@@ -14,7 +14,7 @@ from schema import ExperimentalCompoundDataUpdate, CrystalCompoundData, \
     EnantiomerPairList
 
 def rank_structures_openeye(exp_smi, exp_id, search_smis, search_ids,
-    smi_conv, out_fn=None, n_draw=0):
+    smi_conv, str_based=False, out_fn=None, n_draw=0):
     """
     Rank all molecules in search_mols based on their MCS with exp_mol.
 
@@ -27,37 +27,38 @@ def rank_structures_openeye(exp_smi, exp_id, search_smis, search_ids,
         compounds
     """
 
-    """
-    For structure based matching
-    Options for atom matching:
-      * Aromaticity
-      * HvyDegree - # heavy atoms bonded to
-      * RingMember
-    Options for bond matching:
-      * Aromaticity
-      * BondOrder
-      * RingMember
-    """
-    # atomexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_HvyDegree | \
-    #     oechem.OEExprOpts_RingMember
-    # bondexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_BondOrder | \
-    #     oechem.OEExprOpts_RingMember
-
-    """
-    For atom based matching
-    Options for atom matching (predefined AutomorphAtoms):
-      * AtomicNumber
-      * Aromaticity
-      * RingMember
-      * HvyDegree - # heavy atoms bonded to
-    Options for bond matching:
-      * Aromaticity
-      * BondOrder
-      * RingMember
-    """
-    atomexpr = oechem.OEExprOpts_AutomorphAtoms
-    bondexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_BondOrder | \
-        oechem.OEExprOpts_RingMember
+    if str_based:
+        """
+        For structure based matching
+        Options for atom matching:
+          * Aromaticity
+          * HvyDegree - # heavy atoms bonded to
+          * RingMember
+        Options for bond matching:
+          * Aromaticity
+          * BondOrder
+          * RingMember
+        """
+        atomexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_HvyDegree | \
+            oechem.OEExprOpts_RingMember
+        bondexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_BondOrder | \
+            oechem.OEExprOpts_RingMember
+    else:
+        """
+        For atom based matching
+        Options for atom matching (predefined AutomorphAtoms):
+          * AtomicNumber
+          * Aromaticity
+          * RingMember
+          * HvyDegree - # heavy atoms bonded to
+        Options for bond matching:
+          * Aromaticity
+          * BondOrder
+          * RingMember
+        """
+        atomexpr = oechem.OEExprOpts_AutomorphAtoms
+        bondexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_BondOrder | \
+            oechem.OEExprOpts_RingMember
 
     ## Set up the search pattern and MCS objects
     exp_mol = smi_conv(exp_smi)
@@ -135,7 +136,7 @@ def rank_structures_openeye(exp_smi, exp_id, search_smis, search_ids,
 
 
 def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
-    smi_conv, out_fn=None, n_draw=0):
+    smi_conv, str_based=False, out_fn=None, n_draw=0):
     """
     Rank all molecules in search_mols based on their MCS with exp_mol.
 
@@ -147,6 +148,11 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
         Molecules generated from the SMILES of the ligands in the crystal
         compounds
     """
+
+    if str_based:
+        atom_compare = rdFMCS.AtomCompare.CompareAny
+    else:
+        atom_compare = rdFMCS.AtomCompare.CompareElements
 
     print(f'Starting {exp_id}', flush=True)
     start_time = time.time()
@@ -165,8 +171,8 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
         #  must be complete (allowing for incomplete rings causes problems
         #  for some reason)
         mcs = rdFMCS.FindMCS([exp_mol, mol], maximizeBonds=False,
-            ringMatchesRingOnly=True, completeRingsOnly=True)
-            # atomCompare=rdFMCS.AtomCompare.CompareAny)
+            ringMatchesRingOnly=True, completeRingsOnly=True,
+            atomCompare=atom_compare)
         # put bonds before atoms because lexsort works backwards
         # print(Chem.MolToSmiles(exp_mol))
         # print(Chem.MolToSmiles(mol))
@@ -256,6 +262,8 @@ def get_args():
         help='Number of processors to use.')
     parser.add_argument('-sys', default='rdkit',
         help='Which package to use for MCS search [rdkit, oe].')
+    parser.add_argument('-str', action='store_true', help=('Use '
+        'structure-based matching instead of element-based matching for MCS.'))
     parser.add_argument('-ep', action='store_true',
         help='Input data is in EnantiomerPairList format.')
 
@@ -307,7 +315,7 @@ def main():
     print('Finding best docking structures', flush=True)
     ## Prepare the arguments to pass to starmap
     mp_args = [(c.smiles, c.compound_id, xtal_smiles, xtal_ids, smi_conv,
-        f'{args.o}/{c.compound_id}', 10) for c in exp_compounds]
+        args.str, f'{args.o}/{c.compound_id}', 10) for c in exp_compounds]
     # mp_args = [(m, c, xtal_lig_mols, xtal_ids, f'{args.o}/{c}', 10) \
     #     for m, c in zip(exp_lig_mols, compound_ids)]
     n_procs = min(args.n, mp.cpu_count(), len(exp_compounds))
