@@ -35,6 +35,8 @@ def get_args():
     parser.add_argument('-wts', help='Model weights file.')
     parser.add_argument('-model_params', help='e3nn model parameters.')
     parser.add_argument('-qm9', help='QM9 directory for pretrained model.')
+    parser.add_argument('-qm9_target', type=int, default=10,
+        help='QM9 pretrained target.')
 
     ## Output arguments
     parser.add_argument('-o', required=True, help='Output file basename.')
@@ -46,6 +48,8 @@ def get_args():
         help='Whether to treat the ligand and protein atoms separately.')
     parser.add_argument('-dg', action='store_true',
         help='Whether to predict pIC50 directly or via dG prediction.')
+    parser.add_argument('-rm_atomref', action='store_true',
+        help='Remove atomref embedding in QM9 pretrained SchNet.')
 
     ## Eval arguments
     parser.add_argument('-n', type=int, default=12,
