@@ -20,11 +20,23 @@ def rank_structures_openeye(exp_smi, exp_id, search_smis, search_ids,
 
     Parameters
     ----------
-    exp_mol : oechem.OEGraphMol
-        Molecule generated from the SMILES of the experimental compound
-    search_mol : List[oechem.OEGraphMol]
-        Molecules generated from the SMILES of the ligands in the crystal
-        compounds
+    exp_smi : str
+        SMILES string of the experimental compound
+    exp_id : str
+        CDD compound ID of the experimental compound
+    search_smis : List[str]
+        List of SMILES of the ligands in the crystal compounds
+    search_ids : List[str]
+        List of IDs of crystal compounds
+    smi_conv : function
+        Function to convert a SMILES string to oechem.OEGraphMol
+    str_based : bool
+        Whether to use a structure-based search (True) or a more strict
+        element-based search (False).
+    out_fn : str
+        If not None, the prefix to save overlap molecule structure drawings.
+    n_draw : int
+        Draw top n_draw matched molecules
     """
 
     if str_based:
@@ -142,11 +154,23 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
 
     Parameters
     ----------
-    exp_mol : rdkit.Molecule
-        Molecule generated from the SMILES of the experimental compound
-    search_mol : List[rdkit.Molecule]
-        Molecules generated from the SMILES of the ligands in the crystal
-        compounds
+    exp_smi : str
+        SMILES string of the experimental compound
+    exp_id : str
+        CDD compound ID of the experimental compound
+    search_smis : List[str]
+        List of SMILES of the ligands in the crystal compounds
+    search_ids : List[str]
+        List of IDs of crystal compounds
+    smi_conv : function
+        Function to convert a SMILES string to rdkit.Molecule
+    str_based : bool
+        Whether to use a structure-based search (True) or a more strict
+        element-based search (False)
+    out_fn : str
+        If not None, the prefix to save overlap molecule structure drawings.
+    n_draw : int
+        Draw top n_draw matched molecules
     """
 
     if str_based:
@@ -174,17 +198,11 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
             ringMatchesRingOnly=True, completeRingsOnly=True,
             atomCompare=atom_compare)
         # put bonds before atoms because lexsort works backwards
-        # print(Chem.MolToSmiles(exp_mol))
-        # print(Chem.MolToSmiles(mol))
-        # print(mcs.smartsString)
-        # print(mcs.numBonds, mcs.numAtoms, flush=True)
         sort_args.append((mcs.numBonds, mcs.numAtoms))
         mcs_smarts.append(mcs.smartsString)
 
     sort_args = np.asarray(sort_args)
     sort_idx = np.lexsort(-sort_args.T)
-    # print(-sort_args.T)
-    # print(sort_idx, flush=True)
 
     ## Find all substructure matching atoms and draw the molecule with those
     ##  atoms highlighted
@@ -211,16 +229,6 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
                     print(i, mcs_smarts[mol_idx], flush=True)
                     raise e
                 hit_bonds.append(mol.GetBondBetweenAtoms(aid1,aid2).GetIdx())
-                # except AttributeError:
-                #     pass
-                #     # print(Chem.MolToSmiles(search_mols[mol_idx]))
-                #     # print(aid1, aid2, flush=True)
-                #     # raise e
-                # except RuntimeError as e:
-                #     print(Chem.MolToSmiles(search_mols[mol_idx]))
-                #     print(aid1, aid2)
-                #     print(search_mols[mol_idx].getNumAtoms(), flush=True)
-                #     raise e
 
             d = rdMolDraw2D.MolDraw2DCairo(500, 500)
             rdMolDraw2D.PrepareAndDrawMolecule(d, mol, highlightAtoms=hit_ats,
@@ -301,43 +309,15 @@ def main():
         smi_conv = smi_conv_oe
         rank_fn = rank_structures_openeye
 
-    # exp_lig_mols = [smi_conv(c.smiles) for c in exp_compounds]
-    # xtal_lig_mols = [smi_conv(x.smiles) for x in xtal_compounds]
-    # exp_lig_mols = np.asarray([
-    #     Chem.MolFromSmiles(Chem.CanonSmiles(c.smiles)) \
-    #     for c in exp_compounds])
-    # xtal_lig_mols = np.asarray([
-    #     Chem.MolFromSmiles(Chem.CanonSmiles(x.smiles)) \
-    #     for x in xtal_compounds])
-
     print(f'{len(exp_compounds)} experimental compounds')
     print(f'{len(xtal_compounds)} crystal structures')
     print('Finding best docking structures', flush=True)
     ## Prepare the arguments to pass to starmap
     mp_args = [(c.smiles, c.compound_id, xtal_smiles, xtal_ids, smi_conv,
         args.str, f'{args.o}/{c.compound_id}', 10) for c in exp_compounds]
-    # mp_args = [(m, c, xtal_lig_mols, xtal_ids, f'{args.o}/{c}', 10) \
-    #     for m, c in zip(exp_lig_mols, compound_ids)]
     n_procs = min(args.n, mp.cpu_count(), len(exp_compounds))
     with mp.Pool(n_procs) as pool:
         res = pool.starmap(rank_fn, mp_args)
-    # res = [rank_fn(*a) for a in mp_args]
-
-    # ## Problem molecules
-    # c = 'RED-RED-10c9212c-16'
-    # m = [e for e in exp_compounds if e.compound_id == c][0]
-    # m = Chem.MolFromSmiles(Chem.CanonSmiles(m.smiles))
-
-    # xtal_id = 'Mpro-P1701'
-    # xtal_lig_mols = [x for x in xtal_compounds if xtal_id in x.dataset]
-    # xtal_lig_mols = [Chem.MolFromSmiles(Chem.CanonSmiles(x.smiles)) \
-    #     for x in xtal_lig_mols]
-
-    # print(Chem.CanonSmiles([e for e in exp_compounds if e.compound_id == c][0].smiles))
-    # print(Chem.CanonSmiles([x for x in xtal_compounds if xtal_id in x.dataset][0].smiles))
-    # print('-----', flush=True)
-    # mp_args = (m, c, xtal_lig_mols, [xtal_id], 'mcs_test.pkl', 10)
-    # rank_structures(*mp_args)
 
     pkl.dump([compound_ids, xtal_ids, res],
         open(f'{args.o}/mcs_sort_index.pkl', 'wb'))
