@@ -55,6 +55,16 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
 """
 
 def add_seqres(fn):
+    """
+    Add the Mpro sequence in the PDB header, and take care of some minor
+    formatting issues in the downloaded PDB files. Saves the new PDB file with
+    the same path as the input file, but with the suffix "_seqres.pdb".
+
+    Parameters
+    ----------
+    fn : str
+        Path of the PDB file to modify.
+    """
     pdbfile_lines = [ line for line in open(fn, 'r') if 'UNK' not in line ]
     pdbfile_lines = [ line for line in pdbfile_lines if 'LINK' not in line ]
     ## Fix bad CL atom names

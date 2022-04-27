@@ -13,11 +13,16 @@ class DockedDataset(Dataset):
         """
         Parameters
         ----------
-        str_fns : List[str]
+        str_fns : list[str]
             List of paths for the PDB files. Should correspond 1:1 with the
-            names in compounds.
-        compounds : List[Tuple[str]]
-            List of (crystal structure, ligand compound id).
+            names in compounds
+        compounds : list[tuple[str]]
+            List of (crystal structure, ligand compound id)
+        ignore_h : bool, default=True
+            Whether to remove hydrogens from the loaded structure
+        lig_resn : str, default='LIG'
+            The residue name for the ligand molecules in the PDB files. Used to
+            identify which atoms belong to the ligand
         """
 
         super(DockedDataset, self).__init__()
@@ -27,15 +32,6 @@ class DockedDataset(Dataset):
         table = GetPeriodicTable()
         self.structures = {}
         for fn, compound in zip(str_fns, compounds):
-            # pdb_str = Chem.MolFromPDBFile(fn)
-            # if pdb_str is None:
-            #     print(fn, flush=True)
-
-            # conf = pdb_str.GetConformer()
-            # atomic_nums = [a.GetAtomicNum() for a in pdb_str.GetAtoms()]
-            # atom_pos = [list(conf.GetAtomPosition(i)) \
-            #     for i in range(len(atomic_nums))]
-
             s = PDBParser().get_structure(f'{compound[0]}_{compound[1]}', fn)
             ## Filter out water residues
             all_atoms = [a for a in s.get_atoms() if a.parent.resname != 'HOH']
@@ -57,9 +53,23 @@ class DockedDataset(Dataset):
         return(len(self.compounds))
 
     def __getitem__(self, idx):
+        """
+        Parameters
+        ----------
+        idx
+            Index into dataset. Can either be a numerical index into the
+            structures or a tuple of (crystal structure, ligand compound id),
+            or a list/torch.tensor/numpy.ndarray of either of those types
+        """
+        ## Extract idx from inside the tensor object
         if torch.is_tensor(idx):
-            idx = idx.item()
+            try:
+                idx = idx.item()
+            except ValueError:
+                idx = idx.tolist()
 
+        ## Figure out the type of the index, and keep note of whether a list was
+        ##  passed in or not
         if (type(idx) is int) or (type(idx) is tuple):
             return_list = False
             idx_type = type(idx)
