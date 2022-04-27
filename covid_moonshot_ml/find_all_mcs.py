@@ -24,19 +24,25 @@ def rank_structures_openeye(exp_smi, exp_id, search_smis, search_ids,
         SMILES string of the experimental compound
     exp_id : str
         CDD compound ID of the experimental compound
-    search_smis : List[str]
+    search_smis : list[str]
         List of SMILES of the ligands in the crystal compounds
-    search_ids : List[str]
+    search_ids : list[str]
         List of IDs of crystal compounds
     smi_conv : function
         Function to convert a SMILES string to oechem.OEGraphMol
-    str_based : bool
+    str_based : bool, default=False
         Whether to use a structure-based search (True) or a more strict
         element-based search (False).
-    out_fn : str
+    out_fn : str, optional
         If not None, the prefix to save overlap molecule structure drawings.
-    n_draw : int
+    n_draw : int, optional
         Draw top n_draw matched molecules
+
+    Returns
+    -------
+    numpy.ndarray
+        Index that sorts `sort_smis` by decreasing similarity with `exp_smi`
+        based on MCS search.
     """
 
     if str_based:
@@ -158,19 +164,25 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
         SMILES string of the experimental compound
     exp_id : str
         CDD compound ID of the experimental compound
-    search_smis : List[str]
+    search_smis : list[str]
         List of SMILES of the ligands in the crystal compounds
-    search_ids : List[str]
+    search_ids : list[str]
         List of IDs of crystal compounds
     smi_conv : function
         Function to convert a SMILES string to rdkit.Molecule
-    str_based : bool
+    str_based : bool, default=False
         Whether to use a structure-based search (True) or a more strict
-        element-based search (False)
-    out_fn : str
+        element-based search (False).
+    out_fn : str, optional
         If not None, the prefix to save overlap molecule structure drawings.
-    n_draw : int
+    n_draw : int, optional
         Draw top n_draw matched molecules
+
+    Returns
+    -------
+    numpy.ndarray
+        Index that sorts `sort_smis` by decreasing similarity with `exp_smi`
+        based on MCS search.
     """
 
     if str_based:
