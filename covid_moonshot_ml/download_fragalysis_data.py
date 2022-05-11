@@ -29,6 +29,17 @@ MPRO_API_CALL = {
 }
 
 def download(out_fn, extract=True):
+    """
+    Download Mpro structures from fragalysis.
+
+    Parameters
+    ----------
+    out_fn : str
+        Where to save the downloaded zip file
+    extract : bool, default=True
+        Whether to extract the zip file after downloading. Extracts to the
+        directory given by `dirname(out_fn)`
+    """
     ## First send POST request to prepare the download file and get its URL
     r = requests.post(BASE_URL, data=MPRO_API_CALL)
     url_dl = r.text.split(':"')[1].strip('"}')
