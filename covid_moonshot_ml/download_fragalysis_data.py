@@ -43,6 +43,7 @@ def download(out_fn, extract=True):
     ## First send POST request to prepare the download file and get its URL
     r = requests.post(BASE_URL, data=MPRO_API_CALL)
     url_dl = r.text.split(':"')[1].strip('"}')
+    print('Downloading archive', flush=True)
     ## Send GET request for the zip archive
     r_dl = requests.get(BASE_URL, params={'file_url': url_dl})
     ## Full archive stored in r_dl.content, so write to zip file
@@ -51,6 +52,7 @@ def download(out_fn, extract=True):
 
     ## Extract files if requested
     if extract:
+        print('Extracting files', flush=True)
         zf = ZipFile(out_fn)
         zf.extractall(path=os.path.dirname(out_fn))
 
