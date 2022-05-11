@@ -1,6 +1,4 @@
-import argparse
 from io import StringIO
-import os
 import pandas
 from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 import requests
@@ -11,7 +9,7 @@ BASE_URL = 'https://app.collaborativedrug.com/api/v1/vaults/5549/'
 ## All molecules with SMILES (public)
 ALL_SMI_SEARCH = 'searches/8975987-kmJ-vR0fhkdccPw5UdWiIA'
 
-def download(url, header):
+def download_url(url, header):
     """
     Make requests to the API using the passed information.
 
@@ -74,7 +72,7 @@ def download_achiral(header, fn_out=None):
         DataFrame containing compound information for all achiral molecules
     """
     ## Download all molecules to start
-    response = download(BASE_URL+ALL_SMI_SEARCH, header)
+    response = download_url(BASE_URL+ALL_SMI_SEARCH, header)
     ## Parse into DF
     mol_df = pandas.read_csv(StringIO(response.content.decode()))
     ## Get rid of any molecules that snuck through without SMILES
@@ -126,46 +124,3 @@ def get_achiral_molecules(mol_df):
             raise ValueError(f'No SMILES found for {r["Canonical PostEra ID"]}')
 
     return(mol_df.loc[achiral_idx,:])
-
-################################################################################
-def get_args():
-    parser = argparse.ArgumentParser(description='')
-
-    parser.add_argument('-tok', required=True,
-        help='File containing CDD token.')
-    parser.add_argument('-o', required=True, help='Output CSV file.')
-
-    return(parser.parse_args())
-
-def main():
-    args = get_args()
-
-    ## All molecules with SMILES (public)
-    search_id = 'searches/8975987-kmJ-vR0fhkdccPw5UdWiIA'
-    ## All molecules with SMILES
-    # search_id = 'searches/8869579-9SKN2Zs9LaTRLq9PmTQzZg'
-    ## Protease assay
-    # search_id = 'protocols/49439/data?async=true'
-    ## Achiral in stereochem comments
-    # search_id = 'searches/8866255-iPG5Uqf4mGDemE65iuWt0w'
-    ## Test search (pair of enantiomers)
-    # search_id = 'searches/8860834-q4Jf0BkQNln6mDCG6xtp3w'
-    url = f'https://app.collaborativedrug.com/api/v1/vaults/5549/{search_id}'
-    header = {'X-CDD-token': ''.join(open(args.tok, 'r').readlines()).strip()}
-
-    response = download(url, header)
-    mol_df = pandas.read_csv(StringIO(response.content.decode()))
-    ## Get rid of any molecules that snuck through without SMILES
-    idx = mol_df.loc[:,['shipment_SMILES', 'suspected_SMILES']].isna().all(axis=1)
-    mol_df = mol_df.loc[~idx,:].copy()
-    ## Some of the SMILES from CDD have extra info at the end
-    mol_df.loc[:,'shipment_SMILES'] = [s.strip('|').split()[0] \
-        for s in mol_df.loc[:,'shipment_SMILES']]
-    mol_df.loc[:,'suspected_SMILES'] = [s.strip('|').split()[0] \
-        for s in mol_df.loc[:,'suspected_SMILES']]
-
-    achiral_df = get_achiral_molecules(mol_df)
-    achiral_df.to_csv(args.o, index=False)
-
-if __name__ == '__main__':
-    main()

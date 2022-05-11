@@ -2,6 +2,7 @@
 
 # Add imports here
 from .covid_moonshot_ml import *
+from . import datasets
 
 # Handle versioneer
 from ._version import get_versions
