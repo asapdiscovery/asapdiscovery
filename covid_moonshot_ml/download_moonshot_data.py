@@ -1,16 +1,20 @@
 import argparse
 from io import StringIO
+import os
 import pandas
 from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 import requests
 import sys
 import time
 
+BASE_URL = 'https://app.collaborativedrug.com/api/v1/vaults/5549/'
+## All molecules with SMILES (public)
+ALL_SMI_SEARCH = 'searches/8975987-kmJ-vR0fhkdccPw5UdWiIA'
+
 def download(url, header):
     response = requests.get(url, headers=header)
     export_id = response.json()['id']
-    url = ('https://app.collaborativedrug.com/api/v1/vaults/5549/'
-        f'export_progress/{export_id}')
+    url = f'{BASE_URL}export_progress/{export_id}'
 
     status = None
     total_seconds = 0
@@ -27,11 +31,29 @@ def download(url, header):
     if status != 'finished':
         sys.exit('EXPORT IS BROKEN')
 
-    url = ('https://app.collaborativedrug.com/api/v1/vaults/5549/'
-        f'exports/{export_id}')
+    url = f'{BASE_URL}exports/{export_id}'
     response = requests.get(url, headers=header)
 
     return(response)
+
+def download_achiral(header, fn_out=None):
+    response = download(BASE_URL+ALL_SMI_SEARCH, header)
+    mol_df = pandas.read_csv(StringIO(response.content.decode()))
+    ## Get rid of any molecules that snuck through without SMILES
+    idx = mol_df.loc[:,['shipment_SMILES', 'suspected_SMILES']].isna().all(axis=1)
+    mol_df = mol_df.loc[~idx,:].copy()
+    ## Some of the SMILES from CDD have extra info at the end
+    mol_df.loc[:,'shipment_SMILES'] = [s.strip('|').split()[0] \
+        for s in mol_df.loc[:,'shipment_SMILES']]
+    mol_df.loc[:,'suspected_SMILES'] = [s.strip('|').split()[0] \
+        for s in mol_df.loc[:,'suspected_SMILES']]
+
+    achiral_df = get_achiral_molecules(mol_df)
+
+    if fn_out:
+        achiral_df.to_csv(fn_out, index=False)
+
+    return(achiral_df)
 
 def get_achiral_molecules(mol_df):
     ## Check whether a SMILES is chiral or not
