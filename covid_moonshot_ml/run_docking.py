@@ -11,9 +11,9 @@ from rdkit.Chem import rdFMCS
 from schema import ExperimentalCompoundDataUpdate, CrystalCompoundData, \
     EnantiomerPairList
 
-from kinoml.features.complexes import OEPositDockingFeaturizer
-from kinoml.core.components import BaseProtein
-from kinoml.core.ligands import RDKitLigand
+from kinoml.features.complexes import OEDockingFeaturizer
+from kinoml.core.proteins import Protein
+from kinoml.core.ligands import Ligand
 from kinoml.core.systems import ProteinLigandComplex
 
 def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs):
@@ -38,11 +38,10 @@ def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs):
     systems = []
     for (c, idx) in zip(exp_compounds, compound_idxs):
         x = xtal_compounds[idx][0]
-        protein = BaseProtein(name='MPRO')
-        protein.path = x.str_fn
+        protein = Protein.from_file(x.str_fn, name='MPRO')
         protein.chain_id = x.str_fn.split('_')[-2][-1]
         protein.expo_id = 'LIG'
-        ligand = RDKitLigand.from_smiles(smiles=c.smiles, name=c.compound_id)
+        ligand = Ligand.from_smiles(smiles=c.smiles, name=c.compound_id)
         systems.append(ProteinLigandComplex(components=[protein, ligand]))
 
     return(systems)
@@ -178,7 +177,7 @@ def main():
         cache_dir = args.cache
     print('Running docking', flush=True)
     n_procs = min(args.n, mp.cpu_count(), len(exp_compounds))
-    featurizer = OEPositDockingFeaturizer(cache_dir=cache_dir,
+    featurizer = OEDockingFeaturizer(cache_dir=cache_dir,
         output_dir=args.o, loop_db=args.loop, n_processes=n_procs)
     featurizer.featurize(docking_systems)
 
