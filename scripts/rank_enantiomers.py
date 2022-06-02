@@ -6,11 +6,12 @@ import pickle as pkl
 import re
 import torch
 
-from DockedDataset import DockedDataset
-from schema import ExperimentalCompoundDataUpdate, EnantiomerPairList
+from covid_moonshot_ml.data.dataset import DockedDataset
+from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate, \
+    EnantiomerPairList
+from covid_moonshot_ml.utils import find_most_recent
 from train_dd import add_one_hot_encodings, add_lig_labels, build_model_e3nn, \
     build_model_schnet
-from utils import find_most_recent
 
 def load_affinities(fn):
     ## Load experimental data. Don't need to do any filtering as that's already
