@@ -2,11 +2,34 @@ import numpy as np
 from torch_geometric.nn import SchNet
 
 class SchNetBind(SchNet):
-    """docstring for SchNetBind"""
+    """
+    Light wrapper over the SchNet model from e3nn to compute a binding affinity
+    of a ligand.
+    """
     def __init__(self, *args, **kwargs):
         super(SchNetBind, self).__init__(*args, **kwargs)
 
     def forward(self, z, pos, lig):
+        """
+        Forward pass through the model. Each forward pass through this class
+        makes two forward calls to the back-end model, predicting an energy for
+        the bound complex and the combined energy of the protein and ligand
+        separate.
+
+        Parameters
+        ----------
+        z : torch.tensor
+            Atomic number for each atom
+        pos : torch.tensor
+            Atomic position vectors
+        lig : torch.tensor
+            Boolean labels telling which atoms are part of the ligand
+
+        Returns
+        -------
+        torch.tensor
+            Binding affinity (pIC50) prediction
+        """
         ## First make forward pass for the complex structure
         e_complex = super(SchNetBind, self).forward(z, pos)
 

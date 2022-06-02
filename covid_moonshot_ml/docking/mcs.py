@@ -7,11 +7,29 @@ def rank_structures_openeye(exp_smi, exp_id, search_smis, search_ids,
 
     Parameters
     ----------
-    exp_mol : oechem.OEGraphMol
-        Molecule generated from the SMILES of the experimental compound
-    search_mol : List[oechem.OEGraphMol]
-        Molecules generated from the SMILES of the ligands in the crystal
-        compounds
+    exp_smi : str
+        SMILES string of the experimental compound
+    exp_id : str
+        CDD compound ID of the experimental compound
+    search_smis : list[str]
+        List of SMILES of the ligands in the crystal compounds
+    search_ids : list[str]
+        List of IDs of crystal compounds
+    smi_conv : function
+        Function to convert a SMILES string to oechem.OEGraphMol
+    str_based : bool, default=False
+        Whether to use a structure-based search (True) or a more strict
+        element-based search (False).
+    out_fn : str, optional
+        If not None, the prefix to save overlap molecule structure drawings.
+    n_draw : int, optional
+        Draw top n_draw matched molecules
+
+    Returns
+    -------
+    numpy.ndarray
+        Index that sorts `sort_smis` by decreasing similarity with `exp_smi`
+        based on MCS search.
     """
     from openeye import oechem, oedepict
 
@@ -125,11 +143,29 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
 
     Parameters
     ----------
-    exp_mol : rdkit.Molecule
-        Molecule generated from the SMILES of the experimental compound
-    search_mol : List[rdkit.Molecule]
-        Molecules generated from the SMILES of the ligands in the crystal
-        compounds
+    exp_smi : str
+        SMILES string of the experimental compound
+    exp_id : str
+        CDD compound ID of the experimental compound
+    search_smis : list[str]
+        List of SMILES of the ligands in the crystal compounds
+    search_ids : list[str]
+        List of IDs of crystal compounds
+    smi_conv : function
+        Function to convert a SMILES string to rdkit.Molecule
+    str_based : bool, default=False
+        Whether to use a structure-based search (True) or a more strict
+        element-based search (False).
+    out_fn : str, optional
+        If not None, the prefix to save overlap molecule structure drawings.
+    n_draw : int, optional
+        Draw top n_draw matched molecules
+
+    Returns
+    -------
+    numpy.ndarray
+        Index that sorts `sort_smis` by decreasing similarity with `exp_smi`
+        based on MCS search.
     """
     from rdkit import Chem
     from rdkit.Chem import rdFMCS, Draw
@@ -160,17 +196,11 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
             ringMatchesRingOnly=True, completeRingsOnly=True,
             atomCompare=atom_compare)
         # put bonds before atoms because lexsort works backwards
-        # print(Chem.MolToSmiles(exp_mol))
-        # print(Chem.MolToSmiles(mol))
-        # print(mcs.smartsString)
-        # print(mcs.numBonds, mcs.numAtoms, flush=True)
         sort_args.append((mcs.numBonds, mcs.numAtoms))
         mcs_smarts.append(mcs.smartsString)
 
     sort_args = np.asarray(sort_args)
     sort_idx = np.lexsort(-sort_args.T)
-    # print(-sort_args.T)
-    # print(sort_idx, flush=True)
 
     ## Find all substructure matching atoms and draw the molecule with those
     ##  atoms highlighted
@@ -197,16 +227,6 @@ def rank_structures_rdkit(exp_smi, exp_id, search_smis, search_ids,
                     print(i, mcs_smarts[mol_idx], flush=True)
                     raise e
                 hit_bonds.append(mol.GetBondBetweenAtoms(aid1,aid2).GetIdx())
-                # except AttributeError:
-                #     pass
-                #     # print(Chem.MolToSmiles(search_mols[mol_idx]))
-                #     # print(aid1, aid2, flush=True)
-                #     # raise e
-                # except RuntimeError as e:
-                #     print(Chem.MolToSmiles(search_mols[mol_idx]))
-                #     print(aid1, aid2)
-                #     print(search_mols[mol_idx].getNumAtoms(), flush=True)
-                #     raise e
 
             d = rdMolDraw2D.MolDraw2DCairo(500, 500)
             rdMolDraw2D.PrepareAndDrawMolecule(d, mol, highlightAtoms=hit_ats,

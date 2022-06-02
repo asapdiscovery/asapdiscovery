@@ -78,8 +78,39 @@ def main():
     else:
         cache_dir = args.cache
     print('Running docking', flush=True)
+<<<<<<< HEAD:scripts/run_docking.py
     n_procs = min(args.n, len(exp_compounds))
     run_docking(cache_dir, args.o, args.loop, n_procs, docking_systems)
+=======
+    n_procs = min(args.n, mp.cpu_count(), len(exp_compounds))
+    featurizer = OEDockingFeaturizer(cache_dir=cache_dir,
+        output_dir=args.o, loop_db=args.loop, n_processes=n_procs)
+    docking_systems = featurizer.featurize(docking_systems)
+
+    ## Save docking and posit scores
+    print('Docking scores:', flush=True)
+    scores_dict = {
+        'compound_id': [],
+        'docking_score': [],
+        'posit_score': []
+    }
+    for (c, s) in zip(exp_compounds, docking_systems):
+        scores_dict['compound_id'].append(c.compound_id)
+        try:
+            scores_dict['docking_score'].append(
+                s.featurizations['last']._topology.docking_score)
+            scores_dict['posit_score'].append(
+                s.featurizations['last']._topology.posit_probability)
+        except AttributeError as e:
+            print(dir(s.featurizations['last']._topology), flush=True)
+            raise e
+
+        print(c.compound_id, scores_dict['docking_score'][-1],
+            scores_dict['posit_score'][-1], flush=True)
+
+    scores_dict = pandas.DataFrame(scores_dict)
+    scores_dict.to_csv(f'{args.o}/docking_scores.csv', index=False)
+>>>>>>> master:covid_moonshot_ml/run_docking.py
 
 if __name__ == '__main__':
     main()
