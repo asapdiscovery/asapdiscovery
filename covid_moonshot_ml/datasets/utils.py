@@ -1,29 +1,38 @@
-import argparse
 import json
 import pandas
-from rdkit.Chem import MolToSmiles, MolFromSmiles
-import re
+from rdkit.Chem import CanonSmiles
 
-from schema import ExperimentalCompoundData, EnantiomerPair, EnantiomerPairList
+from ..schema import ExperimentalCompoundData, EnantiomerPair, \
+    EnantiomerPairList
 
-def get_args():
-    parser = argparse.ArgumentParser(description='')
+def cdd_to_schema_pair(cdd_csv, out_json):
+    """
+    Convert a CDD-downloaded CSV file into a JSON file containing an
+    EnantiomerPairList. CSV file must contain the following headers:
+        * suspected_SMILES
+        * Canonical PostEra ID
+        * ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50
 
-    parser.add_argument('-i', required=True, help='CSV file input from CDD.')
-    parser.add_argument('-o', required=True, help='Output JSON file.')
+    Parameters
+    ----------
+    cdd_csv : str
+        CSV file downloaded from CDD.
+    out_json : str
+        JSON file to save to.
 
-    return(parser.parse_args())
-
-def main():
-    args = get_args()
+    Returns
+    -------
+    EnantiomerPairList
+        The parsed EnantiomerPairList.
+    """
 
     ## Load and remove any straggling compounds w/o SMILES data
-    df = pandas.read_csv(args.i)
+    df = pandas.read_csv(cdd_csv)
     df = df.loc[~df['suspected_SMILES'].isna(),:]
 
     ## Remove stereochemistry tags and get canonical SMILES values (to help
     ##  group stereoisomers)
-    smi_nostereo = [MolToSmiles(MolFromSmiles(re.sub('@', '', s))) \
+    smi_nostereo = [CanonSmiles(s, useChiral=False) \
         for s in df['suspected_SMILES']]
     df['suspected_SMILES_nostereo'] = smi_nostereo
 
@@ -66,8 +75,7 @@ def main():
 
     ep_list = EnantiomerPairList(pairs=enant_pairs)
 
-    with open(args.o, 'w') as fp:
+    with open(out_json, 'w') as fp:
         fp.write(ep_list.json())
 
-if __name__ == '__main__':
-    main()
+    return(ep_list)
