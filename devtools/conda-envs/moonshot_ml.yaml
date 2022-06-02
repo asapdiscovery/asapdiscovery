@@ -1,0 +1,32 @@
+name: test
+channels:
+  - pytorch
+  - pyg
+  - openeye
+  - conda-forge
+  - defaults
+dependencies:
+  # Base depends
+  - pip
+
+  # Testing
+  - pytest
+  - pytest-cov
+  - codecov
+
+  # Others
+  - pytorch
+  - pyg
+  - rdkit
+  - seaborn
+  - pydantic
+  - pandas
+  - openff-toolkit
+  - openeye-toolkits
+
+  # Pip-only installs
+  - pip:
+    - e3nn
+    - biopython
+    - ase
+    - schnetpack
