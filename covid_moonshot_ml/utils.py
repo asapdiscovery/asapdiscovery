@@ -22,75 +22,6 @@ def calc_e3nn_model_info(ds, r):
     return(len(unique_atom_types), np.mean(num_neighbors),
         round(np.mean(num_nodes)))
 
-def evaluate(model, ds_train, ds_test, target_dict, model_base, device,
-    model_call=lambda model, d: model(d), plot_o=None, pkl_o=None):
-    ## Set up loss function
-    loss_fn = torch.nn.MSELoss()
-
-    ## Get models and throw an error if no models found
-    models = find_all_models(model_base)
-    if len(models) == 0:
-        raise ValueError(f'No models found in {model_base}')
-    if type(models[0]) is int:
-        if os.path.isdir(model_base):
-            model_fns = [f'{model_base}/{m}.th' for m in models]
-        else:
-            model_fns = [model_base.format(m) for m in models]
-    else:
-        model_fns = models[:]
-        models = list(range(len(model_fns)))
-
-    ## Evaluate the models
-    train_loss = []
-    test_loss = []
-    with torch.no_grad():
-        for wts_fn in model_fns:
-            print(wts_fn, flush=True)
-            ## Load model weights
-            model.load_state_dict(torch.load(wts_fn))
-            ## Send model to desired device if it's not there already
-            model.to(device)
-
-            ## Evaluate training loss
-            tmp_loss = []
-            for s, pose in ds_train:
-                for k, v in pose.items():
-                    pose[k] = v.to(device)
-                pred = model_call(model, pose)
-                for k, v in pose.items():
-                    pose[k] = v.to('cpu')
-                # convert to float to match other types
-                target = torch.tensor([[target_dict[s]]], device=device).float()
-                loss = loss_fn(pred, target)
-                tmp_loss.append(loss.item())
-            train_loss.append(np.asarray(tmp_loss))
-            print(f'Training error: {np.mean(tmp_loss):0.5f}', flush=True)
-
-            tmp_loss = []
-            for s, pose in ds_test:
-                for k, v in pose.items():
-                    pose[k] = v.to(device)
-                pred = model_call(model, pose)
-                for k, v in pose.items():
-                    pose[k] = v.to('cpu')
-                # convert to float to match other types
-                target = torch.tensor([[target_dict[s]]], device=device).float()
-                loss = loss_fn(pred, target)
-                tmp_loss.append(loss.item())
-            test_loss.append(np.asarray(tmp_loss))
-            print(f'Test error: {np.mean(tmp_loss):0.5f}', flush=True)
-
-            if plot_o is not None:
-                print('Plotting', flush=True)
-                plot_loss(np.mean(train_loss, axis=1),
-                    np.mean(test_loss, axis=1), plot_o)
-            if pkl_o is not None:
-                print('Saving', flush=True)
-                pkl.dump([models, np.vstack(train_loss), np.vstack(test_loss)],
-                    open(pkl_o, 'wb'))
-
-    return(models, np.vstack(train_loss), np.vstack(test_loss))
-
 def find_all_models(model_base):
     if model_base is None:
         return([])
@@ -124,22 +55,6 @@ def find_most_recent(model_wts):
 
     epoch_use = models[-1]
     return(epoch_use, f'{model_wts}/{epoch_use}.th')
-
-def one_hot_from_atom_types(atom_types, all_atom_types=None):
-    ## First get all atom types in a usable format
-    ## Just take all unique atom types in atom_types if nothing is passed
-    if all_atom_types is None:
-        all_atom_types = np.unique(atom_types)
-    else:
-        all_atom_types = np.asarray(all_atom_types)
-
-    ## Construct map from atom type to new label
-    at_map = dict(zip(all_atom_types, np.arange(len(all_atom_types))))
-    ## Loop through each atom's type and assign it a new label (needs to be
-    ##  0-indexed and consecutive for torch one-hot)
-    at_labels = [at_map[at.item()] for at in atom_types]
-    return(torch.nn.functional.one_hot(torch.tensor(at_labels),
-        len(all_atom_types)))
 
 def plot_loss(train_loss, test_loss, out_fn):
     fig, axes = plt.subplots(nrows=2, figsize=(12,8), sharex=True)
