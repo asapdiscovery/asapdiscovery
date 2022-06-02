@@ -10,11 +10,12 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-from DockedDataset import DockedDataset
-from E3NNBind import E3NNBind
-from schema import ExperimentalCompoundDataUpdate
-from SchNetBind import SchNetBind
-from utils import calc_e3nn_model_info, find_most_recent, train, plot_loss
+
+from covid_moonshot_ml.data.dataset import DockedDataset
+from covid_moonshot_ml.nn import E3NNBind, SchNetBind
+from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
+from covid_moonshot_ml.utils import calc_e3nn_model_info, find_most_recent, \
+    train, plot_loss
 
 def add_one_hot_encodings(ds):
     """

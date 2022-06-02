@@ -1,7 +1,10 @@
-import argparse
-import glob
-import multiprocessing as mp
+import json
+import pandas
+from rdkit.Chem import CanonSmiles
 import re
+
+from ..schema import ExperimentalCompoundData, EnantiomerPair, \
+    EnantiomerPairList
 
 MPRO_SEQRES = """\
 SEQRES   1 A  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL
@@ -54,19 +57,20 @@ SEQRES  23 B  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN
 SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
 """
 
-def add_seqres(fn):
+def add_seqres(pdb_in, pdb_out=None):
     """
-    Add the Mpro sequence in the PDB header, and take care of some minor
-    formatting issues in the downloaded PDB files. Saves the new PDB file with
-    the same path as the input file, but with the suffix "_seqres.pdb".
+    Add SARS-CoV2 MPRO residue sequence to PDB header.
 
     Parameters
     ----------
-    fn : str
-        Path of the PDB file to modify.
+    pdb_in : str
+        Input PDB file.
+    pdb_out : str, optional
+        Output PDB file. If not given, appends _seqres to the input file.
     """
-    pdbfile_lines = [ line for line in open(fn, 'r') if 'UNK' not in line ]
-    pdbfile_lines = [ line for line in pdbfile_lines if 'LINK' not in line ]
+
+    pdbfile_lines = [line for line in open(pdb_in, 'r') if 'UNK' not in line]
+    pdbfile_lines = [line for line in pdbfile_lines if 'LINK' not in line]
     ## Fix bad CL atom names
     pdbfile_lines = [re.sub('CL', 'Cl', l) for l in pdbfile_lines]
     # # remove ligand hetatoms
@@ -75,28 +79,85 @@ def add_seqres(fn):
     if not 'SEQRES' in pdbfile_contents:
         pdbfile_contents = MPRO_SEQRES + pdbfile_contents
 
-    # remove the _bound.pdb
-    fn_out = f'{fn[:-10]}_seqres.pdb'
-    with open(fn_out, 'w') as fp:
+    if pdb_out is None:
+        pdb_out = f'{pdb_in[:-4]}_seqres.pdb'
+    with open(pdb_out, 'w') as fp:
         fp.write(pdbfile_contents)
 
-    print(f'Wrote {fn_out}', flush=True)
+    print(f'Wrote {pdb_out}', flush=True)
 
-################################################################################
-def get_args():
-    parser = argparse.ArgumentParser(description='')
+def cdd_to_schema_pair(cdd_csv, out_json):
+    """
+    Convert a CDD-downloaded CSV file into a JSON file containing an
+    EnantiomerPairList. CSV file must contain the following headers:
+        * suspected_SMILES
+        * Canonical PostEra ID
+        * ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50
 
-    parser.add_argument('-i', required=True, help='Input directory.')
+    Parameters
+    ----------
+    cdd_csv : str
+        CSV file downloaded from CDD.
+    out_json : str
+        JSON file to save to.
 
-    return(parser.parse_args())
+    Returns
+    -------
+    EnantiomerPairList
+        The parsed EnantiomerPairList.
+    """
 
-def main():
-    args = get_args()
+    ## Load and remove any straggling compounds w/o SMILES data
+    df = pandas.read_csv(cdd_csv)
+    df = df.loc[~df['suspected_SMILES'].isna(),:]
 
-    all_fns = glob.glob(f'{args.i}/*/*_bound.pdb')
+    ## Remove stereochemistry tags and get canonical SMILES values (to help
+    ##  group stereoisomers)
+    smi_nostereo = [CanonSmiles(s, useChiral=False) \
+        for s in df['suspected_SMILES']]
+    df['suspected_SMILES_nostereo'] = smi_nostereo
 
-    with mp.Pool(32) as pool:
-        pool.map(add_seqres, all_fns)
+    ## Sort by non-stereo SMILES to put the enantiomer pairs together
+    df = df.sort_values('suspected_SMILES_nostereo')
 
-if __name__ == '__main__':
-    main()
+    ## Get rid of the </> signs, since we really only need the values to sort
+    ##  enantiomer pairs
+    pic50_key = 'ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50'
+    pic50_vals = [float(c[pic50_key].strip('<> ')) for _, c in df.iterrows()]
+    df['pIC50'] = pic50_vals
+
+    enant_pairs = []
+    ## Loop through the enantiomer pairs and rank them
+    for ep in df.groupby('suspected_SMILES_nostereo'):
+        ## Make sure there aren't any singletons
+        if ep[1].shape[0] != 2:
+            print(f'{ep[1].shape[0]} mols for {ep[0]}', flush=True)
+            continue
+
+        p = []
+        ## Sort by pIC50 value, higher to lower
+        ep = ep[1].sort_values('pIC50', ascending=False)
+        for _, c in ep.iterrows():
+            compound_id = c['Canonical PostEra ID']
+            smiles = c['suspected_SMILES']
+            experimental_data = {'pIC50': c['pIC50']}
+
+            p.append(ExperimentalCompoundData(
+                compound_id=compound_id,
+                smiles=smiles,
+                racemic=False,
+                achiral=False,
+                absolute_stereochemistry_enantiomerically_pure=True,
+                relative_stereochemistry_enantiomerically_pure=True,
+                experimental_data=experimental_data
+            ))
+
+        enant_pairs.append(EnantiomerPair(active=p[0], inactive=p[1]))
+
+    ep_list = EnantiomerPairList(pairs=enant_pairs)
+
+    with open(out_json, 'w') as fp:
+        fp.write(ep_list.json())
+    print(f'Wrote {out_json}', flush=True)
+
+    return(ep_list)
