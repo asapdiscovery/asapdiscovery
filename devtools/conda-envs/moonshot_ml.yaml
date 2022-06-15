@@ -15,14 +15,15 @@ dependencies:
   - codecov
 
   # Others
-  - pytorch
-  - pyg
-  - rdkit
-  - seaborn
-  - pydantic
-  - pandas
+  - mdanalysis
   - openff-toolkit
   - openeye-toolkits
+  - pandas
+  - pydantic
+  - pyg
+  - pytorch
+  - rdkit
+  - seaborn
 
   # Pip-only installs
   - pip:
@@ -30,3 +31,4 @@ dependencies:
     - biopython
     - ase
     - schnetpack
+    - https://github.com/openkinome/kinoml/archive/master.tar.gz
