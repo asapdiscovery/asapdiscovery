@@ -1,25 +1,54 @@
-from kinoml.core.components import BaseProtein
-from kinoml.core.ligands import RDKitLigand
+from kinoml.features.complexes import OEDockingFeaturizer
+from kinoml.core.proteins import Protein
+from kinoml.core.ligands import Ligand
 from kinoml.core.systems import ProteinLigandComplex
-from kinoml.features.complexes import OEPositDockingFeaturizer
 import pandas
 
 from ..schema import CrystalCompoundData
 
 def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs):
+    """
+    Build systems to run through docking.
+    Parameters
+    ----------
+    exp_compounds : list[schema.ExperimentalCompoundData]
+        List of compounds to dock
+    xtal_compounds : list[schema.CrystalCompoundData]
+        List of all crystal structures
+    compound_idxs : list[int]
+        List giving the index of the crystal structure to dock to for each
+        ligand. Should be the same length as `exp_compounds`
+    Returns
+    -------
+    list[kinoml.core.systems.ProteinLigandComplex]
+        List of protein+ligand systems for docking
+    """
     systems = []
     for (c, idx) in zip(exp_compounds, compound_idxs):
         x = xtal_compounds[idx][0]
-        protein = BaseProtein(name='MPRO')
-        protein.path = x.str_fn
+        protein = Protein.from_file(x.str_fn, name='MPRO')
         protein.chain_id = x.str_fn.split('_')[-2][-1]
         protein.expo_id = 'LIG'
-        ligand = RDKitLigand.from_smiles(smiles=c.smiles, name=c.compound_id)
+        ligand = Ligand.from_smiles(smiles=c.smiles, name=c.compound_id)
         systems.append(ProteinLigandComplex(components=[protein, ligand]))
 
     return(systems)
 
 def parse_xtal(x_fn, x_dir):
+    """
+    Load all crystal structures into schema.CrystalCompoundData objects.
+    Parameters
+    ----------
+    x_fn : str
+        CSV file giving information on each crystal structure
+    x_dir : str
+        Path to directory containing directories with crystal structure PDB
+        files
+    Returns
+    -------
+    np.ndarray[schema.CrystalCompoundData]
+        List of parsed crystal structures
+    """
     df = pandas.read_csv(x_fn)
 
     ## Find all P-files
@@ -42,12 +71,12 @@ def parse_xtal(x_fn, x_dir):
             d['str_fn'] = fn
 
     ## Build CrystalCompoundData objects for each row
-    xtal_compounds = [CrystalCompoundData(**d) for d in xtal_dicts]
+    xtal_compounds = np.asarray([CrystalCompoundData(**d) for d in xtal_dicts])
 
     return(xtal_compounds)
 
 def run_docking(cache_dir, output_dir, loop_db, n_procs, docking_systems):
-    featurizer = OEPositDockingFeaturizer(cache_dir=cache_dir,
+    featurizer = OEDockingFeaturizer(cache_dir=cache_dir,
         output_dir=output_dir, loop_db=loop_db, n_processes=n_procs)
     docking_systems = featurizer.featurize(docking_systems)
 
