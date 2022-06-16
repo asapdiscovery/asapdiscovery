@@ -28,6 +28,7 @@ class DockedDataset(Dataset):
 
         super(DockedDataset, self).__init__()
 
+
         table = GetPeriodicTable()
         self.compounds = {}
         self.structures = []
