@@ -27,11 +27,11 @@ class DockedDataset(Dataset):
 
         super(DockedDataset, self).__init__()
 
-        self.compounds = compounds
 
         table = GetPeriodicTable()
-        self.structures = {}
-        for fn, compound in zip(str_fns, compounds):
+        self.compounds = {}
+        self.structures = []
+        for i, (fn, compound) in enumerate(zip(str_fns, compounds)):
             s = PDBParser().get_structure(f'{compound[0]}_{compound[1]}', fn)
             ## Filter out water residues
             all_atoms = [a for a in s.get_atoms() if a.parent.resname != 'HOH']
@@ -43,23 +43,39 @@ class DockedDataset(Dataset):
             atom_pos = [tuple(a.get_vector()) for a in all_atoms]
             is_lig = [a.parent.resname == lig_resn for a in all_atoms]
 
-            self.structures[compound] = {
+            try:
+                self.compounds[compound].append(i)
+            except KeyError:
+                self.compounds[compound] = [i]
+            self.structures.append({
                 'z': torch.tensor(atomic_nums),
                 'pos': torch.tensor(atom_pos).float(),
-                'lig': torch.tensor(is_lig)
-            }
+                'lig': torch.tensor(is_lig),
+                'compound': compound
+            })
 
     def __len__(self):
-        return(len(self.compounds))
+        return(len(self.structures))
 
     def __getitem__(self, idx):
         """
         Parameters
         ----------
-        idx
+        idx : int, tuple, list[tuple/int], tensor[tuple/int]
             Index into dataset. Can either be a numerical index into the
             structures or a tuple of (crystal structure, ligand compound id),
             or a list/torch.tensor/numpy.ndarray of either of those types
+
+        Returns
+        -------
+        list[tuple]
+            List of tuples (crystal_structure, compound_id) for found structures
+        list[dict]
+            List of dictionaries with keys
+            - `z`: atomic numbers
+            - `pos`: position matrix
+            - `lig`: ligand identifier
+            - `compound`: tuple of (crystal_structure, compound_id)
         """
         ## Extract idx from inside the tensor object
         if torch.is_tensor(idx):
@@ -70,9 +86,9 @@ class DockedDataset(Dataset):
 
         ## Figure out the type of the index, and keep note of whether a list was
         ##  passed in or not
-        if (type(idx) is int) or (type(idx) is tuple):
+        if type(idx) is int:
             return_list = False
-            idx_type = type(idx)
+            idx_type = int
             idx = [idx]
         else:
             return_list = True
@@ -80,22 +96,28 @@ class DockedDataset(Dataset):
                 idx_type = int
             else:
                 idx_type = tuple
-                idx = [tuple(i) for i in idx]
+                if (type(idx) is tuple) and (len(idx) == 2) and \
+                    (type(idx[0]) is str) and (type(idx[1]) is str):
+                    idx = [idx]
+                else:
+                    idx = [tuple(i) for i in idx]
 
         ## If idx is integral, assume it is indexing the structures list,
         ##  otherwise assume it's giving structure name
         if idx_type is int:
-            compounds = [self.compounds[i] for i in idx]
+            str_idx_list = idx
         else:
-            compounds = idx
+            ## Need to find the structures that correspond to this compound(s)
+            str_idx_list = [i \
+                for c in idx for i in self.compounds[c]]
 
-        compounds = [c for c in compounds if c in self.structures]
-        str_list = [self.structures[c] for c in compounds]
+        str_list = [self.structures[i] for i in str_idx_list]
+        compounds = [s['compound'] for s in str_list]
         if return_list:
             return(compounds, str_list)
         else:
             return(compounds[0], str_list[0])
 
     def __iter__(self):
-        for s in self.compounds:
-            yield self[s]
+        for s in self.structures:
+            yield (s['compound'], s)
