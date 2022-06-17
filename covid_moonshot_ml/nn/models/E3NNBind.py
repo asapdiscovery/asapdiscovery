@@ -3,11 +3,35 @@ from e3nn.nn.models.gate_points_2101 import Network
 import numpy as np
 
 class E3NNBind(Network):
-    """docstring for E3NNBind"""
+    """
+    Light wrapper over the Network model from e3nn to compute a binding affinity
+    of a ligand.
+    """
     def __init__(self, *args, **kwargs):
         super(E3NNBind, self).__init__(*args, **kwargs)
 
     def forward(self, d):
+        """
+        Forward pass through the model. Each forward pass through this class
+        makes two forward calls to the back-end model, predicting an energy for
+        the bound complex and the combined energy of the protein and ligand
+        separate.
+
+        Parameters
+        ----------
+        d : dict[str->torch.tensor]
+            Entry in data.dataset.DockedDataset to calculate binding affinity
+            for. Should have the following entries:
+            * 'pos': atom positions
+            * 'x': atom features
+            * 'lig': boolean ligand labels
+            * 'z': node attributes, optional
+
+        Returns
+        -------
+        torch.tensor
+            Binding affinity (pIC50) prediction
+        """
         ## First make forward pass for the complex structure
         e_complex = super(E3NNBind, self).forward(d)
 
