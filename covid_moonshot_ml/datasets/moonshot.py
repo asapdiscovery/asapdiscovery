@@ -1,9 +1,10 @@
 from io import StringIO
 import pandas
-from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 import requests
 import sys
 import time
+
+from .utils import get_achiral_molecules
 
 BASE_URL = 'https://app.collaborativedrug.com/api/v1/vaults/5549/'
 ## All molecules with SMILES (public)
@@ -92,35 +93,3 @@ def download_achiral(header, fn_out=None):
         achiral_df.to_csv(fn_out, index=False)
 
     return(achiral_df)
-
-def get_achiral_molecules(mol_df):
-    """
-    Remove chiral molecules.
-
-    Parameters
-    ----------
-    mol_df : pandas.DataFrame
-        DataFrame containing compound information
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing compound information for all achiral molecules
-
-    """
-    ## Check whether a SMILES is chiral or not
-    check_achiral = lambda smi: len(FindMolChiralCenters(MolFromSmiles(smi),
-        includeUnassigned=True, includeCIP=False,
-        useLegacyImplementation=False)) == 0
-    ## Check each molecule, first looking at suspected_SMILES, then
-    ##  shipment_SMILES if not present
-    achiral_idx = []
-    for _, r in mol_df.iterrows():
-        if not pandas.isna(r['suspected_SMILES']):
-            achiral_idx.append(check_achiral(r['suspected_SMILES']))
-        elif not pandas.isna(r['shipment_SMILES']):
-            achiral_idx.append(check_achiral(r['shipment_SMILES']))
-        else:
-            raise ValueError(f'No SMILES found for {r["Canonical PostEra ID"]}')
-
-    return(mol_df.loc[achiral_idx,:])
