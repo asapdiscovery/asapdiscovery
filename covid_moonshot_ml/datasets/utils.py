@@ -123,7 +123,10 @@ def cdd_to_schema_pair(cdd_csv, out_json):
     ## Get rid of the </> signs, since we really only need the values to sort
     ##  enantiomer pairs
     pic50_key = 'ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50'
+    pic50_range = [-1 if '<' in c else (1 if '>' in c else 0) \
+        for c in df[pic50_key]]
     pic50_vals = [float(c[pic50_key].strip('<> ')) for _, c in df.iterrows()]
+    df['pIC50_range'] = pic50_range
     df['pIC50'] = pic50_vals
 
     enant_pairs = []
@@ -140,7 +143,10 @@ def cdd_to_schema_pair(cdd_csv, out_json):
         for _, c in ep.iterrows():
             compound_id = c['Canonical PostEra ID']
             smiles = c['suspected_SMILES']
-            experimental_data = {'pIC50': c['pIC50']}
+            experimental_data = {
+                'pIC50': c['pIC50'],
+                'pIC50_range': c['pIC50_range']
+            }
 
             p.append(ExperimentalCompoundData(
                 compound_id=compound_id,
