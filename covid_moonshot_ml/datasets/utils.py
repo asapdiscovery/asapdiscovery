@@ -7,7 +7,7 @@ import re
 from openeye import oechem
 
 from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
-    PDBStructure, CrystalCompoundData, EnantiomerPairList
+    PDBStructure, CrystalCompoundData, EnantiomerPair, EnantiomerPairList
 
 MPRO_SEQRES = """\
 SEQRES   1 A  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL
