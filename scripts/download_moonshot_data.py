@@ -1,7 +1,8 @@
 import argparse
+import os
 import sys
 
-sys.path.append('.')
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from covid_moonshot_ml.datasets.moonshot import download_achiral
 
 ################################################################################
