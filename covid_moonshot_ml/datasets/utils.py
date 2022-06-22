@@ -3,8 +3,8 @@ import pandas
 from rdkit.Chem import CanonSmiles, FindMolChiralCenters, MolFromSmiles
 import re
 
-from ..schema import ExperimentalCompoundData, EnantiomerPair, \
-    EnantiomerPairList
+from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
+    EnantiomerPair, EnantiomerPairList
 
 MPRO_SEQRES = """\
 SEQRES   1 A  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL
@@ -85,6 +85,73 @@ def add_seqres(pdb_in, pdb_out=None):
         fp.write(pdbfile_contents)
 
     print(f'Wrote {pdb_out}', flush=True)
+
+def cdd_to_schema(cdd_csv, out_json, achiral=False):
+    """
+    Convert a CDD-downloaded CSV file into a JSON file containing an
+    ExperimentalCompoundDataUpdate. CSV file must contain the following headers:
+        * suspected_SMILES
+        * Canonical PostEra ID
+        * ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50
+
+    Parameters
+    ----------
+    cdd_csv : str
+        CSV file downloaded from CDD.
+    out_json : str
+        JSON file to save to.
+    achiral : bool, default=False
+        Only keep achiral molecules
+
+    Returns
+    -------
+    ExperimentalCompoundDataUpdate
+        The parsed ExperimentalCompoundDataUpdate.
+    """
+
+    ## Load and remove any straggling compounds w/o SMILES data
+    df = pandas.read_csv(cdd_csv)
+    df = df.loc[~df['suspected_SMILES'].isna(),:]
+
+    ## Filter out chiral molecules if requested
+    if achiral:
+        df = get_achiral_molecules(df)
+
+    ## Get rid of the </> signs, since we really only need the values to sort
+    ##  enantiomer pairs
+    pic50_key = 'ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50'
+    df = df.loc[~df[pic50_key].isna(),:]
+    pic50_range = [-1 if '<' in c else (1 if '>' in c else 0) \
+        for c in df[pic50_key]]
+    pic50_vals = [float(c.strip('<> ')) for c in df[pic50_key]]
+    df['pIC50'] = pic50_vals
+    df['pIC50_range'] = pic50_range
+
+    compounds = []
+    for _, c in df.iterrows():
+        compound_id = c['Canonical PostEra ID']
+        smiles = c['suspected_SMILES']
+        experimental_data = {
+            'pIC50': c['pIC50'],
+            'pIC50_range': c['pIC50_range']
+        }
+
+        compounds.append(ExperimentalCompoundData(
+            compound_id=compound_id,
+            smiles=smiles,
+            racemic=False,
+            achiral=False,
+            absolute_stereochemistry_enantiomerically_pure=True,
+            relative_stereochemistry_enantiomerically_pure=True,
+            experimental_data=experimental_data
+        ))
+    compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
+
+    with open(out_json, 'w') as fp:
+        fp.write(compounds.json())
+    print(f'Wrote {out_json}', flush=True)
+
+    return(compounds)
 
 def cdd_to_schema_pair(cdd_csv, out_json):
     """
