@@ -114,8 +114,11 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
     df = df.loc[~df['suspected_SMILES'].isna(),:]
 
     ## Filter out chiral molecules if requested
+    achiral_df = get_achiral_molecules(df)
     if achiral:
-        df = get_achiral_molecules(df)
+        df = achiral_df.copy()
+    achiral_label = [compound_id in achiral_df['Canonical PostEra ID'].values
+        for compound_id in df['Canonical PostEra ID']]
 
     ## Get rid of the </> signs, since we really only need the values to sort
     ##  enantiomer pairs
@@ -128,7 +131,7 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
     df['pIC50_range'] = pic50_range
 
     compounds = []
-    for _, c in df.iterrows():
+    for i, (_, c) in enumerate(df.iterrows()):
         compound_id = c['Canonical PostEra ID']
         smiles = c['suspected_SMILES']
         experimental_data = {
@@ -140,7 +143,7 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
             compound_id=compound_id,
             smiles=smiles,
             racemic=False,
-            achiral=False,
+            achiral=achiral_label[i],
             absolute_stereochemistry_enantiomerically_pure=True,
             relative_stereochemistry_enantiomerically_pure=True,
             experimental_data=experimental_data
