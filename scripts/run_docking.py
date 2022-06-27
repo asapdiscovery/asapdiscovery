@@ -2,7 +2,9 @@ import argparse
 import json
 import os
 import pickle as pkl
+import sys
 
+sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../')
 from covid_moonshot_ml.docking.docking import build_docking_systems, \
     parse_xtal, run_docking
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate, \
