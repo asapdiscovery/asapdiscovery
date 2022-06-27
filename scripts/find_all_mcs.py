@@ -2,8 +2,11 @@ import argparse
 import json
 import multiprocessing as mp
 import numpy as np
+import os
 import pickle as pkl
+import sys
 
+sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../')
 from covid_moonshot_ml.docking.docking import parse_xtal
 from covid_moonshot_ml.docking.mcs import rank_structures_openeye, \
     rank_structures_rdkit
