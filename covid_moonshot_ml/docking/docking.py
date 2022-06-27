@@ -2,6 +2,7 @@ from kinoml.features.complexes import OEDockingFeaturizer
 from kinoml.core.proteins import Protein
 from kinoml.core.ligands import Ligand
 from kinoml.core.systems import ProteinLigandComplex
+import os
 import pandas
 
 from ..schema import CrystalCompoundData
@@ -25,7 +26,8 @@ def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs):
     """
     systems = []
     for (c, idx) in zip(exp_compounds, compound_idxs):
-        x = xtal_compounds[idx][0]
+        ## Dock to highest ranked crystal structure
+        x = xtal_compounds[idx[0]]
         protein = Protein.from_file(x.str_fn, name='MPRO')
         protein.chain_id = x.str_fn.split('_')[-2][-1]
         protein.expo_id = 'LIG'
@@ -46,7 +48,7 @@ def parse_xtal(x_fn, x_dir):
         files
     Returns
     -------
-    np.ndarray[schema.CrystalCompoundData]
+    List[schema.CrystalCompoundData]
         List of parsed crystal structures
     """
     df = pandas.read_csv(x_fn)
@@ -71,7 +73,7 @@ def parse_xtal(x_fn, x_dir):
             d['str_fn'] = fn
 
     ## Build CrystalCompoundData objects for each row
-    xtal_compounds = np.asarray([CrystalCompoundData(**d) for d in xtal_dicts])
+    xtal_compounds = [CrystalCompoundData(**d) for d in xtal_dicts]
 
     return(xtal_compounds)
 
