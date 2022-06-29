@@ -302,8 +302,11 @@ def get_args():
         help="Learning rate for Adam optimizer (defaults to 1e-4).",
     )
 
-    return parser.parse_args()
+    ## Loss function arguments
+    parser.add_argument('-step', action='store_true', help=('Use step loss '
+        '(don\'t penalize for predictions outside of the assay range).'))
 
+    return(parser.parse_args())
 
 def init(args, rank=False):
     """
@@ -426,6 +429,13 @@ def main():
         train_loss = []
         val_loss = []
         test_loss = []
+
+    ## Set up the loss function
+    if args.step:
+        from covid_moonshot_ml.nn import MSELoss
+    else:
+        from torch.nn import MSELoss
+    loss_func = MSELoss()
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
