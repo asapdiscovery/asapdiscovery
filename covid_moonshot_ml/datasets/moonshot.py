@@ -81,8 +81,10 @@ def download_achiral(header, fn_out=None):
     mol_df = mol_df.loc[~idx,:].copy()
     ## Some of the SMILES from CDD have extra info at the end
     mol_df.loc[:,'shipment_SMILES'] = [s.strip('|').split()[0] \
+        if not pandas.isna(s) else s \
         for s in mol_df.loc[:,'shipment_SMILES']]
     mol_df.loc[:,'suspected_SMILES'] = [s.strip('|').split()[0] \
+        if not pandas.isna(s) else s \
         for s in mol_df.loc[:,'suspected_SMILES']]
 
     ## Remove chiral molecules
