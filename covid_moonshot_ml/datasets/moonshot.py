@@ -8,7 +8,7 @@ from .utils import get_achiral_molecules
 
 BASE_URL = 'https://app.collaborativedrug.com/api/v1/vaults/5549/'
 ## All molecules with SMILES (public)
-ALL_SMI_SEARCH = 'searches/8975987-kmJ-vR0fhkdccPw5UdWiIA'
+ALL_SMI_SEARCH = 'searches/9469227-zd2doWwzJ63bZYaI_vkjXg'
 
 def download_url(url, header):
     """
