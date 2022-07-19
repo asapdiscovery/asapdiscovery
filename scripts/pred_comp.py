@@ -1,7 +1,6 @@
 import argparse
 import matplotlib.pyplot as plt
 import multiprocessing as mp
-import numpy as np
 import pandas
 import seaborn as sns
 import torch

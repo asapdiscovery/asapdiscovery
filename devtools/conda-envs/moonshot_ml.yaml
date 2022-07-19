@@ -1,0 +1,34 @@
+name: test
+channels:
+  - pytorch
+  - pyg
+  - openeye
+  - conda-forge
+  - defaults
+dependencies:
+  # Base depends
+  - pip
+
+  # Testing
+  - pytest
+  - pytest-cov
+  - codecov
+
+  # Others
+  - mdanalysis
+  - openff-toolkit
+  - openeye-toolkits
+  - pandas
+  - pydantic
+  - pyg
+  - pytorch
+  - rdkit
+  - seaborn
+
+  # Pip-only installs
+  - pip:
+    - e3nn
+    - biopython
+    - ase
+    - schnetpack
+    - https://github.com/openkinome/kinoml/archive/master.tar.gz
