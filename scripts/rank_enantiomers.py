@@ -94,6 +94,8 @@ def get_args():
         help='Whether to predict pIC50 directly or via dG prediction.')
     parser.add_argument('-ep', action='store_true',
         help='Input data is in EnantiomerPairList format.')
+    parser.add_argument('-rm_atomref', action='store_true',
+        help='Remove atomref embedding in QM9 pretrained SchNet.')
 
     ## Output arguments
     parser.add_argument('-o', required=True, help='Output file basename.')
@@ -140,7 +142,8 @@ def main():
             dg=args.dg)
         model_call = lambda model, d: model(d)
     elif args.model == 'schnet':
-        model = build_model_schnet(args.qm9, args.dg)
+        model = build_model_schnet(args.qm9, args.dg,
+            remove_atomref=args.rm_atomref)
         if args.dg:
             model_call = lambda model, d: model(d['z'], d['pos'], d['lig'])
         else:

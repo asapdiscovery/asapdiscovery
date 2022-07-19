@@ -145,7 +145,7 @@ def build_model_e3nn(n_atom_types, num_neighbors, num_nodes, node_attr=False,
         model = Network(**model_kwargs)
     return(model)
 
-def build_model_schnet(qm9=None, dg=False, qm9_target=10):
+def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
     """
     Build appropriate SchNet model.
 
@@ -157,6 +157,9 @@ def build_model_schnet(qm9=None, dg=False, qm9_target=10):
         Whether to use SchNetBind model (True) or regular SchNet model (False)
     qm9_target : int, default=10
         Which QM9 target to use. Must be in the range of [0, 11]
+    remove_atomref : bool, default=False
+        Whether to remove the reference atom propoerties learned from the QM9
+        dataset
 
     Returns
     -------
@@ -176,15 +179,25 @@ def build_model_schnet(qm9=None, dg=False, qm9_target=10):
         # target=10 is free energy (eV)
         model_qm9, _ = SchNet.from_qm9_pretrained(qm9, qm9_dataset, qm9_target)
 
-        if dg:
-            model = SchNetBind(model_qm9.hidden_channels, model_qm9.num_filters,
-                model_qm9.num_interactions, model_qm9.num_gaussians,
-                model_qm9.cutoff, model_qm9.max_num_neighbors, model_qm9.readout,
-                model_qm9.dipole, model_qm9.mean, model_qm9.std,
-                model_qm9.atomref.weight.detach().clone())
-            model.load_state_dict(model_qm9.state_dict())
+        if remove_atomref:
+            atomref = None
+            ## Get rid of entries in state_dict that correspond to atomref
+            wts = {k: v for k,v in model_qm9.state_dict().items() \
+                if 'atomref' not in k}
         else:
-            model = model_qm9
+            atomref = model_qm9.atomref.weight.detach().clone()
+            wts = model_qm9.state_dict()
+
+        model_params = (model_qm9.hidden_channels, model_qm9.num_filters,
+            model_qm9.num_interactions, model_qm9.num_gaussians,
+            model_qm9.cutoff, model_qm9.max_num_neighbors,model_qm9.readout,
+            model_qm9.dipole, model_qm9.mean, model_qm9.std, atomref)
+
+        if dg:
+            model = SchNetBind(*model_params)
+        else:
+            model = SchNet(*model_params)
+        model.load_state_dict(wts)
 
     ## Set interatomic cutoff to 3.5A (default of 10) to make the graph smaller
     model.cutoff = 3.5
@@ -218,6 +231,8 @@ def get_args():
         help='Whether to treat the ligand and protein atoms separately.')
     parser.add_argument('-dg', action='store_true',
         help='Whether to predict pIC50 directly or via dG prediction.')
+    parser.add_argument('-rm_atomref', action='store_true',
+        help='Remove atomref embedding in QM9 pretrained SchNet.')
 
     ## Training arguments
     parser.add_argument('-n_epochs', type=int, default=1000,
@@ -288,7 +303,8 @@ def init(args, rank=False):
         for k,v in ds_train[0][1].items():
             print(k, v.shape, flush=True)
     elif args.model == 'schnet':
-        model = build_model_schnet(args.qm9, args.dg, args.qm9_target)
+        model = build_model_schnet(args.qm9, args.dg, args.qm9_target,
+            args.rm_atomref)
         if args.dg:
             model_call = lambda model, d: model(d['z'], d['pos'], d['lig'])
         else:
