@@ -10,14 +10,28 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-from DockedDataset import DockedDataset
-from E3NNBind import E3NNBind
-from schema import ExperimentalCompoundDataUpdate
-from SchNetBind import SchNetBind
-from utils import calc_e3nn_model_info, find_most_recent, train, plot_loss
+
+from covid_moonshot_ml.data.dataset import DockedDataset
+from covid_moonshot_ml.nn import E3NNBind, SchNetBind
+from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
+from covid_moonshot_ml.utils import calc_e3nn_model_info, find_most_recent, \
+    train, plot_loss
 
 def add_one_hot_encodings(ds):
-    ## Add one hot encodings to each entry in ds
+    """
+    Add 100-length one-hot encoding of the atomic number for each entry in ds.
+    Needed to match the expected format for e3nn model.
+
+    Parameters
+    ----------
+    ds : data.dataset.DockedDataset
+        Dataset to add encodings to
+
+    Returns
+    -------
+    data.dataset.DockedDataset
+        Dataset with one-hot encodings
+    """
     for _, pose in ds:
         ## Use length 100 for one-hot encoding to account for atoms up to element
         ##  number 100
@@ -26,6 +40,20 @@ def add_one_hot_encodings(ds):
     return(ds)
 
 def add_lig_labels(ds):
+    """
+    Convert boolean ligand labels into 0/1 labels. Needed to be able to pass
+    ligand labels as node attributes in e3nn model.
+
+    Parameters
+    ----------
+    ds : data.dataset.DockedDataset
+        Dataset to add encodings to
+
+    Returns
+    -------
+    data.dataset.DockedDataset
+        Dataset with added ligand labels
+    """
     ## Change key values for ligand labels
     for _, pose in ds:
         pose['z'] = pose['lig'].reshape((-1,1)).float()
@@ -33,6 +61,22 @@ def add_lig_labels(ds):
     return(ds)
 
 def load_affinities(fn, achiral=True):
+    """
+    Load binding affinities from JSON file of
+    schema.ExperimentalCompoundDataUpdate.
+
+    Parameters
+    ----------
+    fn : str
+        Path to JSON file
+    achiral : bool, default=True
+        Whether to only take achiral molecules
+
+    Returns
+    -------
+    dict[str->float]
+        Dictionary mapping coumpound id to experimental pIC50 value
+    """
     ## Load all compounds with experimental data and filter to only achiral
     ##  molecules (to start)
     exp_compounds = ExperimentalCompoundDataUpdate(
@@ -46,6 +90,31 @@ def load_affinities(fn, achiral=True):
 
 def build_model_e3nn(n_atom_types, num_neighbors, num_nodes, node_attr=False,
     dg=False):
+    """
+    Build appropriate e3nn model.
+
+    Parameters
+    ----------
+    n_atom_types : int
+        Number off atom types in one-hot encodings. This will define the
+        dimensionality of the input into the model
+    num_neighbors : int
+        Approximate number of neighbor nodes that get convolved over for each
+        node. Used as a normalization factor in the model
+    num_nodes : int
+        Approximate number of nodes per graph. Used as a normalization factor in
+        the model
+    node_attr : bool, default=False
+        Whether the inputs will include node attributes (ligand labels)
+    dg : bool, default=False
+        Whether to use E3NNBind model (True) or regular e3nn network (False)
+
+    Returns
+    -------
+    e3nn.nn.models.gate_points_2101.Network
+        e3nn/E3NNBind model created from input parameters
+    """
+
     # input is one-hot encoding of atom type => n_atom_types scalars
     # output is scalar valued binding energy/pIC50 value
     # hidden layers taken from e3nn tutorial (should be tuned eventually)
@@ -53,7 +122,6 @@ def build_model_e3nn(n_atom_types, num_neighbors, num_nodes, node_attr=False,
     # need to calculate num_neighbors and num_nodes
     # reduce_output because we just want the one binding energy prediction
     #  across the whole graph
-
     model_kwargs = {
         'irreps_in': f'{n_atom_types}x0e',
         'irreps_hidden': [(mul, (l, p)) \
@@ -78,6 +146,27 @@ def build_model_e3nn(n_atom_types, num_neighbors, num_nodes, node_attr=False,
     return(model)
 
 def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
+    """
+    Build appropriate SchNet model.
+
+    Parameters
+    ----------
+    qm9 : str, optional
+        Path to QM9 dataset, if starting with a QM9-pretrained model
+    dg : bool, default=False
+        Whether to use SchNetBind model (True) or regular SchNet model (False)
+    qm9_target : int, default=10
+        Which QM9 target to use. Must be in the range of [0, 11]
+    remove_atomref : bool, default=False
+        Whether to remove the reference atom propoerties learned from the QM9
+        dataset
+
+    Returns
+    -------
+    torch_geometric.nn.SchNet
+        SchNet/SchNetBind model created from input parameters
+    """
+
     ## Load pretrained model if requested, otherwise create a new SchNet
     if qm9 is None:
         if dg:
