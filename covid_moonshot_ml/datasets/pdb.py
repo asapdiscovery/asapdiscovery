@@ -61,6 +61,15 @@ def pymol_alignment(pdb_path,
         pymol.cmd.save(sel_path, f"mobile and {selection}")
     pymol.cmd.delete("all")
 
+def load_openeye_mol(pdb_path):
+    ifs = oechem.oemolistream()
+    ifs.SetFormat(oechem.OEFormat_PDB)
+    ifs.open(pdb_path)
+    mols = []
+    for mol in ifs.GetMolBases():
+        mols.append(oechem.OEMol(mol))
+    return mols[0]
+
 def align_all_pdbs(pdb_list,
                    pdb_dir_path,
                    ref_path=None,
