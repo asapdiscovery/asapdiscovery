@@ -34,7 +34,9 @@ def download_PDBs(pdb_list, pdb_path):
     -------
 
     """
-    print(f"Downloading PDBs to {pdb_path}")
+    ## First load the list of PDB structures
+    pdb_list = load_pdbs_from_yaml(pdb_list_yaml)
+
     for pdb in pdb_list:
         print(pdb)
         download_pdb_structure(pdb, pdb_path)
