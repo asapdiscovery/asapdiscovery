@@ -66,44 +66,36 @@ def load_openeye_mol(pdb_path):
     ifs.SetFormat(oechem.OEFormat_PDB)
     ifs.open(pdb_path)
     mols = []
+    i = 0
     for mol in ifs.GetMolBases():
+        print(i)
+        i+=1
         mols.append(oechem.OEMol(mol))
     return mols[0]
 
 # def align_pdb_to_reference(pdb_path, ref_path):
 
-def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None):
+def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None):
     if not ref_path:
         ref = pdb_list[0]
         ref_path = os.path.join(pdb_dir_path, f'rcsb_{ref}.pdb')
+    else:
+        ref = ref_name
     ref_mol = load_openeye_mol(ref_path)
 
     ofs = oechem.oemolostream()
     for pdb in pdb_list:
         pdb_path = os.path.join(pdb_dir_path, f'rcsb_{pdb}.pdb')
         pdb_mol = load_openeye_mol(pdb_path)
+        pdb_mol.
         new_pdb_path = os.path.join(pdb_dir_path, f"{pdb}_aligned_to_{ref}.pdb")
         ofs.open(new_pdb_path)
-        aligned_mol = superpose_proteins(ref_mol, pdb_mol, chain_id=0)
+        aligned_mol = superpose_proteins(ref_mol, pdb_mol, chain_id="A")
         oechem.OEWriteMolecule(ofs, aligned_mol)
-
-
-
-
-
-
-
-# def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None):
-#     ref = pdb_list[0]
-#     ref_path = os.path.join(pdb_dir_path, f'rcsb_{ref}.pdb')
-#     for pdb in pdb_list:
-#         pdb_path = os.path.join(pdb_dir_path, f'rcsb_{pdb}.pdb')
-#         print(pdb_path, ref_path)
-#         align_pdb_to_reference(pdb_path, ref_path)
 
 
 if __name__ == '__main__':
     # download_PDBs('mers-structures.yaml', '/Users/alexpayne/lilac-mount-point/mers-structures')
     pdb_list = load_pdbs_from_yaml('mers-structures.yaml')
     mers_path = '/Users/alexpayne/lilac-mount-point/mers-structures'
-    align_all_pdbs(pdb_list, mers_path)
+    align_all_pdbs(pdb_list, mers_path, ref_path='/Users/alexpayne/lilac-mount-point/fragalysis/extra_files/reference.pdb', ref_name='frag_ref')
