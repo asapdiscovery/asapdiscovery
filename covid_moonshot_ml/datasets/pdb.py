@@ -96,9 +96,14 @@ def pymol_alignment(pdb_path, ref_path, out_path):
     import pymol
     pymol.cmd.load(pdb_path, "mobile")
     pymol.cmd.load(ref_path, "ref")
-    pymol.cmd.select("ref_chainA", "ref and chain A")
-    pymol.cmd.select("mobile_chainA", "mobile and chain A")
-    pymol.cmd.align("mobile_chainA", "ref_chainA")
+    # pymol.cmd.select("ref_chainA", "ref and chain A")
+    # pymol.cmd.select("mobile_chainA", "mobile and chain A")
+    pymol.cmd.align("polymer and name CA and (mobile) and chain A",
+                        "polymer and name CA and (ref) and chain A",
+                    quiet=0,
+                    reset=1,
+                    cycles=10)
+
     pymol.cmd.save(out_path, "mobile")
 
 
