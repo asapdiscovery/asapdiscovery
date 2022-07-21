@@ -34,9 +34,7 @@ def download_PDBs(pdb_list, pdb_path):
     -------
 
     """
-    ## First load the list of PDB structures
-    pdb_list = load_pdbs_from_yaml(pdb_list_yaml)
-
+    print(f"Downloading PDBs to {pdb_path}")
     for pdb in pdb_list:
         print(pdb)
         download_pdb_structure(pdb, pdb_path)
@@ -60,6 +58,51 @@ def pymol_alignment(pdb_path,
         print(f"Saving selection '{selection}' to {sel_path}")
         pymol.cmd.save(sel_path, f"mobile and {selection}")
     pymol.cmd.delete("all")
+
+def mdanalysis_alignment(pdb_path, ref_path, out_path):
+    import MDAnalysis as mda
+    from MDAnalysis.analysis import align
+    from MDAnalysis.analysis.rms import rmsd
+    from MDAnalysis.coordinates import PDB
+
+    mobile = mda.Universe(pdb_path, pdb_path)
+    ref = mda.Universe(ref_path, ref_path)
+
+    print(len(mobile.select_atoms("protein and segid A and name CA and resnum 147 to 160")))
+
+    print(len(ref.select_atoms("protein and segid A and name CA and resnum 147 to 160")))
+    # for segment in mobile.segments:
+    #     print(segment.ix)
+    #     print(segment.residues)
+    #
+    # for segment in ref.segments:
+    #     print(segment.ix)
+    #     print(segment.residues)
+
+    # _ref = md.load_pdb(ref_path)
+    # mobile = mda.Universe(pdb)
+    # ref = mda.Universe(_ref)
+    align.alignto(mobile, ref,
+                  select="protein and segid A and name CA", # and resnum 140 to 160",
+                  weights="mass",
+                  # match_atoms = False,
+                  strict=False
+                  )
+    mobile.atoms.write(out_path)
+    return
+
+
+def pymol_alignment(pdb_path, ref_path, out_path):
+    import pymol
+    pymol.cmd.load(pdb_path, "mobile")
+    pymol.cmd.load(ref_path, "ref")
+    pymol.cmd.select("ref_chainA", "ref and chain A")
+    pymol.cmd.select("mobile_chainA", "mobile and chain A")
+    pymol.cmd.align("mobile_chainA", "ref_chainA")
+    pymol.cmd.save(out_path, "mobile")
+
+
+
 
 def load_openeye_mol(pdb_path):
     ifs = oechem.oemolistream()
