@@ -103,9 +103,14 @@ def pymol_alignment(pdb_path, ref_path, out_path):
     import pymol
     pymol.cmd.load(pdb_path, "mobile")
     pymol.cmd.load(ref_path, "ref")
-    pymol.cmd.select("ref_chainA", "ref and chain A")
-    pymol.cmd.select("mobile_chainA", "mobile and chain A")
-    pymol.cmd.align("mobile_chainA", "ref_chainA")
+    # pymol.cmd.select("ref_chainA", "ref and chain A")
+    # pymol.cmd.select("mobile_chainA", "mobile and chain A")
+    pymol.cmd.align("polymer and name CA and (mobile) and chain A",
+                        "polymer and name CA and (ref) and chain A",
+                    quiet=0,
+                    reset=1,
+                    cycles=10)
+
     pymol.cmd.save(out_path, "mobile")
 
 
@@ -176,28 +181,42 @@ def superpose_proteins(reference_protein: oechem.OEMolBase,
     return superposed_protein
 
 
+# def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None):
+#     if not ref_path:
+#         ref = pdb_list[0]
+#         ref_path = os.path.join(pdb_dir_path, f'rcsb_{ref}.pdb')
+#     else:
+#         ref = ref_name
+#     ref_mol = load_openeye_mol(ref_path)
+#
+#     ofs = oechem.oemolostream()
+#     for pdb in pdb_list:
+#         pdb_path = os.path.join(pdb_dir_path, f'rcsb_{pdb}.pdb')
+#         pdb_mol = load_openeye_mol(pdb_path)
+#         new_pdb_path = os.path.join(pdb_dir_path, f"{pdb}_aligned_to_{ref}.pdb")
+#         ofs.open(new_pdb_path)
+#         print(f"Aligning {pdb_mol.GetTitle()} to {pdb_mol.GetTitle()} on chain A")
+#         aligned_mol = superpose_proteins(ref_mol,
+#                                          pdb_mol,
+#                                          chain_id="A"
+#                                          )
+#
+#         print(f"Saving aligned molecule to {new_pdb_path}")
+#         oechem.OEWriteMolecule(ofs, aligned_mol)
+
 def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None):
     if not ref_path:
         ref = pdb_list[0]
         ref_path = os.path.join(pdb_dir_path, f'rcsb_{ref}.pdb')
     else:
         ref = ref_name
-    ref_mol = load_openeye_mol(ref_path)
-
-    ofs = oechem.oemolostream()
     for pdb in pdb_list:
         pdb_path = os.path.join(pdb_dir_path, f'rcsb_{pdb}.pdb')
-        pdb_mol = load_openeye_mol(pdb_path)
         new_pdb_path = os.path.join(pdb_dir_path, f"{pdb}_aligned_to_{ref}.pdb")
-        ofs.open(new_pdb_path)
-        print(f"Aligning {pdb_mol.GetTitle()} to {pdb_mol.GetTitle()} on chain A")
-        aligned_mol = superpose_proteins(ref_mol,
-                                         pdb_mol,
-                                         chain_id="A"
-                                         )
+        print(f"Aligning {pdb} to {ref} and saving to {new_pdb_path}")
+        pymol_alignment(pdb_path, ref_path, new_pdb_path)
 
-        print(f"Saving aligned molecule to {new_pdb_path}")
-        oechem.OEWriteMolecule(ofs, aligned_mol)
+
 
 def loading_openeye(molecule: oechem.OEMolBase):
     hv = oechem.OEHierView(molecule)
@@ -207,8 +226,8 @@ def loading_openeye(molecule: oechem.OEMolBase):
 if __name__ == '__main__':
     pdb_list = load_pdbs_from_yaml('mers-structures.yaml')
     pdb_dir_path = '/Users/alexpayne/lilac-mount-point/mers-structures'
-    # ref_path = '/Users/alexpayne/lilac-mount-point/fragalysis/extra_files/reference.pdb'
-    ref_path = pdb_dir_path + "/rcsb_4RSP.pdb"
+    ref_path = '/Users/alexpayne/lilac-mount-point/fragalysis/extra_files/reference.pdb'
+    # ref_path = pdb_dir_path + "/rcsb_4RSP.pdb"
     # download_PDBs(pdb_list, pdb_path)
     # align_all_pdbs(pdb_list, pdb_dir_path,
     #                ref_path=ref_path,
@@ -226,6 +245,7 @@ if __name__ == '__main__':
     #                          ref_path,
     #                          out_path)
 
-    pdb_path = pdb_dir_path + "/rcsb_4YLU.pdb"
-    new_pdb_path = os.path.join(pdb_dir_path, "4YLU_aligned_to_4RSP_pymol.pdb")
-    pymol_alignment(pdb_path, ref_path, new_pdb_path)
+    align_all_pdbs(pdb_list,
+                   pdb_dir_path,
+                   ref_path,
+                   ref_name="frag_ref_pymol")
