@@ -99,19 +99,7 @@ def mdanalysis_alignment(pdb_path, ref_path, out_path):
     return
 
 
-def pymol_alignment(pdb_path, ref_path, out_path):
-    import pymol
-    pymol.cmd.load(pdb_path, "mobile")
-    pymol.cmd.load(ref_path, "ref")
-    # pymol.cmd.select("ref_chainA", "ref and chain A")
-    # pymol.cmd.select("mobile_chainA", "mobile and chain A")
-    pymol.cmd.align("polymer and name CA and (mobile) and chain A",
-                        "polymer and name CA and (ref) and chain A",
-                    quiet=0,
-                    reset=1,
-                    cycles=10)
 
-    pymol.cmd.save(out_path, "mobile")
 
 
 
@@ -204,6 +192,23 @@ def superpose_proteins(reference_protein: oechem.OEMolBase,
 #         print(f"Saving aligned molecule to {new_pdb_path}")
 #         oechem.OEWriteMolecule(ofs, aligned_mol)
 
+def pymol_alignment(pdb_path, ref_path, out_path):
+    import pymol
+
+    print(pdb_path, ref_path)
+    pymol.cmd.load(pdb_path, "mobile")
+    pymol.cmd.load(ref_path, "ref")
+    # pymol.cmd.select("ref_chainA", "ref and chain A")
+    # pymol.cmd.select("mobile_chainA", "mobile and chain A")
+    # print(pymol.cmd.get_object_list(selection='(all)'))
+    pymol.cmd.align("polymer and name CA and mobile and chain A",
+                        "polymer and name CA and ref and chain A",
+                    quiet=0)
+    # pymol.cmd.run("align_pdbs.pml")
+
+    pymol.cmd.save(out_path, "mobile")
+    pymol.cmd.delete("all")
+
 def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None):
     if not ref_path:
         ref = pdb_list[0]
@@ -225,9 +230,9 @@ def loading_openeye(molecule: oechem.OEMolBase):
 
 if __name__ == '__main__':
     pdb_list = load_pdbs_from_yaml('mers-structures.yaml')
-    pdb_dir_path = '/Users/alexpayne/lilac-mount-point/mers-structures'
-    ref_path = '/Users/alexpayne/lilac-mount-point/fragalysis/extra_files/reference.pdb'
-    # ref_path = pdb_dir_path + "/rcsb_4RSP.pdb"
+    pdb_dir_path = '/Users/alexpayne/Scientific_Projects/mers-structures'
+    # ref_path = '/Users/alexpayne/lilac-mount-point/fragalysis/extra_files/reference.pdb'
+    ref_path = pdb_dir_path + "/rcsb_4RSP.pdb"
     # download_PDBs(pdb_list, pdb_path)
     # align_all_pdbs(pdb_list, pdb_dir_path,
     #                ref_path=ref_path,
@@ -247,5 +252,10 @@ if __name__ == '__main__':
 
     align_all_pdbs(pdb_list,
                    pdb_dir_path,
-                   ref_path,
-                   ref_name="frag_ref_pymol")
+                   # ref_path,
+                   # ref_name="frag_ref_pymol"
+                   )
+
+    # pymol_alignment("/Users/alexpayne/Scientific_Projects/mers-structures/rcsb_4WME.pdb",
+    #                 "/Users/alexpayne/Scientific_Projects/mers-structures/rcsb_4RSP.pdb",
+    #                 "/Users/alexpayne/Scientific_Projects/mers-structures/4WME_manual_test.pdb")
