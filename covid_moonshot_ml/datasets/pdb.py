@@ -58,15 +58,15 @@ def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None):
     for pdb in pdb_list:
         pdb_path = os.path.join(pdb_dir_path, f'rcsb_{pdb}.pdb')
         new_pdb_path = os.path.join(pdb_dir_path, f"{pdb}_aligned_to_{ref}.pdb")
-        print(f"Aligning {pdb_path} "
-              f"to {ref_path} "
+        print(f"Aligning {pdb_path} \n"
+              f"to {ref_path} \n"
               f"and saving to {new_pdb_path}")
         pymol_alignment(pdb_path, ref_path, new_pdb_path)
 
 if __name__ == '__main__':
-    download_PDBs(pdb_list, pdb_path)
     pdb_list = load_pdbs_from_yaml('mers-structures.yaml')
     pdb_dir_path = '/Users/alexpayne/Scientific_Projects/mers-structures'
+    download_PDBs(pdb_list, pdb_dir_path)
     # ref_path = '/Users/alexpayne/lilac-mount-point/fragalysis/extra_files/reference.pdb'
     ref_path = pdb_dir_path + "/rcsb_4RSP.pdb"
 
