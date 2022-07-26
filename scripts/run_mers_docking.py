@@ -44,19 +44,7 @@ def main():
     #
     # ## Split dataset bassed on whehter or not there is an ID
     # ## Currently I'm not saving the IC50 information but we could do that
-    # mols_wo_sars2_xtal = sars2_filtered[sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
-    # mols_w_sars2_xtal = sars2_filtered[~sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
     #
-    # ## Use utils function to get sdf file from dataset
-    # mols_w_sars2_xtal["SDF"] = mols_w_sars2_xtal["Dataset"].apply(get_sdf_fn_from_dataset,
-    #                                                               fragalysis_dir=args.x_dir)
-    #
-    # ## Save csv files for each dataset
-    # mols_wo_sars2_xtal.to_csv(os.path.join(args.o_dir, "mers_ligands_without_SARS2_structures.csv"),
-    #                           index=False)
-    #
-    # mols_w_sars2_xtal.to_csv(os.path.join(args.o_dir, "mers_ligands_with_SARS2_structures.csv"),
-    #                          index=False)
     #
     # # mols_w_sars2_xtal.index = mols_w_sars2_xtal["Compound ID"]
     # ligand_args = mols_w_sars2_xtal.to_dict('index')
@@ -105,34 +93,33 @@ def main():
     # # ligands = []
     # # for ligand in mols_w_sars2_xtal["Compound ID"].to_list():
     # #     print(ligand)
-    # mers_structures = []
-    # pdb_list = load_pdbs_from_yaml(args.y)
-    # for pdb in pdb_list:
-    #     mers_fn = os.path.join(args.m_dir, f"{pdb}_aligned_to_frag_ref_chainA_protein.pdb")
-    #     assert os.path.exists(mers_fn)
-    #
-    #     mers_structures.append(
-    #         PDBStructure(
-    #             pdb_id=pdb,
-    #             str_fn=mers_fn
     #         )
     #     )
     # print(mers_structures)
     #
-    # ## could use itertools but not really necessary yet?
-    # combinations = [(lig, pdb) for lig in ligands_w_sars_structs for pdb in mers_structures]
-    # print(f"Running {len(combinations)} docking combinations")
-    # for lig, pdb in combinations:
-    #     #
-    #     sars_xtal = lig_dataset_map[lig.compound_id]
-    #     print(pdb.pdb_id, lig.compound_id, sars_xtal.dataset)
-    #     # print(sars_xtal.dataset, sars_xtal.sdf_fn)
 
-    from covid_moonshot_ml.docking.docking import parse_exp_cmp_data
-    parse_exp_cmp_data(args.exp,
-                       args.x,
-                       args.x_dir)
+    from covid_moonshot_ml.docking.docking import parse_exp_cmp_data, parse_fragalysis_data
+    ligands = parse_exp_cmp_data(args.exp)
+    cmpd_ids = [lig.compound_id for lig in ligands]
+    sars_xtals = parse_fragalysis_data(args.x,
+                                       args.x_dir,
+                                       cmpd_ids,
+                                       args.o_dir)
+    pdb_list = load_pdbs_from_yaml(args.y)
+    pdb_fn_dict = {pdb: os.path.join(args.m_dir, f"{pdb}_aligned_to_frag_ref_chainA_protein.pdb") for pdb in pdb_list}
+    mers_structures = [PDBStructure(pdb_id=pdb, str_fn=fn) for pdb, fn in pdb_fn_dict.items()]
 
+    ## could use itertools but not really necessary yet?
+    combinations = [(lig, pdb) for lig in ligands for pdb in mers_structures]
+    print(f"Running {len(combinations)} docking combinations")
+    for lig, pdb in combinations[0]:
+        sars_xtal = sars_xtals.get(lig.compound_id, CrystalCompoundData())
+        if sars_xtal.sdf_fn:
+            print(pdb.pdb_id, lig.compound_id, sars_xtal.sdf_fn)
+        else:
+            print(f"Skipping {pdb.pdb_id}, {lig.compound_id}")
+
+        ## Profit?
 
     ## TODO
     # Run MCSS on the mols without SARS2 ligands and return a dataset for each Compound ID
