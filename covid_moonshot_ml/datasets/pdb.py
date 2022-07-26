@@ -39,7 +39,11 @@ def download_PDBs(pdb_list, pdb_path):
         print(pdb)
         download_pdb_structure(pdb, pdb_path)
 
-def pymol_alignment(pdb_path, ref_path, out_path):
+def pymol_alignment(pdb_path,
+                    ref_path,
+                    out_path,
+                    sel_dict={}):
+    ## To-Do: convert this so that I can load all pdbs at once and align them all to ref
     import pymol
     pymol.cmd.load(pdb_path, "mobile")
     pymol.cmd.load(ref_path, "ref")
@@ -47,9 +51,19 @@ def pymol_alignment(pdb_path, ref_path, out_path):
                         "polymer and name CA and ref and chain A",
                     quiet=0)
     pymol.cmd.save(out_path, "mobile")
+
+    for name, selection in sel_dict.items():
+        ## get everything but the '.pdb' suffix and then add the name
+        sel_path = f"{out_path.split('.')[0]}_{name}.pdb"
+        print(f"Saving selection '{selection}' to {sel_path}")
+        pymol.cmd.save(sel_path, f"mobile and {selection}")
     pymol.cmd.delete("all")
 
-def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None):
+def align_all_pdbs(pdb_list,
+                   pdb_dir_path,
+                   ref_path=None,
+                   ref_name=None,
+                   sel_dict={}):
     if not ref_path:
         ref = pdb_list[0]
         ref_path = os.path.join(pdb_dir_path, f'rcsb_{ref}.pdb')
@@ -61,7 +75,10 @@ def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None):
         print(f"Aligning {pdb_path} \n"
               f"to {ref_path} \n"
               f"and saving to {new_pdb_path}")
-        pymol_alignment(pdb_path, ref_path, new_pdb_path)
+        pymol_alignment(pdb_path,
+                        ref_path,
+                        new_pdb_path,
+                        sel_dict)
 
 if __name__ == '__main__':
     pdb_list = load_pdbs_from_yaml('mers-structures.yaml')
