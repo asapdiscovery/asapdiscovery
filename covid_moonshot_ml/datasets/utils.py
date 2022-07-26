@@ -1,4 +1,6 @@
 import json
+import os.path
+
 import pandas
 from rdkit.Chem import CanonSmiles, FindMolChiralCenters, MolFromSmiles
 import re
@@ -271,3 +273,12 @@ def get_achiral_molecules(mol_df):
             raise ValueError(f'No SMILES found for {r["Canonical PostEra ID"]}')
 
     return(mol_df.loc[achiral_idx,:])
+
+def get_sdf_fn_from_dataset_list(dataset:str,
+                                 fragalysis_dir,
+                                 ):
+    fn = os.path.join(fragalysis_dir, f"{dataset}_0A/{dataset}_0A.sdf")
+    if not os.path.exists(fn):
+        print(f"File {fn} not found...")
+        fn = None ## not sure what behaviour this should have
+    return fn
