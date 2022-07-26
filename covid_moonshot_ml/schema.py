@@ -100,7 +100,3 @@ class EnantiomerPair(Model):
 
 class EnantiomerPairList(Model):
     pairs: List[EnantiomerPair]
-
-
-
-
