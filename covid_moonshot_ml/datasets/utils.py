@@ -390,7 +390,7 @@ def get_achiral_molecules(mol_df):
 
     return mol_df.loc[achiral_idx, :]
 
-def get_sdf_fn_from_dataset_list(dataset:str,
+def get_sdf_fn_from_dataset(dataset:str,
                                  fragalysis_dir,
                                  ):
     fn = os.path.join(fragalysis_dir, f"{dataset}_0A/{dataset}_0A.sdf")
