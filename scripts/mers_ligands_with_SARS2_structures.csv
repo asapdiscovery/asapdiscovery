@@ -1,15 +1,15 @@
-Compound ID,SMILES,Dataset
-EDG-MED-10fcb19e-1,COC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC(NS(=O)(=O)C)=CC34,Mpro-P1661
-EDG-MED-5d232de5-1,FC=1C=CC=2C=NC=C(NC(=O)[C@@H]3CCOC=4C=CC(Cl)=CC34)C2C1,Mpro-P0160
-EDG-MED-5d232de5-5,CN1CC[C@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,Mpro-P0171
-EDJ-MED-00c1612e-1,COC=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,Mpro-x12777
-EDJ-MED-015fb6b4-2,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1=O,Mpro-P1835
-EDJ-MED-92e193ae-1,ClC=1C=CC=2NCC[C@@H](C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,Mpro-P0034
-EDJ-MED-92e193ae-1,ClC=1C=CC=2NCC[C@@H](C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,Mpro-x12692
-EDJ-MED-e4b030d8-13,C[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,Mpro-x12207
-MAT-POS-4223bc15-40,CN1N=CC=C1C(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2,Mpro-P1079
-MAT-POS-6c284e65-1,CN(C)C=1C=CC(=NC1)N(CC=2C=CC=C(Cl)C2)C(=O)CC=3C=NC=C4C=CC=CC34,Mpro-P0057
-MAT-POS-b3e365b9-1,O=C(Nc1cncc2ccccc12)[C@@H]1CCOc2ccc(Cl)cc21,Mpro-x11612
-PET-UNK-1901c25b-1,CN(C)C=1C=CC(=CC1)N(CC=2C=CSC2)C(=O)CC=3C=NC=C4C=CC=CC34,Mpro-x11790
-VLA-UCB-29506327-1,ClC=1C=CC=2OCCC3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,Mpro-P0022
-VLA-UCB-29506327-1,ClC=1C=CC=2OCCC3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,Mpro-x12686
+Compound ID,SMILES,Dataset,SDF
+EDG-MED-10fcb19e-1,COC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC(NS(=O)(=O)C)=CC34,Mpro-P1661,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P1661_0A/Mpro-P1661_0A.sdf
+EDG-MED-5d232de5-1,FC=1C=CC=2C=NC=C(NC(=O)[C@@H]3CCOC=4C=CC(Cl)=CC34)C2C1,Mpro-P0160,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P0160_0A/Mpro-P0160_0A.sdf
+EDG-MED-5d232de5-5,CN1CC[C@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,Mpro-P0171,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P0171_0A/Mpro-P0171_0A.sdf
+EDJ-MED-00c1612e-1,COC=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,Mpro-x12777,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-x12777_0A/Mpro-x12777_0A.sdf
+EDJ-MED-015fb6b4-2,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1=O,Mpro-P1835,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P1835_0A/Mpro-P1835_0A.sdf
+EDJ-MED-92e193ae-1,ClC=1C=CC=2NCC[C@@H](C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,Mpro-P0034,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P0034_0A/Mpro-P0034_0A.sdf
+EDJ-MED-92e193ae-1,ClC=1C=CC=2NCC[C@@H](C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,Mpro-x12692,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-x12692_0A/Mpro-x12692_0A.sdf
+EDJ-MED-e4b030d8-13,C[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,Mpro-x12207,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-x12207_0A/Mpro-x12207_0A.sdf
+MAT-POS-4223bc15-40,CN1N=CC=C1C(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2,Mpro-P1079,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P1079_0A/Mpro-P1079_0A.sdf
+MAT-POS-6c284e65-1,CN(C)C=1C=CC(=NC1)N(CC=2C=CC=C(Cl)C2)C(=O)CC=3C=NC=C4C=CC=CC34,Mpro-P0057,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P0057_0A/Mpro-P0057_0A.sdf
+MAT-POS-b3e365b9-1,O=C(Nc1cncc2ccccc12)[C@@H]1CCOc2ccc(Cl)cc21,Mpro-x11612,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-x11612_0A/Mpro-x11612_0A.sdf
+PET-UNK-1901c25b-1,CN(C)C=1C=CC(=CC1)N(CC=2C=CSC2)C(=O)CC=3C=NC=C4C=CC=CC34,Mpro-x11790,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-x11790_0A/Mpro-x11790_0A.sdf
+VLA-UCB-29506327-1,ClC=1C=CC=2OCCC3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,Mpro-P0022,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P0022_0A/Mpro-P0022_0A.sdf
+VLA-UCB-29506327-1,ClC=1C=CC=2OCCC3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,Mpro-x12686,/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-x12686_0A/Mpro-x12686_0A.sdf

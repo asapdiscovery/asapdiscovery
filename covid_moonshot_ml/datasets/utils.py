@@ -653,13 +653,11 @@ def get_achiral_molecules(mol_df):
 
     return(mol_df.loc[achiral_idx,:])
 
-def get_sdf_fns_from_dataset_list(fragalysis_dir,
-                                  datasets:list):
-    fns = {}
-    for dataset in datasets:
-        fn = os.path.join(fragalysis_dir, f"{dataset}_0A/{dataset}_0A.sdf")
-        if not os.path.exists(fn):
-            print(f"File {fn} not found...")
-        else:
-            fns[dataset] = fn
-    return fns
+def get_sdf_fn_from_dataset_list(dataset:str,
+                                 fragalysis_dir,
+                                 ):
+    fn = os.path.join(fragalysis_dir, f"{dataset}_0A/{dataset}_0A.sdf")
+    if not os.path.exists(fn):
+        print(f"File {fn} not found...")
+        fn = None ## not sure what behaviour this should have
+    return fn
