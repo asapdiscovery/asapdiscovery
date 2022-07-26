@@ -1,5 +1,7 @@
 import os
 
+from ..schema import CrystalCompoundData, ExperimentalCompoundData, PDBStructure
+from ..datasets.utils import get_sdf_fn_from_dataset
 
 def build_docking_systems(
     exp_compounds, xtal_compounds, compound_idxs, n_top=1
@@ -42,6 +44,49 @@ def build_docking_systems(
 
     return systems
 
+
+def parse_exp_cmp_data(exp_fn: str,
+                       frag_fn: str,
+                       x_dir,
+                       ):
+
+    ## Load in compound data
+    exp_data = pandas.read_csv(exp_fn).fillna("")
+    sars2_structures = pandas.read_csv(frag_fn).fillna("")
+
+    ## Filter fragalysis dataset by the compounds we want to test
+    sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(exp_data['External ID'])]
+
+    ## Construct sars_xtal list
+    sars_xtals = {}
+    for data in sars2_filtered.to_dict('index').values():
+        cmpd_id = data["Compound ID"]
+        dataset = data["Dataset"]
+        print(cmpd_id, dataset)
+        if len(dataset) > 0:
+            if not sars_xtals.get(cmpd_id) or '-P' in dataset:
+                sars_xtals[cmpd_id] = CrystalCompoundData(
+                    smiles=data["SMILES"],
+                    compound_id=cmpd_id,
+                    dataset=dataset,
+                    sdf_fn=get_sdf_fn_from_dataset(dataset, x_dir)
+                )
+        else:
+            sars_xtals[cmpd_id] = CrystalCompoundData()
+    print(sars_xtals.items())
+
+    for cmpd_id, xtal in sars_xtals.items():
+        print(xtal.compound_id, xtal.dataset)
+
+
+    ## Construct ligand list
+    exp_cmpd_dict = exp_data.to_dict('index')
+
+    ligands = []
+    for data in exp_cmpd_dict.values():
+        cmpd_id = data["External ID"]
+        smiles = data["SMILES"]
+        ligand = ExperimentalCompoundData(compound_id=cmpd_id, smiles=smiles)
 
 def parse_xtal(x_fn, x_dir):
     """
