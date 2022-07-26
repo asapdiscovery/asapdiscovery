@@ -12,6 +12,7 @@ from covid_moonshot_ml.schema import CrystalCompoundData, \
     ExperimentalCompoundData, PDBStructure
 from covid_moonshot_ml.datasets.utils import get_sdf_fn_from_dataset
 from covid_moonshot_ml.datasets.pdb import load_pdbs_from_yaml
+from covid_moonshot_ml.docking.docking import parse_exp_cmp_data, parse_fragalysis_data
 
 
 ################################################################################
@@ -34,71 +35,7 @@ def get_args():
 
 def main():
     args = get_args()
-    #
-    # ## Load in compound data
-    # exp_data = pd.read_csv(args.exp).fillna("")
-    # sars2_structures = pd.read_csv(args.x)
-    #
-    # ## Filter fragalysis dataset by the compounds we want to test
-    # sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(exp_data['External ID'])]
-    #
-    # ## Split dataset bassed on whehter or not there is an ID
-    # ## Currently I'm not saving the IC50 information but we could do that
-    #
-    #
-    # # mols_w_sars2_xtal.index = mols_w_sars2_xtal["Compound ID"]
-    # ligand_args = mols_w_sars2_xtal.to_dict('index')
-    # print(ligand_args)
-    #
-    # exp_cmpds = exp_data.to_dict('index')
-    # sars_xtal_dict = mols_w_sars2_xtal.to_dict('index')
-    #
-    # ## Construct sars_xtal list
-    # sars_xtals = {}
-    # for data in sars_xtal_dict.values():
-    #     dataset = data["Dataset"]
-    #     sars_xtals[dataset] = CrystalCompoundData(
-    #         smiles=data["SMILES"],
-    #         compound_id=data["Compound ID"],
-    #         dataset=dataset,
-    #         sdf_fn=get_sdf_fn_from_dataset(dataset, args.x_dir)
-    #     )
-    # print(sars_xtals)
-    #
-    # ligands_w_sars_structs = []
-    # ligands_wo_sars_structs = []
-    # lig_dataset_map = {}
-    # for data in exp_cmpds.values():
-    #     cmpd_id = data["External ID"]
-    #     smiles = data["SMILES"]
-    #     ligand = ExperimentalCompoundData(compound_id=cmpd_id, smiles=smiles)
-    #     datasets = [data["Dataset"] for data in sars_xtal_dict.values() if data["Compound ID"] == cmpd_id]
-    #     if len(datasets) == 0:
-    #         ligands_wo_sars_structs.append(ligand)
-    #     elif len(datasets) == 1:
-    #         ligands_w_sars_structs.append(ligand)
-    #         lig_dataset_map[cmpd_id] = sars_xtals[datasets[0]]
-    #     elif len(datasets) >= 1:
-    #         for dataset in datasets:
-    #             if '-P' in dataset:
-    #                 # print(dataset)
-    #                 ligands_w_sars_structs.append(ligand)
-    #                 lig_dataset_map[cmpd_id] = sars_xtals[dataset]
-    #
-    # print(lig_dataset_map)
-    # print(len(ligands_w_sars_structs), ligands_w_sars_structs)
-    # print(len(ligands_wo_sars_structs), ligands_wo_sars_structs)
-    # # for lig in ligands_w_sars_structs:
-    #
-    # # ligands = []
-    # # for ligand in mols_w_sars2_xtal["Compound ID"].to_list():
-    # #     print(ligand)
-    #         )
-    #     )
-    # print(mers_structures)
-    #
 
-    from covid_moonshot_ml.docking.docking import parse_exp_cmp_data, parse_fragalysis_data
     ligands = parse_exp_cmp_data(args.exp)
     cmpd_ids = [lig.compound_id for lig in ligands]
     sars_xtals = parse_fragalysis_data(args.x,
