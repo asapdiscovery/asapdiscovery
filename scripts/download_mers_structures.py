@@ -19,7 +19,10 @@ def main():
     args = get_args()
     pdb_list = pdb.load_pdbs_from_yaml(args.y)
     pdb.download_PDBs(pdb_list, args.d)
-    pdb.align_all_pdbs(pdb_list, args.d, args.r, args.n)
+    sel_dict = {
+        "chainA_protein": "chain A and polymer.protein"
+    }
+    pdb.align_all_pdbs(pdb_list, args.d, args.r, args.n, sel_dict)
 
 if __name__ == '__main__':
     main()
