@@ -8,7 +8,7 @@ sys.path.append(repo_path)
 
 from covid_moonshot_ml.docking.docking import build_docking_systems,\
     parse_xtal, run_docking
-from covid_moonshot_ml.datasets.utils import get_sdf_fns_from_dataset_list
+from covid_moonshot_ml.datasets.utils import get_sdf_fn_from_dataset_list
 
 
 ################################################################################
@@ -42,16 +42,12 @@ def main():
     mols_wo_sars2_xtal = sars2_filtered[sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES"]]
     mols_w_sars2_xtal = sars2_filtered[~sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
 
-    mols_w_sars2_xtal.to_csv("mers_ligands_with_SARS2_structures.csv",
-                             index=False)
     mols_wo_sars2_xtal.to_csv("mers_ligands_without_SARS2_structures.csv",
                               index=False)
-
-    mols_w_sars2_xtal_datasets = mols_w_sars2_xtal["Dataset"].tolist()
-    fns = get_sdf_fns_from_dataset_list(fragalysis_dir,
-                                  mols_w_sars2_xtal_datasets)
-    print(fns.values())
-
+    mols_w_sars2_xtal["SDF"] = mols_w_sars2_xtal["Dataset"].apply(get_sdf_fn_from_dataset_list,
+                                                                  fragalysis_dir=fragalysis_dir)
+    mols_w_sars2_xtal.to_csv("mers_ligands_with_SARS2_structures.csv",
+                             index=False)
 
 if __name__ == '__main__':
     main()
