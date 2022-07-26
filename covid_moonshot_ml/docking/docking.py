@@ -2,6 +2,7 @@ import os
 
 from ..schema import CrystalCompoundData, ExperimentalCompoundData, PDBStructure
 from ..datasets.utils import get_sdf_fn_from_dataset
+from ..datasets.pdb import load_pdbs_from_yaml
 
 def build_docking_systems(
     exp_compounds, xtal_compounds, compound_idxs, n_top=1
@@ -45,17 +46,49 @@ def build_docking_systems(
     return systems
 
 
+def build_combined_protein_system_from_sdf(pdb_fn, sdf_fn):
+    protein = Protein.from_file(pdb_fn, name="MERS-Mpro")
+    ligand = Ligand.from_file(sdf_fn)
+    return ProteinLigandComplex
+
+
 def parse_exp_cmp_data(exp_fn: str,
-                       frag_fn: str,
-                       x_dir,
                        ):
 
     ## Load in compound data
     exp_data = pandas.read_csv(exp_fn).fillna("")
+
+    ## Construct ligand list
+    exp_cmpd_dict = exp_data.to_dict('index')
+
+    ligands = [ExperimentalCompoundData(compound_id=data["External ID"], smiles=data["SMILES"])
+               for data in exp_cmpd_dict.values()]
+    return ligands
+
+def parse_fragalysis_data(frag_fn,
+                          x_dir,
+                          cmpd_ids,
+                          o_dir=False):
+    ## Load in csv
     sars2_structures = pandas.read_csv(frag_fn).fillna("")
 
     ## Filter fragalysis dataset by the compounds we want to test
-    sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(exp_data['External ID'])]
+    sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(cmpd_ids)]
+
+    if o_dir:
+        mols_wo_sars2_xtal = sars2_filtered[sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
+        mols_w_sars2_xtal = sars2_filtered[~sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
+
+        ## Use utils function to get sdf file from dataset
+        mols_w_sars2_xtal["SDF"] = mols_w_sars2_xtal["Dataset"].apply(get_sdf_fn_from_dataset,
+                                                                      fragalysis_dir=x_dir)
+
+        ## Save csv files for each dataset
+        mols_wo_sars2_xtal.to_csv(os.path.join(o_dir, "mers_ligands_without_SARS2_structures.csv"),
+                                  index=False)
+
+        mols_w_sars2_xtal.to_csv(os.path.join(o_dir, "mers_ligands_with_SARS2_structures.csv"),
+                                 index=False)
 
     ## Construct sars_xtal list
     sars_xtals = {}
@@ -78,15 +111,10 @@ def parse_exp_cmp_data(exp_fn: str,
     for cmpd_id, xtal in sars_xtals.items():
         print(xtal.compound_id, xtal.dataset)
 
+    return sars_xtals
 
-    ## Construct ligand list
-    exp_cmpd_dict = exp_data.to_dict('index')
 
-    ligands = []
-    for data in exp_cmpd_dict.values():
-        cmpd_id = data["External ID"]
-        smiles = data["SMILES"]
-        ligand = ExperimentalCompoundData(compound_id=cmpd_id, smiles=smiles)
+
 
 def parse_xtal(x_fn, x_dir):
     """
