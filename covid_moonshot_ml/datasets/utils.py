@@ -6,7 +6,7 @@ from rdkit.Chem import CanonSmiles, FindMolChiralCenters, MolFromSmiles
 import re
 
 from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
-    EnantiomerPair, EnantiomerPairList
+    PDBStructure, CrystalCompoundData, EnantiomerPairList
 
 MPRO_SEQRES = """\
 SEQRES   1 A  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL
