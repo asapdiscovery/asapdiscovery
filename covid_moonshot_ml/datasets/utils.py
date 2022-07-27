@@ -233,6 +233,24 @@ def cdd_to_schema_pair(cdd_csv, out_json):
     df["pIC50_range"] = pic50_range
     df["pIC50"] = pic50_vals
 
+    ci_lower_key = ('ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 '
+        'CI (Lower) (µM)')
+    ci_upper_key = ('ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 '
+        'CI (Upper) (µM)')
+    ## Calculate 95% CI in pIC50 units based on IC50 vals (not sure if the
+    ##  difference should be taken before or after taking the -log10)
+    pic50_var = []
+    for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
+        if pandas.isna(ci_lower) or pandas.isna(ci_upper):
+            pic50_var.append(np.nan)
+        else:
+            ## First convert bounds from IC50 (uM) to pIC50
+            pic50_ci_upper = -np.log10(ci_upper*10e-6)
+            pic50_ci_lower = -np.log10(ci_lower*10e-6)
+            ## Assume size of 95% CI == 4*sigma => calculate variance from stdev
+            pic50_var.append(((pic50_ci_lower - pic50_ci_upper) / 4) ** 2)
+    df['pIC50_var'] = pic50_var
+
     enant_pairs = []
     ## Loop through the enantiomer pairs and rank them
     for ep in df.groupby("suspected_SMILES_nostereo"):
@@ -248,8 +266,9 @@ def cdd_to_schema_pair(cdd_csv, out_json):
             compound_id = c["Canonical PostEra ID"]
             smiles = c["suspected_SMILES"]
             experimental_data = {
-                "pIC50": c["pIC50"],
-                "pIC50_range": c["pIC50_range"],
+                'pIC50': c['pIC50'],
+                'pIC50_range': c['pIC50_range'],
+                'pIC50_var': c['pIC50_var']
             }
 
             p.append(
