@@ -102,7 +102,7 @@ def main():
         rank_fn = rank_structures_rdkit
     elif args.sys.lower() == "oe":
         rank_fn = rank_structures_openeye
-    n_procs = min(args.n, mp.cpu_count(), len(exp_compounds))
+    n_procs = min(args.n, mp.cpu_count(), len(mcs_compounds))
 
     ## Prepare the arguments to pass to starmap
     mp_args = [
