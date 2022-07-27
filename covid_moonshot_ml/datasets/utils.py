@@ -282,3 +282,93 @@ def get_sdf_fn_from_dataset(dataset:str,
         print(f"File {fn} not found...")
         fn = None ## not sure what behaviour this should have
     return fn
+
+def parse_experimental_compound_data(
+        exp_fn: str,
+        json_fn: str
+):
+    ## Load experimental data and trim columns
+    exp_df = pandas.read_csv(exp_fn)
+    exp_cols = [
+        "External ID",
+        "SMILES",
+        "Pan-coronavirus_enzymatic_Takeda: IC50 MERS Mpro (μM)",
+    ]
+    exp_df = exp_df.loc[:, exp_cols].copy()
+    exp_df.columns = ["External ID", "SMILES", "IC50"]
+
+    ## Convert semi-quantitative values into floats and trim any NaNs
+    exp_df = exp_df.loc[~exp_df["IC50"].isna(), :]
+    ic50_range = [
+        -1 if "<" in c else (1 if ">" in c else 0) for c in exp_df["IC50"]
+    ]
+    ic50_vals = [float(c.strip("<> ")) for c in exp_df["IC50"]]
+    exp_df.loc[:, "IC50"] = ic50_vals
+    exp_df["IC50_range"] = ic50_range
+
+    ## Convert to schema
+    exp_data_compounds = [
+        ExperimentalCompoundData(
+            compound_id=r["External ID"],
+            smiles=r["SMILES"],
+            experimental_data={
+                "IC50": r["IC50"],
+                "IC50_range": r["IC50_range"],
+            },
+        )
+        for _, r in exp_df.iterrows()
+    ]
+
+    ## Dump JSON file
+    with open(json_fn, "w") as fp:
+        fp.write(
+            ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json()
+        )
+
+def parse_fragalysis_data(frag_fn,
+                          x_dir,
+                          cmpd_ids,
+                          o_dir=False):
+    ## Load in csv
+    sars2_structures = pandas.read_csv(frag_fn).fillna("")
+
+    ## Filter fragalysis dataset by the compounds we want to test
+    sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(cmpd_ids)]
+
+    if o_dir:
+        mols_wo_sars2_xtal = sars2_filtered[sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
+        mols_w_sars2_xtal = sars2_filtered[~sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
+
+        ## Use utils function to get sdf file from dataset
+        mols_w_sars2_xtal["SDF"] = mols_w_sars2_xtal["Dataset"].apply(get_sdf_fn_from_dataset,
+                                                                      fragalysis_dir=x_dir)
+
+        ## Save csv files for each dataset
+        mols_wo_sars2_xtal.to_csv(os.path.join(o_dir, "mers_ligands_without_SARS2_structures.csv"),
+                                  index=False)
+
+        mols_w_sars2_xtal.to_csv(os.path.join(o_dir, "mers_ligands_with_SARS2_structures.csv"),
+                                 index=False)
+
+    ## Construct sars_xtal list
+    sars_xtals = {}
+    for data in sars2_filtered.to_dict('index').values():
+        cmpd_id = data["Compound ID"]
+        dataset = data["Dataset"]
+        print(cmpd_id, dataset)
+        if len(dataset) > 0:
+            if not sars_xtals.get(cmpd_id) or '-P' in dataset:
+                sars_xtals[cmpd_id] = CrystalCompoundData(
+                    smiles=data["SMILES"],
+                    compound_id=cmpd_id,
+                    dataset=dataset,
+                    sdf_fn=get_sdf_fn_from_dataset(dataset, x_dir)
+                )
+        else:
+            sars_xtals[cmpd_id] = CrystalCompoundData()
+    print(sars_xtals.items())
+
+    for cmpd_id, xtal in sars_xtals.items():
+        print(xtal.compound_id, xtal.dataset)
+
+    return sars_xtals
