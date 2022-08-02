@@ -1,5 +1,9 @@
 from typing import Dict, List
+
+import pandas
 from pydantic import BaseModel, Field
+import pickle as pkl
+import numpy as np
 
 ## From FAH #####################################################################
 class Model(BaseModel):
@@ -93,3 +97,33 @@ class EnantiomerPair(Model):
 
 class EnantiomerPairList(Model):
     pairs: List[EnantiomerPair]
+
+
+class DockingDataset(Model):
+    class Config:
+        allow_mutation=True
+        arbitrary_types_allowed = True
+
+    pkl_fn: str = Field(
+        None,
+        description='Filename of pickle containing info for docking results'
+    )
+    dir_path: str = Field(
+        None,
+        description='Filepath of dataset directory'
+    )
+    compound_ids: np.ndarray = Field(
+        None,
+        description='Numpy array of compound ids'
+    )
+    xtal_ids: np.ndarray = Field(
+        None,
+        description='Numpy array of structure ids'
+    )
+    res_ranks: np.ndarray = Field(
+        None,
+        description='Numpy array of sorted xtal_ids for each compound_id'
+    )
+
+    def read_pkl(self):
+        self.compound_ids, self.xtal_ids, self.res_ranks = pkl.load(open(self.pkl_fn, 'rb'))

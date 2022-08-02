@@ -4,6 +4,7 @@ import os.path
 import pandas
 from rdkit.Chem import CanonSmiles, FindMolChiralCenters, MolFromSmiles
 import re
+from openeye import oechem
 
 from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
     PDBStructure, CrystalCompoundData, EnantiomerPairList
@@ -372,3 +373,19 @@ def parse_fragalysis_data(frag_fn,
         print(xtal.compound_id, xtal.dataset)
 
     return sars_xtals
+
+def load_openeye_pdb(pdb_fn):
+    ifs = oechem.oemolistream()
+    ifs.SetFlavor(
+        oechem.OEFormat_PDB,
+        oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA,
+    )
+    ifs.open(pdb_fn)
+    in_mol = oechem.OEGraphMol()
+    oechem.OEReadMolecule(ifs, in_mol)
+    ifs.close()
+
+    return in_mol
+
+def get_ligand_rmsd(mobile, ref):
+    return oechem.OERMSD(mobile, ref)
