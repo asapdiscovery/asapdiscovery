@@ -429,43 +429,10 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
             'water': water_mol,
             'other': oth_mol}
 
-def get_ligand_rmsd(mobile: oechem.OEMolBase,
-                    ref: oechem.OEMolBase):
-    # oechem.OERMSD(ref, mobile, overlay=True)
-    from openeye import oespruce
-    opts = oespruce.OESuperpositionOptions()
-    # opts.SetSuperpositionType(oespruce.OESuperpositionType_Site)
-    # opts.AddSiteResidue("LIG:302::A")
-    # print(opts.GetSiteResidues())
-    # opts.SetLigandConstraints()
+def get_ligand_rmsd_openeye(ref: oechem.OEMolBase,
+                    mobile: oechem.OEMolBase):
 
-    ref_lig = split_openeye_mol(ref)['lig']
-    mobile_lig = split_openeye_mol(mobile)['lig']
-    for atom in ref_lig.GetAtoms():
-        print(atom)
-        if atom.IsHydrogen():
-            ref_lig.DeleteAtom(atom)
-
-    for atom in mobile_lig.GetAtoms():
-        print(atom.GetName())
-
-        if atom.IsHydrogen():
-            print(f"deleting {atom}")
-            mobile_lig.DeleteAtom(atom)
-
-    for atom in ref_lig.GetAtoms():
-        print(atom.GetName())
-
-    for atom in mobile_lig.GetAtoms():
-        print(atom.GetName())
-
-    superpose = oespruce.OEStructuralSuperposition(
-        ref_lig,
-        mobile_lig,
-        opts
-    )
-    rmsd = superpose.GetRMSD()
-    return rmsd
+    return oechem.OERMSD(ref, mobile)
 
 
 def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
