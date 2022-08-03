@@ -5,7 +5,7 @@ sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../')
 from covid_moonshot_ml.docking.docking import build_docking_systems, \
     parse_xtal, run_docking
 from covid_moonshot_ml.datasets.utils import load_openeye_pdb, \
-    get_ligand_rmsd, get_ligand_RMSD_mdtraj
+    get_ligand_rmsd_openeye, get_ligand_RMSD_mdtraj, load_openeye_sdf
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate, \
     EnantiomerPairList, DockingDataset
 
@@ -32,20 +32,28 @@ def main():
     # mobile_fn = os.path.join(args.d, 'ADA-UCB-6c2cb422-1/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2210_0B_seqres_chainB_ADA-UCB-6c2cb422-1_complex_6.pdb')
     # ref_fn = os.path.join('/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P2005_0A/Mpro-P2005_0A_bound.pdb')
 
-    ref_fn = os.path.join('/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P2291_0B/Mpro-P2291_0B_bound.pdb')
-    mobile_fn = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2291_0A_seqres_chainA_EDJ-MED-43f8f7d6-4_complex.pdb')
-    mobile_fn2 = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2468_0B_seqres_chainB_EDJ-MED-43f8f7d6-4_complex_2.pdb')
-    mobile_fn3 = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2074_0B_seqres_chainB_EDJ-MED-43f8f7d6-4_complex_7.pdb')
-    mobile_fn4 = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2039_0B_seqres_chainB_EDJ-MED-43f8f7d6-4_complex_6.pdb')
+    # ref_fn = os.path.join('/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P2291_0B/Mpro-P2291_0B_bound.pdb')
+    # mobile_fn = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2291_0A_seqres_chainA_EDJ-MED-43f8f7d6-4_complex.pdb')
+    # mobile_fn2 = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2468_0B_seqres_chainB_EDJ-MED-43f8f7d6-4_complex_2.pdb')
+    # mobile_fn3 = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2074_0B_seqres_chainB_EDJ-MED-43f8f7d6-4_complex_7.pdb')
+    # mobile_fn4 = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2039_0B_seqres_chainB_EDJ-MED-43f8f7d6-4_complex_6.pdb')
+
+    ref_fn = "/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P2291_0B/Mpro-P2291_0B.sdf"
+    mobile_fn = os.path.join(args.d,
+                             'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2291_0A_seqres_chainA_EDJ-MED-43f8f7d6-4_ligand.sdf')
+
+    ref = load_openeye_sdf(ref_fn)
+    mobile = load_openeye_sdf(mobile_fn)
+    print(get_ligand_rmsd_openeye(ref, mobile))
 
 
-    mobile = load_openeye_pdb(mobile_fn)
-    reference = load_openeye_pdb(ref_fn)
+    # mobile = load_openeye_pdb(mobile_fn)
+    # reference = load_openeye_pdb(ref_fn)
     # print(get_ligand_rmsd(mobile, reference))
 
-    for mobile_fn in [ref_fn, mobile_fn, mobile_fn2, mobile_fn3, mobile_fn4]:
-        print(mobile_fn)
-        get_ligand_RMSD_mdtraj(ref_fn, mobile_fn)
+    # for mobile_fn in [mobile_fn, mobile_fn2, mobile_fn3, mobile_fn4]:
+    #     print(mobile_fn)
+    #     get_ligand_RMSD_mdtraj(ref_fn, mobile_fn)
 
     # dd.calculate_RMSDs() ## doesn't exist yet
     # dd.write_csv()
