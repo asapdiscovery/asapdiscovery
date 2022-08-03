@@ -1,6 +1,5 @@
 from typing import Dict, List
-
-import pandas
+import pandas as pd
 from pydantic import BaseModel, Field
 import pickle as pkl
 import numpy as np
@@ -134,3 +133,12 @@ class DockingDataset(Model):
 
     def read_pkl(self):
         self.compound_ids, self.xtal_ids, self.res_ranks = pkl.load(open(self.pkl_fn, 'rb'))
+
+    # def construct_df(self):
+    #     pd.DataFrame({"Compound_ID": self.compound_ids,
+    #                   "Crystal_ID": self.xtal_ids,
+    #                   })
+
+    def calculate_rmsds(self):
+        from .datasets.utils import load_openeye_sdf, get_ligand_rmsd_openeye
+        pass
