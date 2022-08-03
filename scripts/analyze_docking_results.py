@@ -1,6 +1,8 @@
 import sys, os, argparse
 import pickle as pkl
 import numpy as np
+import pandas as pd
+
 sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../')
 from covid_moonshot_ml.docking.docking import build_docking_systems, \
     parse_xtal, run_docking
@@ -17,6 +19,9 @@ def get_args():
     parser.add_argument('-d', required=True,
         help='Directory containing docking results.')
 
+    parser.add_argument('-f', required=True,
+                        help='Directory containing fragalysis data.')
+
     return parser.parse_args()
 
 def main():
@@ -26,6 +31,99 @@ def main():
 
     dd = DockingDataset(pkl_fn=pkl_fn, dir_path=args.d)
     dd.read_pkl()
+
+    cmp_ids = []
+    xtal_ids = []
+    chain_ids = []
+    mcss_ranks = []
+    sdf_fns = []
+    ref_fn_dict = {}
+
+    for cmp_id in dd.compound_ids:
+        cmp_dir = os.path.join(args.d, cmp_id)
+        assert os.path.exists(cmp_dir)
+        fn_list = os.listdir(cmp_dir)
+        sdf_list = [fn for fn in fn_list if os.path.splitext(fn)[1] == '.sdf']
+        # print(sdf_list)
+
+        for fn in sdf_list:
+            info = fn.split(".")[0].split("_")
+            xtal = info[3]
+            chain = info[4]
+            cmp_id = info[7]
+            try:
+                mcss_rank = info[9]
+                # print(xtal, chain, cmp_id, mcss_rank)
+            except:
+                ref_xtal = xtal
+                ref_sdf_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}.sdf"
+                ref_fn_dict[cmp_id] = ref_sdf_fn
+                mcss_rank = np.NaN
+                assert os.path.exists(os.path.join(args.f, ref_sdf_fn))
+
+            cmp_ids.append(cmp_id)
+            xtal_ids.append(xtal)
+            chain_ids.append(chain)
+            mcss_ranks.append((mcss_rank))
+            sdf_fns.append(fn)
+
+
+
+    for l in [cmp_ids, xtal_ids, chain_ids, mcss_ranks, sdf_fns]:
+        print(len(l))
+
+
+
+
+
+    rmsds = []
+    ref_fns = []
+    for idx in range(len(cmp_ids)):
+        cmp_id = cmp_ids[idx]
+        xtal_id = xtal_ids[idx]
+        chain = chain_ids[idx]
+        mcss_rank = mcss_ranks[idx]
+
+        cmp_dir = os.path.join(args.d, cmp_id)
+
+        sdf_fn = os.path.join(cmp_dir, sdf_fns[idx])
+        ref_fn = os.path.join(args.f, ref_fn_dict[cmp_id])
+
+        print(f"Running rmsd calc on {sdf_fn} compared to {ref_fn}")
+        ref = load_openeye_sdf(ref_fn)
+        mobile = load_openeye_sdf(sdf_fn)
+
+        rmsd = get_ligand_rmsd_openeye(ref, mobile)
+
+        ref_fns.append(ref_fn)
+        rmsds.append(rmsd) ## convert to angstroms
+
+
+    df = pd.DataFrame(
+        {"Compound_ID": cmp_ids,
+         "Crystal ID": xtal_ids,
+         "Chain ID": chain_ids,
+         "MCSS Rank": mcss_ranks,
+         "SDF Filename": sdf_fns,
+         "Reference SDF": ref_fns,
+         "RMSD": rmsds
+
+         }
+    )
+
+    # print(df.head)
+    df.to_csv("docking_results.csv")
+
+
+
+
+        # print(ref_sdf_fn)
+
+
+
+        # for xtal_id in dd.xtal_ids:
+        #     print(xtal_id)
+            # docked_system = f"kinoml_OEDockingFeaturizer_MPRO_{xtal_id}_seqres"
 
     # mobile_fn = os.path.join(args.d, 'ADA-UCB-6c2cb422-1/kinoml_OEDockingFeaturizer_MPRO_Mpro-P0764_0B_seqres_chainB_ADA-UCB-6c2cb422-1_complex_1.pdb')
     # mobile_fn = os.path.join(args.d, 'ADA-UCB-6c2cb422-1/kinoml_OEDockingFeaturizer_MPRO_Mpro-P0394_0A_seqres_chainA_ADA-UCB-6c2cb422-1_complex_2.pdb')
@@ -38,13 +136,14 @@ def main():
     # mobile_fn3 = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2074_0B_seqres_chainB_EDJ-MED-43f8f7d6-4_complex_7.pdb')
     # mobile_fn4 = os.path.join(args.d, 'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2039_0B_seqres_chainB_EDJ-MED-43f8f7d6-4_complex_6.pdb')
 
-    ref_fn = "/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P2291_0B/Mpro-P2291_0B.sdf"
-    mobile_fn = os.path.join(args.d,
-                             'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2291_0A_seqres_chainA_EDJ-MED-43f8f7d6-4_ligand.sdf')
+    # ref_fn = "/Users/alexpayne/lilac-mount-point/fragalysis/aligned/Mpro-P2291_0B/Mpro-P2291_0B.sdf"
+    # mobile_fn = os.path.join(args.d,
+    #                          'EDJ-MED-43f8f7d6-4/kinoml_OEDockingFeaturizer_MPRO_Mpro-P2291_0A_seqres_chainA_EDJ-MED-43f8f7d6-4_ligand.sdf')
+    #
+    # ref = load_openeye_sdf(ref_fn)
+    # mobile = load_openeye_sdf(mobile_fn)
+    # print(get_ligand_rmsd_openeye(ref, mobile))
 
-    ref = load_openeye_sdf(ref_fn)
-    mobile = load_openeye_sdf(mobile_fn)
-    print(get_ligand_rmsd_openeye(ref, mobile))
 
 
     # mobile = load_openeye_pdb(mobile_fn)
