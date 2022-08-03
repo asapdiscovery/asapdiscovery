@@ -765,5 +765,116 @@ def load_openeye_pdb(pdb_fn):
 
     return in_mol
 
-def get_ligand_rmsd(mobile, ref):
-    return oechem.OERMSD(mobile, ref)
+def load_openeye_sdf(sdf_fn):
+    ifs = oechem.oemolistream()
+    ifs.SetFlavor(
+        oechem.OEFormat_SDF,
+        oechem.OEIFlavor_SDF_Default,
+    )
+    ifs.open(sdf_fn)
+    coords_mol = oechem.OEGraphMol()
+    oechem.OEReadMolecule(ifs, coords_mol)
+    ifs.close()
+
+    return coords_mol
+
+def split_openeye_mol(complex_mol: oechem.OEMolBase):
+    ## Test splitting
+    lig_mol = oechem.OEGraphMol()
+    prot_mol = oechem.OEGraphMol()
+    water_mol = oechem.OEGraphMol()
+    oth_mol = oechem.OEGraphMol()
+
+    ## Make splitting split out covalent ligands
+    ## TODO: look into different covalent-related options here
+    opts = oechem.OESplitMolComplexOptions()
+    opts.SetSplitCovalent(True)
+    opts.SetSplitCovalentCofactors(True)
+    print(
+        oechem.OESplitMolComplex(lig_mol, prot_mol, water_mol, oth_mol, complex_mol)
+    )
+
+    print(
+        complex_mol.NumAtoms(),
+        lig_mol.NumAtoms(),
+        prot_mol.NumAtoms(),
+        water_mol.NumAtoms(),
+        oth_mol.NumAtoms(),
+    )
+    return {'complex': complex_mol,
+            'lig': lig_mol,
+            'pro': prot_mol,
+            'water': water_mol,
+            'other': oth_mol}
+
+def get_ligand_rmsd(mobile: oechem.OEMolBase,
+                    ref: oechem.OEMolBase):
+    # oechem.OERMSD(ref, mobile, overlay=True)
+    from openeye import oespruce
+    opts = oespruce.OESuperpositionOptions()
+    # opts.SetSuperpositionType(oespruce.OESuperpositionType_Site)
+    # opts.AddSiteResidue("LIG:302::A")
+    # print(opts.GetSiteResidues())
+    # opts.SetLigandConstraints()
+
+    ref_lig = split_openeye_mol(ref)['lig']
+    mobile_lig = split_openeye_mol(mobile)['lig']
+    for atom in ref_lig.GetAtoms():
+        print(atom)
+        if atom.IsHydrogen():
+            ref_lig.DeleteAtom(atom)
+
+    for atom in mobile_lig.GetAtoms():
+        print(atom.GetName())
+
+        if atom.IsHydrogen():
+            print(f"deleting {atom}")
+            mobile_lig.DeleteAtom(atom)
+
+    for atom in ref_lig.GetAtoms():
+        print(atom.GetName())
+
+    for atom in mobile_lig.GetAtoms():
+        print(atom.GetName())
+
+    superpose = oespruce.OEStructuralSuperposition(
+        ref_lig,
+        mobile_lig,
+        opts
+    )
+    rmsd = superpose.GetRMSD()
+    return rmsd
+
+
+def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
+    import mdtraj as md
+    ref = md.load_pdb(ref_fn)
+    mobile = md.load_pdb(mobile_fn)
+
+    ref_idx = ref.topology.select("resname LIG and not type H and chainid 1")
+    mobile_idx = mobile.topology.select("resname LIG and not type H")
+    print(ref_idx)
+    print(mobile_idx)
+
+    ref_lig = ref.atom_slice(ref_idx)
+    mobile_lig = mobile.atom_slice(mobile_idx)
+    print(ref_lig)
+    print(mobile_lig)
+
+
+    rmsd_array = md.rmsd(ref_lig,
+                         mobile_lig,
+                         precentered=True
+                         )
+    per_res_rmsd = rmsd_array[0] / ref_lig.n_atoms
+    #
+    rmsd_array2 = md.rmsd(ref,
+                         mobile,
+                         atom_indices=mobile_idx,
+                          ref_atom_indices=ref_idx
+                         )
+    print(rmsd_array,
+          per_res_rmsd,
+          rmsd_array2)
+
+
