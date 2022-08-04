@@ -404,6 +404,20 @@ def load_openeye_sdf(sdf_fn):
 
     return coords_mol
 
+def save_openeye_pdb(mol, pdb_fn):
+    ofs = oechem.oemolostream()
+    ofs.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
+    ofs.open(pdb_fn)
+    oechem.OEWriteMolecule(ofs, mol)
+    ofs.close()
+
+def save_openeye_sdf(mol, sdf_fn):
+    ofs = oechem.oemolostream()
+    ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
+    ofs.open(sdf_fn)
+    oechem.OEWriteMolecule(ofs, mol)
+    ofs.close()
+
 def split_openeye_mol(complex_mol: oechem.OEMolBase):
     ## Test splitting
     lig_mol = oechem.OEGraphMol()
