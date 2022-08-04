@@ -9,7 +9,8 @@ from covid_moonshot_ml.docking.docking import build_docking_systems, \
 from covid_moonshot_ml.datasets.utils import load_openeye_pdb, \
     get_ligand_rmsd_openeye, get_ligand_RMSD_mdtraj, load_openeye_sdf
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate, \
-    EnantiomerPairList, DockingDataset
+    EnantiomerPairList
+from covid_moonshot_ml.docking.schema import DockingDataset
 
 
 def get_args():
