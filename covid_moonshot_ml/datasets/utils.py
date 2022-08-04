@@ -374,11 +374,15 @@ def parse_fragalysis_data(frag_fn,
 
     return sars_xtals
 
-def load_openeye_pdb(pdb_fn):
+def load_openeye_pdb(pdb_fn, alt_loc=False):
     ifs = oechem.oemolistream()
+    ifs_flavor = oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA
+    ## Add option for keeping track of alternat locations in PDB file
+    if alt_loc:
+        ifs_flavor |= oechem.OEIFlavor_PDB_ALTLOC
     ifs.SetFlavor(
         oechem.OEFormat_PDB,
-        oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA,
+        ifs_flavor,
     )
     ifs.open(pdb_fn)
     in_mol = oechem.OEGraphMol()
