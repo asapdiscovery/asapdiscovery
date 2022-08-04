@@ -3,7 +3,13 @@ from openeye import oechem, oedocking, oespruce
 from .dataset.utils import load_openeye_pdb, load_openeye_sdf, split_openeye_mol
 
 
-def make_du_from_new_lig(initial_complex, new_lig, ref_prot=None):
+def make_du_from_new_lig(
+    initial_complex,
+    new_lig,
+    ref_prot=None,
+    split_initial_complex=True,
+    split_ref=True,
+):
     """
     Create an OEDesignUnit object from the protein component of
     `initial_complex` and the ligand in `new_lig`. Optionally pass in `ref_prot`
@@ -21,6 +27,14 @@ def make_du_from_new_lig(initial_complex, new_lig, ref_prot=None):
     ref_prot : Union[oechem.OEGraphMol, str], optional
         Reference protein to which the protein part of `initial_complex` will
         be aligned. Can also pass a PDB filename instead.
+    split_initial_complex : bool, default=True
+        Whether to split out protein from `initial_complex`. Setting this to
+        False will save time on protein prep if you've already isolated the
+        protein.
+    split_ref : bool, default=True
+        Whether to split out protein from `ref_prot`. Setting this to
+        False will save time on protein prep if you've already isolated the
+        protein.
 
     Returns
     -------
@@ -60,9 +74,13 @@ def make_du_from_new_lig(initial_complex, new_lig, ref_prot=None):
             alf.MakePrimaryAltMol(ref_prot)
 
     ## Split out protein components and align if requested
-    initial_prot = split_openeye_mol(initial_complex)["pro"]
+    if split_initial_complex:
+        initial_prot = split_openeye_mol(initial_complex)["pro"]
+    else:
+        initial_prot = initial_complex
     if ref_prot is not None:
-        ref_prot = split_openeye_mol(ref_prot)["pro"]
+        if split_ref:
+            ref_prot = split_openeye_mol(ref_prot)["pro"]
         initial_prot = superpose_molecule(ref_prot, initial_prot)
 
     ## Add Hs to prep protein and ligand
