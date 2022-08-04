@@ -3,6 +3,7 @@ import pandas as pd
 from pydantic import BaseModel, Field
 import pickle as pkl
 import numpy as np
+import os
 
 ## From FAH #####################################################################
 class Model(BaseModel):
@@ -98,31 +99,14 @@ class EnantiomerPairList(Model):
     pairs: List[EnantiomerPair]
 
 
-class DockingDataset(Model):
-    class Config:
-        allow_mutation=True
-        arbitrary_types_allowed = True
+class DockingDataset():
 
-    pkl_fn: str = Field(
-        None,
-        description='Filename of pickle containing info for docking results'
-    )
-    dir_path: str = Field(
-        None,
-        description='Filepath of dataset directory'
-    )
-    compound_ids: np.ndarray = Field(
-        None,
-        description='Numpy array of compound ids'
-    )
-    xtal_ids: np.ndarray = Field(
-        None,
-        description='Numpy array of structure ids'
-    )
-    res_ranks: np.ndarray = Field(
-        None,
-        description='Numpy array of sorted xtal_ids for each compound_id'
-    )
+    def __init__(self, pkl_fn, dir_path):
+        self.pkl_fn = pkl_fn
+        self.dir_path = dir_path
+
+        for path in [self.pkl_fn, self.dir_path]:
+            assert os.path.exists(path)
 
     def read_pkl(self):
         self.compound_ids, self.xtal_ids, self.res_ranks = pkl.load(open(self.pkl_fn, 'rb'))
@@ -132,6 +116,80 @@ class DockingDataset(Model):
     #                   "Crystal_ID": self.xtal_ids,
     #                   })
 
-    def calculate_rmsds(self):
+    def calculate_rmsds(self, fragalysis_directory):
         from .datasets.utils import load_openeye_sdf, get_ligand_rmsd_openeye
+        assert os.path.exists(os.path.join(fragalysis_directory, ref_sdf_fn))
         pass
+
+    def organize_docking_results(self):
+
+        ## Make lists we want to use to collect information about docking results
+        cmp_ids = []
+        xtal_ids = []
+        chain_ids = []
+        mcss_ranks = []
+        sdf_fns = []
+
+        ## dictionary of reference sdf files for each compound id
+        ref_fn_dict = {}
+
+        ## since each compound has its own directory, we can use that directory
+        for cmp_id in self.compound_ids:
+
+            ## make sure this directory exists
+            cmp_dir = os.path.join(self.dir_path, cmp_id)
+            print(cmp_dir)
+            assert os.path.exists(cmp_dir)
+
+            ## get list of files in this directory
+            fn_list = os.listdir(cmp_dir)
+
+            ## Process this list into info
+            ## TODO: use REGEX instead
+            sdf_list = [fn for fn in fn_list if os.path.splitext(fn)[1] == '.sdf']
+
+            ## For each sdf file in this list, get all the information
+            ## This is very fragile to the file naming scheme
+            for fn in sdf_list:
+                info = fn.split(".")[0].split("_")
+                xtal = info[3]
+                chain = info[4]
+                cmp_id = info[7]
+
+                ## the ligand re-docked to their original xtal have no mcss rank, so this will fail
+                try:
+                    mcss_rank = info[9]
+                    # print(xtal, chain, cmp_id, mcss_rank)
+                except:
+
+                    ## however its a convenient way of identifying which is the original xtal
+                    ref_xtal = xtal
+                    ref_sdf_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}.sdf"
+
+                    ## save the ref filename to the dictionary and make the mcss_rank -1
+                    ref_fn_dict[cmp_id] = ref_sdf_fn
+                    mcss_rank = -1
+
+                ## append all the stuff to lists!
+                cmp_ids.append(cmp_id)
+                xtal_ids.append(xtal)
+                chain_ids.append(chain)
+                mcss_ranks.append((mcss_rank))
+                sdf_fns.append(fn)
+        self.df = pd.DataFrame(
+            {"Compound_ID": cmp_ids,
+             "Crystal ID": xtal_ids,
+             "Chain ID": chain_ids,
+             "MCSS Rank": mcss_ranks,
+             "SDF Filename": sdf_fns,
+             }
+        )
+
+    def write_csv(self):
+        self.df.to_csv("docking_results.csv")
+
+    def analyze_docking_results(self, fragalysis_directory):
+        self.organize_docking_results()
+        self.write_csv()
+
+
