@@ -31,8 +31,8 @@ def main():
 
     dd = DockingDataset(pkl_fn=pkl_fn, dir_path=args.d)
     dd.read_pkl()
-    dd.analyze_docking_results(args.d)
-
+    dd.analyze_docking_results(args.d, "docking_results.csv")
+    #
     # rmsds = []
     # ref_fns = []
     # for idx in range(len(cmp_ids)):
