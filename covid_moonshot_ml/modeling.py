@@ -3,6 +3,31 @@ from openeye import oechem, oedocking, oespruce
 from .dataset.utils import load_openeye_pdb, load_openeye_sdf, split_openeye_mol
 
 
+def du_to_complex(du):
+    """
+    Convert OEDesignUnit to OEGraphMol containing the protein and ligand from
+    `du`.
+
+    Parameters
+    ----------
+    du : oechem.OEDesignUnit
+        OEDesignUnit object to extract from.
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        Molecule with protein and ligand from `du`
+    """
+    complex_mol = oechem.OEGraphMol()
+    du.GetComponents(
+        complex_mol,
+        oechem.OEDesignUnitComponents_Protein
+        | oechem.OEDesignUnitComponents_Ligand,
+    )
+
+    return complex_mol
+
+
 def make_du_from_new_lig(
     initial_complex,
     new_lig,
