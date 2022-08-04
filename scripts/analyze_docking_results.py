@@ -31,7 +31,9 @@ def main():
 
     dd = DockingDataset(pkl_fn=pkl_fn, dir_path=args.d)
     dd.read_pkl()
-    dd.analyze_docking_results(args.d, "docking_results.csv")
+    dd.analyze_docking_results(args.d,
+                               "docking_results.csv",
+                               test=True)
     #
     # rmsds = []
     # ref_fns = []
@@ -54,7 +56,7 @@ def main():
     #
     #     ref_fns.append(ref_fn)
     #     rmsds.append(rmsd) ## convert to angstroms
-    #
+
     #
     # df = pd.DataFrame(
     #     {"Compound_ID": cmp_ids,
