@@ -107,8 +107,8 @@ class DockingDataset():
             ref_path = os.path.join(fragalysis_dir, ref_fn)
 
             print(f"Loading rmsd calc on {sdf_path} compared to {ref_path}")
-            ref = load_openeye_sdf(ref_fn)
-            mobile = load_openeye_sdf(sdf_fn)
+            ref = load_openeye_sdf(ref_path)
+            mobile = load_openeye_sdf(sdf_path)
 
             posit_scores.append(oechem.OEGetSDData(mobile, "POSIT::Probability"))
             docking_scores.append(oechem.OEGetSDData(mobile, "Chemgauss4"))
