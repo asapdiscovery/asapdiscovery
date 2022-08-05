@@ -1,5 +1,4 @@
 from openeye import oechem
-import numpy as np
 
 def load_openeye_pdb(pdb_fn):
     ifs = oechem.oemolistream()
