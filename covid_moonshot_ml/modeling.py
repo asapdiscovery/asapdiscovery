@@ -1,6 +1,10 @@
 from openeye import oechem, oedocking, oespruce
 
-from .dataset.utils import load_openeye_pdb, load_openeye_sdf, split_openeye_mol
+from .datasets.utils import (
+    load_openeye_pdb,
+    load_openeye_sdf,
+    split_openeye_mol,
+)
 
 
 def du_to_complex(du):
@@ -106,7 +110,7 @@ def make_du_from_new_lig(
     if ref_prot is not None:
         if split_ref:
             ref_prot = split_openeye_mol(ref_prot)["pro"]
-        initial_prot = superpose_molecule(ref_prot, initial_prot)
+        initial_prot = superpose_molecule(ref_prot, initial_prot)[0]
 
     ## Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
