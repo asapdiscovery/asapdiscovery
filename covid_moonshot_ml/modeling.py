@@ -152,7 +152,7 @@ def superpose_molecule(ref_mol, mobile_mol):
 
     ## Perform superposing
     superpos.Superpose(aln_res, mobile_mol)
-    print(f"RMSD: {aln_res.GetRMSD()}")
+    # print(f"RMSD: {aln_res.GetRMSD()}")
 
     ## Create copy of molecule and transform it to the aligned position
     mobile_mol_aligned = mobile_mol.CreateCopy()
