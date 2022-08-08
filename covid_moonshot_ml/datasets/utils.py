@@ -4,7 +4,6 @@ import os.path
 import pandas
 from rdkit.Chem import CanonSmiles, FindMolChiralCenters, MolFromSmiles
 import re
-from openeye import oechem
 
 from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
     PDBStructure, CrystalCompoundData, EnantiomerPairList
@@ -474,5 +473,3 @@ def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
     print(rmsd_array,
           per_res_rmsd,
           rmsd_array2)
-
-
