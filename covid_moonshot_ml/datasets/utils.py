@@ -2,6 +2,7 @@ import json
 import pandas
 from rdkit.Chem import CanonSmiles, FindMolChiralCenters, MolFromSmiles
 import re
+import logging
 
 from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
     EnantiomerPair, EnantiomerPairList
@@ -271,3 +272,118 @@ def get_achiral_molecules(mol_df):
             raise ValueError(f'No SMILES found for {r["Canonical PostEra ID"]}')
 
     return(mol_df.loc[achiral_idx,:])
+
+def filter_molecules_dataframe(
+        mol_df,
+        smiles_fieldname='suspected_SMILES',
+        retain_achiral=False,
+        retain_racemic=False,
+        retain_enantiopure=False,
+        retain_semiquantitative_data=False,
+    ):
+    """
+    Filter a dataframe of molecules to retain those specified.
+
+    Parameters
+    ----------
+    mol_df : pandas.DataFrame
+        DataFrame containing compound information
+    smiles_fieldname : str, optional, default='suspected_SMILES'
+        Field name to use for reference SMILES
+    retain_achrial : bool, optional, default=False
+        If True, retain achiral measurements
+    retain_racemic : bool, optional, default=False
+        If True, retain racemic measurements
+    retain_enantiopure : bool, optional, default=False
+        If True, retain chrially resolved measurements
+    retain_out_of_range_data : bool, optional, default=False
+        If True, retain semiquantitative data (data outside assay dynamic range)
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing compound information for all achiral molecules
+
+    """
+    # Define functions to evaluate whether molecule is achiral, racemic, or resolved
+    is_achiral = lambda smi: len(FindMolChiralCenters(MolFromSmiles(smi),
+        includeUnassigned=True, includeCIP=False,
+        useLegacyImplementation=False)) == 0
+    is_racemic = lambda smi: (len(FindMolChiralCenters(MolFromSmiles(smi),
+        includeUnassigned=True, includeCIP=False,
+        useLegacyImplementation=False)) - len(FindMolChiralCenters(MolFromSmiles(smi),
+            includeUnassigned=False, includeCIP=False,
+            useLegacyImplementation=False))) > 0
+    is_enantiopure = lambda smi: (not is_achiral(smi)) and (not is_racemic(smi))
+
+    # Re-label SMILES field and change name of PostEra ID field
+    mol_df = mol_df.rename(columns={smiles_fieldname : 'smiles', 'Canonical PostEra ID' : 'name'})
+
+    logging.debug('Filtering molecules dataframe')
+    # Get rid of any molecules that snuck through without SMILES field specified
+    logging.debug(f'  dataframe contains {mol_df.shape} entries')
+    idx = mol_df.loc[:,'smiles'].isna()
+    mol_df = mol_df.loc[~idx,:].copy()
+    logging.debug(f'  dataframe contains {mol_df.shape} entries after removing molecules with unspecified {smiles_fieldname} field')
+    # Convert CXSMILES to SMILES by removing extra info
+    mol_df.loc[:,'smiles'] = [s.strip('|').split()[0] for s in mol_df.loc[:,'smiles']]
+
+    # Determine which molecules will be retained
+    include_flags = []
+    for _, row in mol_df.iterrows():
+        smiles = row['smiles']
+        include_this_molecule = (retain_achiral and is_achiral(smiles)) or (retain_racemic and is_racemic(smiles)) or (retain_enantiopure and is_enantiopure(smiles))
+        include_flags.append(include_this_molecule)
+    mol_df = mol_df.loc[include_flags,:]
+
+    # Filter out semiquantitative data, if requested
+    if not retain_semiquantitative_data:
+        include_flags = []
+        for _, row in mol_df.iterrows():
+            try:
+                _ = float(row['ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 (µM)'])
+                include_flags.append(True)
+            except ValueError as e:
+                include_flags.append(False)
+        mol_df = mol_df.loc[include_flags,:]
+        logging.debug(f'  dataframe contains {mol_df.shape} entries after removing semiquantitative data')
+
+    # Compute pIC50s and uncertainties from 95% CIs
+    # TODO: In future, we can provide CIs as well
+    import numpy as np
+    import sigfig
+    pIC50_series = []
+    pIC50_stderr_series = []
+    for _, row in mol_df.iterrows():
+        pIC50 = row['ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50'] # string
+        try:
+            IC50 = float(row['ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 (µM)']) * 1e-6 # molar
+            IC50_lower = float(row['ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Lower) (µM)']) * 1e-6 # molar
+            IC50_upper = float(row['ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)']) * 1e-6 # molar
+            
+            pIC50 = -np.log10(IC50)
+            pIC50_stderr = np.abs(-np.log10(IC50_lower) + np.log10(IC50_upper)) / 4.0 # assume normal distribution
+
+            # Render into string with appropriate sig figs
+            pIC50, pIC50_stderr = sigfig.round(pIC50, uncertainty=pIC50_stderr, sep=tuple) # strings
+
+        except ValueError:
+            # Could not convert to string because value was semiquantitative
+            if row['ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 (µM)'] == '(IC50 could not be calculated)':
+                pIC50 = '< 4.0' # lower limit of detection
+
+            # Keep pIC50 string
+            # Use default pIC50 error
+            print(row)
+            pIC50, pIC50_stderr = pIC50, '0.5' # strings
+
+        pIC50_series.append(pIC50)
+        pIC50_stderr_series.append(pIC50_stderr)
+    
+    mol_df['pIC50'] = pIC50_series
+    mol_df['pIC50_stderr'] = pIC50_stderr_series
+
+    # Retain only fields we need
+    mol_df = mol_df.filter(['smiles', 'name', 'pIC50', 'pIC50_stderr'])
+    logging.debug(f'\n{mol_df}')
+    
+    return mol_df

@@ -1,4 +1,4 @@
-name: test
+name: moonshotml
 channels:
   - pytorch
   - pyg
@@ -27,6 +27,7 @@ dependencies:
 
   # Pip-only installs
   - pip:
+    - sigfig
     - e3nn
     - biopython
     - ase

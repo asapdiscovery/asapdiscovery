@@ -7,12 +7,12 @@ import os
 import pickle as pkl
 import re
 import torch
-from torch_geometric.nn import SchNet
+from torch_geometric.nn.models import SchNet
 from torch_geometric.datasets import QM9
 
 
 from covid_moonshot_ml.data.dataset import DockedDataset
-from covid_moonshot_ml.nn import E3NNBind, SchNetBind
+from covid_moonshot_ml.nn.models import E3NNBind, SchNetBind
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import calc_e3nn_model_info, find_most_recent, \
     train, plot_loss
