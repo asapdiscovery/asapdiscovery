@@ -16,6 +16,7 @@ from kinoml.docking.OEDocking import pose_molecules
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from covid_moonshot_ml.datasets.utils import (
     load_openeye_pdb,
+    load_openeye_sdf,
     save_openeye_pdb,
     save_openeye_sdf,
     split_openeye_mol,
@@ -27,12 +28,49 @@ from covid_moonshot_ml.docking.docking import (
 from covid_moonshot_ml.modeling import du_to_complex, make_du_from_new_lig
 
 
-def mp_func(apo_prot, lig, ref_prot, out_dir, holo_name, save_du=False):
+def check_output(d):
+    ## First check for result pickle file
+    try:
+        pkl.load(f"{d}/results.pkl")
+    except Exception:
+        return False
+
+    ## Then check for other intermediate files
+    du = oechem.OEDesignUnit()
+    if not oechem.OEReadDesignUnit(f"{d}/predocked.oedu", du):
+        return False
+
+    if load_openeye_pdb(f"{d}/predocked.pdb").NumAtoms() == 0:
+        return False
+
+    if load_openeye_sdf(f"{d}/docked.sdf").NumAtoms() == 0:
+        return False
+
+    return True
+
+
+def mp_func(
+    apo_prot, lig, ref_prot, out_dir, apo_name, holo_name, save_du=False
+):
+
     out_base = f"{out_dir}/{holo_name}/"
+    ## First check if this combo has already been run
+    if check_output(out_base):
+        print(f"Results found for {apo_name}_{holo_name}", flush=True)
+        return pkl.load(open(f"{out_base}/results.pkl", "rb"))
+
+    ## Make output directory if necessary
     os.makedirs(out_base, exist_ok=True)
     out_fn = f"{out_base}/predocked"
+
     ## Make design unit and prep the receptor
-    du = make_du_from_new_lig(apo_prot, lig, ref_prot, False, False)
+    try:
+        du = make_du_from_new_lig(apo_prot, lig, ref_prot, False, False)
+    except AssertionError:
+        print(f"Design unit generation failed for {apo_name}/{holo_name}")
+        results = (apo_name, holo_name, None, -1.0, -1.0, -1.0)
+        pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
+        return results
     oedocking.OEMakeReceptor(du)
 
     ## Save if desired
@@ -46,7 +84,13 @@ def mp_func(apo_prot, lig, ref_prot, out_dir, holo_name, save_du=False):
     ## Run docking with kinoml
     dock_lig = oechem.OEGraphMol()
     du.GetLigand(dock_lig)
-    docked_mol = pose_molecules(du, [dock_lig], score_pose=True)[0]
+    try:
+        docked_mol = pose_molecules(du, [dock_lig], score_pose=True)[0]
+    except TypeError:
+        print(f"Pose generation failed for {apo_name}/{holo_name}")
+        results = (apo_name, holo_name, None, -1.0, -1.0, -1.0)
+        pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
+        return results
 
     save_openeye_sdf(docked_mol, f"{out_base}/docked.sdf")
 
@@ -55,14 +99,16 @@ def mp_func(apo_prot, lig, ref_prot, out_dir, holo_name, save_du=False):
     du.GetLigand(orig_mol)
     rmsd = oechem.OERMSD(orig_mol, docked_mol)
 
-    return (
-        name,
+    results = (
+        apo_name,
         holo_name,
         f"{out_base}/docked.sdf",
         rmsd,
         float(oechem.OEGetSDData(docked_mol, "POSIT::Probability")),
         float(oechem.OEGetSDData(docked_mol, "Chemgauss4")),
     )
+    pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
+    return results
 
 
 ################################################################################
@@ -130,7 +176,7 @@ def main():
         os.path.splitext(os.path.basename(fn))[0] for fn in all_holo_fns
     ]
 
-    print(args.apo, args.holo)
+    # print(args.apo, args.holo)
 
     print(f"{len(all_apo_fns)} apo structures")
     print(f"{len(all_holo_fns)} ligands to dock", flush=True)
@@ -153,7 +199,6 @@ def main():
     else:
         cache_dir = args.cache
 
-
     mp_args = []
     ## Construct all args for mp_func
     for name, fn in zip(all_apo_names, all_apo_fns):
@@ -163,7 +208,7 @@ def main():
         apo_prot = split_openeye_mol(load_openeye_pdb(fn))["pro"]
         for holo_name, lig in zip(all_holo_names, all_ligs):
             mp_args.append(
-                (apo_prot, lig, ref_prot, out_dir, holo_name, args.du)
+                (apo_prot, lig, ref_prot, out_dir, name, holo_name, args.du)
             )
 
             # reloaded_mol = load_openeye_pdb(f"{out_fn}.pdb")
