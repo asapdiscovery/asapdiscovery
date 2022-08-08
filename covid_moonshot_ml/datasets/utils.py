@@ -808,17 +808,8 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
     opts = oechem.OESplitMolComplexOptions()
     opts.SetSplitCovalent(True)
     opts.SetSplitCovalentCofactors(True)
-    print(
-        oechem.OESplitMolComplex(lig_mol, prot_mol, water_mol, oth_mol, complex_mol)
-    )
+    oechem.OESplitMolComplex(lig_mol, prot_mol, water_mol, oth_mol, complex_mol)
 
-    print(
-        complex_mol.NumAtoms(),
-        lig_mol.NumAtoms(),
-        prot_mol.NumAtoms(),
-        water_mol.NumAtoms(),
-        oth_mol.NumAtoms(),
-    )
     return {'complex': complex_mol,
             'lig': lig_mol,
             'pro': prot_mol,
