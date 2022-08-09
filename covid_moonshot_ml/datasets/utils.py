@@ -1,6 +1,6 @@
 import json
 import os.path
-
+from openeye import oechem
 import pandas
 from rdkit.Chem import CanonSmiles, FindMolChiralCenters, MolFromSmiles
 import re
@@ -327,13 +327,16 @@ def parse_experimental_compound_data(
 
 def parse_fragalysis_data(frag_fn,
                           x_dir,
-                          cmpd_ids,
+                          cmpd_ids=None,
                           o_dir=False):
     ## Load in csv
     sars2_structures = pandas.read_csv(frag_fn).fillna("")
 
-    ## Filter fragalysis dataset by the compounds we want to test
-    sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(cmpd_ids)]
+    if cmpd_ids is not None:
+        ## Filter fragalysis dataset by the compounds we want to test
+        sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(cmpd_ids)]
+    else:
+        sars2_filtered = sars2_structures
 
     if o_dir:
         mols_wo_sars2_xtal = sars2_filtered[sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
