@@ -752,6 +752,38 @@ def parse_fragalysis_data(frag_fn,
 
     return sars_xtals
 
+def get_compound_id_xtal_dicts(sars_xtals):
+    """
+    Get a pair of dictionaries that map between crystal structures and compound
+    ids.
+
+    Parameters
+    ----------
+    sars_xtals : Iter[CrystalCompoundData]
+        Iterable of CrystalCompoundData objects from fragalysis.
+
+    Returns
+    -------
+    Dict[str: List[str]]
+        Dict mapping compound_id to list of crystal structure ids.
+    Dict[str: str]
+        Dict mapping crystal structure id to compound_id.
+    """
+    compound_to_xtals = {}
+    xtal_to_compound = {}
+    for ccd in sars_xtals:
+        compound_id = ccd.compound_id
+        dataset = ccd.dataset
+        try:
+            compound_to_xtals[compound_id].append(dataset)
+        except KeyError:
+            compound_to_xtals[compound_id] = [dataset]
+
+        xtal_to_compound[dataset] = compound_id
+
+    return(compound_to_xtals, xtal_to_compound)
+
+
 def load_openeye_pdb(pdb_fn, alt_loc=False):
     ifs = oechem.oemolistream()
     ifs_flavor = oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA
