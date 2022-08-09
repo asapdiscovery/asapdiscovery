@@ -144,17 +144,17 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
         'CI (Upper) (µM)')
     ## Calculate 95% CI in pIC50 units based on IC50 vals (not sure if the
     ##  difference should be taken before or after taking the -log10)
-    pic50_var = []
+    pic50_stderr = []
     for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
         if pandas.isna(ci_lower) or pandas.isna(ci_upper):
-            pic50_var.append(np.nan)
+            pic50_stderr.append(np.nan)
         else:
             ## First convert bounds from IC50 (uM) to pIC50
             pic50_ci_upper = -np.log10(ci_upper*10e-6)
             pic50_ci_lower = -np.log10(ci_lower*10e-6)
-            ## Assume size of 95% CI == 4*sigma => calculate variance from stdev
-            pic50_var.append(((pic50_ci_lower - pic50_ci_upper) / 4) ** 2)
-    df['pIC50_var'] = pic50_var
+            ## Assume size of 95% CI == 4*sigma
+            pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
+    df['pIC50_stderr'] = pic50_stderr
 
     compounds = []
     for i, (_, c) in enumerate(df.iterrows()):
@@ -163,7 +163,7 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
         experimental_data = {
             'pIC50': c['pIC50'],
             'pIC50_range': c['pIC50_range'],
-            'pIC50_var': c['pIC50_var']
+            'pIC50_stderr': c['pIC50_stderr']
         }
 
         compounds.append(
@@ -238,17 +238,17 @@ def cdd_to_schema_pair(cdd_csv, out_json):
         'CI (Upper) (µM)')
     ## Calculate 95% CI in pIC50 units based on IC50 vals (not sure if the
     ##  difference should be taken before or after taking the -log10)
-    pic50_var = []
+    pic50_stderr = []
     for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
         if pandas.isna(ci_lower) or pandas.isna(ci_upper):
-            pic50_var.append(np.nan)
+            pic50_stderr.append(np.nan)
         else:
             ## First convert bounds from IC50 (uM) to pIC50
             pic50_ci_upper = -np.log10(ci_upper*10e-6)
             pic50_ci_lower = -np.log10(ci_lower*10e-6)
             ## Assume size of 95% CI == 4*sigma => calculate variance from stdev
-            pic50_var.append(((pic50_ci_lower - pic50_ci_upper) / 4) ** 2)
-    df['pIC50_var'] = pic50_var
+            pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
+    df['pIC50_stderr'] = pic50_stderr
 
     enant_pairs = []
     ## Loop through the enantiomer pairs and rank them
@@ -267,7 +267,7 @@ def cdd_to_schema_pair(cdd_csv, out_json):
             experimental_data = {
                 'pIC50': c['pIC50'],
                 'pIC50_range': c['pIC50_range'],
-                'pIC50_var': c['pIC50_var']
+                'pIC50_stderr': c['pIC50_stderr']
             }
 
             p.append(
