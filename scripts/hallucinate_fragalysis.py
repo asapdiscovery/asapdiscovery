@@ -28,6 +28,46 @@ from covid_moonshot_ml.docking.docking import (
 from covid_moonshot_ml.modeling import du_to_complex, make_du_from_new_lig
 
 
+def add_compound_id(in_fn, frag_xtal_fn, frag_xtal_dir, out_fn=None):
+    from covid_moonshot_ml.datasets.utils import (
+        parse_fragalysis_data,
+        get_compound_id_xtal_dicts,
+    )
+
+    compound_id_dict = get_compound_id_xtal_dicts(
+        parse_fragalysis_data(frag_xtal_fn, frag_xtal_dir).values()
+    )[1]
+
+    ## Load original csv file
+    df = pandas.read_csv(in_fn, index_col=0)
+
+    ## Add column for compound_id
+    df["SARS_compound_id"] = [
+        compound_id_dict[xtal.split("_")[0]]
+        if xtal.split("_")[0] in compound_id_dict
+        else None
+        for xtal in df["SARS_structure"]
+    ]
+
+    ## Reorder columns
+    new_cols = [
+        "MERS_structure",
+        "SARS_structure",
+        "SARS_compound_id",
+        "docked_file",
+        "docked_RMSD",
+        "POSIT_prob",
+        "chemgauss4_score",
+    ]
+    df = df.reindex(columns=new_cols)
+
+    ## Save output
+    if out_fn is not None:
+        df.to_csv(out_fn)
+
+    return df
+
+
 def check_output(d):
     ## First check for result pickle file
     try:
