@@ -110,7 +110,7 @@ def find_most_recent(model_wts):
     epoch_use = models[-1]
     return(epoch_use, f'{model_wts}/{epoch_use}.th')
 
-def plot_loss(train_loss, test_loss, out_fn):
+def plot_loss(train_loss, val_loss, test_loss, out_fn):
     """
     Plot loss for train and test sets.
 
@@ -118,25 +118,28 @@ def plot_loss(train_loss, test_loss, out_fn):
     ----------
     train_loss : numpy.ndarray
         Loss at each epoch for train set
+    val_loss : numpy.ndarray
+        Loss at each epoch for validation set
     test_loss : numpy.ndarray
         Loss at each epoch for test set
     out_fn : str
         Path to save plot
     """
-    fig, axes = plt.subplots(nrows=2, figsize=(12,8), sharex=True)
+    fig, axes = plt.subplots(nrows=3, figsize=(12,8), sharex=True)
     sns.lineplot(x=range(len(train_loss)), y=train_loss, ax=axes[0])
-    sns.lineplot(x=range(len(test_loss)), y=test_loss, ax=axes[1])
+    sns.lineplot(x=range(len(val_loss)), y=val_loss, ax=axes[1])
+    sns.lineplot(x=range(len(test_loss)), y=test_loss, ax=axes[2])
 
-    for (ax, loss_type) in zip(axes, ('Training', 'Test')):
+    for (ax, loss_type) in zip(axes, ('Training', 'Validation', 'Test')):
         ax.set_ylabel(f'MSE {loss_type} Loss')
         ax.set_xlabel('Epoch')
         ax.set_title(f'MSE {loss_type} Loss')
 
     fig.savefig(out_fn, dpi=200, bbox_inches='tight')
 
-def train(model, ds_train, ds_test, target_dict, n_epochs, device,
+def train(model, ds_train, ds_val, ds_test, target_dict, n_epochs, device,
     model_call=lambda model, d: model(d), save_file=None, lr=1e-4,
-    start_epoch=0, train_loss=[], test_loss=[]):
+    start_epoch=0, train_loss=[], val_loss=[], test_loss=[]):
     """
     Train a model.
 
@@ -146,6 +149,8 @@ def train(model, ds_train, ds_test, target_dict, n_epochs, device,
         Model to train
     ds_train : data.dataset.DockedDataset
         Train dataset to train on
+    ds_val : data.dataset.DockedDataset
+        Validation dataset to evaluate on
     ds_test : data.dataset.DockedDataset
         Test dataset to evaluate on
     target_dict : dict[str->float]
@@ -180,6 +185,9 @@ def train(model, ds_train, ds_test, target_dict, n_epochs, device,
     numpy.ndarray
         Loss for each structure in `ds_train` from each epoch of training, with
         shape (`n_epochs`, `len(ds_train)`)
+    numpy.ndarray
+        Loss for each structure in `ds_val` from each epoch of training, with
+        shape (`n_epochs`, `len(ds_val)`)
     numpy.ndarray
         Loss for each structure in `ds_test` from each epoch of training, with
         shape (`n_epochs`, `len(ds_test)`)
@@ -243,12 +251,34 @@ def train(model, ds_train, ds_test, target_dict, n_epochs, device,
                 tmp_loss.append(loss.item())
             test_loss.append(np.asarray(tmp_loss))
 
+            tmp_loss = []
+            for (_, compound_id), pose in ds_val:
+                for k, v in pose.items():
+                    try:
+                        pose[k] = v.to(device)
+                    except AttributeError:
+                        pass
+                pred = model_call(model, pose)
+                for k, v in pose.items():
+                    try:
+                        pose[k] = v.to('cpu')
+                    except AttributeError:
+                        pass
+                # convert to float to match other types
+                target = torch.tensor([[target_dict[compound_id]]],
+                    device=device).float()
+                loss = loss_fn(pred, target)
+                tmp_loss.append(loss.item())
+            val_loss.append(np.asarray(tmp_loss))
+
         if save_file is None:
             continue
         elif os.path.isdir(save_file):
             torch.save(model.state_dict(), f'{save_file}/{epoch_idx}.th')
             pkl.dump(np.vstack(train_loss),
                 open(f'{save_file}/train_err.pkl', 'wb'))
+            pkl.dump(np.vstack(val_loss),
+                open(f'{save_file}/val_err.pkl', 'wb'))
             pkl.dump(np.vstack(test_loss),
                 open(f'{save_file}/test_err.pkl', 'wb'))
         elif '{}' in save_file:
@@ -256,4 +286,5 @@ def train(model, ds_train, ds_test, target_dict, n_epochs, device,
         else:
             torch.save(model.state_dict(), save_file)
 
-    return(model, np.vstack(train_loss), np.vstack(test_loss))
+    return(model, np.vstack(train_loss), np.vstack(val_loss),
+        np.vstack(test_loss))
