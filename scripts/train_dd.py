@@ -269,18 +269,21 @@ def init(args, rank=False):
     ## Load the dataset
     ds = DockedDataset(all_fns, compounds)
 
-    ## Split dataset into train/test (80/20 split)
+    ## Split dataset into train/val/test (80/10/10 split)
     n_train = int(len(ds) * 0.8)
-    n_test = len(ds) - n_train
-    print(f'{n_train} training samples, {n_test} testing samples', flush=True)
+    n_val = int(len(ds) * 0.1)
+    n_test = len(ds) - n_train - n_val
+    print((f'{n_train} training samples, {n_val} validation samples, '
+        f'{n_test} testing samples'), flush=True)
     # use fixed seed for reproducibility
-    ds_train, ds_test = torch.utils.data.random_split(ds, [n_train, n_test],
-        torch.Generator().manual_seed(42))
+    ds_train, ds_val, ds_test = torch.utils.data.random_split(ds,
+        [n_train, n_val, n_test], torch.Generator().manual_seed(42))
 
     ## Build the model
     if args.model == 'e3nn':
         ## Need to add one-hot encodings to the dataset
         ds_train = add_one_hot_encodings(ds_train)
+        ds_val = add_one_hot_encodings(ds_val)
         ds_test = add_one_hot_encodings(ds_test)
 
         ## Load or calculate model parameters
@@ -298,6 +301,7 @@ def init(args, rank=False):
         ## Add lig labels as node attributes if requested
         if args.lig:
             ds_train = add_lig_labels(ds_train)
+            ds_val = add_lig_labels(ds_val)
             ds_test = add_lig_labels(ds_test)
 
         for k,v in ds_train[0][1].items():
@@ -312,11 +316,11 @@ def init(args, rank=False):
     else:
         raise ValueError(f'Unknown model type {args.model}.')
 
-    return(exp_affinities, ds_train, ds_test, model, model_call)
+    return(exp_affinities, ds_train, ds_val, ds_test, model, model_call)
 
 def main():
     args = get_args()
-    exp_affinities, ds_train, ds_test, model, model_call = init(args)
+    exp_affinities, ds_train, ds_val, ds_test, model, model_call = init(args)
 
     ## Load model weights as necessary
     if args.cont:
