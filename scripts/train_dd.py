@@ -329,6 +329,11 @@ def main():
                 'rb')).tolist()
         else:
             train_loss = []
+        if os.path.isfile(f'{args.model_o}/val_err.pkl'):
+            val_loss = pkl.load(open(f'{args.model_o}/val_err.pkl',
+                'rb')).tolist()
+        else:
+            val_loss = []
         if os.path.isfile(f'{args.model_o}/test_err.pkl'):
             test_loss = pkl.load(open(f'{args.model_o}/test_err.pkl',
                 'rb')).tolist()
@@ -341,16 +346,19 @@ def main():
     else:
         start_epoch = 0
         train_loss = []
+        val_loss = []
         test_loss = []
 
     ## Train the model
-    model, train_loss, test_loss = train(model, ds_train, ds_test,
-        exp_affinities, args.n_epochs, torch.device(args.device),
-        model_call, args.model_o, args.lr, start_epoch, train_loss, test_loss)
+    model, train_loss, val_loss, test_loss = train(model, ds_train, ds_val,
+        ds_test, exp_affinities, args.n_epochs, torch.device(args.device),
+        model_call, args.model_o, args.lr, start_epoch, train_loss, val_loss,
+        test_loss)
 
     ## Plot loss
     if args.plot_o is not None:
-        plot_loss(train_loss.mean(axis=1), test_loss.mean(axis=1), args.plot_o)
+        plot_loss(train_loss.mean(axis=1), val_loss.mean(axis=1),
+            test_loss.mean(axis=1), args.plot_o)
 
 if __name__ == '__main__':
     main()
