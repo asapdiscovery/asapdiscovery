@@ -112,7 +112,7 @@ def find_most_recent(model_wts):
 
 def plot_loss(train_loss, val_loss, test_loss, out_fn):
     """
-    Plot loss for train and test sets.
+    Plot loss for train, val, and test sets.
 
     Parameters
     ----------
@@ -164,10 +164,11 @@ def train(model, ds_train, ds_val, ds_test, target_dict, n_epochs, device,
         differences in calling the SchNet and e3nn models
     save_file : str, optional
         Where to save model weights and errors at each epoch. If a directory is
-        passed, the weights will be saved as {epoch_idx}.th and the train/test
-        losses will be saved as train_err.pkl and test_err.pkl. If a string is
-        passed containing {}, it will be formatted with the epoch number.
-        Otherwise, the weights will be saved as the passed string
+        passed, the weights will be saved as {epoch_idx}.th and the
+        train/val/test losses will be saved as train_err.pkl, val_err.pkl, and
+        test_err.pkl. If a string is passed containing {}, it will be formatted
+        with the epoch number. Otherwise, the weights will be saved as the
+        passed string
     lr : float, default=1e-4
         Learning rate
     start_epoch : int, default=0
@@ -205,6 +206,7 @@ def train(model, ds_train, ds_val, ds_test, target_dict, n_epochs, device,
         print(f'Epoch {epoch_idx}/{n_epochs}', flush=True)
         if epoch_idx % 10 == 0 and epoch_idx > 0:
             print(f'Training error: {np.mean(train_loss[-1]):0.5f}')
+            print(f'Validation error: {np.mean(val_loss[-1]):0.5f}')
             print(f'Testing error: {np.mean(test_loss[-1]):0.5f}', flush=True)
         tmp_loss = []
         for (_, compound_id), pose in ds_train:
