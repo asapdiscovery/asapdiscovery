@@ -7,7 +7,7 @@ import pandas
 
 from ..schema import CrystalCompoundData
 
-def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs):
+def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs, n_top=1):
     """
     Build systems to run through docking.
     Parameters
@@ -19,6 +19,9 @@ def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs):
     compound_idxs : list[int]
         List giving the index of the crystal structure to dock to for each
         ligand. Should be the same length as `exp_compounds`
+    n_top : int, default=1
+        Dock to top `n_top` crystal structures
+
     Returns
     -------
     list[kinoml.core.systems.ProteinLigandComplex]
@@ -26,13 +29,16 @@ def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs):
     """
     systems = []
     for (c, idx) in zip(exp_compounds, compound_idxs):
-        ## Dock to highest ranked crystal structure
-        x = xtal_compounds[idx[0]]
-        protein = Protein.from_file(x.str_fn, name='MPRO')
-        protein.chain_id = x.str_fn.split('_')[-2][-1]
-        protein.expo_id = 'LIG'
-        ligand = Ligand.from_smiles(smiles=c.smiles, name=c.compound_id)
-        systems.append(ProteinLigandComplex(components=[protein, ligand]))
+        ## Make sure that there are enough crystal structures to dock to
+        n_dock = min(n_top, len(idx))
+        for i in range(n_dock):
+            ## Build protein, ligand, and complex objects
+            x = xtal_compounds[idx[i]]
+            protein = Protein.from_file(x.str_fn, name='MPRO')
+            protein.chain_id = x.str_fn.split('_')[-2][-1]
+            protein.expo_id = 'LIG'
+            ligand = Ligand.from_smiles(smiles=c.smiles, name=c.compound_id)
+            systems.append(ProteinLigandComplex(components=[protein, ligand]))
 
     return(systems)
 
