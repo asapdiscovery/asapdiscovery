@@ -1,11 +1,4 @@
-from kinoml.features.complexes import OEDockingFeaturizer
-from kinoml.core.proteins import Protein
-from kinoml.core.ligands import Ligand
-from kinoml.core.systems import ProteinLigandComplex
 import os
-import pandas
-
-from ..schema import CrystalCompoundData
 
 def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs, n_top=1):
     """
@@ -27,6 +20,10 @@ def build_docking_systems(exp_compounds, xtal_compounds, compound_idxs, n_top=1)
     list[kinoml.core.systems.ProteinLigandComplex]
         List of protein+ligand systems for docking
     """
+    from kinoml.core.proteins import Protein
+    from kinoml.core.ligands import Ligand
+    from kinoml.core.systems import ProteinLigandComplex
+
     systems = []
     for (c, idx) in zip(exp_compounds, compound_idxs):
         ## Make sure that there are enough crystal structures to dock to
@@ -57,6 +54,10 @@ def parse_xtal(x_fn, x_dir):
     List[schema.CrystalCompoundData]
         List of parsed crystal structures
     """
+    import pandas
+
+    from ..schema import CrystalCompoundData
+
     df = pandas.read_csv(x_fn)
 
     ## Find all P-files
@@ -84,6 +85,8 @@ def parse_xtal(x_fn, x_dir):
     return(xtal_compounds)
 
 def run_docking(cache_dir, output_dir, loop_db, n_procs, docking_systems):
+    from kinoml.features.complexes import OEDockingFeaturizer
+
     featurizer = OEDockingFeaturizer(cache_dir=cache_dir,
         output_dir=output_dir, loop_db=loop_db, n_processes=n_procs)
     docking_systems = featurizer.featurize(docking_systems)
