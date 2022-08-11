@@ -1,8 +1,12 @@
 import pandas
 import re
 
-from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
-    EnantiomerPair, EnantiomerPairList
+from ..schema import (
+    ExperimentalCompoundData,
+    ExperimentalCompoundDataUpdate,
+    EnantiomerPair,
+    EnantiomerPairList,
+)
 
 MPRO_SEQRES = """\
 SEQRES   1 A  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL
@@ -55,6 +59,7 @@ SEQRES  23 B  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN
 SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
 """
 
+
 def add_seqres(pdb_in, pdb_out=None):
     """
     Add SARS-CoV2 MPRO residue sequence to PDB header.
@@ -67,22 +72,23 @@ def add_seqres(pdb_in, pdb_out=None):
         Output PDB file. If not given, appends _seqres to the input file.
     """
 
-    pdbfile_lines = [line for line in open(pdb_in, 'r') if 'UNK' not in line]
-    pdbfile_lines = [line for line in pdbfile_lines if 'LINK' not in line]
+    pdbfile_lines = [line for line in open(pdb_in, "r") if "UNK" not in line]
+    pdbfile_lines = [line for line in pdbfile_lines if "LINK" not in line]
     ## Fix bad CL atom names
-    pdbfile_lines = [re.sub('CL', 'Cl', l) for l in pdbfile_lines]
+    pdbfile_lines = [re.sub("CL", "Cl", l) for l in pdbfile_lines]
     # # remove ligand hetatoms
     # pdbfile_lines = [ line for line in pdbfile_lines if 'LIG' not in line ]
-    pdbfile_contents = ''.join(pdbfile_lines)
-    if not 'SEQRES' in pdbfile_contents:
+    pdbfile_contents = "".join(pdbfile_lines)
+    if not "SEQRES" in pdbfile_contents:
         pdbfile_contents = MPRO_SEQRES + pdbfile_contents
 
     if pdb_out is None:
-        pdb_out = f'{pdb_in[:-4]}_seqres.pdb'
-    with open(pdb_out, 'w') as fp:
+        pdb_out = f"{pdb_in[:-4]}_seqres.pdb"
+    with open(pdb_out, "w") as fp:
         fp.write(pdbfile_contents)
 
-    print(f'Wrote {pdb_out}', flush=True)
+    print(f"Wrote {pdb_out}", flush=True)
+
 
 def cdd_to_schema(cdd_csv, out_json, achiral=False):
     """
@@ -109,50 +115,56 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
 
     ## Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
-    df = df.loc[~df['suspected_SMILES'].isna(),:]
+    df = df.loc[~df["suspected_SMILES"].isna(), :]
 
     ## Filter out chiral molecules if requested
     achiral_df = get_achiral_molecules(df)
     if achiral:
         df = achiral_df.copy()
-    achiral_label = [compound_id in achiral_df['Canonical PostEra ID'].values
-        for compound_id in df['Canonical PostEra ID']]
+    achiral_label = [
+        compound_id in achiral_df["Canonical PostEra ID"].values
+        for compound_id in df["Canonical PostEra ID"]
+    ]
 
     ## Get rid of the </> signs, since we really only need the values to sort
     ##  enantiomer pairs
-    pic50_key = 'ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50'
-    df = df.loc[~df[pic50_key].isna(),:]
-    pic50_range = [-1 if '<' in c else (1 if '>' in c else 0) \
-        for c in df[pic50_key]]
-    pic50_vals = [float(c.strip('<> ')) for c in df[pic50_key]]
-    df['pIC50'] = pic50_vals
-    df['pIC50_range'] = pic50_range
+    pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    df = df.loc[~df[pic50_key].isna(), :]
+    pic50_range = [
+        -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
+    ]
+    pic50_vals = [float(c.strip("<> ")) for c in df[pic50_key]]
+    df["pIC50"] = pic50_vals
+    df["pIC50_range"] = pic50_range
 
     compounds = []
     for i, (_, c) in enumerate(df.iterrows()):
-        compound_id = c['Canonical PostEra ID']
-        smiles = c['suspected_SMILES']
+        compound_id = c["Canonical PostEra ID"]
+        smiles = c["suspected_SMILES"]
         experimental_data = {
-            'pIC50': c['pIC50'],
-            'pIC50_range': c['pIC50_range']
+            "pIC50": c["pIC50"],
+            "pIC50_range": c["pIC50_range"],
         }
 
-        compounds.append(ExperimentalCompoundData(
-            compound_id=compound_id,
-            smiles=smiles,
-            racemic=False,
-            achiral=achiral_label[i],
-            absolute_stereochemistry_enantiomerically_pure=True,
-            relative_stereochemistry_enantiomerically_pure=True,
-            experimental_data=experimental_data
-        ))
+        compounds.append(
+            ExperimentalCompoundData(
+                compound_id=compound_id,
+                smiles=smiles,
+                racemic=False,
+                achiral=achiral_label[i],
+                absolute_stereochemistry_enantiomerically_pure=True,
+                relative_stereochemistry_enantiomerically_pure=True,
+                experimental_data=experimental_data,
+            )
+        )
     compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
 
-    with open(out_json, 'w') as fp:
+    with open(out_json, "w") as fp:
         fp.write(compounds.json())
-    print(f'Wrote {out_json}', flush=True)
+    print(f"Wrote {out_json}", flush=True)
 
-    return(compounds)
+    return compounds
+
 
 def cdd_to_schema_pair(cdd_csv, out_json):
     """
@@ -178,64 +190,69 @@ def cdd_to_schema_pair(cdd_csv, out_json):
 
     ## Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
-    df = df.loc[~df['suspected_SMILES'].isna(),:]
+    df = df.loc[~df["suspected_SMILES"].isna(), :]
 
     ## Remove stereochemistry tags and get canonical SMILES values (to help
     ##  group stereoisomers)
-    smi_nostereo = [CanonSmiles(s, useChiral=False) \
-        for s in df['suspected_SMILES']]
-    df['suspected_SMILES_nostereo'] = smi_nostereo
+    smi_nostereo = [
+        CanonSmiles(s, useChiral=False) for s in df["suspected_SMILES"]
+    ]
+    df["suspected_SMILES_nostereo"] = smi_nostereo
 
     ## Sort by non-stereo SMILES to put the enantiomer pairs together
-    df = df.sort_values('suspected_SMILES_nostereo')
+    df = df.sort_values("suspected_SMILES_nostereo")
 
     ## Get rid of the </> signs, since we really only need the values to sort
     ##  enantiomer pairs
-    pic50_key = 'ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50'
-    pic50_range = [-1 if '<' in c else (1 if '>' in c else 0) \
-        for c in df[pic50_key]]
-    pic50_vals = [float(c[pic50_key].strip('<> ')) for _, c in df.iterrows()]
-    df['pIC50_range'] = pic50_range
-    df['pIC50'] = pic50_vals
+    pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    pic50_range = [
+        -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
+    ]
+    pic50_vals = [float(c[pic50_key].strip("<> ")) for _, c in df.iterrows()]
+    df["pIC50_range"] = pic50_range
+    df["pIC50"] = pic50_vals
 
     enant_pairs = []
     ## Loop through the enantiomer pairs and rank them
-    for ep in df.groupby('suspected_SMILES_nostereo'):
+    for ep in df.groupby("suspected_SMILES_nostereo"):
         ## Make sure there aren't any singletons
         if ep[1].shape[0] != 2:
-            print(f'{ep[1].shape[0]} mols for {ep[0]}', flush=True)
+            print(f"{ep[1].shape[0]} mols for {ep[0]}", flush=True)
             continue
 
         p = []
         ## Sort by pIC50 value, higher to lower
-        ep = ep[1].sort_values('pIC50', ascending=False)
+        ep = ep[1].sort_values("pIC50", ascending=False)
         for _, c in ep.iterrows():
-            compound_id = c['Canonical PostEra ID']
-            smiles = c['suspected_SMILES']
+            compound_id = c["Canonical PostEra ID"]
+            smiles = c["suspected_SMILES"]
             experimental_data = {
-                'pIC50': c['pIC50'],
-                'pIC50_range': c['pIC50_range']
+                "pIC50": c["pIC50"],
+                "pIC50_range": c["pIC50_range"],
             }
 
-            p.append(ExperimentalCompoundData(
-                compound_id=compound_id,
-                smiles=smiles,
-                racemic=False,
-                achiral=False,
-                absolute_stereochemistry_enantiomerically_pure=True,
-                relative_stereochemistry_enantiomerically_pure=True,
-                experimental_data=experimental_data
-            ))
+            p.append(
+                ExperimentalCompoundData(
+                    compound_id=compound_id,
+                    smiles=smiles,
+                    racemic=False,
+                    achiral=False,
+                    absolute_stereochemistry_enantiomerically_pure=True,
+                    relative_stereochemistry_enantiomerically_pure=True,
+                    experimental_data=experimental_data,
+                )
+            )
 
         enant_pairs.append(EnantiomerPair(active=p[0], inactive=p[1]))
 
     ep_list = EnantiomerPairList(pairs=enant_pairs)
 
-    with open(out_json, 'w') as fp:
+    with open(out_json, "w") as fp:
         fp.write(ep_list.json())
-    print(f'Wrote {out_json}', flush=True)
+    print(f"Wrote {out_json}", flush=True)
 
-    return(ep_list)
+    return ep_list
+
 
 def get_achiral_molecules(mol_df):
     """
@@ -255,20 +272,30 @@ def get_achiral_molecules(mol_df):
     from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 
     ## Check whether a SMILES is chiral or not
-    check_achiral = lambda smi: len(FindMolChiralCenters(MolFromSmiles(smi),
-        includeUnassigned=True, includeCIP=False,
-        useLegacyImplementation=False)) == 0
+    check_achiral = (
+        lambda smi: len(
+            FindMolChiralCenters(
+                MolFromSmiles(smi),
+                includeUnassigned=True,
+                includeCIP=False,
+                useLegacyImplementation=False,
+            )
+        )
+        == 0
+    )
     ## Check each molecule, first looking at suspected_SMILES, then
     ##  shipment_SMILES if not present
     achiral_idx = []
     for _, r in mol_df.iterrows():
-        if ('suspected_SMILES' in r) and \
-            (not pandas.isna(r['suspected_SMILES'])):
-            achiral_idx.append(check_achiral(r['suspected_SMILES']))
-        elif ('shipment_SMILES' in r) and \
-            (not pandas.isna(r['shipment_SMILES'])):
-            achiral_idx.append(check_achiral(r['shipment_SMILES']))
+        if ("suspected_SMILES" in r) and (
+            not pandas.isna(r["suspected_SMILES"])
+        ):
+            achiral_idx.append(check_achiral(r["suspected_SMILES"]))
+        elif ("shipment_SMILES" in r) and (
+            not pandas.isna(r["shipment_SMILES"])
+        ):
+            achiral_idx.append(check_achiral(r["shipment_SMILES"]))
         else:
             raise ValueError(f'No SMILES found for {r["Canonical PostEra ID"]}')
 
-    return(mol_df.loc[achiral_idx,:])
+    return mol_df.loc[achiral_idx, :]
