@@ -91,7 +91,7 @@ def add_seqres(pdb_in, pdb_out=None):
     print(f"Wrote {pdb_out}", flush=True)
 
 
-def cdd_to_schema(cdd_csv, out_json, achiral=False):
+def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     """
     Convert a CDD-downloaded CSV file into a JSON file containing an
     ExperimentalCompoundDataUpdate. CSV file must contain the following headers:
@@ -103,8 +103,10 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
     ----------
     cdd_csv : str
         CSV file downloaded from CDD.
-    out_json : str
+    out_json : str, optional
         JSON file to save to.
+    out_csv : str, optional
+        CSV file to save to.
     achiral : bool, default=False
         Only keep achiral molecules
 
@@ -184,14 +186,21 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
         )
     compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
 
-    with open(out_json, "w") as fp:
-        fp.write(compounds.json())
-    print(f"Wrote {out_json}", flush=True)
+    if out_json is not None:
+        with open(out_json, 'w') as fp:
+            fp.write(compounds.json())
+        print(f'Wrote {out_json}', flush=True)
+    if out_csv is not None:
+        out_cols = ['Canonical PostEra ID', 'suspected_SMILES', 'pIC50',
+            'pIC50_range', ci_lower_key, ci_upper_key, 'pIC50_stderr',
+            'pIC50_stderr_na']
+        df[out_cols].to_csv(out_csv)
+        print(f'Wrote {out_csv}', flush=True)
 
     return compounds
 
 
-def cdd_to_schema_pair(cdd_csv, out_json):
+def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     """
     Convert a CDD-downloaded CSV file into a JSON file containing an
     EnantiomerPairList. CSV file must contain the following headers:
@@ -203,8 +212,10 @@ def cdd_to_schema_pair(cdd_csv, out_json):
     ----------
     cdd_csv : str
         CSV file downloaded from CDD.
-    out_json : str
+    out_json : str, optional
         JSON file to save to.
+    out_csv : str, optional
+        CSV file to save to.
 
     Returns
     -------
@@ -296,9 +307,16 @@ def cdd_to_schema_pair(cdd_csv, out_json):
 
     ep_list = EnantiomerPairList(pairs=enant_pairs)
 
-    with open(out_json, "w") as fp:
-        fp.write(ep_list.json())
-    print(f"Wrote {out_json}", flush=True)
+    if out_json is not None:
+        with open(out_json, 'w') as fp:
+            fp.write(ep_list.json())
+        print(f'Wrote {out_json}', flush=True)
+    if out_csv is not None:
+        out_cols = ['Canonical PostEra ID', 'suspected_SMILES',
+            'suspected_SMILES_nostereo', 'pIC50', 'pIC50_range', ci_lower_key,
+            ci_upper_key, 'pIC50_stderr', 'pIC50_stderr_na']
+        df[out_cols].to_csv(out_csv)
+        print(f'Wrote {out_csv}', flush=True)
 
     return ep_list
 
