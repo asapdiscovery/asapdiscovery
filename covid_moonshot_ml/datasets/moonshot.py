@@ -1,6 +1,7 @@
-BASE_URL = 'https://app.collaborativedrug.com/api/v1/vaults/5549/'
+BASE_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
 ## All molecules with SMILES (public)
-ALL_SMI_SEARCH = 'searches/8975987-kmJ-vR0fhkdccPw5UdWiIA'
+ALL_SMI_SEARCH = "searches/8975987-kmJ-vR0fhkdccPw5UdWiIA"
+
 
 def download_url(url, header):
     """
@@ -25,31 +26,32 @@ def download_url(url, header):
 
     ## Make the initial download request
     response = requests.get(url, headers=header)
-    export_id = response.json()['id']
-    url = f'{BASE_URL}export_progress/{export_id}'
+    export_id = response.json()["id"]
+    url = f"{BASE_URL}export_progress/{export_id}"
 
     ## Check every 5 seconds to see if the export is ready
     status = None
     total_seconds = 0
-    while status != 'finished':
+    while status != "finished":
         response = requests.get(url, headers=header)
-        status = response.json()['status']
+        status = response.json()["status"]
 
         time.sleep(5)
         total_seconds += 5
         ## Time out after 5000 seconds
         if total_seconds > 5000:
-            print('Export Never Finished')
+            print("Export Never Finished")
             break
 
-    if status != 'finished':
-        sys.exit('EXPORT IS BROKEN')
+    if status != "finished":
+        sys.exit("EXPORT IS BROKEN")
 
     ## Send GET request for final export
-    url = f'{BASE_URL}exports/{export_id}'
+    url = f"{BASE_URL}exports/{export_id}"
     response = requests.get(url, headers=header)
 
-    return(response)
+    return response
+
 
 def download_achiral(header, fn_out=None):
     """
@@ -74,17 +76,23 @@ def download_achiral(header, fn_out=None):
     from .utils import get_achiral_molecules
 
     ## Download all molecules to start
-    response = download_url(BASE_URL+ALL_SMI_SEARCH, header)
+    response = download_url(BASE_URL + ALL_SMI_SEARCH, header)
     ## Parse into DF
     mol_df = pandas.read_csv(StringIO(response.content.decode()))
     ## Get rid of any molecules that snuck through without SMILES
-    idx = mol_df.loc[:,['shipment_SMILES', 'suspected_SMILES']].isna().all(axis=1)
-    mol_df = mol_df.loc[~idx,:].copy()
+    idx = (
+        mol_df.loc[:, ["shipment_SMILES", "suspected_SMILES"]]
+        .isna()
+        .all(axis=1)
+    )
+    mol_df = mol_df.loc[~idx, :].copy()
     ## Some of the SMILES from CDD have extra info at the end
-    mol_df.loc[:,'shipment_SMILES'] = [s.strip('|').split()[0] \
-        for s in mol_df.loc[:,'shipment_SMILES']]
-    mol_df.loc[:,'suspected_SMILES'] = [s.strip('|').split()[0] \
-        for s in mol_df.loc[:,'suspected_SMILES']]
+    mol_df.loc[:, "shipment_SMILES"] = [
+        s.strip("|").split()[0] for s in mol_df.loc[:, "shipment_SMILES"]
+    ]
+    mol_df.loc[:, "suspected_SMILES"] = [
+        s.strip("|").split()[0] for s in mol_df.loc[:, "suspected_SMILES"]
+    ]
 
     ## Remove chiral molecules
     achiral_df = get_achiral_molecules(mol_df)
@@ -93,4 +101,4 @@ def download_achiral(header, fn_out=None):
     if fn_out:
         achiral_df.to_csv(fn_out, index=False)
 
-    return(achiral_df)
+    return achiral_df

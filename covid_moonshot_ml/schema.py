@@ -7,10 +7,12 @@ class Model(BaseModel):
         allow_mutation = False
         extra = "forbid"
 
+
 class ExperimentalCompoundData(Model):
 
     compound_id: str = Field(
-        None, description="The unique compound identifier (PostEra or enumerated ID)"
+        None,
+        description="The unique compound identifier (PostEra or enumerated ID)",
     )
 
     smiles: str = Field(
@@ -48,7 +50,10 @@ class ExperimentalCompoundDataUpdate(Model):
     """A bundle of experimental data for compounds (racemic or enantiopure)."""
 
     compounds: List[ExperimentalCompoundData]
+
+
 ################################################################################
+
 
 class CrystalCompoundData(Model):
 
@@ -57,15 +62,19 @@ class CrystalCompoundData(Model):
         description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",
     )
 
-    dataset: str = Field(None,
-        description='Dataset name from Fragalysis (name of structure).')
+    dataset: str = Field(
+        None, description="Dataset name from Fragalysis (name of structure)."
+    )
 
-    str_fn: str = Field(None, description='Filename of the PDB structure.')
+    str_fn: str = Field(None, description="Filename of the PDB structure.")
+
 
 class EnantiomerPair(Model):
-    active: ExperimentalCompoundData = Field(description='Active enantiomer.')
+    active: ExperimentalCompoundData = Field(description="Active enantiomer.")
     inactive: ExperimentalCompoundData = Field(
-        description='Inactive enantiomer.')
+        description="Inactive enantiomer."
+    )
+
 
 class EnantiomerPairList(Model):
     pairs: List[EnantiomerPair]
