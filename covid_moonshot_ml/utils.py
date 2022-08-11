@@ -1,13 +1,5 @@
-from collections import Counter
-import matplotlib.pyplot as plt
 import numpy as np
 import os
-import pandas
-import pickle as pkl
-import re
-import seaborn as sns
-import torch
-from torch_cluster import radius_graph
 
 def calc_e3nn_model_info(ds, r):
     """
@@ -29,6 +21,9 @@ def calc_e3nn_model_info(ds, r):
     int
         Rounded average number of nodes per structure in `ds`
     """
+    from collections import Counter
+    from torch_cluster import radius_graph
+
     num_neighbors = []
     num_nodes = []
     unique_atom_types = set()
@@ -61,6 +56,8 @@ def find_all_models(model_base):
         Returns sorted list of found epoch indexes if a directory or filename
         with placeholder is given, otherwise returns the given weights file.
     """
+    import re
+
     if model_base is None:
         return([])
     elif os.path.isdir(model_base):
@@ -123,6 +120,9 @@ def plot_loss(train_loss, test_loss, out_fn):
     out_fn : str
         Path to save plot
     """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
     fig, axes = plt.subplots(nrows=2, figsize=(12,8), sharex=True)
     sns.lineplot(x=range(len(train_loss)), y=train_loss, ax=axes[0])
     sns.lineplot(x=range(len(test_loss)), y=test_loss, ax=axes[1])
@@ -184,6 +184,8 @@ def train(model, ds_train, ds_test, target_dict, n_epochs, device,
         Loss for each structure in `ds_test` from each epoch of training, with
         shape (`n_epochs`, `len(ds_test)`)
     """
+    import pickle as pkl
+    import torch
 
     ## Send model to desired device if it's not there already
     model.to(device)

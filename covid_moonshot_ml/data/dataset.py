@@ -1,7 +1,3 @@
-from Bio.PDB.PDBParser import PDBParser
-import numpy as np
-from rdkit.Chem import GetPeriodicTable
-import torch
 from torch.utils.data import Dataset
 
 class DockedDataset(Dataset):
@@ -24,6 +20,9 @@ class DockedDataset(Dataset):
             The residue name for the ligand molecules in the PDB files. Used to
             identify which atoms belong to the ligand
         """
+        from Bio.PDB.PDBParser import PDBParser
+        from rdkit.Chem import GetPeriodicTable
+        import torch
 
         super(DockedDataset, self).__init__()
 
@@ -77,6 +76,8 @@ class DockedDataset(Dataset):
             - `lig`: ligand identifier
             - `compound`: tuple of (crystal_structure, compound_id)
         """
+        import torch
+
         ## Extract idx from inside the tensor object
         if torch.is_tensor(idx):
             try:
