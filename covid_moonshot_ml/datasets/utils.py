@@ -132,6 +132,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     pic50_vals = [float(c.strip('<> ')) for c in df[pic50_key]]
     df['pIC50'] = pic50_vals
     df['pIC50_range'] = pic50_range
+    semiquant = df['pIC50_range'].astype(bool)
 
     ci_lower_key = ('ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 '
         'CI (Lower) (µM)')
@@ -150,10 +151,8 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
             ## Assume size of 95% CI == 4*sigma
             pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
     df['pIC50_stderr'] = pic50_stderr
-    ## Keep track of which confidence intervals weren't in the data, and fill
-    ##  with the mean of all others
-    df['pIC50_stderr_na'] = df['pIC50_stderr'].isna()
-    df['pIC50_stderr'].fillna(df['pIC50_stderr'].mean(), inplace=True)
+    ## Fill standard error for semi-qunatitative data with the mean of others
+    df.loc[semiquant, 'pIC50_stderr'] = df.loc[~semiquant, 'pIC50_stderr'].mean()
 
     compounds = []
     for i, (_, c) in enumerate(df.iterrows()):
@@ -162,8 +161,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         experimental_data = {
             'pIC50': c['pIC50'],
             'pIC50_range': c['pIC50_range'],
-            'pIC50_stderr': c['pIC50_stderr'],
-            'pIC50_stderr_na': c['pIC50_stderr_na']
+            'pIC50_stderr': c['pIC50_stderr']
         }
 
         compounds.append(ExperimentalCompoundData(
@@ -183,8 +181,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         print(f'Wrote {out_json}', flush=True)
     if out_csv is not None:
         out_cols = ['Canonical PostEra ID', 'suspected_SMILES', 'pIC50',
-            'pIC50_range', ci_lower_key, ci_upper_key, 'pIC50_stderr',
-            'pIC50_stderr_na']
+            'pIC50_range', ci_lower_key, ci_upper_key, 'pIC50_stderr']
         df[out_cols].to_csv(out_csv)
         print(f'Wrote {out_csv}', flush=True)
 
@@ -232,8 +229,9 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     pic50_range = [-1 if '<' in c else (1 if '>' in c else 0) \
         for c in df[pic50_key]]
     pic50_vals = [float(c[pic50_key].strip('<> ')) for _, c in df.iterrows()]
-    df['pIC50_range'] = pic50_range
     df['pIC50'] = pic50_vals
+    df['pIC50_range'] = pic50_range
+    semiquant = df['pIC50_range'].astype(bool)
 
     ci_lower_key = ('ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 '
         'CI (Lower) (µM)')
@@ -252,10 +250,8 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
             ## Assume size of 95% CI == 4*sigma => calculate variance from stdev
             pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
     df['pIC50_stderr'] = pic50_stderr
-    ## Keep track of which confidence intervals weren't in the data, and fill
-    ##  with the mean of all others
-    df['pIC50_stderr_na'] = df['pIC50_stderr'].isna()
-    df['pIC50_stderr'].fillna(df['pIC50_stderr'].mean(), inplace=True)
+    ## Fill standard error for semi-qunatitative data with the mean of others
+    df.loc[semiquant, 'pIC50_stderr'] = df.loc[~semiquant, 'pIC50_stderr'].mean()
 
     enant_pairs = []
     ## Loop through the enantiomer pairs and rank them
@@ -274,8 +270,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
             experimental_data = {
                 'pIC50': c['pIC50'],
                 'pIC50_range': c['pIC50_range'],
-                'pIC50_stderr': c['pIC50_stderr'],
-                'pIC50_stderr_na': c['pIC50_stderr_na']
+                'pIC50_stderr': c['pIC50_stderr']
             }
 
             p.append(ExperimentalCompoundData(
@@ -299,7 +294,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     if out_csv is not None:
         out_cols = ['Canonical PostEra ID', 'suspected_SMILES',
             'suspected_SMILES_nostereo', 'pIC50', 'pIC50_range', ci_lower_key,
-            ci_upper_key, 'pIC50_stderr', 'pIC50_stderr_na']
+            ci_upper_key, 'pIC50_stderr']
         df[out_cols].to_csv(out_csv)
         print(f'Wrote {out_csv}', flush=True)
 
