@@ -1,6 +1,4 @@
-import json
 import pandas
-from rdkit.Chem import CanonSmiles, FindMolChiralCenters, MolFromSmiles
 import re
 
 from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
@@ -176,6 +174,7 @@ def cdd_to_schema_pair(cdd_csv, out_json):
     EnantiomerPairList
         The parsed EnantiomerPairList.
     """
+    from rdkit.Chem import CanonSmiles
 
     ## Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
@@ -253,6 +252,8 @@ def get_achiral_molecules(mol_df):
         DataFrame containing compound information for all achiral molecules
 
     """
+    from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
+
     ## Check whether a SMILES is chiral or not
     check_achiral = lambda smi: len(FindMolChiralCenters(MolFromSmiles(smi),
         includeUnassigned=True, includeCIP=False,

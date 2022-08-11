@@ -1,11 +1,3 @@
-from io import StringIO
-import pandas
-import requests
-import sys
-import time
-
-from .utils import get_achiral_molecules
-
 BASE_URL = 'https://app.collaborativedrug.com/api/v1/vaults/5549/'
 ## All molecules with SMILES (public)
 ALL_SMI_SEARCH = 'searches/8975987-kmJ-vR0fhkdccPw5UdWiIA'
@@ -27,6 +19,10 @@ def download_url(url, header):
     requests.Response
         Response object from the final export GET request
     """
+    import requests
+    import sys
+    import time
+
     ## Make the initial download request
     response = requests.get(url, headers=header)
     export_id = response.json()['id']
@@ -72,6 +68,11 @@ def download_achiral(header, fn_out=None):
     pandas.DataFrame
         DataFrame containing compound information for all achiral molecules
     """
+    import pandas
+    from io import StringIO
+
+    from .utils import get_achiral_molecules
+
     ## Download all molecules to start
     response = download_url(BASE_URL+ALL_SMI_SEARCH, header)
     ## Parse into DF
