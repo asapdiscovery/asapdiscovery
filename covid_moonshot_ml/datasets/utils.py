@@ -155,6 +155,10 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
             ## Assume size of 95% CI == 4*sigma
             pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
     df['pIC50_stderr'] = pic50_stderr
+    ## Keep track of which confidence intervals weren't in the data, and fill
+    ##  with the mean of all others
+    df['pIC50_stderr_na'] = df['pIC50_stderr'].isna()
+    df['pIC50_stderr'].fillna(df['pIC50_stderr'].mean(), inplace=True)
 
     compounds = []
     for i, (_, c) in enumerate(df.iterrows()):
@@ -163,7 +167,8 @@ def cdd_to_schema(cdd_csv, out_json, achiral=False):
         experimental_data = {
             'pIC50': c['pIC50'],
             'pIC50_range': c['pIC50_range'],
-            'pIC50_stderr': c['pIC50_stderr']
+            'pIC50_stderr': c['pIC50_stderr'],
+            'pIC50_stderr_na': c['pIC50_stderr_na']
         }
 
         compounds.append(
@@ -249,6 +254,10 @@ def cdd_to_schema_pair(cdd_csv, out_json):
             ## Assume size of 95% CI == 4*sigma => calculate variance from stdev
             pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
     df['pIC50_stderr'] = pic50_stderr
+    ## Keep track of which confidence intervals weren't in the data, and fill
+    ##  with the mean of all others
+    df['pIC50_stderr_na'] = df['pIC50_stderr'].isna()
+    df['pIC50_stderr'].fillna(df['pIC50_stderr'].mean(), inplace=True)
 
     enant_pairs = []
     ## Loop through the enantiomer pairs and rank them
@@ -267,7 +276,8 @@ def cdd_to_schema_pair(cdd_csv, out_json):
             experimental_data = {
                 'pIC50': c['pIC50'],
                 'pIC50_range': c['pIC50_range'],
-                'pIC50_stderr': c['pIC50_stderr']
+                'pIC50_stderr': c['pIC50_stderr'],
+                'pIC50_stderr_na': c['pIC50_stderr_na']
             }
 
             p.append(
