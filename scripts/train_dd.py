@@ -6,11 +6,12 @@ import json
 import os
 import pickle as pkl
 import re
+import sys
 import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-
+sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../')
 from covid_moonshot_ml.data.dataset import DockedDataset
 from covid_moonshot_ml.nn import E3NNBind, SchNetBind
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
