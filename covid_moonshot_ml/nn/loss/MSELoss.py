@@ -1,5 +1,6 @@
 from torch.nn.modules.loss import MSELoss as TorchMSELoss
 
+
 class MSELoss(TorchMSELoss):
     def __init__(self):
         super(MSELoss, self).__init__()
@@ -29,14 +30,14 @@ class MSELoss(TorchMSELoss):
 
         ## If no value given for `in_range` or input is inside the assay range
         if (in_range is None) or (in_range == 0):
-            return(loss)
+            return loss
 
         ## If the target value is below the lower bound of the assay range,
         ##  only compute loss if input is inside range
         if in_range < 0:
-            return((target > input) * loss)
+            return (target > input) * loss
 
         ## If the target value is above the upper bound of the assay range,
         ##  only compute loss if input is inside range
         if in_range > 0:
-            return((target < input) * loss)
+            return (target < input) * loss
