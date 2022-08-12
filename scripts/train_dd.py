@@ -15,8 +15,13 @@ sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../')
 from covid_moonshot_ml.data.dataset import DockedDataset
 from covid_moonshot_ml.nn import E3NNBind, SchNetBind
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
-from covid_moonshot_ml.utils import calc_e3nn_model_info, find_most_recent, \
-    train, plot_loss
+from covid_moonshot_ml.utils import (
+    calc_e3nn_model_info,
+    find_most_recent,
+    train,
+    plot_loss,
+)
+
 
 def add_one_hot_encodings(ds):
     """
@@ -36,9 +41,10 @@ def add_one_hot_encodings(ds):
     for _, pose in ds:
         ## Use length 100 for one-hot encoding to account for atoms up to element
         ##  number 100
-        pose['x'] = torch.nn.functional.one_hot(pose['z']-1, 100).float()
+        pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
 
-    return(ds)
+    return ds
+
 
 def add_lig_labels(ds):
     """
@@ -57,9 +63,10 @@ def add_lig_labels(ds):
     """
     ## Change key values for ligand labels
     for _, pose in ds:
-        pose['z'] = pose['lig'].reshape((-1,1)).float()
+        pose["z"] = pose["lig"].reshape((-1, 1)).float()
 
-    return(ds)
+    return ds
+
 
 def load_affinities(fn, achiral=True):
     """
@@ -81,16 +88,22 @@ def load_affinities(fn, achiral=True):
     ## Load all compounds with experimental data and filter to only achiral
     ##  molecules (to start)
     exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, 'r'))).compounds
-    exp_compounds = [c for c in exp_compounds if c.achiral==achiral]
+        **json.load(open(fn, "r"))
+    ).compounds
+    exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
 
-    affinity_dict = {c.compound_id: c.experimental_data['pIC50'] \
-        for c in exp_compounds if 'pIC50' in c.experimental_data}
+    affinity_dict = {
+        c.compound_id: c.experimental_data["pIC50"]
+        for c in exp_compounds
+        if "pIC50" in c.experimental_data
+    }
 
-    return(affinity_dict)
+    return affinity_dict
 
-def build_model_e3nn(n_atom_types, num_neighbors, num_nodes, node_attr=False,
-    dg=False):
+
+def build_model_e3nn(
+    n_atom_types, num_neighbors, num_nodes, node_attr=False, dg=False
+):
     """
     Build appropriate e3nn model.
 
@@ -124,27 +137,31 @@ def build_model_e3nn(n_atom_types, num_neighbors, num_nodes, node_attr=False,
     # reduce_output because we just want the one binding energy prediction
     #  across the whole graph
     model_kwargs = {
-        'irreps_in': f'{n_atom_types}x0e',
-        'irreps_hidden': [(mul, (l, p)) \
-            for l, mul in enumerate([10,3,2,1]) for p in [-1, 1]],
-        'irreps_out': '1x0e',
-        'irreps_node_attr': '1x0e' if node_attr else None,
-        'irreps_edge_attr': o3.Irreps.spherical_harmonics(3),
-        'layers': 3,
-        'max_radius': 3.5,
-        'number_of_basis': 10,
-        'radial_layers': 1,
-        'radial_neurons': 128,
-        'num_neighbors': num_neighbors,
-        'num_nodes': num_nodes,
-        'reduce_output': True
+        "irreps_in": f"{n_atom_types}x0e",
+        "irreps_hidden": [
+            (mul, (l, p))
+            for l, mul in enumerate([10, 3, 2, 1])
+            for p in [-1, 1]
+        ],
+        "irreps_out": "1x0e",
+        "irreps_node_attr": "1x0e" if node_attr else None,
+        "irreps_edge_attr": o3.Irreps.spherical_harmonics(3),
+        "layers": 3,
+        "max_radius": 3.5,
+        "number_of_basis": 10,
+        "radial_layers": 1,
+        "radial_neurons": 128,
+        "num_neighbors": num_neighbors,
+        "num_nodes": num_nodes,
+        "reduce_output": True,
     }
 
     if dg:
         model = E3NNBind(**model_kwargs)
     else:
         model = Network(**model_kwargs)
-    return(model)
+    return model
+
 
 def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
     """
@@ -183,16 +200,28 @@ def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
         if remove_atomref:
             atomref = None
             ## Get rid of entries in state_dict that correspond to atomref
-            wts = {k: v for k,v in model_qm9.state_dict().items() \
-                if 'atomref' not in k}
+            wts = {
+                k: v
+                for k, v in model_qm9.state_dict().items()
+                if "atomref" not in k
+            }
         else:
             atomref = model_qm9.atomref.weight.detach().clone()
             wts = model_qm9.state_dict()
 
-        model_params = (model_qm9.hidden_channels, model_qm9.num_filters,
-            model_qm9.num_interactions, model_qm9.num_gaussians,
-            model_qm9.cutoff, model_qm9.max_num_neighbors,model_qm9.readout,
-            model_qm9.dipole, model_qm9.mean, model_qm9.std, atomref)
+        model_params = (
+            model_qm9.hidden_channels,
+            model_qm9.num_filters,
+            model_qm9.num_interactions,
+            model_qm9.num_gaussians,
+            model_qm9.cutoff,
+            model_qm9.max_num_neighbors,
+            model_qm9.readout,
+            model_qm9.dipole,
+            model_qm9.mean,
+            model_qm9.std,
+            atomref,
+        )
 
         if dg:
             model = SchNetBind(*model_params)
@@ -203,47 +232,78 @@ def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
     ## Set interatomic cutoff to 3.5A (default of 10) to make the graph smaller
     model.cutoff = 3.5
 
-    return(model)
+    return model
+
 
 ################################################################################
 def get_args():
-    parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description="")
 
     ## Input arguments
-    parser.add_argument('-i', required=True,
-        help='Input directory containing docked PDB files.')
-    parser.add_argument('-exp', required=True,
-        help='JSON file giving experimental results.')
-    parser.add_argument('-model_params', help='e3nn model parameters.')
-    parser.add_argument('-qm9', help='QM9 directory for pretrained model.')
-    parser.add_argument('-qm9_target', type=int, default=10,
-        help='QM9 pretrained target.')
-    parser.add_argument('-cont', action='store_true',
-        help='Whether to restore training with most recent model weights.')
+    parser.add_argument(
+        "-i", required=True, help="Input directory containing docked PDB files."
+    )
+    parser.add_argument(
+        "-exp", required=True, help="JSON file giving experimental results."
+    )
+    parser.add_argument("-model_params", help="e3nn model parameters.")
+    parser.add_argument("-qm9", help="QM9 directory for pretrained model.")
+    parser.add_argument(
+        "-qm9_target", type=int, default=10, help="QM9 pretrained target."
+    )
+    parser.add_argument(
+        "-cont",
+        action="store_true",
+        help="Whether to restore training with most recent model weights.",
+    )
 
     ## Output arguments
-    parser.add_argument('-model_o', help='Where to save model weights.')
-    parser.add_argument('-plot_o', help='Where to save training loss plot.')
+    parser.add_argument("-model_o", help="Where to save model weights.")
+    parser.add_argument("-plot_o", help="Where to save training loss plot.")
 
     ## Model parameters
-    parser.add_argument('-model', required=True,
-        help='Which type of model to use (e3nn or schnet).')
-    parser.add_argument('-lig', action='store_true',
-        help='Whether to treat the ligand and protein atoms separately.')
-    parser.add_argument('-dg', action='store_true',
-        help='Whether to predict pIC50 directly or via dG prediction.')
-    parser.add_argument('-rm_atomref', action='store_true',
-        help='Remove atomref embedding in QM9 pretrained SchNet.')
+    parser.add_argument(
+        "-model",
+        required=True,
+        help="Which type of model to use (e3nn or schnet).",
+    )
+    parser.add_argument(
+        "-lig",
+        action="store_true",
+        help="Whether to treat the ligand and protein atoms separately.",
+    )
+    parser.add_argument(
+        "-dg",
+        action="store_true",
+        help="Whether to predict pIC50 directly or via dG prediction.",
+    )
+    parser.add_argument(
+        "-rm_atomref",
+        action="store_true",
+        help="Remove atomref embedding in QM9 pretrained SchNet.",
+    )
 
     ## Training arguments
-    parser.add_argument('-n_epochs', type=int, default=1000,
-        help='Number of epochs to train for (defaults to 1000).')
-    parser.add_argument('-device', default='cuda',
-        help='Device to use for training (defaults to GPU).')
-    parser.add_argument('-lr', type=float, default=1e-4,
-        help='Learning rate for Adam optimizer (defaults to 1e-4).')
+    parser.add_argument(
+        "-n_epochs",
+        type=int,
+        default=1000,
+        help="Number of epochs to train for (defaults to 1000).",
+    )
+    parser.add_argument(
+        "-device",
+        default="cuda",
+        help="Device to use for training (defaults to GPU).",
+    )
+    parser.add_argument(
+        "-lr",
+        type=float,
+        default=1e-4,
+        help="Learning rate for Adam optimizer (defaults to 1e-4).",
+    )
 
-    return(parser.parse_args())
+    return parser.parse_args()
+
 
 def init(args, rank=False):
     """
@@ -251,9 +311,9 @@ def init(args, rank=False):
     """
 
     ## Get all docked structures
-    all_fns = glob(f'{args.i}/*complex.pdb')
+    all_fns = glob(f"{args.i}/*complex.pdb")
     ## Extract crystal structure and compound id from file name
-    re_pat = r'(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex.pdb'
+    re_pat = r"(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex.pdb"
     compounds = [re.search(re_pat, fn).groups() for fn in all_fns]
 
     if rank:
@@ -264,8 +324,9 @@ def init(args, rank=False):
 
         ## Trim docked structures and filenames to remove compounds that don't have
         ##  experimental data
-        all_fns, compounds = zip(*[o for o in zip(all_fns, compounds) \
-            if o[1][1] in exp_affinities])
+        all_fns, compounds = zip(
+            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_affinities]
+        )
 
     ## Load the dataset
     ds = DockedDataset(all_fns, compounds)
@@ -274,14 +335,15 @@ def init(args, rank=False):
     n_train = int(len(ds) * 0.8)
     n_val = int(len(ds) * 0.1)
     n_test = len(ds) - n_train - n_val
-    print((f'{n_train} training samples, {n_val} validation samples, '
-        f'{n_test} testing samples'), flush=True)
+    print((f"{n_train} training samples, {n_val} validation samples, "
+        f"{n_test} testing samples"), flush=True)
     # use fixed seed for reproducibility
-    ds_train, ds_val, ds_test = torch.utils.data.random_split(ds,
-        [n_train, n_val, n_test], torch.Generator().manual_seed(42))
+    ds_train, ds_val, ds_test = torch.utils.data.random_split(
+        ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+    )
 
     ## Build the model
-    if args.model == 'e3nn':
+    if args.model == "e3nn":
         ## Need to add one-hot encodings to the dataset
         ds_train = add_one_hot_encodings(ds_train)
         ds_val = add_one_hot_encodings(ds_val)
@@ -291,12 +353,13 @@ def init(args, rank=False):
         if args.model_params is None:
             model_params = calc_e3nn_model_info(ds_train, 3.5)
         elif os.path.isfile(args.model_params):
-            model_params = pkl.load(open(args.model_params, 'rb'))
+            model_params = pkl.load(open(args.model_params, "rb"))
         else:
             model_params = calc_e3nn_model_info(ds_train, 3.5)
-            pkl.dump(model_params, open(args.model_params, 'wb'))
-        model = build_model_e3nn(100, *model_params[1:], node_attr=args.lig,
-            dg=args.dg)
+            pkl.dump(model_params, open(args.model_params, "wb"))
+        model = build_model_e3nn(
+            100, *model_params[1:], node_attr=args.lig, dg=args.dg
+        )
         model_call = lambda model, d: model(d)
 
         ## Add lig labels as node attributes if requested
@@ -305,19 +368,21 @@ def init(args, rank=False):
             ds_val = add_lig_labels(ds_val)
             ds_test = add_lig_labels(ds_test)
 
-        for k,v in ds_train[0][1].items():
+        for k, v in ds_train[0][1].items():
             print(k, v.shape, flush=True)
-    elif args.model == 'schnet':
-        model = build_model_schnet(args.qm9, args.dg, args.qm9_target,
-            args.rm_atomref)
+    elif args.model == "schnet":
+        model = build_model_schnet(
+            args.qm9, args.dg, args.qm9_target, args.rm_atomref
+        )
         if args.dg:
-            model_call = lambda model, d: model(d['z'], d['pos'], d['lig'])
+            model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
         else:
-            model_call = lambda model, d: model(d['z'], d['pos'])
+            model_call = lambda model, d: model(d["z"], d["pos"])
     else:
-        raise ValueError(f'Unknown model type {args.model}.')
+        raise ValueError(f"Unknown model type {args.model}.")
 
-    return(exp_affinities, ds_train, ds_val, ds_test, model, model_call)
+    return (exp_affinities, ds_train, ds_val, ds_test, model, model_call)
+
 
 def main():
     args = get_args()
@@ -329,19 +394,22 @@ def main():
         model.load_state_dict(torch.load(wts_fn))
 
         ## Load error dicts
-        if os.path.isfile(f'{args.model_o}/train_err.pkl'):
-            train_loss = pkl.load(open(f'{args.model_o}/train_err.pkl',
-                'rb')).tolist()
+        if os.path.isfile(f"{args.model_o}/train_err.pkl"):
+            train_loss = pkl.load(
+                open(f"{args.model_o}/train_err.pkl", "rb")
+            ).tolist()
         else:
             train_loss = []
-        if os.path.isfile(f'{args.model_o}/val_err.pkl'):
-            val_loss = pkl.load(open(f'{args.model_o}/val_err.pkl',
-                'rb')).tolist()
+        if os.path.isfile(f"{args.model_o}/val_err.pkl"):
+            val_loss = pkl.load(
+                open(f"{args.model_o}/val_err.pkl", 'rb')
+            ).tolist()
         else:
             val_loss = []
-        if os.path.isfile(f'{args.model_o}/test_err.pkl'):
-            test_loss = pkl.load(open(f'{args.model_o}/test_err.pkl',
-                'rb')).tolist()
+        if os.path.isfile(f"{args.model_o}/test_err.pkl"):
+            test_loss = pkl.load(
+                open(f"{args.model_o}/test_err.pkl", "rb")
+            ).tolist()
         else:
             test_loss = []
 
@@ -355,15 +423,28 @@ def main():
         test_loss = []
 
     ## Train the model
-    model, train_loss, val_loss, test_loss = train(model, ds_train, ds_val,
-        ds_test, exp_affinities, args.n_epochs, torch.device(args.device),
-        model_call, args.model_o, args.lr, start_epoch, train_loss, val_loss,
-        test_loss)
+    model, train_loss, val_loss, test_loss = train(
+        model,
+        ds_train,
+        ds_val,
+        ds_test,
+        exp_affinities,
+        args.n_epochs,
+        torch.device(args.device),
+        model_call,
+        args.model_o,
+        args.lr,
+        start_epoch,
+        train_loss,
+        val_loss,
+        test_loss,
+    )
 
     ## Plot loss
     if args.plot_o is not None:
         plot_loss(train_loss.mean(axis=1), val_loss.mean(axis=1),
             test_loss.mean(axis=1), args.plot_o)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

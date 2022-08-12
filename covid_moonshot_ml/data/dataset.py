@@ -1,15 +1,13 @@
-from Bio.PDB.PDBParser import PDBParser
-import numpy as np
-from rdkit.Chem import GetPeriodicTable
-import torch
 from torch.utils.data import Dataset
+
 
 class DockedDataset(Dataset):
     """
     Class for loading docking results into a dataset to be used for graph
     learning.
     """
-    def __init__(self, str_fns, compounds, ignore_h=True, lig_resn='LIG'):
+
+    def __init__(self, str_fns, compounds, ignore_h=True, lig_resn="LIG"):
         """
         Parameters
         ----------
@@ -24,22 +22,25 @@ class DockedDataset(Dataset):
             The residue name for the ligand molecules in the PDB files. Used to
             identify which atoms belong to the ligand
         """
+        from Bio.PDB.PDBParser import PDBParser
+        from rdkit.Chem import GetPeriodicTable
+        import torch
 
         super(DockedDataset, self).__init__()
-
 
         table = GetPeriodicTable()
         self.compounds = {}
         self.structures = []
         for i, (fn, compound) in enumerate(zip(str_fns, compounds)):
-            s = PDBParser().get_structure(f'{compound[0]}_{compound[1]}', fn)
+            s = PDBParser().get_structure(f"{compound[0]}_{compound[1]}", fn)
             ## Filter out water residues
-            all_atoms = [a for a in s.get_atoms() if a.parent.resname != 'HOH']
+            all_atoms = [a for a in s.get_atoms() if a.parent.resname != "HOH"]
             if ignore_h:
-                all_atoms = [a for a in all_atoms if a.element != 'H']
+                all_atoms = [a for a in all_atoms if a.element != "H"]
             ## Fix multi-letter atom elements being in all caps (eg CL)
-            atomic_nums = [table.GetAtomicNumber(a.element.title()) \
-                for a in all_atoms]
+            atomic_nums = [
+                table.GetAtomicNumber(a.element.title()) for a in all_atoms
+            ]
             atom_pos = [tuple(a.get_vector()) for a in all_atoms]
             is_lig = [a.parent.resname == lig_resn for a in all_atoms]
 
@@ -47,15 +48,17 @@ class DockedDataset(Dataset):
                 self.compounds[compound].append(i)
             except KeyError:
                 self.compounds[compound] = [i]
-            self.structures.append({
-                'z': torch.tensor(atomic_nums),
-                'pos': torch.tensor(atom_pos).float(),
-                'lig': torch.tensor(is_lig),
-                'compound': compound
-            })
+            self.structures.append(
+                {
+                    "z": torch.tensor(atomic_nums),
+                    "pos": torch.tensor(atom_pos).float(),
+                    "lig": torch.tensor(is_lig),
+                    "compound": compound,
+                }
+            )
 
     def __len__(self):
-        return(len(self.structures))
+        return len(self.structures)
 
     def __getitem__(self, idx):
         """
@@ -77,6 +80,8 @@ class DockedDataset(Dataset):
             - `lig`: ligand identifier
             - `compound`: tuple of (crystal_structure, compound_id)
         """
+        import torch
+
         ## Extract idx from inside the tensor object
         if torch.is_tensor(idx):
             try:
@@ -96,8 +101,12 @@ class DockedDataset(Dataset):
                 idx_type = int
             else:
                 idx_type = tuple
-                if (type(idx) is tuple) and (len(idx) == 2) and \
-                    (type(idx[0]) is str) and (type(idx[1]) is str):
+                if (
+                    (type(idx) is tuple)
+                    and (len(idx) == 2)
+                    and (type(idx[0]) is str)
+                    and (type(idx[1]) is str)
+                ):
                     idx = [idx]
                 else:
                     idx = [tuple(i) for i in idx]
@@ -108,16 +117,15 @@ class DockedDataset(Dataset):
             str_idx_list = idx
         else:
             ## Need to find the structures that correspond to this compound(s)
-            str_idx_list = [i \
-                for c in idx for i in self.compounds[c]]
+            str_idx_list = [i for c in idx for i in self.compounds[c]]
 
         str_list = [self.structures[i] for i in str_idx_list]
-        compounds = [s['compound'] for s in str_list]
+        compounds = [s["compound"] for s in str_list]
         if return_list:
-            return(compounds, str_list)
+            return (compounds, str_list)
         else:
-            return(compounds[0], str_list[0])
+            return (compounds[0], str_list[0])
 
     def __iter__(self):
         for s in self.structures:
-            yield (s['compound'], s)
+            yield (s["compound"], s)
