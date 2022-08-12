@@ -11,7 +11,7 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../')
+sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from covid_moonshot_ml.data.dataset import DockedDataset
 from covid_moonshot_ml.nn import E3NNBind, SchNetBind
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
@@ -335,8 +335,13 @@ def init(args, rank=False):
     n_train = int(len(ds) * 0.8)
     n_val = int(len(ds) * 0.1)
     n_test = len(ds) - n_train - n_val
-    print((f"{n_train} training samples, {n_val} validation samples, "
-        f"{n_test} testing samples"), flush=True)
+    print(
+        (
+            f"{n_train} training samples, {n_val} validation samples, "
+            f"{n_test} testing samples"
+        ),
+        flush=True,
+    )
     # use fixed seed for reproducibility
     ds_train, ds_val, ds_test = torch.utils.data.random_split(
         ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
@@ -402,7 +407,7 @@ def main():
             train_loss = []
         if os.path.isfile(f"{args.model_o}/val_err.pkl"):
             val_loss = pkl.load(
-                open(f"{args.model_o}/val_err.pkl", 'rb')
+                open(f"{args.model_o}/val_err.pkl", "rb")
             ).tolist()
         else:
             val_loss = []
@@ -442,8 +447,12 @@ def main():
 
     ## Plot loss
     if args.plot_o is not None:
-        plot_loss(train_loss.mean(axis=1), val_loss.mean(axis=1),
-            test_loss.mean(axis=1), args.plot_o)
+        plot_loss(
+            train_loss.mean(axis=1),
+            val_loss.mean(axis=1),
+            test_loss.mean(axis=1),
+            args.plot_o,
+        )
 
 
 if __name__ == "__main__":

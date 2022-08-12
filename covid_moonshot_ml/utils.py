@@ -292,12 +292,13 @@ def train(
                 pred = model_call(model, pose)
                 for k, v in pose.items():
                     try:
-                        pose[k] = v.to('cpu')
+                        pose[k] = v.to("cpu")
                     except AttributeError:
                         pass
                 # convert to float to match other types
-                target = torch.tensor([[target_dict[compound_id]]],
-                    device=device).float()
+                target = torch.tensor(
+                    [[target_dict[compound_id]]], device=device
+                ).float()
                 loss = loss_fn(pred, target)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
