@@ -1,11 +1,13 @@
 import numpy as np
 from torch_geometric.nn import SchNet
 
+
 class SchNetBind(SchNet):
     """
     Light wrapper over the SchNet model from e3nn to compute a binding affinity
     of a ligand.
     """
+
     def __init__(self, *args, **kwargs):
         super(SchNetBind, self).__init__(*args, **kwargs)
 
@@ -37,7 +39,7 @@ class SchNetBind(SchNet):
         ##  away from its original position
         # pos shouldn't require grad but just make sure
         new_pos = pos.detach().clone()
-        new_pos[lig,:] += 100
+        new_pos[lig, :] += 100
 
         ## Calculate total energy of the ligand and Mpro separately
         e_sep = super(SchNetBind, self).forward(z, new_pos)
@@ -49,6 +51,6 @@ class SchNetBind(SchNet):
         ## [dG] = eV (from SchNet)
         ## kt = 25.7 meV = 25.7e-3 eV
         dG = e_complex - e_sep
-        target_pred = -dG/(25.7e-3)*(np.log10(np.e))
+        target_pred = -dG / (25.7e-3) * (np.log10(np.e))
 
-        return(target_pred)
+        return target_pred
