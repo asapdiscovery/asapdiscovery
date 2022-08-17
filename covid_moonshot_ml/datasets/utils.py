@@ -734,7 +734,6 @@ def parse_fragalysis_data(frag_fn,
     for data in sars2_filtered.to_dict('index').values():
         cmpd_id = data["Compound ID"]
         dataset = data["Dataset"]
-        print(cmpd_id, dataset)
         if len(dataset) > 0:
             if not sars_xtals.get(cmpd_id) or '-P' in dataset:
                 sars_xtals[cmpd_id] = CrystalCompoundData(
@@ -745,10 +744,6 @@ def parse_fragalysis_data(frag_fn,
                 )
         else:
             sars_xtals[cmpd_id] = CrystalCompoundData()
-    print(sars_xtals.items())
-
-    for cmpd_id, xtal in sars_xtals.items():
-        print(xtal.compound_id, xtal.dataset)
 
     return sars_xtals
 
