@@ -31,11 +31,6 @@ from covid_moonshot_ml.modeling import du_to_complex, make_du_from_new_lig
 
 
 def add_compound_id(in_fn, frag_xtal_fn, frag_xtal_dir, out_fn=None):
-    from covid_moonshot_ml.datasets.utils import (
-        parse_fragalysis_data,
-        get_compound_id_xtal_dicts,
-    )
-
     compound_id_dict = get_compound_id_xtal_dicts(
         parse_fragalysis_data(frag_xtal_fn, frag_xtal_dir).values()
     )[1]
