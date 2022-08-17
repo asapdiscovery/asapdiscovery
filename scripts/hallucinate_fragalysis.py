@@ -225,7 +225,10 @@ def main():
 
         ## Map all holo structure names to their ligand name
         all_holo_names = [
-            compound_id_dict[n.split("_")[0]] for n in all_holo_names
+            f'{compound_id_dict[n.split("_")[0]]}_{n.split("_")[1]}'
+            if n.split("_")[0] in compound_id_dict
+            else n
+            for n in all_holo_names
         ]
 
     print(f"{len(all_apo_fns)} apo structures")
