@@ -137,7 +137,7 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
     import matplotlib.pyplot as plt
     import seaborn as sns
 
-    fig, axes = plt.subplots(nrows=2, figsize=(12, 8), sharex=True)
+    fig, axes = plt.subplots(nrows=3, figsize=(12, 8), sharex=True)
     sns.lineplot(x=range(len(train_loss)), y=train_loss, ax=axes[0])
     sns.lineplot(x=range(len(val_loss)), y=val_loss, ax=axes[1])
     sns.lineplot(x=range(len(test_loss)), y=test_loss, ax=axes[2])
