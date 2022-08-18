@@ -1,3 +1,4 @@
+import torch
 from torch.nn.modules.loss import MSELoss as TorchMSELoss
 
 
@@ -52,7 +53,7 @@ class MSELoss(TorchMSELoss):
             Model prediction
         target : torch.Tensor
             Prediction target
-        in_range : int
+        in_range : torch.Tensor
             `target`'s presence in the dynamic range of the assay. Give a value
             of < 0 for `target` below lower bound, > 0 for `target` above upper
             bound, and 0 or None for inside range
@@ -87,11 +88,27 @@ class MSELoss(TorchMSELoss):
 
     def uncertainty_loss(self, input, target, uncertainty):
         """
-        Uncertainty MSE loss calculation.
+        Uncertainty MSE loss calculation. Loss for each sample is calculated by
+        first dividing the difference between `input` and `target` by the
+        uncertainty in the `target` measurement.
 
         Parameters
         ----------
+        input : torch.Tensor
+            Model prediction
+        target : torch.Tensor
+            Prediction target
+        uncertainty : torch.Tensor
+            Uncertainty in `target` measurements
 
         Returns
         -------
         """
+        ## Calculate loss
+        loss = super(MSELoss, self).forward(input, target)
+
+        ## Divide by uncertainty squared
+        loss /= (uncertainty ** 2)
+
+        return loss.mean()
+
