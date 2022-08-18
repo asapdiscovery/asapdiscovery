@@ -42,11 +42,11 @@ class Rock():
 
         """
         n_poses = len(df)
-        n_good_poses = sum(df[self.rmsd_name] <= 2)
+        n_good_poses = sum(df[self.rmsd_name] <= 3)
         n_bad_poses = n_poses - n_good_poses
 
         n_cmpds = len(set(df.Compound_ID))
-        set_of_good_cmpds = set(df[df[self.rmsd_name] <= 2].Compound_ID)
+        set_of_good_cmpds = set(df[df[self.rmsd_name] <= 3].Compound_ID)
         n_good_cmpds = len(set_of_good_cmpds)
         n_bad_cmpds = n_cmpds - n_good_cmpds
 
@@ -87,7 +87,7 @@ class Rock():
             df = self.df
             total_poses = self.total_poses
             total_good_poses = self.total_good_poses
-            total_bad_pos = self.total_cmpds
+            total_bad_poses = self.total_bad_poses
             total_good_cmpds = self.total_good_cmpds
             total_bad_cmpds = self.total_bad_cmpds
 
@@ -142,7 +142,7 @@ class Rock():
         if bootstrap:
             self.auc_list.append(self.calc_auc(false_positive_rates_poses, true_positive_rates_poses))
         else:
-            self.true_positive_rates = true_positive_rates_poses
+            self.true_positive_rates_poses = true_positive_rates_poses
             self.false_positive_rates_poses = false_positive_rates_poses
             self.auc = self.calc_auc(false_positive_rates_poses, true_positive_rates_poses)
 
