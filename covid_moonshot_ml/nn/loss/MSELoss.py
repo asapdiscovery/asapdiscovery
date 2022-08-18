@@ -14,7 +14,8 @@ class MSELoss(TorchMSELoss):
              * "step": step MSE loss
              * "uncertainty": MSE loss with added uncertainty
         """
-        super(MSELoss, self).__init__()
+        ## No reduction so we can apply whatever adjustment to each sample
+        super(MSELoss, self).__init__(reduction="none")
 
         if loss_type is not None:
             loss_type = loss_type.lower()
@@ -35,7 +36,7 @@ class MSELoss(TorchMSELoss):
         appropriate loss calculation function based on `self. loss_type`.
         """
 
-        return self.loss_function(*args, **kwargs)
+        return self.loss_function(*args, **kwargs).mean()
 
     def step_loss(self, input, target, in_range):
         """
@@ -61,24 +62,28 @@ class MSELoss(TorchMSELoss):
         torch.Tensor
             Calculated loss
         """
-        ### Need to redo this because this onlny works if the input has a batch
-        ###  size of 1
         ## Calculate loss
         loss = super(MSELoss, self).forward(input, target)
 
-        ## If no value given for `in_range` or input is inside the assay range
-        if in_range == 0:
-            return loss
+        ## Calculate mask
+        mask = [1.0 if r == 0 else ]
+        mask = []
+        for i in range(len(in_range)):
+            ## If input is inside the assay range
+            if in_range[i] == 0:
+                m = 1.0
+            ## If the target value is below the lower bound of the assay range,
+            ##  only compute loss if input is inside range
+            elif in_range[i] < 0:
+                m = target[i] < input[i]
+            ## If the target value is above the upper bound of the assay range,
+            ##  only compute loss if input is inside range
+            elif in_range[i] > 0:
+                m = target[i] > input[i]
+            mask.append(m)
+        mask = torch.tensor(mask)
 
-        ## If the target value is below the lower bound of the assay range,
-        ##  only compute loss if input is inside range
-        if in_range < 0:
-            return (target > input) * loss
-
-        ## If the target value is above the upper bound of the assay range,
-        ##  only compute loss if input is inside range
-        if in_range > 0:
-            return (target < input) * loss
+        return (mask * loss).mean()
 
     def uncertainty_loss(self, input, target, uncertainty):
         """
