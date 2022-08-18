@@ -25,7 +25,7 @@ def main():
     dd.read_pkl()
     dd.analyze_docking_results(args.f,
                                args.c,
-                               test=False)
+                               test=True)
 
 if __name__ == '__main__':
     main()
