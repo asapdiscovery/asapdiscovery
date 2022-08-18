@@ -286,9 +286,15 @@ def train(
                         pass
                 # convert to float to match other types
                 target = torch.tensor(
-                    [[target_dict[compound_id]]], device=device
+                    [[target_dict[compound_id]["pIC50"]]], device=device
                 ).float()
-                loss = loss_fn(pred, target)
+                in_range = torch.tensor(
+                    [[target_dict[compound_id]["pIC50_range"]]], device=device
+                ).float()
+                uncertainty = torch.tensor(
+                    [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+                ).float()
+                loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             test_loss.append(np.asarray(tmp_loss))
 
@@ -307,9 +313,15 @@ def train(
                         pass
                 # convert to float to match other types
                 target = torch.tensor(
-                    [[target_dict[compound_id]]], device=device
+                    [[target_dict[compound_id]["pIC50"]]], device=device
                 ).float()
-                loss = loss_fn(pred, target)
+                in_range = torch.tensor(
+                    [[target_dict[compound_id]["pIC50_range"]]], device=device
+                ).float()
+                uncertainty = torch.tensor(
+                    [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+                ).float()
+                loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
 
