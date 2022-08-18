@@ -21,7 +21,7 @@ class DockingDataset():
         ## make sure this directory exists
         cmpd_dir = os.path.join(self.dir_path, cmpd_id)
         print(cmpd_dir)
-        assert os.path.exists(cmpd_dir)
+        #assert os.path.exists(cmpd_dir)
         return cmpd_dir
 
     def organize_docking_results(self):
