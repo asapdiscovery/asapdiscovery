@@ -31,13 +31,19 @@ class MSELoss(TorchMSELoss):
 
         self.loss_type = loss_type
 
-    def forward(self, *args, **kwargs):
+    def forward(self, input, target, in_range, uncertainty):
         """
-        Dispatch method for calculating loss. All arguments are passed to the
-        appropriate loss calculation function based on `self. loss_type`.
+        Dispatch method for calculating loss. All arguments should be passed
+        regardless of actual loss function to keep an identical signature for
+        this class. Data is passed to `self.loss_function`.
         """
 
-        return self.loss_function(*args, **kwargs).mean()
+        if self.loss_type is None:
+            return self.loss_function(input, target).mean()
+        elif self.loss_type == "step":
+            return self.loss_function(input, target, in_range)
+        elif self.loss_type == "uncertainty":
+            return self.loss_function(input, target, uncertainty)
 
     def step_loss(self, input, target, in_range):
         """
@@ -67,7 +73,6 @@ class MSELoss(TorchMSELoss):
         loss = super(MSELoss, self).forward(input, target)
 
         ## Calculate mask
-        mask = [1.0 if r == 0 else ]
         mask = []
         for i in range(len(in_range)):
             ## If input is inside the assay range
@@ -108,7 +113,6 @@ class MSELoss(TorchMSELoss):
         loss = super(MSELoss, self).forward(input, target)
 
         ## Divide by uncertainty squared
-        loss /= (uncertainty ** 2)
+        loss /= uncertainty**2
 
         return loss.mean()
-
