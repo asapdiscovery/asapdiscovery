@@ -1,7 +1,7 @@
 import pickle as pkl
 import pandas as pd
 import os
-from ..data.openeye import load_openeye_sdf, get_ligand_rmsd_openeye
+from ..data.openeye import load_openeye_sdf, load_openeye_pdb, get_ligand_rmsd_openeye, split_openeye_mol
 from openeye import oechem
 
 class DockingDataset():
@@ -65,10 +65,12 @@ class DockingDataset():
 
                     ## however its a convenient way of identifying which is the original xtal
                     ref_xtal = xtal
-                    ref_sdf_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}.sdf"
+                    # ref_sdf_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}.sdf"
+                    ref_pdb_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
 
                     ## save the ref filename to the dictionary and make the mcss_rank -1
-                    ref_fn_dict[cmpd_id] = ref_sdf_fn
+                    # ref_fn_dict[cmpd_id] = ref_sdf_fn
+                    ref_fn_dict[cmpd_id] = ref_pdb_fn
                     mcss_rank = -1
 
                 ## append all the stuff to lists!
@@ -79,7 +81,7 @@ class DockingDataset():
                 sdf_fns.append(fn)
                 cmplx_ids.append(f"{cmpd_id}_{xtal}_{chain}_{mcss_rank}")
 
-        ref_sdf_fns = [ref_fn_dict[cmpd_id] for cmpd_id in cmpd_ids]
+        ref_fns = [ref_fn_dict[cmpd_id] for cmpd_id in cmpd_ids]
 
         self.df = pd.DataFrame(
             {"Complex_ID": cmplx_ids,
@@ -88,7 +90,7 @@ class DockingDataset():
              "Chain_ID": chain_ids,
              "MCSS_Rank": mcss_ranks,
              "SDF_Filename": sdf_fns,
-             "Reference_SDF": ref_sdf_fns
+             "Reference": ref_fns
              }
         )
 
@@ -100,7 +102,7 @@ class DockingDataset():
         for data in self.df.to_dict(orient='index').values():
             cmpd_id = data["Compound_ID"]
             sdf_fn = data["SDF_Filename"]
-            ref_fn = data["Reference_SDF"]
+            ref_fn = data["Reference"]
 
             cmpd_dir = self.get_cmpd_dir_path(cmpd_id)
 
@@ -108,13 +110,20 @@ class DockingDataset():
             ref_path = os.path.join(fragalysis_dir, ref_fn)
 
             print(f"Loading rmsd calc on {sdf_path} compared to {ref_path}")
-            ref = load_openeye_sdf(ref_path)
+            # ref = load_openeye_sdf(ref_path)
+            ref_pdb = load_openeye_pdb(ref_path)
+            ref = split_openeye_mol(ref_pdb)["lig"]
             mobile = load_openeye_sdf(sdf_path)
 
             posit_scores.append(oechem.OEGetSDData(mobile, "POSIT::Probability"))
             docking_scores.append(oechem.OEGetSDData(mobile, "Chemgauss4"))
 
-            rmsd = get_ligand_rmsd_openeye(ref, mobile)
+            for a in mobile.GetAtoms():
+                if a.GetAtomicNum() == 1:
+                    mobile.DeleteAtom(a)
+
+            # rmsd = get_ligand_rmsd_openeye(ref, mobile)
+            rmsd = oechem.OERMSD(ref, mobile)
             rmsds.append(rmsd)
 
         self.df["POSIT"] = posit_scores
