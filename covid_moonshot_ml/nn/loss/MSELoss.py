@@ -72,22 +72,16 @@ class MSELoss(TorchMSELoss):
         ## Calculate loss
         loss = super(MSELoss, self).forward(input, target)
 
-        ## Calculate mask
-        mask = []
-        for i in range(len(in_range)):
-            ## If input is inside the assay range
-            if in_range[i] == 0:
-                m = 1.0
-            ## If the target value is below the lower bound of the assay range,
-            ##  only compute loss if input is inside range
-            elif in_range[i] < 0:
-                m = target[i] < input[i]
-            ## If the target value is above the upper bound of the assay range,
-            ##  only compute loss if input is inside range
-            elif in_range[i] > 0:
-                m = target[i] > input[i]
-            mask.append(m)
-        mask = torch.tensor(mask)
+        ## Calculate mask:
+        ##  1.0 - If input or data is semiquant and prediction is inside the
+        ##    assay range
+        ##  0.0 - If data is semiquant and prediction is outside the assay range
+        mask = torch.tensor(
+            [
+                1.0 if r == 0 else ((r < 0) == (t < i))
+                for i, t, r in zip(input, target, in_range)
+            ]
+        )
 
         return (mask * loss).mean()
 
