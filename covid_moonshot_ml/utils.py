@@ -159,6 +159,7 @@ def train(
     n_epochs,
     device,
     model_call=lambda model, d: model(d),
+    loss_fn=None,
     save_file=None,
     lr=1e-4,
     start_epoch=0,
@@ -185,6 +186,8 @@ def train(
         Number of epochs to train for
     device : torch.device
         Where to run the training
+    loss_fn : cml.nn.MSELoss
+        Loss function
     model_call : function(model, dict), default=lambda model, d: model(d)
         Function for calling the model. This is present to account for
         differences in calling the SchNet and e3nn models
@@ -221,13 +224,14 @@ def train(
     """
     import pickle as pkl
     import torch
+    from .nn import MSELoss
 
     ## Send model to desired device if it's not there already
     model.to(device)
 
     ## Set up optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters(), lr)
-    loss_fn = torch.nn.MSELoss()
+    loss_fn = MSELoss()
 
     ## Train for n epochs
     for epoch_idx in range(start_epoch, n_epochs):
@@ -252,9 +256,15 @@ def train(
                     pass
             # convert to float to match other types
             target = torch.tensor(
-                [[target_dict[compound_id]]], device=device
+                [[target_dict[compound_id]["pIC50"]]], device=device
             ).float()
-            loss = loss_fn(pred, target)
+            in_range = torch.tensor(
+                [[target_dict[compound_id]["pIC50_range"]]], device=device
+            ).float()
+            uncertainty = torch.tensor(
+                [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+            ).float()
+            loss = loss_fn(pred, target, in_range, uncertainty)
             tmp_loss.append(loss.item())
             loss.backward()
             optimizer.step()
