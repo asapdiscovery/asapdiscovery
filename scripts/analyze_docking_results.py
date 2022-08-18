@@ -13,7 +13,7 @@ def get_args():
     parser.add_argument('-f', required=True,
                         help='Directory containing fragalysis data.')
 
-    parser.add_argument('-c', required=True, description='name of csv file')
+    parser.add_argument('-c', required=True, help='name of csv file')
 
     return parser.parse_args()
 
