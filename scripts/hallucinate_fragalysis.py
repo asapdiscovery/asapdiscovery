@@ -100,9 +100,12 @@ def mp_func(
     os.makedirs(out_base, exist_ok=True)
     out_fn = f"{out_base}/predocked"
 
+    ## Make copy of lig so we don't modify original
+    lig_copy = lig.CreateCopy()
+
     ## Make design unit and prep the receptor
     try:
-        du = make_du_from_new_lig(apo_prot, lig, ref_prot, False, False)
+        du = make_du_from_new_lig(apo_prot, lig_copy, ref_prot, False, False)
     except AssertionError:
         print(f"Design unit generation failed for {lig_name}/{apo_name}")
         results = (lig_name, apo_name, None, -1.0, -1.0, -1.0)
@@ -131,10 +134,13 @@ def mp_func(
 
     save_openeye_sdf(docked_mol, f"{out_base}/docked.sdf")
 
+    ## Need to remove Hs for RMSD calc
+    docked_copy = docked_mol.CreateCopy()
+    for a in docked_copy.GetAtoms():
+        if a.GetAtomicNum() == 1:
+            docked_copy.DeleteAtom(a)
     ## Calculate RMSD
-    orig_mol = oechem.OEGraphMol()
-    du.GetLigand(orig_mol)
-    rmsd = oechem.OERMSD(orig_mol, docked_mol)
+    rmsd = oechem.OERMSD(lig, docked_copy)
 
     results = (
         lig_name,
