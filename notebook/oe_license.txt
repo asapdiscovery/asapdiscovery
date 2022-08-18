@@ -1,0 +1,176 @@
+################# ACADEMIC LICENSE ##################################
+#                                                                   #
+#   This file is a license for OpenEye Scientific Software.  Any    #
+#   modifications to this file may invalidate the license.          #
+#                                                                   #
+#   The Laboratory of John Chodera                                  #
+#   Memorial Sloan Kettering Cancer Center                          #
+#                                                                   #
+#   Tue Aug  9 08:22:25 2022                                        #
+#####################################################################
+#PRODUCT: bioisostere
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 6b7f7765ad285e2f6d4f644cac797b18761d1d9ca8d5359046adf97385d69ee0
+#PRODUCT: docking
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 8e1ae6d7b9d41b46efbb155727c613172d37186a424576367776c3dd39ab4ce1
+#PRODUCT: eon
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 5da9856c0b5ca45636110b72e3426c38110a3bcb5274d37e27fc6864c432c74a
+#PRODUCT: fastrocs
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: e347dd7b034c4c3863303c7d423d245e92a26f179dd26cd2a83fc6c280521d6c
+#PRODUCT: filter
+#EXP_DATE: 2023 08 09
+#FEATURES: toolkit;python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 9e60654a2cadc1f001c7539d647c213a502dfb6adc851bc7b629ea440a50600e
+#PRODUCT: fred2
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 532beec5cb272fe66abcf4ca0c123f6acefa9e248315c8e5dfa15ef01ec57632
+#PRODUCT: grapheme
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: d1ce2d2c1cd2a7f8f6b49194a1ebb5565a3898ae55eb26aeffe006afb5c59e70
+#PRODUCT: graphsim
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: cd2957c135f16ddbe50f194b82fe1bda100868d9881420e56fbb2838bdebf807
+#PRODUCT: iupac
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: fe675a8015a210deedf60574aa7463974071c90346fc4813ae164ce30f7837bb
+#PRODUCT: oechem
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: d96c5d88f073d43156a5e9f29f3b537307c48a28f032448f7af3e925649d6a27
+#PRODUCT: oedepict
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 6de98da7849e45c479debe07d105eb1c34c41930df85cc736495b97d9e8da71b
+#PRODUCT: oemedchem
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 7e82024d7d4c023fc8559c90e43a31a24ed522d3c7eb534322b1eaf9549214e2
+#PRODUCT: omega
+#EXP_DATE: 2023 08 09
+#FEATURES: gas-phase;toolkit;python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 1be93852011f7fcc6f6907a018713322e74d26312171f5e0ff83a3b795388fa8
+#PRODUCT: omega-db
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: bc25741fcc7e292f95d65219c84bb654a67399825509cc418a486ff99c068ca4
+#PRODUCT: posit
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 82db1124c64f0d207d3d5584c90e39b829390cd6441ac3e32abd979037798af6
+#PRODUCT: quacpac
+#EXP_DATE: 2023 08 09
+#FEATURES: beta;python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: a1b9c95d97cfcc2b30d53ef86814cf57376fbbd280943c6825500290e8250b80
+#PRODUCT: rocs
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 7bad28d2edef248f57ed569d3d12057cea57d3ff7141f317648b5948a4485ff9
+#PRODUCT: shape
+#EXP_DATE: 2023 08 09
+#FEATURES: molecules;grids;python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: ffeb6a34fdf085a72156fad7cb9e9e64d2151ceaab304384cb9544fb94b6d1ee
+#PRODUCT: sitehoppertk
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 48a1d676b55b102831391c6d29b8c314aab29ed15558c06ab67fa0484384316f
+#PRODUCT: sitehopper
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 5ddceeb8d52cb0b076cc6049c3a76541b1cf0ea1b26073a24c5b2681d14b62b9
+#PRODUCT: spicoli
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: f9651c07c9b9b833a3d7142b5cf01cda189ba6603f5a397d05a90c763cebbb25
+#PRODUCT: sprucetk
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: a5f3eee592b6ba7f1662ed2e33c5ca825147b2c466d6ddc8b3f0949e74475c4f
+#PRODUCT: spruce
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 3002a71942bacdee89303aacce7a6a68ab782e4a729c22847bcd791393bffe10
+#PRODUCT: szmap
+#EXP_DATE: 2023 08 09
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: f09faabd2c181e17854e0a1565c0a3b77d8f8bf2d970ad9682233d128f20c721
+#PRODUCT: szmaptk
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 507140f10cc67b543504163fc2ae46d48cbe16240cf18010292c89004aee5a17
+#PRODUCT: szybki
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: e80a011c2fbe8b81373bf6a5a239f3cf801dca9c58fd4d8b198ccedf25979cca
+#PRODUCT: case
+#EXP_DATE: 2023 08 09
+#FEATURES: python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 5b1d35d1539e12c4bcabd72b57927d1f368163e641eb492b4837b1236bfab2f2
+#PRODUCT: vida
+#EXP_DATE: 2023 08 09
+#FEATURES: script line
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 4e4a1fa3533597409bf3ed1edf1b986eac9cd697e4ebf03490d422cf3d77badd
+#PRODUCT: zap
+#EXP_DATE: 2023 08 09
+#FEATURES: basic toolkit;protein pka;perfect charge;python;java;clr
+#LICENSEE: The Laboratory of John Chodera
+#SITE: Memorial Sloan Kettering Cancer Center
+LICENSE_KEY: 9b8ea98fa76b6266e95717d96b7d75c6ba5043fd0278d93e3e0f65ce3e5f62b2
+

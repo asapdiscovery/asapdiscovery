@@ -1,4 +1,5 @@
 from openeye import oechem
+import numpy as np
 
 def load_openeye_pdb(pdb_fn):
     ifs = oechem.oemolistream()
@@ -58,4 +59,24 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
 def get_ligand_rmsd_openeye(ref: oechem.OEMolBase,
                     mobile: oechem.OEMolBase):
 
-    return oechem.OERMSD(ref, mobile)
+    # oechem.OERMSD(ref, mobile)
+
+    ## TODO: REMOVE WHEN WE GET PROPER SDF FILES
+    ## this is necessary to compensate for ben's thing
+    oechem.OECanonicalOrderAtoms(mobile)
+    oechem.OECanonicalOrderBonds(mobile)
+
+    oechem.OECanonicalOrderAtoms(ref)
+    oechem.OECanonicalOrderBonds(ref)
+
+    ## this gets the coordinates into a numpy array
+    ref_xyz = np.array(list(ref.GetCoords().values()))
+    mobile_xyz = np.array(list(mobile.GetCoords().values()))
+    n_atoms = len(ref_xyz)
+
+    ## assuming the reference is the one missing hydrogen atoms, and
+    ## that openeye will order them first, then this will get all the non hydrogen atoms
+    ## probably a better way to do this but this works for now
+    rmsd = np.sqrt((((ref_xyz - mobile_xyz[-n_atoms:]) ** 2) * 3).mean())
+
+    return rmsd
