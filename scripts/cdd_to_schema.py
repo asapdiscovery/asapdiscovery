@@ -13,13 +13,20 @@ from covid_moonshot_ml.datasets.utils import cdd_to_schema, cdd_to_schema_pair
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    parser.add_argument('-i', required=True, help='CSV file input from CDD.')
-    parser.add_argument('-json', required=True, help='Output JSON file.')
-    parser.add_argument('-csv', help='Output CSV file.')
-    parser.add_argument('-type', default='std', help=('What type of data is '
-        'being loaded (std: standard, ep: enantiomer pairs)'))
-    parser.add_argument('-achiral', action='store_true',
-        help='Remove chiral molecules.')
+    parser.add_argument("-i", required=True, help="CSV file input from CDD.")
+    parser.add_argument("-json", required=True, help="Output JSON file.")
+    parser.add_argument("-csv", help="Output CSV file.")
+    parser.add_argument(
+        "-type",
+        default="std",
+        help=(
+            "What type of data is "
+            "being loaded (std: standard, ep: enantiomer pairs)"
+        ),
+    )
+    parser.add_argument(
+        "-achiral", action="store_true", help="Remove chiral molecules."
+    )
 
     return parser.parse_args()
 
