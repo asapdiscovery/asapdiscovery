@@ -13,7 +13,7 @@ from torch_geometric.datasets import QM9
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from covid_moonshot_ml.data.dataset import DockedDataset
-from covid_moonshot_ml.nn import E3NNBind, SchNetBind
+from covid_moonshot_ml.nn import E3NNBind, SchNetBind, MSELoss
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import (
     calc_e3nn_model_info,
@@ -99,6 +99,35 @@ def load_affinities(fn, achiral=True):
     }
 
     return affinity_dict
+
+
+def load_exp_data(fn, achiral=True):
+    """
+    Load all experimental data from JSON file of
+    schema.ExperimentalCompoundDataUpdate.
+
+    Parameters
+    ----------
+    fn : str
+        Path to JSON file
+    achiral : bool, default=True
+        Whether to only take achiral molecules
+
+    Returns
+    -------
+    dict[str->dict]
+        Dictionary mapping coumpound id to experimental data
+    """
+    ## Load all compounds with experimental data and filter to only achiral
+    ##  molecules (to start)
+    exp_compounds = ExperimentalCompoundDataUpdate(
+        **json.load(open(fn, "r"))
+    ).compounds
+    exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
+
+    exp_dict = {c.compound_id: c.experimental_data for c in exp_compounds}
+
+    return exp_dict
 
 
 def build_model_e3nn(
@@ -301,10 +330,9 @@ def get_args():
         default=1e-4,
         help="Learning rate for Adam optimizer (defaults to 1e-4).",
     )
-
-    ## Loss function arguments
-    parser.add_argument('-step', action='store_true', help=('Use step loss '
-        '(don\'t penalize for predictions outside of the assay range).'))
+    parser.add_argument(
+        "-loss", help="Loss type. Options are [step, uncertainty]."
+    )
 
     return(parser.parse_args())
 
@@ -320,15 +348,15 @@ def init(args, rank=False):
     compounds = [re.search(re_pat, fn).groups() for fn in all_fns]
 
     if rank:
-        exp_affinities = None
+        exp_data = None
     else:
         ## Load the experimental affinities
-        exp_affinities = load_affinities(args.exp)
+        exp_data = load_exp_data(args.exp)
 
         ## Trim docked structures and filenames to remove compounds that don't have
         ##  experimental data
         all_fns, compounds = zip(
-            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_affinities]
+            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
         )
 
     ## Load the dataset
@@ -389,12 +417,12 @@ def init(args, rank=False):
     else:
         raise ValueError(f"Unknown model type {args.model}.")
 
-    return (exp_affinities, ds_train, ds_val, ds_test, model, model_call)
+    return (exp_data, ds_train, ds_val, ds_test, model, model_call)
 
 
 def main():
     args = get_args()
-    exp_affinities, ds_train, ds_val, ds_test, model, model_call = init(args)
+    exp_data, ds_train, ds_val, ds_test, model, model_call = init(args)
 
     ## Load model weights as necessary
     if args.cont:
@@ -431,11 +459,9 @@ def main():
         test_loss = []
 
     ## Set up the loss function
-    if args.step:
-        from covid_moonshot_ml.nn import MSELoss
-    else:
-        from torch.nn import MSELoss
-    loss_func = MSELoss()
+    loss_func = MSELoss(args.loss)
+    lt = "standard" if args.loss is None else args.loss.lower()
+    print(f"Using {lt} MSE loss", flush=True)
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
@@ -443,10 +469,11 @@ def main():
         ds_train,
         ds_val,
         ds_test,
-        exp_affinities,
+        exp_data,
         args.n_epochs,
         torch.device(args.device),
         model_call,
+        loss_func,
         args.model_o,
         args.lr,
         start_epoch,
