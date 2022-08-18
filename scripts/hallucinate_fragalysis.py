@@ -68,7 +68,7 @@ def add_compound_id(in_fn, frag_xtal_fn, frag_xtal_dir, out_fn=None):
 def check_output(d):
     ## First check for result pickle file
     try:
-        pkl.load(f"{d}/results.pkl")
+        pkl.load(open(f"{d}/results.pkl", "rb"))
     except Exception:
         return False
 
