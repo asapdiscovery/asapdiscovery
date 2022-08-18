@@ -95,6 +95,7 @@ ENV/
 # PyCharm files
 .idea/
 ._*
+.DS*
 
 # Rope project settings
 .ropeproject
