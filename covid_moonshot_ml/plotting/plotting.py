@@ -42,11 +42,11 @@ class Rock():
 
         """
         n_poses = len(df)
-        n_good_poses = sum(df[self.rmsd_name] <= 3)
+        n_good_poses = sum(df[self.rmsd_name] <= 2)
         n_bad_poses = n_poses - n_good_poses
 
         n_cmpds = len(set(df.Compound_ID))
-        set_of_good_cmpds = set(df[df[self.rmsd_name] <= 3].Compound_ID)
+        set_of_good_cmpds = set(df[df[self.rmsd_name] <= 2].Compound_ID)
         n_good_cmpds = len(set_of_good_cmpds)
         n_bad_cmpds = n_cmpds - n_good_cmpds
 
