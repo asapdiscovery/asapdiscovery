@@ -42,11 +42,11 @@ class Rock():
 
         """
         n_poses = len(df)
-        n_good_poses = sum(df[self.rmsd_name] <= 3)
+        n_good_poses = sum(df[self.rmsd_name] <= 2)
         n_bad_poses = n_poses - n_good_poses
 
         n_cmpds = len(set(df.Compound_ID))
-        set_of_good_cmpds = set(df[df[self.rmsd_name] <= 3].Compound_ID)
+        set_of_good_cmpds = set(df[df[self.rmsd_name] <= 2].Compound_ID)
         n_good_cmpds = len(set_of_good_cmpds)
         n_bad_cmpds = n_cmpds - n_good_cmpds
 
@@ -145,6 +145,7 @@ class Rock():
             self.true_positive_rates_poses = true_positive_rates_poses
             self.false_positive_rates_poses = false_positive_rates_poses
             self.auc = self.calc_auc(false_positive_rates_poses, true_positive_rates_poses)
+        return self.auc
 
     def get_bootstrapped_error_bars(self, n_bootstraps):
 
@@ -152,12 +153,14 @@ class Rock():
         self.get_auc_from_df(self.df, bootstrap=False)
 
         ## Then bootstrap CVs
-        _ = [self.get_auc_from_df(self.df.sample(frac=1, replace=True), bootstrap=True) for n in range(n_bootstraps)]
+        self.auc_poses = [self.get_auc_from_df(self.df.sample(frac=1, replace=True), bootstrap=True) for n in range(n_bootstraps)]
 
         auc_poses_array = np.array(self.auc_poses)
         #         auc_cmpds_array = np.array(self.auc_cmpds)
-
-        auc_poses_array.sort()
+        try:
+            auc_poses_array.sort()
+        except:
+            print(auc_poses_array)
         #         auc_cmpds_array.sort()
 
         auc_poses_bounds = math.floor(len(auc_poses_array) * 0.025)
@@ -206,7 +209,9 @@ class Rocks():
         # self.df = df
 
     def clean_dataframe(self):
-        self.df = pd.read_csv(self.csv)
+        df = pd.read_csv(self.csv)
+        df["POSIT_R"] = -df["POSIT"] + 1
+        self.df = df[(df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)]
 
 
     def build_rocks(self):
@@ -257,12 +262,21 @@ class Rocks():
             scaleanchor="x",
             scaleratio=1,
         )
+        fig.add_shape(type='line',
+                      x0=0,
+                      x1=1,
+                      y0=0,
+                      y1=1,
+                      xref='x',
+                      yref="y"
+                      )
+
         return fig
 
     def plot_precision_recall(self):
         fig = ex.line(self.poses_df,
-                      x="False_Positive",
-                      y="True_Positive",
+                      x="True_Positive",
+                      y="Precision",
                       color="Score_Type",
                       hover_data=["Value"],
                       )
@@ -271,3 +285,21 @@ class Rocks():
             scaleanchor="x",
             scaleratio=1,
         )
+        return fig
+
+    def get_compound_results_df(self):
+        total_poses = self.df.groupby('Compound_ID')["RMSD"].count()
+        RMSDs = self.df.groupby('Compound_ID')[['RMSD']].apply(lambda x: x[x <= 2].agg(["count", "min"]))
+        n_good_poses = RMSDs.xs("count", level=1)["RMSD"]
+        min_RMSD = RMSDs.xs("min", level=1)["RMSD"]
+        perc_good_poses = n_good_poses / total_poses
+        min_posit_R = self.df.groupby('Compound_ID')['POSIT_R'].min()
+        cmpd_df = pd.DataFrame({
+            "N_Poses": total_poses,
+            "N_Good_Poses": n_good_poses,
+            "Perc_Good_Poses": perc_good_poses,
+            "Min_RMSD": min_RMSD,
+            "Min_POSIT_R": min_posit_R,
+        })
+        cmpd_df["Compound_ID"] = cmpd_df.index
+        self.cmpd_df = cmpd_df.sort_values("Perc_Good_Poses")
