@@ -55,3 +55,25 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
             'pro': prot_mol,
             'water': water_mol,
             'other': oth_mol}
+
+def get_ligand_rmsd_from_pdb_and_sdf(ref_path,
+                                     mobile_path,
+                                     fetch_docking_results=True):
+    ref_pdb = load_openeye_pdb(ref_path)
+    ref = split_openeye_mol(ref_pdb)["lig"]
+    mobile = load_openeye_sdf(mobile_path)
+
+    for a in mobile.GetAtoms():
+        if a.GetAtomicNum() == 1:
+            mobile.DeleteAtom(a)
+
+    rmsd = oechem.OERMSD(ref, mobile)
+
+    return_dict = {'rmsd': rmsd}
+
+    if fetch_docking_results:
+        return_dict['posit'] = oechem.OEGetSDData(mobile, "POSIT::Probability")
+        return_dict['chemgauss'] = oechem.OEGetSDData(mobile, "Chemgauss4")
+
+    return return_dict
+
