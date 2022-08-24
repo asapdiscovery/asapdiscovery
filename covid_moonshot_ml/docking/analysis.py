@@ -1,7 +1,7 @@
 import pickle as pkl
 import pandas as pd
 import os
-from ..data.openeye import load_openeye_sdf, load_openeye_pdb, get_ligand_rmsd_openeye, split_openeye_mol
+from ..data.openeye import load_openeye_sdf, load_openeye_pdb, get_ligand_rmsd_from_pdb_and_sdf, split_openeye_mol
 from openeye import oechem
 
 class DockingDataset():
@@ -110,21 +110,13 @@ class DockingDataset():
             ref_path = os.path.join(fragalysis_dir, ref_fn)
 
             print(f"Loading rmsd calc on {sdf_path} compared to {ref_path}")
-            # ref = load_openeye_sdf(ref_path)
-            ref_pdb = load_openeye_pdb(ref_path)
-            ref = split_openeye_mol(ref_pdb)["lig"]
-            mobile = load_openeye_sdf(sdf_path)
 
-            posit_scores.append(oechem.OEGetSDData(mobile, "POSIT::Probability"))
-            docking_scores.append(oechem.OEGetSDData(mobile, "Chemgauss4"))
-
-            for a in mobile.GetAtoms():
-                if a.GetAtomicNum() == 1:
-                    mobile.DeleteAtom(a)
-
-            # rmsd = get_ligand_rmsd_openeye(ref, mobile)
-            rmsd = oechem.OERMSD(ref, mobile)
-            rmsds.append(rmsd)
+            docking_results = get_ligand_rmsd_from_pdb_and_sdf(ref_path,
+                                                               mobile_path=sdf_path,
+                                                               fetch_docking_results=True)
+            posit_scores.append(docking_results['posit'])
+            docking_scores.append(docking_results['chemgauss'])
+            rmsds.append(docking_results['rmsd'])
 
         self.df["POSIT"] = posit_scores
         self.df["Chemgauss4"] = docking_scores
