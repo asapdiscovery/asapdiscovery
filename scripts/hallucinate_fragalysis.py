@@ -11,8 +11,6 @@ import pandas
 import pickle as pkl
 import sys
 
-from kinoml.docking.OEDocking import pose_molecules
-
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from covid_moonshot_ml.datasets.utils import (
     get_compound_id_xtal_dicts,
@@ -121,21 +119,47 @@ def mp_func(
     complex_mol = du_to_complex(du)
     save_openeye_pdb(complex_mol, f"{out_fn}.pdb")
 
-    ## Run docking with kinoml
-    dock_lig = oechem.OEGraphMol()
+    ## Set up POSIT docking options
+    opts = oedocking.OEPositOptions()
+    ## kinoml has the below option set, but the accompanying comment implies
+    ##  that we should be ignoring N stereochemistry, which, paradoxically,
+    ##  corresponds to a False option (the default)
+    # opts.SetIgnoreNitrogenStereo(True)
+    opts.SetPositMethods(
+        oedocking.OEPositMethod_FRED
+        | oedocking.OEPositMethod_HYBRID
+        | oedocking.OEPositMethod_SHAPEFIT
+    )
+
+    ## Set up poser object
+    poser = oedocking.OEPosit(opts)
+    poser.AddReceptor(du)
+
+    ## Run posing
+    dock_lig = oechem.OEMol()
     du.GetLigand(dock_lig)
-    try:
-        docked_mol = pose_molecules(du, [dock_lig], score_pose=True)[0]
-    except TypeError:
+    pose_res = oedocking.OESinglePoseResult()
+    ret_code = poser.Dock(pose_res, dock_lig)
+
+    ## Check results
+    if ret_code == oedocking.OEDockingReturnCode_Success:
+        posed_mol = pose_res.GetPose()
+        posit_prob = pose_res.GetProbability()
+
+        ## Get the Chemgauss4 score (adapted from kinoml)
+        pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
+        pose_scorer.Initialize(du)
+        chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
+    else:
         print(f"Pose generation failed for {lig_name}/{apo_name}")
         results = (lig_name, apo_name, None, -1.0, -1.0, -1.0)
         pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
         return results
 
-    save_openeye_sdf(docked_mol, f"{out_base}/docked.sdf")
+    save_openeye_sdf(posed_mol, f"{out_base}/docked.sdf")
 
     ## Need to remove Hs for RMSD calc
-    docked_copy = docked_mol.CreateCopy()
+    docked_copy = posed_mol.CreateCopy()
     for a in docked_copy.GetAtoms():
         if a.GetAtomicNum() == 1:
             docked_copy.DeleteAtom(a)
@@ -147,8 +171,8 @@ def mp_func(
         apo_name,
         f"{out_base}/docked.sdf",
         rmsd,
-        float(oechem.OEGetSDData(docked_mol, "POSIT::Probability")),
-        float(oechem.OEGetSDData(docked_mol, "Chemgauss4")),
+        posit_prob,
+        chemgauss_score,
     )
     pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
     return results
