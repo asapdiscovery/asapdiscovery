@@ -119,32 +119,51 @@ def mp_func(
     complex_mol = du_to_complex(du)
     save_openeye_pdb(complex_mol, f"{out_fn}.pdb")
 
-    ## Set up POSIT docking options
-    opts = oedocking.OEPositOptions()
-    ## kinoml has the below option set, but the accompanying comment implies
-    ##  that we should be ignoring N stereochemistry, which, paradoxically,
-    ##  corresponds to a False option (the default)
-    # opts.SetIgnoreNitrogenStereo(True)
-    opts.SetPositMethods(
-        oedocking.OEPositMethod_FRED
-        | oedocking.OEPositMethod_HYBRID
-        | oedocking.OEPositMethod_SHAPEFIT
-    )
+    # ## Set up POSIT docking options
+    # opts = oedocking.OEPositOptions()
+    # ## kinoml has the below option set, but the accompanying comment implies
+    # ##  that we should be ignoring N stereochemistry, which, paradoxically,
+    # ##  corresponds to a False option (the default)
+    # # opts.SetIgnoreNitrogenStereo(True)
+    # opts.SetPositMethods(
+    #     oedocking.OEPositMethod_FRED | oedocking.OEPositMethod_HYBRID
+    # )
+    # print(
+    #     "posit methods",
+    #     oedocking.OEPositMethod_FRED | oedocking.OEPositMethod_HYBRID,
+    #     opts.GetPositMethods(),
+    #     flush=True,
+    # )
+    # # | oedocking.OEPositMethod_SHAPEFIT
 
     ## Set up poser object
-    poser = oedocking.OEPosit(opts)
-    poser.AddReceptor(du)
+    # poser = oedocking.OEPosit(opts)
+    # poser.AddReceptor(du)
+    poser = oedocking.OEHybrid()
+    poser.Initialize(du)
 
     ## Run posing
     dock_lig = oechem.OEMol()
     du.GetLigand(dock_lig)
-    pose_res = oedocking.OESinglePoseResult()
-    ret_code = poser.Dock(pose_res, dock_lig)
+    # pose_res = oedocking.OESinglePoseResult()
+    # ret_code = poser.Dock(pose_res, dock_lig)
+    posed_mol = oechem.OEMol()
+    ret_code = poser.DockMultiConformerMolecule(posed_mol, dock_lig)
 
     ## Check results
     if ret_code == oedocking.OEDockingReturnCode_Success:
-        posed_mol = pose_res.GetPose()
-        posit_prob = pose_res.GetProbability()
+        # posed_mol = pose_res.GetPose()
+        # posit_prob = pose_res.GetProbability()
+        posit_prob = -1.0
+
+        # print(
+        #     lig_name,
+        #     apo_name,
+        #     pose_res.GetRelaxed(),
+        #     pose_res.GetPositMethod(),
+        #     pose_res.GetHasClash(),
+        #     flush=True,
+        # )
 
         ## Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
@@ -157,14 +176,16 @@ def mp_func(
         return results
 
     save_openeye_sdf(posed_mol, f"{out_base}/docked.sdf")
+    save_openeye_sdf(dock_lig, f"{out_base}/predocked.sdf")
 
-    ## Need to remove Hs for RMSD calc
-    docked_copy = posed_mol.CreateCopy()
-    for a in docked_copy.GetAtoms():
-        if a.GetAtomicNum() == 1:
-            docked_copy.DeleteAtom(a)
+    # ## Need to remove Hs for RMSD calc
+    # docked_copy = posed_mol.CreateCopy()
+    # for a in docked_copy.GetAtoms():
+    #     if a.GetAtomicNum() == 1:
+    #         docked_copy.DeleteAtom(a)
+    # docked_copy = next(iter(oechem.OEApplyStateFromRef(docked_copy, dock_lig)))
     ## Calculate RMSD
-    rmsd = oechem.OERMSD(lig, docked_copy)
+    rmsd = oechem.OERMSD(dock_lig, posed_mol)
 
     results = (
         lig_name,
