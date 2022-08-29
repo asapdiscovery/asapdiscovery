@@ -136,7 +136,7 @@ def mp_func(
     poser.AddReceptor(du)
 
     ## Run posing
-    dock_lig = oechem.OEGraphMol()
+    dock_lig = oechem.OEMol()
     du.GetLigand(dock_lig)
     pose_res = oedocking.OESinglePoseResult()
     ret_code = poser.Dock(pose_res, dock_lig)
@@ -156,10 +156,10 @@ def mp_func(
         pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
         return results
 
-    save_openeye_sdf(docked_mol, f"{out_base}/docked.sdf")
+    save_openeye_sdf(posed_mol, f"{out_base}/docked.sdf")
 
     ## Need to remove Hs for RMSD calc
-    docked_copy = docked_mol.CreateCopy()
+    docked_copy = posed_mol.CreateCopy()
     for a in docked_copy.GetAtoms():
         if a.GetAtomicNum() == 1:
             docked_copy.DeleteAtom(a)
@@ -171,8 +171,8 @@ def mp_func(
         apo_name,
         f"{out_base}/docked.sdf",
         rmsd,
-        float(posit_prob),
-        float(oechem.OEGetSDData(docked_mol, "Chemgauss4")),
+        posit_prob,
+        chemgauss_score,
     )
     pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
     return results
