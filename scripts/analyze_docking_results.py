@@ -1,5 +1,5 @@
 import sys, os, argparse
-sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../')
+sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}')
 from covid_moonshot_ml.docking.analysis import DockingDataset
 
 
@@ -13,7 +13,9 @@ def get_args():
     parser.add_argument('-f', required=True,
                         help='Directory containing fragalysis data.')
 
-    parser.add_argument('-c', required=True, help='name of csv file')
+    parser.add_argument('-c',
+                        required=True,
+                        help='Name of output csv file')
 
     return parser.parse_args()
 
