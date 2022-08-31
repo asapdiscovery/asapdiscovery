@@ -53,6 +53,7 @@ def add_compound_id(in_fn, frag_xtal_fn, frag_xtal_dir, out_fn=None):
         "docked_RMSD",
         "POSIT_prob",
         "chemgauss4_score",
+        "clash",
     ]
     df = df.reindex(columns=new_cols)
 
@@ -85,7 +86,16 @@ def check_output(d):
 
 
 def mp_func(
-    apo_prot, lig, ref_prot, out_dir, apo_name, lig_name, save_du=False
+    apo_prot,
+    lig,
+    ref_prot,
+    out_dir,
+    apo_name,
+    lig_name,
+    dock_sys,
+    relax,
+    hybrid=False,
+    save_du=False,
 ):
 
     out_base = f"{out_dir}/{apo_name}/"
@@ -105,7 +115,10 @@ def mp_func(
     try:
         du = make_du_from_new_lig(apo_prot, lig_copy, ref_prot, False, False)
     except AssertionError:
-        print(f"Design unit generation failed for {lig_name}/{apo_name}")
+        print(
+            f"Design unit generation failed for {lig_name}/{apo_name}",
+            flush=True,
+        )
         results = (lig_name, apo_name, None, -1.0, -1.0, -1.0)
         pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
         return results
@@ -119,42 +132,89 @@ def mp_func(
     complex_mol = du_to_complex(du)
     save_openeye_pdb(complex_mol, f"{out_fn}.pdb")
 
-    # ## Set up POSIT docking options
-    # opts = oedocking.OEPositOptions()
-    # ## kinoml has the below option set, but the accompanying comment implies
-    # ##  that we should be ignoring N stereochemistry, which, paradoxically,
-    # ##  corresponds to a False option (the default)
-    # # opts.SetIgnoreNitrogenStereo(True)
-    # opts.SetPositMethods(
-    #     oedocking.OEPositMethod_FRED | oedocking.OEPositMethod_HYBRID
-    # )
-    # print(
-    #     "posit methods",
-    #     oedocking.OEPositMethod_FRED | oedocking.OEPositMethod_HYBRID,
-    #     opts.GetPositMethods(),
-    #     flush=True,
-    # )
-    # # | oedocking.OEPositMethod_SHAPEFIT
+    ## Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
+    ##  1 if there was a clash that couldn't be resolved)
+    clash = -1
 
-    ## Set up poser object
-    # poser = oedocking.OEPosit(opts)
-    # poser.AddReceptor(du)
-    poser = oedocking.OEHybrid()
-    poser.Initialize(du)
-
-    ## Run posing
+    ## Get ligand to dock
     dock_lig = oechem.OEMol()
     du.GetLigand(dock_lig)
-    # pose_res = oedocking.OESinglePoseResult()
-    # ret_code = poser.Dock(pose_res, dock_lig)
-    posed_mol = oechem.OEMol()
-    ret_code = poser.DockMultiConformerMolecule(posed_mol, dock_lig)
+    if dock_sys == "posit":
+        ## Set up POSIT docking options
+        opts = oedocking.OEPositOptions()
+        ## kinoml has the below option set, but the accompanying comment implies
+        ##  that we should be ignoring N stereochemistry, which, paradoxically,
+        ##  corresponds to a False option (the default)
+        # opts.SetIgnoreNitrogenStereo(True)
+        ## Set the POSIT methods to only be hybrid (otherwise leave as default
+        ##  of all)
+        if hybrid:
+            opts.SetPositMethods(oedocking.OEPositMethod_HYBRID)
+
+        ## Set up pose relaxation
+        if relax == "clash":
+            clash = 0
+            opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_CLASHED)
+        elif relax == "all":
+            clash = 0
+            opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
+        elif relax != "none":
+            ## Don't need to do anything for none bc that's already the default
+            raise ValueError(f'Unknown arg for relaxation "{relax}"')
+
+        print(
+            f"Running POSIT {'hybrid' if hybrid else 'all'} docking with "
+            f"{relax} relaxation for {lig_name}/{apo_name}",
+            flush=True,
+        )
+
+        ## Set up poser object
+        poser = oedocking.OEPosit(opts)
+        poser.AddReceptor(du)
+
+        ## Run posing
+        pose_res = oedocking.OESinglePoseResult()
+        ret_code = poser.Dock(pose_res, dock_lig)
+    elif dock_sys == "hybrid":
+        print("Running Hybrid docking", flush=True)
+
+        ## Set up poser object
+        poser = oedocking.OEHybrid()
+        poser.Initialize(du)
+
+        ## Run posing
+        posed_mol = oechem.OEMol()
+        ret_code = poser.DockMultiConformerMolecule(posed_mol, dock_lig)
+
+        posit_prob = -1.0
+    else:
+        raise ValueError(f'Unknown docking system "{dock_sys}"')
+
+    if ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
+        ## For POSIT with clash removal, if no non-clashing pose can be found,
+        ##  re-run with no clash removal
+        opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
+        clash = 1
+
+        print(
+            f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with "
+            f"no relaxation",
+            flush=True,
+        )
+
+        ## Set up poser object
+        poser = oedocking.OEPosit(opts)
+        poser.AddReceptor(du)
+
+        ## Run posing
+        pose_res = oedocking.OESinglePoseResult()
+        ret_code = poser.Dock(pose_res, dock_lig)
 
     ## Check results
     if ret_code == oedocking.OEDockingReturnCode_Success:
-        # posed_mol = pose_res.GetPose()
-        # posit_prob = pose_res.GetProbability()
-        posit_prob = -1.0
+        if dock_sys == "posit":
+            posed_mol = pose_res.GetPose()
+            posit_prob = pose_res.GetProbability()
 
         # print(
         #     lig_name,
@@ -170,7 +230,11 @@ def mp_func(
         pose_scorer.Initialize(du)
         chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
     else:
-        print(f"Pose generation failed for {lig_name}/{apo_name}")
+        err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
+        print(
+            f"Pose generation failed for {lig_name}/{apo_name} ({err_type})",
+            flush=True,
+        )
         results = (lig_name, apo_name, None, -1.0, -1.0, -1.0)
         pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
         return results
@@ -194,6 +258,7 @@ def mp_func(
         rmsd,
         posit_prob,
         chemgauss_score,
+        clash,
     )
     pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
     return results
@@ -230,6 +295,21 @@ def get_args():
     parser.add_argument(
         "-n", default=10, type=int, help="Number of processors to use."
     )
+    parser.add_argument(
+        "-sys",
+        default="posit",
+        help="Which docking system to use [posit, hybrid]. Defaults to posit.",
+    )
+    parser.add_argument(
+        "-relax",
+        default="none",
+        help="When to run relaxation [none, clash, all]. Defaults to none.",
+    )
+    parser.add_argument(
+        "-hybrid",
+        action="store_true",
+        help="Whether to only use hybrid docking protocol in POSIT.",
+    )
 
     ## Output arguments
     parser.add_argument("-o", required=True, help="Parent output directory.")
@@ -251,6 +331,14 @@ def get_args():
 
 def main():
     args = get_args()
+
+    ## Check -sys and -relax
+    args.sys = args.sys.lower()
+    args.relax = args.relax.lower()
+    if args.sys not in {"posit", "hybrid"}:
+        raise ValueError(f'Unknown docking system "{args.sys}"')
+    if args.relax not in {"none", "clash", "all"}:
+        raise ValueError(f'Unknown arg for relaxation "{args.relax}"')
 
     ## Set logging
     import logging
@@ -316,7 +404,18 @@ def main():
         ## Load and parse apo protein
         for prot_name, apo_prot in zip(all_apo_names, all_prots):
             mp_args.append(
-                (apo_prot, lig, ref_prot, out_dir, prot_name, lig_name, args.du)
+                (
+                    apo_prot,
+                    lig,
+                    ref_prot,
+                    out_dir,
+                    prot_name,
+                    lig_name,
+                    args.sys,
+                    args.relax,
+                    args.hybrid,
+                    args.du,
+                )
             )
 
     results_cols = [
@@ -326,6 +425,7 @@ def main():
         "docked_RMSD",
         "POSIT_prob",
         "chemgauss4_score",
+        "clash",
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.n)
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
