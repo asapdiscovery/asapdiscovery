@@ -198,7 +198,7 @@ def mp_func(
 
         print(
             f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with "
-            f"no relaxation",
+            f"no relaxation for {lig_name}/{apo_name}",
             flush=True,
         )
 
@@ -215,15 +215,6 @@ def mp_func(
         if dock_sys == "posit":
             posed_mol = pose_res.GetPose()
             posit_prob = pose_res.GetProbability()
-
-        # print(
-        #     lig_name,
-        #     apo_name,
-        #     pose_res.GetRelaxed(),
-        #     pose_res.GetPositMethod(),
-        #     pose_res.GetHasClash(),
-        #     flush=True,
-        # )
 
         ## Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
@@ -242,14 +233,29 @@ def mp_func(
     save_openeye_sdf(posed_mol, f"{out_base}/docked.sdf")
     save_openeye_sdf(dock_lig, f"{out_base}/predocked.sdf")
 
-    # ## Need to remove Hs for RMSD calc
-    # docked_copy = posed_mol.CreateCopy()
-    # for a in docked_copy.GetAtoms():
-    #     if a.GetAtomicNum() == 1:
-    #         docked_copy.DeleteAtom(a)
-    # docked_copy = next(iter(oechem.OEApplyStateFromRef(docked_copy, dock_lig)))
     ## Calculate RMSD
-    rmsd = oechem.OERMSD(dock_lig, posed_mol)
+    oechem.OECanonicalOrderAtoms(dock_lig)
+    oechem.OECanonicalOrderBonds(dock_lig)
+    oechem.OECanonicalOrderAtoms(posed_mol)
+    oechem.OECanonicalOrderBonds(posed_mol)
+    ## Get coordinates, filtering out Hs
+    predocked_coords = [
+        c
+        for a in dock_lig.GetAtoms()
+        for c in dock_lig.GetCoords()[a.GetIdx()]
+        if a.GetAtomicNum() != 1
+    ]
+    docked_coords = [
+        c
+        for a in posed_mol.GetAtoms()
+        for c in posed_mol.GetCoords()[a.GetIdx()]
+        if a.GetAtomicNum() != 1
+    ]
+    rmsd = oechem.OERMSD(
+        oechem.OEDoubleArray(predocked_coords),
+        oechem.OEDoubleArray(docked_coords),
+        len(predocked_coords) // 3,
+    )
 
     results = (
         lig_name,
