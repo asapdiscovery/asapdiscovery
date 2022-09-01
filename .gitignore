@@ -112,3 +112,6 @@ ENV/
 
 # OpenEYE
 oe_license.txt
+
+# Figures
+*.png
