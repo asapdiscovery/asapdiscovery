@@ -140,15 +140,28 @@ class DockingDataset():
         self.write_csv(output_csv_fn=output_csv_fn)
 
 
-def get_good_score(feature):
-    if feature == "RMSD":
+def get_good_score(score):
+    """
+    The idea here is that given an array from a DataFrame, x, that is a particular score type, there should be a
+    single function that will tell you whether we think this score is "good" or not. I'm not sure this is the best way
+    to do this but someway to make it obvious when we are using which cutoff would be good.
+
+    Parameters
+    ----------
+    score
+
+    Returns
+    -------
+
+    """
+    if score == "RMSD":
         lambda_func = lambda x: x[(x <= 2.5)].count()
-    elif feature == "POSIT":
+    elif score == "POSIT":
         lambda_func = lambda x: x[(x > 0.7)].count()
-    elif feature == "Chemgauss4":
+    elif score == "Chemgauss4":
         lambda_func = lambda x: x[(x < 0)].count()
     else:
-        raise NotImplementedError(f"good score acquisition not implemented for {feature}")
+        raise NotImplementedError(f"good score acquisition not implemented for {score}")
     return lambda_func
 
 
