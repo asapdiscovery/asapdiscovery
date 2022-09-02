@@ -1,5 +1,6 @@
 import pickle as pkl
 import pandas as pd
+import numpy as np
 import os
 from ..data.openeye import load_openeye_sdf, load_openeye_pdb, get_ligand_rmsd_from_pdb_and_sdf, split_openeye_mol
 from openeye import oechem
@@ -125,10 +126,40 @@ class DockingDataset():
     def write_csv(self, output_csv_fn):
         self.df.to_csv(output_csv_fn, index=False)
 
-    def analyze_docking_results(self, fragalysis_dir, output_csv_fn, test=False):
+    def analyze_docking_results(self,
+                                fragalysis_dir,
+                                output_csv_fn,
+                                test=False):
         self.organize_docking_results()
         # self.to_df()
         if test:
             self.df = self.df.head()
         self.calculate_rmsd_and_posit_score(fragalysis_dir)
         self.write_csv(output_csv_fn=output_csv_fn)
+
+class DockingResults():
+    """
+    This is a class to parse docking results from a csv file.
+    Mainly for mainipulating the data in various useful ways.
+    """
+    def __init__(self, csv_path):
+        ## load in data and replace the annoying `-1.0` and `-1` values with nans
+        self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
+
+    def get_per_compound_df(self,
+                            compound_ID_column = "Compound_ID",
+                            feature_columns=["RMSD", "POSIT", "Chemgauss4"]):
+        feature_df_list = []
+        for feature in feature_columns:
+            not_na =self.df.groupby(compound_ID_column)[[feature]].apply(lambda x: x[(x > 0)].count())
+            good = self.df.groupby(compound_ID_column)[[feature]].apply(lambda x: x[(x > 0) & (x <= 2)].count())
+            mean = self.df.groupby(compound_ID_column)[[feature]].apply(lambda x: x[(x > 0)].mean())
+            min = self.df.groupby(compound_ID_column)[[feature]].apply(lambda x: x[(x > 0)].min())
+            feature_df = pd.concat([not_na, good, mean, min], axis=1)
+            feature_df.columns = [f"{name}_{feature}" for name in ["Not_NA", "Good", "Mean", "Min"]]
+            feature_df_list.append(feature_df)
+        compound_df = pd.concat(feature_df_list, axis=1)
+        compound_df["Compound_ID"] = compound_df.index
+        self.compound_df = compound_df
+
+        return self.compound_df
