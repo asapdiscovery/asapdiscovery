@@ -28,42 +28,6 @@ from covid_moonshot_ml.docking.docking import (
 from covid_moonshot_ml.modeling import du_to_complex, make_du_from_new_lig
 
 
-def add_compound_id(in_fn, frag_xtal_fn, frag_xtal_dir, out_fn=None):
-    compound_id_dict = get_compound_id_xtal_dicts(
-        parse_fragalysis_data(frag_xtal_fn, frag_xtal_dir).values()
-    )[1]
-
-    ## Load original csv file
-    df = pandas.read_csv(in_fn, index_col=0)
-
-    ## Add column for compound_id
-    df["SARS_compound_id"] = [
-        compound_id_dict[xtal.split("_")[0]]
-        if xtal.split("_")[0] in compound_id_dict
-        else None
-        for xtal in df["SARS_structure"]
-    ]
-
-    ## Reorder columns
-    new_cols = [
-        "MERS_structure",
-        "SARS_structure",
-        "SARS_compound_id",
-        "docked_file",
-        "docked_RMSD",
-        "POSIT_prob",
-        "chemgauss4_score",
-        "clash",
-    ]
-    df = df.reindex(columns=new_cols)
-
-    ## Save output
-    if out_fn is not None:
-        df.to_csv(out_fn)
-
-    return df
-
-
 def check_output(d):
     ## First check for result pickle file
     try:
@@ -83,6 +47,93 @@ def check_output(d):
         return False
 
     return True
+
+
+def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
+    """
+    Convert original-style output structure to a fragalysis-style output
+    structure.
+
+    Parameters
+    ----------
+    in_dir : str
+        Top-level directory of original-style output
+    out_dir : str
+        Top-level directory of new output
+    sort_key : str, default="POSIT_prob"
+        Which column to use to pick the best structure for each compound.
+        Options are [docked_RMSD, POSIT_prob, chemgauss4_score]. If POSIT_prob
+        is selected but not present in CSV file, fall back to docked_RMSD, then
+        chemgauss4_score if all docked_RMSD are -1.
+    """
+    ## Load master results CSV file
+    df = pandas.read_csv(f"{in_dir}/all_results.csv", index_col=0)
+
+    ## Set up test for best structure
+    if (sort_key == "POSIT_prob") and ("POSIT_prob" not in df.columns):
+        print(
+            "POSIT_prob not in given CSV file, falling back to docked_RMSD",
+            flush=True,
+        )
+        sort_key = "docked_RMSD"
+    if sort_key == "POSIT_prob":
+        sort_fn = lambda s: s.idxmax()
+    elif (sort_key == "docked_RMSD") or (sort_key == "chemgauss4_score"):
+        sort_fn = lambda s: s.idxmin()
+    else:
+        raise ValueError(f'Unknown sort_key "{sort_key}"')
+
+    ## Get best structure for each
+    best_str_dict = {}
+    for compound_id, g in df.groupby("SARS_ligand"):
+        if (sort_key == "docked_RMSD") and (g["docked_RMSD"] == -1.0).all():
+            sort_key = "chemgauss4_score"
+        best_str_dict[compound_id] = g.loc[
+            sort_fn(g[sort_key]), f"MERS_structure"
+        ]
+
+    ## Set up SDF file that will hold all ligands
+    all_ligs_ofs = oechem.oemolostream()
+    all_ligs_ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
+    os.makedirs(out_dir, exist_ok=True)
+    all_ligs_ofs.open(f"{out_dir}/combined.sdf")
+
+    ## Loop through dict and parse input files into output files
+    for compound_id, best_str in best_str_dict.items():
+        ## Make sure input exists
+        tmp_in_dir = f"{in_dir}/{compound_id}/{best_str}"
+        if not check_output(tmp_in_dir):
+            print(
+                f"No results found for {compound_id}/{best_str}, skipping",
+                flush=True,
+            )
+        ## Create output directory if necessary
+        tmp_out_dir = f"{out_dir}/{compound_id}"
+        os.makedirs(tmp_out_dir, exist_ok=True)
+
+        ## Load necessary files
+        du = oechem.OEDesignUnit()
+        oechem.OEReadDesignUnit(f"{tmp_in_dir}/predocked.oedu", du)
+        prot = oechem.OEGraphMol()
+        du.GetProtein(prot)
+        lig = load_openeye_sdf(f"{tmp_in_dir}/docked.sdf")
+        lig.SetTitle(f"{compound_id}_{best_str}")
+
+        ## First save apo
+        save_openeye_pdb(prot, f"{tmp_out_dir}/{best_str}_apo.pdb")
+
+        ## Combine protein and ligand and save
+        oechem.OEAddMols(prot, lig)
+        save_openeye_pdb(prot, f"{tmp_out_dir}/{compound_id}_bound.pdb")
+
+        ## Remove Hs from lig and save SDF file
+        for a in lig.GetAtoms():
+            if a.GetAtomicNum() == 1:
+                lig.DeleteAtom(a)
+        save_openeye_sdf(lig, f"{tmp_out_dir}/{compound_id}.sdf")
+        oechem.OEWriteMolecule(all_ligs_ofs, lig)
+
+    all_ligs_ofs.close()
 
 
 def mp_func(
@@ -198,7 +249,7 @@ def mp_func(
 
         print(
             f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with "
-            f"no relaxation",
+            f"no relaxation for {lig_name}/{apo_name}",
             flush=True,
         )
 
@@ -215,15 +266,6 @@ def mp_func(
         if dock_sys == "posit":
             posed_mol = pose_res.GetPose()
             posit_prob = pose_res.GetProbability()
-
-        # print(
-        #     lig_name,
-        #     apo_name,
-        #     pose_res.GetRelaxed(),
-        #     pose_res.GetPositMethod(),
-        #     pose_res.GetHasClash(),
-        #     flush=True,
-        # )
 
         ## Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
@@ -242,14 +284,29 @@ def mp_func(
     save_openeye_sdf(posed_mol, f"{out_base}/docked.sdf")
     save_openeye_sdf(dock_lig, f"{out_base}/predocked.sdf")
 
-    # ## Need to remove Hs for RMSD calc
-    # docked_copy = posed_mol.CreateCopy()
-    # for a in docked_copy.GetAtoms():
-    #     if a.GetAtomicNum() == 1:
-    #         docked_copy.DeleteAtom(a)
-    # docked_copy = next(iter(oechem.OEApplyStateFromRef(docked_copy, dock_lig)))
     ## Calculate RMSD
-    rmsd = oechem.OERMSD(dock_lig, posed_mol)
+    oechem.OECanonicalOrderAtoms(dock_lig)
+    oechem.OECanonicalOrderBonds(dock_lig)
+    oechem.OECanonicalOrderAtoms(posed_mol)
+    oechem.OECanonicalOrderBonds(posed_mol)
+    ## Get coordinates, filtering out Hs
+    predocked_coords = [
+        c
+        for a in dock_lig.GetAtoms()
+        for c in dock_lig.GetCoords()[a.GetIdx()]
+        if a.GetAtomicNum() != 1
+    ]
+    docked_coords = [
+        c
+        for a in posed_mol.GetAtoms()
+        for c in posed_mol.GetCoords()[a.GetIdx()]
+        if a.GetAtomicNum() != 1
+    ]
+    rmsd = oechem.OERMSD(
+        oechem.OEDoubleArray(predocked_coords),
+        oechem.OEDoubleArray(docked_coords),
+        len(predocked_coords) // 3,
+    )
 
     results = (
         lig_name,
@@ -434,6 +491,10 @@ def main():
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 
     results_df.to_csv(f"{args.o}/all_results.csv")
+
+    ## Will probably at some point want to integrate this into the actual
+    ##  function instead of having it run afterwards
+    write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
 
 
 if __name__ == "__main__":
