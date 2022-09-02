@@ -5,8 +5,10 @@ import os
 from ..data.openeye import load_openeye_sdf, load_openeye_pdb, get_ligand_rmsd_from_pdb_and_sdf, split_openeye_mol
 from openeye import oechem
 
-class DockingDataset():
+SCORE_COLUMNS = ["RMSD", "POSIT", "Chemgauss4", "MCSS_Rank"]
 
+
+class DockingDataset():
 
     def __init__(self, pkl_fn, dir_path):
         self.pkl_fn = pkl_fn
@@ -22,7 +24,7 @@ class DockingDataset():
         ## make sure this directory exists
         cmpd_dir = os.path.join(self.dir_path, cmpd_id)
         print(cmpd_dir)
-        #assert os.path.exists(cmpd_dir)
+        # assert os.path.exists(cmpd_dir)
         return cmpd_dir
 
     def organize_docking_results(self):
@@ -86,7 +88,7 @@ class DockingDataset():
 
         self.df = pd.DataFrame(
             {"Complex_ID": cmplx_ids,
-                "Compound_ID": cmpd_ids,
+             "Compound_ID": cmpd_ids,
              "Crystal_ID": xtal_ids,
              "Chain_ID": chain_ids,
              "MCSS_Rank": mcss_ranks,
@@ -137,9 +139,10 @@ class DockingDataset():
         self.calculate_rmsd_and_posit_score(fragalysis_dir)
         self.write_csv(output_csv_fn=output_csv_fn)
 
+
 def get_good_score(feature):
     if feature == "RMSD":
-        lambda_func = lambda x: x[(x <= 2)].count()
+        lambda_func = lambda x: x[(x <= 2.5)].count()
     elif feature == "POSIT":
         lambda_func = lambda x: x[(x > 0.7)].count()
     elif feature == "Chemgauss4":
@@ -154,24 +157,40 @@ class DockingResults():
     This is a class to parse docking results from a csv file.
     Mainly for mainipulating the data in various useful ways.
     """
+
     def __init__(self, csv_path):
         ## load in data and replace the annoying `-1.0` and `-1` values with nans
         self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
 
-    def get_per_compound_df(self,
-                            compound_ID_column = "Compound_ID",
-                            feature_columns=["RMSD", "POSIT", "Chemgauss4"]):
-        feature_df_list = []
-        for feature in feature_columns:
-            not_na =self.df.groupby(compound_ID_column)[[feature]].count()
-            good = self.df.groupby(compound_ID_column)[[feature]].apply(get_good_score(feature))
-            mean = self.df.groupby(compound_ID_column)[[feature]].mean()
-            min = self.df.groupby(compound_ID_column)[[feature]].min()
+    def get_grouped_df(self,
+                            groupby_ID_column="Compound_ID",
+                            score_columns=SCORE_COLUMNS):
+        score_df_list = []
+        for score in score_columns:
+            if not score in self.df.columns:
+                print(f"Skipping {score}")
+                continue
+            if not self.df[score].any():
+                print(f"Skipping {score} since no non-NA scores were found")
+                continue
+            not_na = self.df.groupby(groupby_ID_column)[[score]].count()
+            good = self.df.groupby(groupby_ID_column)[[score]].apply(get_good_score(score))
+            mean = self.df.groupby(groupby_ID_column)[[score]].mean()
+            min = self.df.groupby(groupby_ID_column)[[score]].min()
+            # if sum(not_na[not_na != 0]) == 0:
+            #     print(f"Skipping {score} since no non-NA scores were found")
             feature_df = pd.concat([not_na, good, mean, min], axis=1)
-            feature_df.columns = [f"{name}_{feature}" for name in ["Not_NA", "Good", "Mean", "Min"]]
-            feature_df_list.append(feature_df)
-        compound_df = pd.concat(feature_df_list, axis=1)
-        compound_df["Compound_ID"] = compound_df.index
-        self.compound_df = compound_df
+            feature_df.columns = [f"{name}_{score}" for name in ["Not_NA", "Good", "Mean", "Min"]]
+            score_df_list.append(feature_df)
+        grouped_df = pd.concat(score_df_list, axis=1)
+        grouped_df[groupby_ID_column] = grouped_df.index
+        return grouped_df
 
-        return self.compound_df
+    def get_compound_df(self):
+        self.compound_df = self.get_grouped_df(groupby_ID_column="Compound_ID")
+
+    def get_structure_df(self):
+        self.structure_df = self.get_grouped_df(groupby_ID_column="Structure_Source")
+        with open("../scripts/mers_structures.csv") as f:
+            mers_structure_df = pd.read_csv(f)
+        self.structure_df["Resolution"] = list(mers_structure_df.Resolution)
