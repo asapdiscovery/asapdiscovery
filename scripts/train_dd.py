@@ -334,7 +334,8 @@ def get_args():
         "-loss", help="Loss type. Options are [step, uncertainty]."
     )
 
-    return(parser.parse_args())
+    return parser.parse_args()
+
 
 def init(args, rank=False):
     """
@@ -344,7 +345,9 @@ def init(args, rank=False):
     ## Get all docked structures
     all_fns = glob(f"{args.i}/*complex.pdb")
     ## Extract crystal structure and compound id from file name
-    re_pat = r"(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex.pdb"
+    re_pat = (
+        r"(Mpro-P[0-9]{4}_[0-9][A-Z]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex\.pdb"
+    )
     compounds = [re.search(re_pat, fn).groups() for fn in all_fns]
 
     if rank:
