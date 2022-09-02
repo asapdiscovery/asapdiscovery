@@ -82,6 +82,7 @@ class MSELoss(TorchMSELoss):
                 for i, t, r in zip(input, target, in_range)
             ]
         )
+        mask = mask.to(loss.device)
 
         return (mask * loss).mean()
 
