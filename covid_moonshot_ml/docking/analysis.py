@@ -137,6 +137,18 @@ class DockingDataset():
         self.calculate_rmsd_and_posit_score(fragalysis_dir)
         self.write_csv(output_csv_fn=output_csv_fn)
 
+def get_good_score(feature):
+    if feature == "RMSD":
+        lambda_func = lambda x: x[(x <= 2)].count()
+    elif feature == "POSIT":
+        lambda_func = lambda x: x[(x > 0.7)].count()
+    elif feature == "Chemgauss4":
+        lambda_func = lambda x: x[(x < 0)].count()
+    else:
+        raise NotImplementedError(f"good score acquisition not implemented for {feature}")
+    return lambda_func
+
+
 class DockingResults():
     """
     This is a class to parse docking results from a csv file.
@@ -151,10 +163,10 @@ class DockingResults():
                             feature_columns=["RMSD", "POSIT", "Chemgauss4"]):
         feature_df_list = []
         for feature in feature_columns:
-            not_na =self.df.groupby(compound_ID_column)[[feature]].apply(lambda x: x[(x > 0)].count())
-            good = self.df.groupby(compound_ID_column)[[feature]].apply(lambda x: x[(x > 0) & (x <= 2)].count())
-            mean = self.df.groupby(compound_ID_column)[[feature]].apply(lambda x: x[(x > 0)].mean())
-            min = self.df.groupby(compound_ID_column)[[feature]].apply(lambda x: x[(x > 0)].min())
+            not_na =self.df.groupby(compound_ID_column)[[feature]].count()
+            good = self.df.groupby(compound_ID_column)[[feature]].apply(get_good_score(feature))
+            mean = self.df.groupby(compound_ID_column)[[feature]].mean()
+            min = self.df.groupby(compound_ID_column)[[feature]].min()
             feature_df = pd.concat([not_na, good, mean, min], axis=1)
             feature_df.columns = [f"{name}_{feature}" for name in ["Not_NA", "Good", "Mean", "Min"]]
             feature_df_list.append(feature_df)
