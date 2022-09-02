@@ -231,7 +231,8 @@ def train(
 
     ## Set up optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters(), lr)
-    loss_fn = MSELoss()
+    if loss_fn is None:
+        loss_fn = MSELoss()
 
     ## Train for n epochs
     for epoch_idx in range(start_epoch, n_epochs):
