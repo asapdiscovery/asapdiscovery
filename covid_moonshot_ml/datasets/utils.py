@@ -190,11 +190,11 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         )
     compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
 
-    if out_json is not None:
+    if out_json:
         with open(out_json, "w") as fp:
             fp.write(compounds.json())
         print(f"Wrote {out_json}", flush=True)
-    if out_csv is not None:
+    if out_csv:
         out_cols = [
             "Canonical PostEra ID",
             "suspected_SMILES",
@@ -321,11 +321,11 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
 
     ep_list = EnantiomerPairList(pairs=enant_pairs)
 
-    if out_json is not None:
+    if out_json:
         with open(out_json, "w") as fp:
             fp.write(ep_list.json())
         print(f"Wrote {out_json}", flush=True)
-    if out_csv is not None:
+    if out_csv:
         out_cols = [
             "Canonical PostEra ID",
             "suspected_SMILES",
