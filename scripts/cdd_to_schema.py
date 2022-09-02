@@ -34,9 +34,9 @@ def get_args():
 def main():
     args = get_args()
 
-    if args.type.lower() == 'std':
+    if args.type.lower() == "std":
         _ = cdd_to_schema(args.i, args.json, args.csv, args.achiral)
-    elif args.type.lower() == 'ep':
+    elif args.type.lower() == "ep":
         _ = cdd_to_schema_pair(args.i, args.json, args.csv)
     else:
         raise ValueError(f"Unknown value for -type: {args.type}.")
