@@ -194,3 +194,38 @@ class DockingResults():
         with open("../scripts/mers_structures.csv") as f:
             mers_structure_df = pd.read_csv(f)
         self.structure_df["Resolution"] = list(mers_structure_df.Resolution)
+
+    def get_best_structure_per_compound(self,
+                                        score_order=["RMSD", "Chemgauss4"]):
+        """
+        A fancier implementation of this might first just filter the structures based on certain scores and *then*
+        pick the best one from that set, but I haven't done that yet.
+
+        Parameters
+        ----------
+        score_order: this will allow us to pick the structures by filtering in the order that this is given
+
+        Returns
+        -------
+
+        """
+        best_df = self.df
+        for score in score_order:
+            ## TODO: instead of getting min we could use the get_good_score implementation from above to first filter
+            ## and then pick the best one from that set.
+
+            ## first find the minimum value of `score` for each Compound_ID
+            min_value = best_df.groupby("Compound_ID")[score].min()
+
+            ## add merge that to every row in the original dataframe
+            best_df = best_df.merge(min_value, on="Compound_ID", suffixes=('', '_min'))
+
+            ## then only keep the rows where the value of `score` is the minimum one
+            best_df = best_df[best_df[score] == best_df[f"{score}_min"]]
+
+            ## since that might not result in only one `Complex_ID` for each `Compound_ID`, iterate through the scores
+            ## could add a check so that we don't iterate through the scores
+        self.best_df = best_df
+
+
+
