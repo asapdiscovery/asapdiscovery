@@ -149,8 +149,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
         "CI (Upper) (µM)"
     )
-    ## Calculate 95% CI in pIC50 units based on IC50 vals (not sure if the
-    ##  difference should be taken before or after taking the -log10)
+    ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
     pic50_stderr = []
     for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
         if pandas.isna(ci_lower) or pandas.isna(ci_upper):
