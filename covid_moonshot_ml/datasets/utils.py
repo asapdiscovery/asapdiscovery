@@ -572,8 +572,28 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
     opts = oechem.OESplitMolComplexOptions()
     opts.SetSplitCovalent(True)
     opts.SetSplitCovalentCofactors(True)
-    oechem.OESplitMolComplex(lig_mol, prot_mol, water_mol, oth_mol, complex_mol,
-        opts)
+
+    ## Select protein as all protein atoms in chain A or chain B
+    prot_only = oechem.OEMolComplexFilterFactory(
+        oechem.OEMolComplexFilterCategory_Protein
+    )
+    a_chain = oechem.OERoleMolComplexFilterFactory(
+        oechem.OEMolComplexChainRoleFactory("A")
+    )
+    b_chain = oechem.OERoleMolComplexFilterFactory(
+        oechem.OEMolComplexChainRoleFactory("B")
+    )
+    a_or_b_chain = oechem.OEOrRoleSet(a_chain, b_chain)
+    opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
+
+    oechem.OESplitMolComplex(
+        lig_mol,
+        prot_mol,
+        water_mol,
+        oth_mol,
+        complex_mol,
+        opts,
+    )
 
     return {'complex': complex_mol,
             'lig': lig_mol,
