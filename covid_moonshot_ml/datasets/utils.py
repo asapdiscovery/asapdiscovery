@@ -474,35 +474,6 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
     opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
 
     ## Select ligand as all residues with resn LIG
-    # lig_res = oechem.OEAtomMatchResidueID()
-    # lig_res.SetName("LIG")
-    # lig_pred = oechem.OEAtomMatchResidue(lig_res)
-    # lig_role = oechem.OERole("ligand")
-    # has_lig_role = oechem.OEHasRole(lig_role)
-    # frags = oechem.OEAtomBondSetVector()
-    # oechem.OEGetMolComplexFragments(frags, complex_mol, opts)
-    # for frag in frags:
-    #     is_lig = [lig_pred(a) for a in frag.GetAtoms()]
-    #     if all(is_lig):
-    #         print('sdf', flush=True)
-    #         print(frag.AddRole(lig_role))
-    #         print(has_lig_role(frag), flush=True)
-    #         print([f.GetName() for f in frag.GetRoles()])
-    #         print(frag.NumAtoms())
-    #         print('---', flush=True)
-    #     elif any(is_lig):
-    #         print("Mixed ligand fragment", flush=True)
-    # for frag in frags:
-    #     if has_lig_role(frag):
-    #         print('sdf2', flush=True)
-    # oechem.OECombineMolComplexFragments(lig_mol, frags, opts, has_lig_role)
-    # oechem.OECombineMolComplexFragments(
-    #     lig_mol,
-    #     frags,
-    #     opts,
-    #     oechem.OEHasRole("bio:pdb:ligand")
-    # )
-    # opts.SetLigandFilter(oechem.OEHasRole("bio:pdb:ligand"))
     opts.SetLigandFilter(
         oechem.OEMolComplexFilterFactory(
             oechem.OEMolComplexFilterCategory_Ligand
