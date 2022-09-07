@@ -38,6 +38,8 @@ def make_du_from_new_lig(
     ref_prot=None,
     split_initial_complex=True,
     split_ref=True,
+    ref_chain=None,
+    mobile_chain=None,
 ):
     """
     Create an OEDesignUnit object from the protein component of
@@ -64,6 +66,11 @@ def make_du_from_new_lig(
         Whether to split out protein from `ref_prot`. Setting this to
         False will save time on protein prep if you've already isolated the
         protein.
+    ref_chain : str, optional
+        If given, align to given chain in `ref_prot`.
+    mobile_chain : str, optional
+        If given, align the given chain in the protein component of
+        `initial_complex`.
 
     Returns
     -------
@@ -110,7 +117,15 @@ def make_du_from_new_lig(
     if ref_prot is not None:
         if split_ref:
             ref_prot = split_openeye_mol(ref_prot)["pro"]
-        initial_prot = superpose_molecule(ref_prot, initial_prot)[0]
+
+        ## Set up predicates
+        if ref_chain is not None:
+            ref_chain = oechem.OEHasChainID(ref_chain)
+        if mobile_chain is not None:
+            mobile_chain = oechem.OEHasChainID(mobile_chain)
+        initial_prot = superpose_molecule(
+            ref_prot, initial_prot, ref_chain, mobile_chain
+        )[0]
 
     ## Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
@@ -124,7 +139,7 @@ def make_du_from_new_lig(
     return du
 
 
-def superpose_molecule(ref_mol, mobile_mol):
+def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
     """
     Superpose `mobile_mol` onto `ref_mol`.
 
@@ -134,6 +149,10 @@ def superpose_molecule(ref_mol, mobile_mol):
         Reference molecule to align to.
     mobile_mol : oechem.OEGraphMol
         Molecule to align.
+    ref_pred : oechem.OEUnaryPredicate[oechem.OEAtomBase], optional
+        Predicate for which atoms to include from `ref_mol`.
+    mobile_pred : oechem.OEUnaryPredicate[oechem.OEAtomBase], optional
+        Predicate for which atoms to include from `mobile_mol`.
 
     Returns
     -------
@@ -143,15 +162,21 @@ def superpose_molecule(ref_mol, mobile_mol):
         RMSD between `ref_mol` and `mobile_mol` after alignment.
     """
 
+    ## Default atom predicates
+    if ref_pred is None:
+        ref_pred = oechem.OEIsTrueAtom()
+    if mobile_pred is None:
+        mobile_pred = oechem.OEIsTrueAtom()
+
     ## Create object to store results
     aln_res = oespruce.OESuperposeResults()
 
     ## Set up superposing object and set reference molecule
     superpos = oespruce.OESuperpose()
-    superpos.SetupRef(ref_mol)
+    superpos.SetupRef(ref_mol, ref_pred)
 
     ## Perform superposing
-    superpos.Superpose(aln_res, mobile_mol)
+    superpos.Superpose(aln_res, mobile_mol, mobile_pred)
     # print(f"RMSD: {aln_res.GetRMSD()}")
 
     ## Create copy of molecule and transform it to the aligned position
