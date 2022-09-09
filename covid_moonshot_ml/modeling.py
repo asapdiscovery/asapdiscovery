@@ -40,6 +40,7 @@ def make_du_from_new_lig(
     split_ref=True,
     ref_chain=None,
     mobile_chain=None,
+    loop_db=None,
 ):
     """
     Create an OEDesignUnit object from the protein component of
@@ -71,6 +72,8 @@ def make_du_from_new_lig(
     mobile_chain : str, optional
         If given, align the given chain in the protein component of
         `initial_complex`.
+    loop_db : str, optional
+        File name for the Spruce loop database file.
 
     Returns
     -------
@@ -131,9 +134,56 @@ def make_du_from_new_lig(
     oechem.OEAddExplicitHydrogens(initial_prot)
     oechem.OEAddExplicitHydrogens(new_lig)
 
+    ## Set up DU building options
+    opts = oespruce.OEMakeDesignUnitOptions()
+    opts.SetSuperpose(False)
+    if loop_db is not None:
+        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(
+            loop_db
+        )
+
+    ## Options set from John's function ########################################
+    opts.GetPrepOptions().SetStrictProtonationMode(True)
+    # set minimal number of ligand atoms to 5, e.g. a 5-membered ring fragment\
+    opts.GetSplitOptions().SetMinLigAtoms(5)
+
+    # also consider alternate locations outside binding pocket, important for later filtering
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
+        False
+    )
+
+    # alignment options, only matches are important
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
+        oechem.OESeqAlignmentMethod_Identity
+    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(
+        -1
+    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(
+        0
+    )
+
+    # Both N- and C-termini should be zwitterionic
+    # Mpro cleaves its own N- and C-termini
+    # See https://www.pnas.org/content/113/46/12997
+    opts.GetPrepOptions().GetBuildOptions().SetCapNTermini(False)
+    opts.GetPrepOptions().GetBuildOptions().SetCapCTermini(False)
+    # Don't allow truncation of termini, since force fields don't have
+    #  parameters for this
+    opts.GetPrepOptions().GetBuildOptions().GetCapBuilderOptions().SetAllowTruncate(
+        False
+    )
+    # Build loops and sidechains
+    opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True)
+    opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True)
+
+    # Generate ligand tautomers
+    opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
+    ############################################################################
+
     ## Finally make new DesignUnit
     du = oechem.OEDesignUnit()
-    oespruce.OEMakeDesignUnit(du, initial_prot, new_lig)
+    oespruce.OEMakeDesignUnit(du, initial_prot, new_lig, opts)
     assert du.HasProtein() and du.HasLigand()
 
     return du
