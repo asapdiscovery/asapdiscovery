@@ -145,6 +145,7 @@ def mp_func(
     lig_name,
     dock_sys,
     relax,
+    loop_db,
     hybrid=False,
     save_du=False,
 ):
@@ -164,7 +165,9 @@ def mp_func(
 
     ## Make design unit and prep the receptor
     try:
-        du = make_du_from_new_lig(apo_prot, lig_copy, ref_prot, False, False)
+        du = make_du_from_new_lig(
+            apo_prot, lig_copy, ref_prot, False, False, "A", "A", loop_db
+        )
     except AssertionError:
         print(
             f"Design unit generation failed for {lig_name}/{apo_name}",
@@ -470,6 +473,7 @@ def main():
                     lig_name,
                     args.sys,
                     args.relax,
+                    args.loop,
                     args.hybrid,
                     args.du,
                 )
