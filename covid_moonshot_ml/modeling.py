@@ -35,6 +35,7 @@ def du_to_complex(du):
 def make_du_from_new_lig(
     initial_complex,
     new_lig,
+    dimer=True,
     ref_prot=None,
     split_initial_complex=True,
     split_ref=True,
@@ -56,6 +57,8 @@ def make_du_from_new_lig(
     new_lig : Union[oechem.OEGraphMol, str]
         New ligand molecule (loaded straight from a file). Can also pass a PDB
         or SDF filename instead.
+    dimer : bool, default=True
+        Whether to build the dimer or just monomer.
     ref_prot : Union[oechem.OEGraphMol, str], optional
         Reference protein to which the protein part of `initial_complex` will
         be aligned. Can also pass a PDB filename instead.
@@ -71,7 +74,8 @@ def make_du_from_new_lig(
         If given, align to given chain in `ref_prot`.
     mobile_chain : str, optional
         If given, align the given chain in the protein component of
-        `initial_complex`.
+        `initial_complex`. If `dimer` is False, this is required and will give
+        the chain of the monomer to keep.
     loop_db : str, optional
         File name for the Spruce loop database file.
 
@@ -79,6 +83,11 @@ def make_du_from_new_lig(
     -------
     oechem.OEDesignUnit
     """
+
+    if (not dimer) and (not mobile_chain):
+        raise ValueError(
+            "If dimer is False, a value must be given for mobile_chain."
+        )
 
     ## Load initial_complex from file if necessary
     if type(initial_complex) is str:
@@ -114,9 +123,16 @@ def make_du_from_new_lig(
 
     ## Split out protein components and align if requested
     if split_initial_complex:
-        initial_prot = split_openeye_mol(initial_complex)["pro"]
+        initial_prot_temp = split_openeye_mol(initial_complex)["pro"]
     else:
-        initial_prot = initial_complex
+        initial_prot_temp = initial_complex
+    ## Extract if not dimer
+    if dimer:
+        initial_prot = initial_prot_temp
+    else:
+        initial_prot = oechem.OEGraphMol()
+        chain_pred = oechem.OEHasChainID(mobile_chain)
+        oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
     if ref_prot is not None:
         if split_ref:
             ref_prot = split_openeye_mol(ref_prot)["pro"]
@@ -125,7 +141,11 @@ def make_du_from_new_lig(
         if ref_chain is not None:
             ref_chain = oechem.OEHasChainID(ref_chain)
         if mobile_chain is not None:
-            mobile_chain = oechem.OEHasChainID(mobile_chain)
+            try:
+                mobile_chain = oechem.OEHasChainID(mobile_chain)
+            except Exception as e:
+                print(mobile_chain)
+                raise e
         initial_prot = superpose_molecule(
             ref_prot, initial_prot, ref_chain, mobile_chain
         )[0]
