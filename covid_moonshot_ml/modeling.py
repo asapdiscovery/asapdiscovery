@@ -163,6 +163,7 @@ def make_du_from_new_lig(
         )
 
     ## Options set from John's function ########################################
+    ## (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
     opts.GetPrepOptions().SetStrictProtonationMode(True)
     # set minimal number of ligand atoms to 5, e.g. a 5-membered ring fragment\
     opts.GetSplitOptions().SetMinLigAtoms(5)
