@@ -4,11 +4,13 @@ different dataset of apo structures.
 """
 import argparse
 from glob import glob
+import itertools as it
 import multiprocessing as mp
 from openeye import oechem, oedocking
 import os
 import pandas
 import pickle as pkl
+import re
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
@@ -167,13 +169,14 @@ def mp_func(
     out_dir,
     apo_name,
     lig_name,
+    dimer,
+    apo_chain,
     dock_sys,
     relax,
     loop_db,
     hybrid=False,
     save_du=False,
 ):
-
     out_base = f"{out_dir}/{apo_name}/"
     ## First check if this combo has already been run
     if check_output(out_base):
@@ -190,7 +193,15 @@ def mp_func(
     ## Make design unit and prep the receptor
     try:
         du = make_du_from_new_lig(
-            apo_prot, lig_copy, ref_prot, False, False, "A", "A", loop_db
+            apo_prot,
+            lig_copy,
+            dimer,
+            ref_prot,
+            False,
+            False,
+            "A",
+            apo_chain,
+            loop_db,
         )
     except AssertionError:
         print(
@@ -223,7 +234,7 @@ def mp_func(
         ## kinoml has the below option set, but the accompanying comment implies
         ##  that we should be ignoring N stereochemistry, which, paradoxically,
         ##  corresponds to a False option (the default)
-        # opts.SetIgnoreNitrogenStereo(True)
+        opts.SetIgnoreNitrogenStereo(True)
         ## Set the POSIT methods to only be hybrid (otherwise leave as default
         ##  of all)
         if hybrid:
@@ -457,9 +468,13 @@ def main():
     print(f"{len(all_apo_fns)} apo structures")
     print(f"{len(all_holo_fns)} ligands to dock", flush=True)
 
+    ## Get correct ligand chain for each file
+    re_pat = r"Mpro-P[0-9]{4}_[0-9]([AB])"
+    lig_chains = [re.search(re_pat, fn).groups()[0] for fn in all_holo_fns]
     ## Get ligands from all holo structures
     all_ligs = [
-        split_openeye_mol(load_openeye_pdb(fn))["lig"] for fn in all_holo_fns
+        split_openeye_mol(load_openeye_pdb(fn), lig_chain=c)["lig"]
+        for fn, c in zip(all_holo_fns, lig_chains)
     ]
 
     ## Get proteins from apo structures
@@ -483,25 +498,29 @@ def main():
     mp_args = []
     ## Construct all args for mp_func
     for lig_name, lig in zip(all_holo_names, all_ligs):
-        out_dir = f"{args.o}/{lig_name}/"
-        os.makedirs(out_dir, exist_ok=True)
-        ## Load and parse apo protein
-        for prot_name, apo_prot in zip(all_apo_names, all_prots):
-            mp_args.append(
-                (
-                    apo_prot,
-                    lig,
-                    ref_prot,
-                    out_dir,
-                    prot_name,
-                    lig_name,
-                    args.sys,
-                    args.relax,
-                    args.loop,
-                    args.hybrid,
-                    args.du,
+        for (dimer, apo_chain) in it.product([True, False], ["A", "B"]):
+            dimer_s = "dimer" if dimer else "monomer"
+            out_dir = f"{args.o}/{lig_name}/{dimer_s}"
+            os.makedirs(out_dir, exist_ok=True)
+            ## Load and parse apo protein
+            for prot_name, apo_prot in zip(all_apo_names, all_prots):
+                mp_args.append(
+                    (
+                        apo_prot,
+                        lig,
+                        ref_prot,
+                        out_dir,
+                        f"{prot_name}_{apo_chain}",
+                        lig_name,
+                        dimer,
+                        apo_chain,
+                        args.sys,
+                        args.relax,
+                        args.loop,
+                        args.hybrid,
+                        args.du,
+                    )
                 )
-            )
 
     results_cols = [
         "SARS_ligand",
@@ -522,7 +541,7 @@ def main():
 
     ## Will probably at some point want to integrate this into the actual
     ##  function instead of having it run afterwards
-    write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
+    # write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
 
 
 if __name__ == "__main__":
