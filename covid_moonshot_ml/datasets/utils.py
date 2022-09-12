@@ -447,7 +447,21 @@ def save_openeye_sdf(mol, sdf_fn):
     oechem.OEWriteMolecule(ofs, mol)
     ofs.close()
 
-def split_openeye_mol(complex_mol: oechem.OEMolBase):
+def split_openeye_mol(complex_mol, lig_chain="A"):
+    """
+    Split an OpenEye-loaded molecule into protein, ligand, etc.
+
+    Parameters
+    ----------
+    complex_mol : oechem.OEMolBase
+        Complex molecule to split.
+    lig_chain : str, default="A"
+        Which copy of the ligand to keep.
+
+    Returns
+    -------
+    """
+
     ## Test splitting
     lig_mol = oechem.OEGraphMol()
     prot_mol = oechem.OEGraphMol()
@@ -474,11 +488,13 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
     opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
 
     ## Select ligand as all residues with resn LIG
-    opts.SetLigandFilter(
-        oechem.OEMolComplexFilterFactory(
-            oechem.OEMolComplexFilterCategory_Ligand
-        )
+    lig_only = oechem.OEMolComplexFilterFactory(
+        oechem.OEMolComplexFilterCategory_Ligand
     )
+    lig_chain = oechem.OERoleMolComplexFilterFactory(
+        oechem.OEMolComplexChainRoleFactory(lig_chain)
+    )
+    opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
 
     oechem.OESplitMolComplex(
         lig_mol,
