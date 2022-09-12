@@ -569,7 +569,7 @@ def split_openeye_mol(complex_mol, lig_chain="A"):
     complex_mol : oechem.OEMolBase
         Complex molecule to split.
     lig_chain : str, default="A"
-        Which copy of the ligand to keep.
+        Which copy of the ligand to keep. Pass None to keep all ligand atoms.
 
     Returns
     -------
@@ -604,10 +604,13 @@ def split_openeye_mol(complex_mol, lig_chain="A"):
     lig_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_Ligand
     )
-    lig_chain = oechem.OERoleMolComplexFilterFactory(
-        oechem.OEMolComplexChainRoleFactory(lig_chain)
-    )
-    opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
+    if lig_chain is None:
+        opts.SetLigandFilter(lig_only)
+    else:
+        lig_chain = oechem.OERoleMolComplexFilterFactory(
+            oechem.OEMolComplexChainRoleFactory(lig_chain)
+        )
+        opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
 
     oechem.OESplitMolComplex(
         lig_mol,
