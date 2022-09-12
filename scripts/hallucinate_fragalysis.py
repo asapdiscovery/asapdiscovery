@@ -87,30 +87,44 @@ def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
 
     ## Get best structure for each
     best_str_dict = {}
-    for compound_id, g in df.groupby("SARS_ligand"):
+    for ((compound_id, dimer), g) in df.groupby(["SARS_ligand", "dimer"]):
         if (sort_key == "docked_RMSD") and (g["docked_RMSD"] == -1.0).all():
             sort_key = "chemgauss4_score"
-        best_str_dict[compound_id] = g.loc[
+        best_str_dict[(compound_id, dimer)] = g.loc[
             sort_fn(g[sort_key]), f"MERS_structure"
         ]
 
     ## Set up SDF file that will hold all ligands
-    all_ligs_ofs = oechem.oemolostream()
-    all_ligs_ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
-    os.makedirs(out_dir, exist_ok=True)
-    all_ligs_ofs.open(f"{out_dir}/combined.sdf")
+    all_ligs_monomer_ofs = oechem.oemolostream()
+    all_ligs_monomer_ofs.SetFlavor(
+        oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default
+    )
+    all_ligs_dimer_ofs = oechem.oemolostream()
+    all_ligs_dimer_ofs.SetFlavor(
+        oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default
+    )
+    # arranged this way so dimer=True => "dimer"
+    dimers_strings = ["monomer", "dimer"]
+    all_ofs = [all_ligs_monomer_ofs, all_ligs_dimer_ofs]
+    for d, ofs in zip(dimers_strings, all_ofs):
+        os.makedirs(f"{out_dir}/{d}", exist_ok=True)
+        ofs.open(f"{out_dir}/{d}/combined.sdf")
 
     ## Loop through dict and parse input files into output files
-    for compound_id, best_str in best_str_dict.items():
+    for (compound_id, dimer), best_str in best_str_dict.items():
         ## Make sure input exists
-        tmp_in_dir = f"{in_dir}/{compound_id}/{best_str}"
+        dimer_s = "dimer" if dimer else "monomer"
+        tmp_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
         if not check_output(tmp_in_dir):
             print(
-                f"No results found for {compound_id}/{best_str}, skipping",
+                (
+                    f"No results found for {compound_id}/{dimer_s}/{best_str}, "
+                    "skipping"
+                ),
                 flush=True,
             )
         ## Create output directory if necessary
-        tmp_out_dir = f"{out_dir}/{compound_id}"
+        tmp_out_dir = f"{out_dir}/{dimer_s}/{compound_id}"
         os.makedirs(tmp_out_dir, exist_ok=True)
 
         ## Load necessary files
@@ -157,9 +171,11 @@ def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
             if a.GetAtomicNum() == 1:
                 lig.DeleteAtom(a)
         save_openeye_sdf(lig, f"{tmp_out_dir}/{compound_id}.sdf")
-        oechem.OEWriteMolecule(all_ligs_ofs, lig)
+        ofs = all_ofs[int(dimer)]
+        oechem.OEWriteMolecule(ofs, lig)
 
-    all_ligs_ofs.close()
+    for ofs in all_ofs:
+        ofs.close()
 
 
 def mp_func(
@@ -180,7 +196,8 @@ def mp_func(
     out_base = f"{out_dir}/{apo_name}/"
     ## First check if this combo has already been run
     if check_output(out_base):
-        print(f"Results found for {lig_name}_{apo_name}", flush=True)
+        dimer_s = "dimer" if dimer else "monomer"
+        print(f"Results found for {lig_name}_{apo_name}_{dimer_s}", flush=True)
         return pkl.load(open(f"{out_base}/results.pkl", "rb"))
 
     ## Make output directory if necessary
@@ -208,7 +225,7 @@ def mp_func(
             f"Design unit generation failed for {lig_name}/{apo_name}",
             flush=True,
         )
-        results = (lig_name, apo_name, None, -1.0, -1.0, -1.0)
+        results = (lig_name, apo_name, dimer, None, -1.0, -1.0, -1.0)
         pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
         return results
     oedocking.OEMakeReceptor(du)
@@ -315,7 +332,7 @@ def mp_func(
             f"Pose generation failed for {lig_name}/{apo_name} ({err_type})",
             flush=True,
         )
-        results = (lig_name, apo_name, None, -1.0, -1.0, -1.0)
+        results = (lig_name, apo_name, dimer, None, -1.0, -1.0, -1.0)
         pkl.dump(results, open(f"{out_base}/results.pkl", "wb"))
         return results
 
@@ -349,6 +366,7 @@ def mp_func(
     results = (
         lig_name,
         apo_name,
+        dimer,
         f"{out_base}/docked.sdf",
         rmsd,
         posit_prob,
@@ -525,6 +543,7 @@ def main():
     results_cols = [
         "SARS_ligand",
         "MERS_structure",
+        "dimer",
         "docked_file",
         "docked_RMSD",
         "POSIT_prob",
@@ -541,7 +560,7 @@ def main():
 
     ## Will probably at some point want to integrate this into the actual
     ##  function instead of having it run afterwards
-    # write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
+    write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
 
 
 if __name__ == "__main__":
