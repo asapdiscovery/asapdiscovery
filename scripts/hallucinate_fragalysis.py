@@ -423,6 +423,11 @@ def get_args():
         action="store_true",
         help="Whether to only use hybrid docking protocol in POSIT.",
     )
+    parser.add_argument(
+        "-keep_wat",
+        action="store_true",
+        help="Keep water molecules in the Design Unit.",
+    )
 
     ## Output arguments
     parser.add_argument("-o", required=True, help="Parent output directory.")
@@ -496,9 +501,16 @@ def main():
     ]
 
     ## Get proteins from apo structures
-    all_prots = [
-        split_openeye_mol(load_openeye_pdb(fn))["pro"] for fn in all_apo_fns
-    ]
+    if args.keep_wat:
+        all_prots = []
+        for fn in all_apo_fns:
+            split_dict = split_openeye_mol(load_openeye_pdb(fn))
+            oechem.OEAddMols(split_dict["pro"], split_dict["water"])
+            all_prots.append(split_dict["pro"])
+    else:
+        all_prots = [
+            split_openeye_mol(load_openeye_pdb(fn))["pro"] for fn in all_apo_fns
+        ]
 
     ## Parse reference
     if args.ref:
