@@ -5,7 +5,7 @@ import os
 from ..data.openeye import load_openeye_sdf, load_openeye_pdb, get_ligand_rmsd_from_pdb_and_sdf, split_openeye_mol
 from openeye import oechem
 
-SCORE_COLUMNS = ["RMSD", "POSIT", "Chemgauss4", "MCSS_Rank"]
+SCORE_COLUMNS = ["RMSD", "POSIT_R", "Chemgauss4", "MCSS_Rank"]
 
 
 class DockingDataset():
@@ -160,6 +160,8 @@ def get_good_score(score):
         lambda_func = lambda x: x[(x > 0.7)].count()
     elif score == "Chemgauss4":
         lambda_func = lambda x: x[(x < 0)].count()
+    elif score == "POSIT_R":
+        lambda_func = lambda x: x[(x < 0.3)].count()
     else:
         raise NotImplementedError(f"good score acquisition not implemented for {score}")
     return lambda_func
@@ -199,17 +201,19 @@ class DockingResults():
         grouped_df[groupby_ID_column] = grouped_df.index
         return grouped_df
 
-    def get_compound_df(self):
-        self.compound_df = self.get_grouped_df(groupby_ID_column="Compound_ID")
+    def get_compound_df(self, **kwargs):
+        self.compound_df = self.get_grouped_df(groupby_ID_column="Compound_ID", **kwargs)
 
-    def get_structure_df(self):
-        self.structure_df = self.get_grouped_df(groupby_ID_column="Structure_Source")
+    def get_structure_df(self, **kwargs):
+        self.structure_df = self.get_grouped_df(groupby_ID_column="Structure_Source", **kwargs)
         with open("../scripts/mers_structures.csv") as f:
             mers_structure_df = pd.read_csv(f)
         self.structure_df["Resolution"] = list(mers_structure_df.Resolution)
 
     def get_best_structure_per_compound(self,
-                                        score_order=["RMSD", "Chemgauss4"]):
+                                        filter_score = "RMSD",
+                                        filter_value = 2.5,
+                                        score_order=["Chemgauss4", "RMSD"]):
         """
         A fancier implementation of this might first just filter the structures based on certain scores and *then*
         pick the best one from that set, but I haven't done that yet.
@@ -222,10 +226,11 @@ class DockingResults():
         -------
 
         """
-        best_df = self.df
+        ## First filter by RMSD
+
+        best_df = self.df[self.df[filter_score] < 2.5]
+
         for score in score_order:
-            ## TODO: instead of getting min we could use the get_good_score implementation from above to first filter
-            ## and then pick the best one from that set.
 
             ## first find the minimum value of `score` for each Compound_ID
             min_value = best_df.groupby("Compound_ID")[score].min()
