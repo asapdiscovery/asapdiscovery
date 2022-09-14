@@ -4,6 +4,7 @@ import os.path
 import numpy as np
 import pandas
 import re
+import csv
 from openeye import oechem
 
 from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
@@ -882,7 +883,7 @@ def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
           rmsd_array2)
 
 
-def filter_docking_inputs(smarts_queries="scripts/filter_inputs/smarts_queries.csv",
+def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
                             docking_inputs=None, ignore_comment=False,
                             verbose=True):
     """
