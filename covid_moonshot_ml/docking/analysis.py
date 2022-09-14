@@ -178,8 +178,8 @@ class DockingResults():
         self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
 
     def get_grouped_df(self,
-                            groupby_ID_column="Compound_ID",
-                            score_columns=SCORE_COLUMNS):
+                       groupby_ID_column="Compound_ID",
+                       score_columns=SCORE_COLUMNS):
         score_df_list = []
         for score in score_columns:
             if not score in self.df.columns:
@@ -211,39 +211,29 @@ class DockingResults():
         self.structure_df["Resolution"] = list(mers_structure_df.Resolution)
 
     def get_best_structure_per_compound(self,
-                                        filter_score = "RMSD",
-                                        filter_value = 2.5,
-                                        score_order=["Chemgauss4", "RMSD"]):
+                                        filter_score="RMSD",
+                                        filter_value=2.5,
+                                        score_order=['POSIT_R', 'Chemgauss4', 'RMSD']):
         """
-        A fancier implementation of this might first just filter the structures based on certain scores and *then*
-        pick the best one from that set, but I haven't done that yet.
+        Gets the best structure by first filtering based on the filter_score and filter_value,
+        then sorts in order of the scores listed in score_order.
+
+        As with everything else, lower scores are assumed to be better, requiring a conversion of some scores.
 
         Parameters
         ----------
-        score_order: this will allow us to pick the structures by filtering in the order that this is given
+        filter_score
+        filter_value
+        score_order
 
         Returns
         -------
 
         """
-        ## First filter by RMSD
 
-        best_df = self.df[self.df[filter_score] < 2.5]
-
-        for score in score_order:
-
-            ## first find the minimum value of `score` for each Compound_ID
-            min_value = best_df.groupby("Compound_ID")[score].min()
-
-            ## add merge that to every row in the original dataframe
-            best_df = best_df.merge(min_value, on="Compound_ID", suffixes=('', '_min'))
-
-            ## then only keep the rows where the value of `score` is the minimum one
-            best_df = best_df[best_df[score] == best_df[f"{score}_min"]]
-
-            ## since that might not result in only one `Complex_ID` for each `Compound_ID`, iterate through the scores
-            ## could add a check so that we don't iterate through the scores
-        self.best_df = best_df
-
-
-
+        filtered_df = self.df[self.df[filter_score] < filter_value]
+        sort_list = ['Compound_ID'] + score_order
+        sorted_df = filtered_df.sort_values(sort_list, ascending=[True, True, True, True])
+        g = sorted_df.groupby('Compound_ID')
+        self.best_df = g.head(1)
+        return self.best_df
