@@ -612,6 +612,17 @@ def split_openeye_mol(complex_mol, lig_chain="A"):
         )
         opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
 
+    ## Set water filter (keep all waters in A, B, or W chains)
+    ##  (is this sufficient? are there other common water chain ids?)
+    wat_only = oechem.OEMolComplexFilterFactory(
+        oechem.OEMolComplexFilterCategory_Water
+    )
+    w_chain = oechem.OERoleMolComplexFilterFactory(
+        oechem.OEMolComplexChainRoleFactory("W")
+    )
+    all_wat_chains = oechem.OEOrRoleSet(a_or_b_chain, w_chain)
+    opts.SetWaterFilter(oechem.OEAndRoleSet(wat_only, all_wat_chains))
+
     oechem.OESplitMolComplex(
         lig_mol,
         prot_mol,
