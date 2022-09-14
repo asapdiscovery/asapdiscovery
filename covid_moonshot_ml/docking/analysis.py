@@ -231,9 +231,15 @@ class DockingResults():
 
         """
 
+        ## first do filtering
         filtered_df = self.df[self.df[filter_score] < filter_value]
         sort_list = ['Compound_ID'] + score_order
+
+        ## sort dataframe, ascending (smaller / better scores will move to the top)
         sorted_df = filtered_df.sort_values(sort_list, ascending=[True, True, True, True])
+
+        ## group by compound id and return the top row for each group
         g = sorted_df.groupby('Compound_ID')
         self.best_df = g.head(1)
+
         return self.best_df
