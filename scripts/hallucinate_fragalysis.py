@@ -492,13 +492,23 @@ def main():
     print(f"{len(all_holo_fns)} ligands to dock", flush=True)
 
     ## Get correct ligand chain for each file
-    re_pat = r"Mpro-P[0-9]{4}_[0-9]([AB])"
-    lig_chains = [re.search(re_pat, fn).groups()[0] for fn in all_holo_fns]
+    re_pat = r"Mpro-.*_[0-9]([AB])"
+    all_matches = [re.search(re_pat, fn) for fn in all_holo_fns]
+    ## Get rid of files that aren't A or B chain (can't handle that for now)
+    lig_chains = [m.groups()[0] if m else None for m in all_matches]
     ## Get ligands from all holo structures
     all_ligs = [
         split_openeye_mol(load_openeye_pdb(fn), lig_chain=c)["lig"]
         for fn, c in zip(all_holo_fns, lig_chains)
+        if c
     ]
+    ## Trim names
+    bad_holo_names = [
+        n for i, n in enumerate(all_holo_names) if all_matches[i] is None
+    ]
+    all_holo_names = [n for i, n in enumerate(all_holo_names) if all_matches[i]]
+    for n in bad_holo_names:
+        print(f"Removed {n} (not A or B chain)", flush=True)
 
     ## Get proteins from apo structures
     if args.keep_wat:
