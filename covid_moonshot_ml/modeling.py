@@ -139,10 +139,14 @@ def make_du_from_new_lig(
 
         ## Set up predicates
         if ref_chain is not None:
+            not_water = oechem.OENotAtom(oechem.OEIsWater())
             ref_chain = oechem.OEHasChainID(ref_chain)
+            ref_chain = oechem.OEAndAtom(not_water, ref_chain)
         if mobile_chain is not None:
             try:
+                not_water = oechem.OENotAtom(oechem.OEIsWater())
                 mobile_chain = oechem.OEHasChainID(mobile_chain)
+                mobile_chain = oechem.OEAndAtom(not_water, mobile_chain)
             except Exception as e:
                 print(mobile_chain)
                 raise e
@@ -202,10 +206,36 @@ def make_du_from_new_lig(
     opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
     ############################################################################
 
+    ## Check for waters?
+    print(
+        "water in protein",
+        "HOH"
+        in {
+            oechem.OEAtomGetResidue(a).GetName()
+            for a in initial_prot.GetAtoms()
+        },
+    )
+    print(
+        "water in ligand",
+        "HOH"
+        in {oechem.OEAtomGetResidue(a).GetName() for a in new_lig.GetAtoms()},
+        flush=True,
+    )
+
     ## Finally make new DesignUnit
     du = oechem.OEDesignUnit()
     oespruce.OEMakeDesignUnit(du, initial_prot, new_lig, opts)
     assert du.HasProtein() and du.HasLigand()
+
+    ## Check for waters
+    all_atoms = oechem.OEGraphMol()
+    du.GetComponents(all_atoms)
+    print(
+        "water in design unit",
+        "HOH"
+        in {oechem.OEAtomGetResidue(a).GetName() for a in all_atoms.GetAtoms()},
+        flush=True,
+    )
 
     return du
 
