@@ -506,7 +506,7 @@ import re
 
 
 def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv", 
-                            docking_inputs=None, ignore_comment=False,
+                            docking_inputs=None, drop_commented_smarts_strings=True,
                             verbose=True):
     """
     Filter an input file of compound SMILES by SMARTS filters using OEchem matching.
@@ -517,10 +517,10 @@ def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
         Path to file containing SMARTS entries to filter by (comma-separated).
     docking_inputs : list
         List containing SMILES entries and ligand names to filter using smarts_queries.
-    ignore_comment : bool
-        How to handle first-character hashtags on SMARTS entries. True ignores hashtags 
-        so all SMARTS filters are always applied; if False (default), the code ignores 
-        SMARTS filters that are hashtagged.
+    drop_commented_smarts_strings : bool
+        How to handle first-character hashtags ('commented') on SMARTS entries. False 
+        ignores hashtags so all SMARTS filters are always applied; if True (default), the code ignores 
+        SMARTS filters that are commented (hashtagged).
     verbose : bool
         Whether or not to print a message stating the number of compounds filtered.
 
@@ -580,11 +580,11 @@ def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
     query_smarts = pandas.read_csv(
         smarts_queries, names=["smarts", "id"])["smarts"].values
 
-    if ignore_comment:
+    if drop_commented_smarts_strings:
         # only keep SMARTS queries that are not commented.
         query_smarts = [ q for q in query_smarts if not q[0] == "#"]
     else:
-        # some of the SMARTS queries are commented - remove these for now.
+        # some of the SMARTS queries are commented - use these anyway.
         query_smarts = [ q if not q[0] == "#" else q[1:] for q in query_smarts]
 
     input_cpds = []
