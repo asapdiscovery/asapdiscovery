@@ -53,11 +53,11 @@ def main():
         fig.write_image(file_path)
 
     ## make per_compound figures
-    df = dr.structure_df
+    df = dr.compound_df
     for feature in features:
-        fig = px.bar(df.sort_values(feature),
-                     y=feature,
-                     text_auto=".2s")
+        fig = px.histogram(df.sort_values(feature),
+                           x=feature,
+                           text_auto=".2s")
         file_path = os.path.join(args.output_dir, f"per_compound_{feature}.png")
         fig.write_image(file_path)
 
