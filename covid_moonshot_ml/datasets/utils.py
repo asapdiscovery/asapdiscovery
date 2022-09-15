@@ -899,8 +899,9 @@ def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
     docking_inputs : list
         List containing SMILES entries and ligand names to filter using smarts_queries.
     ignore_comment : bool
-        How to handle first-character hashtags on SMARTS entries. True overrides them,
-        False sets these entries to be ignored during filtering.
+        How to handle first-character hashtags on SMARTS entries. True ignores hashtags 
+        so all SMARTS filters are always applied; if False (default), the code ignores 
+        SMARTS filters that are hashtagged.
     verbose : bool
         Whether or not to print a message stating the number of compounds filtered.
 
