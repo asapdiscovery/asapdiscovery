@@ -4,7 +4,6 @@ import os.path
 import numpy as np
 import pandas
 import re
-import csv
 from openeye import oechem
 
 from ..schema import ExperimentalCompoundData, ExperimentalCompoundDataUpdate, \
@@ -708,13 +707,16 @@ def parse_experimental_compound_data(
 
 def parse_fragalysis_data(frag_fn,
                           x_dir,
-                          cmpd_ids,
+                          cmpd_ids=None,
                           o_dir=False):
     ## Load in csv
     sars2_structures = pandas.read_csv(frag_fn).fillna("")
 
-    ## Filter fragalysis dataset by the compounds we want to test
-    sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(cmpd_ids)]
+    if cmpd_ids is not None:
+        ## Filter fragalysis dataset by the compounds we want to test
+        sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(cmpd_ids)]
+    else:
+        sars2_filtered = sars2_structures
 
     if o_dir:
         mols_wo_sars2_xtal = sars2_filtered[sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
@@ -837,7 +839,8 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
     opts = oechem.OESplitMolComplexOptions()
     opts.SetSplitCovalent(True)
     opts.SetSplitCovalentCofactors(True)
-    oechem.OESplitMolComplex(lig_mol, prot_mol, water_mol, oth_mol, complex_mol)
+    oechem.OESplitMolComplex(lig_mol, prot_mol, water_mol, oth_mol, complex_mol,
+        opts)
 
     return {'complex': complex_mol,
             'lig': lig_mol,
@@ -954,38 +957,36 @@ def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
     ['CCC(=O)Nc1ccc(cc1)C2CN(C(=O)C23CN(Cc4c3cc(cc4)Cl)S(=O)(=O)CC5(CC5)C#N)c6cncc7c6cccc7 MIC-UNK-c85ea37c-2']
     ]
     #### ^^ REPLACE WITH ExperimentalCompoundData PARSE INTO LIST OF SMILES^^
+    query_smarts = pandas.read_csv(
+        smarts_queries, names=["smarts", "id"])["smarts"].values
 
-    with open(smarts_queries, "r") as queries:
-        queries_reader = csv.reader(queries)
-        query_smarts = [ q[0] for q in queries_reader ]
+    if ignore_comment:
+        # only keep SMARTS queries that are not commented.
+        query_smarts = [ q for q in query_smarts if not q[0] == "#"]
+    else:
+        # some of the SMARTS queries are commented - remove these for now.
+        query_smarts = [ q if not q[0] == "#" else q[1:] for q in query_smarts]
 
-        if ignore_comment:
-            # only keep SMARTS queries that are not commented.
-            query_smarts = [ q for q in query_smarts if not q[0] == "#"]
-        else:
-            # some of the SMARTS queries are commented - remove these for now.
-            query_smarts = [ q if not q[0] == "#" else q[1:] for q in query_smarts]
+    input_cpds = []
+    num_input_cpds = 0 # initiate counter for verbose setting.
+    filtered_docking_inputs = []
+    for cpd in docking_inputs:
+        num_input_cpds += 1
+        # read input cpd into OE.
+        mol = oechem.OEGraphMol()
+        oechem.OESmilesToMol(mol, cpd[0].split()[0])
 
-        input_cpds = []
-        num_input_cpds = 0 # initiate counter for verbose setting.
-        filtered_docking_inputs = []
-        for cpd in docking_inputs:
-            num_input_cpds += 1
-            # read input cpd into OE.
-            mol = oechem.OEGraphMol()
-            oechem.OESmilesToMol(mol, cpd[0].split()[0])
+        # now loop over queried SMARTS patterns, flag input compound if hit.
+        for query in query_smarts:
+            # create a substructure search object.
+            ss = oechem.OESubSearch(query)
+            oechem.OEPrepareSearch(mol, ss)
 
-            # now loop over queried SMARTS patterns, flag input compound if hit.
-            for query in query_smarts:
-                # create a substructure search object.
-                ss = oechem.OESubSearch(query)
-                oechem.OEPrepareSearch(mol, ss)
-
-                # compare this query to the reference mol.
-                if ss.SingleMatch(mol):
-                    # if match is found we can stop querying and output the cpd.
-                    filtered_docking_inputs.append(cpd)
-                    break
+            # compare this query to the reference mol.
+            if ss.SingleMatch(mol):
+                # if match is found we can stop querying and output the cpd.
+                filtered_docking_inputs.append(cpd)
+                break
 
     if verbose:
         print(f"Retained {len(filtered_docking_inputs)/num_input_cpds*100:.2f}% of compounds after " \
@@ -994,3 +995,6 @@ def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
 
     # return the filtered list.
     return filtered_docking_inputs
+
+if __name__ == "__main__":
+    filter_docking_inputs()
