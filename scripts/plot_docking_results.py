@@ -33,6 +33,14 @@ def main():
     dr.df['POSIT_R'] = 1 - dr.df.POSIT
     dr.df["Complex_ID"] = dr.df.Compound_ID + "_" + dr.df.Structure_Source
 
+    ## Clean the Docked_File paths because there are extra `/`
+    ## also, some of the file paths are NaNs so we need to only keep the ones that are strings
+    cleaned = [directory
+               for string in dr.df.Docked_File if type(string) == str
+               for directory in string.split("/") if not len(directory) == 0
+               ]
+    dr.df.Docked_File = "/".join(cleaned)
+
     ## Re-sort the dataframe by the Compound_ID so that its nice and alphabetical and re-index based on that
     dr.df = dr.df.sort_values(["Compound_ID"]).reset_index(drop=True)
 
