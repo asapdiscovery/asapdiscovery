@@ -42,7 +42,7 @@ def main():
     for string in dr.df.Docked_File:
         if type(string) == str:
             cleaned = [directory for directory in string.split("/") if not len(directory) == 0]
-            cleaned_list.append("/".join(cleaned))
+            cleaned_list.append("/" + "/".join(cleaned))
         else:
             cleaned_list.append(np.NaN)
     dr.df.Docked_File = cleaned_list

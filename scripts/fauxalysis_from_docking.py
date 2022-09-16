@@ -32,10 +32,5 @@ def main():
         output_dir_path = os.path.join(args.output_dir, values["Complex_ID"])
         shutil.copy2(input_dir_path, output_dir_path)
 
-
-
-
-
-
 if __name__ == '__main__':
     main()
