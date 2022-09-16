@@ -31,21 +31,20 @@ def main():
     dr.df = dr.df.drop("Unnamed: 0", axis=1)
     dr.df["MERS_structure"] = dr.df["MERS_structure"].apply(lambda x: x.split("_")[1])
 
-    ## Rename the columns, add POSIT_R and Complex_ID since those are useful
+    ## Rename the columns, add POSIT_R
     dr.df.columns = ["Compound_ID", "Structure_Source", "Docked_File", "RMSD", "POSIT", "Chemgauss4", "Clash"]
     dr.df['POSIT_R'] = 1 - dr.df.POSIT
+
+    ## Drop "_bound" from Compound_ID
+    dr.df.Compound_ID = [string.replace("_bound", "") for string in dr.df.Compound_ID]
+
+    ## Add Complex_ID
     dr.df["Complex_ID"] = dr.df.Compound_ID + "_" + dr.df.Structure_Source
 
     ## Clean the Docked_File paths because there are extra `/`
     ## also, some of the file paths are NaNs so we need to only keep the ones that are strings
-    cleaned_list = []
-    for string in dr.df.Docked_File:
-        if type(string) == str:
-            cleaned = [directory for directory in string.split("/") if not len(directory) == 0]
-            cleaned_list.append("/" + "/".join(cleaned))
-        else:
-            cleaned_list.append(np.NaN)
-    dr.df.Docked_File = cleaned_list
+    dr.df.Docked_File = dr.df.Docked_File.replace(np.nan, "")
+    dr.df.Docked_File = [string.replace("//", "/") for string in dr.df.Docked_File]
 
     ## Re-sort the dataframe by the Compound_ID so that its nice and alphabetical and re-index based on that
     dr.df = dr.df.sort_values(["Compound_ID"]).reset_index(drop=True)
