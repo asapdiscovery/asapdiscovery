@@ -1,6 +1,6 @@
 BASE_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
 ## All molecules with SMILES (public)
-ALL_SMI_SEARCH = "searches/8975987-kmJ-vR0fhkdccPw5UdWiIA"
+ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
 
 
 def download_url(url, header):
@@ -88,10 +88,12 @@ def download_achiral(header, fn_out=None):
     mol_df = mol_df.loc[~idx, :].copy()
     ## Some of the SMILES from CDD have extra info at the end
     mol_df.loc[:, "shipment_SMILES"] = [
-        s.strip("|").split()[0] for s in mol_df.loc[:, "shipment_SMILES"]
+        s.strip("|").split()[0] if not pandas.isna(s) else s
+        for s in mol_df.loc[:, "shipment_SMILES"]
     ]
     mol_df.loc[:, "suspected_SMILES"] = [
-        s.strip("|").split()[0] for s in mol_df.loc[:, "suspected_SMILES"]
+        s.strip("|").split()[0] if not pandas.isna(s) else s
+        for s in mol_df.loc[:, "suspected_SMILES"]
     ]
 
     ## Remove chiral molecules
