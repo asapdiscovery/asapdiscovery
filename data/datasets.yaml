@@ -5,5 +5,11 @@
   Status: Finished
   Notes:
   Source:
-
+001:
+  Path_Data: /data/chodera/paynea/mers-fauxalysis/posit_hybrid_no_relax_fauxalysis
+  Path_CSV: /data/chodera/paynea/mers-fauxalysis/posit_hybrid_no_relax_fauxalysis/metadata/mers_fauxalysis.csv
+  Type: Fauxalysis
+  Status: Delivered
+  Notes: created 20220916
+  Source:
 
