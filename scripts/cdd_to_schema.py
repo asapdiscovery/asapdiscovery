@@ -14,7 +14,8 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     parser.add_argument("-i", required=True, help="CSV file input from CDD.")
-    parser.add_argument("-o", required=True, help="Output JSON file.")
+    parser.add_argument("-json", required=True, help="Output JSON file.")
+    parser.add_argument("-csv", help="Output CSV file.")
     parser.add_argument(
         "-type",
         default="std",
@@ -34,9 +35,9 @@ def main():
     args = get_args()
 
     if args.type.lower() == "std":
-        _ = cdd_to_schema(args.i, args.o, args.achiral)
+        _ = cdd_to_schema(args.i, args.json, args.csv, args.achiral)
     elif args.type.lower() == "ep":
-        _ = cdd_to_schema_pair(args.i, args.o)
+        _ = cdd_to_schema_pair(args.i, args.json, args.csv)
     else:
         raise ValueError(f"Unknown value for -type: {args.type}.")
 
