@@ -31,9 +31,9 @@ def main():
         input_dir_path = os.path.dirname(values["Docked_File"])
         output_dir_path = os.path.join(args.output_dir, values["Complex_ID"])
 
-        if os.path.exists(input_dir_path):
-            print(input_dir_path)
-            print(output_dir_path)
+        if os.path.exists(input_dir_path) and not os.path.exists(output_dir_path):
+            #print(input_dir_path)
+            #print(output_dir_path)
             shutil.copytree(input_dir_path, output_dir_path)
 
 
