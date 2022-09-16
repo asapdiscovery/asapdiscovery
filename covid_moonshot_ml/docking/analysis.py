@@ -195,20 +195,26 @@ class DockingResults():
             # if sum(not_na[not_na != 0]) == 0:
             #     print(f"Skipping {score} since no non-NA scores were found")
             feature_df = pd.concat([not_na, good, mean, min], axis=1)
-            feature_df.columns = [f"{name}_{score}" for name in ["Not_NA", "Good", "Mean", "Min"]]
+            feature_df.columns = [f"{score}_{name}" for name in ["Not_NA", "Good", "Mean", "Min"]]
             score_df_list.append(feature_df)
         grouped_df = pd.concat(score_df_list, axis=1)
         grouped_df[groupby_ID_column] = grouped_df.index
         return grouped_df
 
-    def get_compound_df(self, **kwargs):
-        self.compound_df = self.get_grouped_df(groupby_ID_column="Compound_ID", **kwargs)
+    def get_compound_df(self, csv_file=False, **kwargs):
+        if csv_file:
+            self.compound_df = pd.read_csv(csv_file)
+        else:
+            self.compound_df = self.get_grouped_df(groupby_ID_column="Compound_ID", **kwargs)
 
-    def get_structure_df(self, **kwargs):
-        self.structure_df = self.get_grouped_df(groupby_ID_column="Structure_Source", **kwargs)
-        with open("../scripts/mers_structures.csv") as f:
-            mers_structure_df = pd.read_csv(f)
-        self.structure_df["Resolution"] = list(mers_structure_df.Resolution)
+    def get_structure_df(self, csv_file=False, **kwargs):
+        if csv_file:
+            self.structure_df = pd.read_csv(csv_file)
+        else:
+            self.structure_df = self.get_grouped_df(groupby_ID_column="Structure_Source", **kwargs)
+            with open("../data/mers_structures.csv") as f:
+                mers_structure_df = pd.read_csv(f)
+            self.structure_df["Resolution"] = list(mers_structure_df.Resolution)
 
     def get_best_structure_per_compound(self,
                                         filter_score="RMSD",
