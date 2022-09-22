@@ -3,29 +3,33 @@ import math
 import pandas as pd
 import plotly.express as ex
 
-class Rock():
+
+class Rock:
     """
     Class for getting ROC-AUC results for different scoring functions for a dataset.
     """
 
-    def __init__(self,
-                 df,
-                 score_name,
-                 rmsd_name,
-                 n_samples,
-                 ):
+    def __init__(
+        self,
+        df,
+        score_name,
+        rmsd_name,
+        n_samples,
+    ):
         self.df = df
         self.score_name = score_name
         self.rmsd_name = rmsd_name
         self.n_samples = n_samples
         self.get_score_range()
 
-        self.total_poses, \
-        self.total_good_poses, \
-        self.total_bad_poses, \
-        self.total_cmpds, \
-        self.total_good_cmpds, \
-        self.total_bad_cmpds = self.calc_data(self.df)
+        (
+            self.total_poses,
+            self.total_good_poses,
+            self.total_bad_poses,
+            self.total_cmpds,
+            self.total_good_cmpds,
+            self.total_bad_cmpds,
+        ) = self.calc_data(self.df)
 
         self.auc = str
         self.auc_list = []
@@ -50,7 +54,14 @@ class Rock():
         n_good_cmpds = len(set_of_good_cmpds)
         n_bad_cmpds = n_cmpds - n_good_cmpds
 
-        return n_poses, n_good_poses, n_bad_poses, n_cmpds, n_good_cmpds, n_bad_cmpds
+        return (
+            n_poses,
+            n_good_poses,
+            n_bad_poses,
+            n_cmpds,
+            n_good_cmpds,
+            n_bad_cmpds,
+        )
 
     def calc_auc(self, false_positive_rates, true_positive_rates):
         """
@@ -73,10 +84,12 @@ class Rock():
         -------
 
         """
-        self.score_range = np.linspace(self.df[self.score_name].min() - 1,
-                                       self.df[self.score_name].max(),
-                                       self.n_samples,
-                                       endpoint=True)
+        self.score_range = np.linspace(
+            self.df[self.score_name].min() - 1,
+            self.df[self.score_name].max(),
+            self.n_samples,
+            endpoint=True,
+        )
 
     def weird_division(self, n, d):
         return n / d if d else 0
@@ -91,17 +104,18 @@ class Rock():
             total_good_cmpds = self.total_good_cmpds
             total_bad_cmpds = self.total_bad_cmpds
 
-
         else:
             ## if a new dataframe is passed, that means we are bootstrapping,
             ## in which case we need to re-calculate the 'self' totals
 
-            total_poses, \
-            total_good_poses, \
-            total_bad_poses, \
-            total_cmpds, \
-            total_good_cmpds, \
-            total_bad_cmpds = self.calc_data(df)
+            (
+                total_poses,
+                total_good_poses,
+                total_bad_poses,
+                total_cmpds,
+                total_good_cmpds,
+                total_bad_cmpds,
+            ) = self.calc_data(df)
 
         true_positive_rates_poses = []  ## same thing as recall
         false_positive_rates_poses = []
@@ -112,13 +126,18 @@ class Rock():
         self.precision_cmpds = []
 
         ## I *think* this is faster than iterating through and making lists for each thing but I don't actually know
-        data = [self.calc_data(df[df[self.score_name] <= cutoff]) for cutoff in self.score_range]
-        n_poses_list, \
-        n_good_poses_list, \
-        n_bad_poses_list, \
-        n_cmpds_list, \
-        n_good_cmpds_list, \
-        n_bad_cmpds_list = zip(*data)
+        data = [
+            self.calc_data(df[df[self.score_name] <= cutoff])
+            for cutoff in self.score_range
+        ]
+        (
+            n_poses_list,
+            n_good_poses_list,
+            n_bad_poses_list,
+            n_cmpds_list,
+            n_good_cmpds_list,
+            n_bad_cmpds_list,
+        ) = zip(*data)
 
         for idx in range(len(n_poses_list)):
             n_poses = n_poses_list[idx]
@@ -133,18 +152,30 @@ class Rock():
 
                 n_cmpds = n_cmpds_list[idx]
                 n_good_cmpds = n_good_cmpds_list[idx]
-                self.precision_poses.append(self.weird_division(n_good_poses, n_poses))
-                self.true_positive_rates_cmpds.append(n_good_cmpds / total_good_cmpds)
+                self.precision_poses.append(
+                    self.weird_division(n_good_poses, n_poses)
+                )
+                self.true_positive_rates_cmpds.append(
+                    n_good_cmpds / total_good_cmpds
+                )
                 ## this doesn't really make sense mathematically
                 # self.false_positive_rates_cmpds.append(n_bad_cmpds / self.total_bad_cmpds)
-                self.precision_cmpds.append(self.weird_division(n_good_cmpds, n_cmpds))
+                self.precision_cmpds.append(
+                    self.weird_division(n_good_cmpds, n_cmpds)
+                )
 
         if bootstrap:
-            self.auc_list.append(self.calc_auc(false_positive_rates_poses, true_positive_rates_poses))
+            self.auc_list.append(
+                self.calc_auc(
+                    false_positive_rates_poses, true_positive_rates_poses
+                )
+            )
         else:
             self.true_positive_rates_poses = true_positive_rates_poses
             self.false_positive_rates_poses = false_positive_rates_poses
-            self.auc = self.calc_auc(false_positive_rates_poses, true_positive_rates_poses)
+            self.auc = self.calc_auc(
+                false_positive_rates_poses, true_positive_rates_poses
+            )
         return self.auc
 
     def get_bootstrapped_error_bars(self, n_bootstraps):
@@ -153,7 +184,12 @@ class Rock():
         self.get_auc_from_df(self.df, bootstrap=False)
 
         ## Then bootstrap CVs
-        self.auc_poses = [self.get_auc_from_df(self.df.sample(frac=1, replace=True), bootstrap=True) for n in range(n_bootstraps)]
+        self.auc_poses = [
+            self.get_auc_from_df(
+                self.df.sample(frac=1, replace=True), bootstrap=True
+            )
+            for n in range(n_bootstraps)
+        ]
 
         auc_poses_array = np.array(self.auc_poses)
         #         auc_cmpds_array = np.array(self.auc_cmpds)
@@ -165,38 +201,47 @@ class Rock():
 
         auc_poses_bounds = math.floor(len(auc_poses_array) * 0.025)
         #         auc_cmpds_bounds = math.floor(len(auc_cmpds_array) * 0.025)
-        self.poses_ci = (auc_poses_array.mean() - auc_poses_array[auc_poses_bounds],
-                         auc_poses_array[-auc_poses_bounds] - auc_poses_array.mean())
+        self.poses_ci = (
+            auc_poses_array.mean() - auc_poses_array[auc_poses_bounds],
+            auc_poses_array[-auc_poses_bounds] - auc_poses_array.mean(),
+        )
 
     #         self.cmpds_ci = (auc_cmpds_array.mean() - auc_cmpds_array[auc_cmpds_bounds], auc_cmpds_array[-auc_cmpds_bounds] - auc_cmpds_array.mean())
 
     def get_df(self):
-        self.auc_poses_df = pd.DataFrame({"True_Positive": self.true_positive_rates_poses,
-                                          "False_Positive": self.false_positive_rates_poses,
-                                          "Value": self.score_range,
-                                          "Score_Type": self.score_name,
-                                          "Precision": self.precision_poses
-                                          })
-        self.auc_cmpds_df = pd.DataFrame({"True_Positive": self.true_positive_rates_cmpds,
-                                          #                       "False_Positive": self.false_positive_rates_cmpds,
-                                          "Value": self.score_range,
-                                          "Score_Type": self.score_name,
-                                          "Precision": self.precision_cmpds
-                                          })
+        self.auc_poses_df = pd.DataFrame(
+            {
+                "True_Positive": self.true_positive_rates_poses,
+                "False_Positive": self.false_positive_rates_poses,
+                "Value": self.score_range,
+                "Score_Type": self.score_name,
+                "Precision": self.precision_poses,
+            }
+        )
+        self.auc_cmpds_df = pd.DataFrame(
+            {
+                "True_Positive": self.true_positive_rates_cmpds,
+                #                       "False_Positive": self.false_positive_rates_cmpds,
+                "Value": self.score_range,
+                "Score_Type": self.score_name,
+                "Precision": self.precision_cmpds,
+            }
+        )
 
 
-class Rocks():
+class Rocks:
     """
     Class for analyzing docking data, for comparing from among different scoring functions.
     """
 
-    def __init__(self,
-                 csv,
-                 score_list,
-                 rmsd_name,
-                 n_samples,
-                 n_bootstraps=None,
-                 ):
+    def __init__(
+        self,
+        csv,
+        score_list,
+        rmsd_name,
+        n_samples,
+        n_bootstraps=None,
+    ):
         self.csv = csv
         self.score_list = score_list
         self.n_samples = n_samples
@@ -211,13 +256,16 @@ class Rocks():
     def clean_dataframe(self):
         df = pd.read_csv(self.csv)
         df["POSIT_R"] = -df["POSIT"] + 1
-        self.df = df[(df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)]
-
+        self.df = df[
+            (df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)
+        ]
 
     def build_rocks(self):
         for score_name in self.score_list:
             assert score_name in self.df.columns
-            self.rock_dict[score_name] = Rock(self.df, score_name, self.rmsd_name, self.n_samples)
+            self.rock_dict[score_name] = Rock(
+                self.df, score_name, self.rmsd_name, self.n_samples
+            )
 
     def get_aucs(self):
         for score_name, rock in self.rock_dict.items():
@@ -243,43 +291,40 @@ class Rocks():
             lower_bound_list.append(rock.poses_ci[0])
             upper_bound_list.append(rock.poses_ci[1])
             auc_list.append(rock.auc_poses[0])
-        self.model_df = pd.DataFrame({
-            "Score_Type": self.score_list,
-            "Lower_Bound": lower_bound_list,
-            "AUC": auc_list,
-            "Upper_Bound": upper_bound_list
-        })
+        self.model_df = pd.DataFrame(
+            {
+                "Score_Type": self.score_list,
+                "Lower_Bound": lower_bound_list,
+                "AUC": auc_list,
+                "Upper_Bound": upper_bound_list,
+            }
+        )
 
     def plot_poses_auc(self):
-        fig = ex.line(self.poses_df,
-                      x="False_Positive",
-                      y="True_Positive",
-                      color="Score_Type",
-                      hover_data=["Value"],
-                      )
+        fig = ex.line(
+            self.poses_df,
+            x="False_Positive",
+            y="True_Positive",
+            color="Score_Type",
+            hover_data=["Value"],
+        )
         fig.update_layout(height=600, width=600, title="ROC of all POSES")
         fig.update_yaxes(
             scaleanchor="x",
             scaleratio=1,
         )
-        fig.add_shape(type='line',
-                      x0=0,
-                      x1=1,
-                      y0=0,
-                      y1=1,
-                      xref='x',
-                      yref="y"
-                      )
+        fig.add_shape(type="line", x0=0, x1=1, y0=0, y1=1, xref="x", yref="y")
 
         return fig
 
     def plot_precision_recall(self):
-        fig = ex.line(self.poses_df,
-                      x="True_Positive",
-                      y="Precision",
-                      color="Score_Type",
-                      hover_data=["Value"],
-                      )
+        fig = ex.line(
+            self.poses_df,
+            x="True_Positive",
+            y="Precision",
+            color="Score_Type",
+            hover_data=["Value"],
+        )
         fig.update_layout(height=600, width=600, title="ROC of all POSES")
         fig.update_yaxes(
             scaleanchor="x",
@@ -288,18 +333,22 @@ class Rocks():
         return fig
 
     def get_compound_results_df(self):
-        total_poses = self.df.groupby('Compound_ID')["RMSD"].count()
-        RMSDs = self.df.groupby('Compound_ID')[['RMSD']].apply(lambda x: x[x <= 2].agg(["count", "min"]))
+        total_poses = self.df.groupby("Compound_ID")["RMSD"].count()
+        RMSDs = self.df.groupby("Compound_ID")[["RMSD"]].apply(
+            lambda x: x[x <= 2].agg(["count", "min"])
+        )
         n_good_poses = RMSDs.xs("count", level=1)["RMSD"]
         min_RMSD = RMSDs.xs("min", level=1)["RMSD"]
         perc_good_poses = n_good_poses / total_poses
-        min_posit_R = self.df.groupby('Compound_ID')['POSIT_R'].min()
-        cmpd_df = pd.DataFrame({
-            "N_Poses": total_poses,
-            "N_Good_Poses": n_good_poses,
-            "Perc_Good_Poses": perc_good_poses,
-            "Min_RMSD": min_RMSD,
-            "Min_POSIT_R": min_posit_R,
-        })
+        min_posit_R = self.df.groupby("Compound_ID")["POSIT_R"].min()
+        cmpd_df = pd.DataFrame(
+            {
+                "N_Poses": total_poses,
+                "N_Good_Poses": n_good_poses,
+                "Perc_Good_Poses": perc_good_poses,
+                "Min_RMSD": min_RMSD,
+                "Min_POSIT_R": min_posit_R,
+            }
+        )
         cmpd_df["Compound_ID"] = cmpd_df.index
         self.cmpd_df = cmpd_df.sort_values("Perc_Good_Poses")

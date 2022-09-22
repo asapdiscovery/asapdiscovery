@@ -1,8 +1,13 @@
 import os
-from ..schema import CrystalCompoundData, ExperimentalCompoundData, \
-    PDBStructure, ExperimentalCompoundDataUpdate
+from ..schema import (
+    CrystalCompoundData,
+    ExperimentalCompoundData,
+    PDBStructure,
+    ExperimentalCompoundDataUpdate,
+)
 from ..datasets.utils import get_sdf_fn_from_dataset
 from ..datasets.pdb import load_pdbs_from_yaml
+
 
 def build_docking_systems(
     exp_compounds, xtal_compounds, compound_idxs, n_top=1
@@ -70,10 +75,12 @@ def build_docking_system_direct(prot_mol, lig_smi, prot_name, lig_name):
 
     return ProteinLigandComplex(components=[protein, ligand])
 
+
 def build_combined_protein_system_from_sdf(pdb_fn, sdf_fn):
     protein = Protein.from_file(pdb_fn, name="MERS-Mpro")
     ligand = Ligand.from_file(sdf_fn)
     return ProteinLigandComplex
+
 
 def parse_xtal(x_fn, x_dir):
     """

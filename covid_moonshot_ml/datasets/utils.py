@@ -391,19 +391,19 @@ def get_achiral_molecules(mol_df):
 
     return mol_df.loc[achiral_idx, :]
 
-def get_sdf_fn_from_dataset(dataset:str,
-                                 fragalysis_dir,
-                                 ):
+
+def get_sdf_fn_from_dataset(
+    dataset: str,
+    fragalysis_dir,
+):
     fn = os.path.join(fragalysis_dir, f"{dataset}_0A/{dataset}_0A.sdf")
     if not os.path.exists(fn):
         print(f"File {fn} not found...")
-        fn = None ## not sure what behaviour this should have
+        fn = None  ## not sure what behaviour this should have
     return fn
 
-def parse_experimental_compound_data(
-        exp_fn: str,
-        json_fn: str
-):
+
+def parse_experimental_compound_data(exp_fn: str, json_fn: str):
     ## Load experimental data and trim columns
     exp_df = pandas.read_csv(exp_fn)
     exp_cols = [
@@ -442,51 +442,61 @@ def parse_experimental_compound_data(
             ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json()
         )
 
-def parse_fragalysis_data(frag_fn,
-                          x_dir,
-                          cmpd_ids=None,
-                          o_dir=False):
+
+def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
     ## Load in csv
     sars2_structures = pandas.read_csv(frag_fn).fillna("")
 
     if cmpd_ids is not None:
         ## Filter fragalysis dataset by the compounds we want to test
-        sars2_filtered = sars2_structures[sars2_structures['Compound ID'].isin(cmpd_ids)]
+        sars2_filtered = sars2_structures[
+            sars2_structures["Compound ID"].isin(cmpd_ids)
+        ]
     else:
         sars2_filtered = sars2_structures
 
     if o_dir:
-        mols_wo_sars2_xtal = sars2_filtered[sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
-        mols_w_sars2_xtal = sars2_filtered[~sars2_filtered["Dataset"].isna()][["Compound ID", "SMILES", "Dataset"]]
+        mols_wo_sars2_xtal = sars2_filtered[sars2_filtered["Dataset"].isna()][
+            ["Compound ID", "SMILES", "Dataset"]
+        ]
+        mols_w_sars2_xtal = sars2_filtered[~sars2_filtered["Dataset"].isna()][
+            ["Compound ID", "SMILES", "Dataset"]
+        ]
 
         ## Use utils function to get sdf file from dataset
-        mols_w_sars2_xtal["SDF"] = mols_w_sars2_xtal["Dataset"].apply(get_sdf_fn_from_dataset,
-                                                                      fragalysis_dir=x_dir)
+        mols_w_sars2_xtal["SDF"] = mols_w_sars2_xtal["Dataset"].apply(
+            get_sdf_fn_from_dataset, fragalysis_dir=x_dir
+        )
 
         ## Save csv files for each dataset
-        mols_wo_sars2_xtal.to_csv(os.path.join(o_dir, "mers_ligands_without_SARS2_structures.csv"),
-                                  index=False)
+        mols_wo_sars2_xtal.to_csv(
+            os.path.join(o_dir, "mers_ligands_without_SARS2_structures.csv"),
+            index=False,
+        )
 
-        mols_w_sars2_xtal.to_csv(os.path.join(o_dir, "mers_ligands_with_SARS2_structures.csv"),
-                                 index=False)
+        mols_w_sars2_xtal.to_csv(
+            os.path.join(o_dir, "mers_ligands_with_SARS2_structures.csv"),
+            index=False,
+        )
 
     ## Construct sars_xtal list
     sars_xtals = {}
-    for data in sars2_filtered.to_dict('index').values():
+    for data in sars2_filtered.to_dict("index").values():
         cmpd_id = data["Compound ID"]
         dataset = data["Dataset"]
         if len(dataset) > 0:
-            if not sars_xtals.get(cmpd_id) or '-P' in dataset:
+            if not sars_xtals.get(cmpd_id) or "-P" in dataset:
                 sars_xtals[cmpd_id] = CrystalCompoundData(
                     smiles=data["SMILES"],
                     compound_id=cmpd_id,
                     dataset=dataset,
-                    sdf_fn=get_sdf_fn_from_dataset(dataset, x_dir)
+                    sdf_fn=get_sdf_fn_from_dataset(dataset, x_dir),
                 )
         else:
             sars_xtals[cmpd_id] = CrystalCompoundData()
 
     return sars_xtals
+
 
 def get_compound_id_xtal_dicts(sars_xtals):
     """
@@ -517,7 +527,7 @@ def get_compound_id_xtal_dicts(sars_xtals):
 
         xtal_to_compound[dataset] = compound_id
 
-    return(compound_to_xtals, xtal_to_compound)
+    return (compound_to_xtals, xtal_to_compound)
 
 
 def load_openeye_pdb(pdb_fn, alt_loc=False):
@@ -537,6 +547,7 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
 
     return in_mol
 
+
 def load_openeye_sdf(sdf_fn):
     ifs = oechem.oemolistream()
     ifs.SetFlavor(
@@ -550,6 +561,7 @@ def load_openeye_sdf(sdf_fn):
 
     return coords_mol
 
+
 def save_openeye_pdb(mol, pdb_fn):
     ofs = oechem.oemolostream()
     ofs.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
@@ -557,12 +569,14 @@ def save_openeye_pdb(mol, pdb_fn):
     oechem.OEWriteMolecule(ofs, mol)
     ofs.close()
 
+
 def save_openeye_sdf(mol, sdf_fn):
     ofs = oechem.oemolostream()
     ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
     ofs.open(sdf_fn)
     oechem.OEWriteMolecule(ofs, mol)
     ofs.close()
+
 
 def split_openeye_mol(complex_mol, lig_chain="A"):
     """
@@ -636,20 +650,23 @@ def split_openeye_mol(complex_mol, lig_chain="A"):
         opts,
     )
 
-    return {'complex': complex_mol,
-            'lig': lig_mol,
-            'pro': prot_mol,
-            'water': water_mol,
-            'other': oth_mol}
+    return {
+        "complex": complex_mol,
+        "lig": lig_mol,
+        "pro": prot_mol,
+        "water": water_mol,
+        "other": oth_mol,
+    }
 
-def get_ligand_rmsd_openeye(ref: oechem.OEMolBase,
-                    mobile: oechem.OEMolBase):
+
+def get_ligand_rmsd_openeye(ref: oechem.OEMolBase, mobile: oechem.OEMolBase):
 
     return oechem.OERMSD(ref, mobile)
 
 
 def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
     import mdtraj as md
+
     ref = md.load_pdb(ref_fn)
     mobile = md.load_pdb(mobile_fn)
 
@@ -663,26 +680,21 @@ def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
     print(ref_lig)
     print(mobile_lig)
 
-
-    rmsd_array = md.rmsd(ref_lig,
-                         mobile_lig,
-                         precentered=True
-                         )
+    rmsd_array = md.rmsd(ref_lig, mobile_lig, precentered=True)
     per_res_rmsd = rmsd_array[0] / ref_lig.n_atoms
     #
-    rmsd_array2 = md.rmsd(ref,
-                         mobile,
-                         atom_indices=mobile_idx,
-                          ref_atom_indices=ref_idx
-                         )
-    print(rmsd_array,
-          per_res_rmsd,
-          rmsd_array2)
+    rmsd_array2 = md.rmsd(
+        ref, mobile, atom_indices=mobile_idx, ref_atom_indices=ref_idx
+    )
+    print(rmsd_array, per_res_rmsd, rmsd_array2)
 
 
-def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
-                            docking_inputs=None, drop_commented_smarts_strings=True,
-                            verbose=True):
+def filter_docking_inputs(
+    smarts_queries="../../data/smarts_queries.csv",
+    docking_inputs=None,
+    drop_commented_smarts_strings=True,
+    verbose=True,
+):
     """
     Filter an input file of compound SMILES by SMARTS filters using OEchem matching.
 
@@ -708,62 +720,147 @@ def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
     """
     # PLACEHOLDER FOR SMILES INPUT:
     docking_inputs = [
-    ['CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN(C)C)c6cc(ccc6C2=O)Cl LUO-POS-e1dab717-8'],
-    ['CNCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-4138fde9-1'],
-    ['COCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-2'],
-    ['CS(=O)(=O)Nc1ccc2c(c1)cncc2N3CCC4(C3=O)CN(C(=O)c5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-9f4ac58c-3'],
-    ['COC1(CC1)CS(=O)(=O)N2CC3(CCN(C3=O)c4cncc5c4ccc(c5)NS(=O)(=O)C)c6cc(ccc6C2=O)Cl EDJ-MED-9f4ac58c-7'],
-    ['CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-853c0ffa-9'],
-    ['CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)OC MAT-POS-853c0ffa-10'],
-    ['CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-38eb6498-1'],
-    ['CN1CC(C1)Oc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-ee81482e-2'],
-    ['CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N LUO-POS-8484f2d3-1'],
-    ['CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N LUO-POS-8484f2d3-2'],
-    ['CS(=O)(=O)Nc1cc2cncc(c2cc1F)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N PET-UNK-c6bcc80b-4'],
-    ['CS(=O)(=O)Nc1cc2cncc(c2cc1F)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N PET-UNK-c6bcc80b-11'],
-    ['CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MIK-ENA-7066949b-1'],
-    ['CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MIK-ENA-8063e9dc-1'],
-    ['c1cc2cncc(c2cc1OC3CCNCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-ee81482e-4'],
-    ['CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCCC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-1'],
-    ['CCN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-2'],
-    ['CN(C)CCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-4'],
-    ['CNC(=O)C1(CC1)N2Cc3ccc(cc3C4(C2)CCN(C4=O)c5cncc6c5cc(cc6)OCCNCC(F)(F)F)Cl EDJ-MED-4138fde9-4'],
-    ['CC(C)NCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-3'],
-    ['c1ccc2c(c1)cncc2N3CC(C4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N)CC7CCCCC7 MIC-UNK-c85ea37c-1'],
-    ['CN(C)CC(COc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N)O EDJ-MED-ee81482e-3'],
-    ['c1cc2cncc(c2cc1CN3CC4(C3)COC4)N5CCC6(C5=O)CN(Cc7c6cc(cc7)Cl)S(=O)(=O)CC8(CC8)C#N EDJ-MED-ee81482e-5'],
-    ['CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCOCC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-2'],
-    ['CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CC(C6)(F)F)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-5'],
-    ['CN1CCCC1COc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N MAT-POS-40ad851a-1'],
-    ['CCN(CC)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-3'],
-    ['c1cc2cncc(c2cc1OCCN3CCCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-1'],
-    ['CN1CCC(CC1)Oc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N LUO-POS-d1147590-1'],
-    ['CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCNCC(F)(F)F)c6cc(ccc6C2=O)Cl EDJ-MED-4138fde9-6'],
-    ['CC(C)(C)NCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-4'],
-    ['c1cc2cncc(c2cc1OCCCN3CCCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N MAT-POS-40ad851a-5'],
-    ['c1cc2cncc(c2cc1OCCN3CCOCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-2'],
-    ['c1cc2cncc(c2cc1OCCN3CC(C3)(F)F)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-5'],
-    ['c1cc2cncc(c2cc1OCCNCC(F)(F)F)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-4138fde9-2'],
-    ['CN(C)c1ccc(cc1)C2CN(C(=O)C23CN(Cc4c3cc(cc4)Cl)S(=O)(=O)CC5(CC5)C#N)c6cncc7c6cccc7 MIC-UNK-c85ea37c-3'],
-    ['CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCS(=O)(=O)CC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-3'],
-    ['CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCC(CC6)(F)F)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-4'],
-    ['c1cc2cncc(c2cc1OCCN3CCS(=O)(=O)CC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-3'],
-    ['c1cc2cncc(c2cc1OCCN3CCC(CC3)(F)F)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-4'],
-    ['CCC(=O)Nc1ccc(cc1)C2CN(C(=O)C23CN(Cc4c3cc(cc4)Cl)S(=O)(=O)CC5(CC5)C#N)c6cncc7c6cccc7 MIC-UNK-c85ea37c-2']
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN(C)C)c6cc(ccc6C2=O)Cl LUO-POS-e1dab717-8"
+        ],
+        [
+            "CNCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-4138fde9-1"
+        ],
+        [
+            "COCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-2"
+        ],
+        [
+            "CS(=O)(=O)Nc1ccc2c(c1)cncc2N3CCC4(C3=O)CN(C(=O)c5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-9f4ac58c-3"
+        ],
+        [
+            "COC1(CC1)CS(=O)(=O)N2CC3(CCN(C3=O)c4cncc5c4ccc(c5)NS(=O)(=O)C)c6cc(ccc6C2=O)Cl EDJ-MED-9f4ac58c-7"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-853c0ffa-9"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)OC MAT-POS-853c0ffa-10"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-38eb6498-1"
+        ],
+        [
+            "CN1CC(C1)Oc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-ee81482e-2"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N LUO-POS-8484f2d3-1"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N LUO-POS-8484f2d3-2"
+        ],
+        [
+            "CS(=O)(=O)Nc1cc2cncc(c2cc1F)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N PET-UNK-c6bcc80b-4"
+        ],
+        [
+            "CS(=O)(=O)Nc1cc2cncc(c2cc1F)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N PET-UNK-c6bcc80b-11"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MIK-ENA-7066949b-1"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MIK-ENA-8063e9dc-1"
+        ],
+        [
+            "c1cc2cncc(c2cc1OC3CCNCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-ee81482e-4"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCCC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-1"
+        ],
+        [
+            "CCN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-2"
+        ],
+        [
+            "CN(C)CCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-4"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2Cc3ccc(cc3C4(C2)CCN(C4=O)c5cncc6c5cc(cc6)OCCNCC(F)(F)F)Cl EDJ-MED-4138fde9-4"
+        ],
+        [
+            "CC(C)NCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-3"
+        ],
+        [
+            "c1ccc2c(c1)cncc2N3CC(C4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N)CC7CCCCC7 MIC-UNK-c85ea37c-1"
+        ],
+        [
+            "CN(C)CC(COc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N)O EDJ-MED-ee81482e-3"
+        ],
+        [
+            "c1cc2cncc(c2cc1CN3CC4(C3)COC4)N5CCC6(C5=O)CN(Cc7c6cc(cc7)Cl)S(=O)(=O)CC8(CC8)C#N EDJ-MED-ee81482e-5"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCOCC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-2"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CC(C6)(F)F)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-5"
+        ],
+        [
+            "CN1CCCC1COc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N MAT-POS-40ad851a-1"
+        ],
+        [
+            "CCN(CC)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-3"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CCCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-1"
+        ],
+        [
+            "CN1CCC(CC1)Oc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N LUO-POS-d1147590-1"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCNCC(F)(F)F)c6cc(ccc6C2=O)Cl EDJ-MED-4138fde9-6"
+        ],
+        [
+            "CC(C)(C)NCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-4"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCCN3CCCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N MAT-POS-40ad851a-5"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CCOCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-2"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CC(C3)(F)F)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-5"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCNCC(F)(F)F)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-4138fde9-2"
+        ],
+        [
+            "CN(C)c1ccc(cc1)C2CN(C(=O)C23CN(Cc4c3cc(cc4)Cl)S(=O)(=O)CC5(CC5)C#N)c6cncc7c6cccc7 MIC-UNK-c85ea37c-3"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCS(=O)(=O)CC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-3"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCC(CC6)(F)F)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-4"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CCS(=O)(=O)CC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-3"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CCC(CC3)(F)F)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-4"
+        ],
+        [
+            "CCC(=O)Nc1ccc(cc1)C2CN(C(=O)C23CN(Cc4c3cc(cc4)Cl)S(=O)(=O)CC5(CC5)C#N)c6cncc7c6cccc7 MIC-UNK-c85ea37c-2"
+        ],
     ]
     #### ^^ REPLACE WITH ExperimentalCompoundData PARSE INTO LIST OF SMILES^^
-    query_smarts = pandas.read_csv(
-        smarts_queries, names=["smarts", "id"])["smarts"].values
+    query_smarts = pandas.read_csv(smarts_queries, names=["smarts", "id"])[
+        "smarts"
+    ].values
 
     if drop_commented_smarts_strings:
         # only keep SMARTS queries that are not commented.
-        query_smarts = [ q for q in query_smarts if not q[0] == "#"]
+        query_smarts = [q for q in query_smarts if not q[0] == "#"]
     else:
         # some of the SMARTS queries are commented - use these anyway.
-        query_smarts = [ q if not q[0] == "#" else q[1:] for q in query_smarts]
+        query_smarts = [q if not q[0] == "#" else q[1:] for q in query_smarts]
 
     input_cpds = []
-    num_input_cpds = 0 # initiate counter for verbose setting.
+    num_input_cpds = 0  # initiate counter for verbose setting.
     filtered_docking_inputs = []
     for cpd in docking_inputs:
         num_input_cpds += 1
@@ -784,12 +881,15 @@ def filter_docking_inputs(smarts_queries="../../data/smarts_queries.csv",
                 break
 
     if verbose:
-        print(f"Retained {len(filtered_docking_inputs)/num_input_cpds*100:.2f}% of compounds after " \
-            +f"filtering ({len(query_smarts)} SMARTS filter(s); {num_input_cpds}-->" \
-            +f"{len(filtered_docking_inputs)}).")
+        print(
+            f"Retained {len(filtered_docking_inputs)/num_input_cpds*100:.2f}% of compounds after "
+            + f"filtering ({len(query_smarts)} SMARTS filter(s); {num_input_cpds}-->"
+            + f"{len(filtered_docking_inputs)})."
+        )
 
     # return the filtered list.
     return filtered_docking_inputs
+
 
 if __name__ == "__main__":
     filter_docking_inputs()

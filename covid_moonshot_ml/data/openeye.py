@@ -1,5 +1,6 @@
 from openeye import oechem
 
+
 def load_openeye_pdb(pdb_fn):
     ifs = oechem.oemolistream()
     ifs.SetFlavor(
@@ -12,6 +13,7 @@ def load_openeye_pdb(pdb_fn):
     ifs.close()
 
     return in_mol
+
 
 def load_openeye_sdf(sdf_fn):
     ifs = oechem.oemolistream()
@@ -26,6 +28,7 @@ def load_openeye_sdf(sdf_fn):
 
     return coords_mol
 
+
 def split_openeye_mol(complex_mol: oechem.OEMolBase):
     ## Test splitting
     lig_mol = oechem.OEGraphMol()
@@ -39,7 +42,9 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
     opts.SetSplitCovalent(True)
     opts.SetSplitCovalentCofactors(True)
     print(
-        oechem.OESplitMolComplex(lig_mol, prot_mol, water_mol, oth_mol, complex_mol)
+        oechem.OESplitMolComplex(
+            lig_mol, prot_mol, water_mol, oth_mol, complex_mol
+        )
     )
 
     print(
@@ -49,15 +54,18 @@ def split_openeye_mol(complex_mol: oechem.OEMolBase):
         water_mol.NumAtoms(),
         oth_mol.NumAtoms(),
     )
-    return {'complex': complex_mol,
-            'lig': lig_mol,
-            'pro': prot_mol,
-            'water': water_mol,
-            'other': oth_mol}
+    return {
+        "complex": complex_mol,
+        "lig": lig_mol,
+        "pro": prot_mol,
+        "water": water_mol,
+        "other": oth_mol,
+    }
 
-def get_ligand_rmsd_from_pdb_and_sdf(ref_path,
-                                     mobile_path,
-                                     fetch_docking_results=True):
+
+def get_ligand_rmsd_from_pdb_and_sdf(
+    ref_path, mobile_path, fetch_docking_results=True
+):
     ref_pdb = load_openeye_pdb(ref_path)
     ref = split_openeye_mol(ref_pdb)["lig"]
     mobile = load_openeye_sdf(mobile_path)
@@ -68,11 +76,10 @@ def get_ligand_rmsd_from_pdb_and_sdf(ref_path,
 
     rmsd = oechem.OERMSD(ref, mobile)
 
-    return_dict = {'rmsd': rmsd}
+    return_dict = {"rmsd": rmsd}
 
     if fetch_docking_results:
-        return_dict['posit'] = oechem.OEGetSDData(mobile, "POSIT::Probability")
-        return_dict['chemgauss'] = oechem.OEGetSDData(mobile, "Chemgauss4")
+        return_dict["posit"] = oechem.OEGetSDData(mobile, "POSIT::Probability")
+        return_dict["chemgauss"] = oechem.OEGetSDData(mobile, "Chemgauss4")
 
     return return_dict
-

@@ -2,18 +2,30 @@ import sys, os, argparse
 import numpy as np
 import plotly.express as px
 
-sys.path.append(f'{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}')
+sys.path.append(
+    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
+)
 from covid_moonshot_ml.docking.analysis import DockingResults
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description="")
 
     ## Input arguments
-    parser.add_argument('-d', "--input_dir", required=True, type=str,
-                        help="Path to input directory containing CSVs cleaned by clean_results_csv.py.")
-    parser.add_argument('-o', "--output_dir", required=True, type=str,
-                        help="Path to output directory")
+    parser.add_argument(
+        "-d",
+        "--input_dir",
+        required=True,
+        type=str,
+        help="Path to input directory containing CSVs cleaned by clean_results_csv.py.",
+    )
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        required=True,
+        type=str,
+        help="Path to output directory",
+    )
 
     return parser.parse_args()
 
@@ -36,25 +48,28 @@ def main():
     dr.get_compound_df(by_compound)
     dr.get_structure_df(by_structure)
 
-    features = [feature for feature in dr.structure_df.columns if not feature == "Compound_ID"]
+    features = [
+        feature
+        for feature in dr.structure_df.columns
+        if not feature == "Compound_ID"
+    ]
 
     ## make per_structure figures
     df = dr.structure_df
     for feature in features:
-        fig = px.bar(df.sort_values(feature),
-                     y=feature,
-                     text_auto=".2s")
-        file_path = os.path.join(args.output_dir, f"per_structure_{feature}.png")
+        fig = px.bar(df.sort_values(feature), y=feature, text_auto=".2s")
+        file_path = os.path.join(
+            args.output_dir, f"per_structure_{feature}.png"
+        )
         fig.write_image(file_path)
 
     ## make per_compound figures
     df = dr.compound_df
     for feature in features:
-        fig = px.histogram(df.sort_values(feature),
-                           x=feature,
-                           text_auto=".2s")
+        fig = px.histogram(df.sort_values(feature), x=feature, text_auto=".2s")
         file_path = os.path.join(args.output_dir, f"per_compound_{feature}.png")
         fig.write_image(file_path)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
