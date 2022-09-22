@@ -56,24 +56,17 @@ def main():
         else:
             print(f"Skipping {pdb.pdb_id}, {lig.compound_id}")
 
-    ## Convert to schema
-    exp_data_compounds = [
-        ExperimentalCompoundData(
-            compound_id=r["External ID"],
-            smiles=r["SMILES"],
-            experimental_data={
-                "IC50": r["IC50"],
-                "IC50_range": r["IC50_range"],
-            },
-        )
-        for _, r in exp_df.iterrows()
-    ]
+        ## Profit?
 
-    ## Dump JSON file
-    with open(args.o, "w") as fp:
-        fp.write(
-            ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json()
-        )
+    ## TODO
+    # Run MCSS on the mols without SARS2 ligands and return a dataset for each Compound ID
+    # Get dictionary mapping a sars_dataset to each exp_ligand (can read from csv file)
+    # Construct three objects:
+    # exp_ligand(SMILES, Compound ID, IC50s)
+    # mers_structure(PDB ID, filepath)
+    # sars_dataset(dataset_name, SDF file, Compound ID, SMILES)
+    # For each exp_ligand, for each mers_structure:
+    #
 
 
 if __name__ == '__main__':
