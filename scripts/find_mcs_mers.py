@@ -94,7 +94,7 @@ def main():
     ## Find which compounds we need to run MCSS on
     mcs_compounds = []
     for compound in exp_compounds:
-        if xtal_dict[compound.compound_id].dataset is None:
+        if not xtal_dict[compound.compound_id].dataset:
             mcs_compounds.append(exp_compounds)
 
     ## Set up MCSS
@@ -128,7 +128,7 @@ def main():
         xtal_dict[c.compound_id] = xtal
 
     ## Dump updated dict
-    if args.o is None:
+    if not args.o:
         out_fn = args.x_dict
     else:
         out_fn = args.o
