@@ -3,15 +3,6 @@ import os.path
 import yaml
 from kinoml.databases.pdb import download_pdb_structure
 
-# from kinoml.modeling.OEModeling import superpose_proteins
-from openeye import oechem
-from typing import Iterable
-from MDAnalysis.coordinates.PDB import PDBReader, PDBWriter
-
-# from MDAnalysis.analysis.align import alignto
-# import mdtraj as md
-# from mdtraj.formats import PDBTrajectoryFile
-
 
 def load_pdbs_from_yaml(pdb_list_yaml):
     print(f"Loading pdb list from {pdb_list_yaml}...")
