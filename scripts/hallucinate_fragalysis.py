@@ -34,7 +34,7 @@ def check_output(d):
     ## First check for result pickle file
     try:
         pkl.load(open(f"{d}/results.pkl", "rb"))
-    except Exception:
+    except FileNotFoundError:
         return False
 
     ## Then check for other intermediate files
