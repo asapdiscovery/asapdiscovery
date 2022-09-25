@@ -192,21 +192,16 @@ class Rock:
         ]
 
         auc_poses_array = np.array(self.auc_poses)
-        #         auc_cmpds_array = np.array(self.auc_cmpds)
         try:
             auc_poses_array.sort()
         except:
             print(auc_poses_array)
-        #         auc_cmpds_array.sort()
 
         auc_poses_bounds = math.floor(len(auc_poses_array) * 0.025)
-        #         auc_cmpds_bounds = math.floor(len(auc_cmpds_array) * 0.025)
         self.poses_ci = (
             auc_poses_array.mean() - auc_poses_array[auc_poses_bounds],
             auc_poses_array[-auc_poses_bounds] - auc_poses_array.mean(),
         )
-
-    #         self.cmpds_ci = (auc_cmpds_array.mean() - auc_cmpds_array[auc_cmpds_bounds], auc_cmpds_array[-auc_cmpds_bounds] - auc_cmpds_array.mean())
 
     def get_df(self):
         self.auc_poses_df = pd.DataFrame(
@@ -221,7 +216,6 @@ class Rock:
         self.auc_cmpds_df = pd.DataFrame(
             {
                 "True_Positive": self.true_positive_rates_cmpds,
-                #                       "False_Positive": self.false_positive_rates_cmpds,
                 "Value": self.score_range,
                 "Score_Type": self.score_name,
                 "Precision": self.precision_cmpds,

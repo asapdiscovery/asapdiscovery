@@ -29,8 +29,7 @@ class DockingDataset:
     def get_cmpd_dir_path(self, cmpd_id):
         ## make sure this directory exists
         cmpd_dir = os.path.join(self.dir_path, cmpd_id)
-        print(cmpd_dir)
-        # assert os.path.exists(cmpd_dir)
+        assert os.path.exists(cmpd_dir)
         return cmpd_dir
 
     def organize_docking_results(self):
@@ -76,13 +75,11 @@ class DockingDataset:
 
                     ## however its a convenient way of identifying which is the original xtal
                     ref_xtal = xtal
-                    # ref_sdf_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}.sdf"
                     ref_pdb_fn = (
                         f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
                     )
 
                     ## save the ref filename to the dictionary and make the mcss_rank -1
-                    # ref_fn_dict[cmpd_id] = ref_sdf_fn
                     ref_fn_dict[cmpd_id] = ref_pdb_fn
                     mcss_rank = -1
 
@@ -208,8 +205,6 @@ class DockingResults:
             )
             mean = self.df.groupby(groupby_ID_column)[[score]].mean()
             min = self.df.groupby(groupby_ID_column)[[score]].min()
-            # if sum(not_na[not_na != 0]) == 0:
-            #     print(f"Skipping {score} since no non-NA scores were found")
             feature_df = pd.concat([not_na, good, mean, min], axis=1)
             feature_df.columns = [
                 f"{score}_{name}" for name in ["Not_NA", "Good", "Mean", "Min"]

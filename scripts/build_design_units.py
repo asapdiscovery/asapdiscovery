@@ -46,7 +46,6 @@ def main():
 
     ## Set up options for building DesignUnits
     opts = oespruce.OEMakeDesignUnitOptions()
-    # opts.SetBioUnitExtractionOptions(bio_opts)
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
         False
     )
