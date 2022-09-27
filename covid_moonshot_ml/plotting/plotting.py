@@ -118,7 +118,7 @@ class Rock:
         else:
             ## if a new dataframe is passed, that means we are bootstrapping,
             ## in which case we need to re-calculate the 'self' totals
-
+            assert type(df) == pd.DataFrame
             (
                 total_poses,
                 total_good_poses,
