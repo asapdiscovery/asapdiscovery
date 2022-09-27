@@ -10,8 +10,6 @@ from ..data.openeye import (
 )
 from openeye import oechem
 
-SCORE_COLUMNS = ["RMSD", "POSIT_R", "Chemgauss4", "MCSS_Rank"]
-
 
 class DockingDataset:
     def __init__(self, pkl_fn, dir_path):
@@ -55,9 +53,7 @@ class DockingDataset:
 
             ## Process this list into info
             ## TODO: use REGEX instead
-            sdf_list = [
-                fn for fn in fn_list if os.path.splitext(fn)[1] == ".sdf"
-            ]
+            sdf_list = [fn for fn in fn_list if os.path.splitext(fn)[1] == ".sdf"]
 
             ## For each sdf file in this list, get all the information
             ## This is very fragile to the file naming scheme
@@ -75,9 +71,7 @@ class DockingDataset:
 
                     ## however its a convenient way of identifying which is the original xtal
                     ref_xtal = xtal
-                    ref_pdb_fn = (
-                        f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
-                    )
+                    ref_pdb_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
 
                     ## save the ref filename to the dictionary and make the mcss_rank -1
                     ref_fn_dict[cmpd_id] = ref_pdb_fn
@@ -136,11 +130,9 @@ class DockingDataset:
     def write_csv(self, output_csv_fn):
         self.df.to_csv(output_csv_fn, index=False)
 
-    def analyze_docking_results(
-        self, fragalysis_dir, output_csv_fn, test=False
-    ):
+    def analyze_docking_results(self, fragalysis_dir, output_csv_fn, test=False):
         self.organize_docking_results()
-        # self.to_df()
+
         if test:
             self.df = self.df.head()
         self.calculate_rmsd_and_posit_score(fragalysis_dir)
@@ -171,7 +163,8 @@ def get_good_score(score):
         lambda_func = lambda x: x[(x < 0.3)].count()
     else:
         raise NotImplementedError(
-            f"good score acquisition not implemented for {score}"
+            f"good score acquisition not implemented for {score}. "
+            f'Try using one of ["RMSD", "POSIT", "Chemgauss4", "POSIT_R"]'
         )
     return lambda_func
 
@@ -184,13 +177,27 @@ class DockingResults:
 
     def __init__(self, csv_path):
         ## load in data and replace the annoying `-1.0` and `-1` values with nans
-        self.df = (
-            pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
-        )
+        self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
 
     def get_grouped_df(
-        self, groupby_ID_column="Compound_ID", score_columns=SCORE_COLUMNS
+        self,
+        groupby_ID_column="Compound_ID",
+        score_columns=["RMSD", "POSIT_R", "Chemgauss4", "MCSS_Rank"],
     ):
+        """
+        The purpose of this function is to get a dataframe with meaningful information grouped by either the Compound_ID
+        or by the Structure_Source.
+
+        Parameters
+        ----------
+        groupby_ID_column
+        score_columns
+
+        Returns
+        -------
+
+        """
+        # TODO: I think this can be done without a for loop by replacing [[score]] with [score_columns]
         score_df_list = []
         for score in score_columns:
             if not score in self.df.columns:
@@ -199,12 +206,18 @@ class DockingResults:
             if not self.df[score].any():
                 print(f"Skipping {score} since no non-NA scores were found")
                 continue
+            # Group by the groupby_ID_column and then get either the number, mean, or mean of the identified score
             not_na = self.df.groupby(groupby_ID_column)[[score]].count()
+            mean = self.df.groupby(groupby_ID_column)[[score]].mean()
+            min = self.df.groupby(groupby_ID_column)[[score]].min()
+
+            # I barely understand how this works but basically it
+            # applies the lambda function returned by `get_good_score` and then groups the results, which means that
+            # it can count how many "good" scores there were for each group.
             good = self.df.groupby(groupby_ID_column)[[score]].apply(
                 get_good_score(score)
             )
-            mean = self.df.groupby(groupby_ID_column)[[score]].mean()
-            min = self.df.groupby(groupby_ID_column)[[score]].min()
+
             feature_df = pd.concat([not_na, good, mean, min], axis=1)
             feature_df.columns = [
                 f"{score}_{name}" for name in ["Not_NA", "Good", "Mean", "Min"]
@@ -214,24 +227,38 @@ class DockingResults:
         grouped_df[groupby_ID_column] = grouped_df.index
         return grouped_df
 
-    def get_compound_df(self, csv_file=False, **kwargs):
-        if csv_file:
-            self.compound_df = pd.read_csv(csv_file)
+    def get_compound_df(self, csv_path=False, **kwargs):
+        if csv_path:
+            self.compound_df = pd.read_csv(csv_path)
         else:
             self.compound_df = self.get_grouped_df(
                 groupby_ID_column="Compound_ID", **kwargs
             )
 
-    def get_structure_df(self, csv_file=False, **kwargs):
-        if csv_file:
-            self.structure_df = pd.read_csv(csv_file)
+    def get_structure_df(self, csv_path=False, resolution_csv=None, **kwargs):
+        """
+        Either pull the structure_df from the csv file or generate it using the get_grouped_df function
+        In addition to what the function normally does it also adds the resolution
+
+        Parameters
+        ----------
+        csv_path
+        kwargs
+
+        Returns
+        -------
+
+        """
+        if csv_path:
+            self.structure_df = pd.read_csv(csv_path)
         else:
             self.structure_df = self.get_grouped_df(
                 groupby_ID_column="Structure_Source", **kwargs
             )
-            with open("../data/mers_structures.csv") as f:
-                mers_structure_df = pd.read_csv(f)
-            self.structure_df["Resolution"] = list(mers_structure_df.Resolution)
+            if resolution_csv:
+                with open(resolution_csv) as f:
+                    resolution_df = pd.read_csv(f)
+                self.structure_df["Resolution"] = list(resolution_df.Resolution)
 
     def get_best_structure_per_compound(
         self,

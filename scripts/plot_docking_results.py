@@ -2,9 +2,7 @@ import sys, os, argparse
 import numpy as np
 import plotly.express as px
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
+sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
 from covid_moonshot_ml.docking.analysis import DockingResults
 
 
@@ -44,23 +42,19 @@ def main():
     by_structure = os.path.join(args.input_dir, "by_compound.csv")
 
     ## Load Results
-    dr = DockingResults(all_results)
-    dr.get_compound_df(by_compound)
-    dr.get_structure_df(by_structure)
+    dr = DockingResults(csv_path=all_results)
+    dr.get_compound_df(csv_path=by_compound)
+    dr.get_structure_df(csv_path=by_structure)
 
     features = [
-        feature
-        for feature in dr.structure_df.columns
-        if not feature == "Compound_ID"
+        feature for feature in dr.structure_df.columns if not feature == "Compound_ID"
     ]
 
     ## make per_structure figures
     df = dr.structure_df
     for feature in features:
         fig = px.bar(df.sort_values(feature), y=feature, text_auto=".2s")
-        file_path = os.path.join(
-            args.output_dir, f"per_structure_{feature}.png"
-        )
+        file_path = os.path.join(args.output_dir, f"per_structure_{feature}.png")
         fig.write_image(file_path)
 
     ## make per_compound figures
