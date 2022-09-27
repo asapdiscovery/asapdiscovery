@@ -67,7 +67,7 @@ class DockingDataset:
                 try:
                     mcss_rank = info[9]
 
-                except:
+                except IndexError:
 
                     ## however its a convenient way of identifying which is the original xtal
                     ref_xtal = xtal
