@@ -91,8 +91,19 @@ class Rock:
             endpoint=True,
         )
 
-    def weird_division(self, n, d):
-        return n / d if d else 0
+    def weird_division(self, numerator, denominator):
+        """
+        This function will divide the numerator by the denominator but will return zero if the denominator is zero.
+        Parameters
+        ----------
+        numerator
+        denominator
+
+        Returns
+        -------
+
+        """
+        return numerator / denominator if denominator else 0
 
     def get_auc_from_df(self, df=None, bootstrap=False):
         if df is None:
@@ -122,7 +133,7 @@ class Rock:
         self.precision_poses = []
 
         self.true_positive_rates_cmpds = []  ## same thing as recall
-        # self.false_positive_rates_cmpds = []
+
         self.precision_cmpds = []
 
         ## I *think* this is faster than iterating through and making lists for each thing but I don't actually know
@@ -154,7 +165,7 @@ class Rock:
                 n_good_cmpds = n_good_cmpds_list[idx]
                 self.precision_poses.append(self.weird_division(n_good_poses, n_poses))
                 self.true_positive_rates_cmpds.append(n_good_cmpds / total_good_cmpds)
-                ## this doesn't really make sense mathematically
+                ## this doesn't really make sense mathematically but i'm keeping it to remember that
                 # self.false_positive_rates_cmpds.append(n_bad_cmpds / self.total_bad_cmpds)
                 self.precision_cmpds.append(self.weird_division(n_good_cmpds, n_cmpds))
 
@@ -172,19 +183,26 @@ class Rock:
 
     def get_bootstrapped_error_bars(self, n_bootstraps):
 
-        ## First, make sure we have calculated values for data
+        # First, make sure we have calculated values for data
         self.get_auc_from_df(self.df, bootstrap=False)
 
-        ## Then bootstrap CVs
+        # Then bootstrap CVs
         self.auc_poses = [
             self.get_auc_from_df(self.df.sample(frac=1, replace=True), bootstrap=True)
             for n in range(n_bootstraps)
         ]
 
+        # Make this list a numpy arrray so we can use some numpy functions
         auc_poses_array = np.array(self.auc_poses)
+
+        # sort the array from smallest to largest AUC so we can use 95% confidence interval numerically
         auc_poses_array.sort()
 
+        # the 95% confidence interval includes everything but the bottom and top 2.5% (0.025).
+        # i.e. with 1000 sorted values, our lower CI bound is the 25th value and our upper CI bound is the 975th value
         auc_poses_bounds = math.floor(len(auc_poses_array) * 0.025)
+
+        # The CI's are reported as the difference (i.e. +/-) as opposed to the actual values
         self.poses_ci = (
             auc_poses_array.mean() - auc_poses_array[auc_poses_bounds],
             auc_poses_array[-auc_poses_bounds] - auc_poses_array.mean(),
