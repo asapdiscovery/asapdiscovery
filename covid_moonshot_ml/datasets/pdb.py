@@ -61,7 +61,7 @@ def pymol_alignment(
     -------
 
     """
-    ## To-Do: convert this so that I can load all pdbs at once and align them all to ref
+    # TODO: convert this so that I can load all pdbs at once and align them all to ref
     # TODO: Do we need to add pymol to our environment yaml file or is this optional?
     import pymol
 
