@@ -163,15 +163,23 @@ class Rock:
 
                 n_cmpds = n_cmpds_list[idx]
                 n_good_cmpds = n_good_cmpds_list[idx]
-                self.precision_poses.append(self.weird_division(n_good_poses, n_poses))
-                self.true_positive_rates_cmpds.append(n_good_cmpds / total_good_cmpds)
+                self.precision_poses.append(
+                    self.weird_division(n_good_poses, n_poses)
+                )
+                self.true_positive_rates_cmpds.append(
+                    n_good_cmpds / total_good_cmpds
+                )
                 ## this doesn't really make sense mathematically but i'm keeping it to remember that
                 # self.false_positive_rates_cmpds.append(n_bad_cmpds / self.total_bad_cmpds)
-                self.precision_cmpds.append(self.weird_division(n_good_cmpds, n_cmpds))
+                self.precision_cmpds.append(
+                    self.weird_division(n_good_cmpds, n_cmpds)
+                )
 
         if bootstrap:
             self.auc_list.append(
-                self.calc_auc(false_positive_rates_poses, true_positive_rates_poses)
+                self.calc_auc(
+                    false_positive_rates_poses, true_positive_rates_poses
+                )
             )
         else:
             self.true_positive_rates_poses = true_positive_rates_poses
@@ -188,7 +196,9 @@ class Rock:
 
         # Then bootstrap CVs
         self.auc_poses = [
-            self.get_auc_from_df(self.df.sample(frac=1, replace=True), bootstrap=True)
+            self.get_auc_from_df(
+                self.df.sample(frac=1, replace=True), bootstrap=True
+            )
             for n in range(n_bootstraps)
         ]
 
@@ -255,7 +265,9 @@ class Rocks:
     def clean_dataframe(self):
         df = pd.read_csv(self.csv)
         df["POSIT_R"] = -df["POSIT"] + 1
-        self.df = df[(df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)]
+        self.df = df[
+            (df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)
+        ]
 
     def build_rocks(self):
         for score_name in self.score_list:

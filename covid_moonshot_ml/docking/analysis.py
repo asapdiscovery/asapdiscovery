@@ -53,7 +53,9 @@ class DockingDataset:
 
             ## Process this list into info
             ## TODO: use REGEX instead
-            sdf_list = [fn for fn in fn_list if os.path.splitext(fn)[1] == ".sdf"]
+            sdf_list = [
+                fn for fn in fn_list if os.path.splitext(fn)[1] == ".sdf"
+            ]
 
             ## For each sdf file in this list, get all the information
             ## This is very fragile to the file naming scheme
@@ -71,7 +73,9 @@ class DockingDataset:
 
                     ## however its a convenient way of identifying which is the original xtal
                     ref_xtal = xtal
-                    ref_pdb_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
+                    ref_pdb_fn = (
+                        f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
+                    )
 
                     ## save the ref filename to the dictionary and make the mcss_rank -1
                     ref_fn_dict[cmpd_id] = ref_pdb_fn
@@ -130,7 +134,9 @@ class DockingDataset:
     def write_csv(self, output_csv_fn):
         self.df.to_csv(output_csv_fn, index=False)
 
-    def analyze_docking_results(self, fragalysis_dir, output_csv_fn, test=False):
+    def analyze_docking_results(
+        self, fragalysis_dir, output_csv_fn, test=False
+    ):
         self.organize_docking_results()
 
         if test:
@@ -177,7 +183,9 @@ class DockingResults:
 
     def __init__(self, csv_path):
         ## load in data and replace the annoying `-1.0` and `-1` values with nans
-        self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
+        self.df = (
+            pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
+        )
 
     def get_grouped_df(
         self,

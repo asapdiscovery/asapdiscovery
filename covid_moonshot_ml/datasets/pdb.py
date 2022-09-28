@@ -82,7 +82,9 @@ def pymol_alignment(
     pymol.cmd.delete("all")
 
 
-def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None, sel_dict=None):
+def align_all_pdbs(
+    pdb_list, pdb_dir_path, ref_path=None, ref_name=None, sel_dict=None
+):
     """
     Given a list of PDB_IDs and the directory to them, align all to a ref or to the first in the list.
     Parameters
