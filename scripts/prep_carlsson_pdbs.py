@@ -3,7 +3,6 @@ import sys, os, argparse, yaml
 sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
 )
-from covid_moonshot_ml.docking.analysis import DockingResults
 
 from kinoml.databases.pdb import download_pdb_structure
 

@@ -1,25 +1,17 @@
 import argparse
 import os
 import sys
-import pandas as pd
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from covid_moonshot_ml.docking.docking import (
-    build_docking_systems,
-    parse_xtal,
-    run_docking,
-)
 from covid_moonshot_ml.schema import (
     CrystalCompoundData,
-    ExperimentalCompoundData,
     PDBStructure,
 )
-from covid_moonshot_ml.datasets.utils import get_sdf_fn_from_dataset
 from covid_moonshot_ml.datasets.pdb import load_pdbs_from_yaml
-from covid_moonshot_ml.docking.docking import (
-    parse_exp_cmp_data,
+from covid_moonshot_ml.datasets.utils import (
+    parse_experimental_compound_data,
     parse_fragalysis_data,
 )
 
@@ -51,7 +43,7 @@ def get_args():
 def main():
     args = get_args()
 
-    ligands = parse_exp_cmp_data(args.exp)
+    ligands = parse_experimental_compound_data(args.exp)
     cmpd_ids = [lig.compound_id for lig in ligands]
     sars_xtals = parse_fragalysis_data(args.x, args.x_dir, cmpd_ids, args.o_dir)
     pdb_list = load_pdbs_from_yaml(args.y)

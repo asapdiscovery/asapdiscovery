@@ -100,6 +100,8 @@ def main():
     xtal_ids = [x.dataset for x in xtal_compounds]
     xtal_smiles = [x.smiles for x in xtal_compounds]
 
+    # TODO: What if we specify something different than "rdkit" or "oe"?
+    #  Might cause problems with undefined `rank_fn` variable
     if args.sys.lower() == "rdkit":
         ## Convert SMILES to RDKit mol objects for MCS
         ## Need to canonicalize SMILES first because RDKit MCS seems to have

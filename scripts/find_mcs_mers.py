@@ -98,6 +98,8 @@ def main():
             mcs_compounds.append(exp_compounds)
 
     ## Set up MCSS
+    # TODO: What if we specify something different than "rdkit" or "oe"?
+    #  Might cause problems with undefined `rank_fn` variable
     if args.sys.lower() == "rdkit":
         rank_fn = rank_structures_rdkit
     elif args.sys.lower() == "oe":

@@ -317,6 +317,8 @@ def mp_func(
         ret_code = poser.Dock(pose_res, dock_lig)
 
     ## Check results
+    # FIXME: This uses the `pose_res` defined inside previous conditional.
+    #  What if that previous conditional doesn't happen? `pose_res` might be undefined.
     if ret_code == oedocking.OEDockingReturnCode_Success:
         if dock_sys == "posit":
             posed_mol = pose_res.GetPose()
@@ -325,6 +327,7 @@ def mp_func(
         ## Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
         pose_scorer.Initialize(du)
+        # TODO: If `dock_sys` is not "posit", then `posed_mol` might be undefined here.
         chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
     else:
         err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
@@ -369,6 +372,7 @@ def mp_func(
         dimer,
         f"{out_base}/docked.sdf",
         rmsd,
+        # TODO: If `dock_sys` is not "posit", then `posit_prob` might be undefined here.
         posit_prob,
         chemgauss_score,
         clash,

@@ -24,7 +24,7 @@ def download_PDBs(pdb_list, pdb_path):
 
     Parameters
     ----------
-    pdb_list_yaml
+    pdb_list
     pdb_path
 
     Returns
@@ -62,6 +62,7 @@ def pymol_alignment(
 
     """
     ## To-Do: convert this so that I can load all pdbs at once and align them all to ref
+    # TODO: Do we need to add pymol to our environment yaml file or is this optional?
     import pymol
 
     pymol.cmd.load(pdb_path, "mobile")

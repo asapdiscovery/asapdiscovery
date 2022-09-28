@@ -219,6 +219,8 @@ def train(
         Loss for each structure in `ds_test` from each epoch of training, with
         shape (`n_epochs`, `len(ds_test)`)
     """
+    # TODO: Arguments `train_loss`, `val_loss` and `test_loss` are mutable and empty by default.
+    #  Do we mean to initialize them as `None`?
     import pickle as pkl
     import torch
 
