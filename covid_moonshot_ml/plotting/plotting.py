@@ -218,7 +218,7 @@ class Rock:
             auc_poses_array[-auc_poses_bounds] - auc_poses_array.mean(),
         )
 
-    def get_df(self):
+    def get_tidy_df_for_figure(self):
         self.auc_poses_df = pd.DataFrame(
             {
                 "True_Positive": self.true_positive_rates_poses,
@@ -251,20 +251,24 @@ class Rocks:
         n_samples,
         n_bootstraps=None,
     ):
+        # First save all the passed in variables
         self.csv = csv
         self.score_list = score_list
         self.n_samples = n_samples
         self.n_bootstraps = n_bootstraps
-        self.rock_dict = {}
         self.rmsd_name = rmsd_name
 
+        # Clean the dataframe
         self.clean_dataframe()
+
+        # Make a dictionary of Rock objects
         self.build_rocks()
-        # self.df = df
 
     def clean_dataframe(self):
         df = pd.read_csv(self.csv)
         df["POSIT_R"] = -df["POSIT"] + 1
+
+        # TODO: Expose these hard-coded options
         self.df = df[
             (df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)
         ]
@@ -272,18 +276,27 @@ class Rocks:
     def build_rocks(self):
         for score_name in self.score_list:
             assert score_name in self.df.columns
-            self.rock_dict[score_name] = Rock(
-                self.df, score_name, self.rmsd_name, self.n_samples
-            )
+            self.rock_dict = {
+                score_name: Rock(
+                    self.df, score_name, self.rmsd_name, self.n_samples
+                )
+            }
 
     def get_aucs(self):
+        """
+        Calculates AUC for each ROC curve.
+
+        Returns
+        -------
+
+        """
         for score_name, rock in self.rock_dict.items():
             rock.get_auc_from_df()
-            rock.get_df()
+            rock.get_tidy_df_for_figure()
             self.rock_dict[score_name] = rock
 
     def combine_dfs(self):
-        _ = [rock.get_df() for rock in self.rock_dict.values()]
+        _ = [rock.get_tidy_df_for_figure() for rock in self.rock_dict.values()]
         poses_dfs = [rock.auc_poses_df for rock in self.rock_dict.values()]
         cmpds_dfs = [rock.auc_cmpds_df for rock in self.rock_dict.values()]
         self.poses_df = pd.concat(poses_dfs)
