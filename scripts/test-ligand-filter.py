@@ -34,14 +34,18 @@ def get_args():
 
 def main():
     args = get_args()
-    # sars_xtals = utils.parse_fragalysis_data(args.csv_file, args.fragalysis_dir)
-    # sars_xtals = {
-    #     compound_id: data
-    #     for compound_id, data in sars_xtals.items()
-    #     if data.smiles
-    # }
+    sars_xtals = utils.parse_fragalysis_data(args.csv_file, args.fragalysis_dir)
+    cmp_to_smiles_dict = {
+        compound_id: data.smiles
+        for compound_id, data in sars_xtals.items()
+        if data.smiles
+    }
     # print(sars_xtals)
-    utils.filter_docking_inputs(smarts_queries="../data/smarts_queries.csv")
+    filtered_inputs = utils.filter_docking_inputs(
+        smarts_queries="../data/smarts_queries.csv",
+        docking_inputs=cmp_to_smiles_dict,
+    )
+    print(filtered_inputs)
 
 
 if __name__ == "__main__":
