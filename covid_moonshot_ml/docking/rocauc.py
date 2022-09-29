@@ -22,9 +22,6 @@ class Rock:
             self.total_poses,
             self.total_good_poses,
             self.total_bad_poses,
-            self.total_cmpds,
-            self.total_good_cmpds,
-            self.total_bad_cmpds,
         ) = self.calc_data(self.df)
 
         self.auc = str
@@ -46,20 +43,10 @@ class Rock:
         n_good_poses = sum(df[self.rmsd_name] <= rmsd_cutoff)
         n_bad_poses = n_poses - n_good_poses
 
-        n_cmpds = len(set(df.Compound_ID))
-        set_of_good_cmpds = set(
-            df[df[self.rmsd_name] <= rmsd_cutoff].Compound_ID
-        )
-        n_good_cmpds = len(set_of_good_cmpds)
-        n_bad_cmpds = n_cmpds - n_good_cmpds
-
         return (
             n_poses,
             n_good_poses,
             n_bad_poses,
-            n_cmpds,
-            n_good_cmpds,
-            n_bad_cmpds,
         )
 
     def calc_auc(self, false_positive_rates, true_positive_rates):
@@ -120,8 +107,6 @@ class Rock:
             total_poses = self.total_poses
             total_good_poses = self.total_good_poses
             total_bad_poses = self.total_bad_poses
-            total_good_cmpds = self.total_good_cmpds
-            total_bad_cmpds = self.total_bad_cmpds
 
         else:
             ## if a new dataframe is passed, that means we are bootstrapping,
@@ -131,18 +116,11 @@ class Rock:
                 total_poses,
                 total_good_poses,
                 total_bad_poses,
-                total_cmpds,
-                total_good_cmpds,
-                total_bad_cmpds,
             ) = self.calc_data(df)
 
         true_positive_rates_poses = []  ## same thing as recall
         false_positive_rates_poses = []
         self.precision_poses = []
-
-        self.true_positive_rates_cmpds = []  ## same thing as recall
-
-        self.precision_cmpds = []
 
         ## I *think* this is faster than iterating through and making lists for each thing but I don't actually know
         data = [
@@ -153,9 +131,6 @@ class Rock:
             n_poses_list,
             n_good_poses_list,
             n_bad_poses_list,
-            n_cmpds_list,
-            n_good_cmpds_list,
-            n_bad_cmpds_list,
         ) = zip(*data)
 
         for idx in range(len(n_poses_list)):
@@ -169,18 +144,8 @@ class Rock:
             if not bootstrap:
                 ## Don't care about bootstrapping these
 
-                n_cmpds = n_cmpds_list[idx]
-                n_good_cmpds = n_good_cmpds_list[idx]
                 self.precision_poses.append(
                     self.weird_division(n_good_poses, n_poses)
-                )
-                self.true_positive_rates_cmpds.append(
-                    n_good_cmpds / total_good_cmpds
-                )
-                ## this doesn't really make sense mathematically but i'm keeping it to remember that
-                # self.false_positive_rates_cmpds.append(n_bad_cmpds / self.total_bad_cmpds)
-                self.precision_cmpds.append(
-                    self.weird_division(n_good_cmpds, n_cmpds)
                 )
 
         if bootstrap:
@@ -234,14 +199,6 @@ class Rock:
                 "Value": self.score_range,
                 "Score_Type": self.score_name,
                 "Precision": self.precision_poses,
-            }
-        )
-        self.auc_cmpds_df = pd.DataFrame(
-            {
-                "True_Positive": self.true_positive_rates_cmpds,
-                "Value": self.score_range,
-                "Score_Type": self.score_name,
-                "Precision": self.precision_cmpds,
             }
         )
 
@@ -309,9 +266,7 @@ class Rocks:
     def combine_dfs(self):
         _ = [rock.get_tidy_df_for_figure() for rock in self.rock_dict.values()]
         poses_dfs = [rock.auc_poses_df for rock in self.rock_dict.values()]
-        cmpds_dfs = [rock.auc_cmpds_df for rock in self.rock_dict.values()]
         self.poses_df = pd.concat(poses_dfs)
-        self.cmpds_df = pd.concat(cmpds_dfs)
 
     def get_auc_cis(self):
 
@@ -332,24 +287,3 @@ class Rocks:
                 "Upper_Bound": upper_bound_list,
             }
         )
-
-    def get_compound_results_df(self):
-        total_poses = self.df.groupby("Compound_ID")["RMSD"].count()
-        RMSDs = self.df.groupby("Compound_ID")[["RMSD"]].apply(
-            lambda x: x[x <= 2].agg(["count", "min"])
-        )
-        n_good_poses = RMSDs.xs("count", level=1)["RMSD"]
-        min_RMSD = RMSDs.xs("min", level=1)["RMSD"]
-        perc_good_poses = n_good_poses / total_poses
-        min_posit_R = self.df.groupby("Compound_ID")["POSIT_R"].min()
-        cmpd_df = pd.DataFrame(
-            {
-                "N_Poses": total_poses,
-                "N_Good_Poses": n_good_poses,
-                "Perc_Good_Poses": perc_good_poses,
-                "Min_RMSD": min_RMSD,
-                "Min_POSIT_R": min_posit_R,
-            }
-        )
-        cmpd_df["Compound_ID"] = cmpd_df.index
-        self.cmpd_df = cmpd_df.sort_values("Perc_Good_Poses")

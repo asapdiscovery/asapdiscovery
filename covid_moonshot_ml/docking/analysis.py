@@ -270,6 +270,7 @@ class DockingResults:
         filter_score="RMSD",
         filter_value=2.5,
         score_order=["POSIT_R", "Chemgauss4", "RMSD"],
+        score_ascending=[True, True, True],
     ):
         """
         Gets the best structure by first filtering based on the filter_score and filter_value,
@@ -291,6 +292,7 @@ class DockingResults:
         ## first do filtering
         filtered_df = self.df[self.df[filter_score] < filter_value]
         sort_list = ["Compound_ID"] + score_order
+        score_ascending = [True] + score_ascending
 
         ## sort dataframe, ascending (smaller / better scores will move to the top)
         sorted_df = filtered_df.sort_values(
