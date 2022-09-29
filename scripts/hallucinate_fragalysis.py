@@ -22,6 +22,7 @@ from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
     save_openeye_sdf,
     split_openeye_mol,
+    filter_docking_inputs,
 )
 from covid_moonshot_ml.docking.docking import (
     build_docking_system_direct,
@@ -476,9 +477,29 @@ def main():
     if args.x is not None:
         ## Need to go up one level of directory
         frag_dir = os.path.dirname(os.path.dirname(args.holo))
-        compound_id_dict = get_compound_id_xtal_dicts(
-            parse_fragalysis_data(args.x, frag_dir).values()
-        )[1]
+
+        # First, parse the fragalysis directory into a dictionary of CrystalCompoundData
+        sars_xtals = parse_fragalysis_data(args.s, frag_dir)
+
+        # For the compounds for which we have smiles strings, get a dictionary mapping the Compound_ID to the smiles
+        cmp_to_smiles_dict = {
+            compound_id: data.smiles
+            for compound_id, data in sars_xtals.items()
+            if data.smiles
+        }
+
+        # Filter based on the smiles using this OpenEye function
+        filtered_inputs = filter_docking_inputs(
+            smarts_queries=args.smarts_queries,
+            docking_inputs=cmp_to_smiles_dict,
+        )
+
+        # Get a new dictionary of sars xtals based on the filtered inputs
+        compound_id_dict = {
+            compound_id: data
+            for compound_id, data in sars_xtals.items()
+            if compound_id in filtered_inputs
+        }
 
         ## Map all holo structure names to their ligand name
         all_holo_names = [

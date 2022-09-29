@@ -51,6 +51,7 @@ def main():
         for compound_id, data in sars_xtals.items()
         if data.smiles
     }
+
     # Filter based on the smiles using this OpenEye function
     filtered_inputs = utils.filter_docking_inputs(
         smarts_queries=args.smarts_queries,
