@@ -58,6 +58,9 @@ def get_args():
         action="store_true",
         help="Input data is in EnantiomerPairList format.",
     )
+    parser.add_argument(
+        "-achiral", action="store_true", help="Only keep achiral compounds."
+    )
 
     return parser.parse_args()
 
@@ -81,7 +84,13 @@ def main():
             ).compounds
             if c.smiles is not None
         ]
-        exp_compounds = np.asarray([c for c in exp_compounds if c.achiral])
+        exp_compounds = np.asarray(
+            [
+                c
+                for c in exp_compounds
+                if ((args.achiral and c.achiral) or (not args.achiral))
+            ]
+        )
 
     ## Find relevant crystal structures
     xtal_compounds = parse_xtal(args.x, args.x_dir)
@@ -91,6 +100,8 @@ def main():
     xtal_ids = [x.dataset for x in xtal_compounds]
     xtal_smiles = [x.smiles for x in xtal_compounds]
 
+    # TODO: What if we specify something different than "rdkit" or "oe"?
+    #  Might cause problems with undefined `rank_fn` variable
     if args.sys.lower() == "rdkit":
         ## Convert SMILES to RDKit mol objects for MCS
         ## Need to canonicalize SMILES first because RDKit MCS seems to have
