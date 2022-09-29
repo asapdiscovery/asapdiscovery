@@ -486,7 +486,7 @@ def main():
         frag_dir = os.path.dirname(os.path.dirname(args.holo))
 
         # First, parse the fragalysis directory into a dictionary of CrystalCompoundData
-        sars_xtals = parse_fragalysis_data(args.s, frag_dir)
+        sars_xtals = parse_fragalysis_data(args.x, frag_dir)
 
         # For the compounds for which we have smiles strings, get a dictionary mapping the Compound_ID to the smiles
         cmp_to_smiles_dict = {
