@@ -11,8 +11,6 @@ class SchNetBind(SchNet):
     def __init__(self, *args, **kwargs):
         super(SchNetBind, self).__init__(*args, **kwargs)
 
-    # TODO: Does not match signature in base class
-    #  https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html#torch_geometric.nn.models.SchNet.forward
     def forward(self, z, pos, lig):
         """
         Forward pass through the model. Each forward pass through this class
