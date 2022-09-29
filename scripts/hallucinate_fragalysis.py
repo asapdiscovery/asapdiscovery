@@ -500,8 +500,8 @@ def main():
         ]
 
         if args.smarts_queries:
-            ## For the compounds for which we have smiles strings, get a dictionary
-            ##  mapping the Compound_ID to the smiles
+            ## For the compounds for which we have smiles strings, get a
+            ##  dictionary mapping the Compound_ID to the smiles
             cmp_to_smiles_dict = {
                 compound_id: data.smiles
                 for compound_id, data in sars_xtals.items()
