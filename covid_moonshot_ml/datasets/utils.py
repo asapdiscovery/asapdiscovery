@@ -483,6 +483,7 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
         cmpd_id = data["Compound ID"]
         dataset = data["Dataset"]
         if len(dataset) > 0:
+            ## TODO: is this the behaviour we want? this will build an empty object if there isn't a dataset
             if not sars_xtals.get(cmpd_id) or "-P" in dataset:
                 sars_xtals[cmpd_id] = CrystalCompoundData(
                     smiles=data["SMILES"],
@@ -658,7 +659,6 @@ def split_openeye_mol(complex_mol, lig_chain="A"):
 
 
 def get_ligand_rmsd_openeye(ref: oechem.OEMolBase, mobile: oechem.OEMolBase):
-
     return oechem.OERMSD(ref, mobile)
 
 
@@ -880,7 +880,7 @@ def filter_docking_inputs(
 
     if verbose:
         print(
-            f"Retained {len(filtered_docking_inputs)/num_input_cpds*100:.2f}% of compounds after "
+            f"Retained {len(filtered_docking_inputs) / num_input_cpds * 100:.2f}% of compounds after "
             + f"filtering ({len(query_smarts)} SMARTS filter(s); {num_input_cpds}-->"
             + f"{len(filtered_docking_inputs)})."
         )
