@@ -5,21 +5,18 @@ import pandas as pd
 
 class Rock:
     """
-    Class for getting ROC-AUC results for different scoring functions for a dataset.
+    A class to calculate ROC-AUC results for different scoring functions for a dataset.
     """
 
     def __init__(
         self,
         df,
         score_name,
-        rmsd_name,
-        n_samples,
+        rmsd_name="RMSD",
     ):
         self.df = df
         self.score_name = score_name
         self.rmsd_name = rmsd_name
-        self.n_samples = n_samples
-        self.get_score_range()
 
         (
             self.total_poses,
@@ -33,23 +30,26 @@ class Rock:
         self.auc = str
         self.auc_list = []
 
-    def calc_data(self, df):
+    def calc_data(self, df, rmsd_cutoff=2):
         """
         Given a dataset, return the six things we want to know
+
         Parameters
         ----------
-        df
+        df: pd.DataFrame
 
         Returns
         -------
 
         """
         n_poses = len(df)
-        n_good_poses = sum(df[self.rmsd_name] <= 2)
+        n_good_poses = sum(df[self.rmsd_name] <= rmsd_cutoff)
         n_bad_poses = n_poses - n_good_poses
 
         n_cmpds = len(set(df.Compound_ID))
-        set_of_good_cmpds = set(df[df[self.rmsd_name] <= 2].Compound_ID)
+        set_of_good_cmpds = set(
+            df[df[self.rmsd_name] <= rmsd_cutoff].Compound_ID
+        )
         n_good_cmpds = len(set_of_good_cmpds)
         n_bad_cmpds = n_cmpds - n_good_cmpds
 
@@ -76,19 +76,26 @@ class Rock:
         """
         return np.trapz(x=false_positive_rates, y=true_positive_rates)
 
-    def get_score_range(self):
+    def get_score_range(self, n_bins):
         """
         For some score in the data with arbitrary minima and maxima, return n evenly spaced points along the score.
         Returns
         -------
 
         """
-        self.score_range = np.linspace(
-            self.df[self.score_name].min() - 1,
-            self.df[self.score_name].max(),
-            self.n_samples,
+        # Give a score with min and max values, create n_bins
+        # cutoffs with the first cutoff being slightly below the first value so that the first 0 point is included.
+        min = self.df[self.score_name].min()
+        max = self.df[self.score_name].max()
+        delta = (max - min) / n_bins
+        start = min - delta
+        score_range = np.linspace(
+            start,
+            max,
+            n_bins,
             endpoint=True,
         )
+        return score_range
 
     def weird_division(self, numerator, denominator):
         """
@@ -104,7 +111,9 @@ class Rock:
         """
         return numerator / denominator if denominator else 0
 
-    def get_auc_from_df(self, df=None, bootstrap=False):
+    def get_auc_from_df(self, df=None, bootstrap=False, n_bins=10):
+        self.score_range = self.get_score_range(n_bins)
+
         if df is None:
             ## In the case that we're using the data saved to this class, we can pull out the original totals
             df = self.df
@@ -247,13 +256,13 @@ class Rocks:
         csv,
         score_list,
         rmsd_name,
-        n_samples,
+        n_bins,
         n_bootstraps=None,
     ):
         # First save all the passed in variables
         self.csv = csv
         self.score_list = score_list
-        self.n_samples = n_samples
+        self.n_bins = n_bins
         self.n_bootstraps = n_bootstraps
         self.rmsd_name = rmsd_name
 
@@ -263,9 +272,12 @@ class Rocks:
         # Make a dictionary of Rock objects
         self.build_rocks()
 
+        # Calculate AUC
+        self.get_aucs()
+
     def clean_dataframe(self):
         df = pd.read_csv(self.csv)
-        df["POSIT_R"] = -df["POSIT"] + 1
+        df["POSIT_R"] = 1 - df["POSIT"]
 
         # TODO: Expose these hard-coded options
         self.df = df[
@@ -275,7 +287,7 @@ class Rocks:
     def build_rocks(self):
         self.rock_dict = {
             score_name: Rock(
-                self.df, score_name, self.rmsd_name, self.n_samples
+                self.df, score_name  # , self.rmsd_name, self.n_bins
             )
             for score_name in self.score_list
             if score_name in self.df.columns
@@ -290,7 +302,7 @@ class Rocks:
 
         """
         for score_name, rock in self.rock_dict.items():
-            rock.get_auc_from_df()
+            rock.get_auc_from_df(n_bins=self.n_bins)
             rock.get_tidy_df_for_figure()
             self.rock_dict[score_name] = rock
 
