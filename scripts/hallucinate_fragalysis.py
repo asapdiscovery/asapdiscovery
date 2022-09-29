@@ -317,8 +317,6 @@ def mp_func(
         ret_code = poser.Dock(pose_res, dock_lig)
 
     ## Check results
-    # FIXME: This uses the `pose_res` defined inside previous conditional.
-    #  What if that previous conditional doesn't happen? `pose_res` might be undefined.
     if ret_code == oedocking.OEDockingReturnCode_Success:
         if dock_sys == "posit":
             posed_mol = pose_res.GetPose()
