@@ -273,13 +273,13 @@ class Rocks:
         ]
 
     def build_rocks(self):
-        for score_name in self.score_list:
-            assert score_name in self.df.columns
-            self.rock_dict = {
-                score_name: Rock(
-                    self.df, score_name, self.rmsd_name, self.n_samples
-                )
-            }
+        self.rock_dict = {
+            score_name: Rock(
+                self.df, score_name, self.rmsd_name, self.n_samples
+            )
+            for score_name in self.score_list
+            if score_name in self.df.columns
+        }
 
     def get_aucs(self):
         """
