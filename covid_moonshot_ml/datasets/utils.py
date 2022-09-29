@@ -1,4 +1,3 @@
-import json
 import os.path
 from openeye import oechem
 import numpy as np
@@ -7,7 +6,6 @@ import re
 from ..schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
-    PDBStructure,
     CrystalCompoundData,
     EnantiomerPair,
     EnantiomerPairList,

@@ -1,13 +1,8 @@
 import os
-from ..schema import (
-    CrystalCompoundData,
-    ExperimentalCompoundData,
-    PDBStructure,
-    ExperimentalCompoundDataUpdate,
-)
-from ..datasets.utils import get_sdf_fn_from_dataset
-from ..datasets.pdb import load_pdbs_from_yaml
 
+from kinoml.core.proteins import Protein
+from kinoml.core.ligands import Ligand
+from kinoml.core.systems import ProteinLigandComplex
 
 def build_docking_systems(
     exp_compounds, xtal_compounds, compound_idxs, n_top=1
@@ -31,10 +26,6 @@ def build_docking_systems(
     List[kinoml.core.systems.ProteinLigandComplex]
         List of protein+ligand systems for docking
     """
-    from kinoml.core.proteins import Protein
-    from kinoml.core.ligands import Ligand
-    from kinoml.core.systems import ProteinLigandComplex
-
     systems = []
     for (c, idx) in zip(exp_compounds, compound_idxs):
         ## Make sure that there are enough crystal structures to dock to

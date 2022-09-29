@@ -3,12 +3,8 @@ import pandas as pd
 import numpy as np
 import os
 from ..data.openeye import (
-    load_openeye_sdf,
-    load_openeye_pdb,
     get_ligand_rmsd_from_pdb_and_sdf,
-    split_openeye_mol,
 )
-from openeye import oechem
 
 
 class DockingDataset:
@@ -205,6 +201,7 @@ class DockingResults:
         -------
 
         """
+        # TODO: Default argument `score_columns` is a mutable. This can lead to unexpected behavior in Python.
         # TODO: I think this can be done without a for loop by replacing [[score]] with [score_columns]
         score_df_list = []
         for score in score_columns:
@@ -290,7 +287,7 @@ class DockingResults:
         -------
 
         """
-
+        # TODO: default argument `score_order` is a mutable. This can lead to unexpected behavior in python.
         ## first do filtering
         filtered_df = self.df[self.df[filter_score] < filter_value]
         sort_list = ["Compound_ID"] + score_order
