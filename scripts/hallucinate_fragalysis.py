@@ -485,28 +485,12 @@ def main():
         ## Need to go up one level of directory
         frag_dir = os.path.dirname(os.path.dirname(args.holo))
 
-        # First, parse the fragalysis directory into a dictionary of CrystalCompoundData
+        ## First, parse the fragalysis directory into a dictionary of
+        ##  CrystalCompoundData
         sars_xtals = parse_fragalysis_data(args.x, frag_dir)
 
-        # For the compounds for which we have smiles strings, get a dictionary mapping the Compound_ID to the smiles
-        cmp_to_smiles_dict = {
-            compound_id: data.smiles
-            for compound_id, data in sars_xtals.items()
-            if data.smiles
-        }
-
-        # Filter based on the smiles using this OpenEye function
-        filtered_inputs = filter_docking_inputs(
-            smarts_queries=args.smarts_queries,
-            docking_inputs=cmp_to_smiles_dict,
-        )
-
-        # Get a new dictionary of sars xtals based on the filtered inputs
-        compound_id_dict = {
-            compound_id: data
-            for compound_id, data in sars_xtals.items()
-            if compound_id in filtered_inputs
-        }
+        ## Get dict mapping crystal structure id to compound id
+        compound_id_dict = get_compound_id_xtal_dicts(sars_xtals.values())[1]
 
         ## Map all holo structure names to their ligand name
         all_holo_names = [
@@ -515,6 +499,37 @@ def main():
             else n
             for n in all_holo_names
         ]
+
+        if args.smarts_queries:
+            ## For the compounds for which we have smiles strings, get a dictionary
+            ##  mapping the Compound_ID to the smiles
+            cmp_to_smiles_dict = {
+                compound_id: data.smiles
+                for compound_id, data in sars_xtals.items()
+                if data.smiles
+            }
+
+            ## Filter based on the smiles using this OpenEye function
+            filtered_inputs = filter_docking_inputs(
+                smarts_queries=args.smarts_queries,
+                docking_inputs=cmp_to_smiles_dict,
+            )
+
+            ## Keep track of which structures to keep
+            keep_idx = [
+                n.split("_")[0] in filtered_inputs for n in all_holo_names
+            ]
+        else:
+            keep_idx = [True] * len(all_holo_names)
+
+        ## Trim files and names to keep
+        all_holo_fns = [fn for keep, fn in zip(keep_idx, all_holo_fns) if keep]
+        all_holo_names = [
+            n for keep, n in zip(keep_idx, all_holo_names) if keep
+        ]
+
+        ## Sanity check to make sure the lengths are the same
+        assert len(all_holo_fns) == len(all_holo_names)
 
     print(f"{len(all_apo_fns)} apo structures")
     print(f"{len(all_holo_fns)} ligands to dock", flush=True)
