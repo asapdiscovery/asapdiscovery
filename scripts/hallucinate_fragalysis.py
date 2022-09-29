@@ -404,6 +404,13 @@ def get_args():
     parser.add_argument(
         "-x", help="Fragalysis crystal structure compound tracker CSV file."
     )
+    parser.add_argument(
+        "-s",
+        "--smarts_queries",
+        default="../data/smarts_queries.csv",
+        type=str,
+        help="Path to csv file containing smarts queries.",
+    )
 
     ## Performance arguments
     parser.add_argument(
