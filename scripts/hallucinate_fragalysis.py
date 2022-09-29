@@ -369,7 +369,6 @@ def mp_func(
         dimer,
         f"{out_base}/docked.sdf",
         rmsd,
-        # TODO: If `dock_sys` is not "posit", then `posit_prob` might be undefined here.
         posit_prob,
         chemgauss_score,
         clash,
