@@ -259,3 +259,81 @@ def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
     aln_res.Transform(mobile_mol_aligned)
 
     return mobile_mol_aligned, aln_res.GetRMSD()
+
+
+def align_receptor(
+    input_prot,
+    dimer=True,
+    ref_prot=None,
+    split_initial_complex=True,
+    split_ref=True,
+    ref_chain=None,
+    mobile_chain=None,
+):
+    """
+    Function to prepare receptor before building the design unit.
+
+    Returns
+    -------
+
+    """
+    if (not dimer) and (not mobile_chain):
+        raise ValueError(
+            "If dimer is False, a value must be given for mobile_chain."
+        )
+
+    ## Load initial_complex from file if necessary
+    input_prot
+    if type(input_prot) is str:
+        initial_complex = load_openeye_pdb(input_prot, alt_loc=True)
+        ## If alt locations are present in PDB file, set positions to highest
+        ##  occupancy ALT
+        alf = oechem.OEAltLocationFactory(initial_complex)
+        if alf.GetGroupCount() != 0:
+            alf.MakePrimaryAltMol(initial_complex)
+
+    ## Load reference protein from file if necessary
+    if type(ref_prot) is str:
+        ref_prot = load_openeye_pdb(ref_prot, alt_loc=True)
+        ## If alt locations are present in PDB file, set positions to highest
+        ##  occupancy ALT
+        alf = oechem.OEAltLocationFactory(ref_prot)
+        if alf.GetGroupCount() != 0:
+            alf.MakePrimaryAltMol(ref_prot)
+
+        ## Split out protein components and align if requested
+        if split_initial_complex:
+            initial_prot_temp = split_openeye_mol(initial_complex)["pro"]
+        else:
+            initial_prot_temp = initial_complex
+
+        ## Extract if not dimer
+        if dimer:
+            initial_prot = initial_prot_temp
+        else:
+            initial_prot = oechem.OEGraphMol()
+            chain_pred = oechem.OEHasChainID(mobile_chain)
+            oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
+        if ref_prot is not None:
+            if split_ref:
+                ref_prot = split_openeye_mol(ref_prot)["pro"]
+
+            ## Set up predicates
+            if ref_chain is not None:
+                not_water = oechem.OENotAtom(oechem.OEIsWater())
+                ref_chain = oechem.OEHasChainID(ref_chain)
+                ref_chain = oechem.OEAndAtom(not_water, ref_chain)
+
+            if mobile_chain is not None:
+                try:
+                    not_water = oechem.OENotAtom(oechem.OEIsWater())
+                    mobile_chain = oechem.OEHasChainID(mobile_chain)
+                    mobile_chain = oechem.OEAndAtom(not_water, mobile_chain)
+                except Exception as e:
+                    print(mobile_chain)
+                    raise e
+            initial_prot = superpose_molecule(
+                ref_prot, initial_prot, ref_chain, mobile_chain
+            )[0]
+
+        return initial_prot
