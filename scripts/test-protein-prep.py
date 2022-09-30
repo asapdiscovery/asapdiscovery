@@ -17,6 +17,7 @@ from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
     add_seqres,
     seqres_to_res_list,
+    load_openeye_pdb,
 )
 
 
@@ -71,10 +72,10 @@ def main():
     res_list = seqres_to_res_list(seqres)
     print(len(res_list))
 
-    seqres_pdb = f"{out_name}_seqres.pdb"
+    seqres_pdb = f"{out_name}_01seqres.pdb"
     add_seqres(args.input_prot, seqres_str=seqres, pdb_out=seqres_pdb)
 
-    for mobile_chain in ["A"]:  # , "B"]:
+    for mobile_chain in ["A", "B"]:
         chain_name = f"{out_name}_chain{mobile_chain}"
         initial_prot = align_receptor(
             input_prot=seqres_pdb,
@@ -84,33 +85,32 @@ def main():
             ref_chain="A",
         )
 
-        aligned_fn = f"{chain_name}_aligned.pdb"
-        save_openeye_pdb(initial_prot, aligned_fn)
-
-        site_residue = "HIS:41: :A"
-        # design_units = prep_receptor(
-        #     initial_prot,
-        #     site_residue=site_residue,
-        #     sequence=seq_str,
-        #     loop_db=args.loop_db,
-        # )
-
         mutated_mol = mutate_residues(initial_prot, res_list)
+        aligned_fn = f"{chain_name}_02mutated.pdb"
+        save_openeye_pdb(mutated_mol, aligned_fn)
 
-        # initial_prot = prep_receptor(
-        #     initial_prot,
-        #     site_residue=site_residue,
-        #     sequence=seq_str,
-        #     loop_db=args.loop_db,
-        # )
-        # for i, du in enumerate(design_units):
-        #     print(i, du)
-        #     complex_mol = du_to_complex(du)
-        #     prepped_fn = f"{chain_name}_prepped.pdb"
-        #     save_openeye_pdb(complex_mol, prepped_fn)
+    # site_residue = "HIS:41: :A"
+    # design_units = prep_receptor(
+    #     initial_prot,
+    #     site_residue=site_residue,
+    #     sequence=seq_str,
+    #     loop_db=args.loop_db,
+    # )
 
-        # prepped_fn = f"{chain_name}_test.pdb"
-        # save_openeye_pdb(initial_prot, prepped_fn)
+    # initial_prot = prep_receptor(
+    #     initial_prot,
+    #     site_residue=site_residue,
+    #     sequence=seq_str,
+    #     loop_db=args.loop_db,
+    # )
+    # for i, du in enumerate(design_units):
+    #     print(i, du)
+    #     complex_mol = du_to_complex(du)
+    #     prepped_fn = f"{chain_name}_prepped.pdb"
+    #     save_openeye_pdb(complex_mol, prepped_fn)
+
+    # prepped_fn = f"{chain_name}_test.pdb"
+    # save_openeye_pdb(initial_prot, prepped_fn)
 
     # from kinoml.features.protein import OEProteinStructureFeaturizer
     # from kinoml.core.proteins import Protein, KLIFSKinase
