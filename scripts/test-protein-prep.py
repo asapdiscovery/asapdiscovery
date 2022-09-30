@@ -54,6 +54,13 @@ def get_args():
         type=str,
         help="Path to loop database.",
     )
+    parser.add_argument(
+        "-s",
+        "--seqres_yaml",
+        required=False,
+        type=str,
+        help="Path to yaml file of SEQRES.",
+    )
 
     return parser.parse_args()
 
@@ -66,13 +73,12 @@ def main():
 
     ## first add standard seqres info
 
-    with open("../data/SEQRES.yaml") as f:
+    with open(args.seqres_yaml) as f:
         seqres_dict = yaml.safe_load(f)
-    seqres = seqres_dict["MERS"]["SEQRES"]
+    seqres = seqres_dict["SEQRES"]
 
     ## Get a list of 3-letter codes for the sequence
     res_list = seqres_to_res_list(seqres)
-    print(len(res_list))
 
     ## Generate a new pdb file with the SEQRES we want
     seqres_pdb = f"{out_name}_01seqres.pdb"
