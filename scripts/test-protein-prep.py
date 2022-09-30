@@ -77,39 +77,40 @@ def main():
     initial_prot = load_openeye_pdb(seqres_pdb)
 
     mutated_mol = mutate_residues(initial_prot, res_list)
-    aligned_fn = f"{out_name}_02mutated.pdb"
-    save_openeye_pdb(mutated_mol, aligned_fn)
+    mutated_fn = f"{out_name}_02mutated.pdb"
+    save_openeye_pdb(mutated_mol, mutated_fn)
 
-    # for mobile_chain in ["A", "B"]:
-    #     chain_name = f"{out_name}_chain{mobile_chain}"
-    #     print(f"Running on chain {mobile_chain}")
-    #     initial_prot = align_receptor(
-    #         input_prot=seqres_pdb,
-    #         ref_prot=args.ref_prot,
-    #         dimer=True,
-    #         mobile_chain=mobile_chain,
-    #         ref_chain="A",
-    #     )
+    for mobile_chain in ["A", "B"]:
+        print(f"Running on chain {mobile_chain}")
+        initial_prot = align_receptor(
+            input_prot=mutated_mol,
+            ref_prot=args.ref_prot,
+            dimer=True,
+            mobile_chain=mobile_chain,
+            ref_chain="A",
+        )
+        aligned_fn = f"{out_name}_03aligned_chain{mobile_chain}.pdb"
+        save_openeye_pdb(initial_prot, aligned_fn)
 
-    # site_residue = "HIS:41: :A"
-    # design_units = prep_receptor(
-    #     initial_prot,
-    #     site_residue=site_residue,
-    #     sequence=seq_str,
-    #     loop_db=args.loop_db,
-    # )
+        site_residue = "HIS:41: :A"
+        design_units = prep_receptor(
+            initial_prot,
+            site_residue=site_residue,
+            # sequence=seq_str,
+            loop_db=args.loop_db,
+        )
 
-    # initial_prot = prep_receptor(
-    #     initial_prot,
-    #     site_residue=site_residue,
-    #     sequence=seq_str,
-    #     loop_db=args.loop_db,
-    # )
-    # for i, du in enumerate(design_units):
-    #     print(i, du)
-    #     complex_mol = du_to_complex(du)
-    #     prepped_fn = f"{chain_name}_prepped.pdb"
-    #     save_openeye_pdb(complex_mol, prepped_fn)
+        # initial_prot = prep_receptor(
+        #     initial_prot,
+        #     site_residue=site_residue,
+        #     sequence=seq_str,
+        #     loop_db=args.loop_db,
+        # )
+        for i, du in enumerate(design_units):
+            print(i, du)
+            complex_mol = du_to_complex(du)
+            prepped_fn = f"{out_name}_04prepped_chain{mobile_chain}.pdb"
+            save_openeye_pdb(complex_mol, prepped_fn)
 
     # prepped_fn = f"{chain_name}_test.pdb"
     # save_openeye_pdb(initial_prot, prepped_fn)
