@@ -339,34 +339,76 @@ def align_receptor(
         return initial_prot
 
 
-def mutate_residues(input_mol, res_list):
-    ## Try using direct mutation instead
-    hierview = oechem.OEHierView(input_mol)
-    residues = [residue.GetOEResidue() for residue in hierview.GetResidues()]
-    for residue in residues:
-        res_num = residue.GetResidueNumber()
-        res_name = residue.GetName()
-        if res_num < len(res_list):
-            try:
-                desired_res = res_list[res_num - 1]
-                if res_name != desired_res and len(res_name) > 0:
-                    print(res_name)
-                    print(res_num)
-                    print(desired_res)
-                    # print(
-                    #     f"Mutating {str(res_name)}{res_num} to {desired_res} in chain {residue.GetChainID()}"
-                    # )
-                    if not oespruce.OEMutateResidue(
-                        input_mol, residue, desired_res
-                    ):
-                        print("Failed")
-            except IndexError:
-                print(
-                    "skipping since residue number was out of range for the sequence"
-                )
-                pass
+# def mutate_residues(input_mol, res_list):
+#     ## Try using direct mutation instead
+#     hierview = oechem.OEHierView(input_mol)
+#     residues = [residue.GetOEResidue() for residue in hierview.GetResidues()]
+#     for residue in residues:
+#         res_num = residue.GetResidueNumber()
+#         res_name = residue.GetName()
+#         if res_num < len(res_list):
+#             try:
+#                 desired_res = res_list[res_num - 1]
+#                 if res_name != desired_res and len(res_name) > 0:
+#                     print(res_name)
+#                     print(res_num)
+#                     print(desired_res)
+#                     # print(
+#                     #     f"Mutating {str(res_name)}{res_num} to {desired_res} in chain {residue.GetChainID()}"
+#                     # )
+#                     if not oespruce.OEMutateResidue(
+#                         input_mol, residue, desired_res
+#                     ):
+#                         print("Failed")
+#             except IndexError:
+#                 print(
+#                     "skipping since residue number was out of range for the sequence"
+#                 )
+#                 pass
 
-    return input_mol
+#     return input_mol
+
+
+def mutate_residues(input_mol, res_list, place_h=True):
+    """
+    Mutate residues in the input molecule using OpenEye.
+    TODO: Make this more robust using some kind of sequence alignment.
+
+    Parameters
+    ----------
+    input_mol : oechem.OEGraphMol
+        Input OpenEye molecule
+    res_list : List[str]
+        List of 3 letter codes for the full sequence of `input_mol`. Must have
+        exactly the same number of residues or this will fail
+    place_h : bool, default=True
+        Whether to place hydrogen atoms
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        Newly mutated molecule
+    """
+    ## Create a copy of the molecule to avoid modifying original molecule
+    mut_prot = input_mol.CreateCopy()
+    ## Get sequence of input protein
+    input_mol_seq = [r.GetName() for r in oechem.OEGetResidues(input_mol)]
+    ## Build mutation map from OEResidue to new res name
+    mut_map = {
+        r: new_res
+        for new_res, old_res, r in zip(
+            res_list, input_mol_seq, oechem.OEGetResidues(mut_prot)
+        )
+        if new_res != old_res
+    }
+    ## Mutate and build sidechains
+    oespruce.OEMutateResidues(mut_prot, mut_map)
+
+    ## Place hydrogens
+    if place_h:
+        oechem.OEPlaceHydrogens(mut_prot)
+
+    return mut_prot
 
 
 def prep_receptor(
