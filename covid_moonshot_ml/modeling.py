@@ -393,14 +393,31 @@ def mutate_residues(input_mol, res_list, place_h=True):
     mut_prot = input_mol.CreateCopy()
     ## Get sequence of input protein
     input_mol_seq = [r.GetName() for r in oechem.OEGetResidues(input_mol)]
+    input_mol_num = [
+        r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)
+    ]
     ## Build mutation map from OEResidue to new res name
-    mut_map = {
-        r: new_res
-        for new_res, old_res, r in zip(
-            res_list, input_mol_seq, oechem.OEGetResidues(mut_prot)
-        )
-        if new_res != old_res
-    }
+    # mut_map = {
+    #     r: new_res
+    #     for new_res, old_res, r in zip(
+    #         res_list, input_mol_seq, oechem.OEGetResidues(mut_prot)
+    #     )
+    #     if new_res != old_res
+    # }
+
+    ## Build mutation map from OEResidue to new res name by indexing from res num
+    mut_map = {}
+    for old_res_name, res_num, r in zip(
+        input_mol_seq, input_mol_num, oechem.OEGetResidues(mut_prot)
+    ):
+        try:
+            new_res = res_list[res_num - 1]
+        except IndexError:
+            continue
+        if new_res != old_res_name:
+            print(res_num, old_res_name, new_res)
+            mut_map[r] = new_res
+    print(mut_map)
     ## Mutate and build sidechains
     oespruce.OEMutateResidues(mut_prot, mut_map)
 

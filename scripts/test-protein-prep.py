@@ -74,20 +74,22 @@ def main():
 
     seqres_pdb = f"{out_name}_01seqres.pdb"
     add_seqres(args.input_prot, seqres_str=seqres, pdb_out=seqres_pdb)
+    initial_prot = load_openeye_pdb(seqres_pdb)
 
-    for mobile_chain in ["A", "B"]:
-        chain_name = f"{out_name}_chain{mobile_chain}"
-        initial_prot = align_receptor(
-            input_prot=seqres_pdb,
-            ref_prot=args.ref_prot,
-            dimer=True,
-            mobile_chain=mobile_chain,
-            ref_chain="A",
-        )
+    mutated_mol = mutate_residues(initial_prot, res_list)
+    aligned_fn = f"{out_name}_02mutated.pdb"
+    save_openeye_pdb(mutated_mol, aligned_fn)
 
-        mutated_mol = mutate_residues(initial_prot, res_list)
-        aligned_fn = f"{chain_name}_02mutated.pdb"
-        save_openeye_pdb(mutated_mol, aligned_fn)
+    # for mobile_chain in ["A", "B"]:
+    #     chain_name = f"{out_name}_chain{mobile_chain}"
+    #     print(f"Running on chain {mobile_chain}")
+    #     initial_prot = align_receptor(
+    #         input_prot=seqres_pdb,
+    #         ref_prot=args.ref_prot,
+    #         dimer=True,
+    #         mobile_chain=mobile_chain,
+    #         ref_chain="A",
+    #     )
 
     # site_residue = "HIS:41: :A"
     # design_units = prep_receptor(
