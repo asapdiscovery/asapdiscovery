@@ -342,6 +342,7 @@ def align_receptor(
 def prep_receptor(
     initial_prot,
     site_residue,
+    sequence=None,
     loop_db=None,
 ):
     ## Add Hs to prep protein and ligand
@@ -390,13 +391,19 @@ def prep_receptor(
     # Build loops and sidechains
     opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True)
     opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True)
-
     # TODO: Add ability to add SEQRES and mutate protein accordingly
 
     ## Finally make new DesignUnit
     ## Using this function instead of OEMakeDesignUnit enables passing the empty 'metadata'
     ## object which makes it possible to build an empty DU
     metadata = oespruce.OEStructureMetadata()
+    if sequence:
+        # Use Sequence Metadata Class to add sequence
+        seq_meta = oespruce.OESequenceMetadata()
+        seq_meta.SetSequence(sequence)
+        metadata.AddSequenceMetadata(seq_meta)
+        print(metadata.GetSequenceMetadata()[0].GetSequence())
+
     design_units = oespruce.OEMakeDesignUnits(
         initial_prot, metadata, opts, site_residue
     )
