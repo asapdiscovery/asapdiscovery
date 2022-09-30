@@ -404,6 +404,14 @@ def prep_receptor(
         metadata.AddSequenceMetadata(seq_meta)
         print(metadata.GetSequenceMetadata()[0].GetSequence())
 
+    ## Try using direct mutation instead
+    mutation_opts = oespruce.OEDesignUnitMutationOptions()
+    res = oechem.OEResidue()
+    res.SetName("CYS")
+    res.SetResidueNumber(148)
+    mutation_opts.AddMutation(res, 148)
+    oespruce.OEMutateResidues(initial_prot, [res, 148])
+
     design_units = oespruce.OEMakeDesignUnits(
         initial_prot, metadata, opts, site_residue
     )
