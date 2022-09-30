@@ -346,12 +346,27 @@ def mutate_residues(input_mol, res_list):
     for residue in residues:
         res_num = residue.GetResidueNumber()
         res_name = residue.GetName()
-        desired_res = res_list[res_num - 1]
-        if not res_name == desired_res:
-            print(
-                f"Mutating {res_name}{res_num} to {desired_res} in chain {residue.GetChainID()}"
-            )
-            print(oespruce.OEMutateResidue(input_mol, residue, desired_res))
+        if res_num < len(res_list):
+            try:
+                desired_res = res_list[res_num - 1]
+                if res_name != desired_res and len(res_name) > 0:
+                    print(res_name)
+                    print(res_num)
+                    print(desired_res)
+                    # print(
+                    #     f"Mutating {str(res_name)}{res_num} to {desired_res} in chain {residue.GetChainID()}"
+                    # )
+                    if not oespruce.OEMutateResidue(
+                        input_mol, residue, desired_res
+                    ):
+                        print("Failed")
+            except IndexError:
+                print(
+                    "skipping since residue number was out of range for the sequence"
+                )
+                pass
+
+    return input_mol
 
 
 def prep_receptor(
