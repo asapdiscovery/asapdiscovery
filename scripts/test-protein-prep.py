@@ -57,7 +57,7 @@ def get_args():
     parser.add_argument(
         "-s",
         "--seqres_yaml",
-        required=False,
+        default=None,
         type=str,
         help="Path to yaml file of SEQRES.",
     )
@@ -71,44 +71,47 @@ def main():
     print(base_file_name)
     out_name = os.path.join(args.output_dir, base_file_name)
 
-    ## first add standard seqres info
+    if args.seqres_yaml:
+        ## first add standard seqres info
 
-    with open(args.seqres_yaml) as f:
-        seqres_dict = yaml.safe_load(f)
-    seqres = seqres_dict["SEQRES"]
+        with open(args.seqres_yaml) as f:
+            seqres_dict = yaml.safe_load(f)
+        seqres = seqres_dict["SEQRES"]
 
-    ## Get a list of 3-letter codes for the sequence
-    res_list = seqres_to_res_list(seqres)
+        ## Get a list of 3-letter codes for the sequence
+        res_list = seqres_to_res_list(seqres)
 
-    ## Generate a new pdb file with the SEQRES we want
-    seqres_pdb = f"{out_name}_01seqres.pdb"
-    add_seqres(args.input_prot, seqres_str=seqres, pdb_out=seqres_pdb)
+        ## Generate a new pdb file with the SEQRES we want
+        seqres_pdb = f"{out_name}_01seqres.pdb"
+        add_seqres(args.input_prot, seqres_str=seqres, pdb_out=seqres_pdb)
 
-    ## Load in the pdb file as an OE object
-    initial_prot = load_openeye_pdb(seqres_pdb)
+        ## Load in the pdb file as an OE object
+        seqres_prot = load_openeye_pdb(seqres_pdb)
 
-    ## Mutate the residues to match the residue list
-    mutated_mol = mutate_residues(initial_prot, res_list)
-    mutated_fn = f"{out_name}_02mutated.pdb"
-    save_openeye_pdb(mutated_mol, mutated_fn)
+        ## Mutate the residues to match the residue list
+        initial_prot = mutate_residues(seqres_prot, res_list)
+        mutated_fn = f"{out_name}_02mutated.pdb"
+        save_openeye_pdb(initial_prot, mutated_fn)
+    else:
+        initial_prot = load_openeye_pdb(args.input_prot)
 
     ## For each chain, align the receptor to the reference while keeping both chains.
     for mobile_chain in ["A", "B"]:
         print(f"Running on chain {mobile_chain}")
-        initial_prot = align_receptor(
-            input_prot=mutated_mol,
+        aligned_prot = align_receptor(
+            input_prot=initial_prot,
             ref_prot=args.ref_prot,
             dimer=True,
             mobile_chain=mobile_chain,
             ref_chain="A",
         )
         aligned_fn = f"{out_name}_03aligned_chain{mobile_chain}.pdb"
-        save_openeye_pdb(initial_prot, aligned_fn)
+        save_openeye_pdb(aligned_prot, aligned_fn)
 
         ## Prep the receptor using various SPRUCE options
         site_residue = "HIS:41: :A"
         design_units = prep_receptor(
-            initial_prot,
+            aligned_prot,
             site_residue=site_residue,
             loop_db=args.loop_db,
         )
