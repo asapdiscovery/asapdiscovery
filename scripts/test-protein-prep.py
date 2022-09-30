@@ -69,50 +69,50 @@ def main():
 
     seq_str = seqres_to_res_string(seqres)
 
-    seqres_pdb = f"{out_name}_seqres.pdb"
-    add_seqres(args.input_prot, seqres_str="", pdb_out=seqres_pdb)
-
-    for mobile_chain in ["A", "B"]:
-        chain_name = f"{out_name}_chain{mobile_chain}"
-        initial_prot = align_receptor(
-            input_prot=seqres_pdb,
-            ref_prot=args.ref_prot,
-            dimer=True,
-            mobile_chain=mobile_chain,
-            ref_chain="A",
-        )
-
-        aligned_fn = f"{chain_name}_aligned.pdb"
-        save_openeye_pdb(initial_prot, aligned_fn)
-
-        # site_residue = "HIS:41: :A"
-        # design_units = prep_receptor(
-        #     initial_prot,
-        #     site_residue=site_residue,
-        #     sequence=seq_str,
-        #     loop_db=args.loop_db,
-        # )
-        # for i, du in enumerate(design_units):
-        #     print(i, du)
-        #     complex_mol = du_to_complex(du)
-        #     prepped_fn = f"{chain_name}_prepped.pdb"
-        #     save_openeye_pdb(complex_mol, prepped_fn)
-
-    # from kinoml.features.protein import OEProteinStructureFeaturizer
-    # from kinoml.core.proteins import Protein, KLIFSKinase
-    # from kinoml.core.systems import ProteinSystem, ProteinLigandComplex
+    # seqres_pdb = f"{out_name}_seqres.pdb"
+    # add_seqres(args.input_prot, seqres_str="", pdb_out=seqres_pdb)
     #
-    # systems = []
-    # protein = Protein.from_file(file_path=args.input_prot, name="7DR8")
-    # protein.sequence = seq_str
-    # system = ProteinSystem(components=[protein])
-    # systems.append(system)
-    # featurizer = OEProteinStructureFeaturizer(
-    #     loop_db=args.loop_db,
-    #     output_dir=args.output_dir,
-    #     use_multiprocessing=False,
-    # )
-    # featurizer.featurize(systems)
+    # for mobile_chain in ["A", "B"]:
+    #     chain_name = f"{out_name}_chain{mobile_chain}"
+    #     initial_prot = align_receptor(
+    #         input_prot=seqres_pdb,
+    #         ref_prot=args.ref_prot,
+    #         dimer=True,
+    #         mobile_chain=mobile_chain,
+    #         ref_chain="A",
+    #     )
+    #
+    #     aligned_fn = f"{chain_name}_aligned.pdb"
+    #     save_openeye_pdb(initial_prot, aligned_fn)
+    #
+    #     site_residue = "HIS:41: :A"
+    #     design_units = prep_receptor(
+    #         initial_prot,
+    #         site_residue=site_residue,
+    #         sequence=seq_str,
+    #         loop_db=args.loop_db,
+    #     )
+    #     for i, du in enumerate(design_units):
+    #         print(i, du)
+    #         complex_mol = du_to_complex(du)
+    #         prepped_fn = f"{chain_name}_prepped.pdb"
+    #         save_openeye_pdb(complex_mol, prepped_fn)
+
+    from kinoml.features.protein import OEProteinStructureFeaturizer
+    from kinoml.core.proteins import Protein, KLIFSKinase
+    from kinoml.core.systems import ProteinSystem, ProteinLigandComplex
+
+    systems = []
+    protein = Protein.from_file(file_path=args.input_prot, name="7DR8")
+    protein.sequence = seq_str
+    system = ProteinSystem(components=[protein])
+    systems.append(system)
+    featurizer = OEProteinStructureFeaturizer(
+        loop_db=args.loop_db,
+        output_dir=args.output_dir,
+        use_multiprocessing=False,
+    )
+    featurizer.featurize(systems)
 
 
 if __name__ == "__main__":
