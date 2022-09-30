@@ -62,8 +62,14 @@ def seqres_to_res_list(seqres_str):
 
     """
     ## Grab the sequence from the sequence str
-    ## TODO: change this hard-coded only chain A sequence
-    seq_lines = [line[19:] for line in seqres_str.split("\n") if " A " in line]
+    ## use chain ID column
+    seqres_chain_column = 11
+    seq_lines = [
+        line[19:]
+        for line in seqres_str.split("\n")
+        if len(line) > 0
+        if line[seqres_chain_column] == "A"
+    ]
     seq_str = " ".join(seq_lines)
     res_list = seq_str.split(" ")
     return res_list
