@@ -19,6 +19,7 @@ from covid_moonshot_ml.datasets.utils import (
     seqres_to_res_list,
     load_openeye_pdb,
 )
+from openeye import oechem
 
 
 def get_args():
@@ -69,17 +70,23 @@ def main():
         seqres_dict = yaml.safe_load(f)
     seqres = seqres_dict["MERS"]["SEQRES"]
 
+    ## Get a list of 3-letter codes for the sequence
     res_list = seqres_to_res_list(seqres)
     print(len(res_list))
 
+    ## Generate a new pdb file with the SEQRES we want
     seqres_pdb = f"{out_name}_01seqres.pdb"
     add_seqres(args.input_prot, seqres_str=seqres, pdb_out=seqres_pdb)
+
+    ## Load in the pdb file as an OE object
     initial_prot = load_openeye_pdb(seqres_pdb)
 
+    ## Mutate the residues to match the residue list
     mutated_mol = mutate_residues(initial_prot, res_list)
     mutated_fn = f"{out_name}_02mutated.pdb"
     save_openeye_pdb(mutated_mol, mutated_fn)
 
+    ## For each chain, align the receptor to the reference while keeping both chains.
     for mobile_chain in ["A", "B"]:
         print(f"Running on chain {mobile_chain}")
         initial_prot = align_receptor(
@@ -92,44 +99,28 @@ def main():
         aligned_fn = f"{out_name}_03aligned_chain{mobile_chain}.pdb"
         save_openeye_pdb(initial_prot, aligned_fn)
 
+        ## Prep the receptor using various SPRUCE options
         site_residue = "HIS:41: :A"
         design_units = prep_receptor(
             initial_prot,
             site_residue=site_residue,
-            # sequence=seq_str,
             loop_db=args.loop_db,
         )
 
-        # initial_prot = prep_receptor(
-        #     initial_prot,
-        #     site_residue=site_residue,
-        #     sequence=seq_str,
-        #     loop_db=args.loop_db,
-        # )
+        ## Because of the object I'm using, it returns the design units as a list
+        ## There should only be one but just in case I'm going to write out all of them
         for i, du in enumerate(design_units):
             print(i, du)
+
+            ## First save the design unit itself
+            oechem.OEWriteDesignUnit(
+                f"{out_name}_04prepped_chain{mobile_chain}.oedu", du
+            )
+
+            ## Then save as a PDB file
             complex_mol = du_to_complex(du)
             prepped_fn = f"{out_name}_04prepped_chain{mobile_chain}.pdb"
             save_openeye_pdb(complex_mol, prepped_fn)
-
-    # prepped_fn = f"{chain_name}_test.pdb"
-    # save_openeye_pdb(initial_prot, prepped_fn)
-
-    # from kinoml.features.protein import OEProteinStructureFeaturizer
-    # from kinoml.core.proteins import Protein, KLIFSKinase
-    # from kinoml.core.systems import ProteinSystem, ProteinLigandComplex
-    #
-    # systems = []
-    # protein = Protein.from_file(file_path=args.input_prot, name="7DR8")
-    # protein.sequence = seq_str
-    # system = ProteinSystem(components=[protein])
-    # systems.append(system)
-    # featurizer = OEProteinStructureFeaturizer(
-    #     loop_db=args.loop_db,
-    #     output_dir=args.output_dir,
-    #     use_multiprocessing=False,
-    # )
-    # featurizer.featurize(systems)
 
 
 if __name__ == "__main__":

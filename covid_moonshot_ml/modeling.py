@@ -395,14 +395,6 @@ def mutate_residues(input_mol, res_list, place_h=True):
     input_mol_num = [
         r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)
     ]
-    ## Build mutation map from OEResidue to new res name
-    # mut_map = {
-    #     r: new_res
-    #     for new_res, old_res, r in zip(
-    #         res_list, input_mol_seq, oechem.OEGetResidues(mut_prot)
-    #     )
-    #     if new_res != old_res
-    # }
 
     ## Build mutation map from OEResidue to new res name by indexing from res num
     mut_map = {}
@@ -482,25 +474,14 @@ def prep_receptor(
     # Build loops and sidechains
     opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True)
     opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True)
+
     # TODO: Add ability to add SEQRES and mutate protein accordingly
 
     ## Finally make new DesignUnit
     ## Using this function instead of OEMakeDesignUnit enables passing the empty 'metadata'
     ## object which makes it possible to build an empty DU
     metadata = oespruce.OEStructureMetadata()
-    if sequence:
-        # Use Sequence Metadata Class to add sequence
-        seq_meta = oespruce.OESequenceMetadata()
-        seq_meta.SetSequence(sequence)
-        metadata.AddSequenceMetadata(seq_meta)
-        print(metadata.GetSequenceMetadata()[0].GetSequence())
-    # print("Making DU")
     design_units = oespruce.OEMakeDesignUnits(
         initial_prot, metadata, opts, site_residue
     )
-    # oespruce.OESpruceFilter(du, initial_prot, opts)
-    # assert du.HasProtein()
-    # print(design_units)
-    #
     return design_units
-    # return initial_prot
