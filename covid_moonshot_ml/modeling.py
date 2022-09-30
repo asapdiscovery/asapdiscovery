@@ -337,3 +337,71 @@ def align_receptor(
             )[0]
 
         return initial_prot
+
+
+def prep_receptor(
+    initial_prot,
+    site_residue,
+    loop_db=None,
+):
+    ## Add Hs to prep protein and ligand
+    oechem.OEAddExplicitHydrogens(initial_prot)
+
+    ## Set up DU building options
+    opts = oespruce.OEMakeDesignUnitOptions()
+    opts.SetSuperpose(False)
+    if loop_db is not None:
+        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(
+            loop_db
+        )
+
+    ## Options set from John's function ########################################
+    ## (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
+    opts.GetPrepOptions().SetStrictProtonationMode(True)
+    # set minimal number of ligand atoms to 5, e.g. a 5-membered ring fragment\
+    opts.GetSplitOptions().SetMinLigAtoms(5)
+
+    # also consider alternate locations outside binding pocket, important for later filtering
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
+        False
+    )
+
+    # alignment options, only matches are important
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
+        oechem.OESeqAlignmentMethod_Identity
+    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(
+        -1
+    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(
+        0
+    )
+
+    # Both N- and C-termini should be zwitterionic
+    # Mpro cleaves its own N- and C-termini
+    # See https://www.pnas.org/content/113/46/12997
+    opts.GetPrepOptions().GetBuildOptions().SetCapNTermini(False)
+    opts.GetPrepOptions().GetBuildOptions().SetCapCTermini(False)
+    # Don't allow truncation of termini, since force fields don't have
+    #  parameters for this
+    opts.GetPrepOptions().GetBuildOptions().GetCapBuilderOptions().SetAllowTruncate(
+        False
+    )
+    # Build loops and sidechains
+    opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True)
+    opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True)
+
+    # TODO: Add ability to add SEQRES and mutate protein accordingly
+
+    ## Finally make new DesignUnit
+    ## Using this function instead of OEMakeDesignUnit enables passing the empty 'metadata'
+    ## object which makes it possible to build an empty DU
+    metadata = oespruce.OEStructureMetadata()
+    design_units = oespruce.OEMakeDesignUnits(
+        initial_prot, metadata, opts, site_residue
+    )
+    # oespruce.OESpruceFilter(du, initial_prot, opts)
+    # assert du.HasProtein()
+    print(design_units)
+
+    return design_units
