@@ -12,7 +12,7 @@ from ..schema import (
 )
 
 
-def add_seqres(pdb_in, seqres_str=False, dbref_str=False, pdb_out=None):
+def add_seqres(pdb_in, seqres_str=None, dbref_str=None, pdb_out=None):
     """
     Add SARS-CoV2 MPRO residue sequence to PDB header.
 
@@ -20,22 +20,27 @@ def add_seqres(pdb_in, seqres_str=False, dbref_str=False, pdb_out=None):
     ----------
     pdb_in : str
         Input PDB file.
+    seqres_str : str, optional
+        String containing SEQRES card, including newlines.
+    dbref_str : str, optional
+        String containing DBREF card, including newlines.
     pdb_out : str, optional
         Output PDB file. If not given, appends _seqres to the input file.
     """
+    ## TODO: replace DBREF string as well
 
     pdbfile_lines = [line for line in open(pdb_in, "r") if "UNK" not in line]
     pdbfile_lines = [line for line in pdbfile_lines if "LINK" not in line]
+
     ## Fix bad CL atom names
     pdbfile_lines = [re.sub("CL", "Cl", l) for l in pdbfile_lines]
     # # remove ligand hetatoms
     # pdbfile_lines = [ line for line in pdbfile_lines if 'LIG' not in line ]
     if seqres_str:
         pdbfile_lines = [line for line in pdbfile_lines if not "SEQRES" in line]
-    pdbfile_contents = "".join(pdbfile_lines)
-
-    if not "SEQRES" in pdbfile_contents:
-        pdbfile_contents = seqres_str + pdbfile_contents
+        pdbfile_contents = seqres_str + "".join(pdbfile_lines)
+    else:
+        pdbfile_contents = "".join(pdbfile_lines)
 
     if pdb_out is None:
         pdb_out = f"{pdb_in[:-4]}_seqres.pdb"
@@ -45,7 +50,7 @@ def add_seqres(pdb_in, seqres_str=False, dbref_str=False, pdb_out=None):
     print(f"Wrote {pdb_out}", flush=True)
 
 
-def seqres_to_res_list(SEQRES_str):
+def seqres_to_res_list(seqres_str):
     """
     https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#SEQRES
     Parameters
@@ -56,7 +61,9 @@ def seqres_to_res_list(SEQRES_str):
     -------
 
     """
-    seq_lines = [line[19:] for line in SEQRES_str.split("\n") if " A " in line]
+    ## Grab the sequence from the sequence str
+    ## TODO: change this hard-coded only chain A sequence
+    seq_lines = [line[19:] for line in seqres_str.split("\n") if " A " in line]
     seq_str = " ".join(seq_lines)
     res_list = seq_str.split(" ")
     return res_list
