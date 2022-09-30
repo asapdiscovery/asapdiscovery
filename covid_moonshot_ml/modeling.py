@@ -283,7 +283,6 @@ def align_receptor(
         )
 
     ## Load initial_complex from file if necessary
-    input_prot
     if type(input_prot) is str:
         initial_complex = load_openeye_pdb(input_prot, alt_loc=True)
         ## If alt locations are present in PDB file, set positions to highest
@@ -303,9 +302,9 @@ def align_receptor(
 
         ## Split out protein components and align if requested
         if split_initial_complex:
-            initial_prot_temp = split_openeye_mol(initial_complex)["pro"]
+            initial_prot_temp = split_openeye_mol(input_prot)["pro"]
         else:
-            initial_prot_temp = initial_complex
+            initial_prot_temp = input_prot
 
         ## Extract if not dimer
         if dimer:
@@ -413,11 +412,14 @@ def mutate_residues(input_mol, res_list, place_h=True):
         try:
             new_res = res_list[res_num - 1]
         except IndexError:
+            ## If the residue number is out of range (because its a water or something weird)
+            ## then we can skip right on by it
             continue
         if new_res != old_res_name:
             print(res_num, old_res_name, new_res)
             mut_map[r] = new_res
     print(mut_map)
+
     ## Mutate and build sidechains
     oespruce.OEMutateResidues(mut_prot, mut_map)
 
@@ -492,15 +494,13 @@ def prep_receptor(
         seq_meta.SetSequence(sequence)
         metadata.AddSequenceMetadata(seq_meta)
         print(metadata.GetSequenceMetadata()[0].GetSequence())
-
-    print(result)
     # print("Making DU")
-    # design_units = oespruce.OEMakeDesignUnits(
-    #     initial_prot, metadata, opts, site_residue
-    # )
+    design_units = oespruce.OEMakeDesignUnits(
+        initial_prot, metadata, opts, site_residue
+    )
     # oespruce.OESpruceFilter(du, initial_prot, opts)
     # assert du.HasProtein()
     # print(design_units)
     #
-    # return design_units
-    return initial_prot
+    return design_units
+    # return initial_prot
