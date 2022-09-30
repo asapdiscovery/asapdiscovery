@@ -11,59 +11,8 @@ from ..schema import (
     EnantiomerPairList,
 )
 
-MPRO_SEQRES = """\
-SEQRES   1 A  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL
-SEQRES   2 A  306  GLU GLY CYS MET VAL GLN VAL THR CYS GLY THR THR THR
-SEQRES   3 A  306  LEU ASN GLY LEU TRP LEU ASP ASP VAL VAL TYR CYS PRO
-SEQRES   4 A  306  ARG HIS VAL ILE CYS THR SER GLU ASP MET LEU ASN PRO
-SEQRES   5 A  306  ASN TYR GLU ASP LEU LEU ILE ARG LYS SER ASN HIS ASN
-SEQRES   6 A  306  PHE LEU VAL GLN ALA GLY ASN VAL GLN LEU ARG VAL ILE
-SEQRES   7 A  306  GLY HIS SER MET GLN ASN CYS VAL LEU LYS LEU LYS VAL
-SEQRES   8 A  306  ASP THR ALA ASN PRO LYS THR PRO LYS TYR LYS PHE VAL
-SEQRES   9 A  306  ARG ILE GLN PRO GLY GLN THR PHE SER VAL LEU ALA CYS
-SEQRES  10 A  306  TYR ASN GLY SER PRO SER GLY VAL TYR GLN CYS ALA MET
-SEQRES  11 A  306  ARG PRO ASN PHE THR ILE LYS GLY SER PHE LEU ASN GLY
-SEQRES  12 A  306  SER CYS GLY SER VAL GLY PHE ASN ILE ASP TYR ASP CYS
-SEQRES  13 A  306  VAL SER PHE CYS TYR MET HIS HIS MET GLU LEU PRO THR
-SEQRES  14 A  306  GLY VAL HIS ALA GLY THR ASP LEU GLU GLY ASN PHE TYR
-SEQRES  15 A  306  GLY PRO PHE VAL ASP ARG GLN THR ALA GLN ALA ALA GLY
-SEQRES  16 A  306  THR ASP THR THR ILE THR VAL ASN VAL LEU ALA TRP LEU
-SEQRES  17 A  306  TYR ALA ALA VAL ILE ASN GLY ASP ARG TRP PHE LEU ASN
-SEQRES  18 A  306  ARG PHE THR THR THR LEU ASN ASP PHE ASN LEU VAL ALA
-SEQRES  19 A  306  MET LYS TYR ASN TYR GLU PRO LEU THR GLN ASP HIS VAL
-SEQRES  20 A  306  ASP ILE LEU GLY PRO LEU SER ALA GLN THR GLY ILE ALA
-SEQRES  21 A  306  VAL LEU ASP MET CYS ALA SER LEU LYS GLU LEU LEU GLN
-SEQRES  22 A  306  ASN GLY MET ASN GLY ARG THR ILE LEU GLY SER ALA LEU
-SEQRES  23 A  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN
-SEQRES  24 A  306  CYS SER GLY VAL THR PHE GLN
-SEQRES   1 B  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL
-SEQRES   2 B  306  GLU GLY CYS MET VAL GLN VAL THR CYS GLY THR THR THR
-SEQRES   3 B  306  LEU ASN GLY LEU TRP LEU ASP ASP VAL VAL TYR CYS PRO
-SEQRES   4 B  306  ARG HIS VAL ILE CYS THR SER GLU ASP MET LEU ASN PRO
-SEQRES   5 B  306  ASN TYR GLU ASP LEU LEU ILE ARG LYS SER ASN HIS ASN
-SEQRES   6 B  306  PHE LEU VAL GLN ALA GLY ASN VAL GLN LEU ARG VAL ILE
-SEQRES   7 B  306  GLY HIS SER MET GLN ASN CYS VAL LEU LYS LEU LYS VAL
-SEQRES   8 B  306  ASP THR ALA ASN PRO LYS THR PRO LYS TYR LYS PHE VAL
-SEQRES   9 B  306  ARG ILE GLN PRO GLY GLN THR PHE SER VAL LEU ALA CYS
-SEQRES  10 B  306  TYR ASN GLY SER PRO SER GLY VAL TYR GLN CYS ALA MET
-SEQRES  11 B  306  ARG PRO ASN PHE THR ILE LYS GLY SER PHE LEU ASN GLY
-SEQRES  12 B  306  SER CYS GLY SER VAL GLY PHE ASN ILE ASP TYR ASP CYS
-SEQRES  13 B  306  VAL SER PHE CYS TYR MET HIS HIS MET GLU LEU PRO THR
-SEQRES  14 B  306  GLY VAL HIS ALA GLY THR ASP LEU GLU GLY ASN PHE TYR
-SEQRES  15 B  306  GLY PRO PHE VAL ASP ARG GLN THR ALA GLN ALA ALA GLY
-SEQRES  16 B  306  THR ASP THR THR ILE THR VAL ASN VAL LEU ALA TRP LEU
-SEQRES  17 B  306  TYR ALA ALA VAL ILE ASN GLY ASP ARG TRP PHE LEU ASN
-SEQRES  18 B  306  ARG PHE THR THR THR LEU ASN ASP PHE ASN LEU VAL ALA
-SEQRES  19 B  306  MET LYS TYR ASN TYR GLU PRO LEU THR GLN ASP HIS VAL
-SEQRES  20 B  306  ASP ILE LEU GLY PRO LEU SER ALA GLN THR GLY ILE ALA
-SEQRES  21 B  306  VAL LEU ASP MET CYS ALA SER LEU LYS GLU LEU LEU GLN
-SEQRES  22 B  306  ASN GLY MET ASN GLY ARG THR ILE LEU GLY SER ALA LEU
-SEQRES  23 B  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN
-SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
-"""
 
-
-def add_seqres(pdb_in, pdb_out=None):
+def add_seqres(pdb_in, seqres_str=False, dbref_str=False, pdb_out=None):
     """
     Add SARS-CoV2 MPRO residue sequence to PDB header.
 
@@ -81,9 +30,12 @@ def add_seqres(pdb_in, pdb_out=None):
     pdbfile_lines = [re.sub("CL", "Cl", l) for l in pdbfile_lines]
     # # remove ligand hetatoms
     # pdbfile_lines = [ line for line in pdbfile_lines if 'LIG' not in line ]
+    if seqres_str:
+        pdbfile_lines = [line for line in pdbfile_lines if not "SEQRES" in line]
     pdbfile_contents = "".join(pdbfile_lines)
+
     if not "SEQRES" in pdbfile_contents:
-        pdbfile_contents = MPRO_SEQRES + pdbfile_contents
+        pdbfile_contents = seqres_str + pdbfile_contents
 
     if pdb_out is None:
         pdb_out = f"{pdb_in[:-4]}_seqres.pdb"
@@ -91,6 +43,22 @@ def add_seqres(pdb_in, pdb_out=None):
         fp.write(pdbfile_contents)
 
     print(f"Wrote {pdb_out}", flush=True)
+
+
+def seqres_to_res_string(SEQRES_str):
+    """
+    https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#SEQRES
+    Parameters
+    ----------
+    SEQRES_str
+
+    Returns
+    -------
+
+    """
+    seq_lines = [line[19:] for line in SEQRES_str.split("\n") if " A " in line]
+    seq_str = " ".join(seq_lines)
+    return seq_str
 
 
 def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
@@ -658,7 +626,6 @@ def split_openeye_mol(complex_mol, lig_chain="A"):
 
 
 def get_ligand_rmsd_openeye(ref: oechem.OEMolBase, mobile: oechem.OEMolBase):
-
     return oechem.OERMSD(ref, mobile)
 
 
@@ -880,7 +847,7 @@ def filter_docking_inputs(
 
     if verbose:
         print(
-            f"Retained {len(filtered_docking_inputs)/num_input_cpds*100:.2f}% of compounds after "
+            f"Retained {len(filtered_docking_inputs) / num_input_cpds * 100:.2f}% of compounds after "
             + f"filtering ({len(query_smarts)} SMARTS filter(s); {num_input_cpds}-->"
             + f"{len(filtered_docking_inputs)})."
         )
