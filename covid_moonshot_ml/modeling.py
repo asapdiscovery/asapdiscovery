@@ -339,6 +339,21 @@ def align_receptor(
         return initial_prot
 
 
+def mutate_residues(input_mol, res_list):
+    ## Try using direct mutation instead
+    hierview = oechem.OEHierView(input_mol)
+    residues = [residue.GetOEResidue() for residue in hierview.GetResidues()]
+    for residue in residues:
+        res_num = residue.GetResidueNumber()
+        res_name = residue.GetName()
+        desired_res = res_list[res_num - 1]
+        if not res_name == desired_res:
+            print(
+                f"Mutating {res_name}{res_num} to {desired_res} in chain {residue.GetChainID()}"
+            )
+            print(oespruce.OEMutateResidue(input_mol, residue, desired_res))
+
+
 def prep_receptor(
     initial_prot,
     site_residue,
@@ -404,19 +419,14 @@ def prep_receptor(
         metadata.AddSequenceMetadata(seq_meta)
         print(metadata.GetSequenceMetadata()[0].GetSequence())
 
-    ## Try using direct mutation instead
-    mutation_opts = oespruce.OEDesignUnitMutationOptions()
-    res = oechem.OEResidue()
-    res.SetName("CYS")
-    res.SetResidueNumber(148)
-    mutation_opts.AddMutation(res, 148)
-    oespruce.OEMutateResidues(initial_prot, [res, 148])
-
-    design_units = oespruce.OEMakeDesignUnits(
-        initial_prot, metadata, opts, site_residue
-    )
+    print(result)
+    # print("Making DU")
+    # design_units = oespruce.OEMakeDesignUnits(
+    #     initial_prot, metadata, opts, site_residue
+    # )
     # oespruce.OESpruceFilter(du, initial_prot, opts)
     # assert du.HasProtein()
-    print(design_units)
-
-    return design_units
+    # print(design_units)
+    #
+    # return design_units
+    return initial_prot
