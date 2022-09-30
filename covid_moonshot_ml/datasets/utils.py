@@ -45,7 +45,7 @@ def add_seqres(pdb_in, seqres_str=False, dbref_str=False, pdb_out=None):
     print(f"Wrote {pdb_out}", flush=True)
 
 
-def seqres_to_res_string(SEQRES_str):
+def seqres_to_res_list(SEQRES_str):
     """
     https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#SEQRES
     Parameters
@@ -58,7 +58,8 @@ def seqres_to_res_string(SEQRES_str):
     """
     seq_lines = [line[19:] for line in SEQRES_str.split("\n") if " A " in line]
     seq_str = " ".join(seq_lines)
-    return seq_str
+    res_list = seq_str.split(" ")
+    return res_list
 
 
 def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
