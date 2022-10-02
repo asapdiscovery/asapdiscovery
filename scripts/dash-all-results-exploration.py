@@ -80,17 +80,6 @@ app.layout = html.Div(
         ),
         html.Div(
             [
-                dcc.Graph(
-                    id="crossfilter-indicator-scatter",
-                )
-            ],
-            style={
-                "display": "inline-block",
-                "padding": "0 20",
-            },
-        ),
-        html.Div(
-            [
                 html.H4("Color"),
                 dcc.Dropdown(
                     tidy["variable"].unique(),
@@ -99,9 +88,21 @@ app.layout = html.Div(
                 ),
             ],
             style={
-                "width": "49%",
+                "width": "98%",
                 "display": "inline-block",
-                "float": "right",
+                # "float": "left",
+            },
+        ),
+        html.Div(
+            [
+                dcc.Graph(
+                    id="crossfilter-indicator-scatter",
+                )
+            ],
+            style={
+                "display": "inline-block",
+                "padding": "0 20",
+                # "float": "left",
             },
         ),
         html.Div(
@@ -113,6 +114,7 @@ app.layout = html.Div(
             style={
                 "display": "inline-block",
                 "padding": "0 20",
+                # "float": "right",
             },
         ),
     ]
@@ -129,7 +131,7 @@ app.layout = html.Div(
     Input("y-axis-slider", "value"),
     Input("crossfilter-color", "value"),
 )
-def update_graph(
+def update_scatter(
     xaxis_column_name,
     yaxis_column_name,
     xaxis_type,
@@ -151,6 +153,7 @@ def update_graph(
         y=yaxis_column_name,
         hover_data=["Complex_ID"],
         color=color_column,
+        color_continuous_scale="dense",
     )
 
     fig.update_xaxes(
@@ -164,7 +167,62 @@ def update_graph(
     )
 
     fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 10, "r": 0}, hovermode="closest"
+        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
+    )
+
+    return fig
+
+
+@app.callback(
+    Output("crossfilter-indicator-contour", "figure"),
+    Input("crossfilter-xaxis-column", "value"),
+    Input("crossfilter-yaxis-column", "value"),
+    Input("crossfilter-xaxis-type", "value"),
+    Input("crossfilter-yaxis-type", "value"),
+    Input("x-axis-slider", "value"),
+    Input("y-axis-slider", "value"),
+    Input("crossfilter-color", "value"),
+)
+def update_contour(
+    xaxis_column_name,
+    yaxis_column_name,
+    xaxis_type,
+    yaxis_type,
+    x_range,
+    y_range,
+    color_column,
+):
+    filtered = df[
+        (df[xaxis_column_name] > x_range[0])
+        & (df[xaxis_column_name] < x_range[1])
+        & (df[yaxis_column_name] > y_range[0])
+        & (df[yaxis_column_name] < y_range[1])
+    ]
+
+    fig = px.density_contour(
+        filtered,
+        x=xaxis_column_name,
+        y=yaxis_column_name,
+        marginal_x="histogram",
+        marginal_y="histogram",
+    )
+    fig.update_traces(
+        contours_coloring="heatmap",
+        selector=dict(type="histogram2dcontour"),
+        colorscale="Peach",
+    )
+    fig.update_xaxes(
+        title=xaxis_column_name,
+        type="linear" if xaxis_type == "Linear" else "log",
+    )
+
+    fig.update_yaxes(
+        title=yaxis_column_name,
+        type="linear" if yaxis_type == "Linear" else "log",
+    )
+
+    fig.update_layout(
+        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
     )
 
     return fig
