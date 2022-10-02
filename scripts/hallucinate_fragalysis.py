@@ -22,6 +22,7 @@ from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
     save_openeye_sdf,
     split_openeye_mol,
+    filter_docking_inputs,
 )
 from covid_moonshot_ml.docking.docking import (
     build_docking_system_direct,
@@ -403,6 +404,12 @@ def get_args():
     parser.add_argument(
         "-x", help="Fragalysis crystal structure compound tracker CSV file."
     )
+    parser.add_argument(
+        "-s",
+        "--smarts_queries",
+        type=str,
+        help="Path to csv file containing smarts queries.",
+    )
 
     ## Performance arguments
     parser.add_argument(
@@ -476,9 +483,13 @@ def main():
     if args.x is not None:
         ## Need to go up one level of directory
         frag_dir = os.path.dirname(os.path.dirname(args.holo))
-        compound_id_dict = get_compound_id_xtal_dicts(
-            parse_fragalysis_data(args.x, frag_dir).values()
-        )[1]
+
+        ## First, parse the fragalysis directory into a dictionary of
+        ##  CrystalCompoundData
+        sars_xtals = parse_fragalysis_data(args.x, frag_dir)
+
+        ## Get dict mapping crystal structure id to compound id
+        compound_id_dict = get_compound_id_xtal_dicts(sars_xtals.values())[1]
 
         ## Map all holo structure names to their ligand name
         all_holo_names = [
@@ -487,6 +498,37 @@ def main():
             else n
             for n in all_holo_names
         ]
+
+        if args.smarts_queries:
+            ## For the compounds for which we have smiles strings, get a
+            ##  dictionary mapping the Compound_ID to the smiles
+            cmp_to_smiles_dict = {
+                compound_id: data.smiles
+                for compound_id, data in sars_xtals.items()
+                if data.smiles
+            }
+
+            ## Filter based on the smiles using this OpenEye function
+            filtered_inputs = filter_docking_inputs(
+                smarts_queries=args.smarts_queries,
+                docking_inputs=cmp_to_smiles_dict,
+            )
+
+            ## Keep track of which structures to keep
+            keep_idx = [
+                n.split("_")[0] in filtered_inputs for n in all_holo_names
+            ]
+        else:
+            keep_idx = [True] * len(all_holo_names)
+
+        ## Trim files and names to keep
+        all_holo_fns = [fn for keep, fn in zip(keep_idx, all_holo_fns) if keep]
+        all_holo_names = [
+            n for keep, n in zip(keep_idx, all_holo_names) if keep
+        ]
+
+        ## Sanity check to make sure the lengths are the same
+        assert len(all_holo_fns) == len(all_holo_names)
 
     print(f"{len(all_apo_fns)} apo structures")
     print(f"{len(all_holo_fns)} ligands to dock", flush=True)
