@@ -26,12 +26,6 @@ app.layout = html.Div(
                             id="x-axis-slider",
                             min=-100,
                             max=100,
-                            # min=tidy["variable"]["value"].min(),
-                            # max=tidy[
-                            #     tidy["variable"] == "crossfilter-xaxis-column"
-                            # ]["value"].max(),
-                            # step=0.1,
-                            # marks={0: "0", 1: "1", 3.5: "3.5"},
                             value=[0, 3],
                         ),
                         dcc.RadioItems(
@@ -46,7 +40,6 @@ app.layout = html.Div(
                     ],
                     style={
                         "width": "49%",
-                        "float": "top",
                         "display": "inline-block",
                     },
                 ),
@@ -63,11 +56,6 @@ app.layout = html.Div(
                             id="y-axis-slider",
                             min=-100,
                             max=100,
-                            # max=tidy[
-                            #     tidy["variable"] == "crossfilter-xaxis-column"
-                            # ]["value"].max(),
-                            # step=0.1,
-                            # marks={0: "0", 1: "1", 3.5: "3.5"},
                             value=[0, 3],
                         ),
                         dcc.RadioItems(
@@ -82,44 +70,25 @@ app.layout = html.Div(
                     ],
                     style={
                         "width": "49%",
-                        "float": "bottom",
                         "display": "inline-block",
                     },
                 ),
             ],
             style={
-                "padding": "10px 5px",  # "float": "left",
-                # "display": "inline-block",
+                "padding": "10px 5px",
             },
         ),
         html.Div(
             [
                 dcc.Graph(
                     id="crossfilter-indicator-scatter",
-                    # hoverData={"points": [{"customdata": "Japan"}]},
                 )
             ],
             style={
-                # "width": "49%",
                 "display": "inline-block",
-                # "float": "right",
                 "padding": "0 20",
             },
         ),
-        # html.Div(
-        #     [
-        #         dcc.Graph(
-        #             id="cross-filter-indicator-contour",
-        #             # hoverData={"points": [{"customdata": "Japan"}]},
-        #         )
-        #     ],
-        #     style={
-        #         # "width": "49%",
-        #         "display": "inline-block",
-        #         # "float": "right",
-        #         "padding": "0 20",
-        #     },
-        # ),
         html.Div(
             [
                 html.H4("Color"),
@@ -133,23 +102,19 @@ app.layout = html.Div(
                 "width": "49%",
                 "display": "inline-block",
                 "float": "right",
-                # "padding": "0 20",
             },
         ),
-        # html.Div(
-        #     [
-        #         dcc.Graph(
-        #             id="crossfilter-indicator-contour",
-        #             # hoverData={"points": [{"customdata": "Japan"}]},
-        #         )
-        #     ],
-        #     style={
-        #         # "width": "49%",
-        #         "display": "inline-block",
-        #         # "float": "right",
-        #         "padding": "0 20",
-        #     },
-        # ),
+        html.Div(
+            [
+                dcc.Graph(
+                    id="crossfilter-indicator-contour",
+                )
+            ],
+            style={
+                "display": "inline-block",
+                "padding": "0 20",
+            },
+        ),
     ]
 )
 
@@ -173,20 +138,6 @@ def update_graph(
     y_range,
     color_column,
 ):
-    # x = tidy[tidy["variable"] == xaxis_column_name]["value"]
-    # x_filtered = x[(x > x_range[0]) & (x < x_range[1])]
-    # y = tidy[tidy["variable"] == yaxis_column_name]["value"]
-    # y_filtered = y[(y > y_range[0]) & (y < y_range[1])]
-    #
-    # final = tidy[tidy["variable"] == xaxis_column_name]["value"]
-    #
-    # filtered = tidy[
-    #     ([tidy["variable"] == xaxis_column_name]["value"] > x_range[0])
-    #     # & ([tidy["variable"] == xaxis_column_name]["value"] < x_range[1])
-    #     # & ([tidy["variable"] == yaxis_column_name]["value"] > y_range[0])
-    #     # & ([tidy["variable"] == yaxis_column_name]["value"] < y_range[1])
-    # ]
-
     filtered = df[
         (df[xaxis_column_name] > x_range[0])
         & (df[xaxis_column_name] < x_range[1])
@@ -198,19 +149,9 @@ def update_graph(
         filtered,
         x=xaxis_column_name,
         y=yaxis_column_name,
-        # hover_name=dff[dff["variable"] == yaxis_column_name][
-        #     "Country Name"
-        # ],
         hover_data=["Complex_ID"],
         color=color_column,
-        # color=dff["Structure_Source"].unique(),
     )
-
-    # fig.update_traces(
-    #     customdata=dff[dff["variable"] == yaxis_column_name][
-    #         "Country Name"
-    #     ]
-    # )
 
     fig.update_xaxes(
         title=xaxis_column_name,
