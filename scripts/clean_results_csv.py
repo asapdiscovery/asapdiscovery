@@ -58,7 +58,9 @@ def main():
     ]
 
     ## Add Complex_ID
-    dr.df["Complex_ID"] = f"{dr.df.Compound_ID}_{dr.df.Structure_Source}"
+    ## This is not the same thing as f"{dr.df.Compound_ID}_{dr.df.Structure_Source}", as this enables rowwise addition
+    ## as opposed to adding the *entire* series as a single string
+    dr.df["Complex_ID"] = dr.df.Compound_ID + "_" + dr.df.Structure_Source
 
     ## Clean the Docked_File paths because there are extra `/`
     ## also, some of the file paths are NaNs so we need to only keep the ones that are strings
@@ -68,7 +70,7 @@ def main():
     ]
 
     ## Re-sort the dataframe by the Compound_ID so that its nice and alphabetical and re-index based on that
-    dr.df = dr.df.sort_values(["Compound_ID"]).reset_index(drop=True)
+    dr.df = dr.df.sort_values(["Complex_ID"]).reset_index(drop=True)
 
     ## Get several dataframes
     dr.get_compound_df()
