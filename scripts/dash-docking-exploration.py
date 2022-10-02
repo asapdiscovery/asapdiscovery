@@ -4,18 +4,23 @@ import plotly.express as px
 
 app = Dash(__name__)
 
-df = pd.read_csv(
+by_structure = pd.read_csv(
     "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/by_structure.csv"
 )
-tidy_df = df.melt(id_vars="Structure_Source")
+by_structure_tidy = by_structure.melt(id_vars="Structure_Source")
+
+by_compound = pd.read_csv(
+    "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/by_compound.csv"
+)
+by_compound_tidy = by_compound.melt(id_vars="Compound_ID")
 
 app.layout = html.Div(
     [
         html.Div(
             [
-                html.H4("Interactive bar chart"),
+                html.H4("By Structure"),
                 dcc.Dropdown(
-                    df.columns,
+                    by_structure.columns,
                     "Resolution",
                     id="bar-xaxis",
                 ),
@@ -29,14 +34,37 @@ app.layout = html.Div(
                     marks={0: "0", 1: "1", 3.5: "3.5"},
                     value=[0.5, 3.5],
                 ),
-            ]
+            ],
+            style={"width": "49%", "display": "inline-block"},
+        ),
+        html.Div(
+            [
+                html.H4("By Compound"),
+                dcc.Dropdown(
+                    by_compound.columns,
+                    "POSIT_R_Good",
+                    id="cmpd-bar-xaxis",
+                ),
+                dcc.Graph(id="per-compound-bar-chart"),
+                # html.P("Filter by Resolution:"),
+                # dcc.RangeSlider(
+                #     id="range-slider",
+                #     min=0,
+                #     max=3.5,
+                #     step=0.1,
+                #     marks={0: "0", 1: "1", 3.5: "3.5"},
+                #     value=[0.5, 3.5],
+                # ),
+            ],
+            style={"width": "49%", "display": "inline-block", "float": "right"},
         ),
         html.Div(
             [
                 html.Div(
                     [
+                        html.H4("X-Axis"),
                         dcc.Dropdown(
-                            tidy_df["variable"].unique(),
+                            by_structure_tidy["variable"].unique(),
                             "Resolution",
                             id="crossfilter-xaxis-column",
                         ),
@@ -50,12 +78,17 @@ app.layout = html.Div(
                             },
                         ),
                     ],
-                    style={"width": "49%", "display": "inline-block"},
+                    style={
+                        "width": "49%",
+                        "float": "top",
+                        "display": "inline-block",
+                    },
                 ),
                 html.Div(
                     [
+                        html.H4("Y-Axis"),
                         dcc.Dropdown(
-                            tidy_df["variable"].unique(),
+                            by_structure_tidy["variable"].unique(),
                             "POSIT_R_Good",
                             id="crossfilter-yaxis-column",
                         ),
@@ -71,12 +104,15 @@ app.layout = html.Div(
                     ],
                     style={
                         "width": "49%",
-                        "float": "right",
+                        "float": "bottom",
                         "display": "inline-block",
                     },
                 ),
             ],
-            style={"padding": "10px 5px"},
+            style={
+                "padding": "10px 5px",  # "float": "left",
+                # "display": "inline-block",
+            },
         ),
         html.Div(
             [
@@ -86,8 +122,9 @@ app.layout = html.Div(
                 )
             ],
             style={
-                "width": "49%",
+                # "width": "49%",
                 "display": "inline-block",
+                # "float": "right",
                 "padding": "0 20",
             },
         ),
@@ -102,13 +139,31 @@ app.layout = html.Div(
 )
 def per_structure_bar_chart(slider_range, x_variable):
     low, high = slider_range
-    mask = (df["Resolution"] > low) & (df["Resolution"] < high)
-    filtered_df = df[mask]
+    mask = (by_structure["Resolution"] > low) & (
+        by_structure["Resolution"] < high
+    )
+    filtered_df = by_structure[mask]
     fig = px.bar(
         filtered_df.sort_values(x_variable),
         x=x_variable,
         y="Structure_Source",
         hover_data=["Resolution"],
+        height=800,
+        width=800,
+    )
+    return fig
+
+
+@app.callback(
+    Output("per-compound-bar-chart", "figure"),
+    # Input("range-slider", "value"),
+    Input("cmpd-bar-xaxis", "value"),
+)
+def per_structure_bar_chart(x_variable):
+    fig = px.bar(
+        by_compound.sort_values(x_variable),
+        x=x_variable,
+        y="Compound_ID",
         height=800,
         width=800,
     )
@@ -128,7 +183,7 @@ def update_graph(
     xaxis_type,
     yaxis_type,
 ):
-    dff = tidy_df
+    dff = by_structure_tidy
 
     fig = px.scatter(
         x=dff[dff["variable"] == xaxis_column_name]["value"],
