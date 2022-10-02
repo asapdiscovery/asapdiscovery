@@ -11,36 +11,160 @@ tidy_df = df.melt(id_vars="Structure_Source")
 
 app.layout = html.Div(
     [
-        html.H4("Interactive bar chart"),
-        dcc.Graph(id="per-structure-bar-chart"),
-        html.P("Filter by Resolution:"),
-        dcc.RangeSlider(
-            id="range-slider",
-            min=0,
-            max=3.5,
-            step=0.1,
-            marks={0: "0", 1: "1", 3.5: "3.5"},
-            value=[0.5, 3.5],
+        html.Div(
+            [
+                html.H4("Interactive bar chart"),
+                dcc.Dropdown(
+                    df.columns,
+                    "Resolution",
+                    id="bar-xaxis",
+                ),
+                dcc.Graph(id="per-structure-bar-chart"),
+                html.P("Filter by Resolution:"),
+                dcc.RangeSlider(
+                    id="range-slider",
+                    min=0,
+                    max=3.5,
+                    step=0.1,
+                    marks={0: "0", 1: "1", 3.5: "3.5"},
+                    value=[0.5, 3.5],
+                ),
+            ]
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        dcc.Dropdown(
+                            tidy_df["variable"].unique(),
+                            "Resolution",
+                            id="crossfilter-xaxis-column",
+                        ),
+                        dcc.RadioItems(
+                            ["Linear", "Log"],
+                            "Linear",
+                            id="crossfilter-xaxis-type",
+                            labelStyle={
+                                "display": "inline-block",
+                                "marginTop": "5px",
+                            },
+                        ),
+                    ],
+                    style={"width": "49%", "display": "inline-block"},
+                ),
+                html.Div(
+                    [
+                        dcc.Dropdown(
+                            tidy_df["variable"].unique(),
+                            "POSIT_R_Good",
+                            id="crossfilter-yaxis-column",
+                        ),
+                        dcc.RadioItems(
+                            ["Linear", "Log"],
+                            "Linear",
+                            id="crossfilter-yaxis-type",
+                            labelStyle={
+                                "display": "inline-block",
+                                "marginTop": "5px",
+                            },
+                        ),
+                    ],
+                    style={
+                        "width": "49%",
+                        "float": "right",
+                        "display": "inline-block",
+                    },
+                ),
+            ],
+            style={"padding": "10px 5px"},
+        ),
+        html.Div(
+            [
+                dcc.Graph(
+                    id="crossfilter-indicator-scatter",
+                    # hoverData={"points": [{"customdata": "Japan"}]},
+                )
+            ],
+            style={
+                "width": "49%",
+                "display": "inline-block",
+                "padding": "0 20",
+            },
         ),
     ]
 )
 
 
 @app.callback(
-    Output("per-structure-bar-chart", "figure"), Input("range-slider", "value")
+    Output("per-structure-bar-chart", "figure"),
+    Input("range-slider", "value"),
+    Input("bar-xaxis", "value"),
 )
-def update_bar_chart(slider_range):
+def per_structure_bar_chart(slider_range, x_variable):
     low, high = slider_range
     mask = (df["Resolution"] > low) & (df["Resolution"] < high)
     filtered_df = df[mask]
     fig = px.bar(
-        filtered_df.sort_values("RMSD_Good"),
-        x="RMSD_Good",
+        filtered_df.sort_values(x_variable),
+        x=x_variable,
         y="Structure_Source",
+        hover_data=["Resolution"],
         height=800,
         width=800,
     )
     return fig
 
 
-app.run_server(port=9000, host="localhost", debug=True)
+@app.callback(
+    Output("crossfilter-indicator-scatter", "figure"),
+    Input("crossfilter-xaxis-column", "value"),
+    Input("crossfilter-yaxis-column", "value"),
+    Input("crossfilter-xaxis-type", "value"),
+    Input("crossfilter-yaxis-type", "value"),
+)
+def update_graph(
+    xaxis_column_name,
+    yaxis_column_name,
+    xaxis_type,
+    yaxis_type,
+):
+    dff = tidy_df
+
+    fig = px.scatter(
+        x=dff[dff["variable"] == xaxis_column_name]["value"],
+        y=dff[dff["variable"] == yaxis_column_name]["value"],
+        # hover_name=dff[dff["variable"] == yaxis_column_name][
+        #     "Country Name"
+        # ],
+        hover_data={
+            "Resolution (Å)": dff[dff["variable"] == "Resolution"]["value"],
+            "Structure": dff["Structure_Source"].unique(),
+        },
+        # color=dff[dff["variable"] == "Resolution"]["value"],
+        # color=dff["Structure_Source"].unique(),
+    )
+
+    # fig.update_traces(
+    #     customdata=dff[dff["variable"] == yaxis_column_name][
+    #         "Country Name"
+    #     ]
+    # )
+
+    fig.update_xaxes(
+        title=xaxis_column_name,
+        type="linear" if xaxis_type == "Linear" else "log",
+    )
+
+    fig.update_yaxes(
+        title=yaxis_column_name,
+        type="linear" if yaxis_type == "Linear" else "log",
+    )
+
+    fig.update_layout(
+        margin={"l": 40, "b": 40, "t": 10, "r": 0}, hovermode="closest"
+    )
+
+    return fig
+
+
+app.run_server(port=9000, debug=True)
