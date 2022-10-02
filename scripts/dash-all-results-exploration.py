@@ -1,12 +1,14 @@
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output, dash_table
 import plotly.express as px
+import json
 
 app = Dash(__name__)
 
 df = pd.read_csv(
     "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/all_results_cleaned.csv"
 )
+df.index = df.Complex_ID
 tidy = df.melt(id_vars="Complex_ID")
 
 df = df.round({"Chemgauss4": 3, "POSIT": 3, "POSIT_R": 3, "RMSD": 3})
@@ -15,6 +17,8 @@ by_compound = pd.read_csv(
     "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/by_compound.csv"
 )
 by_compound_tidy = by_compound.melt(id_vars="Compound_ID")
+
+styles = {"pre": {"border": "thin lightgrey solid", "overflowX": "scroll"}}
 
 app.layout = html.Div(
     [
@@ -31,9 +35,9 @@ app.layout = html.Div(
                         html.P("Filter X-Axis:"),
                         dcc.RangeSlider(
                             id="x-axis-slider",
-                            min=-100,
-                            max=100,
-                            value=[0, 3],
+                            min=-50,
+                            max=50,
+                            value=[-50, 50],
                         ),
                         dcc.RadioItems(
                             ["Linear", "Log"],
@@ -61,9 +65,9 @@ app.layout = html.Div(
                         html.P("Filter Y-Axis:"),
                         dcc.RangeSlider(
                             id="y-axis-slider",
-                            min=-100,
-                            max=100,
-                            value=[0, 3],
+                            min=0,
+                            max=30,
+                            value=[0, 30],
                         ),
                         dcc.RadioItems(
                             ["Linear", "Log"],
@@ -138,6 +142,7 @@ app.layout = html.Div(
         ),
         dash_table.DataTable(
             df.to_dict("records"),
+            id="table",
             columns=[
                 {"name": column, "id": column}
                 for column in [
@@ -155,9 +160,37 @@ app.layout = html.Div(
                 "padding": "0 20",
                 # "float": "right",
             },
+            filter_action="custom",
+            filter_query="",
+        ),
+        html.Div(
+            className="row",
+            children=[
+                html.Div(
+                    [
+                        dcc.Markdown(
+                            """
+                            **Click Data**
+    
+                            Click on points in the graph.
+                        """
+                        ),
+                        html.Pre(id="click-data", style=styles["pre"]),
+                    ],
+                    className="three columns",
+                ),
+            ],
         ),
     ]
 )
+
+
+@app.callback(
+    Output("click-data", "children"),
+    Input("crossfilter-indicator-scatter", "clickData"),
+)
+def display_click_data(clickData):
+    return json.dumps(clickData, indent=2)
 
 
 @app.callback(
@@ -250,6 +283,69 @@ def update_contour(
         selector=dict(type="histogram2dcontour"),
         colorscale="Peach",
     )
+    fig.update_xaxes(
+        title=xaxis_column_name,
+        type="linear" if xaxis_type == "Linear" else "log",
+    )
+
+    fig.update_yaxes(
+        title=yaxis_column_name,
+        type="linear" if yaxis_type == "Linear" else "log",
+    )
+
+    fig.update_layout(
+        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
+    )
+
+    return fig
+
+
+@app.callback(
+    Output("table", "data"), Input("crossfilter-indicator-scatter", "clickData")
+)
+def update_table(clickData):
+    if clickData:
+        complex_ID = clickData["points"][0]["customdata"][0]
+
+        ## Get Compound
+        compound = df.loc[complex_ID, "Compound_ID"]
+
+    else:
+        compound = df["Compound_ID"][0]
+
+    ## Filter by compound
+    dff = df[df["Compound_ID"] == compound]
+
+    return dff.to_dict("records")
+
+
+@app.callback(
+    Output("by-compound", "figure"),
+    Input("table", "data"),
+    Input("crossfilter-xaxis-column", "value"),
+    Input("crossfilter-yaxis-column", "value"),
+    Input("crossfilter-xaxis-type", "value"),
+    Input("crossfilter-yaxis-type", "value"),
+    Input("crossfilter-color", "value"),
+)
+def update_filtered_scatter(
+    data_dict,
+    xaxis_column_name,
+    yaxis_column_name,
+    xaxis_type,
+    yaxis_type,
+    color_column,
+):
+    filtered = pd.DataFrame(data_dict)
+    fig = px.scatter(
+        filtered,
+        x=xaxis_column_name,
+        y=yaxis_column_name,
+        hover_data=["Complex_ID"],
+        color=color_column,
+        color_continuous_scale="dense",
+    )
+
     fig.update_xaxes(
         title=xaxis_column_name,
         type="linear" if xaxis_type == "Linear" else "log",
