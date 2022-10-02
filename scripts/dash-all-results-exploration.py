@@ -1,5 +1,5 @@
 import pandas as pd
-from dash import Dash, dcc, html, Input, Output, dash_table
+from dash import Dash, dcc, html, Input, Output, dash_table, ctx
 import plotly.express as px
 import json
 
@@ -17,6 +17,11 @@ by_compound = pd.read_csv(
     "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/by_compound.csv"
 )
 by_compound_tidy = by_compound.melt(id_vars="Compound_ID")
+
+by_structure = pd.read_csv(
+    "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/by_structure.csv"
+)
+by_structure_tidy = by_structure.melt(id_vars="Structure_Source")
 
 styles = {"pre": {"border": "thin lightgrey solid", "overflowX": "scroll"}}
 
@@ -94,7 +99,7 @@ app.layout = html.Div(
                 html.H4("Color"),
                 dcc.Dropdown(
                     tidy["variable"].unique(),
-                    "POSIT_R",
+                    "POSIT",
                     id="crossfilter-color",
                 ),
             ],
@@ -132,6 +137,18 @@ app.layout = html.Div(
             [
                 dcc.Graph(
                     id="by-compound",
+                )
+            ],
+            style={
+                "display": "inline-block",
+                "padding": "0 20",
+                # "float": "right",
+            },
+        ),
+        html.Div(
+            [
+                dcc.Graph(
+                    id="by-structure",
                 )
             ],
             style={
@@ -193,6 +210,16 @@ def display_click_data(clickData):
     return json.dumps(clickData, indent=2)
 
 
+def filter_scatterplot(xaxis_column_name, yaxis_column_name, x_range, y_range):
+    dff = df[
+        (df[xaxis_column_name] > x_range[0])
+        & (df[xaxis_column_name] < x_range[1])
+        & (df[yaxis_column_name] > y_range[0])
+        & (df[yaxis_column_name] < y_range[1])
+    ]
+    return dff
+
+
 @app.callback(
     Output("crossfilter-indicator-scatter", "figure"),
     Input("crossfilter-xaxis-column", "value"),
@@ -212,12 +239,9 @@ def update_scatter(
     y_range,
     color_column,
 ):
-    filtered = df[
-        (df[xaxis_column_name] > x_range[0])
-        & (df[xaxis_column_name] < x_range[1])
-        & (df[yaxis_column_name] > y_range[0])
-        & (df[yaxis_column_name] < y_range[1])
-    ]
+    filtered = filter_scatterplot(
+        xaxis_column_name, yaxis_column_name, x_range, y_range
+    )
 
     fig = px.scatter(
         filtered,
@@ -253,7 +277,6 @@ def update_scatter(
     Input("crossfilter-yaxis-type", "value"),
     Input("x-axis-slider", "value"),
     Input("y-axis-slider", "value"),
-    Input("crossfilter-color", "value"),
 )
 def update_contour(
     xaxis_column_name,
@@ -262,7 +285,6 @@ def update_contour(
     yaxis_type,
     x_range,
     y_range,
-    color_column,
 ):
     filtered = df[
         (df[xaxis_column_name] > x_range[0])
@@ -319,6 +341,9 @@ def update_table(clickData):
     return dff.to_dict("records")
 
 
+# Input("crossfilter-indicator-scatter", "clickData")
+
+
 @app.callback(
     Output("by-compound", "figure"),
     Input("table", "data"),
@@ -344,6 +369,78 @@ def update_filtered_scatter(
         hover_data=["Complex_ID"],
         color=color_column,
         color_continuous_scale="dense",
+    )
+
+    fig.update_xaxes(
+        title=xaxis_column_name,
+        type="linear" if xaxis_type == "Linear" else "log",
+    )
+
+    fig.update_yaxes(
+        title=yaxis_column_name,
+        type="linear" if yaxis_type == "Linear" else "log",
+    )
+
+    fig.update_layout(
+        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
+    )
+
+    return fig
+
+
+@app.callback(
+    Output("by-structure", "figure"),
+    Input("crossfilter-indicator-scatter", "clickData"),
+    Input("by-compound", "clickData"),
+    Input("crossfilter-xaxis-column", "value"),
+    Input("crossfilter-yaxis-column", "value"),
+    Input("crossfilter-xaxis-type", "value"),
+    Input("crossfilter-yaxis-type", "value"),
+    Input("x-axis-slider", "value"),
+    Input("y-axis-slider", "value"),
+    Input("crossfilter-color", "value"),
+)
+def update_by_structure(
+    clickData1,
+    clickData2,
+    xaxis_column_name,
+    yaxis_column_name,
+    xaxis_type,
+    yaxis_type,
+    x_range,
+    y_range,
+    color_column,
+):
+    filtered = filter_scatterplot(
+        xaxis_column_name, yaxis_column_name, x_range, y_range
+    )
+    input_source = ctx.triggered_id
+    if input_source:
+        click_data = ctx.triggered[0]["value"]
+        complex_ID = click_data["points"][0]["customdata"][0]
+
+    else:
+        complex_ID = filtered["Complex_ID"][0]
+    ## Get Structure
+    structure = filtered.loc[complex_ID, "Structure_Source"]
+    # structure = filtered["Structure_Source"][0]
+
+    ## Filter by structure
+    dff = filtered
+    dff.loc[:, "Selection"] = filtered["Structure_Source"] == structure
+    # notff = filtered[filtered["Structure_Source"] != structure]
+
+    fig = px.scatter(
+        dff.sort_values(["Selection"]),
+        x=xaxis_column_name,
+        y=yaxis_column_name,
+        hover_data=["Complex_ID"],
+        opacity=0.5,
+        color="Selection",
+        color_discrete_sequence=["grey", "blue"],
+    )
+    fig.update_layout(
+        legend_title=f"Structure_Source: {structure}",
     )
 
     fig.update_xaxes(
