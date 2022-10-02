@@ -1,5 +1,5 @@
 import pandas as pd
-from dash import Dash, dcc, html, Input, Output
+from dash import Dash, dcc, html, Input, Output, dash_table
 import plotly.express as px
 
 app = Dash(__name__)
@@ -8,6 +8,13 @@ df = pd.read_csv(
     "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/all_results_cleaned.csv"
 )
 tidy = df.melt(id_vars="Complex_ID")
+
+df = df.round({"Chemgauss4": 3, "POSIT": 3, "POSIT_R": 3, "RMSD": 3})
+
+by_compound = pd.read_csv(
+    "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/by_compound.csv"
+)
+by_compound_tidy = by_compound.melt(id_vars="Compound_ID")
 
 app.layout = html.Div(
     [
@@ -18,7 +25,7 @@ app.layout = html.Div(
                         html.H4("X-Axis"),
                         dcc.Dropdown(
                             tidy["variable"].unique(),
-                            "POSIT_R",
+                            "Chemgauss4",
                             id="crossfilter-xaxis-column",
                         ),
                         html.P("Filter X-Axis:"),
@@ -112,6 +119,38 @@ app.layout = html.Div(
                 )
             ],
             style={
+                "display": "inline-block",
+                "padding": "0 20",
+                # "float": "right",
+            },
+        ),
+        html.Div(
+            [
+                dcc.Graph(
+                    id="by-compound",
+                )
+            ],
+            style={
+                "display": "inline-block",
+                "padding": "0 20",
+                # "float": "right",
+            },
+        ),
+        dash_table.DataTable(
+            df.to_dict("records"),
+            columns=[
+                {"name": column, "id": column}
+                for column in [
+                    "Compound_ID",
+                    "Structure_Source",
+                    "RMSD",
+                    "POSIT",
+                    "Chemgauss4",
+                ]
+            ],
+            style_table={
+                "width": "50%",
+                "float": "center",
                 "display": "inline-block",
                 "padding": "0 20",
                 # "float": "right",
