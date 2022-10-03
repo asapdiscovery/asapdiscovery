@@ -415,49 +415,52 @@ def update_by_structure(
         xaxis_column_name, yaxis_column_name, x_range, y_range
     )
     input_source = ctx.triggered_id
-    if input_source:
-        click_data = ctx.triggered[0]["value"]
-        complex_ID = click_data["points"][0]["customdata"][0]
+    print(input_source)
+    if not input_source or input_source in [
+        "crossfilter-indicator-scatter",
+        "by-compound",
+    ]:
+        if not input_source:
+            complex_ID = filtered["Complex_ID"][0]
+        else:
+            click_data = ctx.triggered[0]["value"]
+            complex_ID = click_data["points"][0]["customdata"][0]
 
-    else:
-        complex_ID = filtered["Complex_ID"][0]
-    ## Get Structure
-    structure = filtered.loc[complex_ID, "Structure_Source"]
-    # structure = filtered["Structure_Source"][0]
+        ## Get Structure
+        structure = filtered.loc[complex_ID, "Structure_Source"]
 
-    ## Filter by structure
-    dff = filtered
-    dff.loc[:, "Selection"] = filtered["Structure_Source"] == structure
-    # notff = filtered[filtered["Structure_Source"] != structure]
+        ## Filter by structure
+        dff = filtered
+        dff.loc[:, "Selection"] = filtered["Structure_Source"] == structure
 
-    fig = px.scatter(
-        dff.sort_values(["Selection"]),
-        x=xaxis_column_name,
-        y=yaxis_column_name,
-        hover_data=["Complex_ID"],
-        opacity=0.5,
-        color="Selection",
-        color_discrete_sequence=["grey", "blue"],
-    )
-    fig.update_layout(
-        legend_title=f"Structure_Source: {structure}",
-    )
+        fig = px.scatter(
+            dff.sort_values(["Selection"]),
+            x=xaxis_column_name,
+            y=yaxis_column_name,
+            hover_data=["Complex_ID"],
+            opacity=0.5,
+            color="Selection",
+            color_discrete_sequence=["grey", "blue"],
+        )
+        fig.update_layout(
+            legend_title=f"Structure_Source: {structure}",
+        )
 
-    fig.update_xaxes(
-        title=xaxis_column_name,
-        type="linear" if xaxis_type == "Linear" else "log",
-    )
+        fig.update_xaxes(
+            title=xaxis_column_name,
+            type="linear" if xaxis_type == "Linear" else "log",
+        )
 
-    fig.update_yaxes(
-        title=yaxis_column_name,
-        type="linear" if yaxis_type == "Linear" else "log",
-    )
+        fig.update_yaxes(
+            title=yaxis_column_name,
+            type="linear" if yaxis_type == "Linear" else "log",
+        )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+        fig.update_layout(
+            margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
+        )
 
-    return fig
+        return fig
 
 
 app.run_server(port=9001, debug=True)
