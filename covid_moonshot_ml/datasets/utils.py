@@ -577,7 +577,7 @@ def save_openeye_sdf(mol, sdf_fn):
     ofs.close()
 
 
-def split_openeye_mol(complex_mol, lig_chain="A"):
+def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     """
     Split an OpenEye-loaded molecule into protein, ligand, etc.
 
@@ -587,6 +587,8 @@ def split_openeye_mol(complex_mol, lig_chain="A"):
         Complex molecule to split.
     lig_chain : str, default="A"
         Which copy of the ligand to keep. Pass None to keep all ligand atoms.
+    prot_cutoff_len : int, default=10
+        Minimum number of residues in a protein chain required in order to keep
 
     Returns
     -------
@@ -648,6 +650,28 @@ def split_openeye_mol(complex_mol, lig_chain="A"):
         complex_mol,
         opts,
     )
+
+    ## Remove chains from prot_mol that are too short (possibly a better way of
+    ##  doing this with OpenEye functions)
+    ## Get number of residues per chain
+    chain_len_dict = {}
+    hv = oechem.OEHierView(prot_mol)
+    for chain in hv.GetChains():
+        chain_id = chain.GetChainID()
+        for frag in chain.GetFragments():
+            frag_len = len(list(frag.GetResidues()))
+            try:
+                chain_len_dict[chain_id] += frag_len
+            except KeyError:
+                chain_len_dict[chain_id] = frag_len
+
+    ## Remove short chains atom by atom
+    for a in prot_mol.GetAtoms():
+        chain_id = oechem.OEAtomGetResidue(a).GetExtChainID()
+        if (chain_id not in chain_len_dict) or (
+            chain_len_dict[chain_id] <= prot_cutoff_len
+        ):
+            prot_mol.DeleteAtom(a)
 
     return {
         "complex": complex_mol,
