@@ -157,6 +157,22 @@ app.layout = html.Div(
                 # "float": "right",
             },
         ),
+        html.Div(
+            [
+                html.H4("By Structure"),
+                dcc.Graph(id="per-structure-bar-chart"),
+                html.P("Filter by Resolution:"),
+                dcc.RangeSlider(
+                    id="range-slider",
+                    min=0,
+                    max=3.5,
+                    step=0.1,
+                    marks={0: "0", 1: "1", 3.5: "3.5"},
+                    value=[0.5, 3.5],
+                ),
+            ],
+            style={"width": "49%", "display": "inline-block"},
+        ),
         dash_table.DataTable(
             df.to_dict("records"),
             id="table",
@@ -416,50 +432,100 @@ def update_by_structure(
     )
     input_source = ctx.triggered_id
     print(input_source)
+    if input_source in [
+        "crossfilter-indicator-scatter",
+        "by-compound",
+    ]:
+        click_data = ctx.triggered[0]["value"]
+        complex_ID = click_data["points"][0]["customdata"][0]
+    else:
+        complex_ID = filtered["Complex_ID"][0]
+
+    ## Get Structure
+    structure = filtered.loc[complex_ID, "Structure_Source"]
+
+    ## Filter by structure
+    dff = filtered
+    dff.loc[:, "Selection"] = filtered["Structure_Source"] == structure
+
+    fig = px.scatter(
+        dff.sort_values(["Selection"]),
+        x=xaxis_column_name,
+        y=yaxis_column_name,
+        hover_data=["Complex_ID"],
+        opacity=0.5,
+        color="Selection",
+        color_discrete_sequence=["grey", "blue"],
+    )
+    fig.update_layout(
+        legend_title=f"Structure_Source: {structure}",
+    )
+
+    fig.update_xaxes(
+        title=xaxis_column_name,
+        type="linear" if xaxis_type == "Linear" else "log",
+    )
+
+    fig.update_yaxes(
+        title=yaxis_column_name,
+        type="linear" if yaxis_type == "Linear" else "log",
+    )
+
+    fig.update_layout(
+        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
+    )
+
+    return fig
+
+
+@app.callback(
+    Output("per-structure-bar-chart", "figure"),
+    Input("crossfilter-indicator-scatter", "clickData"),
+    Input("by-compound", "clickData"),
+)
+def per_structure_bar_chart(clickData1, clickData2):
+
+    ## Get "Count" Columns"
+    count_columns = [
+        column
+        for column in by_structure.columns
+        if "Good" in column or "Not_NA" in column
+    ]
+
+    input_source = ctx.triggered_id
+    print(input_source)
     if not input_source or input_source in [
         "crossfilter-indicator-scatter",
         "by-compound",
     ]:
         if not input_source:
-            complex_ID = filtered["Complex_ID"][0]
+            complex_ID = df["Complex_ID"][0]
         else:
             click_data = ctx.triggered[0]["value"]
             complex_ID = click_data["points"][0]["customdata"][0]
 
         ## Get Structure
-        structure = filtered.loc[complex_ID, "Structure_Source"]
+        structure = df.loc[complex_ID, "Structure_Source"]
 
         ## Filter by structure
-        dff = filtered
-        dff.loc[:, "Selection"] = filtered["Structure_Source"] == structure
+        dff = by_structure_tidy[
+            by_structure_tidy["Structure_Source"] == structure
+        ]
+        dff = dff[dff["variable"].isin(count_columns)]
+        # dff.loc[:, "Selection"] = (
+        #     by_structure_tidy["Structure_Source"] == structure
+        # )
 
-        fig = px.scatter(
-            dff.sort_values(["Selection"]),
-            x=xaxis_column_name,
-            y=yaxis_column_name,
-            hover_data=["Complex_ID"],
-            opacity=0.5,
-            color="Selection",
-            color_discrete_sequence=["grey", "blue"],
+        fig = px.bar(
+            dff,
+            x="value",
+            y="Structure_Source",
+            # hover_data=["Resolution"],
+            color="variable",
+            barmode="group",
+            height=800,
+            width=800,
         )
-        fig.update_layout(
-            legend_title=f"Structure_Source: {structure}",
-        )
-
-        fig.update_xaxes(
-            title=xaxis_column_name,
-            type="linear" if xaxis_type == "Linear" else "log",
-        )
-
-        fig.update_yaxes(
-            title=yaxis_column_name,
-            type="linear" if yaxis_type == "Linear" else "log",
-        )
-
-        fig.update_layout(
-            margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-        )
-
         return fig
 
 
