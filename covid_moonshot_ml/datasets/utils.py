@@ -3,6 +3,7 @@ from openeye import oechem
 import numpy as np
 import pandas
 import re
+
 from ..schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
@@ -651,11 +652,43 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
         opts,
     )
 
-    ## Remove chains from prot_mol that are too short (possibly a better way of
+    prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
+
+    return {
+        "complex": complex_mol,
+        "lig": lig_mol,
+        "pro": prot_mol,
+        "water": water_mol,
+        "other": oth_mol,
+    }
+
+
+def trim_small_chains(input_mol, cutoff_len=10):
+    """
+    Remove short chains from a protein molecule object. The goal is to get rid
+    of any peptide ligands that were mistakenly collected by OESplitMolComplex.
+
+    Parameters
+    ----------
+    input_mol : oechem.OEGraphMol
+        OEGraphMol object containing the protein to trim
+    cutoff_len : int, default=10
+        The cutoff length for peptide chains (chains must have more than this
+        many residues to be included)
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        Trimmed molecule
+    """
+    ## Copy the molecule
+    mol_copy = input_mol.CreateCopy()
+
+    ## Remove chains from mol_copy that are too short (possibly a better way of
     ##  doing this with OpenEye functions)
     ## Get number of residues per chain
     chain_len_dict = {}
-    hv = oechem.OEHierView(prot_mol)
+    hv = oechem.OEHierView(mol_copy)
     for chain in hv.GetChains():
         chain_id = chain.GetChainID()
         for frag in chain.GetFragments():
@@ -666,20 +699,35 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
                 chain_len_dict[chain_id] = frag_len
 
     ## Remove short chains atom by atom
-    for a in prot_mol.GetAtoms():
+    for a in mol_copy.GetAtoms():
         chain_id = oechem.OEAtomGetResidue(a).GetExtChainID()
         if (chain_id not in chain_len_dict) or (
-            chain_len_dict[chain_id] <= prot_cutoff_len
+            chain_len_dict[chain_id] <= cutoff_len
         ):
-            prot_mol.DeleteAtom(a)
+            mol_copy.DeleteAtom(a)
 
-    return {
-        "complex": complex_mol,
-        "lig": lig_mol,
-        "pro": prot_mol,
-        "water": water_mol,
-        "other": oth_mol,
-    }
+    ## Get all the PDB data to keep (in-progress, need to do this for each
+    ##  short chain)
+    re_pats = [
+        r"(?:\s[A-Z]{3}\sB\s[^V])",
+        r"(?:DBREF.*\sB\s)",
+        r"(?:SEQRES\s+[0-9]+\sB\s)",
+    ]
+    re_pat = r"|".join(re_pats)
+    keep_data = [
+        (p.GetTag(), p.GetValue())
+        for p in oechem.OEGetPDBDataPairs(mol_copy)
+        if not re.search(re_pat, p.GetTag() + p.GetValue())
+    ]
+
+    ## Clear all PDB data
+    oechem.OEClearPDBData(mol_copy)
+
+    ## Add kept data
+    for (tag, val) in keep_data:
+        oechem.OEAddPDBData(mol_copy, tag, val)
+
+    return mol_copy
 
 
 def get_ligand_rmsd_openeye(ref: oechem.OEMolBase, mobile: oechem.OEMolBase):
