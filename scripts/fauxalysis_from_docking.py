@@ -1,4 +1,4 @@
-import sys, os, argparse, shutil, pandas
+import sys, os, argparse, shutil, pandas, pickle as pkl
 from openeye import oechem
 
 sys.path.append(
@@ -154,34 +154,12 @@ def main():
     best_structure_dict = {
         (values["Compound_ID"], values["Dimer"]): values["Structure_Source"]
         for values in docking_results.df.to_dict(orient="index").values()
+        if values["Compound_ID"] == "ALP-POS-ecbed2ba-12_0A"
     }
-    # for values in docking_results.df.to_dict(orient="index").values():
-    #     print(values)
     print(best_structure_dict)
-    # for index, values in docking_results.df.to_dict(orient="index").items()
-    #     input_dir_path = os.path.dirname(values["Docked_File"])
-    #     output_dir_path = os.path.join(args.output_dir, values["Complex_ID"])
-    #
-    #     if os.path.exists(input_dir_path) and not os.path.exists(
-    #         output_dir_path
-    #     ):
-    #         # print(input_dir_path)
-    #         # print(output_dir_path)
-    #         shutil.copytree(input_dir_path, output_dir_path)
-    #
-    #     if args.fragalysis_dir:
-    #         compound_id = values["Compound_ID"]
-    #         compound_path = os.path.join(args.fragalysis_dir, compound_id)
-    #         bound_pdb_path = os.path.join(
-    #             compound_path, f"{compound_id}_bound.pdb"
-    #         )
-    #         if os.path.exists(bound_pdb_path):
-    #             print(bound_pdb_path)
-    #             shutil.copy2(bound_pdb_path, output_dir_path)
-    #
-    # ## Will probably at some point want to integrate this into the actual
-    # ##  function instead of having it run afterwards
-    # write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
+    in_dir = "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_filter"
+    out_dir = "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_filter/fauxalysis"
+    write_fragalysis_output(in_dir, out_dir, best_structure_dict)
 
 
 if __name__ == "__main__":
