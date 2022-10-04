@@ -554,6 +554,7 @@ def main():
 
     ## Get proteins from apo structures
     all_prots = []
+    prot_chain_ids = []
     for n, fn in zip(all_apo_names, all_apo_fns):
         split_dict = split_openeye_mol(load_openeye_pdb(fn))
         prot = split_dict["pro"]
@@ -581,7 +582,54 @@ def main():
             )
         ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
         ##  doesn't pickle
-        all_prots.append(oechem.OEGraphMol(bus[0]))
+        prot = oechem.OEGraphMol(bus[0])
+
+        ## Reset chain IDs to be A/B
+        ## First get all chains, should only be 2
+        all_chain_ids = {
+            r.GetExtChainID()
+            for r in oechem.OEGetResidues(prot)
+            if all(
+                [
+                    not oechem.OEIsWater()(a)
+                    for a in oechem.OEGetResidueAtoms(prot, r)
+                ]
+            )
+        }
+        if len(all_chain_ids) != 2:
+            raise AssertionError(f"{n} chains: {all_chain_ids}")
+
+        # ## Sort IDs and assign to A/B
+        # chain_id_map = {
+        #     old_chain: new_chain
+        #     for old_chain, new_chain in zip(sorted(all_chain_ids), ["A", "B"])
+        # }
+        # print(chain_id_map, flush=True)
+
+        # ## Switch over chain IDs
+        # for r in oechem.OEGetResidues(prot):
+        #     try:
+        #         new_chain = chain_id_map[r.GetExtChainID()]
+        #     except KeyError:
+        #         print(
+        #             "Warning: waters in different chains from the protein",
+        #             "residues, may cause unintended results later.",
+        #             flush=True,
+        #         )
+        #         continue
+        #     if not r.SetExtChainID(new_chain):
+        #         print(
+        #             "Chain setting failed for,",
+        #             n,
+        #             r.GetResidueNumber(),
+        #             r.GetName(),
+        #             flush=True,
+        #         )
+
+        all_prots.append(prot)
+        prot_chain_ids.append(sorted(all_chain_ids))
+
+        print(n, sorted(all_chain_ids), flush=True)
 
     ## Parse reference
     if args.ref:
@@ -599,12 +647,14 @@ def main():
     mp_args = []
     ## Construct all args for mp_func
     for lig_name, lig in zip(all_holo_names, all_ligs):
-        for (dimer, apo_chain) in it.product([True, False], ["A", "B"]):
-            dimer_s = "dimer" if dimer else "monomer"
-            out_dir = f"{args.o}/{lig_name}/{dimer_s}"
-            os.makedirs(out_dir, exist_ok=True)
-            ## Load and parse apo protein
-            for prot_name, apo_prot in zip(all_apo_names, all_prots):
+        for prot_name, apo_prot, apo_chains in zip(
+            all_apo_names, all_prots, prot_chain_ids
+        ):
+            for (dimer, apo_chain) in it.product([True, False], apo_chains):
+                dimer_s = "dimer" if dimer else "monomer"
+                out_dir = f"{args.o}/{lig_name}/{dimer_s}"
+                os.makedirs(out_dir, exist_ok=True)
+                ## Load and parse apo protein
                 mp_args.append(
                     (
                         apo_prot,
