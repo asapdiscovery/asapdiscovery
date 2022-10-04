@@ -6,7 +6,7 @@ import argparse
 from glob import glob
 import itertools as it
 import multiprocessing as mp
-from openeye import oechem, oedocking
+from openeye import oechem, oedocking, oespruce
 import os
 import pandas
 import pickle as pkl
@@ -553,16 +553,35 @@ def main():
         print(f"Removed {n} (not A or B chain)", flush=True)
 
     ## Get proteins from apo structures
-    if args.keep_wat:
-        all_prots = []
-        for fn in all_apo_fns:
-            split_dict = split_openeye_mol(load_openeye_pdb(fn))
-            oechem.OEAddMols(split_dict["pro"], split_dict["water"])
-            all_prots.append(split_dict["pro"])
-    else:
-        all_prots = [
-            split_openeye_mol(load_openeye_pdb(fn))["pro"] for fn in all_apo_fns
-        ]
+    all_prots = []
+    for n, fn in zip(all_apo_names, all_apo_fns):
+        split_dict = split_openeye_mol(load_openeye_pdb(fn))
+        prot = split_dict["pro"]
+        ## Add waters if required
+        if args.keep_wat:
+            oechem.OEAddMols(prot, split_dict["water"])
+
+        ## Build monomer into dimer as necessary (will need to handle
+        ##  re-labeling chains since the monomer seems to get the chainID C)
+        ## Shouldn't affect the protein if the dimer has already been built
+        bus = list(oespruce.OEExtractBioUnits(prot))
+        ## Check to make sure everything got built correctly
+        if len(bus) != 2:
+            print(
+                f"Incorrect number of Bio units built for {n} ({len(bus)})",
+                flush=True,
+            )
+        if bus[0].NumAtoms() != 2 * bus[1].NumAtoms():
+            print(
+                (
+                    f"Incorrect relative size of Bio units for {n} "
+                    f"({bus[0].NumAtoms()} and {bus[1].NumAtoms()})"
+                ),
+                flush=True,
+            )
+        ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
+        ##  doesn't pickle
+        all_prots.append(oechem.OEGraphMol(bus[0]))
 
     ## Parse reference
     if args.ref:
@@ -624,7 +643,7 @@ def main():
 
     ## Will probably at some point want to integrate this into the actual
     ##  function instead of having it run afterwards
-    write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
+    # write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
 
 
 if __name__ == "__main__":
