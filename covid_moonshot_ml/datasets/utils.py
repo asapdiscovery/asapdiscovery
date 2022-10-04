@@ -706,27 +706,6 @@ def trim_small_chains(input_mol, cutoff_len=10):
         ):
             mol_copy.DeleteAtom(a)
 
-    ## Get all the PDB data to keep (in-progress, need to do this for each
-    ##  short chain)
-    re_pats = [
-        r"(?:\s[A-Z]{3}\sB\s[^V])",
-        r"(?:DBREF.*\sB\s)",
-        r"(?:SEQRES\s+[0-9]+\sB\s)",
-    ]
-    re_pat = r"|".join(re_pats)
-    keep_data = [
-        (p.GetTag(), p.GetValue())
-        for p in oechem.OEGetPDBDataPairs(mol_copy)
-        if not re.search(re_pat, p.GetTag() + p.GetValue())
-    ]
-
-    ## Clear all PDB data
-    oechem.OEClearPDBData(mol_copy)
-
-    ## Add kept data
-    for (tag, val) in keep_data:
-        oechem.OEAddPDBData(mol_copy, tag, val)
-
     return mol_copy
 
 
