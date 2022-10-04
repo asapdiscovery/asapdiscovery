@@ -584,8 +584,7 @@ def main():
         ##  doesn't pickle
         prot = oechem.OEGraphMol(bus[0])
 
-        ## Reset chain IDs to be A/B
-        ## First get all chains, should only be 2
+        ## Keep track of chain IDs
         all_chain_ids = {
             r.GetExtChainID()
             for r in oechem.OEGetResidues(prot)
@@ -599,37 +598,8 @@ def main():
         if len(all_chain_ids) != 2:
             raise AssertionError(f"{n} chains: {all_chain_ids}")
 
-        # ## Sort IDs and assign to A/B
-        # chain_id_map = {
-        #     old_chain: new_chain
-        #     for old_chain, new_chain in zip(sorted(all_chain_ids), ["A", "B"])
-        # }
-        # print(chain_id_map, flush=True)
-
-        # ## Switch over chain IDs
-        # for r in oechem.OEGetResidues(prot):
-        #     try:
-        #         new_chain = chain_id_map[r.GetExtChainID()]
-        #     except KeyError:
-        #         print(
-        #             "Warning: waters in different chains from the protein",
-        #             "residues, may cause unintended results later.",
-        #             flush=True,
-        #         )
-        #         continue
-        #     if not r.SetExtChainID(new_chain):
-        #         print(
-        #             "Chain setting failed for,",
-        #             n,
-        #             r.GetResidueNumber(),
-        #             r.GetName(),
-        #             flush=True,
-        #         )
-
         all_prots.append(prot)
         prot_chain_ids.append(sorted(all_chain_ids))
-
-        print(n, sorted(all_chain_ids), flush=True)
 
     ## Parse reference
     if args.ref:
