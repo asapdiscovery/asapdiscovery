@@ -20,6 +20,7 @@ def get_args():
     parser.add_argument(
         "-o", "--output_dir", required=True, help="Path to output directory"
     )
+    parser.add_argument("-d", "--dimer", action="store_true", default=False)
 
     return parser.parse_args()
 
@@ -41,15 +42,28 @@ def main():
     )
 
     ## Rename the columns, add POSIT_R
-    dr.df.columns = [
-        "Compound_ID",
-        "Structure_Source",
-        "Docked_File",
-        "RMSD",
-        "POSIT",
-        "Chemgauss4",
-        "Clash",
-    ]
+    print(args.dimer)
+    if args.dimer:
+        dr.df.columns = [
+            "Compound_ID",
+            "Structure_Source",
+            "Dimer",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+        ]
+    else:
+        dr.df.columns = [
+            "Compound_ID",
+            "Structure_Source",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+        ]
     dr.df["POSIT_R"] = 1 - dr.df.POSIT
 
     ## Drop "_bound" from Compound_ID
@@ -58,7 +72,9 @@ def main():
     ]
 
     ## Add Complex_ID
-    dr.df["Complex_ID"] = f"{dr.df.Compound_ID}_{dr.df.Structure_Source}"
+    ## This is not the same thing as f"{dr.df.Compound_ID}_{dr.df.Structure_Source}", as this enables rowwise addition
+    ## as opposed to adding the *entire* series as a single string
+    dr.df["Complex_ID"] = dr.df.Compound_ID + "_" + dr.df.Structure_Source
 
     ## Clean the Docked_File paths because there are extra `/`
     ## also, some of the file paths are NaNs so we need to only keep the ones that are strings
