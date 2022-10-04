@@ -21,6 +21,9 @@ def get_args():
         "-o", "--output_dir", required=True, help="Path to output directory"
     )
     parser.add_argument("-d", "--dimer", action="store_true", default=False)
+    parser.add_argument(
+        "-s", "--keep_structure_source", action="store_true", default=False
+    )
 
     return parser.parse_args()
 
@@ -37,9 +40,10 @@ def main():
 
     ## this is a bunch of csv ingesting that is very dependent on the way the csv looks
     dr.df = dr.df.drop("Unnamed: 0", axis=1)
-    dr.df["MERS_structure"] = dr.df["MERS_structure"].apply(
-        lambda x: x.split("_")[1]
-    )
+    if not args.keep_structure_source:
+        dr.df["MERS_structure"] = dr.df["MERS_structure"].apply(
+            lambda x: x.split("_")[1]
+        )
 
     ## Rename the columns, add POSIT_R
     print(args.dimer)
@@ -88,7 +92,8 @@ def main():
 
     ## Get several dataframes
     dr.get_compound_df()
-    dr.get_structure_df(resolution_csv="../data/mers_structures.csv")
+    if not args.keep_structure_source:
+        dr.get_structure_df(resolution_csv="../data/mers_structures.csv")
     dr.get_best_structure_per_compound()
 
     ## Write out CSV Files
@@ -98,9 +103,10 @@ def main():
     dr.compound_df.to_csv(
         os.path.join(args.output_dir, "by_compound.csv"), index=False
     )
-    dr.structure_df.to_csv(
-        os.path.join(args.output_dir, "by_structure.csv"), index=False
-    )
+    if not args.keep_structure_source:
+        dr.structure_df.to_csv(
+            os.path.join(args.output_dir, "by_structure.csv"), index=False
+        )
     dr.best_df.to_csv(
         os.path.join(args.output_dir, "mers_fauxalysis.csv"), index=False
     )
