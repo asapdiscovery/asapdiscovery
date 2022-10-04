@@ -156,27 +156,6 @@ def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
         ## Combine protein and ligand
         oechem.OEAddMols(prot, lig)
 
-        # ## Get number of residues per chain
-        # num_res_chain_dict = {}
-        # hv = oechem.OEHierView(prot)
-        # for chain in hv.GetChains():
-        #     max_resid = 0
-        #     for frag in chain.GetFragments():
-        #         frag_max = max(
-        #             [r.GetResidueNumber() for r in frag.GetResidues()]
-        #         )
-        #         if frag_max > max_resid:
-        #             max_resid = frag_max
-        #     num_res_chain_dict[chain.GetChainID()] = max_resid
-        # ## Rename and renumber ligand residue
-        # for a in prot.GetAtoms():
-        #     r = oechem.OEAtomGetResidue(a)
-        #     if r.GetName() == "UNL":
-        #         r.SetHetAtom(True)
-        #         r.SetName("LIG")
-        #         r.SetResidueNumber(num_res_chain_dict[r.GetChainID()] + 100)
-        #     oechem.OEAtomSetResidue(a, r)
-
         save_openeye_pdb(prot, f"{tmp_out_dir}/{compound_id}_bound.pdb")
 
         ## Remove Hs from lig and save SDF file
