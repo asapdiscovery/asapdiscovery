@@ -64,7 +64,7 @@ def check_output(d):
     return True
 
 
-def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
+def write_fragalysis_output(in_dir, out_dir, best_structure_dict):
     """
     Convert original-style output structure to a fragalysis-style output
     structure.
@@ -75,38 +75,9 @@ def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
         Top-level directory of original-style output
     out_dir : str
         Top-level directory of new output
-    sort_key : str, default="POSIT_prob"
-        Which column to use to pick the best structure for each compound.
-        Options are [docked_RMSD, POSIT_prob, chemgauss4_score]. If POSIT_prob
-        is selected but not present in CSV file, fall back to docked_RMSD, then
-        chemgauss4_score if all docked_RMSD are -1.
+    best_structure_dict : dict
+        Of the form {('Compound_ID', dimer): 'Structure_Source'} where "dimer" is a boolean.
     """
-    ## Load master results CSV file
-    df = pandas.read_csv(f"{in_dir}/all_results.csv", index_col=0)
-
-    ## Set up test for best structure
-    if (sort_key == "POSIT_prob") and ("POSIT_prob" not in df.columns):
-        print(
-            "POSIT_prob not in given CSV file, falling back to docked_RMSD",
-            flush=True,
-        )
-        sort_key = "docked_RMSD"
-    if sort_key == "POSIT_prob":
-        sort_fn = lambda s: s.idxmax()
-    elif (sort_key == "docked_RMSD") or (sort_key == "chemgauss4_score"):
-        sort_fn = lambda s: s.idxmin()
-    else:
-        raise ValueError(f'Unknown sort_key "{sort_key}"')
-
-    ## Get best structure for each
-    best_str_dict = {}
-    for ((compound_id, dimer), g) in df.groupby(["SARS_ligand", "dimer"]):
-        if (sort_key == "docked_RMSD") and (g["docked_RMSD"] == -1.0).all():
-            sort_key = "chemgauss4_score"
-        best_str_dict[(compound_id, dimer)] = g.loc[
-            sort_fn(g[sort_key]), f"MERS_structure"
-        ]
-
     ## Set up SDF file that will hold all ligands
     all_ligs_monomer_ofs = oechem.oemolostream()
     all_ligs_monomer_ofs.SetFlavor(
@@ -124,7 +95,7 @@ def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
         ofs.open(f"{out_dir}/{d}/combined.sdf")
 
     ## Loop through dict and parse input files into output files
-    for (compound_id, dimer), best_str in best_str_dict.items():
+    for (compound_id, dimer), best_str in best_structure_dict.items():
         ## Make sure input exists
         dimer_s = "dimer" if dimer else "monomer"
         tmp_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
@@ -173,37 +144,66 @@ def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
 def main():
     args = get_args()
 
-    assert os.path.exists(args.input_csv)
-    if not os.path.exists(args.output_dir):
-        os.mkdir(args.output_dir)
-    assert os.path.exists(args.output_dir)
+    # assert os.path.exists(args.input_csv)
+    # if not os.path.exists(args.output_dir):
+    #     os.mkdir(args.output_dir)
+    # assert os.path.exists(args.output_dir)
 
-    docking_results = DockingResults(args.input_csv)
+    ## Load master results CSV file
+    df = pandas.read_csv(args.input_csv, index_col=0)
 
-    for index, values in docking_results.df.to_dict(orient="index").items():
-        input_dir_path = os.path.dirname(values["Docked_File"])
-        output_dir_path = os.path.join(args.output_dir, values["Complex_ID"])
+    sort_key = "POSIT_prob"
 
-        if os.path.exists(input_dir_path) and not os.path.exists(
-            output_dir_path
-        ):
-            # print(input_dir_path)
-            # print(output_dir_path)
-            shutil.copytree(input_dir_path, output_dir_path)
+    ## Set up test for best structure
+    if (sort_key == "POSIT_prob") and ("POSIT_prob" not in df.columns):
+        print(
+            "POSIT_prob not in given CSV file, falling back to docked_RMSD",
+            flush=True,
+        )
+        sort_key = "docked_RMSD"
+    if sort_key == "POSIT_prob":
+        sort_fn = lambda s: s.idxmax()
+    elif (sort_key == "docked_RMSD") or (sort_key == "chemgauss4_score"):
+        sort_fn = lambda s: s.idxmin()
+    else:
+        raise ValueError(f'Unknown sort_key "{sort_key}"')
 
-        if args.fragalysis_dir:
-            compound_id = values["Compound_ID"]
-            compound_path = os.path.join(args.fragalysis_dir, compound_id)
-            bound_pdb_path = os.path.join(
-                compound_path, f"{compound_id}_bound.pdb"
-            )
-            if os.path.exists(bound_pdb_path):
-                print(bound_pdb_path)
-                shutil.copy2(bound_pdb_path, output_dir_path)
+    ## Get best structure for each
+    best_str_dict = {}
+    for ((compound_id, dimer), g) in df.groupby(["SARS_ligand", "dimer"]):
+        if (sort_key == "docked_RMSD") and (g["docked_RMSD"] == -1.0).all():
+            sort_key = "chemgauss4_score"
+        best_str_dict[(compound_id, dimer)] = g.loc[
+            sort_fn(g[sort_key]), f"MERS_structure"
+        ]
+    print(best_str_dict)
 
-    ## Will probably at some point want to integrate this into the actual
-    ##  function instead of having it run afterwards
-    write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
+    # docking_results = DockingResults(args.input_csv)
+    #
+    # for index, values in docking_results.df.to_dict(orient="index").items():
+    #     input_dir_path = os.path.dirname(values["Docked_File"])
+    #     output_dir_path = os.path.join(args.output_dir, values["Complex_ID"])
+    #
+    #     if os.path.exists(input_dir_path) and not os.path.exists(
+    #         output_dir_path
+    #     ):
+    #         # print(input_dir_path)
+    #         # print(output_dir_path)
+    #         shutil.copytree(input_dir_path, output_dir_path)
+    #
+    #     if args.fragalysis_dir:
+    #         compound_id = values["Compound_ID"]
+    #         compound_path = os.path.join(args.fragalysis_dir, compound_id)
+    #         bound_pdb_path = os.path.join(
+    #             compound_path, f"{compound_id}_bound.pdb"
+    #         )
+    #         if os.path.exists(bound_pdb_path):
+    #             print(bound_pdb_path)
+    #             shutil.copy2(bound_pdb_path, output_dir_path)
+    #
+    # ## Will probably at some point want to integrate this into the actual
+    # ##  function instead of having it run afterwards
+    # write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
 
 
 if __name__ == "__main__":
