@@ -144,43 +144,21 @@ def write_fragalysis_output(in_dir, out_dir, best_structure_dict):
 def main():
     args = get_args()
 
-    # assert os.path.exists(args.input_csv)
-    # if not os.path.exists(args.output_dir):
-    #     os.mkdir(args.output_dir)
-    # assert os.path.exists(args.output_dir)
+    assert os.path.exists(args.input_csv)
+    if not os.path.exists(args.output_dir):
+        os.mkdir(args.output_dir)
+    assert os.path.exists(args.output_dir)
 
-    ## Load master results CSV file
-    df = pandas.read_csv(args.input_csv, index_col=0)
+    docking_results = DockingResults(args.input_csv)
 
-    sort_key = "POSIT_prob"
-
-    ## Set up test for best structure
-    if (sort_key == "POSIT_prob") and ("POSIT_prob" not in df.columns):
-        print(
-            "POSIT_prob not in given CSV file, falling back to docked_RMSD",
-            flush=True,
-        )
-        sort_key = "docked_RMSD"
-    if sort_key == "POSIT_prob":
-        sort_fn = lambda s: s.idxmax()
-    elif (sort_key == "docked_RMSD") or (sort_key == "chemgauss4_score"):
-        sort_fn = lambda s: s.idxmin()
-    else:
-        raise ValueError(f'Unknown sort_key "{sort_key}"')
-
-    ## Get best structure for each
-    best_str_dict = {}
-    for ((compound_id, dimer), g) in df.groupby(["SARS_ligand", "dimer"]):
-        if (sort_key == "docked_RMSD") and (g["docked_RMSD"] == -1.0).all():
-            sort_key = "chemgauss4_score"
-        best_str_dict[(compound_id, dimer)] = g.loc[
-            sort_fn(g[sort_key]), f"MERS_structure"
-        ]
-    print(best_str_dict)
-
-    # docking_results = DockingResults(args.input_csv)
-    #
-    # for index, values in docking_results.df.to_dict(orient="index").items():
+    best_structure_dict = {
+        (values["Compound_ID"], values["Dimer"]): values["Structure_Source"]
+        for values in docking_results.df.to_dict(orient="index").values()
+    }
+    # for values in docking_results.df.to_dict(orient="index").values():
+    #     print(values)
+    print(best_structure_dict)
+    # for index, values in docking_results.df.to_dict(orient="index").items()
     #     input_dir_path = os.path.dirname(values["Docked_File"])
     #     output_dir_path = os.path.join(args.output_dir, values["Complex_ID"])
     #
