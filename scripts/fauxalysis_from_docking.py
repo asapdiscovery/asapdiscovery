@@ -130,11 +130,7 @@ def write_fragalysis_output(
             )
             continue
         elif os.path.exists(compound_out_dir):
-            print(
-                f"Fauxalysis directory exists at: "
-                f"\t{compound_out_dir}"
-                f"\tSkipping..."
-            )
+            print(f"Fauxalysis directory exists at: " f"\t{compound_out_dir}")
             continue
         else:
             print(
@@ -192,7 +188,7 @@ def write_fragalysis_output(
                 frag_compound_path, f"{frag_structure}_bound.pdb"
             )
             copied_bound_pdb_path = os.path.join(
-                compound_out_dir, f"fragalysis_{compound_id}_bound.pdb"
+                compound_out_dir, f"fragalysis_{frag_structure}_bound.pdb"
             )
             if os.path.exists(bound_pdb_path):
                 print(
