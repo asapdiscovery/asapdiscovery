@@ -20,7 +20,6 @@ def get_args():
         default="../data/luttens2022ultralarge.yaml",
         help="Path to yaml_file",
     )
-    parser.add_argument()
 
     return parser.parse_args()
 
@@ -36,6 +35,7 @@ def main():
         for directory in os.listdir(args.fauxalysis_dir)
         if not ".csv" in directory
     ]
+    print()
 
     for pdb in pdb_dict.keys():
         complexes = [
@@ -43,12 +43,13 @@ def main():
             for complex_id in complex_list
             if pdb.lower() in complex_id
         ]
+        print(complexes)
 
-        for complex in complexes:
-            path = os.path.join(args.fauxalysis_dir, complex)
-
-            print(f"Downloading {pdb} to {path}...")
-            download_pdb_structure(pdb, path)
+        # for complex in complexes:
+        #     path = os.path.join(args.fauxalysis_dir, complex)
+        #
+        #     print(f"Downloading {pdb} to {path}...")
+        #     download_pdb_structure(pdb, path)
 
 
 if __name__ == "__main__":

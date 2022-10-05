@@ -18,7 +18,7 @@ def get_args():
         "-f",
         "--frag_csv",
         required=True,
-        help="Fragalysis crystal structure compound tracker CSV file.",
+        help="Fragalysis crystal structure metadata.csv file.",
     )
     parser.add_argument(
         "-o",
@@ -38,20 +38,21 @@ def main():
     ## First, parse the fragalysis directory into a dictionary of
     ##  CrystalCompoundData
     sars_xtals = parse_fragalysis_data(args.frag_csv, frag_dir)
+    print(sars_xtals)
 
-    ## Get dict mapping crystal structure id to compound id
-    compound_id_dict = {
-        cmpd: xtals[0]
-        for cmpd, xtals in get_compound_id_xtal_dicts(sars_xtals.values())[
-            0
-        ].items()
-        if cmpd
-    }
-
-    print(compound_id_dict)
-
-    with open(args.out_yaml, "w") as f:
-        yaml.safe_dump(compound_id_dict, f)
+    # ## Get dict mapping crystal structure id to compound id
+    # compound_id_dict = {
+    #     cmpd: xtals[0]
+    #     for cmpd, xtals in get_compound_id_xtal_dicts(sars_xtals.values())[
+    #         0
+    #     ].items()
+    #     if cmpd
+    # }
+    #
+    # print(compound_id_dict)
+    #
+    # with open(args.out_yaml, "w") as f:
+    #     yaml.safe_dump(compound_id_dict, f)
 
 
 if __name__ == "__main__":

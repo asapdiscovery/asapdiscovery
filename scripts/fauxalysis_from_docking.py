@@ -176,22 +176,23 @@ def write_fragalysis_output(
         oechem.OEWriteMolecule(ofs, lig)
 
         if frag_dir:
+            compound_id_list = compound_id.split("_")
+            compound_id_without_chain = compound_id_list[0]
+            chain = compound_id_list[1]
+
             if "_bound" in compound_id:
-                frag_structure = compound_id
-                bound_str = ""
+                frag_structure = f"{compound_id_without_chain}_{chain}"
             else:
-                compound_id_without_chain, chain = compound_id.split("_")
                 frag_structure = (
                     f"{cmpd_to_frag_dict[compound_id_without_chain]}_{chain}"
                 )
-                bound_str = "_bound"
 
             frag_compound_path = os.path.join(frag_dir, frag_structure)
             bound_pdb_path = os.path.join(
-                frag_compound_path, f"{frag_structure}{bound_str}.pdb"
+                frag_compound_path, f"{frag_structure}_bound.pdb"
             )
             copied_bound_pdb_path = os.path.join(
-                compound_out_dir, f"fragalysis_{compound_id}{bound_str}.pdb"
+                compound_out_dir, f"fragalysis_{compound_id}_bound.pdb"
             )
             if os.path.exists(bound_pdb_path):
                 print(
