@@ -2,7 +2,7 @@
 Example usage:
     python fauxalysis_from_docking.py -c /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag/mers_fauxalysis.csv -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
 """
-import sys, os, argparse, shutil, pickle as pkl
+import sys, os, argparse, shutil, pickle as pkl, yaml
 from openeye import oechem
 
 sys.path.append(
@@ -32,6 +32,12 @@ def get_args():
         "--fragalysis_dir",
         default=None,
         help="Path to fragalysis results directory.",
+    )
+    parser.add_argument(
+        "-y",
+        "--fragalysis_yaml",
+        default="../data/cmpd_to_frag.yaml",
+        help="Path to yaml file containing a compound-to-fragalysis dictionary.",
     )
     parser.add_argument(
         "-i",
@@ -71,7 +77,7 @@ def check_output(d):
 
 
 def write_fragalysis_output(
-    in_dir, out_dir, best_structure_dict, frag_dir=None
+    in_dir, out_dir, best_structure_dict, frag_dir=None, cmpd_to_frag_dict=None
 ):
     """
     Convert original-style output structure to a fragalysis-style output
@@ -160,17 +166,23 @@ def write_fragalysis_output(
 
         if frag_dir:
             # TODO: Map the compound_id to the crystal structure and use that to build the path
-            frag_compound_path = os.path.join(frag_dir, compound_id)
+            ## the compound ids used so far include a chain A vs chain B split, let's remove that
+            compound_id_without_chain, chain = compound_id.split("_")
+            frag_structure = (
+                f"{cmpd_to_frag_dict[compound_id_without_chain]}_{chain}"
+            )
+            frag_compound_path = os.path.join(frag_dir, frag_structure)
             bound_pdb_path = os.path.join(
-                frag_compound_path, f"{compound_id}_bound.pdb"
+                frag_compound_path, f"{frag_structure}_bound.pdb"
             )
             copied_bound_pdb_path = os.path.join(
                 compound_out_dir, f"fragalysis_{compound_id}_bound.pdb"
             )
             if os.path.exists(bound_pdb_path):
                 print(
-                    f"Copying fragalysis source from {bound_pdb_path}\n"
-                    f"to {copied_bound_pdb_path}"
+                    f"Copying fragalysis source\n"
+                    f"\tfrom {bound_pdb_path}\n"
+                    f"\tto {copied_bound_pdb_path}"
                 )
                 shutil.copy2(
                     bound_pdb_path,
@@ -198,11 +210,19 @@ def main():
         for values in docking_results.df.to_dict(orient="index").values()
     }
     print(best_structure_dict)
+
+    ## Get cmpd_to_fragalysis source dict if required
+    if args.fragalysis_dir:
+        with open(args.fragalysis_yaml, "r") as f:
+            cmpd_to_frag_dict = yaml.safe_load(f)
+    else:
+        cmpd_to_frag_dict = None
     write_fragalysis_output(
         args.input_dir,
         args.output_dir,
         best_structure_dict,
         args.fragalysis_dir,
+        cmpd_to_frag_dict,
     )
 
 
