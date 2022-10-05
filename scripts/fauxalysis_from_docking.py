@@ -2,7 +2,7 @@
 Example usage:
     python fauxalysis_from_docking.py -c /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag/mers_fauxalysis.csv -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
 """
-import sys, os, argparse, shutil, pandas, pickle as pkl
+import sys, os, argparse, shutil, pickle as pkl
 from openeye import oechem
 
 sys.path.append(
@@ -101,21 +101,18 @@ def write_fragalysis_output(
     dimers_strings = ["monomer", "dimer"]
     all_ofs = [all_ligs_monomer_ofs, all_ligs_dimer_ofs]
     for d, ofs in zip(dimers_strings, all_ofs):
-        os.makedirs(f"{out_dir}/{d}", exist_ok=True)
-        ofs.open(f"{out_dir}/{d}/combined.sdf")
+        os.makedirs(f"{out_dir}", exist_ok=True)
+        ofs.open(f"{out_dir}/combined.sdf")
 
     ## Loop through dict and parse input files into output files
     for (compound_id, dimer), best_str in best_structure_dict.items():
         ## Make sure input exists
         dimer_s = "dimer" if dimer else "monomer"
-        compound_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
-        compound_out_dir = f"{out_dir}/{dimer_s}/{compound_id}"
+        compound_in_dir = f"{in_dir}/{compound_id}/{best_str}"
+        compound_out_dir = f"{out_dir}/{compound_id}"
         if not check_output(compound_in_dir):
             print(
-                (
-                    f"No results found for {compound_id}/{dimer_s}/{best_str}, "
-                    "skipping"
-                ),
+                (f"No results found for {compound_id}/{best_str}, " "skipping"),
                 flush=True,
             )
             continue
