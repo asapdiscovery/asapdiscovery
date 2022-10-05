@@ -1,3 +1,7 @@
+"""
+Example Usage:
+    python clean_results_csv.py -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter/all_results.csv -o /lila/data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag -d -s
+"""
 import sys, os, argparse
 import numpy as np
 

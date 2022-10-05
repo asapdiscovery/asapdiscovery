@@ -1,6 +1,6 @@
 """
 Example usage:
-
+    python fauxalysis_from_docking.py -c /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag/mers_fauxalysis.csv -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
 """
 import sys, os, argparse, shutil, pandas, pickle as pkl
 from openeye import oechem
