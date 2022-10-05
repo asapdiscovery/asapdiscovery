@@ -225,6 +225,14 @@ def main():
         (values["Compound_ID"], values["Dimer"]): values["Structure_Source"]
         for values in docking_results.df.to_dict(orient="index").values()
     }
+
+    ## Filter if directory already exists:
+    best_structure_dict = {
+        (cmpd, dimer): values
+        for (cmpd, dimer), values in best_structure_dict.items()
+        if not os.path.exists(f"{args.output_dir}/{cmpd}")
+    }
+
     print(best_structure_dict)
 
     ## Get cmpd_to_fragalysis source dict if required
