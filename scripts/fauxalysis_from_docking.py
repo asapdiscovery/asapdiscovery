@@ -1,3 +1,7 @@
+"""
+Example usage:
+
+"""
 import sys, os, argparse, shutil, pandas, pickle as pkl
 from openeye import oechem
 
@@ -26,7 +30,7 @@ def get_args():
     parser.add_argument(
         "-f",
         "--fragalysis_dir",
-        default=False,
+        default=None,
         help="Path to fragalysis results directory.",
     )
     parser.add_argument(
@@ -155,6 +159,7 @@ def write_fragalysis_output(
         oechem.OEWriteMolecule(ofs, lig)
 
         if frag_dir:
+            # TODO: Map the compound_id to the crystal structure and use that to build the path
             frag_compound_path = os.path.join(frag_dir, compound_id)
             bound_pdb_path = os.path.join(
                 frag_compound_path, f"{compound_id}_bound.pdb"
