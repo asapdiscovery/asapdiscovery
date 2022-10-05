@@ -109,6 +109,8 @@ def write_fragalysis_output(in_dir, out_dir, best_structure_dict):
                 ),
                 flush=True,
             )
+            continue
+
         ## Create output directory if necessary
         tmp_out_dir = f"{out_dir}/{dimer_s}/{compound_id}"
         os.makedirs(tmp_out_dir, exist_ok=True)
@@ -156,7 +158,6 @@ def main():
     best_structure_dict = {
         (values["Compound_ID"], values["Dimer"]): values["Structure_Source"]
         for values in docking_results.df.to_dict(orient="index").values()
-        if values["Compound_ID"] == "ALP-POS-ecbed2ba-12_0A"
     }
     print(best_structure_dict)
     write_fragalysis_output(
