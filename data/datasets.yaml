@@ -12,4 +12,10 @@
   Status: Delivered
   Notes: created 20220916
   Source:
-
+002:
+  Path_Data: /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter
+  Path_CSV: /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter/all_results.csv
+  Type: Docking
+  Status: Finished
+  Notes:
+  Source:
