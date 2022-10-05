@@ -1,6 +1,10 @@
 """
 Example usage:
-    python fauxalysis_from_docking.py -c /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag/mers_fauxalysis.csv -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
+    python fauxalysis_from_docking.py
+        -c /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag/mers_fauxalysis.csv
+        -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter
+        -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
+        -f /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/aligned
 """
 import sys, os, argparse, shutil, pickle as pkl, yaml
 from openeye import oechem
@@ -125,6 +129,13 @@ def write_fragalysis_output(
                 flush=True,
             )
             continue
+        elif os.path.exists(compound_out_dir):
+            print(
+                f"Fauxalysis directory exists at: "
+                f"\t{compound_out_dir}"
+                f"\tSkipping..."
+            )
+            continue
         else:
             print(
                 (
@@ -167,10 +178,15 @@ def write_fragalysis_output(
         if frag_dir:
             # TODO: Map the compound_id to the crystal structure and use that to build the path
             ## the compound ids used so far include a chain A vs chain B split, let's remove that
-            compound_id_without_chain, chain = compound_id.split("_")
-            frag_structure = (
-                f"{cmpd_to_frag_dict[compound_id_without_chain]}_{chain}"
-            )
+
+            if "_bound" in compound_id:
+                frag_structure = compound_id
+            else:
+                compound_id_without_chain, chain = compound_id.split("_")
+                frag_structure = (
+                    f"{cmpd_to_frag_dict[compound_id_without_chain]}_{chain}"
+                )
+
             frag_compound_path = os.path.join(frag_dir, frag_structure)
             bound_pdb_path = os.path.join(
                 frag_compound_path, f"{frag_structure}_bound.pdb"
