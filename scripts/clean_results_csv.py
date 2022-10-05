@@ -75,9 +75,9 @@ def main():
     dr.df["POSIT_R"] = 1 - dr.df.POSIT
 
     ## Drop "_bound" from Compound_ID
-    dr.df.Compound_ID = [
-        string.replace("_bound", "") for string in dr.df.Compound_ID
-    ]
+    # dr.df.Compound_ID = [
+    #     string.replace("_bound", "") for string in dr.df.Compound_ID
+    # ]
 
     ## Add Complex_ID
     ## This is not the same thing as f"{dr.df.Compound_ID}_{dr.df.Structure_Source}", as this enables rowwise addition
