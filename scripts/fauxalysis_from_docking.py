@@ -66,7 +66,9 @@ def check_output(d):
     return True
 
 
-def write_fragalysis_output(in_dir, out_dir, best_structure_dict):
+def write_fragalysis_output(
+    in_dir, out_dir, best_structure_dict, frag_dir=None
+):
     """
     Convert original-style output structure to a fragalysis-style output
     structure.
@@ -77,6 +79,8 @@ def write_fragalysis_output(in_dir, out_dir, best_structure_dict):
         Top-level directory of original-style output
     out_dir : str
         Top-level directory of new output
+    frag_dir : str
+        Path to fragalysis results directory.
     best_structure_dict : dict
         Of the form {('Compound_ID', dimer): 'Structure_Source'} where "dimer" is a boolean.
     """
@@ -100,8 +104,9 @@ def write_fragalysis_output(in_dir, out_dir, best_structure_dict):
     for (compound_id, dimer), best_str in best_structure_dict.items():
         ## Make sure input exists
         dimer_s = "dimer" if dimer else "monomer"
-        tmp_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
-        if not check_output(tmp_in_dir):
+        compound_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
+        compound_out_dir = f"{out_dir}/{dimer_s}/{compound_id}"
+        if not check_output(compound_in_dir):
             print(
                 (
                     f"No results found for {compound_id}/{dimer_s}/{best_str}, "
@@ -110,36 +115,64 @@ def write_fragalysis_output(in_dir, out_dir, best_structure_dict):
                 flush=True,
             )
             continue
+        else:
+            print(
+                (
+                    f"Generating fauxalysis...\n"
+                    f"\tfrom: {compound_in_dir}\n"
+                    f"\tto: {compound_out_dir}"
+                ),
+                flush=True,
+            )
 
         ## Create output directory if necessary
-        tmp_out_dir = f"{out_dir}/{dimer_s}/{compound_id}"
-        os.makedirs(tmp_out_dir, exist_ok=True)
+        os.makedirs(compound_out_dir, exist_ok=True)
 
         ## Load necessary files
         du = oechem.OEDesignUnit()
-        oechem.OEReadDesignUnit(f"{tmp_in_dir}/predocked.oedu", du)
+        oechem.OEReadDesignUnit(f"{compound_in_dir}/predocked.oedu", du)
         prot = oechem.OEGraphMol()
         du.GetProtein(prot)
-        lig = load_openeye_sdf(f"{tmp_in_dir}/docked.sdf")
+        lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
         ## Set ligand title
         lig.SetTitle(f"{compound_id}_{best_str}")
 
         ## First save apo
-        save_openeye_pdb(prot, f"{tmp_out_dir}/{best_str}_apo.pdb")
+        save_openeye_pdb(prot, f"{compound_out_dir}/{best_str}_apo.pdb")
 
         ## Combine protein and ligand
         oechem.OEAddMols(prot, lig)
 
-        save_openeye_pdb(prot, f"{tmp_out_dir}/{compound_id}_bound.pdb")
+        save_openeye_pdb(prot, f"{compound_out_dir}/{compound_id}_bound.pdb")
 
         ## Remove Hs from lig and save SDF file
         for a in lig.GetAtoms():
             if a.GetAtomicNum() == 1:
                 lig.DeleteAtom(a)
-        save_openeye_sdf(lig, f"{tmp_out_dir}/{compound_id}.sdf")
+        save_openeye_sdf(lig, f"{compound_out_dir}/{compound_id}.sdf")
         ofs = all_ofs[int(dimer)]
         oechem.OEWriteMolecule(ofs, lig)
+
+        if frag_dir:
+            frag_compound_path = os.path.join(frag_dir, compound_id)
+            bound_pdb_path = os.path.join(
+                frag_compound_path, f"{compound_id}_bound.pdb"
+            )
+            copied_bound_pdb_path = os.path.join(
+                compound_out_dir, f"fragalysis_{compound_id}_bound.pdb"
+            )
+            if os.path.exists(bound_pdb_path):
+                print(
+                    f"Copying fragalysis source from {bound_pdb_path}\n"
+                    f"to {copied_bound_pdb_path}"
+                )
+                shutil.copy2(
+                    bound_pdb_path,
+                    copied_bound_pdb_path,
+                )
+            else:
+                print(f"Fragalysis source not found:\n" f"\t{bound_pdb_path}")
 
     for ofs in all_ofs:
         ofs.close()
@@ -161,7 +194,10 @@ def main():
     }
     print(best_structure_dict)
     write_fragalysis_output(
-        args.input_dir, args.output_dir, best_structure_dict
+        args.input_dir,
+        args.output_dir,
+        best_structure_dict,
+        args.fragalysis_dir,
     )
 
 
