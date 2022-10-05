@@ -18,7 +18,7 @@ def get_args():
 
     ## Input arguments
     parser.add_argument(
-        "-i",
+        "-c",
         "--input_csv",
         required=True,
         help="Path to CSV file containing best results.",
@@ -28,6 +28,12 @@ def get_args():
         "--fragalysis_dir",
         default=False,
         help="Path to fragalysis results directory.",
+    )
+    parser.add_argument(
+        "-i",
+        "--input_dir",
+        required=True,
+        help="Path to directory containing all the docking results.",
     )
     parser.add_argument(
         "-o",
@@ -153,9 +159,9 @@ def main():
         if values["Compound_ID"] == "ALP-POS-ecbed2ba-12_0A"
     }
     print(best_structure_dict)
-    in_dir = "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_filter"
-    out_dir = "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_filter/fauxalysis"
-    write_fragalysis_output(in_dir, out_dir, best_structure_dict)
+    write_fragalysis_output(
+        args.input_dir, args.output_dir, best_structure_dict
+    )
 
 
 if __name__ == "__main__":
