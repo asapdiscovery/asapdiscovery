@@ -108,11 +108,14 @@ def write_fragalysis_output(
     for (compound_id, dimer), best_str in best_structure_dict.items():
         ## Make sure input exists
         dimer_s = "dimer" if dimer else "monomer"
-        compound_in_dir = f"{in_dir}/{compound_id}/{best_str}"
+        compound_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
         compound_out_dir = f"{out_dir}/{compound_id}"
         if not check_output(compound_in_dir):
             print(
-                (f"No results found for {compound_id}/{best_str}, " "skipping"),
+                (
+                    f"No results found for {compound_id}/{dimer_s}/{best_str}, "
+                    "skipping"
+                ),
                 flush=True,
             )
             continue
