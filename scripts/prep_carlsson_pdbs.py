@@ -1,4 +1,4 @@
-import sys, os, argparse, yaml
+import sys, os, argparse, yaml, shutil
 
 sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
@@ -13,6 +13,9 @@ def get_args():
     ## Input arguments
     parser.add_argument(
         "-d", "--fauxalysis_dir", required=True, help="Path to fauxalysis_dir."
+    )
+    parser.add_argument(
+        "-o", "--output_dir", required=True, help="Path to output dir"
     )
     parser.add_argument(
         "-y",
@@ -35,7 +38,11 @@ def main():
         for directory in os.listdir(args.fauxalysis_dir)
         if not ".csv" in directory
     ]
-    print()
+
+    for file_name in os.listdir(args.fauxalysis_dir):
+        if "csv" in file_name or "sdf" in file_name:
+            in_file = os.path.join(args.fauxalysis_dir, file_name)
+            shutil.copy2(in_file, args.output_dir)
 
     for pdb in pdb_dict.keys():
         complexes = [
@@ -43,13 +50,21 @@ def main():
             for complex_id in complex_list
             if pdb.lower() in complex_id
         ]
-        print(complexes)
-
-        # for complex in complexes:
-        #     path = os.path.join(args.fauxalysis_dir, complex)
-        #
-        #     print(f"Downloading {pdb} to {path}...")
-        #     download_pdb_structure(pdb, path)
+        for complex in complexes:
+            in_path = os.path.join(args.fauxalysis_dir, complex)
+            out_path = os.path.join(args.output_dir, complex)
+            try:
+                shutil.copytree(in_path, out_path)
+                print(
+                    f"Copying...\n" f"\tfrom: {in_path}" f"\t  to: {out_path}"
+                )
+            except FileExistsError:
+                print(
+                    f"File exists, skipping!\n"
+                    f"\tfrom: {in_path}"
+                    f"\t  to: {out_path}"
+                )
+                pass
 
 
 if __name__ == "__main__":
