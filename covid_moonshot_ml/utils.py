@@ -264,27 +264,6 @@ def train(
 
         with torch.no_grad():
             tmp_loss = []
-            for (_, compound_id), pose in ds_test:
-                for k, v in pose.items():
-                    try:
-                        pose[k] = v.to(device)
-                    except AttributeError:
-                        pass
-                pred = model_call(model, pose)
-                for k, v in pose.items():
-                    try:
-                        pose[k] = v.to("cpu")
-                    except AttributeError:
-                        pass
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[target_dict[compound_id]]], device=device
-                ).float()
-                loss = loss_fn(pred, target)
-                tmp_loss.append(loss.item())
-            test_loss.append(np.asarray(tmp_loss))
-
-            tmp_loss = []
             for (_, compound_id), pose in ds_val:
                 for k, v in pose.items():
                     try:
@@ -304,6 +283,27 @@ def train(
                 loss = loss_fn(pred, target)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
+
+            tmp_loss = []
+            for (_, compound_id), pose in ds_test:
+                for k, v in pose.items():
+                    try:
+                        pose[k] = v.to(device)
+                    except AttributeError:
+                        pass
+                pred = model_call(model, pose)
+                for k, v in pose.items():
+                    try:
+                        pose[k] = v.to("cpu")
+                    except AttributeError:
+                        pass
+                # convert to float to match other types
+                target = torch.tensor(
+                    [[target_dict[compound_id]]], device=device
+                ).float()
+                loss = loss_fn(pred, target)
+                tmp_loss.append(loss.item())
+            test_loss.append(np.asarray(tmp_loss))
 
         if save_file is None:
             continue
