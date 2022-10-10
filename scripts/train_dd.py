@@ -102,7 +102,12 @@ def load_affinities(fn, achiral=True):
 
 
 def build_model_e3nn(
-    n_atom_types, num_neighbors, num_nodes, node_attr=False, dg=False
+    n_atom_types,
+    num_neighbors,
+    num_nodes,
+    node_attr=False,
+    dg=False,
+    neighbor_dist=5.0,
 ):
     """
     Build appropriate e3nn model.
@@ -122,6 +127,8 @@ def build_model_e3nn(
         Whether the inputs will include node attributes (ligand labels)
     dg : bool, default=False
         Whether to use E3NNBind model (True) or regular e3nn network (False)
+    neighbor_dist : float, default=5.0
+        Distance cutoff for nodes to be considered neighbors
 
     Returns
     -------
@@ -147,7 +154,7 @@ def build_model_e3nn(
         "irreps_node_attr": "1x0e" if node_attr else None,
         "irreps_edge_attr": o3.Irreps.spherical_harmonics(3),
         "layers": 3,
-        "max_radius": 3.5,
+        "max_radius": neighbor_dist,
         "number_of_basis": 10,
         "radial_layers": 1,
         "radial_neurons": 128,
@@ -163,7 +170,9 @@ def build_model_e3nn(
     return model
 
 
-def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
+def build_model_schnet(
+    qm9=None, dg=False, qm9_target=10, remove_atomref=False, neighbor_dist=5.0
+):
     """
     Build appropriate SchNet model.
 
@@ -178,6 +187,8 @@ def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
     remove_atomref : bool, default=False
         Whether to remove the reference atom propoerties learned from the QM9
         dataset
+    neighbor_dist : float, default=5.0
+        Distance cutoff for nodes to be considered neighbors
 
     Returns
     -------
@@ -229,8 +240,8 @@ def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
             model = SchNet(*model_params)
         model.load_state_dict(wts)
 
-    ## Set interatomic cutoff to 3.5A (default of 10) to make the graph smaller
-    model.cutoff = 3.5
+    ## Set interatomic cutoff (default of 10) to make the graph smaller
+    model.cutoff = neighbor_dist
 
     return model
 
@@ -281,6 +292,12 @@ def get_args():
         "-rm_atomref",
         action="store_true",
         help="Remove atomref embedding in QM9 pretrained SchNet.",
+    )
+    parser.add_argument(
+        "-n_dist",
+        type=float,
+        default=5.0,
+        help="Cutoff distance for node neighbors.",
     )
 
     ## Training arguments
@@ -356,14 +373,18 @@ def init(args, rank=False):
 
         ## Load or calculate model parameters
         if args.model_params is None:
-            model_params = calc_e3nn_model_info(ds_train, 3.5)
+            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
         elif os.path.isfile(args.model_params):
             model_params = pkl.load(open(args.model_params, "rb"))
         else:
-            model_params = calc_e3nn_model_info(ds_train, 3.5)
+            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
             pkl.dump(model_params, open(args.model_params, "wb"))
         model = build_model_e3nn(
-            100, *model_params[1:], node_attr=args.lig, dg=args.dg
+            100,
+            *model_params[1:],
+            node_attr=args.lig,
+            dg=args.dg,
+            neighbor_dist=args.n_dist,
         )
         model_call = lambda model, d: model(d)
 
@@ -377,7 +398,11 @@ def init(args, rank=False):
             print(k, v.shape, flush=True)
     elif args.model == "schnet":
         model = build_model_schnet(
-            args.qm9, args.dg, args.qm9_target, args.rm_atomref
+            args.qm9,
+            args.dg,
+            args.qm9_target,
+            args.rm_atomref,
+            neighbor_dist=args.n_dist,
         )
         if args.dg:
             model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
