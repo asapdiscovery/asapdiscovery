@@ -429,18 +429,21 @@ def main():
                 open(f"{args.model_o}/train_err.pkl", "rb")
             ).tolist()
         else:
+            print("Couldn't find train loss file.", flush=True)
             train_loss = []
         if os.path.isfile(f"{args.model_o}/val_err.pkl"):
             val_loss = pkl.load(
                 open(f"{args.model_o}/val_err.pkl", "rb")
             ).tolist()
         else:
+            print("Couldn't find val loss file.", flush=True)
             val_loss = []
         if os.path.isfile(f"{args.model_o}/test_err.pkl"):
             test_loss = pkl.load(
                 open(f"{args.model_o}/test_err.pkl", "rb")
             ).tolist()
         else:
+            print("Couldn't find test loss file.", flush=True)
             test_loss = []
 
         ## Need to add 1 to start_epoch bc the found idx is the last epoch
