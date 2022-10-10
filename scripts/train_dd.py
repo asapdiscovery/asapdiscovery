@@ -90,7 +90,9 @@ def load_affinities(fn, achiral=True):
     exp_compounds = ExperimentalCompoundDataUpdate(
         **json.load(open(fn, "r"))
     ).compounds
-    exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
+    exp_compounds = [
+        c for c in exp_compounds if ((not achiral) or (c.achiral and achiral))
+    ]
 
     affinity_dict = {
         c.compound_id: c.experimental_data["pIC50"]
