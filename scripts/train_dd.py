@@ -432,30 +432,30 @@ def main():
             ).tolist()
         else:
             print("Couldn't find train loss file.", flush=True)
-            train_loss = []
+            train_loss = None
         if os.path.isfile(f"{args.model_o}/val_err.pkl"):
             val_loss = pkl.load(
                 open(f"{args.model_o}/val_err.pkl", "rb")
             ).tolist()
         else:
             print("Couldn't find val loss file.", flush=True)
-            val_loss = []
+            val_loss = None
         if os.path.isfile(f"{args.model_o}/test_err.pkl"):
             test_loss = pkl.load(
                 open(f"{args.model_o}/test_err.pkl", "rb")
             ).tolist()
         else:
             print("Couldn't find test loss file.", flush=True)
-            test_loss = []
+            test_loss = None
 
         ## Need to add 1 to start_epoch bc the found idx is the last epoch
         ##  successfully trained, not the one we want to start at
         start_epoch += 1
     else:
         start_epoch = 0
-        train_loss = []
-        val_loss = []
-        test_loss = []
+        train_loss = None
+        val_loss = None
+        test_loss = None
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(

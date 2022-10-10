@@ -162,9 +162,9 @@ def train(
     save_file=None,
     lr=1e-4,
     start_epoch=0,
-    train_loss=[],
-    val_loss=[],
-    test_loss=[],
+    train_loss=None,
+    val_loss=None,
+    test_loss=None,
 ):
     """
     Train a model.
@@ -221,10 +221,15 @@ def train(
         Loss for each structure in `ds_test` from each epoch of training, with
         shape (`n_epochs`, `len(ds_test)`)
     """
-    # TODO: Arguments `train_loss`, `val_loss` and `test_loss` are mutable and empty by default.
-    #  Do we mean to initialize them as `None`?
     import pickle as pkl
     import torch
+
+    if train_loss is None:
+        train_loss = []
+    if val_loss is None:
+        val_loss = []
+    if test_loss is None:
+        test_loss = []
 
     ## Send model to desired device if it's not there already
     model.to(device)
