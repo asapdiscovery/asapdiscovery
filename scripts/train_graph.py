@@ -3,7 +3,7 @@ Attempt to train a ligand-only graph network using the same functions as the
 structure-based models. Use a bunch of stuff from dgl-lifesci.
 """
 import argparse
-import dgl
+import dgllife
 import sys
 
 ## Import dgl-lifesci
@@ -149,7 +149,34 @@ def main():
     os.makedirs(cache_dir, exist_ok=True)
 
     ## Build dataset
-    smiles_to_g = dgl.utils.SMILESToBigraph(add_self_loop=True,
+    smiles_to_g = dgllife.utils.SMILESToBigraph(
+        add_self_loop=True,
         node_featurizer=dgl_args["node_featurizer"],
-        edge_featurizer=dgl_args["edge_featurizer"])
-    dataset =
+        edge_featurizer=dgl_args["edge_featurizer"],
+    )
+    dataset = dgllife.data.MoleculeCSVDataset(
+        df=df,
+        smiles_to_graph=smiles_to_g,
+        smiles_column="smiles",
+        cache_file_path=f"{cache_dir}/graph.bin",
+        task_names=["pic50"],
+    )
+
+    ## Split dataset
+    train_ratio = 0.8
+    val_ratio = 0.1
+    test_ratio = 0.1
+    train_set, val_set, test_set = dgllife.utils.RandomSplitter.train_val_split(
+        dataset=dataset,
+        frac_train=train_ratio,
+        frac_val=val_ratio,
+        frac_test=test_ratio,
+        random_state=42,
+    )
+
+    print(len(train_set), len(val_set), len(test_set), flush=True)
+    print(next(iter(train_set)), flush=True)
+
+
+if __name__ == "__main__":
+    main()
