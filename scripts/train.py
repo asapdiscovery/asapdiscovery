@@ -110,6 +110,7 @@ def build_model_e3nn(
     node_attr=False,
     dg=False,
     neighbor_dist=5.0,
+    irreps_hidden=None,
 ):
     """
     Build appropriate e3nn model.
@@ -138,6 +139,14 @@ def build_model_e3nn(
         e3nn/E3NNBind model created from input parameters
     """
 
+    ## Set up default hidden irreps if none specified
+    if irreps_hidden is None:
+        irreps_hidden = [
+            (mul, (l, p))
+            for l, mul in enumerate([10, 3, 2, 1])
+            for p in [-1, 1]
+        ]
+
     # input is one-hot encoding of atom type => n_atom_types scalars
     # output is scalar valued binding energy/pIC50 value
     # hidden layers taken from e3nn tutorial (should be tuned eventually)
@@ -147,11 +156,7 @@ def build_model_e3nn(
     #  across the whole graph
     model_kwargs = {
         "irreps_in": f"{n_atom_types}x0e",
-        "irreps_hidden": [
-            (mul, (l, p))
-            for l, mul in enumerate([10, 3, 2, 1])
-            for p in [-1, 1]
-        ],
+        "irreps_hidden": irreps_hidden,
         "irreps_out": "1x0e",
         "irreps_node_attr": "1x0e" if node_attr else None,
         "irreps_edge_attr": o3.Irreps.spherical_harmonics(3),
@@ -301,6 +306,7 @@ def get_args():
         default=5.0,
         help="Cutoff distance for node neighbors.",
     )
+    parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
 
     ## Training arguments
     parser.add_argument(
@@ -332,8 +338,14 @@ def init(args, rank=False):
     ## Get all docked structures
     all_fns = glob(f"{args.i}/*complex.pdb")
     ## Extract crystal structure and compound id from file name
-    re_pat = r"(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex.pdb"
-    compounds = [re.search(re_pat, fn).groups() for fn in all_fns]
+    # re_pat = r"(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex\.pdb"
+    re_pat = (
+        r"(Mpro-.*?_[0-9][A-Z]).*?([A-Z]{3}-[A-Z]{3}-[0-9a-z]{8}-[0-9]+)"
+        "_complex.pdb"
+    )
+    matches = [re.search(re_pat, fn) for fn in all_fns]
+    compounds = [m.groups() for m in matches if m]
+    num_found = len(compounds)
 
     if rank:
         exp_affinities = None
@@ -346,6 +358,8 @@ def init(args, rank=False):
         all_fns, compounds = zip(
             *[o for o in zip(all_fns, compounds) if o[1][1] in exp_affinities]
         )
+    num_kept = len(compounds)
+    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
     ## Load the dataset
     ds = DockedDataset(all_fns, compounds)
@@ -387,6 +401,7 @@ def init(args, rank=False):
             node_attr=args.lig,
             dg=args.dg,
             neighbor_dist=args.n_dist,
+            irreps_hidden=args.irr,
         )
         model_call = lambda model, d: model(d)
 
@@ -397,7 +412,10 @@ def init(args, rank=False):
             ds_test = add_lig_labels(ds_test)
 
         for k, v in ds_train[0][1].items():
-            print(k, v.shape, flush=True)
+            try:
+                print(k, v.shape, flush=True)
+            except AttributeError as e:
+                print(k, v, flush=True)
     elif args.model == "schnet":
         model = build_model_schnet(
             args.qm9,
@@ -418,6 +436,7 @@ def init(args, rank=False):
 
 def main():
     args = get_args()
+    print("hidden irreps:", args.irr, flush=True)
     exp_affinities, ds_train, ds_val, ds_test, model, model_call = init(args)
 
     ## Load model weights as necessary
