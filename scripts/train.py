@@ -338,7 +338,6 @@ def init(args, rank=False):
     ## Get all docked structures
     all_fns = glob(f"{args.i}/*complex.pdb")
     ## Extract crystal structure and compound id from file name
-    # re_pat = r"(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex\.pdb"
     re_pat = (
         r"(Mpro-.*?_[0-9][A-Z]).*?([A-Z]{3}-[A-Z]{3}-[0-9a-z]{8}-[0-9]+)"
         "_complex.pdb"
