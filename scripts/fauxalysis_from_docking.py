@@ -59,6 +59,12 @@ def get_args():
         required=True,
         help="Path to newly created fauxalysis directory",
     )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        default=False,
+        help="Flag to enable overwriting output data, otherwise it will skip directories that exists already.",
+    )
 
     return parser.parse_args()
 
@@ -125,9 +131,6 @@ def write_fragalysis_output(
                 flush=True,
             )
             continue
-        # elif os.path.exists(compound_out_dir):
-        #     print(f"Fauxalysis directory exists at: " f"\t{compound_out_dir}")
-        #     continue
         else:
             print(
                 (
@@ -236,16 +239,19 @@ def main():
         for values in docking_results.df.to_dict(orient="index").values()
     }
 
-    ## Filter if directory already exists:
-    # best_structure_dict = {}
-    # for (cmpd, dimer), values in best_structure_dict_all.items():
-    #     if not os.path.exists(f"{args.output_dir}/{cmpd}"):
-    #         best_structure_dict[(cmpd, dimer)] = values
-    #     else:
-    #         print(
-    #             f"Skipping {cmpd} since output already exists at:\n"
-    #             f"\t{args.output_dir}/{cmpd}"
-    #         )
+    if args.overwrite:
+        best_structure_dict = best_structure_dict_all
+    else:
+        # Filter if directory already exists:
+        best_structure_dict = {}
+        for (cmpd, dimer), values in best_structure_dict_all.items():
+            if not os.path.exists(f"{args.output_dir}/{cmpd}"):
+                best_structure_dict[(cmpd, dimer)] = values
+            else:
+                print(
+                    f"Skipping {cmpd} since output already exists at:\n"
+                    f"\t{args.output_dir}/{cmpd}"
+                )
 
     ## Get cmpd_to_fragalysis source dict if required
     if args.fragalysis_dir:
@@ -256,7 +262,7 @@ def main():
     write_fragalysis_output(
         args.input_dir,
         args.output_dir,
-        best_structure_dict_all,
+        best_structure_dict,
         args.fragalysis_dir,
         cmpd_to_frag_dict,
     )
