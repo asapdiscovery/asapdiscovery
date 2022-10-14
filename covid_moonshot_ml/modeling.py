@@ -126,10 +126,13 @@ def make_du_from_new_lig(
         initial_prot_temp = split_openeye_mol(initial_complex)["pro"]
     else:
         initial_prot_temp = initial_complex
+
     ## Extract if not dimer
     if dimer:
         initial_prot = initial_prot_temp
     else:
+        ### TODO: Have to figure out how to handle water here if it's in a
+        ###  different chain from the protein
         initial_prot = oechem.OEGraphMol()
         chain_pred = oechem.OEHasChainID(mobile_chain)
         oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
