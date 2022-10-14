@@ -4,8 +4,6 @@ sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
 )
 
-from kinoml.databases.pdb import download_pdb_structure
-
 
 def get_args():
     parser = argparse.ArgumentParser(description="")
@@ -33,25 +31,31 @@ def main():
     with open(args.yaml_file, "r") as f:
         pdb_dict = yaml.safe_load(f)
 
-    complex_list = [
-        directory
-        for directory in os.listdir(args.fauxalysis_dir)
-        if not ".csv" in directory
-    ]
-
-    for file_name in os.listdir(args.fauxalysis_dir):
-        if "csv" in file_name or "sdf" in file_name:
-            in_file = os.path.join(args.fauxalysis_dir, file_name)
+    ## Get a list of directories and copy over all non-directory files
+    complex_dir_list = []
+    for item in os.listdir(args.fauxalysis_dir):
+        full_path = os.path.join(args.fauxalysis_dir, item)
+        if os.path.isdir(full_path):
+            complex_dir_list.append(item)
+        else:
+            in_file = os.path.join(args.fauxalysis_dir, full_path)
+            print(f"Copying {in_file}")
             shutil.copy2(in_file, args.output_dir)
 
-    for pdb in pdb_dict.keys():
+    sdf_list = []
+    for flag in pdb_dict.keys():
+
+        ## if our flag of interest is in any complex, include it!
         complexes = [
             complex_id
-            for complex_id in complex_list
-            if pdb.lower() in complex_id
+            for complex_id in complex_dir_list
+            if flag.lower() in complex_id
         ]
+
+        ## Copy files over using shutil
         for complex in complexes:
             in_path = os.path.join(args.fauxalysis_dir, complex)
+            sdf_list.append(os.path.join(in_path, f"{complex}.sdf"))
             out_path = os.path.join(args.output_dir, complex)
             try:
                 shutil.copytree(in_path, out_path)
@@ -65,6 +69,15 @@ def main():
                     f"\t  to: {out_path}"
                 )
                 pass
+
+    ## Use shutil again to concatenate all the sdf files into one combined file!
+    combined_sdf = f"{args.output_dir}/combined.sdf"
+    print(sdf_list)
+
+    with open(combined_sdf, "wb") as wfd:
+        for f in sdf_list:
+            with open(f, "rb") as fd:
+                shutil.copyfileobj(fd, wfd)
 
 
 if __name__ == "__main__":
