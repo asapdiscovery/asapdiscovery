@@ -104,20 +104,15 @@ def write_fragalysis_output(
         Of the form {('Compound_ID', dimer): 'Structure_Source'} where "dimer" is a boolean.
     """
     ## Set up SDF file that will hold all ligands
-    all_ligs_monomer_ofs = oechem.oemolostream()
-    all_ligs_monomer_ofs.SetFlavor(
-        oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default
-    )
-    all_ligs_dimer_ofs = oechem.oemolostream()
-    all_ligs_dimer_ofs.SetFlavor(
-        oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default
-    )
-    # arranged this way so dimer=True => "dimer"
+    all_ligs_ofs = oechem.oemolostream()
+    all_ligs_ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
+
+    ## arranged this way so dimer=True => "dimer"
     dimers_strings = ["monomer", "dimer"]
-    all_ofs = [all_ligs_monomer_ofs, all_ligs_dimer_ofs]
-    for d, ofs in zip(dimers_strings, all_ofs):
-        os.makedirs(f"{out_dir}", exist_ok=True)
-        ofs.open(f"{out_dir}/combined.sdf")
+    os.makedirs(f"{out_dir}", exist_ok=True)
+    all_ligs_ofs.open(f"{out_dir}/combined.sdf")
+
+    cmpd_sdf_list = []
 
     ## Loop through dict and parse input files into output files
     for (compound_id, dimer), best_str in best_structure_dict.items():
@@ -182,11 +177,12 @@ def write_fragalysis_output(
             if a.GetAtomicNum() == 1:
                 lig.DeleteAtom(a)
         ## Save first to its own sdf file
-        save_openeye_sdf(lig, f"{compound_out_dir}/{compound_id}.sdf")
+        cmpd_sdf = f"{compound_out_dir}/{compound_id}.sdf"
+        cmpd_sdf_list.append(cmpd_sdf)
+        save_openeye_sdf(lig, cmpd_sdf)
 
         ## Save to
-        ofs = all_ofs[int(dimer)]
-        oechem.OEWriteMolecule(ofs, lig)
+        oechem.OEWriteMolecule(all_ligs_ofs, lig)
 
         if frag_dir:
             compound_id_list = compound_id.split("_")
@@ -220,8 +216,14 @@ def write_fragalysis_output(
             else:
                 print(f"Fragalysis source not found:\n" f"\t{bound_pdb_path}")
 
-    for ofs in all_ofs:
-        ofs.close()
+    all_ligs_ofs.close()
+
+    test_combined = f"{out_dir}/combined_cat_test.sdf"
+
+    with open(test_combined, "wb") as wfd:
+        for f in cmpd_sdf_list:
+            with open(f, "rb") as fd:
+                shutil.copyfileobj(fd, wfd)
 
 
 def main():
