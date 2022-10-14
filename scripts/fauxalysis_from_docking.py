@@ -1,4 +1,8 @@
 """
+After having generated some docking results, this script takes a CSV file containing the best structures for each
+Compound_ID and generates a fragalysis-like "fauxalysis" dataset. This includes copying over the original structure
+of the compound bound to SARS-2 Mpro from Fragalysis.
+
 Example usage:
     python fauxalysis_from_docking.py
         -c /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag/mers_fauxalysis.csv
@@ -80,6 +84,7 @@ def check_output(d):
     return True
 
 
+# ToDo: Move this as well as other scripts to a more logical api
 def write_fragalysis_output(
     in_dir, out_dir, best_structure_dict, frag_dir=None, cmpd_to_frag_dict=None
 ):
@@ -120,6 +125,8 @@ def write_fragalysis_output(
         dimer_s = "dimer" if dimer else "monomer"
         compound_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
         compound_out_dir = f"{out_dir}/{compound_id}"
+
+        ## If inputs don't exist, else if the output directory already exists, don't waste time
         if not check_output(compound_in_dir):
             print(
                 (
@@ -129,9 +136,9 @@ def write_fragalysis_output(
                 flush=True,
             )
             continue
-        elif os.path.exists(compound_out_dir):
-            print(f"Fauxalysis directory exists at: " f"\t{compound_out_dir}")
-            continue
+        # elif os.path.exists(compound_out_dir):
+        #     print(f"Fauxalysis directory exists at: " f"\t{compound_out_dir}")
+        #     continue
         else:
             print(
                 (
@@ -217,19 +224,21 @@ def main():
 
     docking_results = DockingResults(args.input_csv)
 
-    best_structure_dict = {
+    best_structure_dict_all = {
         (values["Compound_ID"], values["Dimer"]): values["Structure_Source"]
         for values in docking_results.df.to_dict(orient="index").values()
     }
 
     ## Filter if directory already exists:
-    best_structure_dict = {
-        (cmpd, dimer): values
-        for (cmpd, dimer), values in best_structure_dict.items()
-        if not os.path.exists(f"{args.output_dir}/{cmpd}")
-    }
-
-    print(best_structure_dict)
+    # best_structure_dict = {}
+    # for (cmpd, dimer), values in best_structure_dict_all.items():
+    #     if not os.path.exists(f"{args.output_dir}/{cmpd}"):
+    #         best_structure_dict[(cmpd, dimer)] = values
+    #     else:
+    #         print(
+    #             f"Skipping {cmpd} since output already exists at:\n"
+    #             f"\t{args.output_dir}/{cmpd}"
+    #         )
 
     ## Get cmpd_to_fragalysis source dict if required
     if args.fragalysis_dir:
@@ -240,7 +249,7 @@ def main():
     write_fragalysis_output(
         args.input_dir,
         args.output_dir,
-        best_structure_dict,
+        best_structure_dict_all,
         args.fragalysis_dir,
         cmpd_to_frag_dict,
     )
