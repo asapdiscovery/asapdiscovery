@@ -103,15 +103,9 @@ def write_fragalysis_output(
     best_structure_dict : dict
         Of the form {('Compound_ID', dimer): 'Structure_Source'} where "dimer" is a boolean.
     """
-    ## Set up SDF file that will hold all ligands
-    all_ligs_ofs = oechem.oemolostream()
-    all_ligs_ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
-
-    ## arranged this way so dimer=True => "dimer"
-    dimers_strings = ["monomer", "dimer"]
     os.makedirs(f"{out_dir}", exist_ok=True)
-    all_ligs_ofs.open(f"{out_dir}/combined.sdf")
 
+    ## Create list of sdf files we will make so that we can concatenate them at the end
     cmpd_sdf_list = []
 
     ## Loop through dict and parse input files into output files
@@ -154,10 +148,10 @@ def write_fragalysis_output(
         du.GetProtein(prot)
         lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
-        ## Set ligand title
+        ## Set ligand title, useful for the combined sdf file
         lig.SetTitle(f"{compound_id}_{best_str}")
-        print(type(lig))
-        res_list = []
+
+        ## Give ligand atoms their own chain "L" and set the resname to "LIG"
         for atom in lig.GetAtoms():
             residue = oechem.OEAtomGetResidue(atom)
             residue.SetChainID("L")
@@ -167,29 +161,30 @@ def write_fragalysis_output(
         ## First save apo
         save_openeye_pdb(prot, f"{compound_out_dir}/{best_str}_apo.pdb")
 
-        ## Combine protein and ligand
+        ## Combine protein and ligand and save
         oechem.OEAddMols(prot, lig)
-
         save_openeye_pdb(prot, f"{compound_out_dir}/{compound_id}_bound.pdb")
 
         ## Remove Hs from lig and save SDF file
         for a in lig.GetAtoms():
             if a.GetAtomicNum() == 1:
                 lig.DeleteAtom(a)
+
         ## Save first to its own sdf file
         cmpd_sdf = f"{compound_out_dir}/{compound_id}.sdf"
         cmpd_sdf_list.append(cmpd_sdf)
         save_openeye_sdf(lig, cmpd_sdf)
 
-        ## Save to
-        oechem.OEWriteMolecule(all_ligs_ofs, lig)
-
+        ## Copy over file from original fragalysis directory
         if frag_dir:
             compound_id_list = compound_id.split("_")
             compound_id_without_chain = compound_id_list[0]
             chain = compound_id_list[1]
 
+            ## If the compound_id has "_bound" in it, it was constructed directly from the fragalysis dataset name
+            ## If not, then we have to get the fragalysis dataset name from the cmpd_to_frag_dict
             if "_bound" in compound_id:
+                ## The way this code works, basically it drops the "_bound" suffix from the original compound name
                 frag_structure = f"{compound_id_without_chain}_{chain}"
             else:
                 frag_structure = (
@@ -216,11 +211,11 @@ def write_fragalysis_output(
             else:
                 print(f"Fragalysis source not found:\n" f"\t{bound_pdb_path}")
 
-    all_ligs_ofs.close()
+    ## Use shutil again to concatenate all the sdf files into one combined file!
+    ## I did this because I was seeing errors in the combined.sdf when created using OpenEye
+    combined_sdf = f"{out_dir}/combined.sdf"
 
-    test_combined = f"{out_dir}/combined_cat_test.sdf"
-
-    with open(test_combined, "wb") as wfd:
+    with open(combined_sdf, "wb") as wfd:
         for f in cmpd_sdf_list:
             with open(f, "rb") as fd:
                 shutil.copyfileobj(fd, wfd)
