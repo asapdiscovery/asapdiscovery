@@ -465,7 +465,6 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
         cmpd_id = data["Compound ID"]
         dataset = data["Dataset"]
         if len(dataset) > 0:
-            ## TODO: is this the behaviour we want? this will build an empty object if there isn't a dataset
             if not sars_xtals.get(cmpd_id) or "-P" in dataset:
                 sars_xtals[cmpd_id] = CrystalCompoundData(
                     smiles=data["SMILES"],
@@ -682,8 +681,8 @@ def filter_docking_inputs(
     ----------
     smarts_queries : str
         Path to file containing SMARTS entries to filter by (comma-separated).
-    docking_inputs : dict(Compound_ID: smiles)
-        Dict containing SMILES entries and ligand names to filter using smarts_queries.
+    docking_inputs : list
+        List containing SMILES entries and ligand names to filter using smarts_queries.
     drop_commented_smarts_strings : bool
         How to handle first-character hashtags ('commented') on SMARTS entries. False
         ignores hashtags so all SMARTS filters are always applied; if True (default), the code ignores
@@ -698,6 +697,136 @@ def filter_docking_inputs(
         to docking_inputs.
 
     """
+    # PLACEHOLDER FOR SMILES INPUT:
+    docking_inputs = [
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN(C)C)c6cc(ccc6C2=O)Cl LUO-POS-e1dab717-8"
+        ],
+        [
+            "CNCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-4138fde9-1"
+        ],
+        [
+            "COCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-2"
+        ],
+        [
+            "CS(=O)(=O)Nc1ccc2c(c1)cncc2N3CCC4(C3=O)CN(C(=O)c5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-9f4ac58c-3"
+        ],
+        [
+            "COC1(CC1)CS(=O)(=O)N2CC3(CCN(C3=O)c4cncc5c4ccc(c5)NS(=O)(=O)C)c6cc(ccc6C2=O)Cl EDJ-MED-9f4ac58c-7"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-853c0ffa-9"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)OC MAT-POS-853c0ffa-10"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-38eb6498-1"
+        ],
+        [
+            "CN1CC(C1)Oc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-ee81482e-2"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N LUO-POS-8484f2d3-1"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N LUO-POS-8484f2d3-2"
+        ],
+        [
+            "CS(=O)(=O)Nc1cc2cncc(c2cc1F)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N PET-UNK-c6bcc80b-4"
+        ],
+        [
+            "CS(=O)(=O)Nc1cc2cncc(c2cc1F)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N PET-UNK-c6bcc80b-11"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MIK-ENA-7066949b-1"
+        ],
+        [
+            "CN(C)CCOc1ccc2cncc(c2c1)N3CC[C@]4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MIK-ENA-8063e9dc-1"
+        ],
+        [
+            "c1cc2cncc(c2cc1OC3CCNCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-ee81482e-4"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCCC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-1"
+        ],
+        [
+            "CCN(C)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-2"
+        ],
+        [
+            "CN(C)CCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-4"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2Cc3ccc(cc3C4(C2)CCN(C4=O)c5cncc6c5cc(cc6)OCCNCC(F)(F)F)Cl EDJ-MED-4138fde9-4"
+        ],
+        [
+            "CC(C)NCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-3"
+        ],
+        [
+            "c1ccc2c(c1)cncc2N3CC(C4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N)CC7CCCCC7 MIC-UNK-c85ea37c-1"
+        ],
+        [
+            "CN(C)CC(COc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N)O EDJ-MED-ee81482e-3"
+        ],
+        [
+            "c1cc2cncc(c2cc1CN3CC4(C3)COC4)N5CCC6(C5=O)CN(Cc7c6cc(cc7)Cl)S(=O)(=O)CC8(CC8)C#N EDJ-MED-ee81482e-5"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCOCC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-2"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CC(C6)(F)F)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-5"
+        ],
+        [
+            "CN1CCCC1COc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N MAT-POS-40ad851a-1"
+        ],
+        [
+            "CCN(CC)CCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-40ad851a-3"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CCCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-1"
+        ],
+        [
+            "CN1CCC(CC1)Oc2ccc3cncc(c3c2)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N LUO-POS-d1147590-1"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCNCC(F)(F)F)c6cc(ccc6C2=O)Cl EDJ-MED-4138fde9-6"
+        ],
+        [
+            "CC(C)(C)NCCOc1ccc2cncc(c2c1)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N MAT-POS-1a788f51-4"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCCN3CCCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N MAT-POS-40ad851a-5"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CCOCC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-2"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CC(C3)(F)F)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-5"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCNCC(F)(F)F)N3CCC4(C3=O)CN(Cc5c4cc(cc5)Cl)S(=O)(=O)CC6(CC6)C#N EDJ-MED-4138fde9-2"
+        ],
+        [
+            "CN(C)c1ccc(cc1)C2CN(C(=O)C23CN(Cc4c3cc(cc4)Cl)S(=O)(=O)CC5(CC5)C#N)c6cncc7c6cccc7 MIC-UNK-c85ea37c-3"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCS(=O)(=O)CC6)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-3"
+        ],
+        [
+            "CNC(=O)C1(CC1)N2CC3(CCN(C3=O)c4cncc5c4cc(cc5)OCCN6CCC(CC6)(F)F)c7cc(ccc7C2=O)Cl EDJ-MED-dfa1d800-4"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CCS(=O)(=O)CC3)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-3"
+        ],
+        [
+            "c1cc2cncc(c2cc1OCCN3CCC(CC3)(F)F)N4CCC5(C4=O)CN(Cc6c5cc(cc6)Cl)S(=O)(=O)CC7(CC7)C#N EDJ-MED-468565e0-4"
+        ],
+        [
+            "CCC(=O)Nc1ccc(cc1)C2CN(C(=O)C23CN(Cc4c3cc(cc4)Cl)S(=O)(=O)CC5(CC5)C#N)c6cncc7c6cccc7 MIC-UNK-c85ea37c-2"
+        ],
+    ]
+    #### ^^ REPLACE WITH ExperimentalCompoundData PARSE INTO LIST OF SMILES^^
     query_smarts = pandas.read_csv(smarts_queries, names=["smarts", "id"])[
         "smarts"
     ].values
@@ -709,13 +838,14 @@ def filter_docking_inputs(
         # some of the SMARTS queries are commented - use these anyway.
         query_smarts = [q if not q[0] == "#" else q[1:] for q in query_smarts]
 
+    input_cpds = []
     num_input_cpds = 0  # initiate counter for verbose setting.
     filtered_docking_inputs = []
-    for cpd, smiles in docking_inputs.items():
+    for cpd in docking_inputs:
         num_input_cpds += 1
         # read input cpd into OE.
         mol = oechem.OEGraphMol()
-        oechem.OESmilesToMol(mol, smiles)
+        oechem.OESmilesToMol(mol, cpd[0].split()[0])
 
         # now loop over queried SMARTS patterns, flag input compound if hit.
         for query in query_smarts:
