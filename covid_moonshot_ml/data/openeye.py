@@ -29,6 +29,34 @@ def load_openeye_sdf(sdf_fn):
     return coords_mol
 
 
+def load_openeye_sdfs(sdf_fn):
+    """
+
+    Parameters
+    ----------
+    sdf_fn: str
+        SDF file path
+
+    Returns
+    -------
+    list of OEGraphMol objects
+
+    """
+    ifs = oechem.oemolistream()
+    ifs.SetFlavor(
+        oechem.OEFormat_SDF,
+        oechem.OEIFlavor_SDF_Default,
+    )
+    cmpd_list = []
+    if ifs.open(sdf_fn):
+        for mol in ifs.GetOEGraphMols():
+            cmpd_list.append(mol.CreateCopy())
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
+
+    return cmpd_list
+
+
 def split_openeye_mol(complex_mol: oechem.OEMolBase):
     ## Test splitting
     lig_mol = oechem.OEGraphMol()
