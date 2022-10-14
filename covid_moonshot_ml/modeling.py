@@ -262,3 +262,199 @@ def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
     aln_res.Transform(mobile_mol_aligned)
 
     return mobile_mol_aligned, aln_res.GetRMSD()
+
+
+def align_receptor(
+    input_prot,
+    dimer=True,
+    ref_prot=None,
+    split_initial_complex=True,
+    split_ref=True,
+    ref_chain=None,
+    mobile_chain=None,
+):
+    """
+    Function to prepare receptor before building the design unit.
+
+    Returns
+    -------
+
+    """
+    if (not dimer) and (not mobile_chain):
+        raise ValueError(
+            "If dimer is False, a value must be given for mobile_chain."
+        )
+
+    ## Load initial_complex from file if necessary
+    if type(input_prot) is str:
+        initial_complex = load_openeye_pdb(input_prot, alt_loc=True)
+        ## If alt locations are present in PDB file, set positions to highest
+        ##  occupancy ALT
+        alf = oechem.OEAltLocationFactory(initial_complex)
+        if alf.GetGroupCount() != 0:
+            alf.MakePrimaryAltMol(initial_complex)
+
+    ## Load reference protein from file if necessary
+    if type(ref_prot) is str:
+        ref_prot = load_openeye_pdb(ref_prot, alt_loc=True)
+        ## If alt locations are present in PDB file, set positions to highest
+        ##  occupancy ALT
+        alf = oechem.OEAltLocationFactory(ref_prot)
+        if alf.GetGroupCount() != 0:
+            alf.MakePrimaryAltMol(ref_prot)
+
+        ## Split out protein components and align if requested
+        if split_initial_complex:
+            initial_prot_temp = split_openeye_mol(input_prot)["pro"]
+        else:
+            initial_prot_temp = input_prot
+
+        ## Extract if not dimer
+        if dimer:
+            initial_prot = initial_prot_temp
+        else:
+            initial_prot = oechem.OEGraphMol()
+            chain_pred = oechem.OEHasChainID(mobile_chain)
+            oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
+        if ref_prot is not None:
+            if split_ref:
+                ref_prot = split_openeye_mol(ref_prot)["pro"]
+
+            ## Set up predicates
+            if ref_chain is not None:
+                not_water = oechem.OENotAtom(oechem.OEIsWater())
+                ref_chain = oechem.OEHasChainID(ref_chain)
+                ref_chain = oechem.OEAndAtom(not_water, ref_chain)
+
+            if mobile_chain is not None:
+                try:
+                    not_water = oechem.OENotAtom(oechem.OEIsWater())
+                    mobile_chain = oechem.OEHasChainID(mobile_chain)
+                    mobile_chain = oechem.OEAndAtom(not_water, mobile_chain)
+                except Exception as e:
+                    print(mobile_chain)
+                    raise e
+            initial_prot = superpose_molecule(
+                ref_prot, initial_prot, ref_chain, mobile_chain
+            )[0]
+
+        return initial_prot
+
+
+def mutate_residues(input_mol, res_list, place_h=True):
+    """
+    Mutate residues in the input molecule using OpenEye.
+    TODO: Make this more robust using some kind of sequence alignment.
+
+    Parameters
+    ----------
+    input_mol : oechem.OEGraphMol
+        Input OpenEye molecule
+    res_list : List[str]
+        List of 3 letter codes for the full sequence of `input_mol`. Must have
+        exactly the same number of residues or this will fail
+    place_h : bool, default=True
+        Whether to place hydrogen atoms
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        Newly mutated molecule
+    """
+    ## Create a copy of the molecule to avoid modifying original molecule
+    mut_prot = input_mol.CreateCopy()
+    ## Get sequence of input protein
+    input_mol_seq = [r.GetName() for r in oechem.OEGetResidues(input_mol)]
+    input_mol_num = [
+        r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)
+    ]
+
+    ## Build mutation map from OEResidue to new res name by indexing from res num
+    mut_map = {}
+    for old_res_name, res_num, r in zip(
+        input_mol_seq, input_mol_num, oechem.OEGetResidues(mut_prot)
+    ):
+        try:
+            new_res = res_list[res_num - 1]
+        except IndexError:
+            ## If the residue number is out of range (because its a water or something weird)
+            ## then we can skip right on by it
+            continue
+        if new_res != old_res_name:
+            print(res_num, old_res_name, new_res)
+            mut_map[r] = new_res
+    print(mut_map)
+
+    ## Mutate and build sidechains
+    oespruce.OEMutateResidues(mut_prot, mut_map)
+
+    ## Place hydrogens
+    if place_h:
+        oechem.OEPlaceHydrogens(mut_prot)
+
+    return mut_prot
+
+
+def prep_receptor(
+    initial_prot,
+    site_residue,
+    sequence=None,
+    loop_db=None,
+):
+    ## Add Hs to prep protein and ligand
+    oechem.OEAddExplicitHydrogens(initial_prot)
+
+    ## Set up DU building options
+    opts = oespruce.OEMakeDesignUnitOptions()
+    opts.SetSuperpose(False)
+    if loop_db is not None:
+        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(
+            loop_db
+        )
+
+    ## Options set from John's function ########################################
+    ## (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
+    opts.GetPrepOptions().SetStrictProtonationMode(True)
+    # set minimal number of ligand atoms to 5, e.g. a 5-membered ring fragment\
+    opts.GetSplitOptions().SetMinLigAtoms(5)
+
+    # also consider alternate locations outside binding pocket, important for later filtering
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
+        False
+    )
+
+    # alignment options, only matches are important
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
+        oechem.OESeqAlignmentMethod_Identity
+    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(
+        -1
+    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(
+        0
+    )
+
+    # Both N- and C-termini should be zwitterionic
+    # Mpro cleaves its own N- and C-termini
+    # See https://www.pnas.org/content/113/46/12997
+    opts.GetPrepOptions().GetBuildOptions().SetCapNTermini(False)
+    opts.GetPrepOptions().GetBuildOptions().SetCapCTermini(False)
+    # Don't allow truncation of termini, since force fields don't have
+    #  parameters for this
+    opts.GetPrepOptions().GetBuildOptions().GetCapBuilderOptions().SetAllowTruncate(
+        False
+    )
+    # Build loops and sidechains
+    opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True)
+    opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True)
+
+    # TODO: Add ability to add SEQRES and mutate protein accordingly
+
+    ## Finally make new DesignUnit
+    ## Using this function instead of OEMakeDesignUnit enables passing the empty 'metadata'
+    ## object which makes it possible to build an empty DU
+    metadata = oespruce.OEStructureMetadata()
+    design_units = oespruce.OEMakeDesignUnits(
+        initial_prot, metadata, opts, site_residue
+    )
+    return design_units
