@@ -200,11 +200,11 @@ def train(
     start_epoch : int, default=0
         Which epoch the training is starting on. This is used when restarting
         training to ensure the appropriate number of epochs is reached
-    train_loss : list[float], default=[]
+    train_loss : list[float], default=None
         List of train losses from previous epochs. Used when restarting training
-    val_loss : list[float], default=[]
+    val_loss : list[float], default=None
         List of val losses from previous epochs. Used when restarting training
-    test_loss : list[float], default=[]
+    test_loss : list[float], default=None
         List of test losses from previous epochs. Used when restarting training
 
     Returns
