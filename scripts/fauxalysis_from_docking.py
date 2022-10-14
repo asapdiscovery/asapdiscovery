@@ -161,6 +161,13 @@ def write_fragalysis_output(
 
         ## Set ligand title
         lig.SetTitle(f"{compound_id}_{best_str}")
+        print(type(lig))
+        res_list = []
+        for atom in lig.GetAtoms():
+            residue = oechem.OEAtomGetResidue(atom)
+            residue.SetChainID("L")
+            residue.SetName("LIG")
+            oechem.OEAtomSetResidue(atom, residue)
 
         ## First save apo
         save_openeye_pdb(prot, f"{compound_out_dir}/{best_str}_apo.pdb")
@@ -174,7 +181,10 @@ def write_fragalysis_output(
         for a in lig.GetAtoms():
             if a.GetAtomicNum() == 1:
                 lig.DeleteAtom(a)
+        ## Save first to its own sdf file
         save_openeye_sdf(lig, f"{compound_out_dir}/{compound_id}.sdf")
+
+        ## Save to
         ofs = all_ofs[int(dimer)]
         oechem.OEWriteMolecule(ofs, lig)
 
