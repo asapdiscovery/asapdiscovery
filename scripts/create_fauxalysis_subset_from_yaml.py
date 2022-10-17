@@ -10,9 +10,8 @@ Example Usage:
 """
 import sys, os, argparse, yaml, shutil
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
+repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(repo_path)
 
 
 def get_args():
@@ -29,7 +28,7 @@ def get_args():
         "-y",
         "--yaml_file",
         default=os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
+            repo_path,
             "data",
             "luttens2022ultralarge.yaml",
         ),

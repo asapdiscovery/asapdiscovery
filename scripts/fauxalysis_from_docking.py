@@ -13,9 +13,9 @@ Example usage:
 import sys, os, argparse, shutil, pickle as pkl, yaml
 from openeye import oechem
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
+repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(repo_path)
+
 from covid_moonshot_ml.docking.analysis import DockingResults
 from covid_moonshot_ml.datasets.utils import (
     load_openeye_pdb,
@@ -45,7 +45,7 @@ def get_args():
         "-y",
         "--fragalysis_yaml",
         default=os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            repo_path,
             "data",
             "cmpd_to_frag.yaml",
         ),

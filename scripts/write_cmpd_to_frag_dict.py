@@ -10,7 +10,9 @@ Example Usage:
 """
 import argparse, os, sys, yaml
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
+repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(repo_path)
+
 from covid_moonshot_ml.datasets.utils import (
     get_compound_id_xtal_dicts,
     parse_fragalysis_data,
@@ -30,7 +32,7 @@ def get_args():
         "-o",
         "--out_yaml",
         default=os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
+            repo_path,
             "data",
             "cmpd_to_frag.yaml",
         ),
