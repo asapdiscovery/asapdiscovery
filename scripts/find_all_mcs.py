@@ -114,8 +114,6 @@ def main():
     xtal_ids = [x.dataset for x in xtal_compounds]
     xtal_smiles = [x.smiles for x in xtal_compounds]
 
-    # TODO: What if we specify something different than "rdkit" or "oe"?
-    #  Might cause problems with undefined `rank_fn` variable
     if args.sys.lower() == "rdkit":
         ## Convert SMILES to RDKit mol objects for MCS
         ## Need to canonicalize SMILES first because RDKit MCS seems to have
@@ -123,6 +121,8 @@ def main():
         rank_fn = rank_structures_rdkit
     elif args.sys.lower() == "oe":
         rank_fn = rank_structures_openeye
+    else:
+        raise ValueError(f"Unknwon option for -sys: {args.sys}.")
 
     print(f"{len(exp_compounds)} experimental compounds")
     print(f"{len(xtal_compounds)} crystal structures")
