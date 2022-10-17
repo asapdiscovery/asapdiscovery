@@ -7,6 +7,7 @@ import pickle as pkl
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
+from covid_moonshot_ml.datasets.utils import load_exp_from_sdf
 from covid_moonshot_ml.docking.docking import parse_xtal
 from covid_moonshot_ml.docking.mcs import (
     rank_structures_openeye,
@@ -23,8 +24,9 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     ## Input arguments
+    parser.add_argument("-exp", help="JSON file giving experimental results.")
     parser.add_argument(
-        "-exp", required=True, help="JSON file giving experimental results."
+        "-sdf", help="SDF file containing compounds to use as queries in MCS."
     )
     parser.add_argument(
         "-x", required=True, help="CSV file with crystal compound information."
@@ -70,27 +72,39 @@ def main():
 
     ## Load all compounds with experimental data and filter to only achiral
     ##  molecules (to start)
-    if args.ep:
-        exp_compounds = [
-            c
-            for ep in EnantiomerPairList(**json.load(open(args.exp, "r"))).pairs
-            for c in (ep.active, ep.inactive)
-        ]
-    else:
-        exp_compounds = [
-            c
-            for c in ExperimentalCompoundDataUpdate(
-                **json.load(open(args.exp, "r"))
-            ).compounds
-            if c.smiles is not None
-        ]
-        exp_compounds = np.asarray(
-            [
+    if args.exp:
+        ## Give a warning if both -exp and -sdf are provided
+        if args.sdf:
+            print(
+                "WARNING: Both -exp and -sdf provided, using -exp.", flush=True
+            )
+        if args.ep:
+            exp_compounds = [
                 c
-                for c in exp_compounds
-                if ((args.achiral and c.achiral) or (not args.achiral))
+                for ep in EnantiomerPairList(
+                    **json.load(open(args.exp, "r"))
+                ).pairs
+                for c in (ep.active, ep.inactive)
             ]
-        )
+        else:
+            exp_compounds = [
+                c
+                for c in ExperimentalCompoundDataUpdate(
+                    **json.load(open(args.exp, "r"))
+                ).compounds
+                if c.smiles is not None
+            ]
+            exp_compounds = np.asarray(
+                [
+                    c
+                    for c in exp_compounds
+                    if ((args.achiral and c.achiral) or (not args.achiral))
+                ]
+            )
+    elif args.sdf:
+        exp_compounds = load_exp_from_sdf(args.sdf)
+    else:
+        raise ValueError("Need to specify exactly one of -exp or -sdf.")
 
     ## Find relevant crystal structures
     xtal_compounds = parse_xtal(args.x, args.x_dir)
