@@ -159,11 +159,11 @@ def write_fragalysis_output(
         lig.SetTitle(f"{compound_id}_{best_str}")
 
         ## Give ligand atoms their own chain "L" and set the resname to "LIG"
-        for atom in lig.GetAtoms():
-            residue = oechem.OEAtomGetResidue(atom)
-            residue.SetChainID("L")
-            residue.SetName("LIG")
-            residue.SetHetAtom(True)
+        residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
+        residue.SetChainID("L")
+        residue.SetName("LIG")
+        residue.SetHetAtom(True)
+        for atom in list(lig.GetAtoms()):
             oechem.OEAtomSetResidue(atom, residue)
 
         ## First save apo
