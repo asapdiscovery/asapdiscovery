@@ -45,7 +45,7 @@ def get_args():
         "-y",
         "--fragalysis_yaml",
         default=os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "data",
             "cmpd_to_frag.yaml",
         ),
@@ -236,6 +236,7 @@ def write_fragalysis_output(
 
 def main():
     args = get_args()
+    print(args.fragalysis_yaml)
 
     assert os.path.exists(args.input_csv)
     if not os.path.exists(args.output_dir):
