@@ -1,3 +1,13 @@
+"""
+The purpose of this script is to move a subset of the fauxalysis directory into a new directory.
+The subsetting is done based on the names of PDB files contained in a yaml file passed to the script.
+It also handles getting a new combined SDF file for only the complexes in selection
+Example Usage:
+    python create_fauxalysis_subset_from_yaml.py
+    -d /Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_frag
+    -o /Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_frag_carlsson
+
+"""
 import sys, os, argparse, yaml, shutil
 
 sys.path.append(
@@ -18,7 +28,11 @@ def get_args():
     parser.add_argument(
         "-y",
         "--yaml_file",
-        default="../data/luttens2022ultralarge.yaml",
+        default=os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "data",
+            "luttens2022ultralarge.yaml",
+        ),
         help="Path to yaml_file",
     )
 
@@ -46,6 +60,7 @@ def main():
     for flag in pdb_dict.keys():
 
         ## if our flag of interest is in any complex, include it!
+        ## TODO: replace with REGEX?
         complexes = [
             complex_id
             for complex_id in complex_dir_list
