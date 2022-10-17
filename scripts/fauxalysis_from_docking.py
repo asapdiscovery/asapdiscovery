@@ -44,7 +44,11 @@ def get_args():
     parser.add_argument(
         "-y",
         "--fragalysis_yaml",
-        default="../data/cmpd_to_frag.yaml",
+        default=os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "data",
+            "cmpd_to_frag.yaml",
+        ),
         help="Path to yaml file containing a compound-to-fragalysis dictionary.",
     )
     parser.add_argument(
@@ -159,6 +163,7 @@ def write_fragalysis_output(
             residue = oechem.OEAtomGetResidue(atom)
             residue.SetChainID("L")
             residue.SetName("LIG")
+            residue.SetHetAtom(True)
             oechem.OEAtomSetResidue(atom, residue)
 
         ## First save apo
