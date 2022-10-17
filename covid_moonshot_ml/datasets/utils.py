@@ -3,6 +3,7 @@ from openeye import oechem
 import numpy as np
 import pandas
 import re
+import rdkit.Chem as Chem
 
 from ..schema import (
     ExperimentalCompoundData,
@@ -644,6 +645,7 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
         "other": oth_mol,
     }
 
+
 def trim_small_chains(input_mol, cutoff_len=10):
     """
     Remove short chains from a protein molecule object. The goal is to get rid
@@ -688,6 +690,7 @@ def trim_small_chains(input_mol, cutoff_len=10):
             mol_copy.DeleteAtom(a)
 
     return mol_copy
+
 
 def get_ligand_rmsd_openeye(ref: oechem.OEMolBase, mobile: oechem.OEMolBase):
     return oechem.OERMSD(ref, mobile)
@@ -787,6 +790,34 @@ def filter_docking_inputs(
 
     # return the filtered list.
     return filtered_docking_inputs
+
+
+def load_exp_from_sdf(fn):
+    """
+    Build a list of ExperimentalCompoundData objects from an SDF file.
+    Everything other than `compound_id` and `smiles` will be left as default.
+    TODO: Use rdkit functions to assign stereochemistry (if 3D SDF file)
+
+    Parameters
+    ----------
+    fn : str
+        SDF file name.
+
+    Returns
+    -------
+    List[ExperimentalCompoundData]
+        List of ExperimentalCompoundData objects parsed from SDF file.
+    """
+    ## Open SDF file and load all SMILES
+    suppl = Chem.rdmolfiles.SDMolSupplier(fn)
+    exp_data_compounds = [
+        ExperimentalCompoundData(
+            compound_id=str(i), smiles=Chem.MolToSmiles(mol)
+        )
+        for i, mol in enumerate(suppl)
+    ]
+
+    return exp_data_compounds
 
 
 if __name__ == "__main__":
