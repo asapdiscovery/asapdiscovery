@@ -1,6 +1,12 @@
 """
-Build library of ligands from a dataset of holo crystal structures docked to a
-different dataset of apo structures.
+The goals is to create a saved dictionary mapping the compound_ID to the fragalysis structure we are using.
+i.e. `AAR-POS-0daf6b7e-1: Mpro-x1311`
+The input is the compound_tracker.csv file, the output is a yaml file (default is in data/cmpd_to_frag.yaml).
+This generates a required input for the `fauxalysis_from_docking.py` script.
+Example Usage:
+    python
+    -f /Users/alexpayne/Scientific_Projects/mers-drug-discovery/Mpro-paper-ligand/extra_files/Mpro_compound_tracker_csv.csv
+
 """
 import argparse, os, sys, yaml
 
@@ -18,12 +24,16 @@ def get_args():
         "-f",
         "--frag_csv",
         required=True,
-        help="Fragalysis crystal structure metadata.csv file.",
+        help="Fragalysis crystal structure compound_tracker.csv file.",
     )
     parser.add_argument(
         "-o",
         "--out_yaml",
-        default="../data/cmpd_to_frag.yaml",
+        default=os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "data",
+            "cmpd_to_frag.yaml",
+        ),
         help="Path to output yaml file.",
     )
 
@@ -37,6 +47,7 @@ def main():
 
     ## First, parse the fragalysis directory into a dictionary of
     ##  CrystalCompoundData
+    ## TODO: Update the parse_fragalysis_data function to use the metadata.csv file as that contains all the structures
     sars_xtals = parse_fragalysis_data(args.frag_csv, frag_dir)
 
     ## Get dict mapping crystal structure id to compound id
