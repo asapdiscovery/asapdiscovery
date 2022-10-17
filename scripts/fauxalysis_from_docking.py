@@ -170,13 +170,18 @@ def write_fragalysis_output(
         save_openeye_pdb(prot, f"{compound_out_dir}/{best_str}_apo.pdb")
 
         ## Combine protein and ligand and save
+        ## TODO: consider saving water as well
         oechem.OEAddMols(prot, lig)
-        save_openeye_pdb(prot, f"{compound_out_dir}/{compound_id}_bound.pdb")
 
-        ## Remove Hs from lig and save SDF file
-        for a in lig.GetAtoms():
-            if a.GetAtomicNum() == 1:
-                lig.DeleteAtom(a)
+        ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
+        preserve = (
+            oechem.OEPreserveResInfo_ChainID
+            | oechem.OEPreserveResInfo_ResidueNumber
+            | oechem.OEPreserveResInfo_ResidueName
+        )
+        oechem.OEPerceiveResidues(prot, preserve)
+
+        save_openeye_pdb(prot, f"{compound_out_dir}/{compound_id}_bound.pdb")
 
         ## Save first to its own sdf file
         cmpd_sdf = f"{compound_out_dir}/{compound_id}.sdf"
