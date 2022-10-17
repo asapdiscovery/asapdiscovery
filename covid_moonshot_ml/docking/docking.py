@@ -4,6 +4,7 @@ from kinoml.core.proteins import Protein
 from kinoml.core.ligands import Ligand
 from kinoml.core.systems import ProteinLigandComplex
 
+
 def build_docking_systems(
     exp_compounds, xtal_compounds, compound_idxs, n_top=1
 ):
@@ -105,16 +106,16 @@ def parse_xtal(x_fn, x_dir):
 
     ## Add structure filename information
     for d in xtal_dicts:
-        fn_base = (
-            f'{x_dir}/{d["dataset"]}_0{{}}/{d["dataset"]}_0{{}}_' "seqres.pdb"
-        )
-        fn = fn_base.format("A", "A")
-        if os.path.isfile(fn):
-            d["str_fn"] = fn
-        else:
-            fn = fn_base.format("B", "B")
-            assert os.path.isfile(fn), f'No structure found for {d["dataset"]}.'
-            d["str_fn"] = fn
+        fn_base = f'{x_dir}/{d["dataset"]}_0{{}}/{d["dataset"]}_0{{}}_{{}}.pdb'
+        for suf in ["seqres", "bound"]:
+            for chain in ["A", "B"]:
+                fn = fn_base.format(chain, chain, suf)
+                if os.path.isfile(fn):
+                    d["str_fn"] = fn
+                    break
+            if os.path.isfile(fn):
+                break
+        assert os.path.isfile(fn), f'No structure found for {d["dataset"]}.'
 
     ## Build CrystalCompoundData objects for each row
     xtal_compounds = [CrystalCompoundData(**d) for d in xtal_dicts]
