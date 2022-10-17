@@ -63,6 +63,12 @@ def get_args():
     parser.add_argument(
         "-achiral", action="store_true", help="Only keep achiral compounds."
     )
+    parser.add_argument(
+        "-n_draw",
+        type=int,
+        default=10,
+        help="Number of MCS compounds to draw for each query molecule.",
+    )
 
     return parser.parse_args()
 
@@ -137,7 +143,7 @@ def main():
             None,
             args.str,
             f"{args.o}/{c.compound_id}",
-            10,
+            args.n_draw,
         )
         for c in exp_compounds
     ]
