@@ -160,7 +160,14 @@ def main():
         seqres = None
 
     mp_args = [
-        (x, seqres, args.ref_prot, args.output_dir, args.chains, args.loop_db)
+        {
+            "xtal": x,
+            "seqres": seqres,
+            "ref_prot": args.ref_prot,
+            "out_base": args.output_dir,
+            "chains": args.chains,
+            "loop_db": args.loop_db,
+        }
         for x in xtal_compounds
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
