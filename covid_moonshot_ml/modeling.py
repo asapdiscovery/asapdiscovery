@@ -7,7 +7,7 @@ from .datasets.utils import (
 )
 
 
-def du_to_complex(du):
+def du_to_complex(du, include_solvent=False):
     """
     Convert OEDesignUnit to OEGraphMol containing the protein and ligand from
     `du`.
@@ -16,6 +16,8 @@ def du_to_complex(du):
     ----------
     du : oechem.OEDesignUnit
         OEDesignUnit object to extract from.
+    include_solvent : bool, default=False
+        Whether to include solvent molecules.
 
     Returns
     -------
@@ -23,10 +25,13 @@ def du_to_complex(du):
         Molecule with protein and ligand from `du`
     """
     complex_mol = oechem.OEGraphMol()
-    du.GetComponents(
-        complex_mol,
-        OEDesignUnitComponents_Protein | oechem.OEDesignUnitComponents_Ligand,
+    comp_tag = (
+        oechem.OEDesignUnitComponents_Protein
+        | oechem.OEDesignUnitComponents_Ligand
     )
+    if include_solvent:
+        comp_tag |= oechem.OEDesignUnitComponents_Solvent
+    du.GetComponents(complex_mol, comp_tag)
 
     return complex_mol
 
