@@ -39,7 +39,7 @@ def prep_mp(xtal, seqres, ref_prot, out_base, chains, loop_db):
         ## Generate a new (temporary) pdb file with the SEQRES we want
         with NamedTemporaryFile(mode="w") as tmp_pdb:
             ## Add the SEQRES
-            add_seqres(xtal["str_fn"], seqres_str=seqres, pdb_out=tmp_pdb.name)
+            add_seqres(xtal.str_fn, seqres_str=seqres, pdb_out=tmp_pdb.name)
 
             ## Load in the pdb file as an OE object
             seqres_prot = load_openeye_pdb(tmp_pdb.name)
@@ -47,7 +47,7 @@ def prep_mp(xtal, seqres, ref_prot, out_base, chains, loop_db):
             ## Mutate the residues to match the residue list
             initial_prot = mutate_residues(seqres_prot, res_list)
     else:
-        initial_prot = load_openeye_pdb(xtal["str_fn"])
+        initial_prot = load_openeye_pdb(xtal.str_fn)
 
     for mobile_chain in chains:
         ## Make output directory
@@ -57,7 +57,7 @@ def prep_mp(xtal, seqres, ref_prot, out_base, chains, loop_db):
 
         print(f"Running on chain {mobile_chain}")
         aligned_prot = align_receptor(
-            input_complex=initial_prot,
+            initial_complex=initial_prot,
             dimer=True,
             ref_prot=ref_prot,
             split_initial_complex=False,
@@ -148,7 +148,7 @@ def get_args():
 def main():
     args = get_args()
 
-    xtal_compounds = parse_xtal(args.x, args.d)
+    xtal_compounds = parse_xtal(args.xtal_csv, args.structure_dir)
 
     if args.seqres_yaml:
         with open(args.seqres_yaml) as f:
@@ -158,7 +158,7 @@ def main():
         seqres = None
 
     mp_args = [
-        (x, seqres, args.ref_prot, args.o, args.chains, args.loop_db)
+        (x, seqres, args.ref_prot, args.output_dir, args.chains, args.loop_db)
         for x in xtal_compounds
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
