@@ -239,6 +239,8 @@ def mp_func(
     complex_mol = du_to_complex(du)
     save_openeye_pdb(complex_mol, f"{out_fn}.pdb")
 
+    ### TODO: replace all of this with new docking.run_docking_oe function
+
     ## Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
     ##  1 if there was a clash that couldn't be resolved)
     clash = -1
