@@ -12,9 +12,9 @@ Example Usage:
 import sys, os, argparse
 import numpy as np
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
+repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(repo_path)
+
 from covid_moonshot_ml.docking.analysis import DockingResults
 
 
@@ -49,7 +49,7 @@ def get_args():
         "-r",
         "--resolution_csv",
         default=os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
+            repo_path,
             "data",
             "mers_structures.csv",
         ),
