@@ -110,7 +110,7 @@ def main():
     ## Add Complex_ID
     ## This is not the same thing as f"{dr.df.Compound_ID}_{dr.df.Structure_Source}", as this enables rowwise addition
     ## as opposed to adding the *entire* series as a single string
-    dr.df["Complex_ID"] = dr.df.Compound_ID + "_" + dr.df.Structure_Source
+    dr.df["Complex_ID"] = str(dr.df.Compound_ID) + "_" + dr.df.Structure_Source
 
     ## Clean the Docked_File paths because there are extra `/`
     ## also, some of the file paths are NaNs so we need to only keep the ones that are strings
