@@ -12,8 +12,8 @@ from covid_moonshot_ml.schema import (
 from covid_moonshot_ml.datasets.pdb import load_pdbs_from_yaml
 from covid_moonshot_ml.datasets.utils import (
     parse_experimental_compound_data,
-    parse_fragalysis_data,
 )
+from covid_moonshot_ml.datasets.fragalysis import parse_fragalysis_data
 
 
 ################################################################################

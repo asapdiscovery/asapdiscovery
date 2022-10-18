@@ -7,7 +7,7 @@ import re
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.utils import cdd_to_schema, cdd_to_schema_pair
+from covid_moonshot_ml.datasets.cdd import cdd_to_schema, cdd_to_schema_pair
 
 
 def get_args():

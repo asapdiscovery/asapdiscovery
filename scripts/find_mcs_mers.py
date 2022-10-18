@@ -7,7 +7,7 @@ import pickle as pkl
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.utils import get_sdf_fn_from_dataset
+from covid_moonshot_ml.datasets.fragalysis import get_sdf_fn_from_dataset
 from covid_moonshot_ml.docking.docking import parse_xtal
 from covid_moonshot_ml.docking.mcs import (
     rank_structures_openeye,

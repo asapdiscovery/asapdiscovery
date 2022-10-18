@@ -15,14 +15,18 @@ import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from covid_moonshot_ml.datasets.utils import (
-    get_compound_id_xtal_dicts,
+    filter_docking_inputs,
+)
+from covid_moonshot_ml.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
-    parse_fragalysis_data,
     save_openeye_pdb,
     save_openeye_sdf,
     split_openeye_mol,
-    filter_docking_inputs,
+)
+from covid_moonshot_ml.datasets.fragalysis import (
+    parse_fragalysis_data,
+    get_compound_id_xtal_dicts,
 )
 from covid_moonshot_ml.docking.docking import (
     build_docking_system_direct,

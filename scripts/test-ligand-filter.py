@@ -4,6 +4,8 @@ Function to test implementation of ligand filtering
 
 import sys, os, argparse
 
+import covid_moonshot_ml.datasets.fragalysis
+
 sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
 )
@@ -43,7 +45,9 @@ def main():
     args = get_args()
 
     # First, parse the fragalysis directory and
-    sars_xtals = utils.parse_fragalysis_data(args.csv_file, args.fragalysis_dir)
+    sars_xtals = covid_moonshot_ml.datasets.fragalysis.parse_fragalysis_data(
+        args.csv_file, args.fragalysis_dir
+    )
 
     # For the compounds for which we have smiles strings, get a dictionary mapping the Compound_ID to the smiles
     cmp_to_smiles_dict = {
