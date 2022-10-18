@@ -25,8 +25,7 @@ def du_to_complex(du):
     complex_mol = oechem.OEGraphMol()
     du.GetComponents(
         complex_mol,
-        oechem.OEDesignUnitComponents_Protein
-        | oechem.OEDesignUnitComponents_Ligand,
+        OEDesignUnitComponents_Protein | oechem.OEDesignUnitComponents_Ligand,
     )
 
     return complex_mol
@@ -265,7 +264,7 @@ def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
 
 
 def align_receptor(
-    input_prot,
+    initial_complex,
     dimer=True,
     ref_prot=None,
     split_initial_complex=True,
@@ -286,8 +285,8 @@ def align_receptor(
         )
 
     ## Load initial_complex from file if necessary
-    if type(input_prot) is str:
-        initial_complex = load_openeye_pdb(input_prot, alt_loc=True)
+    if type(initial_complex) is str:
+        initial_complex = load_openeye_pdb(initial_complex, alt_loc=True)
         ## If alt locations are present in PDB file, set positions to highest
         ##  occupancy ALT
         alf = oechem.OEAltLocationFactory(initial_complex)
@@ -303,42 +302,42 @@ def align_receptor(
         if alf.GetGroupCount() != 0:
             alf.MakePrimaryAltMol(ref_prot)
 
-        ## Split out protein components and align if requested
-        if split_initial_complex:
-            initial_prot_temp = split_openeye_mol(input_prot)["pro"]
-        else:
-            initial_prot_temp = input_prot
+    ## Split out protein components and align if requested
+    if split_initial_complex:
+        initial_prot_temp = split_openeye_mol(initial_complex)["pro"]
+    else:
+        initial_prot_temp = initial_complex
 
-        ## Extract if not dimer
-        if dimer:
-            initial_prot = initial_prot_temp
-        else:
-            initial_prot = oechem.OEGraphMol()
-            chain_pred = oechem.OEHasChainID(mobile_chain)
-            oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
-        if ref_prot is not None:
-            if split_ref:
-                ref_prot = split_openeye_mol(ref_prot)["pro"]
+    ## Extract if not dimer
+    if dimer:
+        initial_prot = initial_prot_temp
+    else:
+        ### TODO: Have to figure out how to handle water here if it's in a
+        ###  different chain from the protein
+        initial_prot = oechem.OEGraphMol()
+        chain_pred = oechem.OEHasChainID(mobile_chain)
+        oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
+    if ref_prot is not None:
+        if split_ref:
+            ref_prot = split_openeye_mol(ref_prot)["pro"]
 
-            ## Set up predicates
-            if ref_chain is not None:
+        ## Set up predicates
+        if ref_chain is not None:
+            not_water = oechem.OENotAtom(oechem.OEIsWater())
+            ref_chain = oechem.OEHasChainID(ref_chain)
+            ref_chain = oechem.OEAndAtom(not_water, ref_chain)
+        if mobile_chain is not None:
+            try:
                 not_water = oechem.OENotAtom(oechem.OEIsWater())
-                ref_chain = oechem.OEHasChainID(ref_chain)
-                ref_chain = oechem.OEAndAtom(not_water, ref_chain)
-
-            if mobile_chain is not None:
-                try:
-                    not_water = oechem.OENotAtom(oechem.OEIsWater())
-                    mobile_chain = oechem.OEHasChainID(mobile_chain)
-                    mobile_chain = oechem.OEAndAtom(not_water, mobile_chain)
-                except Exception as e:
-                    print(mobile_chain)
-                    raise e
-            initial_prot = superpose_molecule(
-                ref_prot, initial_prot, ref_chain, mobile_chain
-            )[0]
-
-        return initial_prot
+                mobile_chain = oechem.OEHasChainID(mobile_chain)
+                mobile_chain = oechem.OEAndAtom(not_water, mobile_chain)
+            except Exception as e:
+                print(mobile_chain)
+                raise e
+        initial_prot = superpose_molecule(
+            ref_prot, initial_prot, ref_chain, mobile_chain
+        )[0]
+    return initial_prot
 
 
 def mutate_residues(input_mol, res_list, place_h=True):
@@ -395,12 +394,27 @@ def mutate_residues(input_mol, res_list, place_h=True):
     return mut_prot
 
 
-def prep_receptor(
-    initial_prot,
-    site_residue,
-    sequence=None,
-    loop_db=None,
-):
+def prep_receptor(initial_prot, site_residue="", loop_db=None):
+    """
+    Prepare DU from protein. If the ligand isn't present in `initial_prot`, a
+    value must be provided for `site_residue` or `OEMakeDesignUnits` will fail.
+
+    Parameters
+    ----------
+    initial_prot : oechem.OEGraphMol
+        GraphMol object with protein (and optionally ligand).
+    site_residue : str, optional
+        Binding site residues, must be of the format “ASP:25: :A”. Optional
+        only if `initial_prot` contains a ligand.
+    loop_db : str, optional
+        Loop database file.
+
+    Returns
+    -------
+    Iter[OEDesignUnit]
+        Iterator over generated DUs.
+    """
+
     ## Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
 
@@ -448,13 +462,18 @@ def prep_receptor(
     opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True)
     opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True)
 
-    # TODO: Add ability to add SEQRES and mutate protein accordingly
+    # Generate ligand tautomers
+    opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
+    ############################################################################
 
     ## Finally make new DesignUnit
-    ## Using this function instead of OEMakeDesignUnit enables passing the empty 'metadata'
-    ## object which makes it possible to build an empty DU
-    metadata = oespruce.OEStructureMetadata()
-    design_units = oespruce.OEMakeDesignUnits(
-        initial_prot, metadata, opts, site_residue
+    dus = oespruce.OEMakeDesignUnits(
+        initial_prot, oespruce.OEStructureMetadata(), opts, site_residue
     )
-    return design_units
+    assert next(iter(dus)).HasProtein() and next(iter(dus)).HasLigand()
+
+    ## Generate docking receptor for each DU
+    for du in dus:
+        oedocking.OEMakeReceptor(du)
+
+    return dus
