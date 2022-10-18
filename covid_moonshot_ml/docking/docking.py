@@ -100,8 +100,8 @@ def parse_xtal(x_fn, x_dir):
 
     ## Build argument dicts for the CrystalCompoundData objects
     xtal_dicts = [
-        dict(zip(("smiles", "dataset"), r[1].values))
-        for r in df.loc[idx, ["SMILES", "Dataset"]].iterrows()
+        dict(zip(("smiles", "dataset", "compound_id"), r[1].values))
+        for r in df.loc[idx, ["SMILES", "Dataset", "Compound ID"]].iterrows()
     ]
 
     ## Add structure filename information
