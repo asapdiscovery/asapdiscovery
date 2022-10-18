@@ -7,14 +7,13 @@ import pickle as pkl
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.docking.docking import parse_xtal
-from covid_moonshot_ml.docking.mcs import (
+from asap_docking.docking import parse_xtal
+from asap_docking.docking import (
     rank_structures_openeye,
     rank_structures_rdkit,
 )
-from covid_moonshot_ml.schema import (
+from asap_dataset_handling.schema import (
     ExperimentalCompoundDataUpdate,
-    CrystalCompoundData,
     EnantiomerPairList,
 )
 

@@ -6,8 +6,8 @@ import pickle as pkl
 import re
 import torch
 
-from covid_moonshot_ml.data.dataset import DockedDataset
-from covid_moonshot_ml.schema import (
+from asap_dataset_handling.data import DockedDataset
+from asap_dataset_handling.schema import (
     ExperimentalCompoundDataUpdate,
     EnantiomerPairList,
 )

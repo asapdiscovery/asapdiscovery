@@ -1,11 +1,12 @@
 import sys, os, argparse
+
 # TODO: Do we need to add plotly to our environment yaml?
 import plotly.express as px
 
 sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
 )
-from covid_moonshot_ml.docking.analysis import DockingResults
+from asap_docking.docking import DockingResults
 
 
 def get_args():

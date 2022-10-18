@@ -5,15 +5,15 @@ import sys
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from covid_moonshot_ml.schema import (
+from asap_dataset_handling.schema import (
     CrystalCompoundData,
     PDBStructure,
 )
-from covid_moonshot_ml.datasets.pdb import load_pdbs_from_yaml
-from covid_moonshot_ml.datasets.utils import (
+from asap_dataset_handling.datasets import load_pdbs_from_yaml
+from asap_dataset_handling.datasets.utils import (
     parse_experimental_compound_data,
 )
-from covid_moonshot_ml.datasets.fragalysis import parse_fragalysis_data
+from asap_dataset_handling.datasets import parse_fragalysis_data
 
 
 ################################################################################

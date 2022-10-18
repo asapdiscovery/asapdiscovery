@@ -1,6 +1,10 @@
-from openeye import oechem, oedocking, oespruce
+from openeye import oechem, oespruce
 
-from .data.openeye import load_openeye_pdb, load_openeye_sdf, split_openeye_mol
+from asap_dataset_handling import (
+    load_openeye_pdb,
+    load_openeye_sdf,
+    split_openeye_mol,
+)
 
 
 def du_to_complex(du):

@@ -1,8 +1,8 @@
 import numpy as np
 import pandas
 
-from covid_moonshot_ml.datasets.utils import get_achiral_molecules
-from covid_moonshot_ml.schema import (
+from asap_dataset_handling.datasets.utils import get_achiral_molecules
+from asap_dataset_handling.schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
     EnantiomerPair,

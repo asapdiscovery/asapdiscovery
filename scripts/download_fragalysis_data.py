@@ -3,7 +3,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.fragalysis import download
+from asap_dataset_handling.datasets import download
 
 ################################################################################
 def get_args():

@@ -1,7 +1,7 @@
 from openeye import oechem
 import pandas
 import re
-from ..schema import (
+from asap_dataset_handling.schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
 )

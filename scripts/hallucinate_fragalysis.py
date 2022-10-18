@@ -14,25 +14,21 @@ import re
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.utils import (
+from asap_dataset_handling.datasets.utils import (
     filter_docking_inputs,
 )
-from covid_moonshot_ml.data.openeye import (
+from asap_dataset_handling.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     save_openeye_pdb,
     save_openeye_sdf,
     split_openeye_mol,
 )
-from covid_moonshot_ml.datasets.fragalysis import (
+from asap_dataset_handling.datasets import (
     parse_fragalysis_data,
     get_compound_id_xtal_dicts,
 )
-from covid_moonshot_ml.docking.docking import (
-    build_docking_system_direct,
-    run_docking,
-)
-from covid_moonshot_ml.modeling import du_to_complex, make_du_from_new_lig
+from asap_docking.docking.modeling import du_to_complex, make_du_from_new_lig
 
 
 def check_output(d):

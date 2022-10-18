@@ -4,7 +4,7 @@ import pandas
 import requests
 from zipfile import ZipFile
 
-from covid_moonshot_ml.schema import CrystalCompoundData
+from asap_dataset_handling.schema import CrystalCompoundData
 
 BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
 ## Info for the POST call
