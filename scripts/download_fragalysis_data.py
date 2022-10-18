@@ -3,7 +3,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asap_dataset_handling.datasets import download
+from asap_dataset_handling.datasets.fragalysis import download
 
 ################################################################################
 def get_args():

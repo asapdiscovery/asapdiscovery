@@ -9,7 +9,7 @@ from asap_dataset_handling.schema import (
     CrystalCompoundData,
     PDBStructure,
 )
-from asap_dataset_handling.datasets import load_pdbs_from_yaml
+from asap_dataset_handling.datasets.pdb import load_pdbs_from_yaml
 from asap_dataset_handling.datasets.utils import (
     parse_experimental_compound_data,
 )

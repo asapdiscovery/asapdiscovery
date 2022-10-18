@@ -3,7 +3,7 @@ import sys, os, argparse, shutil
 sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
 )
-from asap_docking.docking import DockingResults
+from asap_docking import DockingResults
 
 
 def get_args():

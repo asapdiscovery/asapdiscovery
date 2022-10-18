@@ -12,7 +12,7 @@ from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asap_dataset_handling.data import DockedDataset
+from covid_moonshot_ml.dataset import DockedDataset
 from covid_moonshot_ml.nn import E3NNBind, SchNetBind
 from asap_dataset_handling.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import (
