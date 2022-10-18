@@ -56,25 +56,20 @@ def prep_mp(xtal, seqres, out_base, chains, loop_db):
         )
         os.makedirs(out_dir, exist_ok=True)
 
-        aligned_prot = align_receptor(
-            initial_complex=initial_prot,
-            dimer=True,
-            ref_prot=None,
-            split_initial_complex=False,
-            split_ref=False,
-            ref_chain="A",
-            mobile_chain=mobile_chain,
-        )
-
         design_units = prep_receptor(
-            aligned_prot,
+            initial_prot,
             loop_db=loop_db,
         )
 
         ## Take the first returned DU and save it
-        du = next(iter(design_units))
-        oechem.OEWriteDesignUnit(
-            os.path.join(out_dir, "prepped_receptor.oedu"), du
+        du = design_units[0]
+        print(
+            f"{xtal.dataset}_{xtal.compound_id}_{mobile_chain}",
+            du,
+            oechem.OEWriteDesignUnit(
+                os.path.join(out_dir, "prepped_receptor.oedu"), du
+            ),
+            flush=True,
         )
 
         ## Save complex as PDB file
@@ -154,17 +149,12 @@ def main():
         seqres = None
 
     mp_args = [
-        {
-            "xtal": x,
-            "seqres": seqres,
-            "out_base": args.output_dir,
-            "chains": args.chains,
-            "loop_db": args.loop_db,
-        }
+        (x, seqres, args.output_dir, args.chains, args.loop_db)
         for x in xtal_compounds
     ]
+    print(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+    print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         pool.starmap(prep_mp, mp_args)
 
