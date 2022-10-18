@@ -137,7 +137,9 @@ def run_docking(cache_dir, output_dir, loop_db, n_procs, docking_systems):
     return docking_systems
 
 
-def run_docking_oe(du, dock_lig, dock_sys, relax="none", hybrid=False):
+def run_docking_oe(
+    du, dock_lig, dock_sys, relax="none", hybrid=False, compound_name=None
+):
     """
     Run docking using OpenEye.
 
@@ -153,6 +155,8 @@ def run_docking_oe(du, dock_lig, dock_sys, relax="none", hybrid=False):
         When to check for relaxation ["clash", "all", "none"]
     hybrid : bool, default=False
         Set POSIT methods to only use Hybrid
+    compound_name : str, optional
+        Compound name, used for error messages if given
 
     Returns
     -------
@@ -198,6 +202,13 @@ def run_docking_oe(du, dock_lig, dock_sys, relax="none", hybrid=False):
             ## Don't need to do anything for none bc that's already the default
             raise ValueError(f'Unknown arg for relaxation "{relax}"')
 
+        if compound_name:
+            print(
+                f"Running POSIT {'hybrid' if hybrid else 'all'} docking with "
+                f"{relax} relaxation for {compound_name}",
+                flush=True,
+            )
+
         ## Set up poser object
         poser = oedocking.OEPosit(opts)
         poser.AddReceptor(du)
@@ -206,7 +217,8 @@ def run_docking_oe(du, dock_lig, dock_sys, relax="none", hybrid=False):
         pose_res = oedocking.OESinglePoseResult()
         ret_code = poser.Dock(pose_res, dock_lig)
     elif dock_sys == "hybrid":
-        print("Running Hybrid docking", flush=True)
+        if compound_name:
+            print(f"Running Hybrid docking for {compound_name}", flush=True)
 
         ## Set up poser object
         poser = oedocking.OEHybrid()
@@ -226,11 +238,12 @@ def run_docking_oe(du, dock_lig, dock_sys, relax="none", hybrid=False):
         opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
         clash = 1
 
-        print(
-            f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with "
-            f"no relaxation for {lig_name}/{apo_name}",
-            flush=True,
-        )
+        if compound_name:
+            print(
+                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking",
+                f"with no relaxation for {compound_name}",
+                flush=True,
+            )
 
         ## Set up poser object
         poser = oedocking.OEPosit(opts)
@@ -252,10 +265,11 @@ def run_docking_oe(du, dock_lig, dock_sys, relax="none", hybrid=False):
         chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
     else:
         err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
-        print(
-            f"Pose generation failed for {lig_name}/{apo_name} ({err_type})",
-            flush=True,
-        )
+        if compound_name:
+            print(
+                f"Pose generation failed for {compound_name} ({err_type})",
+                flush=True,
+            )
         return False, -1.0, -1.0, -1.0, clash
 
     ## Calculate RMSD
