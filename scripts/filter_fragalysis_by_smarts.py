@@ -71,7 +71,7 @@ def main():
     df = pandas.DataFrame(
         {"Dataset": datasets, "Compound ID": compound_ids, "SMILES": smiles}
     )
-    df.to_csv(args.out_file)
+    df.to_csv(args.out_file, index=False)
 
 
 if __name__ == "__main__":
