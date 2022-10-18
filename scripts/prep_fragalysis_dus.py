@@ -8,6 +8,7 @@ import multiprocessing as mp
 from openeye import oechem
 import os
 import pandas
+import re
 import sys
 from tempfile import NamedTemporaryFile
 import yaml
@@ -30,7 +31,7 @@ from covid_moonshot_ml.datasets.utils import (
 from covid_moonshot_ml.docking.docking import parse_xtal
 
 
-def prep_mp(xtal, seqres, out_base, chains, loop_db):
+def prep_mp(xtal, seqres, out_base, loop_db):
     ## Option to add SEQRES header
     if seqres:
         ## Get a list of 3-letter codes for the sequence
@@ -49,34 +50,50 @@ def prep_mp(xtal, seqres, out_base, chains, loop_db):
     else:
         initial_prot = load_openeye_pdb(xtal.str_fn)
 
-    for mobile_chain in chains:
-        ## Make output directory
-        out_dir = os.path.join(
-            out_base, f"{xtal.dataset}_{xtal.compound_id}_{mobile_chain}"
-        )
-        os.makedirs(out_dir, exist_ok=True)
-
-        design_units = prep_receptor(
-            initial_prot,
-            loop_db=loop_db,
-        )
-
-        ## Take the first returned DU and save it
-        du = design_units[0]
+    ## Get chain
+    re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
+    try:
+        chain = re.search(re_pat, xtal.str_fn).groups()[0]
+    except AttributeError:
         print(
-            f"{xtal.dataset}_{xtal.compound_id}_{mobile_chain}",
-            du,
-            oechem.OEWriteDesignUnit(
-                os.path.join(out_dir, "prepped_receptor.oedu"), du
-            ),
+            f"Regex chain search failed: {re_pat}, {str_fn}.",
+            "Using 0A as default.",
             flush=True,
         )
+        chain = "0A"
 
-        ## Save complex as PDB file
-        complex_mol = du_to_complex(du, include_solvent=True)
-        save_openeye_pdb(
-            complex_mol, os.path.join(out_dir, "prepped_complex.pdb")
+    ## Make output directory
+    out_dir = os.path.join(
+        out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}"
+    )
+    os.makedirs(out_dir, exist_ok=True)
+
+    design_units = prep_receptor(
+        initial_prot,
+        loop_db=loop_db,
+    )
+
+    ## Take the first returned DU and save it
+    try:
+        du = design_units[0]
+    except IndexError as e:
+        print(
+            "DU generation failed for",
+            f"{xtal.dataset}_{chain}_{xtal.compound_id})",
+            flush=True,
         )
+        raise e
+    print(
+        f"{xtal.dataset}_{chain}_{xtal.compound_id}",
+        oechem.OEWriteDesignUnit(
+            os.path.join(out_dir, "prepped_receptor.oedu"), du
+        ),
+        flush=True,
+    )
+
+    ## Save complex as PDB file
+    complex_mol = du_to_complex(du, include_solvent=True)
+    save_openeye_pdb(complex_mol, os.path.join(out_dir, "prepped_complex.pdb"))
 
 
 ################################################################################
@@ -116,13 +133,6 @@ def get_args():
         "--seqres_yaml",
         help="Path to yaml file of SEQRES.",
     )
-    parser.add_argument(
-        "-c",
-        "--chains",
-        nargs="+",
-        default=["A", "B"],
-        help="Which chains to align to reference.",
-    )
 
     ## Performance arguments
     parser.add_argument(
@@ -149,8 +159,7 @@ def main():
         seqres = None
 
     mp_args = [
-        (x, seqres, args.output_dir, args.chains, args.loop_db)
-        for x in xtal_compounds
+        (x, seqres, args.output_dir, args.loop_db) for x in xtal_compounds
     ]
     print(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
