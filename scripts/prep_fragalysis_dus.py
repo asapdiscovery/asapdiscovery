@@ -31,7 +31,64 @@ from covid_moonshot_ml.datasets.utils import (
 from covid_moonshot_ml.docking.docking import parse_xtal
 
 
+def check_completed(d):
+    """
+    Check if this prep process has already been run successfully in the given
+    directory.
+
+    Parameters
+    ----------
+    d : str
+        Directory to check.
+
+    Returns
+    -------
+    bool
+        True if both files exist and can be loaded, otherwise False.
+    """
+
+    if (not os.path.isfile(os.path.join(d, "prepped_receptor.oedu"))) or (
+        not os.path.isfile(os.path.join(d, "prepped_complex.pdb"))
+    ):
+        return False
+
+    try:
+        du = oechem.OEDesignUnit()
+        oechem.OEReadDesignUnit(os.path.join(d, "prepped_receptor.oedu"), du)
+    except Exception:
+        return False
+
+    try:
+        _ = load_openeye_pdb(os.path.join(d, "prepped_complex.pdb"))
+    except Exception:
+        return False
+
+    return True
+
+
 def prep_mp(xtal, seqres, out_base, loop_db):
+    ## Get chain
+    re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
+    try:
+        chain = re.search(re_pat, xtal.str_fn).groups()[0]
+    except AttributeError:
+        print(
+            f"Regex chain search failed: {re_pat}, {str_fn}.",
+            "Using 0A as default.",
+            flush=True,
+        )
+        chain = "0A"
+
+    ## Check if results already exist
+    out_dir = os.path.join(
+        out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}"
+    )
+    if check_completed(out_dir):
+        return
+
+    ## Make output directory
+    os.makedirs(out_dir, exist_ok=True)
+
     ## Option to add SEQRES header
     if seqres:
         ## Get a list of 3-letter codes for the sequence
@@ -50,39 +107,21 @@ def prep_mp(xtal, seqres, out_base, loop_db):
     else:
         initial_prot = load_openeye_pdb(xtal.str_fn)
 
-    ## Get chain
-    re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
-    try:
-        chain = re.search(re_pat, xtal.str_fn).groups()[0]
-    except AttributeError:
-        print(
-            f"Regex chain search failed: {re_pat}, {str_fn}.",
-            "Using 0A as default.",
-            flush=True,
-        )
-        chain = "0A"
-
-    ## Make output directory
-    out_dir = os.path.join(
-        out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}"
-    )
-    os.makedirs(out_dir, exist_ok=True)
-
-    design_units = prep_receptor(
-        initial_prot,
-        loop_db=loop_db,
-    )
-
     ## Take the first returned DU and save it
     try:
-        du = design_units[0]
+        design_units = prep_receptor(
+            initial_prot,
+            loop_db=loop_db,
+        )
     except IndexError as e:
         print(
             "DU generation failed for",
             f"{xtal.dataset}_{chain}_{xtal.compound_id})",
             flush=True,
         )
-        raise e
+        return
+
+    du = design_units[0]
     print(
         f"{xtal.dataset}_{chain}_{xtal.compound_id}",
         oechem.OEWriteDesignUnit(
