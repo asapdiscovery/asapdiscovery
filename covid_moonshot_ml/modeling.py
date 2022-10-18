@@ -416,7 +416,7 @@ def prep_receptor(initial_prot, site_residue="", loop_db=None):
 
     Returns
     -------
-    Iter[OEDesignUnit]
+    List[OEDesignUnit]
         Iterator over generated DUs.
     """
 
@@ -472,10 +472,12 @@ def prep_receptor(initial_prot, site_residue="", loop_db=None):
     ############################################################################
 
     ## Finally make new DesignUnit
-    dus = oespruce.OEMakeDesignUnits(
-        initial_prot, oespruce.OEStructureMetadata(), opts, site_residue
+    dus = list(
+        oespruce.OEMakeDesignUnits(
+            initial_prot, oespruce.OEStructureMetadata(), opts, site_residue
+        )
     )
-    assert next(iter(dus)).HasProtein() and next(iter(dus)).HasLigand()
+    assert dus[0].HasProtein() and dus[0].HasLigand()
 
     ## Generate docking receptor for each DU
     for du in dus:
