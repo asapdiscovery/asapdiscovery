@@ -54,8 +54,8 @@ def prep_mp(xtal, seqres, ref_prot, out_base, chains, loop_db):
         out_dir = os.path.join(
             out_base, f"{xtal.dataset}_{xtal.compound_id}_{mobile_chain}"
         )
+        os.makedirs(out_dir, exist_ok=True)
 
-        print(f"Running on chain {mobile_chain}")
         aligned_prot = align_receptor(
             initial_complex=initial_prot,
             dimer=True,
@@ -73,7 +73,9 @@ def prep_mp(xtal, seqres, ref_prot, out_base, chains, loop_db):
 
         ## Take the first returned DU and save it
         du = next(iter(design_units))
-        oechem.OEWriteDesignUnit(os.path.join(out_dir, "prepped_receptor.oedu"))
+        oechem.OEWriteDesignUnit(
+            os.path.join(out_dir, "prepped_receptor.oedu"), du
+        )
 
         ## Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
