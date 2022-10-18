@@ -162,6 +162,8 @@ def run_docking_oe(
     -------
     bool
         If docking succeeded
+    oechem.OEGraphMol
+        Posed molecule
     float
         RMSD
     float
@@ -270,13 +272,14 @@ def run_docking_oe(
                 f"Pose generation failed for {compound_name} ({err_type})",
                 flush=True,
             )
-        return False, -1.0, -1.0, -1.0, clash
+        return False, None, -1.0, -1.0, -1.0, clash
 
     ## Calculate RMSD
+    posed_copy = posed_mol.CreateCopy()
     oechem.OECanonicalOrderAtoms(dock_lig)
     oechem.OECanonicalOrderBonds(dock_lig)
-    oechem.OECanonicalOrderAtoms(posed_mol)
-    oechem.OECanonicalOrderBonds(posed_mol)
+    oechem.OECanonicalOrderAtoms(posed_copy)
+    oechem.OECanonicalOrderBonds(posed_copy)
     ## Get coordinates, filtering out Hs
     predocked_coords = [
         c
@@ -286,8 +289,8 @@ def run_docking_oe(
     ]
     docked_coords = [
         c
-        for a in posed_mol.GetAtoms()
-        for c in posed_mol.GetCoords()[a.GetIdx()]
+        for a in posed_copy.GetAtoms()
+        for c in posed_copy.GetCoords()[a.GetIdx()]
         if a.GetAtomicNum() != 1
     ]
     rmsd = oechem.OERMSD(
@@ -296,4 +299,4 @@ def run_docking_oe(
         len(predocked_coords) // 3,
     )
 
-    return True, rmsd, posit_prob, chemgauss_score, clash
+    return True, posed_mol, rmsd, posit_prob, chemgauss_score, clash
