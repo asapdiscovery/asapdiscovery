@@ -4,8 +4,8 @@ i.e. `AAR-POS-0daf6b7e-1: Mpro-x1311`
 The input is the compound_tracker.csv file, the output is a yaml file (default is in data/cmpd_to_frag.yaml).
 This generates a required input for the `fauxalysis_from_docking.py` script.
 Example Usage:
-    python
-    -f /Users/alexpayne/Scientific_Projects/mers-drug-discovery/Mpro-paper-ligand/extra_files/Mpro_compound_tracker_csv.csv
+    python write_cmpd_to_frag_dict.py
+        -f ~/Scientific_Projects/mers-drug-discovery/Mpro-paper-ligand/extra_files/Mpro_compound_tracker_csv.csv
 
 """
 import argparse, os, sys, yaml

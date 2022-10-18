@@ -4,8 +4,8 @@ The subsetting is done based on the names of PDB files contained in a yaml file 
 It also handles getting a new combined SDF file for only the complexes in selection
 Example Usage:
     python create_fauxalysis_subset_from_yaml.py
-    -d /Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_frag
-    -o /Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_frag_carlsson
+        -d /Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_frag
+        -o /Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_frag_carlsson
 
 """
 import sys, os, argparse, yaml, shutil
