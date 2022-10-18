@@ -141,7 +141,12 @@ def run_docking_oe(
     du, dock_lig, dock_sys, relax="none", hybrid=False, compound_name=None
 ):
     """
-    Run docking using OpenEye.
+    Run docking using OpenEye. The returned OEGraphMol object will have the
+    following SD tags set:
+      * Docking_<docking_id>_RMSD: RMSD score to original molecule
+      * Docking_<docking_id>_POSIT: POSIT probability
+      * Docking_<docking_id>_Chemgauss4: Chemgauss4 score
+      * Docking_<docking_id>_clash: clash results
 
     Parameters
     ----------
@@ -163,18 +168,17 @@ def run_docking_oe(
     bool
         If docking succeeded
     oechem.OEGraphMol
-        Posed molecule
-    float
-        RMSD
-    float
-        POSIT prob
-    float
-        Chemgauss4 score
-    int
-        Whether clash correction was disabled, enabled and no clash was found,
-        or enables and clash was found ([-1, 0, 1] respectively)
+        Posed molecule (with set SD tags)
+    str
+        Generated docking_id, used to access SD tag data
     """
     from openeye import oechem, oedocking
+
+    ## Convert to OEMol for docking purposes
+    dock_lig = oechem.OEMol(dock_lig)
+
+    ## Set docking string id (for SD tags)
+    docking_id = [dock_sys]
 
     ## Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
     ##  1 if there was a clash that couldn't be resolved)
@@ -192,6 +196,7 @@ def run_docking_oe(
         ##  of all)
         if hybrid:
             opts.SetPositMethods(oedocking.OEPositMethod_HYBRID)
+            docking_id.append("hybrid")
 
         ## Set up pose relaxation
         if relax == "clash":
@@ -203,6 +208,7 @@ def run_docking_oe(
         elif relax != "none":
             ## Don't need to do anything for none bc that's already the default
             raise ValueError(f'Unknown arg for relaxation "{relax}"')
+        docking_id.append(relax)
 
         if compound_name:
             print(
@@ -217,7 +223,11 @@ def run_docking_oe(
 
         ## Run posing
         pose_res = oedocking.OESinglePoseResult()
-        ret_code = poser.Dock(pose_res, dock_lig)
+        try:
+            ret_code = poser.Dock(pose_res, dock_lig)
+        except TypeError as e:
+            print(pose_res, dock_lig, type(dock_lig), flush=True)
+            raise e
     elif dock_sys == "hybrid":
         if compound_name:
             print(f"Running Hybrid docking for {compound_name}", flush=True)
@@ -272,7 +282,7 @@ def run_docking_oe(
                 f"Pose generation failed for {compound_name} ({err_type})",
                 flush=True,
             )
-        return False, None, -1.0, -1.0, -1.0, clash
+        return False, None, None
 
     ## Calculate RMSD
     posed_copy = posed_mol.CreateCopy()
@@ -299,4 +309,19 @@ def run_docking_oe(
         len(predocked_coords) // 3,
     )
 
-    return True, posed_mol, rmsd, posit_prob, chemgauss_score, clash
+    ## Set SD tags for molecule
+    docking_id = "_".join(docking_id)
+    oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_RMSD", str(rmsd))
+    oechem.OESetSDData(
+        posed_mol, f"Docking_{docking_id}_POSIT", str(posit_prob)
+    )
+    oechem.OESetSDData(
+        posed_mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
+    )
+    oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_clash", str(clash))
+
+    ## Set molecule name if given
+    if compound_name:
+        posed_mol.SetTitle(compound_name)
+
+    return True, oechem.OEGraphMol(posed_mol), docking_id
