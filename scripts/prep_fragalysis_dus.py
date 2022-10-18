@@ -30,7 +30,7 @@ from covid_moonshot_ml.datasets.utils import (
 from covid_moonshot_ml.docking.docking import parse_xtal
 
 
-def prep_mp(xtal, seqres, ref_prot, out_base, chains, loop_db):
+def prep_mp(xtal, seqres, out_base, chains, loop_db):
     ## Option to add SEQRES header
     if seqres:
         ## Get a list of 3-letter codes for the sequence
@@ -59,7 +59,7 @@ def prep_mp(xtal, seqres, ref_prot, out_base, chains, loop_db):
         aligned_prot = align_receptor(
             initial_complex=initial_prot,
             dimer=True,
-            ref_prot=ref_prot,
+            ref_prot=None,
             split_initial_complex=False,
             split_ref=False,
             ref_chain="A",
@@ -100,12 +100,6 @@ def get_args():
         "--xtal_csv",
         required=True,
         help="CSV file giving information of which structures to prep.",
-    )
-    parser.add_argument(
-        "-r",
-        "--ref_prot",
-        required=True,
-        help="Path to reference pdb to align to.",
     )
 
     ## Output arguments
@@ -163,7 +157,6 @@ def main():
         {
             "xtal": x,
             "seqres": seqres,
-            "ref_prot": args.ref_prot,
             "out_base": args.output_dir,
             "chains": args.chains,
             "loop_db": args.loop_db,
