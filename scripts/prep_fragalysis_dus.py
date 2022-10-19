@@ -95,7 +95,7 @@ def prep_mp(xtal, seqres, out_base, loop_db):
         res_list = seqres_to_res_list(seqres)
 
         ## Generate a new (temporary) pdb file with the SEQRES we want
-        with NamedTemporaryFile(mode="w") as tmp_pdb:
+        with NamedTemporaryFile(mode="w", suffix=".pdb") as tmp_pdb:
             ## Add the SEQRES
             add_seqres(xtal.str_fn, seqres_str=seqres, pdb_out=tmp_pdb.name)
 
