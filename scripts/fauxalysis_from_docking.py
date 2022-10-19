@@ -87,12 +87,12 @@ def check_output(d):
         return False
 
     ## Then check for other intermediate files
-    du = oechem.OEDesignUnit()
-    if not oechem.OEReadDesignUnit(f"{d}/predocked.oedu", du):
-        return False
-
-    if load_openeye_pdb(f"{d}/predocked.pdb").NumAtoms() == 0:
-        return False
+    # du = oechem.OEDesignUnit()
+    # if not oechem.OEReadDesignUnit(f"{d}/predocked.oedu", du):
+    #     return False
+    #
+    # if load_openeye_pdb(f"{d}/predocked.pdb").NumAtoms() == 0:
+    #     return False
 
     if load_openeye_sdf(f"{d}/docked.sdf").NumAtoms() == 0:
         return False
