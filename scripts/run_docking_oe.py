@@ -62,8 +62,11 @@ def load_dus(file_base):
 
     Returns
     -------
-    Dict[str, List[oechem.OEDesignUnit]]
-        Dictionary mapping dataset to list of design units
+    Dict[str, List[str]]
+        Dictionary mapping Mpro dataset name to list of full Mpro names
+        (with chain)
+    Dict[str, oechem.OEDesignUnit]
+        Dictionary mapping full Mpro name (including chain) to its design unit
     """
 
     if os.path.isdir(file_base):
@@ -77,24 +80,27 @@ def load_dus(file_base):
         all_fns = glob(file_base)
 
     du_dict = {}
-    re_pat = r"(Mpro-[A-Za-z][0-9]+)_"
+    dataset_dict = {}
+    re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
     for fn in all_fns:
-        dataset = re.search(re_pat, fn)
-        if dataset is None:
+        m = re.search(re_pat, fn)
+        if m is None:
             print(f"No Mpro dataset found for {fn}", flush=True)
             continue
 
-        dataset = dataset.groups()[0]
+        dataset = m.groups()[0]
+        full_name = m.group()
         du = oechem.OEDesignUnit()
         if not oechem.OEReadDesignUnit(fn, du):
             print(f"Failed to read DesignUnit {fn}", flush=True)
             continue
+        du_dict[full_name] = du
         try:
-            du_dict[dataset].append(du)
+            dataset_dict[dataset].append(full_name)
         except KeyError:
-            du_dict[dataset] = [du]
+            dataset_dict[dataset] = [full_name]
 
-    return du_dict
+    return dataset_dict, du_dict
 
 
 def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
@@ -232,7 +238,7 @@ def main():
     n_mols = len(mols)
 
     ## Load all receptor DesignUnits
-    all_dus = load_dus(args.receptor)
+    dataset_dict, du_dict = load_dus(args.receptor)
 
     ## Load sort indices if given
     if args.sort_res:
@@ -244,7 +250,7 @@ def main():
         ## Use index as compound_id
         compound_ids = [str(i) for i in range(n_mols)]
         ## Get dataset values from DesignUnit filenames
-        xtal_ids = list(all_dus.keys())
+        xtal_ids = list(dataset_dict.keys())
         ## Arbitrary sort index, same for each ligand
         sort_idxs = [list(range(len(xtal_ids)))] * n_mols
         args.top_n = len(xtal_ids)
@@ -254,15 +260,11 @@ def main():
         dock_dus = []
         xtals = []
         for xtal in sort_idxs[i][: args.top_n]:
-            if xtal_ids[xtal] not in all_dus:
+            if xtal_ids[xtal] not in dataset_dict:
                 continue
-            dock_dus.extend(all_dus[xtal_ids[xtal]])
-            xtals.extend(
-                [
-                    f"{xtal_ids[xtal]}_{j}"
-                    for j in range(len(all_dus[xtal_ids[xtal]]))
-                ]
-            )
+            ## Get the DU for each full Mpro name associated with this dataset
+            dock_dus.extend([du_dict[x] for x in dataset_dict[xtal_ids[xtal]]])
+            xtals.extend(dataset_dict[xtal_ids[xtal]])
         new_args = [
             (
                 os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
