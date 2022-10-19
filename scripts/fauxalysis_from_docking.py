@@ -126,12 +126,13 @@ def write_fragalysis_output(
 
     ## Loop through dict and parse input files into output files
     for complex_id, complex_dict in best_structure_dict.items():
-        docked_sdf = complex_dict.get("Docked_File")
+        # docked_sdf = complex_dict.get("Docked_File")
         receptor_oedu = complex_dict.get("Prepped_Receptor")
         ## Make sure input exists
         # dimer_s = "dimer" if dimer else "monomer"
-        compound_in_dir = os.path.dirname(docked_sdf)
-        compound_out_dir = f"{out_dir}/{complex_id}"
+        # compound_in_dir = os.path.dirname(docked_sdf)
+        compound_in_dir = os.path.join(in_dir, complex_id)
+        compound_out_dir = os.path.join(out_dir, complex_id)
 
         ## If inputs don't exist, else if the output directory already exists, don't waste time
         if not check_output(compound_in_dir):
