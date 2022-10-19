@@ -1,18 +1,29 @@
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
+import os, argparse
 
 app = Dash(__name__)
 
-by_structure = pd.read_csv(
-    "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/by_structure.csv"
-)
-by_structure_tidy = by_structure.melt(id_vars="Structure_Source")
 
-by_compound = pd.read_csv(
-    "/Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax/by_compound.csv"
+parser = argparse.ArgumentParser(description="")
+## Input arguments
+parser.add_argument(
+    "-i",
+    "--input_dir",
+    required=True,
+    help="Path to directory containing docking csvs.",
 )
+args = parser.parse_args()
+
+by_compound_csv = os.path.join(args.input_dir, "by_compound.csv")
+by_structure_csv = os.path.join(args.input_dir, "by_structure.csv")
+
+by_compound = pd.read_csv(by_compound_csv)
 by_compound_tidy = by_compound.melt(id_vars="Compound_ID")
+
+by_structure = pd.read_csv(by_structure_csv)
+by_structure_tidy = by_structure.melt(id_vars="Structure_Source")
 
 app.layout = html.Div(
     [
@@ -130,9 +141,9 @@ app.layout = html.Div(
 )
 def per_structure_bar_chart(slider_range, x_variable):
     low, high = slider_range
-    mask = (by_structure["Resolution"] > low) & (
-        by_structure["Resolution"] < high
-    )
+    mask = (
+        (by_structure["Resolution"] > low) & (by_structure["Resolution"] < high)
+    ) | (by_structure["Resolution"].isna())
     filtered_df = by_structure[mask]
     fig = px.bar(
         filtered_df.sort_values(x_variable),
@@ -150,7 +161,7 @@ def per_structure_bar_chart(slider_range, x_variable):
     # Input("range-slider", "value"),
     Input("cmpd-bar-xaxis", "value"),
 )
-def per_structure_bar_chart(x_variable):
+def per_compound_bar_chart(x_variable):
     fig = px.bar(
         by_compound.sort_values(x_variable),
         x=x_variable,
