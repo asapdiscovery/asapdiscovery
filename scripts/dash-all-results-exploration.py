@@ -13,6 +13,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# all_results_csv = os.path.join(args.input_dir, "best_results.csv")
 all_results_csv = os.path.join(args.input_dir, "all_results_cleaned.csv")
 by_compound_csv = os.path.join(args.input_dir, "by_compound.csv")
 by_structure_csv = os.path.join(args.input_dir, "by_structure.csv")
