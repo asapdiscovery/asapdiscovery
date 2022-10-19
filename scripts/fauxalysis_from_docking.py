@@ -69,6 +69,12 @@ def get_args():
         default=False,
         help="Flag to enable overwriting output data, otherwise it will skip directories that exists already.",
     )
+    parser.add_argument(
+        "-p",
+        "--prepped_path",
+        required=True,
+        help="Path to prepped receptors.",
+    )
 
     return parser.parse_args()
 
@@ -111,7 +117,7 @@ def write_fragalysis_output(
     frag_dir : str
         Path to fragalysis results directory.
     best_structure_dict : dict
-        Of the form {('Compound_ID', dimer): 'Structure_Source'} where "dimer" is a boolean.
+        Of the form {'Complex_ID': {key: value}}
     """
     os.makedirs(f"{out_dir}", exist_ok=True)
 
@@ -119,19 +125,18 @@ def write_fragalysis_output(
     cmpd_sdf_list = []
 
     ## Loop through dict and parse input files into output files
-    for (compound_id, dimer), best_str in best_structure_dict.items():
+    for complex_id, complex_dict in best_structure_dict.items():
+        docked_sdf = complex_dict.get("Docked_File")
+        receptor_oedu = complex_dict.get("Prepped_Receptor")
         ## Make sure input exists
-        dimer_s = "dimer" if dimer else "monomer"
-        compound_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
-        compound_out_dir = f"{out_dir}/{compound_id}"
+        # dimer_s = "dimer" if dimer else "monomer"
+        compound_in_dir = os.path.dirname(docked_sdf)
+        compound_out_dir = f"{out_dir}/{complex_id}"
 
         ## If inputs don't exist, else if the output directory already exists, don't waste time
         if not check_output(compound_in_dir):
             print(
-                (
-                    f"No results found for {compound_id}/{dimer_s}/{best_str}, "
-                    "skipping"
-                ),
+                (f"No results found for {compound_in_dir}, " "skipping"),
                 flush=True,
             )
             continue
@@ -150,13 +155,14 @@ def write_fragalysis_output(
 
         ## Load necessary files
         du = oechem.OEDesignUnit()
-        oechem.OEReadDesignUnit(f"{compound_in_dir}/predocked.oedu", du)
+        # oechem.OEReadDesignUnit(f"{compound_in_dir}/predocked.oedu", du)
+        oechem.OEReadDesignUnit(receptor_oedu, du)
         prot = oechem.OEGraphMol()
         du.GetProtein(prot)
         lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
         ## Set ligand title, useful for the combined sdf file
-        lig.SetTitle(f"{compound_id}_{best_str}")
+        lig.SetTitle(f"{complex_id}")
 
         ## Give ligand atoms their own chain "L" and set the resname to "LIG"
         residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
@@ -167,7 +173,7 @@ def write_fragalysis_output(
             oechem.OEAtomSetResidue(atom, residue)
 
         ## First save apo
-        save_openeye_pdb(prot, f"{compound_out_dir}/{best_str}_apo.pdb")
+        save_openeye_pdb(prot, f"{compound_out_dir}/{complex_id}_apo.pdb")
 
         ## Combine protein and ligand and save
         ## TODO: consider saving water as well
@@ -181,10 +187,10 @@ def write_fragalysis_output(
         )
         oechem.OEPerceiveResidues(prot, preserve)
 
-        save_openeye_pdb(prot, f"{compound_out_dir}/{compound_id}_bound.pdb")
+        save_openeye_pdb(prot, f"{compound_out_dir}/{complex_id}_bound.pdb")
 
         ## Save first to its own sdf file
-        cmpd_sdf = f"{compound_out_dir}/{compound_id}.sdf"
+        cmpd_sdf = f"{compound_out_dir}/{complex_id}.sdf"
         cmpd_sdf_list.append(cmpd_sdf)
         save_openeye_sdf(lig, cmpd_sdf)
 
@@ -246,22 +252,31 @@ def main():
     docking_results = DockingResults(args.input_csv)
 
     best_structure_dict_all = {
-        (values["Compound_ID"], values["Dimer"]): values["Structure_Source"]
+        values["Complex_ID"]: values
         for values in docking_results.df.to_dict(orient="index").values()
     }
+
+    ## Get Prepped_Receptor
+    for complex_id, values in best_structure_dict_all.items():
+        values["Prepped_Receptor"] = os.path.join(
+            args.prepped_path,
+            values["Structure_Source"],
+            "prepped_receptor.oedu",
+        )
+        best_structure_dict_all[complex_id] = values
 
     if args.overwrite:
         best_structure_dict = best_structure_dict_all
     else:
         # Filter if directory already exists:
         best_structure_dict = {}
-        for (cmpd, dimer), values in best_structure_dict_all.items():
-            if not os.path.exists(f"{args.output_dir}/{cmpd}"):
-                best_structure_dict[(cmpd, dimer)] = values
+        for complex_id, complex_dict in best_structure_dict_all.items():
+            if not os.path.exists(f"{args.output_dir}/{complex_id}"):
+                best_structure_dict[complex_id] = complex_dict
             else:
                 print(
-                    f"Skipping {cmpd} since output already exists at:\n"
-                    f"\t{args.output_dir}/{cmpd}"
+                    f"Skipping {complex_id} since output already exists at:\n"
+                    f"\t{args.output_dir}/{complex_id}"
                 )
 
     ## Get cmpd_to_fragalysis source dict if required
