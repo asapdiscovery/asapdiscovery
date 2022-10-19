@@ -147,7 +147,7 @@ def main():
         os.path.join(args.output_dir, "by_structure.csv"), index=False
     )
     dr.best_df.to_csv(
-        os.path.join(args.output_dir, "mers_fauxalysis.csv"), index=False
+        os.path.join(args.output_dir, "best_results.csv"), index=False
     )
 
 
