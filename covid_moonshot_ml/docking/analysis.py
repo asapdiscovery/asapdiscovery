@@ -303,10 +303,13 @@ class DockingResults:
         -------
 
         """
+        # TODO: also this is really fragile
         # TODO: default argument `score_order` is a mutable. This can lead to unexpected behavior in python.
         ## first do filtering
-        filtered_df = self.df[self.df[filter_score] < filter_value]
-        sort_list = ["Compound_ID"] + score_order
+        if filter_value and filter_score:
+            print(f"Filtering by {filter_score} less than {filter_value}")
+            filtered_df = self.df[self.df[filter_score] < filter_value]
+            sort_list = ["Compound_ID"] + score_order
 
         ## sort dataframe, ascending (smaller / better scores will move to the top)
         sorted_df = filtered_df.sort_values(

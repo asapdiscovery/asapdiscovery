@@ -54,12 +54,20 @@ def get_args():
             "mers_structures.csv",
         ),
     )
+    # TODO: this should be expandable to filter based on multiple different scores and values
     parser.add_argument(
-        "-c",
-        "--cutoff",
+        "-v",
+        "--filter_value",
         default=2.5,
         type=float,
         help="Cutoff for filtering docking results when getting the best model.",
+    )
+    parser.add_argument(
+        "-f",
+        "--filter_score",
+        default="RMSD",
+        type=str,
+        help="Score to use for filtering docking results when getting the best model.",
     )
 
     return parser.parse_args()
@@ -134,7 +142,9 @@ def main():
     ## Get several dataframes
     dr.get_compound_df()
     dr.get_structure_df(resolution_csv=args.resolution_csv)
-    dr.get_best_structure_per_compound(filter_value=args.cutoff)
+    dr.get_best_structure_per_compound(
+        filter_score=args.filter_score, filter_value=args.filter_value
+    )
 
     ## Write out CSV Files
     dr.df.to_csv(
