@@ -306,7 +306,8 @@ class DockingResults:
         # TODO: also this is really fragile
         # TODO: default argument `score_order` is a mutable. This can lead to unexpected behavior in python.
         ## first do filtering
-        if filter_value and filter_score:
+        print(filter_score, filter_value)
+        if filter_score and type(filter_value) == float:
             print(f"Filtering by {filter_score} less than {filter_value}")
             filtered_df = self.df[self.df[filter_score] < filter_value]
             sort_list = ["Compound_ID"] + score_order
