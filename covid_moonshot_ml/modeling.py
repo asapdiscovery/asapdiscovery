@@ -378,6 +378,10 @@ def mutate_residues(input_mol, res_list, place_h=True):
     for old_res_name, res_num, r in zip(
         input_mol_seq, input_mol_num, oechem.OEGetResidues(mut_prot)
     ):
+        ## Skip if we're looking at a water
+        if old_res_name == "HOH":
+            continue
+
         try:
             new_res = res_list[res_num - 1]
         except IndexError:
@@ -387,7 +391,6 @@ def mutate_residues(input_mol, res_list, place_h=True):
         if new_res != old_res_name:
             print(res_num, old_res_name, new_res)
             mut_map[r] = new_res
-    print(mut_map)
 
     ## Mutate and build sidechains
     oespruce.OEMutateResidues(mut_prot, mut_map)
