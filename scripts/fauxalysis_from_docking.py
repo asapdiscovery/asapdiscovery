@@ -10,7 +10,7 @@ Example usage:
         -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
         -f /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/aligned
 """
-import sys, os, argparse, shutil, pickle as pkl, yaml
+import sys, os, argparse, shutil, pickle as pkl, yaml, re
 from openeye import oechem
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -258,10 +258,16 @@ def main():
     }
 
     ## Get Prepped_Receptor
+    prepped_dir_list = os.listdir(args.prepped_path)
     for complex_id, values in best_structure_dict_all.items():
+        dirname = [
+            dirname
+            for dirname in prepped_dir_list
+            if values["Structure_Source"] in dirname
+        ][0]
         values["Prepped_Receptor"] = os.path.join(
             args.prepped_path,
-            values["Structure_Source"],
+            dirname,
             "prepped_receptor.oedu",
         )
         best_structure_dict_all[complex_id] = values
