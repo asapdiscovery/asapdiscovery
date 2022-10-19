@@ -231,6 +231,9 @@ def get_args():
 def main():
     args = get_args()
 
+    ## Parse symlinks in output_dir
+    args.output_dir = os.path.realpath(args.output_dir)
+
     ## Load all ligands to dock
     ifs = oechem.oemolistream()
     ifs.open(args.lig_file)
