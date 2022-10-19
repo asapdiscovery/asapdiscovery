@@ -54,6 +54,13 @@ def get_args():
             "mers_structures.csv",
         ),
     )
+    parser.add_argument(
+        "-c",
+        "--cutoff",
+        default=2.5,
+        type=float,
+        help="Cutoff for filtering docking results when getting the best model.",
+    )
 
     return parser.parse_args()
 
@@ -110,7 +117,9 @@ def main():
     ## Add Complex_ID
     ## This is not the same thing as f"{dr.df.Compound_ID}_{dr.df.Structure_Source}", as this enables rowwise addition
     ## as opposed to adding the *entire* series as a single string
-    dr.df["Complex_ID"] = str(dr.df.Compound_ID) + "_" + dr.df.Structure_Source
+    dr.df["Complex_ID"] = (
+        dr.df.Compound_ID.apply(str) + "_" + dr.df.Structure_Source
+    )
 
     ## Clean the Docked_File paths because there are extra `/`
     ## also, some of the file paths are NaNs so we need to only keep the ones that are strings
@@ -125,7 +134,7 @@ def main():
     ## Get several dataframes
     dr.get_compound_df()
     dr.get_structure_df(resolution_csv=args.resolution_csv)
-    dr.get_best_structure_per_compound()
+    dr.get_best_structure_per_compound(filter_value=args.cutoff)
 
     ## Write out CSV Files
     dr.df.to_csv(
