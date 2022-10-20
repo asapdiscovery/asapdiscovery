@@ -1,5 +1,5 @@
 """
-Create oedu binary DesignUnit files for the given fragalysis structures. This
+Create oedu binary DesignUnit files for input protein structures. This
 script assumes that there is a ligand bound, and that the ligand will be used
 to dock against.
 """
@@ -73,7 +73,7 @@ def prep_mp(xtal, seqres, out_base, loop_db):
         chain = re.search(re_pat, xtal.str_fn).groups()[0]
     except AttributeError:
         print(
-            f"Regex chain search failed: {re_pat}, {str_fn}.",
+            f"Regex chain search failed: {re_pat}, {xtal.str_fn}.",
             "Using 0A as default.",
             flush=True,
         )
@@ -144,13 +144,28 @@ def get_args():
         "-d",
         "--structure_dir",
         required=True,
-        help="Path to fragalysis/aligned/ directory.",
+        help="Path to fragalysis/aligned/ directory or directory to put PDB structures.",
     )
+
     parser.add_argument(
         "-x",
         "--xtal_csv",
-        required=True,
+        default=None,
         help="CSV file giving information of which structures to prep.",
+    )
+    parser.add_argument(
+        "-p",
+        "--pdb_yaml_path",
+        default=None,
+        help="Yaml file containing PDB IDs.",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--ref_prot",
+        default=None,
+        type=str,
+        help="Path to reference pdb to align to. If None, no alignment will be performed",
     )
 
     ## Output arguments
