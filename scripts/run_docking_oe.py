@@ -121,6 +121,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
     -------
     """
     if check_results(out_dir):
+        print(f"Loading found results for {lig_name}_{du_name}", flush=True)
         return pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
     os.makedirs(out_dir, exist_ok=True)
 
