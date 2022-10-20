@@ -1,12 +1,19 @@
 """
-Function to test implementation of ligand filtering
+Create oedu binary DesignUnit files for the given fragalysis structures. This
+script assumes that there is a ligand bound, and that the ligand will be used
+to dock against.
 """
+import argparse
+import multiprocessing as mp
+from openeye import oechem
+import os
+import pandas
+import re
+import sys
+from tempfile import NamedTemporaryFile
+import yaml
 
-import sys, os, argparse, yaml
-
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from covid_moonshot_ml.modeling import (
     align_receptor,
     prep_receptor,
@@ -14,16 +21,121 @@ from covid_moonshot_ml.modeling import (
     mutate_residues,
 )
 from covid_moonshot_ml.datasets import pdb
-
 from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
+    split_openeye_mol,
     add_seqres,
     seqres_to_res_list,
     load_openeye_pdb,
 )
-from openeye import oechem
+from covid_moonshot_ml.docking.docking import parse_xtal
 
 
+def check_completed(d):
+    """
+    Check if this prep process has already been run successfully in the given
+    directory.
+
+    Parameters
+    ----------
+    d : str
+        Directory to check.
+
+    Returns
+    -------
+    bool
+        True if both files exist and can be loaded, otherwise False.
+    """
+
+    if (not os.path.isfile(os.path.join(d, "prepped_receptor.oedu"))) or (
+        not os.path.isfile(os.path.join(d, "prepped_complex.pdb"))
+    ):
+        return False
+
+    try:
+        du = oechem.OEDesignUnit()
+        oechem.OEReadDesignUnit(os.path.join(d, "prepped_receptor.oedu"), du)
+    except Exception:
+        return False
+
+    try:
+        _ = load_openeye_pdb(os.path.join(d, "prepped_complex.pdb"))
+    except Exception:
+        return False
+
+    return True
+
+
+def prep_mp(xtal, seqres, out_base, loop_db):
+    ## Get chain
+    re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
+    try:
+        chain = re.search(re_pat, xtal.str_fn).groups()[0]
+    except AttributeError:
+        print(
+            f"Regex chain search failed: {re_pat}, {str_fn}.",
+            "Using 0A as default.",
+            flush=True,
+        )
+        chain = "0A"
+
+    ## Check if results already exist
+    out_dir = os.path.join(
+        out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}"
+    )
+    if check_completed(out_dir):
+        return
+
+    ## Make output directory
+    os.makedirs(out_dir, exist_ok=True)
+
+    ## Option to add SEQRES header
+    if seqres:
+        ## Get a list of 3-letter codes for the sequence
+        res_list = seqres_to_res_list(seqres)
+
+        ## Generate a new (temporary) pdb file with the SEQRES we want
+        with NamedTemporaryFile(mode="w", suffix=".pdb") as tmp_pdb:
+            ## Add the SEQRES
+            add_seqres(xtal.str_fn, seqres_str=seqres, pdb_out=tmp_pdb.name)
+
+            ## Load in the pdb file as an OE object
+            seqres_prot = load_openeye_pdb(tmp_pdb.name)
+
+            ## Mutate the residues to match the residue list
+            initial_prot = mutate_residues(seqres_prot, res_list)
+    else:
+        initial_prot = load_openeye_pdb(xtal.str_fn)
+
+    ## Take the first returned DU and save it
+    try:
+        design_units = prep_receptor(
+            initial_prot,
+            loop_db=loop_db,
+        )
+    except IndexError as e:
+        print(
+            "DU generation failed for",
+            f"{xtal.dataset}_{chain}_{xtal.compound_id})",
+            flush=True,
+        )
+        return
+
+    du = design_units[0]
+    print(
+        f"{xtal.dataset}_{chain}_{xtal.compound_id}",
+        oechem.OEWriteDesignUnit(
+            os.path.join(out_dir, "prepped_receptor.oedu"), du
+        ),
+        flush=True,
+    )
+
+    ## Save complex as PDB file
+    complex_mol = du_to_complex(du, include_solvent=True)
+    save_openeye_pdb(complex_mol, os.path.join(out_dir, "prepped_complex.pdb"))
+
+
+################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
@@ -32,42 +144,42 @@ def get_args():
         "-d",
         "--structure_dir",
         required=True,
-        type=str,
-        help="Path to directory containing pdb files.",
+        help="Path to fragalysis/aligned/ directory.",
     )
     parser.add_argument(
-        "-p",
-        "--pdb_yaml_path",
-        default="../data/mers-structures.yaml",
-        help="MERS structures yaml file",
-    )
-    parser.add_argument(
-        "-r",
-        "--ref_prot",
+        "-x",
+        "--xtal_csv",
         required=True,
-        type=str,
-        help="Path to reference pdb to align to.",
+        help="CSV file giving information of which structures to prep.",
     )
+
+    ## Output arguments
     parser.add_argument(
         "-o",
         "--output_dir",
         required=True,
-        type=str,
         help="Path to output_dir.",
     )
+
+    ## Model-building arguments
     parser.add_argument(
         "-l",
         "--loop_db",
-        required=False,
-        type=str,
         help="Path to loop database.",
     )
     parser.add_argument(
         "-s",
         "--seqres_yaml",
-        default=None,
-        type=str,
         help="Path to yaml file of SEQRES.",
+    )
+
+    ## Performance arguments
+    parser.add_argument(
+        "-n",
+        "--num_cores",
+        type=int,
+        default=1,
+        help="Number of concurrent processes to run.",
     )
 
     return parser.parse_args()
@@ -75,77 +187,24 @@ def get_args():
 
 def main():
     args = get_args()
-    # base_file_name = os.path.splitext(os.path.split(args.input_prot)[1])[0]
 
-    pdb_list = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
-    pdb.download_PDBs(pdb_list, args.structure_dir)
+    xtal_compounds = parse_xtal(args.xtal_csv, args.structure_dir)
 
-    for pdb_id in pdb_list:
-        pdb_path = os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb")
-        assert os.path.exists(pdb_path)
-        print(f"Preparing {pdb_path}")
+    if args.seqres_yaml:
+        with open(args.seqres_yaml) as f:
+            seqres_dict = yaml.safe_load(f)
+        seqres = seqres_dict["SEQRES"]
+    else:
+        seqres = None
 
-        out_name = os.path.join(args.structure_dir, f"rcsb_{pdb_id}")
-
-        if args.seqres_yaml:
-            ## first add standard seqres info
-
-            with open(args.seqres_yaml) as f:
-                seqres_dict = yaml.safe_load(f)
-            seqres = seqres_dict["SEQRES"]
-
-            ## Get a list of 3-letter codes for the sequence
-            res_list = seqres_to_res_list(seqres)
-
-            ## Generate a new pdb file with the SEQRES we want
-            seqres_pdb = f"{out_name}_01seqres.pdb"
-            add_seqres(pdb_path, seqres_str=seqres, pdb_out=seqres_pdb)
-
-            ## Load in the pdb file as an OE object
-            seqres_prot = load_openeye_pdb(seqres_pdb)
-
-            ## Mutate the residues to match the residue list
-            initial_prot = mutate_residues(seqres_prot, res_list)
-            mutated_fn = f"{out_name}_02mutated.pdb"
-            save_openeye_pdb(initial_prot, mutated_fn)
-        else:
-            initial_prot = load_openeye_pdb(args.input_prot)
-
-        ## For each chain, align the receptor to the reference while keeping both chains.
-        for mobile_chain in ["A", "B"]:
-            print(f"Running on chain {mobile_chain}")
-            aligned_prot = align_receptor(
-                input_prot=initial_prot,
-                ref_prot=args.ref_prot,
-                dimer=True,
-                mobile_chain=mobile_chain,
-                ref_chain="A",
-            )
-            aligned_fn = f"{out_name}_03aligned_chain{mobile_chain}.pdb"
-            save_openeye_pdb(aligned_prot, aligned_fn)
-
-            ## Prep the receptor using various SPRUCE options
-            site_residue = "HIS:41: :A"
-            design_units = prep_receptor(
-                aligned_prot,
-                site_residue=site_residue,
-                loop_db=args.loop_db,
-            )
-
-            ## Because of the object I'm using, it returns the design units as a list
-            ## There should only be one but just in case I'm going to write out all of them
-            for i, du in enumerate(design_units):
-                print(i, du)
-
-                ## First save the design unit itself
-                oechem.OEWriteDesignUnit(
-                    f"{out_name}_04prepped_chain{mobile_chain}_{i}.oedu", du
-                )
-
-                ## Then save as a PDB file
-                complex_mol = du_to_complex(du)
-                prepped_fn = f"{out_name}_04prepped_chain{mobile_chain}_{i}.pdb"
-                save_openeye_pdb(complex_mol, prepped_fn)
+    mp_args = [
+        (x, seqres, args.output_dir, args.loop_db) for x in xtal_compounds
+    ]
+    print(mp_args[0], flush=True)
+    nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+    print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
+    with mp.Pool(processes=nprocs) as pool:
+        pool.starmap(prep_mp, mp_args)
 
 
 if __name__ == "__main__":
