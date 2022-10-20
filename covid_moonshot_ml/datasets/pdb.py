@@ -32,6 +32,10 @@ def download_PDBs(pdb_list, pdb_path):
 
     """
     from kinoml.databases.pdb import download_pdb_structure
+    import os
+
+    if not os.path.exists(pdb_path):
+        os.mkdir(pdb_path)
 
     print(f"Downloading PDBs to {pdb_path}")
     for pdb in pdb_list:

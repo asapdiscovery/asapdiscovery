@@ -203,7 +203,11 @@ def get_args():
 def main():
     args = get_args()
 
-    xtal_compounds = parse_xtal(args.xtal_csv, args.structure_dir)
+    if args.xtal_csv:
+        xtal_compounds = parse_xtal(args.xtal_csv, args.structure_dir)
+    elif args.pdb_yaml_path:
+        pdb_list = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
+        pdb.download_PDBs(pdb_list, args.structure_dir)
 
     if args.seqres_yaml:
         with open(args.seqres_yaml) as f:
@@ -215,6 +219,7 @@ def main():
     mp_args = [
         (x, seqres, args.output_dir, args.loop_db) for x in xtal_compounds
     ]
+    mp_args = mp_args[0:1]
     print(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
