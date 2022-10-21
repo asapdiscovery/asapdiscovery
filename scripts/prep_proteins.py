@@ -49,7 +49,7 @@ def check_completed(d):
     """
 
     if (not os.path.isfile(os.path.join(d, "prepped_receptor.oedu"))) or (
-        not os.path.isfile(os.path.join(d, "prepped_complex.pdb"))
+        not os.path.isfile(os.path.join(d, "prepped_receptor.pdb"))
     ):
         return False
 
@@ -60,14 +60,21 @@ def check_completed(d):
         return False
 
     try:
-        _ = load_openeye_pdb(os.path.join(d, "prepped_complex.pdb"))
+        _ = load_openeye_pdb(os.path.join(d, "prepped_receptor.pdb"))
     except Exception:
         return False
 
     return True
 
 
-def prep_mp(xtal: CrystalCompoundData, ref_prot, seqres, out_base, loop_db):
+def prep_mp(
+    xtal: CrystalCompoundData,
+    ref_prot,
+    seqres,
+    out_base,
+    loop_db,
+    protein_only: bool,
+):
     ## Check if results already exist
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
     if check_completed(out_dir):
@@ -93,15 +100,13 @@ def prep_mp(xtal: CrystalCompoundData, ref_prot, seqres, out_base, loop_db):
             initial_prot = mutate_residues(seqres_prot, res_list)
     else:
         initial_prot = load_openeye_pdb(xtal.str_fn)
-
-    split_initial_complex = True if not xtal.compound_id else False
-
+    print(protein_only)
     if ref_prot:
         initial_prot = align_receptor(
             initial_complex=initial_prot,
             ref_prot=ref_prot,
             dimer=True,
-            split_initial_complex=split_initial_complex,
+            split_initial_complex=protein_only,
             mobile_chain=xtal.chain,
             ref_chain="A",
         )
@@ -114,6 +119,7 @@ def prep_mp(xtal: CrystalCompoundData, ref_prot, seqres, out_base, loop_db):
             initial_prot,
             site_residue=xtal.active_site,
             loop_db=loop_db,
+            protein_only=protein_only,
         )
     except IndexError as e:
         print(
@@ -134,7 +140,7 @@ def prep_mp(xtal: CrystalCompoundData, ref_prot, seqres, out_base, loop_db):
 
     ## Save complex as PDB file
     complex_mol = du_to_complex(du, include_solvent=True)
-    save_openeye_pdb(complex_mol, os.path.join(out_dir, "prepped_complex.pdb"))
+    save_openeye_pdb(complex_mol, os.path.join(out_dir, "prepped_receptor.pdb"))
 
 
 ################################################################################
@@ -189,6 +195,12 @@ def get_args():
         "--seqres_yaml",
         help="Path to yaml file of SEQRES.",
     )
+    parser.add_argument(
+        "--protein_only",
+        action="store_true",
+        default=False,
+        help="If true, generate design units with only the protein in them",
+    )
 
     ## Performance arguments
     parser.add_argument(
@@ -222,6 +234,8 @@ def main():
                 frag_chain = "0A"
             xtal.output_name = f"{xtal.dataset}_{frag_chain}_{xtal.compound_id}"
             xtal.chain = frag_chain[-1]
+            if args.protein_only:
+                xtal.active_site = f"His:41: :{xtal.chain}"
             print(xtal.chain, xtal.output_name)
         xtal_compounds = [xtal for xtal in xtal_compounds if xtal.chain == "B"]
 
@@ -259,7 +273,14 @@ def main():
         seqres = None
 
     mp_args = [
-        (x, args.ref_prot, seqres, args.output_dir, args.loop_db)
+        (
+            x,
+            args.ref_prot,
+            seqres,
+            args.output_dir,
+            args.loop_db,
+            args.protein_only,
+        )
         for x in xtal_compounds
     ]
     mp_args = mp_args[0:1]
