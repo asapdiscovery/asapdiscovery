@@ -14,6 +14,7 @@ from tempfile import NamedTemporaryFile
 import yaml
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from covid_moonshot_ml.schema import CrystalCompoundData
 from covid_moonshot_ml.modeling import (
     align_receptor,
     prep_receptor,
@@ -66,23 +67,9 @@ def check_completed(d):
     return True
 
 
-def prep_mp(xtal, seqres, out_base, loop_db):
-    ## Get chain
-    re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
-    try:
-        chain = re.search(re_pat, xtal.str_fn).groups()[0]
-    except AttributeError:
-        print(
-            f"Regex chain search failed: {re_pat}, {xtal.str_fn}.",
-            "Using 0A as default.",
-            flush=True,
-        )
-        chain = "0A"
-
+def prep_mp(xtal: CrystalCompoundData, ref_prot, seqres, out_base, loop_db):
     ## Check if results already exist
-    out_dir = os.path.join(
-        out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}"
-    )
+    out_dir = os.path.join(out_base, f"{xtal.output_name}")
     if check_completed(out_dir):
         return
 
@@ -107,23 +94,38 @@ def prep_mp(xtal, seqres, out_base, loop_db):
     else:
         initial_prot = load_openeye_pdb(xtal.str_fn)
 
+    split_initial_complex = True if not xtal.compound_id else False
+
+    if ref_prot:
+        initial_prot = align_receptor(
+            initial_complex=initial_prot,
+            ref_prot=ref_prot,
+            dimer=True,
+            split_initial_complex=split_initial_complex,
+            mobile_chain=xtal.chain,
+            ref_chain="A",
+        )
+
+        save_openeye_pdb(initial_prot, "test.pdb")
+
     ## Take the first returned DU and save it
     try:
         design_units = prep_receptor(
             initial_prot,
+            site_residue=xtal.active_site,
             loop_db=loop_db,
         )
     except IndexError as e:
         print(
             "DU generation failed for",
-            f"{xtal.dataset}_{chain}_{xtal.compound_id})",
+            f"{xtal.output_name})",
             flush=True,
         )
         return
 
     du = design_units[0]
     print(
-        f"{xtal.dataset}_{chain}_{xtal.compound_id}",
+        f"{xtal.output_name}",
         oechem.OEWriteDesignUnit(
             os.path.join(out_dir, "prepped_receptor.oedu"), du
         ),
@@ -205,9 +207,49 @@ def main():
 
     if args.xtal_csv:
         xtal_compounds = parse_xtal(args.xtal_csv, args.structure_dir)
+
+        for xtal in xtal_compounds:
+            ## Get chain
+            re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
+            try:
+                frag_chain = re.search(re_pat, xtal.str_fn).groups()[0]
+            except AttributeError:
+                print(
+                    f"Regex chain search failed: {re_pat}, {xtal.str_fn}.",
+                    "Using A as default.",
+                    flush=True,
+                )
+                frag_chain = "0A"
+            xtal.output_name = f"{xtal.dataset}_{frag_chain}_{xtal.compound_id}"
+            xtal.chain = frag_chain[-1]
+            print(xtal.chain, xtal.output_name)
+        xtal_compounds = [xtal for xtal in xtal_compounds if xtal.chain == "B"]
+
     elif args.pdb_yaml_path:
         pdb_list = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
         pdb.download_PDBs(pdb_list, args.structure_dir)
+        pdb_fns = os.listdir(args.structure_dir)
+        data = []
+        for i, pdb_id in enumerate(pdb_list):
+            data.append(
+                (
+                    os.path.join(args.structure_dir, pdb_fns[i]),
+                    f"{pdb_id}_0A",
+                    "A",
+                    "HIS:41: :A",
+                )
+            )
+
+        xtal_compounds = [
+            CrystalCompoundData(
+                str_fn=pdb_path,
+                output_name=output_name,
+                chain=chain,
+                active_site=active_site,
+            )
+            for pdb_path, output_name, chain, active_site in data
+            if os.path.exists(pdb_path)
+        ]
 
     if args.seqres_yaml:
         with open(args.seqres_yaml) as f:
@@ -217,7 +259,8 @@ def main():
         seqres = None
 
     mp_args = [
-        (x, seqres, args.output_dir, args.loop_db) for x in xtal_compounds
+        (x, args.ref_prot, seqres, args.output_dir, args.loop_db)
+        for x in xtal_compounds
     ]
     mp_args = mp_args[0:1]
     print(mp_args[0], flush=True)

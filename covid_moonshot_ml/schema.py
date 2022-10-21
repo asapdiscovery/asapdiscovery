@@ -55,7 +55,7 @@ class ExperimentalCompoundDataUpdate(Model):
 ################################################################################
 
 
-class CrystalCompoundData(Model):
+class CrystalCompoundData(BaseModel):
 
     smiles: str = Field(
         None,
@@ -73,6 +73,13 @@ class CrystalCompoundData(Model):
     str_fn: str = Field(None, description="Filename of the PDB structure.")
 
     sdf_fn: str = Field(None, description="Filename of the SDF file")
+    chain: str = Field(
+        None, description="Chain identifying the active site of interest."
+    )
+    output_name: str = Field(None, description="Name of output structure.")
+    active_site: str = Field(
+        None, description="OpenEye formatted active site residue."
+    )
 
 
 class PDBStructure(Model):
