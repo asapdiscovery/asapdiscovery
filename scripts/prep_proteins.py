@@ -2,6 +2,16 @@
 Create oedu binary DesignUnit files for input protein structures. This
 script assumes that there is a ligand bound, and that the ligand will be used
 to dock against.
+
+Example Usage:
+    python prep_proteins.py
+        -d /data/chodera/asap-datasets/mers_pdb_download
+        -p ../data/mers-structures.yaml
+        -r ~/fragalysis/extra_files/reference.pdb
+        -l ~/rcsb_spruce.loop_db
+        -o /data/chodera/asap-datasets/mers_prepped_structures
+        -s ../data/mpro_mers_seqres.yaml
+        --protein_only
 """
 import argparse
 import multiprocessing as mp
