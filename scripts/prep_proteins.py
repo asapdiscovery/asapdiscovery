@@ -130,17 +130,20 @@ def prep_mp(
         return
 
     du = design_units[0]
-    print(
-        f"{xtal.output_name}",
-        oechem.OEWriteDesignUnit(
-            os.path.join(out_dir, "prepped_receptor.oedu"), du
-        ),
-        flush=True,
-    )
+    for i, du in enumerate(design_units):
+        print(
+            f"{xtal.output_name}",
+            oechem.OEWriteDesignUnit(
+                os.path.join(out_dir, f"prepped_receptor_{i}.oedu"), du
+            ),
+            flush=True,
+        )
 
-    ## Save complex as PDB file
-    complex_mol = du_to_complex(du, include_solvent=True)
-    save_openeye_pdb(complex_mol, os.path.join(out_dir, "prepped_receptor.pdb"))
+        ## Save complex as PDB file
+        complex_mol = du_to_complex(du, include_solvent=True)
+        save_openeye_pdb(
+            complex_mol, os.path.join(out_dir, f"prepped_receptor_{i}.pdb")
+        )
 
 
 ################################################################################
@@ -240,18 +243,15 @@ def main():
     elif args.pdb_yaml_path:
         pdb_list = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
         pdb.download_PDBs(pdb_list, args.structure_dir)
-        pdb_fns = os.listdir(args.structure_dir)
-        data = []
-        for i, pdb_id in enumerate(pdb_list):
-            data.append(
-                (
-                    os.path.join(args.structure_dir, pdb_fns[i]),
-                    f"{pdb_id}_0A",
-                    "A",
-                    "HIS:41: :A",
-                )
+        data = [
+            (
+                os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"),
+                f"{pdb_id}_0A",
+                "A",
+                "HIS:41: :A",
             )
-
+            for i, pdb_id in enumerate(pdb_list)
+        ]
         xtal_compounds = [
             CrystalCompoundData(
                 str_fn=pdb_path,
@@ -281,6 +281,7 @@ def main():
         )
         for x in xtal_compounds
     ]
+    mp_args = mp_args[0:1]
     print(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
