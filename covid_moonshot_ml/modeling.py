@@ -402,7 +402,9 @@ def mutate_residues(input_mol, res_list, place_h=True):
     return mut_prot
 
 
-def prep_receptor(initial_prot, site_residue="", loop_db=None):
+def prep_receptor(
+    initial_prot, site_residue="", loop_db=None, protein_only=False
+):
     """
     Prepare DU from protein. If the ligand isn't present in `initial_prot`, a
     value must be provided for `site_residue` or `OEMakeDesignUnits` will fail.
@@ -470,8 +472,9 @@ def prep_receptor(initial_prot, site_residue="", loop_db=None):
     opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True)
     opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True)
 
-    # Generate ligand tautomers
-    opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
+    if not protein_only:
+        # Generate ligand tautomers
+        opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
     ############################################################################
 
     ## Finally make new DesignUnit
@@ -480,7 +483,9 @@ def prep_receptor(initial_prot, site_residue="", loop_db=None):
             initial_prot, oespruce.OEStructureMetadata(), opts, site_residue
         )
     )
-    assert dus[0].HasProtein() and dus[0].HasLigand()
+    assert dus[0].HasProtein()
+    if not protein_only:
+        assert dus[0].HasLigand()
 
     ## Generate docking receptor for each DU
     for du in dus:
