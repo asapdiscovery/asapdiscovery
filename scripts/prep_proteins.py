@@ -96,6 +96,8 @@ def prep_mp(
             ## Load in the pdb file as an OE object
             seqres_prot = load_openeye_pdb(tmp_pdb.name)
 
+            save_openeye_pdb(seqres_prot, "seqres_test.pdb")
+
             ## Mutate the residues to match the residue list
             initial_prot = mutate_residues(seqres_prot, res_list)
     else:
@@ -110,8 +112,6 @@ def prep_mp(
             mobile_chain=xtal.chain,
             ref_chain="A",
         )
-
-        save_openeye_pdb(initial_prot, "test.pdb")
 
     ## Take the first returned DU and save it
     try:
@@ -236,8 +236,6 @@ def main():
             xtal.chain = frag_chain[-1]
             if args.protein_only:
                 xtal.active_site = f"His:41: :{xtal.chain}"
-            print(xtal.chain, xtal.output_name)
-        xtal_compounds = [xtal for xtal in xtal_compounds if xtal.chain == "B"]
 
     elif args.pdb_yaml_path:
         pdb_list = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
@@ -283,7 +281,6 @@ def main():
         )
         for x in xtal_compounds
     ]
-    mp_args = mp_args[0:1]
     print(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")

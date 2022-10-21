@@ -51,6 +51,6 @@ SEQRES: |
 DBREF: |
   DBREF1 5C3N A    1   306  UNP                  A0A0A7E693_9BETC
   DBREF2 5C3N A     A0A0A7E693                       3248        3553
-  DBREF1 5C3N B    1   306  UNP                  A0A0A7E693_9BETC
-  DBREF2 5C3N B     A0A0A7E693                       3248        3553
+#  DBREF1 5C3N B    1   306  UNP                  A0A0A7E693_9BETC
+#  DBREF2 5C3N B     A0A0A7E693                       3248        3553
 

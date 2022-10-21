@@ -429,7 +429,7 @@ def prep_receptor(
     List[OEDesignUnit]
         Iterator over generated DUs.
     """
-    initial_prot = build_dimer_from_monomer(initial_prot)
+    # initial_prot = build_dimer_from_monomer(initial_prot)
 
     ## Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
@@ -506,19 +506,19 @@ def build_dimer_from_monomer(prot):
     ## Shouldn't affect the protein if the dimer has already been built
     bus = list(oespruce.OEExtractBioUnits(prot))
     ## Check to make sure everything got built correctly
-    if len(bus) != 2:
-        print(
-            f"Incorrect number of Bio units built for {n} ({len(bus)})",
-            flush=True,
-        )
-    if bus[0].NumAtoms() != 2 * bus[1].NumAtoms():
-        print(
-            (
-                f"Incorrect relative size of Bio units for {n} "
-                f"({bus[0].NumAtoms()} and {bus[1].NumAtoms()})"
-            ),
-            flush=True,
-        )
+    # if len(bus) != 2:
+    #     print(
+    #         f"Incorrect number of Bio units built ({len(bus)})",
+    #         flush=True,
+    #     )
+    # if bus[0].NumAtoms() != 2 * bus[1].NumAtoms():
+    #     print(
+    #         (
+    #             f"Incorrect relative size of Bio units"
+    #             f"({bus[0].NumAtoms()} and {bus[1].NumAtoms()})"
+    #         ),
+    #         flush=True,
+    #     )
     ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
     ##  doesn't pickle
     prot = oechem.OEGraphMol(bus[0])
@@ -535,7 +535,7 @@ def build_dimer_from_monomer(prot):
         )
     }
     if len(all_chain_ids) != 2:
-        raise AssertionError(f"{n} chains: {all_chain_ids}")
+        raise AssertionError(f"Chains: {all_chain_ids}")
 
     print(all_chain_ids)
     return prot
