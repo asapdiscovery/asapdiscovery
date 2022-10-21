@@ -39,7 +39,12 @@ def add_seqres(pdb_in, seqres_str=None, dbref_str=None, pdb_out=None):
     # # remove ligand hetatoms
     # pdbfile_lines = [ line for line in pdbfile_lines if 'LIG' not in line ]
     if seqres_str:
-        pdbfile_lines = [line for line in pdbfile_lines if not "SEQRES" in line]
+        pdbfile_lines = [
+            line
+            for line in pdbfile_lines
+            if not "SEQRES" in line
+            # if not "REMARK 350" in line
+        ]
         pdbfile_contents = "".join(pdbfile_lines)
         # seqres_str +
     else:
