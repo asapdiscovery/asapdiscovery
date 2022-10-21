@@ -13,9 +13,8 @@
 # Specify node group
 #BSUB -q cpuqueue
 
-# nodes: number of nodes and GPU request
+# nodes: number of nodes
 #BSUB -n 10 -R "rusage[mem=8]"
-#BSUB -gpu "num=1:j_exclusive=yes:mode=shared"
 
 
 source ~/.bashrc
