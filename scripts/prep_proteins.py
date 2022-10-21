@@ -77,8 +77,8 @@ def prep_mp(
 ):
     ## Check if results already exist
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
-    if check_completed(out_dir):
-        return
+    # if check_completed(out_dir):
+    #     return
 
     ## Make output directory
     os.makedirs(out_dir, exist_ok=True)

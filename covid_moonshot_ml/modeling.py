@@ -276,6 +276,7 @@ def align_receptor(
     split_ref=True,
     ref_chain=None,
     mobile_chain=None,
+    keep_water=True,
 ):
     """
     Function to prepare receptor before building the design unit.
@@ -308,8 +309,12 @@ def align_receptor(
             alf.MakePrimaryAltMol(ref_prot)
 
     ## Split out protein components and align if requested
+
     if split_initial_complex:
-        initial_prot_temp = split_openeye_mol(initial_complex)["pro"]
+        split_dict = split_openeye_mol(initial_complex)
+        initial_prot_temp = split_dict["pro"]
+        if keep_water:
+            oechem.OEAddMols(initial_prot_temp, split_dict["water"])
     else:
         initial_prot_temp = initial_complex
 
@@ -424,6 +429,7 @@ def prep_receptor(
     List[OEDesignUnit]
         Iterator over generated DUs.
     """
+    initial_prot = build_dimer_from_monomer(initial_prot)
 
     ## Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
@@ -492,3 +498,44 @@ def prep_receptor(
         oedocking.OEMakeReceptor(du)
 
     return dus
+
+
+def build_dimer_from_monomer(prot):
+    ## Build monomer into dimer as necessary (will need to handle
+    ##  re-labeling chains since the monomer seems to get the chainID C)
+    ## Shouldn't affect the protein if the dimer has already been built
+    bus = list(oespruce.OEExtractBioUnits(prot))
+    ## Check to make sure everything got built correctly
+    if len(bus) != 2:
+        print(
+            f"Incorrect number of Bio units built for {n} ({len(bus)})",
+            flush=True,
+        )
+    if bus[0].NumAtoms() != 2 * bus[1].NumAtoms():
+        print(
+            (
+                f"Incorrect relative size of Bio units for {n} "
+                f"({bus[0].NumAtoms()} and {bus[1].NumAtoms()})"
+            ),
+            flush=True,
+        )
+    ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
+    ##  doesn't pickle
+    prot = oechem.OEGraphMol(bus[0])
+
+    ## Keep track of chain IDs
+    all_chain_ids = {
+        r.GetExtChainID()
+        for r in oechem.OEGetResidues(prot)
+        if all(
+            [
+                not oechem.OEIsWater()(a)
+                for a in oechem.OEGetResidueAtoms(prot, r)
+            ]
+        )
+    }
+    if len(all_chain_ids) != 2:
+        raise AssertionError(f"{n} chains: {all_chain_ids}")
+
+    print(all_chain_ids)
+    return prot
