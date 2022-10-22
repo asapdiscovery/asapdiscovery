@@ -35,7 +35,7 @@ from covid_moonshot_ml.datasets import pdb
 from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
     split_openeye_mol,
-    add_seqres,
+    edit_pdb_file,
     seqres_to_res_list,
     load_openeye_pdb,
 )
@@ -101,7 +101,14 @@ def prep_mp(
         ## Generate a new (temporary) pdb file with the SEQRES we want
         with NamedTemporaryFile(mode="w", suffix=".pdb") as tmp_pdb:
             ## Add the SEQRES
-            add_seqres(xtal.str_fn, seqres_str=seqres, pdb_out=tmp_pdb.name)
+            edit_pdb_file(
+                xtal.str_fn,
+                seqres_str=seqres,
+                edit_remark350=True,
+                oligomeric_state=xtal.oligomeric_state,
+                chains=xtal.chains,
+                pdb_out=tmp_pdb.name,
+            )
 
             ## Load in the pdb file as an OE object
             seqres_prot = load_openeye_pdb(tmp_pdb.name)
@@ -109,17 +116,19 @@ def prep_mp(
             save_openeye_pdb(seqres_prot, "seqres_test.pdb")
 
             ## Mutate the residues to match the residue list
-            initial_prot = mutate_residues(seqres_prot, res_list)
+            initial_prot = mutate_residues(
+                seqres_prot, res_list, xtal.protein_chains
+            )
     else:
         initial_prot = load_openeye_pdb(xtal.str_fn)
-    print(protein_only)
+
     if ref_prot:
         initial_prot = align_receptor(
             initial_complex=initial_prot,
             ref_prot=ref_prot,
             dimer=True,
             split_initial_complex=protein_only,
-            mobile_chain=xtal.chain,
+            mobile_chain=xtal.active_site_chain,
             ref_chain="A",
         )
 
@@ -251,26 +260,25 @@ def main():
                 xtal.active_site = f"His:41: :{xtal.chain}"
 
     elif args.pdb_yaml_path:
-        pdb_list = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
+        pdb_dict = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
+        print(pdb_dict)
+        pdb_list = list(pdb_dict.keys())
         pdb.download_PDBs(pdb_list, args.structure_dir)
-        data = [
-            (
-                os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"),
-                f"{pdb_id}_0A",
-                "A",
-                "HIS:41: :A",
-            )
-            for i, pdb_id in enumerate(pdb_list)
-        ]
+        active_site_chain = "A"
         xtal_compounds = [
             CrystalCompoundData(
-                str_fn=pdb_path,
-                output_name=output_name,
-                chain=chain,
-                active_site=active_site,
+                str_fn=os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"),
+                output_name=f"{pdb_id}_0{active_site_chain}",
+                active_site_chain=active_site_chain,
+                active_site=f"HIS:41: :{active_site_chain}",
+                chains=values.get("chains", ["A", "B"]),
+                oligomeric_state=values.get("oligomeric_state", "dimer"),
+                protein_chains=values.get("protein_chains", ["A", "B"]),
             )
-            for pdb_path, output_name, chain, active_site in data
-            if os.path.exists(pdb_path)
+            for pdb_id, values in pdb_dict.items()
+            if os.path.exists(
+                os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb")
+            )
         ]
 
     if args.seqres_yaml:
