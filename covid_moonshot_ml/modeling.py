@@ -389,11 +389,11 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
         input_mol_chain,
         oechem.OEGetResidues(mut_prot),
     ):
-        ## Skip if we're looking at a water
+        ## Skip if not in identified protein chains
         if protein_chains:
             if chain not in protein_chains:
-                print(f"Skipping {chain, old_res_name}")
                 continue
+        ## Skip if we're looking at a water
         if old_res_name == "HOH":
             continue
         try:
