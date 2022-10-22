@@ -15,7 +15,7 @@ from covid_moonshot_ml.modeling import (
 )
 from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
-    add_seqres,
+    edit_pdb_file,
     seqres_to_res_list,
     load_openeye_pdb,
 )
@@ -83,7 +83,7 @@ def main():
 
         ## Generate a new pdb file with the SEQRES we want
         seqres_pdb = f"{out_name}_01seqres.pdb"
-        add_seqres(args.input_prot, seqres_str=seqres, pdb_out=seqres_pdb)
+        edit_pdb_file(args.input_prot, seqres_str=seqres, pdb_out=seqres_pdb)
 
         ## Load in the pdb file as an OE object
         seqres_prot = load_openeye_pdb(seqres_pdb)

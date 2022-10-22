@@ -24,7 +24,7 @@ from covid_moonshot_ml.datasets import pdb
 from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
     split_openeye_mol,
-    add_seqres,
+    edit_pdb_file,
     seqres_to_res_list,
     load_openeye_pdb,
 )
@@ -97,7 +97,7 @@ def prep_mp(xtal, seqres, out_base, loop_db):
         ## Generate a new (temporary) pdb file with the SEQRES we want
         with NamedTemporaryFile(mode="w", suffix=".pdb") as tmp_pdb:
             ## Add the SEQRES
-            add_seqres(xtal.str_fn, seqres_str=seqres, pdb_out=tmp_pdb.name)
+            edit_pdb_file(xtal.str_fn, seqres_str=seqres, pdb_out=tmp_pdb.name)
 
             ## Load in the pdb file as an OE object
             seqres_prot = load_openeye_pdb(tmp_pdb.name)

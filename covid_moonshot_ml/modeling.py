@@ -350,7 +350,7 @@ def align_receptor(
     return initial_prot
 
 
-def mutate_residues(input_mol, res_list, place_h=True):
+def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
     """
     Mutate residues in the input molecule using OpenEye.
     TODO: Make this more robust using some kind of sequence alignment.
@@ -373,6 +373,9 @@ def mutate_residues(input_mol, res_list, place_h=True):
     ## Create a copy of the molecule to avoid modifying original molecule
     mut_prot = input_mol.CreateCopy()
     ## Get sequence of input protein
+    input_mol_chain = [
+        r.GetExtChainID() for r in oechem.OEGetResidues(input_mol)
+    ]
     input_mol_seq = [r.GetName() for r in oechem.OEGetResidues(input_mol)]
     input_mol_num = [
         r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)
@@ -380,13 +383,19 @@ def mutate_residues(input_mol, res_list, place_h=True):
 
     ## Build mutation map from OEResidue to new res name by indexing from res num
     mut_map = {}
-    for old_res_name, res_num, r in zip(
-        input_mol_seq, input_mol_num, oechem.OEGetResidues(mut_prot)
+    for old_res_name, res_num, chain, r in zip(
+        input_mol_seq,
+        input_mol_num,
+        input_mol_chain,
+        oechem.OEGetResidues(mut_prot),
     ):
         ## Skip if we're looking at a water
+        if protein_chains:
+            if chain not in protein_chains:
+                print(f"Skipping {chain, old_res_name}")
+                continue
         if old_res_name == "HOH":
             continue
-
         try:
             new_res = res_list[res_num - 1]
         except IndexError:
