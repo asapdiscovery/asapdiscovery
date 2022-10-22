@@ -291,7 +291,6 @@ def main():
         )
         for x in xtal_compounds
     ]
-    mp_args = mp_args[0:1]
     print(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")

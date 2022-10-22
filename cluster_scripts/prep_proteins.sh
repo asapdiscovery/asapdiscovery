@@ -19,4 +19,11 @@
 
 source ~/.bashrc
 conda activate mers-docking
-python prep_proteins.py -d /data/chodera/asap-datasets/mers_pdb_download -p ../data/mers-structures.yaml -r ~/fragalysis/extra_files/reference.pdb -l ~/rcsb_spruce.loop_db -o /data/chodera/asap-datasets/mers_prepped_structures -s ../data/mpro_mers_seqres.yaml --protein_only
+python ../scripts/prep_proteins.py -n 10 \
+-d /data/chodera/asap-datasets/mers_pdb_download \
+-p ../data/mers-structures.yaml \
+-r ~/fragalysis/extra_files/reference.pdb \
+-l ~/rcsb_spruce.loop_db \
+-o /data/chodera/asap-datasets/mers_prepped_structures \
+-s ../data/mpro_mers_seqres.yaml \
+--protein_only
