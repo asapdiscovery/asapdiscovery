@@ -49,7 +49,7 @@ def check_results(d):
     return True
 
 
-def load_dus(file_base):
+def load_dus(file_base, by_compound=False):
     """
     Load all present oedu files. If `file_base` is a directory, os.walk will be
     used to find all .oedu files in the directory. Otherwise, it will be
@@ -58,15 +58,19 @@ def load_dus(file_base):
     Parameters
     ----------
     file_base : str
-        Directory/base filepath for .oedu files.
+        Directory/base filepath for .oedu files, or best_results.csv file if
+        `by_compound` is True.
+    by_compound : bool, default=False
+        Whether to load by dataset (False) or by compound_id (True).
 
     Returns
     -------
     Dict[str, List[str]]
-        Dictionary mapping Mpro dataset name to list of full Mpro names
-        (with chain)
+        Dictionary mapping Mpro dataset name/compound id to list of full
+        Mpro names/compound ids (with chain)
     Dict[str, oechem.OEDesignUnit]
-        Dictionary mapping full Mpro name (including chain) to its design unit
+        Dictionary mapping full Mpro name/compound id (including chain) to its
+        design unit
     """
 
     if os.path.isdir(file_base):
@@ -76,16 +80,26 @@ def load_dus(file_base):
             for fn in files
             if fn[-4:] == "oedu"
         ]
+    elif os.path.isfile(file_base) and by_compound:
+        df = pandas.read_csv(file_base)
+        all_fns = [
+            os.path.join(os.path.dirname(fn), "predocked.oedu")
+            for fn in df["Docked_File"]
+        ]
     else:
         all_fns = glob(file_base)
 
     du_dict = {}
     dataset_dict = {}
-    re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
+    if by_compound:
+        re_pat = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
+    else:
+        re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
     for fn in all_fns:
         m = re.search(re_pat, fn)
         if m is None:
-            print(f"No Mpro dataset found for {fn}", flush=True)
+            search_type = "compound_id" if by_compound else "Mpro dataset"
+            print(f"No {search_type} found for {fn}", flush=True)
             continue
 
         dataset = m.groups()[0]
@@ -176,7 +190,10 @@ def get_args():
         "-r",
         "--receptor",
         required=True,
-        help="Path/glob to prepped receptor(s).",
+        help=(
+            "Path/glob to prepped receptor(s), or best_results.csv file if "
+            "--by_compound is given."
+        ),
     )
     parser.add_argument(
         "-s",
@@ -225,6 +242,12 @@ def get_args():
         action="store_true",
         help="Whether to only use hybrid docking protocol in POSIT.",
     )
+    parser.add_argument(
+        "-c",
+        "--by_compound",
+        action="store_true",
+        help="Load/store DesignUnits by compound_id instead of by Mpro dataset.",
+    )
 
     return parser.parse_args()
 
@@ -242,7 +265,7 @@ def main():
     n_mols = len(mols)
 
     ## Load all receptor DesignUnits
-    dataset_dict, du_dict = load_dus(args.receptor)
+    dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
 
     ## Load sort indices if given
     if args.sort_res:
