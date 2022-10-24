@@ -72,7 +72,7 @@ def get_args():
     parser.add_argument(
         "-p",
         "--prepped_path",
-        required=True,
+        default=None,
         help="Path to prepped receptors.",
     )
 
@@ -128,10 +128,9 @@ def write_fragalysis_output(
     for complex_id, complex_dict in best_structure_dict.items():
         # docked_sdf = complex_dict.get("Docked_File")
         receptor_oedu = complex_dict.get("Prepped_Receptor")
+        compound_id = complex_dict.get("Compound_ID")
         ## Make sure input exists
-        # dimer_s = "dimer" if dimer else "monomer"
-        # compound_in_dir = os.path.dirname(docked_sdf)
-        compound_in_dir = os.path.join(in_dir, complex_id)
+        compound_in_dir = os.path.dirname(complex_dict.get("Ligand_SDF"))
         compound_out_dir = os.path.join(out_dir, complex_id)
 
         ## If inputs don't exist, else if the output directory already exists, don't waste time
@@ -258,19 +257,45 @@ def main():
     }
 
     ## Get Prepped_Receptor
-    prepped_dir_list = os.listdir(args.prepped_path)
-    for complex_id, values in best_structure_dict_all.items():
-        dirname = [
-            dirname
-            for dirname in prepped_dir_list
-            if values["Structure_Source"] in dirname
-        ][0]
-        values["Prepped_Receptor"] = os.path.join(
-            args.prepped_path,
-            dirname,
-            "prepped_receptor.oedu",
-        )
-        best_structure_dict_all[complex_id] = values
+    if args.prepped_path:
+        prepped_dir_list = os.listdir(args.prepped_path)
+        for complex_id, values in best_structure_dict_all.items():
+            dirname = [
+                dirname
+                for dirname in prepped_dir_list
+                if values["Structure_Source"] in dirname
+            ][0]
+            values["Prepped_Receptor"] = os.path.join(
+                args.prepped_path,
+                dirname,
+                "prepped_receptor.oedu",
+            )
+            best_structure_dict_all[complex_id] = values
+    else:
+        prepped_dir_list = os.listdir(args.input_dir)
+        print(prepped_dir_list[0])
+        for complex_id, values in best_structure_dict_all.items():
+            dirname = [
+                dirname
+                for dirname in prepped_dir_list
+                if values["Compound_ID"] in dirname
+            ][0]
+            oligomeric_state = "dimer" if values["Dimer"] == True else "monomer"
+            compound_input_path = os.path.join(
+                args.input_dir,
+                dirname,
+                oligomeric_state,
+                values["Structure_Source"],
+            )
+            values["Prepped_Receptor"] = os.path.join(
+                compound_input_path, "predocked.oedu"
+            )
+            values["Ligand_SDF"] = os.path.join(
+                compound_input_path, "docked.sdf"
+            )
+            assert os.path.exists(values["Prepped_Receptor"])
+            assert os.path.exists(values["Ligand_SDF"])
+            best_structure_dict_all[complex_id] = values
 
     if args.overwrite:
         best_structure_dict = best_structure_dict_all
