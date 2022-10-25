@@ -40,6 +40,11 @@ from covid_moonshot_ml.datasets.utils import (
     load_openeye_pdb,
 )
 from covid_moonshot_ml.docking.docking import parse_xtal
+import logging, datetime
+
+log_path = f"{datetime.date.today()}.log"
+log = open(log_path, "a")
+sys.stdout = log
 
 
 def check_completed(d):
