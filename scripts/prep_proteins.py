@@ -43,8 +43,10 @@ from covid_moonshot_ml.docking.docking import parse_xtal
 import logging, datetime
 
 log_path = f"{datetime.date.today()}.log"
-log = open(log_path, "a")
-sys.stdout = log
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger()
+logger.addHandler(logging.FileHandler(log_path, "a"))
+print = logger.info
 
 
 def check_completed(d):
