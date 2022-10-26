@@ -18,6 +18,7 @@ def get_remark_str(chains, oligomeric_state):
     allowed_states = ["monomer", "dimer"]
     if oligomeric_state == "monomer":
         REMARK350_STRING = f"""\
+REMARK 300 SEE REMARK 350 FOR THE AUTHOR PROVIDED AND/OR PROGRAM
 REMARK 350
 REMARK 350 COORDINATES FOR A COMPLETE MULTIMER REPRESENTING THE KNOWN
 REMARK 350 BIOLOGICALLY SIGNIFICANT OLIGOMERIZATION STATE OF THE
@@ -109,10 +110,12 @@ def edit_pdb_file(
             if not "SEQRES" in line
             # if not "REMARK 350" in line
         ]
-    #     pdbfile_contents = "".join(pdbfile_lines)
-    #     # seqres_str +
-    # else:
-    #     pdbfile_contents = "".join(pdbfile_lines)
+        ## Somewhere I think the seqres is getting duplicated
+        ## so I am not currently actually adding the seqres back
+
+        # pdbfile_lines = [
+        #     line.rstrip() + "\n" for line in seqres_str.split("\n")
+        # ] + pdbfile_lines
 
     if edit_remark350:
         pdbfile_lines = [
@@ -123,7 +126,6 @@ def edit_pdb_file(
             pdbfile_lines = [
                 line.rstrip() + "\n" for line in remark_str.split("\n")
             ] + pdbfile_lines
-            print([line.rstrip() + "\n" for line in remark_str.split("\n")])
     pdbfile_contents = "".join(pdbfile_lines)
 
     if pdb_out is None:

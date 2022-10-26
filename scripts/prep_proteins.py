@@ -103,8 +103,8 @@ def prep_mp(
             ## Add the SEQRES
             edit_pdb_file(
                 xtal.str_fn,
-                seqres_str=seqres,
-                edit_remark350=True,
+                # seqres_str=seqres,
+                # edit_remark350=True,
                 oligomeric_state=xtal.oligomeric_state,
                 chains=xtal.chains,
                 pdb_out=tmp_pdb.name,
@@ -131,7 +131,7 @@ def prep_mp(
             mobile_chain=xtal.active_site_chain,
             ref_chain="A",
         )
-
+        save_openeye_pdb(initial_prot, "align_test.pdb")
     ## Take the first returned DU and save it
     try:
         design_units = prep_receptor(
@@ -143,7 +143,7 @@ def prep_mp(
     except IndexError as e:
         print(
             "DU generation failed for",
-            f"{xtal.output_name})",
+            f"{xtal.output_name}",
             flush=True,
         )
         return
