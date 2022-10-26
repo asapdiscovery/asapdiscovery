@@ -103,8 +103,8 @@ def prep_mp(
             ## Add the SEQRES
             edit_pdb_file(
                 xtal.str_fn,
-                # seqres_str=seqres,
-                # edit_remark350=True,
+                seqres_str=seqres,
+                edit_remark350=True,
                 oligomeric_state=xtal.oligomeric_state,
                 chains=xtal.chains,
                 pdb_out=tmp_pdb.name,
