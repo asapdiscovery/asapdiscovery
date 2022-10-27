@@ -23,6 +23,7 @@ from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
     save_openeye_sdf,
 )
+from covid_moonshot_ml.data.openeye import save_openeye_design_unit
 
 
 def get_args():
@@ -157,39 +158,20 @@ def write_fragalysis_output(
         du = oechem.OEDesignUnit()
         # oechem.OEReadDesignUnit(f"{compound_in_dir}/predocked.oedu", du)
         oechem.OEReadDesignUnit(receptor_oedu, du)
+
         prot = oechem.OEGraphMol()
         du.GetProtein(prot)
         lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
-        ## Set ligand title, useful for the combined sdf file
-        lig.SetTitle(f"{complex_id}")
-
-        ## Give ligand atoms their own chain "L" and set the resname to "LIG"
-        residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
-        residue.SetChainID("L")
-        residue.SetName("LIG")
-        residue.SetHetAtom(True)
-        for atom in list(lig.GetAtoms()):
-            oechem.OEAtomSetResidue(atom, residue)
+        lig, prot, complex = save_openeye_design_unit(
+            du, lig=lig, lig_title=complex_id
+        )
 
         ## First save apo
         save_openeye_pdb(prot, f"{compound_out_dir}/{complex_id}_apo.pdb")
+        save_openeye_pdb(complex, f"{compound_out_dir}/{complex_id}_bound.pdb")
 
-        ## Combine protein and ligand and save
-        ## TODO: consider saving water as well
-        oechem.OEAddMols(prot, lig)
-
-        ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
-        preserve = (
-            oechem.OEPreserveResInfo_ChainID
-            | oechem.OEPreserveResInfo_ResidueNumber
-            | oechem.OEPreserveResInfo_ResidueName
-        )
-        oechem.OEPerceiveResidues(prot, preserve)
-
-        save_openeye_pdb(prot, f"{compound_out_dir}/{complex_id}_bound.pdb")
-
-        ## Save first to its own sdf file
+        ## Save to sdf file and append to list of sdf files to combine
         cmpd_sdf = f"{compound_out_dir}/{complex_id}.sdf"
         cmpd_sdf_list.append(cmpd_sdf)
         save_openeye_sdf(lig, cmpd_sdf)
