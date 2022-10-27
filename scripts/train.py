@@ -90,7 +90,9 @@ def load_affinities(fn, achiral=True):
     exp_compounds = ExperimentalCompoundDataUpdate(
         **json.load(open(fn, "r"))
     ).compounds
-    exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
+    exp_compounds = [
+        c for c in exp_compounds if ((not achiral) or (c.achiral and achiral))
+    ]
 
     affinity_dict = {
         c.compound_id: c.experimental_data["pIC50"]
@@ -102,7 +104,13 @@ def load_affinities(fn, achiral=True):
 
 
 def build_model_e3nn(
-    n_atom_types, num_neighbors, num_nodes, node_attr=False, dg=False
+    n_atom_types,
+    num_neighbors,
+    num_nodes,
+    node_attr=False,
+    dg=False,
+    neighbor_dist=5.0,
+    irreps_hidden=None,
 ):
     """
     Build appropriate e3nn model.
@@ -122,12 +130,22 @@ def build_model_e3nn(
         Whether the inputs will include node attributes (ligand labels)
     dg : bool, default=False
         Whether to use E3NNBind model (True) or regular e3nn network (False)
+    neighbor_dist : float, default=5.0
+        Distance cutoff for nodes to be considered neighbors
 
     Returns
     -------
     e3nn.nn.models.gate_points_2101.Network
         e3nn/E3NNBind model created from input parameters
     """
+
+    ## Set up default hidden irreps if none specified
+    if irreps_hidden is None:
+        irreps_hidden = [
+            (mul, (l, p))
+            for l, mul in enumerate([10, 3, 2, 1])
+            for p in [-1, 1]
+        ]
 
     # input is one-hot encoding of atom type => n_atom_types scalars
     # output is scalar valued binding energy/pIC50 value
@@ -138,16 +156,12 @@ def build_model_e3nn(
     #  across the whole graph
     model_kwargs = {
         "irreps_in": f"{n_atom_types}x0e",
-        "irreps_hidden": [
-            (mul, (l, p))
-            for l, mul in enumerate([10, 3, 2, 1])
-            for p in [-1, 1]
-        ],
+        "irreps_hidden": irreps_hidden,
         "irreps_out": "1x0e",
         "irreps_node_attr": "1x0e" if node_attr else None,
         "irreps_edge_attr": o3.Irreps.spherical_harmonics(3),
         "layers": 3,
-        "max_radius": 3.5,
+        "max_radius": neighbor_dist,
         "number_of_basis": 10,
         "radial_layers": 1,
         "radial_neurons": 128,
@@ -163,7 +177,9 @@ def build_model_e3nn(
     return model
 
 
-def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
+def build_model_schnet(
+    qm9=None, dg=False, qm9_target=10, remove_atomref=False, neighbor_dist=5.0
+):
     """
     Build appropriate SchNet model.
 
@@ -178,6 +194,8 @@ def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
     remove_atomref : bool, default=False
         Whether to remove the reference atom propoerties learned from the QM9
         dataset
+    neighbor_dist : float, default=5.0
+        Distance cutoff for nodes to be considered neighbors
 
     Returns
     -------
@@ -229,8 +247,8 @@ def build_model_schnet(qm9=None, dg=False, qm9_target=10, remove_atomref=False):
             model = SchNet(*model_params)
         model.load_state_dict(wts)
 
-    ## Set interatomic cutoff to 3.5A (default of 10) to make the graph smaller
-    model.cutoff = 3.5
+    ## Set interatomic cutoff (default of 10) to make the graph smaller
+    model.cutoff = neighbor_dist
 
     return model
 
@@ -282,6 +300,13 @@ def get_args():
         action="store_true",
         help="Remove atomref embedding in QM9 pretrained SchNet.",
     )
+    parser.add_argument(
+        "-n_dist",
+        type=float,
+        default=5.0,
+        help="Cutoff distance for node neighbors.",
+    )
+    parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
 
     ## Training arguments
     parser.add_argument(
@@ -313,8 +338,13 @@ def init(args, rank=False):
     ## Get all docked structures
     all_fns = glob(f"{args.i}/*complex.pdb")
     ## Extract crystal structure and compound id from file name
-    re_pat = r"(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex.pdb"
-    compounds = [re.search(re_pat, fn).groups() for fn in all_fns]
+    re_pat = (
+        r"(Mpro-.*?_[0-9][A-Z]).*?([A-Z]{3}-[A-Z]{3}-[0-9a-z]{8}-[0-9]+)"
+        "_complex.pdb"
+    )
+    matches = [re.search(re_pat, fn) for fn in all_fns]
+    compounds = [m.groups() for m in matches if m]
+    num_found = len(compounds)
 
     if rank:
         exp_affinities = None
@@ -327,6 +357,8 @@ def init(args, rank=False):
         all_fns, compounds = zip(
             *[o for o in zip(all_fns, compounds) if o[1][1] in exp_affinities]
         )
+    num_kept = len(compounds)
+    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
     ## Load the dataset
     ds = DockedDataset(all_fns, compounds)
@@ -356,14 +388,19 @@ def init(args, rank=False):
 
         ## Load or calculate model parameters
         if args.model_params is None:
-            model_params = calc_e3nn_model_info(ds_train, 3.5)
+            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
         elif os.path.isfile(args.model_params):
             model_params = pkl.load(open(args.model_params, "rb"))
         else:
-            model_params = calc_e3nn_model_info(ds_train, 3.5)
+            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
             pkl.dump(model_params, open(args.model_params, "wb"))
         model = build_model_e3nn(
-            100, *model_params[1:], node_attr=args.lig, dg=args.dg
+            100,
+            *model_params[1:],
+            node_attr=args.lig,
+            dg=args.dg,
+            neighbor_dist=args.n_dist,
+            irreps_hidden=args.irr,
         )
         model_call = lambda model, d: model(d)
 
@@ -374,10 +411,17 @@ def init(args, rank=False):
             ds_test = add_lig_labels(ds_test)
 
         for k, v in ds_train[0][1].items():
-            print(k, v.shape, flush=True)
+            try:
+                print(k, v.shape, flush=True)
+            except AttributeError as e:
+                print(k, v, flush=True)
     elif args.model == "schnet":
         model = build_model_schnet(
-            args.qm9, args.dg, args.qm9_target, args.rm_atomref
+            args.qm9,
+            args.dg,
+            args.qm9_target,
+            args.rm_atomref,
+            neighbor_dist=args.n_dist,
         )
         if args.dg:
             model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
@@ -391,6 +435,7 @@ def init(args, rank=False):
 
 def main():
     args = get_args()
+    print("hidden irreps:", args.irr, flush=True)
     exp_affinities, ds_train, ds_val, ds_test, model, model_call = init(args)
 
     ## Load model weights as necessary
@@ -404,28 +449,31 @@ def main():
                 open(f"{args.model_o}/train_err.pkl", "rb")
             ).tolist()
         else:
-            train_loss = []
+            print("Couldn't find train loss file.", flush=True)
+            train_loss = None
         if os.path.isfile(f"{args.model_o}/val_err.pkl"):
             val_loss = pkl.load(
                 open(f"{args.model_o}/val_err.pkl", "rb")
             ).tolist()
         else:
-            val_loss = []
+            print("Couldn't find val loss file.", flush=True)
+            val_loss = None
         if os.path.isfile(f"{args.model_o}/test_err.pkl"):
             test_loss = pkl.load(
                 open(f"{args.model_o}/test_err.pkl", "rb")
             ).tolist()
         else:
-            test_loss = []
+            print("Couldn't find test loss file.", flush=True)
+            test_loss = None
 
         ## Need to add 1 to start_epoch bc the found idx is the last epoch
         ##  successfully trained, not the one we want to start at
         start_epoch += 1
     else:
         start_epoch = 0
-        train_loss = []
-        val_loss = []
-        test_loss = []
+        train_loss = None
+        val_loss = None
+        test_loss = None
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
