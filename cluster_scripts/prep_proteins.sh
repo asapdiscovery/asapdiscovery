@@ -21,7 +21,7 @@ source ~/.bashrc
 conda activate mers-docking
 python ../scripts/prep_proteins.py -n 10 \
 -d /data/chodera/asap-datasets/mers_pdb_download \
--p ../data/mers-structures.yaml \
+-p ../data/mers-structures-dimers.yaml \
 -r ~/fragalysis/extra_files/reference.pdb \
 -l ~/rcsb_spruce.loop_db \
 -o /data/chodera/asap-datasets/mers_prepped_structures \
