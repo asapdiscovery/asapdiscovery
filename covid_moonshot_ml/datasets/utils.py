@@ -441,7 +441,9 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
         )
 
 
-def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
+def parse_fragalysis_data(
+    frag_fn, x_dir, cmpd_ids=None, o_dir=False, xtals_only=True
+):
     ## Load in csv
     sars2_structures = pandas.read_csv(frag_fn).fillna("")
 
@@ -482,7 +484,7 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
     for data in sars2_filtered.to_dict("index").values():
         cmpd_id = data["Compound ID"]
         dataset = data["Dataset"]
-        if len(dataset) > 0:
+        if len(dataset) > 0 or not xtals_only:
             ## TODO: is this the behaviour we want? this will build an empty object if there isn't a dataset
             if not sars_xtals.get(cmpd_id) or "-P" in dataset:
                 sars_xtals[cmpd_id] = CrystalCompoundData(
@@ -491,8 +493,8 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
                     dataset=dataset,
                     sdf_fn=get_sdf_fn_from_dataset(dataset, x_dir),
                 )
-        else:
-            sars_xtals[cmpd_id] = CrystalCompoundData()
+            # else:
+            #     sars_xtals[cmpd_id] = CrystalCompoundData()
 
     return sars_xtals
 

@@ -1,4 +1,4 @@
-from openeye import oechem
+from openeye import oechem, oedepict
 
 
 def load_openeye_pdb(pdb_fn):
@@ -83,3 +83,10 @@ def get_ligand_rmsd_from_pdb_and_sdf(
         return_dict["chemgauss"] = oechem.OEGetSDData(mobile, "Chemgauss4")
 
     return return_dict
+
+
+def write_openeye_ligand(mol, out_fn="test.png"):
+    oedepict.OEPrepareDepiction(mol)
+    disp = oedepict.OE2DMolDisplay(mol)
+    clearbackground = False
+    oedepict.OERenderMolecule(out_fn, disp, clearbackground)

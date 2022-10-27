@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 ## From FAH #####################################################################
 class Model(BaseModel):
     class Config:
-        allow_mutation = False
-        extra = "forbid"
+        allow_mutation = True
+        # extra = "forbid"
 
 
 class ExperimentalCompoundData(Model):

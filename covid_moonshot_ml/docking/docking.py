@@ -4,6 +4,7 @@ from kinoml.core.proteins import Protein
 from kinoml.core.ligands import Ligand
 from kinoml.core.systems import ProteinLigandComplex
 
+
 def build_docking_systems(
     exp_compounds, xtal_compounds, compound_idxs, n_top=1
 ):
@@ -73,7 +74,7 @@ def build_combined_protein_system_from_sdf(pdb_fn, sdf_fn):
     return ProteinLigandComplex
 
 
-def parse_xtal(x_fn, x_dir):
+def parse_xtal(x_fn, x_dir=None, p_filter=True):
     """
     Load all crystal structures into schema.CrystalCompoundData objects.
     Parameters
@@ -95,7 +96,10 @@ def parse_xtal(x_fn, x_dir):
     df = pandas.read_csv(x_fn)
 
     ## Find all P-files
-    idx = [(type(d) is str) and ("-P" in d) for d in df["Dataset"]]
+    if p_filter:
+        idx = [(type(d) is str) and ("-P" in d) for d in df["Dataset"]]
+    else:
+        idx = [d for d in df["Dataset"]]
 
     ## Build argument dicts for the CrystalCompoundData objects
     xtal_dicts = [
@@ -104,17 +108,19 @@ def parse_xtal(x_fn, x_dir):
     ]
 
     ## Add structure filename information
-    for d in xtal_dicts:
-        fn_base = (
-            f'{x_dir}/{d["dataset"]}_0{{}}/{d["dataset"]}_0{{}}_' "seqres.pdb"
-        )
-        fn = fn_base.format("A", "A")
-        if os.path.isfile(fn):
-            d["str_fn"] = fn
-        else:
-            fn = fn_base.format("B", "B")
-            assert os.path.isfile(fn), f'No structure found for {d["dataset"]}.'
-            d["str_fn"] = fn
+    if x_dir:
+        for d in xtal_dicts:
+            fn_base = (
+                f'{x_dir}/{d["dataset"]}_0{{}}/{d["dataset"]}_0{{}}_'
+                "seqres.pdb"
+            )
+            fn = fn_base.format("A", "A")
+            if os.path.isfile(fn):
+                d["str_fn"] = fn
+            else:
+                fn = fn_base.format("B", "B")
+                # assert os.path.isfile(fn), f'No structure found for {d["dataset"]}.'
+                d["str_fn"] = fn
 
     ## Build CrystalCompoundData objects for each row
     xtal_compounds = [CrystalCompoundData(**d) for d in xtal_dicts]
