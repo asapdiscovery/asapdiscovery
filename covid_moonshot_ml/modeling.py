@@ -279,7 +279,43 @@ def align_receptor(
     keep_water=True,
 ):
     """
-    Function to prepare receptor before building the design unit.
+    Basically a copy of the above function to generate an aligned receptor without also needing to do the rest of the
+    protein prep.
+
+    Parameters
+    ----------
+    initial_complex : Union[oechem.OEGraphMol, str]
+        Initial complex loaded straight from a PDB file. Can contain ligands,
+        waters, cofactors, etc., which will be removed. Can also pass a PDB
+        filename instead.
+    new_lig : Union[oechem.OEGraphMol, str]
+        New ligand molecule (loaded straight from a file). Can also pass a PDB
+        or SDF filename instead.
+    dimer : bool, default=True
+        Whether to build the dimer or just monomer.
+    ref_prot : Union[oechem.OEGraphMol, str], optional
+        Reference protein to which the protein part of `initial_complex` will
+        be aligned. Can also pass a PDB filename instead.
+    split_initial_complex : bool, default=True
+        Whether to split out protein from `initial_complex`. Setting this to
+        False will save time on protein prep if you've already isolated the
+        protein.
+    split_ref : bool, default=True
+        Whether to split out protein from `ref_prot`. Setting this to
+        False will save time on protein prep if you've already isolated the
+        protein.
+    ref_chain : str, optional
+        If given, align to given chain in `ref_prot`.
+    mobile_chain : str, optional
+        If given, align the given chain in the protein component of
+        `initial_complex`. If `dimer` is False, this is required and will give
+        the chain of the monomer to keep.
+    keep_water : bool, default=True
+        Whether or not to keep the crystallographic water molecules.
+
+    Returns
+    -------
+    oechem.OEDesignUnit
 
     Returns
     -------
@@ -432,6 +468,8 @@ def prep_receptor(
         only if `initial_prot` contains a ligand.
     loop_db : str, optional
         Loop database file.
+    protein_only : bool, default=True
+        Whether we want to only keep the protein or keep the ligand as well.
 
     Returns
     -------

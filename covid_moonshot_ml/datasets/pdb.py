@@ -14,7 +14,6 @@ def load_pdbs_from_yaml(pdb_list_yaml):
     print(f"Loading pdb list from {pdb_list_yaml}...")
     with open(pdb_list_yaml, "r") as f:
         pdb_dict = yaml.safe_load(f)
-    # TODO: enable using yaml with PDB_IDs as dictionary keys
     return pdb_dict
 
 
