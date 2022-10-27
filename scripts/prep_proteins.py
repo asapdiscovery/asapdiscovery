@@ -1,17 +1,16 @@
 """
-Create oedu binary DesignUnit files for input protein structures. This
-script assumes that there is a ligand bound, and that the ligand will be used
-to dock against.
+Create oedu binary DesignUnit files for input protein structures.
+This was designed to be able to be used for either molecules from the PDB or from fragalysis.
 
 Example Usage:
-    python prep_proteins.py
-        -d /data/chodera/asap-datasets/mers_pdb_download
-        -p ../data/mers-structures.yaml
-        -r ~/fragalysis/extra_files/reference.pdb
-        -l ~/rcsb_spruce.loop_db
-        -o /data/chodera/asap-datasets/mers_prepped_structures
-        -s ../data/mpro_mers_seqres.yaml
-        --protein_only
+    python prep_proteins.py \
+    -d /data/chodera/asap-datasets/mers_pdb_download \
+    -p ../data/mers-structures-dimers.yaml \
+    -r ~/fragalysis/extra_files/reference.pdb \
+    -l ~/rcsb_spruce.loop_db \
+    -o /data/chodera/asap-datasets/mers_prepped_structures \
+    -s ../data/mpro_mers_seqres.yaml \
+    --protein_only
 """
 import argparse
 import multiprocessing as mp
@@ -115,12 +114,16 @@ def prep_mp(
 
             save_openeye_pdb(seqres_prot, "seqres_test.pdb")
 
-            ## Mutate the residues to match the residue list
-            initial_prot = mutate_residues(
-                seqres_prot, res_list, xtal.protein_chains
-            )
+            initial_prot = seqres_prot
     else:
         initial_prot = load_openeye_pdb(xtal.str_fn)
+
+    mutate = True
+    if mutate:
+        ## Mutate the residues to match the residue list
+        initial_prot = mutate_residues(
+            initial_prot, res_list, xtal.protein_chains
+        )
 
     if ref_prot:
         initial_prot = align_receptor(
@@ -244,6 +247,7 @@ def main():
 
         for xtal in xtal_compounds:
             ## Get chain
+            ## The parentheses in this string are the capture group
             re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
             try:
                 frag_chain = re.search(re_pat, xtal.str_fn).groups()[0]
@@ -255,16 +259,20 @@ def main():
                 )
                 frag_chain = "0A"
             xtal.output_name = f"{xtal.dataset}_{frag_chain}_{xtal.compound_id}"
-            xtal.chain = frag_chain[-1]
+
+            ## We also want the chain in the form of a single letter ('A', 'B'), etc
+            xtal.active_site_chain = frag_chain[-1]
+
+            ## If we aren't keeping the ligands, then we want to give it a site residue to use
             if args.protein_only:
                 xtal.active_site = f"His:41: :{xtal.chain}"
 
     elif args.pdb_yaml_path:
         pdb_dict = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
-        print(pdb_dict)
         pdb_list = list(pdb_dict.keys())
         pdb.download_PDBs(pdb_list, args.structure_dir)
         active_site_chain = "A"
+        ## If the yaml file doesn't have any options for the pdb file, then assume it is a dimer
         xtal_compounds = [
             CrystalCompoundData(
                 str_fn=os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"),
