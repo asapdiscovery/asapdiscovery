@@ -162,9 +162,9 @@ def train(
     save_file=None,
     lr=1e-4,
     start_epoch=0,
-    train_loss=[],
-    val_loss=[],
-    test_loss=[],
+    train_loss=None,
+    val_loss=None,
+    test_loss=None,
 ):
     """
     Train a model.
@@ -200,9 +200,11 @@ def train(
     start_epoch : int, default=0
         Which epoch the training is starting on. This is used when restarting
         training to ensure the appropriate number of epochs is reached
-    train_loss : list[float], default=[]
+    train_loss : list[float], default=None
         List of train losses from previous epochs. Used when restarting training
-    test_loss : list[float], default=[]
+    val_loss : list[float], default=None
+        List of val losses from previous epochs. Used when restarting training
+    test_loss : list[float], default=None
         List of test losses from previous epochs. Used when restarting training
 
     Returns
@@ -219,10 +221,15 @@ def train(
         Loss for each structure in `ds_test` from each epoch of training, with
         shape (`n_epochs`, `len(ds_test)`)
     """
-    # TODO: Arguments `train_loss`, `val_loss` and `test_loss` are mutable and empty by default.
-    #  Do we mean to initialize them as `None`?
     import pickle as pkl
     import torch
+
+    if train_loss is None:
+        train_loss = []
+    if val_loss is None:
+        val_loss = []
+    if test_loss is None:
+        test_loss = []
 
     ## Send model to desired device if it's not there already
     model.to(device)
@@ -264,27 +271,6 @@ def train(
 
         with torch.no_grad():
             tmp_loss = []
-            for (_, compound_id), pose in ds_test:
-                for k, v in pose.items():
-                    try:
-                        pose[k] = v.to(device)
-                    except AttributeError:
-                        pass
-                pred = model_call(model, pose)
-                for k, v in pose.items():
-                    try:
-                        pose[k] = v.to("cpu")
-                    except AttributeError:
-                        pass
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[target_dict[compound_id]]], device=device
-                ).float()
-                loss = loss_fn(pred, target)
-                tmp_loss.append(loss.item())
-            test_loss.append(np.asarray(tmp_loss))
-
-            tmp_loss = []
             for (_, compound_id), pose in ds_val:
                 for k, v in pose.items():
                     try:
@@ -304,6 +290,27 @@ def train(
                 loss = loss_fn(pred, target)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
+
+            tmp_loss = []
+            for (_, compound_id), pose in ds_test:
+                for k, v in pose.items():
+                    try:
+                        pose[k] = v.to(device)
+                    except AttributeError:
+                        pass
+                pred = model_call(model, pose)
+                for k, v in pose.items():
+                    try:
+                        pose[k] = v.to("cpu")
+                    except AttributeError:
+                        pass
+                # convert to float to match other types
+                target = torch.tensor(
+                    [[target_dict[compound_id]]], device=device
+                ).float()
+                loss = loss_fn(pred, target)
+                tmp_loss.append(loss.item())
+            test_loss.append(np.asarray(tmp_loss))
 
         if save_file is None:
             continue
