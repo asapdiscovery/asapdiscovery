@@ -246,7 +246,6 @@ def main():
         ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
     )
 
-    model = "GAT"
     exp_configure = json.load(open(args.config))
     exp_configure.update(
         {
@@ -272,7 +271,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
     ## WandB setup
-    wandb.init(project="test-graph-training")
+    wandb.init(project="test-graph-training", config=exp_configure)
 
     ## Train model
     model, train_loss, val_loss, test_loss = train(
