@@ -3,8 +3,153 @@ Attempt to train a ligand-only graph network using the same functions as the
 structure-based models. Use a bunch of stuff from dgl-lifesci.
 """
 import argparse
-import dgllife
+from dgllife.data import MoleculeCSVDataset
+from dgllife.model import GAT
+from dgllife.model.readout.weighted_sum_and_max import WeightedSumAndMax
+from dgllife.utils import (
+    CanonicalAtomFeaturizer,
+    CanonicalBondFeaturizer,
+    RandomSplitter,
+    SMILESToBigraph,
+)
+from glob import glob
+import json
+import numpy as np
+import os
+import pandas
+import pickle as pkl
+import re
 import sys
+import torch
+import wandb
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
+from covid_moonshot_ml.utils import plot_loss
+
+
+class GATModel(torch.nn.Module):
+    """
+    GAT-based model. Only needed for unbatched data, if data is batched, use
+    `dgllife.model.GATPredictor`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(GATModel, self).__init__()
+        self.gnn = GAT(*args, **kwargs)
+        self.readout = torch.nn.Linear(self.gnn.hidden_feats[-1], 1)
+
+    def forward(self, g, feats):
+        node_preds = self.gnn(g, feats)
+        node_preds = self.readout(node_preds)
+        return node_preds.sum(dim=0)
+
+
+def train(
+    model, optimizer, loss_func, ds_train, ds_val, ds_test, n_epochs, device
+):
+    """
+    Training function based on `covid_moonshot_ml.utils.train`.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Model to train
+    optimizer : torch.optim.Optimizer
+        Model optimizer
+    loss_func : torch.nn.Module
+        Loss functions
+    ds_train : data.dataset.DockedDataset
+        Train dataset to train on
+    ds_val : data.dataset.DockedDataset
+        Validation dataset to evaluate on
+    ds_test : data.dataset.DockedDataset
+        Test dataset to evaluate on
+    n_epochs : int
+        Number of epochs to train for
+    device : torch.device
+        Where to run the training
+
+    Returns
+    -------
+    torch.nn.Module
+        Trained model
+    numpy.ndarray
+        Loss for each structure in `ds_train` from each epoch of training, with
+        shape (`n_epochs`, `len(ds_train)`)
+    numpy.ndarray
+        Loss for each structure in `ds_val` from each epoch of training, with
+        shape (`n_epochs`, `len(ds_val)`)
+    numpy.ndarray
+        Loss for each structure in `ds_test` from each epoch of training, with
+        shape (`n_epochs`, `len(ds_test)`)
+    """
+    ## Initialize lists to keep track of loss over time
+    train_loss = []
+    val_loss = []
+    test_loss = []
+
+    ## Send model to device (in case it's not already there)
+    model = model.to(device)
+
+    ## Main loop
+    for epoch_idx in range(n_epochs):
+        print(f"Epoch {epoch_idx}/{n_epochs}", flush=True)
+        if epoch_idx % 10 == 0 and epoch_idx > 0:
+            print(f"Training error: {np.mean(train_loss[-1]):0.5f}")
+            print(f"Validation error: {np.mean(val_loss[-1]):0.5f}")
+            print(f"Testing error: {np.mean(test_loss[-1]):0.5f}", flush=True)
+        ## Train model
+        tmp_loss = []
+        for i, (_, g, label, _) in enumerate(ds_train):
+            g = g.to(device)
+            node_feats = g.ndata["h"].to(device)
+            pred = model(g, node_feats)
+            optimizer.zero_grad()
+            loss = loss_func(pred, label.to(device))
+            tmp_loss.append(loss.item())
+            loss.backward()
+            optimizer.step()
+        train_loss.append(tmp_loss)
+        epoch_train_loss = np.mean(tmp_loss)
+
+        ## Evaluate model
+        with torch.no_grad():
+            tmp_loss = []
+            for _, g, label, _ in ds_val:
+                g = g.to(device)
+                node_feats = g.ndata["h"].to(device)
+                pred = model(g, node_feats)
+                loss = loss_func(pred, label.to(device))
+                tmp_loss.append(loss.item())
+            val_loss.append(tmp_loss)
+            epoch_val_loss = np.mean(tmp_loss)
+
+            tmp_loss = []
+            for _, g, label, _ in ds_test:
+                g = g.to(device)
+                node_feats = g.ndata["h"].to(device)
+                pred = model(g, node_feats)
+                loss = loss_func(pred, label.to(device))
+                tmp_loss.append(loss.item())
+            test_loss.append(tmp_loss)
+            epoch_test_loss = np.mean(tmp_loss)
+
+        wandb.log(
+            {
+                "train_loss": epoch_train_loss,
+                "val_loss": epoch_val_loss,
+                "test_loss": epoch_test_loss,
+                "epoch": epoch_idx,
+            }
+        )
+    return (
+        model,
+        np.vstack(train_loss),
+        np.vstack(val_loss),
+        np.vstack(test_loss),
+    )
+
 
 ################################################################################
 def get_args():
@@ -21,14 +166,28 @@ def get_args():
     ## Output arguments
     parser.add_argument("-model_o", help="Where to save model weights.")
     parser.add_argument("-plot_o", help="Where to save training loss plot.")
-    parser.add_argument("-cache", help="Cache directory.")
+    parser.add_argument("-cache", help="Cache directory for dataset.")
+
+    ## Model arguments
+    parser.add_argument(
+        "-config",
+        required=True,
+        help="JSON file containing model config options.",
+    )
+
+    ## Performance arguments
+    parser.add_argument(
+        "-n_epochs",
+        type=int,
+        default=1000,
+        help="Number of epochs to train for.",
+    )
 
     return parser.parse_args()
 
 
 def main():
     args = get_args()
-    dgl_args = init_dgl_args()
 
     ## Build dataframe for constructing dataset
     ## Get all docked structures
@@ -46,14 +205,9 @@ def main():
     exp_compounds = ExperimentalCompoundDataUpdate(
         **json.load(open(args.exp, "r"))
     ).compounds
-    ## Filter out achiral molecules and molecules with no pIC50 values
+    ## Filter out molecules with no pIC50 values
     exp_compounds = [
-        c
-        for c in exp_compounds
-        if (
-            ((not achiral) or (c.achiral and achiral))
-            and "pIC50" in c.experimental_data
-        )
+        c for c in exp_compounds if ("pIC50" in c.experimental_data)
     ]
 
     ## Get compounds that have both structure and experimental data (this step
@@ -82,26 +236,30 @@ def main():
     )
 
     ## Initialize graph featurizer
-    dgl_args = init_featurizer(dgl_args)
+    node_featurizer = CanonicalAtomFeaturizer()
+    ## Uncomment below if using a message passing network
+    # edge_featurizer = CanonicalBondFeaturizer(self_loop=True)
+    ## No message passing, so nothing to do with the edges
+    edge_featurizer = None
 
     ## Make cache directory as necessary
     if args.cache is None:
-        cache_dir = f"{args.model_o}/.cache/"
+        cache_dir = os.path.join(args.model_o, ".cache")
     else:
         cache_dir = args.cache
     os.makedirs(cache_dir, exist_ok=True)
 
     ## Build dataset
-    smiles_to_g = dgllife.utils.SMILESToBigraph(
+    smiles_to_g = SMILESToBigraph(
         add_self_loop=True,
-        node_featurizer=dgl_args["node_featurizer"],
-        edge_featurizer=dgl_args["edge_featurizer"],
+        node_featurizer=node_featurizer,
+        edge_featurizer=edge_featurizer,
     )
-    dataset = dgllife.data.MoleculeCSVDataset(
+    dataset = MoleculeCSVDataset(
         df=df,
         smiles_to_graph=smiles_to_g,
         smiles_column="smiles",
-        cache_file_path=f"{cache_dir}/graph.bin",
+        cache_file_path=os.path.join(cache_dir, "graph.bin"),
         task_names=["pic50"],
     )
 
@@ -109,7 +267,7 @@ def main():
     train_ratio = 0.8
     val_ratio = 0.1
     test_ratio = 0.1
-    train_set, val_set, test_set = dgllife.utils.RandomSplitter.train_val_split(
+    train_set, val_set, test_set = RandomSplitter.train_val_test_split(
         dataset=dataset,
         frac_train=train_ratio,
         frac_val=val_ratio,
@@ -119,6 +277,73 @@ def main():
 
     print(len(train_set), len(val_set), len(test_set), flush=True)
     print(next(iter(train_set)), flush=True)
+
+    model = "GAT"
+    exp_configure = json.load(open(args.config))
+    exp_configure.update(
+        {
+            "model": "GAT",
+            "n_tasks": 1,
+            "in_node_feats": node_featurizer.feat_size(),
+        }
+    )
+
+    model = GATModel(
+        in_feats=exp_configure["in_node_feats"],
+        hidden_feats=[exp_configure["gnn_hidden_feats"]]
+        * exp_configure["num_gnn_layers"],
+        num_heads=[exp_configure["num_heads"]]
+        * exp_configure["num_gnn_layers"],
+        feat_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
+        attn_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
+        alphas=[exp_configure["alpha"]] * exp_configure["num_gnn_layers"],
+        residuals=[exp_configure["residual"]] * exp_configure["num_gnn_layers"],
+    )
+
+    loss_func = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+
+    ## WandB setup
+    wandb.init(project="test-graph-training")
+
+    ## Train model
+    model, train_loss, val_loss, test_loss = train(
+        model,
+        optimizer,
+        loss_func,
+        train_set,
+        val_set,
+        test_set,
+        args.n_epochs,
+        "cuda",
+    )
+    wandb.finish()
+
+    ## Save model and losses
+    if args.model_o:
+        torch.save(model.state_dict(), os.path.join(args.model_o, "model.th"))
+        pkl.dump(
+            train_loss, open(os.path.join(args.model_o, "train_err.pkl"), "wb")
+        )
+        pkl.dump(
+            val_loss, open(os.path.join(args.model_o, "val_err.pkl"), "wb")
+        )
+        pkl.dump(
+            test_loss, open(os.path.join(args.model_o, "test_err.pkl"), "wb")
+        )
+
+    ## Plot loss
+    if args.plot_o:
+        plot_loss(
+            train_loss.mean(axis=1),
+            val_loss.mean(axis=1),
+            test_loss.mean(axis=1),
+            args.plot_o,
+        )
+
+    print("Train loss:", train_loss[-1, :].mean())
+    print("Val loss:", val_loss[-1, :].mean())
+    print("Test loss:", test_loss[-1, :].mean(), flush=True)
 
 
 if __name__ == "__main__":
