@@ -16,7 +16,6 @@ import argparse
 import multiprocessing as mp
 from openeye import oechem
 import os
-import pandas
 import re
 import sys
 from tempfile import NamedTemporaryFile
@@ -94,6 +93,7 @@ def prep_mp(
 
     ## Option to add SEQRES header
     if seqres:
+        print("Editing PDB file")
         ## Get a list of 3-letter codes for the sequence
         res_list = seqres_to_res_list(seqres)
 
@@ -120,12 +120,14 @@ def prep_mp(
 
     mutate = True
     if mutate:
+        print("Mutating to provided seqres")
         ## Mutate the residues to match the residue list
         initial_prot = mutate_residues(
             initial_prot, res_list, xtal.protein_chains
         )
 
     if ref_prot:
+        print("Aligning receptor")
         initial_prot = align_receptor(
             initial_complex=initial_prot,
             ref_prot=ref_prot,
@@ -137,6 +139,7 @@ def prep_mp(
         save_openeye_pdb(initial_prot, "align_test.pdb")
     ## Take the first returned DU and save it
     try:
+        print("Attempting to prepare design units")
         design_units = prep_receptor(
             initial_prot,
             site_residue=xtal.active_site,
