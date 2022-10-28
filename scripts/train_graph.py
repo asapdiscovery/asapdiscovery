@@ -23,9 +23,10 @@ import torch
 import wandb
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from covid_moonshot_ml.data.dataset import GraphDataset
+from covid_moonshot_ml.nn import GAT
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import plot_loss
-from covid_moonshot_ml.nn import GAT
 
 
 def train(
@@ -203,27 +204,8 @@ def main():
         c for c in exp_compounds if c.compound_id in xtal_compound_ids
     ]
 
-    ## Build dataframe
-    all_compound_ids, all_smiles, all_pic50 = zip(
-        *[
-            (c.compound_id, c.smiles, c.experimental_data["pIC50"])
-            for c in exp_compounds
-        ]
-    )
-    df = pandas.DataFrame(
-        {
-            "compound_id": all_compound_ids,
-            "smiles": all_smiles,
-            "pic50": all_pic50,
-        }
-    )
-
-    ## Initialize graph featurizer
-    node_featurizer = CanonicalAtomFeaturizer()
-    ## Uncomment below if using a message passing network
-    # edge_featurizer = CanonicalBondFeaturizer(self_loop=True)
-    ## No message passing, so nothing to do with the edges
-    edge_featurizer = None
+    ## Dictionary mapping from compound_id to Mpro dataset
+    compound_id_dict = {c[1]: c[0] for c in xtal_compounds}
 
     ## Make cache directory as necessary
     if args.cache is None:
@@ -233,33 +215,36 @@ def main():
     os.makedirs(cache_dir, exist_ok=True)
 
     ## Build dataset
-    smiles_to_g = SMILESToBigraph(
-        add_self_loop=True,
-        node_featurizer=node_featurizer,
-        edge_featurizer=edge_featurizer,
-    )
-    dataset = MoleculeCSVDataset(
-        df=df,
-        smiles_to_graph=smiles_to_g,
-        smiles_column="smiles",
-        cache_file_path=os.path.join(cache_dir, "graph.bin"),
-        task_names=["pic50"],
+    ds = GraphDataset(
+        exp_compounds,
+        compound_id_dict,
+        node_featurizer=CanonicalAtomFeaturizer(),
+        cache_file=os.path.join(cache_dir, "graph.bin"),
     )
 
-    ## Split dataset
-    train_ratio = 0.8
-    val_ratio = 0.1
-    test_ratio = 0.1
-    train_set, val_set, test_set = RandomSplitter.train_val_test_split(
-        dataset=dataset,
-        frac_train=train_ratio,
-        frac_val=val_ratio,
-        frac_test=test_ratio,
-        random_state=42,
+    ## Build dataframe
+    all_compound_ids, all_smiles, all_pic50 = zip(
+        *[
+            (c.compound_id, c.smiles, c.experimental_data["pIC50"])
+            for c in exp_compounds
+        ]
     )
 
-    print(len(train_set), len(val_set), len(test_set), flush=True)
-    print(next(iter(train_set)), flush=True)
+    ## Split dataset into train/val/test (80/10/10 split)
+    n_train = int(len(ds) * 0.8)
+    n_val = int(len(ds) * 0.1)
+    n_test = len(ds) - n_train - n_val
+    print(
+        (
+            f"{n_train} training samples, {n_val} validation samples, "
+            f"{n_test} testing samples"
+        ),
+        flush=True,
+    )
+    # use fixed seed for reproducibility
+    ds_train, ds_val, ds_test = torch.utils.data.random_split(
+        ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+    )
 
     model = "GAT"
     exp_configure = json.load(open(args.config))
