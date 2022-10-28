@@ -113,9 +113,9 @@ def edit_pdb_file(
         ## Somewhere I think the seqres is getting duplicated
         ## so I am not currently actually adding the seqres back
 
-        # pdbfile_lines = [
-        #     line.rstrip() + "\n" for line in seqres_str.split("\n")
-        # ] + pdbfile_lines
+        pdbfile_lines = [
+            line.rstrip() + "\n" for line in seqres_str.split("\n")
+        ] + pdbfile_lines
 
     if edit_remark350:
         pdbfile_lines = [
