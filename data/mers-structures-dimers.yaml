@@ -9,4 +9,10 @@
 #7DR8: {} #Apo
 #7T3Y: {}
 #7DR9: {} #Apo, Cys148Ala
-7DRA: {} #Apo, Cys148Ala, pH 9
+#7DRA: {} #Apo, Cys148Ala, pH 9
+8DGY:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
