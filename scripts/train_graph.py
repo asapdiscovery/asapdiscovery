@@ -6,63 +6,6 @@ import argparse
 import dgllife
 import sys
 
-## Import dgl-lifesci
-sys.path.append(
-    (
-        "/lila/data/chodera/kaminowb/moonshot_ml_dev/dgl-lifesci/examples/"
-        "property_prediction/csv_data_configuration/"
-    )
-)
-from utils import get_configure, load_model, predict, init_featurizer
-
-
-def init_dgl_args():
-    dgl_args = {}
-
-    # Choice of graph model to use
-    # choices are ['GCN', 'GAT', 'Weave', 'MPNN', 'AttentiveFP', 'gin_supervised_contextpred', 'gin_supervised_infomax', 'gin_supervised_edgepred', 'gin_supervised_masking', 'NF']
-    dgl_args["model"] = "GCN"
-
-    # Define split ration for training,validation,test set partitioning of data
-    dgl_args["split_ratio"] = "0.8,0.1,0.1"
-
-    # Splitting strategy
-    # choices are ['scaffold_decompose', 'scaffold_smiles', 'random']
-    dgl_args["split"] = "random"
-
-    # Metric for evaluation
-    # choices are ['r2', 'mae', 'rmse']
-    dgl_args["metric"] = "mae"
-
-    # Atom featurizer type
-    # choices are ['canonical', 'attentivefp']
-    dgl_args["atom_featurizer_type"] = "canonical"
-
-    # Bond featurizer type
-    # choices are ['canonical', 'attentivefp']
-    dgl_args["bond_featurizer_type"] = "canonical"
-
-    # Number of epochs allowed for training
-    dgl_args["num_epochs"] = 1000
-
-    # Number of processes for data loading
-    dgl_args["num_workers"] = 1
-
-    # Path to save training results
-    dgl_args["result_path"] = "regression_results"
-
-    # Number of trials for hyperparameter search
-    dgl_args["num_evals"] = None
-
-    # Name of SMILES column
-    dgl_args["smiles_column"] = "smiles"
-
-    # Task names to learn
-    dgl_args["task_names"] = ["pIC50"]
-
-    return dgl_args
-
-
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
