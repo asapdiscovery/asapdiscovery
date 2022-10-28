@@ -4,7 +4,6 @@ structure-based models. Use a bunch of stuff from dgl-lifesci.
 """
 import argparse
 from dgllife.data import MoleculeCSVDataset
-from dgllife.model import GAT
 from dgllife.model.readout.weighted_sum_and_max import WeightedSumAndMax
 from dgllife.utils import (
     CanonicalAtomFeaturizer,
@@ -26,23 +25,7 @@ import wandb
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import plot_loss
-
-
-class GATModel(torch.nn.Module):
-    """
-    GAT-based model. Only needed for unbatched data, if data is batched, use
-    `dgllife.model.GATPredictor`.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(GATModel, self).__init__()
-        self.gnn = GAT(*args, **kwargs)
-        self.readout = torch.nn.Linear(self.gnn.hidden_feats[-1], 1)
-
-    def forward(self, g, feats):
-        node_preds = self.gnn(g, feats)
-        node_preds = self.readout(node_preds)
-        return node_preds.sum(dim=0)
+from covid_moonshot_ml.nn import GAT
 
 
 def train(
@@ -288,7 +271,7 @@ def main():
         }
     )
 
-    model = GATModel(
+    model = GAT(
         in_feats=exp_configure["in_node_feats"],
         hidden_feats=[exp_configure["gnn_hidden_feats"]]
         * exp_configure["num_gnn_layers"],
