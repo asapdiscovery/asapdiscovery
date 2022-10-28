@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 ## From FAH #####################################################################
 class Model(BaseModel):
     class Config:
-        allow_mutation = True
-        # extra = "forbid"
+        allow_mutation = False
+        extra = "forbid"
 
 
 class ExperimentalCompoundData(Model):
@@ -55,7 +55,7 @@ class ExperimentalCompoundDataUpdate(Model):
 ################################################################################
 
 
-class CrystalCompoundData(Model):
+class CrystalCompoundData(BaseModel):
 
     smiles: str = Field(
         None,
@@ -73,6 +73,11 @@ class CrystalCompoundData(Model):
     str_fn: str = Field(None, description="Filename of the PDB structure.")
 
     sdf_fn: str = Field(None, description="Filename of the SDF file")
+
+    series: str = Field(
+        None,
+        description="Name of COVID Moonshot series associated with this molecule",
+    )
 
 
 class PDBStructure(Model):
