@@ -206,7 +206,9 @@ class GraphDataset(Dataset):
                 self.compounds[compound].append(i)
             except KeyError:
                 self.compounds[compound] = [i]
-            self.structures.append({"g": g, "compound": compound})
+            self.structures.append(
+                {"g": g[1], "pic50": g[2], "compound": compound}
+            )
 
     def __len__(self):
         return len(self.structures)
