@@ -197,7 +197,10 @@ class GraphDataset(Dataset):
         for i, (compound_id, g) in enumerate(zip(all_compound_ids, dataset)):
             ## Make compound tuple
             if compound_id_dict:
-                compound = (compound_id_dict.get(compound_id, "NA"), compound_id)
+                compound = (
+                    compound_id_dict.get(compound_id, "NA"),
+                    compound_id,
+                )
             else:
                 compound = ("NA", compound_id)
 
@@ -207,7 +210,7 @@ class GraphDataset(Dataset):
             except KeyError:
                 self.compounds[compound] = [i]
             self.structures.append(
-                {"g": g[1], "pic50": g[2], "compound": compound}
+                {"smiles": g[0], "g": g[1], "pic50": g[2], "compound": compound}
             )
 
     def __len__(self):
