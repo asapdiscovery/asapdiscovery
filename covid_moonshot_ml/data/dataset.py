@@ -197,9 +197,9 @@ class GraphDataset(Dataset):
         for i, (compound_id, g) in enumerate(zip(all_compound_ids, dataset)):
             ## Make compound tuple
             if compound_id_dict:
-                compound = (compound_id_dict.get(c, "NA"), c)
+                compound = (compound_id_dict.get(compound_id, "NA"), compound_id)
             else:
-                compound = ("NA", c)
+                compound = ("NA", compound_id)
 
             ## Add data
             try:
