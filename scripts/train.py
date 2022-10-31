@@ -544,7 +544,9 @@ def init(args, rank=False):
         }
     elif args.model == "2d":
         model, exp_configure = build_model_2d(args.config)
-        model_call = lambda model, d: model(d["g"], d["g"].ndata["h"])
+        model_call = lambda model, d: torch.reshape(
+            model(d["g"], d["g"].ndata["h"]), (-1, 1)
+        )
 
         ## Update experiment configuration
         exp_configure.update({"model": "GAT"})
