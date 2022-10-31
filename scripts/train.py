@@ -131,14 +131,9 @@ def build_model_2d(config_fn):
         GAT graph model
     """
 
-    exp_configure = json.load(open(args.config))
+    exp_configure = json.load(open(config_fn))
     exp_configure.update(
-        {
-            "model": "GAT",
-            "in_node_feats": CanonicalAtomFeaturizer().feat_size(),
-            "train_function": "utils.train",
-            "run_script": "train.py",
-        }
+        {"in_node_feats": CanonicalAtomFeaturizer().feat_size()}
     )
 
     model = GAT(
@@ -384,6 +379,9 @@ def get_args():
         help="Learning rate for Adam optimizer (defaults to 1e-4).",
     )
 
+    ## WandB arguments
+    parser.add_argument("-proj", help="WandB project name.")
+
     return parser.parse_args()
 
 
@@ -407,9 +405,11 @@ def init(args, rank=False):
         exp_affinities = None
     elif args.model == "2d":
         ## Load the experimental compounds
-        exp_affinities, compounds = load_affinities(
+        exp_affinities, exp_compounds = load_affinities(
             args.exp, return_compounds=True
         )
+        ## Filter exp_compounds to make sure we have structures for them
+        compounds = [c for c in exp_compounds if c.compound_id in compounds]
 
         ## Make cache directory as necessary
         if args.cache is None:
@@ -492,6 +492,18 @@ def init(args, rank=False):
                 print(k, v.shape, flush=True)
             except AttributeError as e:
                 print(k, v, flush=True)
+
+        ## Experiment configuration
+        exp_configure = {
+            "model": "e3nn",
+            "n_atom_types": 100,
+            "num_neighbors": model_params[1],
+            "num_nodes": model_params[2],
+            "lig": args.lig,
+            "dg": args.dg,
+            "neighbor_dist": args.n_dist,
+            "irreps_hidden": args.irr,
+        }
     elif args.model == "schnet":
         model = build_model_schnet(
             args.qm9,
@@ -504,24 +516,64 @@ def init(args, rank=False):
             model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
         else:
             model_call = lambda model, d: model(d["z"], d["pos"])
+
+        ## Experiment configuration
+        exp_configure = {
+            "model": "schnet",
+            "dg": args.dg,
+            "qm9": args.qm9,
+            "qm9_target": args.qm9_target,
+            "rm_atomref": arg.rm_atomref,
+            "neighbor_dist": args.n_dist,
+        }
     elif args.model == "2d":
         model, exp_configure = build_model_2d(args.config)
         model_call = lambda model, d: model(d["g"], d["g"].ndata["h"])
+
+        ## Update experiment configuration
+        exp_configure.update({"model": "GAT"})
     else:
         raise ValueError(f"Unknown model type {args.model}.")
 
-    return (exp_affinities, ds_train, ds_val, ds_test, model, model_call)
+    ## Common config info
+    exp_configure.update(
+        {
+            "train_function": "utils.train",
+            "run_script": "train.py",
+            "continue": args.cont,
+        }
+    )
+    return (
+        exp_affinities,
+        ds_train,
+        ds_val,
+        ds_test,
+        model,
+        model_call,
+        exp_configure,
+    )
 
 
 def main():
     args = get_args()
     print("hidden irreps:", args.irr, flush=True)
-    exp_affinities, ds_train, ds_val, ds_test, model, model_call = init(args)
+    (
+        exp_affinities,
+        ds_train,
+        ds_val,
+        ds_test,
+        model,
+        model_call,
+        exp_configure,
+    ) = init(args)
 
     ## Load model weights as necessary
     if args.cont:
         start_epoch, wts_fn = find_most_recent(args.model_o)
         model.load_state_dict(torch.load(wts_fn))
+
+        ## Update experiment configuration
+        exp_configure.update({"wts_fn": wts_fn})
 
         ## Load error dicts
         if os.path.isfile(f"{args.model_o}/train_err.pkl"):
@@ -555,6 +607,23 @@ def main():
         val_loss = None
         test_loss = None
 
+    ## Update experiment configuration
+    exp_configure.update({"start_epoch": start_epoch})
+
+    ## Try and start wandb
+    try:
+        import wandb
+
+        if args.proj:
+            project_name = args.proj
+        else:
+            project_name = f"train-{args.model}"
+        wandb.init(project=project_name, config=exp_configure)
+
+        use_wandb = True
+    except ModuleNotFoundError:
+        use_wandb = False
+
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
         model,
@@ -572,6 +641,9 @@ def main():
         val_loss,
         test_loss,
     )
+
+    if use_wandb:
+        wandb.finish()
 
     ## Plot loss
     if args.plot_o is not None:
