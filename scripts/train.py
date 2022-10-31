@@ -416,6 +416,7 @@ def get_args():
 
     ## WandB arguments
     parser.add_argument("-proj", help="WandB project name.")
+    parser.add_argument("-name", help="WandB run name.")
 
     return parser.parse_args()
 
@@ -674,7 +675,7 @@ def main():
             project_name = args.proj
         else:
             project_name = f"train-{args.model}"
-        wandb.init(project=project_name, config=exp_configure)
+        wandb.init(project=project_name, config=exp_configure, name=args.name)
 
         ## Log dataset splits
         for name, split in zip(
