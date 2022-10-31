@@ -3,8 +3,6 @@ Attempt to train a ligand-only graph network using the same functions as the
 structure-based models. Use a bunch of stuff from dgl-lifesci.
 """
 import argparse
-from dgllife.data import MoleculeCSVDataset
-from dgllife.model.readout.weighted_sum_and_max import WeightedSumAndMax
 from dgllife.utils import (
     CanonicalAtomFeaturizer,
     CanonicalBondFeaturizer,
