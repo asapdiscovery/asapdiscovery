@@ -302,6 +302,12 @@ def build_model_schnet(
 
 
 def make_wandb_table(ds_split):
+    from rdkit.Chem import MolFromSmiles
+    from rdkit.Chem.AllChem import (
+        Compute2DCoords,
+        GenerateDepictionMatching2DStructure,
+    )
+    from rdkit.Chem.Draw import MolToImage
     import wandb
 
     table = wandb.Table(
@@ -311,7 +317,10 @@ def make_wandb_table(ds_split):
     for (xtal_id, compound_id), d in ds_split:
         try:
             smiles = d["smiles"]
-            mol = wandb.Molecule.from_smiles(smiles)
+            mol = MolFromSmiles(smiles)
+            Compute2DCoords(mol)
+            GenerateDepictionMatching2DStructure(mol, mol)
+            mol = wandb.Image(MolToImage(mol, size=(300, 300)))
         except (KeyError, ValueError):
             smiles = ""
             mol = None
