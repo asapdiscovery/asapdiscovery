@@ -408,8 +408,18 @@ def init(args, rank=False):
         exp_affinities, exp_compounds = load_affinities(
             args.exp, return_compounds=True
         )
+
+        ## Get compounds that have both structure and experimental data (this
+        ##  step isn't actually necessary for performance, but allows a more
+        ##  fair comparison between 2D and 3D models)
+        xtal_compound_ids = {c[1] for c in compounds}
         ## Filter exp_compounds to make sure we have structures for them
-        compounds = [c for c in exp_compounds if c.compound_id in compounds]
+        exp_compounds = [
+            c for c in exp_compounds if c.compound_id in xtal_compound_ids
+        ]
+
+        ## Dictionary mapping from compound_id to Mpro dataset
+        compound_id_dict = {c[1]: c[0] for c in compounds}
 
         ## Make cache directory as necessary
         if args.cache is None:
@@ -418,12 +428,18 @@ def init(args, rank=False):
             cache_dir = args.cache
         os.makedirs(cache_dir, exist_ok=True)
 
+        ## Build the dataset
         ds = GraphDataset(
-            compounds,
-            exp_affinities,
+            exp_compounds,
+            compound_id_dict,
             node_featurizer=CanonicalAtomFeaturizer(),
             cache_file=os.path.join(cache_dir, "graph.bin"),
         )
+
+        print(next(iter(ds)), flush=True)
+
+        ## Rename exp_compounds so the number kept is consistent
+        compounds = exp_compounds
     else:
         ## Load the experimental affinities
         exp_affinities = load_affinities(args.exp)
