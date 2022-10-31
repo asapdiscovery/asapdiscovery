@@ -4,6 +4,7 @@ from e3nn import o3
 from e3nn.nn.models.gate_points_2101 import Network
 from glob import glob
 import json
+import numpy as np
 import os
 import pickle as pkl
 import re
@@ -326,6 +327,8 @@ def make_wandb_table(ds_split):
             mol = None
         try:
             pic50 = d["pic50"].item()
+        except KeyError:
+            pic50 = np.nan
         except AttributeError:
             pic50 = d["pic50"]
         table.add_data(xtal_id, compound_id, mol, smiles, pic50)
@@ -571,7 +574,7 @@ def init(args, rank=False):
             "dg": args.dg,
             "qm9": args.qm9,
             "qm9_target": args.qm9_target,
-            "rm_atomref": arg.rm_atomref,
+            "rm_atomref": args.rm_atomref,
             "neighbor_dist": args.n_dist,
         }
     elif args.model == "2d":
