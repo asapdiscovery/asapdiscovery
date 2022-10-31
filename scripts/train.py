@@ -302,12 +302,25 @@ def build_model_schnet(
 
 
 def make_wandb_table(ds_split):
+    import wandb
+
     table = wandb.Table(
         columns=["crystal", "compound_id", "molecule", "smiles", "pIC50"]
     )
+    ## Build table and add each molecule
     for (xtal_id, compound_id), d in ds_split:
-        mol = wandb.Molecule.from_smiles(d["smiles"])
-        table.add_data([xtal_id, compound_id, mol, d["smiles"], d["pIC50"]])
+        try:
+            smiles = d["smiles"]
+            mol = wandb.Molecule.from_smiles(smiles)
+        except (KeyError, ValueError):
+            smiles = ""
+            mol = None
+        try:
+            pic50 = d["pic50"].item()
+        except AttributeError:
+            pic50 = d["pic50"]
+        table.add_data(xtal_id, compound_id, mol, smiles, pic50)
+
     return table
 
 
@@ -651,14 +664,12 @@ def main():
             project_name = f"train-{args.model}"
         wandb.init(project=project_name, config=exp_configure)
 
-        ## Add artifact for the dataset splits
-        artifact = wandb.Artifact("dataset_splits", type="dataset")
+        ## Log dataset splits
         for name, split in zip(
-            ["ds_train", "ds_val", "ds_test"], [ds_train, ds_val, ds_test]
+            ["train", "val", "test"], [ds_train, ds_val, ds_test]
         ):
             table = make_wandb_table(split)
-            artifact.add(table, name)
-        wandb.log_artifact(artifact)
+            wandb.log({f"dataset_splits/{name}": table})
 
         use_wandb = True
     except ModuleNotFoundError:
