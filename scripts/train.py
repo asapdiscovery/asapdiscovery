@@ -14,7 +14,7 @@ from torch_geometric.datasets import QM9
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from covid_moonshot_ml.data.dataset import DockedDataset, GraphDataset
-from covid_moonshot_ml.nn import E3NNBind, SchNetBind
+from covid_moonshot_ml.nn import E3NNBind, GAT, SchNetBind
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import (
     calc_e3nn_model_info,
@@ -130,6 +130,31 @@ def build_model_2d(config_fn):
     covid_moonshot_ml.nn.models.GAT
         GAT graph model
     """
+
+    exp_configure = json.load(open(args.config))
+    exp_configure.update(
+        {
+            "model": "GAT",
+            "in_node_feats": CanonicalAtomFeaturizer().feat_size(),
+            "train_function": "utils.train",
+            "run_script": "train.py",
+        }
+    )
+
+    model = GAT(
+        in_feats=exp_configure["in_node_feats"],
+        hidden_feats=[exp_configure["gnn_hidden_feats"]]
+        * exp_configure["num_gnn_layers"],
+        num_heads=[exp_configure["num_heads"]]
+        * exp_configure["num_gnn_layers"],
+        feat_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
+        attn_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
+        alphas=[exp_configure["alpha"]] * exp_configure["num_gnn_layers"],
+        residuals=[exp_configure["residual"]] * exp_configure["num_gnn_layers"],
+    )
+
+    return model, exp_configure
+
 
 def build_model_e3nn(
     n_atom_types,
@@ -480,7 +505,7 @@ def init(args, rank=False):
         else:
             model_call = lambda model, d: model(d["z"], d["pos"])
     elif args.model == "2d":
-        model = build_model_2d(args.config)
+        model, exp_configure = build_model_2d(args.config)
         model_call = lambda model, d: model(d["g"], d["g"].ndata["h"])
     else:
         raise ValueError(f"Unknown model type {args.model}.")
