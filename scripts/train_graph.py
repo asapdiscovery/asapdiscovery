@@ -26,10 +26,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from covid_moonshot_ml.data.dataset import GraphDataset
 from covid_moonshot_ml.nn import GAT
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
-from covid_moonshot_ml.utils import plot_loss
+from covid_moonshot_ml.utils import train, plot_loss
 
 
-def train(
+def _train(
     model, optimizer, loss_func, ds_train, ds_val, ds_test, n_epochs, device
 ):
     """
@@ -222,13 +222,8 @@ def main():
         cache_file=os.path.join(cache_dir, "graph.bin"),
     )
 
-    ## Build dataframe
-    all_compound_ids, all_smiles, all_pic50 = zip(
-        *[
-            (c.compound_id, c.smiles, c.experimental_data["pIC50"])
-            for c in exp_compounds
-        ]
-    )
+    ## Build target dict (for compatibility with utils.train)
+    target_dict = {compound_id: d["pic50"].item() for (_, compound_id), d in ds}
 
     ## Split dataset into train/val/test (80/10/10 split)
     n_train = int(len(ds) * 0.8)
@@ -251,7 +246,8 @@ def main():
         {
             "model": "GAT",
             "n_tasks": 1,
-            "in_node_feats": node_featurizer.feat_size(),
+            "in_node_feats": CanonicalAtomFeaturizer().feat_size(),
+            "train_function": "utils.train",
         }
     )
 
@@ -267,6 +263,8 @@ def main():
         residuals=[exp_configure["residual"]] * exp_configure["num_gnn_layers"],
     )
 
+    model_call = lambda model, d: model(d["g"], d["g"].ndata["h"])
+
     loss_func = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
@@ -275,29 +273,17 @@ def main():
 
     ## Train model
     model, train_loss, val_loss, test_loss = train(
-        model,
-        optimizer,
-        loss_func,
-        train_set,
-        val_set,
-        test_set,
-        args.n_epochs,
-        "cuda",
+        model=model,
+        ds_train=ds_train,
+        ds_val=ds_val,
+        ds_test=ds_test,
+        target_dict=target_dict,
+        n_epochs=args.n_epochs,
+        device="cuda",
+        model_call=model_call,
+        save_file=args.model_o,
     )
     wandb.finish()
-
-    ## Save model and losses
-    if args.model_o:
-        torch.save(model.state_dict(), os.path.join(args.model_o, "model.th"))
-        pkl.dump(
-            train_loss, open(os.path.join(args.model_o, "train_err.pkl"), "wb")
-        )
-        pkl.dump(
-            val_loss, open(os.path.join(args.model_o, "val_err.pkl"), "wb")
-        )
-        pkl.dump(
-            test_loss, open(os.path.join(args.model_o, "test_err.pkl"), "wb")
-        )
 
     ## Plot loss
     if args.plot_o:
