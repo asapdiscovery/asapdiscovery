@@ -224,6 +224,13 @@ def train(
     import pickle as pkl
     import torch
 
+    try:
+        import wandb
+
+        log_wandb = True
+    except ModuleNotFoundError:
+        log_wandb = False
+
     if train_loss is None:
         train_loss = []
     if val_loss is None:
@@ -268,6 +275,7 @@ def train(
             loss.backward()
             optimizer.step()
         train_loss.append(np.asarray(tmp_loss))
+        epoch_train_loss = np.mean(tmp_loss)
 
         with torch.no_grad():
             tmp_loss = []
@@ -290,6 +298,7 @@ def train(
                 loss = loss_fn(pred, target)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
+            epoch_val_loss = np.mean(tmp_loss)
 
             tmp_loss = []
             for (_, compound_id), pose in ds_test:
@@ -311,7 +320,17 @@ def train(
                 loss = loss_fn(pred, target)
                 tmp_loss.append(loss.item())
             test_loss.append(np.asarray(tmp_loss))
+            epoch_test_loss = np.mean(tmp_loss)
 
+        if log_wandb:
+            wandb.log(
+                {
+                    "train_loss": epoch_train_loss,
+                    "val_loss": epoch_val_loss,
+                    "test_loss": epoch_test_loss,
+                    "epoch": epoch_idx,
+                }
+            )
         if save_file is None:
             continue
         elif os.path.isdir(save_file):
