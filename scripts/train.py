@@ -1,4 +1,5 @@
 import argparse
+from dgllife.utils import CanonicalAtomFeaturizer
 from e3nn import o3
 from e3nn.nn.models.gate_points_2101 import Network
 from glob import glob
@@ -12,7 +13,7 @@ from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.data.dataset import DockedDataset
+from covid_moonshot_ml.data.dataset import DockedDataset, GraphDataset
 from covid_moonshot_ml.nn import E3NNBind, SchNetBind
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import (
@@ -68,7 +69,7 @@ def add_lig_labels(ds):
     return ds
 
 
-def load_affinities(fn, achiral=True):
+def load_affinities(fn, achiral=True, return_compounds=False):
     """
     Load binding affinities from JSON file of
     schema.ExperimentalCompoundDataUpdate.
@@ -79,11 +80,16 @@ def load_affinities(fn, achiral=True):
         Path to JSON file
     achiral : bool, default=True
         Whether to only take achiral molecules
+    return_compounds : bool, default=False
+        Whether to return the compounds in addition to the pIC50 values
 
     Returns
     -------
     dict[str->float]
         Dictionary mapping coumpound id to experimental pIC50 value
+    List[ExperimentalCompoundData], optional
+        List of experimental compound data objects, only returned if
+        `return_compounds` is True
     """
     ## Load all compounds with experimental data and filter to only achiral
     ##  molecules (to start)
@@ -100,8 +106,30 @@ def load_affinities(fn, achiral=True):
         if "pIC50" in c.experimental_data
     }
 
-    return affinity_dict
+    if return_compounds:
+        ## Filter compounds
+        exp_compounds = [
+            c for c in exp_compounds if c.compound_id in affinity_dict
+        ]
+        return affinity_dict, exp_compounds
+    else:
+        return affinity_dict
 
+
+def build_model_2d(config_fn):
+    """
+    Build appropriate 2D graph model.
+
+    Parameters
+    ----------
+    config_fn : str
+        Config JSON file
+
+    Returns
+    -------
+    covid_moonshot_ml.nn.models.GAT
+        GAT graph model
+    """
 
 def build_model_e3nn(
     n_atom_types,
@@ -278,6 +306,7 @@ def get_args():
     ## Output arguments
     parser.add_argument("-model_o", help="Where to save model weights.")
     parser.add_argument("-plot_o", help="Where to save training loss plot.")
+    parser.add_argument("-cache", help="Cache directory for dataset.")
 
     ## Model parameters
     parser.add_argument(
@@ -307,6 +336,9 @@ def get_args():
         help="Cutoff distance for node neighbors.",
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
+    parser.add_argument(
+        "-config", help="Model config JSON file for graph 2D model."
+    )
 
     ## Training arguments
     parser.add_argument(
@@ -348,6 +380,25 @@ def init(args, rank=False):
 
     if rank:
         exp_affinities = None
+    elif args.model == "2d":
+        ## Load the experimental compounds
+        exp_affinities, compounds = load_affinities(
+            args.exp, return_compounds=True
+        )
+
+        ## Make cache directory as necessary
+        if args.cache is None:
+            cache_dir = os.path.join(args.model_o, ".cache")
+        else:
+            cache_dir = args.cache
+        os.makedirs(cache_dir, exist_ok=True)
+
+        ds = GraphDataset(
+            compounds,
+            exp_affinities,
+            node_featurizer=CanonicalAtomFeaturizer(),
+            cache_file=os.path.join(cache_dir, "graph.bin"),
+        )
     else:
         ## Load the experimental affinities
         exp_affinities = load_affinities(args.exp)
@@ -360,8 +411,9 @@ def init(args, rank=False):
     num_kept = len(compounds)
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
-    ## Load the dataset
-    ds = DockedDataset(all_fns, compounds)
+    if args.model != "2d":
+        ## Load the dataset
+        ds = DockedDataset(all_fns, compounds)
 
     ## Split dataset into train/val/test (80/10/10 split)
     n_train = int(len(ds) * 0.8)
@@ -427,6 +479,9 @@ def init(args, rank=False):
             model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
         else:
             model_call = lambda model, d: model(d["z"], d["pos"])
+    elif args.model == "2d":
+        model = build_model_2d(args.config)
+        model_call = lambda model, d: model(d["g"], d["g"].ndata["h"])
     else:
         raise ValueError(f"Unknown model type {args.model}.")
 
