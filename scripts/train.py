@@ -557,6 +557,9 @@ def init(args, rank=False):
             "train_function": "utils.train",
             "run_script": "train.py",
             "continue": args.cont,
+            "train_examples": len(ds_train),
+            "val_examples": len(ds_val),
+            "test_examples": len(ds_test),
         }
     )
     return (
