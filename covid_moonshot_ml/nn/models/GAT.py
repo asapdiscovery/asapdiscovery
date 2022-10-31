@@ -1,4 +1,4 @@
-from dgllife.model import GAT_dgl
+from dgllife.model import GAT as GAT_dgl
 import torch
 
 
