@@ -301,6 +301,16 @@ def build_model_schnet(
     return model
 
 
+def make_wandb_table(ds_split):
+    table = wandb.Table(
+        columns=["crystal", "compound_id", "molecule", "smiles", "pIC50"]
+    )
+    for (xtal_id, compound_id), d in ds_split:
+        mol = wandb.Molecule.from_smiles(d["smiles"])
+        table.add_data([xtal_id, compound_id, mol, d["smiles"], d["pIC50"]])
+    return table
+
+
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
@@ -640,6 +650,15 @@ def main():
         else:
             project_name = f"train-{args.model}"
         wandb.init(project=project_name, config=exp_configure)
+
+        ## Add artifact for the dataset splits
+        artifact = wandb.Artifact("dataset_splits", type="dataset")
+        for name, split in zip(
+            ["ds_train", "ds_val", "ds_test"], [ds_train, ds_val, ds_test]
+        ):
+            table = make_wandb_table(split)
+            artifact.add(table, name)
+        wandb.log_artifact(artifact)
 
         use_wandb = True
     except ModuleNotFoundError:
