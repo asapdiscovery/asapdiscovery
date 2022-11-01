@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 
 
+### TODO: Add smiles/pic50 values here to match GraphDataset
 class DockedDataset(Dataset):
     """
     Class for loading docking results into a dataset to be used for graph
