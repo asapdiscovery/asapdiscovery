@@ -1,19 +1,27 @@
-BASE_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
+VAULT_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
 ## All molecules with SMILES (public)
 ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
+## Noncovalent molecules with experimental measurements (from John)
+NONCOVALENT_SMI_SEARCH = "searches/9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
+
+import logging
 
 
-def download_url(url, header):
+def download_url(search_url, header, timeout=5000, retry_delay=5):
     """
     Make requests to the API using the passed information.
 
     Parameters
     ----------
-    url : string
+    search_url : string
         URL for the initial GET request
     header : dict
         Header information passed to GET request. Must contain an entry for
         'X-CDD-token' that gives the user's CDD API token
+    timeout : int, default=5000
+        Timeout (in seconds)
+    retry_delay : int, default=5
+        Delay between retry status (in seconds)
 
     Returns
     -------
@@ -25,30 +33,43 @@ def download_url(url, header):
     import time
 
     ## Make the initial download request
-    response = requests.get(url, headers=header)
+    logging.debug(f"download_url : initiating search {search_url}")
+    response = requests.get(search_url, headers=header)
+    logging.debug(f"  {response}")
     export_id = response.json()["id"]
-    url = f"{BASE_URL}export_progress/{export_id}"
+    logging.debug(f"  Export id for requested search is {export_id}")
 
-    ## Check every 5 seconds to see if the export is ready
+    ## Check every `retry_delay` seconds to see if the export is ready
+    status_url = f"{VAULT_URL}export_progress/{export_id}"
     status = None
     total_seconds = 0
-    while status != "finished":
-        response = requests.get(url, headers=header)
+    while True:
+        logging.debug(f"  checking if export is finished at {status_url}")
+        response = requests.get(status_url, headers=header)
         status = response.json()["status"]
 
-        time.sleep(5)
-        total_seconds += 5
-        ## Time out after 5000 seconds
-        if total_seconds > 5000:
-            print("Export Never Finished")
+        if status == "finished":
+            logging.debug(f"  Export is ready")
+            break
+
+        ## Sleep between attempts
+        time.sleep(retry_delay)
+        total_seconds += retry_delay
+
+        ## Time out when we reach the limit
+        if total_seconds > timeout:
+            logging.error("Export Never Finished")
             break
 
     if status != "finished":
-        sys.exit("EXPORT IS BROKEN")
+        logging.error(
+            f"CDD Vault export timed out. Please check manually: {search_url}"
+        )
+        sys.exit("Export failed")
 
     ## Send GET request for final export
-    url = f"{BASE_URL}exports/{export_id}"
-    response = requests.get(url, headers=header)
+    result_url = f"{VAULT_URL}exports/{export_id}"
+    response = requests.get(result_url, headers=header)
 
     return response
 
@@ -76,7 +97,7 @@ def download_achiral(header, fn_out=None):
     from .utils import get_achiral_molecules
 
     ## Download all molecules to start
-    response = download_url(BASE_URL + ALL_SMI_SEARCH, header)
+    response = download_url(VAULT_URL + NONCOVALENT_SMI_SEARCH, header)
     ## Parse into DF
     mol_df = pandas.read_csv(StringIO(response.content.decode()))
     ## Get rid of any molecules that snuck through without SMILES
