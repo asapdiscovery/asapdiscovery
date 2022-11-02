@@ -14,7 +14,11 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     parser.add_argument(
-        "-tok", required=True, help="File containing CDD token."
+        "-tok",
+        help=(
+            "File containing CDD token. Not used if the CDDTOKEN "
+            "environment variable is set."
+        ),
     )
     parser.add_argument("-o", required=True, help="Output CSV file.")
 
@@ -27,7 +31,20 @@ def main():
     ## Set up logging
     logging.basicConfig(level=logging.DEBUG)
 
-    header = {"X-CDD-token": "".join(open(args.tok, "r").readlines()).strip()}
+    if "CDDTOKEN" in os.environ:
+        header = {"X-CDD-token": os.environ["CDDTOKEN"]}
+    elif args.tok:
+        header = {
+            "X-CDD-token": "".join(open(args.tok, "r").readlines()).strip()
+        }
+    else:
+        raise ValueError(
+            (
+                "Must pass a file for -tok if the CDDTOKEN environment variable "
+                "is not set."
+            )
+        )
+
     _ = download_molecules(
         header,
         smiles_fieldname="suspected_SMILES",
