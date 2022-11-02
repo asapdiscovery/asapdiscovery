@@ -21,6 +21,7 @@ def get_args():
         ),
     )
     parser.add_argument("-o", required=True, help="Output CSV file.")
+    parser.add_argument("-cache", help="Cache CSV file.")
 
     ## Filtering arguments
     parser.add_argument(
@@ -73,6 +74,7 @@ def main():
         header,
         smiles_fieldname=args.smiles_fieldname,
         fn_out=args.o,
+        fn_cache=args.cache,
         retain_achiral=args.retain_achiral,
         retain_racemic=args.retain_racemic,
         retain_enantiopure=args.retain_enantiopure,
