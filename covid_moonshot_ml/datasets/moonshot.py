@@ -4,7 +4,9 @@ ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
 ## Noncovalent molecules with experimental measurements (from John)
 NONCOVALENT_SMI_SEARCH = "searches/9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 
+from io import StringIO
 import logging
+import pandas
 
 
 def download_url(search_url, header, timeout=5000, retry_delay=5):
@@ -91,9 +93,6 @@ def download_achiral(header, fn_out=None):
     pandas.DataFrame
         DataFrame containing compound information for all achiral molecules
     """
-    import pandas
-    from io import StringIO
-
     from .utils import get_achiral_molecules
 
     ## Download all molecules to start
