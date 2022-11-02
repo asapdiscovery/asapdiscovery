@@ -413,7 +413,7 @@ def filter_molecules_dataframe(
         If True, retain racemic measurements
     retain_enantiopure : bool, default=False
         If True, retain chirally resolved measurements
-    retain_out_of_range_data : bool, default=False
+    retain_semiquantitative_data : bool, default=False
         If True, retain semiquantitative data (data outside assay dynamic range)
 
     Returns
@@ -421,6 +421,9 @@ def filter_molecules_dataframe(
     pandas.DataFrame
         DataFrame containing compound information for all filtered molecules
     """
+    import logging
+    from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
+
     # Define functions to evaluate whether molecule is achiral, racemic, or resolved
     is_achiral = (
         lambda smi: len(
@@ -457,9 +460,12 @@ def filter_molecules_dataframe(
     is_enantiopure = lambda smi: (not is_achiral(smi)) and (not is_racemic(smi))
 
     # Re-label SMILES field and change name of PostEra ID field
-    mol_df = mol_df.rename(
-        columns={smiles_fieldname: "smiles", "Canonical PostEra ID": "name"}
-    )
+    # mol_df = mol_df.rename(
+    #     columns={smiles_fieldname: "smiles", "Canonical PostEra ID": "name"}
+    # )
+    ## Add new columns so we can keep the original names
+    mol_df.loc[:, "smiles"] = mol_df.loc[:, smiles_fieldname]
+    mol_df.loc[:, "name"] = mol_df.loc[:, "Canonical PostEra ID"]
 
     logging.debug("Filtering molecules dataframe")
     # Get rid of any molecules that snuck through without SMILES field specified
@@ -508,8 +514,6 @@ def filter_molecules_dataframe(
             )
         )
 
-    ### TODO: Keep track of whether a measurement was above or below threshold
-    ###  range
     # Compute pIC50s and uncertainties from 95% CIs
     # TODO: In future, we can provide CIs as well
     import numpy as np
@@ -558,7 +562,7 @@ def filter_molecules_dataframe(
     mol_df["pIC50_stderr"] = pIC50_stderr_series
 
     # Retain only fields we need
-    mol_df = mol_df.filter(["smiles", "name", "pIC50", "pIC50_stderr"])
+    # mol_df = mol_df.filter(["smiles", "name", "pIC50", "pIC50_stderr"])
     logging.debug(f"\n{mol_df}")
 
     return mol_df
