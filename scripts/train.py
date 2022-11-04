@@ -1,3 +1,20 @@
+"""
+Script to train a 2D/3D model on COVID Moonshot data. Takes structural and
+experimental measurement data as inputs, and saves trained models, train, val,
+and test losses for each epoch. Also plots losses over time if the appropriate
+CLI arguments are passed.
+Example usage:
+python train.py \
+    -i complex_structure_dir/ \
+    -exp experimental_measurements.json \
+    -model_o trained_schnet/ \
+    -plot_o trained_schnet/all_loss.png \
+    -model schnet \
+    -lig \
+    -dg \
+    -n_epochs 100 \
+    -proj test-model-compare
+"""
 import argparse
 from dgllife.utils import CanonicalAtomFeaturizer
 from e3nn import o3
