@@ -13,6 +13,7 @@ python train.py \
     -lig \
     -dg \
     -n_epochs 100 \
+    --wandb \
     -proj test-model-compare
 """
 import argparse
@@ -432,6 +433,9 @@ def get_args():
     )
 
     ## WandB arguments
+    parser.add_argument(
+        "--wandb", action="store_true", help="Enable WandB logging."
+    )
     parser.add_argument("-proj", help="WandB project name.")
     parser.add_argument("-name", help="WandB run name.")
 
@@ -685,7 +689,7 @@ def main():
     exp_configure.update({"start_epoch": start_epoch})
 
     ## Try and start wandb
-    try:
+    if args.wandb:
         import wandb
 
         if args.proj:
@@ -700,10 +704,6 @@ def main():
         ):
             table = make_wandb_table(split)
             wandb.log({f"dataset_splits/{name}": table})
-
-        use_wandb = True
-    except ModuleNotFoundError:
-        use_wandb = False
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
@@ -721,9 +721,10 @@ def main():
         train_loss,
         val_loss,
         test_loss,
+        args.wandb,
     )
 
-    if use_wandb:
+    if args.wandb:
         wandb.finish()
 
     ## Plot loss

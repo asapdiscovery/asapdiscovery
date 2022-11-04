@@ -165,6 +165,7 @@ def train(
     train_loss=None,
     val_loss=None,
     test_loss=None,
+    use_wandb=False,
 ):
     """
     Train a model.
@@ -206,6 +207,8 @@ def train(
         List of val losses from previous epochs. Used when restarting training
     test_loss : list[float], default=[]
         List of test losses from previous epochs. Used when restarting training
+    use_wandb : bool, default=False
+        Log results with WandB
 
     Returns
     -------
@@ -224,12 +227,8 @@ def train(
     import pickle as pkl
     import torch
 
-    try:
+    if use_wandb
         import wandb
-
-        log_wandb = True
-    except ModuleNotFoundError:
-        log_wandb = False
 
     if train_loss is None:
         train_loss = []
@@ -322,7 +321,7 @@ def train(
             test_loss.append(np.asarray(tmp_loss))
             epoch_test_loss = np.mean(tmp_loss)
 
-        if log_wandb:
+        if use_wandb:
             wandb.log(
                 {
                     "train_loss": epoch_train_loss,
