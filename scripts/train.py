@@ -354,6 +354,23 @@ def make_wandb_table(ds_split):
     return table
 
 
+def wandb_init(
+    project_name,
+    run_name,
+    exp_configure,
+    ds_splits,
+    ds_split_labels=["train", "val", "test"],
+):
+    import wandb
+
+    wandb.init(project=project_name, config=exp_configure, name=run_name)
+
+    ## Log dataset splits
+    for name, split in zip(ds_split_labels, ds_splits):
+        table = make_wandb_table(split)
+        wandb.log({f"dataset_splits/{name}": table})
+
+
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
@@ -688,22 +705,16 @@ def main():
     ## Update experiment configuration
     exp_configure.update({"start_epoch": start_epoch})
 
-    ## Try and start wandb
+    ## Start wandb
     if args.wandb:
-        import wandb
-
+        ## Get project name
         if args.proj:
             project_name = args.proj
         else:
             project_name = f"train-{args.model}"
-        wandb.init(project=project_name, config=exp_configure, name=args.name)
-
-        ## Log dataset splits
-        for name, split in zip(
-            ["train", "val", "test"], [ds_train, ds_val, ds_test]
-        ):
-            table = make_wandb_table(split)
-            wandb.log({f"dataset_splits/{name}": table})
+        wandb_init(
+            project_name, args.name, exp_configure, [ds_train, ds_val, ds_test]
+        )
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
