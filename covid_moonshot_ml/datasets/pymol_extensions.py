@@ -4,6 +4,17 @@
 Created on Thu Jun 11 11:34:28 2020
 
 @author: alexpayne
+
+Example usage:
+# after starting pymol
+## load in pymol extensions
+run /Users/alexpayne/Scientific_Projects/covid-moonshot-ml/covid_moonshot_ml/datasets/pymol_extensions.py
+
+## make selections from
+sel_from_file /Users/alexpayne/Scientific_Projects/covid-moonshot-ml/data/mers.yaml
+col_from_file /Users/alexpayne/Scientific_Projects/covid-moonshot-ml/data/color_selection.yaml
+
+
 """
 
 import yaml
