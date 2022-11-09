@@ -183,8 +183,11 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     ## Input arguments
+    parser.add_argument("-l", "--lig_file", help="SDF file containing ligands.")
     parser.add_argument(
-        "-l", "--lig_file", required=True, help="SDF file containing ligands."
+        "-e",
+        "--exp_file",
+        help="JSON file containing ExperimentalCompoundDataUpdate object.",
     )
     parser.add_argument(
         "-r",
@@ -258,10 +261,42 @@ def main():
     ## Parse symlinks in output_dir
     args.output_dir = os.path.realpath(args.output_dir)
 
-    ## Load all ligands to dock
-    ifs = oechem.oemolistream()
-    ifs.open(args.lig_file)
-    mols = [mol.CreateCopy() for mol in ifs.GetOEGraphMols()]
+    if args.exp_file:
+        import json
+        from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
+
+        ## Load compounds
+        exp_compounds = [
+            c
+            for c in ExperimentalCompoundDataUpdate(
+                **json.load(open(args.exp_file, "r"))
+            ).compounds
+            if c.smiles is not None
+        ]
+        ## Make OEGraphMol for each compound
+        mols = []
+        for c in exp_compounds:
+            new_mol = oechem.OEGraphMol()
+            oechem.OESmilesToMol(new_mol, c.smiles)
+            mols.append(new_mol)
+    if args.lig_file:
+        if args.exp_file:
+            print(
+                (
+                    "WARNING: Arguments passed for both --exp_file and "
+                    "--lig_file, using --exp_file."
+                ),
+                flush=True,
+            )
+        else:
+            ## Load all ligands to dock
+            ifs = oechem.oemolistream()
+            ifs.open(args.lig_file)
+            mols = [mol.CreateCopy() for mol in ifs.GetOEGraphMols()]
+    elif args.exp_file is None:
+        raise ValueError(
+            "Need to specify exactly one of --exp_file or --lig_file."
+        )
     n_mols = len(mols)
 
     ## Load all receptor DesignUnits
@@ -273,6 +308,19 @@ def main():
         ## If we're docking to all DUs, set top_n appropriately
         if args.top_n == -1:
             args.top_n = len(xtal_ids)
+
+        ## Make sure that compound_ids match with experimental data if that's
+        ##  what we're using
+        if args.exp_file:
+            assert all(
+                [
+                    compound_id == c.compound_id
+                    for (compound_id, c) in zip(compound_ids, exp_compounds)
+                ]
+            ), (
+                "Sort result compound_ids are not equivalent to "
+                "compound_ids in --exp_file."
+            )
     else:
         ## Use index as compound_id
         compound_ids = [str(i) for i in range(n_mols)]
