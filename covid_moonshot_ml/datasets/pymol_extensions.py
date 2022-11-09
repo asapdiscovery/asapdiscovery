@@ -5,12 +5,11 @@ Created on Thu Jun 11 11:34:28 2020
 
 @author: alexpayne
 
-Example usage:
-# after starting pymol
-## load in pymol extensions
-run /PATH_TO/pymol_extensions.py
+Example usage from within pymol:
+## after starting pymol, load in pymol extensions
+run /PATH_TO_THIS_FILE/pymol_extensions.py
 
-run /PATH_TO/scripts/color_active_site
+run /PATH_TO_PYMOL_SCRIPT/color_active_site.pml
 
 
 """
