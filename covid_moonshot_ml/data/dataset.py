@@ -8,7 +8,14 @@ class DockedDataset(Dataset):
     learning.
     """
 
-    def __init__(self, str_fns, compounds, ignore_h=True, lig_resn="LIG"):
+    def __init__(
+        self,
+        str_fns,
+        compounds,
+        ignore_h=True,
+        lig_resn="LIG",
+        extra_dict=None,
+    ):
         """
         Parameters
         ----------
@@ -22,6 +29,10 @@ class DockedDataset(Dataset):
         lig_resn : str, default='LIG'
             The residue name for the ligand molecules in the PDB files. Used to
             identify which atoms belong to the ligand
+        extra_dict : dict[str, dict], optional
+            Extra information to add to each structure. Keys should be
+            compounds, and dicts can be anything as long as they don't have the
+            keys ["z", "pos", "lig", "compound"]
         """
         from Bio.PDB.PDBParser import PDBParser
         from rdkit.Chem import GetPeriodicTable
@@ -49,14 +60,17 @@ class DockedDataset(Dataset):
                 self.compounds[compound].append(i)
             except KeyError:
                 self.compounds[compound] = [i]
-            self.structures.append(
-                {
-                    "z": torch.tensor(atomic_nums),
-                    "pos": torch.tensor(atom_pos).float(),
-                    "lig": torch.tensor(is_lig),
-                    "compound": compound,
-                }
-            )
+
+            ## Create new structure and update from extra_dict
+            new_structure = {
+                "z": torch.tensor(atomic_nums),
+                "pos": torch.tensor(atom_pos).float(),
+                "lig": torch.tensor(is_lig),
+                "compound": compound,
+            }
+            if extra_dict and (compound in extra_dict):
+                new_structure.update(extra_dict[compound])
+            self.structures.append(new_structure)
 
     def __len__(self):
         return len(self.structures)
@@ -132,6 +146,7 @@ class DockedDataset(Dataset):
             yield (s["compound"], s)
 
 
+### TODO before PR: fix compound_id_dict here to match with new format
 class GraphDataset(Dataset):
     """
     Class for loading SMILES as graphs.
