@@ -227,7 +227,7 @@ def train(
     import pickle as pkl
     import torch
 
-    if use_wandb
+    if use_wandb:
         import wandb
 
     if train_loss is None:
