@@ -101,17 +101,12 @@ def edit_pdb_file(
 
     ## Fix bad CL atom names
     pdbfile_lines = [re.sub("CL", "Cl", l) for l in pdbfile_lines]
-    # # remove ligand hetatoms
-    # pdbfile_lines = [ line for line in pdbfile_lines if 'LIG' not in line ]
     if seqres_str:
         pdbfile_lines = [
             line
             for line in pdbfile_lines
             if not "SEQRES" in line
-            # if not "REMARK 350" in line
         ]
-        ## Somewhere I think the seqres is getting duplicated
-        ## so I am not currently actually adding the seqres back
 
         pdbfile_lines = [
             line.rstrip() + "\n" for line in seqres_str.split("\n")
