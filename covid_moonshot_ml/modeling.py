@@ -552,20 +552,7 @@ def build_dimer_from_monomer(prot):
     ##  re-labeling chains since the monomer seems to get the chainID C)
     ## Shouldn't affect the protein if the dimer has already been built
     bus = list(oespruce.OEExtractBioUnits(prot))
-    ## Check to make sure everything got built correctly
-    # if len(bus) != 2:
-    #     print(
-    #         f"Incorrect number of Bio units built ({len(bus)})",
-    #         flush=True,
-    #     )
-    # if bus[0].NumAtoms() != 2 * bus[1].NumAtoms():
-    #     print(
-    #         (
-    #             f"Incorrect relative size of Bio units"
-    #             f"({bus[0].NumAtoms()} and {bus[1].NumAtoms()})"
-    #         ),
-    #         flush=True,
-    #     )
+
     ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
     ##  doesn't pickle
     prot = oechem.OEGraphMol(bus[0])
