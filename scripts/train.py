@@ -31,7 +31,7 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from covid_moonshot_ml.data.dataset import DockedDataset, GraphDataset
 from covid_moonshot_ml.nn import E3NNBind, GAT, SchNetBind
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
@@ -88,7 +88,7 @@ def add_lig_labels(ds):
     return ds
 
 
-def load_affinities(fn, achiral=True, return_compounds=False):
+def load_affinities(fn, achiral=False, return_compounds=False):
     """
     Load binding affinities from JSON file of
     schema.ExperimentalCompoundDataUpdate.
@@ -97,7 +97,7 @@ def load_affinities(fn, achiral=True, return_compounds=False):
     ----------
     fn : str
         Path to JSON file
-    achiral : bool, default=True
+    achiral : bool, default=False
         Whether to only take achiral molecules
     return_compounds : bool, default=False
         Whether to return the compounds in addition to the pIC50 values
@@ -392,6 +392,9 @@ def get_args():
         action="store_true",
         help="Whether to restore training with most recent model weights.",
     )
+    parser.add_argument(
+        "-achiral", action="store_true", help="Keep only achiral molecules."
+    )
 
     ## Output arguments
     parser.add_argument("-model_o", help="Where to save model weights.")
@@ -468,19 +471,26 @@ def init(args, rank=False):
     all_fns = glob(f"{args.i}/*complex.pdb")
     ## Extract crystal structure and compound id from file name
     re_pat = (
-        r"(Mpro-.*?_[0-9][A-Z]).*?([A-Z]{3}-[A-Z]{3}-[0-9a-z]{8}-[0-9]+)"
+        r"(Mpro-.*?_[0-9][A-Z]).*?([A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+)"
         "_complex.pdb"
     )
     matches = [re.search(re_pat, fn) for fn in all_fns]
     compounds = [m.groups() for m in matches if m]
     num_found = len(compounds)
+    ## Dictionary mapping from compound_id to Mpro dataset(s)
+    compound_id_dict = {}
+    for xtal_structure, compound_id in compounds:
+        try:
+            compound_id_dict[compound_id].append(xtal_structure)
+        except KeyError:
+            compound_id_dict[compound_id] = [xtal_structure]
 
     if rank:
         exp_affinities = None
     elif args.model == "2d":
         ## Load the experimental compounds
         exp_affinities, exp_compounds = load_affinities(
-            args.exp, return_compounds=True
+            args.exp, achiral=args.achiral, return_compounds=True
         )
 
         ## Get compounds that have both structure and experimental data (this
@@ -491,9 +501,6 @@ def init(args, rank=False):
         exp_compounds = [
             c for c in exp_compounds if c.compound_id in xtal_compound_ids
         ]
-
-        ## Dictionary mapping from compound_id to Mpro dataset
-        compound_id_dict = {c[1]: c[0] for c in compounds}
 
         ## Make cache directory as necessary
         if args.cache is None:
@@ -516,19 +523,43 @@ def init(args, rank=False):
         compounds = exp_compounds
     else:
         ## Load the experimental affinities
-        exp_affinities = load_affinities(args.exp)
+        exp_affinities, exp_compounds = load_affinities(
+            args.exp, achiral=args.achiral, return_compounds=True
+        )
+
+        ## Make dict to access smiles data
+        smiles_dict = {}
+        for c in exp_compounds:
+            if c.compound_id not in compound_id_dict:
+                continue
+            for xtal_structure in compound_id_dict[c.compound_id]:
+                smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
+
+        ## Make dict to access experimental compound data
+        affinity_dict = {}
+        for compound_id, pic50 in exp_affinities.items():
+            if compound_id not in compound_id_dict:
+                continue
+            for xtal_structure in compound_id_dict[compound_id]:
+                affinity_dict[(xtal_structure, compound_id)] = pic50
 
         ## Trim docked structures and filenames to remove compounds that don't have
         ##  experimental data
         all_fns, compounds = zip(
             *[o for o in zip(all_fns, compounds) if o[1][1] in exp_affinities]
         )
+
+        ## Build extra info dict
+        extra_dict = {
+            compound: {"smiles": smiles, "pic50": affinity_dict[compound]}
+            for compound, smiles in smiles_dict.items()
+        }
+
+        ## Load the dataset
+        ds = DockedDataset(all_fns, compounds, extra_dict=extra_dict)
+
     num_kept = len(compounds)
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
-
-    if args.model != "2d":
-        ## Load the dataset
-        ds = DockedDataset(all_fns, compounds)
 
     ## Split dataset into train/val/test (80/10/10 split)
     n_train = int(len(ds) * 0.8)
