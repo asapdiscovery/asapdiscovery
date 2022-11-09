@@ -395,6 +395,7 @@ def get_args():
     parser.add_argument(
         "-achiral", action="store_true", help="Keep only achiral molecules."
     )
+    parser.add_argument("-n", default="LIG", help="Ligand residue name.")
 
     ## Output arguments
     parser.add_argument("-model_o", help="Where to save model weights.")
@@ -556,7 +557,9 @@ def init(args, rank=False):
         }
 
         ## Load the dataset
-        ds = DockedDataset(all_fns, compounds, extra_dict=extra_dict)
+        ds = DockedDataset(
+            all_fns, compounds, lig_resn=args.n, extra_dict=extra_dict
+        )
 
     num_kept = len(compounds)
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
