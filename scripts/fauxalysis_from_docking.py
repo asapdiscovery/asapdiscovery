@@ -300,11 +300,11 @@ def main():
     else:
         cmpd_to_frag_dict = None
     write_fragalysis_output(
-        args.input_dir,
-        args.output_dir,
-        best_structure_dict,
-        args.fragalysis_dir,
-        cmpd_to_frag_dict,
+        in_dir=args.input_dir,
+        out_dir=args.output_dir,
+        best_structure_dict=best_structure_dict,
+        frag_dir=args.fragalysis_dir,
+        cmpd_to_frag_dict=cmpd_to_frag_dict,
     )
 
 
