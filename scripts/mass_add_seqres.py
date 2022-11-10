@@ -8,7 +8,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.utils import add_seqres
+from covid_moonshot_ml.datasets.utils import edit_pdb_file
 
 
 def get_args():
@@ -28,7 +28,7 @@ def main():
     out_fns = [f"{fn[:-10]}_seqres.pdb" for fn in in_fns]
 
     with mp.Pool(32) as pool:
-        pool.starmap(add_seqres, zip(in_fns, out_fns))
+        pool.starmap(edit_pdb_file, zip(in_fns, out_fns))
 
 
 if __name__ == "__main__":
