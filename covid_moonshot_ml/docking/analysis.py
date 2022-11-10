@@ -1,7 +1,7 @@
 import pickle as pkl
 import pandas as pd
 import numpy as np
-import os
+import os, re
 from ..data.openeye import (
     get_ligand_rmsd_from_pdb_and_sdf,
 )
@@ -261,9 +261,25 @@ class DockingResults:
                 groupby_ID_column="Structure_Source", **kwargs
             )
             if resolution_csv:
+                ## Get a dictionary with {"PDB ID": "Resolution", ..}
                 with open(resolution_csv) as f:
                     resolution_df = pd.read_csv(f)
-                self.structure_df["Resolution"] = list(resolution_df.Resolution)
+                    resolution_df.index = resolution_df["PDB ID"]
+                    resolution_dict = resolution_df.to_dict()["Resolution"]
+
+                ## Iterates over the dataframe
+                ## Uses regex to pull out the PDB ID from each Structure_Source
+                ## and makes a list of the Resolutions that is saved to a column
+                ## of the new structure_df
+                self.structure_df["Resolution"] = [
+                    resolution_dict.get(
+                        re.search(
+                            pattern=r"[\d][A-Za-z0-9]{3}",
+                            string=pdb,
+                        ).group(0)
+                    )
+                    for pdb in self.structure_df.Structure_Source.to_list()
+                ]
 
     def get_best_structure_per_compound(
         self,
@@ -288,11 +304,14 @@ class DockingResults:
         -------
 
         """
+        # TODO: also this is really fragile
         # TODO: default argument `score_order` is a mutable. This can lead to unexpected behavior in python.
         ## first do filtering
-        filtered_df = self.df[self.df[filter_score] < filter_value]
-        sort_list = ["Compound_ID"] + score_order
-        score_ascending = [True] + score_ascending
+        print(filter_score, filter_value)
+        if filter_score and type(filter_value) == float:
+            print(f"Filtering by {filter_score} less than {filter_value}")
+            filtered_df = self.df[self.df[filter_score] < filter_value]
+            sort_list = ["Compound_ID"] + score_order
 
         ## sort dataframe, ascending (smaller / better scores will move to the top)
         sorted_df = filtered_df.sort_values(
