@@ -6,7 +6,7 @@ import argparse
 from glob import glob
 import itertools as it
 import multiprocessing as mp
-from openeye import oechem, oedocking
+from openeye import oechem, oedocking, oespruce
 import os
 import pandas
 import pickle as pkl
@@ -111,6 +111,8 @@ def mp_func(
     ## Get protein+lig complex in molecule form and save
     complex_mol = du_to_complex(du)
     save_openeye_pdb(complex_mol, f"{out_fn}.pdb")
+
+    ### TODO: replace all of this with new docking.run_docking_oe function
 
     ## Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
     ##  1 if there was a clash that couldn't be resolved)
@@ -426,16 +428,53 @@ def main():
         print(f"Removed {n} (not A or B chain)", flush=True)
 
     ## Get proteins from apo structures
-    if args.keep_wat:
-        all_prots = []
-        for fn in all_apo_fns:
-            split_dict = split_openeye_mol(load_openeye_pdb(fn))
-            oechem.OEAddMols(split_dict["pro"], split_dict["water"])
-            all_prots.append(split_dict["pro"])
-    else:
-        all_prots = [
-            split_openeye_mol(load_openeye_pdb(fn))["pro"] for fn in all_apo_fns
-        ]
+    all_prots = []
+    prot_chain_ids = []
+    for n, fn in zip(all_apo_names, all_apo_fns):
+        split_dict = split_openeye_mol(load_openeye_pdb(fn))
+        prot = split_dict["pro"]
+        ## Add waters if required
+        if args.keep_wat:
+            oechem.OEAddMols(prot, split_dict["water"])
+
+        ## Build monomer into dimer as necessary (will need to handle
+        ##  re-labeling chains since the monomer seems to get the chainID C)
+        ## Shouldn't affect the protein if the dimer has already been built
+        bus = list(oespruce.OEExtractBioUnits(prot))
+        ## Check to make sure everything got built correctly
+        if len(bus) != 2:
+            print(
+                f"Incorrect number of Bio units built for {n} ({len(bus)})",
+                flush=True,
+            )
+        if bus[0].NumAtoms() != 2 * bus[1].NumAtoms():
+            print(
+                (
+                    f"Incorrect relative size of Bio units for {n} "
+                    f"({bus[0].NumAtoms()} and {bus[1].NumAtoms()})"
+                ),
+                flush=True,
+            )
+        ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
+        ##  doesn't pickle
+        prot = oechem.OEGraphMol(bus[0])
+
+        ## Keep track of chain IDs
+        all_chain_ids = {
+            r.GetExtChainID()
+            for r in oechem.OEGetResidues(prot)
+            if all(
+                [
+                    not oechem.OEIsWater()(a)
+                    for a in oechem.OEGetResidueAtoms(prot, r)
+                ]
+            )
+        }
+        if len(all_chain_ids) != 2:
+            raise AssertionError(f"{n} chains: {all_chain_ids}")
+
+        all_prots.append(prot)
+        prot_chain_ids.append(sorted(all_chain_ids))
 
     ## Parse reference
     if args.ref:
@@ -453,12 +492,14 @@ def main():
     mp_args = []
     ## Construct all args for mp_func
     for lig_name, lig in zip(all_holo_names, all_ligs):
-        for (dimer, apo_chain) in it.product([True, False], ["A", "B"]):
-            dimer_s = "dimer" if dimer else "monomer"
-            out_dir = f"{args.o}/{lig_name}/{dimer_s}"
-            os.makedirs(out_dir, exist_ok=True)
-            ## Load and parse apo protein
-            for prot_name, apo_prot in zip(all_apo_names, all_prots):
+        for prot_name, apo_prot, apo_chains in zip(
+            all_apo_names, all_prots, prot_chain_ids
+        ):
+            for (dimer, apo_chain) in it.product([True, False], apo_chains):
+                dimer_s = "dimer" if dimer else "monomer"
+                out_dir = f"{args.o}/{lig_name}/{dimer_s}"
+                os.makedirs(out_dir, exist_ok=True)
+                ## Load and parse apo protein
                 mp_args.append(
                     (
                         apo_prot,
@@ -494,7 +535,6 @@ def main():
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 
     results_df.to_csv(f"{args.o}/all_results.csv")
-
 
 if __name__ == "__main__":
     main()

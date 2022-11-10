@@ -1,4 +1,4 @@
-from openeye import oechem
+from openeye import oechem, oedocking, oegrid
 
 
 def load_openeye_pdb(pdb_fn):
@@ -110,7 +110,6 @@ def get_ligand_rmsd_from_pdb_and_sdf(
 
     return return_dict
 
-
 def save_openeye_design_unit(du, lig=None, lig_title=None):
     """
     Parameters
@@ -159,3 +158,12 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
     )
     oechem.OEPerceiveResidues(prot, preserve)
     return lig, prot, complex
+
+def save_receptor_grid(du_fn, out_fn):
+    du = oechem.OEDesignUnit()
+    oechem.OEReadDesignUnit(du_fn, du)
+    # oedocking.OEMakeReceptor(du)
+    oegrid.OEWriteGrid(
+        out_fn,
+        oegrid.OEScalarGrid(du.GetReceptor().GetNegativeImageGrid()),
+    )
