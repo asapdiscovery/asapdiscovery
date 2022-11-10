@@ -50,6 +50,7 @@ def load_openeye_sdfs(sdf_fn):
             cmpd_list.append(mol.CreateCopy())
     else:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
+    ifs.close()
 
     return cmpd_list
 
