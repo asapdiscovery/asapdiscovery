@@ -31,7 +31,7 @@ def get_args():
 
     ## Input arguments
     parser.add_argument(
-        "-c",
+        "-csv",
         "--input_csv",
         required=True,
         help="Path to CSV file containing best results.",
