@@ -323,3 +323,48 @@ class DockingResults:
         self.best_df = g.head(1)
 
         return self.best_df
+
+    def write_dfs_to_csv(self, output_dir):
+        self.df.to_csv(
+            os.path.join(output_dir, "all_results_cleaned.csv"), index=False
+        )
+        self.compound_df.to_csv(
+            os.path.join(output_dir, "by_compound.csv"), index=False
+        )
+        self.structure_df.to_csv(
+            os.path.join(output_dir, "by_structure.csv"), index=False
+        )
+        self.best_df.to_csv(
+            os.path.join(output_dir, "best_results.csv"), index=False
+        )
+
+
+def load_dataframes(input_dir):
+    """
+    Load csv files from an input dict
+
+    Parameters
+    ----------
+    input_dir
+
+    Returns
+    -------
+
+    """
+    best_results_csv = os.path.join(input_dir, "best_results.csv")
+    all_results_csv = os.path.join(input_dir, "all_results_cleaned.csv")
+    by_compound_csv = os.path.join(input_dir, "by_compound.csv")
+    by_structure_csv = os.path.join(input_dir, "by_structure.csv")
+
+    df = pd.read_csv(all_results_csv)
+    df.index = df.Complex_ID
+    tidy = df.melt(id_vars="Complex_ID")
+    df = df.round({"Chemgauss4": 3, "POSIT": 3, "POSIT_R": 3, "RMSD": 3})
+
+    by_compound = pd.read_csv(by_compound_csv)
+    by_compound_tidy = by_compound.melt(id_vars="Compound_ID")
+
+    by_structure = pd.read_csv(by_structure_csv)
+    by_structure_tidy = by_structure.melt(id_vars="Structure_Source")
+
+    return tidy, df, by_compound_tidy, by_structure_tidy

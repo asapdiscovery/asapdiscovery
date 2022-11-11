@@ -75,7 +75,7 @@ def get_args():
 
 def main():
     args = get_args()
-
+    print(args.input_csv)
     assert os.path.exists(args.input_csv)
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
@@ -147,18 +147,7 @@ def main():
     )
 
     ## Write out CSV Files
-    dr.df.to_csv(
-        os.path.join(args.output_dir, "all_results_cleaned.csv"), index=False
-    )
-    dr.compound_df.to_csv(
-        os.path.join(args.output_dir, "by_compound.csv"), index=False
-    )
-    dr.structure_df.to_csv(
-        os.path.join(args.output_dir, "by_structure.csv"), index=False
-    )
-    dr.best_df.to_csv(
-        os.path.join(args.output_dir, "best_results.csv"), index=False
-    )
+    dr.write_dfs_to_csv(args.output_dir)
 
 
 if __name__ == "__main__":
