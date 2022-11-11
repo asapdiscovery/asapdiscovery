@@ -17,7 +17,7 @@ def get_args():
     parser.add_argument(
         "-y",
         "--yaml_file",
-        default="../data/luttens2022ultralarge.yaml",
+        default="../metadata/luttens2022ultralarge.yaml",
         help="Path to yaml_file",
     )
     parser.add_argument()

@@ -72,7 +72,7 @@ def main():
 
     ## Get several dataframes
     dr.get_compound_df()
-    dr.get_structure_df(resolution_csv="../data/mers_structures.csv")
+    dr.get_structure_df(resolution_csv="../metadata/mers_structures.csv")
     dr.get_best_structure_per_compound()
 
     ## Write out CSV Files

@@ -201,7 +201,7 @@ def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
 
 
 def filter_docking_inputs(
-    smarts_queries="../../data/smarts_queries.csv",
+    smarts_queries="../../metadata/smarts_queries.csv",
     docking_inputs=None,
     drop_commented_smarts_strings=True,
     verbose=True,
