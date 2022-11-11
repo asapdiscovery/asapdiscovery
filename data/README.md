@@ -1,0 +1,1 @@
+smarts_queries.py: supply list of compound structures to use as filter for `datasets.utils.filter_docking_inputs()`. Comment ('#') lines to disable them. If ignore_comment=False, only uncommented lines will be used and final docking inputs will only consist of compounds that contain the structures represented by the SMARTS queries.

@@ -92,6 +92,11 @@ ENV/
 .spyderproject
 .spyproject
 
+# PyCharm files
+.idea/
+._*
+.DS*
+
 # Rope project settings
 .ropeproject
 
@@ -107,3 +112,6 @@ ENV/
 
 # Files we don't want to commit
 oe_license.txt
+
+# Figures
+*.png
