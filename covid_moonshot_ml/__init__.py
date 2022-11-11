@@ -1,13 +1,6 @@
 """Scripts and models for ML with COVID Moonshot data."""
 
 # Add imports here
-# from .covid_moonshot_ml import *
-from . import data
-from . import datasets
-from . import docking
-from . import nn
-from . import schema
-from . import utils
 
 # Handle versioneer
 from ._version import get_versions

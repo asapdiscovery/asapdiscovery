@@ -55,11 +55,15 @@ class ExperimentalCompoundDataUpdate(Model):
 ################################################################################
 
 
-class CrystalCompoundData(Model):
+class CrystalCompoundData(BaseModel):
 
     smiles: str = Field(
         None,
         description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",
+    )
+
+    compound_id: str = Field(
+        None, description="The unique compound identifier of the ligand."
     )
 
     dataset: str = Field(
@@ -67,6 +71,29 @@ class CrystalCompoundData(Model):
     )
 
     str_fn: str = Field(None, description="Filename of the PDB structure.")
+
+    sdf_fn: str = Field(None, description="Filename of the SDF file")
+    active_site_chain: str = Field(
+        None, description="Chain identifying the active site of interest."
+    )
+    output_name: str = Field(None, description="Name of output structure.")
+    active_site: str = Field(
+        None, description="OpenEye formatted active site residue."
+    )
+    oligomeric_state: str = Field(
+        None, description="Oligomeric state of the asymmetric unit."
+    )
+    chains: list = Field(
+        None, description="List of chainids in the asymmetric unit."
+    )
+    protein_chains: list = Field(
+        None, description="List of chains corresponding to protein residues."
+    )
+
+
+class PDBStructure(Model):
+    pdb_id: str = Field(None, description="PDB identification code.")
+    str_fn: str = Field(None, description="Filename of local PDB structure.")
 
 
 class EnantiomerPair(Model):

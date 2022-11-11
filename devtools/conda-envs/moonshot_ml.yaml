@@ -15,6 +15,7 @@ dependencies:
   - codecov
 
   # Others
+  - appdirs
   - mdanalysis
   - openff-toolkit
   - openeye-toolkits
