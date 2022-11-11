@@ -17,7 +17,7 @@ sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asap_datasets.datasets.utils import (
     filter_docking_inputs,
 )
-from asap_datasets.data.openeye import (
+from asap_datasets.datatypes.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     save_openeye_pdb,
