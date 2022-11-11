@@ -1,18 +1,9 @@
-# TODO: put dash html logic here so that it can be loaded into the dash-docking-exploration scripts
-import pandas as pd
-from dash import Dash, dcc, html, Input, Output, dash_table, ctx
-import plotly.express as px
-import json, argparse, os
-
+from dash import Dash, dcc, html, dash_table
 
 def get_dash_app():
     app = Dash(__name__)
     styles = {"pre": {"border": "thin lightgrey solid", "overflowX": "scroll"}}
     return app, styles
-
-
-# def wrap_plotting_function(app)
-
 
 def get_basic_plot(id):
     return html.Div(
@@ -78,7 +69,7 @@ def get_dash_table(id, variable_dict, columns):
     )
 
 
-def get_filters(variable_list):
+def get_filters(id, variable_list):
     return html.Div(
         [
             html.Div(
