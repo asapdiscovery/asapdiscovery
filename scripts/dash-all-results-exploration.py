@@ -30,7 +30,13 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-tidy, df, by_compound_tidy, by_structure_tidy = load_dataframes(args.input_dir)
+df_dict = load_dataframes(args.input_dir)
+tidy = df_dict["tidy"]
+df = df_dict["df"]
+by_compound = df_dict["by_compound"]
+by_compound_tidy = df_dict["by_compound_tidy"]
+by_structure = df_dict["by_structure"]
+by_structure_tidy = df_dict["by_structure_tidy"]
 
 app = Dash(__name__)
 styles = {"pre": {"border": "thin lightgrey solid", "overflowX": "scroll"}}
@@ -271,7 +277,7 @@ def update_scatter(
         filtered,
         x=xaxis_column_name,
         y=yaxis_column_name,
-        hover_data=["Complex_ID"],
+        hover_data=["Complex_ID", "Compound_ID", "Structure_Source"],
         color=color_column,
         color_continuous_scale="dense",
     )
@@ -354,7 +360,7 @@ def update_table(clickData):
         complex_ID = clickData["points"][0]["customdata"][0]
 
         ## Get Compound
-        compound = df.loc[complex_ID, "Compound_ID"]
+        compound = df.loc[complex_ID, "Compound_ID"][0]
 
     else:
         compound = df["Compound_ID"][0]
@@ -451,6 +457,8 @@ def update_by_structure(
 
     ## Get Structure
     structure = filtered.loc[complex_ID, "Structure_Source"]
+    if not type(structure) == str:
+        structure = structure[0]
 
     ## Filter by structure
     dff = filtered
@@ -513,7 +521,7 @@ def per_structure_bar_chart(clickData1, clickData2):
             complex_ID = click_data["points"][0]["customdata"][0]
 
         ## Get Structure
-        structure = df.loc[complex_ID, "Structure_Source"]
+        structure = df.loc[complex_ID, "Structure_Source"][0]
 
         ## Filter by structure
         dff = by_structure_tidy[
@@ -564,7 +572,7 @@ def per_structure_bar_chart(clickData1, clickData2):
             complex_ID = click_data["points"][0]["customdata"][0]
 
         ## Get Structure
-        structure = df.loc[complex_ID, "Structure_Source"]
+        structure = df.loc[complex_ID, "Structure_Source"][0]
 
         ## Filter by structure
         dff = by_structure_tidy[
@@ -588,4 +596,4 @@ def per_structure_bar_chart(clickData1, clickData2):
         return fig
 
 
-app.run_server(port=9001, debug=True)
+app.run_server(debug=True)

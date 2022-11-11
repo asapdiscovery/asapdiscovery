@@ -367,7 +367,14 @@ def load_dataframes(input_dir):
     by_structure = pd.read_csv(by_structure_csv)
     by_structure_tidy = by_structure.melt(id_vars="Structure_Source")
 
-    return tidy, df, by_compound_tidy, by_structure_tidy
+    return {
+        "tidy": tidy,
+        "df": df,
+        "by_compound_tidy": by_compound_tidy,
+        "by_compound": by_compound,
+        "by_structure_tidy": by_structure_tidy,
+        "by_structure": by_structure,
+    }
 
 
 def filter_df_by_two_columns(

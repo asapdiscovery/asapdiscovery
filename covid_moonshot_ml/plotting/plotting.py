@@ -115,7 +115,7 @@ def scatter_plot(
         filtered,
         x=xaxis_column_name,
         y=yaxis_column_name,
-        hover_data=["Complex_ID"],
+        hover_data=["Complex_ID", "Compound_ID", "Structure_Source"],
         color=color_column,
         color_continuous_scale="dense",
     )

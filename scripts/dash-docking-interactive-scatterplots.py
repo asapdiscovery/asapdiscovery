@@ -2,8 +2,10 @@
 Plot interactive scatter plots where clicking on one changes the data that is shown on the others
 
 """
-from dash import html, Input, Output
+import pandas as pd
+from dash import html, Input, Output, dcc
 import argparse, os, sys
+import json
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
@@ -26,9 +28,9 @@ def get_args():
 
 def main():
     args = get_args()
-    tidy, df, by_compound_tidy, by_structure_tidy = load_dataframes(
-        args.input_dir
-    )
+    df_dict = load_dataframes(args.input_dir)
+    tidy = df_dict["tidy"]
+    df = df_dict["df"]
 
     ## Get Dash App
     app, styles = plotly_dash_functions.get_dash_app()
@@ -64,6 +66,10 @@ def main():
             ),
             plotly_dash_functions.get_basic_plot(id="by-structure-scatterplot"),
             plotly_dash_functions.get_basic_plot(id="by-compound-scatterplot"),
+            dcc.Store(id="selected-structure"),
+            dcc.Store(id="by-structure-filtered-df"),
+            dcc.Store(id="selected-compound"),
+            dcc.Store(id="by-compound-filtered-df"),
         ]
     )
 
@@ -78,7 +84,7 @@ def main():
         Input("y-axis-slider", "value"),
         Input("crossfilter-color", "value"),
     )
-    def update_plot(*args):
+    def update_scatterplot(*args):
         fig = plotting.scatter_plot(df, *args)
         return fig
 
@@ -97,10 +103,39 @@ def main():
         fig = plotting.contour_plot(df, *args)
         return fig
 
+    ## Instead of processing the dataframe separately in every scatterplot/table function
+    ## this way I can process it every time I click and then get everything from that
+    @app.callback(
+        Output("selected-structure", "data"),
+        Output("selected-compound", "data"),
+        Output("by-structure-filtered-df", "data"),
+        Output("by-compound-filtered-df", "data"),
+        Input("full-scatterplot", "clickData"),
+    )
+    def process_click_data(clickData):
+        if clickData:
+            compound = clickData["points"][0]["customdata"][1]
+            structure = clickData["points"][0]["customdata"][2]
+        else:
+            structure = df.Structure_Source[0]
+            compound = df.Compound_ID[0]
+
+        sdf = df[df["Structure_Source"] == structure]
+        cdf = df[df["Compound_ID"] == compound]
+
+        return (
+            json.dumps(structure),
+            json.dumps(compound),
+            sdf.to_json(orient="split"),
+            cdf.to_json(orient="split"),
+        )
+
     ## Create a by_structure filtered scatterplot
     ## Use dash decorator syntax to pass arguments into the scatterplot function
     @app.callback(
         Output("by-structure-scatterplot", "figure"),
+        Input("by-structure-filtered-df", "data"),
+        Input("selected-structure", "data"),
         Input("crossfilter-xaxis-column", "value"),
         Input("crossfilter-yaxis-column", "value"),
         Input("crossfilter-xaxis-type", "value"),
@@ -108,26 +143,20 @@ def main():
         Input("x-axis-slider", "value"),
         Input("y-axis-slider", "value"),
         Input("crossfilter-color", "value"),
-        Input("full-scatterplot", "clickData"),
     )
-    def update_plot(*args):
-        clickData = args[-1]
-        print(clickData)
-        complex_ID = clickData["points"][0]["customdata"][0]
-        print(complex_ID)
-        ## Get Compound
-        structure = df.loc[complex_ID, "Structure_Source"][0]
-        print(structure)
-        ## Filter by compound
-        dff = df[df["Structure_Source"] == structure]
-        fig = plotting.scatter_plot(dff, *args[0:-1])
-        fig.update_layout(title=f"{structure}")
+    def update_plot(df_data, structure, *args):
+        df = pd.read_json(df_data, orient="split")
+        structure = json.loads(structure)
+        fig = plotting.scatter_plot(df, *args)
+        fig.update_layout(title=structure)
         return fig
 
     ## Create a by_compound filtered scatterplot
     ## Use dash decorator syntax to pass arguments into the scatterplot function
     @app.callback(
         Output("by-compound-scatterplot", "figure"),
+        Input("by-compound-filtered-df", "data"),
+        Input("selected-compound", "data"),
         Input("crossfilter-xaxis-column", "value"),
         Input("crossfilter-yaxis-column", "value"),
         Input("crossfilter-xaxis-type", "value"),
@@ -135,21 +164,12 @@ def main():
         Input("x-axis-slider", "value"),
         Input("y-axis-slider", "value"),
         Input("crossfilter-color", "value"),
-        Input("full-scatterplot", "clickData"),
     )
-    def update_plot(*args):
-        clickData = args[-1]
-        print(clickData)
-        complex_ID = clickData["points"][0]["customdata"][0]
-        print(complex_ID)
-        ## Get Compound
-        compound = df.loc[complex_ID, "Compound_ID"][0]
-        print(compound)
-        ## Filter by compound
-        dff = df[df["Compound_ID"] == compound]
-
-        fig = plotting.scatter_plot(dff, *args[0:-1])
-        fig.update_layout(title=f"{compound}")
+    def update_plot(df_data, compound, *args):
+        df = pd.read_json(df_data, orient="split")
+        compound = json.loads(compound)
+        fig = plotting.scatter_plot(df, *args)
+        fig.update_layout(title=compound)
         return fig
 
     ## Run the server!
