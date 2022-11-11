@@ -42,11 +42,13 @@ def main():
                 columns=[
                     {"name": column, "id": column}
                     for column in [
+                        "Complex_ID",
                         "Compound_ID",
                         "Structure_Source",
                         "RMSD",
                         "POSIT",
                         "Chemgauss4",
+                        "Dimer",
                     ]
                 ],
             ),
@@ -54,7 +56,7 @@ def main():
     )
 
     ## Run the server!
-    app.run_server(port=9001, debug=True)
+    app.run_server(debug=True)
 
 
 if __name__ == "__main__":
