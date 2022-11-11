@@ -36,8 +36,8 @@ def get_filters(variable_list):
                 [
                     html.H4("X-Axis"),
                     dcc.Dropdown(
-                        variable_list,
-                        "Chemgauss4",
+                        variable_list,  ## the whole list
+                        variable_list[0],  ## the default
                         id="crossfilter-xaxis-column",
                     ),
                     html.P("Filter X-Axis:"),
@@ -66,8 +66,8 @@ def get_filters(variable_list):
                 [
                     html.H4("Y-Axis"),
                     dcc.Dropdown(
-                        variable_list,
-                        "RMSD",
+                        variable_list,  ## the whole list
+                        variable_list[-1],  ## the default
                         id="crossfilter-yaxis-column",
                     ),
                     html.P("Filter Y-Axis:"),
