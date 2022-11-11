@@ -29,6 +29,26 @@ def get_contour_plot():
     )
 
 
+def color_variable(variable_list):
+    return (
+        html.Div(
+            [
+                html.H4("Color"),
+                dcc.Dropdown(
+                    variable_list,  ## the whole list
+                    variable_list[0],  ## the default
+                    id="crossfilter-color",
+                ),
+            ],
+            style={
+                "width": "98%",
+                "display": "inline-block",
+                # "float": "left",
+            },
+        ),
+    )
+
+
 def get_filters(variable_list):
     return html.Div(
         [
