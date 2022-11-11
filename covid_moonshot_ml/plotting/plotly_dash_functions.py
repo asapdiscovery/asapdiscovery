@@ -1,9 +1,11 @@
 from dash import Dash, dcc, html, dash_table
 
+
 def get_dash_app():
     app = Dash(__name__)
     styles = {"pre": {"border": "thin lightgrey solid", "overflowX": "scroll"}}
     return app, styles
+
 
 def get_basic_plot(id):
     return html.Div(
