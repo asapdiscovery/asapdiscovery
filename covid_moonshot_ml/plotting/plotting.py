@@ -1,5 +1,6 @@
 # TODO: Do we need to add plotly to our environment yaml?
 import plotly.express as px
+from covid_moonshot_ml.docking.analysis import filter_df_by_two_columns
 
 
 def plot_poses_auc(poses_df):
@@ -36,7 +37,7 @@ def plot_precision_recall(poses_df):
     return fig
 
 
-def update_contour(
+def contour_plot(
     df,
     xaxis_column_name,
     yaxis_column_name,
@@ -63,12 +64,9 @@ def update_contour(
     -------
 
     """
-    filtered = df[
-        (df[xaxis_column_name] > x_range[0])
-        & (df[xaxis_column_name] < x_range[1])
-        & (df[yaxis_column_name] > y_range[0])
-        & (df[yaxis_column_name] < y_range[1])
-    ]
+    filtered = filter_df_by_two_columns(
+        df, xaxis_column_name, yaxis_column_name, x_range, y_range
+    )
 
     fig = px.density_contour(
         filtered,
@@ -82,6 +80,46 @@ def update_contour(
         selector=dict(type="histogram2dcontour"),
         colorscale="Peach",
     )
+    fig.update_xaxes(
+        title=xaxis_column_name,
+        type="linear" if xaxis_type == "Linear" else "log",
+    )
+
+    fig.update_yaxes(
+        title=yaxis_column_name,
+        type="linear" if yaxis_type == "Linear" else "log",
+    )
+
+    fig.update_layout(
+        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
+    )
+
+    return fig
+
+
+def scatter_plot(
+    df,
+    xaxis_column_name,
+    yaxis_column_name,
+    xaxis_type,
+    yaxis_type,
+    x_range,
+    y_range,
+    color_column,
+):
+    filtered = filter_df_by_two_columns(
+        df, xaxis_column_name, yaxis_column_name, x_range, y_range
+    )
+
+    fig = px.scatter(
+        filtered,
+        x=xaxis_column_name,
+        y=yaxis_column_name,
+        hover_data=["Complex_ID"],
+        color=color_column,
+        color_continuous_scale="dense",
+    )
+
     fig.update_xaxes(
         title=xaxis_column_name,
         type="linear" if xaxis_type == "Linear" else "log",
