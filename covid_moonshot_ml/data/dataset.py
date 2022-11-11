@@ -14,6 +14,7 @@ class DockedDataset(Dataset):
         ignore_h=True,
         lig_resn="LIG",
         extra_dict=None,
+        num_workers=1,
     ):
         """
         Parameters
@@ -32,44 +33,76 @@ class DockedDataset(Dataset):
             Extra information to add to each structure. Keys should be
             compounds, and dicts can be anything as long as they don't have the
             keys ["z", "pos", "lig", "compound"]
+        num_workers : int, default=1
+            Number of cores to use to load structures
         """
-        from Bio.PDB.PDBParser import PDBParser
-        from rdkit.Chem import GetPeriodicTable
-        import torch
-
         super(DockedDataset, self).__init__()
 
-        table = GetPeriodicTable()
+        ## Function to extract from extra_dict (just to make the list
+        ##  comprehension look a bit nicer)
+        get_extra = lambda compound: (
+            extra_dict[compound]
+            if (extra_dict and (compound in extra_dict))
+            else None
+        )
+        mp_args = [
+            (fn, compound, ignore_h, lig_resn, get_extra(compound))
+            for i, (fn, compound) in enumerate(zip(str_fns, compounds))
+        ]
+
+        if num_workers > 1:
+            import multiprocessing as mp
+
+            n_procs = min(num_workers, mp.cpu_count(), len(mp_args))
+            with mp.Pool(n_procs) as pool:
+                all_structures = pool.starmap(
+                    DockedDataset._load_structure, mp_args
+                )
+        else:
+            all_structures = [
+                DockedDataset._load_structure(*args) for args in mp_args
+            ]
+
         self.compounds = {}
         self.structures = []
-        for i, (fn, compound) in enumerate(zip(str_fns, compounds)):
-            s = PDBParser().get_structure(f"{compound[0]}_{compound[1]}", fn)
-            ## Filter out water residues
-            all_atoms = [a for a in s.get_atoms() if a.parent.resname != "HOH"]
-            if ignore_h:
-                all_atoms = [a for a in all_atoms if a.element != "H"]
-            ## Fix multi-letter atom elements being in all caps (eg CL)
-            atomic_nums = [
-                table.GetAtomicNumber(a.element.title()) for a in all_atoms
-            ]
-            atom_pos = [tuple(a.get_vector()) for a in all_atoms]
-            is_lig = [a.parent.resname == lig_resn for a in all_atoms]
-
+        for i, (compound, struct) in enumerate(zip(compounds, all_structures)):
             try:
                 self.compounds[compound].append(i)
             except KeyError:
                 self.compounds[compound] = [i]
+            self.structures.append(struct)
 
-            ## Create new structure and update from extra_dict
-            new_structure = {
-                "z": torch.tensor(atomic_nums),
-                "pos": torch.tensor(atom_pos).float(),
-                "lig": torch.tensor(is_lig),
-                "compound": compound,
-            }
-            if extra_dict and (compound in extra_dict):
-                new_structure.update(extra_dict[compound])
-            self.structures.append(new_structure)
+    @staticmethod
+    def _load_structure(fn, compound, ignore_h, lig_resn, extra_dict):
+        from Bio.PDB.PDBParser import PDBParser
+        from rdkit.Chem import GetPeriodicTable
+        import torch
+
+        table = GetPeriodicTable()
+
+        s = PDBParser().get_structure(f"{compound[0]}_{compound[1]}", fn)
+        ## Filter out water residues
+        all_atoms = [a for a in s.get_atoms() if a.parent.resname != "HOH"]
+        if ignore_h:
+            all_atoms = [a for a in all_atoms if a.element != "H"]
+        ## Fix multi-letter atom elements being in all caps (eg CL)
+        atomic_nums = [
+            table.GetAtomicNumber(a.element.title()) for a in all_atoms
+        ]
+        atom_pos = [tuple(a.get_vector()) for a in all_atoms]
+        is_lig = [a.parent.resname == lig_resn for a in all_atoms]
+
+        ## Create new structure and update from extra_dict
+        new_structure = {
+            "z": torch.tensor(atomic_nums),
+            "pos": torch.tensor(atom_pos).float(),
+            "lig": torch.tensor(is_lig),
+            "compound": compound,
+        }
+        if extra_dict:
+            new_structure.update(extra_dict)
+
+        return new_structure
 
     def __len__(self):
         return len(self.structures)

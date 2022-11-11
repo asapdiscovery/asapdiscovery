@@ -396,6 +396,12 @@ def get_args():
         "-achiral", action="store_true", help="Keep only achiral molecules."
     )
     parser.add_argument("-n", default="LIG", help="Ligand residue name.")
+    parser.add_argument(
+        "-w",
+        type=int,
+        default=1,
+        help="Number of workers to use for dataset loading.",
+    )
 
     ## Output arguments
     parser.add_argument("-model_o", help="Where to save model weights.")
@@ -568,7 +574,11 @@ def init(args, rank=False):
 
         ## Load the dataset
         ds = DockedDataset(
-            all_fns, compounds, lig_resn=args.n, extra_dict=extra_dict
+            all_fns,
+            compounds,
+            lig_resn=args.n,
+            extra_dict=extra_dict,
+            num_workers=args.w,
         )
 
     num_kept = len(compounds)
