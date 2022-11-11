@@ -166,6 +166,7 @@ def train(
     val_loss=None,
     test_loss=None,
     use_wandb=False,
+    batch_size=1,
 ):
     """
     Train a model.
@@ -209,6 +210,8 @@ def train(
         List of test losses from previous epochs. Used when restarting training
     use_wandb : bool, default=False
         Log results with WandB
+    batch_size : int, default=1
+        Number of samples to predict on before performing backprop
 
     Returns
     -------
@@ -252,8 +255,12 @@ def train(
             print(f"Validation error: {np.mean(val_loss[-1]):0.5f}")
             print(f"Testing error: {np.mean(test_loss[-1]):0.5f}", flush=True)
         tmp_loss = []
+
+        ## Initialize batch
+        batch_counter = 0
+        optimizer.zero_grad()
+        batch_loss = None
         for (_, compound_id), pose in ds_train:
-            optimizer.zero_grad()
             for k, v in pose.items():
                 try:
                     pose[k] = v.to(device)
@@ -270,9 +277,28 @@ def train(
                 [[target_dict[compound_id]]], device=device
             ).float()
             loss = loss_fn(pred, target)
+
+            ## Keep track of loss for each sample
             tmp_loss.append(loss.item())
-            loss.backward()
-            optimizer.step()
+
+            ## Update batch_loss
+            if batch_loss is None:
+                batch_loss = loss
+            else:
+                batch_loss += loss
+            batch_counter += 1
+
+            ## Perform backprop if we've done all the preds for this batch
+            if batch_counter == batch_size:
+                ## Backprop
+                batch_loss.backward()
+                optimizer.step()
+
+                ## Reset batch tracking
+                batch_counter = 0
+                optimizer.zero_grad()
+                batch_loss = None
+
         train_loss.append(np.asarray(tmp_loss))
         epoch_train_loss = np.mean(tmp_loss)
 
