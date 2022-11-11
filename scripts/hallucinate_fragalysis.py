@@ -6,7 +6,7 @@ import argparse
 from glob import glob
 import itertools as it
 import multiprocessing as mp
-from openeye import oechem, oedocking
+from openeye import oechem, oedocking, oespruce
 import os
 import pandas
 import pickle as pkl
@@ -50,133 +50,6 @@ def check_output(d):
         return False
 
     return True
-
-
-def write_fragalysis_output(in_dir, out_dir, sort_key="POSIT_prob"):
-    """
-    Convert original-style output structure to a fragalysis-style output
-    structure.
-
-    Parameters
-    ----------
-    in_dir : str
-        Top-level directory of original-style output
-    out_dir : str
-        Top-level directory of new output
-    sort_key : str, default="POSIT_prob"
-        Which column to use to pick the best structure for each compound.
-        Options are [docked_RMSD, POSIT_prob, chemgauss4_score]. If POSIT_prob
-        is selected but not present in CSV file, fall back to docked_RMSD, then
-        chemgauss4_score if all docked_RMSD are -1.
-    """
-    ## Load master results CSV file
-    df = pandas.read_csv(f"{in_dir}/all_results.csv", index_col=0)
-
-    ## Set up test for best structure
-    if (sort_key == "POSIT_prob") and ("POSIT_prob" not in df.columns):
-        print(
-            "POSIT_prob not in given CSV file, falling back to docked_RMSD",
-            flush=True,
-        )
-        sort_key = "docked_RMSD"
-    if sort_key == "POSIT_prob":
-        sort_fn = lambda s: s.idxmax()
-    elif (sort_key == "docked_RMSD") or (sort_key == "chemgauss4_score"):
-        sort_fn = lambda s: s.idxmin()
-    else:
-        raise ValueError(f'Unknown sort_key "{sort_key}"')
-
-    ## Get best structure for each
-    best_str_dict = {}
-    for ((compound_id, dimer), g) in df.groupby(["SARS_ligand", "dimer"]):
-        if (sort_key == "docked_RMSD") and (g["docked_RMSD"] == -1.0).all():
-            sort_key = "chemgauss4_score"
-        best_str_dict[(compound_id, dimer)] = g.loc[
-            sort_fn(g[sort_key]), f"MERS_structure"
-        ]
-
-    ## Set up SDF file that will hold all ligands
-    all_ligs_monomer_ofs = oechem.oemolostream()
-    all_ligs_monomer_ofs.SetFlavor(
-        oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default
-    )
-    all_ligs_dimer_ofs = oechem.oemolostream()
-    all_ligs_dimer_ofs.SetFlavor(
-        oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default
-    )
-    # arranged this way so dimer=True => "dimer"
-    dimers_strings = ["monomer", "dimer"]
-    all_ofs = [all_ligs_monomer_ofs, all_ligs_dimer_ofs]
-    for d, ofs in zip(dimers_strings, all_ofs):
-        os.makedirs(f"{out_dir}/{d}", exist_ok=True)
-        ofs.open(f"{out_dir}/{d}/combined.sdf")
-
-    ## Loop through dict and parse input files into output files
-    for (compound_id, dimer), best_str in best_str_dict.items():
-        ## Make sure input exists
-        dimer_s = "dimer" if dimer else "monomer"
-        tmp_in_dir = f"{in_dir}/{compound_id}/{dimer_s}/{best_str}"
-        if not check_output(tmp_in_dir):
-            print(
-                (
-                    f"No results found for {compound_id}/{dimer_s}/{best_str}, "
-                    "skipping"
-                ),
-                flush=True,
-            )
-        ## Create output directory if necessary
-        tmp_out_dir = f"{out_dir}/{dimer_s}/{compound_id}"
-        os.makedirs(tmp_out_dir, exist_ok=True)
-
-        ## Load necessary files
-        du = oechem.OEDesignUnit()
-        oechem.OEReadDesignUnit(f"{tmp_in_dir}/predocked.oedu", du)
-        prot = oechem.OEGraphMol()
-        du.GetProtein(prot)
-        lig = load_openeye_sdf(f"{tmp_in_dir}/docked.sdf")
-
-        ## Set ligand title
-        lig.SetTitle(f"{compound_id}_{best_str}")
-
-        ## First save apo
-        save_openeye_pdb(prot, f"{tmp_out_dir}/{best_str}_apo.pdb")
-
-        ## Combine protein and ligand
-        oechem.OEAddMols(prot, lig)
-
-        # ## Get number of residues per chain
-        # num_res_chain_dict = {}
-        # hv = oechem.OEHierView(prot)
-        # for chain in hv.GetChains():
-        #     max_resid = 0
-        #     for frag in chain.GetFragments():
-        #         frag_max = max(
-        #             [r.GetResidueNumber() for r in frag.GetResidues()]
-        #         )
-        #         if frag_max > max_resid:
-        #             max_resid = frag_max
-        #     num_res_chain_dict[chain.GetChainID()] = max_resid
-        # ## Rename and renumber ligand residue
-        # for a in prot.GetAtoms():
-        #     r = oechem.OEAtomGetResidue(a)
-        #     if r.GetName() == "UNL":
-        #         r.SetHetAtom(True)
-        #         r.SetName("LIG")
-        #         r.SetResidueNumber(num_res_chain_dict[r.GetChainID()] + 100)
-        #     oechem.OEAtomSetResidue(a, r)
-
-        save_openeye_pdb(prot, f"{tmp_out_dir}/{compound_id}_bound.pdb")
-
-        ## Remove Hs from lig and save SDF file
-        for a in lig.GetAtoms():
-            if a.GetAtomicNum() == 1:
-                lig.DeleteAtom(a)
-        save_openeye_sdf(lig, f"{tmp_out_dir}/{compound_id}.sdf")
-        ofs = all_ofs[int(dimer)]
-        oechem.OEWriteMolecule(ofs, lig)
-
-    for ofs in all_ofs:
-        ofs.close()
 
 
 def mp_func(
@@ -238,6 +111,8 @@ def mp_func(
     ## Get protein+lig complex in molecule form and save
     complex_mol = du_to_complex(du)
     save_openeye_pdb(complex_mol, f"{out_fn}.pdb")
+
+    ### TODO: replace all of this with new docking.run_docking_oe function
 
     ## Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
     ##  1 if there was a clash that couldn't be resolved)
@@ -553,16 +428,53 @@ def main():
         print(f"Removed {n} (not A or B chain)", flush=True)
 
     ## Get proteins from apo structures
-    if args.keep_wat:
-        all_prots = []
-        for fn in all_apo_fns:
-            split_dict = split_openeye_mol(load_openeye_pdb(fn))
-            oechem.OEAddMols(split_dict["pro"], split_dict["water"])
-            all_prots.append(split_dict["pro"])
-    else:
-        all_prots = [
-            split_openeye_mol(load_openeye_pdb(fn))["pro"] for fn in all_apo_fns
-        ]
+    all_prots = []
+    prot_chain_ids = []
+    for n, fn in zip(all_apo_names, all_apo_fns):
+        split_dict = split_openeye_mol(load_openeye_pdb(fn))
+        prot = split_dict["pro"]
+        ## Add waters if required
+        if args.keep_wat:
+            oechem.OEAddMols(prot, split_dict["water"])
+
+        ## Build monomer into dimer as necessary (will need to handle
+        ##  re-labeling chains since the monomer seems to get the chainID C)
+        ## Shouldn't affect the protein if the dimer has already been built
+        bus = list(oespruce.OEExtractBioUnits(prot))
+        ## Check to make sure everything got built correctly
+        if len(bus) != 2:
+            print(
+                f"Incorrect number of Bio units built for {n} ({len(bus)})",
+                flush=True,
+            )
+        if bus[0].NumAtoms() != 2 * bus[1].NumAtoms():
+            print(
+                (
+                    f"Incorrect relative size of Bio units for {n} "
+                    f"({bus[0].NumAtoms()} and {bus[1].NumAtoms()})"
+                ),
+                flush=True,
+            )
+        ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
+        ##  doesn't pickle
+        prot = oechem.OEGraphMol(bus[0])
+
+        ## Keep track of chain IDs
+        all_chain_ids = {
+            r.GetExtChainID()
+            for r in oechem.OEGetResidues(prot)
+            if all(
+                [
+                    not oechem.OEIsWater()(a)
+                    for a in oechem.OEGetResidueAtoms(prot, r)
+                ]
+            )
+        }
+        if len(all_chain_ids) != 2:
+            raise AssertionError(f"{n} chains: {all_chain_ids}")
+
+        all_prots.append(prot)
+        prot_chain_ids.append(sorted(all_chain_ids))
 
     ## Parse reference
     if args.ref:
@@ -580,12 +492,14 @@ def main():
     mp_args = []
     ## Construct all args for mp_func
     for lig_name, lig in zip(all_holo_names, all_ligs):
-        for (dimer, apo_chain) in it.product([True, False], ["A", "B"]):
-            dimer_s = "dimer" if dimer else "monomer"
-            out_dir = f"{args.o}/{lig_name}/{dimer_s}"
-            os.makedirs(out_dir, exist_ok=True)
-            ## Load and parse apo protein
-            for prot_name, apo_prot in zip(all_apo_names, all_prots):
+        for prot_name, apo_prot, apo_chains in zip(
+            all_apo_names, all_prots, prot_chain_ids
+        ):
+            for (dimer, apo_chain) in it.product([True, False], apo_chains):
+                dimer_s = "dimer" if dimer else "monomer"
+                out_dir = f"{args.o}/{lig_name}/{dimer_s}"
+                os.makedirs(out_dir, exist_ok=True)
+                ## Load and parse apo protein
                 mp_args.append(
                     (
                         apo_prot,
@@ -621,11 +535,6 @@ def main():
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 
     results_df.to_csv(f"{args.o}/all_results.csv")
-
-    ## Will probably at some point want to integrate this into the actual
-    ##  function instead of having it run afterwards
-    write_fragalysis_output(args.o, f'{args.o.rstrip("/")}_frag/')
-
 
 if __name__ == "__main__":
     main()
