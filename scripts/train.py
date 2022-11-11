@@ -538,6 +538,9 @@ def init(args, rank=False):
 
         ## Rename exp_compounds so the number kept is consistent
         compounds = exp_compounds
+    elif args.cache and os.path.isfile(args.cache):
+        ## Load from cache
+        ds = pkl.load(open(args.cache, "rb"))
     else:
         ## Load the experimental affinities
         exp_affinities, exp_compounds = load_affinities(
@@ -581,6 +584,10 @@ def init(args, rank=False):
             num_workers=args.w,
         )
 
+        if args.cache:
+            ## Cache dataset
+            pkl.dump(ds, open(args.cache, "wb"))
+
     num_kept = len(compounds)
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
@@ -595,6 +602,7 @@ def init(args, rank=False):
         ),
         flush=True,
     )
+    ### TODO: make sure all poses for a given molecule get put in the same split
     # use fixed seed for reproducibility
     ds_train, ds_val, ds_test = torch.utils.data.random_split(
         ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
