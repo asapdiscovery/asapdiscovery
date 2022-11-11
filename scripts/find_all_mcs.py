@@ -12,7 +12,7 @@ from asap_docking.docking import (
     rank_structures_openeye,
     rank_structures_rdkit,
 )
-from asap_dataset_handling.schema import (
+from asap_datasets.schema import (
     ExperimentalCompoundDataUpdate,
     EnantiomerPairList,
 )

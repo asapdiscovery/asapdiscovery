@@ -23,7 +23,7 @@ except:
 
 setup(
     # Self-descriptive entries which should always be present
-    name="covid_moonshot_ml",
+    name="asap_mlmodels",
     author="kaminow",
     author_email="benjamin.kaminow@choderalab.org",
     description=short_description,

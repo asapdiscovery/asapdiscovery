@@ -2,7 +2,7 @@ import pickle as pkl
 import pandas as pd
 import numpy as np
 import os
-from asap_dataset_handling.data.openeye import (
+from asap_datasets.data.openeye import (
     get_ligand_rmsd_from_pdb_and_sdf,
 )
 

@@ -5,15 +5,15 @@ import sys
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from asap_dataset_handling.schema import (
+from asap_datasets.schema import (
     CrystalCompoundData,
     PDBStructure,
 )
-from asap_dataset_handling.datasets.pdb import load_pdbs_from_yaml
-from asap_dataset_handling.datasets.utils import (
+from asap_datasets.datasets.pdb import load_pdbs_from_yaml
+from asap_datasets.datasets.utils import (
     parse_experimental_compound_data,
 )
-from asap_dataset_handling.datasets import parse_fragalysis_data
+from asap_datasets.datasets import parse_fragalysis_data
 
 
 ################################################################################

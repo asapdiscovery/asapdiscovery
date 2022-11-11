@@ -8,7 +8,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asap_dataset_handling.datasets.utils import add_seqres
+from asap_datasets.datasets.utils import add_seqres
 
 
 def get_args():

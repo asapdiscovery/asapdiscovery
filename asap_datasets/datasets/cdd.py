@@ -1,8 +1,8 @@
 import numpy as np
 import pandas
 
-from asap_dataset_handling.datasets.utils import get_achiral_molecules
-from asap_dataset_handling.schema import (
+from asap_datasets.datasets.utils import get_achiral_molecules
+from asap_datasets.schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
     EnantiomerPair,

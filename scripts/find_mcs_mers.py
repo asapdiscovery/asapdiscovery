@@ -5,13 +5,13 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asap_dataset_handling.datasets import get_sdf_fn_from_dataset
+from asap_datasets.datasets import get_sdf_fn_from_dataset
 from asap_docking.docking import parse_xtal
 from asap_docking.docking import (
     rank_structures_openeye,
     rank_structures_rdkit,
 )
-from asap_dataset_handling.schema import (
+from asap_datasets.schema import (
     ExperimentalCompoundDataUpdate,
 )
 

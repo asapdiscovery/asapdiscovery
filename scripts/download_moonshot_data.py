@@ -3,7 +3,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asap_dataset_handling.datasets.moonshot import download_achiral
+from asap_datasets.datasets.moonshot import download_achiral
 
 ################################################################################
 def get_args():

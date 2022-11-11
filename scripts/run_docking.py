@@ -10,7 +10,7 @@ from asap_docking.docking import (
     parse_xtal,
     run_docking,
 )
-from asap_dataset_handling.schema import (
+from asap_datasets.schema import (
     ExperimentalCompoundDataUpdate,
     EnantiomerPairList,
 )

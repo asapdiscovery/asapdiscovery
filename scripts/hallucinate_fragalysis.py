@@ -14,17 +14,17 @@ import re
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asap_dataset_handling.datasets.utils import (
+from asap_datasets.datasets.utils import (
     filter_docking_inputs,
 )
-from asap_dataset_handling.data.openeye import (
+from asap_datasets.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     save_openeye_pdb,
     save_openeye_sdf,
     split_openeye_mol,
 )
-from asap_dataset_handling.datasets import (
+from asap_datasets.datasets import (
     parse_fragalysis_data,
     get_compound_id_xtal_dicts,
 )

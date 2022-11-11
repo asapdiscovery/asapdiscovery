@@ -18,7 +18,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-import covid_moonshot_ml
+import asap_mlmodels
 
 
 # -- Project information -----------------------------------------------------
@@ -146,9 +146,9 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "covid_moonshot_ml.tex",
+        "asap_mlmodels.tex",
         "COVIDMoonshotML Documentation",
-        "covid_moonshot_ml",
+        "asap_mlmodels",
         "manual",
     ),
 ]
@@ -161,7 +161,7 @@ latex_documents = [
 man_pages = [
     (
         master_doc,
-        "covid_moonshot_ml",
+        "asap_mlmodels",
         "COVIDMoonshotML Documentation",
         [author],
         1,
@@ -177,10 +177,10 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        "covid_moonshot_ml",
+        "asap_mlmodels",
         "COVIDMoonshotML Documentation",
         author,
-        "covid_moonshot_ml",
+        "asap_mlmodels",
         "Scripts and models for ML with COVID Moonshot data.",
         "Miscellaneous",
     ),

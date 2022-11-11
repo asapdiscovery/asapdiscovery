@@ -1,6 +1,6 @@
 from openeye import oechem, oespruce
 
-from asap_dataset_handling import (
+from asap_datasets import (
     load_openeye_pdb,
     load_openeye_sdf,
     split_openeye_mol,

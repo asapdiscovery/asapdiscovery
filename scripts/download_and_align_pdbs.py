@@ -2,7 +2,7 @@ import argparse, os, yaml, sys
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
-from asap_dataset_handling.datasets import pdb
+from asap_datasets.datasets import pdb
 
 
 ################################################################################

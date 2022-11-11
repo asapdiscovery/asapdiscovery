@@ -6,12 +6,12 @@ import pickle as pkl
 import re
 import torch
 
-from covid_moonshot_ml.dataset import DockedDataset
-from asap_dataset_handling.schema import (
+from asap_mlmodels.dataset import DockedDataset
+from asap_datasets.schema import (
     ExperimentalCompoundDataUpdate,
     EnantiomerPairList,
 )
-from covid_moonshot_ml.utils import find_most_recent
+from asap_mlmodels.utils import find_most_recent
 from train import (
     add_one_hot_encodings,
     add_lig_labels,
