@@ -1,5 +1,12 @@
 """
 This script starts a dash html instance using the files generated from clean_results_csv.py
+Currently it's trying to do to many different things and is *super* slow for large datasets
+But I want to keep this script to pull from in the future
+
+One of the cool things that this script does it change the filter values interactively
+based on what complex is picked by the user.
+
+--Alex
 """
 
 import pandas as pd
