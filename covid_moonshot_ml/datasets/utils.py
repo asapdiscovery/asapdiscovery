@@ -143,6 +143,8 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     df["pIC50_range"] = pic50_range
     semiquant = df["pIC50_range"].astype(bool)
 
+    ### TODO: handle multiple measurements for the same compound
+    ###  (average of stderr for each compound)
     ci_lower_key = (
         "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
         "CI (Lower) (µM)"
@@ -154,6 +156,13 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
     pic50_stderr = []
     for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
+        ## Cast to float
+        try:
+            ci_lower = float(ci_lower)
+            ci_upper = float(ci_upper)
+        except ValueError:
+            pic50_stderr.append(np.nan)
+            continue
         if pandas.isna(ci_lower) or pandas.isna(ci_upper):
             pic50_stderr.append(np.nan)
         else:
@@ -168,9 +177,15 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         ~semiquant, "pIC50_stderr"
     ].mean()
 
+    ### For now just keep the first measure for each compound_id
     compounds = []
+    seen_compound_ids = set()
     for i, (_, c) in enumerate(df.iterrows()):
         compound_id = c["Canonical PostEra ID"]
+        if compound_id in seen_compound_ids:
+            continue
+        seen_compound_ids.add(compound_id)
+
         smiles = c["suspected_SMILES"]
         experimental_data = {
             "pIC50": c["pIC50"],
