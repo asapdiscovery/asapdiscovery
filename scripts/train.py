@@ -377,7 +377,7 @@ def get_args():
 
     ## Input arguments
     parser.add_argument(
-        "-i", required=True, help="Input directory containing docked PDB files."
+        "-i", required=True, help="Input directory/glob for docked PDB files."
     )
     parser.add_argument(
         "-exp", required=True, help="JSON file giving experimental results."
@@ -469,14 +469,24 @@ def init(args, rank=False):
     """
 
     ## Get all docked structures
-    all_fns = glob(f"{args.i}/*complex.pdb")
+    if os.path.isdir(args.i):
+        all_fns = glob(f"{args.i}/*complex.pdb")
+    else:
+        all_fns = glob(args.i)
     ## Extract crystal structure and compound id from file name
-    re_pat = (
-        r"(Mpro-.*?_[0-9][A-Z]).*?([A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+)"
-        "_complex.pdb"
-    )
-    matches = [re.search(re_pat, fn) for fn in all_fns]
-    compounds = [m.groups() for m in matches if m]
+    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
+    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+
+    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
+    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
+    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
+    compounds = [
+        (xtal_m.group(), compound_m.group())
+        for xtal_m, compound_m, both_m in zip(
+            xtal_matches, compound_matches, idx
+        )
+        if both_m
+    ]
     num_found = len(compounds)
     ## Dictionary mapping from compound_id to Mpro dataset(s)
     compound_id_dict = {}
