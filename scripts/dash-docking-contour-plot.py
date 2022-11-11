@@ -49,7 +49,9 @@ def main():
     ## Make contour plot
     app.layout = html.Div(
         [
-            plotly_dash_functions.get_contour_plot(),
+            plotly_dash_functions.get_basic_plot(
+                id="crossfilter-indicator-contour"
+            ),
             plotly_dash_functions.get_filters(tidy.variable.unique()),
         ]
     )
@@ -66,7 +68,7 @@ def main():
     )
     def update_contour(*args):
         print(*args)
-        fig = plotting.update_contour(df, *args)
+        fig = plotting.contour_plot(df, *args)
         return fig
 
     ## Run the server!
