@@ -14,11 +14,11 @@ def get_dash_app():
 # def wrap_plotting_function(app)
 
 
-def get_contour_plot():
+def get_basic_plot(id):
     return html.Div(
         [
             dcc.Graph(
-                id="crossfilter-indicator-contour",
+                id=id,
             )
         ],
         style={
@@ -29,7 +29,19 @@ def get_contour_plot():
     )
 
 
-def color_variable(variable_list):
+def get_heading(title, id):
+    return (
+        html.Div(
+            [
+                html.H4(title),
+                dcc.Graph(id=id),
+            ],
+            style={"width": "49%", "display": "inline-block"},
+        ),
+    )
+
+
+def get_color_variable(variable_list):
     return (
         html.Div(
             [
@@ -46,6 +58,23 @@ def color_variable(variable_list):
                 # "float": "left",
             },
         ),
+    )
+
+
+def get_dash_table(id, variable_dict, columns):
+    return dash_table.DataTable(
+        variable_dict,
+        id=id,
+        columns=columns,
+        style_table={
+            "width": "50%",
+            "float": "center",
+            "display": "inline-block",
+            "padding": "0 20",
+            # "float": "right",
+        },
+        filter_action="native",
+        filter_query="",
     )
 
 
