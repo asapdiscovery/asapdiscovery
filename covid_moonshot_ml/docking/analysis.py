@@ -341,7 +341,7 @@ class DockingResults:
 
 def load_dataframes(input_dir):
     """
-    Load csv files from an input dict
+    Load csv files from an input directory
 
     Parameters
     ----------
@@ -349,6 +349,7 @@ def load_dataframes(input_dir):
 
     Returns
     -------
+    dictionary of dataframes
 
     """
     best_results_csv = os.path.join(input_dir, "best_results.csv")

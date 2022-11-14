@@ -5,8 +5,6 @@ But I want to keep this script to pull from in the future
 
 One of the cool things that this script does it change the filter values interactively
 based on what complex is picked by the user.
-
---Alex
 """
 
 import pandas as pd

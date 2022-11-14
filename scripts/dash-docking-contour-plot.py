@@ -12,8 +12,6 @@ Adding new functions would require 3 steps (as far as I understand it):
 1. making a plotly figure creator function
 2. making the appropriate html logic function
 3. using the decorator syntax to appropriately pass inputs from the html logic to the plotly creator
-
-
 """
 from dash import html, Input, Output
 import argparse, os, sys

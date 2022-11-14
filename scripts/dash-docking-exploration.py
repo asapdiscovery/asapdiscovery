@@ -4,7 +4,6 @@ It is similar to dash-all-results exploration except the original purpose of thi
 was to just explore the by_compound and by_structure csv files
 It has some nice logic that isn't duplicated in dash-all-results-exploration
 so I would like to keep it for now
---Alex
 """
 
 import pandas as pd
