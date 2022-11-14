@@ -15,6 +15,7 @@ def get_args():
 
     parser.add_argument(
         "-tok",
+        "--token",
         help=(
             "File containing CDD token. Not used if the CDDTOKEN "
             "environment variable is set."
