@@ -783,6 +783,8 @@ def main():
 
     ## Start wandb
     if args.wandb:
+        import wandb
+
         ## Get project name
         if args.proj:
             project_name = args.proj
