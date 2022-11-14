@@ -458,6 +458,9 @@ def get_args():
         default=1e-4,
         help="Learning rate for Adam optimizer (defaults to 1e-4).",
     )
+    parser.add_argument(
+        "-b", "--batch_size", type=int, default=1, help="Training batch size."
+    )
 
     ## WandB arguments
     parser.add_argument(
@@ -541,6 +544,7 @@ def init(args, rank=False):
     elif args.cache and os.path.isfile(args.cache):
         ## Load from cache
         ds = pkl.load(open(args.cache, "rb"))
+        print("Loaded from cache", flush=True)
     else:
         ## Load the experimental affinities
         exp_affinities, exp_compounds = load_affinities(
@@ -698,6 +702,7 @@ def init(args, rank=False):
             "train_examples": len(ds_train),
             "val_examples": len(ds_val),
             "test_examples": len(ds_test),
+            "batch_size": args.batch_size,
         }
     )
     return (
@@ -795,6 +800,7 @@ def main():
         val_loss,
         test_loss,
         args.wandb,
+        args.batch_size,
     )
 
     if args.wandb:
