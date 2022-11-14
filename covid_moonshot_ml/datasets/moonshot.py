@@ -96,7 +96,7 @@ def download_achiral(header, fn_out=None):
     from .utils import get_achiral_molecules
 
     ## Download all molecules to start
-    response = download_url(VAULT_URL + NONCOVALENT_SMI_SEARCH, header)
+    response = download_url(f"{VAULT_URL}{NONCOVALENT_SMI_SEARCH}", header)
     ## Parse into DF
     mol_df = pandas.read_csv(StringIO(response.content.decode()))
     ## Get rid of any molecules that snuck through without SMILES
@@ -162,7 +162,7 @@ def download_molecules(
             content = infile.read()
     else:
         ## Download all molecules to start
-        url = VAULT_URL + NONCOVALENT_SMI_SEARCH
+        url = f"{VAULT_URL}{NONCOVALENT_SMI_SEARCH}"
         logging.debug(f"Downloading data from CDD vault from {url}")
         response = download_url(url, header)
         content = response.content.decode()
