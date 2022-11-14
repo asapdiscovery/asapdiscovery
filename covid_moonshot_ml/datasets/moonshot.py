@@ -135,7 +135,10 @@ def download_molecules(
     **filter_kwargs,
 ):
     """
-    Download all molecules and remove any chiral molecules.
+    Download all molecules and filter based on args in `filter_kwargs`. Saves
+    and loads unfiltered CSV file to `fn_cache` if provided, and saves filtered
+    CSV file to `fn_out` if provided.
+
     Parameters
     ----------
     header : dict
