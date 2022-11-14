@@ -150,6 +150,71 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
     fig.savefig(out_fn, dpi=200, bbox_inches="tight")
 
 
+def split_molecules(ds, split_fracs, generator=None):
+    """
+    Split a dataset while keeping different poses of the same molecule in the
+    same split. Naively splits based on compound_id, so if some compounds has a
+    disproportionate number of poses your splits may be imbalanced.
+
+    Parameters
+    ----------
+    ds : Union[cml.data.DockedDataset, cml.data.GraphDataset]
+        Molecular dataset to split
+    split_fracs : List[float]
+        List of fraction of compounds to put in each split
+    generator : torch.Generator, optional
+        Torch Generator object to use for randomness. If none is supplied, use
+        torch.default_generator
+
+    Returns
+    -------
+    List[torch.utils.data.Subset]
+        List of Subsets of original dataset
+    """
+    import torch
+
+    ### TODO: make this whole process more compact
+
+    ## First get all the unique compound_ids
+    compound_ids_dict = {c[1]: c for c in ds.compounds.keys()}
+    all_compound_ids = list(compound_ids_dict.keys())
+
+    ## Set up generator
+    if generator is None:
+        generator = torch.default_generator
+
+    ## Shuffle the indices
+    indices = torch.randperm(len(all_compound_ids), generator=generator)
+
+    ## For each Subset, grab all molecules with the included compound_ids
+    all_subsets = []
+    offset = 0
+    ## Go up to the last split so we can add anything that got left out from
+    ##  float rounding
+    for frac in split_fracs[:-1]:
+        split_len = frac * len(indices)
+        incl_compounds = all_compound_ids[offset : offset + split_len]
+
+        ## Get subset indices
+        subset_idx = []
+        for compound_id in incl_compounds:
+            for compound in compound_ids_dict[compound_id]:
+                subset_idx.extend([i for i in ds.compounds[compound]])
+        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    ## Finish up anything leftover
+    incl_compounds = all_compound_ids[offset:]
+
+    ## Get subset indices
+    subset_idx = []
+    for compound_id in incl_compounds:
+        for compound in compound_ids_dict[compound_id]:
+            subset_idx.extend([i for i in ds.compounds[compound]])
+    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    return all_subsets
+
+
 def train(
     model,
     ds_train,
