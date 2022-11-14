@@ -299,6 +299,7 @@ def train(
         shape (`n_epochs`, `len(ds_test)`)
     """
     import pickle as pkl
+    from time import time
     import torch
 
     if use_wandb:
@@ -331,6 +332,7 @@ def train(
         batch_counter = 0
         optimizer.zero_grad()
         batch_loss = None
+        start_time = time()
         for (_, compound_id), pose in ds_train:
             for k, v in pose.items():
                 try:
@@ -374,6 +376,7 @@ def train(
             ## Backprop for final incomplete batch
             batch_loss.backward()
             optimizer.step()
+        end_time = time()
 
         train_loss.append(np.asarray(tmp_loss))
         epoch_train_loss = np.mean(tmp_loss)
@@ -430,6 +433,7 @@ def train(
                     "val_loss": epoch_val_loss,
                     "test_loss": epoch_test_loss,
                     "epoch": epoch_idx,
+                    "epoch_time": end_time - start_time,
                 }
             )
         if save_file is None:
