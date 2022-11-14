@@ -546,6 +546,11 @@ def init(args, rank=False):
         ## Load from cache
         ds = pkl.load(open(args.cache, "rb"))
         print("Loaded from cache", flush=True)
+
+        ## Still need to load the experimental affinities
+        exp_affinities, exp_compounds = load_affinities(
+            args.exp, achiral=args.achiral, return_compounds=True
+        )
     else:
         ## Load the experimental affinities
         exp_affinities, exp_compounds = load_affinities(
