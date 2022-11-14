@@ -711,6 +711,7 @@ def init(args, rank=False):
             "val_examples": len(ds_val),
             "test_examples": len(ds_test),
             "batch_size": args.batch_size,
+            "device": args.device,
         }
     )
     return (
