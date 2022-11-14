@@ -299,6 +299,11 @@ def train(
                 optimizer.zero_grad()
                 batch_loss = None
 
+        if batch_counter > 0:
+            ## Backprop for final incomplete batch
+            batch_loss.backward()
+            optimizer.step()
+
         train_loss.append(np.asarray(tmp_loss))
         epoch_train_loss = np.mean(tmp_loss)
 
