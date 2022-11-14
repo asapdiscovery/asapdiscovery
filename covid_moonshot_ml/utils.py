@@ -176,7 +176,12 @@ def split_molecules(ds, split_fracs, generator=None):
     ### TODO: make this whole process more compact
 
     ## First get all the unique compound_ids
-    compound_ids_dict = {c[1]: c for c in ds.compounds.keys()}
+    compound_ids_dict = {}
+    for c in ds.compounds.keys():
+        try:
+            compound_ids_dict[c[1]].append(c)
+        except KeyError:
+            compound_ids_dict[c[1]] = [c]
     all_compound_ids = list(compound_ids_dict.keys())
 
     ## Set up generator
@@ -192,8 +197,9 @@ def split_molecules(ds, split_fracs, generator=None):
     ## Go up to the last split so we can add anything that got left out from
     ##  float rounding
     for frac in split_fracs[:-1]:
-        split_len = frac * len(indices)
+        split_len = int(np.floor(frac * len(indices)))
         incl_compounds = all_compound_ids[offset : offset + split_len]
+        offset += split_len
 
         ## Get subset indices
         subset_idx = []
