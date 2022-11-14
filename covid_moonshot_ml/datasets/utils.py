@@ -471,6 +471,7 @@ def filter_molecules_dataframe(
     retain_racemic=False,
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
+    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
 ):
     """
     Filter a dataframe of molecules to retain those specified.
@@ -479,7 +480,7 @@ def filter_molecules_dataframe(
     ----------
     mol_df : pandas.DataFrame
         DataFrame containing compound information
-    smiles_fieldname : str, default='suspected_SMILES'
+    smiles_fieldname : str, default="suspected_SMILES"
         Field name to use for reference SMILES
     retain_achiral : bool, default=False
         If True, retain achiral measurements
@@ -489,6 +490,8 @@ def filter_molecules_dataframe(
         If True, retain chirally resolved measurements
     retain_semiquantitative_data : bool, default=False
         If True, retain semiquantitative data (data outside assay dynamic range)
+    assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
+        Name of the assay of interest
 
     Returns
     -------
@@ -571,7 +574,6 @@ def filter_molecules_dataframe(
         include_flags.append(include_this_molecule)
     mol_df = mol_df.loc[include_flags, :]
 
-    assay_name = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
     # Filter out semiquantitative data, if requested
     if not retain_semiquantitative_data:
         include_flags = []
