@@ -38,8 +38,9 @@ from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import (
     calc_e3nn_model_info,
     find_most_recent,
-    train,
     plot_loss,
+    split_molecules,
+    train,
 )
 
 
@@ -596,20 +597,22 @@ def init(args, rank=False):
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
     ## Split dataset into train/val/test (80/10/10 split)
-    n_train = int(len(ds) * 0.8)
-    n_val = int(len(ds) * 0.1)
-    n_test = len(ds) - n_train - n_val
-    print(
-        (
-            f"{n_train} training samples, {n_val} validation samples, "
-            f"{n_test} testing samples"
-        ),
-        flush=True,
-    )
-    ### TODO: make sure all poses for a given molecule get put in the same split
     # use fixed seed for reproducibility
-    ds_train, ds_val, ds_test = torch.utils.data.random_split(
-        ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+    ds_train, ds_val, ds_test = split_molecules(
+        ds, [0.8, 0.1, 0.1], torch.Generator().manual_seed(42)
+    )
+
+    train_compound_ids = {c[1] for c, _ in ds_train}
+    val_compound_ids = {c[1] for c, _ in ds_val}
+    test_compound_ids = {c[1] for c, _ in ds_test}
+    print(
+        f"{len(ds_train)} training samples",
+        f"({len(train_compound_ids)}) molecules,",
+        f"{len(ds_val)} validation samples",
+        f"({len(val_compound_ids)}) molecules,",
+        f"{len(ds_test)} test samples",
+        f"({len(test_compound_ids)}) molecules",
+        flush=True,
     )
 
     ## Build the model
