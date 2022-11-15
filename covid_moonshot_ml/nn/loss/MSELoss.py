@@ -39,10 +39,13 @@ class MSELoss(TorchMSELoss):
         """
 
         if self.loss_type is None:
+            ## Just need to calculate mean to get MSE
             return self.loss_function(input, target).mean()
         elif self.loss_type == "step":
+            ## Call step_loss
             return self.loss_function(input, target, in_range)
         elif self.loss_type == "uncertainty":
+            ## Call uncertainty_loss
             return self.loss_function(input, target, uncertainty)
 
     def step_loss(self, input, target, in_range):
