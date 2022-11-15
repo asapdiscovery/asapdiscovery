@@ -1,5 +1,5 @@
 import torch
-from torch.nn.modules.loss import MSELoss as TorchMSELoss
+from torch.nn import MSELoss as TorchMSELoss
 
 
 class MSELoss(TorchMSELoss):
@@ -88,29 +88,3 @@ class MSELoss(TorchMSELoss):
         mask = mask.to(loss.device)
 
         return (mask * loss).mean()
-
-    def uncertainty_loss(self, input, target, uncertainty):
-        """
-        Uncertainty MSE loss calculation. Loss for each sample is calculated by
-        first dividing the difference between `input` and `target` by the
-        uncertainty in the `target` measurement.
-
-        Parameters
-        ----------
-        input : torch.Tensor
-            Model prediction
-        target : torch.Tensor
-            Prediction target
-        uncertainty : torch.Tensor
-            Uncertainty in `target` measurements
-
-        Returns
-        -------
-        """
-        ## Calculate loss
-        loss = super(MSELoss, self).forward(input, target)
-
-        ## Divide by uncertainty squared
-        loss /= uncertainty**2
-
-        return loss.mean()
