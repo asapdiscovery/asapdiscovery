@@ -13,7 +13,7 @@ from torch_geometric.datasets import QM9
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from covid_moonshot_ml.data.dataset import DockedDataset
-from covid_moonshot_ml.nn import E3NNBind, SchNetBind, MSELoss
+from covid_moonshot_ml.nn import E3NNBind, SchNetBind, MSELoss, GaussianNLLLoss
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import (
     calc_e3nn_model_info,
@@ -356,7 +356,11 @@ def get_args():
         help="Learning rate for Adam optimizer (defaults to 1e-4).",
     )
     parser.add_argument(
-        "-loss", help="Loss type. Options are [step, uncertainty]."
+        "-loss",
+        help="Loss type. Options are [step, uncertainty, uncertainty_sq].",
+    )
+    parser.add_argument(
+        "-sq", help="Value to fill in for uncertainty of semiquantitative data."
     )
 
     return parser.parse_args()
@@ -508,9 +512,18 @@ def main():
         test_loss = None
 
     ## Set up the loss function
-    loss_func = MSELoss(args.loss)
-    lt = "standard" if args.loss is None else args.loss.lower()
-    print(f"Using {lt} MSE loss", flush=True)
+    if (args.loss is None) or (args.loss.lower() == "step"):
+        loss_func = MSELoss(args.loss)
+        lt = "standard" if args.loss is None else args.loss.lower()
+        print(f"Using {lt} MSE loss", flush=True)
+    elif "uncertainty" in args.loss.lower():
+        keep_sq = "sq" in args.loss.lower()
+        loss_func = GaussianNLLLoss(keep_sq, args.sq)
+        print(
+            f"Using Gaussian NLL loss with{'out'*(not keep_sq)}",
+            "semiquant values",
+            flush=True,
+        )
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
