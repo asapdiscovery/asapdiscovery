@@ -75,7 +75,7 @@ def get_args():
 
 def main():
     args = get_args()
-
+    print(args.input_csv)
     assert os.path.exists(args.input_csv)
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
@@ -137,7 +137,7 @@ def main():
     ]
 
     ## Re-sort the dataframe by the Compound_ID so that its nice and alphabetical and re-index based on that
-    dr.df = dr.df.sort_values(["Compound_ID"]).reset_index(drop=True)
+    dr.df = dr.df.sort_values(["Complex_ID"]).reset_index(drop=True)
 
     ## Get several dataframes
     dr.get_compound_df()
@@ -147,18 +147,7 @@ def main():
     )
 
     ## Write out CSV Files
-    dr.df.to_csv(
-        os.path.join(args.output_dir, "all_results_cleaned.csv"), index=False
-    )
-    dr.compound_df.to_csv(
-        os.path.join(args.output_dir, "by_compound.csv"), index=False
-    )
-    dr.structure_df.to_csv(
-        os.path.join(args.output_dir, "by_structure.csv"), index=False
-    )
-    dr.best_df.to_csv(
-        os.path.join(args.output_dir, "best_results.csv"), index=False
-    )
+    dr.write_dfs_to_csv(args.output_dir)
 
 
 if __name__ == "__main__":
