@@ -334,17 +334,14 @@ def train(
         batch_loss = None
         start_time = time()
         for (_, compound_id), pose in ds_train:
+            tmp_pose = {}
             for k, v in pose.items():
                 try:
-                    pose[k] = v.to(device)
+                    tmp_pose[k] = v.to(device)
                 except AttributeError:
-                    pass
-            pred = model_call(model, pose)
-            for k, v in pose.items():
-                try:
-                    pose[k] = v.to("cpu")
-                except AttributeError:
-                    pass
+                    tmp_pose[k] = v
+            pred = model_call(model, tmp_pose)
+
             # convert to float to match other types
             target = torch.tensor(
                 [[target_dict[compound_id]]], device=device
@@ -384,17 +381,14 @@ def train(
         with torch.no_grad():
             tmp_loss = []
             for (_, compound_id), pose in ds_val:
+                tmp_pose = {}
                 for k, v in pose.items():
                     try:
-                        pose[k] = v.to(device)
+                        tmp_pose[k] = v.to(device)
                     except AttributeError:
-                        pass
-                pred = model_call(model, pose)
-                for k, v in pose.items():
-                    try:
-                        pose[k] = v.to("cpu")
-                    except AttributeError:
-                        pass
+                        tmp_pose[k] = v
+                pred = model_call(model, tmp_pose)
+
                 # convert to float to match other types
                 target = torch.tensor(
                     [[target_dict[compound_id]]], device=device
@@ -406,17 +400,14 @@ def train(
 
             tmp_loss = []
             for (_, compound_id), pose in ds_test:
+                tmp_pose = {}
                 for k, v in pose.items():
                     try:
-                        pose[k] = v.to(device)
+                        tmp_pose[k] = v.to(device)
                     except AttributeError:
-                        pass
-                pred = model_call(model, pose)
-                for k, v in pose.items():
-                    try:
-                        pose[k] = v.to("cpu")
-                    except AttributeError:
-                        pass
+                        tmp_pose[k] = v
+                pred = model_call(model, tmp_pose)
+
                 # convert to float to match other types
                 target = torch.tensor(
                     [[target_dict[compound_id]]], device=device
