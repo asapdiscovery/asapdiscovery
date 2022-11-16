@@ -73,7 +73,31 @@ class DockedDataset(Dataset):
             self.structures.append(struct)
 
     @staticmethod
-    def _load_structure(fn, compound, ignore_h, lig_resn, extra_dict):
+    def _load_structure(
+        fn, compound, ignore_h=True, lig_resn="LIG", extra_dict=None
+    ):
+        """
+        Helper function to load a single structure that can be multiprocessed in
+        the class constructor.
+
+        Parameters
+        ----------
+        fn : str
+            PDB file path
+        compound : Tuple[str]
+            (crystal structure, ligand compound id)
+        ignore_h : bool, default=True
+            Whether to remove hydrogens from the loaded structure
+        lig_resn : str, default='LIG'
+            The residue name for the ligand molecules in the PDB files. Used to
+            identify which atoms belong to the ligand
+        extra_dict : dict, optional
+            Extra information to add to this structure. Values can be anything
+            as long as they don't have the keys ["z", "pos", "lig", "compound"]
+
+        Returns
+        -------
+        """
         from Bio.PDB.PDBParser import PDBParser
         from rdkit.Chem import GetPeriodicTable
         import torch
