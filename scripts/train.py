@@ -533,7 +533,6 @@ def init(args, rank=False):
         ## Build the dataset
         ds = GraphDataset(
             exp_compounds,
-            compound_id_dict,
             node_featurizer=CanonicalAtomFeaturizer(),
             cache_file=os.path.join(cache_dir, "graph.bin"),
         )
