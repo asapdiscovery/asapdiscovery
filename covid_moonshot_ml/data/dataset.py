@@ -202,7 +202,6 @@ class DockedDataset(Dataset):
             yield (s["compound"], s)
 
 
-### TODO before PR: fix compound_id_dict here to match with new format
 class GraphDataset(Dataset):
     """
     Class for loading SMILES as graphs.
@@ -211,7 +210,6 @@ class GraphDataset(Dataset):
     def __init__(
         self,
         exp_compounds,
-        compound_id_dict=None,
         node_featurizer=None,
         edge_featurizer=None,
         cache_file=None,
@@ -221,8 +219,6 @@ class GraphDataset(Dataset):
         ----------
         exp_compounds : List[schema.ExperimentalCompoundData]
             List of compounds
-        compound_id_dict : Dict[str, str], optional
-            Dict mapping from compound_id to Mpro dataset
         node_featurizer : BaseAtomFeaturizer, optional
             Featurizer for node data
         edge_featurizer : BaseBondFeaturizer, optional
@@ -267,14 +263,9 @@ class GraphDataset(Dataset):
         self.compounds = {}
         self.structures = []
         for i, (compound_id, g) in enumerate(zip(all_compound_ids, dataset)):
-            ## Make compound tuple
-            if compound_id_dict:
-                compound = (
-                    compound_id_dict.get(compound_id, "NA"),
-                    compound_id,
-                )
-            else:
-                compound = ("NA", compound_id)
+            ## Need a tuple to match DockedDataset, but the graph objects aren't
+            ##  attached to a protein structure at all
+            compound = ("NA", compound_id)
 
             ## Add data
             try:
