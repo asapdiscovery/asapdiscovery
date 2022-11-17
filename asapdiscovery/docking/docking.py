@@ -122,6 +122,7 @@ def run_docking_oe(
         Generated docking_id, used to access SD tag data
     """
     from openeye import oechem, oedocking
+    from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
     ## Convert to OEMol for docking purposes
     dock_lig = oechem.OEMol(dock_lig)
@@ -235,28 +236,9 @@ def run_docking_oe(
 
     ## Calculate RMSD
     posed_copy = posed_mol.CreateCopy()
-    oechem.OECanonicalOrderAtoms(dock_lig)
-    oechem.OECanonicalOrderBonds(dock_lig)
-    oechem.OECanonicalOrderAtoms(posed_copy)
-    oechem.OECanonicalOrderBonds(posed_copy)
-    ## Get coordinates, filtering out Hs
-    predocked_coords = [
-        c
-        for a in dock_lig.GetAtoms()
-        for c in dock_lig.GetCoords()[a.GetIdx()]
-        if a.GetAtomicNum() != 1
-    ]
-    docked_coords = [
-        c
-        for a in posed_copy.GetAtoms()
-        for c in posed_copy.GetCoords()[a.GetIdx()]
-        if a.GetAtomicNum() != 1
-    ]
-    rmsd = oechem.OERMSD(
-        oechem.OEDoubleArray(predocked_coords),
-        oechem.OEDoubleArray(docked_coords),
-        len(predocked_coords) // 3,
-    )
+
+    rmsd = calculate_rmsd_openeye(dock_lig,
+                                  posed_copy)
 
     ## Set SD tags for molecule
     docking_id = "_".join(docking_id)
