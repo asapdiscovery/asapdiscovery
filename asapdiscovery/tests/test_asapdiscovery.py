@@ -6,6 +6,6 @@ Unit and regression test for the covid_moonshot_ml package.
 import sys
 
 
-def test_covid_moonshot_ml_imported():
+def test_asapdiscovery():
     """Sample test, will always pass so long as import statement worked."""
-    assert "covid_moonshot_ml" in sys.modules
+    assert "asapdiscovery" in sys.modules
