@@ -42,7 +42,7 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
         -------
         """
         ## Fill in semiquant values
-        if self.include_semiquant and self.fill_value is not None:
+        if self.include_semiquant and (self.fill_value is not None):
             idx = [r != 0 for r in in_range]
             ## Clone to avoid modifying the original uncertainty measurements
             uncertainty = uncertainty.clone()
@@ -55,7 +55,9 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
 
         ## Mask out losses for all semiquant measurements
         if not self.include_semiquant:
-            mask = torch.tensor([r == 0 for r in in_range], dtype=loss.dtype)
+            mask = torch.tensor(
+                [r == 0 for r in in_range], dtype=loss.dtype, device=loss.device
+            )
             loss *= mask
 
         return loss.sum()
