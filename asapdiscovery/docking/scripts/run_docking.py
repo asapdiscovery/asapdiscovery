@@ -7,9 +7,9 @@ import sys
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.docking.docking import (
     build_docking_systems,
-    parse_xtal,
     run_docking,
 )
+from asapdiscovery.data.fragalysis import parse_xtal
 from asapdiscovery.data.schema import (
     ExperimentalCompoundDataUpdate,
     EnantiomerPairList,

@@ -54,3 +54,52 @@ def download(out_fn, extract=True):
         print("Extracting files", flush=True)
         zf = ZipFile(out_fn)
         zf.extractall(path=os.path.dirname(out_fn))
+
+
+def parse_xtal(x_fn, x_dir):
+    """
+    Load all crystal structures into schema.CrystalCompoundData objects.
+    Parameters
+    ----------
+    x_fn : str
+        CSV file giving information on each crystal structure
+    x_dir : str
+        Path to directory containing directories with crystal structure PDB
+        files
+    Returns
+    -------
+    List[schema.CrystalCompoundData]
+        List of parsed crystal structures
+    """
+    import pandas
+
+    from schema import CrystalCompoundData
+
+    df = pandas.read_csv(x_fn)
+
+    ## Find all P-files
+    idx = [(type(d) is str) and ("-P" in d) for d in df["Dataset"]]
+
+    ## Build argument dicts for the CrystalCompoundData objects
+    xtal_dicts = [
+        dict(zip(("smiles", "dataset", "compound_id"), r[1].values))
+        for r in df.loc[idx, ["SMILES", "Dataset", "Compound ID"]].iterrows()
+    ]
+
+    ## Add structure filename information
+    for d in xtal_dicts:
+        fn_base = f'{x_dir}/{d["dataset"]}_0{{}}/{d["dataset"]}_0{{}}_{{}}.pdb'
+        for suf in ["seqres", "bound"]:
+            for chain in ["A", "B"]:
+                fn = fn_base.format(chain, chain, suf)
+                if os.path.isfile(fn):
+                    d["str_fn"] = fn
+                    break
+            if os.path.isfile(fn):
+                break
+        assert os.path.isfile(fn), f'No structure found for {d["dataset"]}.'
+
+    ## Build CrystalCompoundData objects for each row
+    xtal_compounds = [CrystalCompoundData(**d) for d in xtal_dicts]
+
+    return xtal_compounds
