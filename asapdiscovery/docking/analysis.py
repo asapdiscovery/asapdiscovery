@@ -5,6 +5,7 @@ import os, re
 from asapdiscovery.data.openeye import (
     get_ligand_rmsd_from_pdb_and_sdf,
 )
+from openeye import oechem, oedocking
 
 
 class DockingDataset:
@@ -376,3 +377,32 @@ def load_dataframes(input_dir):
         "by_structure_tidy": by_structure_tidy,
         "by_structure": by_structure,
     }
+
+
+def calculate_rmsd_openeye(
+    reference_ligand: oechem.OEMol, docked_ligand: oechem.OEMol
+):
+    ## Calculate RMSD
+    oechem.OECanonicalOrderAtoms(reference_ligand)
+    oechem.OECanonicalOrderBonds(reference_ligand)
+    oechem.OECanonicalOrderAtoms(docked_ligand)
+    oechem.OECanonicalOrderBonds(docked_ligand)
+    ## Get coordinates, filtering out Hs
+    predocked_coords = [
+        c
+        for a in reference_ligand.GetAtoms()
+        for c in reference_ligand.GetCoords()[a.GetIdx()]
+        if a.GetAtomicNum() != 1
+    ]
+    docked_coords = [
+        c
+        for a in docked_ligand.GetAtoms()
+        for c in docked_ligand.GetCoords()[a.GetIdx()]
+        if a.GetAtomicNum() != 1
+    ]
+    rmsd = oechem.OERMSD(
+        oechem.OEDoubleArray(predocked_coords),
+        oechem.OEDoubleArray(docked_coords),
+        len(predocked_coords) // 3,
+    )
+    return rmsd
