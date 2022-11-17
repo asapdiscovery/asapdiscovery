@@ -9,8 +9,8 @@ from asapdiscovery.data.schema import (
     CrystalCompoundData,
     PDBStructure,
 )
-from covid_moonshot_ml.datasets.pdb import load_pdbs_from_yaml
-from covid_moonshot_ml.datasets.utils import (
+from asapdiscovery.data.pdb import load_pdbs_from_yaml
+from asapdiscovery.data.utils import (
     parse_experimental_compound_data,
     parse_fragalysis_data,
 )
