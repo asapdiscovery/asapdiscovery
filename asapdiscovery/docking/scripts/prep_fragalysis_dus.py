@@ -24,7 +24,7 @@ from asapdiscovery.data.utils import (
     seqres_to_res_list,
     load_openeye_pdb,
 )
-from asapdiscovery.docking.docking import parse_xtal
+from asapdiscovery.data.fragalysis import parse_xtal
 
 
 def check_completed(d):

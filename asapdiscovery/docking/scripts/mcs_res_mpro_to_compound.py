@@ -7,7 +7,8 @@ import sys, os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.utils import get_compound_id_xtal_dicts
-from asapdiscovery.docking.docking import parse_xtal
+from asapdiscovery.data.fragalysis import parse_xtal
+
 
 ################################################################################
 def get_args():
