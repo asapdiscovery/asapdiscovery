@@ -1,5 +1,3 @@
-from . import data, docking, ml
-
 # Handle versioneer
 from ._version import get_versions
 

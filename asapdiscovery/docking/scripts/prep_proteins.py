@@ -29,14 +29,14 @@ from asapdiscovery.docking.modeling import (
     du_to_complex,
     mutate_residues,
 )
-from covid_moonshot_ml.datasets import pdb
-from covid_moonshot_ml.datasets.utils import (
+from asapdiscovery.data import pdb
+from asapdiscovery.data.utils import (
     save_openeye_pdb,
     edit_pdb_file,
     seqres_to_res_list,
     load_openeye_pdb,
 )
-from covid_moonshot_ml.docking import parse_xtal
+from asapdiscovery.docking.docking import parse_xtal
 
 
 def check_completed(d):

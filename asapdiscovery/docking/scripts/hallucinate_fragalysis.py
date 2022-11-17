@@ -14,7 +14,7 @@ import re
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.utils import (
+from asapdiscovery.data.utils import (
     get_compound_id_xtal_dicts,
     load_openeye_pdb,
     load_openeye_sdf,

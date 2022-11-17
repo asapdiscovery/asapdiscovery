@@ -13,8 +13,8 @@ import shutil
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from covid_moonshot_ml.datasets.utils import load_openeye_sdf, save_openeye_sdf
-from covid_moonshot_ml.docking import run_docking_oe
+from asapdiscovery.data.utils import load_openeye_sdf, save_openeye_sdf
+from asapdiscovery.docking.docking import run_docking_oe
 
 
 def check_results(d):

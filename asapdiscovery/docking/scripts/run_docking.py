@@ -5,7 +5,7 @@ import pickle as pkl
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.docking import (
+from asapdiscovery.docking.docking import (
     build_docking_systems,
     parse_xtal,
     run_docking,

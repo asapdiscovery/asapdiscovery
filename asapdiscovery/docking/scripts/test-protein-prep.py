@@ -13,7 +13,7 @@ from asapdiscovery.docking.modeling import (
     du_to_complex,
     mutate_residues,
 )
-from covid_moonshot_ml.datasets.utils import (
+from asapdiscovery.data.utils import (
     save_openeye_pdb,
     edit_pdb_file,
     seqres_to_res_list,

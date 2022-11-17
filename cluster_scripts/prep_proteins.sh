@@ -19,7 +19,7 @@
 
 source ~/.bashrc
 conda activate mers-docking
-python ../scripts/prep_proteins.py -n 10 \
+python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
 -d /data/chodera/asap-datasets/mers_pdb_download \
 -p ../data/mers-structures-dimers.yaml \
 -r ~/fragalysis/extra_files/reference.pdb \

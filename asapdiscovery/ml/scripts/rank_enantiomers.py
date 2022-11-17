@@ -12,7 +12,7 @@ from asapdiscovery.data.schema import (
     EnantiomerPairList,
 )
 from asapdiscovery.ml.utils import find_most_recent
-from train_dd import (
+from train import (
     add_one_hot_encodings,
     add_lig_labels,
     build_model_e3nn,

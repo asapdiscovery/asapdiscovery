@@ -16,8 +16,8 @@ from openeye import oechem
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from covid_moonshot_ml.docking import DockingResults
-from covid_moonshot_ml.datasets.utils import (
+from asapdiscovery.docking.analysis import DockingResults
+from asapdiscovery.data.utils import (
     load_openeye_sdf,
     save_openeye_pdb,
     save_openeye_sdf,

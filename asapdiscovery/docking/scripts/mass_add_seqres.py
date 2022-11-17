@@ -8,7 +8,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.utils import edit_pdb_file
+from asapdiscovery.data.utils import edit_pdb_file
 
 
 def get_args():
