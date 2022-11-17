@@ -7,28 +7,24 @@ import argparse
 import multiprocessing as mp
 from openeye import oechem
 import os
-import pandas
 import re
 import sys
 from tempfile import NamedTemporaryFile
 import yaml
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from covid_moonshot_ml.modeling import (
-    align_receptor,
+from asapdiscovery.docking.modeling import (
     prep_receptor,
     du_to_complex,
     mutate_residues,
 )
-from covid_moonshot_ml.datasets import pdb
 from covid_moonshot_ml.datasets.utils import (
     save_openeye_pdb,
-    split_openeye_mol,
     edit_pdb_file,
     seqres_to_res_list,
     load_openeye_pdb,
 )
-from covid_moonshot_ml.docking.docking import parse_xtal
+from covid_moonshot_ml.docking import parse_xtal
 
 
 def check_completed(d):

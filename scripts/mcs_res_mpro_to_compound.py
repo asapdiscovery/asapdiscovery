@@ -7,7 +7,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from covid_moonshot_ml.datasets.utils import get_compound_id_xtal_dicts
-from covid_moonshot_ml.docking.docking import parse_xtal
+from covid_moonshot_ml.docking import parse_xtal
 
 ################################################################################
 def get_args():

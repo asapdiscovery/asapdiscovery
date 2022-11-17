@@ -5,7 +5,7 @@ import pandas
 import re
 import rdkit.Chem as Chem
 
-from ..schema import (
+from asapdiscovery.data.schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
     CrystalCompoundData,

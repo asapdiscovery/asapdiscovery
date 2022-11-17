@@ -7,7 +7,7 @@ import sys, os, argparse, yaml
 sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
 )
-from covid_moonshot_ml.modeling import (
+from asapdiscovery.docking.modeling import (
     align_receptor,
     prep_receptor,
     du_to_complex,

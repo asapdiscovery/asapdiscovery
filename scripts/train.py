@@ -32,7 +32,7 @@ from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from covid_moonshot_ml.data.dataset import DockedDataset, GraphDataset
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from covid_moonshot_ml.nn import (
     E3NNBind,
     GAT,
@@ -40,8 +40,8 @@ from covid_moonshot_ml.nn import (
     MSELoss,
     GaussianNLLLoss,
 )
-from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
-from covid_moonshot_ml.utils import (
+from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
+from asapdiscovery.ml.utils import (
     calc_e3nn_model_info,
     find_most_recent,
     plot_loss,

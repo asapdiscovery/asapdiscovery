@@ -24,11 +24,7 @@ from covid_moonshot_ml.datasets.utils import (
     split_openeye_mol,
     filter_docking_inputs,
 )
-from covid_moonshot_ml.docking.docking import (
-    build_docking_system_direct,
-    run_docking,
-)
-from covid_moonshot_ml.modeling import du_to_complex, make_du_from_new_lig
+from asapdiscovery.docking.modeling import du_to_complex, make_du_from_new_lig
 
 
 def check_output(d):

@@ -1,23 +1,18 @@
 import argparse
 import json
 import multiprocessing as mp
-import numpy as np
 import os
-import pickle as pkl
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from covid_moonshot_ml.datasets.utils import get_sdf_fn_from_dataset
-from covid_moonshot_ml.docking.docking import parse_xtal
-from covid_moonshot_ml.docking.mcs import (
+from covid_moonshot_ml.docking import parse_xtal
+from covid_moonshot_ml.docking import (
     rank_structures_openeye,
     rank_structures_rdkit,
 )
-from covid_moonshot_ml.schema import (
+from asapdiscovery.data.schema import (
     ExperimentalCompoundDataUpdate,
-    CrystalCompoundData,
-    EnantiomerPairList,
-    PDBStructure,
 )
 
 ################################################################################

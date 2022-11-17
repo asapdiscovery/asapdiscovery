@@ -15,7 +15,7 @@ import numpy as np
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from covid_moonshot_ml.docking.analysis import DockingResults
+from covid_moonshot_ml.docking import DockingResults
 
 
 def get_args():

@@ -305,7 +305,7 @@ def train(
     import pickle as pkl
     from time import time
     import torch
-    from .nn import MSELoss
+    from covid_moonshot_ml.nn import MSELoss
 
     if use_wandb:
         import wandb
