@@ -33,7 +33,7 @@ from torch_geometric.datasets import QM9
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
-from covid_moonshot_ml.nn import (
+from asapdiscovery.ml import (
     E3NNBind,
     GAT,
     SchNetBind,

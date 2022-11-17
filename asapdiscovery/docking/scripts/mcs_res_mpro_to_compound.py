@@ -3,11 +3,11 @@ Convert Mpro dataset in MCSS results to compound id of docked compound.
 """
 import argparse
 import pickle as pkl
-import sys
+import sys, os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from covid_moonshot_ml.datasets.utils import get_compound_id_xtal_dicts
-from covid_moonshot_ml.docking import parse_xtal
+from asapdiscovery.data.utils import get_compound_id_xtal_dicts
+from asapdiscovery.docking.docking import parse_xtal
 
 ################################################################################
 def get_args():

@@ -5,9 +5,8 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.utils import get_sdf_fn_from_dataset
-from covid_moonshot_ml.docking import parse_xtal
-from covid_moonshot_ml.docking import (
+from asapdiscovery.docking.docking import parse_xtal
+from asapdiscovery.docking.mcs import (
     rank_structures_openeye,
     rank_structures_rdkit,
 )

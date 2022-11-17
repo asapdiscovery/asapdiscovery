@@ -7,9 +7,9 @@ import pickle as pkl
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.datasets.utils import load_exp_from_sdf
-from covid_moonshot_ml.docking import parse_xtal
-from covid_moonshot_ml.docking import (
+from asapdiscovery.data.utils import load_exp_from_sdf
+from asapdiscovery.docking.docking import parse_xtal
+from asapdiscovery.docking.mcs import (
     rank_structures_openeye,
     rank_structures_rdkit,
 )

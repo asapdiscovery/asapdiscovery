@@ -19,7 +19,7 @@
 
 source ~/.bashrc
 conda activate mers-docking
-python ../scripts/clean_results_csv.py \
+python ../asapdiscovery/docking/scripts/clean_results_csv.py \
 -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water/all_results.csv \
 -o /lila/data/chodera/asap-datasets/posit_hybrid_no_relax_keep_water_frag \
 -d

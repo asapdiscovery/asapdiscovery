@@ -9,7 +9,7 @@ import pandas
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from covid_moonshot_ml.datasets.utils import (
+from asapdiscovery.data.utils import (
     filter_docking_inputs,
     parse_fragalysis_data,
 )

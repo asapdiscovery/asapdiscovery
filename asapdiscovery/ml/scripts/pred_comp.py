@@ -5,7 +5,7 @@ import pandas
 import seaborn as sns
 import torch
 
-from train_dd import init
+from train import init
 
 
 def predict(model, structure, model_call=lambda model, d: model(d)):

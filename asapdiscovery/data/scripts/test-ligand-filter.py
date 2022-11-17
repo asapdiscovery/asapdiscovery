@@ -7,7 +7,7 @@ import sys, os, argparse
 sys.path.append(
     f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
 )
-from covid_moonshot_ml.datasets import utils
+from asapdiscovery.data import utils
 
 
 def get_args():
