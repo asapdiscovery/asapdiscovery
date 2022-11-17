@@ -14,7 +14,7 @@ def get_args():
     parser.add_argument(
         "-p",
         "--pdb_yaml_path",
-        default="../data/mers-structures.yaml",
+        default="../metadata/mers-structures.yaml",
         help="MERS structures yaml file",
     )
     parser.add_argument(
