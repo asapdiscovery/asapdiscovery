@@ -1,7 +1,7 @@
 import pickle as pkl
 import pandas as pd
 import numpy as np
-import os
+import os, re
 from ..data.openeye import (
     get_ligand_rmsd_from_pdb_and_sdf,
 )
@@ -261,15 +261,32 @@ class DockingResults:
                 groupby_ID_column="Structure_Source", **kwargs
             )
             if resolution_csv:
+                ## Get a dictionary with {"PDB ID": "Resolution", ..}
                 with open(resolution_csv) as f:
                     resolution_df = pd.read_csv(f)
-                self.structure_df["Resolution"] = list(resolution_df.Resolution)
+                    resolution_df.index = resolution_df["PDB ID"]
+                    resolution_dict = resolution_df.to_dict()["Resolution"]
+
+                ## Iterates over the dataframe
+                ## Uses regex to pull out the PDB ID from each Structure_Source
+                ## and makes a list of the Resolutions that is saved to a column
+                ## of the new structure_df
+                self.structure_df["Resolution"] = [
+                    resolution_dict.get(
+                        re.search(
+                            pattern=r"[\d][A-Za-z0-9]{3}",
+                            string=pdb,
+                        ).group(0)
+                    )
+                    for pdb in self.structure_df.Structure_Source.to_list()
+                ]
 
     def get_best_structure_per_compound(
         self,
         filter_score="RMSD",
         filter_value=2.5,
         score_order=["POSIT_R", "Chemgauss4", "RMSD"],
+        score_ascending=[True, True, True],
     ):
         """
         Gets the best structure by first filtering based on the filter_score and filter_value,
@@ -287,10 +304,14 @@ class DockingResults:
         -------
 
         """
+        # TODO: also this is really fragile
         # TODO: default argument `score_order` is a mutable. This can lead to unexpected behavior in python.
         ## first do filtering
-        filtered_df = self.df[self.df[filter_score] < filter_value]
-        sort_list = ["Compound_ID"] + score_order
+        print(filter_score, filter_value)
+        if filter_score and type(filter_value) == float:
+            print(f"Filtering by {filter_score} less than {filter_value}")
+            filtered_df = self.df[self.df[filter_score] < filter_value]
+            sort_list = ["Compound_ID"] + score_order
 
         ## sort dataframe, ascending (smaller / better scores will move to the top)
         sorted_df = filtered_df.sort_values(
@@ -302,3 +323,92 @@ class DockingResults:
         self.best_df = g.head(1)
 
         return self.best_df
+
+    def write_dfs_to_csv(self, output_dir):
+        self.df.to_csv(
+            os.path.join(output_dir, "all_results_cleaned.csv"), index=False
+        )
+        self.compound_df.to_csv(
+            os.path.join(output_dir, "by_compound.csv"), index=False
+        )
+        self.structure_df.to_csv(
+            os.path.join(output_dir, "by_structure.csv"), index=False
+        )
+        self.best_df.to_csv(
+            os.path.join(output_dir, "best_results.csv"), index=False
+        )
+
+
+def load_dataframes(input_dir):
+    """
+    Load csv files from an input directory
+
+    Parameters
+    ----------
+    input_dir
+
+    Returns
+    -------
+    dictionary of dataframes
+
+    """
+    best_results_csv = os.path.join(input_dir, "best_results.csv")
+    all_results_csv = os.path.join(input_dir, "all_results_cleaned.csv")
+    by_compound_csv = os.path.join(input_dir, "by_compound.csv")
+    by_structure_csv = os.path.join(input_dir, "by_structure.csv")
+
+    df = pd.read_csv(all_results_csv)
+    df.index = df.Complex_ID
+    tidy = df.melt(id_vars="Complex_ID")
+    df = df.round({"Chemgauss4": 3, "POSIT": 3, "POSIT_R": 3, "RMSD": 3})
+
+    by_compound = pd.read_csv(by_compound_csv)
+    by_compound_tidy = by_compound.melt(id_vars="Compound_ID")
+
+    by_structure = pd.read_csv(by_structure_csv)
+    by_structure_tidy = by_structure.melt(id_vars="Structure_Source")
+
+    return {
+        "tidy": tidy,
+        "df": df,
+        "by_compound_tidy": by_compound_tidy,
+        "by_compound": by_compound,
+        "by_structure_tidy": by_structure_tidy,
+        "by_structure": by_structure,
+    }
+
+
+def filter_df_by_two_columns(
+    df,
+    xaxis_column_name,
+    yaxis_column_name,
+    x_range=None,
+    y_range=None,
+):
+    """
+    Simple function for filtering a dataframe by the values of particular columns
+
+    Parameters
+    ----------
+    df
+    xaxis_column_name: str
+    yaxis_column_name: str
+    x_range: [min, max]
+    y_range: [min, max
+
+    Returns
+    -------
+
+    """
+    if not x_range:
+        x_range = (df[xaxis_column_name].min(), df[xaxis_column_name].max())
+    if not y_range:
+        y_range = (df[yaxis_column_name].min(), df[yaxis_column_name].max())
+
+    dff = df[
+        (df[xaxis_column_name] > x_range[0])
+        & (df[xaxis_column_name] < x_range[1])
+        & (df[yaxis_column_name] > y_range[0])
+        & (df[yaxis_column_name] < y_range[1])
+    ]
+    return dff
