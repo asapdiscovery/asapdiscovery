@@ -536,5 +536,6 @@ def main():
 
     results_df.to_csv(f"{args.o}/all_results.csv")
 
+
 if __name__ == "__main__":
     main()

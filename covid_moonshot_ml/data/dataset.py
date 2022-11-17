@@ -232,9 +232,15 @@ class GraphDataset(Dataset):
         import pandas
 
         ## Build dataframe
-        all_compound_ids, all_smiles, all_pic50 = zip(
+        all_compound_ids, all_smiles, all_pic50, all_range, all_stderr = zip(
             *[
-                (c.compound_id, c.smiles, c.experimental_data["pIC50"])
+                (
+                    c.compound_id,
+                    c.smiles,
+                    c.experimental_data["pIC50"],
+                    c.experimental_data["pIC50_range"],
+                    c.experimental_data["pIC50_stderr"],
+                )
                 for c in exp_compounds
             ]
         )
@@ -242,7 +248,9 @@ class GraphDataset(Dataset):
             {
                 "compound_id": all_compound_ids,
                 "smiles": all_smiles,
-                "pic50": all_pic50,
+                "pIC50": all_pic50,
+                "pIC50_range": all_range,
+                "pIC50_stderr": all_stderr,
             }
         )
 
@@ -257,7 +265,7 @@ class GraphDataset(Dataset):
             smiles_to_graph=smiles_to_g,
             smiles_column="smiles",
             cache_file_path=cache_file,
-            task_names=["pic50"],
+            task_names=["pIC50", "pIC50_range", "pIC50_stderr"],
         )
 
         self.compounds = {}
@@ -273,7 +281,14 @@ class GraphDataset(Dataset):
             except KeyError:
                 self.compounds[compound] = [i]
             self.structures.append(
-                {"smiles": g[0], "g": g[1], "pic50": g[2], "compound": compound}
+                {
+                    "smiles": g[0],
+                    "g": g[1],
+                    "pIC50": g[2][0],
+                    "pIC50_range": g[2][1],
+                    "pIC50_stderr": g[2][2],
+                    "compound": compound,
+                }
             )
 
     def __len__(self):
