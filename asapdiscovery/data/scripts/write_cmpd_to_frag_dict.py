@@ -13,7 +13,7 @@ import argparse, os, sys, yaml
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from covid_moonshot_ml.datasets.utils import (
+from asapdiscovery.data.utils import (
     get_compound_id_xtal_dicts,
     parse_fragalysis_data,
 )
