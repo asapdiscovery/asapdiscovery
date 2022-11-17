@@ -237,8 +237,7 @@ def run_docking_oe(
     ## Calculate RMSD
     posed_copy = posed_mol.CreateCopy()
 
-    rmsd = calculate_rmsd_openeye(dock_lig,
-                                  posed_copy)
+    rmsd = calculate_rmsd_openeye(dock_lig, posed_copy)
 
     ## Set SD tags for molecule
     docking_id = "_".join(docking_id)
