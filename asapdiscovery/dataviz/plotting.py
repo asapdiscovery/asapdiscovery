@@ -1,6 +1,6 @@
 # TODO: Do we need to add plotly to our environment yaml?
 import plotly.express as px
-from asapdiscovery.docking.analysis import filter_df_by_two_columns
+from asapdiscovery.dataviz.utils import filter_df_by_two_columns
 
 
 def plot_poses_auc(poses_df):
