@@ -3,6 +3,5 @@ from asapdiscovery.data import (
     moonshot,
     openeye,
     pdb,
-    pymol_extensions,
     utils,
 )
