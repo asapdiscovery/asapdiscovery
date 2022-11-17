@@ -1,8 +1,28 @@
+"""
+Script to train a 2D/3D model on COVID Moonshot data. Takes structural and
+experimental measurement data as inputs, and saves trained models, train, val,
+and test losses for each epoch. Also plots losses over time if the appropriate
+CLI arguments are passed.
+Example usage:
+python train.py \
+    -i complex_structure_dir/ \
+    -exp experimental_measurements.json \
+    -model_o trained_schnet/ \
+    -plot_o trained_schnet/all_loss.png \
+    -model schnet \
+    -lig \
+    -dg \
+    -n_epochs 100 \
+    --wandb \
+    -proj test-model-compare
+"""
 import argparse
+from dgllife.utils import CanonicalAtomFeaturizer
 from e3nn import o3
 from e3nn.nn.models.gate_points_2101 import Network
 from glob import glob
 import json
+import numpy as np
 import os
 import pickle as pkl
 import re
@@ -11,15 +31,22 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from covid_moonshot_ml.data.dataset import DockedDataset
-from covid_moonshot_ml.nn import E3NNBind, SchNetBind, MSELoss, GaussianNLLLoss
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from covid_moonshot_ml.data.dataset import DockedDataset, GraphDataset
+from covid_moonshot_ml.nn import (
+    E3NNBind,
+    GAT,
+    SchNetBind,
+    MSELoss,
+    GaussianNLLLoss,
+)
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import (
     calc_e3nn_model_info,
     find_most_recent,
-    train,
     plot_loss,
+    split_molecules,
+    train,
 )
 
 
@@ -68,42 +95,7 @@ def add_lig_labels(ds):
     return ds
 
 
-def load_affinities(fn, achiral=True):
-    """
-    Load binding affinities from JSON file of
-    schema.ExperimentalCompoundDataUpdate.
-
-    Parameters
-    ----------
-    fn : str
-        Path to JSON file
-    achiral : bool, default=True
-        Whether to only take achiral molecules
-
-    Returns
-    -------
-    dict[str->float]
-        Dictionary mapping coumpound id to experimental pIC50 value
-    """
-    ## Load all compounds with experimental data and filter to only achiral
-    ##  molecules (to start)
-    exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, "r"))
-    ).compounds
-    exp_compounds = [
-        c for c in exp_compounds if ((not achiral) or (c.achiral and achiral))
-    ]
-
-    affinity_dict = {
-        c.compound_id: c.experimental_data["pIC50"]
-        for c in exp_compounds
-        if "pIC50" in c.experimental_data
-    }
-
-    return affinity_dict
-
-
-def load_exp_data(fn, achiral=True):
+def load_exp_data(fn, achiral=False, return_compounds=False):
     """
     Load all experimental data from JSON file of
     schema.ExperimentalCompoundDataUpdate.
@@ -112,13 +104,18 @@ def load_exp_data(fn, achiral=True):
     ----------
     fn : str
         Path to JSON file
-    achiral : bool, default=True
+    achiral : bool, default=False
         Whether to only take achiral molecules
+    return_compounds : bool, default=False
+        Whether to return the compounds in addition to the experimental data
 
     Returns
     -------
     dict[str->dict]
         Dictionary mapping coumpound id to experimental data
+    List[ExperimentalCompoundData], optional
+        List of experimental compound data objects, only returned if
+        `return_compounds` is True
     """
     ## Load all compounds with experimental data and filter to only achiral
     ##  molecules (to start)
@@ -127,9 +124,60 @@ def load_exp_data(fn, achiral=True):
     ).compounds
     exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
 
-    exp_dict = {c.compound_id: c.experimental_data for c in exp_compounds}
+    exp_dict = {
+        c.compound_id: c.experimental_data
+        for c in exp_compounds
+        if (
+            ("pIC50" in c.experimental_data)
+            and (not np.isnan(c.experimental_data["pIC50"]))
+            and ("pIC50_range" in c.experimental_data)
+            and (not np.isnan(c.experimental_data["pIC50_range"]))
+            and ("pIC50_stderr" in c.experimental_data)
+            and (not np.isnan(c.experimental_data["pIC50_stderr"]))
+        )
+    }
 
-    return exp_dict
+    if return_compounds:
+        ## Filter compounds
+        exp_compounds = [c for c in exp_compounds if c.compound_id in exp_dict]
+        return exp_dict, exp_compounds
+    else:
+        return exp_dict
+
+
+def build_model_2d(config_fn):
+    """
+    Build appropriate 2D graph model.
+
+    Parameters
+    ----------
+    config_fn : str
+        Config JSON file
+
+    Returns
+    -------
+    covid_moonshot_ml.nn.models.GAT
+        GAT graph model
+    """
+
+    exp_configure = json.load(open(config_fn))
+    exp_configure.update(
+        {"in_node_feats": CanonicalAtomFeaturizer().feat_size()}
+    )
+
+    model = GAT(
+        in_feats=exp_configure["in_node_feats"],
+        hidden_feats=[exp_configure["gnn_hidden_feats"]]
+        * exp_configure["num_gnn_layers"],
+        num_heads=[exp_configure["num_heads"]]
+        * exp_configure["num_gnn_layers"],
+        feat_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
+        attn_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
+        alphas=[exp_configure["alpha"]] * exp_configure["num_gnn_layers"],
+        residuals=[exp_configure["residual"]] * exp_configure["num_gnn_layers"],
+    )
+
+    return model, exp_configure
 
 
 def build_model_e3nn(
@@ -282,13 +330,64 @@ def build_model_schnet(
     return model
 
 
+def make_wandb_table(ds_split):
+    from rdkit.Chem import MolFromSmiles
+    from rdkit.Chem.AllChem import (
+        Compute2DCoords,
+        GenerateDepictionMatching2DStructure,
+    )
+    from rdkit.Chem.Draw import MolToImage
+    import wandb
+
+    table = wandb.Table(
+        columns=["crystal", "compound_id", "molecule", "smiles", "pIC50"]
+    )
+    ## Build table and add each molecule
+    for (xtal_id, compound_id), d in ds_split:
+        try:
+            smiles = d["smiles"]
+            mol = MolFromSmiles(smiles)
+            Compute2DCoords(mol)
+            GenerateDepictionMatching2DStructure(mol, mol)
+            mol = wandb.Image(MolToImage(mol, size=(300, 300)))
+        except (KeyError, ValueError):
+            smiles = ""
+            mol = None
+        try:
+            pic50 = d["pic50"].item()
+        except KeyError:
+            pic50 = np.nan
+        except AttributeError:
+            pic50 = d["pic50"]
+        table.add_data(xtal_id, compound_id, mol, smiles, pic50)
+
+    return table
+
+
+def wandb_init(
+    project_name,
+    run_name,
+    exp_configure,
+    ds_splits,
+    ds_split_labels=["train", "val", "test"],
+):
+    import wandb
+
+    wandb.init(project=project_name, config=exp_configure, name=run_name)
+
+    ## Log dataset splits
+    for name, split in zip(ds_split_labels, ds_splits):
+        table = make_wandb_table(split)
+        wandb.log({f"dataset_splits/{name}": table})
+
+
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
     ## Input arguments
     parser.add_argument(
-        "-i", required=True, help="Input directory containing docked PDB files."
+        "-i", required=True, help="Input directory/glob for docked PDB files."
     )
     parser.add_argument(
         "-exp", required=True, help="JSON file giving experimental results."
@@ -303,10 +402,21 @@ def get_args():
         action="store_true",
         help="Whether to restore training with most recent model weights.",
     )
+    parser.add_argument(
+        "-achiral", action="store_true", help="Keep only achiral molecules."
+    )
+    parser.add_argument("-n", default="LIG", help="Ligand residue name.")
+    parser.add_argument(
+        "-w",
+        type=int,
+        default=1,
+        help="Number of workers to use for dataset loading.",
+    )
 
     ## Output arguments
     parser.add_argument("-model_o", help="Where to save model weights.")
     parser.add_argument("-plot_o", help="Where to save training loss plot.")
+    parser.add_argument("-cache", help="Cache directory for dataset.")
 
     ## Model parameters
     parser.add_argument(
@@ -336,6 +446,9 @@ def get_args():
         help="Cutoff distance for node neighbors.",
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
+    parser.add_argument(
+        "-config", help="Model config JSON file for graph 2D model."
+    )
 
     ## Training arguments
     parser.add_argument(
@@ -360,8 +473,20 @@ def get_args():
         help="Loss type. Options are [step, uncertainty, uncertainty_sq].",
     )
     parser.add_argument(
-        "-sq", help="Value to fill in for uncertainty of semiquantitative data."
+        "-sq",
+        type=float,
+        help="Value to fill in for uncertainty of semiquantitative data.",
     )
+    parser.add_argument(
+        "-b", "--batch_size", type=int, default=1, help="Training batch size."
+    )
+
+    ## WandB arguments
+    parser.add_argument(
+        "--wandb", action="store_true", help="Enable WandB logging."
+    )
+    parser.add_argument("-proj", help="WandB project name.")
+    parser.add_argument("-name", help="WandB run name.")
 
     return parser.parse_args()
 
@@ -372,47 +497,151 @@ def init(args, rank=False):
     """
 
     ## Get all docked structures
-    all_fns = glob(f"{args.i}/*complex.pdb")
+    if os.path.isdir(args.i):
+        all_fns = glob(f"{args.i}/*complex.pdb")
+    else:
+        all_fns = glob(args.i)
     ## Extract crystal structure and compound id from file name
-    re_pat = (
-        r"(Mpro-.*?_[0-9][A-Z]).*?([A-Z]{3}-[A-Z]{3}-[0-9a-z]{8}-[0-9]+)"
-        "_complex.pdb"
-    )
-    matches = [re.search(re_pat, fn) for fn in all_fns]
-    compounds = [m.groups() for m in matches if m]
+    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
+    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+
+    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
+    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
+    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
+    compounds = [
+        (xtal_m.group(), compound_m.group())
+        for xtal_m, compound_m, both_m in zip(
+            xtal_matches, compound_matches, idx
+        )
+        if both_m
+    ]
     num_found = len(compounds)
+    ## Dictionary mapping from compound_id to Mpro dataset(s)
+    compound_id_dict = {}
+    for xtal_structure, compound_id in compounds:
+        try:
+            compound_id_dict[compound_id].append(xtal_structure)
+        except KeyError:
+            compound_id_dict[compound_id] = [xtal_structure]
 
     if rank:
         exp_data = None
+    elif args.model == "2d":
+        ## Load the experimental compounds
+        exp_data, exp_compounds = load_exp_data(
+            args.exp, achiral=args.achiral, return_compounds=True
+        )
+
+        ## Get compounds that have both structure and experimental data (this
+        ##  step isn't actually necessary for performance, but allows a more
+        ##  fair comparison between 2D and 3D models)
+        xtal_compound_ids = {c[1] for c in compounds}
+        ## Filter exp_compounds to make sure we have structures for them
+        exp_compounds = [
+            c for c in exp_compounds if c.compound_id in xtal_compound_ids
+        ]
+
+        ## Make cache directory as necessary
+        if args.cache is None:
+            cache_dir = os.path.join(args.model_o, ".cache")
+        else:
+            cache_dir = args.cache
+        os.makedirs(cache_dir, exist_ok=True)
+
+        ## Build the dataset
+        ds = GraphDataset(
+            exp_compounds,
+            node_featurizer=CanonicalAtomFeaturizer(),
+            cache_file=os.path.join(cache_dir, "graph.bin"),
+        )
+
+        print(next(iter(ds)), flush=True)
+
+        ## Rename exp_compounds so the number kept is consistent
+        compounds = exp_compounds
+    elif args.cache and os.path.isfile(args.cache):
+        ## Load from cache
+        ds = pkl.load(open(args.cache, "rb"))
+        print("Loaded from cache", flush=True)
+
+        ## Still need to load the experimental affinities
+        exp_data, exp_compounds = load_exp_data(
+            args.exp, achiral=args.achiral, return_compounds=True
+        )
     else:
+        ### TODO: pick up here, need to modify DockedDataset to deal with
+        ###  all the values in exp_data
         ## Load the experimental affinities
-        exp_data = load_exp_data(args.exp)
+        exp_data, exp_compounds = load_exp_data(
+            args.exp, achiral=args.achiral, return_compounds=True
+        )
+
+        ## Make dict to access smiles data
+        smiles_dict = {}
+        for c in exp_compounds:
+            if c.compound_id not in compound_id_dict:
+                continue
+            for xtal_structure in compound_id_dict[c.compound_id]:
+                smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
+
+        ## Make dict to access experimental compound data
+        exp_data_dict = {}
+        for compound_id, d in exp_data.items():
+            if compound_id not in compound_id_dict:
+                continue
+            for xtal_structure in compound_id_dict[compound_id]:
+                exp_data_dict[(xtal_structure, compound_id)] = d
 
         ## Trim docked structures and filenames to remove compounds that don't have
         ##  experimental data
         all_fns, compounds = zip(
             *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
         )
+
+        ## Build extra info dict
+        extra_dict = {
+            compound: {
+                "smiles": smiles,
+                "pIC50": exp_data_dict[compound]["pIC50"],
+                "pIC50_range": exp_data_dict[compound]["pIC50_range"],
+                "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
+            }
+            for compound, smiles in smiles_dict.items()
+        }
+
+        ## Load the dataset
+        ds = DockedDataset(
+            all_fns,
+            compounds,
+            lig_resn=args.n,
+            extra_dict=extra_dict,
+            num_workers=args.w,
+        )
+
+        if args.cache:
+            ## Cache dataset
+            pkl.dump(ds, open(args.cache, "wb"))
+
     num_kept = len(compounds)
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
-    ## Load the dataset
-    ds = DockedDataset(all_fns, compounds)
-
     ## Split dataset into train/val/test (80/10/10 split)
-    n_train = int(len(ds) * 0.8)
-    n_val = int(len(ds) * 0.1)
-    n_test = len(ds) - n_train - n_val
-    print(
-        (
-            f"{n_train} training samples, {n_val} validation samples, "
-            f"{n_test} testing samples"
-        ),
-        flush=True,
-    )
     # use fixed seed for reproducibility
-    ds_train, ds_val, ds_test = torch.utils.data.random_split(
-        ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+    ds_train, ds_val, ds_test = split_molecules(
+        ds, [0.8, 0.1, 0.1], torch.Generator().manual_seed(42)
+    )
+
+    train_compound_ids = {c[1] for c, _ in ds_train}
+    val_compound_ids = {c[1] for c, _ in ds_val}
+    test_compound_ids = {c[1] for c, _ in ds_test}
+    print(
+        f"{len(ds_train)} training samples",
+        f"({len(train_compound_ids)}) molecules,",
+        f"{len(ds_val)} validation samples",
+        f"({len(val_compound_ids)}) molecules,",
+        f"{len(ds_test)} test samples",
+        f"({len(test_compound_ids)}) molecules",
+        flush=True,
     )
 
     ## Build the model
@@ -451,6 +680,18 @@ def init(args, rank=False):
                 print(k, v.shape, flush=True)
             except AttributeError as e:
                 print(k, v, flush=True)
+
+        ## Experiment configuration
+        exp_configure = {
+            "model": "e3nn",
+            "n_atom_types": 100,
+            "num_neighbors": model_params[1],
+            "num_nodes": model_params[2],
+            "lig": args.lig,
+            "dg": args.dg,
+            "neighbor_dist": args.n_dist,
+            "irreps_hidden": args.irr,
+        }
     elif args.model == "schnet":
         model = build_model_schnet(
             args.qm9,
@@ -463,21 +704,71 @@ def init(args, rank=False):
             model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
         else:
             model_call = lambda model, d: model(d["z"], d["pos"])
+
+        ## Experiment configuration
+        exp_configure = {
+            "model": "schnet",
+            "dg": args.dg,
+            "qm9": args.qm9,
+            "qm9_target": args.qm9_target,
+            "rm_atomref": args.rm_atomref,
+            "neighbor_dist": args.n_dist,
+        }
+    elif args.model == "2d":
+        model, exp_configure = build_model_2d(args.config)
+        model_call = lambda model, d: torch.reshape(
+            model(d["g"], d["g"].ndata["h"]), (-1, 1)
+        )
+
+        ## Update experiment configuration
+        exp_configure.update({"model": "GAT"})
     else:
         raise ValueError(f"Unknown model type {args.model}.")
 
-    return (exp_data, ds_train, ds_val, ds_test, model, model_call)
+    ## Common config info
+    exp_configure.update(
+        {
+            "train_function": "utils.train",
+            "run_script": "train.py",
+            "continue": args.cont,
+            "train_examples": len(ds_train),
+            "val_examples": len(ds_val),
+            "test_examples": len(ds_test),
+            "batch_size": args.batch_size,
+            "device": args.device,
+        }
+    )
+    return (
+        exp_data,
+        ds_train,
+        ds_val,
+        ds_test,
+        model,
+        model_call,
+        exp_configure,
+    )
 
 
 def main():
     args = get_args()
     print("hidden irreps:", args.irr, flush=True)
-    exp_data, ds_train, ds_val, ds_test, model, model_call = init(args)
+    (
+        exp_data,
+        ds_train,
+        ds_val,
+        ds_test,
+        model,
+        model_call,
+        exp_configure,
+    ) = init(args)
 
     ## Load model weights as necessary
     if args.cont:
         start_epoch, wts_fn = find_most_recent(args.model_o)
         model.load_state_dict(torch.load(wts_fn))
+
+        ## Update experiment configuration
+        exp_configure.update({"wts_fn": wts_fn})
 
         ## Load error dicts
         if os.path.isfile(f"{args.model_o}/train_err.pkl"):
@@ -511,6 +802,9 @@ def main():
         val_loss = None
         test_loss = None
 
+    ## Update experiment configuration
+    exp_configure.update({"start_epoch": start_epoch})
+
     ## Set up the loss function
     if (args.loss is None) or (args.loss.lower() == "step"):
         loss_func = MSELoss(args.loss)
@@ -523,6 +817,23 @@ def main():
             f"Using Gaussian NLL loss with{'out'*(not keep_sq)}",
             "semiquant values",
             flush=True,
+        )
+
+    print("sq", args.sq, flush=True)
+    loss_str = args.loss.lower() if args.loss else "mse"
+    exp_configure.update({"loss_func": loss_str, "sq": args.sq})
+
+    ## Start wandb
+    if args.wandb:
+        import wandb
+
+        ## Get project name
+        if args.proj:
+            project_name = args.proj
+        else:
+            project_name = f"train-{args.model}"
+        wandb_init(
+            project_name, args.name, exp_configure, [ds_train, ds_val, ds_test]
         )
 
     ## Train the model
@@ -542,7 +853,12 @@ def main():
         train_loss,
         val_loss,
         test_loss,
+        args.wandb,
+        args.batch_size,
     )
+
+    if args.wandb:
+        wandb.finish()
 
     ## Plot loss
     if args.plot_o is not None:

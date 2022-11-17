@@ -150,6 +150,77 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
     fig.savefig(out_fn, dpi=200, bbox_inches="tight")
 
 
+def split_molecules(ds, split_fracs, generator=None):
+    """
+    Split a dataset while keeping different poses of the same molecule in the
+    same split. Naively splits based on compound_id, so if some compounds has a
+    disproportionate number of poses your splits may be imbalanced.
+
+    Parameters
+    ----------
+    ds : Union[cml.data.DockedDataset, cml.data.GraphDataset]
+        Molecular dataset to split
+    split_fracs : List[float]
+        List of fraction of compounds to put in each split
+    generator : torch.Generator, optional
+        Torch Generator object to use for randomness. If none is supplied, use
+        torch.default_generator
+
+    Returns
+    -------
+    List[torch.utils.data.Subset]
+        List of Subsets of original dataset
+    """
+    import torch
+
+    ### TODO: make this whole process more compact
+
+    ## First get all the unique compound_ids
+    compound_ids_dict = {}
+    for c in ds.compounds.keys():
+        try:
+            compound_ids_dict[c[1]].append(c)
+        except KeyError:
+            compound_ids_dict[c[1]] = [c]
+    all_compound_ids = list(compound_ids_dict.keys())
+
+    ## Set up generator
+    if generator is None:
+        generator = torch.default_generator
+
+    ## Shuffle the indices
+    indices = torch.randperm(len(all_compound_ids), generator=generator)
+
+    ## For each Subset, grab all molecules with the included compound_ids
+    all_subsets = []
+    offset = 0
+    ## Go up to the last split so we can add anything that got left out from
+    ##  float rounding
+    for frac in split_fracs[:-1]:
+        split_len = int(np.floor(frac * len(indices)))
+        incl_compounds = all_compound_ids[offset : offset + split_len]
+        offset += split_len
+
+        ## Get subset indices
+        subset_idx = []
+        for compound_id in incl_compounds:
+            for compound in compound_ids_dict[compound_id]:
+                subset_idx.extend([i for i in ds.compounds[compound]])
+        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    ## Finish up anything leftover
+    incl_compounds = all_compound_ids[offset:]
+
+    ## Get subset indices
+    subset_idx = []
+    for compound_id in incl_compounds:
+        for compound in compound_ids_dict[compound_id]:
+            subset_idx.extend([i for i in ds.compounds[compound]])
+    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    return all_subsets
+
+
 def train(
     model,
     ds_train,
@@ -166,6 +237,8 @@ def train(
     train_loss=None,
     val_loss=None,
     test_loss=None,
+    use_wandb=False,
+    batch_size=1,
 ):
     """
     Train a model.
@@ -209,6 +282,10 @@ def train(
         List of val losses from previous epochs. Used when restarting training
     test_loss : list[float], default=None
         List of test losses from previous epochs. Used when restarting training
+    use_wandb : bool, default=False
+        Log results with WandB
+    batch_size : int, default=1
+        Number of samples to predict on before performing backprop
 
     Returns
     -------
@@ -225,8 +302,12 @@ def train(
         shape (`n_epochs`, `len(ds_test)`)
     """
     import pickle as pkl
+    from time import time
     import torch
     from .nn import MSELoss
+
+    if use_wandb:
+        import wandb
 
     if train_loss is None:
         train_loss = []
@@ -251,19 +332,21 @@ def train(
             print(f"Validation error: {np.mean(val_loss[-1]):0.5f}")
             print(f"Testing error: {np.mean(test_loss[-1]):0.5f}", flush=True)
         tmp_loss = []
+
+        ## Initialize batch
+        batch_counter = 0
+        optimizer.zero_grad()
+        batch_loss = None
+        start_time = time()
         for (_, compound_id), pose in ds_train:
-            optimizer.zero_grad()
+            tmp_pose = {}
             for k, v in pose.items():
                 try:
-                    pose[k] = v.to(device)
+                    tmp_pose[k] = v.to(device)
                 except AttributeError:
-                    pass
-            pred = model_call(model, pose)
-            for k, v in pose.items():
-                try:
-                    pose[k] = v.to("cpu")
-                except AttributeError:
-                    pass
+                    tmp_pose[k] = v
+            pred = model_call(model, tmp_pose)
+
             # convert to float to match other types
             target = torch.tensor(
                 [[target_dict[compound_id]["pIC50"]]], device=device
@@ -275,25 +358,48 @@ def train(
                 [[target_dict[compound_id]["pIC50_stderr"]]], device=device
             ).float()
             loss = loss_fn(pred, target, in_range, uncertainty)
+
+            ## Keep track of loss for each sample
             tmp_loss.append(loss.item())
-            loss.backward()
+
+            ## Update batch_loss
+            if batch_loss is None:
+                batch_loss = loss
+            else:
+                batch_loss += loss
+            batch_counter += 1
+
+            ## Perform backprop if we've done all the preds for this batch
+            if batch_counter == batch_size:
+                ## Backprop
+                batch_loss.backward()
+                optimizer.step()
+
+                ## Reset batch tracking
+                batch_counter = 0
+                optimizer.zero_grad()
+                batch_loss = None
+
+        if batch_counter > 0:
+            ## Backprop for final incomplete batch
+            batch_loss.backward()
             optimizer.step()
+        end_time = time()
+
         train_loss.append(np.asarray(tmp_loss))
+        epoch_train_loss = np.mean(tmp_loss)
 
         with torch.no_grad():
             tmp_loss = []
             for (_, compound_id), pose in ds_val:
+                tmp_pose = {}
                 for k, v in pose.items():
                     try:
-                        pose[k] = v.to(device)
+                        tmp_pose[k] = v.to(device)
                     except AttributeError:
-                        pass
-                pred = model_call(model, pose)
-                for k, v in pose.items():
-                    try:
-                        pose[k] = v.to("cpu")
-                    except AttributeError:
-                        pass
+                        tmp_pose[k] = v
+                pred = model_call(model, tmp_pose)
+
                 # convert to float to match other types
                 target = torch.tensor(
                     [[target_dict[compound_id]["pIC50"]]], device=device
@@ -307,20 +413,18 @@ def train(
                 loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
+            epoch_val_loss = np.mean(tmp_loss)
 
             tmp_loss = []
             for (_, compound_id), pose in ds_test:
+                tmp_pose = {}
                 for k, v in pose.items():
                     try:
-                        pose[k] = v.to(device)
+                        tmp_pose[k] = v.to(device)
                     except AttributeError:
-                        pass
-                pred = model_call(model, pose)
-                for k, v in pose.items():
-                    try:
-                        pose[k] = v.to("cpu")
-                    except AttributeError:
-                        pass
+                        tmp_pose[k] = v
+                pred = model_call(model, tmp_pose)
+
                 # convert to float to match other types
                 target = torch.tensor(
                     [[target_dict[compound_id]["pIC50"]]], device=device
@@ -334,7 +438,18 @@ def train(
                 loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             test_loss.append(np.asarray(tmp_loss))
+            epoch_test_loss = np.mean(tmp_loss)
 
+        if use_wandb:
+            wandb.log(
+                {
+                    "train_loss": epoch_train_loss,
+                    "val_loss": epoch_val_loss,
+                    "test_loss": epoch_test_loss,
+                    "epoch": epoch_idx,
+                    "epoch_time": end_time - start_time,
+                }
+            )
         if save_file is None:
             continue
         elif os.path.isdir(save_file):
