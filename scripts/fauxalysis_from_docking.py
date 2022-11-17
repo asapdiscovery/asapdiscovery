@@ -10,20 +10,19 @@ Example usage:
         -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
         -f /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/aligned
 """
-import sys, os, argparse, shutil, pickle as pkl, yaml, re
+import sys, os, argparse, shutil, pickle as pkl, yaml
 from openeye import oechem
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from covid_moonshot_ml.docking.analysis import DockingResults
+from covid_moonshot_ml.docking import DockingResults
 from covid_moonshot_ml.datasets.utils import (
-    load_openeye_pdb,
     load_openeye_sdf,
     save_openeye_pdb,
     save_openeye_sdf,
 )
-from covid_moonshot_ml.data.openeye import save_openeye_design_unit
+from asapdiscovery.data.openeye import save_openeye_design_unit
 
 
 def get_args():

@@ -1,14 +1,14 @@
 """
 This gives an example of how to add a very basic interactive table
 """
-from dash import html, Input, Output
+from dash import html
 import argparse, os, sys
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from covid_moonshot_ml.docking.analysis import load_dataframes
-from covid_moonshot_ml.plotting import plotting, plotly_dash_functions
+from covid_moonshot_ml.docking import load_dataframes
+from asapdiscovery.docking import plotly_dash_functions
 
 
 def get_args():

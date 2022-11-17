@@ -1,6 +1,6 @@
 # TODO: Do we need to add plotly to our environment yaml?
 import plotly.express as px
-from covid_moonshot_ml.docking.analysis import filter_df_by_two_columns
+from covid_moonshot_ml.docking import filter_df_by_two_columns
 
 
 def plot_poses_auc(poses_df):

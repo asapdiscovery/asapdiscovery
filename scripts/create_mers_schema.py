@@ -5,7 +5,7 @@ import sys
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from covid_moonshot_ml.schema import (
+from asapdiscovery.data.schema import (
     CrystalCompoundData,
     PDBStructure,
 )
