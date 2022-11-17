@@ -1,15 +1,35 @@
 000:
+  Path_Data: /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/aligned
+  Path_CSV: /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/extra_files/Mpro_compound_tracker_csv.csv
+  Type: Fragalysis
+  Status: Updated ???
+  Notes:
+  Source:
+001:
   Path_Data: /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax/
   Path_CSV: /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax/all_results.csv
   Type: Docking
   Status: Finished
   Notes:
   Source:
-001:
+002:
   Path_Data: /data/chodera/paynea/mers-fauxalysis/posit_hybrid_no_relax_fauxalysis
   Path_CSV: /data/chodera/paynea/mers-fauxalysis/posit_hybrid_no_relax_fauxalysis/metadata/mers_fauxalysis.csv
   Type: Fauxalysis
   Status: Delivered
   Notes: created 20220916
   Source:
-
+003:
+  Path_Data: /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter
+  Path_CSV: /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter/all_results.csv
+  Type: Docking
+  Status: Finished
+  Notes:
+  Source:
+004:
+  Path_Data: /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
+  Path_CSV: /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag/mers_fauxalysis.csv
+  Type: Fauxalysis
+  Status: Finished
+  Notes:
+  Source:
