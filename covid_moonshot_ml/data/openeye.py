@@ -110,6 +110,7 @@ def get_ligand_rmsd_from_pdb_and_sdf(
 
     return return_dict
 
+
 def save_openeye_design_unit(du, lig=None, lig_title=None):
     """
     Parameters
@@ -158,6 +159,7 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
     )
     oechem.OEPerceiveResidues(prot, preserve)
     return lig, prot, complex
+
 
 def save_receptor_grid(du_fn, out_fn):
     du = oechem.OEDesignUnit()

@@ -212,6 +212,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
         "CI (Upper) (µM)"
     )
+
     ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
     pic50_stderr = []
     for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
@@ -238,12 +239,13 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
 
     ### For now just keep the first measure for each compound_id
     compounds = []
-    seen_compound_ids = set()
+    seen_compounds = {}
     for i, (_, c) in enumerate(df.iterrows()):
         compound_id = c["Canonical PostEra ID"]
-        if compound_id in seen_compound_ids:
-            continue
-        seen_compound_ids.add(compound_id)
+        if compound_id in seen_compounds:
+            ## If there are no NaN values, don't need to fix
+            if not seen_compounds[compound_id]:
+                continue
 
         smiles = c["suspected_SMILES"]
         experimental_data = {
@@ -251,6 +253,10 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
             "pIC50_range": c["pIC50_range"],
             "pIC50_stderr": c["pIC50_stderr"],
         }
+        ## Keep track of if there are any NaN values
+        seen_compounds[compound_id] = np.isnan(
+            list(experimental_data.values())
+        ).any()
 
         compounds.append(
             ExperimentalCompoundData(

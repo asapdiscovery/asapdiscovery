@@ -33,7 +33,13 @@ from torch_geometric.datasets import QM9
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from covid_moonshot_ml.data.dataset import DockedDataset, GraphDataset
-from covid_moonshot_ml.nn import E3NNBind, GAT, SchNetBind
+from covid_moonshot_ml.nn import (
+    E3NNBind,
+    GAT,
+    SchNetBind,
+    MSELoss,
+    GaussianNLLLoss,
+)
 from covid_moonshot_ml.schema import ExperimentalCompoundDataUpdate
 from covid_moonshot_ml.utils import (
     calc_e3nn_model_info,
@@ -89,9 +95,9 @@ def add_lig_labels(ds):
     return ds
 
 
-def load_affinities(fn, achiral=False, return_compounds=False):
+def load_exp_data(fn, achiral=False, return_compounds=False):
     """
-    Load binding affinities from JSON file of
+    Load all experimental data from JSON file of
     schema.ExperimentalCompoundDataUpdate.
 
     Parameters
@@ -101,12 +107,12 @@ def load_affinities(fn, achiral=False, return_compounds=False):
     achiral : bool, default=False
         Whether to only take achiral molecules
     return_compounds : bool, default=False
-        Whether to return the compounds in addition to the pIC50 values
+        Whether to return the compounds in addition to the experimental data
 
     Returns
     -------
-    dict[str->float]
-        Dictionary mapping coumpound id to experimental pIC50 value
+    dict[str->dict]
+        Dictionary mapping coumpound id to experimental data
     List[ExperimentalCompoundData], optional
         List of experimental compound data objects, only returned if
         `return_compounds` is True
@@ -116,24 +122,27 @@ def load_affinities(fn, achiral=False, return_compounds=False):
     exp_compounds = ExperimentalCompoundDataUpdate(
         **json.load(open(fn, "r"))
     ).compounds
-    exp_compounds = [
-        c for c in exp_compounds if ((not achiral) or (c.achiral and achiral))
-    ]
+    exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
 
-    affinity_dict = {
-        c.compound_id: c.experimental_data["pIC50"]
+    exp_dict = {
+        c.compound_id: c.experimental_data
         for c in exp_compounds
-        if "pIC50" in c.experimental_data
+        if (
+            ("pIC50" in c.experimental_data)
+            and (not np.isnan(c.experimental_data["pIC50"]))
+            and ("pIC50_range" in c.experimental_data)
+            and (not np.isnan(c.experimental_data["pIC50_range"]))
+            and ("pIC50_stderr" in c.experimental_data)
+            and (not np.isnan(c.experimental_data["pIC50_stderr"]))
+        )
     }
 
     if return_compounds:
         ## Filter compounds
-        exp_compounds = [
-            c for c in exp_compounds if c.compound_id in affinity_dict
-        ]
-        return affinity_dict, exp_compounds
+        exp_compounds = [c for c in exp_compounds if c.compound_id in exp_dict]
+        return exp_dict, exp_compounds
     else:
-        return affinity_dict
+        return exp_dict
 
 
 def build_model_2d(config_fn):
@@ -460,6 +469,15 @@ def get_args():
         help="Learning rate for Adam optimizer (defaults to 1e-4).",
     )
     parser.add_argument(
+        "-loss",
+        help="Loss type. Options are [step, uncertainty, uncertainty_sq].",
+    )
+    parser.add_argument(
+        "-sq",
+        type=float,
+        help="Value to fill in for uncertainty of semiquantitative data.",
+    )
+    parser.add_argument(
         "-b", "--batch_size", type=int, default=1, help="Training batch size."
     )
 
@@ -507,10 +525,10 @@ def init(args, rank=False):
             compound_id_dict[compound_id] = [xtal_structure]
 
     if rank:
-        exp_affinities = None
+        exp_data = None
     elif args.model == "2d":
         ## Load the experimental compounds
-        exp_affinities, exp_compounds = load_affinities(
+        exp_data, exp_compounds = load_exp_data(
             args.exp, achiral=args.achiral, return_compounds=True
         )
 
@@ -547,12 +565,14 @@ def init(args, rank=False):
         print("Loaded from cache", flush=True)
 
         ## Still need to load the experimental affinities
-        exp_affinities, exp_compounds = load_affinities(
+        exp_data, exp_compounds = load_exp_data(
             args.exp, achiral=args.achiral, return_compounds=True
         )
     else:
+        ### TODO: pick up here, need to modify DockedDataset to deal with
+        ###  all the values in exp_data
         ## Load the experimental affinities
-        exp_affinities, exp_compounds = load_affinities(
+        exp_data, exp_compounds = load_exp_data(
             args.exp, achiral=args.achiral, return_compounds=True
         )
 
@@ -565,22 +585,27 @@ def init(args, rank=False):
                 smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
 
         ## Make dict to access experimental compound data
-        affinity_dict = {}
-        for compound_id, pic50 in exp_affinities.items():
+        exp_data_dict = {}
+        for compound_id, d in exp_data.items():
             if compound_id not in compound_id_dict:
                 continue
             for xtal_structure in compound_id_dict[compound_id]:
-                affinity_dict[(xtal_structure, compound_id)] = pic50
+                exp_data_dict[(xtal_structure, compound_id)] = d
 
         ## Trim docked structures and filenames to remove compounds that don't have
         ##  experimental data
         all_fns, compounds = zip(
-            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_affinities]
+            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
         )
 
         ## Build extra info dict
         extra_dict = {
-            compound: {"smiles": smiles, "pic50": affinity_dict[compound]}
+            compound: {
+                "smiles": smiles,
+                "pIC50": exp_data_dict[compound]["pIC50"],
+                "pIC50_range": exp_data_dict[compound]["pIC50_range"],
+                "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
+            }
             for compound, smiles in smiles_dict.items()
         }
 
@@ -714,7 +739,7 @@ def init(args, rank=False):
         }
     )
     return (
-        exp_affinities,
+        exp_data,
         ds_train,
         ds_val,
         ds_test,
@@ -728,7 +753,7 @@ def main():
     args = get_args()
     print("hidden irreps:", args.irr, flush=True)
     (
-        exp_affinities,
+        exp_data,
         ds_train,
         ds_val,
         ds_test,
@@ -780,6 +805,24 @@ def main():
     ## Update experiment configuration
     exp_configure.update({"start_epoch": start_epoch})
 
+    ## Set up the loss function
+    if (args.loss is None) or (args.loss.lower() == "step"):
+        loss_func = MSELoss(args.loss)
+        lt = "standard" if args.loss is None else args.loss.lower()
+        print(f"Using {lt} MSE loss", flush=True)
+    elif "uncertainty" in args.loss.lower():
+        keep_sq = "sq" in args.loss.lower()
+        loss_func = GaussianNLLLoss(keep_sq, args.sq)
+        print(
+            f"Using Gaussian NLL loss with{'out'*(not keep_sq)}",
+            "semiquant values",
+            flush=True,
+        )
+
+    print("sq", args.sq, flush=True)
+    loss_str = args.loss.lower() if args.loss else "mse"
+    exp_configure.update({"loss_func": loss_str, "sq": args.sq})
+
     ## Start wandb
     if args.wandb:
         import wandb
@@ -799,10 +842,11 @@ def main():
         ds_train,
         ds_val,
         ds_test,
-        exp_affinities,
+        exp_data,
         args.n_epochs,
         torch.device(args.device),
         model_call,
+        loss_func,
         args.model_o,
         args.lr,
         start_epoch,
