@@ -260,7 +260,8 @@ def train(
     device : torch.device
         Where to run the training
     loss_fn : cml.nn.MSELoss
-        Loss function
+        Loss function that takes pred, target, in_range, and uncertainty values
+        as inputs
     model_call : function(model, dict), default=lambda model, d: model(d)
         Function for calling the model. This is present to account for
         differences in calling the SchNet and e3nn models
