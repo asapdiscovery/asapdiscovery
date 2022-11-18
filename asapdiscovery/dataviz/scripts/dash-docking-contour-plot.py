@@ -5,7 +5,7 @@ to make a simple dash html instance that is straightforward to read.
 The goal is to replace the dash-docking-exploration and dash-all-results-exploration 
 with scripts that look like this one.
 
-This script currently takes plotly functions from covid_moonshot_ml.plotting.plotting
+This script currently takes plotly functions from asapdiscovery.plotting.plotting
 and dash html logic from plotly_dash_functions.
 
 Adding new functions would require 3 steps (as far as I understand it): 
