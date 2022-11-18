@@ -3,5 +3,5 @@ include MANIFEST.in
 include CODE_OF_CONDUCT.md
 include versioneer.py
 
-graft covid_moonshot_ml
+graft asapdiscovery
 global-exclude *.py[cod] __pycache__ *.so
