@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = covid_moonshot_ml
+SPHINXPROJ    = asapdiscovery
 SOURCEDIR     = .
 BUILDDIR      = _build
 

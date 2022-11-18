@@ -156,7 +156,7 @@ def build_model_2d(config_fn):
 
     Returns
     -------
-    covid_moonshot_ml.nn.models.GAT
+    asapdiscovery.ml.models.GAT
         GAT graph model
     """
 

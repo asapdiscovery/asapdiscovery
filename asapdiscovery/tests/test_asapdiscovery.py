@@ -1,5 +1,5 @@
 """
-Unit and regression test for the covid_moonshot_ml package.
+Unit and regression test for the asapdiscovery package.
 """
 
 # Import package, test suite, and other packages as needed

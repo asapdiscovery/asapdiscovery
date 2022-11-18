@@ -18,7 +18,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-import covid_moonshot_ml
+import asapdiscovery
 
 
 # -- Project information -----------------------------------------------------
@@ -120,7 +120,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "covid_moonshot_mldoc"
+htmlhelp_basename = "asapdiscoverydoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -146,9 +146,9 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "covid_moonshot_ml.tex",
+        "asapdiscovery.tex",
         "COVIDMoonshotML Documentation",
-        "covid_moonshot_ml",
+        "asapdiscovery",
         "manual",
     ),
 ]
@@ -161,7 +161,7 @@ latex_documents = [
 man_pages = [
     (
         master_doc,
-        "covid_moonshot_ml",
+        "asapdiscovery",
         "COVIDMoonshotML Documentation",
         [author],
         1,
@@ -177,10 +177,10 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        "covid_moonshot_ml",
+        "asapdiscovery",
         "COVIDMoonshotML Documentation",
         author,
-        "covid_moonshot_ml",
+        "asapdiscovery",
         "Scripts and models for ML with COVID Moonshot data.",
         "Miscellaneous",
     ),
