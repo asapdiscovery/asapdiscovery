@@ -1,3 +1,4 @@
+"""Computational chemistry packages developed by the ASAP Discovery Consortium."""
 # Handle versioneer
 from ._version import get_versions
 
