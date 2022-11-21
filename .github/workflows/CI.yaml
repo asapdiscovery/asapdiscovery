@@ -67,7 +67,7 @@ jobs:
       shell: bash -l {0}
 
       run: |
-        pytest -v --cov=covid_moonshot_ml --cov-report=xml --color=yes covid_moonshot_ml/tests/
+        pytest -v --cov=asapdiscovery --cov-report=xml --color=yes asapdiscovery/tests/
 
     - name: CodeCov
       uses: codecov/codecov-action@v1
