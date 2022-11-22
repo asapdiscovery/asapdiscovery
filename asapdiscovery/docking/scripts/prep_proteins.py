@@ -114,10 +114,11 @@ def prep_mp(
             save_openeye_pdb(seqres_prot, "seqres_test.pdb")
 
             initial_prot = seqres_prot
+        mutate = True
     else:
         initial_prot = load_openeye_pdb(xtal.str_fn)
+        mutate = False
 
-    mutate = True
     if mutate:
         print("Mutating to provided seqres")
         ## Mutate the residues to match the residue list
@@ -139,9 +140,10 @@ def prep_mp(
     ## Take the first returned DU and save it
     try:
         print("Attempting to prepare design units")
+        site_residue = xtal.active_site if xtal.active_site else ""
         design_units = prep_receptor(
             initial_prot,
-            site_residue=xtal.active_site,
+            site_residue=site_residue,
             loop_db=loop_db,
             protein_only=protein_only,
         )
