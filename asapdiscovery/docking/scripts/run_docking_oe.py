@@ -158,12 +158,14 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         clash = int(
             oechem.OEGetSDData(posed_mol, f"Docking_{docking_id}_clash")
         )
+        smiles = oechem.OEGetSDData(posed_mol, f"SMILES")
     else:
         out_fn = ""
         rmsd = -1.0
         posit_prob = -1.0
         chemgauss_score = -1.0
         clash = -1
+        smiles = "None"
 
     results = (
         lig_name,
@@ -173,6 +175,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_prob,
         chemgauss_score,
         clash,
+        smiles
     )
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     return results
@@ -364,6 +367,7 @@ def main():
         "POSIT_prob",
         "chemgauss4_score",
         "clash",
+        "SMILES"
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
