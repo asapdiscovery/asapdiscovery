@@ -73,7 +73,7 @@ def parse_xtal(x_fn, x_dir):
     """
     import pandas
 
-    from schema import CrystalCompoundData
+    from .schema import CrystalCompoundData
 
     df = pandas.read_csv(x_fn)
 
