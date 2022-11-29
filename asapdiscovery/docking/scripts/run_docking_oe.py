@@ -152,6 +152,9 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_prob = float(
             oechem.OEGetSDData(posed_mol, f"Docking_{docking_id}_POSIT")
         )
+        posit_method = oechem.OEGetSDData(
+            posed_mol, f"Docking_{docking_id}_POSIT_method"
+        )
         chemgauss_score = float(
             oechem.OEGetSDData(posed_mol, f"Docking_{docking_id}_Chemgauss4")
         )
@@ -162,6 +165,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         out_fn = ""
         rmsd = -1.0
         posit_prob = -1.0
+        posit_method = ""
         chemgauss_score = -1.0
         clash = -1
 
@@ -171,6 +175,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         out_fn,
         rmsd,
         posit_prob,
+        posit_method,
         chemgauss_score,
         clash,
     )
@@ -362,6 +367,7 @@ def main():
         "docked_file",
         "docked_RMSD",
         "POSIT_prob",
+        "POSIT_method",
         "chemgauss4_score",
         "clash",
     ]

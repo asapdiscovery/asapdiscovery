@@ -94,6 +94,7 @@ def run_docking_oe(
     following SD tags set:
       * Docking_<docking_id>_RMSD: RMSD score to original molecule
       * Docking_<docking_id>_POSIT: POSIT probability
+      * Docking_<docking_id>_POSIT_method: POSIT method used in docking
       * Docking_<docking_id>_Chemgauss4: Chemgauss4 score
       * Docking_<docking_id>_clash: clash results
 
@@ -191,6 +192,7 @@ def run_docking_oe(
         ret_code = poser.DockMultiConformerMolecule(posed_mol, dock_lig)
 
         posit_prob = -1.0
+        posit_method = "NA"
     else:
         raise ValueError(f'Unknown docking system "{dock_sys}"')
 
@@ -220,6 +222,9 @@ def run_docking_oe(
         if dock_sys == "posit":
             posed_mol = pose_res.GetPose()
             posit_prob = pose_res.GetProbability()
+            posit_method = oedocking.OEPositMethodGetName(
+                pose_res.GetPositMethod()
+            )
 
         ## Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
@@ -244,6 +249,9 @@ def run_docking_oe(
     oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_RMSD", str(rmsd))
     oechem.OESetSDData(
         posed_mol, f"Docking_{docking_id}_POSIT", str(posit_prob)
+    )
+    oechem.OESetSDData(
+        posed_mol, f"Docking_{docking_id}_POSIT_method", posit_method
     )
     oechem.OESetSDData(
         posed_mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
