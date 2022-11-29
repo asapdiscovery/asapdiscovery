@@ -178,11 +178,90 @@ class DockingResults:
     Mainly for mainipulating the data in various useful ways.
     """
 
-    def __init__(self, csv_path):
-        ## load in data and replace the annoying `-1.0` and `-1` values with nans
-        self.df = (
-            pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
-        )
+    column_names_dict = {
+        "legacy": [
+            "ligand_id",
+            "du_structure",
+            "docked_file",
+            "docked_RMSD",
+            "POSIT_prob",
+            "chemgauss4_score",
+            "clash",
+        ],
+        "legacy_smiles": [
+            "ligand_id",
+            "du_structure",
+            "docked_file",
+            "docked_RMSD",
+            "POSIT_prob",
+            "chemgauss4_score",
+            "clash",
+            "SMILES",
+        ],
+        "legacy_cleaned": [
+            "Compound_ID",
+            "Structure_Source",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+        ],
+        "legacy_cleaned_dimer": [
+            "Compound_ID",
+            "Structure_Source",
+            "Dimer",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+        ],
+        "default_dimer": [
+            "Compound_ID",
+            "Structure_Source",
+            "Dimer",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+            "SMILES",
+        ],
+        "default": [
+            "Compound_ID",
+            "Structure_Source",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+            "SMILES",
+        ],
+    }
+
+    def __init__(self, csv_path=None, df=None, column_names="default"):
+        """
+
+        Parameters
+        ----------
+        csv_path: path to csv file
+            Optional
+        df: pd.DataFrame
+        """
+        if csv_path:
+            ## load in data and replace the annoying `-1.0` and `-1` values with nans
+            self.df = (
+                pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
+            )
+        elif df:
+            assert type(df) == pd.DataFrame
+            if self.column_names_dict.get(column_names):
+                df.columns = self.column_names_dict.get(column_names)
+            self.df = df
+
+        else:
+            raise Exception("Must pass either a dataframe or a csv path")
 
     def get_grouped_df(
         self,

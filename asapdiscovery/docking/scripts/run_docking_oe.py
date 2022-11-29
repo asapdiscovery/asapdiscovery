@@ -15,6 +15,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.utils import load_openeye_sdf, save_openeye_sdf
 from asapdiscovery.docking.docking import run_docking_oe
+from asapdiscovery.docking.analysis import DockingResults
 
 
 def check_results(d):
@@ -175,7 +176,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_prob,
         chemgauss_score,
         clash,
-        smiles
+        smiles,
     )
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     return results
@@ -367,7 +368,7 @@ def main():
         "POSIT_prob",
         "chemgauss4_score",
         "clash",
-        "SMILES"
+        "SMILES",
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
