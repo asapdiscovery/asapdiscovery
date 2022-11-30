@@ -381,6 +381,7 @@ def main():
         "clash",
         "SMILES",
     ]
+    print(mp.cpu_count(), len(mp_args), args.num_cores)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
