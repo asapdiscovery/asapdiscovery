@@ -14,6 +14,34 @@ from asapdiscovery.data.schema import (
 )
 
 
+def download_file(url: str, path: str):
+    """
+    Download a file and save it locally.
+    Copied from kinoml.utils
+
+    Parameters
+    ----------
+    url: str
+        URL for downloading data.
+    path: str
+        Path to save downloaded data.
+
+    Returns
+    -------
+    : bool
+        True if successful, else False.
+    """
+    import requests
+
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(path, "wb") as write_file:
+            write_file.write(response.content)
+        return True
+
+    return False
+
+
 def get_remark_str(chains, oligomeric_state):
     allowed_states = ["monomer", "dimer"]
     if oligomeric_state == "monomer":

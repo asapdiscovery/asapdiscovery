@@ -17,29 +17,75 @@ def load_pdbs_from_yaml(pdb_list_yaml):
     return pdb_dict
 
 
-def download_PDBs(pdb_list, pdb_path):
+def download_pdb_structure(pdb_id: str, directory: str):
+    """
+    Download a PDB structure. If the structure is not available in PDB format, it will be download
+    in CIF format.
+
+    Copied with some changes from kinoml.databases.pdb.
+
+    Parameters
+    ----------
+    pdb_id: str
+        The PDB ID of interest.
+    directory: str or Path, default=user_cache_dir
+        The directory for saving the downloaded structure.
+
+    Returns
+    -------
+    : Path or False
+        The path to the the downloaded file if successful, else False.
+    """
+    from .utils import download_file
+    import os
+
+    # check for structure in PDB format
+    url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+    pdb_path = os.path.join(directory, f"rcsb_{pdb_id.upper()}.pdb")
+    if not os.path.exists(pdb_path):
+        print("Downloading PDB entry in PDB format ...")
+        if download_file(url, pdb_path):
+            return pdb_path
+    else:
+        return pdb_path
+
+    # check for structure in CIF format
+    url = f"https://files.rcsb.org/download/{pdb_id}.cif"
+    cif_path = os.path.join(directory, f"rcsb_{pdb_id.upper()}.cif")
+    if not os.path.exists(cif_path):
+        print("Downloading PDB entry in CIF format ...")
+        if download_file(url, cif_path):
+            return cif_path
+    else:
+        return cif_path
+    print(f"Could not download PDB entry {pdb_id}.")
+    return False
+
+
+def download_PDBs(pdb_list, pdb_dir):
     """
     Downloads pdbs from pdb_list_yaml using Kinoml.
 
     Parameters
     ----------
     pdb_list
-    pdb_path
+    pdb_dir
 
     Returns
     -------
 
     """
-    from kinoml.databases.pdb import download_pdb_structure
+    # from kinoml.databases.pdb import download_pdb_structure
+    from ..data.utils import download_file
     import os
 
-    if not os.path.exists(pdb_path):
-        os.mkdir(pdb_path)
+    if not os.path.exists(pdb_dir):
+        os.mkdir(pdb_dir)
 
-    print(f"Downloading PDBs to {pdb_path}")
+    print(f"Downloading PDBs to {pdb_dir}")
     for pdb in pdb_list:
         print(pdb)
-        download_pdb_structure(pdb, pdb_path)
+        download_pdb_structure(pdb, pdb_dir)
 
 
 def pymol_alignment(
