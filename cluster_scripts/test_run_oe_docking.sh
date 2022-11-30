@@ -12,7 +12,7 @@ source ~/.bashrc
 conda activate mers-docking
 python ~/covid-moonshot-ml/asapdiscovery/docking/scripts/run_docking_oe.py \
 -l ~/asap-datasets/test_run_oe/ligand.sdf \
--r '~/asap-datasets/full_frag_prepped_dus_seqres/*/prepped_receptor.oedu' \
+-r '/lila/data/chodera/asap-datasets/full_frag_prepped_dus_seqres/*/prepped_receptor.oedu' \
 -s /lila/data/chodera/asap-datasets/amines_small_mcs/mcs_sort_index.pkl \
 -o ~/asap-datasets/test_run_oe/ \
 -n 10 \
