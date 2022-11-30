@@ -128,10 +128,11 @@ def run_docking_oe(
     -------
     bool
         If docking succeeded
-    List[oechem.OEGraphMol]
-        Posed molecules (with set SD tags)
-    List[str]
-        Generated docking_ids, used to access SD tag data
+    oechem.OEMol
+        Molecule with each pose as a different conformation
+        (each with set SD tags)
+    str
+        Generated docking_id, used to access SD tag data
     """
     from openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
@@ -269,7 +270,12 @@ def run_docking_oe(
             )
         return False, None, None
 
-    for mol, prob, method in zip(posed_mols, posit_probs, posit_methods):
+    ## Set docking_id key for SD tags
+    docking_id = "_".join(docking_id)
+
+    for i, (mol, prob, method) in enumerate(
+        zip(posed_mols, posit_probs, posit_methods)
+    ):
         ## Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
         pose_scorer.Initialize(du)
@@ -279,20 +285,27 @@ def run_docking_oe(
         posed_copy = mol.CreateCopy()
         rmsd = calculate_rmsd_openeye(orig_mol.CreateCopy(), posed_copy)
 
+        ## First copy over original SD tags
+        for sd_data in oechem.OEGetSDDataPairs(orig_mol):
+            oechem.OESetSDData(mol, sd_data)
+
         ## Set SD tags for molecule
-        docking_id = "_".join(docking_id)
-        oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_RMSD", str(rmsd))
-        oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_POSIT", str(prob))
+        oechem.OESetSDData(mol, f"Docking_{docking_id}_RMSD", str(rmsd))
+        oechem.OESetSDData(mol, f"Docking_{docking_id}_POSIT", str(prob))
+        oechem.OESetSDData(mol, f"Docking_{docking_id}_POSIT_method", method)
         oechem.OESetSDData(
-            posed_mol, f"Docking_{docking_id}_POSIT_method", method
+            mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
         )
-        oechem.OESetSDData(
-            posed_mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
-        )
-        oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_clash", str(clash))
+        oechem.OESetSDData(mol, f"Docking_{docking_id}_clash", str(clash))
 
-    ## Set molecule name if given
-    if compound_name:
-        posed_mol.SetTitle(compound_name)
+        ## Set molecule name if given
+        if compound_name:
+            mol.SetTitle(f"{compound_name}_{i}")
 
-    return True, oechem.OEGraphMol(posed_mol), docking_id
+    ## Combine all the conformations into one
+    combined_mol = oechem.OEMol(posed_mols[0])
+    for mol in posed_mols[1:]:
+        combined_mol.NewConf(mol)
+    assert combined_mol.NumConfs() == len(posed_mols)
+
+    return True, combined_mol, docking_id
