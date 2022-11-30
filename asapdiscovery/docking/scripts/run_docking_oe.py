@@ -404,7 +404,7 @@ def main():
     ## Concatenate all individual SDF files
     combined_sdf = f"{args.output_dir}/combined.sdf"
     with open(combined_sdf, "wb") as wfd:
-        for f in results_df["docked_file"]:
+        for f in docking_results.df.Docked_File:
             if f == "":
                 continue
             with open(f, "rb") as fd:
