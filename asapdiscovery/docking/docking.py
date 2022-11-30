@@ -40,38 +40,6 @@ def build_docking_systems(
 
     return systems
 
-
-def build_docking_system_direct(prot_mol, lig_smi, prot_name, lig_name):
-    """
-    Build system to run through kinoml docking from OEGraphMol objects.
-
-    Parameters
-    ----------
-    prot_mol : oechem.OEGraphMol
-        Protein molecule.
-    lig_smi : str
-        Ligand SMILES string.
-    prot_name : str
-        Name of protein.
-    lig_name : str
-        Name of ligand.
-
-    Returns
-    -------
-    kinoml.core.systems.ProteinLigandComplex
-    """
-    protein = Protein(molecule=prot_mol, name=prot_name)
-    ligand = Ligand.from_smiles(smiles=lig_smi, name=lig_name)
-
-    return ProteinLigandComplex(components=[protein, ligand])
-
-
-def build_combined_protein_system_from_sdf(pdb_fn, sdf_fn):
-    protein = Protein.from_file(pdb_fn, name="MERS-Mpro")
-    ligand = Ligand.from_file(sdf_fn)
-    return ProteinLigandComplex
-
-
 def run_docking(cache_dir, output_dir, loop_db, n_procs, docking_systems):
     from kinoml.features.complexes import OEDockingFeaturizer
 
