@@ -75,8 +75,6 @@ def download_PDBs(pdb_list, pdb_dir):
     -------
 
     """
-    # from kinoml.databases.pdb import download_pdb_structure
-    from ..data.utils import download_file
     import os
 
     if not os.path.exists(pdb_dir):
