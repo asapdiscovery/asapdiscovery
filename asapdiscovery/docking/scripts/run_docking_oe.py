@@ -12,7 +12,13 @@ import re
 import shutil
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
+    )
+)
 print(sys.path)
 from asapdiscovery.data.utils import load_openeye_sdf, save_openeye_sdf
 from asapdiscovery.docking.docking import run_docking_oe
@@ -341,7 +347,9 @@ def main():
         dock_dus = []
         xtals = []
         for xtal in sort_idxs[i][: args.top_n]:
+            print(xtal)
             if xtal_ids[xtal] not in dataset_dict:
+                print(f"{xtal_ids[xtal]} not in {dataset_dict}")
                 continue
             ## Get the DU for each full Mpro name associated with this dataset
             dock_dus.extend([du_dict[x] for x in dataset_dict[xtal_ids[xtal]]])
