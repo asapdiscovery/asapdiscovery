@@ -124,6 +124,8 @@ Run the docking process based on the MCS results.
 **Example usage:** Run docking using results from previous step. Use 16 concurrent processes, filter for achiral molecules, use default cache directory. Assumes loop database is present in the current directory as `rcsb_spruce.loop_db`.
 ```bash
 mkdir docking_res/
+
+##TODO: THIS SCRIPT HAS SINCE BEEN DELETED, need to rewrite this documentation
 python ${CML_DIR}/scripts/run_docking.py \
 -exp ./cdd_moonshot_achiral.json \
 -x ./fragalysis/extra_files/Mpro_compound_tracker_csv.csv \
