@@ -104,7 +104,7 @@ python ${CML_DIR}/scripts/find_all_mcs.py \
 -n 16
 ```
 
-#### Running the kinoml docking
+#### Running docking
 Run the docking process based on the MCS results.
 
 **Script:** `run_docking.py`
