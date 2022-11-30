@@ -388,28 +388,18 @@ def main():
         ]
         mp_args.extend(new_args)
 
-    results_cols = [
-        "ligand_id",
-        "du_structure",
-        "docked_file",
-        "docked_RMSD",
-        "POSIT_prob",
-        "chemgauss4_score",
-        "clash",
-        "SMILES",
-    ]
     print(
-        f"CPU Count:        {mp.cpu_count()} "
-        f"Processes to Run: {len(mp_args)}"
+        f"CPU Count:        {mp.cpu_count()}\n"
+        f"Processes to Run: {len(mp_args)}\n"
         f"Number of Cores:  {args.num_cores}"
     )
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
-        results_df = pool.starmap(mp_func, mp_args)
-    results_df = pandas.DataFrame(results_df, columns=results_cols)
+        results_df = pandas.DataFrame(pool.starmap(mp_func, mp_args))
 
-    results_df.to_csv(f"{args.output_dir}/all_results.csv")
+    docking_results = DockingResults(df=results_df, column_names="default")
+    docking_results.df.to_csv(f"{args.output_dir}/all_results.csv")
 
     ## Concatenate all individual SDF files
     combined_sdf = f"{args.output_dir}/combined.sdf"
