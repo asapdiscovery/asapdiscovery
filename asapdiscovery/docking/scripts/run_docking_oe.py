@@ -1,5 +1,17 @@
 """
 Script to dock an SDF file of ligands to prepared structures.
+Example Usage:
+    python ~/covid-moonshot-ml/asapdiscovery/docking/scripts/run_docking_oe.py \
+        -l ~/asap-datasets/test_run_oe/ligand.sdf \
+        -r '/lila/data/chodera/asap-datasets/full_frag_prepped_dus_seqres/*/prepped_receptor.oedu' \
+        -s /lila/data/chodera/asap-datasets/amines_small_mcs/mcs_sort_index.pkl \
+        -o ~/asap-datasets/test_run_oe/ \
+        -n 10 \
+        -t 10
+
+Example Cluster Scripts (in cluster_scripts):
+    test_run_oe_docking.sh
+    run_oe_docking_amines_small.sh
 """
 import argparse
 from glob import glob
@@ -80,8 +92,9 @@ def load_dus(file_base, by_compound=False):
         Dictionary mapping full Mpro name/compound id (including chain) to its
         design unit
     """
-
+    print(f"Loading receptor files")
     if os.path.isdir(file_base):
+        print(f"\tReading {file_base} as base path")
         all_fns = [
             os.path.join(file_base, fn)
             for _, _, files in os.walk(file_base)
@@ -89,15 +102,19 @@ def load_dus(file_base, by_compound=False):
             if fn[-4:] == "oedu"
         ]
     elif os.path.isfile(file_base) and by_compound:
+        print(f"\tReading {file_base} as best_results.csv")
         df = pandas.read_csv(file_base)
         all_fns = [
             os.path.join(os.path.dirname(fn), "predocked.oedu")
             for fn in df["Docked_File"]
         ]
     else:
-        print("using glob")
+        print(f"\tUsing glob to parse {file_base}")
         all_fns = glob(file_base)
-        print(all_fns)
+
+    assert (
+        len(all_fns) > 0
+    ), f"ERROR: The list of files parsed from {file_base} is empty."
 
     du_dict = {}
     dataset_dict = {}
@@ -123,7 +140,8 @@ def load_dus(file_base, by_compound=False):
             dataset_dict[dataset].append(full_name)
         except KeyError:
             dataset_dict[dataset] = [full_name]
-    print(dataset_dict)
+    assert len(dataset_dict) > 0, f"Dataset dictionary is empty!"
+    assert len(du_dict) > 0, f"Design Unit dictionary is empty!"
     return dataset_dict, du_dict
 
 
@@ -345,18 +363,15 @@ def main():
 
     mp_args = []
     for i, m in enumerate(mols):
-        print(i, m)
         dock_dus = []
         xtals = []
         for xtal in sort_idxs[i][: args.top_n]:
-            print(xtal)
             if xtal_ids[xtal] not in dataset_dict:
-                print(f"{xtal_ids[xtal]} not in {dataset_dict}")
+                print(f"{xtal_ids[xtal]} not found in dataset dictionary")
                 continue
             ## Get the DU for each full Mpro name associated with this dataset
             dock_dus.extend([du_dict[x] for x in dataset_dict[xtal_ids[xtal]]])
             xtals.extend(dataset_dict[xtal_ids[xtal]])
-        print(xtals)
         new_args = [
             (
                 os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
@@ -383,7 +398,11 @@ def main():
         "clash",
         "SMILES",
     ]
-    print(mp.cpu_count(), len(mp_args), args.num_cores)
+    print(
+        f"CPU Count:        {mp.cpu_count()} "
+        f"Processes to Run: {len(mp_args)}"
+        f"Number of Cores:  {args.num_cores}"
+    )
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
