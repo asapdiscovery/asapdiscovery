@@ -337,6 +337,7 @@ def main():
 
     mp_args = []
     for i, m in enumerate(mols):
+        print(i, m)
         dock_dus = []
         xtals = []
         for xtal in sort_idxs[i][: args.top_n]:
@@ -345,6 +346,7 @@ def main():
             ## Get the DU for each full Mpro name associated with this dataset
             dock_dus.extend([du_dict[x] for x in dataset_dict[xtal_ids[xtal]]])
             xtals.extend(dataset_dict[xtal_ids[xtal]])
+        print(xtals)
         new_args = [
             (
                 os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
