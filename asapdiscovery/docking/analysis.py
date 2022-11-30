@@ -249,13 +249,12 @@ class DockingResults:
             Optional
         df: pd.DataFrame
         """
-        if csv_path:
+        if type(csv_path) == str:
             ## load in data and replace the annoying `-1.0` and `-1` values with nans
             self.df = (
                 pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
             )
-        elif df:
-            assert type(df) == pd.DataFrame
+        elif type(df) == pd.DataFrame:
             if self.column_names_dict.get(column_names):
                 df.columns = self.column_names_dict.get(column_names)
             self.df = df
