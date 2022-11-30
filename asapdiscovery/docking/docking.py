@@ -87,7 +87,14 @@ def run_docking(cache_dir, output_dir, loop_db, n_procs, docking_systems):
 
 
 def run_docking_oe(
-    du, dock_lig, dock_sys, relax="none", hybrid=False, compound_name=None
+    du,
+    orig_mol,
+    dock_sys,
+    relax="none",
+    hybrid=False,
+    compound_name=None,
+    use_omega=False,
+    num_poses=1,
 ):
     """
     Run docking using OpenEye. The returned OEGraphMol object will have the
@@ -102,7 +109,7 @@ def run_docking_oe(
     ----------
     du : oechem.OEDesignUnit
         DesignUnit receptor to dock to
-    dock_lig : oechem.OEMol
+    orig_mol : oechem.OEMol
         Mol object to dock
     dock_sys : str
         Which docking system to use ["posit", "hybrid"]
@@ -112,21 +119,40 @@ def run_docking_oe(
         Set POSIT methods to only use Hybrid
     compound_name : str, optional
         Compound name, used for error messages if given
+    use_omega : bool, default=False
+        Use OEOmega to manually generate conformations
+    num_poses : int, default=1
+        Number of poses to return from docking (only relevant for POSIT)
 
     Returns
     -------
     bool
         If docking succeeded
-    oechem.OEGraphMol
-        Posed molecule (with set SD tags)
-    str
-        Generated docking_id, used to access SD tag data
+    List[oechem.OEGraphMol]
+        Posed molecules (with set SD tags)
+    List[str]
+        Generated docking_ids, used to access SD tag data
     """
     from openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
+    ## Make copy so we can keep the original for RMSD purposes
+    orig_mol = orig_mol.CreateCopy()
+
     ## Convert to OEMol for docking purposes
-    dock_lig = oechem.OEMol(dock_lig)
+    dock_lig = oechem.OEMol(orig_mol.CreateCopy())
+
+    ## Perform OMEGA sampling
+    if use_omega:
+        from openeye import oeomega
+
+        omega = oeomega.OEOmega()
+        ret_code = omega.Build(dock_lig)
+        if ret_code:
+            print(
+                f"Omega failed with error {oeomega.OEGetOmegaError(ret_code)}",
+                flush=True,
+            )
 
     ## Set docking string id (for SD tags)
     docking_id = [dock_sys]
@@ -173,9 +199,9 @@ def run_docking_oe(
         poser.AddReceptor(du)
 
         ## Run posing
-        pose_res = oedocking.OESinglePoseResult()
+        pose_res = oedocking.OEPositResults()
         try:
-            ret_code = poser.Dock(pose_res, dock_lig)
+            ret_code = poser.Dock(pose_res, dock_lig, num_poses)
         except TypeError as e:
             print(pose_res, dock_lig, type(dock_lig), flush=True)
             raise e
@@ -191,8 +217,11 @@ def run_docking_oe(
         posed_mol = oechem.OEMol()
         ret_code = poser.DockMultiConformerMolecule(posed_mol, dock_lig)
 
-        posit_prob = -1.0
-        posit_method = "NA"
+        ## Place in list to match output
+        posed_mols = [posed_mol]
+
+        posit_probs = [-1.0]
+        posit_methods = ["NA"]
     else:
         raise ValueError(f'Unknown docking system "{dock_sys}"')
 
@@ -214,22 +243,23 @@ def run_docking_oe(
         poser.AddReceptor(du)
 
         ## Run posing
-        pose_res = oedocking.OESinglePoseResult()
-        ret_code = poser.Dock(pose_res, dock_lig)
+        pose_res = oedocking.OEPositResults()
+        ret_code = poser.Dock(pose_res, dock_lig, num_poses)
 
     ## Check results
-    if ret_code == oedocking.OEDockingReturnCode_Success:
-        if dock_sys == "posit":
-            posed_mol = pose_res.GetPose()
-            posit_prob = pose_res.GetProbability()
-            posit_method = oedocking.OEPositMethodGetName(
-                pose_res.GetPositMethod()
+    if (
+        ret_code == oedocking.OEDockingReturnCode_Success
+        and dock_sys == "posit"
+    ):
+        posed_mols = []
+        posit_probs = []
+        posit_methods = []
+        for r in pose_res.GetSinglePoseResults():
+            posed_mols.append(r.GetPose())
+            posit_probs.append(r.GetProbability())
+            posit_methods.append(
+                oedocking.OEPositMethodGetName(r.GetPositMethod())
             )
-
-        ## Get the Chemgauss4 score (adapted from kinoml)
-        pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
-        pose_scorer.Initialize(du)
-        chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
     else:
         err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
         if compound_name:
@@ -239,24 +269,27 @@ def run_docking_oe(
             )
         return False, None, None
 
-    ## Calculate RMSD
-    posed_copy = posed_mol.CreateCopy()
+    for mol, prob, method in zip(posed_mols, posit_probs, posit_methods):
+        ## Get the Chemgauss4 score (adapted from kinoml)
+        pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
+        pose_scorer.Initialize(du)
+        chemgauss_score = pose_scorer.ScoreLigand(mol)
 
-    rmsd = calculate_rmsd_openeye(dock_lig, posed_copy)
+        ## Calculate RMSD
+        posed_copy = mol.CreateCopy()
+        rmsd = calculate_rmsd_openeye(orig_mol.CreateCopy(), posed_copy)
 
-    ## Set SD tags for molecule
-    docking_id = "_".join(docking_id)
-    oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_RMSD", str(rmsd))
-    oechem.OESetSDData(
-        posed_mol, f"Docking_{docking_id}_POSIT", str(posit_prob)
-    )
-    oechem.OESetSDData(
-        posed_mol, f"Docking_{docking_id}_POSIT_method", posit_method
-    )
-    oechem.OESetSDData(
-        posed_mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
-    )
-    oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_clash", str(clash))
+        ## Set SD tags for molecule
+        docking_id = "_".join(docking_id)
+        oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_RMSD", str(rmsd))
+        oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_POSIT", str(prob))
+        oechem.OESetSDData(
+            posed_mol, f"Docking_{docking_id}_POSIT_method", method
+        )
+        oechem.OESetSDData(
+            posed_mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
+        )
+        oechem.OESetSDData(posed_mol, f"Docking_{docking_id}_clash", str(clash))
 
     ## Set molecule name if given
     if compound_name:
