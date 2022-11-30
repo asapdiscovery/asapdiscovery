@@ -95,7 +95,9 @@ def load_dus(file_base, by_compound=False):
             for fn in df["Docked_File"]
         ]
     else:
+        print("using glob")
         all_fns = glob(file_base)
+        print(all_fns)
 
     du_dict = {}
     dataset_dict = {}
@@ -121,7 +123,7 @@ def load_dus(file_base, by_compound=False):
             dataset_dict[dataset].append(full_name)
         except KeyError:
             dataset_dict[dataset] = [full_name]
-
+    print(dataset_dict)
     return dataset_dict, du_dict
 
 
