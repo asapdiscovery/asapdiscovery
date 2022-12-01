@@ -1,6 +1,5 @@
 #!/bin/bash
 #BSUB -J test_run_oe_docking
-#BSUB -R span[hosts=4]
 #BSUB -o log_files/run_fragalysis_retrospective.out
 #BSUB -e log_files/run_fragalysis_retrospective.stderr
 #BSUB -n 64
