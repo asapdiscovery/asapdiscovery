@@ -1,8 +1,8 @@
 #!/bin/bash
 #BSUB -J test_run_oe_docking
-#BSUB -R span[hosts=1]
-#BSUB -o log_files/test_run_oe_docking.out
-#BSUB -e log_files/test_run_oe_docking.stderr
+#BSUB -R span[hosts=16]
+#BSUB -o log_files/run_fragalysis_retrospective.out
+#BSUB -e log_files/run_fragalysis_retrospective.stderr
 #BSUB -n 64
 #BSUB -q cpuqueue
 #BSUB -R rusage[mem=4]
