@@ -75,6 +75,7 @@ def save_openeye_sdfs(mols, sdf_fn):
     else:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
+
 def split_openeye_mol(complex_mol: oechem.OEMolBase):
     ## Test splitting
     lig_mol = oechem.OEGraphMol()
