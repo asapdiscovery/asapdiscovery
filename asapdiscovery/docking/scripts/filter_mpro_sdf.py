@@ -59,6 +59,7 @@ def main():
         oechem.OESmilesToMol(new_mol, c.smiles)
         oechem.OESetSDData(new_mol, f"SMILES", c.smiles)
         oechem.OESetSDData(new_mol, f"Dataset", c.dataset)
+        oechem.OESetSDData(new_mol, f"Compound_ID", c.compound_id)
         new_mol.SetTitle(c.compound_id)
         mols.append(new_mol)
 
