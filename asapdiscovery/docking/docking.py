@@ -297,6 +297,7 @@ def run_docking_oe(
             mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
         )
         oechem.OESetSDData(mol, f"Docking_{docking_id}_clash", str(clash))
+        oechem.OESetSDData(mol, f"SMILES", oechem.OEMolToSmiles(mol))
 
         ## Set molecule name if given
         if compound_name:
