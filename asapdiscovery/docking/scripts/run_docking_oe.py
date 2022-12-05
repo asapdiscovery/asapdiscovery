@@ -148,6 +148,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_probs = []
         posit_methods = []
         chemgauss_scores = []
+        smiles = []
         for conf in posed_mol.GetConfs():
             rmsds.append(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD"))
@@ -163,6 +164,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
                     oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4")
                 )
             )
+            smiles.append(oechem.OEGetSDData(posed_mol, f"SMILES"))
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
     else:
         out_fn = ""
@@ -171,6 +173,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_methods = [""]
         chemgauss_scores = [-1.0]
         clash = -1
+        smiles = ["None"]
 
     results = [
         (
@@ -183,11 +186,13 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
             method,
             chemgauss,
             clash,
+            smi,
         )
-        for i, (rmsd, prob, method, chemgauss) in enumerate(
-            zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
+        for i, (rmsd, prob, method, chemgauss, smi) in enumerate(
+            zip(rmsds, posit_probs, posit_methods, chemgauss_scores, smiles)
         )
     ]
+
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     return results
 
@@ -395,6 +400,7 @@ def main():
         "POSIT_method",
         "chemgauss4_score",
         "clash",
+        "SMILES",
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
