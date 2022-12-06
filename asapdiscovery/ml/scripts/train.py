@@ -31,7 +31,6 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml import (
     E3NNBind,
@@ -48,6 +47,8 @@ from asapdiscovery.ml.utils import (
     split_molecules,
     train,
 )
+
+import mtenn.conversion_utils
 
 
 def add_one_hot_encodings(ds):
@@ -248,10 +249,13 @@ def build_model_e3nn(
     }
 
     if dg:
-        model = E3NNBind(**model_kwargs)
+        strategy = "delta"
     else:
-        model = Network(**model_kwargs)
-    return model
+        strategy = "concat"
+
+    return mtenn.conversion_utils.E3NN.get_model(
+        model_kwargs=model_kwargs, strategy=strategy
+    )
 
 
 def build_model_schnet(
@@ -281,11 +285,12 @@ def build_model_schnet(
     """
 
     ## Load pretrained model if requested, otherwise create a new SchNet
+    if dg:
+        strategy = "delta"
+    else:
+        strategy = "concat"
     if qm9 is None:
-        if dg:
-            model = SchNetBind()
-        else:
-            model = SchNet()
+        model = mtenn.conversion_utils.SchNet.get_model(strategy=strategy)
     else:
         qm9_dataset = QM9(qm9)
 
@@ -318,11 +323,11 @@ def build_model_schnet(
             atomref,
         )
 
-        if dg:
-            model = SchNetBind(*model_params)
-        else:
-            model = SchNet(*model_params)
+        model = SchNet(*model_params)
         model.load_state_dict(wts)
+        model = mtenn.conversion_utils.SchNet.get_model(
+            model=model, strategy=strategy
+        )
 
     ## Set interatomic cutoff (default of 10) to make the graph smaller
     model.cutoff = neighbor_dist
@@ -700,10 +705,7 @@ def init(args, rank=False):
             args.rm_atomref,
             neighbor_dist=args.n_dist,
         )
-        if args.dg:
-            model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
-        else:
-            model_call = lambda model, d: model(d["z"], d["pos"])
+        model_call = lambda model, d: model(d)
 
         ## Experiment configuration
         exp_configure = {
