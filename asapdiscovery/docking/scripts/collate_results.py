@@ -51,6 +51,7 @@ def main():
         "POSIT_method",
         "chemgauss4_score",
         "clash",
+        "SMILES",
     ]
     results_df = [pkl.load(open(fn, "rb")) for fn in all_pickle]
     results_df = pandas.DataFrame(results_df, columns=results_cols)
