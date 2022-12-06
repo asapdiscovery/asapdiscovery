@@ -255,11 +255,11 @@ def run_docking_oe(
         posed_mols = []
         posit_probs = []
         posit_methods = []
-        for r in pose_res.GetSinglePoseResults():
-            posed_mols.append(r.GetPose())
-            posit_probs.append(r.GetProbability())
+        for single_res in pose_res.GetSinglePoseResults():
+            posed_mols.append(single_res.GetPose())
+            posit_probs.append(single_res.GetProbability())
             posit_methods.append(
-                oedocking.OEPositMethodGetName(r.GetPositMethod())
+                oedocking.OEPositMethodGetName(single_res.GetPositMethod())
             )
     else:
         err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
