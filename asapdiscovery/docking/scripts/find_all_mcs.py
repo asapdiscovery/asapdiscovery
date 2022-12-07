@@ -141,7 +141,7 @@ def main():
             xtal_ids,
             None,
             args.str,
-            f"{args.o}/{c.compound_id}",
+            None if args.n_draw == 0 else f"{args.o}/{c.compound_id}",
             args.n_draw,
         )
         for c in exp_compounds
