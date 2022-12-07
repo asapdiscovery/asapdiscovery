@@ -4,7 +4,7 @@ import os
 import pandas
 import sys
 
-from asapdiscovery.data.utils import (
+from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     split_openeye_mol,
