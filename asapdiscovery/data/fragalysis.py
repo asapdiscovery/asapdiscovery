@@ -56,7 +56,7 @@ def download(out_fn, extract=True):
         zf.extractall(path=os.path.dirname(out_fn))
 
 
-def parse_xtal(x_fn, x_dir):
+def parse_xtal(x_fn, x_dir, p_only=True):
     """
     Load all crystal structures into schema.CrystalCompoundData objects.
     Parameters
@@ -66,6 +66,8 @@ def parse_xtal(x_fn, x_dir):
     x_dir : str
         Path to directory containing directories with crystal structure PDB
         files
+    p_only : bool, default=True
+        Whether to filter to only -P* files in fragalysis
     Returns
     -------
     List[schema.CrystalCompoundData]
@@ -77,8 +79,11 @@ def parse_xtal(x_fn, x_dir):
 
     df = pandas.read_csv(x_fn)
 
-    ## Find all P-files
-    idx = [(type(d) is str) and ("-P" in d) for d in df["Dataset"]]
+    if p_only:
+        ## Find all P-files
+        idx = [(type(d) is str) and ("-P" in d) for d in df["Dataset"]]
+    else:
+        idx = [type(d) is str for d in df["Dataset"]]
 
     ## Build argument dicts for the CrystalCompoundData objects
     xtal_dicts = [
