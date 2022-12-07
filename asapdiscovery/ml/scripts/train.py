@@ -492,6 +492,16 @@ def get_args():
     )
     parser.add_argument("-proj", help="WandB project name.")
     parser.add_argument("-name", help="WandB run name.")
+    parser.add_argument(
+        "-e",
+        "--extra_config",
+        nargs="+",
+        help=(
+            "Any extra config options to log to WandB. Can provide any "
+            "number of comma-separated key-value pairs "
+            "(eg --extra_config key1,val1 key2,val2 key3,val3)."
+        ),
+    )
 
     return parser.parse_args()
 
@@ -824,6 +834,11 @@ def main():
     print("sq", args.sq, flush=True)
     loss_str = args.loss.lower() if args.loss else "mse"
     exp_configure.update({"loss_func": loss_str, "sq": args.sq})
+
+    ## Add any extra user-supplied config options
+    exp_configure.update(
+        {a.split(",")[0]: a.split(",")[1] for a in args.extra_config}
+    )
 
     ## Start wandb
     if args.wandb:
