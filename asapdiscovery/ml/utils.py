@@ -305,7 +305,7 @@ def train(
     import pickle as pkl
     from time import time
     import torch
-    from .ml import MSELoss
+    from . import MSELoss
 
     if use_wandb:
         import wandb
