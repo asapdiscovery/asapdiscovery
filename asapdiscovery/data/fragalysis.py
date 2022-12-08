@@ -67,7 +67,8 @@ def parse_xtal(x_fn, x_dir, p_only=True):
         Path to directory containing directories with crystal structure PDB
         files
     p_only : bool, default=True
-        Whether to filter to only -P* files in fragalysis
+        Whether to filter to only include fragalysis structures of the
+        format Mpro-P*
     Returns
     -------
     List[schema.CrystalCompoundData]
