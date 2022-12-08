@@ -378,12 +378,14 @@ def wandb_init(
 ):
     import wandb
 
-    wandb.init(project=project_name, config=exp_configure, name=run_name)
+    run = wandb.init(project=project_name, config=exp_configure, name=run_name)
 
     ## Log dataset splits
     for name, split in zip(ds_split_labels, ds_splits):
         table = make_wandb_table(split)
         wandb.log({f"dataset_splits/{name}": table})
+
+    return run.id
 
 
 ################################################################################
@@ -584,8 +586,6 @@ def init(args, rank=False):
             args.exp, achiral=args.achiral, return_compounds=True
         )
     else:
-        ### TODO: pick up here, need to modify DockedDataset to deal with
-        ###  all the values in exp_data
         ## Load the experimental affinities
         exp_data, exp_compounds = load_exp_data(
             args.exp, achiral=args.achiral, return_compounds=True
@@ -844,14 +844,27 @@ def main():
     if args.wandb:
         import wandb
 
-        ## Get project name
-        if args.proj:
-            project_name = args.proj
+        run_id_fn = os.path.join(args.model_o, "run_id")
+
+        ## Load run_id to resume run
+        if args.cont:
+            run_id = open(run_id_fn).read().strip()
+            wandb.init(id=run_id, resume="must")
         else:
-            project_name = f"train-{args.model}"
-        wandb_init(
-            project_name, args.name, exp_configure, [ds_train, ds_val, ds_test]
-        )
+            ## Get project name
+            if args.proj:
+                project_name = args.proj
+            else:
+                project_name = f"train-{args.model}"
+            run_id = wandb_init(
+                project_name,
+                args.name,
+                exp_configure,
+                [ds_train, ds_val, ds_test],
+            )
+            if args.model_o:
+                with open(os.path.join(args.model_o, "run_id"), "w") as fp:
+                    fp.write(run_id)
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
