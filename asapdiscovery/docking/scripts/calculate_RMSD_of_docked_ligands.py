@@ -6,7 +6,7 @@ Example Usage
     python calculate_RMSD_of_docked_ligands.py
         -sdf ~/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221202/combined.sdf
         -o ~/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221202
-        -r ~/asap-datasets/prospective/prepped_mpro_structures_fragalysis/*/prepped_complex.pdb
+        -r ~/asap-datasets/full_frag_prepped_mpro_12_2022/*/prepped_receptor.pdb'
 """
 import argparse
 from glob import glob
