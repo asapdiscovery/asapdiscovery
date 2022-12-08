@@ -1,5 +1,5 @@
 """
-Function to test implementation of ligand filtering
+Function to test implementation of protein-prep functions
 """
 
 import sys, os, argparse, yaml
