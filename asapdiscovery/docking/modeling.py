@@ -1,6 +1,6 @@
 from openeye import oechem, oedocking, oespruce
 
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.utils import (
     load_openeye_pdb,
     load_openeye_sdf,
     split_openeye_mol,
