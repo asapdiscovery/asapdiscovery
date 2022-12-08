@@ -73,7 +73,6 @@ def main():
 
     xtal = CrystalCompoundData(
         str_fn=args.input_prot,
-        output_name="prepped_structure_test",
         active_site_chain=active_site_chain,
         # chains=values.get("chains", ["A", "B"]),
         # oligomeric_state=values.get("oligomeric_state", "dimer"),
@@ -123,6 +122,9 @@ def main():
         ## Mutate the residues to match the residue list
         initial_prot = mutate_residues(
             initial_prot, res_list, xtal.protein_chains
+        )
+        save_openeye_pdb(
+            initial_prot, os.path.join(args.output_dir, "mutated_test.pdb")
         )
 
 
