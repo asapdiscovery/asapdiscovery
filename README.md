@@ -1,7 +1,7 @@
 COVIDMoonshotML
 ==============================
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/covid_moonshot_ml/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/covid_moonshot_ml/actions?query=workflow%3ACI)
+[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/asapdiscovery/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/asapdiscovery/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/COVIDMoonshotML/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/COVIDMoonshotML/branch/master)
 
 

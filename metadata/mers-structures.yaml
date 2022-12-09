@@ -1,0 +1,111 @@
+4RSP:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+    - B
+4WMD: {} #Apo
+4WME: {}
+4WMF: {}
+4YLU: {}
+5C3N: {} #Apo
+5WKJ:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+5WKK:
+  protein_chains:
+    - A
+  oligomeric_state: dimer
+  chains:
+    - A
+5WKL:
+  protein_chains:
+    - A
+  oligomeric_state: dimer
+  chains:
+    - A
+5WKM:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+6VGY: {}
+6VGZ: {}
+6VH0: {}
+6VH1: {}
+6VH2: {}
+6VH3: {}
+7D3C:
+  protein_chains:
+    - A
+    - B
+  oligomeric_state: dimer
+  chains:
+    - A
+    - B
+    - C
+    - E # This isn't a joke the ligands are really in chains C and E
+7DR8: {} #Apo
+7DR9: {} #Apo, catalytically inactive
+7DRA: {} #Apo, catalytically inactive, pH 9
+7T3Y: {}
+7T3Z: # This one is weird, it has the dimer in the asymetric unit but with chain B on the wrong side
+  protein_chains:
+    - A
+    - B
+  oligomeric_state: monomer # So I'm gonna treat it as a monomer
+  chains:
+    - A
+7T40:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+7T41:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+7TQ7:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+7TQ8:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+8CZT:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+8CZU:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+8CZV:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
+8DGY:
+  protein_chains:
+    - A
+  oligomeric_state: monomer
+  chains:
+    - A
