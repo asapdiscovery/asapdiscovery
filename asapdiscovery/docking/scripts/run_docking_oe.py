@@ -80,6 +80,7 @@ def load_dus(file_base, by_compound=False):
     """
 
     if os.path.isdir(file_base):
+        print(f"Using {file_base} as directory")
         all_fns = [
             os.path.join(file_base, fn)
             for _, _, files in os.walk(file_base)
@@ -87,14 +88,16 @@ def load_dus(file_base, by_compound=False):
             if fn[-4:] == "oedu"
         ]
     elif os.path.isfile(file_base) and by_compound:
+        print(f"Using {file_base} as file")
         df = pandas.read_csv(file_base)
         all_fns = [
             os.path.join(os.path.dirname(fn), "predocked.oedu")
             for fn in df["Docked_File"]
         ]
     else:
+        print(f"Using {file_base} as glob")
         all_fns = glob(file_base)
-
+    assert len(all_fns) > 0, f"No files found at {file_base}."
     du_dict = {}
     dataset_dict = {}
     if by_compound:
