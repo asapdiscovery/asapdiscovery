@@ -336,11 +336,12 @@ def main():
             "Need to specify exactly one of --exp_file or --lig_file."
         )
     n_mols = len(mols)
-    print(f"{n_mols} molecules found")
-
     ## Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
+    print(f"{n_mols} molecules found")
     print(f"{len(du_dict.keys())} receptor structures found")
+    assert n_mols > 0
+    assert len(du_dict.keys()) > 0
 
     ## Load sort indices if given
     if args.sort_res:
