@@ -14,6 +14,7 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 from asapdiscovery.data.openeye import load_openeye_sdf, load_openeye_sdfs
+from asapdiscovery.dataviz.plotting_molecules import display_openeye_ligand
 
 ################################################################################
 def get_args():
@@ -33,6 +34,13 @@ def get_args():
         "--ref_mol",
         help="Reference molecule to be aligned to. If blank, first molecule in sdf file is used",
     )
+    parser.add_argument(
+        "--do_not_align",
+        action="store_true",
+        default=False,
+        help="If flag is passed, script will skip the "
+        "mcss-based alignment and just write out the positions in the sdf file.",
+    )
 
     return parser.parse_args()
 
@@ -47,25 +55,31 @@ def main():
 
     for mol in mols:
         ## Prepare mcss
-        mcss = oechem.OEMCSSearch(oechem.OEMCSType_Approximate)
-        atomexpr = oechem.OEExprOpts_DefaultAtoms
-        bondexpr = oechem.OEExprOpts_DefaultBonds
-        mcss.Init(ref, atomexpr, bondexpr)
-        mcss.SetMCSFunc(oechem.OEMCSMaxBondsCompleteCycles())
+        if not args.do_not_align:
+            out_fn = f"{os.path.join(args.output_dir, mol.GetTitle())}_aligned.png".replace(
+                " ", "_"
+            )
+            ## this code is mostly taken from the mcsalign2d.py example from openeye
+            ## <https://docs.eyesopen.com/toolkits/python/depicttk/examples_summary_mcsalign2D.html>
+            mcss = oechem.OEMCSSearch(oechem.OEMCSType_Approximate)
+            atomexpr = oechem.OEExprOpts_DefaultAtoms
+            bondexpr = oechem.OEExprOpts_DefaultBonds
+            mcss.Init(ref, atomexpr, bondexpr)
+            mcss.SetMCSFunc(oechem.OEMCSMaxBondsCompleteCycles())
 
-        ## Prepare openeye aligned depiction
-        alignres = oedepict.OEPrepareAlignedDepiction(mol, mcss)
+            ## Prepare openeye aligned depiction
+            alignres = oedepict.OEPrepareAlignedDepiction(mol, mcss)
 
-        ## Write out image
-        if alignres.IsValid():
+            ## Write out image
+            if alignres.IsValid():
+                display_openeye_ligand(mol, out_fn=out_fn, aligned=True)
+        else:
             out_fn = (
                 f"{os.path.join(args.output_dir, mol.GetTitle())}.png".replace(
                     " ", "_"
                 )
             )
-            disp = oedepict.OE2DMolDisplay(mol)
-            clearbackground = False
-            oedepict.OERenderMolecule(out_fn, disp, clearbackground)
+            display_openeye_ligand(mol, out_fn=out_fn)
 
 
 if __name__ == "__main__":
