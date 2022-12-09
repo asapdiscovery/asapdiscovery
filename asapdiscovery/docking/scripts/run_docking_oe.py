@@ -104,6 +104,7 @@ def load_dus(file_base, by_compound=False):
         re_pat = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
     else:
         re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
+    print(f"Loading {len(all_fns)} design units")
     for fn in all_fns:
         m = re.search(re_pat, fn)
         if m is None:
@@ -122,7 +123,7 @@ def load_dus(file_base, by_compound=False):
             dataset_dict[dataset].append(full_name)
         except KeyError:
             dataset_dict[dataset] = [full_name]
-
+    print(f"{len(du_dict.keys())} design units loaded")
     return dataset_dict, du_dict
 
 
