@@ -336,9 +336,11 @@ def main():
             "Need to specify exactly one of --exp_file or --lig_file."
         )
     n_mols = len(mols)
+    print(f"{n_mols} molecules found")
 
     ## Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
+    print(f"{len(du_dict.keys())} receptor structures found")
 
     ## Load sort indices if given
     if args.sort_res:
@@ -376,7 +378,6 @@ def main():
         ## Arbitrary sort index, same for each ligand
         sort_idxs = [list(range(len(xtal_ids)))] * n_mols
         args.top_n = len(xtal_ids)
-
     mp_args = []
     for i, m in enumerate(mols):
         dock_dus = []
