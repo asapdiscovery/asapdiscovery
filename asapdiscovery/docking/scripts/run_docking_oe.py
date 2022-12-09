@@ -418,6 +418,11 @@ def main():
         "SMILES",
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+    print(
+        f"CPUs: {mp.cpu_count()}\n"
+        f"N Processes: {mp_args}\n"
+        f"N Cores: {args.num_cores}"
+    )
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         results_df = pool.starmap(mp_func, mp_args)
