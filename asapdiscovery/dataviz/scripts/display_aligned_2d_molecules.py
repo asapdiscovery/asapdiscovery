@@ -1,5 +1,9 @@
 """
 The goal of this function is to take an SDF file of molecules, align them in 2D, and display them
+Example Usage:
+python display_aligned_2d_molecules.py
+    -s ~/asap-datasets/amines_to_dock_small.sdf
+    -o ~/asap-datasets/test_ligand_visualization
 
 """
 import os, sys, argparse
@@ -10,7 +14,6 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 from asapdiscovery.data.openeye import load_openeye_sdf, load_openeye_sdfs
-from asapdiscovery.dataviz.plotting_molecules import write_openeye_ligand
 
 ################################################################################
 def get_args():
