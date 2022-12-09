@@ -846,16 +846,17 @@ def main():
 
         run_id_fn = os.path.join(args.model_o, "run_id")
 
+        ## Get project name
+        if args.proj:
+            project_name = args.proj
+        else:
+            project_name = f"train-{args.model}"
+
         ## Load run_id to resume run
         if args.cont:
             run_id = open(run_id_fn).read().strip()
-            wandb.init(id=run_id, resume="must")
+            wandb.init(project=project_name, id=run_id, resume="must")
         else:
-            ## Get project name
-            if args.proj:
-                project_name = args.proj
-            else:
-                project_name = f"train-{args.model}"
             run_id = wandb_init(
                 project_name,
                 args.name,
