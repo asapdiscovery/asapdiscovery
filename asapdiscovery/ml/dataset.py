@@ -202,6 +202,146 @@ class DockedDataset(Dataset):
             yield (s["compound"], s)
 
 
+class GroupedDockedDataset(Dataset):
+    """
+    Version of DockedDataset where data is grouped by compound_id, so all poses
+    for a given compound can be accessed at a time.
+    """
+
+    def __init__(
+        self,
+        str_fns,
+        compounds,
+        ignore_h=True,
+        lig_resn="LIG",
+        extra_dict=None,
+        num_workers=1,
+    ):
+        """
+        Parameters
+        ----------
+        str_fns : list[str]
+            List of paths for the PDB files. Should correspond 1:1 with the
+            names in compounds
+        compounds : list[tuple[str]]
+            List of (crystal structure, ligand compound id)
+        ignore_h : bool, default=True
+            Whether to remove hydrogens from the loaded structure
+        lig_resn : str, default='LIG'
+            The residue name for the ligand molecules in the PDB files. Used to
+            identify which atoms belong to the ligand
+        extra_dict : dict[str, dict], optional
+            Extra information to add to each structure. Keys should be
+            compounds, and dicts can be anything as long as they don't have the
+            keys ["z", "pos", "lig", "compound"]
+        num_workers : int, default=1
+            Number of cores to use to load structures
+        """
+        import numpy as np
+
+        super(GroupedDockedDataset, self).__init__()
+
+        ## Function to extract from extra_dict (just to make the list
+        ##  comprehension look a bit nicer)
+        get_extra = lambda compound: (
+            extra_dict[compound]
+            if (extra_dict and (compound in extra_dict))
+            else None
+        )
+        mp_args = [
+            (fn, compound, ignore_h, lig_resn, get_extra(compound))
+            for i, (fn, compound) in enumerate(zip(str_fns, compounds))
+        ]
+
+        if num_workers > 1:
+            import multiprocessing as mp
+
+            n_procs = min(num_workers, mp.cpu_count(), len(mp_args))
+            with mp.Pool(n_procs) as pool:
+                all_structures = pool.starmap(
+                    DockedDataset._load_structure, mp_args
+                )
+        else:
+            all_structures = [
+                DockedDataset._load_structure(*args) for args in mp_args
+            ]
+
+        self.compound_ids = []
+        self.structures = {}
+        for i, ((_, compound_id), struct) in enumerate(
+            zip(compounds, all_structures)
+        ):
+            try:
+                self.structures[compound_id].append(struct)
+            except KeyError:
+                self.structures[compound_id] = [struct]
+            self.compound_ids.append(compound_id)
+        self.compound_ids = np.asarray(self.compound_ids)
+
+    def __len__(self):
+        return len(self.compound_ids)
+
+    def __getitem__(self, idx):
+        """
+        Parameters
+        ----------
+        idx : int, str, list[str/int], tensor[str/int]
+            Index into dataset. Can either be a numerical index into the
+            compound ids or the compound id itself, or a
+            list/torch.tensor/numpy.ndarray of either of those types.
+
+        Returns
+        -------
+        List[str]
+            List of compound_id for found groups
+        List[List[Dict]]
+            List of groups (lists) of dict representation of structures
+        """
+        import torch
+
+        ## Extract idx from inside the tensor object
+        if torch.is_tensor(idx):
+            try:
+                idx = idx.item()
+            except ValueError:
+                idx = idx.tolist()
+
+        ## Figure out the type of the index, and keep note of whether a list was
+        ##  passed in or not
+        if (type(idx) is int) or (type(idx) is str):
+            return_list = False
+            idx_type = type(idx)
+            idx = [idx]
+        elif (type(idx[0]) is int) or (type(idx[0]) is str):
+            return_list = True
+            idx_type = type(idx[0])
+        else:
+            try:
+                err_type = type(idx[0])
+            except TypeError:
+                err_type = type(idx)
+            raise TypeError(f"Unknown indexing type {err_type}")
+
+        ## If idx is integral, assume it is indexing the structures list,
+        ##  otherwise assume it's giving structure name
+        if idx_type is int:
+            compound_id_list = self.compound_ids[idx]
+        else:
+            compound_id_list = idx
+
+        str_list = [
+            self.structures[compound_id] for compound_id in compound_id_list
+        ]
+        if return_list:
+            return compound_id_list, str_list
+        else:
+            return compound_id_list[0], str_list[0]
+
+    def __iter__(self):
+        for compound_id in self.compound_ids:
+            yield compound_id, self.structures[compound_id]
+
+
 class GraphDataset(Dataset):
     """
     Class for loading SMILES as graphs.
