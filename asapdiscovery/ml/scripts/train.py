@@ -825,7 +825,7 @@ def init(args, rank=False):
 
         ## Check and parse comb readout
         try:
-            pred_readout = args.comb_r.lower()
+            comb_readout = args.comb_r.lower()
             if comb_readout == "pic50":
                 comb_readout = mtenn.model.PIC50Readout()
             else:
