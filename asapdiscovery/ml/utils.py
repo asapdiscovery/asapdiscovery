@@ -339,7 +339,11 @@ def train(
         optimizer.zero_grad()
         batch_loss = None
         start_time = time()
-        for (_, compound_id), pose in ds_train:
+        for compound, pose in ds_train:
+            if type(compound) is tuple:
+                compound_id = compound[1]
+            else:
+                compound_id = compound
             tmp_pose = {}
             for k, v in pose.items():
                 try:
@@ -392,7 +396,11 @@ def train(
 
         with torch.no_grad():
             tmp_loss = []
-            for (_, compound_id), pose in ds_val:
+            for compound, pose in ds_val:
+                if type(compound) is tuple:
+                    compound_id = compound[1]
+                else:
+                    compound_id = compound
                 tmp_pose = {}
                 for k, v in pose.items():
                     try:
@@ -417,7 +425,11 @@ def train(
             epoch_val_loss = np.mean(tmp_loss)
 
             tmp_loss = []
-            for (_, compound_id), pose in ds_test:
+            for compound, pose in ds_test:
+                if type(compound) is tuple:
+                    compound_id = compound[1]
+                else:
+                    compound_id = compound
                 tmp_pose = {}
                 for k, v in pose.items():
                     try:
