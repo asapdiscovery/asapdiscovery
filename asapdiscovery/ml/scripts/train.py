@@ -335,9 +335,16 @@ def make_wandb_table(ds_split):
         columns=["crystal", "compound_id", "molecule", "smiles", "pIC50"]
     )
     ## Build table and add each molecule
-    for (xtal_id, compound_id), d in ds_split:
+    for compound, d in ds_split:
+        if type(compound) is tuple:
+            xtal_id, compound_id = compound
+            tmp_d = d
+        else:
+            xtal_id = ""
+            compound_id = compound
+            tmp_d = d[0]
         try:
-            smiles = d["smiles"]
+            smiles = tmp_d["smiles"]
             mol = MolFromSmiles(smiles)
             Compute2DCoords(mol)
             GenerateDepictionMatching2DStructure(mol, mol)
@@ -346,11 +353,11 @@ def make_wandb_table(ds_split):
             smiles = ""
             mol = None
         try:
-            pic50 = d["pic50"].item()
+            pic50 = tmp_d["pic50"].item()
         except KeyError:
             pic50 = np.nan
         except AttributeError:
-            pic50 = d["pic50"]
+            pic50 = tmp_d["pic50"]
         table.add_data(xtal_id, compound_id, mol, smiles, pic50)
 
     return table
