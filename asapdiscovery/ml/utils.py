@@ -318,7 +318,7 @@ def train(
         test_loss = []
 
     ## Send model to desired device if it's not there already
-    model.to(device)
+    model = model.to(device)
 
     ## Set up optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters(), lr)
@@ -344,13 +344,7 @@ def train(
                 compound_id = compound[1]
             else:
                 compound_id = compound
-            tmp_pose = {}
-            for k, v in pose.items():
-                try:
-                    tmp_pose[k] = v.to(device)
-                except AttributeError:
-                    tmp_pose[k] = v
-            pred = model_call(model, tmp_pose)
+            pred = model_call(model, pose)
 
             # convert to float to match other types
             target = torch.tensor(
@@ -401,13 +395,7 @@ def train(
                     compound_id = compound[1]
                 else:
                     compound_id = compound
-                tmp_pose = {}
-                for k, v in pose.items():
-                    try:
-                        tmp_pose[k] = v.to(device)
-                    except AttributeError:
-                        tmp_pose[k] = v
-                pred = model_call(model, tmp_pose)
+                pred = model_call(model, pose)
 
                 # convert to float to match other types
                 target = torch.tensor(
@@ -430,13 +418,7 @@ def train(
                     compound_id = compound[1]
                 else:
                     compound_id = compound
-                tmp_pose = {}
-                for k, v in pose.items():
-                    try:
-                        tmp_pose[k] = v.to(device)
-                    except AttributeError:
-                        tmp_pose[k] = v
-                pred = model_call(model, tmp_pose)
+                pred = model_call(model, pose)
 
                 # convert to float to match other types
                 target = torch.tensor(

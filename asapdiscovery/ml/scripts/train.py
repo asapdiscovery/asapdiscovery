@@ -819,6 +819,7 @@ def init(args, rank=False):
             combination=combination,
             pred_readout=pred_readout,
             comb_readout=comb_readout,
+            fix_device=True,
         )
 
         exp_configure.update(
