@@ -469,7 +469,7 @@ def get_args():
     parser.add_argument(
         "-b", "--batch_size", type=int, default=1, help="Training batch size."
     )
-    parse.add_argument(
+    parser.add_argument(
         "--grouped",
         action="store_true",
         help="Group poses for the same compound into one prediction.",
@@ -663,22 +663,37 @@ def init(args, rank=False):
 
     ## Split dataset into train/val/test (80/10/10 split)
     # use fixed seed for reproducibility
-    ds_train, ds_val, ds_test = split_molecules(
-        ds, [0.8, 0.1, 0.1], torch.Generator().manual_seed(42)
-    )
+    if args.grouped:
+        n_train = int(len(ds) * 0.8)
+        n_val = int(len(ds) * 0.1)
+        n_test = len(ds) - n_train - n_val
+        ds_train, ds_val, ds_test = torch.utils.data.random_split(
+            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+        )
+        print(
+            (
+                f"{n_train} training molecules, {n_val} validation molecules, "
+                f"{n_test} testing molecules"
+            ),
+            flush=True,
+        )
+    else:
+        ds_train, ds_val, ds_test = split_molecules(
+            ds, [0.8, 0.1, 0.1], torch.Generator().manual_seed(42)
+        )
 
-    train_compound_ids = {c[1] for c, _ in ds_train}
-    val_compound_ids = {c[1] for c, _ in ds_val}
-    test_compound_ids = {c[1] for c, _ in ds_test}
-    print(
-        f"{len(ds_train)} training samples",
-        f"({len(train_compound_ids)}) molecules,",
-        f"{len(ds_val)} validation samples",
-        f"({len(val_compound_ids)}) molecules,",
-        f"{len(ds_test)} test samples",
-        f"({len(test_compound_ids)}) molecules",
-        flush=True,
-    )
+        train_compound_ids = {c[1] for c, _ in ds_train}
+        val_compound_ids = {c[1] for c, _ in ds_val}
+        test_compound_ids = {c[1] for c, _ in ds_test}
+        print(
+            f"{len(ds_train)} training samples",
+            f"({len(train_compound_ids)}) molecules,",
+            f"{len(ds_val)} validation samples",
+            f"({len(val_compound_ids)}) molecules,",
+            f"{len(ds_test)} test samples",
+            f"({len(test_compound_ids)}) molecules",
+            flush=True,
+        )
 
     ## Build the model
     if args.model == "e3nn":
@@ -821,6 +836,7 @@ def init(args, rank=False):
             comb_readout=comb_readout,
             fix_device=True,
         )
+        model_call = lambda model, d: model(d)
 
         exp_configure.update(
             {
