@@ -31,7 +31,11 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
+from asapdiscovery.ml.dataset import (
+    DockedDataset,
+    GroupedDockedDataset,
+    GraphDataset,
+)
 from asapdiscovery.ml import (
     E3NNBind,
     GAT,
@@ -49,6 +53,7 @@ from asapdiscovery.ml.utils import (
 )
 
 import mtenn.conversion_utils
+import mtenn.model
 
 
 def add_one_hot_encodings(ds):
@@ -186,7 +191,6 @@ def build_model_e3nn(
     num_neighbors,
     num_nodes,
     node_attr=False,
-    dg=False,
     neighbor_dist=5.0,
     irreps_hidden=None,
 ):
@@ -206,15 +210,13 @@ def build_model_e3nn(
         the model
     node_attr : bool, default=False
         Whether the inputs will include node attributes (ligand labels)
-    dg : bool, default=False
-        Whether to use E3NNBind model (True) or regular e3nn network (False)
     neighbor_dist : float, default=5.0
         Distance cutoff for nodes to be considered neighbors
 
     Returns
     -------
-    e3nn.nn.models.gate_points_2101.Network
-        e3nn/E3NNBind model created from input parameters
+    mtenn.conversion_utils.e3nn.E3NN
+        e3nn model created from input parameters
     """
 
     ## Set up default hidden irreps if none specified
@@ -248,18 +250,11 @@ def build_model_e3nn(
         "reduce_output": True,
     }
 
-    if dg:
-        strategy = "delta"
-    else:
-        strategy = "concat"
-
-    return mtenn.conversion_utils.E3NN.get_model(
-        model_kwargs=model_kwargs, strategy=strategy
-    )
+    return mtenn.conversion_utils.E3NN(model_kwargs=model_kwargs)
 
 
 def build_model_schnet(
-    qm9=None, dg=False, qm9_target=10, remove_atomref=False, neighbor_dist=5.0
+    qm9=None, qm9_target=10, remove_atomref=False, neighbor_dist=5.0
 ):
     """
     Build appropriate SchNet model.
@@ -268,8 +263,6 @@ def build_model_schnet(
     ----------
     qm9 : str, optional
         Path to QM9 dataset, if starting with a QM9-pretrained model
-    dg : bool, default=False
-        Whether to use SchNetBind model (True) or regular SchNet model (False)
     qm9_target : int, default=10
         Which QM9 target to use. Must be in the range of [0, 11]
     remove_atomref : bool, default=False
@@ -280,17 +273,13 @@ def build_model_schnet(
 
     Returns
     -------
-    torch_geometric.nn.SchNet
-        SchNet/SchNetBind model created from input parameters
+    mtenn.conversion_utils.SchNet
+        MTENN SchNet model created from input parameters
     """
 
     ## Load pretrained model if requested, otherwise create a new SchNet
-    if dg:
-        strategy = "delta"
-    else:
-        strategy = "concat"
     if qm9 is None:
-        model = mtenn.conversion_utils.SchNet.get_model(strategy=strategy)
+        model = mtenn.conversion_utils.SchNet()
     else:
         qm9_dataset = QM9(qm9)
 
@@ -325,9 +314,7 @@ def build_model_schnet(
 
         model = SchNet(*model_params)
         model.load_state_dict(wts)
-        model = mtenn.conversion_utils.SchNet.get_model(
-            model=model, strategy=strategy
-        )
+        model = mtenn.conversion_utils.SchNet(model)
 
     ## Set interatomic cutoff (default of 10) to make the graph smaller
     model.cutoff = neighbor_dist
@@ -434,12 +421,7 @@ def get_args():
     parser.add_argument(
         "-lig",
         action="store_true",
-        help="Whether to treat the ligand and protein atoms separately.",
-    )
-    parser.add_argument(
-        "-dg",
-        action="store_true",
-        help="Whether to predict pIC50 directly or via dG prediction.",
+        help="Whether to add e3nn node attributes for ligand atoms.",
     )
     parser.add_argument(
         "-rm_atomref",
@@ -487,6 +469,11 @@ def get_args():
     parser.add_argument(
         "-b", "--batch_size", type=int, default=1, help="Training batch size."
     )
+    parse.add_argument(
+        "--grouped",
+        action="store_true",
+        help="Group poses for the same compound into one prediction.",
+    )
 
     ## WandB arguments
     parser.add_argument(
@@ -502,6 +489,31 @@ def get_args():
             "Any extra config options to log to WandB. Can provide any "
             "number of comma-separated key-value pairs "
             "(eg --extra_config key1,val1 key2,val2 key3,val3)."
+        ),
+    )
+
+    ## MTENN arguments
+    parser.add_argument(
+        "-strat",
+        default="delta",
+        help="Which strategy to use for combining model predictions.",
+    )
+    parser.add_argument(
+        "-comb",
+        help=(
+            "Which combination method to use for combining grouped "
+            "predictions. Only used if --grouped is set, and must be provided "
+            "in that case."
+        ),
+    )
+    parser.add_argument(
+        "-pred_r", help="Readout method to use for energy predictions."
+    )
+    parser.add_argument(
+        "-comb_r",
+        help=(
+            "Readout method to use for combination output. Only used if "
+            "--grouped is set."
         ),
     )
 
@@ -678,11 +690,10 @@ def init(args, rank=False):
             100,
             *model_params[1:],
             node_attr=args.lig,
-            dg=args.dg,
             neighbor_dist=args.n_dist,
             irreps_hidden=args.irr,
         )
-        model_call = lambda model, d: model(d)
+        get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
 
         ## Add lig labels as node attributes if requested
         if args.lig:
@@ -703,24 +714,21 @@ def init(args, rank=False):
             "num_neighbors": model_params[1],
             "num_nodes": model_params[2],
             "lig": args.lig,
-            "dg": args.dg,
             "neighbor_dist": args.n_dist,
             "irreps_hidden": args.irr,
         }
     elif args.model == "schnet":
         model = build_model_schnet(
             args.qm9,
-            args.dg,
             args.qm9_target,
             args.rm_atomref,
             neighbor_dist=args.n_dist,
         )
-        model_call = lambda model, d: model(d)
+        get_model = mtenn.conversion_utils.schnet.SchNet.get_model
 
         ## Experiment configuration
         exp_configure = {
             "model": "schnet",
-            "dg": args.dg,
             "qm9": args.qm9,
             "qm9_target": args.qm9_target,
             "rm_atomref": args.rm_atomref,
@@ -748,8 +756,71 @@ def init(args, rank=False):
             "test_examples": len(ds_test),
             "batch_size": args.batch_size,
             "device": args.device,
+            "grouped": args.grouped,
         }
     )
+
+    ## MTENN setup
+    if (args.model == "e3nn") or (args.model == "schnet"):
+        strategy = args.strat.lower()
+
+        ## Check and parse combination
+        try:
+            combination = args.comb.lower()
+            if combination == "mean":
+                combination = mtenn.model.MeanCombination()
+            elif combination == "boltzmann":
+                combination = mtenn.model.BoltzmannCombination()
+            else:
+                raise ValueError(f"Uknown value for -comb: {args.comb}")
+        except AttributeError:
+            ## This will be triggered if combination is left blank
+            ##  (None.lower() => AttributeError)
+            if args.grouped:
+                raise ValueError(
+                    f"A value must be provided for -comb if --grouped is set."
+                )
+            combination = None
+
+        ## Check and parse pred readout
+        try:
+            pred_readout = args.pred_r.lower()
+            if pred_readout == "pic50":
+                pred_readout = mtenn.model.PIC50Readout()
+            else:
+                raise ValueError(f"Uknown value for -pred_r: {args.pred_r}")
+        except AttributeError:
+            pred_readout = None
+
+        ## Check and parse comb readout
+        try:
+            pred_readout = args.comb_r.lower()
+            if comb_readout == "pic50":
+                comb_readout = mtenn.model.PIC50Readout()
+            else:
+                raise ValueError(f"Uknown value for -comb_r: {args.comb_r}")
+        except AttributeError:
+            comb_readout = None
+
+        ## Use previously built model to construct mtenn.model.Model
+        model = get_model(
+            model=model,
+            grouped=args.grouped,
+            strategy=strategy,
+            combination=combination,
+            pred_readout=pred_readout,
+            comb_readout=comb_readout,
+        )
+
+        exp_configure.update(
+            {
+                "mtenn:strategy": strategy,
+                "mtenn:combination": combination,
+                "mtenn:pred_readout": pred_readout,
+                "mtenn:comb_readout": comb_readout,
+            }
+        )
+
     return (
         exp_data,
         ds_train,
@@ -849,7 +920,10 @@ def main():
         ## Load run_id to resume run
         if args.cont:
             run_id = open(run_id_fn).read().strip()
-            wandb.init(id=run_id, resume="must")
+            run = wandb.init(id=run_id, resume="must")
+            run.config["wts_fn"] = exp_configure["wts_fn"]
+            run.config["continue"] = True
+            run.update()
         else:
             ## Get project name
             if args.proj:
