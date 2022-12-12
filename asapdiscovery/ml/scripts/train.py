@@ -637,13 +637,22 @@ def init(args, rank=False):
         }
 
         ## Load the dataset
-        ds = DockedDataset(
-            all_fns,
-            compounds,
-            lig_resn=args.n,
-            extra_dict=extra_dict,
-            num_workers=args.w,
-        )
+        if args.grouped:
+            ds = GroupedDockedDataset(
+                all_fns,
+                compounds,
+                lig_resn=args.n,
+                extra_dict=extra_dict,
+                num_workers=args.w,
+            )
+        else:
+            ds = DockedDataset(
+                all_fns,
+                compounds,
+                lig_resn=args.n,
+                extra_dict=extra_dict,
+                num_workers=args.w,
+            )
 
         if args.cache:
             ## Cache dataset
