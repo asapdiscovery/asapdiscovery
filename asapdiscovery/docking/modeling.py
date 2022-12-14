@@ -1,6 +1,6 @@
 from openeye import oechem, oedocking, oespruce
 
-from asapdiscovery.data.utils import (
+from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     split_openeye_mol,
@@ -573,3 +573,46 @@ def build_dimer_from_monomer(prot):
 
     print(all_chain_ids)
     return prot
+
+
+def remove_extra_ligands(mol, lig_chain=None):
+    """
+    Remove extra ligands from a molecule. Useful in the case where a complex
+    crystal structure has two copies of the ligand, but we only want one. If
+    `lig_chain` is not specified, we'll automatically select the first chain
+    (as sorted alphabetically) to be the copy to keep.
+
+    Creates a copy of the input molecule, so input molecule is not modified.
+
+    Parameters
+    ----------
+    mol : oechem.OEMolBase
+        Complex molecule.
+    lig_chain : str, optional
+        Ligand chain ID to keep.
+
+    Returns
+    -------
+    oechem.OEMolBase
+        Molecule with extra ligand copies removed.
+    """
+    ## Atom filter to match all atoms in residue with name LIG
+    all_lig_match = oechem.OEAtomMatchResidueID()
+    all_lig_match.SetName("LIG")
+    all_lig_filter = oechem.OEAtomMatchResidue(all_lig_match)
+
+    ## Detect ligand chain to keep if none is given
+    if lig_chain is None:
+        lig_chain = sorted(
+            {
+                oechem.OEAtomGetResidue(a).GetExtChainID()
+                for a in mol.GetAtoms(all_lig_filter)
+            }
+        )[0]
+
+    ## Copy molecule and delete all lig atoms that don't have the desired chain
+    mol_copy = mol.CreateCopy()
+    for a in mol_copy.GetAtoms(all_lig_filter):
+        if oechem.OEAtomGetResidue(a).GetExtChainID() != lig_chain:
+            mol_copy.DeleteAtom(a)
+    return mol_copy
