@@ -4,9 +4,9 @@ docking results to their corresponding reference structures.
 
 Example Usage
     python calculate_RMSD_of_docked_ligands.py
-        -sdf ~/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221202/combined.sdf
-        -o ~/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221202
-        -r ~/asap-datasets/full_frag_prepped_mpro_12_2022/*/prepped_receptor.pdb'
+        -sdf /data/chodera/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221208/combined.sdf
+        -o /data/chodera/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221208
+        -r '/data/chodera/asap-datasets/full_frag_prepped_mpro_12_2022/*/prepped_receptor_0.pdb'
 """
 import argparse
 from glob import glob
@@ -123,7 +123,7 @@ def main():
             print(f"Skipping missing reference structure: {compound_id}")
 
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+    print(f"Running {len(mp_args)} RMSD calculations over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         rmsds = pool.starmap(calculate_rmsd_openeye, mp_args)
     df = pd.DataFrame(
