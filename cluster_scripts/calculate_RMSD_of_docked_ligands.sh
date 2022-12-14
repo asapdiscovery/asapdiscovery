@@ -8,7 +8,7 @@
 #BSUB -W 1:00
 source ~/.bashrc
 conda activate mers-docking
-python calculate_RMSD_of_docked_ligands.py \
+python ~/covid-moonshot-ml/docking/scripts/calculate_RMSD_of_docked_ligands.py \
 -sdf /data/chodera/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221208/combined.sdf \
 -o /data/chodera/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221208 \
 -r '/data/chodera/asap-datasets/full_frag_prepped_mpro_12_2022/*/prepped_receptor_0.pdb' \
