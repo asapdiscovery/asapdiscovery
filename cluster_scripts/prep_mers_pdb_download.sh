@@ -3,12 +3,12 @@
 #BSUB -W 1:00
 
 # Set output file
-#BSUB -o  %J.out
+#BSUB -o  log_files/prep_mers_pdb_download.out
 
-#BSUB -J "prep_proteins"
+#BSUB -J prep_mers_pdb_download
 
 # Set error file
-#BSUB -e %J.stderr
+#BSUB -e log_files/prep_mers_pdb_download.stderr
 
 # Specify node group
 #BSUB -q cpuqueue
@@ -19,11 +19,20 @@
 
 source ~/.bashrc
 conda activate mers-docking
-python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
+#python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
+#-d /data/chodera/asap-datasets/mers_pdb_download \
+#-p ../data/mers-structures-dimers.yaml \
+#-r ~/fragalysis/extra_files/reference.pdb \
+#-l ~/rcsb_spruce.loop_db \
+#-o /data/chodera/asap-datasets/mers_prepped_structures \
+#-s ../data/mpro_mers_seqres.yaml \
+#--protein_only
+
+python prep_proteins.py -n 10 \
 -d /data/chodera/asap-datasets/mers_pdb_download \
--p ../data/mers-structures-dimers.yaml \
--r ~/fragalysis/extra_files/reference.pdb \
--l ~/rcsb_spruce.loop_db \
--o /data/chodera/asap-datasets/mers_prepped_structures \
--s ../data/mpro_mers_seqres.yaml \
+-p ../../../metadata/mers-structures-dimers.yaml \
+-r /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
+-l /data/chodera/asap-datasets/rcsb_spruce.loop_db \
+-o /data/chodera/asap-datasets/mers_fauxalysis/mers_prepped_structures_dimers_only \
+-s ../../../metadata/mpro_mers_seqres.yaml \
 --protein_only

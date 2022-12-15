@@ -4,12 +4,12 @@ This was designed to be able to be used for either molecules from the PDB or fro
 
 Example Usage:
     python prep_proteins.py \
-    -d /data/chodera/asap-datasets/mers_pdb_download \
-    -p ../data/mers-structures-dimers.yaml \
-    -r ~/fragalysis/extra_files/reference.pdb \
-    -l ~/rcsb_spruce.loop_db \
-    -o /data/chodera/asap-datasets/mers_prepped_structures \
-    -s ../data/mpro_mers_seqres.yaml \
+    -d /Users/alexpayne/lilac-mount-point/asap-datasets/mers_pdb_download \
+    -p ../../../metadata/mers-structures-dimers.yaml \
+    -r /Users/alexpayne/lilac-mount-point/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
+    -l /Users/alexpayne/lilac-mount-point/asap-datasets/rcsb_spruce.loop_db \
+    -o /Users/alexpayne/lilac-mount-point/asap-datasets/mers_fauxalysis/mers_prepped_structures_dimers_only \
+    -s ../../../metadata/mpro_mers_seqres.yaml \
     --protein_only
 """
 import argparse
@@ -274,6 +274,7 @@ def main():
                 xtal.active_site = f"His:41: :{xtal.chain}"
 
     elif args.pdb_yaml_path:
+        ## First, get list of pdbs from yaml file
         pdb_dict = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
         pdb_list = list(pdb_dict.keys())
         pdb.download_PDBs(pdb_list, args.structure_dir)
@@ -294,6 +295,8 @@ def main():
                 os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb")
             )
         ]
+    else:
+        raise NotImplementedError("Crystal CSV or PDB yaml file needed")
 
     if args.seqres_yaml:
         with open(args.seqres_yaml) as f:
