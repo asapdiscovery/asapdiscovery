@@ -173,7 +173,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_methods = [""]
         chemgauss_scores = [-1.0]
         clash = -1
-        smiles = ["None"]
+        smiles = "None"
 
     results = [
         (
