@@ -255,6 +255,17 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
 
 
 def save_receptor_grid(du_fn, out_fn):
+    """
+    Load in a design unit from a file and write out the receptor grid as a .ccp4 grid file.
+    Parameters
+    ----------
+    du_fn
+    out_fn: Works with a .ccp4 extension
+
+    Returns
+    -------
+
+    """
     du = oechem.OEDesignUnit()
     oechem.OEReadDesignUnit(du_fn, du)
     # oedocking.OEMakeReceptor(du)
@@ -262,3 +273,28 @@ def save_receptor_grid(du_fn, out_fn):
         out_fn,
         oegrid.OEScalarGrid(du.GetReceptor().GetNegativeImageGrid()),
     )
+
+
+def openeye_copy_pdb_data(
+    destination: oechem.OEGraphMol, source: oechem.OEGraphMol, tag: str
+):
+    """
+    Copy over the PDB data from one object to another. Tag examples include "SEQRES"
+
+    Parameters
+    ----------
+    destination: oechem.OEGraphMol
+    source: oechem.OEGraphMol
+    tag: str
+
+    Returns
+    -------
+
+    """
+    ## first, delete data with that tag
+    oechem.OEDeletePDBData(destination, tag)
+
+    ## now, add over all the data with the tag
+    for data_pair in oechem.OEGetPDBDataPairs(source):
+        if data_pair.GetTag() == tag:
+            oechem.OEAddPDBData(destination, data_pair)
