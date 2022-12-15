@@ -49,6 +49,27 @@ def save_openeye_sdf(mol, sdf_fn):
     ofs.close()
 
 
+def save_openeye_sdfs(mols, sdf_fn):
+    """
+    Parameters
+    ----------
+    mols: list of OEGraphMol
+    sdf_fn: str
+        SDF file path
+    """
+    ofs = oechem.oemolostream()
+    ofs.SetFlavor(
+        oechem.OEFormat_SDF,
+        oechem.OEOFlavor_SDF_Default,
+    )
+    if ofs.open(sdf_fn):
+        for mol in mols:
+            oechem.OEWriteMolecule(ofs, mol)
+        ofs.close()
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
+
+
 def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     """
     Split an OpenEye-loaded molecule into protein, ligand, etc.

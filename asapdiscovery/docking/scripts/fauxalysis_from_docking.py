@@ -17,7 +17,7 @@ repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
 from asapdiscovery.docking.analysis import DockingResults
-from asapdiscovery.data.utils import (
+from asapdiscovery.data.openeye import (
     load_openeye_sdf,
     save_openeye_pdb,
     save_openeye_sdf,
