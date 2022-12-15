@@ -128,7 +128,7 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
     exp_compounds = ExperimentalCompoundDataUpdate(
         **json.load(open(fn, "r"))
     ).compounds
-    exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
+    exp_compounds = [c for c in exp_compounds if ((not achiral) or c.achiral)]
 
     exp_dict = {
         c.compound_id: c.experimental_data
@@ -665,7 +665,7 @@ def init(args, rank=False):
             ## Cache dataset
             pkl.dump(ds, open(args.cache, "wb"))
 
-    num_kept = len(compounds)
+    num_kept = len(ds)
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
     ## Split dataset into train/val/test (80/10/10 split)
