@@ -148,7 +148,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_probs = []
         posit_methods = []
         chemgauss_scores = []
-        smiles = []
+
         for conf in posed_mol.GetConfs():
             rmsds.append(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD"))
@@ -164,7 +164,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
                     oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4")
                 )
             )
-            smiles.append(oechem.OEGetSDData(posed_mol, f"SMILES"))
+        smiles = oechem.OEGetSDData(conf, f"SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
     else:
         out_fn = ""
@@ -173,7 +173,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_methods = [""]
         chemgauss_scores = [-1.0]
         clash = -1
-        smiles = ["None"]
+        smiles = "None"
 
     results = [
         (
@@ -186,10 +186,10 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
             method,
             chemgauss,
             clash,
-            smi,
+            smiles,
         )
-        for i, (rmsd, prob, method, chemgauss, smi) in enumerate(
-            zip(rmsds, posit_probs, posit_methods, chemgauss_scores, smiles)
+        for i, (rmsd, prob, method, chemgauss) in enumerate(
+            zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
         )
     ]
 
