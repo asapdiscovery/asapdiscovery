@@ -119,6 +119,49 @@ def find_most_recent(model_wts):
     return (epoch_use, f"{model_wts}/{epoch_use}.th")
 
 
+def load_weights(model, wts_fn):
+    """
+    Load weights for an MTENN model, initializing internal layers as necessary.
+
+    Parameters
+    ----------
+    model: mtenn.Model
+        Model to load weights into
+    wts_fn: str
+        Weights file to load from
+
+    Returns
+    -------
+    mtenn.Model
+        Model with loaded weights
+    """
+    import torch
+
+    ## Load weights
+    wts_dict = torch.load(wts_fn)
+
+    ## Initialize linear module in ConcatStrategy
+    if "strategy.reduce_nn.weight" in wts_dict:
+        model.strategy.reduce_nn = torch.nn.Linear(
+            wts_dict["strategy.reduce_nn.weight"].shape[1],
+            wts_dict["strategy.reduce_nn.weight"].shape[0],
+        )
+
+    loaded_params = set(wts_dict.keys())
+    model_params = set(model.state_dict().keys())
+    print("extra parameters:", loaded_params - model_params)
+    print("missing parameters:", model_params - loaded_params)
+
+    ## Get rid of extra params
+    for p in loaded_params - model_params:
+        del wts_dict[p]
+
+    ## Load model parameters
+    model.load_state_dict(wts_dict)
+
+    return model
+
+
 def plot_loss(train_loss, val_loss, test_loss, out_fn):
     """
     Plot loss for train, val, and test sets.

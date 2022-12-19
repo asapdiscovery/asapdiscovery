@@ -47,6 +47,7 @@ from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.ml.utils import (
     calc_e3nn_model_info,
     find_most_recent,
+    load_weights,
     plot_loss,
     split_molecules,
     train,
@@ -881,7 +882,7 @@ def main():
     ## Load model weights as necessary
     if args.cont:
         start_epoch, wts_fn = find_most_recent(args.model_o)
-        model.load_state_dict(torch.load(wts_fn))
+        model = load_weights(model, wts_fn)
 
         ## Update experiment configuration
         exp_configure.update({"wts_fn": wts_fn})
