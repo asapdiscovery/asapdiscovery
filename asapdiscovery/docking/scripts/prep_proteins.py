@@ -243,6 +243,12 @@ def get_args():
         default=False,
         help="If true, generate design units with only the protein in them",
     )
+    parser.add_argument(
+        "--include_non_Pseries",
+        default=False,
+        action="store_true",
+        help="If true, the p_only flag of parse_xtal will be set to False. Default is False, which sets p_only to True",
+    )
 
     ## Performance arguments
     parser.add_argument(
@@ -260,7 +266,10 @@ def main():
     args = get_args()
 
     if args.xtal_csv:
-        xtal_compounds = parse_xtal(args.xtal_csv, args.structure_dir)
+        p_only = False if args.include_non_Pseries else True
+        xtal_compounds = parse_xtal(
+            args.xtal_csv, args.structure_dir, p_only=p_only
+        )
 
         for xtal in xtal_compounds:
             ## Get chain
