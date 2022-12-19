@@ -3,7 +3,7 @@ Function to test implementation of protein-prep functions
 Example Usage:
 python test-mpro-fragalysis-seqres-addition.py
     -i /Users/alexpayne/lilac-mount-point/asap-datasets/mpro_fragalysis_2022_10_12/aligned/Mpro-P3054_0A/Mpro-P3054_0A_bound.pdb
-    -o /Users/alexpayne/lilac-mount-point/asap-datasets/test_protein_prep/Mpro-P3054_0A_bound_test.pdb
+    -o /Users/alexpayne/lilac-mount-point/asap-datasets/test_protein_prep/
     -s /Users/alexpayne/Scientific_Projects/covid-moonshot-ml/metadata/mpro_sars2_seqres.yaml
 """
 

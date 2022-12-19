@@ -38,7 +38,11 @@ from asapdiscovery.docking.modeling import (
 )
 from asapdiscovery.data import pdb
 from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
-from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
+from asapdiscovery.data.openeye import (
+    save_openeye_pdb,
+    load_openeye_pdb,
+    openeye_copy_pdb_data,
+)
 from asapdiscovery.data.fragalysis import parse_xtal
 
 
@@ -175,6 +179,7 @@ def prep_mp(
 
         ## Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
+        openeye_copy_pdb_data(complex_mol, initial_prot, "SEQRES")
         save_openeye_pdb(
             complex_mol, os.path.join(out_dir, f"prepped_receptor_{i}.pdb")
         )
