@@ -275,7 +275,7 @@ class GroupedDockedDataset(Dataset):
                 self.structures[compound_id].append(struct)
             except KeyError:
                 self.structures[compound_id] = [struct]
-            self.compound_ids.append(compound_id)
+                self.compound_ids.append(compound_id)
         self.compound_ids = np.asarray(self.compound_ids)
 
     def __len__(self):
