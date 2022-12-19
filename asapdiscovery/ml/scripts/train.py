@@ -949,20 +949,21 @@ def main():
         import wandb
 
         run_id_fn = os.path.join(args.model_o, "run_id")
+        if args.proj:
+            project_name = args.proj
+        else:
+            project_name = f"train-{args.model}"
 
         ## Load run_id to resume run
         if args.cont:
             run_id = open(run_id_fn).read().strip()
-            run = wandb.init(id=run_id, resume="must")
-            run.config["wts_fn"] = exp_configure["wts_fn"]
-            run.config["continue"] = True
-            run.update()
+            run = wandb.init(project=project_name, id=run_id, resume="must")
+            wandb.config.update(
+                {"wts_fn": exp_configure["wts_fn"], "continue": True},
+                allow_val_change=True,
+            )
         else:
             ## Get project name
-            if args.proj:
-                project_name = args.proj
-            else:
-                project_name = f"train-{args.model}"
             run_id = wandb_init(
                 project_name,
                 args.name,
