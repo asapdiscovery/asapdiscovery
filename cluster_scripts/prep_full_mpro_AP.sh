@@ -15,6 +15,7 @@ python /data/chodera/paynea/covid-moonshot-ml/asapdiscovery/docking/scripts/prep
 -o /data/chodera/asap-datasets/full_frag_prepped_mpro_20221219/ \
 -l /data/chocera/asap-datasets/rcsb_spruce.loop_db \
 -n 32 \
--s /data/chodera/paynea/covid-moonshot-ml/metadata/mpro_sars2_seqres.yaml
+-s /data/chodera/paynea/covid-moonshot-ml/metadata/mpro_sars2_seqres.yaml \
+--include_non_Pseries
 echo date
 echo done
