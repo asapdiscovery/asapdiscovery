@@ -92,7 +92,8 @@ def parse_xtal(x_fn, x_dir, p_only=True):
         for r in df.loc[idx, ["SMILES", "Dataset", "Compound ID"]].iterrows()
     ]
 
-    ## Add structure filename information
+    ## Add structure filename information and filter if not found
+    filtered_xtal_dicts = []
     for d in xtal_dicts:
         fn_base = f'{x_dir}/{d["dataset"]}_0{{}}/{d["dataset"]}_0{{}}_{{}}.pdb'
         for suf in ["seqres", "bound"]:
@@ -103,9 +104,15 @@ def parse_xtal(x_fn, x_dir, p_only=True):
                     break
             if os.path.isfile(fn):
                 break
-        assert os.path.isfile(fn), f'No structure found for {d["dataset"]}.'
-
+        if os.path.isfile(fn):
+            filtered_xtal_dicts.append(d)
+        else:
+            print(f'No structure found for {d["dataset"]}.')
+    assert (
+        len(filtered_xtal_dicts) > 0
+    ), "No structure filenames were found by parse_xtal"
     ## Build CrystalCompoundData objects for each row
-    xtal_compounds = [CrystalCompoundData(**d) for d in xtal_dicts]
+    print(f"Loading {len(filtered_xtal_dicts)} structures")
+    xtal_compounds = [CrystalCompoundData(**d) for d in filtered_xtal_dicts]
 
     return xtal_compounds
