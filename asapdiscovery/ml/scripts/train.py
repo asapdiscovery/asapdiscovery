@@ -955,6 +955,12 @@ def main():
         else:
             project_name = f"train-{args.model}"
 
+        ## Get project name
+        if args.proj:
+            project_name = args.proj
+        else:
+            project_name = f"train-{args.model}"
+
         ## Load run_id to resume run
         if args.cont:
             run_id = open(run_id_fn).read().strip()
