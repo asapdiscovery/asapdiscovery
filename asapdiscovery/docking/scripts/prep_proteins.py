@@ -99,7 +99,9 @@ def prep_mp(
     ## Make output directory
     os.makedirs(out_dir, exist_ok=True)
 
-    logging.basicConfig(filename=out_dir, level=logging.DEBUG)
+    logging.basicConfig(
+        filename=os.path.join(out_dir, "log.txt"), level=logging.DEBUG
+    )
     logging.info(datetime.datetime.isoformat(datetime.datetime.now()))
     logging.info(f"Prepping {xtal.output_name}")
 
