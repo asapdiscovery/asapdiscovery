@@ -13,6 +13,7 @@ Example Usage:
     --protein_only
 """
 import argparse
+import datetime
 import multiprocessing as mp
 from openeye import oechem
 import os
@@ -20,6 +21,7 @@ import re
 import sys
 from tempfile import NamedTemporaryFile
 import yaml
+import logging
 
 sys.path.append(
     os.path.dirname(
@@ -97,9 +99,13 @@ def prep_mp(
     ## Make output directory
     os.makedirs(out_dir, exist_ok=True)
 
+    logging.basicConfig(filename=out_dir, level=logging.DEBUG)
+    logging.info(datetime.datetime.isoformat(datetime.datetime.now()))
+    logging.info(f"Prepping {xtal.output_name}")
+
     ## Option to add SEQRES header
     if seqres:
-        print("Editing PDB file")
+        logging.info("Editing PDB file")
         ## Get a list of 3-letter codes for the sequence
         res_list = seqres_to_res_list(seqres)
 
@@ -127,7 +133,7 @@ def prep_mp(
         mutate = False
 
     if mutate:
-        print("Mutating to provided seqres")
+        logging.info("Mutating to provided seqres")
         ## Mutate the residues to match the residue list
         initial_prot = mutate_residues(
             initial_prot, res_list, xtal.protein_chains
@@ -139,7 +145,7 @@ def prep_mp(
     )
 
     if ref_prot:
-        print("Aligning receptor")
+        logging.info("Aligning receptor")
         initial_prot = align_receptor(
             initial_complex=initial_prot,
             ref_prot=ref_prot,
@@ -151,7 +157,7 @@ def prep_mp(
         save_openeye_pdb(initial_prot, "align_test.pdb")
     ## Take the first returned DU and save it
     try:
-        print("Attempting to prepare design units")
+        logging.info("Attempting to prepare design units")
         site_residue = xtal.active_site if xtal.active_site else ""
         design_units = prep_receptor(
             initial_prot,
@@ -160,7 +166,7 @@ def prep_mp(
             protein_only=protein_only,
         )
     except IndexError as e:
-        print(
+        logging.error(
             "DU generation failed for",
             f"{xtal.output_name}",
             flush=True,
@@ -169,7 +175,7 @@ def prep_mp(
 
     du = design_units[0]
     for i, du in enumerate(design_units):
-        print(
+        logging.info(
             f"{xtal.output_name}",
             oechem.OEWriteDesignUnit(
                 os.path.join(out_dir, f"prepped_receptor_{i}.oedu"), du
