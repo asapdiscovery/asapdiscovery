@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #BSUB -J prep_full_mpro_AP
 #BSUB -R span[hosts=1]
@@ -8,6 +7,7 @@
 #BSUB -R rusage[mem=4]
 #BSUB -W 24:00
 mkdir -p /data/chodera/asap-datasets/full_frag_prepped_mpro_20221219/
+source ~/.bashrc
 conda activate mers-docking
 python /data/chodera/paynea/covid-moonshot-ml/asapdiscovery/docking/scripts/prep_proteins.py \
 -d /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/aligned/ \

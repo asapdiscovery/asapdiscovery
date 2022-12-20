@@ -5,7 +5,7 @@
 #BSUB -n 32
 #BSUB -q cpuqueue
 #BSUB -R rusage[mem=4]
-#BSUB -W 1:00
+#BSUB -W 24:00
 source ~/.bashrc
 conda activate mers-docking
 python ~/covid-moonshot-ml/asapdiscovery/docking/scripts/calculate_RMSD_of_docked_ligands.py \
