@@ -193,6 +193,9 @@ def prep_mp(
         save_openeye_pdb(
             complex_mol, os.path.join(out_dir, f"prepped_receptor_{i}.pdb")
         )
+    logging.info(
+        f"Finished protein prep at {datetime.datetime.isoformat(datetime.datetime.now())}"
+    )
 
 
 ################################################################################
