@@ -119,6 +119,49 @@ def find_most_recent(model_wts):
     return (epoch_use, f"{model_wts}/{epoch_use}.th")
 
 
+def load_weights(model, wts_fn):
+    """
+    Load weights for an MTENN model, initializing internal layers as necessary.
+
+    Parameters
+    ----------
+    model: mtenn.Model
+        Model to load weights into
+    wts_fn: str
+        Weights file to load from
+
+    Returns
+    -------
+    mtenn.Model
+        Model with loaded weights
+    """
+    import torch
+
+    ## Load weights
+    wts_dict = torch.load(wts_fn)
+
+    ## Initialize linear module in ConcatStrategy
+    if "strategy.reduce_nn.weight" in wts_dict:
+        model.strategy.reduce_nn = torch.nn.Linear(
+            wts_dict["strategy.reduce_nn.weight"].shape[1],
+            wts_dict["strategy.reduce_nn.weight"].shape[0],
+        )
+
+    loaded_params = set(wts_dict.keys())
+    model_params = set(model.state_dict().keys())
+    print("extra parameters:", loaded_params - model_params)
+    print("missing parameters:", model_params - loaded_params)
+
+    ## Get rid of extra params
+    for p in loaded_params - model_params:
+        del wts_dict[p]
+
+    ## Load model parameters
+    model.load_state_dict(wts_dict)
+
+    return model
+
+
 def plot_loss(train_loss, val_loss, test_loss, out_fn):
     """
     Plot loss for train, val, and test sets.
@@ -318,7 +361,7 @@ def train(
         test_loss = []
 
     ## Send model to desired device if it's not there already
-    model.to(device)
+    model = model.to(device)
 
     ## Set up optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters(), lr)
@@ -339,14 +382,12 @@ def train(
         optimizer.zero_grad()
         batch_loss = None
         start_time = time()
-        for (_, compound_id), pose in ds_train:
-            tmp_pose = {}
-            for k, v in pose.items():
-                try:
-                    tmp_pose[k] = v.to(device)
-                except AttributeError:
-                    tmp_pose[k] = v
-            pred = model_call(model, tmp_pose)
+        for compound, pose in ds_train:
+            if type(compound) is tuple:
+                compound_id = compound[1]
+            else:
+                compound_id = compound
+            pred = model_call(model, pose)
 
             # convert to float to match other types
             target = torch.tensor(
@@ -392,14 +433,12 @@ def train(
 
         with torch.no_grad():
             tmp_loss = []
-            for (_, compound_id), pose in ds_val:
-                tmp_pose = {}
-                for k, v in pose.items():
-                    try:
-                        tmp_pose[k] = v.to(device)
-                    except AttributeError:
-                        tmp_pose[k] = v
-                pred = model_call(model, tmp_pose)
+            for compound, pose in ds_val:
+                if type(compound) is tuple:
+                    compound_id = compound[1]
+                else:
+                    compound_id = compound
+                pred = model_call(model, pose)
 
                 # convert to float to match other types
                 target = torch.tensor(
@@ -417,14 +456,12 @@ def train(
             epoch_val_loss = np.mean(tmp_loss)
 
             tmp_loss = []
-            for (_, compound_id), pose in ds_test:
-                tmp_pose = {}
-                for k, v in pose.items():
-                    try:
-                        tmp_pose[k] = v.to(device)
-                    except AttributeError:
-                        tmp_pose[k] = v
-                pred = model_call(model, tmp_pose)
+            for compound, pose in ds_test:
+                if type(compound) is tuple:
+                    compound_id = compound[1]
+                else:
+                    compound_id = compound
+                pred = model_call(model, pose)
 
                 # convert to float to match other types
                 target = torch.tensor(

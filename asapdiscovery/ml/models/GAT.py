@@ -13,6 +13,9 @@ class GAT(torch.nn.Module):
         self.readout = torch.nn.Linear(self.gnn.hidden_feats[-1], 1)
 
     def forward(self, g, feats):
+        device = next(self.parameters()).device
+        g = g.to(device)
+        feats = feats.to(device)
         node_preds = self.gnn(g, feats)
         node_preds = self.readout(node_preds)
         return node_preds.sum(dim=0)
