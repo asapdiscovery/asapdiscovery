@@ -102,6 +102,146 @@ def add_lig_labels(ds):
     return ds
 
 
+def build_dataset(args, rank=False):
+    ## Get all docked structures
+    if os.path.isdir(args.i):
+        all_fns = glob(f"{args.i}/*complex.pdb")
+    else:
+        all_fns = glob(args.i)
+    ## Extract crystal structure and compound id from file name
+    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
+    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+
+    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
+    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
+    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
+    compounds = [
+        (xtal_m.group(), compound_m.group())
+        for xtal_m, compound_m, both_m in zip(
+            xtal_matches, compound_matches, idx
+        )
+        if both_m
+    ]
+    num_found = len(compounds)
+    ## Dictionary mapping from compound_id to Mpro dataset(s)
+    compound_id_dict = {}
+    for xtal_structure, compound_id in compounds:
+        try:
+            compound_id_dict[compound_id].append(xtal_structure)
+        except KeyError:
+            compound_id_dict[compound_id] = [xtal_structure]
+
+    if rank:
+        exp_data = None
+    elif args.model == "2d":
+        ## Load the experimental compounds
+        exp_data, exp_compounds = load_exp_data(
+            args.exp, achiral=args.achiral, return_compounds=True
+        )
+
+        ## Get compounds that have both structure and experimental data (this
+        ##  step isn't actually necessary for performance, but allows a more
+        ##  fair comparison between 2D and 3D models)
+        xtal_compound_ids = {c[1] for c in compounds}
+        ## Filter exp_compounds to make sure we have structures for them
+        exp_compounds = [
+            c for c in exp_compounds if c.compound_id in xtal_compound_ids
+        ]
+
+        ## Make cache directory as necessary
+        if args.cache is None:
+            cache_dir = os.path.join(args.model_o, ".cache")
+        else:
+            cache_dir = args.cache
+        os.makedirs(cache_dir, exist_ok=True)
+
+        ## Build the dataset
+        ds = GraphDataset(
+            exp_compounds,
+            node_featurizer=CanonicalAtomFeaturizer(),
+            cache_file=os.path.join(cache_dir, "graph.bin"),
+        )
+
+        print(next(iter(ds)), flush=True)
+
+        ## Rename exp_compounds so the number kept is consistent
+        compounds = exp_compounds
+    elif args.cache and os.path.isfile(args.cache):
+        ## Load from cache
+        ds = pkl.load(open(args.cache, "rb"))
+        print("Loaded from cache", flush=True)
+
+        ## Still need to load the experimental affinities
+        exp_data, exp_compounds = load_exp_data(
+            args.exp, achiral=args.achiral, return_compounds=True
+        )
+    else:
+        ## Load the experimental affinities
+        exp_data, exp_compounds = load_exp_data(
+            args.exp, achiral=args.achiral, return_compounds=True
+        )
+
+        ## Make dict to access smiles data
+        smiles_dict = {}
+        for c in exp_compounds:
+            if c.compound_id not in compound_id_dict:
+                continue
+            for xtal_structure in compound_id_dict[c.compound_id]:
+                smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
+
+        ## Make dict to access experimental compound data
+        exp_data_dict = {}
+        for compound_id, d in exp_data.items():
+            if compound_id not in compound_id_dict:
+                continue
+            for xtal_structure in compound_id_dict[compound_id]:
+                exp_data_dict[(xtal_structure, compound_id)] = d
+
+        ## Trim docked structures and filenames to remove compounds that don't have
+        ##  experimental data
+        all_fns, compounds = zip(
+            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
+        )
+
+        ## Build extra info dict
+        extra_dict = {
+            compound: {
+                "smiles": smiles,
+                "pIC50": exp_data_dict[compound]["pIC50"],
+                "pIC50_range": exp_data_dict[compound]["pIC50_range"],
+                "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
+            }
+            for compound, smiles in smiles_dict.items()
+        }
+
+        ## Load the dataset
+        if args.grouped:
+            ds = GroupedDockedDataset(
+                all_fns,
+                compounds,
+                lig_resn=args.n,
+                extra_dict=extra_dict,
+                num_workers=args.w,
+            )
+        else:
+            ds = DockedDataset(
+                all_fns,
+                compounds,
+                lig_resn=args.n,
+                extra_dict=extra_dict,
+                num_workers=args.w,
+            )
+
+        if args.cache:
+            ## Cache dataset
+            pkl.dump(ds, open(args.cache, "wb"))
+
+    num_kept = len(ds)
+    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
+
+    return ds
+
+
 def load_exp_data(fn, achiral=False, return_compounds=False):
     """
     Load all experimental data from JSON file of
@@ -533,141 +673,8 @@ def init(args, rank=False):
     Initialization steps that are common to all analyses.
     """
 
-    ## Get all docked structures
-    if os.path.isdir(args.i):
-        all_fns = glob(f"{args.i}/*complex.pdb")
-    else:
-        all_fns = glob(args.i)
-    ## Extract crystal structure and compound id from file name
-    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
-    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
-
-    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
-    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
-    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
-    compounds = [
-        (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(
-            xtal_matches, compound_matches, idx
-        )
-        if both_m
-    ]
-    num_found = len(compounds)
-    ## Dictionary mapping from compound_id to Mpro dataset(s)
-    compound_id_dict = {}
-    for xtal_structure, compound_id in compounds:
-        try:
-            compound_id_dict[compound_id].append(xtal_structure)
-        except KeyError:
-            compound_id_dict[compound_id] = [xtal_structure]
-
-    if rank:
-        exp_data = None
-    elif args.model == "2d":
-        ## Load the experimental compounds
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-
-        ## Get compounds that have both structure and experimental data (this
-        ##  step isn't actually necessary for performance, but allows a more
-        ##  fair comparison between 2D and 3D models)
-        xtal_compound_ids = {c[1] for c in compounds}
-        ## Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [
-            c for c in exp_compounds if c.compound_id in xtal_compound_ids
-        ]
-
-        ## Make cache directory as necessary
-        if args.cache is None:
-            cache_dir = os.path.join(args.model_o, ".cache")
-        else:
-            cache_dir = args.cache
-        os.makedirs(cache_dir, exist_ok=True)
-
-        ## Build the dataset
-        ds = GraphDataset(
-            exp_compounds,
-            node_featurizer=CanonicalAtomFeaturizer(),
-            cache_file=os.path.join(cache_dir, "graph.bin"),
-        )
-
-        print(next(iter(ds)), flush=True)
-
-        ## Rename exp_compounds so the number kept is consistent
-        compounds = exp_compounds
-    elif args.cache and os.path.isfile(args.cache):
-        ## Load from cache
-        ds = pkl.load(open(args.cache, "rb"))
-        print("Loaded from cache", flush=True)
-
-        ## Still need to load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-    else:
-        ## Load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-
-        ## Make dict to access smiles data
-        smiles_dict = {}
-        for c in exp_compounds:
-            if c.compound_id not in compound_id_dict:
-                continue
-            for xtal_structure in compound_id_dict[c.compound_id]:
-                smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
-
-        ## Make dict to access experimental compound data
-        exp_data_dict = {}
-        for compound_id, d in exp_data.items():
-            if compound_id not in compound_id_dict:
-                continue
-            for xtal_structure in compound_id_dict[compound_id]:
-                exp_data_dict[(xtal_structure, compound_id)] = d
-
-        ## Trim docked structures and filenames to remove compounds that don't have
-        ##  experimental data
-        all_fns, compounds = zip(
-            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
-        )
-
-        ## Build extra info dict
-        extra_dict = {
-            compound: {
-                "smiles": smiles,
-                "pIC50": exp_data_dict[compound]["pIC50"],
-                "pIC50_range": exp_data_dict[compound]["pIC50_range"],
-                "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
-            }
-            for compound, smiles in smiles_dict.items()
-        }
-
-        ## Load the dataset
-        if args.grouped:
-            ds = GroupedDockedDataset(
-                all_fns,
-                compounds,
-                lig_resn=args.n,
-                extra_dict=extra_dict,
-                num_workers=args.w,
-            )
-        else:
-            ds = DockedDataset(
-                all_fns,
-                compounds,
-                lig_resn=args.n,
-                extra_dict=extra_dict,
-                num_workers=args.w,
-            )
-
-        if args.cache:
-            ## Cache dataset
-            pkl.dump(ds, open(args.cache, "wb"))
-
-    num_kept = len(ds)
-    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
+    ## Load full dataset
+    ds = build_dataset(args, rank)
 
     ## Split dataset into train/val/test (80/10/10 split)
     # use fixed seed for reproducibility
