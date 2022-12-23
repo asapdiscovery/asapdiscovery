@@ -242,6 +242,84 @@ def build_dataset(args, rank=False):
     return ds
 
 
+def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
+    """
+    Split a dataset into train, val, and test splits. A warning will be raised
+    if fractions don't add to 1.
+
+    Parameters
+    ----------
+    ds: torch.Dataset
+        Dataset object to split
+    grouped: bool
+        If data objects should be grouped by compound_id
+    train_frac: float, default=0.8
+        Fraction of dataset to put in the train split
+    val_frac: float, default=0.1
+        Fraction of dataset to put in the val split
+    test_frac: float, default=0.1
+        Fraction of dataset to put in the test split
+
+    Returns
+    -------
+    torch.Dataset
+        Train split
+    torch.Dataset
+        Val split
+    torch.Dataset
+        Test split
+    """
+    ## Check that fractions add to 1
+    if sum(train_frac, val_frac, test_frac) != 1:
+        from warnings import warn
+
+        warn(
+            (
+                "Split fraction add to "
+                f"{sum(train_frac, val_frac, test_frac):0.2f}, not 1"
+            ),
+            RuntimeWarning,
+        )
+
+    ## Split dataset into train/val/test (80/10/10 split)
+    # use fixed seed for reproducibility
+    if grouped:
+        n_train = int(len(ds) * train_frac)
+        n_val = int(len(ds) * val_frac)
+        n_test = len(ds) - n_train - n_val
+        ds_train, ds_val, ds_test = torch.utils.data.random_split(
+            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+        )
+        print(
+            (
+                f"{n_train} training molecules, {n_val} validation molecules, "
+                f"{n_test} testing molecules"
+            ),
+            flush=True,
+        )
+    else:
+        ds_train, ds_val, ds_test = split_molecules(
+            ds,
+            [train_frac, val_frac, test_frac],
+            torch.Generator().manual_seed(42),
+        )
+
+        train_compound_ids = {c[1] for c, _ in ds_train}
+        val_compound_ids = {c[1] for c, _ in ds_val}
+        test_compound_ids = {c[1] for c, _ in ds_test}
+        print(
+            f"{len(ds_train)} training samples",
+            f"({len(train_compound_ids)}) molecules,",
+            f"{len(ds_val)} validation samples",
+            f"({len(val_compound_ids)}) molecules,",
+            f"{len(ds_test)} test samples",
+            f"({len(test_compound_ids)}) molecules",
+            flush=True,
+        )
+
+    return ds_train, ds_val, ds_test
+
+
 def load_exp_data(fn, achiral=False, return_compounds=False):
     """
     Load all experimental data from JSON file of
@@ -675,40 +753,7 @@ def init(args, rank=False):
 
     ## Load full dataset
     ds = build_dataset(args, rank)
-
-    ## Split dataset into train/val/test (80/10/10 split)
-    # use fixed seed for reproducibility
-    if args.grouped:
-        n_train = int(len(ds) * 0.8)
-        n_val = int(len(ds) * 0.1)
-        n_test = len(ds) - n_train - n_val
-        ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
-        )
-        print(
-            (
-                f"{n_train} training molecules, {n_val} validation molecules, "
-                f"{n_test} testing molecules"
-            ),
-            flush=True,
-        )
-    else:
-        ds_train, ds_val, ds_test = split_molecules(
-            ds, [0.8, 0.1, 0.1], torch.Generator().manual_seed(42)
-        )
-
-        train_compound_ids = {c[1] for c, _ in ds_train}
-        val_compound_ids = {c[1] for c, _ in ds_val}
-        test_compound_ids = {c[1] for c, _ in ds_test}
-        print(
-            f"{len(ds_train)} training samples",
-            f"({len(train_compound_ids)}) molecules,",
-            f"{len(ds_val)} validation samples",
-            f"({len(val_compound_ids)}) molecules,",
-            f"{len(ds_test)} test samples",
-            f"({len(test_compound_ids)}) molecules",
-            flush=True,
-        )
+    ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
     ## Build the model
     if args.model == "e3nn":
