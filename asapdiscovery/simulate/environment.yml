@@ -1,0 +1,14 @@
+name: asap-simulate
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - conda-forge/label/openmm_dev::openmm=8
+  - openmmforcefields
+  - pdbfixer
+  - mdtraj
+  - imageio
+  - pymol-open-source
+  - rich
+  - docopt
+
