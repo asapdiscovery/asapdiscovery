@@ -1,6 +1,11 @@
 """
 Script for a Weights & Biases hyperparameter sweep.
 """
+import argparse
+# from asapdiscovery.ml import MSELoss
+import multiprocessing as mp
+import wandb
+import yaml
 
 
 def build_model_2d(config=None):
@@ -18,6 +23,9 @@ def build_model_2d(config=None):
     asapdiscovery.ml.models.GAT
         GAT graph model
     """
+    from asapdiscovery.ml import GAT
+    from dgllife.utils import CanonicalAtomFeaturizer
+    import json
 
     if type(config) is str:
         config = json.load(open(config_fn))
@@ -38,7 +46,17 @@ def build_model_2d(config=None):
         residuals=[config["residual"]] * config["num_gnn_layers"],
     )
 
-    return model, config
+    return model
+
+
+def sweep_func():
+    wandb.init()
+    model = build_model_2d()
+    print(model, flush=True)
+
+
+def agent_wrap(sweep_id, function, project, count=1):
+    wandb.agent(sweep_id, function=function, project=project, count=count)
 
 
 ################################################################################
@@ -138,7 +156,41 @@ def get_args():
 
     return parser.parse_args()
 
+
 def main():
     args = get_args()
+    print(args.i, args.exp, args.model, flush=True)
 
-    ds = build_dataset(args)
+    # ## Load and split dataset
+    # ds = build_dataset(args)
+    # ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
+
+    # model = build_model_2d()
+    # model_call = lambda model, d: torch.reshape(
+    #     model(d["g"], d["g"].ndata["h"]), (-1, 1)
+    # )
+
+    # ## Update experiment configuration
+    # # exp_configure.update({"model": "GAT"})
+
+    # loss_func = MSELoss("step")
+
+    # config_fn = (
+    #     "/lila/data/chodera/kaminowb/moonshot_ml_dev/"
+    #     "pipeline_testing/test_config.yaml"
+    # )
+    # sweep_config = yaml.safe_load(open(config_fn, "rb"))
+    # print(sweep_config, flush=True)
+
+    # sweep_id = wandb.sweep(sweep_config, project="test-sweep")
+    # with mp.Pool(processes=5) as pool:
+    #     pool.starmap(
+    #         agent_wrap,
+    #         [(sweep_id, sweep_func, "test-sweep") for _ in range(5)],
+    #     )
+    wandb.init()
+    print(wandb.config, flush=True)
+
+
+if __name__ == "__main__":
+    main()
