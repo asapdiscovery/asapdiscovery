@@ -22,7 +22,7 @@ mamba create -n asap-simulate -f environment.yml
 
 Run a 1 ns simulation of a receptor:ligand complex:
 ```bash
-python simulate.py --receptor structures/Mpro-P2487_0B_bound-His41\(0\)-Cys145\(0\)-His163\(0\)-protein.pdb --ligand structures/Mpro-P2487_0B_bound-His41\(0\)-Cys145\(0\)-His163\(0\)-ligand.sdf --nsteps 250000 --selection "not water" --minimized minimized.pdb --xtctraj trajectory.xtc --final final.pdb
+python simulate.py --receptor "structures/Mpro-P1788_0A_bound-His41(+)-Cys145(-)-His163(+)-protein.pdb" --ligand "structures/Mpro-P1788_0A_bound-His41(+)-Cys145(-)-His163(+)-ligand.sdf" --nsteps 250000 --selection "not water" --minimized minimized.pdb --xtctraj trajectory.xtc --final final.pdb
 ```
 Generate an animated GIF from the trajectory:
 ```bash

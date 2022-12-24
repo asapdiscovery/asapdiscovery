@@ -19,7 +19,7 @@ log = logging.getLogger("rich")
 __doc__ = """Creates a light-weight animated GIF file from a set of simulation output files.
 
 Usage:
-  traj_to_gif.py --system=FILE --traj=FILE --gif=FILE [--pse] [--smooth=INT] [--contacts]
+  traj_to_gif.py --system=FILE --traj=FILE --gif=FILE [--pse] [--smooth=INT] [--contacts] [--interval=INT]
   traj_to_gif.py (-h | --help)
 
 Options:
@@ -30,6 +30,7 @@ Options:
   --pse               Write PyMol session (.pse) states to filename (for debugging)
   --smooth=INT        If specified, will smooth frames with the specified window
   --contacts          If specified, show contacts (requires show_contacts.py plugin)
+  --interval=INT      If specified, load frames with specified interval.
 """
 from docopt import docopt
 arguments = docopt(__doc__, version='simulate 0.1')
@@ -120,7 +121,10 @@ if arguments['--pse']:
 
 ## load trajectory; center the system in the simulation and smoothen between frames.
 log.info(':thinking_face:  Loading trajectory into PyMol...')
-cmd.load_traj(f"{arguments['--traj']}", object=complex_name, start=1)
+interval = 1
+if arguments['--interval']:
+    interval = arguments['--interval']
+cmd.load_traj(f"{arguments['--traj']}", object=complex_name, start=1, interval=interval)
 if arguments['--pse']:
     log.info(f":page_facing_up:  Writing PyMol ensemble to session_4_loaded_trajectory.pse...")
     cmd.save("session_4_loaded_trajectory.pse")
