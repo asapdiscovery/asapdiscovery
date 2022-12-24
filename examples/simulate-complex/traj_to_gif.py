@@ -39,12 +39,12 @@ arguments = docopt(__doc__, version='simulate 0.1')
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 view_coords = (\
-     0.383985907,    0.676508129,    0.628391743,\
-     0.267365783,   -0.732870340,    0.625607014,\
-     0.883769155,   -0.072211117,   -0.462298840,\
-     0.000457883,   -0.000074564,  -94.866157532,\
-    -6.947262764,   -1.080027819,  -22.212558746,\
-  -421.704925537,  611.407409668,  -20.000000000 )
+    -0.817061782,   -0.483965963,   -0.313349009,\
+     0.427320212,   -0.873188138,    0.234389409,\
+    -0.387048066,    0.057610676,    0.920257390,\
+     0.000000000,    0.000000000,  -58.474720001,\
+     8.358913422,    1.852121353,   23.119800568,\
+    26.430496216,   90.518905640,  -20.000000000 )
 ## set colorings of subpockets by resn. This may change over time.
 pocket_dict = { # SARS2
 "subP1" : "140-145+163+172",
@@ -133,7 +133,7 @@ log.info(':triangular_ruler:  Intrafitting simulation...')
 cmd.intra_fit("binding_site")
 if arguments['--smooth']:
     cmd.smooth('all', window=int(arguments['--smooth'])) # perform some smoothing of frames
-cmd.zoom('resn UNK') # zoom to ligand
+cmd.zoom('resn UNK', buffer=1) # zoom to ligand
 
 if arguments['--contacts']:
     from show_contacts import show_contacts
