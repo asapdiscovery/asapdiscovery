@@ -15,19 +15,21 @@ log = logging.getLogger("rich")
 
 # Use docopt for CLI handling
 # TODO: Once we refactor this to encapsulate behavior in functions (or classes) migrate to click: https://click.palletsprojects.com/en/8.1.x/
-# TODO: Refine --writesess (rename) - this should be a bool. Currently the filepath is not being used.
+# TODO: Refine --pse (rename) - this should be a bool. Currently the filepath is not being used.
 __doc__ = """Creates a light-weight animated GIF file from a set of simulation output files.
 
 Usage:
-  traj_to_gif.py --system=FILE --traj=FILE [--writesess=FILE]  
+  traj_to_gif.py --system=FILE --traj=FILE --gif=FILE [--pse] [--smooth=INT] [--contacts]
   traj_to_gif.py (-h | --help)
 
 Options:
   -h --help           Show this screen.
   --system=FILE       System PDB filename.
   --traj=FILE         Trajectory DCD filename.
-  --writesess=FILE    Write PyMol session states to filename (for debugging)
-
+  --gif=FILE          Animated GIF filename.
+  --pse               Write PyMol session (.pse) states to filename (for debugging)
+  --smooth=INT        If specified, will smooth frames with the specified window
+  --contacts          If specified, show contacts (requires show_contacts.py plugin)
 """
 from docopt import docopt
 arguments = docopt(__doc__, version='simulate 0.1')
@@ -71,21 +73,27 @@ color_dict = {
 ## load pdb file of interest. Currently needs minimized PDB. 
 from pymol import cmd
 log.info(':thinking_face:  Loading system into PyMol and applying aesthetics...')
-cmd.load(arguments['--system'])
+complex_name = 'complex'
+cmd.load(arguments['--system'], object=complex_name)
 
-if arguments['--writesess']:
+if arguments['--pse']:
     log.info(f":page_facing_up:  Writing PyMol ensemble to session_1_loaded_system.pse...")
     cmd.save("session_1_loaded_system.pse")
 
 # now select the residues, name them and color them.
 for subpocket_name, residues in pocket_dict.items():
-    cmd.select(subpocket_name,  f"{arguments['--system'].replace('.pdb','')} and resi {residues} and polymer.protein")
+    cmd.select(subpocket_name,  f"{complex_name} and resi {residues} and polymer.protein")
 
 for subpocket_name, color in color_dict.items():
     cmd.set("surface_color", color, f"({subpocket_name})")
-if arguments['--writesess']:
+if arguments['--pse']:
     log.info(f":page_facing_up:  Writing PyMol ensemble to session_2_colored_subpockets.pse...")
     cmd.save("session_2_colored_subpockets.pse")
+
+# Select ligand and receptor
+cmd.select('ligand', 'resn UNK')
+cmd.select('receptor', 'chain A or chain B') # TODO: Modify this to generalize to dimer
+cmd.select('binding_site', 'name CA within 7 of resn UNK') # automate selection of the binding site
 
 ## set a bunch of stuff for visualization
 cmd.set("bg_rgb", "white")
@@ -93,7 +101,8 @@ cmd.set("surface_color", "grey90")
 cmd.bg_color("white")
 cmd.hide("everything")
 cmd.show("cartoon")
-cmd.show("surface")
+cmd.show("surface", 'receptor')
+cmd.set('surface_mode', 3)
 cmd.set("cartoon_color", "grey")
 cmd.set("transparency", 0.3)
 
@@ -105,45 +114,63 @@ cmd.hide("sticks", "(elem C extend 1) and (elem H)")
 cmd.color("pink", "elem C and sele")
 
 cmd.set_view(view_coords)
-if arguments['--writesess']:
+if arguments['--pse']:
     log.info(f":page_facing_up:  Writing PyMol ensemble to session_3_set_ligand_view.pse...")
     cmd.save("session_3_set_ligand_view.pse")
 
 ## load trajectory; center the system in the simulation and smoothen between frames.
 log.info(':thinking_face:  Loading trajectory into PyMol...')
-cmd.load(f"{arguments['--traj']}")
-if arguments['--writesess']:
+cmd.load_traj(f"{arguments['--traj']}", object=complex_name, start=1)
+if arguments['--pse']:
     log.info(f":page_facing_up:  Writing PyMol ensemble to session_4_loaded_trajectory.pse...")
     cmd.save("session_4_loaded_trajectory.pse")
 
 log.info(':triangular_ruler:  Intrafitting simulation...')
-cmd.intra_fit("resn UNK")
-if arguments['--writesess']:
+cmd.intra_fit("binding_site")
+if arguments['--smooth']:
+    cmd.smooth('all', window=int(arguments['--smooth'])) # perform some smoothing of frames
+cmd.zoom('resn UNK') # zoom to ligand
+
+if arguments['--contacts']:
+    from show_contacts import show_contacts
+    #cmd.run('show_contacts.py')
+    show_contacts('ligand', 'receptor')
+
+if arguments['--pse']:
     log.info(f":page_facing_up:  Writing PyMol ensemble to session_5_intrafitted.pse...")
     cmd.save("session_5_intrafitted.pse")
 
-## now make the movie. 
-log.info(':camera_with_flash:  Rendering images for frames...')
-cmd.set("ray_trace_frames", 0) # ray tracing with surface representation is too expensive.
-cmd.set("cache_frames", 0)
-cmd.mclear()   # clears cache 
-cmd.mpng("mov")   # saves png of each frame as "mov001.png, mov002.png, .."
-# TODO: higher resolution on the pngs.
-# TODO: Find way to improve writing speed by e.g. removing atoms not in view. Currently takes ~80sec per .png
+# Process the trajectory in a temporary directory
+import tempfile
+with tempfile.TemporaryDirectory() as tmpdirname:
+    log.info(f':file_folder: Creating temporary directory {tmpdirname}')
 
-## use imagio to create a gif from the .png files generated by pymol
-import imageio.v2 as iio
-from glob import glob
-log.info(':videocassette:  Creating animated GIF from images...')
-png_files = glob("tmp_mov*.png")
-if len(png_files) == 0:
-    raise IOError("No tmp_mov*.png files found - did PyMol not generate any?")
+    ## now make the movie. 
+    log.info(':camera_with_flash:  Rendering images for frames...')
+    cmd.set("ray_trace_frames", 0) # ray tracing with surface representation is too expensive.
+    cmd.set("defer_builds_mode", 1) # this saves memory for large trajectories
+    cmd.set("cache_frames", 0)
+    cmd.set("max_threads", 4) # limit to 4 threads so PyMOL doesn't try to use too many threads
+    cmd.mclear()   # clears cache 
+    prefix = f"{tmpdirname}/frame"
+    cmd.mpng(prefix)   # saves png of each frame as "frame001.png, frame002.png, .."
+    # TODO: higher resolution on the pngs.
+    # TODO: Find way to improve writing speed by e.g. removing atoms not in view. Currently takes ~80sec per .png
+
+    ## use imagio to create a gif from the .png files generated by pymol
+    import imageio.v2 as iio
+    from glob import glob
+    gif_filename = arguments["--gif"]
+    log.info(f':videocassette:  Creating animated GIF {gif_filename} from images...')
+    png_files = glob(f"{prefix}*.png")
+    if len(png_files) == 0:
+        raise IOError(f"No {prefix}*.png files found - did PyMol not generate any?")
     
-with iio.get_writer('output_simulation.gif', mode='I') as writer:
-    for filename in png_files:
-        image = iio.imread(filename)
-        writer.append_data(image)
+    with iio.get_writer(gif_filename, mode='I') as writer:
+        for filename in png_files:
+            image = iio.imread(filename)
+            writer.append_data(image)
 
-## remove all .png files. Could consider setting argument to not remove these during debugging?
-import os
-[ os.remove(f) for f in glob("tmp_mov*.png") ]
+    ## remove all .png files. Could consider setting argument to not remove these during debugging?
+    #import os
+    #[ os.remove(f) for f in glob("frame*.png") ]

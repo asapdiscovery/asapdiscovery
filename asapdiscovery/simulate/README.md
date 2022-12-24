@@ -1,1 +1,0 @@
-[WIP] Scripts to run an OpenMM simulation on a ligand+protein, in this case an Mpro structure from `Fragalysis`. After simulation, use an automated PyMol script to create a visual representation of the trajectory and write out a portable animated GIF.
