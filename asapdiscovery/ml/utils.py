@@ -282,6 +282,7 @@ def train(
     test_loss=None,
     use_wandb=False,
     batch_size=1,
+    optimizer=None
 ):
     """
     Train a model.
@@ -330,6 +331,9 @@ def train(
         Log results with WandB
     batch_size : int, default=1
         Number of samples to predict on before performing backprop
+    optimizer : torch.optim.Optimizer, optional
+        Optimizer to use for model training. If not used, defaults to Adam
+        optimizer
 
     Returns
     -------
@@ -364,7 +368,8 @@ def train(
     model = model.to(device)
 
     ## Set up optimizer and loss function
-    optimizer = torch.optim.Adam(model.parameters(), lr)
+    if optimizer is None:
+        optimizer = torch.optim.Adam(model.parameters(), lr)
     if loss_fn is None:
         loss_fn = MSELoss()
 
