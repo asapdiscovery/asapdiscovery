@@ -138,6 +138,7 @@ def build_dataset(args, rank=False):
         exp_data, exp_compounds = load_exp_data(
             args.exp, achiral=args.achiral, return_compounds=True
         )
+        print("load", len(exp_compounds), flush=True)
 
         ## Get compounds that have both structure and experimental data (this
         ##  step isn't actually necessary for performance, but allows a more
@@ -147,6 +148,7 @@ def build_dataset(args, rank=False):
         exp_compounds = [
             c for c in exp_compounds if c.compound_id in xtal_compound_ids
         ]
+        print("filter", len(exp_compounds), flush=True)
 
         ## Make cache directory as necessary
         if args.cache is None:
@@ -239,7 +241,7 @@ def build_dataset(args, rank=False):
     num_kept = len(ds)
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
-    return ds
+    return ds, exp_data
 
 
 def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
@@ -270,13 +272,13 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
         Test split
     """
     ## Check that fractions add to 1
-    if sum(train_frac, val_frac, test_frac) != 1:
+    if sum([train_frac, val_frac, test_frac]) != 1:
         from warnings import warn
 
         warn(
             (
                 "Split fraction add to "
-                f"{sum(train_frac, val_frac, test_frac):0.2f}, not 1"
+                f"{sum([train_frac, val_frac, test_frac]):0.2f}, not 1"
             ),
             RuntimeWarning,
         )
@@ -752,7 +754,7 @@ def init(args, rank=False):
     """
 
     ## Load full dataset
-    ds = build_dataset(args, rank)
+    ds, exp_data = build_dataset(args, rank)
     ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
     ## Build the model
