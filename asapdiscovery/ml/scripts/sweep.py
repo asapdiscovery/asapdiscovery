@@ -3,6 +3,7 @@ Script for a Weights & Biases hyperparameter sweep.
 """
 import argparse
 
+import json
 import multiprocessing as mp
 import torch
 import wandb
@@ -11,6 +12,92 @@ import yaml
 from asapdiscovery.ml import MSELoss
 from asapdiscovery.ml.scripts.train import build_dataset, split_dataset
 from asapdiscovery.ml.utils import train
+
+
+def build_model(args):
+    """
+    Dispatch function for building the correct model and setting model_call
+    functions.
+
+    Parameters
+    ----------
+    args : dict
+        CLI arguments
+
+    Returns
+    -------
+    Union[asapdiscovery.ml.models.GAT, mtenn.model.Model]
+        Build model
+    """
+
+    ## Correct model name if needed
+    model = args.model.lower()
+    ## Get config
+    config = wandb.config
+
+    if model == "2d":
+        model = build_model_2d()
+        model_call = lambda model, d: torch.reshape(
+            model(d["g"], d["g"].ndata["h"]), (-1, 1)
+        )
+    elif model == "schnet":
+        import mtenn.conversion_utils
+        import mtenn.model
+
+        model = build_model_schnet()
+        strategy = args.strat.lower()
+
+        ## Check and parse combination
+        try:
+            combination = args.comb.lower()
+            if combination == "mean":
+                combination = mtenn.model.MeanCombination()
+            elif combination == "boltzmann":
+                combination = mtenn.model.BoltzmannCombination()
+            else:
+                raise ValueError(f"Uknown value for -comb: {args.comb}")
+        except AttributeError:
+            ## This will be triggered if combination is left blank
+            ##  (None.lower() => AttributeError)
+            if args.grouped:
+                raise ValueError(
+                    f"A value must be provided for -comb if --grouped is set."
+                )
+            combination = None
+
+        ## Check and parse pred readout
+        try:
+            pred_readout = args.pred_r.lower()
+            if pred_readout == "pic50":
+                pred_readout = mtenn.model.PIC50Readout()
+            else:
+                raise ValueError(f"Uknown value for -pred_r: {args.pred_r}")
+        except AttributeError:
+            pred_readout = None
+
+        ## Check and parse comb readout
+        try:
+            comb_readout = args.comb_r.lower()
+            if comb_readout == "pic50":
+                comb_readout = mtenn.model.PIC50Readout()
+            else:
+                raise ValueError(f"Uknown value for -comb_r: {args.comb_r}")
+        except AttributeError:
+            comb_readout = None
+
+        ## Use previously built model to construct mtenn.model.Model
+        model = mtenn.conversion_utils.schnet.SchNet.get_model(
+            model=model,
+            grouped=args.grouped,
+            strategy=strategy,
+            combination=combination,
+            pred_readout=pred_readout,
+            comb_readout=comb_readout,
+            fix_device=True,
+        )
+        model_call = lambda model, d: model(d)
+
+    return model, model_call
 
 
 def build_model_2d(config=None):
@@ -30,7 +117,6 @@ def build_model_2d(config=None):
     """
     from asapdiscovery.ml import GAT
     from dgllife.utils import CanonicalAtomFeaturizer
-    import json
 
     if type(config) is str:
         config = json.load(open(config_fn))
@@ -51,6 +137,51 @@ def build_model_2d(config=None):
         alphas=[config["alpha"]] * config["num_gnn_layers"],
         residuals=[config["residual"]] * config["num_gnn_layers"],
     )
+
+    return model
+
+
+def build_model_schnet(config=None):
+    """
+    Build appropriate SchNet model.
+
+    Parameters
+    ----------
+    config : Union[str, dict], optional
+        Either a dict or JSON file with model config options. If not passed,
+        `config` will be taken from `wandb`.
+
+    Returns
+    -------
+    mtenn.conversion_utils.SchNet
+        MTENN SchNet model created from input parameters
+    """
+    from torch_geometric.nn import SchNet
+
+    ## Parse config
+    if type(config) is str:
+        config = json.load(open(config_fn))
+    elif config is None:
+        config = wandb.config
+    elif type(config) != dict:
+        raise ValueError(f"Unknown type of config: {type(config)}")
+
+    ## Get param values from config if they're there, otherwise just use default
+    ##  SchNet values
+    model_params = [
+        "hidden_channels",
+        "num_filters",
+        "num_interactions",
+        "num_gaussians",
+        "cutoff",
+        "max_num_neighbors",
+        "readout",
+    ]
+    model_params = {p: config[p] for p in model_params if p in config}
+
+    ## Build SchNet model and then MTENN model
+    model = SchNet(**model_params)
+    model = mtenn.conversion_utils.SchNet(model)
 
     return model
 
@@ -150,6 +281,31 @@ def get_args():
         ),
     )
 
+    ## MTENN arguments
+    parser.add_argument(
+        "-strat",
+        default="delta",
+        help="Which strategy to use for combining model predictions.",
+    )
+    parser.add_argument(
+        "-comb",
+        help=(
+            "Which combination method to use for combining grouped "
+            "predictions. Only used if --grouped is set, and must be provided "
+            "in that case."
+        ),
+    )
+    parser.add_argument(
+        "-pred_r", help="Readout method to use for energy predictions."
+    )
+    parser.add_argument(
+        "-comb_r",
+        help=(
+            "Readout method to use for combination output. Only used if "
+            "--grouped is set."
+        ),
+    )
+
     return parser.parse_args()
 
 
@@ -166,10 +322,7 @@ def main():
     ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
     ## Build model and set model call function
-    model = build_model_2d()
-    model_call = lambda model, d: torch.reshape(
-        model(d["g"], d["g"].ndata["h"]), (-1, 1)
-    )
+    model, model_call = build_model(args)
 
     # print("pred", model_call(model, next(iter(ds))[1]), flush=True)
 
