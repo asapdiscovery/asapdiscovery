@@ -156,6 +156,7 @@ def build_model_schnet(config=None):
     mtenn.conversion_utils.SchNet
         MTENN SchNet model created from input parameters
     """
+    import mtenn.conversion_utils
     from torch_geometric.nn import SchNet
 
     ## Parse config
@@ -344,7 +345,7 @@ def main():
         torch.device(args.device),
         model_call,
         loss_func,
-        args.model_o,
+        None,
         wandb.config["lr"],
         start_epoch,
         train_loss,
