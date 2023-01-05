@@ -2,10 +2,15 @@
 Script for a Weights & Biases hyperparameter sweep.
 """
 import argparse
-# from asapdiscovery.ml import MSELoss
+
 import multiprocessing as mp
+import torch
 import wandb
 import yaml
+
+from asapdiscovery.ml import MSELoss
+from asapdiscovery.ml.scripts.train import build_dataset, split_dataset
+from asapdiscovery.ml.utils import train
 
 
 def build_model_2d(config=None):
@@ -34,10 +39,11 @@ def build_model_2d(config=None):
     elif type(config) != dict:
         raise ValueError(f"Unknown type of config: {type(config)}")
 
-    config.update({"in_node_feats": CanonicalAtomFeaturizer().feat_size()})
+    # config.update({"in_node_feats": CanonicalAtomFeaturizer().feat_size()})
+    in_node_feats = CanonicalAtomFeaturizer().feat_size()
 
     model = GAT(
-        in_feats=config["in_node_feats"],
+        in_feats=in_node_feats,
         hidden_feats=[config["gnn_hidden_feats"]] * config["num_gnn_layers"],
         num_heads=[config["num_heads"]] * config["num_gnn_layers"],
         feat_drops=[config["dropout"]] * config["num_gnn_layers"],
@@ -47,16 +53,6 @@ def build_model_2d(config=None):
     )
 
     return model
-
-
-def sweep_func():
-    wandb.init()
-    model = build_model_2d()
-    print(model, flush=True)
-
-
-def agent_wrap(sweep_id, function, project, count=1):
-    wandb.agent(sweep_id, function=function, project=project, count=count)
 
 
 ################################################################################
@@ -158,38 +154,51 @@ def get_args():
 
 
 def main():
+    ## Initialize WandB
+    wandb.init()
+    print(wandb.config, flush=True)
+
     args = get_args()
     print(args.i, args.exp, args.model, flush=True)
 
-    # ## Load and split dataset
-    # ds = build_dataset(args)
-    # ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
+    ## Load and split dataset
+    ds, exp_data = build_dataset(args)
+    ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
-    # model = build_model_2d()
-    # model_call = lambda model, d: torch.reshape(
-    #     model(d["g"], d["g"].ndata["h"]), (-1, 1)
-    # )
+    ## Build model and set model call function
+    model = build_model_2d()
+    model_call = lambda model, d: torch.reshape(
+        model(d["g"], d["g"].ndata["h"]), (-1, 1)
+    )
 
-    # ## Update experiment configuration
-    # # exp_configure.update({"model": "GAT"})
+    # print("pred", model_call(model, next(iter(ds))[1]), flush=True)
 
-    # loss_func = MSELoss("step")
+    loss_func = MSELoss("step")
 
-    # config_fn = (
-    #     "/lila/data/chodera/kaminowb/moonshot_ml_dev/"
-    #     "pipeline_testing/test_config.yaml"
-    # )
-    # sweep_config = yaml.safe_load(open(config_fn, "rb"))
-    # print(sweep_config, flush=True)
+    ## Initialization
+    start_epoch = 0
+    train_loss = []
+    val_loss = []
+    test_loss = []
 
-    # sweep_id = wandb.sweep(sweep_config, project="test-sweep")
-    # with mp.Pool(processes=5) as pool:
-    #     pool.starmap(
-    #         agent_wrap,
-    #         [(sweep_id, sweep_func, "test-sweep") for _ in range(5)],
-    #     )
-    wandb.init()
-    print(wandb.config, flush=True)
+    model, train_loss, val_loss, test_loss = train(
+        model,
+        ds_train,
+        ds_val,
+        ds_test,
+        exp_data,
+        args.n_epochs,
+        torch.device(args.device),
+        model_call,
+        loss_func,
+        args.model_o,
+        wandb.config["lr"],
+        start_epoch,
+        train_loss,
+        val_loss,
+        test_loss,
+        use_wandb=True,
+    )
 
 
 if __name__ == "__main__":
