@@ -282,7 +282,7 @@ def train(
     test_loss=None,
     use_wandb=False,
     batch_size=1,
-    optimizer=None
+    optimizer=None,
 ):
     """
     Train a model.
@@ -510,6 +510,14 @@ def train(
             torch.save(model.state_dict(), save_file.format(epoch_idx))
         else:
             torch.save(model.state_dict(), save_file)
+
+        ## Stop if loss has gone to infinity or is NaN
+        if (
+            np.isnan(epoch_val_loss)
+            or (epoch_val_loss == np.inf)
+            or (epoch_val_loss == -np.inf)
+        ):
+            raise ValueError("Unrecoverable loss value reached.")
 
     return (
         model,
