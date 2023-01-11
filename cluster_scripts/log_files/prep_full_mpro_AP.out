@@ -1,0 +1,127 @@
+Sender: LSF System <lsfadmin@lt08>
+Subject: Job 13714232: <prep_full_mpro_AP> in cluster <lila> Exited
+
+Job <prep_full_mpro_AP> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Tue Dec 20 15:59:31 2022
+Job was executed on host(s) <16*lt08>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Tue Dec 20 15:59:45 2022
+</home/paynea> was used as the home directory.
+</home/paynea/covid-moonshot-ml/cluster_scripts> was used as the working directory.
+Started at Tue Dec 20 15:59:45 2022
+Terminated at Wed Dec 21 15:59:45 2022
+Results reported at Wed Dec 21 15:59:45 2022
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -J prep_full_mpro_AP
+#BSUB -R span[hosts=1]
+#BSUB -oo log_files/prep_full_mpro_AP.out
+#BSUB -e log_files/prep_full_mpro_AP.stderr
+#BSUB -n 16
+#BSUB -R rusage[mem=4]
+#BSUB -W 24:00
+mkdir -p /data/chodera/asap-datasets/full_frag_prepped_mpro_20221220/
+source ~/.bashrc
+conda activate mers-docking
+python /data/chodera/paynea/covid-moonshot-ml/asapdiscovery/docking/scripts/prep_proteins.py \
+-d /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/aligned/ \
+-x /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/Mpro_compound_tracker_csv.csv \
+-o /data/chodera/asap-datasets/full_frag_prepped_mpro_20221220/ \
+-l /data/chocera/asap-datasets/rcsb_spruce.loop_db \
+-n 16 \
+-s /data/chodera/paynea/covid-moonshot-ml/metadata/mpro_sars2_seqres.yaml \
+--include_non_Pseries
+echo date
+echo done
+
+------------------------------------------------------------
+
+TERM_RUNLIMIT: job killed after reaching LSF run time limit.
+Exited with exit code 140.
+
+Resource usage summary:
+
+    CPU time :                                   5847.00 sec.
+    Max Memory :                                 3 GB
+    Average Memory :                             3.00 GB
+    Total Requested Memory :                     64.00 GB
+    Delta Memory :                               61.00 GB
+    Max Swap :                                   -
+    Max Processes :                              20
+    Max Threads :                                32
+    Run time :                                   86401 sec.
+    Turnaround time :                            86414 sec.
+
+The output (if any) follows:
+
+No structure found for Mpro_Nterm-x0029.
+No structure found for Mpro_Nterm-x0066.
+No structure found for Mpro_Nterm-x0077.
+Loading 578 structures
+(CrystalCompoundData(smiles='ClCC(=O)N(C1CS(=O)(=O)C=C1)c2ccccc2', compound_id='AAR-POS-0daf6b7e-1', dataset='Mpro-x1311', str_fn='/data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/aligned//Mpro-x1311_0A/Mpro-x1311_0A_bound.pdb', sdf_fn=None, active_site_chain='A', output_name='Mpro-x1311_0A_AAR-POS-0daf6b7e-1', active_site=None, oligomeric_state=None, chains=None, protein_chains=None), None, 'SEQRES   1 A  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL\nSEQRES   2 A  306  GLU GLY CYS MET VAL GLN VAL THR CYS GLY THR THR THR\nSEQRES   3 A  306  LEU ASN GLY LEU TRP LEU ASP ASP VAL VAL TYR CYS PRO\nSEQRES   4 A  306  ARG HIS VAL ILE CYS THR SER GLU ASP MET LEU ASN PRO\nSEQRES   5 A  306  ASN TYR GLU ASP LEU LEU ILE ARG LYS SER ASN HIS ASN\nSEQRES   6 A  306  PHE LEU VAL GLN ALA GLY ASN VAL GLN LEU ARG VAL ILE\nSEQRES   7 A  306  GLY HIS SER MET GLN ASN CYS VAL LEU LYS LEU LYS VAL\nSEQRES   8 A  306  ASP THR ALA ASN PRO LYS THR PRO LYS TYR LYS PHE VAL\nSEQRES   9 A  306  ARG ILE GLN PRO GLY GLN THR PHE SER VAL LEU ALA CYS\nSEQRES  10 A  306  TYR ASN GLY SER PRO SER GLY VAL TYR GLN CYS ALA MET\nSEQRES  11 A  306  ARG PRO ASN PHE THR ILE LYS GLY SER PHE LEU ASN GLY\nSEQRES  12 A  306  SER CYS GLY SER VAL GLY PHE ASN ILE ASP TYR ASP CYS\nSEQRES  13 A  306  VAL SER PHE CYS TYR MET HIS HIS MET GLU LEU PRO THR\nSEQRES  14 A  306  GLY VAL HIS ALA GLY THR ASP LEU GLU GLY ASN PHE TYR\nSEQRES  15 A  306  GLY PRO PHE VAL ASP ARG GLN THR ALA GLN ALA ALA GLY\nSEQRES  16 A  306  THR ASP THR THR ILE THR VAL ASN VAL LEU ALA TRP LEU\nSEQRES  17 A  306  TYR ALA ALA VAL ILE ASN GLY ASP ARG TRP PHE LEU ASN\nSEQRES  18 A  306  ARG PHE THR THR THR LEU ASN ASP PHE ASN LEU VAL ALA\nSEQRES  19 A  306  MET LYS TYR ASN TYR GLU PRO LEU THR GLN ASP HIS VAL\nSEQRES  20 A  306  ASP ILE LEU GLY PRO LEU SER ALA GLN THR GLY ILE ALA\nSEQRES  21 A  306  VAL LEU ASP MET CYS ALA SER LEU LYS GLU LEU LEU GLN\nSEQRES  22 A  306  ASN GLY MET ASN GLY ARG THR ILE LEU GLY SER ALA LEU\nSEQRES  23 A  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN\nSEQRES  24 A  306  CYS SER GLY VAL THR PHE GLN\nSEQRES   1 B  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL\nSEQRES   2 B  306  GLU GLY CYS MET VAL GLN VAL THR CYS GLY THR THR THR\nSEQRES   3 B  306  LEU ASN GLY LEU TRP LEU ASP ASP VAL VAL TYR CYS PRO\nSEQRES   4 B  306  ARG HIS VAL ILE CYS THR SER GLU ASP MET LEU ASN PRO\nSEQRES   5 B  306  ASN TYR GLU ASP LEU LEU ILE ARG LYS SER ASN HIS ASN\nSEQRES   6 B  306  PHE LEU VAL GLN ALA GLY ASN VAL GLN LEU ARG VAL ILE\nSEQRES   7 B  306  GLY HIS SER MET GLN ASN CYS VAL LEU LYS LEU LYS VAL\nSEQRES   8 B  306  ASP THR ALA ASN PRO LYS THR PRO LYS TYR LYS PHE VAL\nSEQRES   9 B  306  ARG ILE GLN PRO GLY GLN THR PHE SER VAL LEU ALA CYS\nSEQRES  10 B  306  TYR ASN GLY SER PRO SER GLY VAL TYR GLN CYS ALA MET\nSEQRES  11 B  306  ARG PRO ASN PHE THR ILE LYS GLY SER PHE LEU ASN GLY\nSEQRES  12 B  306  SER CYS GLY SER VAL GLY PHE ASN ILE ASP TYR ASP CYS\nSEQRES  13 B  306  VAL SER PHE CYS TYR MET HIS HIS MET GLU LEU PRO THR\nSEQRES  14 B  306  GLY VAL HIS ALA GLY THR ASP LEU GLU GLY ASN PHE TYR\nSEQRES  15 B  306  GLY PRO PHE VAL ASP ARG GLN THR ALA GLN ALA ALA GLY\nSEQRES  16 B  306  THR ASP THR THR ILE THR VAL ASN VAL LEU ALA TRP LEU\nSEQRES  17 B  306  TYR ALA ALA VAL ILE ASN GLY ASP ARG TRP PHE LEU ASN\nSEQRES  18 B  306  ARG PHE THR THR THR LEU ASN ASP PHE ASN LEU VAL ALA\nSEQRES  19 B  306  MET LYS TYR ASN TYR GLU PRO LEU THR GLN ASP HIS VAL\nSEQRES  20 B  306  ASP ILE LEU GLY PRO LEU SER ALA GLN THR GLY ILE ALA\nSEQRES  21 B  306  VAL LEU ASP MET CYS ALA SER LEU LYS GLU LEU LEU GLN\nSEQRES  22 B  306  ASN GLY MET ASN GLY ARG THR ILE LEU GLY SER ALA LEU\nSEQRES  23 B  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN\nSEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN', '/data/chodera/asap-datasets/full_frag_prepped_mpro_20221220/', '/data/chocera/asap-datasets/rcsb_spruce.loop_db', False)
+Prepping 578 structures over 16 cores.
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpvt39pclk.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpzws8ympy.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpxm77lrd3.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpizxq0fop.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp6tqdmxna.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpbjdjzc1q.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp1i9dw1in.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp7ogg1v1g.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpvr2t6fvr.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpptnb6af1.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpqzn2e4yr.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpaw6vggm5.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmphagt6v_l.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpn35ya1y2.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmptirqvfv1.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpsyjcr2jv.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp78lzi3yb.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpffq8tj80.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp81el1hke.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpgy1ljzuv.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpwyel72y5.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpy2hqincn.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpksrbw34u.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpzqy5rkr6.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpx06217er.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpjie9sh6a.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmplo772tvl.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpjcbu1fbv.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpp3oxpikb.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp191nhm1l.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpszdri0hq.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp9qu2wxeg.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp20mz6u_2.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpxpifwvas.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmphq0zx4yh.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp1a3bjog_.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmphdctv98z.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpk0uk69_5.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp3hosqy_a.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp51gbi9nl.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp53f2nhs6.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp679mt3_3.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpcroh15w4.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpy_qbm167.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp2mjqcywe.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpxeawpgr7.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpp0jggm02.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmps4ar6ibr.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpeqqtr11i.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmprstesjoz.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpwft0nvoc.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpxzlmwcwn.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpv1ffxohv.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpbs95bgob.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmppnuv0rnu.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmpcfp9xilt.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp7ue_upqu.pdb
+Wrote /scratch/lsftmp/13714232.tmpdir/tmp1u4_0e3l.pdb
+
+
+PS:
+
+Read file <log_files/prep_full_mpro_AP.stderr> for stderr output of this job.
+
