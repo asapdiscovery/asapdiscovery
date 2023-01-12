@@ -584,6 +584,36 @@ def make_wandb_table(ds_split):
     return table
 
 
+def parse_config(config_fn):
+    """
+    Function to load a model config JSON/YAML file with the appropriate
+    function.
+
+    Parameters
+    ----------
+    config_fn : str
+        Filename of the config file
+
+    Returns
+    -------
+    dict
+        Loaded config
+    """
+    fn_ext = config_fn.split(".")[-1].lower()
+    if fn_ext == "json":
+        import json
+
+        model_config = json.load(open(config_fn))
+    elif fn_ext in {"yaml", "yml"}:
+        import yaml
+
+        model_config = yaml.safe_load(open(config_fn))
+    else:
+        raise ValueError(f"Unknown config file extension: {fn_ext}")
+
+    return model_config
+
+
 def wandb_init(
     project_name,
     run_name,
@@ -663,9 +693,7 @@ def get_args():
         help="Cutoff distance for node neighbors.",
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
-    parser.add_argument(
-        "-config", help="Model config JSON file for graph 2D model."
-    )
+    parser.add_argument("-config", help="Model config JSON/YAML file.")
 
     ## Training arguments
     parser.add_argument(
@@ -757,6 +785,12 @@ def init(args, rank=False):
     ds, exp_data = build_dataset(args, rank)
     ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
+    ## Parse model config file
+    if args.config:
+        model_config = parse_config(args.config)
+    else:
+        model_config = {}
+
     ## Build the model
     if args.model == "e3nn":
         ## Need to add one-hot encodings to the dataset
@@ -773,6 +807,7 @@ def init(args, rank=False):
             model_params = calc_e3nn_model_info(ds_train, args.n_dist)
             pkl.dump(model_params, open(args.model_params, "wb"))
         model = build_model_e3nn(
+            model_config,
             100,
             *model_params[1:],
             node_attr=args.lig,
@@ -805,6 +840,7 @@ def init(args, rank=False):
         }
     elif args.model == "schnet":
         model = build_model_schnet(
+            model_config,
             args.qm9,
             args.qm9_target,
             args.rm_atomref,
@@ -821,7 +857,7 @@ def init(args, rank=False):
             "neighbor_dist": args.n_dist,
         }
     elif args.model == "2d":
-        model, exp_configure = build_model_2d(args.config)
+        model, exp_configure = build_model_2d(model_config)
         model_call = lambda model, d: torch.reshape(
             model(d["g"], d["g"].ndata["h"]), (-1, 1)
         )
