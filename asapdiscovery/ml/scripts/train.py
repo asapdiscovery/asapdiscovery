@@ -372,14 +372,14 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         return exp_dict
 
 
-def build_model_2d(config_fn):
+def build_model_2d(model_config):
     """
     Build appropriate 2D graph model.
 
     Parameters
     ----------
-    config_fn : str
-        Config JSON file
+    model_config : dict
+        Model config
 
     Returns
     -------
@@ -387,24 +387,22 @@ def build_model_2d(config_fn):
         GAT graph model
     """
 
-    exp_configure = json.load(open(config_fn))
-    exp_configure.update(
+    model_config.update(
         {"in_node_feats": CanonicalAtomFeaturizer().feat_size()}
     )
 
     model = GAT(
-        in_feats=exp_configure["in_node_feats"],
-        hidden_feats=[exp_configure["gnn_hidden_feats"]]
-        * exp_configure["num_gnn_layers"],
-        num_heads=[exp_configure["num_heads"]]
-        * exp_configure["num_gnn_layers"],
-        feat_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
-        attn_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
-        alphas=[exp_configure["alpha"]] * exp_configure["num_gnn_layers"],
-        residuals=[exp_configure["residual"]] * exp_configure["num_gnn_layers"],
+        in_feats=model_config["in_node_feats"],
+        hidden_feats=[model_config["gnn_hidden_feats"]]
+        * model_config["num_gnn_layers"],
+        num_heads=[model_config["num_heads"]] * model_config["num_gnn_layers"],
+        feat_drops=[model_config["dropout"]] * model_config["num_gnn_layers"],
+        attn_drops=[model_config["dropout"]] * model_config["num_gnn_layers"],
+        alphas=[model_config["alpha"]] * model_config["num_gnn_layers"],
+        residuals=[model_config["residual"]] * model_config["num_gnn_layers"],
     )
 
-    return model, exp_configure
+    return model, model_config
 
 
 def build_model_e3nn(
@@ -475,13 +473,19 @@ def build_model_e3nn(
 
 
 def build_model_schnet(
-    qm9=None, qm9_target=10, remove_atomref=False, neighbor_dist=5.0
+    model_config=None,
+    qm9=None,
+    qm9_target=10,
+    remove_atomref=False,
+    neighbor_dist=5.0,
 ):
     """
     Build appropriate SchNet model.
 
     Parameters
     ----------
+    model_config : dict, optional
+        Model config
     qm9 : str, optional
         Path to QM9 dataset, if starting with a QM9-pretrained model
     qm9_target : int, default=10
@@ -500,7 +504,11 @@ def build_model_schnet(
 
     ## Load pretrained model if requested, otherwise create a new SchNet
     if qm9 is None:
-        model = mtenn.conversion_utils.SchNet()
+        if model_config:
+            model = SchNet(**model_config)
+        else:
+            model = SchNet()
+        model = mtenn.conversion_utils.SchNet(model)
     else:
         qm9_dataset = QM9(qm9)
 
@@ -538,7 +546,8 @@ def build_model_schnet(
         model = mtenn.conversion_utils.SchNet(model)
 
     ## Set interatomic cutoff (default of 10) to make the graph smaller
-    model.cutoff = neighbor_dist
+    if (model_config is None) or ("cutoff" not in neighbor_dist):
+        model.cutoff = neighbor_dist
 
     return model
 
