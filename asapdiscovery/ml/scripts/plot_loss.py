@@ -30,7 +30,7 @@ RT = RT._value
 
 def convert_pic50(pic50):
     """
-    Function to convert pIC50 value to delta G value (in kT units).
+    Function to convert pIC50 value to delta G value (in kcal/mol).
 
     Conversion:
     IC50 value = exp(dG/kT) => pic50 = -log10(exp(dg/kT))
