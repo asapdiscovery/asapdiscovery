@@ -4,6 +4,7 @@ from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     split_openeye_mol,
+    openeye_perceive_residues,
 )
 
 
@@ -448,6 +449,9 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
     ## Place hydrogens
     if place_h:
         oechem.OEPlaceHydrogens(mut_prot)
+
+    ## Re-percieve residues so that atom number and connect records dont get screwed up
+    openeye_perceive_residues(mut_prot)
 
     return mut_prot
 

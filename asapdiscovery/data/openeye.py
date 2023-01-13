@@ -70,6 +70,31 @@ def save_openeye_sdfs(mols, sdf_fn):
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
+def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
+    """
+    Function for doing basic openeye percieve residues function,
+    necessary when changes are made to the protein to ensure correct atom ordering and CONECT record creation
+
+    Parameters
+    ----------
+    prot: oechem.OEGraphMol
+
+    Returns
+    -------
+    prot: oechem.OEGraphMol
+
+    """
+    ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
+    preserve = (
+        oechem.OEPreserveResInfo_ChainID
+        | oechem.OEPreserveResInfo_ResidueNumber
+        | oechem.OEPreserveResInfo_ResidueName
+    )
+    oechem.OEPerceiveResidues(prot, preserve)
+
+    return prot
+
+
 def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     """
     Split an OpenEye-loaded molecule into protein, ligand, etc.
@@ -245,12 +270,7 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
     oechem.OEAddMols(complex, lig)
 
     ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
-    preserve = (
-        oechem.OEPreserveResInfo_ChainID
-        | oechem.OEPreserveResInfo_ResidueNumber
-        | oechem.OEPreserveResInfo_ResidueName
-    )
-    oechem.OEPerceiveResidues(prot, preserve)
+    openeye_perceive_residues(prot)
     return lig, prot, complex
 
 

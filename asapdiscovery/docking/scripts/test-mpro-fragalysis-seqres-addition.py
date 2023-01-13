@@ -67,6 +67,8 @@ def get_args():
 def main():
     args = get_args()
 
+    os.makedirs(args.output_dir)
+
     active_site_chain = args.active_site_chain
 
     ## Load PDB File
