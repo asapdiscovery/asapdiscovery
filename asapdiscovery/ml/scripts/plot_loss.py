@@ -8,7 +8,7 @@ import seaborn as sns
 
 ## Set up constants for pIC50 conversion
 from simtk.unit import (
-    AVOGADRO_CONSTANT_NA,
+    AVOGADRO_CONSTANT_NA as NA,
     BOLTZMANN_CONSTANT_kB as kB,
     calorie,
     coulomb,
@@ -48,7 +48,8 @@ def convert_pic50(pic50):
     float
         Converted delta G value in kT
     """
-    return kT * -pic50 / np.log10(np.e)
+    ## No negative sign so we can get absolute value
+    return RT * pic50 / np.log10(np.e)
 
 
 ################################################################################
@@ -174,7 +175,7 @@ def main():
     )
 
     ## Fix axes
-    ylab = "MAE (delta G in kT)" if args.conv else "MSE (squared pIC50)"
+    ylab = "MAE (delta G in kcal/mol)" if args.conv else "MSE (squared pIC50)"
     ax.set_ylabel(ylab)
     ax.set_xlabel("Epoch")
     title = "delta G MAE Loss" if args.conv else "pIC50 MSE Loss"
