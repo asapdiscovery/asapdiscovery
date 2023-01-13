@@ -799,6 +799,7 @@ def init(args, rank=False):
         model_config = parse_config(args.config)
     else:
         model_config = {}
+    print("Using model config:", model_config, flush=True)
 
     ## Build the model
     if args.model == "e3nn":
