@@ -187,6 +187,89 @@ def build_model_schnet(config=None):
     return model
 
 
+def build_model_e3nn(
+    n_atom_types,
+    num_neighbors,
+    num_nodes,
+    config=None,
+    neighbor_dist=5.0,
+    irreps_hidden=None,
+):
+    """
+    Build appropriate e3nn model.
+
+    Parameters
+    ----------
+    n_atom_types : int
+        Number off atom types in one-hot encodings. This will define the
+        dimensionality of the input into the model
+    num_neighbors : int
+        Approximate number of neighbor nodes that get convolved over for each
+        node. Used as a normalization factor in the model
+    num_nodes : int
+        Approximate number of nodes per graph. Used as a normalization factor in
+        the model
+    neighbor_dist : float, default=5.0
+        Distance cutoff for nodes to be considered neighbors
+
+    Returns
+    -------
+    mtenn.conversion_utils.e3nn.E3NN
+        e3nn model created from input parameters
+    """
+    from e3nn.o3 import Irreps
+    import mtenn.conversion_utils
+
+    ## Parse config
+    if type(config) is str:
+        config = json.load(open(config_fn))
+    elif config is None:
+        config = wandb.config
+    elif type(config) != dict:
+        raise ValueError(f"Unknown type of config: {type(config)}")
+
+    ## Build hidden irreps
+    irreps_hidden = Irreps(
+        [
+            (config.irreps_0o, "0o"),
+            (config.irreps_0e, "0e"),
+            (config.irreps_1o, "1o"),
+            (config.irreps_1e, "1e"),
+            (config.irreps_2o, "2o"),
+            (config.irreps_2e, "2e"),
+            (config.irreps_3o, "3o"),
+            (config.irreps_3e, "3e"),
+            (config.irreps_4o, "4o"),
+            (config.irreps_4e, "4e"),
+        ]
+    )
+
+    # input is one-hot encoding of atom type => n_atom_types scalars
+    # output is scalar valued binding energy/pIC50 value
+    # hidden layers taken from e3nn tutorial (should be tuned eventually)
+    # same with edge attribute irreps (and all hyperparameters)
+    # need to calculate num_neighbors and num_nodes
+    # reduce_output because we just want the one binding energy prediction
+    #  across the whole graph
+    model_kwargs = {
+        "irreps_in": f"{n_atom_types}x0e",
+        "irreps_hidden": irreps_hidden,
+        "irreps_out": "1x0e",
+        "irreps_node_attr": "1x0e" if config.lig else None,
+        "irreps_edge_attr": Irreps.spherical_harmonics(config.irreps_edge_attr),
+        "layers": config.layers,
+        "max_radius": config.max_radius,
+        "number_of_basis": config.number_of_basis,
+        "radial_layers": config.radial_layers,
+        "radial_neurons": config.radial_neurons,
+        "num_neighbors": num_neighbors,
+        "num_nodes": num_nodes,
+        "reduce_output": True,
+    }
+
+    return mtenn.conversion_utils.E3NN(model_kwargs=model_kwargs)
+
+
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
