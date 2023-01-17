@@ -148,7 +148,7 @@ def prep_mp(
         complex_mol = du_to_complex(du, include_solvent=True)
 
         ## Add SEQRES entries if they're not present
-        if not oechem.OEHasPDBData(complex_mol, "SEQRES"):
+        if (not oechem.OEHasPDBData(complex_mol, "SEQRES")) and seqres:
             for seqres_line in seqres.split("\n"):
                 if seqres_line != "":
                     oechem.OEAddPDBData(complex_mol, "SEQRES", seqres_line[6:])
