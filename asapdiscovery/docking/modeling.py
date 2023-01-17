@@ -442,6 +442,11 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
             print(res_num, old_res_name, new_res)
             mut_map[r] = new_res
 
+    ## Return early if no mutations found
+    if len(mut_map) == 0:
+        print("No mutations found", flush=True)
+        return input_mol
+
     ## Mutate and build sidechains
     oespruce.OEMutateResidues(mut_prot, mut_map)
 
