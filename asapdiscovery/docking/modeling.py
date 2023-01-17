@@ -453,7 +453,7 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
 
 
 def prep_receptor(
-    initial_prot, site_residue="", loop_db=None, protein_only=False
+    initial_prot, site_residue="", loop_db=None, protein_only=False, seqres=None
 ):
     """
     Prepare DU from protein. If the ligand isn't present in `initial_prot`, a
@@ -470,6 +470,9 @@ def prep_receptor(
         Loop database file.
     protein_only : bool, default=True
         Whether we want to only keep the protein or keep the ligand as well.
+    seqres : str, optional
+        Residue sequence of a single chain. Should be in the format of three
+        letter codes, separated by a space for each residue.
 
     Returns
     -------
@@ -528,13 +531,31 @@ def prep_receptor(
     if not protein_only:
         # Generate ligand tautomers
         opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
+
     ############################################################################
+
+    ## Structure metadata object
+    metadata = oespruce.OEStructureMetadata()
+
+    ## Allow for adding residues at the beginning/end if they're missing
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
+        True
+    )
+    if seqres:
+        all_prot_chains = {
+            res.GetExtChainID()
+            for res in oechem.OEGetResidues(initial_prot)
+            if (res.GetName() != "LIG") and (res.GetName() != "HOH")
+        }
+        for chain in all_prot_chains:
+            seq_metadata = oespruce.OESequenceMetadata()
+            seq_metadata.SetChainID(chain)
+            seq_metadata.SetSequence(seqres)
+            metadata.AddSequenceMetadata(seq_metadata)
 
     ## Finally make new DesignUnit
     dus = list(
-        oespruce.OEMakeDesignUnits(
-            initial_prot, oespruce.OEStructureMetadata(), opts, site_residue
-        )
+        oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
     )
     assert dus[0].HasProtein()
     if not protein_only:
