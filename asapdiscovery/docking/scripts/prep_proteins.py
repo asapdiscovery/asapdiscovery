@@ -87,36 +87,12 @@ def prep_mp(
     ## Make output directory
     os.makedirs(out_dir, exist_ok=True)
 
-    ## Option to add SEQRES header
+    ## Load protein from pdb
+    initial_prot = load_openeye_pdb(xtal.str_fn)
+
     if seqres:
-        print("Editing PDB file")
-        ## Get a list of 3-letter codes for the sequence
         res_list = seqres_to_res_list(seqres)
 
-        ## Generate a new (temporary) pdb file with the SEQRES we want
-        with NamedTemporaryFile(mode="w", suffix=".pdb") as tmp_pdb:
-            ## Add the SEQRES
-            edit_pdb_file(
-                xtal.str_fn,
-                seqres_str=seqres,
-                edit_remark350=True,
-                oligomeric_state=xtal.oligomeric_state,
-                chains=xtal.chains,
-                pdb_out=tmp_pdb.name,
-            )
-
-            ## Load in the pdb file as an OE object
-            seqres_prot = load_openeye_pdb(tmp_pdb.name)
-
-            save_openeye_pdb(seqres_prot, "seqres_test.pdb")
-
-            initial_prot = seqres_prot
-        mutate = True
-    else:
-        initial_prot = load_openeye_pdb(xtal.str_fn)
-        mutate = False
-
-    if mutate:
         print("Mutating to provided seqres")
         ## Mutate the residues to match the residue list
         initial_prot = mutate_residues(
@@ -148,6 +124,7 @@ def prep_mp(
             site_residue=site_residue,
             loop_db=loop_db,
             protein_only=protein_only,
+            seqres=" ".join(res_list),
         )
     except IndexError as e:
         print(
