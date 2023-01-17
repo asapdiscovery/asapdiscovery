@@ -1755,3 +1755,1562 @@ Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biouni
 Warning: Failed to charge miscellaneous components
 Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
 User defined signal 2
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 279   C 3  ' and ' O   HOH 279   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.34 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.12 < 0.5A
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.40 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.29 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.42 < 0.5A
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 279   C 3  ' and ' O   HOH 279   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.34 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 4  ' and ' O   HOH 8   W 2  ' are too close 0.67 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.40 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 262   C 3  ' and ' O   HOH 262   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.29 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.12 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 4  ' and ' O   HOH 8   W 2  ' are too close 0.65 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.42 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 279   W 2  , placing in undefined
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 262   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+DPI: 0.20, RFree: 0.26, Resolution: 1.84
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'COCC(c1cccc(c1)Br)NC(=O)CC2c3cc(ccc3NC2=O)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COCC(c1cccc(c1)Br)NC(=O)CC2c3cc(ccc3NC2=O)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)nnn2CC(=O)N(Cc3ccsc3)c4ccc(cc4)NC(=O)C5CC5' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)nnn2CC(=O)N(Cc3ccsc3)c4ccc(cc4)NC(=O)C5CC5' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCN(CC1)S(=O)(=O)c2ccc(cc2)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCN(CC1)S(=O)(=O)c2ccc(cc2)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.68 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(c1cccc2c1cccc2)NC(=O)C' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(c1cccc2c1cccc2)NC(=O)C' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains ABW
+Warning: AddExplicitHydrogensForProteins: H1  HOH279(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH279(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Processing BU # 1 with title: , chains ABW
+Warning: Failed.For LIG, could not update 'c1ccc(cc1)c2ccncc2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc(cc1)c2ccncc2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 5 residues after SER 301   A 1  , with sequence GVTFQ
+Found unresolved C-terminal with 5 residues after SER 301   B 3  , with sequence GVTFQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 4 residues after GLY 302   A 1  , with sequence VTFQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found 9 residue gap between ILE 43   B 2   and ASN 53   B 2  , with sequence CTSEDMLNP
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: CTSEDMLNP between ILE 43   B 2   and ASN 53   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH262(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH262(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.41 < 0.5A
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Failed.For LIG, could not update 'Cn1ccc(n1)C(=O)NCC2CCCO2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cn1ccc(n1)C(=O)NCC2CCCO2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.68 < 0.7A. Cleaning up by deleting second water
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CCNc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CCNc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'Cc1ccc(cc1)N(C2CCS(=O)(=O)C2)C(=O)C' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccc(cc1)N(C2CCS(=O)(=O)C2)C(=O)C' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains ABCW
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'C[NH+]1CCN(CC1)C(=O)Cc2c[nH]c3c2cccn3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'C[NH+]1CCN(CC1)C(=O)Cc2c[nH]c3c2cccn3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'Cc1cc(no1)CN(C)C(=O)NC2CC2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1cc(no1)CN(C)C(=O)NC2CC2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed.For LIG, could not update 'c1cc2c(cc1Cl)C(CCO2)C(=O)Nc3cncc4c3ccnc4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc2c(cc1Cl)C(CCO2)C(=O)Nc3cncc4c3ccnc4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 6 residues after CYS 300   A 1  , with sequence SGVTFQ
+Warning: Failed.For LIG, could not update 'CC(=O)Nc1nc2c(cccc2s1)OC' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)Nc1nc2c(cccc2s1)OC' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc(c(c1)C(=O)NCCc2ccncc2)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc(c(c1)C(=O)NCCc2ccncc2)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)CCc2cccc(c2)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)CCc2cccc(c2)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found 1 residue gap between GLU 14   B 2   and CYS 16   B 2  , with sequence G
+Found 9 residue gap between CYS 44   B 2   and TYR 54   B 2  , with sequence TSEDMLNPN
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: Failed.For LIG, could not update 'CC(=O)NC(Cc1ccc(cc1)O)C(=O)NCC#CBr' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)NC(Cc1ccc(cc1)O)C(=O)NCC#CBr' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Attempting to build loop: G between GLU 14   B 2   and CYS 16   B 2  
+Increased two sided crop back length from 1 to 2 to accommodate the minimum loop length in database
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: Failed.For LIG, could not update 'CC(=O)N(c1ccccc1)C2CCS(=O)(=O)C2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccc(cc1)S(=O)(=O)N2CCN(CC2)C(=O)C' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N(c1ccccc1)C2CCS(=O)(=O)C2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccc(cc1)S(=O)(=O)N2CCN(CC2)C(=O)C' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CN2CCOC=C2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CN2CCOC=C2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cccc(c2)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cccc(c2)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Residue requested to be mutated  Cl 1   A 2   has incorrect or incomplete backbone connectivity - skipping
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found 9 residue gap between ILE 43   B 2   and ASN 53   B 2  , with sequence CTSEDMLNP
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: CTSEDMLNP between ILE 43   B 2   and ASN 53   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.44 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.41 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(=O)Nc1ccncc1NC(=O)C2Cc3c2cc(cc3)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)Nc1ccncc1NC(=O)C2Cc3c2cc(cc3)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.44 < 0.7A. Cleaning up by deleting second water
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.54 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCN(CC1)c2ccc(cc2)OC' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCN(CC1)c2ccc(cc2)OC' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 6 residues after CYS 300   A 1  , with sequence SGVTFQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' are too close 0.53 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2CC(=O)N(CCC3CCCCC3)Cc4cccs4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2CC(=O)N(CCC3CCCCC3)Cc4cccs4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2N3CCCC(C3=O)c4ccc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2N3CCCC(C3=O)c4ccc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Processing BU # 1 with title: , chains ABCW
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)C[NH+]2CCCCC2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)C[NH+]2CCCCC2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cccc(c2)OC3CC(=O)N3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cccc(c2)OC3CC(=O)N3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed.For LIG, could not update 'CC1CCN(CC1)C(=O)Cn2c3ccccc3nn2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC1CCN(CC1)C(=O)Cn2c3ccccc3nn2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found 7 residue gap between CYS 44   B 2   and PRO 52   B 2  , with sequence TSEDMLN
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TSEDMLN between CYS 44   B 2   and PRO 52   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'C[NH+]1CCN(CC1)C(=O)Nc2ccccc2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'C[NH+]1CCN(CC1)C(=O)Nc2ccccc2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCOC(C1)c2ccc(cc2)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCOC(C1)c2ccc(cc2)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed.For LIG, could not update 'Cc1nc(c(s1)NC(=O)OC)c2ccccc2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1nc(c(s1)NC(=O)OC)c2ccccc2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.51 < 0.7A. Cleaning up by deleting second water
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains AB
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(C)CC1CN(CC[NH+]1Cc2cccc(c2)Cl)C(=O)C' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(C)CC1CN(CC[NH+]1Cc2cccc(c2)Cl)C(=O)C' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 5 residues after SER 301   A 1  , with sequence GVTFQ
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed.For LIG, could not update 'c1cc2c(cc1Cl)C(CCO2)C(=O)Nc3cncc4c3C[NH2+]CC4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc2c(cc1Cl)C(CCO2)C(=O)Nc3cncc4c3C[NH2+]CC4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 314   C 3  ' and ' O   HOH 314   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.63 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 314   C 3  ' and ' O   HOH 314   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 314   W 2  , placing in undefined
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH314(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH314(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'C[NH2+]Cc1c[nH]c2c1cc(cc2)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'C[NH2+]Cc1c[nH]c2c1cc(cc2)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.60 < 0.7A. Cleaning up by deleting second water
+Warning: Failed.For LIG, could not update 'CC(=O)Nc1nc2c(s1)cccc2S(=O)(=O)NCCc3ccccc3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)Nc1nc2c(s1)cccc2S(=O)(=O)NCCc3ccccc3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'c1cc(cnc1)NC(=O)Cc2cc(cnc2)C#N' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc(cnc1)NC(=O)Cc2cc(cnc2)C#N' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABCW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 6 residues after CYS 300   A 1  , with sequence SGVTFQ
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Found unresolved C-terminal with 6 residues after CYS 300   A 1  , with sequence SGVTFQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Processing BU # 1 with title: , chains ABW
+Warning: Failed.For LIG, could not update 'c1cc2cncc(c2cc1F)NC(=O)C3CCOc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc2cncc(c2cc1F)NC(=O)C3CCOc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cn1c2c(cncc2NC(=O)C3CCOc4c3cc(cc4)Cl)[nH]c1=O' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cn1c2c(cncc2NC(=O)C3CCOc4c3cc(cc4)Cl)[nH]c1=O' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 5 residues after SER 301   A 1  , with sequence GVTFQ
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+DPI: 0.15, RFree: 0.24, Resolution: 1.64
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Processing BU # 1 with title: , chains ABW
+Warning: Failed.For LIG, could not update 'Cc1ccnc(c1NC(=O)Cc2cccc(c2)Cl)N' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccnc(c1NC(=O)Cc2cccc(c2)Cl)N' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3(CCOc4c3cc(cc4)Cl)CNC(=O)Cn5ccnc5' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3(CCOc4c3cc(cc4)Cl)CNC(=O)Cn5ccnc5' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CNC(=O)C1(CC1)N2CC(c3cc(ccc3C2=O)Cl)C(=O)Nc4cncc5c4cccc5' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CNC(=O)C1(CC1)N2CC(c3cc(ccc3C2=O)Cl)C(=O)Nc4cncc5c4cccc5' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 4 residues after GLY 302   A 1  , with sequence VTFQ
+Found 7 residue gap between CYS 44   B 2   and PRO 52   B 2  , with sequence TSEDMLN
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TSEDMLN between CYS 44   B 2   and PRO 52   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.13 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.13 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 336   C 3  ' and ' O   HOH 336   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found 9 residue gap between ILE 43   B 2   and ASN 53   B 2  , with sequence CTSEDMLNP
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: CTSEDMLNP between ILE 43   B 2   and ASN 53   B 2  
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 336   W 2  , placing in undefined
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.11 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.11 < 0.7A. Cleaning up by deleting second water
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Processing BU # 1 with title: , chains ABCW
+   Falling back to charging protein with OEMMFF94Charges
+Processing BU # 1 with title: , chains ABCW
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CC(=O)Nc2cncc3c2CCCC3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CC(=O)Nc2cncc3c2CCCC3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains AW
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.04 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'CC1C(c2cc(ccc2C(=O)N1CC(=O)NC)Cl)C(=O)Nc3cncc4c3ccc(c4)S(=O)(=O)C' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC1C(c2cc(ccc2C(=O)N1CC(=O)NC)Cl)C(=O)Nc3cncc4c3ccc(c4)S(=O)(=O)C' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.40 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.04 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 377   C 3  ' and ' O   HOH 377   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 378   C 3  ' and ' O   HOH 378   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.40 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Found unresolved C-terminal with 4 residues after GLY 302   A 1  , with sequence VTFQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 4 residues after GLY 302   B 2  , with sequence VTFQ
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found 8 residue gap between ILE 43   B 2   and PRO 52   B 2  , with sequence CTSEDMLN
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Processing BU # 1 with title: , chains ABCW
+Attempting to build loop: CTSEDMLN between ILE 43   B 2   and PRO 52   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 377   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 378   W 2  , placing in undefined
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.09 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH336(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH336(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CCNc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CCNc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1NC2CN(C2)C(=O)c3cc(=O)[nH]c4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1NC2CN(C2)C(=O)c3cc(=O)[nH]c4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1NC2CN(C2)C(=O)c3cc(=O)[nH]c4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1NC2CN(C2)C(=O)c3cc(=O)[nH]c4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1NC2CN(C2)C(=O)c3cc(=O)[nH]c4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1NC2CN(C2)C(=O)c3cc(=O)[nH]c4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1NC2CN(C2)C(=O)c3cc(=O)[nH]c4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1NC2CN(C2)C(=O)c3cc(=O)[nH]c4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.09 < 0.7A. Cleaning up by deleting second water
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)ncn2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)ncn2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed.For LIG, could not update 'c1cc2c(cc1Cl)C(CCO2)C(=O)Nc3nncn3C4CC4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc2c(cc1Cl)C(CCO2)C(=O)Nc3nncn3C4CC4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 337   C 3  ' and ' O   HOH 337   W 2  ' too close 0.00 < 0.5A
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'COc1ccccc1OCCNC(=O)c2cc(=O)[nH]c3c2c(ccc3)OC' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccccc1OCCNC(=O)c2cc(=O)[nH]c3c2c(ccc3)OC' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.54 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 337   C 3  ' and ' O   HOH 337   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.41 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.63 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.41 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH377(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH377(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH378(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH378(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 337   W 2  , placing in undefined
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cccc(c2)Br' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cccc(c2)Br' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(c1cccc(c1)Cl)C(=O)Nc2cnccc2NC(=O)C' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(c1cccc(c1)Cl)C(=O)Nc2cnccc2NC(=O)C' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc2c(cc1Cl)C(CO2)C(=O)Nc3cnccc3CO' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc2c(cc1Cl)C(CO2)C(=O)Nc3cnccc3CO' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(c1cccc(c1)Cl)C(=O)Nc2cnccc2n3cccn3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(c1cccc(c1)Cl)C(=O)Nc2cnccc2n3cccn3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.56 < 0.7A. Cleaning up by deleting second water
+Warning: Failed.For LIG, could not update 'CNC(=O)CN1CC2(CCN(C2=O)c3cncc4c3cc(cc4)Cl)c5cc(ccc5C1=O)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CNC(=O)CN1CC2(CCN(C2=O)c3cncc4c3cc(cc4)Cl)c5cc(ccc5C1=O)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)N(CCC2CCCCC2)C(=O)Nc3cccnc3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)N(CCC2CCCCC2)C(=O)Nc3cccnc3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(=O)Nc1cccc(c1)N2CCCC2=O' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)Nc1cccc(c1)N2CCCC2=O' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed.For LIG, could not update 'CCC(=O)N(c1ccc(cc1)C(C)(C)C)C(c2cccnc2)C(=O)NCCOC' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CCC(=O)N(c1ccc(cc1)C(C)(C)C)C(c2cccnc2)C(=O)NCCOC' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH337(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH337(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(=O)N1CC[NH+](CC1)Cc2cccs2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CC[NH+](CC1)Cc2cccs2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cnnc2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cnnc2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 4  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC1(CCOc2c1cc(cc2)Cl)C(=O)Nc3cncc4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC1(CCOc2c1cc(cc2)Cl)C(=O)Nc3cncc4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2C(=O)N3CCN(C(=O)C3)c4cccc(c4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2C(=O)N3CCN(C(=O)C3)c4cccc(c4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found unresolved C-terminal with 5 residues after SER 301   A 1  , with sequence GVTFQ
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.64 < 0.7A. Cleaning up by deleting second water
+Found unresolved C-terminal with 5 residues after SER 301   B 2  , with sequence GVTFQ
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: Failed.For LIG, could not update 'CCOc1ccccc1CN2c3ccc(cc3C(C2=O)O)Br' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CCOc1ccccc1CN2c3ccc(cc3C(C2=O)O)Br' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed.For LIG, could not update 'CCC(=O)N(c1ccc(cc1)C(C)(C)C)C(c2cccnc2)C(=O)NCCc3cccc(c3)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CCC(=O)N(c1ccc(cc1)C(C)(C)C)C(c2cccnc2)C(=O)NCCc3cccc(c3)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'COC(=O)c1cccc(c1)NS(=O)(=O)C' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COC(=O)c1cccc(c1)NS(=O)(=O)C' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed.For LIG, could not update 'CCC(=O)N(c1ccc(cc1)C(C)OC)C(c2cccnc2)C(=O)Nc3ccc(cc3C)OC' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CCC(=O)N(c1ccc(cc1)C(C)OC)C(c2cccnc2)C(=O)Nc3ccc(cc3C)OC' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CC(=O)Nc2cncc3c2CCC3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CC(=O)Nc2cncc3c2CCC3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cc(cc(c2)Cl)NC3CCCC3O' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cc(cc(c2)Cl)NC3CCCC3O' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'Cn1cnc2c1c(cnc2)NC(=O)C3CCOc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cn1cnc2c1c(cnc2)NC(=O)C3CCOc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'COc1ccc(cc1CC(=O)Nc2cncc3c2cccc3)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1ccc(cc1CC(=O)Nc2cncc3c2cccc3)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 4 residues after GLY 302   A 1  , with sequence VTFQ
+Found 7 residue gap between CYS 44   B 2   and PRO 52   B 2  , with sequence TSEDMLN
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TSEDMLN between CYS 44   B 2   and PRO 52   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Found unresolved C-terminal with 4 residues after GLY 302   A 1  , with sequence VTFQ
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: Residue requested to be mutated SER 44   B 2   has incorrect or incomplete backbone connectivity - skipping
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CN(Cc4c3cc(cc4)Cl)S(=O)(=O)c5[nH]ccn5' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CN(Cc4c3cc(cc4)Cl)S(=O)(=O)c5[nH]ccn5' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'COc1cccc(n1)Oc2cc(cc(c2)Cl)NC(=O)Cc3cncc4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COc1cccc(n1)Oc2cc(cc(c2)Cl)NC(=O)Cc3cncc4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.62 < 0.7A. Cleaning up by deleting second water
+DPI: 0.14, RFree: 0.24, Resolution: 1.67
+Processing BU # 1 with title: , chains ABCW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABW
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.63 < 0.7A. Cleaning up by deleting second water
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Processing BU # 1 with title: , chains ABCW
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)C(C)OC(F)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)C(C)OC(F)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found 2 residue gap between SER 1   B 2   and GLY 2   B 2  , with sequence CT
+Found 5 residue gap between SER 44   B 2   and PRO 52   B 2  , with sequence EDMLN
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: CT between SER 1   B 2   and GLY 2   B 2  
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)CC2CC3CC3C2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)CC2CC3CC3C2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC1COc2ccc(cc2C1C(=O)Nc3cncc4c3cccc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC1COc2ccc(cc2C1C(=O)Nc3cncc4c3cccc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.40 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(CNC(=O)c1cc(=O)[nH]c2c1cc(cc2)F)Oc3ccccc3OC' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(CNC(=O)c1cc(=O)[nH]c2c1cc(cc2)F)Oc3ccccc3OC' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.40 < 0.7A. Cleaning up by deleting second water
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found 7 residue gap between CYS 44   B 2   and PRO 52   B 2  , with sequence TSEDMLN
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TSEDMLN between CYS 44   B 2   and PRO 52   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CCOc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CCOc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Processing BU # 1 with title: , chains ABW
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'CN(c1cncc2c1cccc2)C(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CN(c1cncc2c1cccc2)C(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Found unresolved C-terminal with 6 residues after CYS 300   A 1  , with sequence SGVTFQ
+DPI: 0.18, RFree: 0.25, Resolution: 1.72
+Found 9 residue gap between ILE 43   B 2   and ASN 53   B 2  , with sequence CTSEDMLNP
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: CTSEDMLNP between ILE 43   B 2   and ASN 53   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABW
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(C)(C)NC(=O)C(c1cccnc1)Nc2ccc(cc2)CCC#N' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(C)(C)NC(=O)C(c1cccnc1)Nc2ccc(cc2)CCC#N' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Processing BU # 1 with title: , chains ABW
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CC(=O)Nc2cncc3c2[nH]cn3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CC(=O)Nc2cncc3c2[nH]cn3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found 6 residue gap between CYS 44   B 2   and ASN 51   B 2  , with sequence TSEDML
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TSEDML between CYS 44   B 2   and ASN 51   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 3  , with sequence FQ
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found 2 residue gap between CYS 44   B 2   and GLU 47   B 2  , with sequence TS
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TS between CYS 44   B 2   and GLU 47   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Processing BU # 1 with title: , chains ABW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'COC(=O)c1ccc(cc1)S(=O)(=O)N' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COC(=O)c1ccc(cc1)S(=O)(=O)N' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains AW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 5 residues after SER 301   A 1  , with sequence GVTFQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Found 9 residue gap between ILE 43   B 2   and ASN 53   B 2  , with sequence CTSEDMLNP
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+DPI: 0.19, RFree: 0.25, Resolution: 1.74
+Attempting to build loop: CTSEDMLNP between ILE 43   B 2   and ASN 53   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Found unresolved C-terminal with 5 residues after SER 301   A 1  , with sequence GVTFQ
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Found unresolved C-terminal with 6 residues after CYS 300   A 1  , with sequence SGVTFQ
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 5 residues after SER 301   A 1  , with sequence GVTFQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: Failed.For LIG, could not update 'CCC(=O)N(c1cncc2c1cccc2)C(=O)C3COc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CCC(=O)N(c1cncc2c1cccc2)C(=O)C3COc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains ABW
+Warning: Failed.For LIG, could not update 'COC1(CCOc2c1cc(cc2)Cl)C(=O)Nc3cncc4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'COC1(CCOc2c1cc(cc2)Cl)C(=O)Nc3cncc4c3cccc4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed.For LIG, could not update 'CC(c1ccc(c(c1)Cl)Cl)C(=O)Nc2cncc3c2cccc3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(c1ccc(c(c1)Cl)Cl)C(=O)Nc2cncc3c2cccc3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Processing BU # 1 with title: , chains ABW
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found 8 residue gap between CYS 44   B 2   and ASN 53   B 2  , with sequence TSEDMLNP
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TSEDMLNP between CYS 44   B 2   and ASN 53   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Processing BU # 1 with title: , chains ABCW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Processing BU # 1 with title: , chains AW
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'C#Cc1cccc(c1)CC(=O)Nc2cncc3c2cccc3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'C#Cc1cccc(c1)CC(=O)Nc2cncc3c2cccc3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found 6 residue gap between CYS 44   B 2   and ASN 51   B 2  , with sequence TSEDML
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TSEDML between CYS 44   B 2   and ASN 51   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: Failed.For LIG, could not update 'c1ccc(cc1)CC(=O)Nc2cncc3c2cccc3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc(cc1)CC(=O)Nc2cncc3c2cccc3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.40 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABCW
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.40 < 0.7A. Cleaning up by deleting second water
+Warning: After setting primary alternate location, water molecules, ' O   HOH 258   C 3  ' and ' O   HOH 258   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Failed.For LIG, could not update 'c1ccn2c(c1)nnc2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccn2c(c1)nnc2NC(=O)Cc3cccc(c3)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found 7 residue gap between CYS 44   B 2   and PRO 52   B 2  , with sequence TSEDMLN
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Attempting to build loop: TSEDMLN between CYS 44   B 2   and PRO 52   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 258   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Failed.For LIG, could not update 'c1ccc(cc1)n2cnnc2NC(=O)C3COc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc(cc1)n2cnnc2NC(=O)C3COc4c3cc(cc4)Cl' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: After setting primary alternate location, water molecules, ' O   HOH 231   C 3  ' and ' O   HOH 231   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.66 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found 8 residue gap between CYS 44   B 2   and ASN 53   B 2  , with sequence TSEDMLNP
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: Could not properly categorize HOH 231   W 2  , placing in undefined
+Attempting to build loop: TSEDMLNP between CYS 44   B 2   and ASN 53   B 2  
+Fatal: Database file does not exist: /data/chocera/asap-datasets/rcsb_spruce.loop_db
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 6 residues after CYS 300   A 1  , with sequence SGVTFQ
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: OEPlaceHydrogens: mol  has heavy atoms ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' too close 0.00 < 0.5A
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CC(=O)Nc2c[nH]nc2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1cc(cc(c1)Cl)CC(=O)Nc2c[nH]nc2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.00 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH258(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH258(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)Cc3cc(cc(c3)Cl)C#N' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)Cc3cc(cc(c3)Cl)C#N' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed.For LIG, could not update 'CC(=O)N1CC[NH+](CC1)C(c2ccccc2)c3ccccc3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CC[NH+](CC1)C(c2ccccc2)c3ccccc3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Processing BU # 1 with title: , chains ABW
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed.For LIG, could not update 'CC(=O)N1CC[NH+](CC1)CC#C' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CC[NH+](CC1)CC#C' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH231(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCC(CC1)C(=O)N2CCCCC2' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCC(CC1)C(=O)N2CCCCC2' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1c(cncc1NC(=O)Cc2cccc(c2)C#N)N' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1c(cncc1NC(=O)Cc2cccc(c2)C#N)N' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.65 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Found unresolved C-terminal with 6 residues after CYS 300   A 1  , with sequence SGVTFQ
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCCC(C1)[NH+](CC2CCCCC2)C3CCC(CC3)O' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CCCC(C1)[NH+](CC2CCCCC2)C3CCC(CC3)O' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: Failed.For LIG, could not update 'CC(=O)N1CC[NH+](CC1)Cc2cnc(s2)Cc3ccccc3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC(=O)N1CC[NH+](CC1)Cc2cnc(s2)Cc3ccccc3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CCN(c4c3cc(cc4)Cl)Cc5[nH]ccn5' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)C3CCN(c4c3cc(cc4)Cl)Cc5[nH]ccn5' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC1(CNS(=O)(=O)c2c1cc(cc2)Cl)C(=O)Nc3cncc4c3CCCC4' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'CC1(CNS(=O)(=O)c2c1cc(cc2)Cl)C(=O)Nc3cncc4c3CCCC4' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Found unresolved C-terminal with 1 residues after PHE 305   A 1  , with sequence Q
+Found unresolved C-terminal with 1 residues after PHE 305   B 2  , with sequence Q
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Warning: No BioAssembly transforms found, using input molecule as biounit: 
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)Cc3ccc(cc3)F' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2NC(=O)Cc3ccc(cc3)F' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Cannot set Rfree, due to lack of R value for 
+Warning: Calc DPI: no reflection number found for  
+DPI: 20.00, RFree: 0.00, Resolution: 0.00
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cc(cc(c2)Cl)OC3CC(=O)N3' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'Cc1ccncc1NC(=O)Cc2cc(cc(c2)Cl)OC3CC(=O)N3' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: After setting primary alternate location, water molecules, ' O   HOH 8   C 3  ' and ' O   HOH 8   W 2  ' are too close 0.52 < 0.7A. Cleaning up by deleting second water
+Processing BU # 1 with title: , chains ABCW
+Warning: Could not properly categorize HOH 8   W 2  , placing in undefined
+Found unresolved C-terminal with 2 residues after THR 304   A 1  , with sequence FQ
+Found unresolved C-terminal with 2 residues after THR 304   B 2  , with sequence FQ
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: AddExplicitHydrogensForProteins: H1  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: AddExplicitHydrogensForProteins: H2  HOH8(W) has problem with hydrogen count or geometry. Please fix if necessary.
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2N3C(=O)C4(CCOc5c4cc(cc5)Cl)NC3=O' to match 'c1ccc-2c(c1)Cc3c2[nH]nc3c4ccncc4'
+Warning: Failed.For LIG, could not update 'c1ccc2c(c1)cncc2N3C(=O)C4(CCOc5c4cc(cc5)Cl)NC3=O' to match 'c1ccc-2c(c1)Cc3c2n[nH]c3c4ccncc4'
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+Warning: Failed to charge miscellaneous components
+Warning: Unable to add partial charges and radii to DesignUnit: (AB)__DU__biounit
+User defined signal 2
