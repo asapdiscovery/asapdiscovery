@@ -146,6 +146,13 @@ def prep_mp(
 
         ## Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
+
+        ## Add SEQRES entries if they're not present
+        if not oechem.OEHasPDBData(complex_mol, "SEQRES"):
+            for seqres_line in seqres.split("\n"):
+                if seqres_line != "":
+                    oechem.OEAddPDBData(complex_mol, "SEQRES", seqres_line[6:])
+
         save_openeye_pdb(
             complex_mol, os.path.join(out_dir, f"prepped_receptor_{i}.pdb")
         )
