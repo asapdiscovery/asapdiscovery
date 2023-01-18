@@ -1,12 +1,12 @@
 ## These are only the mers structures with simple dimers that don't fail our current protein prep pipeline
-#5C3N: {} #Apo
+5C3N: {} #Apo
 6VGY: {}
-#6VGZ: {}
-#6VH0: {}
-#6VH1: {}
-#6VH2: {}
-#6VH3: {}
-#7DR8: {} #Apo
-#7T3Y: {}
-#7DR9: {} #Apo, Cys148Ala
-#7DRA: {} #Apo, Cys148Ala, pH 9
+6VGZ: {}
+6VH0: {}
+6VH1: {}
+6VH2: {}
+6VH3: {}
+7DR8: {} #Apo
+7T3Y: {}
+7DR9: {} #Apo, Cys148Ala
+7DRA: {} #Apo, Cys148Ala, pH 9
