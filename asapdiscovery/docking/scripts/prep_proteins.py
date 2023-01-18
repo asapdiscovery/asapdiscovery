@@ -107,12 +107,6 @@ def prep_mp(
     if check_completed(out_dir):
         prep_logger.info("Already completed! Finishing.")
         return
-
-    # logging.basicConfig(
-    #     filename=os.path.join(out_dir, "log.txt"),
-    #     level=logging.DEBUG,
-    #     filemode="w",
-    # )
     prep_logger.info(f"Prepping {xtal.output_name}")
 
     ## Option to add SEQRES header
@@ -179,8 +173,7 @@ def prep_mp(
         )
     except IndexError as e:
         prep_logger.error(
-            "DU generation failed for",
-            f"{xtal.output_name}",
+            f"DU generation failed for {xtal.output_name}",
         )
         return
 
@@ -288,12 +281,6 @@ def get_args():
 
 def main():
     args = get_args()
-
-    # logging.basicConfig(
-    #     filename=args.log_file,
-    #     level=logging.DEBUG,
-    #     filemode="w",
-    # )
     handler = logging.FileHandler(args.log_file, mode="w")
     main_logger = logging.getLogger("main")
     main_logger.setLevel(logging.INFO)
