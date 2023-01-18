@@ -372,14 +372,14 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         return exp_dict
 
 
-def build_model_2d(config_fn):
+def build_model_2d(model_config):
     """
     Build appropriate 2D graph model.
 
     Parameters
     ----------
-    config_fn : str
-        Config JSON file
+    model_config : dict
+        Model config
 
     Returns
     -------
@@ -387,30 +387,29 @@ def build_model_2d(config_fn):
         GAT graph model
     """
 
-    exp_configure = json.load(open(config_fn))
-    exp_configure.update(
+    model_config.update(
         {"in_node_feats": CanonicalAtomFeaturizer().feat_size()}
     )
 
     model = GAT(
-        in_feats=exp_configure["in_node_feats"],
-        hidden_feats=[exp_configure["gnn_hidden_feats"]]
-        * exp_configure["num_gnn_layers"],
-        num_heads=[exp_configure["num_heads"]]
-        * exp_configure["num_gnn_layers"],
-        feat_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
-        attn_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
-        alphas=[exp_configure["alpha"]] * exp_configure["num_gnn_layers"],
-        residuals=[exp_configure["residual"]] * exp_configure["num_gnn_layers"],
+        in_feats=model_config["in_node_feats"],
+        hidden_feats=[model_config["gnn_hidden_feats"]]
+        * model_config["num_gnn_layers"],
+        num_heads=[model_config["num_heads"]] * model_config["num_gnn_layers"],
+        feat_drops=[model_config["dropout"]] * model_config["num_gnn_layers"],
+        attn_drops=[model_config["dropout"]] * model_config["num_gnn_layers"],
+        alphas=[model_config["alpha"]] * model_config["num_gnn_layers"],
+        residuals=[model_config["residual"]] * model_config["num_gnn_layers"],
     )
 
-    return model, exp_configure
+    return model, model_config
 
 
 def build_model_e3nn(
     n_atom_types,
     num_neighbors,
     num_nodes,
+    model_config=None,
     node_attr=False,
     neighbor_dist=5.0,
     irreps_hidden=None,
@@ -440,13 +439,83 @@ def build_model_e3nn(
         e3nn model created from input parameters
     """
 
+    ## Build hidden irreps
+    if model_config:
+        if "irreps_0o" in model_config:
+            irreps_hidden = o3.Irreps(
+                [
+                    (model_config["irreps_0o"], "0o"),
+                    (model_config["irreps_0e"], "0e"),
+                    (model_config["irreps_1o"], "1o"),
+                    (model_config["irreps_1e"], "1e"),
+                    (model_config["irreps_2o"], "2o"),
+                    (model_config["irreps_2e"], "2e"),
+                    (model_config["irreps_3o"], "3o"),
+                    (model_config["irreps_3e"], "3e"),
+                    (model_config["irreps_4o"], "4o"),
+                    (model_config["irreps_4e"], "4e"),
+                ]
+            )
+        else:
+            irreps_hidden = o3.Irreps(
+                [
+                    (model_config["irreps_0"], "0o"),
+                    (model_config["irreps_0"], "0e"),
+                    (model_config["irreps_1"], "1o"),
+                    (model_config["irreps_1"], "1e"),
+                    (model_config["irreps_2"], "2o"),
+                    (model_config["irreps_2"], "2e"),
+                    (model_config["irreps_3"], "3o"),
+                    (model_config["irreps_3"], "3e"),
+                    (model_config["irreps_4"], "4o"),
+                    (model_config["irreps_4"], "4e"),
+                ]
+            )
     ## Set up default hidden irreps if none specified
-    if irreps_hidden is None:
+    elif irreps_hidden is None:
         irreps_hidden = [
             (mul, (l, p))
             for l, mul in enumerate([10, 3, 2, 1])
             for p in [-1, 1]
         ]
+
+    ## Handle any conflicts and set defaults if necessary. model_config will
+    ##  override any other parameters
+    node_attr = (
+        model_config["lig"]
+        if model_config and ("lig" in model_config)
+        else node_attr
+    )
+    irreps_edge_attr = (
+        model_config["irreps_edge_attr"]
+        if model_config and ("irreps_edge_attr" in model_config)
+        else 3
+    )
+    layers = (
+        model_config["layers"]
+        if model_config and ("layers" in model_config)
+        else 3
+    )
+    neighbor_dist = (
+        model_config["max_radius"]
+        if model_config and ("max_radius" in model_config)
+        else neighbor_dist
+    )
+    number_of_basis = (
+        model_config["number_of_basis"]
+        if model_config and ("number_of_basis" in model_config)
+        else 10
+    )
+    radial_layers = (
+        model_config["radial_layers"]
+        if model_config and ("radial_layers" in model_config)
+        else 1
+    )
+    radial_neurons = (
+        model_config["radial_neurons"]
+        if model_config and ("radial_neurons" in model_config)
+        else 128
+    )
 
     # input is one-hot encoding of atom type => n_atom_types scalars
     # output is scalar valued binding energy/pIC50 value
@@ -460,12 +529,12 @@ def build_model_e3nn(
         "irreps_hidden": irreps_hidden,
         "irreps_out": "1x0e",
         "irreps_node_attr": "1x0e" if node_attr else None,
-        "irreps_edge_attr": o3.Irreps.spherical_harmonics(3),
-        "layers": 3,
+        "irreps_edge_attr": o3.Irreps.spherical_harmonics(irreps_edge_attr),
+        "layers": layers,
         "max_radius": neighbor_dist,
-        "number_of_basis": 10,
-        "radial_layers": 1,
-        "radial_neurons": 128,
+        "number_of_basis": number_of_basis,
+        "radial_layers": radial_layers,
+        "radial_neurons": radial_neurons,
         "num_neighbors": num_neighbors,
         "num_nodes": num_nodes,
         "reduce_output": True,
@@ -475,13 +544,19 @@ def build_model_e3nn(
 
 
 def build_model_schnet(
-    qm9=None, qm9_target=10, remove_atomref=False, neighbor_dist=5.0
+    model_config=None,
+    qm9=None,
+    qm9_target=10,
+    remove_atomref=False,
+    neighbor_dist=5.0,
 ):
     """
     Build appropriate SchNet model.
 
     Parameters
     ----------
+    model_config : dict, optional
+        Model config
     qm9 : str, optional
         Path to QM9 dataset, if starting with a QM9-pretrained model
     qm9_target : int, default=10
@@ -500,7 +575,11 @@ def build_model_schnet(
 
     ## Load pretrained model if requested, otherwise create a new SchNet
     if qm9 is None:
-        model = mtenn.conversion_utils.SchNet()
+        if model_config:
+            model = SchNet(**model_config)
+        else:
+            model = SchNet()
+        model = mtenn.conversion_utils.SchNet(model)
     else:
         qm9_dataset = QM9(qm9)
 
@@ -538,7 +617,8 @@ def build_model_schnet(
         model = mtenn.conversion_utils.SchNet(model)
 
     ## Set interatomic cutoff (default of 10) to make the graph smaller
-    model.cutoff = neighbor_dist
+    if (model_config is None) or ("cutoff" not in model_config):
+        model.cutoff = neighbor_dist
 
     return model
 
@@ -582,6 +662,36 @@ def make_wandb_table(ds_split):
         table.add_data(xtal_id, compound_id, mol, smiles, pic50)
 
     return table
+
+
+def parse_config(config_fn):
+    """
+    Function to load a model config JSON/YAML file with the appropriate
+    function.
+
+    Parameters
+    ----------
+    config_fn : str
+        Filename of the config file
+
+    Returns
+    -------
+    dict
+        Loaded config
+    """
+    fn_ext = config_fn.split(".")[-1].lower()
+    if fn_ext == "json":
+        import json
+
+        model_config = json.load(open(config_fn))
+    elif fn_ext in {"yaml", "yml"}:
+        import yaml
+
+        model_config = yaml.safe_load(open(config_fn))
+    else:
+        raise ValueError(f"Unknown config file extension: {fn_ext}")
+
+    return model_config
 
 
 def wandb_init(
@@ -663,9 +773,7 @@ def get_args():
         help="Cutoff distance for node neighbors.",
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
-    parser.add_argument(
-        "-config", help="Model config JSON file for graph 2D model."
-    )
+    parser.add_argument("-config", help="Model config JSON/YAML file.")
 
     ## Training arguments
     parser.add_argument(
@@ -757,6 +865,17 @@ def init(args, rank=False):
     ds, exp_data = build_dataset(args, rank)
     ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
+    ## Parse model config file
+    if args.config:
+        model_config = parse_config(args.config)
+    else:
+        model_config = {}
+    print("Using model config:", model_config, flush=True)
+
+    if "lr" in model_config:
+        args.lr = model_config["lr"]
+        del model_config["lr"]
+
     ## Build the model
     if args.model == "e3nn":
         ## Need to add one-hot encodings to the dataset
@@ -775,6 +894,7 @@ def init(args, rank=False):
         model = build_model_e3nn(
             100,
             *model_params[1:],
+            model_config,
             node_attr=args.lig,
             neighbor_dist=args.n_dist,
             irreps_hidden=args.irr,
@@ -805,6 +925,7 @@ def init(args, rank=False):
         }
     elif args.model == "schnet":
         model = build_model_schnet(
+            model_config,
             args.qm9,
             args.qm9_target,
             args.rm_atomref,
@@ -821,7 +942,7 @@ def init(args, rank=False):
             "neighbor_dist": args.n_dist,
         }
     elif args.model == "2d":
-        model, exp_configure = build_model_2d(args.config)
+        model, exp_configure = build_model_2d(model_config)
         model_call = lambda model, d: torch.reshape(
             model(d["g"], d["g"].ndata["h"]), (-1, 1)
         )
@@ -908,6 +1029,11 @@ def init(args, rank=False):
                 "mtenn:comb_readout": comb_readout,
             }
         )
+
+    ## Update exp_configure to have model info in it
+    exp_configure.update(
+        {f"model_config:{k}": v for k, v in model_config.items()}
+    )
 
     return (
         exp_data,
