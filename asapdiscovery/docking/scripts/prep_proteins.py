@@ -93,11 +93,12 @@ def prep_mp(
 ):
     ## Check if results already exist
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
-    # if check_completed(out_dir):
-    #     return
+    if check_completed(out_dir):
+        return
 
     ## Make output directory
-    os.makedirs(out_dir, exist_ok=True)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
     logging.basicConfig(
         filename=os.path.join(out_dir, "log.txt"),
@@ -173,7 +174,6 @@ def prep_mp(
         logging.error(
             "DU generation failed for",
             f"{xtal.output_name}",
-            flush=True,
         )
         return
 
@@ -184,7 +184,6 @@ def prep_mp(
             oechem.OEWriteDesignUnit(
                 os.path.join(out_dir, f"prepped_receptor_{i}.oedu"), du
             ),
-            flush=True,
         )
 
         ## Save complex as PDB file
