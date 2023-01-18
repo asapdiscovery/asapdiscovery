@@ -1,5 +1,5 @@
-from asapdiscovery.postera_api.src.arg_parser import arg_parser
-from asapdiscovery.postera_api.src.molecule_set_crud import MoleculeSetCRUD, MoleculeList, MoleculeUpdateList
+from src.arg_parser import arg_parser
+from src.molecule_set_crud import MoleculeSetCRUD, MoleculeList, MoleculeUpdateList
 
 import pandas as pd
 
