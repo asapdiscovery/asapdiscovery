@@ -100,17 +100,22 @@ def prep_mp(
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    logging.basicConfig(
-        filename=os.path.join(out_dir, "log.txt"),
-        level=logging.DEBUG,
-        filemode="w",
-    )
-    logging.info(datetime.datetime.isoformat(datetime.datetime.now()))
-    logging.info(f"Prepping {xtal.output_name}")
+    handler = logging.FileHandler(os.path.join(out_dir, "log.txt"))
+    prep_logger = logging.getLogger(xtal.output_name)
+    prep_logger.setLevel(logging.INFO)
+    prep_logger.addHandler(handler)
+
+    # logging.basicConfig(
+    #     filename=os.path.join(out_dir, "log.txt"),
+    #     level=logging.DEBUG,
+    #     filemode="w",
+    # )
+    prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
+    prep_logger.info(f"Prepping {xtal.output_name}")
 
     ## Option to add SEQRES header
     if seqres:
-        logging.info("Editing PDB file")
+        prep_logger.info("Editing PDB file")
         ## Get a list of 3-letter codes for the sequence
         res_list = seqres_to_res_list(seqres)
 
@@ -138,7 +143,7 @@ def prep_mp(
         mutate = False
 
     if mutate:
-        logging.info("Mutating to provided seqres")
+        prep_logger.info("Mutating to provided seqres")
         ## Mutate the residues to match the residue list
         initial_prot = mutate_residues(
             initial_prot, res_list, xtal.protein_chains
@@ -150,7 +155,7 @@ def prep_mp(
     )
 
     if ref_prot:
-        logging.info("Aligning receptor")
+        prep_logger.info("Aligning receptor")
         initial_prot = align_receptor(
             initial_complex=initial_prot,
             ref_prot=ref_prot,
@@ -162,7 +167,7 @@ def prep_mp(
         save_openeye_pdb(initial_prot, "align_test.pdb")
     ## Take the first returned DU and save it
     try:
-        logging.info("Attempting to prepare design units")
+        prep_logger.info("Attempting to prepare design units")
         site_residue = xtal.active_site if xtal.active_site else ""
         design_units = prep_receptor(
             initial_prot,
@@ -179,7 +184,7 @@ def prep_mp(
 
     du = design_units[0]
     for i, du in enumerate(design_units):
-        logging.info(
+        prep_logger.info(
             f"{xtal.output_name}",
             oechem.OEWriteDesignUnit(
                 os.path.join(out_dir, f"prepped_receptor_{i}.oedu"), du
@@ -192,7 +197,7 @@ def prep_mp(
         save_openeye_pdb(
             complex_mol, os.path.join(out_dir, f"prepped_receptor_{i}.pdb")
         )
-    logging.info(
+    prep_logger.info(
         f"Finished protein prep at {datetime.datetime.isoformat(datetime.datetime.now())}"
     )
 
@@ -282,11 +287,11 @@ def get_args():
 def main():
     args = get_args()
 
-    logging.basicConfig(
-        filename=args.log_file,
-        level=logging.DEBUG,
-        filemode="w",
-    )
+    # logging.basicConfig(
+    #     filename=args.log_file,
+    #     level=logging.DEBUG,
+    #     filemode="w",
+    # )
     handler = logging.FileHandler(args.log_file)
     main_logger = logging.getLogger("main")
     main_logger.setLevel(logging.INFO)
