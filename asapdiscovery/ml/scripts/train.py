@@ -409,6 +409,7 @@ def build_model_e3nn(
     n_atom_types,
     num_neighbors,
     num_nodes,
+    model_config=None,
     node_attr=False,
     neighbor_dist=5.0,
     irreps_hidden=None,
@@ -438,13 +439,83 @@ def build_model_e3nn(
         e3nn model created from input parameters
     """
 
+    ## Build hidden irreps
+    if model_config:
+        if "irreps_0o" in model_config:
+            irreps_hidden = o3.Irreps(
+                [
+                    (model_config["irreps_0o"], "0o"),
+                    (model_config["irreps_0e"], "0e"),
+                    (model_config["irreps_1o"], "1o"),
+                    (model_config["irreps_1e"], "1e"),
+                    (model_config["irreps_2o"], "2o"),
+                    (model_config["irreps_2e"], "2e"),
+                    (model_config["irreps_3o"], "3o"),
+                    (model_config["irreps_3e"], "3e"),
+                    (model_config["irreps_4o"], "4o"),
+                    (model_config["irreps_4e"], "4e"),
+                ]
+            )
+        else:
+            irreps_hidden = o3.Irreps(
+                [
+                    (model_config["irreps_0"], "0o"),
+                    (model_config["irreps_0"], "0e"),
+                    (model_config["irreps_1"], "1o"),
+                    (model_config["irreps_1"], "1e"),
+                    (model_config["irreps_2"], "2o"),
+                    (model_config["irreps_2"], "2e"),
+                    (model_config["irreps_3"], "3o"),
+                    (model_config["irreps_3"], "3e"),
+                    (model_config["irreps_4"], "4o"),
+                    (model_config["irreps_4"], "4e"),
+                ]
+            )
     ## Set up default hidden irreps if none specified
-    if irreps_hidden is None:
+    elif irreps_hidden is None:
         irreps_hidden = [
             (mul, (l, p))
             for l, mul in enumerate([10, 3, 2, 1])
             for p in [-1, 1]
         ]
+
+    ## Handle any conflicts and set defaults if necessary. model_config will
+    ##  override any other parameters
+    node_attr = (
+        model_config["lig"]
+        if model_config and ("lig" in model_config)
+        else node_attr
+    )
+    irreps_edge_attr = (
+        model_config["irreps_edge_attr"]
+        if model_config and ("irreps_edge_attr" in model_config)
+        else 3
+    )
+    layers = (
+        model_config["layers"]
+        if model_config and ("layers" in model_config)
+        else 3
+    )
+    neighbor_dist = (
+        model_config["max_radius"]
+        if model_config and ("max_radius" in model_config)
+        else neighbor_dist
+    )
+    number_of_basis = (
+        model_config["number_of_basis"]
+        if model_config and ("number_of_basis" in model_config)
+        else 10
+    )
+    radial_layers = (
+        model_config["radial_layers"]
+        if model_config and ("radial_layers" in model_config)
+        else 1
+    )
+    radial_neurons = (
+        model_config["radial_neurons"]
+        if model_config and ("radial_neurons" in model_config)
+        else 128
+    )
 
     # input is one-hot encoding of atom type => n_atom_types scalars
     # output is scalar valued binding energy/pIC50 value
@@ -458,12 +529,12 @@ def build_model_e3nn(
         "irreps_hidden": irreps_hidden,
         "irreps_out": "1x0e",
         "irreps_node_attr": "1x0e" if node_attr else None,
-        "irreps_edge_attr": o3.Irreps.spherical_harmonics(3),
-        "layers": 3,
+        "irreps_edge_attr": o3.Irreps.spherical_harmonics(irreps_edge_attr),
+        "layers": layers,
         "max_radius": neighbor_dist,
-        "number_of_basis": 10,
-        "radial_layers": 1,
-        "radial_neurons": 128,
+        "number_of_basis": number_of_basis,
+        "radial_layers": radial_layers,
+        "radial_neurons": radial_neurons,
         "num_neighbors": num_neighbors,
         "num_nodes": num_nodes,
         "reduce_output": True,
@@ -821,9 +892,9 @@ def init(args, rank=False):
             model_params = calc_e3nn_model_info(ds_train, args.n_dist)
             pkl.dump(model_params, open(args.model_params, "wb"))
         model = build_model_e3nn(
-            model_config,
             100,
             *model_params[1:],
+            model_config,
             node_attr=args.lig,
             neighbor_dist=args.n_dist,
             irreps_hidden=args.irr,
