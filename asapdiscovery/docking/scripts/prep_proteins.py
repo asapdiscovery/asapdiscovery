@@ -185,11 +185,11 @@ def prep_mp(
 
     du = design_units[0]
     for i, du in enumerate(design_units):
+        success = oechem.OEWriteDesignUnit(
+            os.path.join(out_dir, f"prepped_receptor_{i}.oedu"), du
+        )
         prep_logger.info(
-            f"{xtal.output_name}",
-            oechem.OEWriteDesignUnit(
-                os.path.join(out_dir, f"prepped_receptor_{i}.oedu"), du
-            ),
+            f"{xtal.output_name} DU successfully written out: {success}"
         )
 
         ## Save complex as PDB file
