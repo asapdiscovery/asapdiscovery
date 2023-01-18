@@ -64,19 +64,19 @@ def check_completed(d):
         True if both files exist and can be loaded, otherwise False.
     """
 
-    if (not os.path.isfile(os.path.join(d, "prepped_receptor.oedu"))) or (
-        not os.path.isfile(os.path.join(d, "prepped_receptor.pdb"))
+    if (not os.path.isfile(os.path.join(d, "prepped_receptor_0.oedu"))) or (
+        not os.path.isfile(os.path.join(d, "prepped_receptor_0.pdb"))
     ):
         return False
 
     try:
         du = oechem.OEDesignUnit()
-        oechem.OEReadDesignUnit(os.path.join(d, "prepped_receptor.oedu"), du)
+        oechem.OEReadDesignUnit(os.path.join(d, "prepped_receptor_0.oedu"), du)
     except Exception:
         return False
 
     try:
-        _ = load_openeye_pdb(os.path.join(d, "prepped_receptor.pdb"))
+        _ = load_openeye_pdb(os.path.join(d, "prepped_receptor_0.pdb"))
     except Exception:
         return False
 
@@ -96,7 +96,7 @@ def prep_mp(
     handler = logging.FileHandler(os.path.join(out_dir, "log.txt"))
     prep_logger = logging.getLogger(xtal.output_name)
     prep_logger.setLevel(logging.INFO)
-    prep_logger.addHandler(handler)
+    prep_logger.addHandler(handler, mode="w")
     prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
 
     if check_completed(out_dir):
@@ -296,7 +296,7 @@ def main():
     handler = logging.FileHandler(args.log_file)
     main_logger = logging.getLogger("main")
     main_logger.setLevel(logging.INFO)
-    main_logger.addHandler(handler)
+    main_logger.addHandler(handler, mode="w")
 
     if args.xtal_csv:
         p_only = False if args.include_non_Pseries else True
