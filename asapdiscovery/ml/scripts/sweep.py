@@ -5,12 +5,18 @@ import argparse
 
 import json
 import multiprocessing as mp
+import pickle as pkl
 import torch
 import wandb
 import yaml
 
 from asapdiscovery.ml import MSELoss
-from asapdiscovery.ml.scripts.train import build_dataset, split_dataset
+from asapdiscovery.ml.scripts.train import (
+    add_one_hot_encodings,
+    add_lig_labels,
+    build_dataset,
+    split_dataset,
+)
 from asapdiscovery.ml.utils import train
 
 
@@ -40,11 +46,15 @@ def build_model(args):
         model_call = lambda model, d: torch.reshape(
             model(d["g"], d["g"].ndata["h"]), (-1, 1)
         )
-    elif model == "schnet":
+    elif (model == "schnet") or (model == "e3nn"):
         import mtenn.conversion_utils
         import mtenn.model
 
-        model = build_model_schnet()
+        if model == "schnet":
+            model = build_model_schnet()
+        else:
+            model_params = pkl.load(open(args.model_params, "rb"))
+            model = build_model_e3nn(100, *model_params[1:])
         strategy = args.strat.lower()
 
         ## Check and parse combination
@@ -192,8 +202,6 @@ def build_model_e3nn(
     num_neighbors,
     num_nodes,
     config=None,
-    neighbor_dist=5.0,
-    irreps_hidden=None,
 ):
     """
     Build appropriate e3nn model.
@@ -209,8 +217,9 @@ def build_model_e3nn(
     num_nodes : int
         Approximate number of nodes per graph. Used as a normalization factor in
         the model
-    neighbor_dist : float, default=5.0
-        Distance cutoff for nodes to be considered neighbors
+    config : Union[str, dict], optional
+        Either a dict or JSON file with model config options. If not passed,
+        `config` will be taken from `wandb`.
 
     Returns
     -------
@@ -404,6 +413,19 @@ def main():
     ## Load and split dataset
     ds, exp_data = build_dataset(args)
     ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
+
+    ## Need to augment the datasets if using e3nn
+    if args.model.lower() == "e3nn":
+        ## Add one-hot encodings to the dataset
+        ds_train = add_one_hot_encodings(ds_train)
+        ds_val = add_one_hot_encodings(ds_val)
+        ds_test = add_one_hot_encodings(ds_test)
+
+        ## Add lig labels as node attributes if requested
+        if wandb.config.lig:
+            ds_train = add_lig_labels(ds_train)
+            ds_val = add_lig_labels(ds_val)
+            ds_test = add_lig_labels(ds_test)
 
     ## Build model and set model call function
     model, model_call = build_model(args)
