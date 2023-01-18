@@ -64,19 +64,25 @@ def check_completed(d, prefix):
         True if both files exist and can be loaded, otherwise False.
     """
 
-    if (not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"))) or (
+    if (
+        not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"))
+    ) or (
         not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
     ):
         return False
 
     try:
         du = oechem.OEDesignUnit()
-        oechem.OEReadDesignUnit(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"), du)
+        oechem.OEReadDesignUnit(
+            os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"), du
+        )
     except Exception:
         return False
 
     try:
-        _ = load_openeye_pdb(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
+        _ = load_openeye_pdb(
+            os.path.join(d, f"{prefix}_prepped_receptor_0.pdb")
+        )
     except Exception:
         return False
 
@@ -180,7 +186,10 @@ def prep_mp(
     du = design_units[0]
     for i, du in enumerate(design_units):
         success = oechem.OEWriteDesignUnit(
-            os.path.join(out_dir, f"{xtal.output_name}_prepped_receptor_{i}.oedu"), du
+            os.path.join(
+                out_dir, f"{xtal.output_name}_prepped_receptor_{i}.oedu"
+            ),
+            du,
         )
         prep_logger.info(
             f"{xtal.output_name} DU successfully written out: {success}"
@@ -190,7 +199,10 @@ def prep_mp(
         complex_mol = du_to_complex(du, include_solvent=True)
         openeye_copy_pdb_data(complex_mol, initial_prot, "SEQRES")
         save_openeye_pdb(
-            complex_mol, os.path.join(out_dir, f"{xtal.output_name}_prepped_receptor_{i}.pdb")
+            complex_mol,
+            os.path.join(
+                out_dir, f"{xtal.output_name}_prepped_receptor_{i}.pdb"
+            ),
         )
     prep_logger.info(
         f"Finished protein prep at {datetime.datetime.isoformat(datetime.datetime.now())}"
