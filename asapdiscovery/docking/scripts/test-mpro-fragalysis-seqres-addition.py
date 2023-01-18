@@ -67,6 +67,9 @@ def get_args():
 def main():
     args = get_args()
 
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
     active_site_chain = args.active_site_chain
 
     ## Load PDB File
