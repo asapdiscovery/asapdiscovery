@@ -91,21 +91,22 @@ def prep_mp(
     loop_db,
     protein_only: bool,
 ):
-    ## Check if results already exist
+    ## Make output directory
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    ## Prepare logger
     handler = logging.FileHandler(os.path.join(out_dir, "log.txt"), mode="w")
     prep_logger = logging.getLogger(xtal.output_name)
     prep_logger.setLevel(logging.INFO)
     prep_logger.addHandler(handler)
     prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
 
+    ## Check if results already exist
     if check_completed(out_dir):
         prep_logger.info("Already completed! Finishing.")
         return
-
-    ## Make output directory
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
 
     # logging.basicConfig(
     #     filename=os.path.join(out_dir, "log.txt"),
