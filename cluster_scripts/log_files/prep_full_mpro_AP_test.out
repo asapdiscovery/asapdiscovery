@@ -1,0 +1,123 @@
+Sender: LSF System <lsfadmin@ln02>
+Subject: Job 14136851: <prep_full_mpro_AP_test> in cluster <lila> Exited
+
+Job <prep_full_mpro_AP_test> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Wed Jan 18 11:37:37 2023
+Job was executed on host(s) <32*ln02>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Wed Jan 18 11:37:38 2023
+</home/paynea> was used as the home directory.
+</home/paynea/covid-moonshot-ml/cluster_scripts> was used as the working directory.
+Started at Wed Jan 18 11:37:38 2023
+Terminated at Wed Jan 18 11:39:56 2023
+Results reported at Wed Jan 18 11:39:56 2023
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -J prep_full_mpro_AP_test
+#BSUB -oo log_files/prep_full_mpro_AP_test.out
+#BSUB -e log_files/prep_full_mpro_AP_test.stderr
+#BSUB -n 32
+#BSUB -R rusage[mem=4]
+#BSUB -W 72:00
+mkdir -p /data/chodera/asap-datasets/full_frag_prepped_mpro_20230118/
+source ~/.bashrc
+conda activate mers-docking
+python /data/chodera/paynea/covid-moonshot-ml/asapdiscovery/docking/scripts/prep_proteins.py \
+-d /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/aligned/ \
+-x /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/Mpro_compound_tracker_csv.csv \
+-o /data/chodera/asap-datasets/full_frag_prepped_mpro_20230118/ \
+-l /data/chocera/asap-datasets/rcsb_spruce.loop_db \
+-n 32 \
+-s /data/chodera/paynea/covid-moonshot-ml/metadata/mpro_sars2_seqres.yaml \
+--include_non_Pseries
+echo date
+echo done
+
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with signal termination: 14.
+
+Resource usage summary:
+
+    CPU time :                                   3031.94 sec.
+    Max Memory :                                 5 GB
+    Average Memory :                             3.37 GB
+    Total Requested Memory :                     128.00 GB
+    Delta Memory :                               123.00 GB
+    Max Swap :                                   -
+    Max Processes :                              36
+    Max Threads :                                48
+    Run time :                                   139 sec.
+    Turnaround time :                            139 sec.
+
+The output (if any) follows:
+
+No structure found for Mpro_Nterm-x0029.
+No structure found for Mpro_Nterm-x0066.
+No structure found for Mpro_Nterm-x0077.
+Loading 578 structures
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp6_y7xzys.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpiy6l6qhf.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpfhy2xusm.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpe1cb63iu.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp25a0eh9r.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp2_kbbfip.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpu9c78el1.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpknjd9u5e.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmphx9_ax4a.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpw6bci73_.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpxhug6nou.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpyl8x7vk1.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpici0ospf.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp4c5o26_j.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpi0ovrfo6.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp8jw15dzf.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp4idqoggf.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpwuie5bhy.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpa17it5jg.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpjxjd9h2_.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpt6oy5lq4.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpg43dx6nq.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpl3gjy5ce.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpdbt7nsxb.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpe5k_jt61.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp6teom603.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpq0oegcx7.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpccfj6anq.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp8g7f4sr6.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpk5k3ra0w.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpyn8a3b85.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpw9023ehk.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpd0n0m5qg.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmphz5z18dr.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpnm_hoy3c.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpdhqn_d72.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpb8x1b1ny.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpae8u9d_p.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp5_0nhc6k.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpib5tnmh7.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp7elgk9_p.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmppvf25pds.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpylnwqwub.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpu59zvvtq.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp1m3z993p.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpiisfkd23.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp8y2l0w1u.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpkuq23fha.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp_c7tb_6e.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpmp3pidzt.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpvvt2piz8.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpucoueotl.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmphodbe5t4.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmpoyr4tmhc.pdb
+Wrote /scratch/lsftmp/14136851.tmpdir/tmp6sld8h_o.pdb
+date
+done
+
+
+PS:
+
+Read file <log_files/prep_full_mpro_AP_test.stderr> for stderr output of this job.
+
