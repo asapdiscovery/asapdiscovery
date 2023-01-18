@@ -238,20 +238,36 @@ def build_model_e3nn(
         raise ValueError(f"Unknown type of config: {type(config)}")
 
     ## Build hidden irreps
-    irreps_hidden = Irreps(
-        [
-            (config.irreps_0o, "0o"),
-            (config.irreps_0e, "0e"),
-            (config.irreps_1o, "1o"),
-            (config.irreps_1e, "1e"),
-            (config.irreps_2o, "2o"),
-            (config.irreps_2e, "2e"),
-            (config.irreps_3o, "3o"),
-            (config.irreps_3e, "3e"),
-            (config.irreps_4o, "4o"),
-            (config.irreps_4e, "4e"),
-        ]
-    )
+    if "irreps_0o" in config:
+        irreps_hidden = Irreps(
+            [
+                (config.irreps_0o, "0o"),
+                (config.irreps_0e, "0e"),
+                (config.irreps_1o, "1o"),
+                (config.irreps_1e, "1e"),
+                (config.irreps_2o, "2o"),
+                (config.irreps_2e, "2e"),
+                (config.irreps_3o, "3o"),
+                (config.irreps_3e, "3e"),
+                (config.irreps_4o, "4o"),
+                (config.irreps_4e, "4e"),
+            ]
+        )
+    else:
+        irreps_hidden = Irreps(
+            [
+                (config.irreps_0, "0o"),
+                (config.irreps_0, "0e"),
+                (config.irreps_1, "1o"),
+                (config.irreps_1, "1e"),
+                (config.irreps_2, "2o"),
+                (config.irreps_2, "2e"),
+                (config.irreps_3, "3o"),
+                (config.irreps_3, "3e"),
+                (config.irreps_4, "4o"),
+                (config.irreps_4, "4e"),
+            ]
+        )
 
     # input is one-hot encoding of atom type => n_atom_types scalars
     # output is scalar valued binding energy/pIC50 value
