@@ -261,6 +261,11 @@ def get_args():
         action="store_true",
         help="If true, the p_only flag of parse_xtal will be set to False. Default is False, which sets p_only to True",
     )
+    parser.add_argument(
+        "--log_file",
+        default="prep_proteins_log.txt",
+        help="Path to high level log file.",
+    )
 
     ## Performance arguments
     parser.add_argument(
@@ -277,6 +282,12 @@ def get_args():
 def main():
     args = get_args()
 
+    logging.basicConfig(
+        filename=args.log_file,
+        level=logging.DEBUG,
+        filemode="w",
+    )
+
     if args.xtal_csv:
         p_only = False if args.include_non_Pseries else True
         xtal_compounds = parse_xtal(
@@ -290,10 +301,9 @@ def main():
             try:
                 frag_chain = re.search(re_pat, xtal.str_fn).groups()[0]
             except AttributeError:
-                print(
+                logging.error(
                     f"Regex chain search failed: {re_pat}, {xtal.str_fn}.",
                     "Using A as default.",
-                    flush=True,
                 )
                 frag_chain = "0A"
             xtal.output_name = f"{xtal.dataset}_{frag_chain}_{xtal.compound_id}"
@@ -348,9 +358,12 @@ def main():
         )
         for x in xtal_compounds
     ]
-    print(mp_args[0], flush=True)
+    logging.info(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
+    logging.info(
+        f"CPUS: {mp.cpu_count()}, Structure: {mp_args}, N Cores: {args.num_cores}"
+    )
+    logging.info(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         pool.starmap(prep_mp, mp_args)
 
