@@ -287,6 +287,10 @@ def main():
         level=logging.DEBUG,
         filemode="w",
     )
+    handler = logging.FileHandler(args.log_file)
+    main_logger = logging.getLogger("main")
+    main_logger.setLevel(logging.INFO)
+    main_logger.addHandler(handler)
 
     if args.xtal_csv:
         p_only = False if args.include_non_Pseries else True
@@ -301,7 +305,7 @@ def main():
             try:
                 frag_chain = re.search(re_pat, xtal.str_fn).groups()[0]
             except AttributeError:
-                logging.error(
+                main_logger.error(
                     f"Regex chain search failed: {re_pat}, {xtal.str_fn}.",
                     "Using A as default.",
                 )
@@ -358,12 +362,12 @@ def main():
         )
         for x in xtal_compounds
     ]
-    logging.info(mp_args[0])
+    main_logger.info(mp_args[0])
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    logging.info(
+    main_logger.info(
         f"CPUS: {mp.cpu_count()}, Structure: {mp_args}, N Cores: {args.num_cores}"
     )
-    logging.info(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
+    main_logger.info(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         pool.starmap(prep_mp, mp_args)
 
