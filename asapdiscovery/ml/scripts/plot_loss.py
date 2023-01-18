@@ -86,6 +86,20 @@ def get_args():
         help="Convert errors from squared pIC50 values to delta G values.",
     )
 
+    parser.add_argument(
+        "-s",
+        "--start_epoch",
+        type=int,
+        default=0,
+        help="Which epoch to start plotting from.",
+    )
+    parser.add_argument(
+        "-e",
+        "--end_epoch",
+        type=int,
+        help="Last epoch to plot.",
+    )
+
     return parser.parse_args()
 
 
@@ -155,7 +169,9 @@ def main():
     all_lab = np.asarray(all_lab)
     all_type = np.asarray(all_type)
 
-    idx = all_epoch >= 100
+    idx = all_epoch >= args.start_epoch
+    if args.end_epoch is not None:
+        idx |= all_epoch <= args.end_epoch
     all_epoch = all_epoch[idx]
     all_loss = all_loss[idx]
     all_lab = all_lab[idx]
