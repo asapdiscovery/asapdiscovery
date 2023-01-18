@@ -1030,6 +1030,11 @@ def init(args, rank=False):
             }
         )
 
+    ## Update exp_configure to have model info in it
+    exp_configure.update(
+        {f"model_config:{k}": v for k, v in model_config.items()}
+    )
+
     return (
         exp_data,
         ds_train,
