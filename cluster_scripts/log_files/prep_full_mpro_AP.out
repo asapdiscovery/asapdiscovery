@@ -1,13 +1,13 @@
-Sender: LSF System <lsfadmin@lu07>
-Subject: Job 14023906: <prep_full_mpro_AP> in cluster <lila> Exited
+Sender: LSF System <lsfadmin@ln05>
+Subject: Job 14080075: <prep_full_mpro_AP> in cluster <lila> Exited
 
-Job <prep_full_mpro_AP> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Wed Jan 11 15:18:03 2023
-Job was executed on host(s) <32*lu07>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Wed Jan 11 17:29:04 2023
+Job <prep_full_mpro_AP> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Tue Jan 17 15:31:54 2023
+Job was executed on host(s) <32*ln05>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Tue Jan 17 15:32:20 2023
 </home/paynea> was used as the home directory.
 </home/paynea/covid-moonshot-ml/cluster_scripts> was used as the working directory.
-Started at Wed Jan 11 17:29:04 2023
-Terminated at Sat Jan 14 17:29:04 2023
-Results reported at Sat Jan 14 17:29:04 2023
+Started at Tue Jan 17 15:32:20 2023
+Terminated at Wed Jan 18 11:48:25 2023
+Results reported at Wed Jan 18 11:48:25 2023
 
 Your job looked like:
 
@@ -19,7 +19,7 @@ Your job looked like:
 #BSUB -e log_files/prep_full_mpro_AP.stderr
 #BSUB -n 32
 #BSUB -R rusage[mem=4]
-#BSUB -W 72:00
+#BSUB -W 168:00
 mkdir -p /data/chodera/asap-datasets/full_frag_prepped_mpro_20230111/
 source ~/.bashrc
 conda activate mers-docking
@@ -36,12 +36,12 @@ echo done
 
 ------------------------------------------------------------
 
-TERM_RUNLIMIT: job killed after reaching LSF run time limit.
-Exited with exit code 140.
+TERM_OWNER: job killed by owner.
+Exited with signal termination: 14.
 
 Resource usage summary:
 
-    CPU time :                                   12350.00 sec.
+    CPU time :                                   11547.49 sec.
     Max Memory :                                 5 GB
     Average Memory :                             5.00 GB
     Total Requested Memory :                     128.00 GB
@@ -49,8 +49,8 @@ Resource usage summary:
     Max Swap :                                   -
     Max Processes :                              36
     Max Threads :                                48
-    Run time :                                   259201 sec.
-    Turnaround time :                            267061 sec.
+    Run time :                                   72964 sec.
+    Turnaround time :                            72991 sec.
 
 The output (if any) follows:
 
@@ -60,123 +60,125 @@ No structure found for Mpro_Nterm-x0077.
 Loading 578 structures
 (CrystalCompoundData(smiles='ClCC(=O)N(C1CS(=O)(=O)C=C1)c2ccccc2', compound_id='AAR-POS-0daf6b7e-1', dataset='Mpro-x1311', str_fn='/data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/aligned//Mpro-x1311_0A/Mpro-x1311_0A_bound.pdb', sdf_fn=None, active_site_chain='A', output_name='Mpro-x1311_0A_AAR-POS-0daf6b7e-1', active_site=None, oligomeric_state=None, chains=None, protein_chains=None), None, 'SEQRES   1 A  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL\nSEQRES   2 A  306  GLU GLY CYS MET VAL GLN VAL THR CYS GLY THR THR THR\nSEQRES   3 A  306  LEU ASN GLY LEU TRP LEU ASP ASP VAL VAL TYR CYS PRO\nSEQRES   4 A  306  ARG HIS VAL ILE CYS THR SER GLU ASP MET LEU ASN PRO\nSEQRES   5 A  306  ASN TYR GLU ASP LEU LEU ILE ARG LYS SER ASN HIS ASN\nSEQRES   6 A  306  PHE LEU VAL GLN ALA GLY ASN VAL GLN LEU ARG VAL ILE\nSEQRES   7 A  306  GLY HIS SER MET GLN ASN CYS VAL LEU LYS LEU LYS VAL\nSEQRES   8 A  306  ASP THR ALA ASN PRO LYS THR PRO LYS TYR LYS PHE VAL\nSEQRES   9 A  306  ARG ILE GLN PRO GLY GLN THR PHE SER VAL LEU ALA CYS\nSEQRES  10 A  306  TYR ASN GLY SER PRO SER GLY VAL TYR GLN CYS ALA MET\nSEQRES  11 A  306  ARG PRO ASN PHE THR ILE LYS GLY SER PHE LEU ASN GLY\nSEQRES  12 A  306  SER CYS GLY SER VAL GLY PHE ASN ILE ASP TYR ASP CYS\nSEQRES  13 A  306  VAL SER PHE CYS TYR MET HIS HIS MET GLU LEU PRO THR\nSEQRES  14 A  306  GLY VAL HIS ALA GLY THR ASP LEU GLU GLY ASN PHE TYR\nSEQRES  15 A  306  GLY PRO PHE VAL ASP ARG GLN THR ALA GLN ALA ALA GLY\nSEQRES  16 A  306  THR ASP THR THR ILE THR VAL ASN VAL LEU ALA TRP LEU\nSEQRES  17 A  306  TYR ALA ALA VAL ILE ASN GLY ASP ARG TRP PHE LEU ASN\nSEQRES  18 A  306  ARG PHE THR THR THR LEU ASN ASP PHE ASN LEU VAL ALA\nSEQRES  19 A  306  MET LYS TYR ASN TYR GLU PRO LEU THR GLN ASP HIS VAL\nSEQRES  20 A  306  ASP ILE LEU GLY PRO LEU SER ALA GLN THR GLY ILE ALA\nSEQRES  21 A  306  VAL LEU ASP MET CYS ALA SER LEU LYS GLU LEU LEU GLN\nSEQRES  22 A  306  ASN GLY MET ASN GLY ARG THR ILE LEU GLY SER ALA LEU\nSEQRES  23 A  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN\nSEQRES  24 A  306  CYS SER GLY VAL THR PHE GLN\nSEQRES   1 B  306  SER GLY PHE ARG LYS MET ALA PHE PRO SER GLY LYS VAL\nSEQRES   2 B  306  GLU GLY CYS MET VAL GLN VAL THR CYS GLY THR THR THR\nSEQRES   3 B  306  LEU ASN GLY LEU TRP LEU ASP ASP VAL VAL TYR CYS PRO\nSEQRES   4 B  306  ARG HIS VAL ILE CYS THR SER GLU ASP MET LEU ASN PRO\nSEQRES   5 B  306  ASN TYR GLU ASP LEU LEU ILE ARG LYS SER ASN HIS ASN\nSEQRES   6 B  306  PHE LEU VAL GLN ALA GLY ASN VAL GLN LEU ARG VAL ILE\nSEQRES   7 B  306  GLY HIS SER MET GLN ASN CYS VAL LEU LYS LEU LYS VAL\nSEQRES   8 B  306  ASP THR ALA ASN PRO LYS THR PRO LYS TYR LYS PHE VAL\nSEQRES   9 B  306  ARG ILE GLN PRO GLY GLN THR PHE SER VAL LEU ALA CYS\nSEQRES  10 B  306  TYR ASN GLY SER PRO SER GLY VAL TYR GLN CYS ALA MET\nSEQRES  11 B  306  ARG PRO ASN PHE THR ILE LYS GLY SER PHE LEU ASN GLY\nSEQRES  12 B  306  SER CYS GLY SER VAL GLY PHE ASN ILE ASP TYR ASP CYS\nSEQRES  13 B  306  VAL SER PHE CYS TYR MET HIS HIS MET GLU LEU PRO THR\nSEQRES  14 B  306  GLY VAL HIS ALA GLY THR ASP LEU GLU GLY ASN PHE TYR\nSEQRES  15 B  306  GLY PRO PHE VAL ASP ARG GLN THR ALA GLN ALA ALA GLY\nSEQRES  16 B  306  THR ASP THR THR ILE THR VAL ASN VAL LEU ALA TRP LEU\nSEQRES  17 B  306  TYR ALA ALA VAL ILE ASN GLY ASP ARG TRP PHE LEU ASN\nSEQRES  18 B  306  ARG PHE THR THR THR LEU ASN ASP PHE ASN LEU VAL ALA\nSEQRES  19 B  306  MET LYS TYR ASN TYR GLU PRO LEU THR GLN ASP HIS VAL\nSEQRES  20 B  306  ASP ILE LEU GLY PRO LEU SER ALA GLN THR GLY ILE ALA\nSEQRES  21 B  306  VAL LEU ASP MET CYS ALA SER LEU LYS GLU LEU LEU GLN\nSEQRES  22 B  306  ASN GLY MET ASN GLY ARG THR ILE LEU GLY SER ALA LEU\nSEQRES  23 B  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN\nSEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN', '/data/chodera/asap-datasets/full_frag_prepped_mpro_20230111/', '/data/chocera/asap-datasets/rcsb_spruce.loop_db', False)
 Prepping 578 structures over 32 cores.
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpx6wh3_ul.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpki0zruzc.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp9ifmfa6_.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp3uy1r220.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpvvckq94i.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpucq9gb_k.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpbv9agpx4.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpb66al0p7.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpmhf96tcj.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpp77n1a49.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmprv5q_ffr.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpzrs2fhqa.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmprk0cr6eh.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp4y2s0ekp.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmptokw8j74.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp62erp21a.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmppguozjm5.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp2cl3kpfr.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp0csiknj6.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpcu8zqaoo.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpf4b4gwrv.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpu9gfnzlb.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpfwj5rbus.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp4uxvtr_t.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp0man8a6z.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp8fvrtql8.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp81d223rv.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpm9ghsnbg.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpbyqtqs23.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpb7_s4yl5.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp7l1tqwcu.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp1b35t1_b.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpvur_ea48.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpr21_ucuu.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpxj8h0069.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp6mq__eg3.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpop09xbs4.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpbfnlllv7.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpmcznkxa8.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpnvght_ui.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpxr4brm6t.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmplbpg7dj1.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpa_f2wi9s.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpefgvnswm.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpovsykqjz.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp9dzm6ms7.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpakd9e_vj.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp7wxlin_3.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpj0t1tdxb.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmph4bx9q91.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpxwcowcby.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp2_p2e55x.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp9cf92s58.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpiuzjhikm.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpt5oatvdr.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpoxwn36qy.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpn98yeqth.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp21tkaj9p.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpktvcv7lk.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpmkf12toq.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpiyrof82p.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpls1sd62o.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmplbyhr18r.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpdnm_d8t7.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpwxhx0yx9.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpclhdq7_p.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmptbuwob8m.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpsf_6gp6i.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpfxnns547.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpaftd_ugd.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp6hx7m3at.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp2hbizpsf.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpo5ecghb9.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp305_zzzj.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpbndcv60f.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpci7g3tf9.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpdug10hky.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpw1407vjw.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp7j_8drft.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpwfteyqsc.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp267bmkyx.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpkbey0ens.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpz2b7vanp.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpo0j6azxq.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp1do2nub9.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpjgmsv257.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp2wkh79kx.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpy7cy3_td.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpvlcyzr7g.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpm8ozdwy_.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp420obabw.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpg7eg8ixz.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpl1tj0nzu.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp3hgxi3q4.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpfr5xndm1.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp3ci0ao7i.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp7mhm5wuu.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp0gnneivm.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp58kmegc6.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpopi4m2n7.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp5n4h5z81.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpkahjnts2.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmphoz4ti1w.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp7d7o9h6d.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpcoosfppl.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpkz7zm6tv.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpk11gj0_7.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmputltmuus.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpz_udk3kb.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp3zicj0sp.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp328vxpnh.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpv092eoqe.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpa6cei_v4.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpb2p3_q7g.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpb335v_ih.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpcd3temw5.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp1e3uhskt.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp8039zahh.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpjus_8gi6.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpaxzccb4t.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpdvafp09x.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpa6f4na8g.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpbogs40vg.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp00lg8p74.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp4f1sl81t.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpyqttb2v5.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpuslndkc2.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp9c74k0w8.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpvzezi34f.pdb
 1  Cl SER
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpjedxgsg2.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpu0no6lpd.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp_cs8ox7w.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp49_746hi.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpwy951gny.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpsqhs_lt5.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpiro5ypgd.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp6t35_xf9.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpsmxv513p.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpjb_n2w12.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpb8cf5o1a.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpqi9uj2z2.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpqrm7b80n.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpnpkx6mix.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp79keej_7.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp9x8zu5ql.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpw6lai7fv.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp44wvhg61.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp3fq4_asp.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpil5un7d_.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp0odp_ine.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpstdd5o67.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp3gnd8jzl.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmplg8bf25n.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp2neoe9cu.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp1sl7_wu7.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpq9_4w1ou.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpqw8hoa9b.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpvmwaop6l.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp77afm6jl.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpupf6e515.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpwumjeasn.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpmyglgfj8.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmphd4ubjfx.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpgcnitpb2.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp1m43pv__.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpyylfc33q.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpp1wco_wd.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpchb4hctr.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpchcwu65f.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp50rskf4c.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp81944ya9.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmptvtgmzfa.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpgllf7xqc.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpb6vbcl4k.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpl5p7i23q.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp00dyve4c.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpjxhn2bvk.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpy18db5hr.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpjz5fo8ef.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp5sfmbwod.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmpfdb28r0_.pdb
-Wrote /scratch/lsftmp/14023906.tmpdir/tmp5jq5po5_.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp3ly3bfha.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpy8x4mnor.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp7lxw4gmi.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpic9twdkz.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpdcdihvpn.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpu6jcm28c.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpn_0t41nd.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp_w2f4hmb.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp9caaltbc.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpws88xjdg.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpmohd6kb0.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp9o6isd0y.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpikjkp09h.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpemjjju8t.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp15lc85fz.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp8qny9cfj.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmphod312qy.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpimul9gm7.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp9u27ah8s.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp1hef3rze.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpmgakcyy6.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpnq1hf7f_.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp2k3f5y06.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpynti7qtl.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp3myv19lo.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpkuie1uf8.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpb27n_9_n.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpq0ik0lo0.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpdq9ky6ei.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmprktm7m43.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpzwr3j68y.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpyczprkz3.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpca4div84.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpp0h8es_w.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp_u5qesm1.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp9_464mp3.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpnsea47p_.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpx9qr37ls.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp8ayrmu1q.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp5r1ni73x.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmprkuj0xft.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpi3udg3iu.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmppisb82j0.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpc8vlu6k3.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmp7mtiyp1h.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpxjk3jdvl.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpsr0akx2w.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpsab284cg.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmprqjw9mfo.pdb
+Wrote /scratch/lsftmp/14080075.tmpdir/tmpo9sj13b6.pdb
+date
+done
 
 
 PS:
