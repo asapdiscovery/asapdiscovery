@@ -358,7 +358,7 @@ def main():
         )
         for x in xtal_compounds
     ]
-    logging.info(mp_args[0], flush=True)
+    logging.info(mp_args[0])
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     logging.info(
         f"CPUS: {mp.cpu_count()}, Structure: {mp_args}, N Cores: {args.num_cores}"
