@@ -546,7 +546,7 @@ def build_model_schnet(
         model = mtenn.conversion_utils.SchNet(model)
 
     ## Set interatomic cutoff (default of 10) to make the graph smaller
-    if (model_config is None) or ("cutoff" not in neighbor_dist):
+    if (model_config is None) or ("cutoff" not in model_config):
         model.cutoff = neighbor_dist
 
     return model
