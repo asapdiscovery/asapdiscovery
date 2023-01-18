@@ -93,24 +93,25 @@ def prep_mp(
 ):
     ## Check if results already exist
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
+    handler = logging.FileHandler(os.path.join(out_dir, "log.txt"))
+    prep_logger = logging.getLogger(xtal.output_name)
+    prep_logger.setLevel(logging.INFO)
+    prep_logger.addHandler(handler)
+    prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
+
     if check_completed(out_dir):
+        prep_logger.info("Already completed! Finishing.")
         return
 
     ## Make output directory
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    handler = logging.FileHandler(os.path.join(out_dir, "log.txt"))
-    prep_logger = logging.getLogger(xtal.output_name)
-    prep_logger.setLevel(logging.INFO)
-    prep_logger.addHandler(handler)
-
     # logging.basicConfig(
     #     filename=os.path.join(out_dir, "log.txt"),
     #     level=logging.DEBUG,
     #     filemode="w",
     # )
-    prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
     prep_logger.info(f"Prepping {xtal.output_name}")
 
     ## Option to add SEQRES header
