@@ -93,10 +93,10 @@ def prep_mp(
 ):
     ## Check if results already exist
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
-    handler = logging.FileHandler(os.path.join(out_dir, "log.txt"))
+    handler = logging.FileHandler(os.path.join(out_dir, "log.txt"), mode="w")
     prep_logger = logging.getLogger(xtal.output_name)
     prep_logger.setLevel(logging.INFO)
-    prep_logger.addHandler(handler, mode="w")
+    prep_logger.addHandler(handler)
     prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
 
     if check_completed(out_dir):
@@ -293,10 +293,10 @@ def main():
     #     level=logging.DEBUG,
     #     filemode="w",
     # )
-    handler = logging.FileHandler(args.log_file)
+    handler = logging.FileHandler(args.log_file, mode="w")
     main_logger = logging.getLogger("main")
     main_logger.setLevel(logging.INFO)
-    main_logger.addHandler(handler, mode="w")
+    main_logger.addHandler(handler)
 
     if args.xtal_csv:
         p_only = False if args.include_non_Pseries else True
