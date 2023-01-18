@@ -176,7 +176,7 @@ def prep_mp(
             protein_only=protein_only,
         )
     except IndexError as e:
-        logging.error(
+        prep_logger.info.error(
             "DU generation failed for",
             f"{xtal.output_name}",
         )
