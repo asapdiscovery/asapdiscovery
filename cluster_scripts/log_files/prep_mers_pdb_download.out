@@ -1,248 +1,13 @@
-Sender: LSF System <lsfadmin@lx05>
-Subject: Job 13332236: <prep_mers_pdb_download> in cluster <lila> Exited
+Sender: LSF System <lsfadmin@lt19>
+Subject: Job 14137571: <prep_mers_pdb_download> in cluster <lila> Done
 
-Job <prep_mers_pdb_download> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Thu Dec 15 14:33:07 2022
-Job was executed on host(s) <10*lx05>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Thu Dec 15 14:33:25 2022
+Job <prep_mers_pdb_download> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Wed Jan 18 17:25:20 2023
+Job was executed on host(s) <10*lt19>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Wed Jan 18 17:25:20 2023
 </home/paynea> was used as the home directory.
 </home/paynea/covid-moonshot-ml/cluster_scripts> was used as the working directory.
-Started at Thu Dec 15 14:33:25 2022
-Terminated at Thu Dec 15 14:33:28 2022
-Results reported at Thu Dec 15 14:33:28 2022
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-#!/usr/bin/env bash
-# Set walltime limit
-#BSUB -W 1:00
-
-# Set output file
-#BSUB -o  log_files/prep_mers_pdb_download.out
-
-#BSUB -J prep_mers_pdb_download
-
-# Set error file
-#BSUB -e log_files/prep_mers_pdb_download.stderr
-
-# Specify node group
-#BSUB -q cpuqueue
-
-# nodes: number of nodes
-#BSUB -n 10 -R "rusage[mem=8]"
-
-
-source ~/.bashrc
-conda activate mers-docking
-#python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
-#-d /data/chodera/asap-datasets/mers_pdb_download \
-#-p ../data/mers-structures-dimers.yaml \
-#-r ~/fragalysis/extra_files/reference.pdb \
-#-l ~/rcsb_spruce.loop_db \
-#-o /data/chodera/asap-datasets/mers_prepped_structures \
-#-s ../data/mpro_mers_seqres.yaml \
-#--protein_only
-
-python prep_proteins.py -n 10 \
--d /data/chodera/asap-datasets/mers_pdb_download \
--p ../../../metadata/mers-structures-dimers.yaml \
--r /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
--l /data/chodera/asap-datasets/rcsb_spruce.loop_db \
--o /data/chodera/asap-datasets/mers_fauxalysis/mers_prepped_structures_dimers_only \
--s ../../../metadata/mpro_mers_seqres.yaml \
---protein_only
-------------------------------------------------------------
-
-Exited with exit code 2.
-
-Resource usage summary:
-
-    CPU time :                                   1.03 sec.
-    Max Memory :                                 -
-    Average Memory :                             -
-    Total Requested Memory :                     80.00 GB
-    Delta Memory :                               -
-    Max Swap :                                   -
-    Max Processes :                              5
-    Max Threads :                                6
-    Run time :                                   3 sec.
-    Turnaround time :                            21 sec.
-
-The output (if any) follows:
-
-
-
-PS:
-
-Read file <log_files/prep_mers_pdb_download.stderr> for stderr output of this job.
-
-Sender: LSF System <lsfadmin@ly04>
-Subject: Job 13332238: <prep_mers_pdb_download> in cluster <lila> Exited
-
-Job <prep_mers_pdb_download> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Thu Dec 15 14:34:16 2022
-Job was executed on host(s) <10*ly04>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Thu Dec 15 14:34:34 2022
-</home/paynea> was used as the home directory.
-</home/paynea/covid-moonshot-ml/cluster_scripts> was used as the working directory.
-Started at Thu Dec 15 14:34:34 2022
-Terminated at Thu Dec 15 14:34:48 2022
-Results reported at Thu Dec 15 14:34:48 2022
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-#!/usr/bin/env bash
-# Set walltime limit
-#BSUB -W 1:00
-
-# Set output file
-#BSUB -o  log_files/prep_mers_pdb_download.out
-
-#BSUB -J prep_mers_pdb_download
-
-# Set error file
-#BSUB -e log_files/prep_mers_pdb_download.stderr
-
-# Specify node group
-#BSUB -q cpuqueue
-
-# nodes: number of nodes
-#BSUB -n 10 -R "rusage[mem=8]"
-
-
-source ~/.bashrc
-conda activate mers-docking
-#python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
-#-d /data/chodera/asap-datasets/mers_pdb_download \
-#-p ../data/mers-structures-dimers.yaml \
-#-r ~/fragalysis/extra_files/reference.pdb \
-#-l ~/rcsb_spruce.loop_db \
-#-o /data/chodera/asap-datasets/mers_prepped_structures \
-#-s ../data/mpro_mers_seqres.yaml \
-#--protein_only
-
-python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
--d /data/chodera/asap-datasets/mers_pdb_download \
--p ../../../metadata/mers-structures-dimers.yaml \
--r /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
--l /data/chodera/asap-datasets/rcsb_spruce.loop_db \
--o /data/chodera/asap-datasets/mers_fauxalysis/mers_prepped_structures_dimers_only \
--s ../../../metadata/mpro_mers_seqres.yaml \
---protein_only
-------------------------------------------------------------
-
-Exited with exit code 1.
-
-Resource usage summary:
-
-    CPU time :                                   1.52 sec.
-    Max Memory :                                 -
-    Average Memory :                             -
-    Total Requested Memory :                     80.00 GB
-    Delta Memory :                               -
-    Max Swap :                                   -
-    Max Processes :                              6
-    Max Threads :                                7
-    Run time :                                   14 sec.
-    Turnaround time :                            32 sec.
-
-The output (if any) follows:
-
-
-
-PS:
-
-Read file <log_files/prep_mers_pdb_download.stderr> for stderr output of this job.
-
-Sender: LSF System <lsfadmin@ln09>
-Subject: Job 13332262: <prep_mers_pdb_download> in cluster <lila> Exited
-
-Job <prep_mers_pdb_download> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Thu Dec 15 15:00:15 2022
-Job was executed on host(s) <10*ln09>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Thu Dec 15 15:00:38 2022
-</home/paynea> was used as the home directory.
-</home/paynea/covid-moonshot-ml/cluster_scripts> was used as the working directory.
-Started at Thu Dec 15 15:00:38 2022
-Terminated at Thu Dec 15 15:02:37 2022
-Results reported at Thu Dec 15 15:02:37 2022
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-#!/usr/bin/env bash
-# Set walltime limit
-#BSUB -W 1:00
-
-# Set output file
-#BSUB -o  log_files/prep_mers_pdb_download.out
-
-#BSUB -J prep_mers_pdb_download
-
-# Set error file
-#BSUB -e log_files/prep_mers_pdb_download.stderr
-
-# Specify node group
-#BSUB -q cpuqueue
-
-# nodes: number of nodes
-#BSUB -n 10 -R "rusage[mem=8]"
-
-
-source ~/.bashrc
-conda activate mers-docking
-#python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
-#-d /data/chodera/asap-datasets/mers_pdb_download \
-#-p ../data/mers-structures-dimers.yaml \
-#-r ~/fragalysis/extra_files/reference.pdb \
-#-l ~/rcsb_spruce.loop_db \
-#-o /data/chodera/asap-datasets/mers_prepped_structures \
-#-s ../data/mpro_mers_seqres.yaml \
-#--protein_only
-
-python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
--d /data/chodera/asap-datasets/mers_pdb_download \
--p ../../../metadata/mers-structures-dimers.yaml \
--r /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
--l /data/chodera/asap-datasets/rcsb_spruce.loop_db \
--o /data/chodera/asap-datasets/mers_fauxalysis/mers_prepped_structures_dimers_only \
--s ../../../metadata/mpro_mers_seqres.yaml \
---protein_only
-------------------------------------------------------------
-
-Exited with exit code 1.
-
-Resource usage summary:
-
-    CPU time :                                   1.49 sec.
-    Max Memory :                                 -
-    Average Memory :                             -
-    Total Requested Memory :                     80.00 GB
-    Delta Memory :                               -
-    Max Swap :                                   -
-    Max Processes :                              6
-    Max Threads :                                13
-    Run time :                                   120 sec.
-    Turnaround time :                            142 sec.
-
-The output (if any) follows:
-
-Loading pdb list from ../../../metadata/mers-structures-dimers.yaml...
-
-
-PS:
-
-Read file <log_files/prep_mers_pdb_download.stderr> for stderr output of this job.
-
-Sender: LSF System <lsfadmin@ln09>
-Subject: Job 13332265: <prep_mers_pdb_download> in cluster <lila> Done
-
-Job <prep_mers_pdb_download> was submitted from host <lilac-ln02> by user <paynea> in cluster <lila> at Thu Dec 15 15:05:19 2022
-Job was executed on host(s) <10*ln09>, in queue <cpuqueue>, as user <paynea> in cluster <lila> at Thu Dec 15 15:05:26 2022
-</home/paynea> was used as the home directory.
-</home/paynea/covid-moonshot-ml/cluster_scripts> was used as the working directory.
-Started at Thu Dec 15 15:05:26 2022
-Terminated at Thu Dec 15 15:15:44 2022
-Results reported at Thu Dec 15 15:15:44 2022
+Started at Wed Jan 18 17:25:20 2023
+Terminated at Wed Jan 18 17:35:01 2023
+Results reported at Wed Jan 18 17:35:01 2023
 
 Your job looked like:
 
@@ -292,16 +57,16 @@ Successfully completed.
 
 Resource usage summary:
 
-    CPU time :                                   2651.36 sec.
+    CPU time :                                   3438.53 sec.
     Max Memory :                                 3 GB
-    Average Memory :                             1.94 GB
+    Average Memory :                             2.29 GB
     Total Requested Memory :                     80.00 GB
     Delta Memory :                               77.00 GB
     Max Swap :                                   -
     Max Processes :                              14
     Max Threads :                                26
-    Run time :                                   620 sec.
-    Turnaround time :                            625 sec.
+    Run time :                                   580 sec.
+    Turnaround time :                            581 sec.
 
 The output (if any) follows:
 
@@ -318,107 +83,43 @@ Downloading PDBs to /data/chodera/asap-datasets/mers_pdb_download
 7T3Y
 7DR9
 7DRA
-(CrystalCompoundData(smiles=None, compound_id=None, dataset=None, str_fn='/data/chodera/asap-datasets/mers_pdb_download/rcsb_5C3N.pdb', sdf_fn=None, active_site_chain='A', output_name='5C3N_0A', active_site='HIS:41: :A', oligomeric_state='dimer', chains=['A', 'B'], protein_chains=['A', 'B']), '/data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb', 'SEQRES   1 A  306  SER GLY LEU VAL LYS MET SER HIS PRO SER GLY ASP VAL\nSEQRES   2 A  306  GLU ALA CYS MET VAL GLN VAL THR CYS GLY SER MET THR\nSEQRES   3 A  306  LEU ASN GLY LEU TRP LEU ASP ASN THR VAL TRP CYS PRO\nSEQRES   4 A  306  ARG HIS VAL MET CYS PRO ALA ASP GLN LEU SER ASP PRO\nSEQRES   5 A  306  ASN TYR ASP ALA LEU LEU ILE SER MET THR ASN HIS SER\nSEQRES   6 A  306  PHE SER VAL GLN LYS HIS ILE GLY ALA PRO ALA ASN LEU\nSEQRES   7 A  306  ARG VAL VAL GLY HIS ALA MET GLN GLY THR LEU LEU LYS\nSEQRES   8 A  306  LEU THR VAL ASP VAL ALA ASN PRO SER THR PRO ALA TYR\nSEQRES   9 A  306  THR PHE THR THR VAL LYS PRO GLY ALA ALA PHE SER VAL\nSEQRES  10 A  306  LEU ALA CYS TYR ASN GLY ARG PRO THR GLY THR PHE THR\nSEQRES  11 A  306  VAL VAL MET ARG PRO ASN TYR THR ILE LYS GLY SER PHE\nSEQRES  12 A  306  LEU CYS GLY SER CYS GLY SER VAL GLY TYR THR LYS GLU\nSEQRES  13 A  306  GLY SER VAL ILE ASN PHE CYS TYR MET HIS GLN MET GLU\nSEQRES  14 A  306  LEU ALA ASN GLY THR HIS THR GLY SER ALA PHE ASP GLY\nSEQRES  15 A  306  THR MET TYR GLY ALA PHE MET ASP LYS GLN VAL HIS GLN\nSEQRES  16 A  306  VAL GLN LEU THR ASP LYS TYR CYS SER VAL ASN VAL VAL\nSEQRES  17 A  306  ALA TRP LEU TYR ALA ALA ILE LEU ASN GLY CYS ALA TRP\nSEQRES  18 A  306  PHE VAL LYS PRO ASN ARG THR SER VAL VAL SER PHE ASN\nSEQRES  19 A  306  GLU TRP ALA LEU ALA ASN GLN PHE THR GLU PHE VAL GLY\nSEQRES  20 A  306  THR GLN SER VAL ASP MET LEU ALA VAL LYS THR GLY VAL\nSEQRES  21 A  306  ALA ILE GLU GLN LEU LEU TYR ALA ILE GLN GLN LEU TYR\nSEQRES  22 A  306  THR GLY PHE GLN GLY LYS GLN ILE LEU GLY SER THR MET\nSEQRES  23 A  306  LEU GLU ASP GLU PHE THR PRO GLU ASP VAL ASN MET GLN\nSEQRES  24 A  306  ILE MET GLY VAL VAL MET GLN\nSEQRES   1 B  306  SER GLY LEU VAL LYS MET SER HIS PRO SER GLY ASP VAL\nSEQRES   2 B  306  GLU ALA CYS MET VAL GLN VAL THR CYS GLY SER MET THR\nSEQRES   3 B  306  LEU ASN GLY LEU TRP LEU ASP ASN THR VAL TRP CYS PRO\nSEQRES   4 B  306  ARG HIS VAL MET CYS PRO ALA ASP GLN LEU SER ASP PRO\nSEQRES   5 B  306  ASN TYR ASP ALA LEU LEU ILE SER MET THR ASN HIS SER\nSEQRES   6 B  306  PHE SER VAL GLN LYS HIS ILE GLY ALA PRO ALA ASN LEU\nSEQRES   7 B  306  ARG VAL VAL GLY HIS ALA MET GLN GLY THR LEU LEU LYS\nSEQRES   8 B  306  LEU THR VAL ASP VAL ALA ASN PRO SER THR PRO ALA TYR\nSEQRES   9 B  306  THR PHE THR THR VAL LYS PRO GLY ALA ALA PHE SER VAL\nSEQRES  10 B  306  LEU ALA CYS TYR ASN GLY ARG PRO THR GLY THR PHE THR\nSEQRES  11 B  306  VAL VAL MET ARG PRO ASN TYR THR ILE LYS GLY SER PHE\nSEQRES  12 B  306  LEU CYS GLY SER CYS GLY SER VAL GLY TYR THR LYS GLU\nSEQRES  13 B  306  GLY SER VAL ILE ASN PHE CYS TYR MET HIS GLN MET GLU\nSEQRES  14 B  306  LEU ALA ASN GLY THR HIS THR GLY SER ALA PHE ASP GLY\nSEQRES  15 B  306  THR MET TYR GLY ALA PHE MET ASP LYS GLN VAL HIS GLN\nSEQRES  16 B  306  VAL GLN LEU THR ASP LYS TYR CYS SER VAL ASN VAL VAL\nSEQRES  17 B  306  ALA TRP LEU TYR ALA ALA ILE LEU ASN GLY CYS ALA TRP\nSEQRES  18 B  306  PHE VAL LYS PRO ASN ARG THR SER VAL VAL SER PHE ASN\nSEQRES  19 B  306  GLU TRP ALA LEU ALA ASN GLN PHE THR GLU PHE VAL GLY\nSEQRES  20 B  306  THR GLN SER VAL ASP MET LEU ALA VAL LYS THR GLY VAL\nSEQRES  21 B  306  ALA ILE GLU GLN LEU LEU TYR ALA ILE GLN GLN LEU TYR\nSEQRES  22 B  306  THR GLY PHE GLN GLY LYS GLN ILE LEU GLY SER THR MET\nSEQRES  23 B  306  LEU GLU ASP GLU PHE THR PRO GLU ASP VAL ASN MET GLN\nSEQRES  24 B  306  ILE MET GLY VAL VAL MET GLN\n', '/data/chodera/asap-datasets/mers_fauxalysis/mers_prepped_structures_dimers_only', '/data/chodera/asap-datasets/rcsb_spruce.loop_db', True)
-Prepping 11 structures over 10 cores.
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmpmnklu6iu.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmpro_flwr_.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmplf0efj0g.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmpygwq_az0.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmp845s2f6f.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmpx1gghf3_.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmpp7w2wxl1.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmppxi185gq.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmp0ynsehum.pdb
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmpn6v23z_a.pdb
-Mutating to provided seqres
-Aligning receptor
-Attempting to prepare design units
-5C3N_0A True
-Editing PDB file
-Wrote /scratch/lsftmp/13332265.tmpdir/tmpwltgejht.pdb
-Mutating to provided seqres
+Wrote /scratch/lsftmp/14137571.tmpdir/tmpicgd6mnp.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmphvocqihy.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmp31wxc5f_.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmp61lgkoac.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmp01vqmnki.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmplswh0idq.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmpqrv2rcx5.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmpn7u5phmu.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmpgzdnf6i8.pdb
+Wrote /scratch/lsftmp/14137571.tmpdir/tmp24cw_k07.pdb
 -1 HIS MET
 0 HIS GLN
 -1 HIS MET
 0 HIS GLN
-Aligning receptor
-Attempting to prepare design units
-6VH1_0A True
-Mutating to provided seqres
 148 ALA CYS
 148 ALA CYS
-Aligning receptor
-Attempting to prepare design units
-7DR8_0A True
-Mutating to provided seqres
 -1 HIS MET
 0 HIS GLN
 -1 HIS MET
 0 HIS GLN
-Aligning receptor
-Attempting to prepare design units
-6VGY_0A True
-Mutating to provided seqres
 -1 HIS MET
 0 HIS GLN
--1 HIS MET
-0 HIS GLN
-Aligning receptor
-Attempting to prepare design units
-6VH2_0A True
-Mutating to provided seqres
--1 HIS MET
-0 HIS GLN
-Aligning receptor
-Attempting to prepare design units
-6VH3_0A True
-Mutating to provided seqres
 -1 HIS MET
 0 HIS GLN
 -2 HIS VAL
 -1 HIS MET
 0 HIS GLN
-Aligning receptor
-Attempting to prepare design units
-7T3Y_0A True
-Mutating to provided seqres
 -1 HIS MET
 0 HIS GLN
 -1 HIS MET
 0 HIS GLN
-Aligning receptor
-Attempting to prepare design units
-6VGZ_0A True
-Mutating to provided seqres
 -1 HIS MET
 0 HIS GLN
 -1 HIS MET
 0 HIS GLN
-Aligning receptor
-Attempting to prepare design units
-6VH0_0A True
-Mutating to provided seqres
 148 ALA CYS
 148 ALA CYS
-Aligning receptor
-Attempting to prepare design units
-DU generation failed for 7DRA_0A
-Mutating to provided seqres
-148 ALA CYS
-148 ALA CYS
-Aligning receptor
-Attempting to prepare design units
-7DR9_0A True
 
 
 PS:
