@@ -801,6 +801,10 @@ def init(args, rank=False):
         model_config = {}
     print("Using model config:", model_config, flush=True)
 
+    if "lr" in model_config:
+        args.lr = model_config["lr"]
+        del model_config["lr"]
+
     ## Build the model
     if args.model == "e3nn":
         ## Need to add one-hot encodings to the dataset
