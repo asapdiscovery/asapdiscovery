@@ -287,7 +287,7 @@ def rank_structures_rdkit(
             d.FinishDrawing()
             d.WriteDrawingText(f"{out_fn}_{search_ids[mol_idx]}_{i}.png")
 
-    Draw.MolToFile(exp_mol, f"{out_fn}.png")
+        Draw.MolToFile(exp_mol, f"{out_fn}.png")
 
     return sort_idx
 

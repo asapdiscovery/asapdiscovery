@@ -28,14 +28,11 @@ from asapdiscovery.docking.modeling import (
     prep_receptor,
     du_to_complex,
     mutate_residues,
+    remove_extra_ligands,
 )
 from asapdiscovery.data import pdb
-from asapdiscovery.data.utils import (
-    save_openeye_pdb,
-    edit_pdb_file,
-    seqres_to_res_list,
-    load_openeye_pdb,
-)
+from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
+from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
 from asapdiscovery.data.fragalysis import parse_xtal
 
 
@@ -125,6 +122,11 @@ def prep_mp(
         initial_prot = mutate_residues(
             initial_prot, res_list, xtal.protein_chains
         )
+
+    ## Delete extra copies of ligand in the complex
+    initial_prot = remove_extra_ligands(
+        initial_prot, lig_chain=xtal.active_site_chain
+    )
 
     if ref_prot:
         print("Aligning receptor")

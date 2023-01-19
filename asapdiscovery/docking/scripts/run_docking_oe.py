@@ -13,7 +13,7 @@ import shutil
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.data.utils import load_openeye_sdf, save_openeye_sdf
+from asapdiscovery.data.openeye import load_openeye_sdf, save_openeye_sdf
 from asapdiscovery.docking.docking import run_docking_oe
 
 
@@ -143,40 +143,56 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
     if success:
         out_fn = os.path.join(out_dir, "docked.sdf")
         save_openeye_sdf(posed_mol, out_fn)
-        # with open(out_fn, "wb") as fp:
-        #     fp.write(oechem.OEWriteMolToBytes(".sdf", posed_mol))
 
-        rmsd = float(
-            oechem.OEGetSDData(posed_mol, f"Docking_{docking_id}_RMSD")
-        )
-        posit_prob = float(
-            oechem.OEGetSDData(posed_mol, f"Docking_{docking_id}_POSIT")
-        )
-        chemgauss_score = float(
-            oechem.OEGetSDData(posed_mol, f"Docking_{docking_id}_Chemgauss4")
-        )
-        clash = int(
-            oechem.OEGetSDData(posed_mol, f"Docking_{docking_id}_clash")
-        )
-        smiles = oechem.OEGetSDData(posed_mol, f"SMILES")
+        rmsds = []
+        posit_probs = []
+        posit_methods = []
+        chemgauss_scores = []
+
+        for conf in posed_mol.GetConfs():
+            rmsds.append(
+                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD"))
+            )
+            posit_probs.append(
+                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
+            )
+            posit_methods.append(
+                oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT_method")
+            )
+            chemgauss_scores.append(
+                float(
+                    oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4")
+                )
+            )
+        smiles = oechem.OEGetSDData(conf, f"SMILES")
+        clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
     else:
         out_fn = ""
-        rmsd = -1.0
-        posit_prob = -1.0
-        chemgauss_score = -1.0
+        rmsds = [-1.0]
+        posit_probs = [-1.0]
+        posit_methods = [""]
+        chemgauss_scores = [-1.0]
         clash = -1
         smiles = "None"
 
-    results = (
-        lig_name,
-        du_name,
-        out_fn,
-        rmsd,
-        posit_prob,
-        chemgauss_score,
-        clash,
-        smiles
-    )
+    results = [
+        (
+            lig_name,
+            du_name,
+            out_fn,
+            i,
+            rmsd,
+            prob,
+            method,
+            chemgauss,
+            clash,
+            smiles,
+        )
+        for i, (rmsd, prob, method, chemgauss) in enumerate(
+            zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
+        )
+    ]
+
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     return results
 
@@ -253,6 +269,19 @@ def get_args():
         "--by_compound",
         action="store_true",
         help="Load/store DesignUnits by compound_id instead of by Mpro dataset.",
+    )
+    parser.add_argument(
+        "-g",
+        "--omega",
+        action="store_true",
+        help="Use Omega conformer enumeration.",
+    )
+    parser.add_argument(
+        "-p",
+        "--num_poses",
+        type=int,
+        default=1,
+        help="Number of poses to return from docking.",
     )
 
     return parser.parse_args()
@@ -354,6 +383,8 @@ def main():
                 args.relax.lower(),
                 args.hybrid,
                 f"{compound_ids[i]}_{x}",
+                args.omega,
+                args.num_poses,
             )
             for du, x in zip(dock_dus, xtals)
         ]
@@ -363,16 +394,19 @@ def main():
         "ligand_id",
         "du_structure",
         "docked_file",
+        "pose_id",
         "docked_RMSD",
         "POSIT_prob",
+        "POSIT_method",
         "chemgauss4_score",
         "clash",
-        "SMILES"
+        "SMILES",
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         results_df = pool.starmap(mp_func, mp_args)
+    results_df = [res for res_list in results_df for res in res_list]
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 
     results_df.to_csv(f"{args.output_dir}/all_results.csv")

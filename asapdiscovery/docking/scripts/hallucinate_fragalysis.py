@@ -16,13 +16,15 @@ import sys
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.utils import (
     get_compound_id_xtal_dicts,
+    parse_fragalysis_data,
+    filter_docking_inputs,
+)
+from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
-    parse_fragalysis_data,
     save_openeye_pdb,
     save_openeye_sdf,
     split_openeye_mol,
-    filter_docking_inputs,
 )
 from asapdiscovery.docking.modeling import du_to_complex, make_du_from_new_lig
 
