@@ -106,6 +106,8 @@ def build_model(args):
             fix_device=True,
         )
         model_call = lambda model, d: model(d)
+    else:
+        raise ValueError(f"Unknown model type: {model}")
 
     return model, model_call
 
@@ -295,6 +297,66 @@ def build_model_e3nn(
     return mtenn.conversion_utils.E3NN(model_kwargs=model_kwargs)
 
 
+def build_optimizer(model):
+    """
+    Create optimizer object based on options in WandB config. Current options
+    are Adam and SGD.
+
+    Parameters
+    ----------
+    model : Union[asapdiscovery.ml.models.GAT, mtenn.model.Model]
+        Model to be trained by the optimizer
+
+    Returns
+    -------
+    torch.optim.Optimizer
+        Optimizer object
+    """
+
+    ## Get config
+    config = wandb.config
+
+    ## Return None (use script default) if not present
+    if optimizer not in config:
+        print("No optimizer specified, using standard Adam.", flush=True)
+        return None
+
+    ## Correct model name if needed
+    optim_type = config.optimizer.lower()
+
+    if optim_type == "adam":
+        ## Defaults from torch if not present in config
+        b1 = config.b1 if b1 in config else 0.9
+        b2 = config.b2 if b2 in config else 0.999
+        eps = config.eps if eps in config else 1e-8
+        weight_decay = config.weight_decay if weight_decay in config else 0
+
+        optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=config.lr,
+            betas=(b1, b2),
+            eps=eps,
+            weight_decay=weight_decay,
+        )
+    elif optim_type == "sgd":
+        ## Defaults from torch if not present in config
+        momentum = config.momentum if momentum in config else 0
+        weight_decay = config.weight_decay if weight_decay in config else 0
+        dampening = config.dampening if dampening in config else 0
+
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=config.lr,
+            momentum=momentum,
+            weight_decay=weight_decay,
+            dampening=dampening,
+        )
+    else:
+        raise ValueError(f"Unknown optimizer type: {optim_type}")
+
+    return optimizer
+
+
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
@@ -446,6 +508,9 @@ def main():
     ## Build model and set model call function
     model, model_call = build_model(args)
 
+    ## Set up optimizer based on WandB config
+    optimizer = build_optimizer(model)
+
     # print("pred", model_call(model, next(iter(ds))[1]), flush=True)
 
     loss_func = MSELoss("step")
@@ -457,22 +522,23 @@ def main():
     test_loss = []
 
     model, train_loss, val_loss, test_loss = train(
-        model,
-        ds_train,
-        ds_val,
-        ds_test,
-        exp_data,
-        args.n_epochs,
-        torch.device(args.device),
-        model_call,
-        loss_func,
-        None,
-        wandb.config["lr"],
-        start_epoch,
-        train_loss,
-        val_loss,
-        test_loss,
+        model=model,
+        ds_train=ds_train,
+        ds_val=ds_val,
+        ds_test=ds_test,
+        target_dict=exp_data,
+        n_epochs=args.n_epochs,
+        device=torch.device(args.device),
+        model_call=model_call,
+        loss_fn=loss_func,
+        save_file=None,
+        lr=wandb.config["lr"],
+        start_epoch=start_epoch,
+        train_loss=train_loss,
+        val_loss=val_loss,
+        test_loss=test_loss,
         use_wandb=True,
+        optimizer=optimizer,
     )
 
 
