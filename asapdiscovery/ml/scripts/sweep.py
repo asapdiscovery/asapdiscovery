@@ -317,7 +317,7 @@ def build_optimizer(model):
     config = wandb.config
 
     ## Return None (use script default) if not present
-    if optimizer not in config:
+    if "optimizer" not in config:
         print("No optimizer specified, using standard Adam.", flush=True)
         return None
 
@@ -326,10 +326,10 @@ def build_optimizer(model):
 
     if optim_type == "adam":
         ## Defaults from torch if not present in config
-        b1 = config.b1 if b1 in config else 0.9
-        b2 = config.b2 if b2 in config else 0.999
-        eps = config.eps if eps in config else 1e-8
-        weight_decay = config.weight_decay if weight_decay in config else 0
+        b1 = config.b1 if "b1" in config else 0.9
+        b2 = config.b2 if "b2" in config else 0.999
+        eps = config.eps if "eps" in config else 1e-8
+        weight_decay = config.weight_decay if "weight_decay" in config else 0
 
         optimizer = torch.optim.Adam(
             model.parameters(),
@@ -340,9 +340,9 @@ def build_optimizer(model):
         )
     elif optim_type == "sgd":
         ## Defaults from torch if not present in config
-        momentum = config.momentum if momentum in config else 0
-        weight_decay = config.weight_decay if weight_decay in config else 0
-        dampening = config.dampening if dampening in config else 0
+        momentum = config.momentum if "momentum" in config else 0
+        weight_decay = config.weight_decay if "weight_decay" in config else 0
+        dampening = config.dampening if "dampening" in config else 0
 
         optimizer = torch.optim.SGD(
             model.parameters(),
