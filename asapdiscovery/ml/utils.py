@@ -370,6 +370,8 @@ def train(
     ## Set up optimizer and loss function
     if optimizer is None:
         optimizer = torch.optim.Adam(model.parameters(), lr)
+    print("Using optimizer", optimizer, flush=True)
+
     if loss_fn is None:
         loss_fn = MSELoss()
 
