@@ -5,6 +5,7 @@ import argparse
 
 import json
 import multiprocessing as mp
+import os
 import pickle as pkl
 import torch
 import wandb
@@ -52,24 +53,33 @@ def build_model(args):
 
         if model == "schnet":
             model = build_model_schnet()
+            get_model = mtenn.conversion_utils.schnet.SchNet.get_model
         else:
             model_params = pkl.load(open(args.model_params, "rb"))
             model = build_model_e3nn(100, *model_params[1:])
-        strategy = args.strat.lower()
+            get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
+
+        ## Take MTENN args from config if present, else from args
+        strategy = (
+            config.strat.lower() if "strat" in config else args.strat.lower()
+        )
+        grouped = config.grouped if "grouped" in config else args.grouped
 
         ## Check and parse combination
         try:
-            combination = args.comb.lower()
+            combination = (
+                config.comb.lower() if "comb" in config else args.comb.lower()
+            )
             if combination == "mean":
                 combination = mtenn.model.MeanCombination()
             elif combination == "boltzmann":
                 combination = mtenn.model.BoltzmannCombination()
             else:
-                raise ValueError(f"Uknown value for -comb: {args.comb}")
+                raise ValueError(f"Uknown value for -comb: {combination}")
         except AttributeError:
             ## This will be triggered if combination is left blank
             ##  (None.lower() => AttributeError)
-            if args.grouped:
+            if grouped:
                 raise ValueError(
                     f"A value must be provided for -comb if --grouped is set."
                 )
@@ -77,28 +87,40 @@ def build_model(args):
 
         ## Check and parse pred readout
         try:
-            pred_readout = args.pred_r.lower()
+            pred_readout = (
+                config.pred_r.lower()
+                if "pred_r" in config
+                else args.pred_r.lower()
+            )
             if pred_readout == "pic50":
                 pred_readout = mtenn.model.PIC50Readout()
+            elif pred_readout == "none":
+                pred_readout = None
             else:
-                raise ValueError(f"Uknown value for -pred_r: {args.pred_r}")
+                raise ValueError(f"Uknown value for -pred_r: {pred_readout}")
         except AttributeError:
             pred_readout = None
 
         ## Check and parse comb readout
         try:
-            comb_readout = args.comb_r.lower()
+            comb_readout = (
+                config.comb_r.lower()
+                if "comb_r" in config
+                else args.comb_r.lower()
+            )
             if comb_readout == "pic50":
                 comb_readout = mtenn.model.PIC50Readout()
+            elif comb_readout == "none":
+                comb_readout = None
             else:
-                raise ValueError(f"Uknown value for -comb_r: {args.comb_r}")
+                raise ValueError(f"Uknown value for -comb_r: {comb_readout}")
         except AttributeError:
             comb_readout = None
 
         ## Use previously built model to construct mtenn.model.Model
-        model = mtenn.conversion_utils.schnet.SchNet.get_model(
+        model = get_model(
             model=model,
-            grouped=args.grouped,
+            grouped=grouped,
             strategy=strategy,
             combination=combination,
             pred_readout=pred_readout,
@@ -482,7 +504,7 @@ def get_args():
 
 def main():
     ## Initialize WandB
-    wandb.init()
+    r = wandb.init()
     print(wandb.config, flush=True)
 
     args = get_args()
@@ -490,7 +512,9 @@ def main():
 
     ## Load and split dataset
     ds, exp_data = build_dataset(args)
-    ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
+    ds_train, ds_val, ds_test = split_dataset(
+        ds, wandb.config.grouped if "grouped" in wandb.config else args.grouped
+    )
 
     ## Need to augment the datasets if using e3nn
     if args.model.lower() == "e3nn":
@@ -521,6 +545,8 @@ def main():
     val_loss = []
     test_loss = []
 
+    model_dir = os.path.join(args.model_o, r.name)
+    os.makedirs(model_dir, exist_ok=True)
     model, train_loss, val_loss, test_loss = train(
         model=model,
         ds_train=ds_train,
@@ -531,7 +557,7 @@ def main():
         device=torch.device(args.device),
         model_call=model_call,
         loss_fn=loss_func,
-        save_file=None,
+        save_file=model_dir,
         lr=wandb.config["lr"],
         start_epoch=start_epoch,
         train_loss=train_loss,
