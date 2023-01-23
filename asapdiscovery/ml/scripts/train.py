@@ -969,11 +969,25 @@ def init(args, rank=False):
 
     ## MTENN setup
     if (args.model == "e3nn") or (args.model == "schnet"):
-        strategy = args.strat.lower()
+        ## Take MTENN args from config if present, else from args
+        strategy = (
+            model_config["strat"].lower()
+            if "strat" in model_config
+            else args.strat.lower()
+        )
+        grouped = (
+            model_config["grouped"]
+            if "grouped" in model_config
+            else args.grouped
+        )
 
         ## Check and parse combination
         try:
-            combination = args.comb.lower()
+            combination = (
+                model_config["comb"].lower()
+                if "comb" in model_config
+                else args.comb.lower()
+            )
             if combination == "mean":
                 combination = mtenn.model.MeanCombination()
             elif combination == "boltzmann":
@@ -991,9 +1005,15 @@ def init(args, rank=False):
 
         ## Check and parse pred readout
         try:
-            pred_readout = args.pred_r.lower()
+            pred_readout = (
+                model_config["pred_r"].lower()
+                if "pred_r" in model_config
+                else args.pred_r.lower()
+            )
             if pred_readout == "pic50":
                 pred_readout = mtenn.model.PIC50Readout()
+            elif pred_readout == "none":
+                pred_readout = None
             else:
                 raise ValueError(f"Uknown value for -pred_r: {args.pred_r}")
         except AttributeError:
@@ -1001,9 +1021,15 @@ def init(args, rank=False):
 
         ## Check and parse comb readout
         try:
-            comb_readout = args.comb_r.lower()
+            comb_readout = (
+                model_config["comb_r"].lower()
+                if "comb_r" in model_config
+                else args.comb_r.lower()
+            )
             if comb_readout == "pic50":
                 comb_readout = mtenn.model.PIC50Readout()
+            elif comb_readout == "none":
+                comb_readout = None
             else:
                 raise ValueError(f"Uknown value for -comb_r: {args.comb_r}")
         except AttributeError:
