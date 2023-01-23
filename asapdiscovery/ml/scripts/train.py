@@ -576,7 +576,21 @@ def build_model_schnet(
     ## Load pretrained model if requested, otherwise create a new SchNet
     if qm9 is None:
         if model_config:
-            model = SchNet(**model_config)
+            ## Get param values from config if they're there, otherwise just
+            ##  use default SchNet values
+            model_params = [
+                "hidden_channels",
+                "num_filters",
+                "num_interactions",
+                "num_gaussians",
+                "cutoff",
+                "max_num_neighbors",
+                "readout",
+            ]
+            model_params = {
+                p: model_config[p] for p in model_params if p in model_config
+            }
+            model = SchNet(**model_params)
         else:
             model = SchNet()
         model = mtenn.conversion_utils.SchNet(model)
@@ -874,7 +888,6 @@ def init(args, rank=False):
 
     if "lr" in model_config:
         args.lr = model_config["lr"]
-        del model_config["lr"]
 
     ## Build the model
     if args.model == "e3nn":
