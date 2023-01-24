@@ -40,7 +40,7 @@ def molecule_set(args):
         molecule_set_id = molecule_set.create(molecule_list, args.molecule_set_name)
         print(f"Created molecule set with id {molecule_set_id}")
 
-    elif args.action == "update_custom_data":
+    elif args.action == "update":
 
         if not args.input_file:
             raise ValueError("Input file required for update_custom_data command")
