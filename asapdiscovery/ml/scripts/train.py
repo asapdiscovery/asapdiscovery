@@ -788,6 +788,9 @@ def get_args():
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
     parser.add_argument("-config", help="Model config JSON/YAML file.")
+    parser.add_argument(
+        "-wts_fn", help="Specific model weights file to load from."
+    )
 
     ## Training arguments
     parser.add_argument(
@@ -1101,10 +1104,6 @@ def main():
     ## Load model weights as necessary
     if args.cont:
         start_epoch, wts_fn = find_most_recent(args.model_o)
-        model = load_weights(model, wts_fn)
-
-        ## Update experiment configuration
-        exp_configure.update({"wts_fn": wts_fn})
 
         ## Load error dicts
         if os.path.isfile(f"{args.model_o}/train_err.pkl"):
@@ -1133,10 +1132,21 @@ def main():
         ##  successfully trained, not the one we want to start at
         start_epoch += 1
     else:
+        if args.wts_fn:
+            wts_fn = args.wts_fn
+        else:
+            wts_fn = None
         start_epoch = 0
         train_loss = None
         val_loss = None
         test_loss = None
+
+    ## Load weights
+    if wts_fn:
+        model = load_weights(model, wts_fn)
+
+        ## Update experiment configuration
+        exp_configure.update({"wts_fn": wts_fn})
 
     ## Update experiment configuration
     exp_configure.update({"start_epoch": start_epoch})
@@ -1185,7 +1195,7 @@ def main():
             run_id = open(run_id_fn).read().strip()
             run = wandb.init(project=project_name, id=run_id, resume="must")
             wandb.config.update(
-                {"wts_fn": exp_configure["wts_fn"], "continue": True},
+                {"continue": True},
                 allow_val_change=True,
             )
         else:
