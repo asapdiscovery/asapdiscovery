@@ -45,7 +45,7 @@ from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     openeye_copy_pdb_data,
 )
-from asapdiscovery.data.fragalysis import parse_xtal
+from asapdiscovery.data.fragalysis import parse_fragalysis
 
 
 def check_completed(d, prefix):
@@ -121,7 +121,7 @@ def prep_mp(
     if seqres:
         res_list = seqres_to_res_list(seqres)
         prep_logger.info("Mutating to provided seqres")
-        
+
         ## Mutate the residues to match the residue list
         initial_prot = mutate_residues(
             initial_prot, res_list, xtal.protein_chains
@@ -174,7 +174,7 @@ def prep_mp(
 
         ## Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
-        
+
         ## TODO: Compare this function to Ben's code below
         # openeye_copy_pdb_data(complex_mol, initial_prot, "SEQRES")
 
@@ -190,7 +190,7 @@ def prep_mp(
                 out_dir, f"{xtal.output_name}_prepped_receptor_{i}.pdb"
             ),
         )
-        
+
     prep_logger.info(
         f"Finished protein prep at {datetime.datetime.isoformat(datetime.datetime.now())}"
     )
@@ -287,9 +287,18 @@ def main():
 
     if args.xtal_csv:
         p_only = False if args.include_non_Pseries else True
-        xtal_compounds = parse_xtal(
-            args.xtal_csv, args.structure_dir, p_only=p_only
-        )
+        if p_only:
+            xtal_compounds = parse_fragalysis(
+                args.xtal_csv,
+                args.structure_dir,
+                name_filter="Mpro-P",
+                drop_duplicate_datasets=True,
+            )
+        else:
+            xtal_compounds = parse_fragalysis(
+                args.xtal_csv,
+                args.structure_dir,
+            )
 
         for xtal in xtal_compounds:
             ## Get chain
