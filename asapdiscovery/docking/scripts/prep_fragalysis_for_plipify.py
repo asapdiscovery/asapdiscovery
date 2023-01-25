@@ -1050,12 +1050,6 @@ def get_args():
         default=None,
         help="CSV file giving information of which structures to prep.",
     )
-    parser.add_argument(
-        "-p",
-        "--pdb_yaml_path",
-        default=None,
-        help="Yaml file containing PDB IDs.",
-    )
 
     parser.add_argument(
         "-r",
@@ -1150,31 +1144,6 @@ def main():
             ## If we aren't keeping the ligands, then we want to give it a site residue to use
             if args.protein_only:
                 xtal.active_site = f"His:41: :{xtal.active_site_chain}"
-
-    elif args.pdb_yaml_path:
-        ## First, get list of pdbs from yaml file
-        pdb_dict = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
-        pdb_list = list(pdb_dict.keys())
-        pdb.download_PDBs(pdb_list, args.structure_dir)
-        active_site_chain = "A"
-        ## If the yaml file doesn't have any options for the pdb file, then assume it is a dimer
-        xtal_compounds = [
-            CrystalCompoundData(
-                str_fn=os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"),
-                output_name=f"{pdb_id}_0{active_site_chain}",
-                active_site_chain=active_site_chain,
-                active_site=f"HIS:41: :{active_site_chain}",
-                chains=values.get("chains", ["A", "B"]),
-                oligomeric_state=values.get("oligomeric_state", "dimer"),
-                protein_chains=values.get("protein_chains", ["A", "B"]),
-            )
-            for pdb_id, values in pdb_dict.items()
-            if os.path.exists(
-                os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb")
-            )
-        ]
-    else:
-        raise NotImplementedError("Crystal CSV or PDB yaml file needed")
 
     if args.seqres_yaml:
         with open(args.seqres_yaml) as f:
