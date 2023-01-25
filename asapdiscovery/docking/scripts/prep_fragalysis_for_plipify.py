@@ -15,7 +15,6 @@ Example Usage:
 import argparse
 import datetime
 import multiprocessing as mp
-from openeye import oechem
 import os
 import sys
 import yaml
@@ -421,9 +420,6 @@ def align_receptor(
         Initial complex loaded straight from a PDB file. Can contain ligands,
         waters, cofactors, etc., which will be removed. Can also pass a PDB
         filename instead.
-    new_lig : Union[oechem.OEGraphMol, str]
-        New ligand molecule (loaded straight from a file). Can also pass a PDB
-        or SDF filename instead.
     dimer : bool, default=True
         Whether to build the dimer or just monomer.
     ref_prot : Union[oechem.OEGraphMol, str], optional
