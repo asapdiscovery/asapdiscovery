@@ -367,6 +367,10 @@ def train(
     ## Send model to desired device if it's not there already
     model = model.to(device)
 
+    ## Save initial model weights for debugging
+    if os.path.isdir(save_file):
+        torch.save(model.state_dict(), os.path.join(save_file, "init.th"))
+
     ## Set up optimizer and loss function
     if optimizer is None:
         optimizer = torch.optim.Adam(model.parameters(), lr)
@@ -519,6 +523,19 @@ def train(
             or (epoch_val_loss == np.inf)
             or (epoch_val_loss == -np.inf)
         ):
+            if os.path.isdir(save_file):
+                pkl.dump(
+                    ds_train,
+                    open(os.path.join(save_file, "ds_train.pkl"), "wb"),
+                )
+                pkl.dump(
+                    ds_val,
+                    open(os.path.join(save_file, "ds_val.pkl"), "wb"),
+                )
+                pkl.dump(
+                    ds_test,
+                    open(os.path.join(save_file, "ds_test.pkl"), "wb"),
+                )
             raise ValueError("Unrecoverable loss value reached.")
 
     return (
