@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import requests
 from zipfile import ZipFile
 
@@ -148,6 +149,8 @@ def parse_fragalysis(
     import pandas
     from .schema import CrystalCompoundData
     from tqdm import tqdm
+
+    x_dir = Path(x_dir)
 
     df = pandas.read_csv(x_fn)
 
