@@ -116,3 +116,54 @@ def parse_xtal(x_fn, x_dir, p_only=True):
     xtal_compounds = [CrystalCompoundData(**d) for d in filtered_xtal_dicts]
 
     return xtal_compounds
+
+
+def parse_fragalysis(x_fn, x_dir):
+    """
+    Load all crystal structures into schema.CrystalCompoundData objects.
+    Parameters
+    ----------
+    x_fn : str
+        metadata.CSV file giving information on each crystal structure
+    x_dir : str
+        Path to directory containing directories with crystal structure PDB
+        files
+    Returns
+    -------
+    List[schema.CrystalCompoundData]
+        List of parsed crystal structures
+    """
+    import pandas
+
+    from .schema import CrystalCompoundData
+    from tqdm import tqdm
+
+    df = pandas.read_csv(x_fn)
+
+    ## Build argument dicts for the CrystalCompoundData objects
+    xtal_dicts = [
+        dict(zip(("smiles", "dataset", "compound_id"), r[1].values))
+        for r in df.loc[
+            :, ["smiles", "crystal_name", "alternate_name"]
+        ].iterrows()
+    ]
+
+    ## Add structure filename information and filter if not found
+    filtered_xtal_dicts = []
+    for d in tqdm(xtal_dicts):
+        glob_str = f"{d['dataset']}*/*.pdb"
+        fns = list(x_dir.glob(glob_str))
+        for fn in fns:
+            d["str_fn"] = str(fn)
+            if os.path.isfile(fn):
+                filtered_xtal_dicts.append(d)
+            else:
+                print(f'No structure found for {d["dataset"]}.')
+    assert (
+        len(filtered_xtal_dicts) > 0
+    ), "No structure filenames were found by parse_xtal"
+    ## Build CrystalCompoundData objects for each row
+    print(f"Loading {len(filtered_xtal_dicts)} structures")
+    xtal_compounds = [CrystalCompoundData(**d) for d in filtered_xtal_dicts]
+
+    return xtal_compounds
