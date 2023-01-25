@@ -2,6 +2,456 @@ import numpy as np
 import os
 
 
+def build_model(
+    model_type,
+    e3nn_params=None,
+    strat="delta",
+    grouped=False,
+    comb=None,
+    pred_r=None,
+    comb_r=None,
+    config=None,
+):
+    """
+    Dispatch function for building the correct model and setting model_call
+    functions.
+
+    Parameters
+    ----------
+    model_type : str
+        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+    e3nn_params : Union[str, list], optional
+        Pickle file containing model parameters for the e3nn model, or just the
+        parameters themselves.
+    strat : str, default="delta"
+        Which strategy to use to combine protein and ligand representations.
+        Current options are ["delta", "concat"]
+    grouped : bool, default=False
+        Whether to group structures by ligand
+    comb : str, optional
+        Which method to use to combine predictions for multiple poses in a
+        grouped model. Current options are ["mean", "boltzmann"]
+    pred_r : str, optional
+        Which readout method to use for the individual pose predictions. Current
+        options are ["pic50"]
+    comb_r : str, optional
+        Which readout method to use for the combined pose prediction. Current
+        options are ["pic50"]
+    config : dict, optional
+        Override wandb config
+
+    Returns
+    -------
+    Union[asapdiscovery.ml.models.GAT, mtenn.model.Model]
+        Build model
+    """
+
+    ## Correct model name if needed
+    model_type = model_type.lower()
+
+    ## Get config
+    if not config:
+        try:
+            import wandb
+
+            config = dict(wandb.config)
+        except Exception:
+            config = {}
+
+    if model_type == "2d":
+        model = build_model_2d(config)
+        model_call = lambda model, d: torch.reshape(
+            model(d["g"], d["g"].ndata["h"]), (-1, 1)
+        )
+    elif (model_type == "schnet") or (model_type == "e3nn"):
+        import mtenn.conversion_utils
+        import mtenn.model
+
+        if model_type == "schnet":
+            model = build_model_schnet(config)
+            get_model = mtenn.conversion_utils.schnet.SchNet.get_model
+        else:
+            ## Loadmodel parameters
+            if os.path.isfile(e3nn_params):
+                model_params = pkl.load(open(e3nn_params, "rb"))
+            elif (type(e3nn_params) is list) or (type(e3nn_params) is tuple):
+                model_params = e3nn_params
+            else:
+                raise ValueError(
+                    (
+                        "Must provide an appropriate value for e3nn_params "
+                        f"(received {e3nn_params})"
+                    )
+                )
+            model = build_model_e3nn(100, *model_params[1:], config)
+            get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
+
+        ## Take MTENN args from config if present, else from args
+        strategy = (
+            config["strat"].lower() if "strat" in config else strat.lower()
+        )
+        grouped = config["grouped"] if "grouped" in config else grouped
+
+        ## Check and parse combination
+        try:
+            combination = (
+                config["comb"].lower() if "comb" in config else comb.lower()
+            )
+            if combination == "mean":
+                combination = mtenn.model.MeanCombination()
+            elif combination == "boltzmann":
+                combination = mtenn.model.BoltzmannCombination()
+            else:
+                raise ValueError(f"Uknown value for -comb: {combination}")
+        except AttributeError:
+            ## This will be triggered if combination is left blank
+            ##  (None.lower() => AttributeError)
+            if grouped:
+                raise ValueError(
+                    f"A value must be provided for -comb if --grouped is set."
+                )
+            combination = None
+
+        ## Check and parse pred readout
+        try:
+            pred_readout = (
+                config["pred_r"].lower()
+                if "pred_r" in config
+                else pred_r.lower()
+            )
+            if pred_readout == "pic50":
+                pred_readout = mtenn.model.PIC50Readout()
+            elif pred_readout == "none":
+                pred_readout = None
+            else:
+                raise ValueError(f"Uknown value for -pred_r: {pred_readout}")
+        except AttributeError:
+            pred_readout = None
+
+        ## Check and parse comb readout
+        try:
+            comb_readout = (
+                config["comb_r"].lower()
+                if "comb_r" in config
+                else comb_r.lower()
+            )
+            if comb_readout == "pic50":
+                comb_readout = mtenn.model.PIC50Readout()
+            elif comb_readout == "none":
+                comb_readout = None
+            else:
+                raise ValueError(f"Uknown value for -comb_r: {comb_readout}")
+        except AttributeError:
+            comb_readout = None
+
+        ## Use previously built model to construct mtenn.model.Model
+        model = get_model(
+            model=model,
+            grouped=grouped,
+            strategy=strategy,
+            combination=combination,
+            pred_readout=pred_readout,
+            comb_readout=comb_readout,
+            fix_device=True,
+        )
+        model_call = lambda model, d: model(d)
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
+
+    return model, model_call
+
+
+def build_model_2d(config=None):
+    """
+    Build appropriate 2D graph model.
+
+    Parameters
+    ----------
+    config : Union[str, dict], optional
+        Either a dict or JSON file with model config options. If not passed,
+        `config` will be taken from `wandb`.
+
+    Returns
+    -------
+    asapdiscovery.ml.models.GAT
+        GAT graph model
+    """
+    from asapdiscovery.ml import GAT
+    from dgllife.utils import CanonicalAtomFeaturizer
+
+    if type(config) is str:
+        config = json.load(open(config_fn))
+    elif config is None:
+        config = wandb.config
+    elif type(config) != dict:
+        raise ValueError(f"Unknown type of config: {type(config)}")
+
+    # config.update({"in_node_feats": CanonicalAtomFeaturizer().feat_size()})
+    in_node_feats = CanonicalAtomFeaturizer().feat_size()
+
+    model = GAT(
+        in_feats=in_node_feats,
+        hidden_feats=[config["gnn_hidden_feats"]] * config["num_gnn_layers"],
+        num_heads=[config["num_heads"]] * config["num_gnn_layers"],
+        feat_drops=[config["dropout"]] * config["num_gnn_layers"],
+        attn_drops=[config["dropout"]] * config["num_gnn_layers"],
+        alphas=[config["alpha"]] * config["num_gnn_layers"],
+        residuals=[config["residual"]] * config["num_gnn_layers"],
+    )
+
+    return model
+
+
+def build_model_schnet(
+    config=None,
+    qm9=None,
+    qm9_target=10,
+    remove_atomref=False,
+    neighbor_dist=5.0,
+):
+    """
+    Build appropriate SchNet model.
+
+    Parameters
+    ----------
+    config : Union[str, dict], optional
+        Either a dict or JSON file with model config options. If not passed,
+        `config` will be taken from `wandb`.
+    qm9 : str, optional
+        Path to QM9 dataset, if starting with a QM9-pretrained model
+    qm9_target : int, default=10
+        Which QM9 target to use. Must be in the range of [0, 11]
+    remove_atomref : bool, default=False
+        Whether to remove the reference atom propoerties learned from the QM9
+        dataset
+    neighbor_dist : float, default=5.0
+        Distance cutoff for nodes to be considered neighbors
+
+    Returns
+    -------
+    mtenn.conversion_utils.SchNet
+        MTENN SchNet model created from input parameters
+    """
+    import mtenn.conversion_utils
+    from torch_geometric.nn import SchNet
+
+    ## Parse config
+    if type(config) is str:
+        config = parse_config(config_fn)
+    elif config is None:
+        try:
+            import wandb
+
+            config = wandb.config
+        except Exception:
+            pass
+    elif type(config) != dict:
+        raise ValueError(f"Unknown type of config: {type(config)}")
+
+    ## Load pretrained model if requested, otherwise create a new SchNet
+    if qm9 is None:
+        if config:
+            ## Get param values from config if they're there, otherwise just
+            ##  use default SchNet values
+            model_params = [
+                "hidden_channels",
+                "num_filters",
+                "num_interactions",
+                "num_gaussians",
+                "cutoff",
+                "max_num_neighbors",
+                "readout",
+            ]
+            model_params = {p: config[p] for p in model_params if p in config}
+            model = SchNet(**model_params)
+        else:
+            model = SchNet()
+        model = mtenn.conversion_utils.SchNet(model)
+    else:
+        qm9_dataset = QM9(qm9)
+
+        # target=10 is free energy (eV)
+        model_qm9, _ = SchNet.from_qm9_pretrained(qm9, qm9_dataset, qm9_target)
+
+        if remove_atomref:
+            atomref = None
+            ## Get rid of entries in state_dict that correspond to atomref
+            wts = {
+                k: v
+                for k, v in model_qm9.state_dict().items()
+                if "atomref" not in k
+            }
+        else:
+            atomref = model_qm9.atomref.weight.detach().clone()
+            wts = model_qm9.state_dict()
+
+        model_params = (
+            model_qm9.hidden_channels,
+            model_qm9.num_filters,
+            model_qm9.num_interactions,
+            model_qm9.num_gaussians,
+            model_qm9.cutoff,
+            model_qm9.max_num_neighbors,
+            model_qm9.readout,
+            model_qm9.dipole,
+            model_qm9.mean,
+            model_qm9.std,
+            atomref,
+        )
+
+        model = SchNet(*model_params)
+        model.load_state_dict(wts)
+        model = mtenn.conversion_utils.SchNet(model)
+
+    ## Set interatomic cutoff (default of 10) to make the graph smaller
+    if (config is None) or ("cutoff" not in config):
+        model.cutoff = neighbor_dist
+
+    return model
+
+
+def build_model_e3nn(
+    n_atom_types,
+    num_neighbors,
+    num_nodes,
+    config=None,
+    node_attr=False,
+    neighbor_dist=5.0,
+    irreps_hidden=None,
+):
+    """
+    Build appropriate e3nn model.
+
+    Parameters
+    ----------
+    n_atom_types : int
+        Number off atom types in one-hot encodings. This will define the
+        dimensionality of the input into the model
+    num_neighbors : int
+        Approximate number of neighbor nodes that get convolved over for each
+        node. Used as a normalization factor in the model
+    num_nodes : int
+        Approximate number of nodes per graph. Used as a normalization factor in
+        the model
+    config : Union[str, dict], optional
+        Either a dict or JSON file with model config options. If not passed,
+        `config` will be taken from `wandb`.
+
+    Returns
+    -------
+    mtenn.conversion_utils.e3nn.E3NN
+        e3nn model created from input parameters
+    """
+    from e3nn.o3 import Irreps
+    import mtenn.conversion_utils
+
+    ## Parse config
+    if type(config) is str:
+        config = parse_config(config_fn)
+    elif config is None:
+        try:
+            import wandb
+
+            config = wandb.config
+        except Exception:
+            pass
+    elif type(config) != dict:
+        raise ValueError(f"Unknown type of config: {type(config)}")
+
+    ## Build hidden irreps
+    if config:
+        if "irreps_0o" in config:
+            irreps_hidden = Irreps(
+                [
+                    (config["irreps_0o"], "0o"),
+                    (config["irreps_0e"], "0e"),
+                    (config["irreps_1o"], "1o"),
+                    (config["irreps_1e"], "1e"),
+                    (config["irreps_2o"], "2o"),
+                    (config["irreps_2e"], "2e"),
+                    (config["irreps_3o"], "3o"),
+                    (config["irreps_3e"], "3e"),
+                    (config["irreps_4o"], "4o"),
+                    (config["irreps_4e"], "4e"),
+                ]
+            )
+        else:
+            irreps_hidden = Irreps(
+                [
+                    (config["irreps_0"], "0o"),
+                    (config["irreps_0"], "0e"),
+                    (config["irreps_1"], "1o"),
+                    (config["irreps_1"], "1e"),
+                    (config["irreps_2"], "2o"),
+                    (config["irreps_2"], "2e"),
+                    (config["irreps_3"], "3o"),
+                    (config["irreps_3"], "3e"),
+                    (config["irreps_4"], "4o"),
+                    (config["irreps_4"], "4e"),
+                ]
+            )
+        ## Set up default hidden irreps if none specified
+    elif irreps_hidden is None:
+        irreps_hidden = [
+            (mul, (l, p))
+            for l, mul in enumerate([10, 3, 2, 1])
+            for p in [-1, 1]
+        ]
+
+    ## Handle any conflicts and set defaults if necessary. config will
+    ##  override any other parameters
+    node_attr = config["lig"] if config and ("lig" in config) else node_attr
+    irreps_edge_attr = (
+        config["irreps_edge_attr"]
+        if config and ("irreps_edge_attr" in config)
+        else 3
+    )
+    layers = config["layers"] if config and ("layers" in config) else 3
+    neighbor_dist = (
+        config["max_radius"]
+        if config and ("max_radius" in config)
+        else neighbor_dist
+    )
+    number_of_basis = (
+        config["number_of_basis"]
+        if config and ("number_of_basis" in config)
+        else 10
+    )
+    radial_layers = (
+        config["radial_layers"] if config and ("radial_layers" in config) else 1
+    )
+    radial_neurons = (
+        config["radial_neurons"]
+        if config and ("radial_neurons" in config)
+        else 128
+    )
+
+    # input is one-hot encoding of atom type => n_atom_types scalars
+    # output is scalar valued binding energy/pIC50 value
+    # hidden layers taken from e3nn tutorial (should be tuned eventually)
+    # same with edge attribute irreps (and all hyperparameters)
+    # need to calculate num_neighbors and num_nodes
+    # reduce_output because we just want the one binding energy prediction
+    #  across the whole graph
+    model_kwargs = {
+        "irreps_in": f"{n_atom_types}x0e",
+        "irreps_hidden": irreps_hidden,
+        "irreps_out": "1x0e",
+        "irreps_node_attr": "1x0e" if node_attr else None,
+        "irreps_edge_attr": Irreps.spherical_harmonics(irreps_edge_attr),
+        "layers": layers,
+        "max_radius": neighbor_dist,
+        "number_of_basis": number_of_basis,
+        "radial_layers": radial_layers,
+        "radial_neurons": radial_neurons,
+        "num_neighbors": num_neighbors,
+        "num_nodes": num_nodes,
+        "reduce_output": True,
+    }
+
+    return mtenn.conversion_utils.E3NN(model_kwargs=model_kwargs)
+
+
 def calc_e3nn_model_info(ds, r):
     """
     Calculate parameters to use in creation of an e3nn model.
@@ -164,6 +614,36 @@ def load_weights(model, wts_fn):
     print(f"Loaded model weights from {wts_fn}", flush=True)
 
     return model
+
+
+def parse_config(config_fn):
+    """
+    Function to load a model config JSON/YAML file with the appropriate
+    function.
+
+    Parameters
+    ----------
+    config_fn : str
+        Filename of the config file
+
+    Returns
+    -------
+    dict
+        Loaded config
+    """
+    fn_ext = config_fn.split(".")[-1].lower()
+    if fn_ext == "json":
+        import json
+
+        model_config = json.load(open(config_fn))
+    elif fn_ext in {"yaml", "yml"}:
+        import yaml
+
+        model_config = yaml.safe_load(open(config_fn))
+    else:
+        raise ValueError(f"Unknown config file extension: {fn_ext}")
+
+    return model_config
 
 
 def plot_loss(train_loss, val_loss, test_loss, out_fn):

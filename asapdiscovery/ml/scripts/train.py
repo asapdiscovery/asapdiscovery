@@ -45,9 +45,11 @@ from asapdiscovery.ml import (
 )
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.ml.utils import (
+    build_model,
     calc_e3nn_model_info,
     find_most_recent,
     load_weights,
+    parse_config,
     plot_loss,
     split_molecules,
     train,
@@ -678,36 +680,6 @@ def make_wandb_table(ds_split):
     return table
 
 
-def parse_config(config_fn):
-    """
-    Function to load a model config JSON/YAML file with the appropriate
-    function.
-
-    Parameters
-    ----------
-    config_fn : str
-        Filename of the config file
-
-    Returns
-    -------
-    dict
-        Loaded config
-    """
-    fn_ext = config_fn.split(".")[-1].lower()
-    if fn_ext == "json":
-        import json
-
-        model_config = json.load(open(config_fn))
-    elif fn_ext in {"yaml", "yml"}:
-        import yaml
-
-        model_config = yaml.safe_load(open(config_fn))
-    else:
-        raise ValueError(f"Unknown config file extension: {fn_ext}")
-
-    return model_config
-
-
 def wandb_init(
     project_name,
     run_name,
@@ -892,30 +864,12 @@ def init(args, rank=False):
     if "lr" in model_config:
         args.lr = model_config["lr"]
 
-    ## Build the model
-    if args.model == "e3nn":
-        ## Need to add one-hot encodings to the dataset
+    ## Need to augment the datasets if using e3nn
+    if args.model.lower() == "e3nn":
+        ## Add one-hot encodings to the dataset
         ds_train = add_one_hot_encodings(ds_train)
         ds_val = add_one_hot_encodings(ds_val)
         ds_test = add_one_hot_encodings(ds_test)
-
-        ## Load or calculate model parameters
-        if args.model_params is None:
-            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
-        elif os.path.isfile(args.model_params):
-            model_params = pkl.load(open(args.model_params, "rb"))
-        else:
-            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
-            pkl.dump(model_params, open(args.model_params, "wb"))
-        model = build_model_e3nn(
-            100,
-            *model_params[1:],
-            model_config,
-            node_attr=args.lig,
-            neighbor_dist=args.n_dist,
-            irreps_hidden=args.irr,
-        )
-        get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
 
         ## Add lig labels as node attributes if requested
         if args.lig:
@@ -923,12 +877,19 @@ def init(args, rank=False):
             ds_val = add_lig_labels(ds_val)
             ds_test = add_lig_labels(ds_test)
 
-        for k, v in ds_train[0][1].items():
-            try:
-                print(k, v.shape, flush=True)
-            except AttributeError as e:
-                print(k, v, flush=True)
+    model, model_call = build_model(
+        model_type=args.model,
+        e3nn_params=args.model_params,
+        strat=args.strat,
+        grouped=args.grouped,
+        comb=args.comb,
+        pred_r=args.pred_r,
+        comb_r=args.comb_r,
+        config=model_config,
+    )
 
+    ## Build the model
+    if args.model == "e3nn":
         ## Experiment configuration
         exp_configure = {
             "model": "e3nn",
@@ -940,15 +901,6 @@ def init(args, rank=False):
             "irreps_hidden": args.irr,
         }
     elif args.model == "schnet":
-        model = build_model_schnet(
-            model_config,
-            args.qm9,
-            args.qm9_target,
-            args.rm_atomref,
-            neighbor_dist=args.n_dist,
-        )
-        get_model = mtenn.conversion_utils.schnet.SchNet.get_model
-
         ## Experiment configuration
         exp_configure = {
             "model": "schnet",
@@ -958,11 +910,6 @@ def init(args, rank=False):
             "neighbor_dist": args.n_dist,
         }
     elif args.model == "2d":
-        model, exp_configure = build_model_2d(model_config)
-        model_call = lambda model, d: torch.reshape(
-            model(d["g"], d["g"].ndata["h"]), (-1, 1)
-        )
-
         ## Update experiment configuration
         exp_configure.update({"model": "GAT"})
     else:
@@ -983,86 +930,8 @@ def init(args, rank=False):
         }
     )
 
-    ## MTENN setup
-    if (args.model == "e3nn") or (args.model == "schnet"):
-        ## Take MTENN args from config if present, else from args
-        strategy = (
-            model_config["strat"].lower()
-            if "strat" in model_config
-            else args.strat.lower()
-        )
-        grouped = (
-            model_config["grouped"]
-            if "grouped" in model_config
-            else args.grouped
-        )
-
-        ## Check and parse combination
-        try:
-            combination = (
-                model_config["comb"].lower()
-                if "comb" in model_config
-                else args.comb.lower()
-            )
-            if combination == "mean":
-                combination = mtenn.model.MeanCombination()
-            elif combination == "boltzmann":
-                combination = mtenn.model.BoltzmannCombination()
-            else:
-                raise ValueError(f"Uknown value for -comb: {args.comb}")
-        except AttributeError:
-            ## This will be triggered if combination is left blank
-            ##  (None.lower() => AttributeError)
-            if args.grouped:
-                raise ValueError(
-                    f"A value must be provided for -comb if --grouped is set."
-                )
-            combination = None
-
-        ## Check and parse pred readout
-        try:
-            pred_readout = (
-                model_config["pred_r"].lower()
-                if "pred_r" in model_config
-                else args.pred_r.lower()
-            )
-            if pred_readout == "pic50":
-                pred_readout = mtenn.model.PIC50Readout()
-            elif pred_readout == "none":
-                pred_readout = None
-            else:
-                raise ValueError(f"Uknown value for -pred_r: {args.pred_r}")
-        except AttributeError:
-            pred_readout = None
-
-        ## Check and parse comb readout
-        try:
-            comb_readout = (
-                model_config["comb_r"].lower()
-                if "comb_r" in model_config
-                else args.comb_r.lower()
-            )
-            if comb_readout == "pic50":
-                comb_readout = mtenn.model.PIC50Readout()
-            elif comb_readout == "none":
-                comb_readout = None
-            else:
-                raise ValueError(f"Uknown value for -comb_r: {args.comb_r}")
-        except AttributeError:
-            comb_readout = None
-
-        ## Use previously built model to construct mtenn.model.Model
-        model = get_model(
-            model=model,
-            grouped=args.grouped,
-            strategy=strategy,
-            combination=combination,
-            pred_readout=pred_readout,
-            comb_readout=comb_readout,
-            fix_device=True,
-        )
-        model_call = lambda model, d: model(d)
-
+    ## Add MTENN options
+    if (args.model.lower() == "schnet") or (args.model.lower() == "e3nn"):
         exp_configure.update(
             {
                 "mtenn:strategy": strategy,
