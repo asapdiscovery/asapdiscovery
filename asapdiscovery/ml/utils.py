@@ -138,7 +138,10 @@ def load_weights(model, wts_fn):
     import torch
 
     ## Load weights
-    wts_dict = torch.load(wts_fn)
+    try:
+        wts_dict = torch.load(wts_fn)
+    except RuntimeError:
+        wts_dict = torch.load(wts_fn, map_location="cpu")
 
     ## Initialize linear module in ConcatStrategy
     if "strategy.reduce_nn.weight" in wts_dict:
@@ -158,6 +161,7 @@ def load_weights(model, wts_fn):
 
     ## Load model parameters
     model.load_state_dict(wts_dict)
+    print(f"Loaded model weights from {wts_fn}", flush=True)
 
     return model
 
