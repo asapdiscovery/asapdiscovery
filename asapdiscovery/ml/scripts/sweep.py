@@ -21,7 +21,7 @@ from asapdiscovery.ml.scripts.train import (
 from asapdiscovery.ml.utils import train
 
 
-def build_model(args):
+def build_model(args, config=None):
     """
     Dispatch function for building the correct model and setting model_call
     functions.
@@ -30,6 +30,8 @@ def build_model(args):
     ----------
     args : dict
         CLI arguments
+    config : dict, optional
+        Override wandb config
 
     Returns
     -------
@@ -39,8 +41,10 @@ def build_model(args):
 
     ## Correct model name if needed
     model = args.model.lower()
+
     ## Get config
-    config = wandb.config
+    if not config:
+        config = dict(wandb.config)
 
     if model == "2d":
         model = build_model_2d()
@@ -52,7 +56,7 @@ def build_model(args):
         import mtenn.model
 
         if model == "schnet":
-            model = build_model_schnet()
+            model = build_model_schnet(config)
             get_model = mtenn.conversion_utils.schnet.SchNet.get_model
         else:
             model_params = pkl.load(open(args.model_params, "rb"))
@@ -61,14 +65,16 @@ def build_model(args):
 
         ## Take MTENN args from config if present, else from args
         strategy = (
-            config.strat.lower() if "strat" in config else args.strat.lower()
+            config["strat"].lower() if "strat" in config else args.strat.lower()
         )
-        grouped = config.grouped if "grouped" in config else args.grouped
+        grouped = config["grouped"] if "grouped" in config else args.grouped
 
         ## Check and parse combination
         try:
             combination = (
-                config.comb.lower() if "comb" in config else args.comb.lower()
+                config["comb"].lower()
+                if "comb" in config
+                else args.comb.lower()
             )
             if combination == "mean":
                 combination = mtenn.model.MeanCombination()
@@ -88,7 +94,7 @@ def build_model(args):
         ## Check and parse pred readout
         try:
             pred_readout = (
-                config.pred_r.lower()
+                config["pred_r"].lower()
                 if "pred_r" in config
                 else args.pred_r.lower()
             )
@@ -104,7 +110,7 @@ def build_model(args):
         ## Check and parse comb readout
         try:
             comb_readout = (
-                config.comb_r.lower()
+                config["comb_r"].lower()
                 if "comb_r" in config
                 else args.comb_r.lower()
             )
@@ -265,31 +271,31 @@ def build_model_e3nn(
     if "irreps_0o" in config:
         irreps_hidden = Irreps(
             [
-                (config.irreps_0o, "0o"),
-                (config.irreps_0e, "0e"),
-                (config.irreps_1o, "1o"),
-                (config.irreps_1e, "1e"),
-                (config.irreps_2o, "2o"),
-                (config.irreps_2e, "2e"),
-                (config.irreps_3o, "3o"),
-                (config.irreps_3e, "3e"),
-                (config.irreps_4o, "4o"),
-                (config.irreps_4e, "4e"),
+                (config["irreps_0o"], "0o"),
+                (config["irreps_0e"], "0e"),
+                (config["irreps_1o"], "1o"),
+                (config["irreps_1e"], "1e"),
+                (config["irreps_2o"], "2o"),
+                (config["irreps_2e"], "2e"),
+                (config["irreps_3o"], "3o"),
+                (config["irreps_3e"], "3e"),
+                (config["irreps_4o"], "4o"),
+                (config["irreps_4e"], "4e"),
             ]
         )
     else:
         irreps_hidden = Irreps(
             [
-                (config.irreps_0, "0o"),
-                (config.irreps_0, "0e"),
-                (config.irreps_1, "1o"),
-                (config.irreps_1, "1e"),
-                (config.irreps_2, "2o"),
-                (config.irreps_2, "2e"),
-                (config.irreps_3, "3o"),
-                (config.irreps_3, "3e"),
-                (config.irreps_4, "4o"),
-                (config.irreps_4, "4e"),
+                (config["irreps_0"], "0o"),
+                (config["irreps_0"], "0e"),
+                (config["irreps_1"], "1o"),
+                (config["irreps_1"], "1e"),
+                (config["irreps_2"], "2o"),
+                (config["irreps_2"], "2e"),
+                (config["irreps_3"], "3o"),
+                (config["irreps_3"], "3e"),
+                (config["irreps_4"], "4o"),
+                (config["irreps_4"], "4e"),
             ]
         )
 
@@ -304,13 +310,15 @@ def build_model_e3nn(
         "irreps_in": f"{n_atom_types}x0e",
         "irreps_hidden": irreps_hidden,
         "irreps_out": "1x0e",
-        "irreps_node_attr": "1x0e" if config.lig else None,
-        "irreps_edge_attr": Irreps.spherical_harmonics(config.irreps_edge_attr),
-        "layers": config.layers,
-        "max_radius": config.max_radius,
-        "number_of_basis": config.number_of_basis,
-        "radial_layers": config.radial_layers,
-        "radial_neurons": config.radial_neurons,
+        "irreps_node_attr": "1x0e" if config["lig"] else None,
+        "irreps_edge_attr": Irreps.spherical_harmonics(
+            config["irreps_edge_attr"]
+        ),
+        "layers": config["layers"],
+        "max_radius": config["max_radius"],
+        "number_of_basis": config["number_of_basis"],
+        "radial_layers": config["radial_layers"],
+        "radial_neurons": config["radial_neurons"],
         "num_neighbors": num_neighbors,
         "num_nodes": num_nodes,
         "reduce_output": True,
@@ -344,31 +352,31 @@ def build_optimizer(model):
         return None
 
     ## Correct model name if needed
-    optim_type = config.optimizer.lower()
+    optim_type = config["optimizer"].lower()
 
     if optim_type == "adam":
         ## Defaults from torch if not present in config
-        b1 = config.b1 if "b1" in config else 0.9
-        b2 = config.b2 if "b2" in config else 0.999
-        eps = config.eps if "eps" in config else 1e-8
-        weight_decay = config.weight_decay if "weight_decay" in config else 0
+        b1 = config["b1"] if "b1" in config else 0.9
+        b2 = config["b2"] if "b2" in config else 0.999
+        eps = config["eps"] if "eps" in config else 1e-8
+        weight_decay = config["weight_decay"] if "weight_decay" in config else 0
 
         optimizer = torch.optim.Adam(
             model.parameters(),
-            lr=config.lr,
+            lr=config["lr"],
             betas=(b1, b2),
             eps=eps,
             weight_decay=weight_decay,
         )
     elif optim_type == "sgd":
         ## Defaults from torch if not present in config
-        momentum = config.momentum if "momentum" in config else 0
-        weight_decay = config.weight_decay if "weight_decay" in config else 0
-        dampening = config.dampening if "dampening" in config else 0
+        momentum = config["momentum"] if "momentum" in config else 0
+        weight_decay = config["weight_decay"] if "weight_decay" in config else 0
+        dampening = config["dampening"] if "dampening" in config else 0
 
         optimizer = torch.optim.SGD(
             model.parameters(),
-            lr=config.lr,
+            lr=config["lr"],
             momentum=momentum,
             weight_decay=weight_decay,
             dampening=dampening,
@@ -513,7 +521,8 @@ def main():
     ## Load and split dataset
     ds, exp_data = build_dataset(args)
     ds_train, ds_val, ds_test = split_dataset(
-        ds, wandb.config.grouped if "grouped" in wandb.config else args.grouped
+        ds,
+        wandb.config["grouped"] if "grouped" in wandb.config else args.grouped,
     )
 
     ## Need to augment the datasets if using e3nn
@@ -524,7 +533,7 @@ def main():
         ds_test = add_one_hot_encodings(ds_test)
 
         ## Add lig labels as node attributes if requested
-        if wandb.config.lig:
+        if wandb.config["lig"]:
             ds_train = add_lig_labels(ds_train)
             ds_val = add_lig_labels(ds_val)
             ds_test = add_lig_labels(ds_test)
