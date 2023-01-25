@@ -303,23 +303,17 @@ def main():
         for xtal in xtal_compounds:
             ## Get chain
             ## The parentheses in this string are the capture group
-            re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
-            try:
-                frag_chain = re.search(re_pat, xtal.str_fn).groups()[0]
-            except AttributeError:
-                main_logger.error(
-                    f"Regex chain search failed: {re_pat}, {xtal.str_fn}.",
-                    "Using A as default.",
-                )
-                frag_chain = "0A"
-            xtal.output_name = f"{xtal.dataset}_{frag_chain}_{xtal.compound_id}"
+
+            xtal.output_name = f"{xtal.dataset}_{xtal.compound_id}"
+
+            frag_chain = xtal.dataset[-2:]
 
             ## We also want the chain in the form of a single letter ('A', 'B'), etc
             xtal.active_site_chain = frag_chain[-1]
 
             ## If we aren't keeping the ligands, then we want to give it a site residue to use
             if args.protein_only:
-                xtal.active_site = f"His:41: :{xtal.chain}"
+                xtal.active_site = f"His:41: :{xtal.active_site_chain}"
 
     elif args.pdb_yaml_path:
         ## First, get list of pdbs from yaml file
