@@ -20,7 +20,6 @@ import argparse
 from dgllife.utils import CanonicalAtomFeaturizer
 from e3nn import o3
 from e3nn.nn.models.gate_points_2101 import Network
-from glob import glob
 import json
 import numpy as np
 import os
@@ -31,11 +30,6 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-from asapdiscovery.ml.dataset import (
-    DockedDataset,
-    GroupedDockedDataset,
-    GraphDataset,
-)
 from asapdiscovery.ml import (
     E3NNBind,
     GAT,
@@ -43,15 +37,15 @@ from asapdiscovery.ml import (
     MSELoss,
     GaussianNLLLoss,
 )
-from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.ml.utils import (
+    build_dataset,
     build_model,
     calc_e3nn_model_info,
     find_most_recent,
     load_weights,
     parse_config,
     plot_loss,
-    split_molecules,
+    split_dataset,
     train,
 )
 
@@ -102,276 +96,6 @@ def add_lig_labels(ds):
         pose["z"] = pose["lig"].reshape((-1, 1)).float()
 
     return ds
-
-
-def build_dataset(args, rank=False):
-    ## Get all docked structures
-    if os.path.isdir(args.i):
-        all_fns = glob(f"{args.i}/*complex.pdb")
-    else:
-        all_fns = glob(args.i)
-    ## Extract crystal structure and compound id from file name
-    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
-    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
-
-    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
-    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
-    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
-    compounds = [
-        (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(
-            xtal_matches, compound_matches, idx
-        )
-        if both_m
-    ]
-    num_found = len(compounds)
-    ## Dictionary mapping from compound_id to Mpro dataset(s)
-    compound_id_dict = {}
-    for xtal_structure, compound_id in compounds:
-        try:
-            compound_id_dict[compound_id].append(xtal_structure)
-        except KeyError:
-            compound_id_dict[compound_id] = [xtal_structure]
-
-    if rank:
-        exp_data = None
-    elif args.model == "2d":
-        ## Load the experimental compounds
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-        print("load", len(exp_compounds), flush=True)
-
-        ## Get compounds that have both structure and experimental data (this
-        ##  step isn't actually necessary for performance, but allows a more
-        ##  fair comparison between 2D and 3D models)
-        xtal_compound_ids = {c[1] for c in compounds}
-        ## Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [
-            c for c in exp_compounds if c.compound_id in xtal_compound_ids
-        ]
-        print("filter", len(exp_compounds), flush=True)
-
-        ## Make cache directory as necessary
-        if args.cache is None:
-            cache_dir = os.path.join(args.model_o, ".cache")
-        else:
-            cache_dir = args.cache
-        os.makedirs(cache_dir, exist_ok=True)
-
-        ## Build the dataset
-        ds = GraphDataset(
-            exp_compounds,
-            node_featurizer=CanonicalAtomFeaturizer(),
-            cache_file=os.path.join(cache_dir, "graph.bin"),
-        )
-
-        print(next(iter(ds)), flush=True)
-
-        ## Rename exp_compounds so the number kept is consistent
-        compounds = exp_compounds
-    elif args.cache and os.path.isfile(args.cache):
-        ## Load from cache
-        ds = pkl.load(open(args.cache, "rb"))
-        print("Loaded from cache", flush=True)
-
-        ## Still need to load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-    else:
-        ## Load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-
-        ## Make dict to access smiles data
-        smiles_dict = {}
-        for c in exp_compounds:
-            if c.compound_id not in compound_id_dict:
-                continue
-            for xtal_structure in compound_id_dict[c.compound_id]:
-                smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
-
-        ## Make dict to access experimental compound data
-        exp_data_dict = {}
-        for compound_id, d in exp_data.items():
-            if compound_id not in compound_id_dict:
-                continue
-            for xtal_structure in compound_id_dict[compound_id]:
-                exp_data_dict[(xtal_structure, compound_id)] = d
-
-        ## Trim docked structures and filenames to remove compounds that don't have
-        ##  experimental data
-        all_fns, compounds = zip(
-            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
-        )
-
-        ## Build extra info dict
-        extra_dict = {
-            compound: {
-                "smiles": smiles,
-                "pIC50": exp_data_dict[compound]["pIC50"],
-                "pIC50_range": exp_data_dict[compound]["pIC50_range"],
-                "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
-            }
-            for compound, smiles in smiles_dict.items()
-        }
-
-        ## Load the dataset
-        if args.grouped:
-            ds = GroupedDockedDataset(
-                all_fns,
-                compounds,
-                lig_resn=args.n,
-                extra_dict=extra_dict,
-                num_workers=args.w,
-            )
-        else:
-            ds = DockedDataset(
-                all_fns,
-                compounds,
-                lig_resn=args.n,
-                extra_dict=extra_dict,
-                num_workers=args.w,
-            )
-
-        if args.cache:
-            ## Cache dataset
-            pkl.dump(ds, open(args.cache, "wb"))
-
-    num_kept = len(ds)
-    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
-
-    return ds, exp_data
-
-
-def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
-    """
-    Split a dataset into train, val, and test splits. A warning will be raised
-    if fractions don't add to 1.
-
-    Parameters
-    ----------
-    ds: torch.Dataset
-        Dataset object to split
-    grouped: bool
-        If data objects should be grouped by compound_id
-    train_frac: float, default=0.8
-        Fraction of dataset to put in the train split
-    val_frac: float, default=0.1
-        Fraction of dataset to put in the val split
-    test_frac: float, default=0.1
-        Fraction of dataset to put in the test split
-
-    Returns
-    -------
-    torch.Dataset
-        Train split
-    torch.Dataset
-        Val split
-    torch.Dataset
-        Test split
-    """
-    ## Check that fractions add to 1
-    if sum([train_frac, val_frac, test_frac]) != 1:
-        from warnings import warn
-
-        warn(
-            (
-                "Split fraction add to "
-                f"{sum([train_frac, val_frac, test_frac]):0.2f}, not 1"
-            ),
-            RuntimeWarning,
-        )
-
-    ## Split dataset into train/val/test (80/10/10 split)
-    # use fixed seed for reproducibility
-    if grouped:
-        n_train = int(len(ds) * train_frac)
-        n_val = int(len(ds) * val_frac)
-        n_test = len(ds) - n_train - n_val
-        ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
-        )
-        print(
-            (
-                f"{n_train} training molecules, {n_val} validation molecules, "
-                f"{n_test} testing molecules"
-            ),
-            flush=True,
-        )
-    else:
-        ds_train, ds_val, ds_test = split_molecules(
-            ds,
-            [train_frac, val_frac, test_frac],
-            torch.Generator().manual_seed(42),
-        )
-
-        train_compound_ids = {c[1] for c, _ in ds_train}
-        val_compound_ids = {c[1] for c, _ in ds_val}
-        test_compound_ids = {c[1] for c, _ in ds_test}
-        print(
-            f"{len(ds_train)} training samples",
-            f"({len(train_compound_ids)}) molecules,",
-            f"{len(ds_val)} validation samples",
-            f"({len(val_compound_ids)}) molecules,",
-            f"{len(ds_test)} test samples",
-            f"({len(test_compound_ids)}) molecules",
-            flush=True,
-        )
-
-    return ds_train, ds_val, ds_test
-
-
-def load_exp_data(fn, achiral=False, return_compounds=False):
-    """
-    Load all experimental data from JSON file of
-    schema.ExperimentalCompoundDataUpdate.
-
-    Parameters
-    ----------
-    fn : str
-        Path to JSON file
-    achiral : bool, default=False
-        Whether to only take achiral molecules
-    return_compounds : bool, default=False
-        Whether to return the compounds in addition to the experimental data
-
-    Returns
-    -------
-    dict[str->dict]
-        Dictionary mapping coumpound id to experimental data
-    List[ExperimentalCompoundData], optional
-        List of experimental compound data objects, only returned if
-        `return_compounds` is True
-    """
-    ## Load all compounds with experimental data and filter to only achiral
-    ##  molecules (to start)
-    exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, "r"))
-    ).compounds
-    exp_compounds = [c for c in exp_compounds if ((not achiral) or c.achiral)]
-
-    exp_dict = {
-        c.compound_id: c.experimental_data
-        for c in exp_compounds
-        if (
-            ("pIC50" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50"]))
-            and ("pIC50_range" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_range"]))
-            and ("pIC50_stderr" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_stderr"]))
-        )
-    }
-
-    if return_compounds:
-        ## Filter compounds
-        exp_compounds = [c for c in exp_compounds if c.compound_id in exp_dict]
-        return exp_dict, exp_compounds
-    else:
-        return exp_dict
 
 
 def build_model_2d(model_config):
@@ -851,7 +575,17 @@ def init(args, rank=False):
     """
 
     ## Load full dataset
-    ds, exp_data = build_dataset(args, rank)
+    ds, exp_data = build_dataset(
+        in_files=args.i,
+        model_type=args.model,
+        exp_fn=args.exp,
+        achiral=args.achiral,
+        cache_fn=args.cache,
+        grouped=args.grouped,
+        lig_name=args.n,
+        num_workers=args.w,
+        rank=rank,
+    )
     ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
     ## Parse model config file

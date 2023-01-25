@@ -15,10 +15,13 @@ from asapdiscovery.ml import MSELoss
 from asapdiscovery.ml.scripts.train import (
     add_one_hot_encodings,
     add_lig_labels,
-    build_dataset,
-    split_dataset,
 )
-from asapdiscovery.ml.utils import build_model, train
+from asapdiscovery.ml.utils import (
+    build_dataset,
+    build_model,
+    split_dataset,
+    train,
+)
 
 
 def build_optimizer(model):
@@ -213,7 +216,16 @@ def main():
     print(args.i, args.exp, args.model, flush=True)
 
     ## Load and split dataset
-    ds, exp_data = build_dataset(args)
+    ds, exp_data = build_dataset(
+        in_files=args.i,
+        model_type=args.model,
+        exp_fn=args.exp,
+        achiral=args.achiral,
+        cache_fn=args.cache,
+        grouped=args.grouped,
+        lig_name=args.n,
+        num_workers=args.w,
+    )
     ds_train, ds_val, ds_test = split_dataset(
         ds,
         wandb.config["grouped"] if "grouped" in wandb.config else args.grouped,
