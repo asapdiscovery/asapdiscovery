@@ -118,7 +118,13 @@ def parse_xtal(x_fn, x_dir, p_only=True):
     return xtal_compounds
 
 
-def parse_fragalysis(x_fn, x_dir):
+def parse_fragalysis(
+    x_fn,
+    x_dir,
+    name_filter=None,
+    name_filter_column="crystal_name",
+    drop_duplicate_datasets=False,
+):
     """
     Load all crystal structures into schema.CrystalCompoundData objects.
     Parameters
@@ -128,17 +134,35 @@ def parse_fragalysis(x_fn, x_dir):
     x_dir : str
         Path to directory containing directories with crystal structure PDB
         files
+    name_filter : str or list
+        String or list of strings that are required to be in the name_filter_column
+    name_filter_column : str
+        Name of column in the metadata.csv that will be used to filter the dataframe
+    drop_duplicate_datasets : bool
+        If true, will drop the _1A, _0B, etc duplicate datasets for a given crystal structure.
     Returns
     -------
     List[schema.CrystalCompoundData]
         List of parsed crystal structures
     """
     import pandas
-
     from .schema import CrystalCompoundData
     from tqdm import tqdm
 
     df = pandas.read_csv(x_fn)
+
+    ## Only keep rows of dataframe where the name_filter_column includes the name_filter string
+    if name_filter:
+        if type(name_filter) == str:
+            idx = df[name_filter_column].apply(lambda x: name_filter in x)
+            df = df[idx]
+        elif type(name_filter) == list:
+            for filter in name_filter:
+                idx = df[name_filter_column].apply(lambda x: filter in x)
+                df = df[idx]
+    ## Drop duplicates, keeping only the first one.
+    if drop_duplicate_datasets:
+        df = df.drop_duplicates("RealCrystalName")
 
     ## Build argument dicts for the CrystalCompoundData objects
     xtal_dicts = [
@@ -155,13 +179,14 @@ def parse_fragalysis(x_fn, x_dir):
         fns = list(x_dir.glob(glob_str))
         for fn in fns:
             d["str_fn"] = str(fn)
+
+            ## This should basically always be true since we're getting the filenames from glob but just in case.
             if os.path.isfile(fn):
                 filtered_xtal_dicts.append(d)
-            else:
-                print(f'No structure found for {d["dataset"]}.')
     assert (
         len(filtered_xtal_dicts) > 0
-    ), "No structure filenames were found by parse_xtal"
+    ), "No structure filenames were found by parse_fragalysis"
+
     ## Build CrystalCompoundData objects for each row
     print(f"Loading {len(filtered_xtal_dicts)} structures")
     xtal_compounds = [CrystalCompoundData(**d) for d in filtered_xtal_dicts]
