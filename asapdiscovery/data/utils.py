@@ -160,7 +160,7 @@ def seqres_to_res_list(seqres_str):
     https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#SEQRES
     Parameters
     ----------
-    SEQRES_str
+    seqres_str
 
     Returns
     -------
