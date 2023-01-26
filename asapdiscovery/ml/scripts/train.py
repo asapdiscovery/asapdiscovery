@@ -700,10 +700,10 @@ def init(args, rank=False):
     if (args.model.lower() == "schnet") or (args.model.lower() == "e3nn"):
         exp_configure.update(
             {
-                "mtenn:strategy": strategy,
-                "mtenn:combination": combination,
-                "mtenn:pred_readout": pred_readout,
-                "mtenn:comb_readout": comb_readout,
+                "mtenn:strategy": args.strat,
+                "mtenn:combination": args.comb,
+                "mtenn:pred_readout": args.pred_r,
+                "mtenn:comb_readout": args.comb_r,
             }
         )
 
@@ -809,9 +809,10 @@ def main():
     exp_configure.update({"loss_func": loss_str, "sq": args.sq})
 
     ## Add any extra user-supplied config options
-    exp_configure.update(
-        {a.split(",")[0]: a.split(",")[1] for a in args.extra_config}
-    )
+    if args.extra_config:
+        exp_configure.update(
+            {a.split(",")[0]: a.split(",")[1] for a in args.extra_config}
+        )
 
     ## Start wandb
     if args.sweep:
