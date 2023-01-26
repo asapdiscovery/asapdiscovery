@@ -586,11 +586,30 @@ def init(args, rank=False):
 
         wandb.init()
         model_config = dict(wandb.config)
+        print("Using wandb config.", flush=True)
     elif args.config:
         model_config = parse_config(args.config)
     else:
         model_config = {}
     print("Using model config:", model_config, flush=True)
+
+    ## Override args parameters with model_config parameters\
+    ## This shouldn't strictly be necessary, as model_config should override
+    ##  everything, but just to be safe
+    if "grouped" in model_config:
+        args.grouped = model_config["grouped"]
+    if "lig" in model_config:
+        args.lig = model_config["lig"]
+    if "strat" in model_config:
+        args.strat = model_config["strat"]
+    if "comb" in model_config:
+        args.comb = model_config["comb"]
+    if "pred_r" in model_config:
+        args.pred_r = model_config["pred_r"]
+    if "comb_r" in model_config:
+        args.comb_r = model_config["comb_r"]
+    if "lr" in model_config:
+        args.lr = model_config["lr"]
 
     ## Load full dataset
     ds, exp_data = build_dataset(
@@ -604,10 +623,7 @@ def init(args, rank=False):
         num_workers=args.w,
         rank=rank,
     )
-    ds_train, ds_val, ds_test = split_dataset(
-        ds,
-        model_config["grouped"] if "grouped" in model_config else args.grouped,
-    )
+    ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
     ## Need to augment the datasets if using e3nn
     if args.model.lower() == "e3nn":
@@ -635,8 +651,6 @@ def init(args, rank=False):
 
     ## Set up optimizer
     optimizer = build_optimizer(model, model_config)
-    if "lr" in model_config:
-        args.lr = model_config["lr"]
 
     ## Update exp_configure with model parameters
     if args.model == "e3nn":
