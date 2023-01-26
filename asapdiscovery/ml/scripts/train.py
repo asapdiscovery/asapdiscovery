@@ -610,6 +610,8 @@ def init(args, rank=False):
         args.comb_r = model_config["comb_r"]
     if "lr" in model_config:
         args.lr = model_config["lr"]
+    if "cutoff" in model_config:
+        args.n_dist = model_config["cutoff"]
 
     ## Load full dataset
     ds, exp_data = build_dataset(
@@ -662,7 +664,7 @@ def init(args, rank=False):
             "num_nodes": model_params[2],
             "lig": args.lig,
             "neighbor_dist": args.n_dist,
-            "irreps_hidden": args.irr,
+            "irreps_hidden": model.irreps_hidden,
         }
     elif args.model == "schnet":
         ## Experiment configuration
@@ -799,6 +801,8 @@ def main():
             "semiquant values",
             flush=True,
         )
+    else:
+        raise ValueError(f"Unknown loss type {args.loss}")
 
     print("sq", args.sq, flush=True)
     loss_str = args.loss.lower() if args.loss else "mse"
@@ -867,7 +871,7 @@ def main():
         device=torch.device(args.device),
         model_call=model_call,
         loss_fn=loss_func,
-        save_file=args.model_o,
+        save_file=model_dir,
         lr=args.lr,
         start_epoch=start_epoch,
         train_loss=train_loss,
@@ -878,7 +882,7 @@ def main():
         optimizer=optimizer,
     )
 
-    if args.wandb:
+    if args.wandb or args.sweep:
         wandb.finish()
 
     ## Plot loss

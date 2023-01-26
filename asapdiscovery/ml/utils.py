@@ -244,6 +244,7 @@ def build_model(
             import wandb
 
             config = dict(wandb.config)
+            print("Using wandb config for model building.", flush=True)
         except Exception:
             config = {}
 
@@ -674,6 +675,7 @@ def build_optimizer(model, config=None):
             import wandb
 
             config = dict(wandb.config)
+            print("Using wandb config for optimizer building.", flush=True)
         except Exception:
             pass
     elif type(config) != dict:
