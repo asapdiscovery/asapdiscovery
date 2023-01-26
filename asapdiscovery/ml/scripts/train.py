@@ -40,6 +40,7 @@ from asapdiscovery.ml import (
 from asapdiscovery.ml.utils import (
     build_dataset,
     build_model,
+    build_optimizer,
     calc_e3nn_model_info,
     find_most_recent,
     load_weights,
@@ -540,6 +541,11 @@ def get_args():
             "(eg --extra_config key1,val1 key2,val2 key3,val3)."
         ),
     )
+    parser.add_argument(
+        "--sweep",
+        action="store_true",
+        help="This run is part of a WandB sweep.",
+    )
 
     ## MTENN arguments
     parser.add_argument(
@@ -574,6 +580,18 @@ def init(args, rank=False):
     Initialization steps that are common to all analyses.
     """
 
+    ## Parse model config file
+    if args.sweep:
+        import wandb
+
+        wandb.init()
+        model_config = dict(wandb.config)
+    elif args.config:
+        model_config = parse_config(args.config)
+    else:
+        model_config = {}
+    print("Using model config:", model_config, flush=True)
+
     ## Load full dataset
     ds, exp_data = build_dataset(
         in_files=args.i,
@@ -586,17 +604,10 @@ def init(args, rank=False):
         num_workers=args.w,
         rank=rank,
     )
-    ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
-
-    ## Parse model config file
-    if args.config:
-        model_config = parse_config(args.config)
-    else:
-        model_config = {}
-    print("Using model config:", model_config, flush=True)
-
-    if "lr" in model_config:
-        args.lr = model_config["lr"]
+    ds_train, ds_val, ds_test = split_dataset(
+        ds,
+        model_config["grouped"] if "grouped" in model_config else args.grouped,
+    )
 
     ## Need to augment the datasets if using e3nn
     if args.model.lower() == "e3nn":
@@ -622,7 +633,12 @@ def init(args, rank=False):
         config=model_config,
     )
 
-    ## Build the model
+    ## Set up optimizer
+    optimizer = build_optimizer(model, model_config)
+    if "lr" in model_config:
+        args.lr = model_config["lr"]
+
+    ## Update exp_configure with model parameters
     if args.model == "e3nn":
         ## Experiment configuration
         exp_configure = {
@@ -687,6 +703,7 @@ def init(args, rank=False):
         ds_test,
         model,
         model_call,
+        optimizer,
         exp_configure,
     )
 
@@ -701,6 +718,7 @@ def main():
         ds_test,
         model,
         model_call,
+        optimizer,
         exp_configure,
     ) = init(args)
 
@@ -778,7 +796,12 @@ def main():
     )
 
     ## Start wandb
-    if args.wandb:
+    if args.sweep:
+        import wandb
+
+        r = wandb.init()
+        model_dir = os.path.join(args.model_o, r.id)
+    elif args.wandb:
         import wandb
 
         run_id_fn = os.path.join(args.model_o, "run_id")
@@ -812,6 +835,12 @@ def main():
             if args.model_o:
                 with open(os.path.join(args.model_o, "run_id"), "w") as fp:
                     fp.write(run_id)
+        model_dir = os.path.join(args.model_o, run_id)
+    else:
+        model_dir = args.model_o
+
+    ## Make output dir if necessary
+    os.makedirs(model_dir, exist_ok=True)
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
@@ -830,8 +859,9 @@ def main():
         train_loss=train_loss,
         val_loss=val_loss,
         test_loss=test_loss,
-        use_wandb=args.wandb,
+        use_wandb=(args.wandb or args.sweep),
         batch_size=args.batch_size,
+        optimizer=optimizer,
     )
 
     if args.wandb:
