@@ -43,10 +43,10 @@ def molecule_set(args):
     elif args.action == "update":
 
         if not args.input_file:
-            raise ValueError("Input file required for update_custom_data command")
+            raise ValueError("Input file required for update command")
 
         if not args.molecule_set_id:
-            raise ValueError("Molecule Set id required for update_custom_data command")
+            raise ValueError("Molecule Set id required for update command")
 
         df = pd.read_csv(args.input_file)
 
