@@ -23,54 +23,61 @@ class MoleculeUpdate(TypedDict):
 class MoleculeList(T.List[Molecule]):
     """Data type to pass to PostEra API in molecule set create"""
 
-    def from_pandas_df(self,
-                       df: pd.DataFrame,
-                       smiles_field: str = None,
-                       first_entry: int = 0,
-                       last_entry: int = 0,):
+    def from_pandas_df(
+        self,
+        df: pd.DataFrame,
+        smiles_field: str = None,
+        first_entry: int = 0,
+        last_entry: int = 0,
+    ):
 
         data = json.loads(df.to_json(orient="records"))
 
-        self.extend([
-            {
-                "smiles": datum[smiles_field],
-                "customData": {
-                    **{
-                        key: value
-                        for key, value in datum.items()
-                        if key not in [smiles_field, "mol"]
+        self.extend(
+            [
+                {
+                    "smiles": datum[smiles_field],
+                    "customData": {
+                        **{
+                            key: value
+                            for key, value in datum.items()
+                            if key not in [smiles_field, "mol"]
+                        },
                     },
-                },
-            }
-            for datum in data[first_entry:last_entry]
-        ])
+                }
+                for datum in data[first_entry:last_entry]
+            ]
+        )
 
 
 class MoleculeUpdateList(T.List[MoleculeUpdate]):
     """Data type to pass to PostEra API in molecule set update_custom_data"""
 
-    def from_pandas_df(self,
-                       df: pd.DataFrame,
-                       postera_id_field: str = None,
-                       first_entry: int = 0,
-                       last_entry: int = 0,
-                       ):
+    def from_pandas_df(
+        self,
+        df: pd.DataFrame,
+        postera_id_field: str = None,
+        first_entry: int = 0,
+        last_entry: int = 0,
+    ):
 
         data = json.loads(df.to_json(orient="records"))
 
-        self.extend([
-            {
-                "id": str(datum[postera_id_field]),
-                "customData": {
-                    **{
-                        key: value
-                        for key, value in datum.items()
-                        if key not in [postera_id_field, "mol"]
+        self.extend(
+            [
+                {
+                    "id": str(datum[postera_id_field]),
+                    "customData": {
+                        **{
+                            key: value
+                            for key, value in datum.items()
+                            if key not in [postera_id_field, "mol"]
+                        },
                     },
-                },
-            }
-            for datum in data[first_entry:last_entry]
-        ])
+                }
+                for datum in data[first_entry:last_entry]
+            ]
+        )
 
 
 class MoleculeSetCRUD(PostEraAPI):
@@ -93,18 +100,13 @@ class MoleculeSetCRUD(PostEraAPI):
             },
         ).json()
 
-        return response['id']
+        return response["id"]
 
     def read_page(self, molecule_set_id: str, page: int) -> (pd.DataFrame, str):
 
         print(f"Getting page {page}")
         read_url = f"{self.molecule_set_url}/{molecule_set_id}/get_all_molecules/"
-        response = self._session.get(
-            read_url,
-            params = {
-                "page": page
-            }
-        ).json()
+        response = self._session.get(read_url, params={"page": page}).json()
 
         return response["results"], response["paginationInfo"]["hasNext"]
 
@@ -132,16 +134,14 @@ class MoleculeSetCRUD(PostEraAPI):
 
         return result_df
 
-    def update_custom_data(self, molecule_set_id: str, data: MoleculeUpdateList, overwrite=False):
+    def update_custom_data(
+        self, molecule_set_id: str, data: MoleculeUpdateList, overwrite=False
+    ):
         """Updates the custom data associated with the molecules in a molecule set"""
 
         update_url = f"{self.molecule_set_url}/{molecule_set_id}/update_molecules/"
         response = self._session.patch(
-            update_url,
-            json = {
-                "moleculesToUpdate": data,
-                "overwrite": overwrite
-            }
+            update_url, json={"moleculesToUpdate": data, "overwrite": overwrite}
         ).json()
 
         return response["moleculesUpdated"]
