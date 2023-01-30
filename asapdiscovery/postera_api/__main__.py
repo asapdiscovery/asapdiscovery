@@ -5,7 +5,21 @@ import pandas as pd
 
 
 def molecule_set(args):
-    """Handle molecule set commands"""
+    """
+    Handle molecule set commands defined in args.action given:
+
+    Manifold API URL defined in args.url
+    Manifold API version defined in args.api_version
+    Manifold API token defined in args.api_token
+
+    args.action = read - get the molecule set with id args.molecule_set_id and write to csv
+
+    args.action = create - create a molecule set with name args.molcule_set_name
+    from data in args.input_file with SMILES field defined in args.smiles_field
+
+    args.action = update - update the custom fields in the molecule set with id args.molecule_set_id
+    with data supplied in args.input_file given the postera molecule ids supplied in args.postera_id_field
+    """
 
     molecule_set = MoleculeSetCRUD(args.url, args.api_version, args.api_token)
 
