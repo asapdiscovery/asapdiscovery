@@ -1,6 +1,7 @@
 import requests
 from requests.adapters import Retry, HTTPAdapter
 
+
 class PostEraAPI:
     """Base class for connection to PostEra API"""
 
@@ -18,4 +19,4 @@ class PostEraAPI:
         self._session.headers.update({"X-API-KEY": self.token})
         retry = Retry(connect=retries, backoff_factor=backoff_factor)
         adapter = HTTPAdapter(max_retries=retry)
-        self._session.mount('https://', adapter)
+        self._session.mount("https://", adapter)
