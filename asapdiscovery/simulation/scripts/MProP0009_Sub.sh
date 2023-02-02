@@ -6,7 +6,7 @@
 #BSUB -R rusage[mem=4]
 #BSUB -q gpuqueue
 #BSUB -W 12:00
-mkdir -p /data/chodera/asap-datasets/prepped_mpro_P0009/
+mkdir -p /data/chodera/lemonsk/asap-datasets/prepped_mpro_P0009/
 
 source ~/.bashrc
 conda activate docking
