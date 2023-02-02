@@ -22,7 +22,7 @@ from openmm.app import PDBFile
 
 ## Parameters
 def get_args():
-    parser = ArgumentParser()
+    parser = argparse.ArgumentParser()
 
     ## Input arguments
     parser.add_argument(
