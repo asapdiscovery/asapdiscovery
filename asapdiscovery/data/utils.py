@@ -304,6 +304,15 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
             "pIC50_range": c["pIC50_range"],
             "pIC50_stderr": c["pIC50_stderr"],
         }
+        ## Add delta G values if present
+        if "exp_binding_affinity_kcal_mol" in c:
+            experimental_data.update(
+                {
+                    "dG": c["exp_binding_affinity_kcal_mol"],
+                    "dG_stderr": c["exp_binding_affinity_kcal_mol_stderr"],
+                }
+            )
+
         ## Keep track of if there are any NaN values
         seen_compounds[compound_id] = np.isnan(
             list(experimental_data.values())
