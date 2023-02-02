@@ -378,21 +378,25 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
 
     ## Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
-    df = df.loc[~df["suspected_SMILES"].isna(), :]
+    smiles_key = "smiles" if "smiles" in df.columns else "suspected_SMILES"
+    df = df.loc[~df[smiles_key].isna(), :]
 
     ## Remove stereochemistry tags and get canonical SMILES values (to help
     ##  group stereoisomers)
-    smi_nostereo = [
-        CanonSmiles(s, useChiral=False) for s in df["suspected_SMILES"]
-    ]
-    df["suspected_SMILES_nostereo"] = smi_nostereo
+    smi_nostereo = [CanonSmiles(s, useChiral=False) for s in df[smiles_key]]
+    df["smiles_nostereo"] = smi_nostereo
 
     ## Sort by non-stereo SMILES to put the enantiomer pairs together
-    df = df.sort_values("suspected_SMILES_nostereo")
+    df = df.sort_values("smiles_nostereo")
 
     ## Get rid of the </> signs, since we really only need the values to sort
     ##  enantiomer pairs
-    pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    pic50_key = (
+        "pIC50"
+        if "pIC50" in df.columns
+        else "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    )
+    df = df.loc[~df[pic50_key].isna(), :]
     pic50_range = [
         -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
     ]
@@ -401,27 +405,44 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     df["pIC50_range"] = pic50_range
     semiquant = df["pIC50_range"].astype(bool)
 
-    ci_lower_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Lower) (µM)"
-    )
-    ci_upper_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Upper) (µM)"
-    )
-    ## Calculate 95% CI in pIC50 units based on IC50 vals (not sure if the
-    ##  difference should be taken before or after taking the -log10)
-    pic50_stderr = []
-    for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
-        if pandas.isna(ci_lower) or pandas.isna(ci_upper):
-            pic50_stderr.append(np.nan)
-        else:
-            ## First convert bounds from IC50 (uM) to pIC50
-            pic50_ci_upper = -np.log10(ci_upper * 10e-6)
-            pic50_ci_lower = -np.log10(ci_lower * 10e-6)
-            ## Assume size of 95% CI == 4*sigma => calculate variance from stdev
-            pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
-    df["pIC50_stderr"] = pic50_stderr
+    ## Don't need to recompute stderr if it's already there
+    if "pIC50_stderr" not in df.columns:
+        ### TODO: handle multiple measurements for the same compound
+        ###  (average of stderr for each compound)
+        ci_lower_key = (
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
+            "CI (Lower) (µM)"
+        )
+        ci_upper_key = (
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
+            "CI (Upper) (µM)"
+        )
+
+        ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
+        pic50_stderr = []
+        for _, (ci_lower, ci_upper) in df[
+            [ci_lower_key, ci_upper_key]
+        ].iterrows():
+            ## Cast to float
+            try:
+                ci_lower = float(ci_lower)
+                ci_upper = float(ci_upper)
+            except ValueError:
+                pic50_stderr.append(np.nan)
+                continue
+            if pandas.isna(ci_lower) or pandas.isna(ci_upper):
+                pic50_stderr.append(np.nan)
+            else:
+                ## First convert bounds from IC50 (uM) to pIC50
+                pic50_ci_upper = -np.log10(ci_upper * 10e-6)
+                pic50_ci_lower = -np.log10(ci_lower * 10e-6)
+                ## Assume size of 95% CI == 4*sigma
+                pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
+        df["pIC50_stderr"] = pic50_stderr
+    else:
+        ci_lower_key = "pIC50_95ci_lower"
+        ci_upper_key = "pIC50_95ci_upper"
+
     ## Fill standard error for semi-qunatitative data with the mean of others
     df.loc[semiquant, "pIC50_stderr"] = df.loc[
         ~semiquant, "pIC50_stderr"
@@ -429,7 +450,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
 
     enant_pairs = []
     ## Loop through the enantiomer pairs and rank them
-    for ep in df.groupby("suspected_SMILES_nostereo"):
+    for ep in df.groupby("smiles_nostereo"):
         ## Make sure there aren't any singletons
         if ep[1].shape[0] != 2:
             print(f"{ep[1].shape[0]} mols for {ep[0]}", flush=True)
@@ -440,12 +461,29 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
         ep = ep[1].sort_values("pIC50", ascending=False)
         for _, c in ep.iterrows():
             compound_id = c["Canonical PostEra ID"]
-            smiles = c["suspected_SMILES"]
+            ## Replace long dash unicode character with regular - sign (only
+            ##  one compound like this I think)
+            if "\u2212" in compound_id:
+                print(
+                    f"Replacing unicode character with - in",
+                    compound_id,
+                    flush=True,
+                )
+                compound_id = re.sub("\u2212", "-", compound_id)
+            smiles = c[smiles_key]
             experimental_data = {
                 "pIC50": c["pIC50"],
                 "pIC50_range": c["pIC50_range"],
                 "pIC50_stderr": c["pIC50_stderr"],
             }
+            ## Add delta G values if present
+            if "exp_binding_affinity_kcal_mol" in c:
+                experimental_data.update(
+                    {
+                        "dG": c["exp_binding_affinity_kcal_mol"],
+                        "dG_stderr": c["exp_binding_affinity_kcal_mol_stderr"],
+                    }
+                )
 
             p.append(
                 ExperimentalCompoundData(
@@ -470,8 +508,8 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     if out_csv:
         out_cols = [
             "Canonical PostEra ID",
-            "suspected_SMILES",
-            "suspected_SMILES_nostereo",
+            smiles_key,
+            "smiles_nostereo",
             "pIC50",
             "pIC50_range",
             ci_lower_key,
