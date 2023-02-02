@@ -207,7 +207,9 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
 
     ## Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
-    df = df.loc[~df["suspected_SMILES"].isna(), :]
+    smiles_key = "smiles" if "smiles" in df.columns else "suspected_SMILES"
+
+    df = df.loc[~df[smiles_key].isna(), :]
 
     ## Filter out chiral molecules if requested
     achiral_df = get_achiral_molecules(df)
@@ -220,7 +222,11 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
 
     ## Get rid of the </> signs, since we really only need the values to sort
     ##  enantiomer pairs
-    pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    pic50_key = (
+        "pIC50"
+        if "pIC50" in df.columns
+        else "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    )
     df = df.loc[~df[pic50_key].isna(), :]
     pic50_range = [
         -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
@@ -230,36 +236,44 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     df["pIC50_range"] = pic50_range
     semiquant = df["pIC50_range"].astype(bool)
 
-    ### TODO: handle multiple measurements for the same compound
-    ###  (average of stderr for each compound)
-    ci_lower_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Lower) (µM)"
-    )
-    ci_upper_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Upper) (µM)"
-    )
+    ## Don't need to recompute stderr if it's already there
+    if "pIC50_stderr" not in df.columns:
+        ### TODO: handle multiple measurements for the same compound
+        ###  (average of stderr for each compound)
+        ci_lower_key = (
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
+            "CI (Lower) (µM)"
+        )
+        ci_upper_key = (
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
+            "CI (Upper) (µM)"
+        )
 
-    ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
-    pic50_stderr = []
-    for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
-        ## Cast to float
-        try:
-            ci_lower = float(ci_lower)
-            ci_upper = float(ci_upper)
-        except ValueError:
-            pic50_stderr.append(np.nan)
-            continue
-        if pandas.isna(ci_lower) or pandas.isna(ci_upper):
-            pic50_stderr.append(np.nan)
-        else:
-            ## First convert bounds from IC50 (uM) to pIC50
-            pic50_ci_upper = -np.log10(ci_upper * 10e-6)
-            pic50_ci_lower = -np.log10(ci_lower * 10e-6)
-            ## Assume size of 95% CI == 4*sigma
-            pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
-    df["pIC50_stderr"] = pic50_stderr
+        ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
+        pic50_stderr = []
+        for _, (ci_lower, ci_upper) in df[
+            [ci_lower_key, ci_upper_key]
+        ].iterrows():
+            ## Cast to float
+            try:
+                ci_lower = float(ci_lower)
+                ci_upper = float(ci_upper)
+            except ValueError:
+                pic50_stderr.append(np.nan)
+                continue
+            if pandas.isna(ci_lower) or pandas.isna(ci_upper):
+                pic50_stderr.append(np.nan)
+            else:
+                ## First convert bounds from IC50 (uM) to pIC50
+                pic50_ci_upper = -np.log10(ci_upper * 10e-6)
+                pic50_ci_lower = -np.log10(ci_lower * 10e-6)
+                ## Assume size of 95% CI == 4*sigma
+                pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
+        df["pIC50_stderr"] = pic50_stderr
+    else:
+        ci_lower_key = "pIC50_95ci_lower"
+        ci_upper_key = "pIC50_95ci_upper"
+
     ## Fill standard error for semi-qunatitative data with the mean of others
     df.loc[semiquant, "pIC50_stderr"] = df.loc[
         ~semiquant, "pIC50_stderr"
@@ -270,12 +284,21 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     seen_compounds = {}
     for i, (_, c) in enumerate(df.iterrows()):
         compound_id = c["Canonical PostEra ID"]
+        ## Replace long dash unicode character with regular - sign (only
+        ##  one compound like this I think)
+        if "\u2212" in compound_id:
+            print(
+                f"Replacing unicode character with - in",
+                compound_id,
+                flush=True,
+            )
+            compound_id = re.sub("\u2212", "-", compound_id)
         if compound_id in seen_compounds:
             ## If there are no NaN values, don't need to fix
             if not seen_compounds[compound_id]:
                 continue
 
-        smiles = c["suspected_SMILES"]
+        smiles = c[smiles_key]
         experimental_data = {
             "pIC50": c["pIC50"],
             "pIC50_range": c["pIC50_range"],
@@ -297,6 +320,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
                 experimental_data=experimental_data,
             )
         )
+
     compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
 
     if out_json:
@@ -306,7 +330,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     if out_csv:
         out_cols = [
             "Canonical PostEra ID",
-            "suspected_SMILES",
+            smiles_key,
             "pIC50",
             "pIC50_range",
             ci_lower_key,
@@ -609,10 +633,14 @@ def filter_molecules_dataframe(
     # mol_df = mol_df.rename(
     #     columns={smiles_fieldname: "smiles", "Canonical PostEra ID": "name"}
     # )
+
+    ## Drop any rows with no SMILES
+    mol_df = mol_df.dropna(subset=smiles_fieldname)
+
     ## Add new columns so we can keep the original names
     print("Stripping salts", flush=True)
     mol_df.loc[:, "smiles"] = (
-        mol_df[smiles_fieldname].astype(str).apply(strip_smiles_salts)
+        mol_df.loc[:, smiles_fieldname].astype(str).apply(strip_smiles_salts)
     )
     mol_df.loc[:, "name"] = mol_df.loc[:, "Canonical PostEra ID"]
 
