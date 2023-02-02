@@ -498,6 +498,28 @@ def get_achiral_molecules(mol_df):
     return mol_df.loc[achiral_idx, :]
 
 
+def strip_smiles_salts(smiles):
+    """
+    Strip salts from a SMILES string.
+
+    Parameters
+    ----------
+    smiles : str
+        SMILES containig salt(s) to remove
+
+    Returns
+    -------
+    str
+        Salt-free SMILES
+    """
+
+    oemol = oechem.OEGraphMol()
+    oechem.OESmilesToMol(oemol, smiles)
+    oechem.OEDeleteEverythingExceptTheFirstLargestComponent(oemol)
+
+    return oechem.OEMolToSmiles(oemol)
+
+
 def filter_molecules_dataframe(
     mol_df,
     smiles_fieldname="suspected_SMILES",
@@ -505,6 +527,7 @@ def filter_molecules_dataframe(
     retain_racemic=False,
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
+    keep_best_per_mol=True,
     assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
 ):
     """
@@ -532,6 +555,9 @@ def filter_molecules_dataframe(
         If True, retain chirally resolved measurements
     retain_semiquantitative_data : bool, default=False
         If True, retain semiquantitative data (data outside assay dynamic range)
+    keep_best_per_mol : bool, default=True
+        Keep only the best measurement for each molecule (first sorting by
+        curve class and then 95% CI pIC50 width)
     assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
         Name of the assay of interest
 
@@ -543,7 +569,6 @@ def filter_molecules_dataframe(
     import logging
     import numpy as np
     from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
-    import sigfig
 
     # Define functions to evaluate whether molecule is achiral, racemic, or resolved
     is_achiral = (
@@ -585,7 +610,10 @@ def filter_molecules_dataframe(
     #     columns={smiles_fieldname: "smiles", "Canonical PostEra ID": "name"}
     # )
     ## Add new columns so we can keep the original names
-    mol_df.loc[:, "smiles"] = mol_df.loc[:, smiles_fieldname]
+    print("Stripping salts", flush=True)
+    mol_df.loc[:, "smiles"] = (
+        mol_df[smiles_fieldname].astype(str).apply(strip_smiles_salts)
+    )
     mol_df.loc[:, "name"] = mol_df.loc[:, "Canonical PostEra ID"]
 
     logging.debug("Filtering molecules dataframe")
@@ -635,9 +663,10 @@ def filter_molecules_dataframe(
         )
 
     # Compute pIC50s and uncertainties from 95% CIs
-    # TODO: In future, we can provide CIs as well
     pIC50_series = []
     pIC50_stderr_series = []
+    pIC50_lower_series = []
+    pIC50_upper_series = []
     for _, row in mol_df.iterrows():
         pIC50 = row[f"{assay_name}: Avg pIC50"]  # string
         try:
@@ -650,14 +679,23 @@ def filter_molecules_dataframe(
             )  # molar
 
             pIC50 = -np.log10(IC50)
+            pIC50_lower = -np.log10(IC50_lower)
+            pIC50_upper = -np.log10(IC50_upper)
             pIC50_stderr = (
-                np.abs(-np.log10(IC50_lower) + np.log10(IC50_upper)) / 4.0
+                np.abs(pIC50_upper - pIC50_lower) / 4.0
             )  # assume normal distribution
 
             # Render into string with appropriate sig figs
-            pIC50, pIC50_stderr = sigfig.round(
-                pIC50, uncertainty=pIC50_stderr, sep=tuple
-            )  # strings
+            try:
+                import sigfig
+
+                pIC50, pIC50_stderr = sigfig.round(
+                    pIC50, uncertainty=pIC50_stderr, sep=tuple
+                )  # strings
+            except ModuleNotFoundError:
+                ## Just round to 4 digits if sigfig pacakge not present
+                pIC50 = str(round(pIC50, 4))
+                pIC50_stderr = str(round(pIC50_stderr, 4))
 
         except ValueError:
             # Could not convert to string because value was semiquantitative
@@ -670,17 +708,61 @@ def filter_molecules_dataframe(
             # Keep pIC50 string
             # Use default pIC50 error
             print(row)
-            pIC50, pIC50_stderr = pIC50, "0.5"  # strings
+            pIC50 = pIC50
+            ## Set as high number so sorting works but still puts this at end
+            pIC50_stderr = 100
+            pIC50_lower = row[f"{assay_name}: IC50 CI (Lower) (µM)"]
+            pIC50_upper = row[f"{assay_name}: IC50 CI (Upper) (µM)"]
 
         pIC50_series.append(pIC50)
-        pIC50_stderr_series.append(pIC50_stderr)
+        pIC50_stderr_series.append(float(pIC50_stderr))
+        pIC50_lower_series.append(pIC50_lower)
+        pIC50_upper_series.append(pIC50_upper)
 
     mol_df["pIC50"] = pIC50_series
     mol_df["pIC50_stderr"] = pIC50_stderr_series
+    mol_df["pIC50_95ci_lower"] = pIC50_lower_series
+    mol_df["pIC50_95ci_upper"] = pIC50_upper_series
+
+    ## Compute binding affinity in kcal/mol
+    # use kT = 0.593, kcal/mol for 298 K/25C
+    deltaG = lambda pIC50: -0.593 * np.log(10.0) * float(pIC50)
+    mol_df["exp_binding_affinity_kcal_mol"] = [
+        deltaG(pIC50) if re.match("[0-9]*\.[0-9]*", pIC50) else np.nan
+        for pIC50 in mol_df["pIC50"]
+    ]
+    mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
+        abs(deltaG(pIC50_stderr))
+        if re.match("[0-9]*\.[0-9]*", str(pIC50_stderr))
+        else np.nan
+        for pIC50_stderr in mol_df["pIC50_stderr"]
+    ]
+    mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
+        deltaG(pIC50_lower)
+        if re.match("[0-9]*\.[0-9]*", str(pIC50_lower))
+        else np.nan
+        for pIC50_lower in mol_df["pIC50_95ci_lower"]
+    ]
+    mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
+        deltaG(pIC50_upper)
+        if re.match("[0-9]*\.[0-9]*", str(pIC50_upper))
+        else np.nan
+        for pIC50_upper in mol_df["pIC50_95ci_upper"]
+    ]
+
+    ## Keep only the best measurement for each molecule
+    if keep_best_per_mol:
+        for mol_name, g in mol_df.groupby("name"):
+            g.sort_values(
+                by=[f"{assay_name}: Curve class", "pIC50_stderr"],
+                inplace=True,
+                ascending=True,
+            )
+        mol_df = mol_df.groupby("name").first()
 
     # Retain only fields we need
     # mol_df = mol_df.filter(["smiles", "name", "pIC50", "pIC50_stderr"])
-    logging.debug(f"\n{mol_df}")
+    # logging.debug(f"\n{mol_df}")
 
     return mol_df
 
