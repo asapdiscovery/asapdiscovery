@@ -59,9 +59,9 @@ def main():
 
     if "CDDTOKEN" in os.environ:
         header = {"X-CDD-token": os.environ["CDDTOKEN"]}
-    elif args.tok:
+    elif args.token:
         header = {
-            "X-CDD-token": "".join(open(args.tok, "r").readlines()).strip()
+            "X-CDD-token": "".join(open(args.token, "r").readlines()).strip()
         }
     else:
         raise ValueError(
