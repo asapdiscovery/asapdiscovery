@@ -12,6 +12,6 @@ conda activate docking
 
 python MproP0009.py \
 -i /data/chodera/asap-datasets/full_frag_prepped_mpro_12_2022/Mpro-P0009_0A_MAT-POS-f2460aef-1/prepped_receptor_0.pdb \
--o .
+-o /data/chodera/lemonsk/asap-datasets/prepped_mpro_P0009
 echo date
 echo done
