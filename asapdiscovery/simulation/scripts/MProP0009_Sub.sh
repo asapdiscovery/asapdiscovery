@@ -15,4 +15,3 @@ python /data/chodera/lemonsk/covid-moonshot-ml/asapdiscovery/simulation/scripts/
 -o /data/chodera/lemonsk/asap-datasets/prepped_mpro_P0009/ \
 echo date
 echo done
-
