@@ -36,12 +36,13 @@ def get_args():
         "-o", 
         "--output_dir",
         type = str,
-        default = "/data/chodera/lemonsk/default_out",
+        default = "/data/chodera/lemonsk/asap-datasets/prepped_mpro_P0009/",
         help="Output simulation directory."
     )
     args = parser.parse_args()
     return args
 
+args = get_args()
 
 # Input Files
 
@@ -50,18 +51,19 @@ forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')
 
 # System Configuration
 
-nonbondedMethod = CutoffPeriodic
+nonbondedMethod = PME
 nonbondedCutoff = 1.0*nanometers
+ewaldErrorTolerance = 0.000001
 constraints = HBonds
 rigidWater = True
 constraintTolerance = 0.000001
-hydrogenMass = 1.5*amu
+hydrogenMass = 4.0*amu
 
 
 
 # Integration Options
 
-dt = 0.005*picoseconds
+dt = 0.004*picoseconds
 temperature = 300*kelvin
 friction = 1.0/picosecond
 pressure = 1.0*atmospheres
@@ -83,9 +85,9 @@ print('Building system...')
 topology = pdb.topology
 positions = pdb.positions
 modeller = Modeller(pdb.topology, pdb.positions)
-modeller.addSolvent(forcefield, boxSize=Vec3(5.0, 3.5, 3.5)*nanometers, model='tip3p')
+modeller.addSolvent(forcefield, padding=0.9*nanometers, model='tip3p')
 system = forcefield.createSystem(modeller.topology, nonbondedMethod=nonbondedMethod, nonbondedCutoff=nonbondedCutoff,
-    constraints=constraints, rigidWater=rigidWater, hydrogenMass=hydrogenMass)
+    constraints=constraints, rigidWater=rigidWater, ewaldErrorTolerance=ewaldErrorTolerance, hydrogenMass=hydrogenMass)
 system.addForce(MonteCarloBarostat(pressure, temperature, barostatInterval))
 integrator = LangevinMiddleIntegrator(temperature, friction, dt)
 integrator.setConstraintTolerance(constraintTolerance)
