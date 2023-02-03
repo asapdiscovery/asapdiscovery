@@ -47,7 +47,9 @@ if __name__ == "__main__":
 
     ## Original Prepped P2660 structure
     try:
-        main("inputs/Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_prepped_receptor_0.pdb")
+        main(
+            "inputs/01_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_prepped_receptor_0.pdb"
+        )
     except ValueError as error:
         print(f"Error was: {error}")
         if (
@@ -60,7 +62,7 @@ if __name__ == "__main__":
 
     ## Fauxalysis output
     try:
-        main("inputs/P2660_fauxalysis.pdb")
+        main("inputs/02_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_4RSP_fauxalysis.pdb")
     except ValueError as error:
         print(f"Error was: {error}")
         if (
@@ -73,7 +75,9 @@ if __name__ == "__main__":
 
     ## After running perses prep script
     try:
-        main("inputs/P2660_fauxalysis_protonated.pdb")
+        main(
+            "inputs/03_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_4RSP_fauxalysis_protonated.pdb"
+        )
     except ValueError as error:
         print(f"Error was: {error}")
         if (
