@@ -53,8 +53,7 @@ if __name__ == "__main__":
     except ValueError as error:
         print(f"Error was: {error}")
         if (
-            error.__str__()
-            == "No template found for residue 307 (LIG).  This might mean your input topology is missing some atoms or bonds, or possibly that you are using the wrong force field."
+            "No template found for residue 307 (LIG)." in error.__str__()
         ):
             print("Expected Error")
         else:
@@ -65,9 +64,7 @@ if __name__ == "__main__":
         main("inputs/02_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_4RSP_fauxalysis.pdb")
     except ValueError as error:
         print(f"Error was: {error}")
-        if (
-            error.__str__()
-            == "No template found for residue 145 (CSO).  The set of atoms matches CCYS, but the bonds are different."
+        if ( "No template found for residue 145 (CSO).  The set of atoms matches CCYS, but the bonds are different." in error.__str__()
         ):
             print("Expected Error")
         else:
@@ -80,10 +77,24 @@ if __name__ == "__main__":
         )
     except ValueError as error:
         print(f"Error was: {error}")
-        if (
-            error.__str__()
-            == "No template found for residue 8 (HIS).  The set of atoms matches HIP, but the bonds are different."
+        if ("No template found for residue 8 (HIS).  The set of atoms matches HIP, but the bonds are different." in error.__str__()
         ):
             print("Expected Error")
         else:
             print("Unexpected Error")
+
+    ## ASAP Prepped
+    try:
+        main("inputs/prepped_receptor_0.pdb")
+    except ValueError as error:
+        print(f"Error was: {error}")
+        if (
+            "No template found for residue 303 (LIG)." in error.__str__()
+        ):
+            print("Expected Error")
+        else:
+            print("Unexpected Error")
+
+
+    ## Openmm-Setup prepped
+    main("inputs/prepped_receptor_0-processed.pdb")
