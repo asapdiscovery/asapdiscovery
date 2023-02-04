@@ -17,7 +17,7 @@ def load_pdbs_from_yaml(pdb_list_yaml):
     return pdb_dict
 
 
-def download_pdb_structure(pdb_id: str, directory: str):
+def download_pdb_structure(pdb_id: str, directory: str, pdb_type: str = "pdb"):
     """
     Download a PDB structure. If the structure is not available in PDB format, it will be download
     in CIF format.
@@ -30,6 +30,9 @@ def download_pdb_structure(pdb_id: str, directory: str):
         The PDB ID of interest.
     directory: str or Path, default=user_cache_dir
         The directory for saving the downloaded structure.
+    pdb_type: str
+        Indicates whether you would like to download the entry in pdb or cif format,
+        or the first biological assembly in cif format
 
     Returns
     -------
@@ -39,30 +42,45 @@ def download_pdb_structure(pdb_id: str, directory: str):
     from .utils import download_file
     import os
 
-    # check for structure in PDB format
-    url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
-    pdb_path = os.path.join(directory, f"rcsb_{pdb_id.upper()}.pdb")
-    if not os.path.exists(pdb_path):
-        print("Downloading PDB entry in PDB format ...")
-        if download_file(url, pdb_path):
-            return pdb_path
-    else:
-        return pdb_path
+    ## only implemented types
+    ## cif1 is the first biological assembly, useful for downloading dimer assemblies of monomer structures
+    ## however this is the most natural order, so it will start with whichever you picked
+    ## and then go through the others in order, stopping as soon as one is downloaded successfully
+    pdb_types = ["pdb", "cif", "cif1"]
+    try:
+        pdb_types.pop(pdb_types.index(pdb_type))
+    except ValueError:
+        raise NotImplementedError(
+            f"pdb_type expected to be one of {pdb_types}, not '{pdb_type}'"
+        )
+    pdb_types = [pdb_type] + pdb_types
 
-    # check for structure in CIF format
-    url = f"https://files.rcsb.org/download/{pdb_id}.cif"
-    cif_path = os.path.join(directory, f"rcsb_{pdb_id.upper()}.cif")
-    if not os.path.exists(cif_path):
-        print("Downloading PDB entry in CIF format ...")
-        if download_file(url, cif_path):
-            return cif_path
-    else:
-        return cif_path
+    # check for structure in PDB format
+    for pdb_type in pdb_types:
+        if pdb_type == "pdb":
+            url = f"https://files.rcsb.org/download/{pdb_id.lower()}.pdb"
+            pdb_path = os.path.join(directory, f"rcsb_{pdb_id.upper()}.pdb")
+        elif pdb_type == "cif":
+            url = f"https://files.rcsb.org/download/{pdb_id}.cif"
+            pdb_path = os.path.join(directory, f"rcsb_{pdb_id.upper()}.cif")
+        elif pdb_type == "cif1":
+            url = f"https://files.rcsb.org/download/{pdb_id.lower()}-assembly1.cif"
+            pdb_path = os.path.join(
+                directory, f"rcsb_{pdb_id.upper()}-assembly1.cif"
+            )
+        if not os.path.exists(pdb_path):
+            print(f"Downloading PDB entry as {pdb_type}...")
+            if download_file(url, pdb_path):
+                return pdb_path
+        else:
+            print(f"{pdb_path} already exists!...")
+            return pdb_path
+
     print(f"Could not download PDB entry {pdb_id}.")
     return False
 
 
-def download_PDBs(pdb_list, pdb_dir):
+def download_PDBs(pdb_list, pdb_dir, pdb_type="pdb"):
     """
     Downloads pdbs from pdb_list_yaml using Kinoml.
 
@@ -83,7 +101,7 @@ def download_PDBs(pdb_list, pdb_dir):
     print(f"Downloading PDBs to {pdb_dir}")
     for pdb in pdb_list:
         print(pdb)
-        download_pdb_structure(pdb, pdb_dir)
+        download_pdb_structure(pdb, pdb_dir, pdb_type)
 
 
 def pymol_alignment(
