@@ -84,6 +84,7 @@ if __name__ == "__main__":
             print("Unexpected Error")
 
     ## ASAP Prepped
+    ## TODO: use ligand forcefield instead of this script
     try:
         main("inputs/prepped_receptor_0.pdb")
     except ValueError as error:
