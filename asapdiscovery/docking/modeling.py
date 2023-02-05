@@ -1,3 +1,7 @@
+import datetime
+import logging
+import os
+
 from openeye import oechem, oedocking, oespruce
 
 from asapdiscovery.data.openeye import (
@@ -5,7 +9,10 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdf,
     split_openeye_mol,
     openeye_perceive_residues,
+    save_openeye_pdb,
 )
+from asapdiscovery.data.schema import CrystalCompoundData
+from asapdiscovery.data.utils import seqres_to_res_list
 
 
 def du_to_complex(du, include_solvent=False):
@@ -644,3 +651,151 @@ def remove_extra_ligands(mol, lig_chain=None):
         if oechem.OEAtomGetResidue(a).GetExtChainID() != lig_chain:
             mol_copy.DeleteAtom(a)
     return mol_copy
+
+
+def check_completed(d, prefix):
+    """
+    Check if this prep process has already been run successfully in the given
+    directory.
+
+    Parameters
+    ----------
+    d : str
+        Directory to check.
+
+    Returns
+    -------
+    bool
+        True if both files exist and can be loaded, otherwise False.
+    """
+
+    if (
+        not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"))
+    ) or (
+        not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
+    ):
+        return False
+
+    try:
+        du = oechem.OEDesignUnit()
+        oechem.OEReadDesignUnit(
+            os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"), du
+        )
+    except Exception:
+        return False
+
+    try:
+        _ = load_openeye_pdb(
+            os.path.join(d, f"{prefix}_prepped_receptor_0.pdb")
+        )
+    except Exception:
+        return False
+
+    return True
+
+
+def prep_mp(
+    xtal: CrystalCompoundData,
+    ref_prot,
+    seqres,
+    out_base,
+    loop_db,
+    protein_only: bool,
+):
+    ## Make output directory
+    out_dir = os.path.join(out_base, f"{xtal.output_name}")
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    ## Prepare logger
+    handler = logging.FileHandler(os.path.join(out_dir, "log.txt"), mode="w")
+    prep_logger = logging.getLogger(xtal.output_name)
+    prep_logger.setLevel(logging.INFO)
+    prep_logger.addHandler(handler)
+    prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
+
+    ## Check if results already exist
+    if check_completed(out_dir, xtal.output_name):
+        prep_logger.info("Already completed! Finishing.")
+        return
+    prep_logger.info(f"Prepping {xtal.output_name}")
+
+    ## Load protein from pdb
+    initial_prot = load_openeye_pdb(xtal.str_fn)
+
+    if seqres:
+        res_list = seqres_to_res_list(seqres)
+        prep_logger.info("Mutating to provided seqres")
+
+        ## Mutate the residues to match the residue list
+        initial_prot = mutate_residues(
+            initial_prot, res_list, xtal.protein_chains
+        )
+
+    ## Delete extra copies of ligand in the complex
+    initial_prot = remove_extra_ligands(
+        initial_prot, lig_chain=xtal.active_site_chain
+    )
+
+    if ref_prot:
+        prep_logger.info("Aligning receptor")
+        initial_prot = align_receptor(
+            initial_complex=initial_prot,
+            ref_prot=ref_prot,
+            dimer=True,
+            split_initial_complex=protein_only,
+            mobile_chain=xtal.active_site_chain,
+            ref_chain="A",
+        )
+        save_openeye_pdb(initial_prot, "align_test.pdb")
+    ## Take the first returned DU and save it
+    try:
+        prep_logger.info("Attempting to prepare design units")
+        site_residue = xtal.active_site if xtal.active_site else ""
+        design_units = prep_receptor(
+            initial_prot,
+            site_residue=site_residue,
+            loop_db=loop_db,
+            protein_only=protein_only,
+            seqres=" ".join(res_list),
+        )
+    except IndexError as e:
+        prep_logger.error(
+            f"DU generation failed for {xtal.output_name}",
+        )
+        return
+
+    du = design_units[0]
+    for i, du in enumerate(design_units):
+        success = oechem.OEWriteDesignUnit(
+            os.path.join(
+                out_dir, f"{xtal.output_name}_prepped_receptor_{i}.oedu"
+            ),
+            du,
+        )
+        prep_logger.info(
+            f"{xtal.output_name} DU successfully written out: {success}"
+        )
+
+        ## Save complex as PDB file
+        complex_mol = du_to_complex(du, include_solvent=True)
+
+        ## TODO: Compare this function to Ben's code below
+        # openeye_copy_pdb_data(complex_mol, initial_prot, "SEQRES")
+
+        ## Add SEQRES entries if they're not present
+        if (not oechem.OEHasPDBData(complex_mol, "SEQRES")) and seqres:
+            for seqres_line in seqres.split("\n"):
+                if seqres_line != "":
+                    oechem.OEAddPDBData(complex_mol, "SEQRES", seqres_line[6:])
+
+        save_openeye_pdb(
+            complex_mol,
+            os.path.join(
+                out_dir, f"{xtal.output_name}_prepped_receptor_{i}.pdb"
+            ),
+        )
+
+    prep_logger.info(
+        f"Finished protein prep at {datetime.datetime.isoformat(datetime.datetime.now())}"
+    )
