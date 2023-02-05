@@ -19,6 +19,25 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
     return in_mol
 
 
+def load_openeye_cif(cif_fn, alt_loc=False):
+    ifs = oechem.oemolistream()
+    ifs_flavor = oechem.OEIFlavor_MMCIF_DEFAULT
+    ## Add option for keeping track of alternat locations in PDB file
+    ## TODO: check if this is a thing in mmcif
+    if not alt_loc:
+        ifs_flavor |= oechem.OEIFlavor_MMCIF_NoAltLoc
+    ifs.SetFlavor(
+        oechem.OEFormat_MMCIF,
+        ifs_flavor,
+    )
+    ifs.open(cif_fn)
+    in_mol = oechem.OEGraphMol()
+    oechem.OEReadMolecule(ifs, in_mol)
+    ifs.close()
+
+    return in_mol
+
+
 def load_openeye_sdf(sdf_fn):
     ifs = oechem.oemolistream()
     ifs.SetFlavor(
