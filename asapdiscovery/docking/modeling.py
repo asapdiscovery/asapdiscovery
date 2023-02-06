@@ -708,7 +708,7 @@ def prep_mp(
         os.makedirs(out_dir)
 
     ## Prepare logger
-    handler = logging.FileHandler(os.path.join(out_dir, "log.txt"), mode="w")
+    handler = logging.FileHandler(os.path.join(out_dir, f"{xtal.output_name}-log.txt"), mode="w")
     prep_logger = logging.getLogger(xtal.output_name)
     prep_logger.setLevel(logging.INFO)
     prep_logger.addHandler(handler)
@@ -747,7 +747,9 @@ def prep_mp(
             mobile_chain=xtal.active_site_chain,
             ref_chain="A",
         )
-        save_openeye_pdb(initial_prot, "align_test.pdb")
+        # prone to race condition if multiple processes are writing to same file
+        # so need a file prefix 
+        save_openeye_pdb(initial_prot, f"{xtal.output_name}-align_test.pdb")
     ## Take the first returned DU and save it
     try:
         prep_logger.info("Attempting to prepare design units")
