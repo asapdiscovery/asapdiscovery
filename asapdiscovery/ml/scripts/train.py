@@ -377,16 +377,18 @@ def init(args, rank=False):
 
         ## Load or calculate model parameters
         if args.model_params is None:
-            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
+            e3nn_params = calc_e3nn_model_info(ds_train, args.n_dist)
         elif os.path.isfile(args.model_params):
-            model_params = pkl.load(open(args.model_params, "rb"))
+            e3nn_params = pkl.load(open(args.model_params, "rb"))
         else:
-            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
-            pkl.dump(model_params, open(args.model_params, "wb"))
+            e3nn_params = calc_e3nn_model_info(ds_train, args.n_dist)
+            pkl.dump(e3nn_params, open(args.model_params, "wb"))
+    else:
+        e3nn_params = None
 
     model, model_call = build_model(
         model_type=args.model,
-        e3nn_params=model_params,
+        e3nn_params=e3nn_params,
         strat=args.strat,
         grouped=args.grouped,
         comb=args.comb,
@@ -404,8 +406,8 @@ def init(args, rank=False):
         exp_configure = {
             "model": "e3nn",
             "n_atom_types": 100,
-            "num_neighbors": model_params[1],
-            "num_nodes": model_params[2],
+            "num_neighbors": e3nn_params[1],
+            "num_nodes": e3nn_params[2],
             "lig": args.lig,
             "neighbor_dist": args.n_dist,
             "irreps_hidden": model.irreps_hidden,
