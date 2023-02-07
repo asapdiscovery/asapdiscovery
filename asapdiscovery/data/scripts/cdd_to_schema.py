@@ -1,3 +1,17 @@
+"""
+Script to convert a CSV file downloaded (and filtered) from CDD into Schema
+objects that can be used with the rest of the asapdiscovery pipeline. At a
+minimum, the CSV file must have the following columns:
+ * "smiles" or "suspected_SMILES"
+ * "Canonical PostEra ID"
+ * "pIC50" or "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+
+Minimal example usage:
+python cdd_to_schema.py \
+-i cdd_downloaded_filtered.csv \
+-json cdd_downloaded_filtered.json
+"""
+
 import argparse
 import json
 import os
