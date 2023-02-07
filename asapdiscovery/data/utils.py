@@ -209,7 +209,9 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     df = pandas.read_csv(cdd_csv)
     smiles_key = "smiles" if "smiles" in df.columns else "suspected_SMILES"
 
-    df = df.loc[~df[smiles_key].isna(), :]
+    idx = df[smiles_key].isna()
+    print(f"Removing {idx.sum()} entries with no SMILES", flush=True)
+    df = df.loc[~idx, :]
 
     ## Filter out chiral molecules if requested
     achiral_df = get_achiral_molecules(df)
@@ -379,7 +381,10 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     ## Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
     smiles_key = "smiles" if "smiles" in df.columns else "suspected_SMILES"
-    df = df.loc[~df[smiles_key].isna(), :]
+
+    idx = df[smiles_key].isna()
+    print(f"Removing {idx.sum()} entries with no SMILES", flush=True)
+    df = df.loc[~idx, :]
 
     ## Remove stereochemistry tags and get canonical SMILES values (to help
     ##  group stereoisomers)
