@@ -184,9 +184,9 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     """
     Convert a CDD-downloaded CSV file into a JSON file containing an
     ExperimentalCompoundDataUpdate. CSV file must contain the following headers:
-        * suspected_SMILES
-        * Canonical PostEra ID
-        * ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50
+        * "smiles" or "suspected_SMILES"
+        * "Canonical PostEra ID"
+        * "pIC50" or "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
 
     Parameters
     ----------
@@ -358,9 +358,9 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     """
     Convert a CDD-downloaded CSV file into a JSON file containing an
     EnantiomerPairList. CSV file must contain the following headers:
-        * suspected_SMILES
-        * Canonical PostEra ID
-        * ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50
+        * "smiles" or "suspected_SMILES"
+        * "Canonical PostEra ID"
+        * "pIC50" or "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
 
     Parameters
     ----------
