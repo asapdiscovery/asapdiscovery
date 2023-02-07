@@ -91,7 +91,7 @@ system = forcefield.createSystem(modeller.topology, nonbondedMethod=nonbondedMet
 system.addForce(MonteCarloBarostat(pressure, temperature, barostatInterval))
 integrator = LangevinMiddleIntegrator(temperature, friction, dt)
 integrator.setConstraintTolerance(constraintTolerance)
-simulation = Simulation(topology, system, integrator, platform)
+simulation = Simulation(modeller.topology, system, integrator, platform)
 simulation.context.setPositions(modeller.positions)
 
 
