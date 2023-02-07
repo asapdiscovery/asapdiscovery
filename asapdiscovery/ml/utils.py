@@ -262,10 +262,10 @@ def build_model(
             get_model = mtenn.conversion_utils.schnet.SchNet.get_model
         else:
             ## Loadmodel parameters
-            if os.path.isfile(e3nn_params):
-                model_params = pkl.load(open(e3nn_params, "rb"))
-            elif (type(e3nn_params) is list) or (type(e3nn_params) is tuple):
+            if (type(e3nn_params) is list) or (type(e3nn_params) is tuple):
                 model_params = e3nn_params
+            elif os.path.isfile(e3nn_params):
+                model_params = pkl.load(open(e3nn_params, "rb"))
             else:
                 raise ValueError(
                     (
