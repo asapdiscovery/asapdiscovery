@@ -640,9 +640,18 @@ def init(args, rank=False):
             ds_val = add_lig_labels(ds_val)
             ds_test = add_lig_labels(ds_test)
 
+        ## Load or calculate model parameters
+        if args.model_params is None:
+            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
+        elif os.path.isfile(args.model_params):
+            model_params = pkl.load(open(args.model_params, "rb"))
+        else:
+            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
+            pkl.dump(model_params, open(args.model_params, "wb"))
+
     model, model_call = build_model(
         model_type=args.model,
-        e3nn_params=args.model_params,
+        e3nn_params=model_params,
         strat=args.strat,
         grouped=args.grouped,
         comb=args.comb,
