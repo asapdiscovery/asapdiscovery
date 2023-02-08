@@ -100,15 +100,15 @@ def build_dataset(
         ## Make cache directory as necessary
         if cache_fn is None:
             raise ValueError("Must provide cache_fn for 2d model.")
-        else:
-            cache_dir = os.path.dirname(cache_fn)
-        os.makedirs(cache_dir, exist_ok=True)
+        elif os.path.isdir(cache_fn):
+            os.makedirs(cache_fn, exist_ok=True)
+            cache_fn = os.path.join(cache_fn, "graph.bin")
 
         ## Build the dataset
         ds = GraphDataset(
             exp_compounds,
             node_featurizer=CanonicalAtomFeaturizer(),
-            cache_file=os.path.join(cache_fn),
+            cache_file=cache_fn,
         )
 
         print(next(iter(ds)), flush=True)
