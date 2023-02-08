@@ -423,7 +423,7 @@ def init(args, rank=False):
         }
     elif args.model == "2d":
         ## Update experiment configuration
-        exp_configure.update({"model": "GAT"})
+        exp_configure = {"model": "GAT"}
     else:
         raise ValueError(f"Unknown model type {args.model}.")
 
