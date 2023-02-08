@@ -58,6 +58,20 @@ def analyze_mp(fn, out_dir):
     prep_logger.addHandler(handler)
     prep_logger.info(datetime.isoformat(datetime.now()))
 
+    ## Check if outputs exists
+    def check_output():
+        for fn_suffix in ["_acive_site", "_full_protein"]:
+            for extension in [".pdb", ".npy"]:
+                if not (
+                    out_dir / f"{output_name}{fn_suffix}{extension}"
+                ).exists():
+                    return False
+        return True
+
+    if check_output():
+        prep_logger.info("Output already exists!")
+        return True
+
     prep_logger.info(f"Loading {fn}")
     pdb = md.load(fn)
 
@@ -92,7 +106,7 @@ def main():
     main_logger.info(f"{len(fns)} files found")
 
     out_dir = Path(args.output_dir)
-    out_dir.mkdir(exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     mp_args = [(fn, out_dir) for fn in fns]
 
