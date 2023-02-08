@@ -410,7 +410,7 @@ def init(args, rank=False):
             "num_nodes": e3nn_params[2],
             "lig": args.lig,
             "neighbor_dist": args.n_dist,
-            "irreps_hidden": model.irreps_hidden,
+            "irreps_hidden": model.representation.irreps_hidden,
         }
     elif args.model == "schnet":
         ## Experiment configuration
