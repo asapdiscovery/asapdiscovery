@@ -57,10 +57,10 @@ jobs:
       # conda setup requires this special shell
       shell: bash -l {0}
       run: |
-        python -m pip install ./ad-data --no-deps
-        python -m pip install ./ad-dataviz --no-deps
-        python -m pip install ./ad-docking --no-deps
-        python -m pip install ./ad-ml --no-deps
+        python -m pip install ./asapdiscovery-data --no-deps
+        python -m pip install ./asapdiscovery-dataviz --no-deps
+        python -m pip install ./asapdiscovery-docking --no-deps
+        python -m pip install ./asapdiscovery-ml --no-deps
         conda list
 
 
@@ -71,10 +71,10 @@ jobs:
 
       run: |
         # run each package test suite; append to coverage file
-        coverage run --append -m pytest -v  --color=yes ./ad-data/asapdiscovery/data/tests/
-        coverage run --append -m pytest -v  --color=yes ./ad-dataviz/asapdiscovery/dataviz/tests/
-        coverage run --append -m pytest -v  --color=yes ./ad-docking/asapdiscovery/docking/tests/
-        coverage run --append -m pytest -v  --color=yes ./ad-ml/asapdiscovery/ml/tests/
+        coverage run --append -m pytest -v  --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
+        coverage run --append -m pytest -v  --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
+        coverage run --append -m pytest -v  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
+        coverage run --append -m pytest -v  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
 
         # generate xml report from .coverage file
         coverage xml
