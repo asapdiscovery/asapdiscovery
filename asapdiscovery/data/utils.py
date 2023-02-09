@@ -667,9 +667,9 @@ def filter_molecules_dataframe(
     def is_semiquant(ic50):
         try:
             _ = float(ic50)
-            return True
-        except ValueError as e:
             return False
+        except ValueError as e:
+            return True
 
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries")
 
