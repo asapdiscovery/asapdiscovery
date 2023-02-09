@@ -8,10 +8,12 @@
 #BSUB -W 12:00
 
 source ~/.bashrc
-conda activate docking
+conda activate /home/lemonsk/miniconda3/envs/asap-simulation
 
-python MproP0009.py \
--i /data/chodera/asap-datasets/full_frag_prepped_mpro_12_2022/Mpro-P0009_0A_MAT-POS-f2460aef-1/prepped_receptor_0.pdb \
--o /data/chodera/lemonsk/asap-datasets/prepped_mpro_P0009
+python /data/chodera/lemonsk/covid-moonshot-ml/asapdiscovery/simulation/scripts/MproP0009_2.py \
+-i /data/chodera/lemonsk/asap-datasets/openmm_setup_processed/prepped_receptor_0-processed.pdb \
+-o /data/chodera/lemonsk/asap-datasets/prepped_mpro_P0009/ \
+-l /data/chodera/lemonsk/covid-moonshot-ml/asapdiscovery/simulation/tests/inputs/MAT-POS-f2460aef-1.sdf \
+-p /data/chodera/lemonsk/asap-datasets/openmm_setup_processed/prepped_receptor_0-processed.pdb
 echo date
 echo done
