@@ -681,10 +681,12 @@ def filter_molecules_dataframe(
     )
     is_enantiopure = lambda smi: (not is_achiral(smi)) and (not is_racemic(smi))
 
-    # Re-label SMILES field and change name of PostEra ID field
-    # mol_df = mol_df.rename(
-    #     columns={smiles_fieldname: "smiles", "Canonical PostEra ID": "name"}
-    # )
+    def is_semiquant(ic50):
+        try:
+            _ = float(ic50)
+            return True
+        except ValueError as e:
+            return False
 
     ## Drop any rows with no SMILES
     mol_df = mol_df.dropna(subset=smiles_fieldname)
@@ -712,35 +714,31 @@ def filter_molecules_dataframe(
         s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]
     ]
 
-    # Determine which molecules will be retained
-    include_flags = []
-    for _, row in mol_df.iterrows():
-        smiles = row["smiles"]
-        include_this_molecule = (
-            (retain_achiral and is_achiral(smiles))
-            or (retain_racemic and is_racemic(smiles))
-            or (retain_enantiopure and is_enantiopure(smiles))
-        )
-        include_flags.append(include_this_molecule)
-    mol_df = mol_df.loc[include_flags, :]
+    ## Determine which molecules will be retained and add corresponding labels
+    ##  to the data frame
+    achiral_label = [is_achiral(smiles) for smiles in mol_df["smiles"]]
+    racemic_label = [is_racemic(smiles) for smiles in mol_df["smiles"]]
+    enantiopure_label = [is_enantiopure(smiles) for smiles in mol_df["smiles"]]
+    semiquant_label = [
+        is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
+    ]
+    keep_idx = [
+        (retain_achiral and achiral_label[i])
+        or (retain_racemic and racemic_label[i])
+        or (retain_enantiopure and enantiopure_label[i])
+        or (retain_semiquantitative_data and semiquant_label[i])
+        for i in range(mol_df.shape[0])
+    ]
 
-    # Filter out semiquantitative data, if requested
-    if not retain_semiquantitative_data:
-        include_flags = []
-        for _, row in mol_df.iterrows():
-            try:
-                _ = float(row[f"{assay_name}: IC50 (µM)"])
-                include_flags.append(True)
-            except ValueError as e:
-                include_flags.append(False)
+    mol_df["achiral"] = achiral_label
+    mol_df["racemic"] = racemic_label
+    mol_df["enantiopure"] = enantiopure_label
+    mol_df["semiquant"] = semiquant_label
 
-        mol_df = mol_df.loc[include_flags, :]
-        logging.debug(
-            (
-                f"  dataframe contains {mol_df.shape} entries after removing "
-                "semiquantitative data"
-            )
-        )
+    mol_df = mol_df.loc[keep_idx, :]
+    logging.debug(
+        f"Removed {sum(~keep_idx)} entries, {mol_df.shape[0]} remaining"
+    )
 
     # Compute pIC50s and uncertainties from 95% CIs
     pIC50_series = []
