@@ -101,7 +101,7 @@ def download_PDBs(pdb_list, pdb_dir, pdb_type="pdb"):
     print(f"Downloading PDBs to {pdb_dir}")
     for pdb in pdb_list:
         print(pdb)
-        download_pdb_structure(pdb, pdb_dir, pdb_type)
+        download_pdb_structure(pdb, pdb_dir, pdb_type=pdb_type)
 
 
 def pymol_alignment(
