@@ -38,9 +38,6 @@ def get_args():
             "being loaded (std: standard, ep: enantiomer pairs)"
         ),
     )
-    parser.add_argument(
-        "-achiral", action="store_true", help="Remove chiral molecules."
-    )
 
     return parser.parse_args()
 
@@ -49,7 +46,7 @@ def main():
     args = get_args()
 
     if args.type.lower() == "std":
-        _ = cdd_to_schema(args.i, args.json, args.csv, args.achiral)
+        _ = cdd_to_schema(args.i, args.json, args.csv)
     elif args.type.lower() == "ep":
         _ = cdd_to_schema_pair(args.i, args.json, args.csv)
     else:
