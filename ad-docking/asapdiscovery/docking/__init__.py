@@ -6,3 +6,9 @@ versions = get_versions()
 __version__ = versions["version"]
 __git_revision__ = versions["full-revisionid"]
 del get_versions, versions
+
+from .mcs import *
+from .docking import *
+from .analysis import *
+from .rocauc import *
+from .modeling import *

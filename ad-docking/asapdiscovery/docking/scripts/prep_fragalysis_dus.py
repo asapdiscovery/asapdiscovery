@@ -19,11 +19,10 @@ from asapdiscovery.docking.modeling import (
     mutate_residues,
 )
 from asapdiscovery.data.utils import (
-    save_openeye_pdb,
     edit_pdb_file,
     seqres_to_res_list,
-    load_openeye_pdb,
 )
+from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
 from asapdiscovery.data.fragalysis import parse_xtal
 
 

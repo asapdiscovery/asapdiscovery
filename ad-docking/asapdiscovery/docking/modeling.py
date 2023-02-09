@@ -442,6 +442,11 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
             print(res_num, old_res_name, new_res)
             mut_map[r] = new_res
 
+    ## Return early if no mutations found
+    if len(mut_map) == 0:
+        print("No mutations found", flush=True)
+        return input_mol
+
     ## Mutate and build sidechains
     oespruce.OEMutateResidues(mut_prot, mut_map)
 
@@ -453,7 +458,7 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
 
 
 def prep_receptor(
-    initial_prot, site_residue="", loop_db=None, protein_only=False
+    initial_prot, site_residue="", loop_db=None, protein_only=False, seqres=None
 ):
     """
     Prepare DU from protein. If the ligand isn't present in `initial_prot`, a
@@ -470,6 +475,9 @@ def prep_receptor(
         Loop database file.
     protein_only : bool, default=True
         Whether we want to only keep the protein or keep the ligand as well.
+    seqres : str, optional
+        Residue sequence of a single chain. Should be in the format of three
+        letter codes, separated by a space for each residue.
 
     Returns
     -------
@@ -528,13 +536,31 @@ def prep_receptor(
     if not protein_only:
         # Generate ligand tautomers
         opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
+
     ############################################################################
+
+    ## Structure metadata object
+    metadata = oespruce.OEStructureMetadata()
+
+    ## Allow for adding residues at the beginning/end if they're missing
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
+        True
+    )
+    if seqres:
+        all_prot_chains = {
+            res.GetExtChainID()
+            for res in oechem.OEGetResidues(initial_prot)
+            if (res.GetName() != "LIG") and (res.GetName() != "HOH")
+        }
+        for chain in all_prot_chains:
+            seq_metadata = oespruce.OESequenceMetadata()
+            seq_metadata.SetChainID(chain)
+            seq_metadata.SetSequence(seqres)
+            metadata.AddSequenceMetadata(seq_metadata)
 
     ## Finally make new DesignUnit
     dus = list(
-        oespruce.OEMakeDesignUnits(
-            initial_prot, oespruce.OEStructureMetadata(), opts, site_residue
-        )
+        oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
     )
     assert dus[0].HasProtein()
     if not protein_only:
@@ -573,3 +599,46 @@ def build_dimer_from_monomer(prot):
 
     print(all_chain_ids)
     return prot
+
+
+def remove_extra_ligands(mol, lig_chain=None):
+    """
+    Remove extra ligands from a molecule. Useful in the case where a complex
+    crystal structure has two copies of the ligand, but we only want one. If
+    `lig_chain` is not specified, we'll automatically select the first chain
+    (as sorted alphabetically) to be the copy to keep.
+
+    Creates a copy of the input molecule, so input molecule is not modified.
+
+    Parameters
+    ----------
+    mol : oechem.OEMolBase
+        Complex molecule.
+    lig_chain : str, optional
+        Ligand chain ID to keep.
+
+    Returns
+    -------
+    oechem.OEMolBase
+        Molecule with extra ligand copies removed.
+    """
+    ## Atom filter to match all atoms in residue with name LIG
+    all_lig_match = oechem.OEAtomMatchResidueID()
+    all_lig_match.SetName("LIG")
+    all_lig_filter = oechem.OEAtomMatchResidue(all_lig_match)
+
+    ## Detect ligand chain to keep if none is given
+    if lig_chain is None:
+        lig_chain = sorted(
+            {
+                oechem.OEAtomGetResidue(a).GetExtChainID()
+                for a in mol.GetAtoms(all_lig_filter)
+            }
+        )[0]
+
+    ## Copy molecule and delete all lig atoms that don't have the desired chain
+    mol_copy = mol.CreateCopy()
+    for a in mol_copy.GetAtoms(all_lig_filter):
+        if oechem.OEAtomGetResidue(a).GetExtChainID() != lig_chain:
+            mol_copy.DeleteAtom(a)
+    return mol_copy

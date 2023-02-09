@@ -28,14 +28,11 @@ from asapdiscovery.docking.modeling import (
     prep_receptor,
     du_to_complex,
     mutate_residues,
+    remove_extra_ligands,
 )
 from asapdiscovery.data import pdb
-from asapdiscovery.data.utils import (
-    save_openeye_pdb,
-    edit_pdb_file,
-    seqres_to_res_list,
-    load_openeye_pdb,
-)
+from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
+from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
 from asapdiscovery.data.fragalysis import parse_xtal
 
 
@@ -90,41 +87,22 @@ def prep_mp(
     ## Make output directory
     os.makedirs(out_dir, exist_ok=True)
 
-    ## Option to add SEQRES header
+    ## Load protein from pdb
+    initial_prot = load_openeye_pdb(xtal.str_fn)
+
     if seqres:
-        print("Editing PDB file")
-        ## Get a list of 3-letter codes for the sequence
         res_list = seqres_to_res_list(seqres)
 
-        ## Generate a new (temporary) pdb file with the SEQRES we want
-        with NamedTemporaryFile(mode="w", suffix=".pdb") as tmp_pdb:
-            ## Add the SEQRES
-            edit_pdb_file(
-                xtal.str_fn,
-                seqres_str=seqres,
-                edit_remark350=True,
-                oligomeric_state=xtal.oligomeric_state,
-                chains=xtal.chains,
-                pdb_out=tmp_pdb.name,
-            )
-
-            ## Load in the pdb file as an OE object
-            seqres_prot = load_openeye_pdb(tmp_pdb.name)
-
-            save_openeye_pdb(seqres_prot, "seqres_test.pdb")
-
-            initial_prot = seqres_prot
-        mutate = True
-    else:
-        initial_prot = load_openeye_pdb(xtal.str_fn)
-        mutate = False
-
-    if mutate:
         print("Mutating to provided seqres")
         ## Mutate the residues to match the residue list
         initial_prot = mutate_residues(
             initial_prot, res_list, xtal.protein_chains
         )
+
+    ## Delete extra copies of ligand in the complex
+    initial_prot = remove_extra_ligands(
+        initial_prot, lig_chain=xtal.active_site_chain
+    )
 
     if ref_prot:
         print("Aligning receptor")
@@ -146,6 +124,7 @@ def prep_mp(
             site_residue=site_residue,
             loop_db=loop_db,
             protein_only=protein_only,
+            seqres=" ".join(res_list),
         )
     except IndexError as e:
         print(
@@ -167,6 +146,13 @@ def prep_mp(
 
         ## Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
+
+        ## Add SEQRES entries if they're not present
+        if (not oechem.OEHasPDBData(complex_mol, "SEQRES")) and seqres:
+            for seqres_line in seqres.split("\n"):
+                if seqres_line != "":
+                    oechem.OEAddPDBData(complex_mol, "SEQRES", seqres_line[6:])
+
         save_openeye_pdb(
             complex_mol, os.path.join(out_dir, f"prepped_receptor_{i}.pdb")
         )
