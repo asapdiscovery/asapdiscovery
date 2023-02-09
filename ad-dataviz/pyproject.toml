@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "versioningit"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "asapdiscovery-data"
+name = "asapdiscovery-dataviz"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
