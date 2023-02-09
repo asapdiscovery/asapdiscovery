@@ -30,9 +30,9 @@ def download_pdb_structure(pdb_id: str, directory: str, pdb_type: str = "pdb"):
         The PDB ID of interest.
     directory: str or Path, default=user_cache_dir
         The directory for saving the downloaded structure.
-    pdb_type: str
+    pdb_type: str, optional
         Indicates whether you would like to download the entry in pdb or cif format,
-        or the first biological assembly in cif format
+        or the first biological assembly in cif format. Defaults to "pdb"
 
     Returns
     -------
