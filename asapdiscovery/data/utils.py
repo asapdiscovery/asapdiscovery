@@ -739,8 +739,8 @@ def filter_molecules_dataframe(
             )  # molar
 
             pIC50 = -np.log10(IC50)
-            pIC50_lower = -np.log10(IC50_lower)
-            pIC50_upper = -np.log10(IC50_upper)
+            pIC50_lower = -np.log10(IC50_upper)
+            pIC50_upper = -np.log10(IC50_lower)
             pIC50_stderr = (
                 np.abs(pIC50_upper - pIC50_lower) / 4.0
             )  # assume normal distribution
