@@ -97,7 +97,12 @@ def load_dus(file_base, by_compound=False):
     else:
         print(f"Using {file_base} as glob")
         all_fns = glob(file_base)
-    assert len(all_fns) > 0, f"No files found at {file_base}."
+    
+    # check that we actually have loaded in prepped receptors.
+    if len(all_fns) == 0:
+        raise ValueError(
+            f"No prepared receptors found in {file_base}, check that the path is correct."
+        )
     du_dict = {}
     dataset_dict = {}
     if by_compound:
