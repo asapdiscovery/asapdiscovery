@@ -737,7 +737,7 @@ def filter_molecules_dataframe(
 
     mol_df = mol_df.loc[keep_idx, :]
     logging.debug(
-        f"Removed {sum(~keep_idx)} entries, {mol_df.shape[0]} remaining"
+        f"  dataframe contains {mol_df.shape[0]} entries after filtering"
     )
 
     # Compute pIC50s and uncertainties from 95% CIs
@@ -746,7 +746,6 @@ def filter_molecules_dataframe(
     pIC50_lower_series = []
     pIC50_upper_series = []
     for _, row in mol_df.iterrows():
-        pIC50 = row[f"{assay_name}: Avg pIC50"]  # string
         try:
             IC50 = float(row[f"{assay_name}: IC50 (µM)"]) * 1e-6  # molar
             IC50_lower = (
@@ -782,11 +781,12 @@ def filter_molecules_dataframe(
                 == "(IC50 could not be calculated)"
             ):
                 pIC50 = "< 4.0"  # lower limit of detection
+            else:
+                pIC50 = row[f"{assay_name}: IC50 (µM)"]
 
             # Keep pIC50 string
             # Use default pIC50 error
             print(row)
-            pIC50 = pIC50
             ## Set as high number so sorting works but still puts this at end
             pIC50_stderr = 100
             pIC50_lower = row[f"{assay_name}: IC50 CI (Lower) (µM)"]
@@ -801,6 +801,11 @@ def filter_molecules_dataframe(
     mol_df["pIC50_stderr"] = pIC50_stderr_series
     mol_df["pIC50_95ci_lower"] = pIC50_lower_series
     mol_df["pIC50_95ci_upper"] = pIC50_upper_series
+
+    ## Add label indicating whether pIC50 values were out of the assay range
+    mol_df["pIC50_range"] = [
+        -1 if "<" in c else (1 if ">" in c else 0) for c in mol_df["pIC50"]
+    ]
 
     ## Compute binding affinity in kcal/mol
     # use kT = 0.593, kcal/mol for 298 K/25C
@@ -837,10 +842,6 @@ def filter_molecules_dataframe(
                 ascending=True,
             )
         mol_df = mol_df.groupby("name").first()
-
-    # Retain only fields we need
-    # mol_df = mol_df.filter(["smiles", "name", "pIC50", "pIC50_stderr"])
-    # logging.debug(f"\n{mol_df}")
 
     return mol_df
 
