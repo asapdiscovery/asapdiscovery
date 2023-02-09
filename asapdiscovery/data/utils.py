@@ -1,7 +1,9 @@
+import logging
 import os.path
 from openeye import oechem
 import numpy as np
 import pandas
+import pydantic
 import re
 import rdkit.Chem as Chem
 
@@ -180,13 +182,20 @@ def seqres_to_res_list(seqres_str):
     return res_list
 
 
-def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
+def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     """
-    Convert a CDD-downloaded CSV file into a JSON file containing an
-    ExperimentalCompoundDataUpdate. CSV file must contain the following headers:
-        * "smiles" or "suspected_SMILES"
-        * "Canonical PostEra ID"
-        * "pIC50" or "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    Convert a CDD-downloaded and filtered CSV file into a JSON file containing an
+    ExperimentalCompoundDataUpdate. CSV file should be the result of the
+    filter_molecules_dataframe function and must contain the following headers:
+        * name
+        * smiles
+        * achiral
+        * racemic
+        * pIC50
+        * pIC50_stderr
+        * pIC50_95ci_lower
+        * pIC50_95ci_upper
+        * pIC50_range
 
     Parameters
     ----------
@@ -207,85 +216,47 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
 
     ## Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
-    smiles_key = "smiles" if "smiles" in df.columns else "suspected_SMILES"
 
-    idx = df[smiles_key].isna()
-    print(f"Removing {idx.sum()} entries with no SMILES", flush=True)
+    ## Check that all required columns are present
+    reqd_cols = [
+        "name",
+        "smiles",
+        "achiral",
+        "racemic",
+        "semiquant",
+        "pIC50",
+        "pIC50_stderr",
+        "pIC50_95ci_lower",
+        "pIC50_95ci_upper",
+        "pIC50_range",
+    ]
+    missing_cols = [c for c in reqd_cols if c not in df.columns]
+    if len(missing_cols) > 0:
+        raise ValueError(
+            (
+                f"Required columns not present in CSV file: {missing_cols}. "
+                "Please use `filter_molecules_dataframe` to properly populate "
+                "the dataframe."
+            )
+        )
+
+    ## Make extra sure nothing snuck by
+    idx = df["smiles"].isna()
+    logging.debug(f"Removing {idx.sum()} entries with no SMILES", flush=True)
     df = df.loc[~idx, :]
 
-    ## Filter out chiral molecules if requested
-    achiral_df = get_achiral_molecules(df)
-    if achiral:
-        df = achiral_df.copy()
-    achiral_label = [
-        compound_id in achiral_df["Canonical PostEra ID"].values
-        for compound_id in df["Canonical PostEra ID"]
-    ]
-
-    ## Get rid of the </> signs, since we really only need the values to sort
-    ##  enantiomer pairs
-    pic50_key = (
-        "pIC50"
-        if "pIC50" in df.columns
-        else "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
-    )
-    df = df.loc[~df[pic50_key].isna(), :]
-    pic50_range = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
-    ]
-    pic50_vals = [float(c.strip("<> ")) for c in df[pic50_key]]
-    df["pIC50"] = pic50_vals
-    df["pIC50_range"] = pic50_range
-    semiquant = df["pIC50_range"].astype(bool)
-
-    ## Don't need to recompute stderr if it's already there
-    if "pIC50_stderr" not in df.columns:
-        ### TODO: handle multiple measurements for the same compound
-        ###  (average of stderr for each compound)
-        ci_lower_key = (
-            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-            "CI (Lower) (µM)"
-        )
-        ci_upper_key = (
-            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-            "CI (Upper) (µM)"
-        )
-
-        ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
-        pic50_stderr = []
-        for _, (ci_lower, ci_upper) in df[
-            [ci_lower_key, ci_upper_key]
-        ].iterrows():
-            ## Cast to float
-            try:
-                ci_lower = float(ci_lower)
-                ci_upper = float(ci_upper)
-            except ValueError:
-                pic50_stderr.append(np.nan)
-                continue
-            if pandas.isna(ci_lower) or pandas.isna(ci_upper):
-                pic50_stderr.append(np.nan)
-            else:
-                ## First convert bounds from IC50 (uM) to pIC50
-                pic50_ci_upper = -np.log10(ci_upper * 10e-6)
-                pic50_ci_lower = -np.log10(ci_lower * 10e-6)
-                ## Assume size of 95% CI == 4*sigma
-                pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
-        df["pIC50_stderr"] = pic50_stderr
-    else:
-        ci_lower_key = "pIC50_95ci_lower"
-        ci_upper_key = "pIC50_95ci_upper"
-
     ## Fill standard error for semi-qunatitative data with the mean of others
-    df.loc[semiquant, "pIC50_stderr"] = df.loc[
-        ~semiquant, "pIC50_stderr"
+    df.loc[df["semiquant"], "pIC50_stderr"] = df.loc[
+        ~df["semiquant"], "pIC50_stderr"
     ].mean()
 
-    ### For now just keep the first measure for each compound_id
+    ## For now just keep the first measure for each compound_id (should be the
+    ##  only one if `keep_best_per_mol` was set when running
+    ##  `filter_molecules_dataframe`.)
     compounds = []
     seen_compounds = {}
     for i, (_, c) in enumerate(df.iterrows()):
-        compound_id = c["Canonical PostEra ID"]
+        compound_id = c["name"]
         ## Replace long dash unicode character with regular - sign (only
         ##  one compound like this I think)
         if "\u2212" in compound_id:
@@ -300,7 +271,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
             if not seen_compounds[compound_id]:
                 continue
 
-        smiles = c[smiles_key]
+        smiles = c["smiles"]
         experimental_data = {
             "pIC50": c["pIC50"],
             "pIC50_range": c["pIC50_range"],
@@ -316,21 +287,33 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
             )
 
         ## Keep track of if there are any NaN values
-        seen_compounds[compound_id] = np.isnan(
-            list(experimental_data.values())
-        ).any()
+        try:
+            seen_compounds[compound_id] = np.isnan(
+                list(experimental_data.values())
+            ).any()
+        except TypeError as e:
 
-        compounds.append(
-            ExperimentalCompoundData(
-                compound_id=compound_id,
-                smiles=smiles,
-                racemic=False,
-                achiral=achiral_label[i],
-                absolute_stereochemistry_enantiomerically_pure=True,
-                relative_stereochemistry_enantiomerically_pure=True,
-                experimental_data=experimental_data,
+            seen_compounds[compound_id] = True
+
+        try:
+            compounds.append(
+                ExperimentalCompoundData(
+                    compound_id=compound_id,
+                    smiles=smiles,
+                    racemic=c["racemic"],
+                    achiral=c["achiral"],
+                    absolute_stereochemistry_enantiomerically_pure=(
+                        not c["racemic"]
+                    ),
+                    relative_stereochemistry_enantiomerically_pure=(
+                        not c["racemic"]
+                    ),
+                    experimental_data=experimental_data,
+                )
             )
-        )
+        except pydantic.error_wrappers.ValidationError as e:
+            print(c, flush=True)
+            raise e
 
     compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
 
@@ -340,12 +323,12 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         print(f"Wrote {out_json}", flush=True)
     if out_csv:
         out_cols = [
-            "Canonical PostEra ID",
-            smiles_key,
+            "name",
+            "smiles",
             "pIC50",
             "pIC50_range",
-            ci_lower_key,
-            ci_upper_key,
+            "pIC50_95ci_lower",
+            "pIC50_95ci_upper",
             "pIC50_stderr",
         ]
         df[out_cols].to_csv(out_csv)
@@ -688,32 +671,31 @@ def filter_molecules_dataframe(
         except ValueError as e:
             return False
 
-    ## Drop any rows with no SMILES
-    mol_df = mol_df.dropna(subset=smiles_fieldname)
+    logging.debug(f"  dataframe contains {mol_df.shape[0]} entries")
+
+    ## Drop any rows with no SMILES (need the copy to make pandas happy)
+    # Get rid of any molecules that snuck through without SMILES field specified
+    mol_df = mol_df.dropna(subset=smiles_fieldname).copy()
+    logging.debug(
+        (
+            f"  dataframe contains {mol_df.shape[0]} entries after removing "
+            f"molecules with unspecified {smiles_fieldname} field"
+        )
+    )
 
     ## Add new columns so we can keep the original names
-    print("Stripping salts", flush=True)
+    logging.debug("Stripping salts")
     mol_df.loc[:, "smiles"] = (
         mol_df.loc[:, smiles_fieldname].astype(str).apply(strip_smiles_salts)
     )
     mol_df.loc[:, "name"] = mol_df.loc[:, "Canonical PostEra ID"]
 
-    logging.debug("Filtering molecules dataframe")
-    # Get rid of any molecules that snuck through without SMILES field specified
-    logging.debug(f"  dataframe contains {mol_df.shape} entries")
-    idx = mol_df.loc[:, "smiles"].isna()
-    mol_df = mol_df.loc[~idx, :].copy()
-    logging.debug(
-        (
-            f"  dataframe contains {mol_df.shape} entries after removing "
-            f"molecules with unspecified {smiles_fieldname} field"
-        )
-    )
     # Convert CXSMILES to SMILES by removing extra info
     mol_df.loc[:, "smiles"] = [
         s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]
     ]
 
+    logging.debug("Filtering molecules dataframe")
     ## Determine which molecules will be retained and add corresponding labels
     ##  to the data frame
     achiral_label = [is_achiral(smiles) for smiles in mol_df["smiles"]]
@@ -743,6 +725,7 @@ def filter_molecules_dataframe(
     # Compute pIC50s and uncertainties from 95% CIs
     pIC50_series = []
     pIC50_stderr_series = []
+    pIC50_range_series = []
     pIC50_lower_series = []
     pIC50_upper_series = []
     for _, row in mol_df.iterrows():
@@ -775,61 +758,60 @@ def filter_molecules_dataframe(
                 pIC50_stderr = str(round(pIC50_stderr, 4))
 
         except ValueError:
+            IC50 = row[f"{assay_name}: IC50 (µM)"]
             # Could not convert to string because value was semiquantitative
             if (
                 row[f"{assay_name}: IC50 (µM)"]
                 == "(IC50 could not be calculated)"
             ):
+                pIC50 = "nan"
+            elif ">" in IC50:
                 pIC50 = "< 4.0"  # lower limit of detection
+            elif "<" in IC50:
+                pIC50 = "> 7.3"  # upper limit of detection
             else:
-                pIC50 = row[f"{assay_name}: IC50 (µM)"]
+                pIC50 = "nan"
 
             # Keep pIC50 string
             # Use default pIC50 error
-            print(row)
+            # print(row)
             ## Set as high number so sorting works but still puts this at end
             pIC50_stderr = 100
-            pIC50_lower = row[f"{assay_name}: IC50 CI (Lower) (µM)"]
-            pIC50_upper = row[f"{assay_name}: IC50 CI (Upper) (µM)"]
+            pIC50_lower = np.nan
+            pIC50_upper = np.nan
 
-        pIC50_series.append(pIC50)
+        pIC50_series.append(float(pIC50.strip("<> ")))
         pIC50_stderr_series.append(float(pIC50_stderr))
+        ## Add label indicating whether pIC50 values were out of the assay range
+        pIC50_range_series.append(
+            -1 if "<" in pIC50 else (1 if ">" in pIC50 else 0)
+        )
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
 
     mol_df["pIC50"] = pIC50_series
     mol_df["pIC50_stderr"] = pIC50_stderr_series
+    mol_df["pIC50_range"] = pIC50_range_series
     mol_df["pIC50_95ci_lower"] = pIC50_lower_series
     mol_df["pIC50_95ci_upper"] = pIC50_upper_series
-
-    ## Add label indicating whether pIC50 values were out of the assay range
-    mol_df["pIC50_range"] = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in mol_df["pIC50"]
-    ]
 
     ## Compute binding affinity in kcal/mol
     # use kT = 0.593, kcal/mol for 298 K/25C
     deltaG = lambda pIC50: -0.593 * np.log(10.0) * float(pIC50)
     mol_df["exp_binding_affinity_kcal_mol"] = [
-        deltaG(pIC50) if re.match("[0-9]*\.[0-9]*", pIC50) else np.nan
+        deltaG(pIC50) if not np.isnan(pIC50) else np.nan
         for pIC50 in mol_df["pIC50"]
     ]
     mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
-        abs(deltaG(pIC50_stderr))
-        if re.match("[0-9]*\.[0-9]*", str(pIC50_stderr))
-        else np.nan
+        abs(deltaG(pIC50_stderr)) if not np.isnan(pIC50_stderr) else np.nan
         for pIC50_stderr in mol_df["pIC50_stderr"]
     ]
     mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
-        deltaG(pIC50_lower)
-        if re.match("[0-9]*\.[0-9]*", str(pIC50_lower))
-        else np.nan
+        deltaG(pIC50_lower) if not np.isnan(pIC50_lower) else np.nan
         for pIC50_lower in mol_df["pIC50_95ci_lower"]
     ]
     mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
-        deltaG(pIC50_upper)
-        if re.match("[0-9]*\.[0-9]*", str(pIC50_upper))
-        else np.nan
+        deltaG(pIC50_upper) if not np.isnan(pIC50_upper) else np.nan
         for pIC50_upper in mol_df["pIC50_95ci_upper"]
     ]
 
@@ -841,7 +823,7 @@ def filter_molecules_dataframe(
                 inplace=True,
                 ascending=True,
             )
-        mol_df = mol_df.groupby("name").first()
+        mol_df = mol_df.groupby("name", as_index=False).first()
 
     return mol_df
 
