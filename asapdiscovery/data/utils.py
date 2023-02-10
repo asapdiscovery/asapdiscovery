@@ -567,6 +567,7 @@ def filter_molecules_dataframe(
     keep_best_per_mol=True,
     assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
     dG_T=298.0,
+    cp_values=None,
 ):
     """
     Filter a dataframe of molecules to retain those specified.
@@ -600,6 +601,11 @@ def filter_molecules_dataframe(
         Name of the assay of interest
     dG_T : float, default=298.0
         Temperature in Kelvin for converting pIC50 values to delta G values
+    cp_values : Tuple[int], optional
+        Substrate concentration and Km values for calculating Ki using the
+        Cheng-Prussof equation. These values are assumed to be in the same
+        concentration units. If no values are passed for this, pIC50 values
+        will be used as an approximation of the Ki
 
     Returns
     -------
@@ -704,6 +710,10 @@ def filter_molecules_dataframe(
     )
 
     # Compute pIC50s and uncertainties from 95% CIs
+    IC50_series = []
+    IC50_stderr_series = []
+    IC50_lower_series = []
+    IC50_upper_series = []
     pIC50_series = []
     pIC50_stderr_series = []
     pIC50_range_series = []
@@ -711,17 +721,16 @@ def filter_molecules_dataframe(
     pIC50_upper_series = []
     for _, row in mol_df.iterrows():
         try:
-            IC50 = float(row[f"{assay_name}: IC50 (µM)"]) * 1e-6  # molar
-            IC50_lower = (
-                float(row[f"{assay_name}: IC50 CI (Lower) (µM)"]) * 1e-6
-            )  # molar
-            IC50_upper = (
-                float(row[f"{assay_name}: IC50 CI (Upper) (µM)"]) * 1e-6
-            )  # molar
+            IC50 = float(row[f"{assay_name}: IC50 (µM)"])
+            IC50_lower = float(row[f"{assay_name}: IC50 CI (Lower) (µM)"])
+            IC50_upper = float(row[f"{assay_name}: IC50 CI (Upper) (µM)"])
+            IC50_stderr = (
+                np.abs(IC50_upper - IC50_lower) / 4.0
+            )  # assume normal distribution
 
-            pIC50 = -np.log10(IC50)
-            pIC50_lower = -np.log10(IC50_upper)
-            pIC50_upper = -np.log10(IC50_lower)
+            pIC50 = -np.log10(IC50 * 1e-6)
+            pIC50_lower = -np.log10(IC50_upper * 1e-6)
+            pIC50_upper = -np.log10(IC50_lower * 1e-6)
             pIC50_stderr = (
                 np.abs(pIC50_upper - pIC50_lower) / 4.0
             )  # assume normal distribution
@@ -730,37 +739,48 @@ def filter_molecules_dataframe(
             try:
                 import sigfig
 
+                IC50, IC50_stderr = sigfig.round(
+                    IC50, uncertainty=IC50_stderr, sep=tuple
+                )  # strings
                 pIC50, pIC50_stderr = sigfig.round(
                     pIC50, uncertainty=pIC50_stderr, sep=tuple
                 )  # strings
             except ModuleNotFoundError:
                 ## Just round to 4 digits if sigfig pacakge not present
+                IC50 = str(round(IC50, 4))
+                IC50_stderr = str(round(IC50_stderr, 4))
                 pIC50 = str(round(pIC50, 4))
                 pIC50_stderr = str(round(pIC50_stderr, 4))
 
         except ValueError:
             IC50 = row[f"{assay_name}: IC50 (µM)"]
             # Could not convert to string because value was semiquantitative
-            if (
-                row[f"{assay_name}: IC50 (µM)"]
-                == "(IC50 could not be calculated)"
-            ):
+            if IC50 == "(IC50 could not be calculated)":
+                IC50 = "nan"
                 pIC50 = "nan"
             elif ">" in IC50:
                 pIC50 = "< 4.0"  # lower limit of detection
             elif "<" in IC50:
                 pIC50 = "> 7.3"  # upper limit of detection
             else:
+                IC50 = "nan"
                 pIC50 = "nan"
 
             # Keep pIC50 string
             # Use default pIC50 error
             # print(row)
             ## Set as high number so sorting works but still puts this at end
+            IC50_stderr = 100
+            IC50_lower = np.nan
+            IC50_upper = np.nan
             pIC50_stderr = 100
             pIC50_lower = np.nan
             pIC50_upper = np.nan
 
+        IC50_series.append(float(IC50.strip("<> ")))
+        IC50_stderr_series.append(float(IC50_stderr))
+        IC50_lower_series.append(IC50_lower)
+        IC50_upper_series.append(IC50_upper)
         pIC50_series.append(float(pIC50.strip("<> ")))
         pIC50_stderr_series.append(float(pIC50_stderr))
         ## Add label indicating whether pIC50 values were out of the assay range
@@ -770,6 +790,10 @@ def filter_molecules_dataframe(
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
 
+    mol_df["IC50"] = IC50_series
+    mol_df["IC50_stderr"] = IC50_stderr_series
+    mol_df["IC50_95ci_lower"] = IC50_lower_series
+    mol_df["IC50_95ci_upper"] = IC50_upper_series
     mol_df["pIC50"] = pIC50_series
     mol_df["pIC50_stderr"] = pIC50_stderr_series
     mol_df["pIC50_range"] = pIC50_range_series
@@ -791,23 +815,54 @@ def filter_molecules_dataframe(
         R = 0.001987
         logging.debug("simtk package not found, using R value of", R)
 
-    deltaG = lambda pIC50: -R * dG_T * np.log(10.0) * float(pIC50)
-    mol_df["exp_binding_affinity_kcal_mol"] = [
-        deltaG(pIC50) if not np.isnan(pIC50) else np.nan
-        for pIC50 in mol_df["pIC50"]
-    ]
-    mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
-        abs(deltaG(pIC50_stderr)) if not np.isnan(pIC50_stderr) else np.nan
-        for pIC50_stderr in mol_df["pIC50_stderr"]
-    ]
-    mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
-        deltaG(pIC50_lower) if not np.isnan(pIC50_lower) else np.nan
-        for pIC50_lower in mol_df["pIC50_95ci_lower"]
-    ]
-    mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
-        deltaG(pIC50_upper) if not np.isnan(pIC50_upper) else np.nan
-        for pIC50_upper in mol_df["pIC50_95ci_upper"]
-    ]
+    ## Calculate Ki using Cheng-Prussof
+    if cp_values:
+        import warnings
+
+        warnings.filterwarnings("error")
+        logging.debug("Using Cheng-Prussof equation for delta G calculations")
+        deltaG = (
+            lambda IC50: R
+            * dG_T
+            * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
+        )
+        mol_df["exp_binding_affinity_kcal_mol"] = [
+            deltaG(IC50 * 1e-6) if not np.isnan(IC50) else np.nan
+            for IC50 in mol_df["IC50"]
+        ]
+        mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
+            abs(deltaG(IC50_stderr * 1e-6))
+            if not np.isnan(IC50_stderr)
+            else np.nan
+            for IC50_stderr in mol_df["IC50_stderr"]
+        ]
+        mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
+            deltaG(IC50_lower * 1e-6) if not np.isnan(IC50_lower) else np.nan
+            for IC50_lower in mol_df["IC50_95ci_lower"]
+        ]
+        mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
+            deltaG(IC50_upper * 1e-6) if not np.isnan(IC50_upper) else np.nan
+            for IC50_upper in mol_df["IC50_95ci_upper"]
+        ]
+    else:
+        logging.debug("Using pIC50 values for delta G calculations")
+        deltaG = lambda pIC50: -R * dG_T * np.log(10.0) * pIC50
+        mol_df["exp_binding_affinity_kcal_mol"] = [
+            deltaG(pIC50) if not np.isnan(pIC50) else np.nan
+            for pIC50 in mol_df["pIC50"]
+        ]
+        mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
+            abs(deltaG(pIC50_stderr)) if not np.isnan(pIC50_stderr) else np.nan
+            for pIC50_stderr in mol_df["pIC50_stderr"]
+        ]
+        mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
+            deltaG(pIC50_lower) if not np.isnan(pIC50_lower) else np.nan
+            for pIC50_lower in mol_df["pIC50_95ci_lower"]
+        ]
+        mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
+            deltaG(pIC50_upper) if not np.isnan(pIC50_upper) else np.nan
+            for pIC50_upper in mol_df["pIC50_95ci_upper"]
+        ]
 
     ## Keep only the best measurement for each molecule
     if keep_best_per_mol:
