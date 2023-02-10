@@ -44,9 +44,9 @@ def download_pdb_structure(pdb_id: str, directory: str, file_format: str = "pdb"
     url_base_str = f"https://files.rcsb.org/download/"  # base str to use for URLs
     # Dictionary with allowed formats and their upstream basenames
     format_to_basename = {
-        "pdb": f"{pdb_id.lower()}.pdb",
+        "pdb": f"{pdb_id}.pdb",
         "cif": f"{pdb_id}.cif",
-        "cif1": f"{pdb_id.lower()}-assembly1.cif"
+        "cif1": f"{pdb_id}-assembly1.cif"
     }
 
     allowed_types = format_to_basename.keys()
