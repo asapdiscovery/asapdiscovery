@@ -777,8 +777,21 @@ def filter_molecules_dataframe(
     mol_df["pIC50_95ci_upper"] = pIC50_upper_series
 
     ## Compute binding affinity in kcal/mol
-    # use R = .001987 kcal/K/mol
-    deltaG = lambda pIC50: -0.001987 * dG_T * np.log(10.0) * float(pIC50)
+    try:
+        from simtk.unit import (
+            MOLAR_GAS_CONSTANT_R as R_const,
+            kilocalorie as kcal,
+            mole as mol,
+            kelvin as K,
+        )
+
+        R = R_const.in_units_of(kcal / mol / K)._value
+    except ModuleNotFoundError:
+        # use R = .001987 kcal/K/mol
+        R = 0.001987
+        logging.debug("simtk package not found, using R value of", R)
+
+    deltaG = lambda pIC50: -R * dG_T * np.log(10.0) * float(pIC50)
     mol_df["exp_binding_affinity_kcal_mol"] = [
         deltaG(pIC50) if not np.isnan(pIC50) else np.nan
         for pIC50 in mol_df["pIC50"]
