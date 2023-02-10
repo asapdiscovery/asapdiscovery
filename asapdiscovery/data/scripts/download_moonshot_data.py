@@ -47,12 +47,40 @@ def get_args():
         action="store_true",
         help="Keep molecules whose IC50 values are out of range.",
     )
+    parser.add_argument(
+        "-an",
+        "--assay_name",
+        default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
+        help="Assay name to parse as IC50.",
+    )
+    parser.add_argument(
+        "-T",
+        "--temp",
+        type=float,
+        default=298.0,
+        help="Temperature in K to use for delta G conversion.",
+    )
+    parser.add_argument(
+        "-cp",
+        "--cheng_prussof",
+        nargs=2,
+        type=float,
+        default=[0.375, 9.5],
+        help=(
+            "[S] and Km values to use in the Cheng-Prussof equation. "
+            "Pass 0 for both values to disable and use the pIC50 approximation."
+        ),
+    )
 
     return parser.parse_args()
 
 
 def main():
     args = get_args()
+
+    ## Set to None to force pIC50 usage
+    if args.cheng_prussof == [0, 0]:
+        args.cheng_prussof = None
 
     ## Set up logging
     logging.basicConfig(level=logging.DEBUG)
@@ -80,6 +108,9 @@ def main():
         retain_racemic=args.retain_racemic,
         retain_enantiopure=args.retain_enantiopure,
         retain_semiquantitative_data=args.retain_semiquant,
+        assay_name=args.assay_name,
+        dG_T=args.temp,
+        cp_values=args.cheng_prussof,
     )
 
 
