@@ -566,6 +566,7 @@ def filter_molecules_dataframe(
     retain_semiquantitative_data=False,
     keep_best_per_mol=True,
     assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
+    dG_T=298.0,
 ):
     """
     Filter a dataframe of molecules to retain those specified.
@@ -597,6 +598,8 @@ def filter_molecules_dataframe(
         curve class and then 95% CI pIC50 width)
     assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
         Name of the assay of interest
+    dG_T : float, default=298.0
+        Temperature in Kelvin for converting pIC50 values to delta G values
 
     Returns
     -------
@@ -774,8 +777,8 @@ def filter_molecules_dataframe(
     mol_df["pIC50_95ci_upper"] = pIC50_upper_series
 
     ## Compute binding affinity in kcal/mol
-    # use kT = 0.593, kcal/mol for 298 K/25C
-    deltaG = lambda pIC50: -0.593 * np.log(10.0) * float(pIC50)
+    # use R = .001987 kcal/K/mol
+    deltaG = lambda pIC50: -0.001987 * dG_T * np.log(10.0) * float(pIC50)
     mol_df["exp_binding_affinity_kcal_mol"] = [
         deltaG(pIC50) if not np.isnan(pIC50) else np.nan
         for pIC50 in mol_df["pIC50"]
