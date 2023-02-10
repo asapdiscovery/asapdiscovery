@@ -11,7 +11,7 @@ import openmm
 import argparse
 
 from openmm.app import PDBFile
-
+from openmm.app import ForceField
 
 ## Parameters
 def get_args():
@@ -71,7 +71,6 @@ system_generator = SystemGenerator(
     forcefield_kwargs=forcefield_kwargs, periodic_forcefield_kwargs=periodic_forcefield_kwargs);
 
 # Use Modeller to combine the protein and ligand into a complex
-from openmm.app import PDBFile
 from openmm.app import Modeller
 protein_pdb = PDBFile(args.protein)
 modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
@@ -82,16 +81,10 @@ modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
 # conformer and passes it to Modeller. It works. Don't ask why!
 modeller.add(ligand_mol.to_topology().to_openmm(), ligand_mol.conformers[0].to_openmm())
 
-# Input Files
-
-from openmm.app import ForceField
-#pdb = PDBFile(args.input_pdb_path)
-forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')
 
 # System Configuration
 
-from openmm.app import *
-from openmm.unit import * 
+from openmm.app import PME, HBonds
 
 nonbondedMethod = PME
 nonbondedCutoff = 1.0*nanometers
@@ -105,10 +98,10 @@ hydrogenMass = 4.0*amu
 
 # Integration Options
 
-dt = 0.004*picoseconds
-temperature = 300*kelvin
-friction = 1.0/picosecond
-pressure = 1.0*atmospheres
+dt = 4.0 * unit.femtoseconds
+temperature = 300 * unit.kelvin
+friction = 1.0 / unit.femtosecond
+pressure = 1.0 * atmospheres
 barostatInterval = 25
 
 from openmm.app import PDBReporter
@@ -118,13 +111,13 @@ from openmm.app import CheckpointReporter
 from openmm import Platform
 # Simulation Options
 
-steps = 1000000
-equilibrationSteps = 1000
-platform = Platform.getPlatformByName('Reference')
-dcdReporter = DCDReporter(os.path.join(args.output_dir,'trajectory.dcd'), 10000)
-dataReporter = StateDataReporter(os.path.join(args.output_dir,'log.txt'), 1000, totalSteps=steps,
+steps = 10000
+equilibrationSteps = 100
+platform = Platform.getPlatformByName('CUDA')
+dcdReporter = DCDReporter(os.path.join(args.output_dir,'trajectory.dcd'), 50)
+dataReporter = StateDataReporter(os.path.join(args.output_dir,'log.txt'), 50, totalSteps=steps,
     step=True, speed=True, progress=True, potentialEnergy=True, temperature=True, separator='\t')
-checkpointReporter = CheckpointReporter(os.path.join(args.output_dir,'checkpoint.chk'), 10000)
+checkpointReporter = CheckpointReporter(os.path.join(args.output_dir,'checkpoint.chk'), 50)
 
 # Prepare the Simulation
 from openmm import MonteCarloBarostat
@@ -134,7 +127,7 @@ print('Building system...')
 #topology = pdb.topology
 #positions = pdb.positions
 #modeller = Modeller(pdb.topology, pdb.positions)
-modeller.addSolvent(forcefield, padding=0.9*nanometers, model='tip3p')
+modeller.addSolvent(system_generator.forcefield, padding=0.9*unit.nanometers, model='tip3p')
 system = forcefield.createSystem(modeller.topology, nonbondedMethod=nonbondedMethod, nonbondedCutoff=nonbondedCutoff,
     constraints=constraints, rigidWater=rigidWater, ewaldErrorTolerance=ewaldErrorTolerance, hydrogenMass=hydrogenMass)
 system.addForce(MonteCarloBarostat(pressure, temperature, barostatInterval))
@@ -157,14 +150,14 @@ simulation.step(equilibrationSteps)
 # Simulate
 
 print('Simulating...')
-simulation.reporters.append(PDBReporter(os.path.join(args.output_dir,'output(P0009).pdb'), 10))
-simulation.reporters.append(DCDReporter(os.path.join(args.output_dir,'output(P0009).dcd'), 10))
+simulation.reporters.append(PDBReporter(os.path.join(args.output_dir,'output_P0009.pdb'), 10))
+simulation.reporters.append(DCDReporter(os.path.join(args.output_dir,'output_P0009.dcd'), 10))
 simulation.currentStep = 0
 simulation.step(steps)
 
 
 print('Saving...')
 positions = simulation.context.getState(getPositions=True).getPositions()
-PDBFile.writeFile(simulation.topology, positions, open(os.path.join(args.output_dir,'output(P0009*).pdb'), 'w'))
+PDBFile.writeFile(simulation.topology, positions, open(os.path.join(args.output_dir,'output_P0009*.pdb'), 'w'))
 simulation.saveState(os.path.join(args.output_dir,'output.xml'))
 print('Done')
