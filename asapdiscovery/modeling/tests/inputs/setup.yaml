@@ -1,0 +1,19 @@
+---
+# Parameters for manual COVID Moonshot setup scripts
+
+name: ASAP-DESIGN-MERS
+
+# Path to fragalysis source structures
+structures_path: /lila/data/chodera/asap-datasets/current/sars_00_fragalysis/ 
+
+# Path for Spruce-prepared receptors to create
+receptors_path: ./receptors
+
+# Spruce loop database
+# Created with loopdb_builder: https://docs.eyesopen.com/applications/spruce/loopdb_builder/loopdb_builder_example.html
+# Must download OpenEye applications package 
+#spruce_loop_database: /data/chodera/chodera/asap-perses-local/covid-moonshot-sulfonamides/fragalysis_spruce.loop_db
+
+# Source structures to model, with corresponding PostEra compound IDs of bound ligands
+source_structures:
+  - fragalysis_id: P2660_fauxalysis
