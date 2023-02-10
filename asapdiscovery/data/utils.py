@@ -817,9 +817,6 @@ def filter_molecules_dataframe(
 
     ## Calculate Ki using Cheng-Prussof
     if cp_values:
-        import warnings
-
-        warnings.filterwarnings("error")
         logging.debug("Using Cheng-Prussof equation for delta G calculations")
         deltaG = (
             lambda IC50: R
@@ -829,12 +826,6 @@ def filter_molecules_dataframe(
         mol_df["exp_binding_affinity_kcal_mol"] = [
             deltaG(IC50 * 1e-6) if not np.isnan(IC50) else np.nan
             for IC50 in mol_df["IC50"]
-        ]
-        mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
-            abs(deltaG(IC50_stderr * 1e-6))
-            if not np.isnan(IC50_stderr)
-            else np.nan
-            for IC50_stderr in mol_df["IC50_stderr"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
             deltaG(IC50_lower * 1e-6) if not np.isnan(IC50_lower) else np.nan
@@ -851,18 +842,27 @@ def filter_molecules_dataframe(
             deltaG(pIC50) if not np.isnan(pIC50) else np.nan
             for pIC50 in mol_df["pIC50"]
         ]
-        mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
-            abs(deltaG(pIC50_stderr)) if not np.isnan(pIC50_stderr) else np.nan
-            for pIC50_stderr in mol_df["pIC50_stderr"]
-        ]
+        ## Need to flip upper/lower bounds again
         mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
-            deltaG(pIC50_lower) if not np.isnan(pIC50_lower) else np.nan
-            for pIC50_lower in mol_df["pIC50_95ci_lower"]
-        ]
-        mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
             deltaG(pIC50_upper) if not np.isnan(pIC50_upper) else np.nan
             for pIC50_upper in mol_df["pIC50_95ci_upper"]
         ]
+        mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
+            deltaG(pIC50_lower) if not np.isnan(pIC50_lower) else np.nan
+            for pIC50_lower in mol_df["pIC50_95ci_lower"]
+        ]
+    ## Based on already calculated dG values so can be the same for both
+    mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
+        abs(affinity_upper - affinity_lower) / 4.0
+        if ((not np.isnan(affinity_lower)) and (not np.isnan(affinity_upper)))
+        else np.nan
+        for _, (affinity_lower, affinity_upper) in mol_df[
+            [
+                "exp_binding_affinity_kcal_mol_95ci_lower",
+                "exp_binding_affinity_kcal_mol_95ci_upper",
+            ]
+        ].iterrows()
+    ]
 
     ## Keep only the best measurement for each molecule
     if keep_best_per_mol:
