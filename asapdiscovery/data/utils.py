@@ -184,8 +184,8 @@ def seqres_to_res_list(seqres_str):
 
 def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     """
-    Convert a CDD-downloaded and filtered CSV file into a JSON file containing an
-    ExperimentalCompoundDataUpdate. CSV file should be the result of the
+    Convert a CDD-downloaded and filtered CSV file into a JSON file containing
+    an ExperimentalCompoundDataUpdate. CSV file should be the result of the
     filter_molecules_dataframe function and must contain the following headers:
         * name
         * smiles
@@ -205,8 +205,6 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
         JSON file to save to.
     out_csv : str, optional
         CSV file to save to.
-    achiral : bool, default=False
-        Only keep achiral molecules
 
     Returns
     -------
@@ -312,7 +310,11 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                 )
             )
         except pydantic.error_wrappers.ValidationError as e:
-            print(c, flush=True)
+            print(
+                "Error converting this row to ExperimentalCompoundData object:",
+                c,
+                flush=True,
+            )
             raise e
 
     compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
@@ -339,11 +341,18 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
 
 def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     """
-    Convert a CDD-downloaded CSV file into a JSON file containing an
-    EnantiomerPairList. CSV file must contain the following headers:
-        * "smiles" or "suspected_SMILES"
-        * "Canonical PostEra ID"
-        * "pIC50" or "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    Convert a CDD-downloaded and filtered CSV file into a JSON file containing
+    an EnantiomerPairList. CSV file should be the result of the
+    filter_molecules_dataframe function and must contain the following headers:
+        * name
+        * smiles
+        * achiral
+        * racemic
+        * pIC50
+        * pIC50_stderr
+        * pIC50_95ci_lower
+        * pIC50_95ci_upper
+        * pIC50_range
 
     Parameters
     ----------
@@ -363,78 +372,47 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
 
     ## Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
-    smiles_key = "smiles" if "smiles" in df.columns else "suspected_SMILES"
 
-    idx = df[smiles_key].isna()
-    print(f"Removing {idx.sum()} entries with no SMILES", flush=True)
+    ## Check that all required columns are present
+    reqd_cols = [
+        "name",
+        "smiles",
+        "achiral",
+        "racemic",
+        "semiquant",
+        "pIC50",
+        "pIC50_stderr",
+        "pIC50_95ci_lower",
+        "pIC50_95ci_upper",
+        "pIC50_range",
+    ]
+    missing_cols = [c for c in reqd_cols if c not in df.columns]
+    if len(missing_cols) > 0:
+        raise ValueError(
+            (
+                f"Required columns not present in CSV file: {missing_cols}. "
+                "Please use `filter_molecules_dataframe` to properly populate "
+                "the dataframe."
+            )
+        )
+
+    ## Make extra sure nothing snuck by
+    idx = df["smiles"].isna()
+    logging.debug(f"Removing {idx.sum()} entries with no SMILES", flush=True)
     df = df.loc[~idx, :]
+
+    ## Fill standard error for semi-qunatitative data with the mean of others
+    df.loc[df["semiquant"], "pIC50_stderr"] = df.loc[
+        ~df["semiquant"], "pIC50_stderr"
+    ].mean()
 
     ## Remove stereochemistry tags and get canonical SMILES values (to help
     ##  group stereoisomers)
-    smi_nostereo = [CanonSmiles(s, useChiral=False) for s in df[smiles_key]]
+    smi_nostereo = [CanonSmiles(s, useChiral=False) for s in df["smiles"]]
     df["smiles_nostereo"] = smi_nostereo
 
     ## Sort by non-stereo SMILES to put the enantiomer pairs together
     df = df.sort_values("smiles_nostereo")
-
-    ## Get rid of the </> signs, since we really only need the values to sort
-    ##  enantiomer pairs
-    pic50_key = (
-        "pIC50"
-        if "pIC50" in df.columns
-        else "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
-    )
-    df = df.loc[~df[pic50_key].isna(), :]
-    pic50_range = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
-    ]
-    pic50_vals = [float(c[pic50_key].strip("<> ")) for _, c in df.iterrows()]
-    df["pIC50"] = pic50_vals
-    df["pIC50_range"] = pic50_range
-    semiquant = df["pIC50_range"].astype(bool)
-
-    ## Don't need to recompute stderr if it's already there
-    if "pIC50_stderr" not in df.columns:
-        ### TODO: handle multiple measurements for the same compound
-        ###  (average of stderr for each compound)
-        ci_lower_key = (
-            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-            "CI (Lower) (µM)"
-        )
-        ci_upper_key = (
-            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-            "CI (Upper) (µM)"
-        )
-
-        ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
-        pic50_stderr = []
-        for _, (ci_lower, ci_upper) in df[
-            [ci_lower_key, ci_upper_key]
-        ].iterrows():
-            ## Cast to float
-            try:
-                ci_lower = float(ci_lower)
-                ci_upper = float(ci_upper)
-            except ValueError:
-                pic50_stderr.append(np.nan)
-                continue
-            if pandas.isna(ci_lower) or pandas.isna(ci_upper):
-                pic50_stderr.append(np.nan)
-            else:
-                ## First convert bounds from IC50 (uM) to pIC50
-                pic50_ci_upper = -np.log10(ci_upper * 10e-6)
-                pic50_ci_lower = -np.log10(ci_lower * 10e-6)
-                ## Assume size of 95% CI == 4*sigma
-                pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
-        df["pIC50_stderr"] = pic50_stderr
-    else:
-        ci_lower_key = "pIC50_95ci_lower"
-        ci_upper_key = "pIC50_95ci_upper"
-
-    ## Fill standard error for semi-qunatitative data with the mean of others
-    df.loc[semiquant, "pIC50_stderr"] = df.loc[
-        ~semiquant, "pIC50_stderr"
-    ].mean()
 
     enant_pairs = []
     ## Loop through the enantiomer pairs and rank them
@@ -448,7 +426,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
         ## Sort by pIC50 value, higher to lower
         ep = ep[1].sort_values("pIC50", ascending=False)
         for _, c in ep.iterrows():
-            compound_id = c["Canonical PostEra ID"]
+            compound_id = c["name"]
             ## Replace long dash unicode character with regular - sign (only
             ##  one compound like this I think)
             if "\u2212" in compound_id:
@@ -458,7 +436,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
                     flush=True,
                 )
                 compound_id = re.sub("\u2212", "-", compound_id)
-            smiles = c[smiles_key]
+            smiles = c["smiles"]
             experimental_data = {
                 "pIC50": c["pIC50"],
                 "pIC50_range": c["pIC50_range"],
@@ -495,13 +473,13 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
         print(f"Wrote {out_json}", flush=True)
     if out_csv:
         out_cols = [
-            "Canonical PostEra ID",
-            smiles_key,
+            "name",
+            "smiles",
             "smiles_nostereo",
             "pIC50",
             "pIC50_range",
-            ci_lower_key,
-            ci_upper_key,
+            "pIC50_95ci_lower",
+            "pIC50_95ci_upper",
             "pIC50_stderr",
         ]
         df[out_cols].to_csv(out_csv)
