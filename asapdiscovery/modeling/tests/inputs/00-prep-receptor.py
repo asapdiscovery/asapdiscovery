@@ -252,10 +252,12 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
     pred = oechem.OEAtomMatchResidue(["GLN:189:.*:.*:.*"])
     protonate_opts = opts.GetPrepOptions().GetProtonateOptions()
     place_hydrogens_opts = protonate_opts.GetPlaceHydrogensOptions()
-    # place_hydrogens_opts.SetBypassPredicate(pred)
+    place_hydrogens_opts.SetBypassPredicate(pred)
     place_hydrogens_opts.SetNoFlipPredicate(pred)
-    # protonate_opts = oespruce.OEProtonateDesignUnitOptions(place_hydrogens_opts) # ?
-    # opts.GetPrepOptions().SetProtonateOptions(protonate_opts) # ?
+    protonate_opts = oespruce.OEProtonateDesignUnitOptions(
+        place_hydrogens_opts
+    )  # ?
+    opts.GetPrepOptions().SetProtonateOptions(protonate_opts)  # ?
 
     # Make design units
     print(f"Making design units...")
