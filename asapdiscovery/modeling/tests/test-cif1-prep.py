@@ -14,10 +14,11 @@ from asapdiscovery.data.openeye import (
 from pathlib import Path
 import yaml
 
-out_path = Path("pdb_prep")
-pdb_path = out_path / "rcsb_8DGY-assembly1.cif"
-ref_path = out_path / "reference.pdb"
-seqres_path = Path("../../../metadata/mpro_mers_seqres.yaml")
+out_path = Path("")
+in_path = Path("inputs")
+pdb_path = in_path / "rcsb_8DGY-assembly1.cif"
+ref_path = in_path / "reference.pdb"
+seqres_path = Path("../../../metadata/mpro_sars2_seqres.yaml")
 with open(seqres_path) as f:
     seqres_dict = yaml.safe_load(f)
 seqres = seqres_dict["SEQRES"]

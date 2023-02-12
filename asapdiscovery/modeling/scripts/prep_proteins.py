@@ -19,8 +19,6 @@ import sys
 import yaml
 import logging
 
-from asapdiscovery.docking import prep_mp
-
 sys.path.append(
     os.path.dirname(
         os.path.dirname(
@@ -28,6 +26,7 @@ sys.path.append(
         )
     )
 )
+from asapdiscovery.docking import prep_mp
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data import pdb
 from asapdiscovery.data.fragalysis import parse_fragalysis
