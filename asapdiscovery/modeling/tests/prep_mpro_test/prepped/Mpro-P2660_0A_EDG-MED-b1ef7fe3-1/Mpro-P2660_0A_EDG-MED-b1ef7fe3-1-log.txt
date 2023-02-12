@@ -1,6 +1,6 @@
-2023-02-12T17:04:01.268121
+2023-02-12T17:19:19.255337
 Prepping Mpro-P2660_0A_EDG-MED-b1ef7fe3-1
 Mutating to provided seqres
 Attempting to prepare design units
 Mpro-P2660_0A_EDG-MED-b1ef7fe3-1 DU successfully written out: True
-Finished protein prep at 2023-02-12T17:05:14.959690
+Finished protein prep at 2023-02-12T17:20:33.310715
