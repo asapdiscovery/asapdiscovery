@@ -88,6 +88,12 @@ def load_dus(file_base, by_compound=False):
         ]
     else:
         all_fns = glob(file_base)
+    
+    # check that we actually have loaded in prepped receptors.
+    if len(all_fns) == 0:
+        raise ValueError(
+            f"No prepared receptors found in {file_base}, check that the path is correct."
+        )
 
     du_dict = {}
     dataset_dict = {}
@@ -148,7 +154,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_probs = []
         posit_methods = []
         chemgauss_scores = []
-        smiles = []
+
         for conf in posed_mol.GetConfs():
             rmsds.append(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD"))
@@ -164,7 +170,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
                     oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4")
                 )
             )
-            smiles.append(oechem.OEGetSDData(posed_mol, f"SMILES"))
+        smiles = oechem.OEGetSDData(conf, f"SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
     else:
         out_fn = ""
@@ -173,7 +179,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         posit_methods = [""]
         chemgauss_scores = [-1.0]
         clash = -1
-        smiles = ["None"]
+        smiles = "None"
 
     results = [
         (
@@ -186,10 +192,10 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
             method,
             chemgauss,
             clash,
-            smi,
+            smiles,
         )
-        for i, (rmsd, prob, method, chemgauss, smi) in enumerate(
-            zip(rmsds, posit_probs, posit_methods, chemgauss_scores, smiles)
+        for i, (rmsd, prob, method, chemgauss) in enumerate(
+            zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
         )
     ]
 
