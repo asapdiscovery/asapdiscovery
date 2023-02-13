@@ -8,7 +8,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asapdiscovery.data.utils import edit_pdb_file
+from asapdiscovery.data.utils import edit_pdb_file, check_filelist_has_elements
 
 
 def get_args():
@@ -24,6 +24,7 @@ def main():
 
     ## Find all files to fix
     in_fns = glob.glob(f"{args.i}/*/*_bound.pdb")
+    check_filelist_has_elements(in_fns, tag="bound PDB files")
     ## Replace _bound with _seqres in output filenames
     out_fns = [f"{fn[:-10]}_seqres.pdb" for fn in in_fns]
 

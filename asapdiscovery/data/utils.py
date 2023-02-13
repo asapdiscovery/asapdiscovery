@@ -4,6 +4,8 @@ import numpy as np
 import pandas
 import re
 import rdkit.Chem as Chem
+import glob
+from typing import Union, List, Optional
 
 from asapdiscovery.data.schema import (
     ExperimentalCompoundData,
@@ -996,6 +998,26 @@ def load_exp_from_sdf(fn):
     ]
 
     return exp_data_compounds
+
+
+def check_filelist_has_elements(filelist: Union[glob.glob, List], tag: Optional[str]="untagged") -> None:
+    """
+    Check that a glob or list of files actually contains some elements - if not, raise an error.
+
+    Parameters
+    ----------
+    filelist : Union[glob.glob, List]
+        List of files or glob
+    tag : Optional[str]
+        Tag to add to error message if list is empty
+    
+    Returns
+    -------
+    None
+    """
+    if len(filelist) == 0:
+        raise ValueError(f"list of files or glob with tag: {tag} does not contain any elements")
+    
 
 
 if __name__ == "__main__":

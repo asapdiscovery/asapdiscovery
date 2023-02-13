@@ -11,6 +11,7 @@ from asapdiscovery.data.schema import (
     ExperimentalCompoundDataUpdate,
     EnantiomerPairList,
 )
+from asapdiscovery.data.utils import check_filelist_has_elements
 from asapdiscovery.ml.utils import find_most_recent
 from train import (
     add_one_hot_encodings,
@@ -150,6 +151,7 @@ def main():
 
     ## Get all docked structures
     all_fns = glob(f"{args.i}/*complex.pdb")
+    check_filelist_has_elements(all_fns, tag="docked structures")
     ## Extract crystal structure and compound id from file name
     re_pat = r"(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex.pdb"
     compounds = [re.search(re_pat, fn).groups() for fn in all_fns]
