@@ -82,6 +82,25 @@ modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
 modeller.add(ligand_mol.to_topology().to_openmm(), ligand_mol.conformers[0].to_openmm())
 
 
+# We need to temporarily create a Context in order to identify molecules for adding virtual bonds
+integrator = openmm.VerletIntegrator(1 * unit.femtoseconds)
+system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
+context = openmm.Context(system, integrator, openmm.Platform.getPlatformByName('CUDA'))
+molecules_atom_indices = context.getMolecules()
+del context, integrator, system
+
+system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
+
+custom_bond_force = openmm.CustomBondForce('0')
+for molecule_index in range(len(molecules_atom_indices)-1):
+    custom_bond_force.addBond(molecules_atom_indices[molecule_index][0], molecules_atom_indices[molecule_index+1][0], [])
+system.addForce(custom_bond_force)
+
+# Input Files
+
+from openmm.app import ForceField
+#pdb = PDBFile(args.input_pdb_path)
+
 # System Configuration
 
 from openmm.app import PME, HBonds
