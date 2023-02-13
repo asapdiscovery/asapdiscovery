@@ -41,6 +41,7 @@ from asapdiscovery.ml import (
     GaussianNLLLoss,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
+from asapdiscovery.data.utils import check_filelist_has_elements
 from asapdiscovery.ml.utils import (
     calc_e3nn_model_info,
     find_most_recent,
@@ -501,6 +502,9 @@ def init(args, rank=False):
         all_fns = glob(f"{args.i}/*complex.pdb")
     else:
         all_fns = glob(args.i)
+    
+    check_filelist_has_elements(all_fns, tag="docked PDB files")
+    
     ## Extract crystal structure and compound id from file name
     xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
     compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
