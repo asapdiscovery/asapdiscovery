@@ -43,6 +43,7 @@ def download_pdb_structure(
     """
     from .utils import download_file
     import os
+    import requests
 
     url_base_str = (
         f"https://files.rcsb.org/download/"  # base str to use for URLs
