@@ -9,7 +9,7 @@ dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="lol@nowhere.com" },
 ]
-description = ""
+description = "API and scripts related to running docking and preparing the input structures"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -19,6 +19,10 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 dependencies = [
+    "pandas",
+    "rdkit",
+    #"openeye-toolkit",
+    "plotly",
 ]
 
 [project.urls]

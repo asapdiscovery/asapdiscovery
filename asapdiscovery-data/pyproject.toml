@@ -9,7 +9,7 @@ dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="lol@nowhere.com" },
 ]
-description = ""
+description = "API and scripts related to downloading and interacting with data from the Collaborative Drug Discovery Vault, Fragalysis, and the PDB"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -19,6 +19,13 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 dependencies = [
+    "pandas",
+    "rdkit",
+    "mdtraj",
+    #"openeye-toolkit",
+    "sigfig",
+    #"pymol",
+    "requests"
 ]
 
 [project.urls]

@@ -9,7 +9,7 @@ dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="lol@nowhere.com" },
 ]
-description = ""
+description = "API and scripts related to machine learning training and inference using the ASAP data"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
