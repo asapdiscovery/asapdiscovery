@@ -26,6 +26,7 @@ from asapdiscovery.data.openeye import (
     save_openeye_sdf,
     split_openeye_mol,
 )
+from asapdiscovery.data.utils import check_filelist_has_elements
 from asapdiscovery.docking.modeling import du_to_complex, make_du_from_new_lig
 
 
@@ -345,10 +346,14 @@ def main():
 
     ## Get all files and parse out a name
     all_apo_fns = glob(args.apo)
+    check_filelist_has_elements(all_apo_fns, tag="apo PDB files")
+
     all_apo_names = [
         os.path.splitext(os.path.basename(fn))[0] for fn in all_apo_fns
     ]
     all_holo_fns = glob(args.holo)
+    check_filelist_has_elements(all_holo_fns, tag="holo PDB files")
+
     all_holo_names = [
         os.path.splitext(os.path.basename(fn))[0] for fn in all_holo_fns
     ]
