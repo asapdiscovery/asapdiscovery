@@ -31,9 +31,10 @@ def download_pdb_structure(
         The PDB ID of interest.
     directory: str or Path, default=user_cache_dir
         The directory for saving the downloaded structure.
-    file_format: str, optional
-        Indicates whether you would like to download the entry in pdb ("pdb") or cif format ("cif"),
-        or the first biological assembly in cif format ("cif1"). Defaults to "pdb".
+    file_format : str, default="pdb"
+        Indicates whether you would like to download the entry in pdb ("pdb")
+        or cif format ("cif"), or the first biological assembly in
+        cif format ("cif1"). Defaults to "pdb".
 
     Returns
     -------
@@ -90,15 +91,17 @@ def download_PDBs(pdb_list, pdb_dir, file_format="pdb", ignore_errors=True):
 
     Parameters
     ----------
-    pdb_list
-    pdb_dir
+    pdb_list : List[str]
+        List of RCSB IDs to download
+    pdb_dir : str
+        Directory to download structures to
+    file_format : str, default="pdb"
+        Indicates whether you would like to download the entry in pdb ("pdb")
+        or cif format ("cif"), or the first biological assembly in
+        cif format ("cif1"). Defaults to "pdb".
     ignore_errors : bool, default=True
         If a PDB file failed to download, either catch the error and ignore, or
         raise the error
-
-    Returns
-    -------
-
     """
     import os
     import requests
