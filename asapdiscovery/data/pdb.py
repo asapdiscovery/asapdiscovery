@@ -77,7 +77,7 @@ def download_pdb_structure(
     return result
 
 
-def download_PDBs(pdb_list, pdb_dir, file_format="pdb"):
+def download_PDBs(pdb_list, pdb_dir, file_format="pdb", ignore_errors=True):
     """
     Downloads pdbs from pdb_list_yaml using Kinoml.
 
@@ -85,12 +85,16 @@ def download_PDBs(pdb_list, pdb_dir, file_format="pdb"):
     ----------
     pdb_list
     pdb_dir
+    ignore_errors : bool, default=True
+        If a PDB file failed to download, either catch the error and ignore, or
+        raise the error
 
     Returns
     -------
 
     """
     import os
+    import requests
 
     if not os.path.exists(pdb_dir):
         os.mkdir(pdb_dir)
@@ -98,7 +102,14 @@ def download_PDBs(pdb_list, pdb_dir, file_format="pdb"):
     print(f"Downloading PDBs to {pdb_dir}")
     for pdb in pdb_list:
         print(pdb)
-        download_pdb_structure(pdb, pdb_dir, file_format=file_format)
+        try:
+            download_pdb_structure(pdb, pdb_dir, file_format=file_format)
+        except requests.HTTPError as e:
+            if ignore_errors:
+                print("Error downloading", {pdb}, flush=True)
+                continue
+            else:
+                raise e
 
 
 def pymol_alignment(
