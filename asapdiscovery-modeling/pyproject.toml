@@ -7,7 +7,7 @@ name = "asapdiscovery-modeling"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
-  { name="ASAP Discovery", email="lol@nowhere.com" },
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
 ]
 description = "API and scripts for preparing protein and ligand models for downstream applications"
 readme = "README.md"

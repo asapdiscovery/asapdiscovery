@@ -7,7 +7,7 @@ name = "asapdiscovery-docking"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
-  { name="ASAP Discovery", email="lol@nowhere.com" },
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
 ]
 description = "API and scripts related to running docking and preparing the input structures"
 readme = "README.md"

@@ -7,7 +7,7 @@ name = "asapdiscovery-simulation"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
-  { name="ASAP Discovery", email="lol@nowhere.com" },
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
 ]
 description = "API and scripts for running molecular dynamics simulations and free energy calculations"
 readme = "README.md"

@@ -7,7 +7,7 @@ name = "asapdiscovery-data"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
-  { name="ASAP Discovery", email="lol@nowhere.com" },
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
 ]
 description = "API and scripts related to downloading and interacting with data from the Collaborative Drug Discovery Vault, Fragalysis, and the PDB"
 readme = "README.md"
