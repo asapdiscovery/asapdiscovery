@@ -17,7 +17,9 @@ def load_pdbs_from_yaml(pdb_list_yaml):
     return pdb_dict
 
 
-def download_pdb_structure(pdb_id: str, directory: str, file_format: str = "pdb"):
+def download_pdb_structure(
+    pdb_id: str, directory: str, file_format: str = "pdb"
+):
     """
     Download a structure, using the specified format/type.
 
@@ -41,12 +43,14 @@ def download_pdb_structure(pdb_id: str, directory: str, file_format: str = "pdb"
     from .utils import download_file
     import os
 
-    url_base_str = f"https://files.rcsb.org/download/"  # base str to use for URLs
+    url_base_str = (
+        f"https://files.rcsb.org/download/"  # base str to use for URLs
+    )
     # Dictionary with allowed formats and their upstream basenames
     format_to_basename = {
         "pdb": f"{pdb_id}.pdb",
         "cif": f"{pdb_id}.cif",
-        "cif1": f"{pdb_id}-assembly1.cif"
+        "cif1": f"{pdb_id}-assembly1.cif",
     }
 
     allowed_types = format_to_basename.keys()
@@ -61,11 +65,11 @@ def download_pdb_structure(pdb_id: str, directory: str, file_format: str = "pdb"
     # Download only if it doesn't exist locally
     if not os.path.exists(local_path):
         url = f"{url_base_str}{basename}"
-        if download_file(url, local_path):
+        response = download_file(url, local_path)
+        if response.ok:
             result = local_path
         else:
-            result = False  # I'm not fond on things returning bools
-
+            response.raise_for_status()
     else:
         print(f"{local_path} already exists!...")
         result = local_path
