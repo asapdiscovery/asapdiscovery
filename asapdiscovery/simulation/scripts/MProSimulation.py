@@ -160,8 +160,8 @@ simulation.step(equilibrationSteps);
 
 # Reporters
 log.info(':gold mining: Runninng Reporters...')
-dcdReporter = simulation.reporters.append(DCDReporter(os.path.join(args['--output_dir'], args['--protein']('_')[0]+'.pdb'), reportingInterval))
-xtcReporter = simulation.reporters.append(XTCReporter(os.path.join(args['--output_dir'], args['--protein']('_')[0]+'.xtc'), reportingInterval))
+dcdReporter = simulation.reporters.append(DCDReporter(os.path.join(args['--output_dir'], args['--protein'].split('_')[0]+'.pdb'), reportingInterval))
+xtcReporter = simulation.reporters.append(XTCReporter(os.path.join(args['--output_dir'], args['--protein'].split('_')[0]+'.xtc'), reportingInterval))
 
 # Run simulation
 log.info(':coffee:  Starting simulation...')
