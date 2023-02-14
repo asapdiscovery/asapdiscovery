@@ -66,8 +66,15 @@ def download_pdb_structure(
     if not os.path.exists(local_path):
         url = f"{url_base_str}{basename}"
         response = download_file(url, local_path)
-        if response.ok:
+        if response.status_code == 200:
             result = local_path
+        elif response.ok:
+            raise requests.HTTPError(
+                (
+                    f"Received status code {response.status_code}, "
+                    "file not downloaded."
+                )
+            )
         else:
             response.raise_for_status()
     else:
