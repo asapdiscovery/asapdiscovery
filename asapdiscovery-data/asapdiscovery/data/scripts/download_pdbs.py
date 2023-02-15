@@ -23,15 +23,6 @@ def get_args():
         help="MERS structures yaml file",
     )
     parser.add_argument(
-        "-r",
-        "--ref_path",
-        default=None,
-        help="Path to pdb reference file to align to",
-    )
-    parser.add_argument(
-        "-n", "--ref_name", default=None, help="Name of reference"
-    )
-    parser.add_argument(
         "-t",
         "--pdb_type",
         default="pdb",

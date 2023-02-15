@@ -50,13 +50,14 @@ def download_pdb_structure(
     )
     # Dictionary with allowed formats and their upstream basenames
     format_to_basename = {
-        "pdb": f"{pdb_id}.pdb",
-        "cif": f"{pdb_id}.cif",
-        "cif1": f"{pdb_id}-assembly1.cif",
+        "pdb": f"{pdb_id.lower()}.pdb",
+        "cif": f"{pdb_id.lower()}.cif",
+        "cif1": f"{pdb_id.lower()}-assembly1.cif",
     }
 
     allowed_types = format_to_basename.keys()
     # Make sure pdb_type can be handled
+    file_format = file_format.lower()
     if file_format not in allowed_types:
         raise NotImplementedError(
             f"pdb_type expected to be one of {allowed_types}, not '{file_format}'"
