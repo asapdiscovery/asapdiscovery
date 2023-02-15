@@ -1,8 +1,8 @@
-COVIDMoonshotML
-==============================
+asapdiscovery
+=============
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/asapdiscovery/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/asapdiscovery/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/COVIDMoonshotML/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/COVIDMoonshotML/branch/master)
+[![GitHub Actions Build Status](https://github.com/choderalalb/asapdiscovery/workflows/CI/badge.svg)](https://github.com/choderalab/asapdiscovery/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/choderalab/asapdiscovery/branch/main/graph/badge.svg)](https://codecov.io/gh/choderalab/asapdiscovery/branch/main)
 
 
 Scripts and models for ML with COVID Moonshot data.
@@ -11,7 +11,7 @@ Scripts and models for ML with COVID Moonshot data.
 ## How to use
 
 ### Intro
-This is a brief depiction of an example run through the pipeline in the [`covid-moonshot-ml` repo](https://github.com/choderalab/covid-moonshot-ml). All Python scripts mentioned in this tutorial are located in the top-level `scripts/` directory in the repo. I will also use the variable `CML_DIR` as the directory where the repo has been downloaded. The steps in the pipeline are:
+This is a brief depiction of an example run through the pipeline in the [`asapdiscovery` repo](https://github.com/choderalab/asapdiscovery). All Python scripts mentioned in this tutorial are located in the top-level `scripts/` directory in the repo. I will also use the variable `CML_DIR` as the directory where the repo has been downloaded. The steps in the pipeline are:
 1. Download Fragalysis and COVID Moonshot data
 2. Parse data into correct format for ML
 3. Run the docking pipeline
@@ -104,7 +104,7 @@ python ${CML_DIR}/scripts/find_all_mcs.py \
 -n 16
 ```
 
-#### Running the kinoml docking
+#### Running docking
 Run the docking process based on the MCS results.
 
 **Script:** `run_docking.py`
@@ -124,6 +124,8 @@ Run the docking process based on the MCS results.
 **Example usage:** Run docking using results from previous step. Use 16 concurrent processes, filter for achiral molecules, use default cache directory. Assumes loop database is present in the current directory as `rcsb_spruce.loop_db`.
 ```bash
 mkdir docking_res/
+
+##TODO: THIS SCRIPT HAS SINCE BEEN DELETED, need to rewrite this documentation
 python ${CML_DIR}/scripts/run_docking.py \
 -exp ./cdd_moonshot_achiral.json \
 -x ./fragalysis/extra_files/Mpro_compound_tracker_csv.csv \
