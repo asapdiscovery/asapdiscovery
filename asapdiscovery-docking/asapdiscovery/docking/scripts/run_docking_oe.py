@@ -21,6 +21,7 @@ sys.path.append(
 )
 from asapdiscovery.data.openeye import load_openeye_sdf, save_openeye_sdf
 from asapdiscovery.docking.docking import run_docking_oe
+from asapdiscovery.data.utils import check_filelist_has_elements
 
 
 def check_results(d):
@@ -97,12 +98,10 @@ def load_dus(file_base, by_compound=False):
     else:
         print(f"Using {file_base} as glob")
         all_fns = glob(file_base)
-    
+
     # check that we actually have loaded in prepped receptors.
-    if len(all_fns) == 0:
-        raise ValueError(
-            f"No prepared receptors found in {file_base}, check that the path is correct."
-        )
+    check_filelist_has_elements(all_fns, tag="prepped receptors")
+
     du_dict = {}
     dataset_dict = {}
     if by_compound:
