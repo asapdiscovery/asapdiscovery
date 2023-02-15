@@ -248,7 +248,7 @@ def get_ligand_rmsd_from_pdb_and_sdf(
     return return_dict
 
 
-def save_openeye_design_unit(du, lig=None, lig_title=None):
+def split_openeye_design_unit(du, lig=None, lig_title=None):
     """
     Parameters
     ----------

@@ -22,7 +22,7 @@ from asapdiscovery.data.openeye import (
     save_openeye_pdb,
     save_openeye_sdf,
 )
-from asapdiscovery.data.openeye import save_openeye_design_unit
+from asapdiscovery.data.openeye import split_openeye_design_unit
 
 
 def get_args():
@@ -162,7 +162,7 @@ def write_fragalysis_output(
         du.GetProtein(prot)
         lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
-        lig, prot, complex = save_openeye_design_unit(
+        lig, prot, complex = split_openeye_design_unit(
             du, lig=lig, lig_title=complex_id
         )
 
