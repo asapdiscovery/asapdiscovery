@@ -52,12 +52,15 @@ jobs:
         auto-activate-base: false
         show-channel-urls: true
 
-    - name: Install package
+    - name: Install packages
 
       # conda setup requires this special shell
       shell: bash -l {0}
       run: |
-        python -m pip install . --no-deps
+        python -m pip install ./asapdiscovery-data --no-deps
+        python -m pip install ./asapdiscovery-dataviz --no-deps
+        python -m pip install ./asapdiscovery-docking --no-deps
+        python -m pip install ./asapdiscovery-ml --no-deps
         conda list
 
 
@@ -67,7 +70,14 @@ jobs:
       shell: bash -l {0}
 
       run: |
-        pytest -v --cov=asapdiscovery --cov-report=xml --color=yes asapdiscovery/tests/
+        # run each package test suite; append to coverage file
+        coverage run --append --source=./asapdiscovery-data/asapdiscovery/data/ -m pytest -v  --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
+        coverage run --append --source=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -m pytest -v  --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
+        coverage run --append --source=./asapdiscovery-docking/asapdiscovery/docking/ -m pytest -v  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
+        coverage run --append --source=./asapdiscovery-ml/asapdiscovery/ml/ -m pytest -v  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
+
+        # generate xml report from .coverage file
+        coverage xml
 
     - name: CodeCov
       uses: codecov/codecov-action@v1
