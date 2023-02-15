@@ -30,8 +30,8 @@ def download_file(url: str, path: str):
 
     Returns
     -------
-    : bool
-        True if successful, else False.
+    requests.Response
+        HTTP response from the GET attempt
     """
     import requests
 
@@ -39,9 +39,8 @@ def download_file(url: str, path: str):
     if response.status_code == 200:
         with open(path, "wb") as write_file:
             write_file.write(response.content)
-        return True
 
-    return False
+    return response
 
 
 def get_remark_str(chains, oligomeric_state):
@@ -1000,7 +999,9 @@ def load_exp_from_sdf(fn):
     return exp_data_compounds
 
 
-def check_filelist_has_elements(filelist: Union[glob.glob, List], tag: Optional[str]="untagged") -> None:
+def check_filelist_has_elements(
+    filelist: Union[glob.glob, List], tag: Optional[str] = "untagged"
+) -> None:
     """
     Check that a glob or list of files actually contains some elements - if not, raise an error.
 
@@ -1010,14 +1011,15 @@ def check_filelist_has_elements(filelist: Union[glob.glob, List], tag: Optional[
         List of files or glob
     tag : Optional[str]
         Tag to add to error message if list is empty
-    
+
     Returns
     -------
     None
     """
     if len(filelist) == 0:
-        raise ValueError(f"list of files or glob with tag: {tag} does not contain any elements")
-    
+        raise ValueError(
+            f"list of files or glob with tag: {tag} does not contain any elements"
+        )
 
 
 if __name__ == "__main__":

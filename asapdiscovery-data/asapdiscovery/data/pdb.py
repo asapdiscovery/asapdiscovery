@@ -17,10 +17,11 @@ def load_pdbs_from_yaml(pdb_list_yaml):
     return pdb_dict
 
 
-def download_pdb_structure(pdb_id: str, directory: str):
+def download_pdb_structure(
+    pdb_id: str, directory: str, file_format: str = "pdb"
+):
     """
-    Download a PDB structure. If the structure is not available in PDB format, it will be download
-    in CIF format.
+    Download a structure, using the specified format/type.
 
     Copied with some changes from kinoml.databases.pdb.
 
@@ -30,52 +31,82 @@ def download_pdb_structure(pdb_id: str, directory: str):
         The PDB ID of interest.
     directory: str or Path, default=user_cache_dir
         The directory for saving the downloaded structure.
+    file_format : str, default="pdb"
+        Indicates whether you would like to download the entry in pdb ("pdb")
+        or cif format ("cif"), or the first biological assembly in
+        cif format ("cif1"). Defaults to "pdb".
 
     Returns
     -------
-    : Path or False
-        The path to the the downloaded file if successful, else False.
+    file_path : Path or False
+        The path to the downloaded file if successful, else False.
     """
     from .utils import download_file
     import os
+    import requests
 
-    # check for structure in PDB format
-    url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
-    pdb_path = os.path.join(directory, f"rcsb_{pdb_id.upper()}.pdb")
-    if not os.path.exists(pdb_path):
-        print("Downloading PDB entry in PDB format ...")
-        if download_file(url, pdb_path):
-            return pdb_path
+    url_base_str = (
+        f"https://files.rcsb.org/download/"  # base str to use for URLs
+    )
+    # Dictionary with allowed formats and their upstream basenames
+    format_to_basename = {
+        "pdb": f"{pdb_id.lower()}.pdb",
+        "cif": f"{pdb_id.lower()}.cif",
+        "cif1": f"{pdb_id.lower()}-assembly1.cif",
+    }
+
+    allowed_types = format_to_basename.keys()
+    # Make sure pdb_type can be handled
+    file_format = file_format.lower()
+    if file_format not in allowed_types:
+        raise NotImplementedError(
+            f"pdb_type expected to be one of {allowed_types}, not '{file_format}'"
+        )
+
+    basename = format_to_basename[file_format]
+    local_path = os.path.join(directory, f"rcsb_{basename}")
+    # Download only if it doesn't exist locally
+    if not os.path.exists(local_path):
+        url = f"{url_base_str}{basename}"
+        response = download_file(url, local_path)
+        if response.status_code == 200:
+            result = local_path
+        elif response.ok:
+            raise requests.HTTPError(
+                (
+                    f"Received status code {response.status_code}, "
+                    "file not downloaded."
+                )
+            )
+        else:
+            response.raise_for_status()
     else:
-        return pdb_path
+        print(f"{local_path} already exists!...")
+        result = local_path
 
-    # check for structure in CIF format
-    url = f"https://files.rcsb.org/download/{pdb_id}.cif"
-    cif_path = os.path.join(directory, f"rcsb_{pdb_id.upper()}.cif")
-    if not os.path.exists(cif_path):
-        print("Downloading PDB entry in CIF format ...")
-        if download_file(url, cif_path):
-            return cif_path
-    else:
-        return cif_path
-    print(f"Could not download PDB entry {pdb_id}.")
-    return False
+    return result
 
 
-def download_PDBs(pdb_list, pdb_dir):
+def download_PDBs(pdb_list, pdb_dir, file_format="pdb", ignore_errors=True):
     """
     Downloads pdbs from pdb_list_yaml using Kinoml.
 
     Parameters
     ----------
-    pdb_list
-    pdb_dir
-
-    Returns
-    -------
-
+    pdb_list : List[str]
+        List of RCSB IDs to download
+    pdb_dir : str
+        Directory to download structures to
+    file_format : str, default="pdb"
+        Indicates whether you would like to download the entry in pdb ("pdb")
+        or cif format ("cif"), or the first biological assembly in
+        cif format ("cif1"). Defaults to "pdb".
+    ignore_errors : bool, default=True
+        If a PDB file failed to download, either catch the error and ignore, or
+        raise the error
     """
     import os
+    import requests
 
     if not os.path.exists(pdb_dir):
         os.mkdir(pdb_dir)
@@ -83,7 +114,14 @@ def download_PDBs(pdb_list, pdb_dir):
     print(f"Downloading PDBs to {pdb_dir}")
     for pdb in pdb_list:
         print(pdb)
-        download_pdb_structure(pdb, pdb_dir)
+        try:
+            download_pdb_structure(pdb, pdb_dir, file_format=file_format)
+        except requests.HTTPError as e:
+            if ignore_errors:
+                print("Error downloading", {pdb}, flush=True)
+                continue
+            else:
+                raise e
 
 
 def pymol_alignment(
