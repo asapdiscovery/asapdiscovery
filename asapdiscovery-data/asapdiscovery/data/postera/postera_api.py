@@ -3,7 +3,7 @@ from requests.adapters import Retry, HTTPAdapter
 
 
 class PostEraAPI:
-    """Base class for connection to PostEra API"""
+    """Base class for connection to PostEra Manifold API"""
 
     def __init__(self, url, api_version, api_key):
 

@@ -25,7 +25,8 @@ dependencies = [
     #"openeye-toolkit",
     "sigfig",
     #"pymol",
-    "requests"
+    "requests",
+    "typing-extensions"
 ]
 
 [project.urls]
