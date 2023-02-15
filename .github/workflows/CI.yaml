@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: [macOS-latest, ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [ 3.9, 3.10]
 
     steps:
     - uses: actions/checkout@v1
@@ -43,7 +43,7 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        environment-file: devtools/conda-envs/moonshot_ml.yaml
+        environment-file: devtools/conda-envs/test.yaml
 
         channels: conda-forge,defaults
 
