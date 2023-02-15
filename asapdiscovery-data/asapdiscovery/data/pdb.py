@@ -57,6 +57,7 @@ def download_pdb_structure(
 
     allowed_types = format_to_basename.keys()
     # Make sure pdb_type can be handled
+    file_format = file_format.lower()
     if file_format not in allowed_types:
         raise NotImplementedError(
             f"pdb_type expected to be one of {allowed_types}, not '{file_format}'"
