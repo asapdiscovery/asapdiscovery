@@ -1,7 +1,4 @@
-import argparse, os, sys
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
+import argparse
 from asapdiscovery.data.pdb import (
     download_PDBs,
     load_pdbs_from_yaml,
@@ -19,7 +16,7 @@ def get_args():
     parser.add_argument(
         "-p",
         "--pdb_yaml_path",
-        default="../../../metadata/mers-structures.yaml",
+        default="../../../../metadata/mers-structures.yaml",
         help="MERS structures yaml file",
     )
     parser.add_argument(

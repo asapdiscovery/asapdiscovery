@@ -2,11 +2,7 @@
 Function to test implementation of ligand filtering
 """
 
-import sys, os, argparse
-
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
+import argparse
 from asapdiscovery.data import utils
 
 
