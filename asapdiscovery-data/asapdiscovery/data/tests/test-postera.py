@@ -5,10 +5,10 @@ from requests import Session
 
 import pandas as pd
 
-from asapdiscovery.postera_api.src.molecule_set_crud import (
+from asapdiscovery.data.postera import (
     MoleculeList,
     MoleculeUpdateList,
-    MoleculeSetCRUD,
+    MoleculeSet,
 )
 
 
@@ -96,7 +96,8 @@ class TestMoleculeUpdateList(unittest.TestCase):
         )
 
 
-class TestMoleculeSetCRUD(unittest.TestCase):
+class TestMoleculeSet(unittest.TestCase):
+
     @patch.object(Session, "get")
     def test_read(self, mock_get):
 
@@ -134,7 +135,7 @@ class TestMoleculeSetCRUD(unittest.TestCase):
 
         expected_output_df = pd.DataFrame.from_dict(expected_dict)
 
-        molecule_set = MoleculeSetCRUD(
+        molecule_set = MoleculeSet(
             "mock_api_url", "mock_api_version", "mock_api_key"
         )
         output_df = molecule_set.read("mock_molecule_set_id")

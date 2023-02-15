@@ -1,6 +1,6 @@
 from .postera_api import PostEraAPI
 
-import typing as T
+from typing import Dict, Union, List
 from typing_extensions import TypedDict
 import json
 import pandas as pd
@@ -10,17 +10,17 @@ class Molecule(TypedDict):
     """Data type to build MoleculeList"""
 
     smiles: str
-    customData: T.Dict[str, T.Union[str, float, int]]
+    customData: Dict[str, Union[str, float, int]]
 
 
 class MoleculeUpdate(TypedDict):
     """Data type to build MoleculeUpdateList"""
 
     id: str
-    customData: T.Dict[str, T.Union[str, float, int]]
+    customData: Dict[str, Union[str, float, int]]
 
 
-class MoleculeList(T.List[Molecule]):
+class MoleculeList(List[Molecule]):
     """Data type to pass to PostEra API in molecule set create"""
 
     def from_pandas_df(
@@ -31,7 +31,7 @@ class MoleculeList(T.List[Molecule]):
         last_entry: int = 0,
     ):
 
-        data = json.loads(df.to_json(orient="records"))
+        #data = json.loads(df.to_json(orient="records"))
 
         self.extend(
             [
@@ -45,12 +45,12 @@ class MoleculeList(T.List[Molecule]):
                         },
                     },
                 }
-                for datum in data[first_entry:last_entry]
+                for datum in df[first_entry:last_entry]
             ]
         )
 
 
-class MoleculeUpdateList(T.List[MoleculeUpdate]):
+class MoleculeUpdateList(List[MoleculeUpdate]):
     """Data type to pass to PostEra API in molecule set update_custom_data"""
 
     def from_pandas_df(
@@ -61,7 +61,7 @@ class MoleculeUpdateList(T.List[MoleculeUpdate]):
         last_entry: int = 0,
     ):
 
-        data = json.loads(df.to_json(orient="records"))
+        #data = json.loads(df.to_json(orient="records"))
 
         self.extend(
             [
@@ -75,17 +75,17 @@ class MoleculeUpdateList(T.List[MoleculeUpdate]):
                         },
                     },
                 }
-                for datum in data[first_entry:last_entry]
+                for datum in df[first_entry:last_entry]
             ]
         )
 
 
-class MoleculeSetCRUD(PostEraAPI):
+class MoleculeSet(PostEraAPI):
     """Connection and commands for PostEra Molecule Set API"""
 
     def __init__(self, *args, **kwargs):
 
-        super(MoleculeSetCRUD, self).__init__(*args, **kwargs)
+        super(MoleculeSet, self).__init__(*args, **kwargs)
 
         self.molecule_set_url = f"{self.api_url}/moleculesets"
 
@@ -102,7 +102,11 @@ class MoleculeSetCRUD(PostEraAPI):
 
         return response["id"]
 
-    def read_page(self, molecule_set_id: str, page: int) -> (pd.DataFrame, str):
+    def read_page(
+            self, 
+            molecule_set_id: str,
+            page: int
+        ) -> (pd.DataFrame, str):
 
         print(f"Getting page {page}")
         read_url = f"{self.molecule_set_url}/{molecule_set_id}/get_all_molecules/"
@@ -110,7 +114,10 @@ class MoleculeSetCRUD(PostEraAPI):
 
         return response["results"], response["paginationInfo"]["hasNext"]
 
-    def read(self, molecule_set_id: str) -> pd.DataFrame:
+    def read(
+            self,
+            molecule_set_id: str
+        ) -> pd.DataFrame:
 
         page = 0
         has_next = True
@@ -135,9 +142,19 @@ class MoleculeSetCRUD(PostEraAPI):
         return result_df
 
     def update_custom_data(
-        self, molecule_set_id: str, data: MoleculeUpdateList, overwrite=False
-    ):
-        """Updates the custom data associated with the molecules in a molecule set"""
+        self, 
+        molecule_set_id: str, 
+        data: MoleculeUpdateList, 
+        overwrite=False
+    ) -> List[float]:
+        """Updates the custom data associated with the Molecules in a MoleculeSet.
+
+        Parameters
+        ----------
+        molecule_set_id
+            The unique id of the MoleculeSet
+
+        """
 
         update_url = f"{self.molecule_set_url}/{molecule_set_id}/update_molecules/"
         response = self._session.patch(
