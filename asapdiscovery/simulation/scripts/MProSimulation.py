@@ -14,8 +14,8 @@ log = logging.getLogger("rich")
 
 ## Preliminary Imports
 import os
-import openmm
 import argparse
+import openmm
 import rdkit
 from rdkit import Chem
 
@@ -54,29 +54,50 @@ constraintTolerance = 0.000001
 hydrogenMass = 4.0*unit.amu
 platform = Platform.getPlatformByName('CUDA')
 
-__doc__ = """Generate explicit-solvent molecular dynamics simulation for MPro Files.
-Usage:
-  MProSimulation.py --protein=STR --ligand=STR --nsteps=INT [--selection=SELECT] [--output_dir=STR]
-  MProSimulation.py (-h | --help)
-Options:
-  -h --help           Show this screen.
-  --protein=STR       Receptor PDB file path
-  --ligand=STR        Ligand SDF file path.
-  --nsteps=INT        Number of steps to run.
-  --selection=SELECT  MDTraj selection to use (e.g. 'not water') [default: all].
-  --ouput_dir=STR     Output directory for reporters
-"""
+def get_args():
+    parser = argparse.ArgumentParser()
 
-from docopt import docopt
-args = docopt(__doc__, version='MPro Simulation 0.1')
+    ## Input arguments
+    parser.add_argument(
+        "-p", 
+        "--protein", 
+        type = str,
+        default = "/data/chodera/lemonsk/asap-datasets/openmm_setup_processed/prepped_receptor_0-processed.pdb",
+        help = "Path to PDB file to simulate"
+    )
+    parser.add_argument(
+        "-l", 
+        "--ligand",
+        type = str,
+        default = "/data/chodera/lemonsk/covid-moonshot-ml/asapdiscovery/simulation/tests/inputs/MAT-POS-f2460aef-1.sdf",
+        help="Ligand"
+    )
+    parser.add_argument(
+        "-n",
+        "--nsteps",
+        type = int,
+        default = 12,
+        help = "Number of Steps"
+    )
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        type = str,
+        default = "/data/chodera/lemonsk/asap-datasets/MPro_Simulations",
+        help = "Output simulation directory."
+    )
+    args = parser.parse_args()
+    return args
 
-num_steps = int(args['--nsteps']) # number of integrator steps
+args = get_args()
+
+num_steps = int(args.nsteps) # number of integrator steps
 n_snapshots = int(num_steps / reportingInterval) # calculate number of snapshots that will be generated
 num_steps = n_snapshots * reportingInterval # recalculate number of steps to run
 
 # Read the molfile into RDKit, add Hs and create an openforcefield Molecule object
 log.info(':pill:  Reading ligand')
-rdkitmol = Chem.SDMolSupplier(args['--ligand'])[0]
+rdkitmol = Chem.SDMolSupplier(args.ligand)[0]
 log.info(f':mage:  Adding hydrogens')
 rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True);
 # ensure the chiral centers are all defined
@@ -94,7 +115,7 @@ system_generator = SystemGenerator(
 
 # Use Modeller to combine the protein and ligand into a complex
 log.info(':cut_of_meat:  Reading protein')
-protein_pdb = PDBFile(args['--protein'])
+protein_pdb = PDBFile(args.protein)
 log.info(':sandwich:  Preparing complex')
 modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
 # This next bit is black magic.
@@ -120,11 +141,15 @@ modeller.addSolvent(system_generator.forcefield, model='tip3p', padding=0.9*unit
 log.info(':package:  System has %d atoms' % modeller.topology.getNumAtoms())
 
 # Determine which atom indices we want to use
-mdtop = mdtraj.Topology.from_openmm(modeller.topology)
-atom_selection = args['--selection']
-log.info(f':clipboard:  Using selection: {atom_selection}')
-output_indices = mdtop.select(atom_selection)
-output_topology = mdtop.subset(output_indices).to_openmm()
+#mdtop = mdtraj.Topology.from_openmm(modeller.topology)
+#atom_selection = args['--selection']
+#log.info(f':clipboard:  Using selection: {atom_selection}')
+#output_indices = mdtop.select(atom_selection)
+#output_topology = mdtop.subset(output_indices).to_openmm()
+
+# Create the system using the SystemGenerator
+log.info(':globe_showing_americas:  Creating system...')
+system = system_generator.create_system(modeller.topology, molecules=ligand_mol);
 
 # Add virtual bonds so solute is imaged together
 log.info(f':chains:  Adding virtual bonds between molecules')
@@ -160,8 +185,8 @@ simulation.step(equilibrationSteps);
 
 # Reporters
 log.info(':gold mining: Runninng Reporters...')
-dcdReporter = simulation.reporters.append(DCDReporter(os.path.join(args['--output_dir'], args['--protein'].split('_')[0]+'.pdb'), reportingInterval))
-xtcReporter = simulation.reporters.append(XTCReporter(os.path.join(args['--output_dir'], args['--protein'].split('_')[0]+'.xtc'), reportingInterval))
+dcdReporter = simulation.reporters.append(DCDReporter(os.path.join(args.output_dir, args.protein.split('_')[0]+'.pdb'), reportingInterval))
+xtcReporter = simulation.reporters.append(XTCReporter(os.path.join(args.output_dir, args.protein.split('_')[0]+'.xtc'), reportingInterval))
 
 # Run simulation
 log.info(':coffee:  Starting simulation...')
