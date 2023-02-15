@@ -1,8 +1,3 @@
-import sys
-
-sys.path.append(
-    "/Users/alexpayne/Scientific_Projects/covid-moonshot-ml/asapdiscovery-data"
-)
 from asapdiscovery.data.pdb import download_pdb_structure, load_pdbs_from_yaml
 from pathlib import Path
 
