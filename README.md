@@ -142,12 +142,31 @@ Train the model with the docked structures.
 
 **Script:** `train_dd.py`
 
+### Contributing
+
+### [pre-commit](https://pre-commit.com/#intro)
+
+We use pre-commit to automate code formatting and other fixes.
+You do not need to install pre-commit as we run it on our CI.
+If you want to run it locally:
+```bash
+# install
+$ mamba install -c conda-forge pre-commit
+# check
+$ pre-commit --version
+pre-commit 3.0.4 # your version may be different
+$ pre-commit install
+```
+
+Now every time you make a commit, the hooks will run on just the files you changed.
+See [here](https://pre-commit.com/#usage) for more details.
+
 ### Copyright
 
 Copyright (c) 2022, kaminow
 
 
 #### Acknowledgements
- 
-Project based on the 
+
+Project based on the
 [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.6.
