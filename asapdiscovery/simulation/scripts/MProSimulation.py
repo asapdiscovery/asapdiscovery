@@ -14,6 +14,7 @@ log = logging.getLogger("rich")
 
 ## Preliminary Imports
 import os
+import re
 import argparse
 import openmm
 import rdkit
@@ -83,13 +84,17 @@ def get_args():
         "-o",
         "--output_dir",
         type = str,
-        default = "/data/chodera/lemonsk/asap-datasets/MPro_Simulations",
+        default = "/data/chodera/lemonsk/asap-datasets/MPro_Simulations/",
         help = "Output simulation directory."
     )
     args = parser.parse_args()
     return args
 
 args = get_args()
+
+## Necessary for Reporters
+save = re.search(r"Mpro-P+\d{4}", args.protein).group(0)
+
 
 num_steps = int(args.nsteps) # number of integrator steps
 n_snapshots = int(num_steps / reportingInterval) # calculate number of snapshots that will be generated
@@ -184,12 +189,6 @@ simulation.context.setVelocitiesToTemperature(temperature);
 simulation.step(equilibrationSteps);
 
 # Reporters
-log.info(':gold mining: Runninng Reporters...')
-dcdReporter = simulation.reporters.append(DCDReporter(os.path.join(args.output_dir, args.protein.split('_')[0]+'.pdb'), reportingInterval))
-xtcReporter = simulation.reporters.append(XTCReporter(os.path.join(args.output_dir, args.protein.split('_')[0]+'.xtc'), reportingInterval))
-
-# Run simulation
-log.info(':coffee:  Starting simulation...')
-from rich.progress import track
-for snapshot_index in track(range(n_snapshots), ':rocket: Running production simulation...'):
-    simulation.step(reportingInterval)
+log.info(':steam_locomotive: Running Simulation...')
+dcdReporter = simulation.reporters.append(DCDReporter(os.path.join(args.output_dir, save +'.pdb'), reportingInterval))
+xtcReporter = simulation.reporters.append(XTCReporter(os.path.join(args.output_dir, save +'.xtc'), reportingInterval))
