@@ -87,3 +87,18 @@ if __name__ == "__main__":
             print("Expected Error")
         else:
             print("Unexpected Error")
+
+        ## After running perses prep script
+        try:
+            main(
+                "../../../asapdiscovery-modeling/asapdiscovery/modeling/tests/prep_mers_files/outputs/rcsb_8DGY-assembly1-openmm-oespruced-loops-and-seqres.pdb"
+            )
+        except ValueError as error:
+            print(f"Error was: {error}")
+            if (
+                error.__str__()
+                == "No template found for residue 8 (HIS).  The set of atoms matches HIP, but the bonds are different."
+            ):
+                print("Expected Error")
+            else:
+                print("Unexpected Error")
