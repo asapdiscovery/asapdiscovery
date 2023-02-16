@@ -13,14 +13,17 @@ Adding new functions would require 3 steps (as far as I understand it):
 2. making the appropriate html logic function
 3. using the decorator syntax to appropriately pass inputs from the html logic to the plotly creator
 """
-from dash import html, Input, Output
-import argparse, os, sys
+import argparse
+import os
+import sys
+
+from dash import Input, Output, html
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
+from asapdiscovery.dataviz import plotly_dash_functions, plotting
 from asapdiscovery.docking.analysis import load_dataframes
-from asapdiscovery.dataviz import plotting, plotly_dash_functions
 
 
 def get_args():
@@ -37,9 +40,7 @@ def get_args():
 
 def main():
     args = get_args()
-    tidy, df, by_compound_tidy, by_structure_tidy = load_dataframes(
-        args.input_dir
-    )
+    tidy, df, by_compound_tidy, by_structure_tidy = load_dataframes(args.input_dir)
 
     ## Get Dash App
     app, styles = plotly_dash_functions.get_dash_app()
@@ -47,9 +48,7 @@ def main():
     ## Make contour plot
     app.layout = html.Div(
         [
-            plotly_dash_functions.get_basic_plot(
-                id="crossfilter-indicator-contour"
-            ),
+            plotly_dash_functions.get_basic_plot(id="crossfilter-indicator-contour"),
             plotly_dash_functions.get_filters(tidy.variable.unique()),
         ]
     )

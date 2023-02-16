@@ -3,30 +3,25 @@ Build library of ligands from a dataset of holo crystal structures docked to a
 different dataset of apo structures.
 """
 import argparse
-from glob import glob
 import itertools as it
 import multiprocessing as mp
-from openeye import oechem, oedocking, oespruce
 import os
-import pandas
 import pickle as pkl
 import re
 import sys
+from glob import glob
+
+import pandas
+from openeye import oechem, oedocking, oespruce
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asapdiscovery.data.utils import (
-    get_compound_id_xtal_dicts,
-    parse_fragalysis_data,
-    filter_docking_inputs,
-)
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    load_openeye_sdf,
-    save_openeye_pdb,
-    save_openeye_sdf,
-    split_openeye_mol,
-)
-from asapdiscovery.data.utils import check_filelist_has_elements
+from asapdiscovery.data.openeye import (load_openeye_pdb, load_openeye_sdf,
+                                        save_openeye_pdb, save_openeye_sdf,
+                                        split_openeye_mol)
+from asapdiscovery.data.utils import (check_filelist_has_elements,
+                                      filter_docking_inputs,
+                                      get_compound_id_xtal_dicts,
+                                      parse_fragalysis_data)
 from asapdiscovery.docking.modeling import du_to_complex, make_du_from_new_lig
 
 
@@ -286,9 +281,7 @@ def get_args():
     )
 
     ## Performance arguments
-    parser.add_argument(
-        "-n", default=10, type=int, help="Number of processors to use."
-    )
+    parser.add_argument("-n", default=10, type=int, help="Number of processors to use.")
     parser.add_argument(
         "-sys",
         default="posit",
@@ -320,8 +313,7 @@ def get_args():
     parser.add_argument(
         "-cache",
         help=(
-            "Cache directory (will use .cache in "
-            "output directory if not specified)."
+            "Cache directory (will use .cache in " "output directory if not specified)."
         ),
     )
 
@@ -348,15 +340,11 @@ def main():
     all_apo_fns = glob(args.apo)
     check_filelist_has_elements(all_apo_fns, tag="apo PDB files")
 
-    all_apo_names = [
-        os.path.splitext(os.path.basename(fn))[0] for fn in all_apo_fns
-    ]
+    all_apo_names = [os.path.splitext(os.path.basename(fn))[0] for fn in all_apo_fns]
     all_holo_fns = glob(args.holo)
     check_filelist_has_elements(all_holo_fns, tag="holo PDB files")
 
-    all_holo_names = [
-        os.path.splitext(os.path.basename(fn))[0] for fn in all_holo_fns
-    ]
+    all_holo_names = [os.path.splitext(os.path.basename(fn))[0] for fn in all_holo_fns]
 
     if args.x is not None:
         ## Need to go up one level of directory
@@ -393,17 +381,13 @@ def main():
             )
 
             ## Keep track of which structures to keep
-            keep_idx = [
-                n.split("_")[0] in filtered_inputs for n in all_holo_names
-            ]
+            keep_idx = [n.split("_")[0] in filtered_inputs for n in all_holo_names]
         else:
             keep_idx = [True] * len(all_holo_names)
 
         ## Trim files and names to keep
         all_holo_fns = [fn for keep, fn in zip(keep_idx, all_holo_fns) if keep]
-        all_holo_names = [
-            n for keep, n in zip(keep_idx, all_holo_names) if keep
-        ]
+        all_holo_names = [n for keep, n in zip(keep_idx, all_holo_names) if keep]
 
         ## Sanity check to make sure the lengths are the same
         assert len(all_holo_fns) == len(all_holo_names)
@@ -423,9 +407,7 @@ def main():
         if c
     ]
     ## Trim names
-    bad_holo_names = [
-        n for i, n in enumerate(all_holo_names) if all_matches[i] is None
-    ]
+    bad_holo_names = [n for i, n in enumerate(all_holo_names) if all_matches[i] is None]
     all_holo_names = [n for i, n in enumerate(all_holo_names) if all_matches[i]]
     for n in bad_holo_names:
         print(f"Removed {n} (not A or B chain)", flush=True)
@@ -467,10 +449,7 @@ def main():
             r.GetExtChainID()
             for r in oechem.OEGetResidues(prot)
             if all(
-                [
-                    not oechem.OEIsWater()(a)
-                    for a in oechem.OEGetResidueAtoms(prot, r)
-                ]
+                [not oechem.OEIsWater()(a) for a in oechem.OEGetResidueAtoms(prot, r)]
             )
         }
         if len(all_chain_ids) != 2:

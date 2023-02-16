@@ -14,26 +14,23 @@ Example Usage:
 """
 import argparse
 import multiprocessing as mp
-from openeye import oechem
 import os
 import re
 import sys
 from tempfile import NamedTemporaryFile
+
 import yaml
+from openeye import oechem
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.docking.modeling import (
-    align_receptor,
-    prep_receptor,
-    du_to_complex,
-    mutate_residues,
-    remove_extra_ligands,
-)
 from asapdiscovery.data import pdb
-from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
-from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
 from asapdiscovery.data.fragalysis import parse_xtal
+from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
+from asapdiscovery.data.schema import CrystalCompoundData
+from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
+from asapdiscovery.docking.modeling import (align_receptor, du_to_complex,
+                                            mutate_residues, prep_receptor,
+                                            remove_extra_ligands)
 
 
 def check_completed(d):
@@ -95,14 +92,10 @@ def prep_mp(
 
         print("Mutating to provided seqres")
         ## Mutate the residues to match the residue list
-        initial_prot = mutate_residues(
-            initial_prot, res_list, xtal.protein_chains
-        )
+        initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
 
     ## Delete extra copies of ligand in the complex
-    initial_prot = remove_extra_ligands(
-        initial_prot, lig_chain=xtal.active_site_chain
-    )
+    initial_prot = remove_extra_ligands(initial_prot, lig_chain=xtal.active_site_chain)
 
     if ref_prot:
         print("Aligning receptor")
@@ -274,9 +267,7 @@ def main():
                 protein_chains=values.get("protein_chains", ["A", "B"]),
             )
             for pdb_id, values in pdb_dict.items()
-            if os.path.exists(
-                os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb")
-            )
+            if os.path.exists(os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"))
         ]
 
     if args.seqres_yaml:

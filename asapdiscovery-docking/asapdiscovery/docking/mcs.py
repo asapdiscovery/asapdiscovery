@@ -162,9 +162,7 @@ def rank_structures_openeye(
             search_cell = grid.GetCell(1, 2)
             oedepict.OERenderMolecule(search_cell, search_disp)
 
-            oedepict.OEWriteImage(
-                f"{out_fn}_{search_ids[mol_idx]}_{i}.png", image
-            )
+            oedepict.OEWriteImage(f"{out_fn}_{search_ids[mol_idx]}_{i}.png", image)
 
     return sort_idx
 
@@ -209,7 +207,7 @@ def rank_structures_rdkit(
         based on MCS search.
     """
     from rdkit import Chem
-    from rdkit.Chem import rdFMCS, Draw
+    from rdkit.Chem import Draw, rdFMCS
     from rdkit.Chem.Draw import rdMolDraw2D
 
     if smi_conv is None:

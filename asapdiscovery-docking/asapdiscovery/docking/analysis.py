@@ -1,10 +1,10 @@
+import os
 import pickle as pkl
-import pandas as pd
+import re
+
 import numpy as np
-import os, re
-from asapdiscovery.data.openeye import (
-    get_ligand_rmsd_from_pdb_and_sdf,
-)
+import pandas as pd
+from asapdiscovery.data.openeye import get_ligand_rmsd_from_pdb_and_sdf
 from openeye import oechem, oedocking
 
 
@@ -50,9 +50,7 @@ class DockingDataset:
 
             ## Process this list into info
             ## TODO: use REGEX instead
-            sdf_list = [
-                fn for fn in fn_list if os.path.splitext(fn)[1] == ".sdf"
-            ]
+            sdf_list = [fn for fn in fn_list if os.path.splitext(fn)[1] == ".sdf"]
 
             ## For each sdf file in this list, get all the information
             ## This is very fragile to the file naming scheme
@@ -70,9 +68,7 @@ class DockingDataset:
 
                     ## however its a convenient way of identifying which is the original xtal
                     ref_xtal = xtal
-                    ref_pdb_fn = (
-                        f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
-                    )
+                    ref_pdb_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
 
                     ## save the ref filename to the dictionary and make the mcss_rank -1
                     ref_fn_dict[cmpd_id] = ref_pdb_fn
@@ -131,9 +127,7 @@ class DockingDataset:
     def write_csv(self, output_csv_fn):
         self.df.to_csv(output_csv_fn, index=False)
 
-    def analyze_docking_results(
-        self, fragalysis_dir, output_csv_fn, test=False
-    ):
+    def analyze_docking_results(self, fragalysis_dir, output_csv_fn, test=False):
         self.organize_docking_results()
 
         if test:
@@ -180,9 +174,7 @@ class DockingResults:
 
     def __init__(self, csv_path):
         ## load in data and replace the annoying `-1.0` and `-1` values with nans
-        self.df = (
-            pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
-        )
+        self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
 
     def get_grouped_df(
         self,
@@ -326,18 +318,14 @@ class DockingResults:
         return self.best_df
 
     def write_dfs_to_csv(self, output_dir):
-        self.df.to_csv(
-            os.path.join(output_dir, "all_results_cleaned.csv"), index=False
-        )
+        self.df.to_csv(os.path.join(output_dir, "all_results_cleaned.csv"), index=False)
         self.compound_df.to_csv(
             os.path.join(output_dir, "by_compound.csv"), index=False
         )
         self.structure_df.to_csv(
             os.path.join(output_dir, "by_structure.csv"), index=False
         )
-        self.best_df.to_csv(
-            os.path.join(output_dir, "best_results.csv"), index=False
-        )
+        self.best_df.to_csv(os.path.join(output_dir, "best_results.csv"), index=False)
 
 
 def load_dataframes(input_dir):
@@ -379,9 +367,7 @@ def load_dataframes(input_dir):
     }
 
 
-def calculate_rmsd_openeye(
-    reference_ligand: oechem.OEMol, docked_ligand: oechem.OEMol
-):
+def calculate_rmsd_openeye(reference_ligand: oechem.OEMol, docked_ligand: oechem.OEMol):
     ## Calculate RMSD
     oechem.OECanonicalOrderAtoms(reference_ligand)
     oechem.OECanonicalOrderBonds(reference_ligand)

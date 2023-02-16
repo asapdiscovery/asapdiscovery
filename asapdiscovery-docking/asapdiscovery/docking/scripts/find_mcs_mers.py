@@ -6,13 +6,10 @@ import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.fragalysis import parse_xtal
-from asapdiscovery.docking.mcs import (
-    rank_structures_openeye,
-    rank_structures_rdkit,
-)
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundDataUpdate,
-)
+from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
+from asapdiscovery.docking.mcs import (rank_structures_openeye,
+                                       rank_structures_rdkit)
+
 
 ################################################################################
 def get_args():
@@ -47,9 +44,7 @@ def get_args():
     )
 
     ## Performance arguments
-    parser.add_argument(
-        "-n", default=1, type=int, help="Number of processors to use."
-    )
+    parser.add_argument("-n", default=1, type=int, help="Number of processors to use.")
     parser.add_argument(
         "-sys",
         default="rdkit",
@@ -59,8 +54,7 @@ def get_args():
         "-str",
         action="store_true",
         help=(
-            "Use structure-based matching instead of element-based matching "
-            "for MCS."
+            "Use structure-based matching instead of element-based matching " "for MCS."
         ),
     )
 

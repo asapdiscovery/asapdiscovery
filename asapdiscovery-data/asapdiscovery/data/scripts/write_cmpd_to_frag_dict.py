@@ -8,15 +8,17 @@ Example Usage:
         -f ~/Scientific_Projects/mers-drug-discovery/Mpro-paper-ligand/extra_files/Mpro_compound_tracker_csv.csv
 
 """
-import argparse, os, sys, yaml
+import argparse
+import os
+import sys
+
+import yaml
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from asapdiscovery.data.utils import (
-    get_compound_id_xtal_dicts,
-    parse_fragalysis_data,
-)
+from asapdiscovery.data.utils import (get_compound_id_xtal_dicts,
+                                      parse_fragalysis_data)
 
 
 def get_args():
@@ -55,9 +57,7 @@ def main():
     ## Get dict mapping crystal structure id to compound id
     compound_id_dict = {
         cmpd: xtals[0]
-        for cmpd, xtals in get_compound_id_xtal_dicts(sars_xtals.values())[
-            0
-        ].items()
+        for cmpd, xtals in get_compound_id_xtal_dicts(sars_xtals.values())[0].items()
         if cmpd
     }
 

@@ -2,25 +2,18 @@
 Function to test implementation of ligand filtering
 """
 
-import sys, os, argparse, yaml
+import argparse
+import os
+import sys
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
-from asapdiscovery.docking.modeling import (
-    align_receptor,
-    prep_receptor,
-    du_to_complex,
-    mutate_residues,
-)
+import yaml
+
+sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
 from asapdiscovery.data import pdb
-
-from asapdiscovery.data.utils import (
-    save_openeye_pdb,
-    edit_pdb_file,
-    seqres_to_res_list,
-    load_openeye_pdb,
-)
+from asapdiscovery.data.utils import (edit_pdb_file, load_openeye_pdb,
+                                      save_openeye_pdb, seqres_to_res_list)
+from asapdiscovery.docking.modeling import (align_receptor, du_to_complex,
+                                            mutate_residues, prep_receptor)
 from openeye import oechem
 
 

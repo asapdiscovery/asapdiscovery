@@ -6,10 +6,12 @@ It has some nice logic that isn't duplicated in dash-all-results-exploration
 so I would like to keep it for now
 """
 
+import argparse
+import os
+
 import pandas as pd
-from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
-import os, argparse
+from dash import Dash, Input, Output, dcc, html
 
 app = Dash(__name__)
 
@@ -225,9 +227,7 @@ def update_graph(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 10, "r": 0}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 10, "r": 0}, hovermode="closest")
 
     return fig
 

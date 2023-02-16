@@ -2,16 +2,19 @@
 Plot interactive scatter plots where clicking on one changes the data that is shown on the others
 
 """
-import pandas as pd
-from dash import html, Input, Output, dcc
-import argparse, os, sys
+import argparse
 import json
+import os
+import sys
+
+import pandas as pd
+from dash import Input, Output, dcc, html
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
+from asapdiscovery.dataviz import plotly_dash_functions, plotting
 from asapdiscovery.docking.analysis import load_dataframes
-from asapdiscovery.dataviz import plotting, plotly_dash_functions
 
 
 def get_args():
@@ -55,9 +58,7 @@ def main():
                 id="full-scatterplot-header", text="Contour Plot"
             ),
             plotly_dash_functions.get_basic_plot(id="full-scatterplot"),
-            plotly_dash_functions.get_basic_plot(
-                id="crossfilter-indicator-contour"
-            ),
+            plotly_dash_functions.get_basic_plot(id="crossfilter-indicator-contour"),
             plotly_dash_functions.get_heading(
                 id="by-structure-header", text="Filtered by Structure"
             ),

@@ -1,5 +1,6 @@
-import numpy as np
 import os
+
+import numpy as np
 
 
 def calc_e3nn_model_info(ds, r):
@@ -23,6 +24,7 @@ def calc_e3nn_model_info(ds, r):
         Rounded average number of nodes per structure in `ds`
     """
     from collections import Counter
+
     from torch_cluster import radius_graph
 
     num_neighbors = []
@@ -74,8 +76,7 @@ def find_all_models(model_base):
     elif "{}" in model_base:
         re_match = re.sub(r"{}", r"([0-9]+)", os.path.basename(model_base))
         models = [
-            re.match(re_match, fn)
-            for fn in os.listdir(os.path.dirname(model_base))
+            re.match(re_match, fn) for fn in os.listdir(os.path.dirname(model_base))
         ]
         models = [int(m.group(1)) for m in models if m is not None]
     elif os.path.isfile(model_base):
@@ -174,7 +175,6 @@ def split_molecules(ds, split_fracs, generator=None):
     import torch
 
     ### TODO: make this whole process more compact
-
     ## First get all the unique compound_ids
     compound_ids_dict = {}
     for c in ds.compounds.keys():
@@ -304,7 +304,9 @@ def train(
     """
     import pickle as pkl
     from time import time
+
     import torch
+
     from .ml import MSELoss
 
     if use_wandb:
@@ -455,15 +457,9 @@ def train(
             continue
         elif os.path.isdir(save_file):
             torch.save(model.state_dict(), f"{save_file}/{epoch_idx}.th")
-            pkl.dump(
-                np.vstack(train_loss), open(f"{save_file}/train_err.pkl", "wb")
-            )
-            pkl.dump(
-                np.vstack(val_loss), open(f"{save_file}/val_err.pkl", "wb")
-            )
-            pkl.dump(
-                np.vstack(test_loss), open(f"{save_file}/test_err.pkl", "wb")
-            )
+            pkl.dump(np.vstack(train_loss), open(f"{save_file}/train_err.pkl", "wb"))
+            pkl.dump(np.vstack(val_loss), open(f"{save_file}/val_err.pkl", "wb"))
+            pkl.dump(np.vstack(test_loss), open(f"{save_file}/test_err.pkl", "wb"))
         elif "{}" in save_file:
             torch.save(model.state_dict(), save_file.format(epoch_idx))
         else:

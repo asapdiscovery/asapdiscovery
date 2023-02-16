@@ -1,10 +1,11 @@
 import argparse
 import json
 import os
-import pandas
-from rdkit.Chem import MolToSmiles, MolFromSmiles
 import re
 import sys
+
+import pandas
+from rdkit.Chem import MolFromSmiles, MolToSmiles
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.utils import cdd_to_schema, cdd_to_schema_pair
@@ -20,8 +21,7 @@ def get_args():
         "-type",
         default="std",
         help=(
-            "What type of data is "
-            "being loaded (std: standard, ep: enantiomer pairs)"
+            "What type of data is " "being loaded (std: standard, ep: enantiomer pairs)"
         ),
     )
     parser.add_argument(

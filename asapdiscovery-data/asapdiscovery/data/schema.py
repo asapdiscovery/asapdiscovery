@@ -1,5 +1,7 @@
 from typing import Dict, List
+
 from pydantic import BaseModel, Field
+
 
 ## From FAH #####################################################################
 class Model(BaseModel):
@@ -77,15 +79,11 @@ class CrystalCompoundData(BaseModel):
         None, description="Chain identifying the active site of interest."
     )
     output_name: str = Field(None, description="Name of output structure.")
-    active_site: str = Field(
-        None, description="OpenEye formatted active site residue."
-    )
+    active_site: str = Field(None, description="OpenEye formatted active site residue.")
     oligomeric_state: str = Field(
         None, description="Oligomeric state of the asymmetric unit."
     )
-    chains: list = Field(
-        None, description="List of chainids in the asymmetric unit."
-    )
+    chains: list = Field(None, description="List of chainids in the asymmetric unit.")
     protein_chains: list = Field(
         None, description="List of chains corresponding to protein residues."
     )
@@ -98,9 +96,7 @@ class PDBStructure(Model):
 
 class EnantiomerPair(Model):
     active: ExperimentalCompoundData = Field(description="Active enantiomer.")
-    inactive: ExperimentalCompoundData = Field(
-        description="Inactive enantiomer."
-    )
+    inactive: ExperimentalCompoundData = Field(description="Inactive enantiomer.")
 
 
 class EnantiomerPairList(Model):

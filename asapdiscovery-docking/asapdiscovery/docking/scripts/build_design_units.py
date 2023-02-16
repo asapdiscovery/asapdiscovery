@@ -1,14 +1,14 @@
 import argparse
 import os
+
 from openeye import oechem, oespruce
+
 
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    parser.add_argument(
-        "-target", required=True, help="PDB file for target protein."
-    )
+    parser.add_argument("-target", required=True, help="PDB file for target protein.")
     parser.add_argument("-ref", help="PDB file for reference protein")
     parser.add_argument("-loop", help="SPRUCE loop database.")
     parser.add_argument("-o", required=True, help="Output directory.")
@@ -46,9 +46,7 @@ def main():
 
     ## Set up options for building DesignUnits
     opts = oespruce.OEMakeDesignUnitOptions()
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
-        False
-    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(False)
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(
         args.loop
     )
@@ -60,8 +58,7 @@ def main():
     )
     design_units = list(design_units)
     out_base_du = (
-        f"{args.o}/"
-        f"{os.path.splitext(os.path.basename(args.target))[0]}_{{}}.oedu"
+        f"{args.o}/" f"{os.path.splitext(os.path.basename(args.target))[0]}_{{}}.oedu"
     )
     out_base = (
         f"{args.o}/"

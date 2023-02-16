@@ -1,10 +1,10 @@
 import argparse
-import matplotlib.pyplot as plt
 import multiprocessing as mp
+
+import matplotlib.pyplot as plt
 import pandas
 import seaborn as sns
 import torch
-
 from train import init
 
 
@@ -100,9 +100,7 @@ def main():
 
     if args.wts is not None:
         ## Model was trained on GPU so need to let torch know we're loading for CPU
-        model.load_state_dict(
-            torch.load(args.wts, map_location=torch.device("cpu"))
-        )
+        model.load_state_dict(torch.load(args.wts, map_location=torch.device("cpu")))
 
     ## No learning going on so we can multiprocess the predictions
     mp_args = [(model, s, model_call) for _, s in full_ds]

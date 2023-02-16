@@ -14,8 +14,10 @@ run /PATH_TO_PYMOL_SCRIPT/color_active_site.pml
 
 """
 from __future__ import print_function
+
 import yaml
 from pymol import cmd, stored, util
+
 
 ## Very useful script
 def make_selection(
@@ -27,9 +29,7 @@ def make_selection(
         ## This is ugly.
         ## It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
         ## The structures should not be in quotes
-        structure_list = (
-            structure_list.replace("[", "").replace("]", "").split(",")
-        )
+        structure_list = structure_list.replace("[", "").replace("]", "").split(",")
         print(structure_list)
 
     for structure in structure_list:
@@ -53,9 +53,7 @@ def select_from_file(file_name, structure_list="all", delete=False):
         ## This is ugly.
         ## It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
         ## The structures should not be in quotes
-        structure_list = (
-            structure_list.replace("[", "").replace("]", "").split(",")
-        )
+        structure_list = structure_list.replace("[", "").replace("]", "").split(",")
         print(structure_list)
     for structure in structure_list:
         for name, selection in seldict.items():
@@ -77,9 +75,7 @@ def color_selection(name="chainA", structure_list="all", color="carbon"):
         ## This is ugly.
         ## It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
         ## The structures should not be in quotes
-        structure_list = (
-            structure_list.replace("[", "").replace("]", "").split(",")
-        )
+        structure_list = structure_list.replace("[", "").replace("]", "").split(",")
         print(structure_list)
 
     for structure in structure_list:
@@ -254,9 +250,7 @@ def add_menu():
     try:
         from pymol.menu import all_colors_list
     except ImportError:
-        print(
-            "PyMOL version too old for cb_colors menu. Requires 1.6.0 or later."
-        )
+        print("PyMOL version too old for cb_colors menu. Requires 1.6.0 or later.")
         return
 
     # Add the menu

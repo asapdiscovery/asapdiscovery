@@ -46,8 +46,8 @@ def run_docking_oe(
     str
         Generated docking_id, used to access SD tag data
     """
-    from openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+    from openeye import oechem, oedocking
 
     ## Make copy so we can keep the original for RMSD purposes
     orig_mol = orig_mol.CreateCopy()
@@ -160,10 +160,7 @@ def run_docking_oe(
         ret_code = poser.Dock(pose_res, dock_lig, num_poses)
 
     ## Check results
-    if (
-        ret_code == oedocking.OEDockingReturnCode_Success
-        and dock_sys == "posit"
-    ):
+    if ret_code == oedocking.OEDockingReturnCode_Success and dock_sys == "posit":
         posed_mols = []
         posit_probs = []
         posit_methods = []

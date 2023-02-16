@@ -1,14 +1,17 @@
 """
 This gives an example of how to add a very basic interactive table
 """
+import argparse
+import os
+import sys
+
 from dash import html
-import argparse, os, sys
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from asapdiscovery.docking.analysis import load_dataframes
 from asapdiscovery.dataviz import plotly_dash_functions
+from asapdiscovery.docking.analysis import load_dataframes
 
 
 def get_args():
@@ -25,9 +28,7 @@ def get_args():
 
 def main():
     args = get_args()
-    tidy, df, by_compound_tidy, by_structure_tidy = load_dataframes(
-        args.input_dir
-    )
+    tidy, df, by_compound_tidy, by_structure_tidy = load_dataframes(args.input_dir)
 
     ## Get Dash App
     app, styles = plotly_dash_functions.get_dash_app()

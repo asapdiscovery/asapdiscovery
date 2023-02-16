@@ -7,16 +7,19 @@ One of the cool things that this script does it change the filter values interac
 based on what complex is picked by the user.
 """
 
+import argparse
+import json
+import os
+import sys
+
 import pandas as pd
-from dash import Dash, dcc, html, Input, Output, dash_table, ctx
 import plotly.express as px
-import json, argparse, os, sys
+from dash import Dash, Input, Output, ctx, dash_table, dcc, html
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
 from asapdiscovery.docking.analysis import load_dataframes
-
 
 parser = argparse.ArgumentParser(description="")
 ## Input arguments
@@ -290,9 +293,7 @@ def update_scatter(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -343,9 +344,7 @@ def update_contour(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -409,9 +408,7 @@ def update_filtered_scatter(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -485,9 +482,7 @@ def update_by_structure(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -522,9 +517,7 @@ def per_structure_bar_chart(clickData1, clickData2):
         structure = df.loc[complex_ID, "Structure_Source"][0]
 
         ## Filter by structure
-        dff = by_structure_tidy[
-            by_structure_tidy["Structure_Source"] == structure
-        ]
+        dff = by_structure_tidy[by_structure_tidy["Structure_Source"] == structure]
         dff = dff[dff["variable"].isin(count_columns)]
         # dff.loc[:, "Selection"] = (
         #     by_structure_tidy["Structure_Source"] == structure
@@ -552,9 +545,7 @@ def per_structure_bar_chart(clickData1, clickData2):
 
     ## Get "Values" Columns"
     count_columns = [
-        column
-        for column in by_structure.columns
-        if "Min" in column or "Mean" in column
+        column for column in by_structure.columns if "Min" in column or "Mean" in column
     ]
 
     input_source = ctx.triggered_id
@@ -573,9 +564,7 @@ def per_structure_bar_chart(clickData1, clickData2):
         structure = df.loc[complex_ID, "Structure_Source"][0]
 
         ## Filter by structure
-        dff = by_structure_tidy[
-            by_structure_tidy["Structure_Source"] == structure
-        ]
+        dff = by_structure_tidy[by_structure_tidy["Structure_Source"] == structure]
         dff = dff[dff["variable"].isin(count_columns)]
         # dff.loc[:, "Selection"] = (
         #     by_structure_tidy["Structure_Source"] == structure

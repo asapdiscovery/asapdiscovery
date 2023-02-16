@@ -1,5 +1,5 @@
-from dgllife.model import GAT as GAT_dgl
 import torch
+from dgllife.model import GAT as GAT_dgl
 
 
 class GAT(torch.nn.Module):

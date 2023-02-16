@@ -8,7 +8,12 @@ Example Usage:
         -o /Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_frag_carlsson
 
 """
-import sys, os, argparse, yaml, shutil
+import argparse
+import os
+import shutil
+import sys
+
+import yaml
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
@@ -21,9 +26,7 @@ def get_args():
     parser.add_argument(
         "-d", "--fauxalysis_dir", required=True, help="Path to fauxalysis_dir."
     )
-    parser.add_argument(
-        "-o", "--output_dir", required=True, help="Path to output dir"
-    )
+    parser.add_argument("-o", "--output_dir", required=True, help="Path to output dir")
     parser.add_argument(
         "-y",
         "--yaml_file",
@@ -61,9 +64,7 @@ def main():
         ## if our flag of interest is in any complex, include it!
         ## TODO: replace with REGEX?
         complexes = [
-            complex_id
-            for complex_id in complex_dir_list
-            if flag.lower() in complex_id
+            complex_id for complex_id in complex_dir_list if flag.lower() in complex_id
         ]
 
         ## Copy files over using shutil
@@ -73,9 +74,7 @@ def main():
             out_path = os.path.join(args.output_dir, complex)
             try:
                 shutil.copytree(in_path, out_path)
-                print(
-                    f"Copying...\n" f"\tfrom: {in_path}" f"\t  to: {out_path}"
-                )
+                print(f"Copying...\n" f"\tfrom: {in_path}" f"\t  to: {out_path}")
             except FileExistsError:
                 print(
                     f"File exists, skipping!\n"

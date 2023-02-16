@@ -1,12 +1,13 @@
 import argparse
-import matplotlib.pyplot as plt
-import numpy as np
 import os
-import pandas
 import pickle as pkl
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas
 # # TODO: Do we need to add upsetplot to our environment yaml?
 import upsetplot as ups
+
 
 ################################################################################
 def get_args():
@@ -34,9 +35,7 @@ def main():
     else:
         labs = args.labs
 
-    correct_dict, incorrect_dict = zip(
-        *[pkl.load(open(fn, "rb")) for fn in args.i]
-    )
+    correct_dict, incorrect_dict = zip(*[pkl.load(open(fn, "rb")) for fn in args.i])
     correct_dict = {lab: l for lab, l in zip(labs, correct_dict)}
     incorrect_dict = {lab: l for lab, l in zip(labs, incorrect_dict)}
 
@@ -44,13 +43,11 @@ def main():
     all_pairs.update({p for l in incorrect_dict.values() for p in l})
 
     ## Plotting
-    membership_dict = {
-        p: [l for l in labs if p in correct_dict[l]] for p in all_pairs
-    }
+    membership_dict = {p: [l for l in labs if p in correct_dict[l]] for p in all_pairs}
     fig = plt.figure(figsize=(12, 8))
-    ups.UpSet(
-        ups.from_memberships(membership_dict.values()), subset_size="count"
-    ).plot(fig)
+    ups.UpSet(ups.from_memberships(membership_dict.values()), subset_size="count").plot(
+        fig
+    )
     fig.savefig(f"{args.o}.png", dpi=200, bbox_inches="tight")
 
     ## Formatting to CSV

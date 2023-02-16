@@ -1,6 +1,6 @@
+import numpy as np
 from e3nn import o3
 from e3nn.nn.models.gate_points_2101 import Network
-import numpy as np
 
 
 class E3NNBind(Network):

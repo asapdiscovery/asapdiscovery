@@ -106,9 +106,7 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
 
     ## Set water filter (keep all waters in A, B, or W chains)
     ##  (is this sufficient? are there other common water chain ids?)
-    wat_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Water
-    )
+    wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
     w_chain = oechem.OERoleMolComplexFilterFactory(
         oechem.OEMolComplexChainRoleFactory("W")
     )
@@ -161,9 +159,7 @@ def load_openeye_sdfs(sdf_fn):
     return cmpd_list
 
 
-def get_ligand_rmsd_from_pdb_and_sdf(
-    ref_path, mobile_path, fetch_docking_results=True
-):
+def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_results=True):
     ref_pdb = load_openeye_pdb(ref_path)
     ref = split_openeye_mol(ref_pdb)["lig"]
     mobile = load_openeye_sdf(mobile_path)

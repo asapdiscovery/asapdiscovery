@@ -1,6 +1,7 @@
 import os
-import requests
 from zipfile import ZipFile
+
+import requests
 
 BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
 ## Info for the POST call

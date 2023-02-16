@@ -2,31 +2,25 @@
 Make complex PDB files for docked SDF files.
 """
 import argparse
-from openeye import oechem
 import os
-import pandas
 import re
 import sys
 
+import pandas
+from openeye import oechem
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    load_openeye_sdf,
-    save_openeye_pdb,
-    split_openeye_mol,
-)
+from asapdiscovery.data.openeye import (load_openeye_pdb, load_openeye_sdf,
+                                        save_openeye_pdb, split_openeye_mol)
+
 
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
     ## I/O args
-    parser.add_argument(
-        "-i", "--in_file", required=True, help="Input CSV file."
-    )
-    parser.add_argument(
-        "-d", "--xtal_dir", required=True, help="Fragalysis directory."
-    )
+    parser.add_argument("-i", "--in_file", required=True, help="Input CSV file.")
+    parser.add_argument("-d", "--xtal_dir", required=True, help="Fragalysis directory.")
     parser.add_argument(
         "-o",
         "--out_dir",

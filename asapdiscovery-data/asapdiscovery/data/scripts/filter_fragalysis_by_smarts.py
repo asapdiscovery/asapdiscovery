@@ -5,14 +5,14 @@ structures.
 """
 import argparse
 import os
-import pandas
 import sys
 
+import pandas
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.data.utils import (
-    filter_docking_inputs,
-    parse_fragalysis_data,
-)
+from asapdiscovery.data.utils import (filter_docking_inputs,
+                                      parse_fragalysis_data)
+
 
 ################################################################################
 def get_args():
@@ -24,9 +24,7 @@ def get_args():
         required=True,
         help="Input fragalysis directory.",
     )
-    parser.add_argument(
-        "-o", "--out_file", required=True, help="Output CSV file."
-    )
+    parser.add_argument("-o", "--out_file", required=True, help="Output CSV file.")
     parser.add_argument(
         "-s",
         "--smarts_filter",

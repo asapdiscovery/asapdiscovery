@@ -1,19 +1,16 @@
+import glob
 import os.path
-from openeye import oechem
+import re
+from typing import List, Optional, Union
+
 import numpy as np
 import pandas
-import re
 import rdkit.Chem as Chem
-import glob
-from typing import Union, List, Optional
-
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundData,
-    ExperimentalCompoundDataUpdate,
-    CrystalCompoundData,
-    EnantiomerPair,
-    EnantiomerPairList,
-)
+from asapdiscovery.data.schema import (CrystalCompoundData, EnantiomerPair,
+                                       EnantiomerPairList,
+                                       ExperimentalCompoundData,
+                                       ExperimentalCompoundDataUpdate)
+from openeye import oechem
 
 
 def download_file(url: str, path: str):
@@ -138,9 +135,7 @@ def edit_pdb_file(
         ] + pdbfile_lines
 
     if edit_remark350:
-        pdbfile_lines = [
-            line for line in pdbfile_lines if not "REMARK 350" in line
-        ]
+        pdbfile_lines = [line for line in pdbfile_lines if not "REMARK 350" in line]
         if chains and oligomeric_state:
             remark_str = get_remark_str(chains, oligomeric_state)
             pdbfile_lines = [
@@ -223,9 +218,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     ##  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
     df = df.loc[~df[pic50_key].isna(), :]
-    pic50_range = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
-    ]
+    pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c.strip("<> ")) for c in df[pic50_key]]
     df["pIC50"] = pic50_vals
     df["pIC50_range"] = pic50_range
@@ -234,12 +227,10 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     ### TODO: handle multiple measurements for the same compound
     ###  (average of stderr for each compound)
     ci_lower_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Lower) (µM)"
+        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 " "CI (Lower) (µM)"
     )
     ci_upper_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Upper) (µM)"
+        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 " "CI (Upper) (µM)"
     )
 
     ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
@@ -262,9 +253,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
             pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
     df["pIC50_stderr"] = pic50_stderr
     ## Fill standard error for semi-qunatitative data with the mean of others
-    df.loc[semiquant, "pIC50_stderr"] = df.loc[
-        ~semiquant, "pIC50_stderr"
-    ].mean()
+    df.loc[semiquant, "pIC50_stderr"] = df.loc[~semiquant, "pIC50_stderr"].mean()
 
     ### For now just keep the first measure for each compound_id
     compounds = []
@@ -283,9 +272,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
             "pIC50_stderr": c["pIC50_stderr"],
         }
         ## Keep track of if there are any NaN values
-        seen_compounds[compound_id] = np.isnan(
-            list(experimental_data.values())
-        ).any()
+        seen_compounds[compound_id] = np.isnan(list(experimental_data.values())).any()
 
         compounds.append(
             ExperimentalCompoundData(
@@ -350,9 +337,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
 
     ## Remove stereochemistry tags and get canonical SMILES values (to help
     ##  group stereoisomers)
-    smi_nostereo = [
-        CanonSmiles(s, useChiral=False) for s in df["suspected_SMILES"]
-    ]
+    smi_nostereo = [CanonSmiles(s, useChiral=False) for s in df["suspected_SMILES"]]
     df["suspected_SMILES_nostereo"] = smi_nostereo
 
     ## Sort by non-stereo SMILES to put the enantiomer pairs together
@@ -361,21 +346,17 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     ## Get rid of the </> signs, since we really only need the values to sort
     ##  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
-    pic50_range = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
-    ]
+    pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c[pic50_key].strip("<> ")) for _, c in df.iterrows()]
     df["pIC50"] = pic50_vals
     df["pIC50_range"] = pic50_range
     semiquant = df["pIC50_range"].astype(bool)
 
     ci_lower_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Lower) (µM)"
+        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 " "CI (Lower) (µM)"
     )
     ci_upper_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Upper) (µM)"
+        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 " "CI (Upper) (µM)"
     )
     ## Calculate 95% CI in pIC50 units based on IC50 vals (not sure if the
     ##  difference should be taken before or after taking the -log10)
@@ -391,9 +372,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
             pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
     df["pIC50_stderr"] = pic50_stderr
     ## Fill standard error for semi-qunatitative data with the mean of others
-    df.loc[semiquant, "pIC50_stderr"] = df.loc[
-        ~semiquant, "pIC50_stderr"
-    ].mean()
+    df.loc[semiquant, "pIC50_stderr"] = df.loc[~semiquant, "pIC50_stderr"].mean()
 
     enant_pairs = []
     ## Loop through the enantiomer pairs and rank them
@@ -485,13 +464,9 @@ def get_achiral_molecules(mol_df):
     ##  shipment_SMILES if not present
     achiral_idx = []
     for _, r in mol_df.iterrows():
-        if ("suspected_SMILES" in r) and (
-            not pandas.isna(r["suspected_SMILES"])
-        ):
+        if ("suspected_SMILES" in r) and (not pandas.isna(r["suspected_SMILES"])):
             achiral_idx.append(check_achiral(r["suspected_SMILES"]))
-        elif ("shipment_SMILES" in r) and (
-            not pandas.isna(r["shipment_SMILES"])
-        ):
+        elif ("shipment_SMILES" in r) and (not pandas.isna(r["shipment_SMILES"])):
             achiral_idx.append(check_achiral(r["shipment_SMILES"]))
         else:
             raise ValueError(f'No SMILES found for {r["Canonical PostEra ID"]}')
@@ -542,9 +517,10 @@ def filter_molecules_dataframe(
         DataFrame containing compound information for all filtered molecules
     """
     import logging
+
     import numpy as np
-    from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
     import sigfig
+    from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 
     # Define functions to evaluate whether molecule is achiral, racemic, or resolved
     is_achiral = (
@@ -601,9 +577,7 @@ def filter_molecules_dataframe(
         )
     )
     # Convert CXSMILES to SMILES by removing extra info
-    mol_df.loc[:, "smiles"] = [
-        s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]
-    ]
+    mol_df.loc[:, "smiles"] = [s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]]
 
     # Determine which molecules will be retained
     include_flags = []
@@ -662,10 +636,7 @@ def filter_molecules_dataframe(
 
         except ValueError:
             # Could not convert to string because value was semiquantitative
-            if (
-                row[f"{assay_name}: IC50 (µM)"]
-                == "(IC50 could not be calculated)"
-            ):
+            if row[f"{assay_name}: IC50 (µM)"] == "(IC50 could not be calculated)":
                 pIC50 = "< 4.0"  # lower limit of detection
 
             # Keep pIC50 string
@@ -710,9 +681,7 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
 
     ## Convert semi-quantitative values into floats and trim any NaNs
     exp_df = exp_df.loc[~exp_df["IC50"].isna(), :]
-    ic50_range = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in exp_df["IC50"]
-    ]
+    ic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in exp_df["IC50"]]
     ic50_vals = [float(c.strip("<> ")) for c in exp_df["IC50"]]
     exp_df.loc[:, "IC50"] = ic50_vals
     exp_df["IC50_range"] = ic50_range
@@ -732,9 +701,7 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
 
     ## Dump JSON file
     with open(json_fn, "w") as fp:
-        fp.write(
-            ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json()
-        )
+        fp.write(ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json())
 
 
 def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
@@ -863,9 +830,7 @@ def trim_small_chains(input_mol, cutoff_len=10):
     ## Remove short chains atom by atom
     for a in mol_copy.GetAtoms():
         chain_id = oechem.OEAtomGetResidue(a).GetExtChainID()
-        if (chain_id not in chain_len_dict) or (
-            chain_len_dict[chain_id] <= cutoff_len
-        ):
+        if (chain_id not in chain_len_dict) or (chain_len_dict[chain_id] <= cutoff_len):
             mol_copy.DeleteAtom(a)
 
     return mol_copy
@@ -990,9 +955,7 @@ def load_exp_from_sdf(fn):
     ## Open SDF file and load all SMILES
     suppl = Chem.rdmolfiles.SDMolSupplier(fn)
     exp_data_compounds = [
-        ExperimentalCompoundData(
-            compound_id=str(i), smiles=Chem.MolToSmiles(mol)
-        )
+        ExperimentalCompoundData(compound_id=str(i), smiles=Chem.MolToSmiles(mol))
         for i, mol in enumerate(suppl)
     ]
 

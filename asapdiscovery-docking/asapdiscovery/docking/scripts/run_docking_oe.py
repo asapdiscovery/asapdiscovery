@@ -2,20 +2,21 @@
 Script to dock an SDF file of ligands to prepared structures.
 """
 import argparse
-from glob import glob
 import multiprocessing as mp
-from openeye import oechem
 import os
-import pandas
 import pickle as pkl
 import re
 import shutil
 import sys
+from glob import glob
+
+import pandas
+from openeye import oechem
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.openeye import load_openeye_sdf, save_openeye_sdf
-from asapdiscovery.docking.docking import run_docking_oe
 from asapdiscovery.data.utils import check_filelist_has_elements
+from asapdiscovery.docking.docking import run_docking_oe
 
 
 def check_results(d):
@@ -89,7 +90,7 @@ def load_dus(file_base, by_compound=False):
         ]
     else:
         all_fns = glob(file_base)
-    
+
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")
 
@@ -154,9 +155,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         chemgauss_scores = []
 
         for conf in posed_mol.GetConfs():
-            rmsds.append(
-                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD"))
-            )
+            rmsds.append(float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD")))
             posit_probs.append(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
             )
@@ -164,9 +163,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
                 oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT_method")
             )
             chemgauss_scores.append(
-                float(
-                    oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4")
-                )
+                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4"))
             )
         smiles = oechem.OEGetSDData(conf, f"SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
@@ -299,6 +296,7 @@ def main():
 
     if args.exp_file:
         import json
+
         from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 
         ## Load compounds
@@ -330,9 +328,7 @@ def main():
             ifs.open(args.lig_file)
             mols = [mol.CreateCopy() for mol in ifs.GetOEGraphMols()]
     elif args.exp_file is None:
-        raise ValueError(
-            "Need to specify exactly one of --exp_file or --lig_file."
-        )
+        raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
 
     ## Load all receptor DesignUnits

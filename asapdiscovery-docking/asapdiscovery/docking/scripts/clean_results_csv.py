@@ -9,7 +9,10 @@ Example Usage:
         -d
         -s
 """
-import sys, os, argparse
+import argparse
+import os
+import sys
+
 import numpy as np
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -125,16 +128,12 @@ def main():
     ## Add Complex_ID
     ## This is not the same thing as f"{dr.df.Compound_ID}_{dr.df.Structure_Source}", as this enables rowwise addition
     ## as opposed to adding the *entire* series as a single string
-    dr.df["Complex_ID"] = (
-        dr.df.Compound_ID.apply(str) + "_" + dr.df.Structure_Source
-    )
+    dr.df["Complex_ID"] = dr.df.Compound_ID.apply(str) + "_" + dr.df.Structure_Source
 
     ## Clean the Docked_File paths because there are extra `/`
     ## also, some of the file paths are NaNs so we need to only keep the ones that are strings
     dr.df.Docked_File = dr.df.Docked_File.replace(np.nan, "")
-    dr.df.Docked_File = [
-        string.replace("//", "/") for string in dr.df.Docked_File
-    ]
+    dr.df.Docked_File = [string.replace("//", "/") for string in dr.df.Docked_File]
 
     ## Re-sort the dataframe by the Compound_ID so that its nice and alphabetical and re-index based on that
     dr.df = dr.df.sort_values(["Complex_ID"]).reset_index(drop=True)

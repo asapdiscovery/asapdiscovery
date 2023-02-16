@@ -4,8 +4,8 @@ from importlib.metadata import version
 
 __version__ = version("asapdiscovery-docking")
 
-from .mcs import *
-from .docking import *
 from .analysis import *
-from .rocauc import *
+from .docking import *
+from .mcs import *
 from .modeling import *
+from .rocauc import *

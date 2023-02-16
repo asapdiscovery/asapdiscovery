@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, dash_table
+from dash import Dash, dash_table, dcc, html
 
 
 def get_dash_app():

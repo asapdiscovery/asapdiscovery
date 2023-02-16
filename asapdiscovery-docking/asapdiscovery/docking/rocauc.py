@@ -1,5 +1,6 @@
-import numpy as np
 import math
+
+import numpy as np
 import pandas as pd
 
 
@@ -144,15 +145,11 @@ class Rock:
             if not bootstrap:
                 ## Don't care about bootstrapping these
 
-                self.precision_poses.append(
-                    self.weird_division(n_good_poses, n_poses)
-                )
+                self.precision_poses.append(self.weird_division(n_good_poses, n_poses))
 
         if bootstrap:
             self.auc_list.append(
-                self.calc_auc(
-                    false_positive_rates_poses, true_positive_rates_poses
-                )
+                self.calc_auc(false_positive_rates_poses, true_positive_rates_poses)
             )
         else:
             self.true_positive_rates_poses = true_positive_rates_poses
@@ -169,9 +166,7 @@ class Rock:
 
         # Then bootstrap CVs
         self.auc_poses = [
-            self.get_auc_from_df(
-                self.df.sample(frac=1, replace=True), bootstrap=True
-            )
+            self.get_auc_from_df(self.df.sample(frac=1, replace=True), bootstrap=True)
             for n in range(n_bootstraps)
         ]
 
@@ -237,15 +232,11 @@ class Rocks:
         df["POSIT_R"] = 1 - df["POSIT"]
 
         # TODO: Expose these hard-coded options
-        self.df = df[
-            (df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)
-        ]
+        self.df = df[(df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)]
 
     def build_rocks(self):
         self.rock_dict = {
-            score_name: Rock(
-                self.df, score_name  # , self.rmsd_name, self.n_bins
-            )
+            score_name: Rock(self.df, score_name)  # , self.rmsd_name, self.n_bins
             for score_name in self.score_list
             if score_name in self.df.columns
         }

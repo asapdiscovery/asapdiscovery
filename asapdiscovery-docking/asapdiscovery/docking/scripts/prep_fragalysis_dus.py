@@ -5,25 +5,20 @@ to dock against.
 """
 import argparse
 import multiprocessing as mp
-from openeye import oechem
 import os
 import re
 import sys
 from tempfile import NamedTemporaryFile
+
 import yaml
+from openeye import oechem
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.docking.modeling import (
-    prep_receptor,
-    du_to_complex,
-    mutate_residues,
-)
-from asapdiscovery.data.utils import (
-    edit_pdb_file,
-    seqres_to_res_list,
-)
-from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
 from asapdiscovery.data.fragalysis import parse_xtal
+from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
+from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
+from asapdiscovery.docking.modeling import (du_to_complex, mutate_residues,
+                                            prep_receptor)
 
 
 def check_completed(d):
@@ -75,9 +70,7 @@ def prep_mp(xtal, seqres, out_base, loop_db):
         chain = "0A"
 
     ## Check if results already exist
-    out_dir = os.path.join(
-        out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}"
-    )
+    out_dir = os.path.join(out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}")
     if check_completed(out_dir):
         return
 
@@ -119,9 +112,7 @@ def prep_mp(xtal, seqres, out_base, loop_db):
     du = design_units[0]
     print(
         f"{xtal.dataset}_{chain}_{xtal.compound_id}",
-        oechem.OEWriteDesignUnit(
-            os.path.join(out_dir, "prepped_receptor.oedu"), du
-        ),
+        oechem.OEWriteDesignUnit(os.path.join(out_dir, "prepped_receptor.oedu"), du),
         flush=True,
     )
 
@@ -192,9 +183,7 @@ def main():
     else:
         seqres = None
 
-    mp_args = [
-        (x, seqres, args.output_dir, args.loop_db) for x in xtal_compounds
-    ]
+    mp_args = [(x, seqres, args.output_dir, args.loop_db) for x in xtal_compounds]
     print(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")

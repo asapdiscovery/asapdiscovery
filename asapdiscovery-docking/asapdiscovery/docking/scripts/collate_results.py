@@ -2,11 +2,13 @@
 Small script to gather all completed results.
 """
 import argparse
-from glob import glob
-import pandas
 import pickle as pkl
 import shutil
+from glob import glob
+
+import pandas
 from asapdiscovery.data.utils import check_filelist_has_elements
+
 
 ################################################################################
 def get_args():
@@ -42,7 +44,7 @@ def main():
 
     all_pickle = glob(args.results)
     check_filelist_has_elements(all_pickle, tag="results pickle files")
-    
+
     ## Build final df
     results_cols = [
         "ligand_id",

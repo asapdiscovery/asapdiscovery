@@ -1,14 +1,11 @@
 import argparse
-from openeye import oechem, oedocking, oegrid
 import os
-import pandas
 import sys
 
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    load_openeye_sdf,
-    split_openeye_mol,
-)
+import pandas
+from asapdiscovery.data.openeye import (load_openeye_pdb, load_openeye_sdf,
+                                        split_openeye_mol)
+from openeye import oechem, oedocking, oegrid
 
 SCORE_TYPES = {
     "chemgauss": oedocking.OEScoreType_Chemgauss4,
@@ -26,12 +23,8 @@ def get_args():
     parser.add_argument(
         "-s", "--structure_fn", required=True, help="Protein structure file."
     )
-    parser.add_argument(
-        "-l", "--ligand_fn", required=True, help="SDF ligand file."
-    )
-    parser.add_argument(
-        "-o", "--out_fn", required=True, help="Output CSV file."
-    )
+    parser.add_argument("-l", "--ligand_fn", required=True, help="SDF ligand file.")
+    parser.add_argument("-o", "--out_fn", required=True, help="Output CSV file.")
 
     parser.add_argument(
         "-c", "--score_type", nargs="*", help="Which scoring type(s) to use."
@@ -41,8 +34,7 @@ def get_args():
         "-g",
         "--grid_base",
         help=(
-            "Grid base name (must end in .ccp4 and have an empty {} for "
-            "formatting)."
+            "Grid base name (must end in .ccp4 and have an empty {} for " "formatting)."
         ),
     )
 
@@ -64,9 +56,7 @@ def main():
         ## Don't use chemgauss key because it's a duplicate
         use_scores = list(SCORE_TYPES.keys())[1:]
     else:
-        use_scores = [
-            s.lower() for s in args.score_type if s.lower() in SCORE_TYPES
-        ]
+        use_scores = [s.lower() for s in args.score_type if s.lower() in SCORE_TYPES]
     if len(use_scores) == 0:
         raise RuntimeError("No valid score types")
     use_types = [SCORE_TYPES[s] for s in use_scores]

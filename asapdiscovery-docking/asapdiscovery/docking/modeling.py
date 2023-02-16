@@ -1,10 +1,6 @@
+from asapdiscovery.data.openeye import (load_openeye_pdb, load_openeye_sdf,
+                                        split_openeye_mol)
 from openeye import oechem, oedocking, oespruce
-
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    load_openeye_sdf,
-    split_openeye_mol,
-)
 
 
 def du_to_complex(du, include_solvent=False):
@@ -26,8 +22,7 @@ def du_to_complex(du, include_solvent=False):
     """
     complex_mol = oechem.OEGraphMol()
     comp_tag = (
-        oechem.OEDesignUnitComponents_Protein
-        | oechem.OEDesignUnitComponents_Ligand
+        oechem.OEDesignUnitComponents_Protein | oechem.OEDesignUnitComponents_Ligand
     )
     if include_solvent:
         comp_tag |= oechem.OEDesignUnitComponents_Solvent
@@ -89,9 +84,7 @@ def make_du_from_new_lig(
     """
 
     if (not dimer) and (not mobile_chain):
-        raise ValueError(
-            "If dimer is False, a value must be given for mobile_chain."
-        )
+        raise ValueError("If dimer is False, a value must be given for mobile_chain.")
 
     ## Load initial_complex from file if necessary
     if type(initial_complex) is str:
@@ -180,9 +173,7 @@ def make_du_from_new_lig(
     opts.GetSplitOptions().SetMinLigAtoms(5)
 
     # also consider alternate locations outside binding pocket, important for later filtering
-    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
-        False
-    )
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(False)
 
     # alignment options, only matches are important
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
@@ -322,9 +313,7 @@ def align_receptor(
 
     """
     if (not dimer) and (not mobile_chain):
-        raise ValueError(
-            "If dimer is False, a value must be given for mobile_chain."
-        )
+        raise ValueError("If dimer is False, a value must be given for mobile_chain.")
 
     ## Load initial_complex from file if necessary
     if type(initial_complex) is str:
@@ -409,13 +398,9 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
     ## Create a copy of the molecule to avoid modifying original molecule
     mut_prot = input_mol.CreateCopy()
     ## Get sequence of input protein
-    input_mol_chain = [
-        r.GetExtChainID() for r in oechem.OEGetResidues(input_mol)
-    ]
+    input_mol_chain = [r.GetExtChainID() for r in oechem.OEGetResidues(input_mol)]
     input_mol_seq = [r.GetName() for r in oechem.OEGetResidues(input_mol)]
-    input_mol_num = [
-        r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)
-    ]
+    input_mol_num = [r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)]
 
     ## Build mutation map from OEResidue to new res name by indexing from res num
     mut_map = {}
@@ -504,9 +489,7 @@ def prep_receptor(
     opts.GetSplitOptions().SetMinLigAtoms(5)
 
     # also consider alternate locations outside binding pocket, important for later filtering
-    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
-        False
-    )
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(False)
 
     # alignment options, only matches are important
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
@@ -543,9 +526,7 @@ def prep_receptor(
     metadata = oespruce.OEStructureMetadata()
 
     ## Allow for adding residues at the beginning/end if they're missing
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
-        True
-    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(True)
     if seqres:
         all_prot_chains = {
             res.GetExtChainID()
@@ -559,9 +540,7 @@ def prep_receptor(
             metadata.AddSequenceMetadata(seq_metadata)
 
     ## Finally make new DesignUnit
-    dus = list(
-        oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
-    )
+    dus = list(oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue))
     assert dus[0].HasProtein()
     if not protein_only:
         assert dus[0].HasLigand()
@@ -587,12 +566,7 @@ def build_dimer_from_monomer(prot):
     all_chain_ids = {
         r.GetExtChainID()
         for r in oechem.OEGetResidues(prot)
-        if all(
-            [
-                not oechem.OEIsWater()(a)
-                for a in oechem.OEGetResidueAtoms(prot, r)
-            ]
-        )
+        if all([not oechem.OEIsWater()(a) for a in oechem.OEGetResidueAtoms(prot, r)])
     }
     if len(all_chain_ids) != 2:
         raise AssertionError(f"Chains: {all_chain_ids}")

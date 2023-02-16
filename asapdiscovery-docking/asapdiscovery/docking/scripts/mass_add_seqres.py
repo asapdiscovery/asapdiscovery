@@ -8,7 +8,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asapdiscovery.data.utils import edit_pdb_file, check_filelist_has_elements
+from asapdiscovery.data.utils import check_filelist_has_elements, edit_pdb_file
 
 
 def get_args():

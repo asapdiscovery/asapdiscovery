@@ -41,9 +41,7 @@ class DockedDataset(Dataset):
         ## Function to extract from extra_dict (just to make the list
         ##  comprehension look a bit nicer)
         get_extra = lambda compound: (
-            extra_dict[compound]
-            if (extra_dict and (compound in extra_dict))
-            else None
+            extra_dict[compound] if (extra_dict and (compound in extra_dict)) else None
         )
         mp_args = [
             (fn, compound, ignore_h, lig_resn, get_extra(compound))
@@ -55,13 +53,9 @@ class DockedDataset(Dataset):
 
             n_procs = min(num_workers, mp.cpu_count(), len(mp_args))
             with mp.Pool(n_procs) as pool:
-                all_structures = pool.starmap(
-                    DockedDataset._load_structure, mp_args
-                )
+                all_structures = pool.starmap(DockedDataset._load_structure, mp_args)
         else:
-            all_structures = [
-                DockedDataset._load_structure(*args) for args in mp_args
-            ]
+            all_structures = [DockedDataset._load_structure(*args) for args in mp_args]
 
         self.compounds = {}
         self.structures = []
@@ -73,9 +67,7 @@ class DockedDataset(Dataset):
             self.structures.append(struct)
 
     @staticmethod
-    def _load_structure(
-        fn, compound, ignore_h=True, lig_resn="LIG", extra_dict=None
-    ):
+    def _load_structure(fn, compound, ignore_h=True, lig_resn="LIG", extra_dict=None):
         """
         Helper function to load a single structure that can be multiprocessed in
         the class constructor.
@@ -98,9 +90,9 @@ class DockedDataset(Dataset):
         Returns
         -------
         """
+        import torch
         from Bio.PDB.PDBParser import PDBParser
         from rdkit.Chem import GetPeriodicTable
-        import torch
 
         table = GetPeriodicTable()
 
@@ -110,9 +102,7 @@ class DockedDataset(Dataset):
         if ignore_h:
             all_atoms = [a for a in all_atoms if a.element != "H"]
         ## Fix multi-letter atom elements being in all caps (eg CL)
-        atomic_nums = [
-            table.GetAtomicNumber(a.element.title()) for a in all_atoms
-        ]
+        atomic_nums = [table.GetAtomicNumber(a.element.title()) for a in all_atoms]
         atom_pos = [tuple(a.get_vector()) for a in all_atoms]
         is_lig = [a.parent.resname == lig_resn for a in all_atoms]
 
@@ -227,9 +217,9 @@ class GraphDataset(Dataset):
             Cache file for graph dataset
 
         """
+        import pandas
         from dgllife.data import MoleculeCSVDataset
         from dgllife.utils import SMILESToBigraph
-        import pandas
 
         ## Build dataframe
         all_compound_ids, all_smiles, all_pic50, all_range, all_stderr = zip(

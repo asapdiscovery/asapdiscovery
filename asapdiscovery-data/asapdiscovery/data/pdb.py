@@ -17,9 +17,7 @@ def load_pdbs_from_yaml(pdb_list_yaml):
     return pdb_dict
 
 
-def download_pdb_structure(
-    pdb_id: str, directory: str, file_format: str = "pdb"
-):
+def download_pdb_structure(pdb_id: str, directory: str, file_format: str = "pdb"):
     """
     Download a structure, using the specified format/type.
 
@@ -41,13 +39,13 @@ def download_pdb_structure(
     file_path : Path or False
         The path to the downloaded file if successful, else False.
     """
-    from .utils import download_file
     import os
+
     import requests
 
-    url_base_str = (
-        f"https://files.rcsb.org/download/"  # base str to use for URLs
-    )
+    from .utils import download_file
+
+    url_base_str = f"https://files.rcsb.org/download/"  # base str to use for URLs
     # Dictionary with allowed formats and their upstream basenames
     format_to_basename = {
         "pdb": f"{pdb_id.lower()}.pdb",
@@ -106,6 +104,7 @@ def download_PDBs(pdb_list, pdb_dir, file_format="pdb", ignore_errors=True):
         raise the error
     """
     import os
+
     import requests
 
     if not os.path.exists(pdb_dir):
@@ -168,9 +167,7 @@ def pymol_alignment(
     pymol.cmd.delete("all")
 
 
-def align_all_pdbs(
-    pdb_list, pdb_dir_path, ref_path=None, ref_name=None, sel_dict=None
-):
+def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None, sel_dict=None):
     """
     Given a list of PDB_IDs and the directory to them, align all to a ref or to the first in the list.
     Parameters

@@ -17,38 +17,29 @@ python train.py \
     -proj test-model-compare
 """
 import argparse
-from dgllife.utils import CanonicalAtomFeaturizer
-from e3nn import o3
-from e3nn.nn.models.gate_points_2101 import Network
-from glob import glob
 import json
-import numpy as np
 import os
 import pickle as pkl
 import re
 import sys
+from glob import glob
+
+import numpy as np
 import torch
-from torch_geometric.nn import SchNet
+from dgllife.utils import CanonicalAtomFeaturizer
+from e3nn import o3
+from e3nn.nn.models.gate_points_2101 import Network
 from torch_geometric.datasets import QM9
+from torch_geometric.nn import SchNet
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
-from asapdiscovery.ml import (
-    E3NNBind,
-    GAT,
-    SchNetBind,
-    MSELoss,
-    GaussianNLLLoss,
-)
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.data.utils import check_filelist_has_elements
-from asapdiscovery.ml.utils import (
-    calc_e3nn_model_info,
-    find_most_recent,
-    plot_loss,
-    split_molecules,
-    train,
-)
+from asapdiscovery.ml import (GAT, E3NNBind, GaussianNLLLoss, MSELoss,
+                              SchNetBind)
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
+from asapdiscovery.ml.utils import (calc_e3nn_model_info, find_most_recent,
+                                    plot_loss, split_molecules, train)
 
 
 def add_one_hot_encodings(ds):
@@ -120,9 +111,7 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
     """
     ## Load all compounds with experimental data and filter to only achiral
     ##  molecules (to start)
-    exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, "r"))
-    ).compounds
+    exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn, "r"))).compounds
     exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
 
     exp_dict = {
@@ -162,16 +151,13 @@ def build_model_2d(config_fn):
     """
 
     exp_configure = json.load(open(config_fn))
-    exp_configure.update(
-        {"in_node_feats": CanonicalAtomFeaturizer().feat_size()}
-    )
+    exp_configure.update({"in_node_feats": CanonicalAtomFeaturizer().feat_size()})
 
     model = GAT(
         in_feats=exp_configure["in_node_feats"],
         hidden_feats=[exp_configure["gnn_hidden_feats"]]
         * exp_configure["num_gnn_layers"],
-        num_heads=[exp_configure["num_heads"]]
-        * exp_configure["num_gnn_layers"],
+        num_heads=[exp_configure["num_heads"]] * exp_configure["num_gnn_layers"],
         feat_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
         attn_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
         alphas=[exp_configure["alpha"]] * exp_configure["num_gnn_layers"],
@@ -220,9 +206,7 @@ def build_model_e3nn(
     ## Set up default hidden irreps if none specified
     if irreps_hidden is None:
         irreps_hidden = [
-            (mul, (l, p))
-            for l, mul in enumerate([10, 3, 2, 1])
-            for p in [-1, 1]
+            (mul, (l, p)) for l, mul in enumerate([10, 3, 2, 1]) for p in [-1, 1]
         ]
 
     # input is one-hot encoding of atom type => n_atom_types scalars
@@ -297,9 +281,7 @@ def build_model_schnet(
             atomref = None
             ## Get rid of entries in state_dict that correspond to atomref
             wts = {
-                k: v
-                for k, v in model_qm9.state_dict().items()
-                if "atomref" not in k
+                k: v for k, v in model_qm9.state_dict().items() if "atomref" not in k
             }
         else:
             atomref = model_qm9.atomref.weight.detach().clone()
@@ -332,13 +314,11 @@ def build_model_schnet(
 
 
 def make_wandb_table(ds_split):
-    from rdkit.Chem import MolFromSmiles
-    from rdkit.Chem.AllChem import (
-        Compute2DCoords,
-        GenerateDepictionMatching2DStructure,
-    )
-    from rdkit.Chem.Draw import MolToImage
     import wandb
+    from rdkit.Chem import MolFromSmiles
+    from rdkit.Chem.AllChem import (Compute2DCoords,
+                                    GenerateDepictionMatching2DStructure)
+    from rdkit.Chem.Draw import MolToImage
 
     table = wandb.Table(
         columns=["crystal", "compound_id", "molecule", "smiles", "pIC50"]
@@ -447,9 +427,7 @@ def get_args():
         help="Cutoff distance for node neighbors.",
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
-    parser.add_argument(
-        "-config", help="Model config JSON file for graph 2D model."
-    )
+    parser.add_argument("-config", help="Model config JSON file for graph 2D model.")
 
     ## Training arguments
     parser.add_argument(
@@ -483,9 +461,7 @@ def get_args():
     )
 
     ## WandB arguments
-    parser.add_argument(
-        "--wandb", action="store_true", help="Enable WandB logging."
-    )
+    parser.add_argument("--wandb", action="store_true", help="Enable WandB logging.")
     parser.add_argument("-proj", help="WandB project name.")
     parser.add_argument("-name", help="WandB run name.")
 
@@ -502,9 +478,9 @@ def init(args, rank=False):
         all_fns = glob(f"{args.i}/*complex.pdb")
     else:
         all_fns = glob(args.i)
-    
+
     check_filelist_has_elements(all_fns, tag="docked PDB files")
-    
+
     ## Extract crystal structure and compound id from file name
     xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
     compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
@@ -514,9 +490,7 @@ def init(args, rank=False):
     idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
     compounds = [
         (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(
-            xtal_matches, compound_matches, idx
-        )
+        for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
         if both_m
     ]
     num_found = len(compounds)
@@ -541,9 +515,7 @@ def init(args, rank=False):
         ##  fair comparison between 2D and 3D models)
         xtal_compound_ids = {c[1] for c in compounds}
         ## Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [
-            c for c in exp_compounds if c.compound_id in xtal_compound_ids
-        ]
+        exp_compounds = [c for c in exp_compounds if c.compound_id in xtal_compound_ids]
 
         ## Make cache directory as necessary
         if args.cache is None:
@@ -776,23 +748,17 @@ def main():
 
         ## Load error dicts
         if os.path.isfile(f"{args.model_o}/train_err.pkl"):
-            train_loss = pkl.load(
-                open(f"{args.model_o}/train_err.pkl", "rb")
-            ).tolist()
+            train_loss = pkl.load(open(f"{args.model_o}/train_err.pkl", "rb")).tolist()
         else:
             print("Couldn't find train loss file.", flush=True)
             train_loss = None
         if os.path.isfile(f"{args.model_o}/val_err.pkl"):
-            val_loss = pkl.load(
-                open(f"{args.model_o}/val_err.pkl", "rb")
-            ).tolist()
+            val_loss = pkl.load(open(f"{args.model_o}/val_err.pkl", "rb")).tolist()
         else:
             print("Couldn't find val loss file.", flush=True)
             val_loss = None
         if os.path.isfile(f"{args.model_o}/test_err.pkl"):
-            test_loss = pkl.load(
-                open(f"{args.model_o}/test_err.pkl", "rb")
-            ).tolist()
+            test_loss = pkl.load(open(f"{args.model_o}/test_err.pkl", "rb")).tolist()
         else:
             print("Couldn't find test loss file.", flush=True)
             test_loss = None
@@ -836,9 +802,7 @@ def main():
             project_name = args.proj
         else:
             project_name = f"train-{args.model}"
-        wandb_init(
-            project_name, args.name, exp_configure, [ds_train, ds_val, ds_test]
-        )
+        wandb_init(project_name, args.name, exp_configure, [ds_train, ds_val, ds_test])
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(

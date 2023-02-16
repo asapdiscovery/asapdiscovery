@@ -1,8 +1,7 @@
 import argparse
-from asapdiscovery.data.pdb import (
-    download_PDBs,
-    load_pdbs_from_yaml,
-)
+
+from asapdiscovery.data.pdb import download_PDBs, load_pdbs_from_yaml
+
 
 ################################################################################
 def get_args():

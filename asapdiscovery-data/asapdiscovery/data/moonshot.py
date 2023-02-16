@@ -4,8 +4,9 @@ ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
 ## Noncovalent molecules with experimental measurements (from John)
 NONCOVALENT_SMI_SEARCH = "searches/9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 
-from io import StringIO
 import logging
+from io import StringIO
+
 import pandas
 
 
@@ -30,9 +31,10 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
     requests.Response
         Response object from the final export GET request
     """
-    import requests
     import sys
     import time
+
+    import requests
 
     ## Make the initial download request
     logging.debug(f"download_url : initiating search {search_url}")
@@ -100,11 +102,7 @@ def download_achiral(header, fn_out=None):
     ## Parse into DF
     mol_df = pandas.read_csv(StringIO(response.content.decode()))
     ## Get rid of any molecules that snuck through without SMILES
-    idx = (
-        mol_df.loc[:, ["shipment_SMILES", "suspected_SMILES"]]
-        .isna()
-        .all(axis=1)
-    )
+    idx = mol_df.loc[:, ["shipment_SMILES", "suspected_SMILES"]].isna().all(axis=1)
     mol_df = mol_df.loc[~idx, :].copy()
     ## Some of the SMILES from CDD have extra info at the end
     mol_df.loc[:, "shipment_SMILES"] = [

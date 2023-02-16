@@ -1,24 +1,18 @@
 import argparse
-from glob import glob
 import json
 import os
 import pickle as pkl
 import re
-import torch
+from glob import glob
 
-from asapdiscovery.ml.dataset import DockedDataset
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundDataUpdate,
-    EnantiomerPairList,
-)
+import torch
+from asapdiscovery.data.schema import (EnantiomerPairList,
+                                       ExperimentalCompoundDataUpdate)
 from asapdiscovery.data.utils import check_filelist_has_elements
+from asapdiscovery.ml.dataset import DockedDataset
 from asapdiscovery.ml.utils import find_most_recent
-from train import (
-    add_one_hot_encodings,
-    add_lig_labels,
-    build_model_e3nn,
-    build_model_schnet,
-)
+from train import (add_lig_labels, add_one_hot_encodings, build_model_e3nn,
+                   build_model_schnet)
 
 
 def load_affinities(fn):
@@ -41,12 +35,8 @@ def load_affinities(fn):
     """
     ## Load experimental data. Don't need to do any filtering as that's already
     ##  been taken care of by this point
-    exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, "r"))
-    ).compounds
-    affinity_dict = {
-        c.compound_id: c.experimental_data["pIC50"] for c in exp_compounds
-    }
+    exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn, "r"))).compounds
+    affinity_dict = {c.compound_id: c.experimental_data["pIC50"] for c in exp_compounds}
     all_compounds = {c.compound_id for c in exp_compounds}
 
     ## Pair the compounds and rank each pair
@@ -86,9 +76,7 @@ def load_affinities_ep(fn):
     ## Load experimental data. Don't need to do any filtering as that's already
     ##  been taken care of by this point
     ep_list = EnantiomerPairList(**json.load(open(fn, "r"))).pairs
-    enant_pairs = [
-        (ep.active.compound_id, ep.inactive.compound_id) for ep in ep_list
-    ]
+    enant_pairs = [(ep.active.compound_id, ep.inactive.compound_id) for ep in ep_list]
     all_compounds = {c for ep in enant_pairs for c in ep}
 
     return (enant_pairs, all_compounds)
@@ -178,14 +166,10 @@ def main():
 
         ## Load model parameters
         model_params = pkl.load(open(args.model_params, "rb"))
-        model = build_model_e3nn(
-            100, *model_params[1:], node_attr=args.lig, dg=args.dg
-        )
+        model = build_model_e3nn(100, *model_params[1:], node_attr=args.lig, dg=args.dg)
         model_call = lambda model, d: model(d)
     elif args.model == "schnet":
-        model = build_model_schnet(
-            args.qm9, args.dg, remove_atomref=args.rm_atomref
-        )
+        model = build_model_schnet(args.qm9, args.dg, remove_atomref=args.rm_atomref)
         if args.dg:
             model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
         else:
@@ -200,9 +184,7 @@ def main():
         wts_fn = args.model_dir
     print(f"Loading weights from {wts_fn}", flush=True)
     try:
-        model.load_state_dict(
-            torch.load(wts_fn, map_location=torch.device("cpu"))
-        )
+        model.load_state_dict(torch.load(wts_fn, map_location=torch.device("cpu")))
     except Exception as e:
         print(f"Could not load weights at {wts_fn}.")
         print(e)

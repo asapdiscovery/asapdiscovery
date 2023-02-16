@@ -9,6 +9,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.moonshot import download_molecules
 
+
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
@@ -60,9 +61,7 @@ def main():
     if "CDDTOKEN" in os.environ:
         header = {"X-CDD-token": os.environ["CDDTOKEN"]}
     elif args.tok:
-        header = {
-            "X-CDD-token": "".join(open(args.tok, "r").readlines()).strip()
-        }
+        header = {"X-CDD-token": "".join(open(args.tok, "r").readlines()).strip()}
     else:
         raise ValueError(
             (

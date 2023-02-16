@@ -1,22 +1,20 @@
 import argparse
 import json
 import multiprocessing as mp
-import numpy as np
 import os
 import pickle as pkl
 import sys
 
+import numpy as np
+
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asapdiscovery.data.utils import load_exp_from_sdf
 from asapdiscovery.data.fragalysis import parse_xtal
-from asapdiscovery.docking.mcs import (
-    rank_structures_openeye,
-    rank_structures_rdkit,
-)
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundDataUpdate,
-    EnantiomerPairList,
-)
+from asapdiscovery.data.schema import (EnantiomerPairList,
+                                       ExperimentalCompoundDataUpdate)
+from asapdiscovery.data.utils import load_exp_from_sdf
+from asapdiscovery.docking.mcs import (rank_structures_openeye,
+                                       rank_structures_rdkit)
+
 
 ################################################################################
 def get_args():
@@ -38,9 +36,7 @@ def get_args():
     parser.add_argument("-o", required=True, help="Main output directory.")
 
     ## Performance arguments
-    parser.add_argument(
-        "-n", default=1, type=int, help="Number of processors to use."
-    )
+    parser.add_argument("-n", default=1, type=int, help="Number of processors to use.")
     parser.add_argument(
         "-sys",
         default="rdkit",
@@ -50,8 +46,7 @@ def get_args():
         "-str",
         action="store_true",
         help=(
-            "Use "
-            "structure-based matching instead of element-based matching for MCS."
+            "Use " "structure-based matching instead of element-based matching for MCS."
         ),
     )
     parser.add_argument(
@@ -80,15 +75,11 @@ def main():
     if args.exp:
         ## Give a warning if both -exp and -sdf are provided
         if args.sdf:
-            print(
-                "WARNING: Both -exp and -sdf provided, using -exp.", flush=True
-            )
+            print("WARNING: Both -exp and -sdf provided, using -exp.", flush=True)
         if args.ep:
             exp_compounds = [
                 c
-                for ep in EnantiomerPairList(
-                    **json.load(open(args.exp, "r"))
-                ).pairs
+                for ep in EnantiomerPairList(**json.load(open(args.exp, "r"))).pairs
                 for c in (ep.active, ep.inactive)
             ]
         else:

@@ -10,19 +10,22 @@ Example usage:
         -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
         -f /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/aligned
 """
-import sys, os, argparse, shutil, pickle as pkl, yaml
+import argparse
+import os
+import pickle as pkl
+import shutil
+import sys
+
+import yaml
 from openeye import oechem
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from asapdiscovery.docking.analysis import DockingResults
-from asapdiscovery.data.utils import (
-    load_openeye_sdf,
-    save_openeye_pdb,
-    save_openeye_sdf,
-)
 from asapdiscovery.data.openeye import save_openeye_design_unit
+from asapdiscovery.data.utils import (load_openeye_sdf, save_openeye_pdb,
+                                      save_openeye_sdf)
+from asapdiscovery.docking.analysis import DockingResults
 
 
 def get_args():
@@ -162,9 +165,7 @@ def write_fragalysis_output(
         du.GetProtein(prot)
         lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
-        lig, prot, complex = save_openeye_design_unit(
-            du, lig=lig, lig_title=complex_id
-        )
+        lig, prot, complex = save_openeye_design_unit(du, lig=lig, lig_title=complex_id)
 
         ## First save apo
         save_openeye_pdb(prot, f"{compound_out_dir}/{complex_id}_apo.pdb")
@@ -271,9 +272,7 @@ def main():
             values["Prepped_Receptor"] = os.path.join(
                 compound_input_path, "predocked.oedu"
             )
-            values["Ligand_SDF"] = os.path.join(
-                compound_input_path, "docked.sdf"
-            )
+            values["Ligand_SDF"] = os.path.join(compound_input_path, "docked.sdf")
             assert os.path.exists(values["Prepped_Receptor"])
             assert os.path.exists(values["Ligand_SDF"])
             best_structure_dict_all[complex_id] = values
