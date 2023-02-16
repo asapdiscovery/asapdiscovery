@@ -44,13 +44,12 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: devtools/conda-envs/test.yaml
-
-        channels: conda-forge,defaults
-
+        miniforge-variant: Mambaforge
         activate-environment: test
         auto-update-conda: false
         auto-activate-base: false
         show-channel-urls: true
+        use-mamba: true
 
     - name: Install packages
 
