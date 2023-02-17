@@ -1,12 +1,5 @@
 import argparse
-import json
-import os
-import pandas
-from rdkit.Chem import MolToSmiles, MolFromSmiles
-import re
-import sys
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.utils import cdd_to_schema, cdd_to_schema_pair
 
 

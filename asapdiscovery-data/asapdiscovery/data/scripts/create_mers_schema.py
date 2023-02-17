@@ -1,9 +1,5 @@
 import argparse
 import os
-import sys
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
 
 from asapdiscovery.data.schema import (
     CrystalCompoundData,

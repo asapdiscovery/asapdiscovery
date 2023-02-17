@@ -4,11 +4,8 @@ matches the given SMARTS string(s). Output is a CSV file with all kept
 structures.
 """
 import argparse
-import os
 import pandas
-import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.utils import (
     filter_docking_inputs,
     parse_fragalysis_data,

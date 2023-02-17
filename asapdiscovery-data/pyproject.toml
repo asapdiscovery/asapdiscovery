@@ -32,6 +32,16 @@ dependencies = [
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
+[project.scripts]
+cdd-to-schema = "asapdiscovery.data.scripts.cdd_to_schema:main"
+create-mers-schema = "asapdiscovery.data.scripts.create_mers_schema:main"
+docking-data-to-csv = "asapdiscovery.data.scripts.docking_data_to_csv:main"
+download-fragalysis-data = "asapdiscovery.data.scripts.download_fragalysis_data:main"
+download-moonshot-data = "asapdiscovery.data.scripts.download_moonshot_data:main"
+download-pdbs = "asapdiscovery.data.scripts.download_pdbs:main"
+filter-fragalysis-by-smarts = "asapdiscovery.data.scripts.filter_fragalysis_by_smarts:main"
+write-cmpd-to-frag-dict = "asapdiscovery.data.scripts.write_cmpd_to_frag_dict:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 

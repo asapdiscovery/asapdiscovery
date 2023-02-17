@@ -8,10 +8,7 @@ Example Usage:
         -f ~/Scientific_Projects/mers-drug-discovery/Mpro-paper-ligand/extra_files/Mpro_compound_tracker_csv.csv
 
 """
-import argparse, os, sys, yaml
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
+import argparse, os, yaml
 
 from asapdiscovery.data.utils import (
     get_compound_id_xtal_dicts,
