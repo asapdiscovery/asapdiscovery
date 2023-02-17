@@ -10,11 +10,8 @@ Example usage:
         -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
         -f /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/aligned
 """
-import sys, os, argparse, shutil, pickle as pkl, yaml
+import os, argparse, shutil, pickle as pkl, yaml
 from openeye import oechem
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
 
 from asapdiscovery.docking.analysis import DockingResults
 from asapdiscovery.data.utils import (

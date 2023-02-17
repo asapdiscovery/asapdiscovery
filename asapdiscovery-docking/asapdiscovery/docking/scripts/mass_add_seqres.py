@@ -4,10 +4,7 @@ Add MPRO seqres for an entire directory downloaded from fragalysis.
 import argparse
 import glob
 import multiprocessing as mp
-import os
-import sys
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.utils import edit_pdb_file, check_filelist_has_elements
 
 

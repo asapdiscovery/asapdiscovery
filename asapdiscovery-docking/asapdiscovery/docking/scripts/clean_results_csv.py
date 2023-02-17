@@ -9,11 +9,8 @@ Example Usage:
         -d
         -s
 """
-import sys, os, argparse
+import os, argparse
 import numpy as np
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
 
 from asapdiscovery.docking.analysis import DockingResults
 

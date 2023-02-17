@@ -1,8 +1,6 @@
 import argparse
 from openeye import oechem, oedocking, oegrid
-import os
 import pandas
-import sys
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,

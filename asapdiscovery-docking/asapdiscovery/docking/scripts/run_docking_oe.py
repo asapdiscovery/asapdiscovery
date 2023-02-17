@@ -10,9 +10,7 @@ import pandas
 import pickle as pkl
 import re
 import shutil
-import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.openeye import load_openeye_sdf, save_openeye_sdf
 from asapdiscovery.docking.docking import run_docking_oe
 from asapdiscovery.data.utils import check_filelist_has_elements

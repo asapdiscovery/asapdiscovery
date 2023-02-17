@@ -2,11 +2,8 @@ import argparse
 import json
 import multiprocessing as mp
 import numpy as np
-import os
 import pickle as pkl
-import sys
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.utils import load_exp_from_sdf
 from asapdiscovery.data.fragalysis import parse_xtal
 from asapdiscovery.docking.mcs import (

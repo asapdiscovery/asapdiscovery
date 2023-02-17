@@ -8,11 +8,7 @@ Example Usage:
         -o /Volumes/Rohirrim/local_test/mers_hallucination_hybrid/posit_hybrid_no_relax_keep_water_frag_carlsson
 
 """
-import sys, os, argparse, yaml, shutil
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
-
+import os, argparse, yaml, shutil
 
 def get_args():
     parser = argparse.ArgumentParser(description="")

@@ -5,10 +5,7 @@ import argparse
 from openeye import oechem
 import os
 import pandas
-import re
-import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,

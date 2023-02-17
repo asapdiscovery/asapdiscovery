@@ -17,11 +17,8 @@ import multiprocessing as mp
 from openeye import oechem
 import os
 import re
-import sys
-from tempfile import NamedTemporaryFile
 import yaml
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.docking.modeling import (
     align_receptor,

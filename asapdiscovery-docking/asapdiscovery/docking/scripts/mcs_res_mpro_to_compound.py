@@ -3,9 +3,7 @@ Convert Mpro dataset in MCSS results to compound id of docked compound.
 """
 import argparse
 import pickle as pkl
-import sys, os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.utils import get_compound_id_xtal_dicts
 from asapdiscovery.data.fragalysis import parse_xtal
 

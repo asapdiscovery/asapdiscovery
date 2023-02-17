@@ -1,11 +1,8 @@
-import sys, os, argparse
+import os, argparse
 
 # TODO: Do we need to add plotly to our environment yaml?
 import plotly.express as px
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
 from asapdiscovery.docking.analysis import DockingResults
 
 

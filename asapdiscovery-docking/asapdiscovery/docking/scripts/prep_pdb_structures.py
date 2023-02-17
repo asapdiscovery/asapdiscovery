@@ -2,11 +2,8 @@
 Function to test implementation of ligand filtering
 """
 
-import sys, os, argparse, yaml
+import os, argparse, yaml
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
 from asapdiscovery.docking.modeling import (
     align_receptor,
     prep_receptor,

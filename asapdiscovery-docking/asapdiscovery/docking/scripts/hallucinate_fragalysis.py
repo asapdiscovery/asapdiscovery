@@ -11,9 +11,7 @@ import os
 import pandas
 import pickle as pkl
 import re
-import sys
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.utils import (
     get_compound_id_xtal_dicts,
     parse_fragalysis_data,
