@@ -53,7 +53,7 @@ seqres = seqres_dict["SEQRES"]
 from asapdiscovery.data.utils import seqres_to_res_list
 
 res_list = seqres_to_res_list(seqres)
-seqres = " ".join(res_list)
+sequence = " ".join(res_list)
 
 print("Making mutations")
 from asapdiscovery.docking.modeling import mutate_residues
@@ -64,7 +64,7 @@ print("Sprucing protein")
 from asapdiscovery.modeling.modeling import spruce_protein
 
 du = spruce_protein(
-    initial_prot=prot, seqres=seqres, loop_db=str(loop_path), return_du=True
+    initial_prot=prot, seqres=sequence, loop_db=str(loop_path), return_du=True
 )
 print("Saving Design Unit")
 from openeye import oechem
@@ -77,5 +77,12 @@ from openeye import oechem
 
 prot = oechem.OEGraphMol()
 du.GetProtein(prot)
+
+## Add SEQRES entries if they're not present
+if (not oechem.OEHasPDBData(prot, "SEQRES")) and seqres:
+    for seqres_line in seqres.split("\n"):
+        if seqres_line != "":
+            oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
+
 prot_fn = output / f"{cifpath.stem}-02.pdb"
 save_openeye_pdb(prot, str(prot_fn))

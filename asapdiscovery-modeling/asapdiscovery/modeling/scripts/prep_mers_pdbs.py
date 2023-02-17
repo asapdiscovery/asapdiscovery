@@ -150,6 +150,13 @@ def main():
 
             prot = oechem.OEGraphMol()
             du.GetProtein(prot)
+
+            ## Add SEQRES entries if they're not present
+            if (not oechem.OEHasPDBData(prot, "SEQRES")) and seqres:
+                for seqres_line in seqres.split("\n"):
+                    if seqres_line != "":
+                        oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
+
             prot_fn = output / f"{cifpath.stem}-prepped_receptor_0.pdb"
             save_openeye_pdb(prot, str(prot_fn))
 
