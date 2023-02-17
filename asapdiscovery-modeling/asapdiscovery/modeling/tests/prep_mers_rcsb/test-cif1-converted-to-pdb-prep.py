@@ -16,16 +16,17 @@ import yaml
 
 out_path = Path("")
 in_path = Path("inputs")
-pdb_path = in_path / "rcsb_8DGY-assembly1.cif"
+# pdb_path = in_path / "rcsb_8DGY-assembly1.pdb"
+pdb_path = in_path / "rcsb_8DGY-assembly1-openmm.pdb"
 ref_path = in_path / "reference.pdb"
-seqres_path = Path("../../../metadata/mpro_sars2_seqres.yaml")
+seqres_path = Path("../../../../../metadata/mpro_mers_seqres.yaml")
 with open(seqres_path) as f:
     seqres_dict = yaml.safe_load(f)
-seqres = seqres_dict["SEQRES"]
+# seqres = seqres_dict["SEQRES"]
 pdb_id = "8DGY"
 active_site_chain = "A"
 
-mol = load_openeye_cif(pdb_path.as_posix())
+mol = load_openeye_pdb(pdb_path.as_posix())
 
 ## Align protein
 ## TODO: This currently only keeps waters for one of the chains
@@ -34,7 +35,7 @@ mol = align_receptor(
     initial_complex=mol,
     ref_prot=ref_path.as_posix(),
     dimer=True,
-    split_initial_complex=True,
+    split_initial_complex=False,
     mobile_chain=active_site_chain,
     ref_chain="A",
 )
@@ -48,22 +49,22 @@ save_openeye_pdb(mol, str(out_path / "align_test.pdb"))
 ## but it would be nice to do this intelligently
 
 
-res_list = seqres_to_res_list(seqres)
-print("Mutating to provided seqres")
-print(res_list)
+# res_list = seqres_to_res_list(seqres)
+# print("Mutating to provided seqres")
+# print(res_list)
 
 # Mutate the residues to match the residue list
-mol = mutate_residues(mol, res_list)
-save_openeye_pdb(mol, str(out_path / "mutate_test.pdb"))
+# mol = mutate_residues(mol, res_list)
+# save_openeye_pdb(mol, str(out_path / "mutate_test.pdb"))
 
 # Prep receptor
 print("Prepping receptor")
 design_units = prep_receptor(
     mol,
-    site_residue=f"HIS:41: :{active_site_chain}",
+    site_residue=f"HIS:166: :{active_site_chain}",
     # loop_db=loop_db,
     protein_only=True,
-    seqres=" ".join(res_list),
+    # seqres=" ".join(res_list),
 )
 
 # xtal = CrystalCompoundData(
