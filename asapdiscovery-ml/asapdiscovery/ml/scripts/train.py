@@ -26,12 +26,10 @@ import numpy as np
 import os
 import pickle as pkl
 import re
-import sys
 import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml import (
     E3NNBind,
