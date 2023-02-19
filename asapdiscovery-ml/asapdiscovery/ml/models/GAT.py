@@ -1,5 +1,5 @@
-from dgllife.model import GAT as GAT_dgl
 import torch
+from dgllife.model import GAT as GAT_dgl
 
 
 class GAT(torch.nn.Module):
@@ -8,7 +8,7 @@ class GAT(torch.nn.Module):
     """
 
     def __init__(self, *args, **kwargs):
-        super(GAT, self).__init__()
+        super().__init__()
         self.gnn = GAT_dgl(*args, **kwargs)
         self.readout = torch.nn.Linear(self.gnn.hidden_feats[-1], 1)
 

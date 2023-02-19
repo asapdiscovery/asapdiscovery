@@ -5,16 +5,16 @@ structures.
 """
 import argparse
 import os
-import pandas
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.data.utils import (
-    filter_docking_inputs,
-    parse_fragalysis_data,
-)
+import pandas
 
-################################################################################
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from asapdiscovery.data.utils import filter_docking_inputs  # noqa: E402
+from asapdiscovery.data.utils import parse_fragalysis_data  # noqa: E402
+
+
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
@@ -24,9 +24,7 @@ def get_args():
         required=True,
         help="Input fragalysis directory.",
     )
-    parser.add_argument(
-        "-o", "--out_file", required=True, help="Output CSV file."
-    )
+    parser.add_argument("-o", "--out_file", required=True, help="Output CSV file.")
     parser.add_argument(
         "-s",
         "--smarts_filter",
@@ -40,26 +38,26 @@ def get_args():
 def main():
     args = get_args()
 
-    ## First, parse the fragalysis directory into a dictionary of
-    ##  CrystalCompoundData
+    # First, parse the fragalysis directory into a dictionary of
+    #  CrystalCompoundData
     xtal_fn = f"{args.frag_input_dir}/extra_files/Mpro_compound_tracker_csv.csv"
     sars_xtals = parse_fragalysis_data(xtal_fn, args.frag_input_dir)
 
-    ## For the compounds for which we have smiles strings, get a
-    ##  dictionary mapping the Compound_ID to the smiles
+    # For the compounds for which we have smiles strings, get a
+    #  dictionary mapping the Compound_ID to the smiles
     cmp_to_smiles_dict = {
         compound_id: data.smiles
         for compound_id, data in sars_xtals.items()
         if data.smiles
     }
 
-    ## Filter based on the smiles using this OpenEye function
+    # Filter based on the smiles using this OpenEye function
     filtered_inputs = filter_docking_inputs(
         smarts_queries=args.smarts_filter,
         docking_inputs=cmp_to_smiles_dict,
     )
 
-    ## Build output df
+    # Build output df
     datasets = []
     compound_ids = []
     smiles = []

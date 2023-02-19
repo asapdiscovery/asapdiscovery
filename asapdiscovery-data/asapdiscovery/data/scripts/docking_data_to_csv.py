@@ -1,15 +1,15 @@
-import sys, os, argparse
+import argparse
+import os
+import sys
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
-from asapdiscovery.docking.analysis import DockingDataset
+sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
+from asapdiscovery.docking.analysis import DockingDataset  # noqa: E402
 
 
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d", required=True, help="Directory containing docking results."
     )

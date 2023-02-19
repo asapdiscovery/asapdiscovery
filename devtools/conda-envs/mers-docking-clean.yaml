@@ -35,7 +35,7 @@ backports                 1.0                        py_2    conda-forge
 backports.functools_lru_cache 1.6.4              pyhd8ed1ab_0    conda-forge
 beautifulsoup4            4.11.1             pyha770c72_0    conda-forge
 biopandas                 0.4.1              pyhd8ed1ab_0    conda-forge
-biopython                 1.77             py39h9ed2024_0  
+biopython                 1.77             py39h9ed2024_0
 biotite                   0.33.0           py39h701faf5_1    conda-forge
 black                     22.6.0             pyhd8ed1ab_0    conda-forge
 blas                      2.115                       mkl    conda-forge
