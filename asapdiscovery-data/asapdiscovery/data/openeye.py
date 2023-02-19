@@ -1,10 +1,10 @@
-from openeye import oechem, oedocking, oegrid
+from openeye import oechem, oegrid
 
 
 def load_openeye_pdb(pdb_fn, alt_loc=False):
     ifs = oechem.oemolistream()
     ifs_flavor = oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA
-    ## Add option for keeping track of alternat locations in PDB file
+    # Add option for keeping track of alternat locations in PDB file
     if alt_loc:
         ifs_flavor |= oechem.OEIFlavor_PDB_ALTLOC
     ifs.SetFlavor(
@@ -67,19 +67,19 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     """
     from .utils import trim_small_chains
 
-    ## Test splitting
+    # Test splitting
     lig_mol = oechem.OEGraphMol()
     prot_mol = oechem.OEGraphMol()
     water_mol = oechem.OEGraphMol()
     oth_mol = oechem.OEGraphMol()
 
-    ## Make splitting split out covalent ligands
-    ## TODO: look into different covalent-related options here
+    # Make splitting split out covalent ligands
+    # TODO: look into different covalent-related options here
     opts = oechem.OESplitMolComplexOptions()
     opts.SetSplitCovalent(True)
     opts.SetSplitCovalentCofactors(True)
 
-    ## Select protein as all protein atoms in chain A or chain B
+    # Select protein as all protein atoms in chain A or chain B
     prot_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_Protein
     )
@@ -92,7 +92,7 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     a_or_b_chain = oechem.OEOrRoleSet(a_chain, b_chain)
     opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
 
-    ## Select ligand as all residues with resn LIG
+    # Select ligand as all residues with resn LIG
     lig_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_Ligand
     )
@@ -104,11 +104,9 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
         )
         opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
 
-    ## Set water filter (keep all waters in A, B, or W chains)
-    ##  (is this sufficient? are there other common water chain ids?)
-    wat_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Water
-    )
+    # Set water filter (keep all waters in A, B, or W chains)
+    #  (is this sufficient? are there other common water chain ids?)
+    wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
     w_chain = oechem.OERoleMolComplexFilterFactory(
         oechem.OEMolComplexChainRoleFactory("W")
     )
@@ -161,9 +159,7 @@ def load_openeye_sdfs(sdf_fn):
     return cmpd_list
 
 
-def get_ligand_rmsd_from_pdb_and_sdf(
-    ref_path, mobile_path, fetch_docking_results=True
-):
+def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_results=True):
     ref_pdb = load_openeye_pdb(ref_path)
     ref = split_openeye_mol(ref_pdb)["lig"]
     mobile = load_openeye_sdf(mobile_path)
@@ -206,11 +202,11 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
         lig = oechem.OEGraphMol()
         du.GetLigand(lig)
 
-    ## Set ligand title, useful for the combined sdf file
+    # Set ligand title, useful for the combined sdf file
     if lig_title:
         lig.SetTitle(f"{lig_title}")
 
-    ## Give ligand atoms their own chain "L" and set the resname to "LIG"
+    # Give ligand atoms their own chain "L" and set the resname to "LIG"
     residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
     residue.SetChainID("L")
     residue.SetName("LIG")
@@ -218,12 +214,13 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
     for atom in list(lig.GetAtoms()):
         oechem.OEAtomSetResidue(atom, residue)
 
-    ## Combine protein and ligand and save
-    ## TODO: consider saving water as well
+    # Combine protein and ligand and save
+    # TODO: consider saving water as well
     oechem.OEAddMols(complex, prot)
     oechem.OEAddMols(complex, lig)
 
-    ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
+    # Clean up PDB info by re-perceiving, perserving chain ID,
+    # residue number, and residue name
     preserve = (
         oechem.OEPreserveResInfo_ChainID
         | oechem.OEPreserveResInfo_ResidueNumber

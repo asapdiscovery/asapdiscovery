@@ -3,41 +3,39 @@ Build library of ligands from a dataset of holo crystal structures docked to a
 different dataset of apo structures.
 """
 import argparse
-from glob import glob
 import itertools as it
 import multiprocessing as mp
-from openeye import oechem, oedocking, oespruce
 import os
-import pandas
 import pickle as pkl
 import re
 import sys
+from glob import glob
+
+import pandas
+from openeye import oechem, oedocking, oespruce
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asapdiscovery.data.utils import (
-    get_compound_id_xtal_dicts,
-    parse_fragalysis_data,
-    filter_docking_inputs,
-)
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    load_openeye_sdf,
-    save_openeye_pdb,
-    save_openeye_sdf,
-    split_openeye_mol,
-)
-from asapdiscovery.data.utils import check_filelist_has_elements
-from asapdiscovery.docking.modeling import du_to_complex, make_du_from_new_lig
+from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402 E501
+from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402 E501
+from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: 402
+from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402 E501
+from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402 E501
+from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
+from asapdiscovery.data.utils import filter_docking_inputs  # noqa: 402
+from asapdiscovery.data.utils import get_compound_id_xtal_dicts  # noqa: E402
+from asapdiscovery.data.utils import parse_fragalysis_data  # noqa: E402 E501
+from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402 E501
+from asapdiscovery.docking.modeling import make_du_from_new_lig  # noqa: 402
 
 
 def check_output(d):
-    ## First check for result pickle file
+    # First check for result pickle file
     try:
         pkl.load(open(f"{d}/results.pkl", "rb"))
     except FileNotFoundError:
         return False
 
-    ## Then check for other intermediate files
+    # Then check for other intermediate files
     du = oechem.OEDesignUnit()
     if not oechem.OEReadDesignUnit(f"{d}/predocked.oedu", du):
         return False
@@ -67,20 +65,20 @@ def mp_func(
     save_du=False,
 ):
     out_base = f"{out_dir}/{apo_name}/"
-    ## First check if this combo has already been run
+    # First check if this combo has already been run
     if check_output(out_base):
         dimer_s = "dimer" if dimer else "monomer"
         print(f"Results found for {lig_name}_{apo_name}_{dimer_s}", flush=True)
         return pkl.load(open(f"{out_base}/results.pkl", "rb"))
 
-    ## Make output directory if necessary
+    # Make output directory if necessary
     os.makedirs(out_base, exist_ok=True)
     out_fn = f"{out_base}/predocked"
 
-    ## Make copy of lig so we don't modify original
+    # Make copy of lig so we don't modify original
     lig_copy = lig.CreateCopy()
 
-    ## Make design unit and prep the receptor
+    # Make design unit and prep the receptor
     try:
         du = make_du_from_new_lig(
             apo_prot,
@@ -103,36 +101,36 @@ def mp_func(
         return results
     oedocking.OEMakeReceptor(du)
 
-    ## Save if desired
+    # Save if desired
     if save_du:
         oechem.OEWriteDesignUnit(f"{out_fn}.oedu", du)
 
-    ## Get protein+lig complex in molecule form and save
+    # Get protein+lig complex in molecule form and save
     complex_mol = du_to_complex(du)
     save_openeye_pdb(complex_mol, f"{out_fn}.pdb")
 
-    ### TODO: replace all of this with new docking.run_docking_oe function
+    # TODO: replace all of this with new docking.run_docking_oe function
 
-    ## Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
-    ##  1 if there was a clash that couldn't be resolved)
+    # Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
+    #  1 if there was a clash that couldn't be resolved)
     clash = -1
 
-    ## Get ligand to dock
+    # Get ligand to dock
     dock_lig = oechem.OEMol()
     du.GetLigand(dock_lig)
     if dock_sys == "posit":
-        ## Set up POSIT docking options
+        # Set up POSIT docking options
         opts = oedocking.OEPositOptions()
-        ## kinoml has the below option set, but the accompanying comment implies
-        ##  that we should be ignoring N stereochemistry, which, paradoxically,
-        ##  corresponds to a False option (the default)
+        # kinoml has the below option set, but the accompanying comment implies
+        #  that we should be ignoring N stereochemistry, which, paradoxically,
+        #  corresponds to a False option (the default)
         opts.SetIgnoreNitrogenStereo(True)
-        ## Set the POSIT methods to only be hybrid (otherwise leave as default
-        ##  of all)
+        # Set the POSIT methods to only be hybrid (otherwise leave as default
+        #  of all)
         if hybrid:
             opts.SetPositMethods(oedocking.OEPositMethod_HYBRID)
 
-        ## Set up pose relaxation
+        # Set up pose relaxation
         if relax == "clash":
             clash = 0
             opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_CLASHED)
@@ -140,7 +138,7 @@ def mp_func(
             clash = 0
             opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
         elif relax != "none":
-            ## Don't need to do anything for none bc that's already the default
+            # Don't need to do anything for none bc that's already the default
             raise ValueError(f'Unknown arg for relaxation "{relax}"')
 
         print(
@@ -149,21 +147,21 @@ def mp_func(
             flush=True,
         )
 
-        ## Set up poser object
+        # Set up poser object
         poser = oedocking.OEPosit(opts)
         poser.AddReceptor(du)
 
-        ## Run posing
+        # Run posing
         pose_res = oedocking.OESinglePoseResult()
         ret_code = poser.Dock(pose_res, dock_lig)
     elif dock_sys == "hybrid":
         print("Running Hybrid docking", flush=True)
 
-        ## Set up poser object
+        # Set up poser object
         poser = oedocking.OEHybrid()
         poser.Initialize(du)
 
-        ## Run posing
+        # Run posing
         posed_mol = oechem.OEMol()
         ret_code = poser.DockMultiConformerMolecule(posed_mol, dock_lig)
 
@@ -172,8 +170,8 @@ def mp_func(
         raise ValueError(f'Unknown docking system "{dock_sys}"')
 
     if ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
-        ## For POSIT with clash removal, if no non-clashing pose can be found,
-        ##  re-run with no clash removal
+        # For POSIT with clash removal, if no non-clashing pose can be found,
+        #  re-run with no clash removal
         opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
         clash = 1
 
@@ -183,21 +181,21 @@ def mp_func(
             flush=True,
         )
 
-        ## Set up poser object
+        # Set up poser object
         poser = oedocking.OEPosit(opts)
         poser.AddReceptor(du)
 
-        ## Run posing
+        # Run posing
         pose_res = oedocking.OESinglePoseResult()
         ret_code = poser.Dock(pose_res, dock_lig)
 
-    ## Check results
+    # Check results
     if ret_code == oedocking.OEDockingReturnCode_Success:
         if dock_sys == "posit":
             posed_mol = pose_res.GetPose()
             posit_prob = pose_res.GetProbability()
 
-        ## Get the Chemgauss4 score (adapted from kinoml)
+        # Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
         pose_scorer.Initialize(du)
         chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
@@ -214,12 +212,12 @@ def mp_func(
     save_openeye_sdf(posed_mol, f"{out_base}/docked.sdf")
     save_openeye_sdf(dock_lig, f"{out_base}/predocked.sdf")
 
-    ## Calculate RMSD
+    # Calculate RMSD
     oechem.OECanonicalOrderAtoms(dock_lig)
     oechem.OECanonicalOrderBonds(dock_lig)
     oechem.OECanonicalOrderAtoms(posed_mol)
     oechem.OECanonicalOrderBonds(posed_mol)
-    ## Get coordinates, filtering out Hs
+    # Get coordinates, filtering out Hs
     predocked_coords = [
         c
         for a in dock_lig.GetAtoms()
@@ -252,11 +250,11 @@ def mp_func(
     return results
 
 
-################################################################################
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments (these can be changed to eg yaml files later)
+    # Input arguments (these can be changed to eg yaml files later)
     parser.add_argument(
         "-apo",
         required=True,
@@ -285,10 +283,8 @@ def get_args():
         help="Path to csv file containing smarts queries.",
     )
 
-    ## Performance arguments
-    parser.add_argument(
-        "-n", default=10, type=int, help="Number of processors to use."
-    )
+    # Performance arguments
+    parser.add_argument("-n", default=10, type=int, help="Number of processors to use.")
     parser.add_argument(
         "-sys",
         default="posit",
@@ -310,7 +306,7 @@ def get_args():
         help="Keep water molecules in the Design Unit.",
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument("-o", required=True, help="Parent output directory.")
     parser.add_argument(
         "-du",
@@ -320,8 +316,7 @@ def get_args():
     parser.add_argument(
         "-cache",
         help=(
-            "Cache directory (will use .cache in "
-            "output directory if not specified)."
+            "Cache directory (will use .cache in " "output directory if not specified)."
         ),
     )
 
@@ -331,7 +326,7 @@ def get_args():
 def main():
     args = get_args()
 
-    ## Check -sys and -relax
+    # Check -sys and -relax
     args.sys = args.sys.lower()
     args.relax = args.relax.lower()
     if args.sys not in {"posit", "hybrid"}:
@@ -339,37 +334,33 @@ def main():
     if args.relax not in {"none", "clash", "all"}:
         raise ValueError(f'Unknown arg for relaxation "{args.relax}"')
 
-    ## Set logging
+    # Set logging
     import logging
 
     logging.basicConfig(level=logging.DEBUG)
 
-    ## Get all files and parse out a name
+    # Get all files and parse out a name
     all_apo_fns = glob(args.apo)
     check_filelist_has_elements(all_apo_fns, tag="apo PDB files")
 
-    all_apo_names = [
-        os.path.splitext(os.path.basename(fn))[0] for fn in all_apo_fns
-    ]
+    all_apo_names = [os.path.splitext(os.path.basename(fn))[0] for fn in all_apo_fns]
     all_holo_fns = glob(args.holo)
     check_filelist_has_elements(all_holo_fns, tag="holo PDB files")
 
-    all_holo_names = [
-        os.path.splitext(os.path.basename(fn))[0] for fn in all_holo_fns
-    ]
+    all_holo_names = [os.path.splitext(os.path.basename(fn))[0] for fn in all_holo_fns]
 
     if args.x is not None:
-        ## Need to go up one level of directory
+        # Need to go up one level of directory
         frag_dir = os.path.dirname(os.path.dirname(args.holo))
 
-        ## First, parse the fragalysis directory into a dictionary of
-        ##  CrystalCompoundData
+        # First, parse the fragalysis directory into a dictionary of
+        #  CrystalCompoundData
         sars_xtals = parse_fragalysis_data(args.x, frag_dir)
 
-        ## Get dict mapping crystal structure id to compound id
+        # Get dict mapping crystal structure id to compound id
         compound_id_dict = get_compound_id_xtal_dicts(sars_xtals.values())[1]
 
-        ## Map all holo structure names to their ligand name
+        # Map all holo structure names to their ligand name
         all_holo_names = [
             f'{compound_id_dict[n.split("_")[0]]}_{n.split("_")[1]}'
             if n.split("_")[0] in compound_id_dict
@@ -378,73 +369,67 @@ def main():
         ]
 
         if args.smarts_queries:
-            ## For the compounds for which we have smiles strings, get a
-            ##  dictionary mapping the Compound_ID to the smiles
+            # For the compounds for which we have smiles strings, get a
+            #  dictionary mapping the Compound_ID to the smiles
             cmp_to_smiles_dict = {
                 compound_id: data.smiles
                 for compound_id, data in sars_xtals.items()
                 if data.smiles
             }
 
-            ## Filter based on the smiles using this OpenEye function
+            # Filter based on the smiles using this OpenEye function
             filtered_inputs = filter_docking_inputs(
                 smarts_queries=args.smarts_queries,
                 docking_inputs=cmp_to_smiles_dict,
             )
 
-            ## Keep track of which structures to keep
-            keep_idx = [
-                n.split("_")[0] in filtered_inputs for n in all_holo_names
-            ]
+            # Keep track of which structures to keep
+            keep_idx = [n.split("_")[0] in filtered_inputs for n in all_holo_names]
         else:
             keep_idx = [True] * len(all_holo_names)
 
-        ## Trim files and names to keep
+        # Trim files and names to keep
         all_holo_fns = [fn for keep, fn in zip(keep_idx, all_holo_fns) if keep]
-        all_holo_names = [
-            n for keep, n in zip(keep_idx, all_holo_names) if keep
-        ]
+        all_holo_names = [n for keep, n in zip(keep_idx, all_holo_names) if keep]
 
-        ## Sanity check to make sure the lengths are the same
+        # Sanity check to make sure the lengths are the same
         assert len(all_holo_fns) == len(all_holo_names)
 
     print(f"{len(all_apo_fns)} apo structures")
     print(f"{len(all_holo_fns)} ligands to dock", flush=True)
 
-    ## Get correct ligand chain for each file
+    # Get correct ligand chain for each file
     re_pat = r"Mpro-.*_[0-9]([AB])"
     all_matches = [re.search(re_pat, fn) for fn in all_holo_fns]
-    ## Get rid of files that aren't A or B chain (can't handle that for now)
+    # Get rid of files that aren't A or B chain (can't handle that for now)
     lig_chains = [m.groups()[0] if m else None for m in all_matches]
-    ## Get ligands from all holo structures
+    # Get ligands from all holo structures
     all_ligs = [
         split_openeye_mol(load_openeye_pdb(fn), lig_chain=c)["lig"]
         for fn, c in zip(all_holo_fns, lig_chains)
         if c
     ]
-    ## Trim names
-    bad_holo_names = [
-        n for i, n in enumerate(all_holo_names) if all_matches[i] is None
-    ]
+    # Trim names
+    bad_holo_names = [n for i, n in enumerate(all_holo_names) if all_matches[i] is None]
     all_holo_names = [n for i, n in enumerate(all_holo_names) if all_matches[i]]
     for n in bad_holo_names:
         print(f"Removed {n} (not A or B chain)", flush=True)
 
-    ## Get proteins from apo structures
+    # Get proteins from apo structures
     all_prots = []
     prot_chain_ids = []
     for n, fn in zip(all_apo_names, all_apo_fns):
         split_dict = split_openeye_mol(load_openeye_pdb(fn))
         prot = split_dict["pro"]
-        ## Add waters if required
+        # Add waters if required
         if args.keep_wat:
             oechem.OEAddMols(prot, split_dict["water"])
 
-        ## Build monomer into dimer as necessary (will need to handle
-        ##  re-labeling chains since the monomer seems to get the chainID C)
-        ## Shouldn't affect the protein if the dimer has already been built
+        # Build monomer into dimer as necessary (will need to handle
+        #  re-labeling chains since the monomer seems to get the chainID C)
+        # Shouldn't affect the protein if the dimer has already been built
         bus = list(oespruce.OEExtractBioUnits(prot))
-        ## Check to make sure everything got built correctly
+        # Check to make sure everything got built correctly
         if len(bus) != 2:
             print(
                 f"Incorrect number of Bio units built for {n} ({len(bus)})",
@@ -458,19 +443,16 @@ def main():
                 ),
                 flush=True,
             )
-        ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
-        ##  doesn't pickle
+        # Need to cast to OEGraphMol bc returned type is OEMolBase, which
+        #  doesn't pickle
         prot = oechem.OEGraphMol(bus[0])
 
-        ## Keep track of chain IDs
+        # Keep track of chain IDs
         all_chain_ids = {
             r.GetExtChainID()
             for r in oechem.OEGetResidues(prot)
             if all(
-                [
-                    not oechem.OEIsWater()(a)
-                    for a in oechem.OEGetResidueAtoms(prot, r)
-                ]
+                [not oechem.OEIsWater()(a) for a in oechem.OEGetResidueAtoms(prot, r)]
             )
         }
         if len(all_chain_ids) != 2:
@@ -479,13 +461,13 @@ def main():
         all_prots.append(prot)
         prot_chain_ids.append(sorted(all_chain_ids))
 
-    ## Parse reference
+    # Parse reference
     if args.ref:
         ref_prot = split_openeye_mol(load_openeye_pdb(args.ref))["pro"]
     else:
         ref_prot = None
 
-    ## Figure out cache dir for docking
+    # Figure out cache dir for docking
     if args.cache is None:
         cache_dir = f"{args.o}/.cache/"
     else:
@@ -493,7 +475,7 @@ def main():
     os.makedirs(cache_dir, exist_ok=True)
 
     mp_args = []
-    ## Construct all args for mp_func
+    # Construct all args for mp_func
     for lig_name, lig in zip(all_holo_names, all_ligs):
         for prot_name, apo_prot, apo_chains in zip(
             all_apo_names, all_prots, prot_chain_ids
@@ -502,7 +484,7 @@ def main():
                 dimer_s = "dimer" if dimer else "monomer"
                 out_dir = f"{args.o}/{lig_name}/{dimer_s}"
                 os.makedirs(out_dir, exist_ok=True)
-                ## Load and parse apo protein
+                # Load and parse apo protein
                 mp_args.append(
                     (
                         apo_prot,

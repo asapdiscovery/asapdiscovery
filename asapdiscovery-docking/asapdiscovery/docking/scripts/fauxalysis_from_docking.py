@@ -1,34 +1,39 @@
 """
-After having generated some docking results, this script takes a CSV file containing the best structures for each
-Compound_ID and generates a fragalysis-like "fauxalysis" dataset. This includes copying over the original structure
-of the compound bound to SARS-2 Mpro from Fragalysis.
+After having generated some docking results, this script takes a CSV file containing the
+best structures for each Compound_ID and generates a fragalysis-like "fauxalysis"
+dataset. This includes copying over the original structure of the compound bound to
+SARS-2 Mpro from Fragalysis.
 
 Example usage:
     python fauxalysis_from_docking.py
-        -csv /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag/mers_fauxalysis.csv
-        -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water_filter
-        -o /data/chodera/paynea/posit_hybrid_no_relax_keep_water_filter_frag
-        -f /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/aligned
+        -csv mers_fauxalysis.csv
+        -i posit_hybrid_no_relax_keep_water_filter
+        -o posit_hybrid_no_relax_keep_water_filter_frag
+        -f aligned
 """
-import sys, os, argparse, shutil, pickle as pkl, yaml
+import argparse
+import os
+import pickle as pkl
+import shutil
+import sys
+
+import yaml
 from openeye import oechem
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from asapdiscovery.docking.analysis import DockingResults
-from asapdiscovery.data.utils import (
-    load_openeye_sdf,
-    save_openeye_pdb,
-    save_openeye_sdf,
-)
-from asapdiscovery.data.openeye import save_openeye_design_unit
+from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
+from asapdiscovery.data.utils import load_openeye_sdf  # noqa: 402
+from asapdiscovery.data.utils import save_openeye_pdb  # noqa: E402
+from asapdiscovery.data.utils import save_openeye_sdf  # noqa: E402
+from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
 
 
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-csv",
         "--input_csv",
@@ -67,7 +72,7 @@ def get_args():
         "--overwrite",
         action="store_true",
         default=False,
-        help="Flag to enable overwriting output data, otherwise it will skip directories that exists already.",
+        help="Flag to enable overwriting output data, otherwise it will skip directories that exists already.",  # noqa: E501
     )
     parser.add_argument(
         "-p",
@@ -80,13 +85,13 @@ def get_args():
 
 
 def check_output(d):
-    ## First check for result pickle file
+    # First check for result pickle file
     try:
         pkl.load(open(f"{d}/results.pkl", "rb"))
     except FileNotFoundError:
         return False
 
-    ## Then check for other intermediate files
+    # Then check for other intermediate files
     # du = oechem.OEDesignUnit()
     # if not oechem.OEReadDesignUnit(f"{d}/predocked.oedu", du):
     #     return False
@@ -121,19 +126,20 @@ def write_fragalysis_output(
     """
     os.makedirs(f"{out_dir}", exist_ok=True)
 
-    ## Create list of sdf files we will make so that we can concatenate them at the end
+    # Create list of sdf files we will make so that we can concatenate them at the end
     cmpd_sdf_list = []
 
-    ## Loop through dict and parse input files into output files
+    # Loop through dict and parse input files into output files
     for complex_id, complex_dict in best_structure_dict.items():
         # docked_sdf = complex_dict.get("Docked_File")
         receptor_oedu = complex_dict.get("Prepped_Receptor")
         compound_id = complex_dict.get("Compound_ID")
-        ## Make sure input exists
+        # Make sure input exists
         compound_in_dir = os.path.dirname(complex_dict.get("Ligand_SDF"))
         compound_out_dir = os.path.join(out_dir, complex_id)
 
-        ## If inputs don't exist, else if the output directory already exists, don't waste time
+        # If inputs don't exist, else if the output directory already exists, don't
+        # waste time
         if not check_output(compound_in_dir):
             print(
                 (f"No results found for {compound_in_dir}, " "skipping"),
@@ -150,10 +156,10 @@ def write_fragalysis_output(
                 flush=True,
             )
 
-        ## Create output directory if necessary
+        # Create output directory if necessary
         os.makedirs(compound_out_dir, exist_ok=True)
 
-        ## Load necessary files
+        # Load necessary files
         du = oechem.OEDesignUnit()
         # oechem.OEReadDesignUnit(f"{compound_in_dir}/predocked.oedu", du)
         oechem.OEReadDesignUnit(receptor_oedu, du)
@@ -162,29 +168,30 @@ def write_fragalysis_output(
         du.GetProtein(prot)
         lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
-        lig, prot, complex = save_openeye_design_unit(
-            du, lig=lig, lig_title=complex_id
-        )
+        lig, prot, complex = save_openeye_design_unit(du, lig=lig, lig_title=complex_id)
 
-        ## First save apo
+        # First save apo
         save_openeye_pdb(prot, f"{compound_out_dir}/{complex_id}_apo.pdb")
         save_openeye_pdb(complex, f"{compound_out_dir}/{complex_id}_bound.pdb")
 
-        ## Save to sdf file and append to list of sdf files to combine
+        # Save to sdf file and append to list of sdf files to combine
         cmpd_sdf = f"{compound_out_dir}/{complex_id}.sdf"
         cmpd_sdf_list.append(cmpd_sdf)
         save_openeye_sdf(lig, cmpd_sdf)
 
-        ## Copy over file from original fragalysis directory
+        # Copy over file from original fragalysis directory
         if frag_dir:
             compound_id_list = compound_id.split("_")
             compound_id_without_chain = compound_id_list[0]
             chain = compound_id_list[1]
 
-            ## If the compound_id has "_bound" in it, it was constructed directly from the fragalysis dataset name
-            ## If not, then we have to get the fragalysis dataset name from the cmpd_to_frag_dict
+            # If the compound_id has "_bound" in it, it was constructed directly from
+            # the fragalysis dataset name
+            # If not, then we have to get the fragalysis dataset name from the
+            # cmpd_to_frag_dict
             if "_bound" in compound_id:
-                ## The way this code works, basically it drops the "_bound" suffix from the original compound name
+                # The way this code works, basically it drops the "_bound" suffix from
+                # the original compound name
                 frag_structure = f"{compound_id_without_chain}_{chain}"
             else:
                 frag_structure = (
@@ -211,8 +218,9 @@ def write_fragalysis_output(
             else:
                 print(f"Fragalysis source not found:\n" f"\t{bound_pdb_path}")
 
-    ## Use shutil again to concatenate all the sdf files into one combined file!
-    ## I did this because I was seeing errors in the combined.sdf when created using OpenEye
+    # Use shutil again to concatenate all the sdf files into one combined file!
+    # I did this because I was seeing errors in the combined.sdf when created using
+    # OpenEye
     combined_sdf = f"{out_dir}/combined.sdf"
 
     with open(combined_sdf, "wb") as wfd:
@@ -237,7 +245,7 @@ def main():
         for values in docking_results.df.to_dict(orient="index").values()
     }
 
-    ## Get Prepped_Receptor
+    # Get Prepped_Receptor
     if args.prepped_path:
         prepped_dir_list = os.listdir(args.prepped_path)
         for complex_id, values in best_structure_dict_all.items():
@@ -261,7 +269,9 @@ def main():
                 for dirname in prepped_dir_list
                 if values["Compound_ID"] in dirname
             ][0]
-            oligomeric_state = "dimer" if values["Dimer"] == True else "monomer"
+            oligomeric_state = (
+                "dimer" if values["Dimer"] == True else "monomer"  # noqa E712
+            )
             compound_input_path = os.path.join(
                 args.input_dir,
                 dirname,
@@ -271,9 +281,7 @@ def main():
             values["Prepped_Receptor"] = os.path.join(
                 compound_input_path, "predocked.oedu"
             )
-            values["Ligand_SDF"] = os.path.join(
-                compound_input_path, "docked.sdf"
-            )
+            values["Ligand_SDF"] = os.path.join(compound_input_path, "docked.sdf")
             assert os.path.exists(values["Prepped_Receptor"])
             assert os.path.exists(values["Ligand_SDF"])
             best_structure_dict_all[complex_id] = values
@@ -292,9 +300,9 @@ def main():
                     f"\t{args.output_dir}/{complex_id}"
                 )
 
-    ## Get cmpd_to_fragalysis source dict if required
+    # Get cmpd_to_fragalysis source dict if required
     if args.fragalysis_dir:
-        with open(args.fragalysis_yaml, "r") as f:
+        with open(args.fragalysis_yaml) as f:
             cmpd_to_frag_dict = yaml.safe_load(f)
     else:
         cmpd_to_frag_dict = None
