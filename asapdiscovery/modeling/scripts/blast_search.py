@@ -49,22 +49,26 @@ def get_args():
 def main():
     args = get_args()
 
-    # Load reference sequence
-    fasta_seq = open(args.in_fasta).read().strip()
+    # Check for cache and load if present
+    if args.cache and os.path.isfile(args.cache):
+        result_handle = open(args.cache)
+    else:
+        # Load reference sequence
+        fasta_seq = open(args.in_fasta).read().strip()
 
-    # Run BLASTP and get results
-    result_handle = NCBIWWW.qblast(
-        program="blastp",
-        database="refseq_protein",
-        sequence=fasta_seq,
-        alignments=args.n_alignments,
-    )
+        # Run BLASTP and get results
+        result_handle = NCBIWWW.qblast(
+            program="blastp",
+            database="refseq_protein",
+            sequence=fasta_seq,
+            alignments=args.n_alignments,
+        )
 
-    # Save BLAST results
-    if args.cache:
-        with open(args.cache, "w") as fp:
-            fp.write(result_handle.read())
-        result_handle.seek(0)
+        # Save BLAST results
+        if args.cache:
+            with open(args.cache, "w") as fp:
+                fp.write(result_handle.read())
+            result_handle.seek(0)
 
     # Parse BLAST results
     result_seqs = {}
