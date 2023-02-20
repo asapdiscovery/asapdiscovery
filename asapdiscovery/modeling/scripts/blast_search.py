@@ -11,10 +11,15 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     parser.add_argument(
-        "-f",
-        "--fasta",
+        "-if",
+        "--in_fasta",
         required=True,
         help="Protein FASTA sequence to search in BLAST.",
+    )
+    parser.add_argument(
+        "-of",
+        "--out_fasta",
+        help="FASTA file for BLAST results.",
     )
     parser.add_argument(
         "-o", "--out_fn", required=True, help="Output CSV file name."
@@ -45,7 +50,7 @@ def main():
     args = get_args()
 
     # Load reference sequence
-    fasta_seq = open(args.fasta).read().strip()
+    fasta_seq = open(args.in_fasta).read().strip()
 
     # Run BLASTP and get results
     result_handle = NCBIWWW.qblast(
@@ -75,9 +80,17 @@ def main():
     print(f"Found {len(result_seqs)} sequences", flush=True)
 
     # Write FASTA file
+    if args.out_fasta:
+        with open(args.out_fasta, "w") as fp:
+            for k, v in result_seqs.items():
+                fp.write(f">{k}\n{v}\n")
+
+    # Write CSV file
     with open(args.out_fn, "w") as fp:
+        fp.write("id,sequence\n")
         for k, v in result_seqs.items():
-            fp.write(f">{k}\n{v}\n")
+            accession = k.split("|")[1]
+            fp.write(f"{accession},{v}\n")
 
 
 if __name__ == "__main__":
