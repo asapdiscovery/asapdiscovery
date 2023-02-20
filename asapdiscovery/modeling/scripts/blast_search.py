@@ -94,7 +94,8 @@ def main():
         fp.write("id,sequence\n")
         for k, v in result_seqs.items():
             accession = k.split("|")[1]
-            fp.write(f"{accession},{v}\n")
+            # Need to write out the sequence twice for dimer
+            fp.write(f"{accession},{v}:{v}\n")
 
 
 if __name__ == "__main__":
