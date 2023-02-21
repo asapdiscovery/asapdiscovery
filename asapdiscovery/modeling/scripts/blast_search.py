@@ -49,6 +49,13 @@ def get_args():
         default=1e-20,
         help="Threshold for BLAST E value.",
     )
+    parser.add_argument(
+        "-f",
+        "--filter",
+        nargs="+",
+        default=[],
+        help="Regex(es) to search in hit title.",
+    )
 
     return parser.parse_args()
 
@@ -83,14 +90,25 @@ def main():
 
     # Parse BLAST results
     result_seqs = {}
+    total_results = 0
     for record in NCBIXML.parse(result_handle):
         if record.alignments:
             for align in record.alignments:
-                # Save sequence identity, title, and gapless sequence
-                #  substring that aligns
-                sequence_to_model = align.hsps[0].sbjct.replace("-", "")
-                result_seqs[align.title] = sequence_to_model
-    print(f"Found {len(result_seqs)} sequences", flush=True)
+                total_results += 1
+                keep_aln = False
+                if len(args.filter) == 0:
+                    keep_aln = True
+                for f in args.filter:
+                    if re.search(f, align.title):
+                        keep_aln = True
+                        break
+
+                if keep_aln:
+                    # Save sequence identity, title, and gapless sequence
+                    #  substring that aligns
+                    sequence_to_model = align.hsps[0].sbjct.replace("-", "")
+                    result_seqs[align.title] = sequence_to_model
+    print(f"Kept {len(result_seqs)} out of {total_results} hits", flush=True)
 
     # Write FASTA file
     if args.out_fasta:
