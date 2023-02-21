@@ -32,10 +32,13 @@ The ColabFold script takes a CSV file as input with two columns: `id`, and
 `sequence`. For the script included in this repo, the names in the `id` column
 should have a blank `{}` in them, which will be replaced by the random seed
 that is used to generate the protein. This is to prevent ColabFold from thinking
-it has already generated the structure when the random seed is different. For
-now, we have the file `./metadata/MERS_Mpro_input.csv`, but in the future we
-will provide functionality for this sequence file to be dynamically generated
-using `BLASTP`.
+it has already generated the structure when the random seed is different. We
+have prepared the file `./metadata/MERS_Mpro_input.csv`, but this file can also
+be generated from the results of a `BLASTP` search using the `blast_search.py`
+script:
+```bash
+./scripts/blast_search.py -if query_seq.fasta -o blast_colabfold_in.csv
+```
 
 ### Structure Generation
 The `run_colabfold.sh` script in this repo will generate a random seed, fill
@@ -45,6 +48,10 @@ structures to generate. Each structure will have a differen random seed. If this
 arg is not provided, only one structure will be generated. Example usage to
 generate 10 different structures, each with a different random seed:
 ```bash
+# Using a fixed MERS Mpro sequence
 ./scripts/run_colabfold.sh ./metadata/MERS_Mpro_input.csv \
+/path/to/templates/ /path/to/output/ 10
+# Using a generated file from a BLASTP search
+./scripts/run_colabfold.sh blast_colabfold_in.csv \
 /path/to/templates/ /path/to/output/ 10
 ```
