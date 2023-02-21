@@ -52,8 +52,10 @@ def main():
 
     # Check for cache and load if present
     if args.cache and os.path.isfile(args.cache):
+        print("Loading from cached download", flush=True)
         result_handle = open(args.cache)
     else:
+        print("Searching BLASTP", flush=True)
         # Load reference sequence
         fasta_seq = open(args.in_fasta).read().strip()
 
@@ -67,6 +69,7 @@ def main():
 
         # Save BLAST results
         if args.cache:
+            print("Saving cache", flush=True)
             with open(args.cache, "w") as fp:
                 fp.write(result_handle.read())
             result_handle.seek(0)
