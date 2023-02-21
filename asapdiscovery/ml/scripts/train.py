@@ -396,6 +396,7 @@ def init(args, rank=False):
         comb_r=args.comb_r,
         config=model_config,
     )
+    print("Model", model, flush=True)
 
     ## Set up optimizer
     optimizer = build_optimizer(model, model_config)
@@ -566,6 +567,13 @@ def main():
 
         r = wandb.init()
         model_dir = os.path.join(args.model_o, r.id)
+
+        ## Log dataset splits
+        for name, split in zip(
+            ["train", "val", "test"], [ds_train, ds_val, ds_test]
+        ):
+            table = make_wandb_table(split)
+            wandb.log({f"dataset_splits/{name}": table})
     elif args.wandb:
         import wandb
 
