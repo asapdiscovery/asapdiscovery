@@ -28,6 +28,11 @@ def get_args():
     parser.add_argument(
         "--cache", help="Optional cache file to save raw XML results."
     )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite cache file if it already exists.",
+    )
 
     parser.add_argument(
         "-n",
@@ -51,7 +56,7 @@ def main():
     args = get_args()
 
     # Check for cache and load if present
-    if args.cache and os.path.isfile(args.cache):
+    if args.cache and os.path.isfile(args.cache) and (not args.overwrite):
         print("Loading from cached download", flush=True)
         result_handle = open(args.cache)
     else:
