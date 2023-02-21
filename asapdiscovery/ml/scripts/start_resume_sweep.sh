@@ -25,6 +25,7 @@ fi
 
 ## Otherwise start sweep with the config file, store and print sweep id
 wandb sweep $config_file 2>&1 | \
+tee ${out_dir}/wandb_log | \
 grep -F 'Created sweep with ID' | \
 awk '{print $NF}'| \
 tee $sweep_id_fn

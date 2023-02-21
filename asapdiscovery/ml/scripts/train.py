@@ -20,7 +20,6 @@ import argparse
 from dgllife.utils import CanonicalAtomFeaturizer
 from e3nn import o3
 from e3nn.nn.models.gate_points_2101 import Network
-from glob import glob
 import json
 import numpy as np
 import os
@@ -31,11 +30,6 @@ import torch
 from torch_geometric.nn import SchNet
 from torch_geometric.datasets import QM9
 
-from asapdiscovery.ml.dataset import (
-    DockedDataset,
-    GroupedDockedDataset,
-    GraphDataset,
-)
 from asapdiscovery.ml import (
     E3NNBind,
     GAT,
@@ -43,13 +37,16 @@ from asapdiscovery.ml import (
     MSELoss,
     GaussianNLLLoss,
 )
-from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.ml.utils import (
+    build_dataset,
+    build_model,
+    build_optimizer,
     calc_e3nn_model_info,
     find_most_recent,
     load_weights,
+    parse_config,
     plot_loss,
-    split_molecules,
+    split_dataset,
     train,
 )
 
@@ -102,527 +99,6 @@ def add_lig_labels(ds):
     return ds
 
 
-def build_dataset(args, rank=False):
-    ## Get all docked structures
-    if os.path.isdir(args.i):
-        all_fns = glob(f"{args.i}/*complex.pdb")
-    else:
-        all_fns = glob(args.i)
-    ## Extract crystal structure and compound id from file name
-    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
-    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
-
-    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
-    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
-    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
-    compounds = [
-        (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(
-            xtal_matches, compound_matches, idx
-        )
-        if both_m
-    ]
-    num_found = len(compounds)
-    ## Dictionary mapping from compound_id to Mpro dataset(s)
-    compound_id_dict = {}
-    for xtal_structure, compound_id in compounds:
-        try:
-            compound_id_dict[compound_id].append(xtal_structure)
-        except KeyError:
-            compound_id_dict[compound_id] = [xtal_structure]
-
-    if rank:
-        exp_data = None
-    elif args.model == "2d":
-        ## Load the experimental compounds
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-        print("load", len(exp_compounds), flush=True)
-
-        ## Get compounds that have both structure and experimental data (this
-        ##  step isn't actually necessary for performance, but allows a more
-        ##  fair comparison between 2D and 3D models)
-        xtal_compound_ids = {c[1] for c in compounds}
-        ## Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [
-            c for c in exp_compounds if c.compound_id in xtal_compound_ids
-        ]
-        print("filter", len(exp_compounds), flush=True)
-
-        ## Make cache directory as necessary
-        if args.cache is None:
-            cache_dir = os.path.join(args.model_o, ".cache")
-        else:
-            cache_dir = args.cache
-        os.makedirs(cache_dir, exist_ok=True)
-
-        ## Build the dataset
-        ds = GraphDataset(
-            exp_compounds,
-            node_featurizer=CanonicalAtomFeaturizer(),
-            cache_file=os.path.join(cache_dir, "graph.bin"),
-        )
-
-        print(next(iter(ds)), flush=True)
-
-        ## Rename exp_compounds so the number kept is consistent
-        compounds = exp_compounds
-    elif args.cache and os.path.isfile(args.cache):
-        ## Load from cache
-        ds = pkl.load(open(args.cache, "rb"))
-        print("Loaded from cache", flush=True)
-
-        ## Still need to load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-    else:
-        ## Load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            args.exp, achiral=args.achiral, return_compounds=True
-        )
-
-        ## Make dict to access smiles data
-        smiles_dict = {}
-        for c in exp_compounds:
-            if c.compound_id not in compound_id_dict:
-                continue
-            for xtal_structure in compound_id_dict[c.compound_id]:
-                smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
-
-        ## Make dict to access experimental compound data
-        exp_data_dict = {}
-        for compound_id, d in exp_data.items():
-            if compound_id not in compound_id_dict:
-                continue
-            for xtal_structure in compound_id_dict[compound_id]:
-                exp_data_dict[(xtal_structure, compound_id)] = d
-
-        ## Trim docked structures and filenames to remove compounds that don't have
-        ##  experimental data
-        all_fns, compounds = zip(
-            *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
-        )
-
-        ## Build extra info dict
-        extra_dict = {
-            compound: {
-                "smiles": smiles,
-                "pIC50": exp_data_dict[compound]["pIC50"],
-                "pIC50_range": exp_data_dict[compound]["pIC50_range"],
-                "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
-            }
-            for compound, smiles in smiles_dict.items()
-        }
-
-        ## Load the dataset
-        if args.grouped:
-            ds = GroupedDockedDataset(
-                all_fns,
-                compounds,
-                lig_resn=args.n,
-                extra_dict=extra_dict,
-                num_workers=args.w,
-            )
-        else:
-            ds = DockedDataset(
-                all_fns,
-                compounds,
-                lig_resn=args.n,
-                extra_dict=extra_dict,
-                num_workers=args.w,
-            )
-
-        if args.cache:
-            ## Cache dataset
-            pkl.dump(ds, open(args.cache, "wb"))
-
-    num_kept = len(ds)
-    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
-
-    return ds, exp_data
-
-
-def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
-    """
-    Split a dataset into train, val, and test splits. A warning will be raised
-    if fractions don't add to 1.
-
-    Parameters
-    ----------
-    ds: torch.Dataset
-        Dataset object to split
-    grouped: bool
-        If data objects should be grouped by compound_id
-    train_frac: float, default=0.8
-        Fraction of dataset to put in the train split
-    val_frac: float, default=0.1
-        Fraction of dataset to put in the val split
-    test_frac: float, default=0.1
-        Fraction of dataset to put in the test split
-
-    Returns
-    -------
-    torch.Dataset
-        Train split
-    torch.Dataset
-        Val split
-    torch.Dataset
-        Test split
-    """
-    ## Check that fractions add to 1
-    if sum([train_frac, val_frac, test_frac]) != 1:
-        from warnings import warn
-
-        warn(
-            (
-                "Split fraction add to "
-                f"{sum([train_frac, val_frac, test_frac]):0.2f}, not 1"
-            ),
-            RuntimeWarning,
-        )
-
-    ## Split dataset into train/val/test (80/10/10 split)
-    # use fixed seed for reproducibility
-    if grouped:
-        n_train = int(len(ds) * train_frac)
-        n_val = int(len(ds) * val_frac)
-        n_test = len(ds) - n_train - n_val
-        ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
-        )
-        print(
-            (
-                f"{n_train} training molecules, {n_val} validation molecules, "
-                f"{n_test} testing molecules"
-            ),
-            flush=True,
-        )
-    else:
-        ds_train, ds_val, ds_test = split_molecules(
-            ds,
-            [train_frac, val_frac, test_frac],
-            torch.Generator().manual_seed(42),
-        )
-
-        train_compound_ids = {c[1] for c, _ in ds_train}
-        val_compound_ids = {c[1] for c, _ in ds_val}
-        test_compound_ids = {c[1] for c, _ in ds_test}
-        print(
-            f"{len(ds_train)} training samples",
-            f"({len(train_compound_ids)}) molecules,",
-            f"{len(ds_val)} validation samples",
-            f"({len(val_compound_ids)}) molecules,",
-            f"{len(ds_test)} test samples",
-            f"({len(test_compound_ids)}) molecules",
-            flush=True,
-        )
-
-    return ds_train, ds_val, ds_test
-
-
-def load_exp_data(fn, achiral=False, return_compounds=False):
-    """
-    Load all experimental data from JSON file of
-    schema.ExperimentalCompoundDataUpdate.
-
-    Parameters
-    ----------
-    fn : str
-        Path to JSON file
-    achiral : bool, default=False
-        Whether to only take achiral molecules
-    return_compounds : bool, default=False
-        Whether to return the compounds in addition to the experimental data
-
-    Returns
-    -------
-    dict[str->dict]
-        Dictionary mapping coumpound id to experimental data
-    List[ExperimentalCompoundData], optional
-        List of experimental compound data objects, only returned if
-        `return_compounds` is True
-    """
-    ## Load all compounds with experimental data and filter to only achiral
-    ##  molecules (to start)
-    exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, "r"))
-    ).compounds
-    exp_compounds = [c for c in exp_compounds if ((not achiral) or c.achiral)]
-
-    exp_dict = {
-        c.compound_id: c.experimental_data
-        for c in exp_compounds
-        if (
-            ("pIC50" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50"]))
-            and ("pIC50_range" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_range"]))
-            and ("pIC50_stderr" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_stderr"]))
-        )
-    }
-
-    if return_compounds:
-        ## Filter compounds
-        exp_compounds = [c for c in exp_compounds if c.compound_id in exp_dict]
-        return exp_dict, exp_compounds
-    else:
-        return exp_dict
-
-
-def build_model_2d(model_config):
-    """
-    Build appropriate 2D graph model.
-
-    Parameters
-    ----------
-    model_config : dict
-        Model config
-
-    Returns
-    -------
-    asapdiscovery.ml.models.GAT
-        GAT graph model
-    """
-
-    model_config.update(
-        {"in_node_feats": CanonicalAtomFeaturizer().feat_size()}
-    )
-
-    model = GAT(
-        in_feats=model_config["in_node_feats"],
-        hidden_feats=[model_config["gnn_hidden_feats"]]
-        * model_config["num_gnn_layers"],
-        num_heads=[model_config["num_heads"]] * model_config["num_gnn_layers"],
-        feat_drops=[model_config["dropout"]] * model_config["num_gnn_layers"],
-        attn_drops=[model_config["dropout"]] * model_config["num_gnn_layers"],
-        alphas=[model_config["alpha"]] * model_config["num_gnn_layers"],
-        residuals=[model_config["residual"]] * model_config["num_gnn_layers"],
-    )
-
-    return model, model_config
-
-
-def build_model_e3nn(
-    n_atom_types,
-    num_neighbors,
-    num_nodes,
-    model_config=None,
-    node_attr=False,
-    neighbor_dist=5.0,
-    irreps_hidden=None,
-):
-    """
-    Build appropriate e3nn model.
-
-    Parameters
-    ----------
-    n_atom_types : int
-        Number off atom types in one-hot encodings. This will define the
-        dimensionality of the input into the model
-    num_neighbors : int
-        Approximate number of neighbor nodes that get convolved over for each
-        node. Used as a normalization factor in the model
-    num_nodes : int
-        Approximate number of nodes per graph. Used as a normalization factor in
-        the model
-    node_attr : bool, default=False
-        Whether the inputs will include node attributes (ligand labels)
-    neighbor_dist : float, default=5.0
-        Distance cutoff for nodes to be considered neighbors
-
-    Returns
-    -------
-    mtenn.conversion_utils.e3nn.E3NN
-        e3nn model created from input parameters
-    """
-
-    ## Build hidden irreps
-    if model_config:
-        if "irreps_0o" in model_config:
-            irreps_hidden = o3.Irreps(
-                [
-                    (model_config["irreps_0o"], "0o"),
-                    (model_config["irreps_0e"], "0e"),
-                    (model_config["irreps_1o"], "1o"),
-                    (model_config["irreps_1e"], "1e"),
-                    (model_config["irreps_2o"], "2o"),
-                    (model_config["irreps_2e"], "2e"),
-                    (model_config["irreps_3o"], "3o"),
-                    (model_config["irreps_3e"], "3e"),
-                    (model_config["irreps_4o"], "4o"),
-                    (model_config["irreps_4e"], "4e"),
-                ]
-            )
-        else:
-            irreps_hidden = o3.Irreps(
-                [
-                    (model_config["irreps_0"], "0o"),
-                    (model_config["irreps_0"], "0e"),
-                    (model_config["irreps_1"], "1o"),
-                    (model_config["irreps_1"], "1e"),
-                    (model_config["irreps_2"], "2o"),
-                    (model_config["irreps_2"], "2e"),
-                    (model_config["irreps_3"], "3o"),
-                    (model_config["irreps_3"], "3e"),
-                    (model_config["irreps_4"], "4o"),
-                    (model_config["irreps_4"], "4e"),
-                ]
-            )
-    ## Set up default hidden irreps if none specified
-    elif irreps_hidden is None:
-        irreps_hidden = [
-            (mul, (l, p))
-            for l, mul in enumerate([10, 3, 2, 1])
-            for p in [-1, 1]
-        ]
-
-    ## Handle any conflicts and set defaults if necessary. model_config will
-    ##  override any other parameters
-    node_attr = (
-        model_config["lig"]
-        if model_config and ("lig" in model_config)
-        else node_attr
-    )
-    irreps_edge_attr = (
-        model_config["irreps_edge_attr"]
-        if model_config and ("irreps_edge_attr" in model_config)
-        else 3
-    )
-    layers = (
-        model_config["layers"]
-        if model_config and ("layers" in model_config)
-        else 3
-    )
-    neighbor_dist = (
-        model_config["max_radius"]
-        if model_config and ("max_radius" in model_config)
-        else neighbor_dist
-    )
-    number_of_basis = (
-        model_config["number_of_basis"]
-        if model_config and ("number_of_basis" in model_config)
-        else 10
-    )
-    radial_layers = (
-        model_config["radial_layers"]
-        if model_config and ("radial_layers" in model_config)
-        else 1
-    )
-    radial_neurons = (
-        model_config["radial_neurons"]
-        if model_config and ("radial_neurons" in model_config)
-        else 128
-    )
-
-    # input is one-hot encoding of atom type => n_atom_types scalars
-    # output is scalar valued binding energy/pIC50 value
-    # hidden layers taken from e3nn tutorial (should be tuned eventually)
-    # same with edge attribute irreps (and all hyperparameters)
-    # need to calculate num_neighbors and num_nodes
-    # reduce_output because we just want the one binding energy prediction
-    #  across the whole graph
-    model_kwargs = {
-        "irreps_in": f"{n_atom_types}x0e",
-        "irreps_hidden": irreps_hidden,
-        "irreps_out": "1x0e",
-        "irreps_node_attr": "1x0e" if node_attr else None,
-        "irreps_edge_attr": o3.Irreps.spherical_harmonics(irreps_edge_attr),
-        "layers": layers,
-        "max_radius": neighbor_dist,
-        "number_of_basis": number_of_basis,
-        "radial_layers": radial_layers,
-        "radial_neurons": radial_neurons,
-        "num_neighbors": num_neighbors,
-        "num_nodes": num_nodes,
-        "reduce_output": True,
-    }
-
-    return mtenn.conversion_utils.E3NN(model_kwargs=model_kwargs)
-
-
-def build_model_schnet(
-    model_config=None,
-    qm9=None,
-    qm9_target=10,
-    remove_atomref=False,
-    neighbor_dist=5.0,
-):
-    """
-    Build appropriate SchNet model.
-
-    Parameters
-    ----------
-    model_config : dict, optional
-        Model config
-    qm9 : str, optional
-        Path to QM9 dataset, if starting with a QM9-pretrained model
-    qm9_target : int, default=10
-        Which QM9 target to use. Must be in the range of [0, 11]
-    remove_atomref : bool, default=False
-        Whether to remove the reference atom propoerties learned from the QM9
-        dataset
-    neighbor_dist : float, default=5.0
-        Distance cutoff for nodes to be considered neighbors
-
-    Returns
-    -------
-    mtenn.conversion_utils.SchNet
-        MTENN SchNet model created from input parameters
-    """
-
-    ## Load pretrained model if requested, otherwise create a new SchNet
-    if qm9 is None:
-        if model_config:
-            model = SchNet(**model_config)
-        else:
-            model = SchNet()
-        model = mtenn.conversion_utils.SchNet(model)
-    else:
-        qm9_dataset = QM9(qm9)
-
-        # target=10 is free energy (eV)
-        model_qm9, _ = SchNet.from_qm9_pretrained(qm9, qm9_dataset, qm9_target)
-
-        if remove_atomref:
-            atomref = None
-            ## Get rid of entries in state_dict that correspond to atomref
-            wts = {
-                k: v
-                for k, v in model_qm9.state_dict().items()
-                if "atomref" not in k
-            }
-        else:
-            atomref = model_qm9.atomref.weight.detach().clone()
-            wts = model_qm9.state_dict()
-
-        model_params = (
-            model_qm9.hidden_channels,
-            model_qm9.num_filters,
-            model_qm9.num_interactions,
-            model_qm9.num_gaussians,
-            model_qm9.cutoff,
-            model_qm9.max_num_neighbors,
-            model_qm9.readout,
-            model_qm9.dipole,
-            model_qm9.mean,
-            model_qm9.std,
-            atomref,
-        )
-
-        model = SchNet(*model_params)
-        model.load_state_dict(wts)
-        model = mtenn.conversion_utils.SchNet(model)
-
-    ## Set interatomic cutoff (default of 10) to make the graph smaller
-    if (model_config is None) or ("cutoff" not in model_config):
-        model.cutoff = neighbor_dist
-
-    return model
-
-
 def make_wandb_table(ds_split):
     from rdkit.Chem import MolFromSmiles
     from rdkit.Chem.AllChem import (
@@ -662,36 +138,6 @@ def make_wandb_table(ds_split):
         table.add_data(xtal_id, compound_id, mol, smiles, pic50)
 
     return table
-
-
-def parse_config(config_fn):
-    """
-    Function to load a model config JSON/YAML file with the appropriate
-    function.
-
-    Parameters
-    ----------
-    config_fn : str
-        Filename of the config file
-
-    Returns
-    -------
-    dict
-        Loaded config
-    """
-    fn_ext = config_fn.split(".")[-1].lower()
-    if fn_ext == "json":
-        import json
-
-        model_config = json.load(open(config_fn))
-    elif fn_ext in {"yaml", "yml"}:
-        import yaml
-
-        model_config = yaml.safe_load(open(config_fn))
-    else:
-        raise ValueError(f"Unknown config file extension: {fn_ext}")
-
-    return model_config
 
 
 def wandb_init(
@@ -774,6 +220,9 @@ def get_args():
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
     parser.add_argument("-config", help="Model config JSON/YAML file.")
+    parser.add_argument(
+        "-wts_fn", help="Specific model weights file to load from."
+    )
 
     ## Training arguments
     parser.add_argument(
@@ -827,6 +276,11 @@ def get_args():
             "(eg --extra_config key1,val1 key2,val2 key3,val3)."
         ),
     )
+    parser.add_argument(
+        "--sweep",
+        action="store_true",
+        help="This run is part of a WandB sweep.",
+    )
 
     ## MTENN arguments
     parser.add_argument(
@@ -861,45 +315,59 @@ def init(args, rank=False):
     Initialization steps that are common to all analyses.
     """
 
-    ## Load full dataset
-    ds, exp_data = build_dataset(args, rank)
-    ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
-
     ## Parse model config file
-    if args.config:
+    if args.sweep:
+        import wandb
+
+        wandb.init()
+        model_config = dict(wandb.config)
+        print("Using wandb config.", flush=True)
+    elif args.config:
         model_config = parse_config(args.config)
     else:
         model_config = {}
     print("Using model config:", model_config, flush=True)
 
+    ## Override args parameters with model_config parameters\
+    ## This shouldn't strictly be necessary, as model_config should override
+    ##  everything, but just to be safe
+    if "grouped" in model_config:
+        args.grouped = model_config["grouped"]
+    if "lig" in model_config:
+        args.lig = model_config["lig"]
+    if "strat" in model_config:
+        args.strat = model_config["strat"]
+    if "comb" in model_config:
+        args.comb = model_config["comb"]
+    if "pred_r" in model_config:
+        args.pred_r = model_config["pred_r"]
+    if "comb_r" in model_config:
+        args.comb_r = model_config["comb_r"]
     if "lr" in model_config:
         args.lr = model_config["lr"]
-        del model_config["lr"]
+    if "cutoff" in model_config:
+        args.n_dist = model_config["cutoff"]
 
-    ## Build the model
-    if args.model == "e3nn":
-        ## Need to add one-hot encodings to the dataset
+    ## Load full dataset
+    ds, exp_data = build_dataset(
+        in_files=args.i,
+        model_type=args.model,
+        exp_fn=args.exp,
+        achiral=args.achiral,
+        cache_fn=args.cache,
+        grouped=args.grouped,
+        lig_name=args.n,
+        num_workers=args.w,
+        rank=rank,
+    )
+    ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
+
+    ## Need to augment the datasets if using e3nn
+    if args.model.lower() == "e3nn":
+        ## Add one-hot encodings to the dataset
         ds_train = add_one_hot_encodings(ds_train)
         ds_val = add_one_hot_encodings(ds_val)
         ds_test = add_one_hot_encodings(ds_test)
-
-        ## Load or calculate model parameters
-        if args.model_params is None:
-            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
-        elif os.path.isfile(args.model_params):
-            model_params = pkl.load(open(args.model_params, "rb"))
-        else:
-            model_params = calc_e3nn_model_info(ds_train, args.n_dist)
-            pkl.dump(model_params, open(args.model_params, "wb"))
-        model = build_model_e3nn(
-            100,
-            *model_params[1:],
-            model_config,
-            node_attr=args.lig,
-            neighbor_dist=args.n_dist,
-            irreps_hidden=args.irr,
-        )
-        get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
 
         ## Add lig labels as node attributes if requested
         if args.lig:
@@ -907,32 +375,45 @@ def init(args, rank=False):
             ds_val = add_lig_labels(ds_val)
             ds_test = add_lig_labels(ds_test)
 
-        for k, v in ds_train[0][1].items():
-            try:
-                print(k, v.shape, flush=True)
-            except AttributeError as e:
-                print(k, v, flush=True)
+        ## Load or calculate model parameters
+        if args.model_params is None:
+            e3nn_params = calc_e3nn_model_info(ds_train, args.n_dist)
+        elif os.path.isfile(args.model_params):
+            e3nn_params = pkl.load(open(args.model_params, "rb"))
+        else:
+            e3nn_params = calc_e3nn_model_info(ds_train, args.n_dist)
+            pkl.dump(e3nn_params, open(args.model_params, "wb"))
+    else:
+        e3nn_params = None
 
+    model, model_call = build_model(
+        model_type=args.model,
+        e3nn_params=e3nn_params,
+        strat=args.strat,
+        grouped=args.grouped,
+        comb=args.comb,
+        pred_r=args.pred_r,
+        comb_r=args.comb_r,
+        config=model_config,
+    )
+    print("Model", model, flush=True)
+
+    ## Set up optimizer
+    optimizer = build_optimizer(model, model_config)
+
+    ## Update exp_configure with model parameters
+    if args.model == "e3nn":
         ## Experiment configuration
         exp_configure = {
             "model": "e3nn",
             "n_atom_types": 100,
-            "num_neighbors": model_params[1],
-            "num_nodes": model_params[2],
+            "num_neighbors": e3nn_params[1],
+            "num_nodes": e3nn_params[2],
             "lig": args.lig,
             "neighbor_dist": args.n_dist,
-            "irreps_hidden": args.irr,
+            "irreps_hidden": model.representation.irreps_hidden,
         }
     elif args.model == "schnet":
-        model = build_model_schnet(
-            model_config,
-            args.qm9,
-            args.qm9_target,
-            args.rm_atomref,
-            neighbor_dist=args.n_dist,
-        )
-        get_model = mtenn.conversion_utils.schnet.SchNet.get_model
-
         ## Experiment configuration
         exp_configure = {
             "model": "schnet",
@@ -942,13 +423,8 @@ def init(args, rank=False):
             "neighbor_dist": args.n_dist,
         }
     elif args.model == "2d":
-        model, exp_configure = build_model_2d(model_config)
-        model_call = lambda model, d: torch.reshape(
-            model(d["g"], d["g"].ndata["h"]), (-1, 1)
-        )
-
         ## Update experiment configuration
-        exp_configure.update({"model": "GAT"})
+        exp_configure = {"model": "GAT"}
     else:
         raise ValueError(f"Unknown model type {args.model}.")
 
@@ -967,66 +443,14 @@ def init(args, rank=False):
         }
     )
 
-    ## MTENN setup
-    if (args.model == "e3nn") or (args.model == "schnet"):
-        strategy = args.strat.lower()
-
-        ## Check and parse combination
-        try:
-            combination = args.comb.lower()
-            if combination == "mean":
-                combination = mtenn.model.MeanCombination()
-            elif combination == "boltzmann":
-                combination = mtenn.model.BoltzmannCombination()
-            else:
-                raise ValueError(f"Uknown value for -comb: {args.comb}")
-        except AttributeError:
-            ## This will be triggered if combination is left blank
-            ##  (None.lower() => AttributeError)
-            if args.grouped:
-                raise ValueError(
-                    f"A value must be provided for -comb if --grouped is set."
-                )
-            combination = None
-
-        ## Check and parse pred readout
-        try:
-            pred_readout = args.pred_r.lower()
-            if pred_readout == "pic50":
-                pred_readout = mtenn.model.PIC50Readout()
-            else:
-                raise ValueError(f"Uknown value for -pred_r: {args.pred_r}")
-        except AttributeError:
-            pred_readout = None
-
-        ## Check and parse comb readout
-        try:
-            comb_readout = args.comb_r.lower()
-            if comb_readout == "pic50":
-                comb_readout = mtenn.model.PIC50Readout()
-            else:
-                raise ValueError(f"Uknown value for -comb_r: {args.comb_r}")
-        except AttributeError:
-            comb_readout = None
-
-        ## Use previously built model to construct mtenn.model.Model
-        model = get_model(
-            model=model,
-            grouped=args.grouped,
-            strategy=strategy,
-            combination=combination,
-            pred_readout=pred_readout,
-            comb_readout=comb_readout,
-            fix_device=True,
-        )
-        model_call = lambda model, d: model(d)
-
+    ## Add MTENN options
+    if (args.model.lower() == "schnet") or (args.model.lower() == "e3nn"):
         exp_configure.update(
             {
-                "mtenn:strategy": strategy,
-                "mtenn:combination": combination,
-                "mtenn:pred_readout": pred_readout,
-                "mtenn:comb_readout": comb_readout,
+                "mtenn:strategy": args.strat,
+                "mtenn:combination": args.comb,
+                "mtenn:pred_readout": args.pred_r,
+                "mtenn:comb_readout": args.comb_r,
             }
         )
 
@@ -1042,6 +466,7 @@ def init(args, rank=False):
         ds_test,
         model,
         model_call,
+        optimizer,
         exp_configure,
     )
 
@@ -1056,16 +481,13 @@ def main():
         ds_test,
         model,
         model_call,
+        optimizer,
         exp_configure,
     ) = init(args)
 
     ## Load model weights as necessary
     if args.cont:
         start_epoch, wts_fn = find_most_recent(args.model_o)
-        model = load_weights(model, wts_fn)
-
-        ## Update experiment configuration
-        exp_configure.update({"wts_fn": wts_fn})
 
         ## Load error dicts
         if os.path.isfile(f"{args.model_o}/train_err.pkl"):
@@ -1094,10 +516,21 @@ def main():
         ##  successfully trained, not the one we want to start at
         start_epoch += 1
     else:
+        if args.wts_fn:
+            wts_fn = args.wts_fn
+        else:
+            wts_fn = None
         start_epoch = 0
         train_loss = None
         val_loss = None
         test_loss = None
+
+    ## Load weights
+    if wts_fn:
+        model = load_weights(model, wts_fn)
+
+        ## Update experiment configuration
+        exp_configure.update({"wts_fn": wts_fn})
 
     ## Update experiment configuration
     exp_configure.update({"start_epoch": start_epoch})
@@ -1115,18 +548,33 @@ def main():
             "semiquant values",
             flush=True,
         )
+    else:
+        raise ValueError(f"Unknown loss type {args.loss}")
 
     print("sq", args.sq, flush=True)
     loss_str = args.loss.lower() if args.loss else "mse"
     exp_configure.update({"loss_func": loss_str, "sq": args.sq})
 
     ## Add any extra user-supplied config options
-    exp_configure.update(
-        {a.split(",")[0]: a.split(",")[1] for a in args.extra_config}
-    )
+    if args.extra_config:
+        exp_configure.update(
+            {a.split(",")[0]: a.split(",")[1] for a in args.extra_config}
+        )
 
     ## Start wandb
-    if args.wandb:
+    if args.sweep:
+        import wandb
+
+        r = wandb.init()
+        model_dir = os.path.join(args.model_o, r.id)
+
+        ## Log dataset splits
+        for name, split in zip(
+            ["train", "val", "test"], [ds_train, ds_val, ds_test]
+        ):
+            table = make_wandb_table(split)
+            wandb.log({f"dataset_splits/{name}": table})
+    elif args.wandb:
         import wandb
 
         run_id_fn = os.path.join(args.model_o, "run_id")
@@ -1146,7 +594,7 @@ def main():
             run_id = open(run_id_fn).read().strip()
             run = wandb.init(project=project_name, id=run_id, resume="must")
             wandb.config.update(
-                {"wts_fn": exp_configure["wts_fn"], "continue": True},
+                {"continue": True},
                 allow_val_change=True,
             )
         else:
@@ -1160,29 +608,36 @@ def main():
             if args.model_o:
                 with open(os.path.join(args.model_o, "run_id"), "w") as fp:
                     fp.write(run_id)
+        model_dir = os.path.join(args.model_o, run_id)
+    else:
+        model_dir = args.model_o
+
+    ## Make output dir if necessary
+    os.makedirs(model_dir, exist_ok=True)
 
     ## Train the model
     model, train_loss, val_loss, test_loss = train(
-        model,
-        ds_train,
-        ds_val,
-        ds_test,
-        exp_data,
-        args.n_epochs,
-        torch.device(args.device),
-        model_call,
-        loss_func,
-        args.model_o,
-        args.lr,
-        start_epoch,
-        train_loss,
-        val_loss,
-        test_loss,
-        args.wandb,
-        args.batch_size,
+        model=model,
+        ds_train=ds_train,
+        ds_val=ds_val,
+        ds_test=ds_test,
+        target_dict=exp_data,
+        n_epochs=args.n_epochs,
+        device=torch.device(args.device),
+        model_call=model_call,
+        loss_fn=loss_func,
+        save_file=model_dir,
+        lr=args.lr,
+        start_epoch=start_epoch,
+        train_loss=train_loss,
+        val_loss=val_loss,
+        test_loss=test_loss,
+        use_wandb=(args.wandb or args.sweep),
+        batch_size=args.batch_size,
+        optimizer=optimizer,
     )
 
-    if args.wandb:
+    if args.wandb or args.sweep:
         wandb.finish()
 
     ## Plot loss
