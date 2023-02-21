@@ -6,6 +6,7 @@ file that can then be passed to run_colabfold.sh.
 import argparse
 from Bio.Blast import NCBIWWW, NCBIXML
 import os
+import re
 
 ################################################################################
 def get_args():
@@ -70,6 +71,7 @@ def main():
             database="refseq_protein",
             sequence=fasta_seq,
             hitlist_size=args.n_hits,
+            expect=args.e_val_thresh
         )
 
         # Save BLAST results
@@ -85,11 +87,10 @@ def main():
         if record.alignments:
             for align in record.alignments:
                 for hsp in align.hsps:
-                    if hsp.expect < args.e_val_thresh:
-                        # Save sequence identity, title, and gapless sequence
-                        #  substring that aligns
-                        sequence_to_model = align.hsps[0].sbjct.replace("-", "")
-                        result_seqs[align.title] = sequence_to_model
+                    # Save sequence identity, title, and gapless sequence
+                    #  substring that aligns
+                    sequence_to_model = align.hsps[0].sbjct.replace("-", "")
+                    result_seqs[align.title] = sequence_to_model
     print(f"Found {len(result_seqs)} sequences", flush=True)
 
     # Write FASTA file
