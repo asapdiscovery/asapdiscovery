@@ -122,7 +122,7 @@ def main():
         for k, v in result_seqs.items():
             accession = k.split("|")[1]
             # Need to write out the sequence twice for dimer
-            fp.write(f"{accession},{v}:{v}\n")
+            fp.write(f"{accession}_{{}},{v}:{v}\n")
 
 
 if __name__ == "__main__":
