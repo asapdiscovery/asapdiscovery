@@ -249,6 +249,8 @@ def build_model(
             config = {}
 
     if model_type == "2d":
+        import torch
+
         model = build_model_2d(config)
         model_call = lambda model, d: torch.reshape(
             model(d["g"], d["g"].ndata["h"]), (-1, 1)
