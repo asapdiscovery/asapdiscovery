@@ -5,6 +5,7 @@ file that can then be passed to run_colabfold.sh.
 
 import argparse
 from Bio.Blast import NCBIWWW, NCBIXML
+import os
 
 ################################################################################
 def get_args():
@@ -29,11 +30,11 @@ def get_args():
     )
 
     parser.add_argument(
-        "-aln",
-        "--n_alignments",
+        "-n",
+        "--n_hits",
         type=int,
         default=500,
-        help="Number of alignments to retrieve.",
+        help="Number of hits to return.",
     )
     parser.add_argument(
         "-e",
@@ -61,7 +62,7 @@ def main():
             program="blastp",
             database="refseq_protein",
             sequence=fasta_seq,
-            alignments=args.n_alignments,
+            hitlist_size=args.n_hits,
         )
 
         # Save BLAST results
