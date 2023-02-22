@@ -2,7 +2,7 @@ from openeye import oechem, oedocking, oegrid
 
 # exec on module import 
 if not oechem.OEChemIsLicensed("python"):
-    raise RuntimeError("OpenEye license required to use openeye module")
+    raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
 
 
 
