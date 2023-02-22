@@ -1,5 +1,10 @@
 from openeye import oechem, oedocking, oegrid
 
+# exec on module import 
+if not oechem.OEChemIsLicensed("python"):
+    raise RunTimeError("OpenEye license required to use openeye module")
+
+
 
 def load_openeye_pdb(pdb_fn, alt_loc=False):
     ifs = oechem.oemolistream()
