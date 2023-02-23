@@ -92,22 +92,18 @@ def main():
     result_seqs = {}
     total_results = 0
     for record in NCBIXML.parse(result_handle):
-        if record.alignments:
-            for align in record.alignments:
-                total_results += 1
-                keep_aln = False
-                if len(args.filter) == 0:
-                    keep_aln = True
-                for f in args.filter:
-                    if re.search(f, align.title):
-                        keep_aln = True
-                        break
+        if not record.alignments:
+            continue
 
-                if keep_aln:
-                    # Save sequence identity, title, and gapless sequence
-                    #  substring that aligns
-                    sequence_to_model = align.hsps[0].sbjct.replace("-", "")
-                    result_seqs[align.title] = sequence_to_model
+        for align in record.alignments:
+            total_results += 1
+            if (len(args.filter) == 0) or any(
+                re.search(f, align.title) for f in args.filter
+            ):
+                # Save sequence identity, title, and gapless sequence
+                #  substring that aligns
+                sequence_to_model = align.hsps[0].sbjct.replace("-", "")
+                result_seqs[align.title] = sequence_to_model
     print(f"Kept {len(result_seqs)} out of {total_results} hits", flush=True)
 
     # Write FASTA file
