@@ -5,14 +5,16 @@ structures of proteins that we don't yet have crystal structures for, to be
 used as inputs for the other `asapdiscovery` pipelines.
 
 ## Environment Prep
-Create your environment for these scripts using the instructions from the
-[ColabFold repo](https://github.com/sokrypton/ColabFold/):
-```bash
-pip install "colabfold[alphafold] @ git+https://github.com/sokrypton/ColabFold"
-pip install -q "jax[cuda]>=0.3.8,<0.4" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-# For template-based predictions also install kalign and hhsuite
-conda install -c conda-forge -c bioconda kalign2=2.04 hhsuite=3.3.0
-```
+To install ColabFold, follow the instructions from the
+[LocalColabFold repo](https://github.com/YoshitakaMo/localcolabfold). One
+recommended change to these instructions is in step `5`, where we recommend
+appending the ColabFold directory to your `$PATH`
+(`export PATH="$PATH:<COLABFOLDBATCH_DIR>/bin"`) instead of prepending it. This
+will prevent the ColabFold Python instance from being called instead of your
+local Python installation. Alternatively, this line can be prepended to any
+script call (eg `PATH="$PATH:<COLABFOLDBATCH_DIR>/bin"
+copy_and_clean_frag.sh ...`), which will prevent
+your overall environment from being affected.
 
 ## General Pipeline
 There are four steps for now:
