@@ -15,7 +15,7 @@ conda install -c conda-forge -c bioconda kalign2=2.04 hhsuite=3.3.0
 ```
 
 ## General Pipeline
-There are two steps for now:
+There are three steps for now:
 1. Prepare Fragalysis structures for use as ColabFold templates
 2. Prepare sequence input for structures to generate
 3. Generate structures from ColabFold
