@@ -43,10 +43,15 @@ script:
 ### Structure Generation
 The `run_colabfold.sh` script in this repo will generate a random seed, fill
 that random seed into the `id` column in the input CSV file, and then run
-ColabFold. The last CLI arg to this script, which is optional, is the number of
-structures to generate. Each structure will have a differen random seed. If this
-arg is not provided, only one structure will be generated. Example usage to
-generate 10 different structures, each with a different random seed:
+ColabFold. The next CLI arg to this script, which is optional, is the number of
+structures to generate. Each structure will have a different random seed, which
+allows different structures to be generated from the same input sequence. If
+this arg is not provided, only one structure will be generated. There is also an
+optional `--no-rand` flag, which fully disables the random seed usage, and
+instead will use the default seed of `0`. Finally, any additional args that are
+passed when calling this script will be passed directly to `colabfold_batch`.
+Example usage to generate 10 different structures, each with a different random
+seed:
 ```bash
 # Using a fixed MERS Mpro sequence
 ./scripts/run_colabfold.sh ./metadata/MERS_Mpro_input.csv \
