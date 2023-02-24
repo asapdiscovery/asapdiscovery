@@ -1,21 +1,18 @@
 import argparse
-from glob import glob
 import json
 import os
 import pickle as pkl
 import re
-import torch
+from glob import glob
 
-from asapdiscovery.ml.dataset import DockedDataset
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundDataUpdate,
-    EnantiomerPairList,
-)
+import torch
+from asapdiscovery.data.schema import EnantiomerPairList, ExperimentalCompoundDataUpdate
 from asapdiscovery.data.utils import check_filelist_has_elements
+from asapdiscovery.ml.dataset import DockedDataset
 from asapdiscovery.ml.utils import find_most_recent
 from train import (
-    add_one_hot_encodings,
     add_lig_labels,
+    add_one_hot_encodings,
     build_model_e3nn,
     build_model_schnet,
 )
@@ -39,17 +36,13 @@ def load_affinities(fn):
     set[str]
         Set of unique compound ids
     """
-    ## Load experimental data. Don't need to do any filtering as that's already
-    ##  been taken care of by this point
-    exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, "r"))
-    ).compounds
-    affinity_dict = {
-        c.compound_id: c.experimental_data["pIC50"] for c in exp_compounds
-    }
+    # Load experimental data. Don't need to do any filtering as that's already
+    #  been taken care of by this point
+    exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn))).compounds
+    affinity_dict = {c.compound_id: c.experimental_data["pIC50"] for c in exp_compounds}
     all_compounds = {c.compound_id for c in exp_compounds}
 
-    ## Pair the compounds and rank each pair
+    # Pair the compounds and rank each pair
     enant_pairs = []
     for i in range(0, len(exp_compounds), 2):
         p = tuple(
@@ -83,22 +76,20 @@ def load_affinities_ep(fn):
     set[str]
         Set of unique compound ids
     """
-    ## Load experimental data. Don't need to do any filtering as that's already
-    ##  been taken care of by this point
-    ep_list = EnantiomerPairList(**json.load(open(fn, "r"))).pairs
-    enant_pairs = [
-        (ep.active.compound_id, ep.inactive.compound_id) for ep in ep_list
-    ]
+    # Load experimental data. Don't need to do any filtering as that's already
+    #  been taken care of by this point
+    ep_list = EnantiomerPairList(**json.load(open(fn))).pairs
+    enant_pairs = [(ep.active.compound_id, ep.inactive.compound_id) for ep in ep_list]
     all_compounds = {c for ep in enant_pairs for c in ep}
 
     return (enant_pairs, all_compounds)
 
 
-################################################################################
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-i", required=True, help="Input directory containing docked PDB files."
     )
@@ -134,7 +125,7 @@ def get_args():
         help="Remove atomref embedding in QM9 pretrained SchNet.",
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument("-o", required=True, help="Output file basename.")
 
     return parser.parse_args()
@@ -143,73 +134,67 @@ def get_args():
 def main():
     args = get_args()
 
-    ## Load the experimental affinities
+    # Load the experimental affinities
     if args.ep:
         enant_pairs, all_compounds = load_affinities_ep(args.exp)
     else:
         enant_pairs, all_compounds = load_affinities(args.exp)
 
-    ## Get all docked structures
+    # Get all docked structures
     all_fns = glob(f"{args.i}/*complex.pdb")
     check_filelist_has_elements(all_fns, tag="docked structures")
-    ## Extract crystal structure and compound id from file name
+    # Extract crystal structure and compound id from file name
     re_pat = r"(Mpro-P[0-9]{4}_0[AB]).*?([A-Z]{3}-[A-Z]{3}-.*?)_complex.pdb"
     compounds = [re.search(re_pat, fn).groups() for fn in all_fns]
 
-    ## Trim docked structures and filenames to remove compounds that don't have
-    ##  experimental data (strictly speaking this shouldn't be necessary, but
-    ##  just in case)
+    # Trim docked structures and filenames to remove compounds that don't have
+    #  experimental data (strictly speaking this shouldn't be necessary, but
+    #  just in case)
     all_fns, compounds = zip(
         *[o for o in zip(all_fns, compounds) if o[1][1] in all_compounds]
     )
     compound_dict = {c[1]: c for c in compounds}
 
-    ## Load the dataset
+    # Load the dataset
     ds = DockedDataset(all_fns, compounds)
 
-    ## Build the model
+    # Build the model
     if args.model == "e3nn":
-        ## Need to add one-hot encodings to the dataset
+        # Need to add one-hot encodings to the dataset
         ds = add_one_hot_encodings(ds)
 
-        ## Add lig labels as node attributes if requested
+        # Add lig labels as node attributes if requested
         if args.lig:
             ds = add_lig_labels(ds)
 
-        ## Load model parameters
+        # Load model parameters
         model_params = pkl.load(open(args.model_params, "rb"))
-        model = build_model_e3nn(
-            100, *model_params[1:], node_attr=args.lig, dg=args.dg
-        )
-        model_call = lambda model, d: model(d)
+        model = build_model_e3nn(100, *model_params[1:], node_attr=args.lig, dg=args.dg)
+        model_call = lambda model, d: model(d)  # noqa: E731
     elif args.model == "schnet":
-        model = build_model_schnet(
-            args.qm9, args.dg, remove_atomref=args.rm_atomref
-        )
+        model = build_model_schnet(args.qm9, args.dg, remove_atomref=args.rm_atomref)
         if args.dg:
-            model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
+            model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])  # noqa: 731
         else:
-            model_call = lambda model, d: model(d["z"], d["pos"])
+            model_call = lambda model, d: model(d["z"], d["pos"])  # noqa: E731
     else:
         raise ValueError(f"Unknown model type {args.model}.")
 
-    ## Load model weights
+    # Load model weights
     if os.path.isdir(args.model_dir):
         wts_fn = find_most_recent(args.model_dir)[1]
     elif os.path.isfile(args.model_dir):
         wts_fn = args.model_dir
     print(f"Loading weights from {wts_fn}", flush=True)
     try:
-        model.load_state_dict(
-            torch.load(wts_fn, map_location=torch.device("cpu"))
-        )
+        model.load_state_dict(torch.load(wts_fn, map_location=torch.device("cpu")))
     except Exception as e:
         print(f"Could not load weights at {wts_fn}.")
         print(e)
         print("Using model weights.", flush=True)
 
-    ## Loop through pairs, evaluate on each one, rank, check
-    ## remember to use torch.no_grad()
+    # Loop through pairs, evaluate on each one, rank, check
+    # remember to use torch.no_grad()
     correct_pairs = []
     incorrect_pairs = []
     for p in enant_pairs:

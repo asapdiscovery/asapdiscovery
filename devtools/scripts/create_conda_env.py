@@ -82,10 +82,10 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Open the base file
-with open(args.conda_file, "r") as handle:
+with open(args.conda_file) as handle:
     yaml_script = loader(handle.read())
 
-python_replacement_string = "python {}*".format(args.python)
+python_replacement_string = f"python {args.python}*"
 
 try:
     for dep_index, dep_value in enumerate(yaml_script["dependencies"]):
@@ -111,10 +111,10 @@ if conda_path is None:
         "Could not find a conda binary in CONDA_EXE variable or in executable search path"
     )
 
-print("CONDA ENV NAME  {}".format(args.name))
-print("PYTHON VERSION  {}".format(args.python))
-print("CONDA FILE NAME {}".format(args.conda_file))
-print("CONDA PATH      {}".format(conda_path))
+print(f"CONDA ENV NAME  {args.name}")
+print(f"PYTHON VERSION  {args.python}")
+print(f"CONDA FILE NAME {args.conda_file}")
+print(f"CONDA PATH      {conda_path}")
 
 # Write to a temp directory which will always be cleaned up
 with temp_cd():

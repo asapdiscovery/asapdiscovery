@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, dash_table
+from dash import Dash, dash_table, dcc, html
 
 
 def get_dash_app():
@@ -77,8 +77,8 @@ def get_color_variable(variable_list, id="crossfilter-color"):
         [
             html.H4("Color"),
             dcc.Dropdown(
-                variable_list,  ## the whole list
-                variable_list[0],  ## the default
+                variable_list,  # the whole list
+                variable_list[0],  # the default
                 id=id,
             ),
         ],
@@ -153,8 +153,8 @@ def get_filters(
                 [
                     html.H4("X-Axis"),
                     dcc.Dropdown(
-                        variable_list,  ## the whole list
-                        default_x,  ## the default
+                        variable_list,  # the whole list
+                        default_x,  # the default
                         id="crossfilter-xaxis-column",
                     ),
                     html.P("Filter X-Axis:"),
@@ -183,8 +183,8 @@ def get_filters(
                 [
                     html.H4("Y-Axis"),
                     dcc.Dropdown(
-                        variable_list,  ## the whole list
-                        default_y,  ## the default
+                        variable_list,  # the whole list
+                        default_y,  # the default
                         id="crossfilter-yaxis-column",
                     ),
                     html.P("Filter Y-Axis:"),

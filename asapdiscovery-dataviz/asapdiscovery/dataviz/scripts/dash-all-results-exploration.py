@@ -1,25 +1,29 @@
 """
-This script starts a dash html instance using the files generated from clean_results_csv.py
-Currently it's trying to do to many different things and is *super* slow for large datasets
-But I want to keep this script to pull from in the future
+This script starts a dash html instance using the files generated from
+clean_results_csv.py. Currently it's trying to do to many different things and is
+*super* slow for large datasets. But I want to keep this script to pull from in the
+future.
 
 One of the cool things that this script does it change the filter values interactively
 based on what complex is picked by the user.
 """
 
+import argparse
+import json
+import os
+import sys
+
 import pandas as pd
-from dash import Dash, dcc, html, Input, Output, dash_table, ctx
 import plotly.express as px
-import json, argparse, os, sys
+from dash import Dash, Input, Output, ctx, dash_table, dcc, html
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from asapdiscovery.docking.analysis import load_dataframes
-
+from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
 
 parser = argparse.ArgumentParser(description="")
-## Input arguments
+# Input arguments
 parser.add_argument(
     "-i",
     "--input_dir",
@@ -216,7 +220,7 @@ app.layout = html.Div(
                         dcc.Markdown(
                             """
                             **Click Data**
-    
+
                             Click on points in the graph.
                         """
                         ),
@@ -290,9 +294,7 @@ def update_scatter(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -343,9 +345,7 @@ def update_contour(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -357,13 +357,13 @@ def update_table(clickData):
     if clickData:
         complex_ID = clickData["points"][0]["customdata"][0]
 
-        ## Get Compound
+        # Get Compound
         compound = df.loc[complex_ID, "Compound_ID"][0]
 
     else:
         compound = df["Compound_ID"][0]
 
-    ## Filter by compound
+    # Filter by compound
     dff = df[df["Compound_ID"] == compound]
 
     return dff.to_dict("records")
@@ -409,9 +409,7 @@ def update_filtered_scatter(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -453,12 +451,12 @@ def update_by_structure(
     else:
         complex_ID = filtered["Complex_ID"][0]
 
-    ## Get Structure
+    # Get Structure
     structure = filtered.loc[complex_ID, "Structure_Source"]
     if not type(structure) == str:
         structure = structure[0]
 
-    ## Filter by structure
+    # Filter by structure
     dff = filtered
     dff.loc[:, "Selection"] = filtered["Structure_Source"] == structure
 
@@ -485,9 +483,7 @@ def update_by_structure(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -499,7 +495,7 @@ def update_by_structure(
 )
 def per_structure_bar_chart(clickData1, clickData2):
 
-    ## Get "Count" Columns"
+    # Get "Count" Columns"
     count_columns = [
         column
         for column in by_structure.columns
@@ -518,13 +514,11 @@ def per_structure_bar_chart(clickData1, clickData2):
             click_data = ctx.triggered[0]["value"]
             complex_ID = click_data["points"][0]["customdata"][0]
 
-        ## Get Structure
+        # Get Structure
         structure = df.loc[complex_ID, "Structure_Source"][0]
 
-        ## Filter by structure
-        dff = by_structure_tidy[
-            by_structure_tidy["Structure_Source"] == structure
-        ]
+        # Filter by structure
+        dff = by_structure_tidy[by_structure_tidy["Structure_Source"] == structure]
         dff = dff[dff["variable"].isin(count_columns)]
         # dff.loc[:, "Selection"] = (
         #     by_structure_tidy["Structure_Source"] == structure
@@ -548,13 +542,11 @@ def per_structure_bar_chart(clickData1, clickData2):
     Input("crossfilter-indicator-scatter", "clickData"),
     Input("by-compound", "clickData"),
 )
-def per_structure_bar_chart(clickData1, clickData2):
+def per_structure_bar_chart(clickData1, clickData2):  # noqa F811
 
-    ## Get "Values" Columns"
+    # Get "Values" Columns"
     count_columns = [
-        column
-        for column in by_structure.columns
-        if "Min" in column or "Mean" in column
+        column for column in by_structure.columns if "Min" in column or "Mean" in column
     ]
 
     input_source = ctx.triggered_id
@@ -569,13 +561,11 @@ def per_structure_bar_chart(clickData1, clickData2):
             click_data = ctx.triggered[0]["value"]
             complex_ID = click_data["points"][0]["customdata"][0]
 
-        ## Get Structure
+        # Get Structure
         structure = df.loc[complex_ID, "Structure_Source"][0]
 
-        ## Filter by structure
-        dff = by_structure_tidy[
-            by_structure_tidy["Structure_Source"] == structure
-        ]
+        # Filter by structure
+        dff = by_structure_tidy[by_structure_tidy["Structure_Source"] == structure]
         dff = dff[dff["variable"].isin(count_columns)]
         # dff.loc[:, "Selection"] = (
         #     by_structure_tidy["Structure_Source"] == structure

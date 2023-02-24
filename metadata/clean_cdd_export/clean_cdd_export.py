@@ -8,7 +8,7 @@ Molecule Name,Canonical PostEra ID,suspected_SMILES,ProteaseAssay_Fluorescence_D
 From: https://github.com/choderalab/perses/blob/main/examples/moonshot-mainseries/molecules/filter-cdd-export.py
 """
 import sys
-import numpy as np 
+import numpy as np
 cdd_csv_filename = 'CDD CSV Export - 2023-02-20 00h18m18s.csv'
 clean_output_csv_filename = 'fullseries_clean.csv'
 bulky_output_csv_filename = 'fullseries_bulky.csv'
@@ -60,7 +60,7 @@ for idx, row in bulky_df[bulky_df["ProteaseAssay_Fluorescence_Dose-Response_Weiz
     bulky_df.loc[idx]["ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)"] = 99
     bulky_df.loc[idx]["ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Lower) (µM)"] = 101
 
-# finally drop rows where "(IC50 CI (x) could not be calculated; confidence interval too large)".  
+# finally drop rows where "(IC50 CI (x) could not be calculated; confidence interval too large)".
 bulky_df["ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)"] = pd.to_numeric(bulky_df["ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)"], errors='coerce')
 bulky_df.dropna(subset=["ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)"], axis=0, inplace=True)
 ##

@@ -87,39 +87,39 @@ def rank_structures_openeye(
             | oechem.OEExprOpts_RingMember
         )
 
-    ## Set up the search pattern and MCS objects
+    # Set up the search pattern and MCS objects
     exp_mol = smi_conv(exp_smi)
     pattern_query = oechem.OEQMol(exp_mol)
     pattern_query.BuildExpressions(atomexpr, bondexpr)
     mcss = oechem.OEMCSSearch(pattern_query)
     mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
 
-    ## Prepare exp_mol for drawing
+    # Prepare exp_mol for drawing
     oedepict.OEPrepareDepiction(exp_mol)
 
     sort_args = []
     for smi in search_smis:
         mol = smi_conv(smi)
 
-        ## MCS search
+        # MCS search
         mcs = next(iter(mcss.Match(mol, True)))
         sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
 
     sort_args = np.asarray(sort_args)
     sort_idx = np.lexsort(-sort_args.T)
 
-    ## Find all substructure matching atoms and draw the molecule with those
-    ##  atoms highlighted
+    # Find all substructure matching atoms and draw the molecule with those
+    #  atoms highlighted
     if out_fn is not None:
         for i in range(min(n_draw, len(search_smis))):
             mol_idx = sort_idx[i]
             smi = search_smis[mol_idx]
             mol = smi_conv(smi)
 
-            ## Set up xtal mol for drawing
+            # Set up xtal mol for drawing
             oedepict.OEPrepareDepiction(mol)
 
-            ## Set up aligned image
+            # Set up aligned image
             alignres = oedepict.OEPrepareAlignedDepiction(mol, mcss)
             image = oedepict.OEImage(400, 200)
             grid = oedepict.OEImageGrid(image, 1, 2)
@@ -162,9 +162,7 @@ def rank_structures_openeye(
             search_cell = grid.GetCell(1, 2)
             oedepict.OERenderMolecule(search_cell, search_disp)
 
-            oedepict.OEWriteImage(
-                f"{out_fn}_{search_ids[mol_idx]}_{i}.png", image
-            )
+            oedepict.OEWriteImage(f"{out_fn}_{search_ids[mol_idx]}_{i}.png", image)
 
     return sort_idx
 
@@ -209,7 +207,7 @@ def rank_structures_rdkit(
         based on MCS search.
     """
     from rdkit import Chem
-    from rdkit.Chem import rdFMCS, Draw
+    from rdkit.Chem import Draw, rdFMCS
     from rdkit.Chem.Draw import rdMolDraw2D
 
     if smi_conv is None:
@@ -225,10 +223,10 @@ def rank_structures_rdkit(
     sort_args = []
     mcs_smarts = []
     for smi in search_smis:
-        ## Convert SMILES to molecule
+        # Convert SMILES to molecule
         mol = smi_conv(smi)
 
-        ## Perform MCS search for each search molecule
+        # Perform MCS search for each search molecule
         # maximize atoms first and then bonds
         # ensure that all ring bonds match other ring bonds and that all rings
         #  must be complete (allowing for incomplete rings causes problems
@@ -247,8 +245,8 @@ def rank_structures_rdkit(
     sort_args = np.asarray(sort_args)
     sort_idx = np.lexsort(-sort_args.T)
 
-    ## Find all substructure matching atoms and draw the molecule with those
-    ##  atoms highlighted
+    # Find all substructure matching atoms and draw the molecule with those
+    #  atoms highlighted
     if out_fn is not None:
         for i in range(min(n_draw, len(search_smis))):
             mol_idx = sort_idx[i]

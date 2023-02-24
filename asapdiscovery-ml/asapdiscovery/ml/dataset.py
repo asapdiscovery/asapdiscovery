@@ -36,14 +36,12 @@ class DockedDataset(Dataset):
         num_workers : int, default=1
             Number of cores to use to load structures
         """
-        super(DockedDataset, self).__init__()
+        super().__init__()
 
-        ## Function to extract from extra_dict (just to make the list
-        ##  comprehension look a bit nicer)
-        get_extra = lambda compound: (
-            extra_dict[compound]
-            if (extra_dict and (compound in extra_dict))
-            else None
+        # Function to extract from extra_dict (just to make the list
+        #  comprehension look a bit nicer)
+        get_extra = lambda compound: (  # noqa" E731
+            extra_dict[compound] if (extra_dict and (compound in extra_dict)) else None
         )
         mp_args = [
             (fn, compound, ignore_h, lig_resn, get_extra(compound))
@@ -55,13 +53,9 @@ class DockedDataset(Dataset):
 
             n_procs = min(num_workers, mp.cpu_count(), len(mp_args))
             with mp.Pool(n_procs) as pool:
-                all_structures = pool.starmap(
-                    DockedDataset._load_structure, mp_args
-                )
+                all_structures = pool.starmap(DockedDataset._load_structure, mp_args)
         else:
-            all_structures = [
-                DockedDataset._load_structure(*args) for args in mp_args
-            ]
+            all_structures = [DockedDataset._load_structure(*args) for args in mp_args]
 
         self.compounds = {}
         self.structures = []
@@ -73,9 +67,7 @@ class DockedDataset(Dataset):
             self.structures.append(struct)
 
     @staticmethod
-    def _load_structure(
-        fn, compound, ignore_h=True, lig_resn="LIG", extra_dict=None
-    ):
+    def _load_structure(fn, compound, ignore_h=True, lig_resn="LIG", extra_dict=None):
         """
         Helper function to load a single structure that can be multiprocessed in
         the class constructor.
@@ -98,25 +90,23 @@ class DockedDataset(Dataset):
         Returns
         -------
         """
+        import torch
         from Bio.PDB.PDBParser import PDBParser
         from rdkit.Chem import GetPeriodicTable
-        import torch
 
         table = GetPeriodicTable()
 
         s = PDBParser().get_structure(f"{compound[0]}_{compound[1]}", fn)
-        ## Filter out water residues
+        # Filter out water residues
         all_atoms = [a for a in s.get_atoms() if a.parent.resname != "HOH"]
         if ignore_h:
             all_atoms = [a for a in all_atoms if a.element != "H"]
-        ## Fix multi-letter atom elements being in all caps (eg CL)
-        atomic_nums = [
-            table.GetAtomicNumber(a.element.title()) for a in all_atoms
-        ]
+        # Fix multi-letter atom elements being in all caps (eg CL)
+        atomic_nums = [table.GetAtomicNumber(a.element.title()) for a in all_atoms]
         atom_pos = [tuple(a.get_vector()) for a in all_atoms]
         is_lig = [a.parent.resname == lig_resn for a in all_atoms]
 
-        ## Create new structure and update from extra_dict
+        # Create new structure and update from extra_dict
         new_structure = {
             "z": torch.tensor(atomic_nums),
             "pos": torch.tensor(atom_pos).float(),
@@ -153,15 +143,15 @@ class DockedDataset(Dataset):
         """
         import torch
 
-        ## Extract idx from inside the tensor object
+        # Extract idx from inside the tensor object
         if torch.is_tensor(idx):
             try:
                 idx = idx.item()
             except ValueError:
                 idx = idx.tolist()
 
-        ## Figure out the type of the index, and keep note of whether a list was
-        ##  passed in or not
+        # Figure out the type of the index, and keep note of whether a list was
+        #  passed in or not
         if type(idx) is int:
             return_list = False
             idx_type = int
@@ -182,12 +172,12 @@ class DockedDataset(Dataset):
                 else:
                     idx = [tuple(i) for i in idx]
 
-        ## If idx is integral, assume it is indexing the structures list,
-        ##  otherwise assume it's giving structure name
+        # If idx is integral, assume it is indexing the structures list,
+        #  otherwise assume it's giving structure name
         if idx_type is int:
             str_idx_list = idx
         else:
-            ## Need to find the structures that correspond to this compound(s)
+            # Need to find the structures that correspond to this compound(s)
             str_idx_list = [i for c in idx for i in self.compounds[c]]
 
         str_list = [self.structures[i] for i in str_idx_list]
@@ -227,11 +217,11 @@ class GraphDataset(Dataset):
             Cache file for graph dataset
 
         """
+        import pandas
         from dgllife.data import MoleculeCSVDataset
         from dgllife.utils import SMILESToBigraph
-        import pandas
 
-        ## Build dataframe
+        # Build dataframe
         all_compound_ids, all_smiles, all_pic50, all_range, all_stderr = zip(
             *[
                 (
@@ -254,7 +244,7 @@ class GraphDataset(Dataset):
             }
         )
 
-        ## Build dataset
+        # Build dataset
         smiles_to_g = SMILESToBigraph(
             add_self_loop=True,
             node_featurizer=node_featurizer,
@@ -271,11 +261,11 @@ class GraphDataset(Dataset):
         self.compounds = {}
         self.structures = []
         for i, (compound_id, g) in enumerate(zip(all_compound_ids, dataset)):
-            ## Need a tuple to match DockedDataset, but the graph objects aren't
-            ##  attached to a protein structure at all
+            # Need a tuple to match DockedDataset, but the graph objects aren't
+            #  attached to a protein structure at all
             compound = ("NA", compound_id)
 
-            ## Add data
+            # Add data
             try:
                 self.compounds[compound].append(i)
             except KeyError:
@@ -314,15 +304,15 @@ class GraphDataset(Dataset):
         """
         import torch
 
-        ## Extract idx from inside the tensor object
+        # Extract idx from inside the tensor object
         if torch.is_tensor(idx):
             try:
                 idx = idx.item()
             except ValueError:
                 idx = idx.tolist()
 
-        ## Figure out the type of the index, and keep note of whether a list was
-        ##  passed in or not
+        # Figure out the type of the index, and keep note of whether a list was
+        #  passed in or not
         if type(idx) is int:
             return_list = False
             idx_type = int
@@ -343,12 +333,12 @@ class GraphDataset(Dataset):
                 else:
                     idx = [tuple(i) for i in idx]
 
-        ## If idx is integral, assume it is indexing the structures list,
-        ##  otherwise assume it's giving structure name
+        # If idx is integral, assume it is indexing the structures list,
+        #  otherwise assume it's giving structure name
         if idx_type is int:
             str_idx_list = idx
         else:
-            ## Need to find the structures that correspond to this compound(s)
+            # Need to find the structures that correspond to this compound(s)
             str_idx_list = [i for c in idx for i in self.compounds[c]]
 
         str_list = [self.structures[i] for i in str_idx_list]

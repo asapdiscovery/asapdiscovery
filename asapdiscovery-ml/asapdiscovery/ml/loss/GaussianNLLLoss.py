@@ -15,8 +15,8 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
             If provided, use this value as the uncertainty for all
             semiquant predictions
         """
-        ## No reduction so we can apply masking if desired
-        super(GaussianNLLLoss, self).__init__(reduction="none")
+        # No reduction so we can apply masking if desired
+        super().__init__(reduction="none")
 
         self.include_semiquant = include_semiquant
         self.fill_value = fill_value
@@ -41,19 +41,17 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
         Returns
         -------
         """
-        ## Clone to avoid modifying the original uncertainty measurements
+        # Clone to avoid modifying the original uncertainty measurements
         uncertainty_clone = uncertainty.clone()
-        ## Fill in semiquant values
+        # Fill in semiquant values
         if self.include_semiquant and (self.fill_value is not None):
             idx = [r != 0 for r in in_range]
             uncertainty_clone[idx] = self.fill_value
 
-        ## Calculate loss (need to square uncertainty to convert to variance)
-        loss = super(GaussianNLLLoss, self).forward(
-            input, target, uncertainty_clone**2
-        )
+        # Calculate loss (need to square uncertainty to convert to variance)
+        loss = super().forward(input, target, uncertainty_clone**2)
 
-        ## Mask out losses for all semiquant measurements
+        # Mask out losses for all semiquant measurements
         if not self.include_semiquant:
             mask = torch.tensor(
                 [r == 0 for r in in_range], dtype=loss.dtype, device=loss.device

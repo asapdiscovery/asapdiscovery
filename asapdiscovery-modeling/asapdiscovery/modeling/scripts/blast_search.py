@@ -4,9 +4,11 @@ file that can then be passed to run_colabfold.sh.
 """
 
 import argparse
-from Bio.Blast import NCBIWWW, NCBIXML
 import os
 import re
+
+from Bio.Blast import NCBIWWW, NCBIXML
+
 
 ################################################################################
 def get_args():
@@ -23,12 +25,8 @@ def get_args():
         "--out_fasta",
         help="FASTA file for BLAST results.",
     )
-    parser.add_argument(
-        "-o", "--out_fn", required=True, help="Output CSV file name."
-    )
-    parser.add_argument(
-        "--cache", help="Optional cache file to save raw XML results."
-    )
+    parser.add_argument("-o", "--out_fn", required=True, help="Output CSV file name.")
+    parser.add_argument("--cache", help="Optional cache file to save raw XML results.")
     parser.add_argument(
         "--overwrite",
         action="store_true",
