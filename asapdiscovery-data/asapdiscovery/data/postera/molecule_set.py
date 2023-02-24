@@ -1,34 +1,35 @@
-from .postera_api import PostEraAPI
-
-from typing import Dict, Union, List, Optional
-from typing_extensions import TypedDict
 import json
+from typing import Dict, List, Optional, Union
+
 import pandas as pd
+from typing_extensions import TypedDict
+
+from .postera_api import PostEraAPI
 
 
 class Molecule(TypedDict):
     """Data type to build MoleculeList"""
 
     smiles: str
-    customData: Dict[str, Union[str, float, int]]
+    customData: dict[str, Union[str, float, int]]
 
 
 class MoleculeUpdate(TypedDict):
     """Data type to build MoleculeUpdateList"""
 
     id: str
-    customData: Dict[str, Union[str, float, int]]
+    customData: dict[str, Union[str, float, int]]
 
 
-class MoleculeList(List[Molecule]):
+class MoleculeList(list[Molecule]):
     """Data type to pass to PostEra API in molecule set create"""
 
     @classmethod
     def from_pandas_df(
         cls,
         df: pd.DataFrame,
-        smiles_field: str = 'smiles',
-        id_field: str = 'id',
+        smiles_field: str = "smiles",
+        id_field: str = "id",
     ):
         return cls(
             [
@@ -47,15 +48,15 @@ class MoleculeList(List[Molecule]):
         )
 
 
-class MoleculeUpdateList(List[MoleculeUpdate]):
+class MoleculeUpdateList(list[MoleculeUpdate]):
     """Data type to pass to PostEra API in molecule set update_custom_data"""
 
     @classmethod
     def from_pandas_df(
         cls,
         df: pd.DataFrame,
-        smiles_field: str = 'smiles',
-        id_field: str = 'id',
+        smiles_field: str = "smiles",
+        id_field: str = "id",
     ):
         return cls(
             [
@@ -82,11 +83,8 @@ class MoleculeSetAPI(PostEraAPI):
         return f"{self.api_url}/moleculesets"
 
     def create(
-            self, 
-            molecule_set_name: str,
-            data: MoleculeList,
-            return_full: bool = False
-        ) -> str:
+        self, molecule_set_name: str, data: MoleculeList, return_full: bool = False
+    ) -> str:
         """Create a MoleculeSet from a list of Molecules.
 
         Parameters
@@ -114,20 +112,13 @@ class MoleculeSetAPI(PostEraAPI):
         else:
             return response["id"]
 
-    def _read_page(
-            self, 
-            url: str,
-            page: int
-        ) -> (pd.DataFrame, str):
+    def _read_page(self, url: str, page: int) -> (pd.DataFrame, str):
 
         response = self._session.get(url, params={"page": page}).json()
 
         return response["results"], response["paginationInfo"]["hasNext"]
 
-    def _collate(
-            self,
-            url
-            ):
+    def _collate(self, url):
         page = 0
         has_next = True
         results = []
@@ -138,7 +129,6 @@ class MoleculeSetAPI(PostEraAPI):
             results.extend(result)
 
         return results
-
 
     def list(self, return_full: bool = False) -> Union[list[dict], dict]:
         """List available MoleculeSets.
@@ -158,8 +148,7 @@ class MoleculeSetAPI(PostEraAPI):
         if return_full:
             return results
         else:
-            return {result['id']: result['name'] for result in results}
-
+            return {result["id"]: result["name"] for result in results}
 
     def get(self, molecule_set_id: str) -> dict:
         """Get summary data for a given MoleculeSet.
@@ -182,10 +171,8 @@ class MoleculeSetAPI(PostEraAPI):
         return response
 
     def get_molecules(
-            self,
-            molecule_set_id: str,
-            return_as = "dataframe"
-        ) -> Union[pd.DataFrame, list]:
+        self, molecule_set_id: str, return_as="dataframe"
+    ) -> Union[pd.DataFrame, list]:
         """Pull the full contents of a MoleculeSet as a DataFrame.
 
         Parameters
@@ -196,16 +183,16 @@ class MoleculeSetAPI(PostEraAPI):
 
         """
 
-        if not return_as in ('dataframe', 'list'):
+        if not return_as in ("dataframe", "list"):
             raise ValueError("`return_as` must be either 'dataframe' or 'list'")
 
         url = f"{self.molecule_set_url}/{molecule_set_id}/get_all_molecules/"
 
         results = self._collate(url)
 
-        if return_as == 'list':
+        if return_as == "list":
             return results
-        elif return_as == 'dataframe':
+        elif return_as == "dataframe":
             response_data = [
                 {
                     "smiles": result["smiles"],
@@ -217,10 +204,10 @@ class MoleculeSetAPI(PostEraAPI):
             return pd.DataFrame(response_data)
 
     def add_molecules(
-            self,
-            molecule_set_id: id,
-            data: MoleculeList,
-        ) -> int:
+        self,
+        molecule_set_id: id,
+        data: MoleculeList,
+    ) -> int:
         """Add additional molecules to the MoleculeSet.
 
         Parameters
@@ -244,15 +231,11 @@ class MoleculeSetAPI(PostEraAPI):
             },
         )
 
-        return response.json()['nOverLimit']
-
+        return response.json()["nOverLimit"]
 
     def update_molecules(
-        self, 
-        molecule_set_id: str, 
-        data: MoleculeUpdateList,
-        overwrite=False
-    ) -> List[str]:
+        self, molecule_set_id: str, data: MoleculeUpdateList, overwrite=False
+    ) -> list[str]:
         """Updates the custom data associated with the Molecules in a MoleculeSet.
 
         Parameters
@@ -276,9 +259,7 @@ class MoleculeSetAPI(PostEraAPI):
         url = f"{self.molecule_set_url}/{molecule_set_id}/update_molecules/"
 
         response = self._session.patch(
-            url, 
-            json={"moleculesToUpdate": data, 
-                  "overwrite": overwrite}
+            url, json={"moleculesToUpdate": data, "overwrite": overwrite}
         ).json()
 
         return response["moleculesUpdated"]
