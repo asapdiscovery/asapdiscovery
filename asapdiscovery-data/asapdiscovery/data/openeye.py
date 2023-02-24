@@ -1,9 +1,8 @@
 from openeye import oechem, oegrid
 
-# exec on module import 
+# exec on module import
 if not oechem.OEChemIsLicensed("python"):
     raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
-
 
 
 def load_openeye_pdb(pdb_fn, alt_loc=False):

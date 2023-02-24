@@ -8,9 +8,10 @@ contain the PDB structure files in the same format as in the Fragalysis
 database.
 """
 import argparse
-from glob import glob
 import os
 import re
+from glob import glob
+
 
 ################################################################################
 def get_args():
@@ -28,9 +29,7 @@ def get_args():
         required=True,
         help="CSV file that was used as input for ColabFold.",
     )
-    parser.add_argument(
-        "-o", "--out_dir", required=True, help="Output directory."
-    )
+    parser.add_argument("-o", "--out_dir", required=True, help="Output directory.")
 
     return parser.parse_args()
 
@@ -47,9 +46,7 @@ def main():
 
     # Set up output dir
     os.makedirs(os.path.join(args.out_dir, "extra_files"), exist_ok=True)
-    out_csv = os.path.join(
-        args.out_dir, "extra_files", "Mpro_compound_tracker_csv.csv"
-    )
+    out_csv = os.path.join(args.out_dir, "extra_files", "Mpro_compound_tracker_csv.csv")
     aln_dir = os.path.join(args.out_dir, "aligned")
     os.makedirs(aln_dir, exist_ok=True)
 

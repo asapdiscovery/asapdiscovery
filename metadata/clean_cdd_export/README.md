@@ -3,7 +3,7 @@
 Files:
 - `CDD CSV Export - 2023-02-20 00h18m18s.csv` : raw export from CDD vault containing all data points (n=2826)
 
-- `clean_cdd_export.py` : script to clean CDD data 
+- `clean_cdd_export.py` : script to clean CDD data
 
 - `clean_cdd_export.out` : stdout captured from above python script
 
@@ -13,4 +13,4 @@ Files:
 
 Dependencies for running this script to regenerate output files:
 - Pandas
-- Numpy 
+- Numpy
