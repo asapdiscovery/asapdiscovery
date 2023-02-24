@@ -7,6 +7,7 @@ import pickle as pkl
 from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
 from asapdiscovery.data.utils import get_compound_id_xtal_dicts  # noqa: E402
 
+
 def get_args():
     parser = argparse.ArgumentParser(description="")
 

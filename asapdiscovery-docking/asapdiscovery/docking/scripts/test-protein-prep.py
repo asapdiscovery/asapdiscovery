@@ -6,7 +6,6 @@ import argparse
 import os
 
 import yaml
-
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.utils import edit_pdb_file  # noqa: E402

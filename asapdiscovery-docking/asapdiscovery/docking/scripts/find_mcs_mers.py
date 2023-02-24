@@ -7,6 +7,7 @@ from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E4
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: 402
 
+
 def get_args():
     parser = argparse.ArgumentParser(description="")
 

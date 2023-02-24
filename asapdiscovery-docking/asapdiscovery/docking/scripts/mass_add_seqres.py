@@ -10,6 +10,7 @@ from asapdiscovery.data.utils import (  # noqa: E402 E501
     edit_pdb_file,
 )
 
+
 def get_args():
     parser = argparse.ArgumentParser(description="")
 

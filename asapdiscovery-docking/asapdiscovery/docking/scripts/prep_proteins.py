@@ -19,8 +19,6 @@ import os
 import re
 
 import yaml
-from openeye import oechem
-
 from asapdiscovery.data import pdb  # noqa: E402
 from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
@@ -32,6 +30,7 @@ from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
 from asapdiscovery.docking.modeling import mutate_residues  # noqa: E402 E501
 from asapdiscovery.docking.modeling import prep_receptor  # noqa: E402
 from asapdiscovery.docking.modeling import remove_extra_ligands  # noqa: E402
+from openeye import oechem
 
 
 def check_completed(d):

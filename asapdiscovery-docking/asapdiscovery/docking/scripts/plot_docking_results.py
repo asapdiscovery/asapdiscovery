@@ -3,7 +3,6 @@ import os
 
 # TODO: Do we need to add plotly to our environment yaml?
 import plotly.express as px
-
 from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
 
 

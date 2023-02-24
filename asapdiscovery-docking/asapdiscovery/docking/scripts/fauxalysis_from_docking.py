@@ -15,14 +15,15 @@ import argparse
 import os
 import pickle as pkl
 import shutil
-import yaml
-from openeye import oechem
 
+import yaml
 from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
 from asapdiscovery.data.utils import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.utils import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.utils import save_openeye_sdf  # noqa: E402
 from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
+from openeye import oechem
+
 
 def get_args():
     parser = argparse.ArgumentParser(description="")

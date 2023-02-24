@@ -14,7 +14,6 @@ import argparse
 import os
 
 import numpy as np
-
 from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
 
 

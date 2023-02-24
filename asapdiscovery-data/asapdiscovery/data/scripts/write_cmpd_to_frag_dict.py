@@ -11,8 +11,8 @@ Example Usage:
 """
 import argparse
 import os
-import yaml
 
+import yaml
 from asapdiscovery.data.utils import get_compound_id_xtal_dicts  # noqa: E402
 from asapdiscovery.data.utils import parse_fragalysis_data  # noqa: E402
 

@@ -5,12 +5,12 @@ import argparse
 import os
 
 import pandas
-from openeye import oechem
-
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: 402
 from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402
+from openeye import oechem
+
 
 def get_args():
     parser = argparse.ArgumentParser(description="")

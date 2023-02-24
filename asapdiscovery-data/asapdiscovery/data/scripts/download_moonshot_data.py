@@ -7,6 +7,7 @@ import os
 
 from asapdiscovery.data.moonshot import download_molecules  # noqa: E402
 
+
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
