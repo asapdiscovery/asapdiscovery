@@ -26,8 +26,12 @@ dependencies = [
     "sigfig",
     #"pymol",
     "requests",
-    "typing-extensions"
+    "typing-extensions",
+    "click"
 ]
+[project.scripts]
+asapdiscovery-data = "asapdiscovery.data.cli:cli"
+
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"

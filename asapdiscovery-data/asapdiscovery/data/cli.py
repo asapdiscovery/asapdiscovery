@@ -1,7 +1,3 @@
-from .postera.molecule_set import MoleculeSetAPI, MoleculeList, MoleculeUpdateList
-
-import pandas as pd
-
 import click
 
 
@@ -13,7 +9,7 @@ def cli():
 def molecule_set_id_arg(func):
     molecule_set_id = click.argument(
         "molecule_set_id",
-        help="Name of the MoleculeSet")
+    )
 
     return molecule_set_id(func)
 
@@ -21,16 +17,13 @@ def molecule_set_id_arg(func):
 def input_file_arg(func):
     input_file = click.argument(
         "input_file",
-        help="Path to CSV file containing molecule data\n"
-        "If using create, the file must include a field containing SMILES.\n"
-        "If using update, the file must include a field containing postera molecule ids\n",
     )
 
     return input_file(func)
 
 
 def smiles_field_param(func):
-    smiles_field = click.argument(
+    smiles_field = click.option(
         "--smiles-field",
         help="Input csv field that stores the SMILES",
         default='smiles'
@@ -39,7 +32,7 @@ def smiles_field_param(func):
 
 
 def id_field_param(func):
-    id_field = click.argument(
+    id_field = click.option(
         "--id-field",
         help="Input csv field that stores the PostEra Molecule IDs",
         default='id'
@@ -83,6 +76,7 @@ def postera(ctx, api_url, api_token, api_version):
 @postera.group()
 @click.pass_context
 def moleculeset(ctx):
+    from .postera.molecule_set import MoleculeSetAPI
 
     ctx.obj['moleculesetapi'] = MoleculeSetAPI(
             ctx.obj['api_url'],
@@ -90,17 +84,19 @@ def moleculeset(ctx):
             ctx.obj['api_token'])
 
 
-@postera.command(help="")
+@moleculeset.command(help="")
 @smiles_field_param
 @click.argument("molecule_set_name")
 @input_file_arg
 @click.pass_context
 def create(
+        ctx,
         smiles_field,
         molecule_set_name,
         input_file,
-        ctx
     ):
+    import pandas as pd
+    from .postera.molecule_set import MoleculeList
 
     msa = ctx.obj['moleculesetapi']
     df = pd.read_csv(input_file)
@@ -112,29 +108,34 @@ def create(
 
     molecule_list = MoleculeList.from_pandas_df(df, smiles_field=smiles_field)
 
-    molecule_set_id = msa.create(molecule_list, molecule_set_name)
+    molecule_set_id = msa.create(molecule_set_name, molecule_list)
     click.echo(f"Created molecule set with id {molecule_set_id}")
 
 
-@postera.command(help="")
-def list():
-    ...
+@moleculeset.command(help="")
+@click.pass_context
+def list(ctx):
+    msa = ctx.obj['moleculesetapi']
+
+    click.echo(msa.list())
 
 
-@postera.command(help="")
+@moleculeset.command(help="")
 @molecule_set_id_arg
+@click.pass_context
 def get(
+    ctx,
     molecule_set_id,
-    ctx
     ):
     ...
 
 
-@postera.command(help="")
+@moleculeset.command(help="")
 @molecule_set_id_arg
+@click.pass_context
 def get_molecules(
+    ctx,
     molecule_set_id,
-    ctx
     ):
     msa = ctx.obj['moleculesetapi']
     df = msa.get_molecules(molecule_set_id)
@@ -144,24 +145,28 @@ def get_molecules(
     click.echo(f"Wrote molecule set to {outfile_name}")
 
 
-@postera.command(help="")
+@moleculeset.command(help="")
 @id_field_param
 @molecule_set_id_arg
 @input_file_arg
+@click.pass_context
 def add_molecules():
     ...
 
 
-@postera.command(help="")
+@moleculeset.command(help="")
 @id_field_param
 @molecule_set_id_arg
 @input_file_arg
+@click.pass_context
 def update_molecules(
+        ctx,
         id_field,
         molecule_set_id,
         input_file,
-        ctx
     ):
+    import pandas as pd
+    from .postera.molecule_set import MoleculeUpdateList
 
     msa = ctx.obj['moleculesetapi']
 
@@ -174,7 +179,7 @@ def update_molecules(
 
     update_molecule_list = MoleculeUpdateList.from_pandas_df(df, id_field=id_field)
 
-    molecules_updated = msa.update_custom_data(
+    molecules_updated = msa.update_molecules(
         molecule_set_id, update_molecule_list
     )
     click.echo(f"Updated molecules {molecules_updated} in set {molecule_set_id}")
