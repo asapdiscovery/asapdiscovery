@@ -28,19 +28,24 @@ def input_file_arg(func):
 
     return input_file(func)
 
-def field_params(func):
+
+def smiles_field_param(func):
     smiles_field = click.argument(
         "--smiles-field",
         help="Input csv field that stores the SMILES",
         default='smiles'
     )
+    return smiles_field(func)
+
+
+def id_field_param(func):
     id_field = click.argument(
         "--id-field",
         help="Input csv field that stores the PostEra Molecule IDs",
         default='id'
     )
 
-    return id_field(smiles_field(func))
+    return id_field(func)
 
 
 @cli.group(help="Subcommands for interacting with the PostEra API")
@@ -86,13 +91,12 @@ def moleculeset(ctx):
 
 
 @postera.command(help="")
-@field_params
+@smiles_field_param
 @click.argument("molecule_set_name")
 @input_file_arg
 @click.pass_context
 def create(
         smiles_field,
-        id_field,
         molecule_set_name,
         input_file,
         ctx
@@ -141,7 +145,7 @@ def get_molecules(
 
 
 @postera.command(help="")
-@field_params
+@id_field_param
 @molecule_set_id_arg
 @input_file_arg
 def add_molecules():
@@ -149,11 +153,10 @@ def add_molecules():
 
 
 @postera.command(help="")
-@field_params
+@id_field_param
 @molecule_set_id_arg
 @input_file_arg
 def update_molecules(
-        smiles_field,
         id_field,
         molecule_set_id,
         input_file,
