@@ -1,5 +1,6 @@
-import numpy as np
 import os
+
+import numpy as np
 
 
 def calc_e3nn_model_info(ds, r):
@@ -23,6 +24,7 @@ def calc_e3nn_model_info(ds, r):
         Rounded average number of nodes per structure in `ds`
     """
     from collections import Counter
+
     from torch_cluster import radius_graph
 
     num_neighbors = []
@@ -74,8 +76,7 @@ def find_all_models(model_base):
     elif "{}" in model_base:
         re_match = re.sub(r"{}", r"([0-9]+)", os.path.basename(model_base))
         models = [
-            re.match(re_match, fn)
-            for fn in os.listdir(os.path.dirname(model_base))
+            re.match(re_match, fn) for fn in os.listdir(os.path.dirname(model_base))
         ]
         models = [int(m.group(1)) for m in models if m is not None]
     elif os.path.isfile(model_base):
@@ -173,9 +174,8 @@ def split_molecules(ds, split_fracs, generator=None):
     """
     import torch
 
-    ### TODO: make this whole process more compact
-
-    ## First get all the unique compound_ids
+    # TODO: make this whole process more compact
+    # First get all the unique compound_ids
     compound_ids_dict = {}
     for c in ds.compounds.keys():
         try:
@@ -184,34 +184,34 @@ def split_molecules(ds, split_fracs, generator=None):
             compound_ids_dict[c[1]] = [c]
     all_compound_ids = list(compound_ids_dict.keys())
 
-    ## Set up generator
+    # Set up generator
     if generator is None:
         generator = torch.default_generator
 
-    ## Shuffle the indices
+    # Shuffle the indices
     indices = torch.randperm(len(all_compound_ids), generator=generator)
 
-    ## For each Subset, grab all molecules with the included compound_ids
+    # For each Subset, grab all molecules with the included compound_ids
     all_subsets = []
     offset = 0
-    ## Go up to the last split so we can add anything that got left out from
-    ##  float rounding
+    # Go up to the last split so we can add anything that got left out from
+    #  float rounding
     for frac in split_fracs[:-1]:
         split_len = int(np.floor(frac * len(indices)))
         incl_compounds = all_compound_ids[offset : offset + split_len]
         offset += split_len
 
-        ## Get subset indices
+        # Get subset indices
         subset_idx = []
         for compound_id in incl_compounds:
             for compound in compound_ids_dict[compound_id]:
                 subset_idx.extend([i for i in ds.compounds[compound]])
         all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
-    ## Finish up anything leftover
+    # Finish up anything leftover
     incl_compounds = all_compound_ids[offset:]
 
-    ## Get subset indices
+    # Get subset indices
     subset_idx = []
     for compound_id in incl_compounds:
         for compound in compound_ids_dict[compound_id]:
@@ -304,7 +304,9 @@ def train(
     """
     import pickle as pkl
     from time import time
+
     import torch
+
     from .ml import MSELoss
 
     if use_wandb:
@@ -317,15 +319,15 @@ def train(
     if test_loss is None:
         test_loss = []
 
-    ## Send model to desired device if it's not there already
+    # Send model to desired device if it's not there already
     model.to(device)
 
-    ## Set up optimizer and loss function
+    # Set up optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters(), lr)
     if loss_fn is None:
         loss_fn = MSELoss()
 
-    ## Train for n epochs
+    # Train for n epochs
     for epoch_idx in range(start_epoch, n_epochs):
         print(f"Epoch {epoch_idx}/{n_epochs}", flush=True)
         if epoch_idx % 10 == 0 and epoch_idx > 0:
@@ -334,7 +336,7 @@ def train(
             print(f"Testing error: {np.mean(test_loss[-1]):0.5f}", flush=True)
         tmp_loss = []
 
-        ## Initialize batch
+        # Initialize batch
         batch_counter = 0
         optimizer.zero_grad()
         batch_loss = None
@@ -360,29 +362,29 @@ def train(
             ).float()
             loss = loss_fn(pred, target, in_range, uncertainty)
 
-            ## Keep track of loss for each sample
+            # Keep track of loss for each sample
             tmp_loss.append(loss.item())
 
-            ## Update batch_loss
+            # Update batch_loss
             if batch_loss is None:
                 batch_loss = loss
             else:
                 batch_loss += loss
             batch_counter += 1
 
-            ## Perform backprop if we've done all the preds for this batch
+            # Perform backprop if we've done all the preds for this batch
             if batch_counter == batch_size:
-                ## Backprop
+                # Backprop
                 batch_loss.backward()
                 optimizer.step()
 
-                ## Reset batch tracking
+                # Reset batch tracking
                 batch_counter = 0
                 optimizer.zero_grad()
                 batch_loss = None
 
         if batch_counter > 0:
-            ## Backprop for final incomplete batch
+            # Backprop for final incomplete batch
             batch_loss.backward()
             optimizer.step()
         end_time = time()
@@ -455,15 +457,9 @@ def train(
             continue
         elif os.path.isdir(save_file):
             torch.save(model.state_dict(), f"{save_file}/{epoch_idx}.th")
-            pkl.dump(
-                np.vstack(train_loss), open(f"{save_file}/train_err.pkl", "wb")
-            )
-            pkl.dump(
-                np.vstack(val_loss), open(f"{save_file}/val_err.pkl", "wb")
-            )
-            pkl.dump(
-                np.vstack(test_loss), open(f"{save_file}/test_err.pkl", "wb")
-            )
+            pkl.dump(np.vstack(train_loss), open(f"{save_file}/train_err.pkl", "wb"))
+            pkl.dump(np.vstack(val_loss), open(f"{save_file}/val_err.pkl", "wb"))
+            pkl.dump(np.vstack(test_loss), open(f"{save_file}/test_err.pkl", "wb"))
         elif "{}" in save_file:
             torch.save(model.state_dict(), save_file.format(epoch_idx))
         else:

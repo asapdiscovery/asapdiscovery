@@ -1,12 +1,13 @@
-import os, argparse
+import argparse
+import os
 
-from asapdiscovery.docking.analysis import DockingDataset
+from asapdiscovery.docking.analysis import DockingDataset  # noqa: E402
 
 
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d", required=True, help="Directory containing docking results."
     )

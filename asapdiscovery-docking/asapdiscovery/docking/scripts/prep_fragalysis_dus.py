@@ -5,23 +5,21 @@ to dock against.
 """
 import argparse
 import multiprocessing as mp
-from openeye import oechem
 import os
 import re
 from tempfile import NamedTemporaryFile
-import yaml
 
-from asapdiscovery.docking.modeling import (
-    prep_receptor,
-    du_to_complex,
-    mutate_residues,
-)
-from asapdiscovery.data.utils import (
-    edit_pdb_file,
-    seqres_to_res_list,
-)
-from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
-from asapdiscovery.data.fragalysis import parse_xtal
+import yaml
+from openeye import oechem
+
+from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
+from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
+from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
+from asapdiscovery.data.utils import edit_pdb_file  # noqa: E402
+from asapdiscovery.data.utils import seqres_to_res_list  # noqa: E402
+from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
+from asapdiscovery.docking.modeling import mutate_residues  # noqa: 402
+from asapdiscovery.docking.modeling import prep_receptor  # noqa: E402
 
 
 def check_completed(d):
@@ -60,53 +58,51 @@ def check_completed(d):
 
 
 def prep_mp(xtal, seqres, out_base, loop_db):
-    ## Get chain
+    # Get chain
     re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
     try:
         chain = re.search(re_pat, xtal.str_fn).groups()[0]
     except AttributeError:
         print(
-            f"Regex chain search failed: {re_pat}, {str_fn}.",
+            f"Regex chain search failed: {re_pat}, {str_fn}.",  # noqa: F821
             "Using 0A as default.",
             flush=True,
         )
         chain = "0A"
 
-    ## Check if results already exist
-    out_dir = os.path.join(
-        out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}"
-    )
+    # Check if results already exist
+    out_dir = os.path.join(out_base, f"{xtal.dataset}_{chain}_{xtal.compound_id}")
     if check_completed(out_dir):
         return
 
-    ## Make output directory
+    # Make output directory
     os.makedirs(out_dir, exist_ok=True)
 
-    ## Option to add SEQRES header
+    # Option to add SEQRES header
     if seqres:
-        ## Get a list of 3-letter codes for the sequence
+        # Get a list of 3-letter codes for the sequence
         res_list = seqres_to_res_list(seqres)
 
-        ## Generate a new (temporary) pdb file with the SEQRES we want
+        # Generate a new (temporary) pdb file with the SEQRES we want
         with NamedTemporaryFile(mode="w", suffix=".pdb") as tmp_pdb:
-            ## Add the SEQRES
+            # Add the SEQRES
             edit_pdb_file(xtal.str_fn, seqres_str=seqres, pdb_out=tmp_pdb.name)
 
-            ## Load in the pdb file as an OE object
+            # Load in the pdb file as an OE object
             seqres_prot = load_openeye_pdb(tmp_pdb.name)
 
-            ## Mutate the residues to match the residue list
+            # Mutate the residues to match the residue list
             initial_prot = mutate_residues(seqres_prot, res_list)
     else:
         initial_prot = load_openeye_pdb(xtal.str_fn)
 
-    ## Take the first returned DU and save it
+    # Take the first returned DU and save it
     try:
         design_units = prep_receptor(
             initial_prot,
             loop_db=loop_db,
         )
-    except IndexError as e:
+    except IndexError:
         print(
             "DU generation failed for",
             f"{xtal.dataset}_{chain}_{xtal.compound_id})",
@@ -117,22 +113,20 @@ def prep_mp(xtal, seqres, out_base, loop_db):
     du = design_units[0]
     print(
         f"{xtal.dataset}_{chain}_{xtal.compound_id}",
-        oechem.OEWriteDesignUnit(
-            os.path.join(out_dir, "prepped_receptor.oedu"), du
-        ),
+        oechem.OEWriteDesignUnit(os.path.join(out_dir, "prepped_receptor.oedu"), du),
         flush=True,
     )
 
-    ## Save complex as PDB file
+    # Save complex as PDB file
     complex_mol = du_to_complex(du, include_solvent=True)
     save_openeye_pdb(complex_mol, os.path.join(out_dir, "prepped_complex.pdb"))
 
 
-################################################################################
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d",
         "--structure_dir",
@@ -146,7 +140,7 @@ def get_args():
         help="CSV file giving information of which structures to prep.",
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument(
         "-o",
         "--output_dir",
@@ -154,7 +148,7 @@ def get_args():
         help="Path to output_dir.",
     )
 
-    ## Model-building arguments
+    # Model-building arguments
     parser.add_argument(
         "-l",
         "--loop_db",
@@ -166,7 +160,7 @@ def get_args():
         help="Path to yaml file of SEQRES.",
     )
 
-    ## Performance arguments
+    # Performance arguments
     parser.add_argument(
         "-n",
         "--num_cores",
@@ -190,9 +184,7 @@ def main():
     else:
         seqres = None
 
-    mp_args = [
-        (x, seqres, args.output_dir, args.loop_db) for x in xtal_compounds
-    ]
+    mp_args = [(x, seqres, args.output_dir, args.loop_db) for x in xtal_compounds]
     print(mp_args[0], flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")

@@ -2,18 +2,20 @@
 Script to dock an SDF file of ligands to prepared structures.
 """
 import argparse
-from glob import glob
 import multiprocessing as mp
-from openeye import oechem
 import os
-import pandas
 import pickle as pkl
 import re
 import shutil
+from glob import glob
 
-from asapdiscovery.data.openeye import load_openeye_sdf, save_openeye_sdf
-from asapdiscovery.docking.docking import run_docking_oe
-from asapdiscovery.data.utils import check_filelist_has_elements
+import pandas
+from openeye import oechem
+
+from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
+from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
+from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
+from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
 
 
 def check_results(d):
@@ -87,7 +89,7 @@ def load_dus(file_base, by_compound=False):
         ]
     else:
         all_fns = glob(file_base)
-    
+
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")
 
@@ -152,9 +154,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         chemgauss_scores = []
 
         for conf in posed_mol.GetConfs():
-            rmsds.append(
-                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD"))
-            )
+            rmsds.append(float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD")))
             posit_probs.append(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
             )
@@ -162,11 +162,9 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
                 oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT_method")
             )
             chemgauss_scores.append(
-                float(
-                    oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4")
-                )
+                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4"))
             )
-        smiles = oechem.OEGetSDData(conf, f"SMILES")
+        smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
     else:
         out_fn = ""
@@ -199,11 +197,11 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
     return results
 
 
-################################################################################
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument("-l", "--lig_file", help="SDF file containing ligands.")
     parser.add_argument(
         "-e",
@@ -225,7 +223,7 @@ def get_args():
         help="Pickle file giving compound_ids, xtal_ids, and sort_idxs.",
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument(
         "-o",
         "--output_dir",
@@ -233,7 +231,7 @@ def get_args():
         help="Path to output_dir.",
     )
 
-    ## Performance arguments
+    # Performance arguments
     parser.add_argument(
         "-n",
         "--num_cores",
@@ -292,22 +290,23 @@ def get_args():
 def main():
     args = get_args()
 
-    ## Parse symlinks in output_dir
+    # Parse symlinks in output_dir
     args.output_dir = os.path.realpath(args.output_dir)
 
     if args.exp_file:
         import json
+
         from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 
-        ## Load compounds
+        # Load compounds
         exp_compounds = [
             c
             for c in ExperimentalCompoundDataUpdate(
-                **json.load(open(args.exp_file, "r"))
+                **json.load(open(args.exp_file))
             ).compounds
             if c.smiles is not None
         ]
-        ## Make OEGraphMol for each compound
+        # Make OEGraphMol for each compound
         mols = []
         for c in exp_compounds:
             new_mol = oechem.OEGraphMol()
@@ -323,28 +322,26 @@ def main():
                 flush=True,
             )
         else:
-            ## Load all ligands to dock
+            # Load all ligands to dock
             ifs = oechem.oemolistream()
             ifs.open(args.lig_file)
             mols = [mol.CreateCopy() for mol in ifs.GetOEGraphMols()]
     elif args.exp_file is None:
-        raise ValueError(
-            "Need to specify exactly one of --exp_file or --lig_file."
-        )
+        raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
 
-    ## Load all receptor DesignUnits
+    # Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
 
-    ## Load sort indices if given
+    # Load sort indices if given
     if args.sort_res:
         compound_ids, xtal_ids, sort_idxs = pkl.load(open(args.sort_res, "rb"))
-        ## If we're docking to all DUs, set top_n appropriately
+        # If we're docking to all DUs, set top_n appropriately
         if args.top_n == -1:
             args.top_n = len(xtal_ids)
 
-        ## Make sure that compound_ids match with experimental data if that's
-        ##  what we're using
+        # Make sure that compound_ids match with experimental data if that's
+        #  what we're using
         if args.exp_file:
             assert all(
                 [
@@ -356,11 +353,11 @@ def main():
                 "compound_ids in --exp_file."
             )
     else:
-        ## Use index as compound_id
+        # Use index as compound_id
         compound_ids = [str(i) for i in range(n_mols)]
-        ## Get dataset values from DesignUnit filenames
+        # Get dataset values from DesignUnit filenames
         xtal_ids = list(dataset_dict.keys())
-        ## Arbitrary sort index, same for each ligand
+        # Arbitrary sort index, same for each ligand
         sort_idxs = [list(range(len(xtal_ids)))] * n_mols
         args.top_n = len(xtal_ids)
 
@@ -371,7 +368,7 @@ def main():
         for xtal in sort_idxs[i][: args.top_n]:
             if xtal_ids[xtal] not in dataset_dict:
                 continue
-            ## Get the DU for each full Mpro name associated with this dataset
+            # Get the DU for each full Mpro name associated with this dataset
             dock_dus.extend([du_dict[x] for x in dataset_dict[xtal_ids[xtal]]])
             xtals.extend(dataset_dict[xtal_ids[xtal]])
         new_args = [
@@ -413,7 +410,7 @@ def main():
 
     results_df.to_csv(f"{args.output_dir}/all_results.csv")
 
-    ## Concatenate all individual SDF files
+    # Concatenate all individual SDF files
     combined_sdf = f"{args.output_dir}/combined.sdf"
     with open(combined_sdf, "wb") as wfd:
         for f in results_df["docked_file"]:

@@ -1,12 +1,13 @@
-VAULT_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
-## All molecules with SMILES (public)
-ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
-## Noncovalent molecules with experimental measurements (from John)
-NONCOVALENT_SMI_SEARCH = "searches/9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
-
-from io import StringIO
 import logging
+from io import StringIO
+
 import pandas
+
+VAULT_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
+# All molecules with SMILES (public)
+ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
+# Noncovalent molecules with experimental measurements (from John)
+NONCOVALENT_SMI_SEARCH = "searches/9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 
 
 def download_url(search_url, header, timeout=5000, retry_delay=5):
@@ -30,18 +31,19 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
     requests.Response
         Response object from the final export GET request
     """
-    import requests
     import sys
     import time
 
-    ## Make the initial download request
+    import requests
+
+    # Make the initial download request
     logging.debug(f"download_url : initiating search {search_url}")
     response = requests.get(search_url, headers=header)
     logging.debug(f"  {response}")
     export_id = response.json()["id"]
     logging.debug(f"  Export id for requested search is {export_id}")
 
-    ## Check every `retry_delay` seconds to see if the export is ready
+    # Check every `retry_delay` seconds to see if the export is ready
     status_url = f"{VAULT_URL}export_progress/{export_id}"
     status = None
     total_seconds = 0
@@ -51,14 +53,14 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
         status = response.json()["status"]
 
         if status == "finished":
-            logging.debug(f"  Export is ready")
+            logging.debug("  Export is ready")
             break
 
-        ## Sleep between attempts
+        # Sleep between attempts
         time.sleep(retry_delay)
         total_seconds += retry_delay
 
-        ## Time out when we reach the limit
+        # Time out when we reach the limit
         if total_seconds > timeout:
             logging.error("Export Never Finished")
             break
@@ -69,7 +71,7 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
         )
         sys.exit("Export failed")
 
-    ## Send GET request for final export
+    # Send GET request for final export
     result_url = f"{VAULT_URL}exports/{export_id}"
     response = requests.get(result_url, headers=header)
 
@@ -95,18 +97,14 @@ def download_achiral(header, fn_out=None):
     """
     from .utils import get_achiral_molecules
 
-    ## Download all molecules to start
+    # Download all molecules to start
     response = download_url(f"{VAULT_URL}{NONCOVALENT_SMI_SEARCH}", header)
-    ## Parse into DF
+    # Parse into DF
     mol_df = pandas.read_csv(StringIO(response.content.decode()))
-    ## Get rid of any molecules that snuck through without SMILES
-    idx = (
-        mol_df.loc[:, ["shipment_SMILES", "suspected_SMILES"]]
-        .isna()
-        .all(axis=1)
-    )
+    # Get rid of any molecules that snuck through without SMILES
+    idx = mol_df.loc[:, ["shipment_SMILES", "suspected_SMILES"]].isna().all(axis=1)
     mol_df = mol_df.loc[~idx, :].copy()
-    ## Some of the SMILES from CDD have extra info at the end
+    # Some of the SMILES from CDD have extra info at the end
     mol_df.loc[:, "shipment_SMILES"] = [
         s.strip("|").split()[0] if not pandas.isna(s) else s
         for s in mol_df.loc[:, "shipment_SMILES"]
@@ -116,10 +114,10 @@ def download_achiral(header, fn_out=None):
         for s in mol_df.loc[:, "suspected_SMILES"]
     ]
 
-    ## Remove chiral molecules
+    # Remove chiral molecules
     achiral_df = get_achiral_molecules(mol_df)
 
-    ## Save to CSV as requested
+    # Save to CSV as requested
     if fn_out:
         achiral_df.to_csv(fn_out, index=False)
 
@@ -161,30 +159,30 @@ def download_molecules(
     import os
 
     if fn_cache and os.path.exists(fn_cache):
-        with open(fn_cache, "rt") as infile:
+        with open(fn_cache) as infile:
             content = infile.read()
     else:
-        ## Download all molecules to start
+        # Download all molecules to start
         url = f"{VAULT_URL}{NONCOVALENT_SMI_SEARCH}"
         logging.debug(f"Downloading data from CDD vault from {url}")
         response = download_url(url, header)
         content = response.content.decode()
 
         if fn_cache:
-            with open(fn_cache, "wt") as outfile:
+            with open(fn_cache, "w") as outfile:
                 outfile.write(content)
 
-    ## Parse into DF
+    # Parse into DF
     mol_df = pandas.read_csv(StringIO(content))
     logging.debug(f"\n{mol_df}")
 
-    ## Remove chiral molecules
-    logging.debug(f"Filtering dataframe...")
+    # Remove chiral molecules
+    logging.debug("Filtering dataframe...")
     from .utils import filter_molecules_dataframe
 
     filtered_df = filter_molecules_dataframe(mol_df, **filter_kwargs)
 
-    ## Save to CSV as requested
+    # Save to CSV as requested
     if fn_out:
         logging.debug(f"Generating CSV file {fn_out}")
         filtered_df.to_csv(fn_out, index=False)

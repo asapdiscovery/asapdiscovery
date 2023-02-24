@@ -1,15 +1,16 @@
-import os, argparse
+import argparse
+import os
 
 # TODO: Do we need to add plotly to our environment yaml?
 import plotly.express as px
 
-from asapdiscovery.docking.analysis import DockingResults
+from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
 
 
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d",
         "--input_dir",
@@ -36,32 +37,28 @@ def main():
         os.mkdir(args.output_dir)
     assert os.path.exists(args.output_dir)
 
-    ## Get File Paths
+    # Get File Paths
     all_results = os.path.join(args.input_dir, "all_results_cleaned.csv")
     by_compound = os.path.join(args.input_dir, "by_compound.csv")
     by_structure = os.path.join(args.input_dir, "by_compound.csv")
 
-    ## Load Results
+    # Load Results
     dr = DockingResults(csv_path=all_results)
     dr.get_compound_df(csv_path=by_compound)
     dr.get_structure_df(csv_path=by_structure)
 
     features = [
-        feature
-        for feature in dr.structure_df.columns
-        if not feature == "Compound_ID"
+        feature for feature in dr.structure_df.columns if not feature == "Compound_ID"
     ]
 
-    ## make per_structure figures
+    # make per_structure figures
     df = dr.structure_df
     for feature in features:
         fig = px.bar(df.sort_values(feature), y=feature, text_auto=".2s")
-        file_path = os.path.join(
-            args.output_dir, f"per_structure_{feature}.png"
-        )
+        file_path = os.path.join(args.output_dir, f"per_structure_{feature}.png")
         fig.write_image(file_path)
 
-    ## make per_compound figures
+    # make per_compound figures
     df = dr.compound_df
     for feature in features:
         fig = px.histogram(df.sort_values(feature), x=feature, text_auto=".2s")

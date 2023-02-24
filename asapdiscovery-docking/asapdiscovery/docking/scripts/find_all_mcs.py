@@ -1,25 +1,21 @@
 import argparse
 import json
 import multiprocessing as mp
-import numpy as np
 import pickle as pkl
 
-from asapdiscovery.data.utils import load_exp_from_sdf
-from asapdiscovery.data.fragalysis import parse_xtal
-from asapdiscovery.docking.mcs import (
-    rank_structures_openeye,
-    rank_structures_rdkit,
-)
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundDataUpdate,
-    EnantiomerPairList,
-)
+import numpy as np
 
-################################################################################
+from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
+from asapdiscovery.data.schema import EnantiomerPairList  # noqa: E402
+from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
+from asapdiscovery.data.utils import load_exp_from_sdf  # noqa: E402
+from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
+from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: E402
+
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument("-exp", help="JSON file giving experimental results.")
     parser.add_argument(
         "-sdf", help="SDF file containing compounds to use as queries in MCS."
@@ -31,13 +27,11 @@ def get_args():
         "-x_dir", required=True, help="Directory with crystal structures."
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument("-o", required=True, help="Main output directory.")
 
-    ## Performance arguments
-    parser.add_argument(
-        "-n", default=1, type=int, help="Number of processors to use."
-    )
+    # Performance arguments
+    parser.add_argument("-n", default=1, type=int, help="Number of processors to use.")
     parser.add_argument(
         "-sys",
         default="rdkit",
@@ -47,8 +41,7 @@ def get_args():
         "-str",
         action="store_true",
         help=(
-            "Use "
-            "structure-based matching instead of element-based matching for MCS."
+            "Use " "structure-based matching instead of element-based matching for MCS."
         ),
     )
     parser.add_argument(
@@ -72,27 +65,23 @@ def get_args():
 def main():
     args = get_args()
 
-    ## Load all compounds with experimental data and filter to only achiral
-    ##  molecules (to start)
+    # Load all compounds with experimental data and filter to only achiral
+    #  molecules (to start)
     if args.exp:
-        ## Give a warning if both -exp and -sdf are provided
+        # Give a warning if both -exp and -sdf are provided
         if args.sdf:
-            print(
-                "WARNING: Both -exp and -sdf provided, using -exp.", flush=True
-            )
+            print("WARNING: Both -exp and -sdf provided, using -exp.", flush=True)
         if args.ep:
             exp_compounds = [
                 c
-                for ep in EnantiomerPairList(
-                    **json.load(open(args.exp, "r"))
-                ).pairs
+                for ep in EnantiomerPairList(**json.load(open(args.exp))).pairs
                 for c in (ep.active, ep.inactive)
             ]
         else:
             exp_compounds = [
                 c
                 for c in ExperimentalCompoundDataUpdate(
-                    **json.load(open(args.exp, "r"))
+                    **json.load(open(args.exp))
                 ).compounds
                 if c.smiles is not None
             ]
@@ -108,18 +97,18 @@ def main():
     else:
         raise ValueError("Need to specify exactly one of -exp or -sdf.")
 
-    ## Find relevant crystal structures
+    # Find relevant crystal structures
     xtal_compounds = parse_xtal(args.x, args.x_dir)
 
-    ## See if I can add a title to the MCS plots for the xtal id
+    # See if I can add a title to the MCS plots for the xtal id
     compound_ids = [c.compound_id for c in exp_compounds]
     xtal_ids = [x.dataset for x in xtal_compounds]
     xtal_smiles = [x.smiles for x in xtal_compounds]
 
     if args.sys.lower() == "rdkit":
-        ## Convert SMILES to RDKit mol objects for MCS
-        ## Need to canonicalize SMILES first because RDKit MCS seems to have
-        ##  trouble with non-canon SMILES
+        # Convert SMILES to RDKit mol objects for MCS
+        # Need to canonicalize SMILES first because RDKit MCS seems to have
+        #  trouble with non-canon SMILES
         rank_fn = rank_structures_rdkit
     elif args.sys.lower() == "oe":
         rank_fn = rank_structures_openeye
@@ -129,7 +118,7 @@ def main():
     print(f"{len(exp_compounds)} experimental compounds")
     print(f"{len(xtal_compounds)} crystal structures")
     print("Finding best docking structures", flush=True)
-    ## Prepare the arguments to pass to starmap
+    # Prepare the arguments to pass to starmap
     mp_args = [
         (
             c.smiles,

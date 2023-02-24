@@ -2,13 +2,15 @@
 Small script to gather all completed results.
 """
 import argparse
-from glob import glob
-import pandas
 import pickle as pkl
 import shutil
+from glob import glob
+
+import pandas
 from asapdiscovery.data.utils import check_filelist_has_elements
 
-################################################################################
+
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
@@ -42,8 +44,8 @@ def main():
 
     all_pickle = glob(args.results)
     check_filelist_has_elements(all_pickle, tag="results pickle files")
-    
-    ## Build final df
+
+    # Build final df
     results_cols = [
         "ligand_id",
         "du_structure",
@@ -62,7 +64,7 @@ def main():
         results_df.to_csv(f"{args.out_dir}/all_results.csv")
 
     if not args.no_sdf:
-        ## Concatenate all individual SDF files
+        # Concatenate all individual SDF files
         combined_sdf = f"{args.out_dir}/combined.sdf"
         with open(combined_sdf, "wb") as wfd:
             for f in results_df["docked_file"]:

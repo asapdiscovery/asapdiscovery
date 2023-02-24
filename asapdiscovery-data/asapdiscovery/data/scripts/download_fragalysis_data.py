@@ -1,8 +1,7 @@
 import argparse
 
-from asapdiscovery.data.fragalysis import download
+from asapdiscovery.data.fragalysis import download  # noqa: E402
 
-################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 

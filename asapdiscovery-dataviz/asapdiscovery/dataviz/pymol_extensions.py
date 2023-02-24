@@ -1,35 +1,34 @@
 # !/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Thu Jun 11 11:34:28 2020
 
 @author: alexpayne
 
 Example usage from within pymol:
-## after starting pymol, load in pymol extensions
+# after starting pymol, load in pymol extensions
 run /PATH_TO_THIS_FILE/pymol_extensions.py
 
 run /PATH_TO_PYMOL_SCRIPT/color_active_site.pml
 
 
 """
-from __future__ import print_function
-import yaml
-from pymol import cmd, stored, util
 
-## Very useful script
+import pymol
+import yaml
+from pymol import cmd, util
+
+
+# Very useful script
 def make_selection(
     name="chainA", selection="chain A", structure_list="all", delete=False
 ):
     if structure_list == "all":
         structure_list = cmd.get_object_list()
     else:
-        ## This is ugly.
-        ## It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
-        ## The structures should not be in quotes
-        structure_list = (
-            structure_list.replace("[", "").replace("]", "").split(",")
-        )
+        # This is ugly.
+        # It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
+        # The structures should not be in quotes
+        structure_list = structure_list.replace("[", "").replace("]", "").split(",")
         print(structure_list)
 
     for structure in structure_list:
@@ -38,10 +37,10 @@ def make_selection(
         print(f"Making {selname}: {full_selection}")
         cmd.select(selname, full_selection)
 
-        ## Nifty way to get rid of a bunch of selections I just made if made by accident
+        # Nifty way to get rid of a bunch of selections I just made if made by accident
         if delete:
             cmd.delete(selname)
-            print("############ Deleted #############")
+            print("###### Deleted #######")
 
 
 def select_from_file(file_name, structure_list="all", delete=False):
@@ -50,12 +49,10 @@ def select_from_file(file_name, structure_list="all", delete=False):
     if structure_list == "all":
         structure_list = cmd.get_object_list()
     else:
-        ## This is ugly.
-        ## It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
-        ## The structures should not be in quotes
-        structure_list = (
-            structure_list.replace("[", "").replace("]", "").split(",")
-        )
+        # This is ugly.
+        # It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
+        # The structures should not be in quotes
+        structure_list = structure_list.replace("[", "").replace("]", "").split(",")
         print(structure_list)
     for structure in structure_list:
         for name, selection in seldict.items():
@@ -69,23 +66,21 @@ def align_all(sel_str, reference):
             cmd.align(model, reference)
 
 
-## Very useful script
+# Very useful script
 def color_selection(name="chainA", structure_list="all", color="carbon"):
     if structure_list == "all":
         structure_list = cmd.get_object_list()
     else:
-        ## This is ugly.
-        ## It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
-        ## The structures should not be in quotes
-        structure_list = (
-            structure_list.replace("[", "").replace("]", "").split(",")
-        )
+        # This is ugly.
+        # It reminds me that I'm expecting a list, e.g. [7bv1, 7bv2]
+        # The structures should not be in quotes
+        structure_list = structure_list.replace("[", "").replace("]", "").split(",")
         print(structure_list)
 
     for structure in structure_list:
         selname = f"{structure}_{name}"
         sel_list = cmd.get_names("selections")
-        if not selname in sel_list:
+        if not selname in sel_list:  # noqa: E713
             print(f"{selname} does not exist!!")
         else:
             cmd.set("cartoon_color", color, selname)
@@ -220,16 +215,16 @@ def set_colors(replace=False):
         # Set the colors
         for name in names:
             # Set the cb_color
-            cb_name = "cb_{}".format(name)
+            cb_name = f"cb_{name}"
             cmd.set_color(cb_name, rgb)
 
             # Optionally replace built-in colors
             if replace:
                 cmd.set_color(name, rgb)
                 spacer = (20 - len(name)) * " "
-                added_colors.append("    {}{}{}".format(name, spacer, cb_name))
+                added_colors.append(f"    {name}{spacer}{cb_name}")
             else:
-                added_colors.append("    {}".format(cb_name))
+                added_colors.append(f"    {cb_name}")
 
     # Notify user of newly available colors
     print("\nColor blind-friendly colors are now available:")
@@ -254,9 +249,7 @@ def add_menu():
     try:
         from pymol.menu import all_colors_list
     except ImportError:
-        print(
-            "PyMOL version too old for cb_colors menu. Requires 1.6.0 or later."
-        )
+        print("PyMOL version too old for cb_colors menu. Requires 1.6.0 or later.")
         return
 
     # Add the menu
@@ -276,7 +269,7 @@ def add_menu():
         ],
     )
     # First `pymol` is the program instance, second is the Python module
-    all_colors_list = pymol.pymol.menu.all_colors_list
+    all_colors_list = pymol.pymol.menu.all_colors_list  # noqa: F811
     if cb_colors in all_colors_list:
         print("Menu was already added!")
     else:

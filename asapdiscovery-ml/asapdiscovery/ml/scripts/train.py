@@ -17,36 +17,29 @@ python train.py \
     -proj test-model-compare
 """
 import argparse
-from dgllife.utils import CanonicalAtomFeaturizer
-from e3nn import o3
-from e3nn.nn.models.gate_points_2101 import Network
-from glob import glob
 import json
-import numpy as np
 import os
 import pickle as pkl
 import re
-import torch
-from torch_geometric.nn import SchNet
-from torch_geometric.datasets import QM9
+from glob import glob
 
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
-from asapdiscovery.ml import (
-    E3NNBind,
-    GAT,
-    SchNetBind,
-    MSELoss,
-    GaussianNLLLoss,
-)
-from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
-from asapdiscovery.data.utils import check_filelist_has_elements
-from asapdiscovery.ml.utils import (
-    calc_e3nn_model_info,
-    find_most_recent,
-    plot_loss,
-    split_molecules,
-    train,
-)
+import numpy as np
+import torch
+from dgllife.utils import CanonicalAtomFeaturizer
+from e3nn import o3
+from e3nn.nn.models.gate_points_2101 import Network
+from torch_geometric.datasets import QM9
+from torch_geometric.nn import SchNet
+
+from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
+from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
+from asapdiscovery.ml import MSELoss  # noqa: E402
+from asapdiscovery.ml import GAT, E3NNBind, GaussianNLLLoss, SchNetBind  # noqa: E402
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset  # noqa: E402
+from asapdiscovery.ml.utils import calc_e3nn_model_info  # noqa: E402 E501
+from asapdiscovery.ml.utils import find_most_recent  # noqa: 402
+from asapdiscovery.ml.utils import plot_loss  # noqa: E402
+from asapdiscovery.ml.utils import split_molecules, train  # noqa: E402
 
 
 def add_one_hot_encodings(ds):
@@ -65,8 +58,8 @@ def add_one_hot_encodings(ds):
         Dataset with one-hot encodings
     """
     for _, pose in ds:
-        ## Use length 100 for one-hot encoding to account for atoms up to element
-        ##  number 100
+        # Use length 100 for one-hot encoding to account for atoms up to element
+        #  number 100
         pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
 
     return ds
@@ -87,7 +80,7 @@ def add_lig_labels(ds):
     data.dataset.DockedDataset
         Dataset with added ligand labels
     """
-    ## Change key values for ligand labels
+    # Change key values for ligand labels
     for _, pose in ds:
         pose["z"] = pose["lig"].reshape((-1, 1)).float()
 
@@ -116,11 +109,9 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         List of experimental compound data objects, only returned if
         `return_compounds` is True
     """
-    ## Load all compounds with experimental data and filter to only achiral
-    ##  molecules (to start)
-    exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, "r"))
-    ).compounds
+    # Load all compounds with experimental data and filter to only achiral
+    #  molecules (to start)
+    exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn))).compounds
     exp_compounds = [c for c in exp_compounds if c.achiral == achiral]
 
     exp_dict = {
@@ -137,7 +128,7 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
     }
 
     if return_compounds:
-        ## Filter compounds
+        # Filter compounds
         exp_compounds = [c for c in exp_compounds if c.compound_id in exp_dict]
         return exp_dict, exp_compounds
     else:
@@ -160,16 +151,13 @@ def build_model_2d(config_fn):
     """
 
     exp_configure = json.load(open(config_fn))
-    exp_configure.update(
-        {"in_node_feats": CanonicalAtomFeaturizer().feat_size()}
-    )
+    exp_configure.update({"in_node_feats": CanonicalAtomFeaturizer().feat_size()})
 
     model = GAT(
         in_feats=exp_configure["in_node_feats"],
         hidden_feats=[exp_configure["gnn_hidden_feats"]]
         * exp_configure["num_gnn_layers"],
-        num_heads=[exp_configure["num_heads"]]
-        * exp_configure["num_gnn_layers"],
+        num_heads=[exp_configure["num_heads"]] * exp_configure["num_gnn_layers"],
         feat_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
         attn_drops=[exp_configure["dropout"]] * exp_configure["num_gnn_layers"],
         alphas=[exp_configure["alpha"]] * exp_configure["num_gnn_layers"],
@@ -215,11 +203,11 @@ def build_model_e3nn(
         e3nn/E3NNBind model created from input parameters
     """
 
-    ## Set up default hidden irreps if none specified
+    # Set up default hidden irreps if none specified
     if irreps_hidden is None:
         irreps_hidden = [
             (mul, (l, p))
-            for l, mul in enumerate([10, 3, 2, 1])
+            for l, mul in enumerate([10, 3, 2, 1])  # noqa: E741
             for p in [-1, 1]
         ]
 
@@ -279,7 +267,7 @@ def build_model_schnet(
         SchNet/SchNetBind model created from input parameters
     """
 
-    ## Load pretrained model if requested, otherwise create a new SchNet
+    # Load pretrained model if requested, otherwise create a new SchNet
     if qm9 is None:
         if dg:
             model = SchNetBind()
@@ -293,11 +281,9 @@ def build_model_schnet(
 
         if remove_atomref:
             atomref = None
-            ## Get rid of entries in state_dict that correspond to atomref
+            # Get rid of entries in state_dict that correspond to atomref
             wts = {
-                k: v
-                for k, v in model_qm9.state_dict().items()
-                if "atomref" not in k
+                k: v for k, v in model_qm9.state_dict().items() if "atomref" not in k
             }
         else:
             atomref = model_qm9.atomref.weight.detach().clone()
@@ -323,25 +309,22 @@ def build_model_schnet(
             model = SchNet(*model_params)
         model.load_state_dict(wts)
 
-    ## Set interatomic cutoff (default of 10) to make the graph smaller
+    # Set interatomic cutoff (default of 10) to make the graph smaller
     model.cutoff = neighbor_dist
 
     return model
 
 
 def make_wandb_table(ds_split):
-    from rdkit.Chem import MolFromSmiles
-    from rdkit.Chem.AllChem import (
-        Compute2DCoords,
-        GenerateDepictionMatching2DStructure,
-    )
-    from rdkit.Chem.Draw import MolToImage
     import wandb
+    from rdkit.Chem import MolFromSmiles
+    from rdkit.Chem.AllChem import Compute2DCoords, GenerateDepictionMatching2DStructure
+    from rdkit.Chem.Draw import MolToImage
 
     table = wandb.Table(
         columns=["crystal", "compound_id", "molecule", "smiles", "pIC50"]
     )
-    ## Build table and add each molecule
+    # Build table and add each molecule
     for (xtal_id, compound_id), d in ds_split:
         try:
             smiles = d["smiles"]
@@ -374,17 +357,17 @@ def wandb_init(
 
     wandb.init(project=project_name, config=exp_configure, name=run_name)
 
-    ## Log dataset splits
+    # Log dataset splits
     for name, split in zip(ds_split_labels, ds_splits):
         table = make_wandb_table(split)
         wandb.log({f"dataset_splits/{name}": table})
 
 
-################################################################################
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-i", required=True, help="Input directory/glob for docked PDB files."
     )
@@ -412,12 +395,12 @@ def get_args():
         help="Number of workers to use for dataset loading.",
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument("-model_o", help="Where to save model weights.")
     parser.add_argument("-plot_o", help="Where to save training loss plot.")
     parser.add_argument("-cache", help="Cache directory for dataset.")
 
-    ## Model parameters
+    # Model parameters
     parser.add_argument(
         "-model",
         required=True,
@@ -445,11 +428,9 @@ def get_args():
         help="Cutoff distance for node neighbors.",
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
-    parser.add_argument(
-        "-config", help="Model config JSON file for graph 2D model."
-    )
+    parser.add_argument("-config", help="Model config JSON file for graph 2D model.")
 
-    ## Training arguments
+    # Training arguments
     parser.add_argument(
         "-n_epochs",
         type=int,
@@ -480,10 +461,8 @@ def get_args():
         "-b", "--batch_size", type=int, default=1, help="Training batch size."
     )
 
-    ## WandB arguments
-    parser.add_argument(
-        "--wandb", action="store_true", help="Enable WandB logging."
-    )
+    # WandB arguments
+    parser.add_argument("--wandb", action="store_true", help="Enable WandB logging.")
     parser.add_argument("-proj", help="WandB project name.")
     parser.add_argument("-name", help="WandB run name.")
 
@@ -495,15 +474,15 @@ def init(args, rank=False):
     Initialization steps that are common to all analyses.
     """
 
-    ## Get all docked structures
+    # Get all docked structures
     if os.path.isdir(args.i):
         all_fns = glob(f"{args.i}/*complex.pdb")
     else:
         all_fns = glob(args.i)
-    
+
     check_filelist_has_elements(all_fns, tag="docked PDB files")
-    
-    ## Extract crystal structure and compound id from file name
+
+    # Extract crystal structure and compound id from file name
     xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
     compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
 
@@ -512,13 +491,11 @@ def init(args, rank=False):
     idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
     compounds = [
         (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(
-            xtal_matches, compound_matches, idx
-        )
+        for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
         if both_m
     ]
     num_found = len(compounds)
-    ## Dictionary mapping from compound_id to Mpro dataset(s)
+    # Dictionary mapping from compound_id to Mpro dataset(s)
     compound_id_dict = {}
     for xtal_structure, compound_id in compounds:
         try:
@@ -529,28 +506,26 @@ def init(args, rank=False):
     if rank:
         exp_data = None
     elif args.model == "2d":
-        ## Load the experimental compounds
+        # Load the experimental compounds
         exp_data, exp_compounds = load_exp_data(
             args.exp, achiral=args.achiral, return_compounds=True
         )
 
-        ## Get compounds that have both structure and experimental data (this
-        ##  step isn't actually necessary for performance, but allows a more
-        ##  fair comparison between 2D and 3D models)
+        # Get compounds that have both structure and experimental data (this
+        #  step isn't actually necessary for performance, but allows a more
+        #  fair comparison between 2D and 3D models)
         xtal_compound_ids = {c[1] for c in compounds}
-        ## Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [
-            c for c in exp_compounds if c.compound_id in xtal_compound_ids
-        ]
+        # Filter exp_compounds to make sure we have structures for them
+        exp_compounds = [c for c in exp_compounds if c.compound_id in xtal_compound_ids]
 
-        ## Make cache directory as necessary
+        # Make cache directory as necessary
         if args.cache is None:
             cache_dir = os.path.join(args.model_o, ".cache")
         else:
             cache_dir = args.cache
         os.makedirs(cache_dir, exist_ok=True)
 
-        ## Build the dataset
+        # Build the dataset
         ds = GraphDataset(
             exp_compounds,
             node_featurizer=CanonicalAtomFeaturizer(),
@@ -559,26 +534,26 @@ def init(args, rank=False):
 
         print(next(iter(ds)), flush=True)
 
-        ## Rename exp_compounds so the number kept is consistent
+        # Rename exp_compounds so the number kept is consistent
         compounds = exp_compounds
     elif args.cache and os.path.isfile(args.cache):
-        ## Load from cache
+        # Load from cache
         ds = pkl.load(open(args.cache, "rb"))
         print("Loaded from cache", flush=True)
 
-        ## Still need to load the experimental affinities
+        # Still need to load the experimental affinities
         exp_data, exp_compounds = load_exp_data(
             args.exp, achiral=args.achiral, return_compounds=True
         )
     else:
-        ### TODO: pick up here, need to modify DockedDataset to deal with
-        ###  all the values in exp_data
-        ## Load the experimental affinities
+        # TODO: pick up here, need to modify DockedDataset to deal with
+        #  all the values in exp_data
+        # Load the experimental affinities
         exp_data, exp_compounds = load_exp_data(
             args.exp, achiral=args.achiral, return_compounds=True
         )
 
-        ## Make dict to access smiles data
+        # Make dict to access smiles data
         smiles_dict = {}
         for c in exp_compounds:
             if c.compound_id not in compound_id_dict:
@@ -586,7 +561,7 @@ def init(args, rank=False):
             for xtal_structure in compound_id_dict[c.compound_id]:
                 smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
 
-        ## Make dict to access experimental compound data
+        # Make dict to access experimental compound data
         exp_data_dict = {}
         for compound_id, d in exp_data.items():
             if compound_id not in compound_id_dict:
@@ -594,13 +569,13 @@ def init(args, rank=False):
             for xtal_structure in compound_id_dict[compound_id]:
                 exp_data_dict[(xtal_structure, compound_id)] = d
 
-        ## Trim docked structures and filenames to remove compounds that don't have
-        ##  experimental data
+        # Trim docked structures and filenames to remove compounds that don't have
+        #  experimental data
         all_fns, compounds = zip(
             *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
         )
 
-        ## Build extra info dict
+        # Build extra info dict
         extra_dict = {
             compound: {
                 "smiles": smiles,
@@ -611,7 +586,7 @@ def init(args, rank=False):
             for compound, smiles in smiles_dict.items()
         }
 
-        ## Load the dataset
+        # Load the dataset
         ds = DockedDataset(
             all_fns,
             compounds,
@@ -621,13 +596,13 @@ def init(args, rank=False):
         )
 
         if args.cache:
-            ## Cache dataset
+            # Cache dataset
             pkl.dump(ds, open(args.cache, "wb"))
 
     num_kept = len(compounds)
     print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
 
-    ## Split dataset into train/val/test (80/10/10 split)
+    # Split dataset into train/val/test (80/10/10 split)
     # use fixed seed for reproducibility
     ds_train, ds_val, ds_test = split_molecules(
         ds, [0.8, 0.1, 0.1], torch.Generator().manual_seed(42)
@@ -646,14 +621,14 @@ def init(args, rank=False):
         flush=True,
     )
 
-    ## Build the model
+    # Build the model
     if args.model == "e3nn":
-        ## Need to add one-hot encodings to the dataset
+        # Need to add one-hot encodings to the dataset
         ds_train = add_one_hot_encodings(ds_train)
         ds_val = add_one_hot_encodings(ds_val)
         ds_test = add_one_hot_encodings(ds_test)
 
-        ## Load or calculate model parameters
+        # Load or calculate model parameters
         if args.model_params is None:
             model_params = calc_e3nn_model_info(ds_train, args.n_dist)
         elif os.path.isfile(args.model_params):
@@ -669,9 +644,9 @@ def init(args, rank=False):
             neighbor_dist=args.n_dist,
             irreps_hidden=args.irr,
         )
-        model_call = lambda model, d: model(d)
+        model_call = lambda model, d: model(d)  # noqa: E731
 
-        ## Add lig labels as node attributes if requested
+        # Add lig labels as node attributes if requested
         if args.lig:
             ds_train = add_lig_labels(ds_train)
             ds_val = add_lig_labels(ds_val)
@@ -680,10 +655,10 @@ def init(args, rank=False):
         for k, v in ds_train[0][1].items():
             try:
                 print(k, v.shape, flush=True)
-            except AttributeError as e:
+            except AttributeError:
                 print(k, v, flush=True)
 
-        ## Experiment configuration
+        # Experiment configuration
         exp_configure = {
             "model": "e3nn",
             "n_atom_types": 100,
@@ -703,11 +678,11 @@ def init(args, rank=False):
             neighbor_dist=args.n_dist,
         )
         if args.dg:
-            model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])
+            model_call = lambda model, d: model(d["z"], d["pos"], d["lig"])  # noqa: 731
         else:
-            model_call = lambda model, d: model(d["z"], d["pos"])
+            model_call = lambda model, d: model(d["z"], d["pos"])  # noqa: E731
 
-        ## Experiment configuration
+        # Experiment configuration
         exp_configure = {
             "model": "schnet",
             "dg": args.dg,
@@ -718,16 +693,16 @@ def init(args, rank=False):
         }
     elif args.model == "2d":
         model, exp_configure = build_model_2d(args.config)
-        model_call = lambda model, d: torch.reshape(
+        model_call = lambda model, d: torch.reshape(  # noqa: E731
             model(d["g"], d["g"].ndata["h"]), (-1, 1)
         )
 
-        ## Update experiment configuration
+        # Update experiment configuration
         exp_configure.update({"model": "GAT"})
     else:
         raise ValueError(f"Unknown model type {args.model}.")
 
-    ## Common config info
+    # Common config info
     exp_configure.update(
         {
             "train_function": "utils.train",
@@ -764,39 +739,33 @@ def main():
         exp_configure,
     ) = init(args)
 
-    ## Load model weights as necessary
+    # Load model weights as necessary
     if args.cont:
         start_epoch, wts_fn = find_most_recent(args.model_o)
         model.load_state_dict(torch.load(wts_fn))
 
-        ## Update experiment configuration
+        # Update experiment configuration
         exp_configure.update({"wts_fn": wts_fn})
 
-        ## Load error dicts
+        # Load error dicts
         if os.path.isfile(f"{args.model_o}/train_err.pkl"):
-            train_loss = pkl.load(
-                open(f"{args.model_o}/train_err.pkl", "rb")
-            ).tolist()
+            train_loss = pkl.load(open(f"{args.model_o}/train_err.pkl", "rb")).tolist()
         else:
             print("Couldn't find train loss file.", flush=True)
             train_loss = None
         if os.path.isfile(f"{args.model_o}/val_err.pkl"):
-            val_loss = pkl.load(
-                open(f"{args.model_o}/val_err.pkl", "rb")
-            ).tolist()
+            val_loss = pkl.load(open(f"{args.model_o}/val_err.pkl", "rb")).tolist()
         else:
             print("Couldn't find val loss file.", flush=True)
             val_loss = None
         if os.path.isfile(f"{args.model_o}/test_err.pkl"):
-            test_loss = pkl.load(
-                open(f"{args.model_o}/test_err.pkl", "rb")
-            ).tolist()
+            test_loss = pkl.load(open(f"{args.model_o}/test_err.pkl", "rb")).tolist()
         else:
             print("Couldn't find test loss file.", flush=True)
             test_loss = None
 
-        ## Need to add 1 to start_epoch bc the found idx is the last epoch
-        ##  successfully trained, not the one we want to start at
+        # Need to add 1 to start_epoch bc the found idx is the last epoch
+        #  successfully trained, not the one we want to start at
         start_epoch += 1
     else:
         start_epoch = 0
@@ -804,10 +773,10 @@ def main():
         val_loss = None
         test_loss = None
 
-    ## Update experiment configuration
+    # Update experiment configuration
     exp_configure.update({"start_epoch": start_epoch})
 
-    ## Set up the loss function
+    # Set up the loss function
     if (args.loss is None) or (args.loss.lower() == "step"):
         loss_func = MSELoss(args.loss)
         lt = "standard" if args.loss is None else args.loss.lower()
@@ -825,20 +794,18 @@ def main():
     loss_str = args.loss.lower() if args.loss else "mse"
     exp_configure.update({"loss_func": loss_str, "sq": args.sq})
 
-    ## Start wandb
+    # Start wandb
     if args.wandb:
         import wandb
 
-        ## Get project name
+        # Get project name
         if args.proj:
             project_name = args.proj
         else:
             project_name = f"train-{args.model}"
-        wandb_init(
-            project_name, args.name, exp_configure, [ds_train, ds_val, ds_test]
-        )
+        wandb_init(project_name, args.name, exp_configure, [ds_train, ds_val, ds_test])
 
-    ## Train the model
+    # Train the model
     model, train_loss, val_loss, test_loss = train(
         model,
         ds_train,
@@ -862,7 +829,7 @@ def main():
     if args.wandb:
         wandb.finish()
 
-    ## Plot loss
+    # Plot loss
     if args.plot_o is not None:
         plot_loss(
             train_loss.mean(axis=1),

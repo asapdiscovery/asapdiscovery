@@ -1,6 +1,7 @@
 """
 Create oedu binary DesignUnit files for input protein structures.
-This was designed to be able to be used for either molecules from the PDB or from fragalysis.
+This was designed to be able to be used for either molecules from the PDB or from
+fragalysis.
 
 Example Usage:
     python prep_proteins.py \
@@ -14,23 +15,23 @@ Example Usage:
 """
 import argparse
 import multiprocessing as mp
-from openeye import oechem
 import os
 import re
-import yaml
 
-from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.docking.modeling import (
-    align_receptor,
-    prep_receptor,
-    du_to_complex,
-    mutate_residues,
-    remove_extra_ligands,
-)
-from asapdiscovery.data import pdb
-from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
-from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
-from asapdiscovery.data.fragalysis import parse_xtal
+import yaml
+from openeye import oechem
+
+from asapdiscovery.data import pdb  # noqa: E402
+from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
+from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
+from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
+from asapdiscovery.data.schema import CrystalCompoundData  # noqa: E402
+from asapdiscovery.data.utils import seqres_to_res_list  # noqa: E402
+from asapdiscovery.docking.modeling import align_receptor  # noqa: E402 E501
+from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
+from asapdiscovery.docking.modeling import mutate_residues  # noqa: E402 E501
+from asapdiscovery.docking.modeling import prep_receptor  # noqa: E402
+from asapdiscovery.docking.modeling import remove_extra_ligands  # noqa: E402
 
 
 def check_completed(d):
@@ -76,30 +77,26 @@ def prep_mp(
     loop_db,
     protein_only: bool,
 ):
-    ## Check if results already exist
+    # Check if results already exist
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
     # if check_completed(out_dir):
     #     return
 
-    ## Make output directory
+    # Make output directory
     os.makedirs(out_dir, exist_ok=True)
 
-    ## Load protein from pdb
+    # Load protein from pdb
     initial_prot = load_openeye_pdb(xtal.str_fn)
 
     if seqres:
         res_list = seqres_to_res_list(seqres)
 
         print("Mutating to provided seqres")
-        ## Mutate the residues to match the residue list
-        initial_prot = mutate_residues(
-            initial_prot, res_list, xtal.protein_chains
-        )
+        # Mutate the residues to match the residue list
+        initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
 
-    ## Delete extra copies of ligand in the complex
-    initial_prot = remove_extra_ligands(
-        initial_prot, lig_chain=xtal.active_site_chain
-    )
+    # Delete extra copies of ligand in the complex
+    initial_prot = remove_extra_ligands(initial_prot, lig_chain=xtal.active_site_chain)
 
     if ref_prot:
         print("Aligning receptor")
@@ -112,7 +109,7 @@ def prep_mp(
             ref_chain="A",
         )
         save_openeye_pdb(initial_prot, "align_test.pdb")
-    ## Take the first returned DU and save it
+    # Take the first returned DU and save it
     try:
         print("Attempting to prepare design units")
         site_residue = xtal.active_site if xtal.active_site else ""
@@ -123,7 +120,7 @@ def prep_mp(
             protein_only=protein_only,
             seqres=" ".join(res_list),
         )
-    except IndexError as e:
+    except IndexError:
         print(
             "DU generation failed for",
             f"{xtal.output_name}",
@@ -141,10 +138,10 @@ def prep_mp(
             flush=True,
         )
 
-        ## Save complex as PDB file
+        # Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
 
-        ## Add SEQRES entries if they're not present
+        # Add SEQRES entries if they're not present
         if (not oechem.OEHasPDBData(complex_mol, "SEQRES")) and seqres:
             for seqres_line in seqres.split("\n"):
                 if seqres_line != "":
@@ -155,16 +152,16 @@ def prep_mp(
         )
 
 
-################################################################################
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d",
         "--structure_dir",
         required=True,
-        help="Path to fragalysis/aligned/ directory or directory to put PDB structures.",
+        help="Path to fragalysis/aligned/ directory or directory to put PDB structures.",  # noqa: E501
     )
 
     parser.add_argument(
@@ -185,10 +182,10 @@ def get_args():
         "--ref_prot",
         default=None,
         type=str,
-        help="Path to reference pdb to align to. If None, no alignment will be performed",
+        help="Path to reference pdb to align to. If None, no alignment will be performed",  # noqa: E501
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument(
         "-o",
         "--output_dir",
@@ -196,7 +193,7 @@ def get_args():
         help="Path to output_dir.",
     )
 
-    ## Model-building arguments
+    # Model-building arguments
     parser.add_argument(
         "-l",
         "--loop_db",
@@ -214,7 +211,7 @@ def get_args():
         help="If true, generate design units with only the protein in them",
     )
 
-    ## Performance arguments
+    # Performance arguments
     parser.add_argument(
         "-n",
         "--num_cores",
@@ -233,8 +230,8 @@ def main():
         xtal_compounds = parse_xtal(args.xtal_csv, args.structure_dir)
 
         for xtal in xtal_compounds:
-            ## Get chain
-            ## The parentheses in this string are the capture group
+            # Get chain
+            # The parentheses in this string are the capture group
             re_pat = rf"/{xtal.dataset}_([0-9][A-Z])/"
             try:
                 frag_chain = re.search(re_pat, xtal.str_fn).groups()[0]
@@ -247,10 +244,11 @@ def main():
                 frag_chain = "0A"
             xtal.output_name = f"{xtal.dataset}_{frag_chain}_{xtal.compound_id}"
 
-            ## We also want the chain in the form of a single letter ('A', 'B'), etc
+            # We also want the chain in the form of a single letter ('A', 'B'), etc
             xtal.active_site_chain = frag_chain[-1]
 
-            ## If we aren't keeping the ligands, then we want to give it a site residue to use
+            # If we aren't keeping the ligands, then we want to give it a site residue
+            # to use
             if args.protein_only:
                 xtal.active_site = f"His:41: :{xtal.chain}"
 
@@ -259,7 +257,8 @@ def main():
         pdb_list = list(pdb_dict.keys())
         pdb.download_PDBs(pdb_list, args.structure_dir)
         active_site_chain = "A"
-        ## If the yaml file doesn't have any options for the pdb file, then assume it is a dimer
+        # If the yaml file doesn't have any options for the pdb file, then assume it is
+        # a dimer
         xtal_compounds = [
             CrystalCompoundData(
                 str_fn=os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"),
@@ -271,9 +270,7 @@ def main():
                 protein_chains=values.get("protein_chains", ["A", "B"]),
             )
             for pdb_id, values in pdb_dict.items()
-            if os.path.exists(
-                os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb")
-            )
+            if os.path.exists(os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"))
         ]
 
     if args.seqres_yaml:
