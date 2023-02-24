@@ -1,11 +1,11 @@
+import os
 import pickle as pkl
-import pandas as pd
+import re
+
 import numpy as np
-import os, re
-from asapdiscovery.data.openeye import (
-    get_ligand_rmsd_from_pdb_and_sdf,
-)
-from openeye import oechem, oedocking
+import pandas as pd
+from asapdiscovery.data.openeye import get_ligand_rmsd_from_pdb_and_sdf
+from openeye import oechem
 
 
 class DockingDataset:
@@ -22,13 +22,13 @@ class DockingDataset:
         )
 
     def get_cmpd_dir_path(self, cmpd_id):
-        ## make sure this directory exists
+        # make sure this directory exists
         cmpd_dir = os.path.join(self.dir_path, cmpd_id)
         assert os.path.exists(cmpd_dir)
         return cmpd_dir
 
     def organize_docking_results(self):
-        ## Make lists we want to use to collect information about docking results
+        # Make lists we want to use to collect information about docking results
         cmpd_ids = []
         xtal_ids = []
         chain_ids = []
@@ -36,53 +36,51 @@ class DockingDataset:
         sdf_fns = []
         cmplx_ids = []
 
-        ## dictionary of reference sdf files for each compound id
+        # dictionary of reference sdf files for each compound id
         ref_fn_dict = {}
 
-        ## since each compound has its own directory, we can use that directory
+        # since each compound has its own directory, we can use that directory
         for cmpd_id in self.compound_ids:
             cmpd_id = cmpd_id.rstrip()
 
             cmpd_dir = self.get_cmpd_dir_path(cmpd_id)
 
-            ## get list of files in this directory
+            # get list of files in this directory
             fn_list = os.listdir(cmpd_dir)
 
-            ## Process this list into info
-            ## TODO: use REGEX instead
-            sdf_list = [
-                fn for fn in fn_list if os.path.splitext(fn)[1] == ".sdf"
-            ]
+            # Process this list into info
+            # TODO: use REGEX instead
+            sdf_list = [fn for fn in fn_list if os.path.splitext(fn)[1] == ".sdf"]
 
-            ## For each sdf file in this list, get all the information
-            ## This is very fragile to the file naming scheme
+            # For each sdf file in this list, get all the information
+            # This is very fragile to the file naming scheme
             for fn in sdf_list:
                 info = fn.split(".")[0].split("_")
                 xtal = info[3]
                 chain = info[4]
                 cmpd_id = info[7]
 
-                ## the ligand re-docked to their original xtal have no mcss rank, so this will fail
+                # the ligand re-docked to their original xtal have no mcss rank, so this
+                # will fail
                 try:
                     mcss_rank = info[9]
 
                 except IndexError:
 
-                    ## however its a convenient way of identifying which is the original xtal
+                    # however its a convenient way of identifying which is the original
+                    # xtal
                     ref_xtal = xtal
-                    ref_pdb_fn = (
-                        f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
-                    )
+                    ref_pdb_fn = f"{ref_xtal}_{chain}/{ref_xtal}_{chain}_bound.pdb"
 
-                    ## save the ref filename to the dictionary and make the mcss_rank -1
+                    # save the ref filename to the dictionary and make the mcss_rank -1
                     ref_fn_dict[cmpd_id] = ref_pdb_fn
                     mcss_rank = -1
 
-                ## append all the stuff to lists!
+                # append all the stuff to lists!
                 cmpd_ids.append(cmpd_id)
                 xtal_ids.append(xtal)
                 chain_ids.append(chain)
-                mcss_ranks.append((mcss_rank))
+                mcss_ranks.append(mcss_rank)
                 sdf_fns.append(fn)
                 cmplx_ids.append(f"{cmpd_id}_{xtal}_{chain}_{mcss_rank}")
 
@@ -131,9 +129,7 @@ class DockingDataset:
     def write_csv(self, output_csv_fn):
         self.df.to_csv(output_csv_fn, index=False)
 
-    def analyze_docking_results(
-        self, fragalysis_dir, output_csv_fn, test=False
-    ):
+    def analyze_docking_results(self, fragalysis_dir, output_csv_fn, test=False):
         self.organize_docking_results()
 
         if test:
@@ -144,9 +140,10 @@ class DockingDataset:
 
 def get_good_score(score):
     """
-    The idea here is that given an array from a DataFrame, x, that is a particular score type, there should be a
-    single function that will tell you whether we think this score is "good" or not. I'm not sure this is the best way
-    to do this but someway to make it obvious when we are using which cutoff would be good.
+    The idea here is that given an array from a DataFrame, x, that is a particular score
+    type, there should be a single function that will tell you whether we think this
+    score is "good" or not. I'm not sure this is the best way to do this but someway to
+    make it obvious when we are using which cutoff would be good.
 
     Parameters
     ----------
@@ -157,13 +154,13 @@ def get_good_score(score):
 
     """
     if score == "RMSD":
-        lambda_func = lambda x: x[(x <= 2.5)].count()
+        lambda_func = lambda x: x[(x <= 2.5)].count()  # noqa: E731
     elif score == "POSIT":
-        lambda_func = lambda x: x[(x > 0.7)].count()
+        lambda_func = lambda x: x[(x > 0.7)].count()  # noqa: E731
     elif score == "Chemgauss4":
-        lambda_func = lambda x: x[(x < 0)].count()
+        lambda_func = lambda x: x[(x < 0)].count()  # noqa: E731
     elif score == "POSIT_R":
-        lambda_func = lambda x: x[(x < 0.3)].count()
+        lambda_func = lambda x: x[(x < 0.3)].count()  # noqa: E731
     else:
         raise NotImplementedError(
             f"good score acquisition not implemented for {score}. "
@@ -179,10 +176,8 @@ class DockingResults:
     """
 
     def __init__(self, csv_path):
-        ## load in data and replace the annoying `-1.0` and `-1` values with nans
-        self.df = (
-            pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
-        )
+        # load in data and replace the annoying `-1.0` and `-1` values with nans
+        self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
 
     def get_grouped_df(
         self,
@@ -190,8 +185,8 @@ class DockingResults:
         score_columns=["RMSD", "POSIT_R", "Chemgauss4", "MCSS_Rank"],
     ):
         """
-        The purpose of this function is to get a dataframe with meaningful information grouped by either the Compound_ID
-        or by the Structure_Source.
+        The purpose of this function is to get a dataframe with meaningful information
+        grouped by either the Compound_ID or by the Structure_Source.
 
         Parameters
         ----------
@@ -202,23 +197,27 @@ class DockingResults:
         -------
 
         """
-        # TODO: Default argument `score_columns` is a mutable. This can lead to unexpected behavior in Python.
-        # TODO: I think this can be done without a for loop by replacing [[score]] with [score_columns]
+        # TODO: Default argument `score_columns` is a mutable. This can lead to
+        # unexpected behavior in Python.
+        # TODO: I think this can be done without a for loop by
+        # replacing [[score]] with [score_columns]
         score_df_list = []
         for score in score_columns:
-            if not score in self.df.columns:
+            if not score in self.df.columns:  # noqa: E713
                 print(f"Skipping {score}")
                 continue
             if not self.df[score].any():
                 print(f"Skipping {score} since no non-NA scores were found")
                 continue
-            # Group by the groupby_ID_column and then get either the number, mean, or mean of the identified score
+            # Group by the groupby_ID_column and then get either the number, mean,
+            # or mean of the identified score
             not_na = self.df.groupby(groupby_ID_column)[[score]].count()
             mean = self.df.groupby(groupby_ID_column)[[score]].mean()
             min = self.df.groupby(groupby_ID_column)[[score]].min()
 
             # I barely understand how this works but basically it
-            # applies the lambda function returned by `get_good_score` and then groups the results, which means that
+            # applies the lambda function returned by `get_good_score` and then groups
+            # the results, which means that
             # it can count how many "good" scores there were for each group.
             good = self.df.groupby(groupby_ID_column)[[score]].apply(
                 get_good_score(score)
@@ -243,8 +242,9 @@ class DockingResults:
 
     def get_structure_df(self, csv_path=False, resolution_csv=None, **kwargs):
         """
-        Either pull the structure_df from the csv file or generate it using the get_grouped_df function
-        In addition to what the function normally does it also adds the resolution
+        Either pull the structure_df from the csv file or generate it using the
+        get_grouped_df function in addition to what the function normally does it also
+        adds the resolution
 
         Parameters
         ----------
@@ -262,16 +262,16 @@ class DockingResults:
                 groupby_ID_column="Structure_Source", **kwargs
             )
             if resolution_csv:
-                ## Get a dictionary with {"PDB ID": "Resolution", ..}
+                # Get a dictionary with {"PDB ID": "Resolution", ..}
                 with open(resolution_csv) as f:
                     resolution_df = pd.read_csv(f)
                     resolution_df.index = resolution_df["PDB ID"]
                     resolution_dict = resolution_df.to_dict()["Resolution"]
 
-                ## Iterates over the dataframe
-                ## Uses regex to pull out the PDB ID from each Structure_Source
-                ## and makes a list of the Resolutions that is saved to a column
-                ## of the new structure_df
+                # Iterates over the dataframe
+                # Uses regex to pull out the PDB ID from each Structure_Source
+                # and makes a list of the Resolutions that is saved to a column
+                # of the new structure_df
                 self.structure_df["Resolution"] = [
                     resolution_dict.get(
                         re.search(
@@ -290,10 +290,11 @@ class DockingResults:
         score_ascending=[True, True, True],
     ):
         """
-        Gets the best structure by first filtering based on the filter_score and filter_value,
-        then sorts in order of the scores listed in score_order.
+        Gets the best structure by first filtering based on the filter_score and
+        filter_value, then sorts in order of the scores listed in score_order.
 
-        As with everything else, lower scores are assumed to be better, requiring a conversion of some scores.
+        As with everything else, lower scores are assumed to be better, requiring a
+        conversion of some scores.
 
         Parameters
         ----------
@@ -306,38 +307,35 @@ class DockingResults:
 
         """
         # TODO: also this is really fragile
-        # TODO: default argument `score_order` is a mutable. This can lead to unexpected behavior in python.
-        ## first do filtering
+        # TODO: default argument `score_order` is a mutable. This can lead to unexpected
+        # behavior in python.
+        # first do filtering
         print(filter_score, filter_value)
         if filter_score and type(filter_value) == float:
             print(f"Filtering by {filter_score} less than {filter_value}")
             filtered_df = self.df[self.df[filter_score] < filter_value]
             sort_list = ["Compound_ID"] + score_order
 
-        ## sort dataframe, ascending (smaller / better scores will move to the top)
+        # sort dataframe, ascending (smaller / better scores will move to the top)
         sorted_df = filtered_df.sort_values(
             sort_list, ascending=[True, True, True, True]
         )
 
-        ## group by compound id and return the top row for each group
+        # group by compound id and return the top row for each group
         g = sorted_df.groupby("Compound_ID")
         self.best_df = g.head(1)
 
         return self.best_df
 
     def write_dfs_to_csv(self, output_dir):
-        self.df.to_csv(
-            os.path.join(output_dir, "all_results_cleaned.csv"), index=False
-        )
+        self.df.to_csv(os.path.join(output_dir, "all_results_cleaned.csv"), index=False)
         self.compound_df.to_csv(
             os.path.join(output_dir, "by_compound.csv"), index=False
         )
         self.structure_df.to_csv(
             os.path.join(output_dir, "by_structure.csv"), index=False
         )
-        self.best_df.to_csv(
-            os.path.join(output_dir, "best_results.csv"), index=False
-        )
+        self.best_df.to_csv(os.path.join(output_dir, "best_results.csv"), index=False)
 
 
 def load_dataframes(input_dir):
@@ -353,7 +351,6 @@ def load_dataframes(input_dir):
     dictionary of dataframes
 
     """
-    best_results_csv = os.path.join(input_dir, "best_results.csv")
     all_results_csv = os.path.join(input_dir, "all_results_cleaned.csv")
     by_compound_csv = os.path.join(input_dir, "by_compound.csv")
     by_structure_csv = os.path.join(input_dir, "by_structure.csv")
@@ -379,15 +376,13 @@ def load_dataframes(input_dir):
     }
 
 
-def calculate_rmsd_openeye(
-    reference_ligand: oechem.OEMol, docked_ligand: oechem.OEMol
-):
-    ## Calculate RMSD
+def calculate_rmsd_openeye(reference_ligand: oechem.OEMol, docked_ligand: oechem.OEMol):
+    # Calculate RMSD
     oechem.OECanonicalOrderAtoms(reference_ligand)
     oechem.OECanonicalOrderBonds(reference_ligand)
     oechem.OECanonicalOrderAtoms(docked_ligand)
     oechem.OECanonicalOrderBonds(docked_ligand)
-    ## Get coordinates, filtering out Hs
+    # Get coordinates, filtering out Hs
     predocked_coords = [
         c
         for a in reference_ligand.GetAtoms()

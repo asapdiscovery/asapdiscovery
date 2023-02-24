@@ -1,11 +1,13 @@
-import numpy as np
 import math
+
+import numpy as np
 import pandas as pd
 
 
 class Rock:
     """
-    A class to calculate ROC-AUC results for different scoring functions for a dataset.
+    A class to calculate ROC-AUC results for different scoring functions for a
+    dataset.
     """
 
     def __init__(
@@ -65,13 +67,15 @@ class Rock:
 
     def get_score_range(self, n_bins):
         """
-        For some score in the data with arbitrary minima and maxima, return n evenly spaced points along the score.
+        For some score in the data with arbitrary minima and maxima, return n
+        evenly spaced points along the score.
         Returns
         -------
 
         """
         # Give a score with min and max values, create n_bins
-        # cutoffs with the first cutoff being slightly below the first value so that the first 0 point is included.
+        # cutoffs with the first cutoff being slightly below the
+        # first value so that the first 0 point is included.
         min = self.df[self.score_name].min()
         max = self.df[self.score_name].max()
         delta = (max - min) / n_bins
@@ -86,7 +90,8 @@ class Rock:
 
     def weird_division(self, numerator, denominator):
         """
-        This function will divide the numerator by the denominator but will return zero if the denominator is zero.
+        This function will divide the numerator by the denominator but will
+        return zero if the denominator is zero.
         Parameters
         ----------
         numerator
@@ -102,15 +107,16 @@ class Rock:
         self.score_range = self.get_score_range(n_bins)
 
         if df is None:
-            ## In the case that we're using the data saved to this class, we can pull out the original totals
+            # In the case that we're using the data saved to this class, we can
+            # pull out the original totals
             df = self.df
             total_poses = self.total_poses
             total_good_poses = self.total_good_poses
             total_bad_poses = self.total_bad_poses
 
         else:
-            ## if a new dataframe is passed, that means we are bootstrapping,
-            ## in which case we need to re-calculate the 'self' totals
+            # if a new dataframe is passed, that means we are bootstrapping,
+            # in which case we need to re-calculate the 'self' totals
             assert type(df) == pd.DataFrame
             (
                 total_poses,
@@ -118,11 +124,12 @@ class Rock:
                 total_bad_poses,
             ) = self.calc_data(df)
 
-        true_positive_rates_poses = []  ## same thing as recall
+        true_positive_rates_poses = []  # same thing as recall
         false_positive_rates_poses = []
         self.precision_poses = []
 
-        ## I *think* this is faster than iterating through and making lists for each thing but I don't actually know
+        # I *think* this is faster than iterating through and making lists for
+        # each thing but I don't actually know
         data = [
             self.calc_data(df[df[self.score_name] <= cutoff])
             for cutoff in self.score_range
@@ -142,17 +149,13 @@ class Rock:
             false_positive_rates_poses.append(n_bad_poses / total_bad_poses)
 
             if not bootstrap:
-                ## Don't care about bootstrapping these
+                # Don't care about bootstrapping these
 
-                self.precision_poses.append(
-                    self.weird_division(n_good_poses, n_poses)
-                )
+                self.precision_poses.append(self.weird_division(n_good_poses, n_poses))
 
         if bootstrap:
             self.auc_list.append(
-                self.calc_auc(
-                    false_positive_rates_poses, true_positive_rates_poses
-                )
+                self.calc_auc(false_positive_rates_poses, true_positive_rates_poses)
             )
         else:
             self.true_positive_rates_poses = true_positive_rates_poses
@@ -169,23 +172,25 @@ class Rock:
 
         # Then bootstrap CVs
         self.auc_poses = [
-            self.get_auc_from_df(
-                self.df.sample(frac=1, replace=True), bootstrap=True
-            )
+            self.get_auc_from_df(self.df.sample(frac=1, replace=True), bootstrap=True)
             for n in range(n_bootstraps)
         ]
 
         # Make this list a numpy arrray so we can use some numpy functions
         auc_poses_array = np.array(self.auc_poses)
 
-        # sort the array from smallest to largest AUC so we can use 95% confidence interval numerically
+        # sort the array from smallest to largest AUC so we can use 95% confidence
+        # interval numerically
         auc_poses_array.sort()
 
-        # the 95% confidence interval includes everything but the bottom and top 2.5% (0.025).
-        # i.e. with 1000 sorted values, our lower CI bound is the 25th value and our upper CI bound is the 975th value
+        # the 95% confidence interval includes everything but the bottom and
+        # top 2.5% (0.025).
+        # i.e. with 1000 sorted values, our lower CI bound is the 25th value and our
+        # upper CI bound is the 975th value
         auc_poses_bounds = math.floor(len(auc_poses_array) * 0.025)
 
-        # The CI's are reported as the difference (i.e. +/-) as opposed to the actual values
+        # The CI's are reported as the difference (i.e. +/-) as opposed to the actual
+        # values
         self.poses_ci = (
             auc_poses_array.mean() - auc_poses_array[auc_poses_bounds],
             auc_poses_array[-auc_poses_bounds] - auc_poses_array.mean(),
@@ -205,7 +210,8 @@ class Rock:
 
 class Rocks:
     """
-    Class for analyzing docking data, for comparing from among different scoring functions.
+    Class for analyzing docking data, for comparing from among different scoring
+    functions.
     """
 
     def __init__(
@@ -237,15 +243,11 @@ class Rocks:
         df["POSIT_R"] = 1 - df["POSIT"]
 
         # TODO: Expose these hard-coded options
-        self.df = df[
-            (df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)
-        ]
+        self.df = df[(df["Chemgauss4"] < 100) & (df["RMSD"] < 20) & (df["RMSD"] > 0)]
 
     def build_rocks(self):
         self.rock_dict = {
-            score_name: Rock(
-                self.df, score_name  # , self.rmsd_name, self.n_bins
-            )
+            score_name: Rock(self.df, score_name)  # , self.rmsd_name, self.n_bins
             for score_name in self.score_list
             if score_name in self.df.columns
         }

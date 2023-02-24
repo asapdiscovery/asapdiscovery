@@ -3,13 +3,14 @@ Function to test implementation of ligand filtering
 """
 
 import argparse
+
 from asapdiscovery.data import utils
 
 
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-f",
         "--fragalysis_dir",
@@ -41,7 +42,8 @@ def main():
     # First, parse the fragalysis directory and
     sars_xtals = utils.parse_fragalysis_data(args.csv_file, args.fragalysis_dir)
 
-    # For the compounds for which we have smiles strings, get a dictionary mapping the Compound_ID to the smiles
+    # For the compounds for which we have smiles strings, get a dictionary mapping the
+    # Compound_ID to the smiles
     cmp_to_smiles_dict = {
         compound_id: data.smiles
         for compound_id, data in sars_xtals.items()

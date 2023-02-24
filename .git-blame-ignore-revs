@@ -1,0 +1,6 @@
+# Migrate code style to Black, Isory, pyupgrade, flake8
+54afa09bb67b9900511348978d494cbb9001ca86
+# pre-commit running after a merge
+13ec71476c61ea1b961c53eca7ab2ea0c5e20f21
+# last edits before merge to main
+028dfdb8b143c60fcb388a6180c7874f19b5af66

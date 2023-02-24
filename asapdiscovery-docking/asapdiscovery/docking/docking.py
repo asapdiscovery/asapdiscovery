@@ -46,16 +46,16 @@ def run_docking_oe(
     str
         Generated docking_id, used to access SD tag data
     """
-    from openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+    from openeye import oechem, oedocking
 
-    ## Make copy so we can keep the original for RMSD purposes
+    # Make copy so we can keep the original for RMSD purposes
     orig_mol = orig_mol.CreateCopy()
 
-    ## Convert to OEMol for docking purposes
+    # Convert to OEMol for docking purposes
     dock_lig = oechem.OEMol(orig_mol.CreateCopy())
 
-    ## Perform OMEGA sampling
+    # Perform OMEGA sampling
     if use_omega:
         from openeye import oeomega
 
@@ -67,28 +67,28 @@ def run_docking_oe(
                 flush=True,
             )
 
-    ## Set docking string id (for SD tags)
+    # Set docking string id (for SD tags)
     docking_id = [dock_sys]
 
-    ## Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
-    ##  1 if there was a clash that couldn't be resolved)
+    # Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
+    #  1 if there was a clash that couldn't be resolved)
     clash = -1
 
-    ## Get ligand to dock
+    # Get ligand to dock
     if dock_sys == "posit":
-        ## Set up POSIT docking options
+        # Set up POSIT docking options
         opts = oedocking.OEPositOptions()
-        ## kinoml has the below option set, but the accompanying comment implies
-        ##  that we should be ignoring N stereochemistry, which, paradoxically,
-        ##  corresponds to a False option (the default)
+        # kinoml has the below option set, but the accompanying comment implies
+        #  that we should be ignoring N stereochemistry, which, paradoxically,
+        #  corresponds to a False option (the default)
         opts.SetIgnoreNitrogenStereo(True)
-        ## Set the POSIT methods to only be hybrid (otherwise leave as default
-        ##  of all)
+        # Set the POSIT methods to only be hybrid (otherwise leave as default
+        #  of all)
         if hybrid:
             opts.SetPositMethods(oedocking.OEPositMethod_HYBRID)
             docking_id.append("hybrid")
 
-        ## Set up pose relaxation
+        # Set up pose relaxation
         if relax == "clash":
             clash = 0
             opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_CLASHED)
@@ -96,7 +96,7 @@ def run_docking_oe(
             clash = 0
             opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
         elif relax != "none":
-            ## Don't need to do anything for none bc that's already the default
+            # Don't need to do anything for none bc that's already the default
             raise ValueError(f'Unknown arg for relaxation "{relax}"')
         docking_id.append(relax)
 
@@ -107,11 +107,11 @@ def run_docking_oe(
                 flush=True,
             )
 
-        ## Set up poser object
+        # Set up poser object
         poser = oedocking.OEPosit(opts)
         poser.AddReceptor(du)
 
-        ## Run posing
+        # Run posing
         pose_res = oedocking.OEPositResults()
         try:
             ret_code = poser.Dock(pose_res, dock_lig, num_poses)
@@ -122,15 +122,15 @@ def run_docking_oe(
         if compound_name:
             print(f"Running Hybrid docking for {compound_name}", flush=True)
 
-        ## Set up poser object
+        # Set up poser object
         poser = oedocking.OEHybrid()
         poser.Initialize(du)
 
-        ## Run posing
+        # Run posing
         posed_mol = oechem.OEMol()
         ret_code = poser.DockMultiConformerMolecule(posed_mol, dock_lig)
 
-        ## Place in list to match output
+        # Place in list to match output
         posed_mols = [posed_mol]
 
         posit_probs = [-1.0]
@@ -139,8 +139,8 @@ def run_docking_oe(
         raise ValueError(f'Unknown docking system "{dock_sys}"')
 
     if ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
-        ## For POSIT with clash removal, if no non-clashing pose can be found,
-        ##  re-run with no clash removal
+        # For POSIT with clash removal, if no non-clashing pose can be found,
+        #  re-run with no clash removal
         opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
         clash = 1
 
@@ -151,19 +151,16 @@ def run_docking_oe(
                 flush=True,
             )
 
-        ## Set up poser object
+        # Set up poser object
         poser = oedocking.OEPosit(opts)
         poser.AddReceptor(du)
 
-        ## Run posing
+        # Run posing
         pose_res = oedocking.OEPositResults()
         ret_code = poser.Dock(pose_res, dock_lig, num_poses)
 
-    ## Check results
-    if (
-        ret_code == oedocking.OEDockingReturnCode_Success
-        and dock_sys == "posit"
-    ):
+    # Check results
+    if ret_code == oedocking.OEDockingReturnCode_Success and dock_sys == "posit":
         posed_mols = []
         posit_probs = []
         posit_methods = []
@@ -182,26 +179,26 @@ def run_docking_oe(
             )
         return False, None, None
 
-    ## Set docking_id key for SD tags
+    # Set docking_id key for SD tags
     docking_id = "_".join(docking_id)
 
     for i, (mol, prob, method) in enumerate(
         zip(posed_mols, posit_probs, posit_methods)
     ):
-        ## Get the Chemgauss4 score (adapted from kinoml)
+        # Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
         pose_scorer.Initialize(du)
         chemgauss_score = pose_scorer.ScoreLigand(mol)
 
-        ## Calculate RMSD
+        # Calculate RMSD
         posed_copy = mol.CreateCopy()
         rmsd = calculate_rmsd_openeye(orig_mol.CreateCopy(), posed_copy)
 
-        ## First copy over original SD tags
+        # First copy over original SD tags
         for sd_data in oechem.OEGetSDDataPairs(orig_mol):
             oechem.OESetSDData(mol, sd_data)
 
-        ## Set SD tags for molecule
+        # Set SD tags for molecule
         oechem.OESetSDData(mol, f"Docking_{docking_id}_RMSD", str(rmsd))
         oechem.OESetSDData(mol, f"Docking_{docking_id}_POSIT", str(prob))
         oechem.OESetSDData(mol, f"Docking_{docking_id}_POSIT_method", method)
@@ -209,13 +206,13 @@ def run_docking_oe(
             mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
         )
         oechem.OESetSDData(mol, f"Docking_{docking_id}_clash", str(clash))
-        oechem.OESetSDData(mol, f"SMILES", oechem.OEMolToSmiles(mol))
+        oechem.OESetSDData(mol, "SMILES", oechem.OEMolToSmiles(mol))
 
-        ## Set molecule name if given
+        # Set molecule name if given
         if compound_name:
             mol.SetTitle(f"{compound_name}_{i}")
 
-    ## Combine all the conformations into one
+    # Combine all the conformations into one
     combined_mol = oechem.OEMol(posed_mols[0])
     for mol in posed_mols[1:]:
         combined_mol.NewConf(mol)
