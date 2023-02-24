@@ -7,7 +7,6 @@ from asapdiscovery.data.postera import (
     Molecule,
     MoleculeList,
     MoleculeSetAPI,
-    MoleculeUpdate,
     MoleculeUpdateList,
 )
 from requests import Session

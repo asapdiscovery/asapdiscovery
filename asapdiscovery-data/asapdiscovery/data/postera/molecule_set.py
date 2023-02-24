@@ -1,5 +1,4 @@
-import json
-from typing import Dict, List, Optional, Union
+from typing import Union
 
 import pandas as pd
 from typing_extensions import TypedDict
@@ -183,7 +182,7 @@ class MoleculeSetAPI(PostEraAPI):
 
         """
 
-        if not return_as in ("dataframe", "list"):
+        if return_as not in ("dataframe", "list"):
             raise ValueError("`return_as` must be either 'dataframe' or 'list'")
 
         url = f"{self.molecule_set_url}/{molecule_set_id}/get_all_molecules/"
