@@ -98,6 +98,15 @@ class TestMoleculeUpdateList(unittest.TestCase):
 
 class TestMoleculeSet(unittest.TestCase):
 
+    @patch.object(Session, "post")
+    def test_create(self, mock_post):
+
+        # create a MoleculeList for submission
+
+        mock_post.return_value.json.return_value = 
+
+        mock_post.assert_called_once_with(
+
     @patch.object(Session, "get")
     def test_read(self, mock_get):
 
@@ -141,3 +150,6 @@ class TestMoleculeSet(unittest.TestCase):
         output_df = molecule_set.read("mock_molecule_set_id")
 
         pd.testing.assert_frame_equal(expected_output_df, output_df)
+
+    def test_update_custom_data(self):
+        ...
