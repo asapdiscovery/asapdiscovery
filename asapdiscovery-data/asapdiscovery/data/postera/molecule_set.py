@@ -28,7 +28,7 @@ class MoleculeList(List[Molecule]):
         cls,
         df: pd.DataFrame,
         smiles_field: str = 'smiles',
-        postera_id_field: str = 'id',
+        id_field: str = 'id',
     ):
         return cls(
             [
@@ -38,7 +38,7 @@ class MoleculeList(List[Molecule]):
                         **{
                             key: value
                             for key, value in row.items()
-                            if key not in [smiles_field, postera_id_field]
+                            if key not in [smiles_field, id_field]
                         },
                     },
                 }
@@ -55,17 +55,17 @@ class MoleculeUpdateList(List[MoleculeUpdate]):
         cls,
         df: pd.DataFrame,
         smiles_field: str = 'smiles',
-        postera_id_field: str = 'id',
+        id_field: str = 'id',
     ):
         return cls(
             [
                 {
-                    "id": str(row[postera_id_field]),
+                    "id": str(row[id_field]),
                     "customData": {
                         **{
                             key: value
                             for key, value in row.items()
-                            if key not in [smiles_field, postera_id_field]
+                            if key not in [smiles_field, id_field]
                         },
                     },
                 }

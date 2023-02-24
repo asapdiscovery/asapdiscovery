@@ -1,18 +1,22 @@
-import unittest
 from unittest.mock import patch
+import uuid
 
+import pytest
 from requests import Session
 
 import pandas as pd
 
 from asapdiscovery.data.postera import (
+    Molecule,
+    MoleculeUpdate,
     MoleculeList,
     MoleculeUpdateList,
-    MoleculeSet,
+    MoleculeSetAPI,
 )
 
 
-class TestMoleculeList(unittest.TestCase):
+class TestMoleculeList:
+
     def test_from_pandas_df(self):
 
         expected_molecule_list = [
@@ -42,19 +46,14 @@ class TestMoleculeList(unittest.TestCase):
         }
 
         df = pd.DataFrame.from_dict(test_data)
-        molecule_list = MoleculeList()
-        molecule_list.from_pandas_df(
-            df, smiles_field="smiles_field", first_entry=0, last_entry=len(df)
-        )
 
-        self.assertListEqual(
-            molecule_list,
-            expected_molecule_list,
-            "MoleculeList.from_pandas_df produces incorrect list",
-        )
+        molecule_list = MoleculeList.from_pandas_df(df, smiles_field="smiles_field")
+
+        assert molecule_list == expected_molecule_list
 
 
-class TestMoleculeUpdateList(unittest.TestCase):
+class TestMoleculeUpdateList:
+
     def test_from_pandas_df(self):
 
         expected_molecule_update_list = [
@@ -84,31 +83,86 @@ class TestMoleculeUpdateList(unittest.TestCase):
         }
 
         df = pd.DataFrame.from_dict(test_data)
-        molecule_update_list = MoleculeUpdateList()
-        molecule_update_list.from_pandas_df(
-            df, postera_id_field="id_field", first_entry=0, last_entry=len(df)
+        molecule_update_list = MoleculeUpdateList.from_pandas_df(df, id_field="id_field")
+
+        assert molecule_update_list == expected_molecule_update_list
+
+
+class TestMoleculeSet:
+
+    @pytest.fixture
+    def moleculesetapi(self):
+        return MoleculeSetAPI(
+            "mock_api_url", "mock_api_version", "mock_api_key"
         )
 
-        self.assertListEqual(
-            molecule_update_list,
-            expected_molecule_update_list,
-            "MoleculeUpdateList.from_pandas_df produces incorrect list",
-        )
-
-
-class TestMoleculeSet(unittest.TestCase):
 
     @patch.object(Session, "post")
-    def test_create(self, mock_post):
+    def test_create(self, mock_post, moleculesetapi):
 
         # create a MoleculeList for submission
+        moleculeset_id = str(uuid.uuid4())
 
-        mock_post.return_value.json.return_value = 
+        mock_post.return_value.json.return_value = {'id': moleculeset_id}
 
-        mock_post.assert_called_once_with(
+        mols = MoleculeList([Molecule(smiles=i * 'C') for i in range(1,4)])
+
+        molset_id = moleculesetapi.create("molset_name", mols)
+
+        assert molset_id == moleculeset_id
 
     @patch.object(Session, "get")
-    def test_read(self, mock_get):
+    def test_list(self, mock_get, moleculesetapi):
+        mock_get.return_value.json.return_value = {
+          "results": [
+            {
+              "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+              "created": "2019-08-24T14:15:22Z",
+              "updated": "2019-08-24T14:15:22Z",
+              "link": "string",
+              "name": "test_set",
+              "molecules": [
+                {
+                  "smiles": "string",
+                  "customData": {
+                    "property1": "string",
+                    "property2": "string"
+                  }
+                }
+              ]
+            }
+          ],
+          "paginationInfo": {
+            "page": 0,
+            "numberOfPages": 0,
+            "pageNumbersList": [
+              0
+            ],
+            "count": 0,
+            "hasNext": False
+          }
+        }
+
+        output = moleculesetapi.list()
+
+        assert output == {"497f6eca-6276-4993-bfeb-53cbbbba6f08": "test_set"}
+
+    @patch.object(Session, "get")
+    def test_get(self, mock_get, moleculesetapi):
+        metadata = {
+          "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+          "created": "2019-08-24T14:15:22Z",
+          "updated": "2019-08-24T14:15:22Z",
+          "link": "string",
+          "name": "test_set"
+        }
+        mock_get.return_value.json.return_value = metadata
+
+        output = moleculesetapi.get("497f6eca-6276-4993-bfeb-53cbbbba6f08")
+        assert output == metadata
+
+    @patch.object(Session, "get")
+    def test_get_molecules(self, mock_get, moleculesetapi):
 
         mock_get.return_value.json.side_effect = [
             {
@@ -137,19 +191,19 @@ class TestMoleculeSet(unittest.TestCase):
         ]
 
         expected_dict = {
-            "SMILES": ["SMILES1", "SMILES2", "SMILES3"],
-            "postera_molecule_id": ["ID1", "ID2", "ID3"],
+            "smiles": ["SMILES1", "SMILES2", "SMILES3"],
+            "id": ["ID1", "ID2", "ID3"],
             "field": ["DATA1", "DATA2", "DATA3"],
         }
 
         expected_output_df = pd.DataFrame.from_dict(expected_dict)
-
-        molecule_set = MoleculeSet(
-            "mock_api_url", "mock_api_version", "mock_api_key"
-        )
-        output_df = molecule_set.read("mock_molecule_set_id")
+        output_df = moleculesetapi.get_molecules("mock_molecule_set_id")
 
         pd.testing.assert_frame_equal(expected_output_df, output_df)
 
-    def test_update_custom_data(self):
+    
+    def test_add_molecules(self):
+        ...
+
+    def test_update_molecules(self):
         ...
