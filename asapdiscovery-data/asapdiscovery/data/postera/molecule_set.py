@@ -129,7 +129,7 @@ class MoleculeSetAPI(PostEraAPI):
 
         return results
 
-    def list(self, return_full: bool = False) -> Union[list[dict], dict]:
+    def list_available(self, return_full: bool = False) -> Union[list[dict], dict]:
         """List available MoleculeSets.
 
         Parameters
@@ -234,7 +234,7 @@ class MoleculeSetAPI(PostEraAPI):
 
     def update_molecules(
         self, molecule_set_id: str, data: MoleculeUpdateList, overwrite=False
-    ):
+    ) -> list[str]:
         """Updates the custom data associated with the Molecules in a MoleculeSet.
 
         Parameters
