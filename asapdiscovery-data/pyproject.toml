@@ -27,7 +27,9 @@ dependencies = [
     #"pymol",
     "requests",
     "typing-extensions",
-    "click"
+    "click",
+    "boto3",
+    "moto"
 ]
 [project.scripts]
 asapdiscovery-data = "asapdiscovery.data.cli:cli"
