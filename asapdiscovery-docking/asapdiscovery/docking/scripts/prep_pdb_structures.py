@@ -4,7 +4,6 @@ Function to test implementation of ligand filtering
 
 import argparse
 import os
-import sys
 
 import yaml
 from asapdiscovery.data import pdb  # noqa: E402

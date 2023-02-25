@@ -30,8 +30,6 @@ def get_args():
         "-o",
         "--out_yaml",
         default=os.path.join(
-            repo_path,
-            "data",
             "cmpd_to_frag.yaml",
         ),
         help="Path to output yaml file.",

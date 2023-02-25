@@ -28,8 +28,6 @@ def get_args():
         "-y",
         "--yaml_file",
         default=os.path.join(
-            repo_path,
-            "data",
             "luttens2022ultralarge.yaml",
         ),
         help="Path to yaml_file",

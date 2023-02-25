@@ -48,8 +48,6 @@ def get_args():
         "-r",
         "--resolution_csv",
         default=os.path.join(
-            repo_path,
-            "data",
             "mers_structures.csv",
         ),
     )

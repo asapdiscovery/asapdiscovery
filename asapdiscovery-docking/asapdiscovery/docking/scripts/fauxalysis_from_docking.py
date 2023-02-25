@@ -45,8 +45,6 @@ def get_args():
         "-y",
         "--fragalysis_yaml",
         default=os.path.join(
-            repo_path,
-            "data",
             "cmpd_to_frag.yaml",
         ),
         help="Path to yaml file containing a compound-to-fragalysis dictionary.",
