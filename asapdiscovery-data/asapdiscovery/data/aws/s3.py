@@ -5,14 +5,18 @@
 import os
 from typing import Optional
 
+
 class S3Error(Exception):
     ...
 
 
 class S3:
-
     def __init__(
-        self, session: "boto3.Session", bucket: str, prefix: Optional[str] = None, endpoint_url=None
+        self,
+        session: "boto3.Session",
+        bucket: str,
+        prefix: Optional[str] = None,
+        endpoint_url=None,
     ):
         """ """
         self.session = session
@@ -36,7 +40,7 @@ class S3:
         if content_type is None:
             extra_args = {}
         else:
-            extra_args = {'ContentType': content_type}
+            extra_args = {"ContentType": content_type}
 
         if location is None:
             location = os.path.basename(path)

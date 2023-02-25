@@ -1,8 +1,8 @@
-import click
 from pathlib import Path
 
-from ..cli import cli
+import click
 
+from ..cli import cli
 
 # use these extra kwargs with any option from a settings parameter.
 SETTINGS_OPTION_KWARGS = {
@@ -59,10 +59,10 @@ def aws(ctx, access_key_id, secret_access_key, session_token, default_region):
 
     ctx.ensure_object(dict)
 
-    ctx.obj['access_key_id'] = access_key_id
-    ctx.obj['secret_access_key'] = secret_access_key
-    ctx.obj['session_token'] = session_token
-    ctx.obj['default_region'] = default_region
+    ctx.obj["access_key_id"] = access_key_id
+    ctx.obj["secret_access_key"] = secret_access_key
+    ctx.obj["session_token"] = session_token
+    ctx.obj["default_region"] = default_region
 
     # create a boto3 Session and parameterize with keys
     session = Session(
@@ -72,7 +72,8 @@ def aws(ctx, access_key_id, secret_access_key, session_token, default_region):
         region_name=default_region,
     )
 
-    ctx.obj['session'] = session
+    ctx.obj["session"] = session
+
 
 @aws.group(help="Commands for interacting with AWS S3")
 @s3_params
@@ -80,15 +81,15 @@ def aws(ctx, access_key_id, secret_access_key, session_token, default_region):
 def s3(ctx, s3_bucket, s3_prefix):
     from .s3 import S3
 
-    ctx.obj['s3'] = S3(ctx.obj['session'], s3_bucket, s3_prefix)
+    ctx.obj["s3"] = S3(ctx.obj["session"], s3_bucket, s3_prefix)
 
 
 @s3.command(help="Push artifacts to S3")
 @click.pass_context
-@click.argument('files', type=click.Path(exists=True), nargs=-1)
+@click.argument("files", type=click.Path(exists=True), nargs=-1)
 def push(ctx, files):
 
-    s3 = ctx.obj['s3']
+    s3 = ctx.obj["s3"]
 
     click.echo(f"Pushing {len(files)} to 's3://{s3.bucket}/{s3.prefix}'")
 
@@ -98,6 +99,7 @@ def push(ctx, files):
         click.echo(f" : '{file}'")
 
     click.echo(f"Done")
+
 
 @s3.command(help="Pull artifacts from S3")
 @click.pass_context
