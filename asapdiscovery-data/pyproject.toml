@@ -29,15 +29,13 @@ dependencies = [
     "typing-extensions",
     "click"
 ]
-[project.scripts]
-asapdiscovery-data = "asapdiscovery.data.cli:cli"
-
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
+asapdiscovery-data = "asapdiscovery.data.cli:cli"
 cdd-to-schema = "asapdiscovery.data.scripts.cdd_to_schema:main"
 create-mers-schema = "asapdiscovery.data.scripts.create_mers_schema:main"
 docking-data-to-csv = "asapdiscovery.data.scripts.docking_data_to_csv:main"
