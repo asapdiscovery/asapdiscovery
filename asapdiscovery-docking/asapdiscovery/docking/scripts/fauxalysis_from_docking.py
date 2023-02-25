@@ -72,7 +72,7 @@ def get_args():
         "--overwrite",
         action="store_true",
         default=False,
-        help="Flag to enable overwriting output data, otherwise it will skip directories that exists already.",  # noqa: E501
+        help="Flag to enable overwriting output data, otherwise it will skip directories that exists already.",
     )
     parser.add_argument(
         "-p",
