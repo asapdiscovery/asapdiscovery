@@ -25,6 +25,9 @@ dependencies:
   - pytorch
   - rdkit
   - seaborn
+  - boto3
+  - moto
+  - click
 
   # Pip-only installs
   - pip:
