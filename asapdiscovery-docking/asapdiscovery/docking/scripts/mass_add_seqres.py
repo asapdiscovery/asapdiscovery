@@ -8,7 +8,7 @@ import os
 import sys
 
 sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
-from asapdiscovery.data.utils import (  # noqa: E402 E501
+from asapdiscovery.data.utils import (  # noqa: E402
     check_filelist_has_elements,
     edit_pdb_file,
 )

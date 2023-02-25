@@ -17,7 +17,7 @@ from asapdiscovery.data.utils import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.utils import seqres_to_res_list  # noqa: E402
 from asapdiscovery.docking.modeling import align_receptor  # noqa: E402
 from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
-from asapdiscovery.docking.modeling import mutate_residues  # noqa: E402 E501
+from asapdiscovery.docking.modeling import mutate_residues  # noqa: E402
 from asapdiscovery.docking.modeling import prep_receptor  # noqa: E402
 
 
