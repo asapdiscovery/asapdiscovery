@@ -7,9 +7,10 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.data.moonshot import download_molecules
+from asapdiscovery.data.moonshot import download_molecules  # noqa: E402
 
-################################################################################
+
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
@@ -24,7 +25,7 @@ def get_args():
     parser.add_argument("-o", required=True, help="Output CSV file.")
     parser.add_argument("-cache", help="Cache CSV file.")
 
-    ## Filtering arguments
+    # Filtering arguments
     parser.add_argument(
         "-smi",
         "--smiles_fieldname",
@@ -54,21 +55,17 @@ def get_args():
 def main():
     args = get_args()
 
-    ## Set up logging
+    # Set up logging
     logging.basicConfig(level=logging.DEBUG)
 
     if "CDDTOKEN" in os.environ:
         header = {"X-CDD-token": os.environ["CDDTOKEN"]}
     elif args.tok:
-        header = {
-            "X-CDD-token": "".join(open(args.tok, "r").readlines()).strip()
-        }
+        header = {"X-CDD-token": "".join(open(args.tok).readlines()).strip()}
     else:
         raise ValueError(
-            (
-                "Must pass a file for -tok if the CDDTOKEN environment "
-                "variable is not set."
-            )
+            "Must pass a file for -tok if the CDDTOKEN environment "
+            "variable is not set."
         )
 
     _ = download_molecules(

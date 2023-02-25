@@ -4,7 +4,7 @@ Dropping NaNs...
 Keeping best measurements for each molecules, sorting by curve class and then 95% pIC50 width
 Resulting measurements
                      Molecule Name  ... EXP_BINDING_AFFINITY_IN_KCAL_PER_MOL_95%CI_HIGH
-Canonical PostEra ID                ...                                                
+Canonical PostEra ID                ...
 DRR-IMP-dff87f5e-9     CVD-0020484  ...                                       -6.037072
 DRR-IMP-dff87f5e-8     CVD-0020483  ...                                       -7.793542
 DRR-IMP-dff87f5e-7     CVD-0020482  ...                                       -6.571118
@@ -22,7 +22,7 @@ AGN-NEW-891393a6-1     CVD-0000033  ...                                       -7
 Keeping best measurements for each molecules, sorting by curve class and then 95% pIC50 width
 Resulting measurements
                      Molecule Name  ... EXP_BINDING_AFFINITY_IN_KCAL_PER_MOL_95%CI_HIGH
-Canonical PostEra ID                ...                                                
+Canonical PostEra ID                ...
 inserted_ID_0          CVD-0020651  ...                                       -8.747938
 inserted_ID_1          CVD-0020650  ...                                       -8.130712
 inserted_ID_2          CVD-0020649  ...                                       -6.320497

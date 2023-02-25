@@ -1,22 +1,18 @@
-from unittest.mock import patch
 import uuid
-
-import pytest
-from requests import Session
+from unittest.mock import patch
 
 import pandas as pd
-
+import pytest
 from asapdiscovery.data.postera import (
     Molecule,
-    MoleculeUpdate,
     MoleculeList,
-    MoleculeUpdateList,
     MoleculeSetAPI,
+    MoleculeUpdateList,
 )
+from requests import Session
 
 
 class TestMoleculeList:
-
     def test_from_pandas_df(self):
 
         expected_molecule_list = [
@@ -53,7 +49,6 @@ class TestMoleculeList:
 
 
 class TestMoleculeUpdateList:
-
     def test_from_pandas_df(self):
 
         expected_molecule_update_list = [
@@ -83,19 +78,17 @@ class TestMoleculeUpdateList:
         }
 
         df = pd.DataFrame.from_dict(test_data)
-        molecule_update_list = MoleculeUpdateList.from_pandas_df(df, id_field="id_field")
+        molecule_update_list = MoleculeUpdateList.from_pandas_df(
+            df, id_field="id_field"
+        )
 
         assert molecule_update_list == expected_molecule_update_list
 
 
 class TestMoleculeSet:
-
     @pytest.fixture
     def moleculesetapi(self):
-        return MoleculeSetAPI(
-            "mock_api_url", "mock_api_version", "mock_api_key"
-        )
-
+        return MoleculeSetAPI("mock_api_url", "mock_api_version", "mock_api_key")
 
     @patch.object(Session, "post")
     def test_create(self, mock_post, moleculesetapi):
@@ -103,9 +96,9 @@ class TestMoleculeSet:
         # create a MoleculeList for submission
         moleculeset_id = str(uuid.uuid4())
 
-        mock_post.return_value.json.return_value = {'id': moleculeset_id}
+        mock_post.return_value.json.return_value = {"id": moleculeset_id}
 
-        mols = MoleculeList([Molecule(smiles=i * 'C') for i in range(1,4)])
+        mols = MoleculeList([Molecule(smiles=i * "C") for i in range(1, 4)])
 
         molset_id = moleculesetapi.create("molset_name", mols)
 
@@ -114,47 +107,45 @@ class TestMoleculeSet:
     @patch.object(Session, "get")
     def test_list(self, mock_get, moleculesetapi):
         mock_get.return_value.json.return_value = {
-          "results": [
-            {
-              "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
-              "created": "2019-08-24T14:15:22Z",
-              "updated": "2019-08-24T14:15:22Z",
-              "link": "string",
-              "name": "test_set",
-              "molecules": [
+            "results": [
                 {
-                  "smiles": "string",
-                  "customData": {
-                    "property1": "string",
-                    "property2": "string"
-                  }
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "created": "2019-08-24T14:15:22Z",
+                    "updated": "2019-08-24T14:15:22Z",
+                    "link": "string",
+                    "name": "test_set",
+                    "molecules": [
+                        {
+                            "smiles": "string",
+                            "customData": {
+                                "property1": "string",
+                                "property2": "string",
+                            },
+                        }
+                    ],
                 }
-              ]
-            }
-          ],
-          "paginationInfo": {
-            "page": 0,
-            "numberOfPages": 0,
-            "pageNumbersList": [
-              0
             ],
-            "count": 0,
-            "hasNext": False
-          }
+            "paginationInfo": {
+                "page": 0,
+                "numberOfPages": 0,
+                "pageNumbersList": [0],
+                "count": 0,
+                "hasNext": False,
+            },
         }
 
-        output = moleculesetapi.list()
+        output = moleculesetapi.list_available()
 
         assert output == {"497f6eca-6276-4993-bfeb-53cbbbba6f08": "test_set"}
 
     @patch.object(Session, "get")
     def test_get(self, mock_get, moleculesetapi):
         metadata = {
-          "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
-          "created": "2019-08-24T14:15:22Z",
-          "updated": "2019-08-24T14:15:22Z",
-          "link": "string",
-          "name": "test_set"
+            "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+            "created": "2019-08-24T14:15:22Z",
+            "updated": "2019-08-24T14:15:22Z",
+            "link": "string",
+            "name": "test_set",
         }
         mock_get.return_value.json.return_value = metadata
 
@@ -201,7 +192,6 @@ class TestMoleculeSet:
 
         pd.testing.assert_frame_equal(expected_output_df, output_df)
 
-    
     def test_add_molecules(self):
         ...
 

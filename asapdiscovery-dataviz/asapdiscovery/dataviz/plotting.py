@@ -90,9 +90,7 @@ def contour_plot(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig
 
@@ -130,8 +128,6 @@ def scatter_plot(
         type="linear" if yaxis_type == "Linear" else "log",
     )
 
-    fig.update_layout(
-        margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest"
-    )
+    fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
 
     return fig

@@ -1,5 +1,5 @@
 import requests
-from requests.adapters import Retry, HTTPAdapter
+from requests.adapters import HTTPAdapter, Retry
 
 
 class PostEraAPI:
