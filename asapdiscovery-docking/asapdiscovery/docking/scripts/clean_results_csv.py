@@ -40,7 +40,7 @@ def get_args():
         "--dimer",
         action="store_true",
         default=False,
-        help="If true, keep track of whether the complex is a dimer. Optional as earlier CSVs didn't have this.",  # noqa E501
+        help="If true, keep track of whether the complex is a dimer. Optional as earlier CSVs didn't have this.",
     )
     parser.add_argument(
         "-s",

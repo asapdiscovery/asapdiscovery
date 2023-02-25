@@ -165,7 +165,7 @@ def make_du_from_new_lig(
     opts = oespruce.OEMakeDesignUnitOptions()
     opts.SetSuperpose(False)
     if loop_db is not None:
-        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(  # noqa: E501
+        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(
             loop_db
         )
 
@@ -183,10 +183,10 @@ def make_du_from_new_lig(
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
         oechem.OESeqAlignmentMethod_Identity
     )
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(  # noqa: E501
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(
         -1
     )
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(  # noqa: E501
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(
         0
     )
 
@@ -482,7 +482,7 @@ def prep_receptor(
     opts = oespruce.OEMakeDesignUnitOptions()
     opts.SetSuperpose(False)
     if loop_db is not None:
-        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(  # noqa: E501
+        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(
             loop_db
         )
 
@@ -500,10 +500,10 @@ def prep_receptor(
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
         oechem.OESeqAlignmentMethod_Identity
     )
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(  # noqa: E501
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(
         -1
     )
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(  # noqa: E501
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(
         0
     )
 

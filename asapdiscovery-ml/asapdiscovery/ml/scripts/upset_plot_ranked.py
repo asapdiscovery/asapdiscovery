@@ -46,7 +46,7 @@ def main():
     # Plotting
     membership_dict = {
         p: [l for l in labs if p in correct_dict[l]] for p in all_pairs  # noqa: E741
-    }  # noqa: E741 E501
+    }  # noqa: E741
     fig = plt.figure(figsize=(12, 8))
     ups.UpSet(ups.from_memberships(membership_dict.values()), subset_size="count").plot(
         fig
