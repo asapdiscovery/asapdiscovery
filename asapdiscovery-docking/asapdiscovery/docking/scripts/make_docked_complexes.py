@@ -57,7 +57,8 @@ def main():
     use_cols = ["ligand_id", "du_structure", "docked_file"]
     for _, (compound_id, struct, docked_fn) in df[use_cols].iterrows():
         try:
-            xtal = xtal_structs[struct].CreateCopy()
+            xtal = xtal_structs[struct][0].CreateCopy()
+            new_resid, new_atomid = xtal_structs[struct][1:]
         except KeyError:
             xtal_fn = f"{args.xtal_dir}/{struct}/{struct}_apo.pdb"
             xtal = load_openeye_pdb(xtal_fn)
@@ -65,7 +66,25 @@ def main():
             # Get rid of non-protein atoms
             if args.prot_only:
                 xtal = split_openeye_mol(xtal, lig_chain=None)["pro"]
-            xtal_structs[struct] = xtal.CreateCopy()
+
+            ## Find max resid for numbering the ligand residue
+            new_resid = (
+                max([r.GetResidueNumber() for r in oechem.OEGetResidues(xtal)]) + 1
+            )
+
+            ## Same with atom numbering
+            new_atomid = (
+                max(
+                    [
+                        oechem.OEAtomGetResidue(a).GetSerialNumber()
+                        for a in xtal.GetAtoms()
+                    ]
+                )
+                + 1
+            )
+
+            ## Store data to avoid reloading/recalculating
+            xtal_structs[struct] = (xtal.CreateCopy(), new_resid, new_atomid)
 
         try:
             mol = load_openeye_sdf(docked_fn)
@@ -79,13 +98,30 @@ def main():
             )
             continue
 
-        # Adjust molecule residue properties
-        oechem.OEPerceiveResidues(mol)
+        num_elem_atoms = {}
+        ## Adjust molecule residue properties
         for a in mol.GetAtoms():
+            ## Set atom name
+            cur_name = oechem.OEGetAtomicSymbol(a.GetAtomicNum())
+            try:
+                new_name = f"{cur_name}{num_elem_atoms[cur_name]}"
+                num_elem_atoms[cur_name] += 1
+            except KeyError:
+                new_name = cur_name
+                num_elem_atoms[cur_name] = 1
+            a.SetName(new_name)
+
+            # new_a = amap[a.GetIdx()]
             res = oechem.OEAtomGetResidue(a)
             res.SetName(args.lig_name.upper())
+            res.SetResidueNumber(new_resid)
+            res.SetSerialNumber(new_atomid)
+            new_atomid += 1
+            res.SetHetAtom(True)
+            oechem.OEAtomSetResidue(a, res)
 
-        oechem.OEAddMols(xtal, mol)
+        ## First combine the mols, keeping track of mapping
+        amap, bmap = oechem.OEAddMols(xtal, mol)
 
         out_base = f"{compound_id}_{struct}"
         if args.out_dir:
