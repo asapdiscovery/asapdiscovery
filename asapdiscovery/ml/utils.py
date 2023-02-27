@@ -1432,7 +1432,7 @@ def train(
         # Stop training if EarlyStopping says to
         if es and es.check(epoch_val_loss, model.state_dict()):
             print(f"Stopping training after epoch {epoch_idx}", flush=True)
-            model.load_state_dict(es.wts_dict)
+            model.load_state_dict(es.best_wts)
             break
 
     return (
