@@ -6,6 +6,7 @@ from typing import Optional, Union
 import numpy as np
 import pandas
 import rdkit.Chem as Chem
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import (
     CrystalCompoundData,
     EnantiomerPair,
@@ -13,7 +14,6 @@ from asapdiscovery.data.schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
 )
-from asapdiscovery.data.openeye import oechem
 
 
 def download_file(url: str, path: str):

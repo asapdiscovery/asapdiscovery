@@ -1,9 +1,11 @@
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
+    oechem,
+    oedocking,
+    oespruce,
     split_openeye_mol,
 )
-from asapdiscovery.data.openeye import oechem, oedocking, oespruce
 
 
 def du_to_complex(du, include_solvent=False):
