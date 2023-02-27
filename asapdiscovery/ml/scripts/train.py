@@ -32,6 +32,7 @@ from torch_geometric.datasets import QM9
 
 from asapdiscovery.ml import (
     E3NNBind,
+    EarlyStopping,
     GAT,
     SchNetBind,
     MSELoss,
@@ -259,6 +260,12 @@ def get_args():
         action="store_true",
         help="Group poses for the same compound into one prediction.",
     )
+    parser.add_argument(
+        "-es",
+        "--early-stopping",
+        type=int,
+        help="Number of training epochs to allow with no improvement in val loss.",
+    )
 
     ## WandB arguments
     parser.add_argument(
@@ -459,6 +466,13 @@ def init(args, rank=False):
         {f"model_config:{k}": v for k, v in model_config.items()}
     )
 
+    # Early stopping
+    if args.early_stopping:
+        es = EarlyStopping(args.early_stopping)
+        exp_configure.update({"early_stopping": args.early_stopping})
+    else:
+        es = None
+
     return (
         exp_data,
         ds_train,
@@ -467,6 +481,7 @@ def init(args, rank=False):
         model,
         model_call,
         optimizer,
+        es,
         exp_configure,
     )
 
@@ -482,6 +497,7 @@ def main():
         model,
         model_call,
         optimizer,
+        es,
         exp_configure,
     ) = init(args)
 
@@ -634,6 +650,7 @@ def main():
         test_loss=test_loss,
         use_wandb=(args.wandb or args.sweep),
         batch_size=args.batch_size,
+        es=es,
         optimizer=optimizer,
     )
 
