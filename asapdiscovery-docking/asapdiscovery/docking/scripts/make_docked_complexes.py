@@ -8,7 +8,6 @@ import sys
 import pandas
 from openeye import oechem
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: 402
