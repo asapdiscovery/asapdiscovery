@@ -41,7 +41,7 @@ class EarlyStopping(object):
         # If this is the first epoch, just set internal variables and return
         if self.best_loss is None:
             self.best_loss = loss
-            self.best_wts = best_wts
+            self.best_wts = wts_dict
             return False
 
         # Update best loss and best weights
