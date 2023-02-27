@@ -4,7 +4,6 @@ import os
 from asapdiscovery.data.openeye import oechem, oedocking, oegrid, oespruce
 
 
-
 ########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
