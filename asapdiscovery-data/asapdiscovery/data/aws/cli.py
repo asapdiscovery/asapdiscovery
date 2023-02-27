@@ -42,13 +42,16 @@ def aws_params(func):
 
 
 def s3_params(func):
-    s3_bucket = click.option(
-        "--s3-bucket", type=str, envvar="AWS_S3_BUCKET", **SETTINGS_OPTION_KWARGS
+    bucket = click.option(
+        "--bucket", type=str, envvar="AWS_S3_BUCKET", **SETTINGS_OPTION_KWARGS
     )
-    s3_prefix = click.option(
-        "--s3-prefix", type=str, envvar="AWS_S3_PREFIX", **SETTINGS_OPTION_KWARGS
+    prefix = click.option(
+        "--prefix", type=str, envvar="AWS_S3_PREFIX", **SETTINGS_OPTION_KWARGS
     )
-    return s3_bucket(s3_prefix(func))
+    endpoint_url= click.option(
+        "--endpoint-url", type=str
+    )
+    return bucket(prefix(endpoint_url(func)))
 
 
 @cli.group(help="Commands for interacting with the AWS API")
@@ -78,10 +81,10 @@ def aws(ctx, access_key_id, secret_access_key, session_token, default_region):
 @aws.group(help="Commands for interacting with AWS S3")
 @s3_params
 @click.pass_context
-def s3(ctx, s3_bucket, s3_prefix):
+def s3(ctx, bucket, prefix, endpoint_url):
     from .s3 import S3
 
-    ctx.obj["s3"] = S3(ctx.obj["session"], s3_bucket, s3_prefix)
+    ctx.obj["s3"] = S3(ctx.obj["session"], bucket, prefix, endpoint_url)
 
 
 @s3.command(help="Push artifacts to S3")

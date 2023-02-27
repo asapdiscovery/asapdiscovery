@@ -35,6 +35,19 @@ class S3:
         bucket.create()
         bucket.wait_until_exists()
 
+    def reset(self):
+        """Delete all objects, including bucket itself.
+
+        Inverse operation of `initialize`.
+
+        """
+        bucket = self.resource.Bucket(self.bucket)
+
+        # delete all objects, then the bucket
+        bucket.objects.delete()
+        bucket.delete()
+        bucket.wait_until_not_exists()
+
     def push_file(self, path, location=None, content_type=None):
 
         if content_type is None:

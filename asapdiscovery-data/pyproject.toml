@@ -29,7 +29,9 @@ dependencies = [
     "typing-extensions",
     "click",
     "boto3",
-    "moto"
+    "moto",
+    "flask",
+    "flask_cors"
 ]
 [project.scripts]
 asapdiscovery-data = "asapdiscovery.data.cli:cli"
