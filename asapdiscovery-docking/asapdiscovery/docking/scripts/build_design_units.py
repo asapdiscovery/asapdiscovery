@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from asapdiscovery.data.openeye import oechem, oedocking, oegrid, oespruce
+from asapdiscovery.data.openeye import oechem, oespruce
 
 
 
