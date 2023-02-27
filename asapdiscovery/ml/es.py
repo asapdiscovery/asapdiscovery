@@ -22,7 +22,7 @@ class EarlyStopping(object):
         self.best_loss = None
         self.best_wts = None
 
-    def check(loss, wts_dict):
+    def check(self, loss, wts_dict):
         """
         Check if training should be stopped. Return True to stop, False to keep going.
 
