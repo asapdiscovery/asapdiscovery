@@ -3,7 +3,7 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdf,
     split_openeye_mol,
 )
-from openeye import oechem, oedocking, oespruce
+from asapdiscovery.data.openeye import oechem, oedocking, oespruce
 
 
 def du_to_complex(du, include_solvent=False):

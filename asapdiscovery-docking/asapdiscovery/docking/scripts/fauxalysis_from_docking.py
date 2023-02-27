@@ -18,7 +18,7 @@ import shutil
 import sys
 
 import yaml
-from openeye import oechem
+from asapdiscovery.data.openeye import oechem
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)

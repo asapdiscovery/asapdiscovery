@@ -6,7 +6,7 @@ import os
 import sys
 
 import pandas
-from openeye import oechem
+from asapdiscovery.data.openeye import oechem
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402

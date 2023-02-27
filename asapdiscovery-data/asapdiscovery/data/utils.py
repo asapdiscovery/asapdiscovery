@@ -13,7 +13,7 @@ from asapdiscovery.data.schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
 )
-from openeye import oechem
+from asapdiscovery.data.openeye import oechem
 
 
 def download_file(url: str, path: str):

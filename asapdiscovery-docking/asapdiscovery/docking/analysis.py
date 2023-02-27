@@ -5,7 +5,7 @@ import re
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.openeye import get_ligand_rmsd_from_pdb_and_sdf
-from openeye import oechem
+from asapdiscovery.data.openeye import oechem
 
 
 class DockingDataset:

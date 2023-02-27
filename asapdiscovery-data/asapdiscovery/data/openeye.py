@@ -1,4 +1,4 @@
-from openeye import oechem, oegrid
+from openeye import oechem, oegrid, oedocking, oespruce, oedepict
 
 # exec on module import
 if not oechem.OEChemIsLicensed("python"):
