@@ -8,6 +8,7 @@ import sys
 import pandas
 from openeye import oechem
 
+from asapdiscovery.data.openeye import combine_protein_ligand
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: 402
@@ -97,30 +98,9 @@ def main():
             )
             continue
 
-        num_elem_atoms = {}
-        ## Adjust molecule residue properties
-        for a in mol.GetAtoms():
-            ## Set atom name
-            cur_name = oechem.OEGetAtomicSymbol(a.GetAtomicNum())
-            try:
-                new_name = f"{cur_name}{num_elem_atoms[cur_name]}"
-                num_elem_atoms[cur_name] += 1
-            except KeyError:
-                new_name = cur_name
-                num_elem_atoms[cur_name] = 1
-            a.SetName(new_name)
-
-            # new_a = amap[a.GetIdx()]
-            res = oechem.OEAtomGetResidue(a)
-            res.SetName(args.lig_name.upper())
-            res.SetResidueNumber(new_resid)
-            res.SetSerialNumber(new_atomid)
-            new_atomid += 1
-            res.SetHetAtom(True)
-            oechem.OEAtomSetResidue(a, res)
-
-        ## First combine the mols, keeping track of mapping
-        amap, bmap = oechem.OEAddMols(xtal, mol)
+        xtal = combine_protein_ligand(
+            xtal, mol, resid=new_resid, start_atom_id=new_atomid
+        )
 
         out_base = f"{compound_id}_{struct}"
         if args.out_dir:
