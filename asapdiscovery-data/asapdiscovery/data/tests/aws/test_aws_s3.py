@@ -5,9 +5,8 @@ import pytest
 
 
 class TestS3:
-
     def test_push_file(self, s3, tmpdir):
-        filepath = 'testfile.txt'
+        filepath = "testfile.txt"
 
         with tmpdir.as_cwd():
             with open(filepath, "w") as f:

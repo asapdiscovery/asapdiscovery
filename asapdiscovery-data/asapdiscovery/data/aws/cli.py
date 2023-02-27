@@ -48,9 +48,7 @@ def s3_params(func):
     prefix = click.option(
         "--prefix", type=str, envvar="AWS_S3_PREFIX", **SETTINGS_OPTION_KWARGS
     )
-    endpoint_url= click.option(
-        "--endpoint-url", type=str
-    )
+    endpoint_url = click.option("--endpoint-url", type=str)
     return bucket(prefix(endpoint_url(func)))
 
 
