@@ -1,13 +1,12 @@
-import os
 import contextlib
+import os
 import traceback
 import uuid
 
 import pytest
+from asapdiscovery.data.cli import cli
 from click.testing import CliRunner
 from moto import mock_s3
-
-from asapdiscovery.data.cli import cli
 
 
 def click_success(result):
@@ -31,14 +30,13 @@ def set_env_vars(env):
 
 
 class TestS3:
-
     def test_s3_push_file(self, s3, tmpdir):
 
         env_vars = {
-        #    "AWS_ACCESS_KEY_ID": "test-access-key-id",
-        #    "AWS_SECRET_ACCESS_KEY": "test-secret-access-key",
-        #    "AWS_SESSION_TOKEN": "test-session-token",
-        #    "REGION_NAME": "us-east-1",
+            #    "AWS_ACCESS_KEY_ID": "test-access-key-id",
+            #    "AWS_SECRET_ACCESS_KEY": "test-secret-access-key",
+            #    "AWS_SESSION_TOKEN": "test-session-token",
+            #    "REGION_NAME": "us-east-1",
         }
 
         filename = f"{str(uuid.uuid4())}.txt"
@@ -51,20 +49,20 @@ class TestS3:
             runner = CliRunner()
             with set_env_vars(env_vars):
                 result = runner.invoke(
-                        cli, 
-                        [
-                            "aws", 
-                            "s3", 
-                            '--bucket',
-                            'test-bucket',
-                            '--prefix',
-                            'test-prefix',
-                            '--endpoint-url',
-                            'http://127.0.0.1:5000',
-                            "push",
-                            filename
-                        ]
-                    )
+                    cli,
+                    [
+                        "aws",
+                        "s3",
+                        "--bucket",
+                        "test-bucket",
+                        "--prefix",
+                        "test-prefix",
+                        "--endpoint-url",
+                        "http://127.0.0.1:5000",
+                        "push",
+                        filename,
+                    ],
+                )
                 assert click_success(result)
 
             # examine object metadata
