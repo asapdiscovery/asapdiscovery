@@ -1,4 +1,4 @@
-from openeye import oechem, oegrid, oedocking, oespruce, oedepict
+from openeye import oechem, oegrid, oedocking, oespruce, oedepict # noqa: E401
 
 # exec on module import
 if not oechem.OEChemIsLicensed("python"):
