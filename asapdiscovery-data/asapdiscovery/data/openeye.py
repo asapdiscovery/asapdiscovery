@@ -31,28 +31,28 @@ def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=
     oechem.OEMol
         Combined molecule, with the appropriate biopolymer field set for the lig atoms
     """
-    ## Calculate residue number if necessary
+    # Calculate residue number if necessary
     if resid is None:
-        ## Find max resid for numbering the ligand residue
+        # Find max resid for numbering the ligand residue
         resid = max([r.GetResidueNumber() for r in oechem.OEGetResidues(prot)]) + 1
 
-    ## Calculate atom number if necessary
+    # Calculate atom number if necessary
     if start_atom_id is None:
-        ## Same with atom numbering
+        # Same with atom numbering
         start_atom_id = (
             max([oechem.OEAtomGetResidue(a).GetSerialNumber() for a in prot.GetAtoms()])
             + 1
         )
 
-    ## Make copies so we don't modify the original molecules
+    # Make copies so we don't modify the original molecules
     prot = prot.CreateCopy()
     lig = lig.CreateCopy()
 
-    ## Keep track of how many times each element has been seen in the ligand
+    # Keep track of how many times each element has been seen in the ligand
     num_elem_atoms = {}
-    ## Adjust molecule residue properties
+    # Adjust molecule residue properties
     for a in lig.GetAtoms():
-        ## Set atom name
+        # Set atom name
         cur_name = oechem.OEGetAtomicSymbol(a.GetAtomicNum())
         try:
             new_name = f"{cur_name}{num_elem_atoms[cur_name]}"
@@ -62,7 +62,7 @@ def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=
             num_elem_atoms[cur_name] = 1
         a.SetName(new_name)
 
-        ## Set residue level properties
+        # Set residue level properties
         res = oechem.OEAtomGetResidue(a)
         res.SetName(lig_name.upper())
         res.SetResidueNumber(resid)
@@ -71,7 +71,7 @@ def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=
         res.SetHetAtom(True)
         oechem.OEAtomSetResidue(a, res)
 
-    ## Combine the mols
+    # Combine the mols
     oechem.OEAddMols(prot, lig)
 
     return prot

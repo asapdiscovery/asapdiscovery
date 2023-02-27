@@ -3,7 +3,6 @@ Make complex PDB files for docked SDF files.
 """
 import argparse
 import os
-import sys
 
 import pandas
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
@@ -14,7 +13,7 @@ from asapdiscovery.data.openeye import combine_protein_ligand
 from openeye import oechem
 
 
-########################################
+################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
@@ -66,12 +65,12 @@ def main():
             if args.prot_only:
                 xtal = split_openeye_mol(xtal, lig_chain=None)["pro"]
 
-            ## Find max resid for numbering the ligand residue
+            # Find max resid for numbering the ligand residue
             new_resid = (
                 max([r.GetResidueNumber() for r in oechem.OEGetResidues(xtal)]) + 1
             )
 
-            ## Same with atom numbering
+            # Same with atom numbering
             new_atomid = (
                 max(
                     [
@@ -82,7 +81,7 @@ def main():
                 + 1
             )
 
-            ## Store data to avoid reloading/recalculating
+            # Store data to avoid reloading/recalculating
             xtal_structs[struct] = (xtal.CreateCopy(), new_resid, new_atomid)
 
         try:
