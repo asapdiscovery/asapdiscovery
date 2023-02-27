@@ -1357,10 +1357,6 @@ def train(
             val_loss.append(np.asarray(tmp_loss))
             epoch_val_loss = np.mean(tmp_loss)
 
-            ## Check about early stopping
-            if es:
-                stop_training = es.check(epoch_val_loss, model.state_dict())
-
             tmp_loss = []
             for compound, pose in ds_test:
                 if type(compound) is tuple:
@@ -1434,7 +1430,7 @@ def train(
             raise ValueError("Unrecoverable loss value reached.")
 
         # Stop training if EarlyStopping says to
-        if es and stop_training:
+        if es and es.check(epoch_val_loss, model.state_dict()):
             print(f"Stopping training after epoch {epoch_idx}", flush=True)
             model.load_state_dict(es.wts_dict)
             break
