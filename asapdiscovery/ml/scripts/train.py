@@ -657,6 +657,9 @@ def main():
     if args.wandb or args.sweep:
         wandb.finish()
 
+    # Save model weights
+    torch.save(model.state_dict(), f"{model_dir}/final.th")
+
     ## Plot loss
     if args.plot_o is not None:
         plot_loss(
