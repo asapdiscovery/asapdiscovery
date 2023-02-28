@@ -11,7 +11,7 @@ import sys
 from tempfile import NamedTemporaryFile
 
 import yaml
-from openeye import oechem
+from asapdiscovery.data.openeye import oechem
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
