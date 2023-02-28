@@ -21,8 +21,9 @@ class EarlyStopping(object):
         self.counter = 0
         self.best_loss = None
         self.best_wts = None
+        self.best_epoch = 0
 
-    def check(self, loss, wts_dict):
+    def check(self, epoch, loss, wts_dict):
         """
         Check if training should be stopped. Return True to stop, False to keep going.
 
@@ -48,6 +49,7 @@ class EarlyStopping(object):
         if loss < self.best_loss:
             self.best_loss = loss
             self.best_wts = wts_dict
+            self.best_epoch = epoch
 
             # Reset counter
             self.counter = 0

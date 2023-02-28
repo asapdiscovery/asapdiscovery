@@ -1430,8 +1430,14 @@ def train(
             raise ValueError("Unrecoverable loss value reached.")
 
         # Stop training if EarlyStopping says to
-        if es and es.check(epoch_val_loss, model.state_dict()):
-            print(f"Stopping training after epoch {epoch_idx}", flush=True)
+        if es and es.check(epoch_idx, epoch_val_loss, model.state_dict()):
+            print(
+                (
+                    f"Stopping training after epoch {epoch_idx}, "
+                    f"using weights from epoch {es.best_epoch}"
+                ),
+                flush=True,
+            )
             model.load_state_dict(es.best_wts)
             break
 
