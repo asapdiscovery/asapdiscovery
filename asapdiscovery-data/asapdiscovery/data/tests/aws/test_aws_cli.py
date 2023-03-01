@@ -29,7 +29,9 @@ def set_env_vars(env):
 
 
 class TestS3:
-    def test_s3_push_file(self, s3, tmpdir):
+    def test_s3_push_file(self, s3_fresh, tmpdir):
+
+        s3 = s3_fresh
 
         env_vars = {
             #    "AWS_ACCESS_KEY_ID": "test-access-key-id",

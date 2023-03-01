@@ -5,7 +5,8 @@ import pytest
 
 
 class TestS3:
-    def test_push_file(self, s3, tmpdir):
+    def test_push_file(self, s3_fresh, tmpdir):
+        s3 = s3_fresh
         filepath = "testfile.txt"
 
         with tmpdir.as_cwd():

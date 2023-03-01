@@ -4,7 +4,7 @@ from boto3.session import Session
 from moto.server import ThreadedMotoServer
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def s3():
     server = ThreadedMotoServer()
     server.start()
@@ -21,5 +21,12 @@ def s3():
 
     yield s3
 
-    s3.reset()
     server.stop()
+
+
+@pytest.fixture
+def s3_fresh(s3):
+    s3.reset()
+    s3.initialize()
+
+    return s3
