@@ -5,6 +5,81 @@ if not oechem.OEChemIsLicensed("python"):
     raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
 
 
+def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=None):
+    """
+    Combine a protein OEMol and ligand OEMol into one, handling residue/atom
+    numbering, and HetAtom status.
+
+    Parameters
+    ----------
+    prot : oechem.OEMol
+        OEMol with the protein atoms. This should have perceived resiudes
+    lig : oechem.OEMol
+        OEMol with the ligand atoms
+    lig_name : str, default="LIG"
+        Residue name to give to the ligand atoms
+    resid : int, optional
+        Which residue number to assign to the ligand. If not given, the largest existing
+        residue number in `prot` will be found, and the ligand will be assigned the next
+        number
+    start_atom_id : int, optional
+        Which atom number to assign to the first atom in the ligand. If not given, the
+        next available atom number will be calculated and assigned
+
+    Returns
+    -------
+    oechem.OEMol
+        Combined molecule, with the appropriate biopolymer field set for the lig atoms
+    """
+    # Calculate residue number if necessary
+    if resid is None:
+        # Find max resid for numbering the ligand residue
+        # Add 1 so we start numbering at the next residue id
+        resid = max([r.GetResidueNumber() for r in oechem.OEGetResidues(prot)]) + 1
+
+    # Calculate atom number if necessary
+    if start_atom_id is None:
+        # Same with atom numbering
+        start_atom_id = (
+            max([oechem.OEAtomGetResidue(a).GetSerialNumber() for a in prot.GetAtoms()])
+            + 1
+        )
+
+    # Make copies so we don't modify the original molecules
+    prot = prot.CreateCopy()
+    lig = lig.CreateCopy()
+
+    # Keep track of how many times each element has been seen in the ligand
+    # Each atom in a residue needs a unique name, so just append this number to the
+    #  element
+    num_elem_atoms = {}
+    # Adjust molecule residue properties
+    for a in lig.GetAtoms():
+        # Set atom name
+        cur_name = oechem.OEGetAtomicSymbol(a.GetAtomicNum())
+        try:
+            new_name = f"{cur_name}{num_elem_atoms[cur_name]}"
+            num_elem_atoms[cur_name] += 1
+        except KeyError:
+            new_name = cur_name
+            num_elem_atoms[cur_name] = 1
+        a.SetName(new_name)
+
+        # Set residue level properties
+        res = oechem.OEAtomGetResidue(a)
+        res.SetName(lig_name.upper())
+        res.SetResidueNumber(resid)
+        res.SetSerialNumber(start_atom_id)
+        start_atom_id += 1
+        res.SetHetAtom(True)
+        oechem.OEAtomSetResidue(a, res)
+
+    # Combine the mols
+    oechem.OEAddMols(prot, lig)
+
+    return prot
+
+
 def load_openeye_pdb(pdb_fn, alt_loc=False):
     ifs = oechem.oemolistream()
     ifs_flavor = oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA
