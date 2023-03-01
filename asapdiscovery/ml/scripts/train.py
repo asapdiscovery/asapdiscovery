@@ -262,7 +262,7 @@ def get_args():
     )
     parser.add_argument(
         "-es",
-        "--early-stopping",
+        "--early_stopping",
         type=int,
         help="Number of training epochs to allow with no improvement in val loss.",
     )
