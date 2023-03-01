@@ -34,6 +34,7 @@ def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=
     # Calculate residue number if necessary
     if resid is None:
         # Find max resid for numbering the ligand residue
+        # Add 1 so we start numbering at the next residue id
         resid = max([r.GetResidueNumber() for r in oechem.OEGetResidues(prot)]) + 1
 
     # Calculate atom number if necessary
@@ -49,6 +50,8 @@ def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=
     lig = lig.CreateCopy()
 
     # Keep track of how many times each element has been seen in the ligand
+    # Each atom in a residue needs a unique name, so just append this number to the
+    #  element
     num_elem_atoms = {}
     # Adjust molecule residue properties
     for a in lig.GetAtoms():
