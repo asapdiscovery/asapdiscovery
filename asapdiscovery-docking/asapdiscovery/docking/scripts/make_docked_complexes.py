@@ -3,19 +3,16 @@ Make complex PDB files for docked SDF files.
 """
 import argparse
 import os
-import sys
 
 import pandas
-from asapdiscovery.data.openeye import oechem
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: 402
 from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402
+from asapdiscovery.data.openeye import combine_protein_ligand, oechem
 
 
-########################################
+################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
@@ -57,7 +54,8 @@ def main():
     use_cols = ["ligand_id", "du_structure", "docked_file"]
     for _, (compound_id, struct, docked_fn) in df[use_cols].iterrows():
         try:
-            xtal = xtal_structs[struct].CreateCopy()
+            xtal = xtal_structs[struct][0].CreateCopy()
+            new_resid, new_atomid = xtal_structs[struct][1:]
         except KeyError:
             xtal_fn = f"{args.xtal_dir}/{struct}/{struct}_apo.pdb"
             xtal = load_openeye_pdb(xtal_fn)
@@ -65,7 +63,25 @@ def main():
             # Get rid of non-protein atoms
             if args.prot_only:
                 xtal = split_openeye_mol(xtal, lig_chain=None)["pro"]
-            xtal_structs[struct] = xtal.CreateCopy()
+
+            # Find max resid for numbering the ligand residue
+            new_resid = (
+                max([r.GetResidueNumber() for r in oechem.OEGetResidues(xtal)]) + 1
+            )
+
+            # Same with atom numbering
+            new_atomid = (
+                max(
+                    [
+                        oechem.OEAtomGetResidue(a).GetSerialNumber()
+                        for a in xtal.GetAtoms()
+                    ]
+                )
+                + 1
+            )
+
+            # Store data to avoid reloading/recalculating
+            xtal_structs[struct] = (xtal.CreateCopy(), new_resid, new_atomid)
 
         try:
             mol = load_openeye_sdf(docked_fn)
@@ -79,13 +95,9 @@ def main():
             )
             continue
 
-        # Adjust molecule residue properties
-        oechem.OEPerceiveResidues(mol)
-        for a in mol.GetAtoms():
-            res = oechem.OEAtomGetResidue(a)
-            res.SetName(args.lig_name.upper())
-
-        oechem.OEAddMols(xtal, mol)
+        xtal = combine_protein_ligand(
+            xtal, mol, resid=new_resid, start_atom_id=new_atomid
+        )
 
         out_base = f"{compound_id}_{struct}"
         if args.out_dir:
