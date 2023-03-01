@@ -10,7 +10,7 @@ from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: 402
 from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402
 from asapdiscovery.data.openeye import combine_protein_ligand
-from openeye import oechem
+from asapdiscovery.data.openeye import oechem
 
 
 ################################################################################
