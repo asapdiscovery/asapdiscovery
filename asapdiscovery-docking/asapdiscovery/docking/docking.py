@@ -46,8 +46,8 @@ def run_docking_oe(
     str
         Generated docking_id, used to access SD tag data
     """
+    from asapdiscovery.data.openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
-    from openeye import oechem, oedocking
 
     # Make copy so we can keep the original for RMSD purposes
     orig_mol = orig_mol.CreateCopy()
