@@ -16,8 +16,14 @@ def s3():
         #    region_name="us-east-1",
     )
 
-    s3 = S3(session, "test-bucket", "test-prefix", endpoint_url="http://127.0.0.1:5000")
+    s3 = S3(
+            session, 
+            "test-bucket", 
+            "test-prefix", 
+            endpoint_url="http://127.0.0.1:5000")
     s3.initialize()
+
     yield s3
+
     s3.reset()
     server.stop()
