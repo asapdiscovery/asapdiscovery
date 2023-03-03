@@ -13,7 +13,7 @@ def s3():
         #    aws_access_key_id="test-access-key-id",
         #    aws_secret_access_key="test-secret-access-key",
         #    aws_session_token="test-session-token",
-        #    region_name="us-east-1",
+        region_name="us-east-1",
     )
 
     s3 = S3(session, "test-bucket", "test-prefix", endpoint_url="http://127.0.0.1:5000")
