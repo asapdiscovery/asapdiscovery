@@ -1,8 +1,6 @@
 import os
 import uuid
 
-import pytest
-
 
 class TestS3:
     def test_push_file(self, s3_fresh, tmpdir):
