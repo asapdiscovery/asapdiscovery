@@ -6,7 +6,7 @@ from boto3.session import Session
 from moto.server import ThreadedMotoServer
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
