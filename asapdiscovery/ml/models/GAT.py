@@ -23,7 +23,18 @@ class GAT(torch.nn.Module):
             gnn_out_feats = self.gnn.hidden_feats[-1]
         self.readout = WeightedSumAndMax(gnn_out_feats)
 
-        self.predict = torch.nn.Linear(2 * gnn_out_feats, 1)
+        # Use given hidden feats if supplied, otherwise use 1/2 gnn_out_feats
+        if "predictor_hidden_feats" in kwargs:
+            predictor_hidden_feats = kwargs["predictor_hidden_feats"]
+        else:
+            predictor_hidden_feats = gnn_out_feats // 2
+
+        # 2 layer MLP with ReLU activation (borrowed from GATPredictor)
+        self.predict = torch.nn.Sequential(
+            torch.nn.Linear(2 * gnn_out_feats, predictor_hidden_feats),
+            torch.nn.ReLU(),
+            torch.nn.Linear(predictor_hidden_feats, 1),
+        )
 
     def forward(self, g, feats):
         device = next(self.parameters()).device
