@@ -994,7 +994,7 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
     sns.lineplot(x=range(len(val_loss)), y=val_loss, ax=axes[1])
     sns.lineplot(x=range(len(test_loss)), y=test_loss, ax=axes[2])
 
-    for (ax, loss_type) in zip(axes, ("Training", "Validation", "Test")):
+    for ax, loss_type in zip(axes, ("Training", "Validation", "Test")):
         ax.set_ylabel(f"MSE {loss_type} Loss")
         ax.set_xlabel("Epoch")
         ax.set_title(f"MSE {loss_type} Loss")
@@ -1172,6 +1172,7 @@ def train(
     use_wandb=False,
     batch_size=1,
     optimizer=None,
+    es=None,
 ):
     """
     Train a model.
@@ -1223,6 +1224,8 @@ def train(
     optimizer : torch.optim.Optimizer, optional
         Optimizer to use for model training. If not used, defaults to Adam
         optimizer
+    es : asapdiscovery.ml.EarlyStopping
+        EarlyStopping object to keep track of early stopping
 
     Returns
     -------
@@ -1425,6 +1428,18 @@ def train(
                     open(os.path.join(save_file, "ds_test.pkl"), "wb"),
                 )
             raise ValueError("Unrecoverable loss value reached.")
+
+        # Stop training if EarlyStopping says to
+        if es and es.check(epoch_idx, epoch_val_loss, model.state_dict()):
+            print(
+                (
+                    f"Stopping training after epoch {epoch_idx}, "
+                    f"using weights from epoch {es.best_epoch}"
+                ),
+                flush=True,
+            )
+            model.load_state_dict(es.best_wts)
+            break
 
     return (
         model,
