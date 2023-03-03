@@ -33,13 +33,6 @@ class TestS3:
 
         s3 = s3_fresh
 
-        env_vars = {
-            #    "AWS_ACCESS_KEY_ID": "test-access-key-id",
-            #    "AWS_SECRET_ACCESS_KEY": "test-secret-access-key",
-            #    "AWS_SESSION_TOKEN": "test-session-token",
-            #    "REGION_NAME": "us-east-1",
-        }
-
         filename = f"{str(uuid.uuid4())}.txt"
 
         with tmpdir.as_cwd():
@@ -48,23 +41,22 @@ class TestS3:
 
             # run the CLI
             runner = CliRunner()
-            with set_env_vars(env_vars):
-                result = runner.invoke(
-                    cli,
-                    [
-                        "aws",
-                        "s3",
-                        "--bucket",
-                        "test-bucket",
-                        "--prefix",
-                        "test-prefix",
-                        "--endpoint-url",
-                        "http://127.0.0.1:5000",
-                        "push",
-                        filename,
-                    ],
-                )
-                assert click_success(result)
+            result = runner.invoke(
+                cli,
+                [
+                    "aws",
+                    "s3",
+                    "--bucket",
+                    "test-bucket",
+                    "--prefix",
+                    "test-prefix",
+                    "--endpoint-url",
+                    "http://127.0.0.1:5000",
+                    "push",
+                    filename,
+                ],
+            )
+            assert click_success(result)
 
             # examine object metadata
             objs = list(s3.resource.Bucket(s3.bucket).objects.all())
