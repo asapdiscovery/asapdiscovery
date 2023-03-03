@@ -40,7 +40,7 @@ def rank_structures_openeye(
         Index that sorts `sort_smis` by decreasing similarity with `exp_smi`
         based on MCS search.
     """
-    from openeye import oechem, oedepict
+    from asapdiscovery.data.openeye import oechem, oedepict
 
     if smi_conv is None:
         smi_conv = _smi_conv_oe
