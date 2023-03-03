@@ -5,6 +5,8 @@
 import os
 from typing import Optional
 
+import boto3
+
 
 class S3Error(Exception):
     ...
@@ -13,7 +15,7 @@ class S3Error(Exception):
 class S3:
     def __init__(
         self,
-        session: "boto3.Session",
+        session: boto3.Session,
         bucket: str,
         prefix: Optional[str] = None,
         endpoint_url=None,

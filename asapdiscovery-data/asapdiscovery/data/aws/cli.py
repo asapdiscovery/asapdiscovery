@@ -99,7 +99,7 @@ def push(ctx, files):
         s3.push_file(path.name, path)
         click.echo(f" : '{file}'")
 
-    click.echo(f"Done")
+    click.echo("Done")
 
 
 @s3.command(help="Pull artifacts from S3")
