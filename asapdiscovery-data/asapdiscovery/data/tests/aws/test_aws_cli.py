@@ -3,9 +3,9 @@ import os
 import traceback
 import uuid
 
-import pytest
-from asapdiscovery.data.cli import cli
 from click.testing import CliRunner
+
+from asapdiscovery.data.cli import cli
 
 
 def click_success(result):
