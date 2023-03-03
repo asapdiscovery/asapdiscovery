@@ -40,9 +40,6 @@ class GAT(torch.nn.Module):
         device = next(self.parameters()).device
         g = g.to(device)
         feats = feats.to(device)
-        ### doesn't work bc GATPredictor calls torch.functional.batch_norm,
-        ###  which requires multiple channels (which we don't have)
-        # return super(GAT, self).forward(g, feats)
         node_feats = self.gnn(g, feats)
         graph_feats = self.readout(g, node_feats)
         return self.predict(graph_feats)
