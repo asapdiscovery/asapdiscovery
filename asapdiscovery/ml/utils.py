@@ -994,7 +994,7 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
     sns.lineplot(x=range(len(val_loss)), y=val_loss, ax=axes[1])
     sns.lineplot(x=range(len(test_loss)), y=test_loss, ax=axes[2])
 
-    for (ax, loss_type) in zip(axes, ("Training", "Validation", "Test")):
+    for ax, loss_type in zip(axes, ("Training", "Validation", "Test")):
         ax.set_ylabel(f"MSE {loss_type} Loss")
         ax.set_xlabel("Epoch")
         ax.set_title(f"MSE {loss_type} Loss")
@@ -1266,6 +1266,7 @@ def train(
 
     if loss_fn is None:
         loss_fn = MSELoss()
+    print("Using loss functions", loss_fn, flush=True)
 
     ## Train for n epochs
     for epoch_idx in range(start_epoch, n_epochs):
