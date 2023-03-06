@@ -1289,7 +1289,6 @@ def train(
                 compound_id = compound[1]
             else:
                 compound_id = compound
-            pred = model_call(model, pose)
 
             # convert to float to match other types
             target = torch.tensor(
@@ -1301,6 +1300,9 @@ def train(
             uncertainty = torch.tensor(
                 [[target_dict[compound_id]["pIC50_stderr"]]], device=device
             ).float()
+
+            # Make prediction and calculate loss
+            pred = model_call(model, pose).reshape(target.shape)
             loss = loss_fn(pred, target, in_range, uncertainty)
 
             ## Keep track of loss for each sample
@@ -1340,7 +1342,6 @@ def train(
                     compound_id = compound[1]
                 else:
                     compound_id = compound
-                pred = model_call(model, pose)
 
                 # convert to float to match other types
                 target = torch.tensor(
@@ -1352,6 +1353,9 @@ def train(
                 uncertainty = torch.tensor(
                     [[target_dict[compound_id]["pIC50_stderr"]]], device=device
                 ).float()
+
+                # Make prediction and calculate loss
+                pred = model_call(model, pose).reshape(target.shape)
                 loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
@@ -1363,7 +1367,6 @@ def train(
                     compound_id = compound[1]
                 else:
                     compound_id = compound
-                pred = model_call(model, pose)
 
                 # convert to float to match other types
                 target = torch.tensor(
@@ -1375,6 +1378,9 @@ def train(
                 uncertainty = torch.tensor(
                     [[target_dict[compound_id]["pIC50_stderr"]]], device=device
                 ).float()
+
+                # Make prediction and calculate loss
+                pred = model_call(model, pose).reshape(target.shape)
                 loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             test_loss.append(np.asarray(tmp_loss))
