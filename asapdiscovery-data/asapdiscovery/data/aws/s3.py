@@ -14,9 +14,8 @@ class S3Error(Exception):
 
 
 class S3:
-    """Interface for AWS S3.
+    """Interface for AWS S3."""
 
-    """
     def __init__(
         self,
         session: boto3.Session,
@@ -44,7 +43,7 @@ class S3:
         self.resource = self.session.resource("s3", endpoint_url=endpoint_url)
 
         self.bucket = bucket
-        self.prefix = prefix.strip('/') if prefix is not None else ""
+        self.prefix = prefix.strip("/") if prefix is not None else ""
 
     def initialize(self):
         """Initialize bucket.
@@ -69,7 +68,9 @@ class S3:
         bucket.delete()
         bucket.wait_until_not_exists()
 
-    def push_file(self, path: PathLike, location: PathLike = None, content_type: str = None):
+    def push_file(
+        self, path: PathLike, location: PathLike = None, content_type: str = None
+    ):
         """Push a file at the local filesystem `path` to an object `location`
         in this S3 Bucket.
 
