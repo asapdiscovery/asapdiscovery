@@ -1,7 +1,6 @@
 from dgllife.model import GAT as GAT_dgl
 from dgllife.model import WeightedSumAndMax
 
-# from dgllife.model import GATPredictor
 import torch
 
 
@@ -11,7 +10,6 @@ class GAT(torch.nn.Module):
     """
 
     def __init__(self, *args, **kwargs):
-        # super(GAT, self).__init__(*args, **kwargs)
         super(GAT, self).__init__()
         self.gnn = GAT_dgl(*args, **kwargs)
 
