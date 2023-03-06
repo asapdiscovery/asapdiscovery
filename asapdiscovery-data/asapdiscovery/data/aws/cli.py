@@ -32,13 +32,19 @@ def aws_params(func):
         envvar="AWS_SESSION_TOKEN",
         **SETTINGS_OPTION_KWARGS,
     )
-    default_region = click.option(
-        "--default-region",
+    region = click.option(
+        "--region",
         type=str,
         envvar="AWS_DEFAULT_REGION",
         **SETTINGS_OPTION_KWARGS,
     )
-    return access_key_id(secret_access_key(session_token(default_region(func))))
+    profile = click.option(
+        "--profile",
+        type=str,
+        envvar="AWS_PROFILE",
+        **SETTINGS_OPTION_KWARGS,
+    )
+    return access_key_id(secret_access_key(session_token(region(profile(func)))))
 
 
 def s3_params(func):
@@ -55,7 +61,7 @@ def s3_params(func):
 @cli.group(help="Commands for interacting with the AWS API")
 @aws_params
 @click.pass_context
-def aws(ctx, access_key_id, secret_access_key, session_token, default_region):
+def aws(ctx, access_key_id, secret_access_key, session_token, region, profile):
     from boto3.session import Session
 
     ctx.ensure_object(dict)
@@ -63,14 +69,16 @@ def aws(ctx, access_key_id, secret_access_key, session_token, default_region):
     ctx.obj["access_key_id"] = access_key_id
     ctx.obj["secret_access_key"] = secret_access_key
     ctx.obj["session_token"] = session_token
-    ctx.obj["default_region"] = default_region
+    ctx.obj["region"] = region
+    ctx.obj["profile"] = profile
 
     # create a boto3 Session and parameterize with keys
     session = Session(
         aws_access_key_id=access_key_id,
         aws_secret_access_key=secret_access_key,
         aws_session_token=session_token,
-        region_name=default_region,
+        region_name=region,
+        profile_name=profile,
     )
 
     ctx.obj["session"] = session

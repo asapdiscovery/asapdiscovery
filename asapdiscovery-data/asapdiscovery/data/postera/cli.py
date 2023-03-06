@@ -43,6 +43,7 @@ def id_field_param(func):
     "--api-url",
     help="PostEra API url",
     type=str,
+    required=True,
     envvar="POSTERA_API_URL",
     show_envvar=True,
 )
@@ -50,6 +51,7 @@ def id_field_param(func):
     "--api-token",
     help="PostEra API token",
     type=str,
+    required=True,
     envvar="POSTERA_API_TOKEN",
     show_envvar=True,
 )
