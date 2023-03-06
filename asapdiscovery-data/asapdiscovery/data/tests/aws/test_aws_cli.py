@@ -27,7 +27,7 @@ def set_env_vars(env):
         os.environ.update(old_env)
 
 
-class TestS3:
+class TestS3CLI:
     def test_s3_push_file(self, s3_fresh, tmpdir):
 
         s3 = s3_fresh
