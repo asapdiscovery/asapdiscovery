@@ -1266,7 +1266,7 @@ def train(
 
     if loss_fn is None:
         loss_fn = MSELoss()
-    print("Using loss functions", loss_fn, flush=True)
+    print("Using loss function", loss_fn, flush=True)
 
     ## Train for n epochs
     for epoch_idx in range(start_epoch, n_epochs):
