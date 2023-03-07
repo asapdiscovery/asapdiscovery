@@ -21,4 +21,4 @@ source ~/.bashrc
 conda activate mers-docking
 python ../scripts/save-combined-fragalysis-structures.py -n 32 \
 -d /data/chodera/asap-datasets/current/sars_01_prepped_v3 \
--o /data/chodera/paynea/asap-datasets/sars_01_prepped_v3_split
+-o /data/chodera/paynea/asap-datasets-ap/sars_01_prepped_v3_split
