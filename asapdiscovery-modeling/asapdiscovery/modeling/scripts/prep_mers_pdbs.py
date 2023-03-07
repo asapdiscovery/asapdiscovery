@@ -1,20 +1,20 @@
 import argparse
 import multiprocessing as mp
 from pathlib import Path
+
+import yaml
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
+    oechem,
     openeye_perceive_residues,
     save_openeye_pdb,
     split_openeye_design_unit,
     split_openeye_mol,
 )
-from openmm.app import PDBFile, PDBxFile
-from asapdiscovery.docking.modeling import align_receptor
-import yaml
 from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.docking.modeling import mutate_residues
+from asapdiscovery.docking.modeling import align_receptor, mutate_residues
 from asapdiscovery.modeling.modeling import spruce_protein
-from asapdiscovery.data.openeye import oechem
+from openmm.app import PDBFile, PDBxFile
 
 
 def get_args():
