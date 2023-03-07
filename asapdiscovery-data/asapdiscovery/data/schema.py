@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-
+from pydantic.typing import Dict, List
 
 # From FAH ###################################
 class Model(BaseModel):
@@ -40,7 +40,7 @@ class ExperimentalCompoundData(Model):
         description="If True, the compound was enantiopure, but unknown if stereochemistry recorded in SMILES is correct",
     )
 
-    experimental_data: dict[str, float] = Field(
+    experimental_data: Dict[str, float] = Field(
         dict(),
         description='Experimental data fields, including "pIC50" and uncertainty (either "pIC50_stderr" or  "pIC50_{lower|upper}"',
     )
@@ -49,7 +49,7 @@ class ExperimentalCompoundData(Model):
 class ExperimentalCompoundDataUpdate(Model):
     """A bundle of experimental data for compounds (racemic or enantiopure)."""
 
-    compounds: list[ExperimentalCompoundData]
+    compounds: List[ExperimentalCompoundData]
 
 
 ########################################
@@ -81,8 +81,8 @@ class CrystalCompoundData(BaseModel):
     oligomeric_state: str = Field(
         None, description="Oligomeric state of the asymmetric unit."
     )
-    chains: list = Field(None, description="List of chainids in the asymmetric unit.")
-    protein_chains: list = Field(
+    chains: List = Field(None, description="List of chainids in the asymmetric unit.")
+    protein_chains: List = Field(
         None, description="List of chains corresponding to protein residues."
     )
 
@@ -98,4 +98,4 @@ class EnantiomerPair(Model):
 
 
 class EnantiomerPairList(Model):
-    pairs: list[EnantiomerPair]
+    pairs: List[EnantiomerPair]
