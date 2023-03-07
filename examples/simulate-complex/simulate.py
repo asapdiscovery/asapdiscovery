@@ -27,7 +27,7 @@ reporting_interval = 1250 # 5 ps
 __doc__ = """Generate explicit-solvent molecular dynamics simulation for a given receptor and ligand.
 
 Usage:
-  simulate.py --receptor=FILE --ligand=FILE --nsteps=INT [--selection=SELECT] [--initial=FILE] [--minimized=FILE] [--final=FILE] [--xtctraj=FILE] [--dcdtraj=FILE] [--pdbtraj=FILE] 
+  simulate.py --receptor=FILE --ligand=FILE --nsteps=INT [--selection=SELECT] [--initial=FILE] [--minimized=FILE] [--final=FILE] [--xtctraj=FILE] [--dcdtraj=FILE] [--pdbtraj=FILE]
   simulate.py (-h | --help)
 
 Options:
@@ -36,7 +36,7 @@ Options:
   --ligand=FILE       Ligand SDF filename.
   --nsteps=INT        Number of steps to run.
   --selection=SELECT  MDTraj selection to use (e.g. 'not water') [default: all].
-  --initial=FILE      Write initial complex PDB file.  
+  --initial=FILE      Write initial complex PDB file.
   --minimized=FILE    Write minimized complex PDB file.
   --final=FILE        Write final complex PDB file.
   --xtctraj=FILE      Generate XTC trajectory file.
@@ -163,7 +163,7 @@ context.setPositions(modeller.positions)
 if arguments['--initial']:
     log.info(f":page_facing_up:  Writing initial PDB to {arguments['--initial']}")
     output_positions = context.getState(getPositions=True, enforcePeriodicBox=False).getPositions(asNumpy=True)
-    with open(arguments['--initial'], 'w') as outfile:    
+    with open(arguments['--initial'], 'w') as outfile:
         PDBFile.writeFile(output_topology, output_positions[output_indices,:], file=outfile, keepIds=False);
 
 # Minimize energy
@@ -174,7 +174,7 @@ simulation.minimizeEnergy();
 if arguments['--minimized']:
     log.info(f":page_facing_up:  Writing minimized PDB to {arguments['--minimized']}")
     output_positions = context.getState(getPositions=True, enforcePeriodicBox=False).getPositions(asNumpy=True)
-    with open(arguments['--minimized'], 'w') as outfile:    
+    with open(arguments['--minimized'], 'w') as outfile:
         PDBFile.writeFile(output_topology, output_positions[output_indices,:], file=outfile, keepIds=False);
 
 # Equilibrate
@@ -211,7 +211,7 @@ for snapshot_index in track(range(n_snapshots), ':rocket: Running production sim
 if arguments['--final']:
     log.info(f":page_facing_up:  Writing final PDB to {arguments['--final']}")
     output_positions = context.getState(getPositions=True, enforcePeriodicBox=False).getPositions(asNumpy=True)
-    with open(arguments['--final'], 'w') as outfile:    
+    with open(arguments['--final'], 'w') as outfile:
         PDBFile.writeFile(output_topology, output_positions[output_indices,:], file=outfile, keepIds=False);
 
 # Flush trajectories to force files to be closed

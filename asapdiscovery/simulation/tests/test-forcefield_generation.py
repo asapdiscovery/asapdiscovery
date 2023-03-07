@@ -4,8 +4,8 @@ Created on Sat Jan 28 18:10:15 2023
 Edited by: Alex Payne
 """
 from openmm.app import *
-from openmm.unit import *
 from openmm.app import PDBFile
+from openmm.unit import *
 
 
 def main(input_pdb_path):
@@ -47,9 +47,7 @@ if __name__ == "__main__":
 
     ## Original Prepped P2660 structure
     try:
-        main(
-            "inputs/01_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_prepped_receptor_0.pdb"
-        )
+        main("inputs/01_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_prepped_receptor_0.pdb")
     except ValueError as error:
         print(f"Error was: {error}")
         if (
