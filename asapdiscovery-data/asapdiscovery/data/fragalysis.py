@@ -172,9 +172,7 @@ def parse_fragalysis(
     # Build argument dicts for the CrystalCompoundData objects
     xtal_dicts = [
         dict(zip(("smiles", "dataset", "compound_id"), r[1].values))
-        for r in df.loc[
-            :, ["smiles", "crystal_name", "alternate_name"]
-        ].iterrows()
+        for r in df.loc[:, ["smiles", "crystal_name", "alternate_name"]].iterrows()
     ]
 
     # Add structure filename information and filter if not found
