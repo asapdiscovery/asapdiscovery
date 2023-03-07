@@ -195,6 +195,6 @@ def parse_fragalysis(
     # Build CrystalCompoundData objects for each row
     print(f"Loading {len(filtered_xtal_dicts)} structures")
     xtal_compounds = [CrystalCompoundData(**d) for d in filtered_xtal_dicts]
-        assert os.path.isfile(fn), f'No structure found for {d["dataset"]}.'
+    assert os.path.isfile(fn), f'No structure found for {d["dataset"]}.'
 
     return xtal_compounds
