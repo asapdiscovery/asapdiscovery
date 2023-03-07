@@ -55,9 +55,7 @@ def prepare_receptor(
     print(f"preparing {complex_pdb_filename}...")
 
     # Read in PDB file, skipping UNK atoms (left over from processing covalent ligands)
-    pdbfile_lines = [
-        line for line in open(complex_pdb_filename) if "UNK" not in line
-    ]
+    pdbfile_lines = [line for line in open(complex_pdb_filename) if "UNK" not in line]
 
     # If monomer is specified, drop crystal symmetry lines
     if not dimer:
