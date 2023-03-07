@@ -7,6 +7,9 @@ from openeye import oechem, oedocking, oespruce
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
+    oechem,
+    oedocking,
+    oespruce,
     split_openeye_mol,
     openeye_perceive_residues,
     save_openeye_pdb,
@@ -34,8 +37,7 @@ def du_to_complex(du, include_solvent=False):
     """
     complex_mol = oechem.OEGraphMol()
     comp_tag = (
-        oechem.OEDesignUnitComponents_Protein
-        | oechem.OEDesignUnitComponents_Ligand
+        oechem.OEDesignUnitComponents_Protein | oechem.OEDesignUnitComponents_Ligand
     )
     if include_solvent:
         comp_tag |= oechem.OEDesignUnitComponents_Solvent
@@ -97,20 +99,18 @@ def make_du_from_new_lig(
     """
 
     if (not dimer) and (not mobile_chain):
-        raise ValueError(
-            "If dimer is False, a value must be given for mobile_chain."
-        )
+        raise ValueError("If dimer is False, a value must be given for mobile_chain.")
 
-    ## Load initial_complex from file if necessary
+    # Load initial_complex from file if necessary
     if type(initial_complex) is str:
         initial_complex = load_openeye_pdb(initial_complex, alt_loc=True)
-        ## If alt locations are present in PDB file, set positions to highest
-        ##  occupancy ALT
+        # If alt locations are present in PDB file, set positions to highest
+        #  occupancy ALT
         alf = oechem.OEAltLocationFactory(initial_complex)
         if alf.GetGroupCount() != 0:
             alf.MakePrimaryAltMol(initial_complex)
 
-    ## Load ligand from file if necessary
+    # Load ligand from file if necessary
     if type(new_lig) is str:
         if new_lig[-3:] == "sdf":
             parse_func = load_openeye_sdf
@@ -120,31 +120,31 @@ def make_du_from_new_lig(
             raise ValueError(f"Unknown file format: {new_lig}")
 
         new_lig = parse_func(new_lig)
-    ## Update ligand dimensions in case its internal dimensions property is set
-    ##  as 2 for some reason (eg created from SMILES)
+    # Update ligand dimensions in case its internal dimensions property is set
+    #  as 2 for some reason (eg created from SMILES)
     new_lig.SetDimension(3)
 
-    ## Load reference protein from file if necessary
+    # Load reference protein from file if necessary
     if type(ref_prot) is str:
         ref_prot = load_openeye_pdb(ref_prot, alt_loc=True)
-        ## If alt locations are present in PDB file, set positions to highest
-        ##  occupancy ALT
+        # If alt locations are present in PDB file, set positions to highest
+        #  occupancy ALT
         alf = oechem.OEAltLocationFactory(ref_prot)
         if alf.GetGroupCount() != 0:
             alf.MakePrimaryAltMol(ref_prot)
 
-    ## Split out protein components and align if requested
+    # Split out protein components and align if requested
     if split_initial_complex:
         initial_prot_temp = split_openeye_mol(initial_complex)["pro"]
     else:
         initial_prot_temp = initial_complex
 
-    ## Extract if not dimer
+    # Extract if not dimer
     if dimer:
         initial_prot = initial_prot_temp
     else:
-        ### TODO: Have to figure out how to handle water here if it's in a
-        ###  different chain from the protein
+        # TODO: Have to figure out how to handle water here if it's in a
+        #  different chain from the protein
         initial_prot = oechem.OEGraphMol()
         chain_pred = oechem.OEHasChainID(mobile_chain)
         oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
@@ -152,7 +152,7 @@ def make_du_from_new_lig(
         if split_ref:
             ref_prot = split_openeye_mol(ref_prot)["pro"]
 
-        ## Set up predicates
+        # Set up predicates
         if ref_chain is not None:
             not_water = oechem.OENotAtom(oechem.OEIsWater())
             ref_chain = oechem.OEHasChainID(ref_chain)
@@ -169,11 +169,11 @@ def make_du_from_new_lig(
             ref_prot, initial_prot, ref_chain, mobile_chain
         )[0]
 
-    ## Add Hs to prep protein and ligand
+    # Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
     oechem.OEAddExplicitHydrogens(new_lig)
 
-    ## Set up DU building options
+    # Set up DU building options
     opts = oespruce.OEMakeDesignUnitOptions()
     opts.SetSuperpose(False)
     if loop_db is not None:
@@ -181,16 +181,15 @@ def make_du_from_new_lig(
             loop_db
         )
 
-    ## Options set from John's function ########################################
-    ## (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
+    # Options set from John's function ####################
+    # (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
     opts.GetPrepOptions().SetStrictProtonationMode(True)
     # set minimal number of ligand atoms to 5, e.g. a 5-membered ring fragment\
     opts.GetSplitOptions().SetMinLigAtoms(5)
 
-    # also consider alternate locations outside binding pocket, important for later filtering
-    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
-        False
-    )
+    # also consider alternate locations outside binding pocket, important for later
+    # filtering
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(False)
 
     # alignment options, only matches are important
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
@@ -219,9 +218,9 @@ def make_du_from_new_lig(
 
     # Generate ligand tautomers
     opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
-    ############################################################################
+    ######################################
 
-    ## Finally make new DesignUnit
+    # Finally make new DesignUnit
     du = oechem.OEDesignUnit()
     oespruce.OEMakeDesignUnit(du, initial_prot, new_lig, opts)
     assert du.HasProtein() and du.HasLigand()
@@ -252,24 +251,24 @@ def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
         RMSD between `ref_mol` and `mobile_mol` after alignment.
     """
 
-    ## Default atom predicates
+    # Default atom predicates
     if ref_pred is None:
         ref_pred = oechem.OEIsTrueAtom()
     if mobile_pred is None:
         mobile_pred = oechem.OEIsTrueAtom()
 
-    ## Create object to store results
+    # Create object to store results
     aln_res = oespruce.OESuperposeResults()
 
-    ## Set up superposing object and set reference molecule
+    # Set up superposing object and set reference molecule
     superpos = oespruce.OESuperpose()
     superpos.SetupRef(ref_mol, ref_pred)
 
-    ## Perform superposing
+    # Perform superposing
     superpos.Superpose(aln_res, mobile_mol, mobile_pred)
     # print(f"RMSD: {aln_res.GetRMSD()}")
 
-    ## Create copy of molecule and transform it to the aligned position
+    # Create copy of molecule and transform it to the aligned position
     mobile_mol_aligned = mobile_mol.CreateCopy()
     aln_res.Transform(mobile_mol_aligned)
 
@@ -287,8 +286,8 @@ def align_receptor(
     keep_water=True,
 ):
     """
-    Basically a copy of the above function to generate an aligned receptor without also needing to do the rest of the
-    protein prep.
+    Basically a copy of the above function to generate an aligned receptor without also
+    needing to do the rest of the protein prep.
 
     Parameters
     ----------
@@ -328,29 +327,27 @@ def align_receptor(
 
     """
     if (not dimer) and (not mobile_chain):
-        raise ValueError(
-            "If dimer is False, a value must be given for mobile_chain."
-        )
+        raise ValueError("If dimer is False, a value must be given for mobile_chain.")
 
-    ## Load initial_complex from file if necessary
+    # Load initial_complex from file if necessary
     if type(initial_complex) is str:
         initial_complex = load_openeye_pdb(initial_complex, alt_loc=True)
-        ## If alt locations are present in PDB file, set positions to highest
-        ##  occupancy ALT
+        # If alt locations are present in PDB file, set positions to highest
+        #  occupancy ALT
         alf = oechem.OEAltLocationFactory(initial_complex)
         if alf.GetGroupCount() != 0:
             alf.MakePrimaryAltMol(initial_complex)
 
-    ## Load reference protein from file if necessary
+    # Load reference protein from file if necessary
     if type(ref_prot) is str:
         ref_prot = load_openeye_pdb(ref_prot, alt_loc=True)
-        ## If alt locations are present in PDB file, set positions to highest
-        ##  occupancy ALT
+        # If alt locations are present in PDB file, set positions to highest
+        #  occupancy ALT
         alf = oechem.OEAltLocationFactory(ref_prot)
         if alf.GetGroupCount() != 0:
             alf.MakePrimaryAltMol(ref_prot)
 
-    ## Split out protein components and align if requested
+    # Split out protein components and align if requested
 
     if split_initial_complex:
         split_dict = split_openeye_mol(initial_complex)
@@ -360,12 +357,12 @@ def align_receptor(
     else:
         initial_prot_temp = initial_complex
 
-    ## Extract if not dimer
+    # Extract if not dimer
     if dimer:
         initial_prot = initial_prot_temp
     else:
-        ### TODO: Have to figure out how to handle water here if it's in a
-        ###  different chain from the protein
+        # TODO: Have to figure out how to handle water here if it's in a
+        #  different chain from the protein
         initial_prot = oechem.OEGraphMol()
         chain_pred = oechem.OEHasChainID(mobile_chain)
         oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
@@ -373,7 +370,7 @@ def align_receptor(
         if split_ref:
             ref_prot = split_openeye_mol(ref_prot)["pro"]
 
-        ## Set up predicates
+        # Set up predicates
         if ref_chain is not None:
             not_water = oechem.OENotAtom(oechem.OEIsWater())
             ref_chain = oechem.OEHasChainID(ref_chain)
@@ -412,18 +409,14 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
     oechem.OEGraphMol
         Newly mutated molecule
     """
-    ## Create a copy of the molecule to avoid modifying original molecule
+    # Create a copy of the molecule to avoid modifying original molecule
     mut_prot = input_mol.CreateCopy()
-    ## Get sequence of input protein
-    input_mol_chain = [
-        r.GetExtChainID() for r in oechem.OEGetResidues(input_mol)
-    ]
+    # Get sequence of input protein
+    input_mol_chain = [r.GetExtChainID() for r in oechem.OEGetResidues(input_mol)]
     input_mol_seq = [r.GetName() for r in oechem.OEGetResidues(input_mol)]
-    input_mol_num = [
-        r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)
-    ]
+    input_mol_num = [r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)]
 
-    ## Build mutation map from OEResidue to new res name by indexing from res num
+    # Build mutation map from OEResidue to new res name by indexing from res num
     mut_map = {}
     for old_res_name, res_num, chain, r in zip(
         input_mol_seq,
@@ -431,32 +424,32 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
         input_mol_chain,
         oechem.OEGetResidues(mut_prot),
     ):
-        ## Skip if not in identified protein chains
+        # Skip if not in identified protein chains
         if protein_chains:
             if chain not in protein_chains:
                 continue
-        ## Skip if we're looking at a water
+        # Skip if we're looking at a water
         if old_res_name == "HOH":
             continue
         try:
             new_res = res_list[res_num - 1]
         except IndexError:
-            ## If the residue number is out of range (because its a water or something weird)
-            ## then we can skip right on by it
+            # If the residue number is out of range (because its a water or something
+            # weird) then we can skip right on by it
             continue
         if new_res != old_res_name:
             print(res_num, old_res_name, new_res)
             mut_map[r] = new_res
 
-    ## Return early if no mutations found
+    # Return early if no mutations found
     if len(mut_map) == 0:
         print("No mutations found", flush=True)
         return input_mol
 
-    ## Mutate and build sidechains
+    # Mutate and build sidechains
     oespruce.OEMutateResidues(mut_prot, mut_map)
 
-    ## Place hydrogens
+    # Place hydrogens
     if place_h:
         oechem.OEPlaceHydrogens(mut_prot)
 
@@ -495,10 +488,10 @@ def prep_receptor(
     """
     # initial_prot = build_dimer_from_monomer(initial_prot)
 
-    ## Add Hs to prep protein and ligand
+    # Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
 
-    ## Set up DU building options
+    # Set up DU building options
     opts = oespruce.OEMakeDesignUnitOptions()
     opts.SetSuperpose(False)
     if loop_db is not None:
@@ -506,16 +499,15 @@ def prep_receptor(
             loop_db
         )
 
-    ## Options set from John's function ########################################
-    ## (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
+    # Options set from John's function ####################
+    # (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
     opts.GetPrepOptions().SetStrictProtonationMode(True)
     # set minimal number of ligand atoms to 5, e.g. a 5-membered ring fragment\
     opts.GetSplitOptions().SetMinLigAtoms(5)
 
-    # also consider alternate locations outside binding pocket, important for later filtering
-    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
-        False
-    )
+    # also consider alternate locations outside binding pocket, important for later
+    # filtering
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(False)
 
     # alignment options, only matches are important
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
@@ -546,15 +538,13 @@ def prep_receptor(
         # Generate ligand tautomers
         opts.GetPrepOptions().GetProtonateOptions().SetGenerateTautomers(True)
 
-    ############################################################################
+    ######################################
 
-    ## Structure metadata object
+    # Structure metadata object
     metadata = oespruce.OEStructureMetadata()
 
-    ## Allow for adding residues at the beginning/end if they're missing
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
-        True
-    )
+    # Allow for adding residues at the beginning/end if they're missing
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(True)
     if seqres:
         all_prot_chains = {
             res.GetExtChainID()
@@ -567,15 +557,13 @@ def prep_receptor(
             seq_metadata.SetSequence(seqres)
             metadata.AddSequenceMetadata(seq_metadata)
 
-    ## Finally make new DesignUnit
-    dus = list(
-        oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
-    )
+    # Finally make new DesignUnit
+    dus = list(oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue))
     assert dus[0].HasProtein()
     if not protein_only:
         assert dus[0].HasLigand()
 
-    ## Generate docking receptor for each DU
+    # Generate docking receptor for each DU
     for du in dus:
         oedocking.OEMakeReceptor(du)
 
@@ -583,25 +571,20 @@ def prep_receptor(
 
 
 def build_dimer_from_monomer(prot):
-    ## Build monomer into dimer as necessary (will need to handle
-    ##  re-labeling chains since the monomer seems to get the chainID C)
-    ## Shouldn't affect the protein if the dimer has already been built
+    # Build monomer into dimer as necessary (will need to handle
+    #  re-labeling chains since the monomer seems to get the chainID C)
+    # Shouldn't affect the protein if the dimer has already been built
     bus = list(oespruce.OEExtractBioUnits(prot))
 
-    ## Need to cast to OEGraphMol bc returned type is OEMolBase, which
-    ##  doesn't pickle
+    # Need to cast to OEGraphMol bc returned type is OEMolBase, which
+    #  doesn't pickle
     prot = oechem.OEGraphMol(bus[0])
 
-    ## Keep track of chain IDs
+    # Keep track of chain IDs
     all_chain_ids = {
         r.GetExtChainID()
         for r in oechem.OEGetResidues(prot)
-        if all(
-            [
-                not oechem.OEIsWater()(a)
-                for a in oechem.OEGetResidueAtoms(prot, r)
-            ]
-        )
+        if all([not oechem.OEIsWater()(a) for a in oechem.OEGetResidueAtoms(prot, r)])
     }
     if len(all_chain_ids) != 2:
         raise AssertionError(f"Chains: {all_chain_ids}")
@@ -631,12 +614,12 @@ def remove_extra_ligands(mol, lig_chain=None):
     oechem.OEMolBase
         Molecule with extra ligand copies removed.
     """
-    ## Atom filter to match all atoms in residue with name LIG
+    # Atom filter to match all atoms in residue with name LIG
     all_lig_match = oechem.OEAtomMatchResidueID()
     all_lig_match.SetName("LIG")
     all_lig_filter = oechem.OEAtomMatchResidue(all_lig_match)
 
-    ## Detect ligand chain to keep if none is given
+    # Detect ligand chain to keep if none is given
     if lig_chain is None:
         lig_chain = sorted(
             {
@@ -645,7 +628,7 @@ def remove_extra_ligands(mol, lig_chain=None):
             }
         )[0]
 
-    ## Copy molecule and delete all lig atoms that don't have the desired chain
+    # Copy molecule and delete all lig atoms that don't have the desired chain
     mol_copy = mol.CreateCopy()
     for a in mol_copy.GetAtoms(all_lig_filter):
         if oechem.OEAtomGetResidue(a).GetExtChainID() != lig_chain:
@@ -748,7 +731,7 @@ def prep_mp(
             ref_chain="A",
         )
         # prone to race condition if multiple processes are writing to same file
-        # so need a file prefix 
+        # so need a file prefix
         save_openeye_pdb(initial_prot, f"{xtal.output_name}-align_test.pdb")
     ## Take the first returned DU and save it
     try:

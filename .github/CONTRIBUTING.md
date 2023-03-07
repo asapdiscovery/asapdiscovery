@@ -1,7 +1,7 @@
 # How to contribute
 
 We welcome contributions from external contributors, and this document
-describes how to merge code changes into this asapdiscovery. 
+describes how to merge code changes into this asapdiscovery.
 
 ## Getting Started
 

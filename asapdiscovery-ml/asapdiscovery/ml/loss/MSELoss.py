@@ -15,8 +15,8 @@ class MSELoss(TorchMSELoss):
              * "step": step MSE loss
              * "uncertainty": MSE loss with added uncertainty
         """
-        ## No reduction so we can apply whatever adjustment to each sample
-        super(MSELoss, self).__init__(reduction="none")
+        # No reduction so we can apply whatever adjustment to each sample
+        super().__init__(reduction="none")
 
         if loss_type is not None:
             loss_type = loss_type.lower()
@@ -27,7 +27,7 @@ class MSELoss(TorchMSELoss):
             else:
                 raise ValueError(f'Unknown loss_type "{loss_type}"')
         else:
-            self.loss_function = super(MSELoss, self).forward
+            self.loss_function = super().forward
 
         self.loss_type = loss_type
 
@@ -39,13 +39,13 @@ class MSELoss(TorchMSELoss):
         """
 
         if self.loss_type is None:
-            ## Just need to calculate mean to get MSE
+            # Just need to calculate mean to get MSE
             return self.loss_function(input, target).mean()
         elif self.loss_type == "step":
-            ## Call step_loss
+            # Call step_loss
             return self.loss_function(input, target, in_range)
         elif self.loss_type == "uncertainty":
-            ## Call uncertainty_loss
+            # Call uncertainty_loss
             return self.loss_function(input, target, uncertainty)
 
     def step_loss(self, input, target, in_range):
@@ -72,13 +72,13 @@ class MSELoss(TorchMSELoss):
         torch.Tensor
             Calculated loss
         """
-        ## Calculate loss
-        loss = super(MSELoss, self).forward(input, target)
+        # Calculate loss
+        loss = super().forward(input, target)
 
-        ## Calculate mask:
-        ##  1.0 - If input or data is semiquant and prediction is inside the
-        ##    assay range
-        ##  0.0 - If data is semiquant and prediction is outside the assay range
+        # Calculate mask:
+        #  1.0 - If input or data is semiquant and prediction is inside the
+        #    assay range
+        #  0.0 - If data is semiquant and prediction is outside the assay range
         mask = torch.tensor(
             [
                 1.0 if r == 0 else ((r < 0) == (t < i))

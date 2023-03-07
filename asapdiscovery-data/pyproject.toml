@@ -25,8 +25,17 @@ dependencies = [
     #"openeye-toolkit",
     "sigfig",
     #"pymol",
-    "requests"
+    "requests",
+    "typing-extensions",
+    "click",
+    "boto3",
+    "moto",
+    "flask",
+    "flask_cors"
 ]
+[project.scripts]
+asapdiscovery-data = "asapdiscovery.data.cli:cli"
+
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"

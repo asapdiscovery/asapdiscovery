@@ -19,14 +19,19 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macOS-latest, ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [ "3.9", "3.10"]
 
     steps:
     - uses: actions/checkout@v1
@@ -43,14 +48,13 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        environment-file: devtools/conda-envs/moonshot_ml.yaml
-
-        channels: conda-forge,defaults
-
+        environment-file: devtools/conda-envs/test.yaml
+        miniforge-variant: Mambaforge
         activate-environment: test
         auto-update-conda: false
         auto-activate-base: false
         show-channel-urls: true
+        use-mamba: true
 
     - name: Install packages
 

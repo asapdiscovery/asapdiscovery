@@ -2,31 +2,23 @@
 Make complex PDB files for docked SDF files.
 """
 import argparse
-from openeye import oechem
 import os
-import pandas
-import re
-import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    load_openeye_sdf,
-    save_openeye_pdb,
-    split_openeye_mol,
-)
+import pandas
+from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
+from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
+from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: 402
+from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402
+from asapdiscovery.data.openeye import combine_protein_ligand, oechem
+
 
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## I/O args
-    parser.add_argument(
-        "-i", "--in_file", required=True, help="Input CSV file."
-    )
-    parser.add_argument(
-        "-d", "--xtal_dir", required=True, help="Fragalysis directory."
-    )
+    # I/O args
+    parser.add_argument("-i", "--in_file", required=True, help="Input CSV file.")
+    parser.add_argument("-d", "--xtal_dir", required=True, help="Fragalysis directory.")
     parser.add_argument(
         "-o",
         "--out_dir",
@@ -39,7 +31,7 @@ def get_args():
         "-n", "--lig_name", default="LIG", help="Residue name for ligand."
     )
 
-    ## Selection args
+    # Selection args
     parser.add_argument(
         "-p",
         "--prot_only",
@@ -53,24 +45,43 @@ def get_args():
 def main():
     args = get_args()
 
-    ## Load docking results
+    # Load docking results
     df = pandas.read_csv(args.in_file, index_col=0)
 
-    ## Dict to hold loaded Mpro structures to avoid reloading the same one a
-    ##  bunch of times
+    # Dict to hold loaded Mpro structures to avoid reloading the same one a
+    #  bunch of times
     xtal_structs = {}
     use_cols = ["ligand_id", "du_structure", "docked_file"]
     for _, (compound_id, struct, docked_fn) in df[use_cols].iterrows():
         try:
-            xtal = xtal_structs[struct].CreateCopy()
+            xtal = xtal_structs[struct][0].CreateCopy()
+            new_resid, new_atomid = xtal_structs[struct][1:]
         except KeyError:
             xtal_fn = f"{args.xtal_dir}/{struct}/{struct}_apo.pdb"
             xtal = load_openeye_pdb(xtal_fn)
 
-            ## Get rid of non-protein atoms
+            # Get rid of non-protein atoms
             if args.prot_only:
                 xtal = split_openeye_mol(xtal, lig_chain=None)["pro"]
-            xtal_structs[struct] = xtal.CreateCopy()
+
+            # Find max resid for numbering the ligand residue
+            new_resid = (
+                max([r.GetResidueNumber() for r in oechem.OEGetResidues(xtal)]) + 1
+            )
+
+            # Same with atom numbering
+            new_atomid = (
+                max(
+                    [
+                        oechem.OEAtomGetResidue(a).GetSerialNumber()
+                        for a in xtal.GetAtoms()
+                    ]
+                )
+                + 1
+            )
+
+            # Store data to avoid reloading/recalculating
+            xtal_structs[struct] = (xtal.CreateCopy(), new_resid, new_atomid)
 
         try:
             mol = load_openeye_sdf(docked_fn)
@@ -84,13 +95,9 @@ def main():
             )
             continue
 
-        ## Adjust molecule residue properties
-        oechem.OEPerceiveResidues(mol)
-        for a in mol.GetAtoms():
-            res = oechem.OEAtomGetResidue(a)
-            res.SetName(args.lig_name.upper())
-
-        oechem.OEAddMols(xtal, mol)
+        xtal = combine_protein_ligand(
+            xtal, mol, resid=new_resid, start_atom_id=new_atomid
+        )
 
         out_base = f"{compound_id}_{struct}"
         if args.out_dir:

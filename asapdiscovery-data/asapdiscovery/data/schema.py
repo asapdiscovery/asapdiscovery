@@ -1,7 +1,7 @@
-from typing import Dict, List
 from pydantic import BaseModel, Field
 
-## From FAH #####################################################################
+
+# From FAH ###################################
 class Model(BaseModel):
     class Config:
         allow_mutation = False
@@ -40,7 +40,7 @@ class ExperimentalCompoundData(Model):
         description="If True, the compound was enantiopure, but unknown if stereochemistry recorded in SMILES is correct",
     )
 
-    experimental_data: Dict[str, float] = Field(
+    experimental_data: dict[str, float] = Field(
         dict(),
         description='Experimental data fields, including "pIC50" and uncertainty (either "pIC50_stderr" or  "pIC50_{lower|upper}"',
     )
@@ -49,10 +49,10 @@ class ExperimentalCompoundData(Model):
 class ExperimentalCompoundDataUpdate(Model):
     """A bundle of experimental data for compounds (racemic or enantiopure)."""
 
-    compounds: List[ExperimentalCompoundData]
+    compounds: list[ExperimentalCompoundData]
 
 
-################################################################################
+########################################
 
 
 class CrystalCompoundData(BaseModel):
@@ -77,15 +77,11 @@ class CrystalCompoundData(BaseModel):
         None, description="Chain identifying the active site of interest."
     )
     output_name: str = Field(None, description="Name of output structure.")
-    active_site: str = Field(
-        None, description="OpenEye formatted active site residue."
-    )
+    active_site: str = Field(None, description="OpenEye formatted active site residue.")
     oligomeric_state: str = Field(
         None, description="Oligomeric state of the asymmetric unit."
     )
-    chains: list = Field(
-        None, description="List of chainids in the asymmetric unit."
-    )
+    chains: list = Field(None, description="List of chainids in the asymmetric unit.")
     protein_chains: list = Field(
         None, description="List of chains corresponding to protein residues."
     )
@@ -98,10 +94,8 @@ class PDBStructure(Model):
 
 class EnantiomerPair(Model):
     active: ExperimentalCompoundData = Field(description="Active enantiomer.")
-    inactive: ExperimentalCompoundData = Field(
-        description="Inactive enantiomer."
-    )
+    inactive: ExperimentalCompoundData = Field(description="Inactive enantiomer.")
 
 
 class EnantiomerPairList(Model):
-    pairs: List[EnantiomerPair]
+    pairs: list[EnantiomerPair]

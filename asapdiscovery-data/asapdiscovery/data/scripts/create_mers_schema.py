@@ -5,38 +5,28 @@ import sys
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from asapdiscovery.data.schema import (
-    CrystalCompoundData,
-    PDBStructure,
-)
-from asapdiscovery.data.pdb import load_pdbs_from_yaml
-from asapdiscovery.data.utils import (
-    parse_experimental_compound_data,
-    parse_fragalysis_data,
-)
+from asapdiscovery.data.pdb import load_pdbs_from_yaml  # noqa: E402
+from asapdiscovery.data.schema import CrystalCompoundData  # noqa: E402
+from asapdiscovery.data.schema import PDBStructure  # noqa: E402
+from asapdiscovery.data.utils import parse_experimental_compound_data  # noqa: E402
+from asapdiscovery.data.utils import parse_fragalysis_data  # noqa: E402
 
 
-################################################################################
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument(
-        "-exp", required=True, help="CSV file with experimental data."
-    )
+    parser.add_argument("-exp", required=True, help="CSV file with experimental data.")
     parser.add_argument(
         "-x", required=True, help="CSV file with crystal compound information."
     )
     parser.add_argument(
         "-x_dir", required=True, help="Directory with crystal structures."
     )
-    parser.add_argument(
-        "-o_dir", required=True, help="Directory to output files"
-    )
+    parser.add_argument("-o_dir", required=True, help="Directory to output files")
     parser.add_argument(
         "-y", default="mers-structures.yaml", help="MERS structures yaml file"
     )
-    parser.add_argument(
-        "-m_dir", required=True, help="MERS structure directory"
-    )
+    parser.add_argument("-m_dir", required=True, help="MERS structure directory")
     return parser.parse_args()
 
 
@@ -48,16 +38,14 @@ def main():
     sars_xtals = parse_fragalysis_data(args.x, args.x_dir, cmpd_ids, args.o_dir)
     pdb_list = load_pdbs_from_yaml(args.y)
     pdb_fn_dict = {
-        pdb: os.path.join(
-            args.m_dir, f"{pdb}_aligned_to_frag_ref_chainA_protein.pdb"
-        )
+        pdb: os.path.join(args.m_dir, f"{pdb}_aligned_to_frag_ref_chainA_protein.pdb")
         for pdb in pdb_list
     }
     mers_structures = [
         PDBStructure(pdb_id=pdb, str_fn=fn) for pdb, fn in pdb_fn_dict.items()
     ]
 
-    ## could use itertools but not really necessary yet?
+    # could use itertools but not really necessary yet?
     combinations = [(lig, pdb) for lig in ligands for pdb in mers_structures]
     print(f"Running {len(combinations)} docking combinations")
     for lig, pdb in combinations[0]:
@@ -67,10 +55,11 @@ def main():
         else:
             print(f"Skipping {pdb.pdb_id}, {lig.compound_id}")
 
-        ## Profit?
+        # Profit?
 
-    ## TODO
-    # Run MCSS on the mols without SARS2 ligands and return a dataset for each Compound ID
+    # TODO
+    # Run MCSS on the mols without SARS2 ligands and return a dataset for each
+    # Compound ID
     # Get dictionary mapping a sars_dataset to each exp_ligand (can read from csv file)
     # Construct three objects:
     # exp_ligand(SMILES, Compound ID, IC50s)

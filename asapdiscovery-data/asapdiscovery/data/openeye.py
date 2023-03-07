@@ -1,10 +1,89 @@
-from openeye import oechem, oedocking, oegrid
+from openeye import oechem, oedepict, oedocking, oegrid, oespruce  # noqa: F401
+
+# exec on module import
+if not oechem.OEChemIsLicensed("python"):
+    raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
+
+
+def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=None):
+    """
+    Combine a protein OEMol and ligand OEMol into one, handling residue/atom
+    numbering, and HetAtom status.
+
+    Parameters
+    ----------
+    prot : oechem.OEMol
+        OEMol with the protein atoms. This should have perceived resiudes
+    lig : oechem.OEMol
+        OEMol with the ligand atoms
+    lig_name : str, default="LIG"
+        Residue name to give to the ligand atoms
+    resid : int, optional
+        Which residue number to assign to the ligand. If not given, the largest existing
+        residue number in `prot` will be found, and the ligand will be assigned the next
+        number
+    start_atom_id : int, optional
+        Which atom number to assign to the first atom in the ligand. If not given, the
+        next available atom number will be calculated and assigned
+
+    Returns
+    -------
+    oechem.OEMol
+        Combined molecule, with the appropriate biopolymer field set for the lig atoms
+    """
+    # Calculate residue number if necessary
+    if resid is None:
+        # Find max resid for numbering the ligand residue
+        # Add 1 so we start numbering at the next residue id
+        resid = max([r.GetResidueNumber() for r in oechem.OEGetResidues(prot)]) + 1
+
+    # Calculate atom number if necessary
+    if start_atom_id is None:
+        # Same with atom numbering
+        start_atom_id = (
+            max([oechem.OEAtomGetResidue(a).GetSerialNumber() for a in prot.GetAtoms()])
+            + 1
+        )
+
+    # Make copies so we don't modify the original molecules
+    prot = prot.CreateCopy()
+    lig = lig.CreateCopy()
+
+    # Keep track of how many times each element has been seen in the ligand
+    # Each atom in a residue needs a unique name, so just append this number to the
+    #  element
+    num_elem_atoms = {}
+    # Adjust molecule residue properties
+    for a in lig.GetAtoms():
+        # Set atom name
+        cur_name = oechem.OEGetAtomicSymbol(a.GetAtomicNum())
+        try:
+            new_name = f"{cur_name}{num_elem_atoms[cur_name]}"
+            num_elem_atoms[cur_name] += 1
+        except KeyError:
+            new_name = cur_name
+            num_elem_atoms[cur_name] = 1
+        a.SetName(new_name)
+
+        # Set residue level properties
+        res = oechem.OEAtomGetResidue(a)
+        res.SetName(lig_name.upper())
+        res.SetResidueNumber(resid)
+        res.SetSerialNumber(start_atom_id)
+        start_atom_id += 1
+        res.SetHetAtom(True)
+        oechem.OEAtomSetResidue(a, res)
+
+    # Combine the mols
+    oechem.OEAddMols(prot, lig)
+
+    return prot
 
 
 def load_openeye_pdb(pdb_fn, alt_loc=False):
     ifs = oechem.oemolistream()
     ifs_flavor = oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA
-    ## Add option for keeping track of alternat locations in PDB file
+    # Add option for keeping track of alternat locations in PDB file
     if alt_loc:
         ifs_flavor |= oechem.OEIFlavor_PDB_ALTLOC
     ifs.SetFlavor(
@@ -132,19 +211,19 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     """
     from .utils import trim_small_chains
 
-    ## Test splitting
+    # Test splitting
     lig_mol = oechem.OEGraphMol()
     prot_mol = oechem.OEGraphMol()
     water_mol = oechem.OEGraphMol()
     oth_mol = oechem.OEGraphMol()
 
-    ## Make splitting split out covalent ligands
-    ## TODO: look into different covalent-related options here
+    # Make splitting split out covalent ligands
+    # TODO: look into different covalent-related options here
     opts = oechem.OESplitMolComplexOptions()
     opts.SetSplitCovalent(True)
     opts.SetSplitCovalentCofactors(True)
 
-    ## Select protein as all protein atoms in chain A or chain B
+    # Select protein as all protein atoms in chain A or chain B
     prot_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_Protein
     )
@@ -157,7 +236,7 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     a_or_b_chain = oechem.OEOrRoleSet(a_chain, b_chain)
     opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
 
-    ## Select ligand as all residues with resn LIG
+    # Select ligand as all residues with resn LIG
     lig_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_Ligand
     )
@@ -169,11 +248,9 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
         )
         opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
 
-    ## Set water filter (keep all waters in A, B, or W chains)
-    ##  (is this sufficient? are there other common water chain ids?)
-    wat_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Water
-    )
+    # Set water filter (keep all waters in A, B, or W chains)
+    #  (is this sufficient? are there other common water chain ids?)
+    wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
     w_chain = oechem.OERoleMolComplexFilterFactory(
         oechem.OEMolComplexChainRoleFactory("W")
     )
@@ -226,9 +303,7 @@ def load_openeye_sdfs(sdf_fn):
     return cmpd_list
 
 
-def get_ligand_rmsd_from_pdb_and_sdf(
-    ref_path, mobile_path, fetch_docking_results=True
-):
+def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_results=True):
     ref_pdb = load_openeye_pdb(ref_path)
     ref = split_openeye_mol(ref_pdb)["lig"]
     mobile = load_openeye_sdf(mobile_path)
@@ -271,11 +346,11 @@ def split_openeye_design_unit(du, lig=None, lig_title=None):
         lig = oechem.OEGraphMol()
         du.GetLigand(lig)
 
-    ## Set ligand title, useful for the combined sdf file
+    # Set ligand title, useful for the combined sdf file
     if lig_title:
         lig.SetTitle(f"{lig_title}")
 
-    ## Give ligand atoms their own chain "L" and set the resname to "LIG"
+    # Give ligand atoms their own chain "L" and set the resname to "LIG"
     residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
     residue.SetChainID("L")
     residue.SetName("LIG")
@@ -283,12 +358,13 @@ def split_openeye_design_unit(du, lig=None, lig_title=None):
     for atom in list(lig.GetAtoms()):
         oechem.OEAtomSetResidue(atom, residue)
 
-    ## Combine protein and ligand and save
-    ## TODO: consider saving water as well
+    # Combine protein and ligand and save
+    # TODO: consider saving water as well
     oechem.OEAddMols(complex, prot)
     oechem.OEAddMols(complex, lig)
 
-    ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
+    # Clean up PDB info by re-perceiving, perserving chain ID,
+    # residue number, and residue name
     openeye_perceive_residues(prot)
     return lig, prot, complex
 

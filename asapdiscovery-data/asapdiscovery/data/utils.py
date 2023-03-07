@@ -1,18 +1,18 @@
+import glob
 import os.path
-from openeye import oechem
+import re
+from typing import Optional, Union
+
 import numpy as np
 import pandas
-import re
 import rdkit.Chem as Chem
-import glob
-from typing import Union, List, Optional
-
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import (
-    ExperimentalCompoundData,
-    ExperimentalCompoundDataUpdate,
     CrystalCompoundData,
     EnantiomerPair,
     EnantiomerPairList,
+    ExperimentalCompoundData,
+    ExperimentalCompoundDataUpdate,
 )
 
 
@@ -123,15 +123,17 @@ def edit_pdb_file(
     pdb_out : str, optional
         Output PDB file. If not given, appends _seqres to the input file.
     """
-    ## TODO: replace DBREF string as well
+    # TODO: replace DBREF string as well
 
-    pdbfile_lines = [line for line in open(pdb_in, "r") if "UNK" not in line]
+    pdbfile_lines = [line for line in open(pdb_in) if "UNK" not in line]
     pdbfile_lines = [line for line in pdbfile_lines if "LINK" not in line]
 
-    ## Fix bad CL atom names
-    pdbfile_lines = [re.sub("CL", "Cl", l) for l in pdbfile_lines]
+    # Fix bad CL atom names
+    pdbfile_lines = [re.sub("CL", "Cl", l) for l in pdbfile_lines]  # noqa: E741
     if seqres_str:
-        pdbfile_lines = [line for line in pdbfile_lines if not "SEQRES" in line]
+        pdbfile_lines = [
+            line for line in pdbfile_lines if not "SEQRES" in line  # noqa: E713
+        ]
 
         pdbfile_lines = [
             line.rstrip() + "\n" for line in seqres_str.split("\n")
@@ -139,7 +141,7 @@ def edit_pdb_file(
 
     if edit_remark350:
         pdbfile_lines = [
-            line for line in pdbfile_lines if not "REMARK 350" in line
+            line for line in pdbfile_lines if not "REMARK 350" in line  # noqa: E713
         ]
         if chains and oligomeric_state:
             remark_str = get_remark_str(chains, oligomeric_state)
@@ -167,8 +169,8 @@ def seqres_to_res_list(seqres_str):
     -------
 
     """
-    ## Grab the sequence from the sequence str
-    ## use chain ID column
+    # Grab the sequence from the sequence str
+    # use chain ID column
     seqres_chain_column = 11
     seq_lines = [
         line[19:]
@@ -206,11 +208,11 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         The parsed ExperimentalCompoundDataUpdate.
     """
 
-    ## Load and remove any straggling compounds w/o SMILES data
+    # Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
     df = df.loc[~df["suspected_SMILES"].isna(), :]
 
-    ## Filter out chiral molecules if requested
+    # Filter out chiral molecules if requested
     achiral_df = get_achiral_molecules(df)
     if achiral:
         df = achiral_df.copy()
@@ -219,33 +221,29 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         for compound_id in df["Canonical PostEra ID"]
     ]
 
-    ## Get rid of the </> signs, since we really only need the values to sort
-    ##  enantiomer pairs
+    # Get rid of the </> signs, since we really only need the values to sort
+    #  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
     df = df.loc[~df[pic50_key].isna(), :]
-    pic50_range = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
-    ]
+    pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c.strip("<> ")) for c in df[pic50_key]]
     df["pIC50"] = pic50_vals
     df["pIC50_range"] = pic50_range
     semiquant = df["pIC50_range"].astype(bool)
 
-    ### TODO: handle multiple measurements for the same compound
-    ###  (average of stderr for each compound)
+    # TODO: handle multiple measurements for the same compound
+    #  (average of stderr for each compound)
     ci_lower_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Lower) (µM)"
+        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 " "CI (Lower) (µM)"
     )
     ci_upper_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Upper) (µM)"
+        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 " "CI (Upper) (µM)"
     )
 
-    ## Convert IC50 vals to pIC50 and calculate standard error for  95% CI
+    # Convert IC50 vals to pIC50 and calculate standard error for  95% CI
     pic50_stderr = []
     for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
-        ## Cast to float
+        # Cast to float
         try:
             ci_lower = float(ci_lower)
             ci_upper = float(ci_upper)
@@ -255,24 +253,22 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
         if pandas.isna(ci_lower) or pandas.isna(ci_upper):
             pic50_stderr.append(np.nan)
         else:
-            ## First convert bounds from IC50 (uM) to pIC50
+            # First convert bounds from IC50 (uM) to pIC50
             pic50_ci_upper = -np.log10(ci_upper * 10e-6)
             pic50_ci_lower = -np.log10(ci_lower * 10e-6)
-            ## Assume size of 95% CI == 4*sigma
+            # Assume size of 95% CI == 4*sigma
             pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
     df["pIC50_stderr"] = pic50_stderr
-    ## Fill standard error for semi-qunatitative data with the mean of others
-    df.loc[semiquant, "pIC50_stderr"] = df.loc[
-        ~semiquant, "pIC50_stderr"
-    ].mean()
+    # Fill standard error for semi-qunatitative data with the mean of others
+    df.loc[semiquant, "pIC50_stderr"] = df.loc[~semiquant, "pIC50_stderr"].mean()
 
-    ### For now just keep the first measure for each compound_id
+    # For now just keep the first measure for each compound_id
     compounds = []
     seen_compounds = {}
     for i, (_, c) in enumerate(df.iterrows()):
         compound_id = c["Canonical PostEra ID"]
         if compound_id in seen_compounds:
-            ## If there are no NaN values, don't need to fix
+            # If there are no NaN values, don't need to fix
             if not seen_compounds[compound_id]:
                 continue
 
@@ -282,10 +278,8 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
             "pIC50_range": c["pIC50_range"],
             "pIC50_stderr": c["pIC50_stderr"],
         }
-        ## Keep track of if there are any NaN values
-        seen_compounds[compound_id] = np.isnan(
-            list(experimental_data.values())
-        ).any()
+        # Keep track of if there are any NaN values
+        seen_compounds[compound_id] = np.isnan(list(experimental_data.values())).any()
 
         compounds.append(
             ExperimentalCompoundData(
@@ -344,67 +338,59 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     """
     from rdkit.Chem import CanonSmiles
 
-    ## Load and remove any straggling compounds w/o SMILES data
+    # Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
     df = df.loc[~df["suspected_SMILES"].isna(), :]
 
-    ## Remove stereochemistry tags and get canonical SMILES values (to help
-    ##  group stereoisomers)
-    smi_nostereo = [
-        CanonSmiles(s, useChiral=False) for s in df["suspected_SMILES"]
-    ]
+    # Remove stereochemistry tags and get canonical SMILES values (to help
+    #  group stereoisomers)
+    smi_nostereo = [CanonSmiles(s, useChiral=False) for s in df["suspected_SMILES"]]
     df["suspected_SMILES_nostereo"] = smi_nostereo
 
-    ## Sort by non-stereo SMILES to put the enantiomer pairs together
+    # Sort by non-stereo SMILES to put the enantiomer pairs together
     df = df.sort_values("suspected_SMILES_nostereo")
 
-    ## Get rid of the </> signs, since we really only need the values to sort
-    ##  enantiomer pairs
+    # Get rid of the </> signs, since we really only need the values to sort
+    #  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
-    pic50_range = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]
-    ]
+    pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c[pic50_key].strip("<> ")) for _, c in df.iterrows()]
     df["pIC50"] = pic50_vals
     df["pIC50_range"] = pic50_range
     semiquant = df["pIC50_range"].astype(bool)
 
     ci_lower_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Lower) (µM)"
+        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 " "CI (Lower) (µM)"
     )
     ci_upper_key = (
-        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 "
-        "CI (Upper) (µM)"
+        "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 " "CI (Upper) (µM)"
     )
-    ## Calculate 95% CI in pIC50 units based on IC50 vals (not sure if the
-    ##  difference should be taken before or after taking the -log10)
+    # Calculate 95% CI in pIC50 units based on IC50 vals (not sure if the
+    #  difference should be taken before or after taking the -log10)
     pic50_stderr = []
     for _, (ci_lower, ci_upper) in df[[ci_lower_key, ci_upper_key]].iterrows():
         if pandas.isna(ci_lower) or pandas.isna(ci_upper):
             pic50_stderr.append(np.nan)
         else:
-            ## First convert bounds from IC50 (uM) to pIC50
+            # First convert bounds from IC50 (uM) to pIC50
             pic50_ci_upper = -np.log10(ci_upper * 10e-6)
             pic50_ci_lower = -np.log10(ci_lower * 10e-6)
-            ## Assume size of 95% CI == 4*sigma => calculate variance from stdev
+            # Assume size of 95% CI == 4*sigma => calculate variance from stdev
             pic50_stderr.append((pic50_ci_lower - pic50_ci_upper) / 4)
     df["pIC50_stderr"] = pic50_stderr
-    ## Fill standard error for semi-qunatitative data with the mean of others
-    df.loc[semiquant, "pIC50_stderr"] = df.loc[
-        ~semiquant, "pIC50_stderr"
-    ].mean()
+    # Fill standard error for semi-qunatitative data with the mean of others
+    df.loc[semiquant, "pIC50_stderr"] = df.loc[~semiquant, "pIC50_stderr"].mean()
 
     enant_pairs = []
-    ## Loop through the enantiomer pairs and rank them
+    # Loop through the enantiomer pairs and rank them
     for ep in df.groupby("suspected_SMILES_nostereo"):
-        ## Make sure there aren't any singletons
+        # Make sure there aren't any singletons
         if ep[1].shape[0] != 2:
             print(f"{ep[1].shape[0]} mols for {ep[0]}", flush=True)
             continue
 
         p = []
-        ## Sort by pIC50 value, higher to lower
+        # Sort by pIC50 value, higher to lower
         ep = ep[1].sort_values("pIC50", ascending=False)
         for _, c in ep.iterrows():
             compound_id = c["Canonical PostEra ID"]
@@ -469,7 +455,7 @@ def get_achiral_molecules(mol_df):
     """
     from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 
-    ## Check whether a SMILES is chiral or not
+    # Check whether a SMILES is chiral or not
     check_achiral = (
         lambda smi: len(
             FindMolChiralCenters(
@@ -481,17 +467,13 @@ def get_achiral_molecules(mol_df):
         )
         == 0
     )
-    ## Check each molecule, first looking at suspected_SMILES, then
-    ##  shipment_SMILES if not present
+    # Check each molecule, first looking at suspected_SMILES, then
+    #  shipment_SMILES if not present
     achiral_idx = []
     for _, r in mol_df.iterrows():
-        if ("suspected_SMILES" in r) and (
-            not pandas.isna(r["suspected_SMILES"])
-        ):
+        if ("suspected_SMILES" in r) and (not pandas.isna(r["suspected_SMILES"])):
             achiral_idx.append(check_achiral(r["suspected_SMILES"]))
-        elif ("shipment_SMILES" in r) and (
-            not pandas.isna(r["shipment_SMILES"])
-        ):
+        elif ("shipment_SMILES" in r) and (not pandas.isna(r["shipment_SMILES"])):
             achiral_idx.append(check_achiral(r["shipment_SMILES"]))
         else:
             raise ValueError(f'No SMILES found for {r["Canonical PostEra ID"]}')
@@ -542,9 +524,10 @@ def filter_molecules_dataframe(
         DataFrame containing compound information for all filtered molecules
     """
     import logging
+
     import numpy as np
-    from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
     import sigfig
+    from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 
     # Define functions to evaluate whether molecule is achiral, racemic, or resolved
     is_achiral = (
@@ -579,13 +562,15 @@ def filter_molecules_dataframe(
         )
         > 0
     )
-    is_enantiopure = lambda smi: (not is_achiral(smi)) and (not is_racemic(smi))
+    is_enantiopure = lambda smi: (not is_achiral(smi)) and (  # noqa: E731
+        not is_racemic(smi)
+    )
 
     # Re-label SMILES field and change name of PostEra ID field
     # mol_df = mol_df.rename(
     #     columns={smiles_fieldname: "smiles", "Canonical PostEra ID": "name"}
     # )
-    ## Add new columns so we can keep the original names
+    # Add new columns so we can keep the original names
     mol_df.loc[:, "smiles"] = mol_df.loc[:, smiles_fieldname]
     mol_df.loc[:, "name"] = mol_df.loc[:, "Canonical PostEra ID"]
 
@@ -595,15 +580,11 @@ def filter_molecules_dataframe(
     idx = mol_df.loc[:, "smiles"].isna()
     mol_df = mol_df.loc[~idx, :].copy()
     logging.debug(
-        (
-            f"  dataframe contains {mol_df.shape} entries after removing "
-            f"molecules with unspecified {smiles_fieldname} field"
-        )
+        f"  dataframe contains {mol_df.shape} entries after removing "
+        f"molecules with unspecified {smiles_fieldname} field"
     )
     # Convert CXSMILES to SMILES by removing extra info
-    mol_df.loc[:, "smiles"] = [
-        s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]
-    ]
+    mol_df.loc[:, "smiles"] = [s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]]
 
     # Determine which molecules will be retained
     include_flags = []
@@ -624,15 +605,13 @@ def filter_molecules_dataframe(
             try:
                 _ = float(row[f"{assay_name}: IC50 (µM)"])
                 include_flags.append(True)
-            except ValueError as e:
+            except ValueError:
                 include_flags.append(False)
 
         mol_df = mol_df.loc[include_flags, :]
         logging.debug(
-            (
-                f"  dataframe contains {mol_df.shape} entries after removing "
-                "semiquantitative data"
-            )
+            f"  dataframe contains {mol_df.shape} entries after removing "
+            "semiquantitative data"
         )
 
     # Compute pIC50s and uncertainties from 95% CIs
@@ -662,10 +641,7 @@ def filter_molecules_dataframe(
 
         except ValueError:
             # Could not convert to string because value was semiquantitative
-            if (
-                row[f"{assay_name}: IC50 (µM)"]
-                == "(IC50 could not be calculated)"
-            ):
+            if row[f"{assay_name}: IC50 (µM)"] == "(IC50 could not be calculated)":
                 pIC50 = "< 4.0"  # lower limit of detection
 
             # Keep pIC50 string
@@ -693,12 +669,12 @@ def get_sdf_fn_from_dataset(
     fn = os.path.join(fragalysis_dir, f"{dataset}_0A/{dataset}_0A.sdf")
     if not os.path.exists(fn):
         print(f"File {fn} not found...")
-        fn = None  ## not sure what behaviour this should have
+        fn = None  # not sure what behaviour this should have
     return fn
 
 
 def parse_experimental_compound_data(exp_fn: str, json_fn: str):
-    ## Load experimental data and trim columns
+    # Load experimental data and trim columns
     exp_df = pandas.read_csv(exp_fn)
     exp_cols = [
         "External ID",
@@ -708,16 +684,14 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
     exp_df = exp_df.loc[:, exp_cols].copy()
     exp_df.columns = ["External ID", "SMILES", "IC50"]
 
-    ## Convert semi-quantitative values into floats and trim any NaNs
+    # Convert semi-quantitative values into floats and trim any NaNs
     exp_df = exp_df.loc[~exp_df["IC50"].isna(), :]
-    ic50_range = [
-        -1 if "<" in c else (1 if ">" in c else 0) for c in exp_df["IC50"]
-    ]
+    ic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in exp_df["IC50"]]
     ic50_vals = [float(c.strip("<> ")) for c in exp_df["IC50"]]
     exp_df.loc[:, "IC50"] = ic50_vals
     exp_df["IC50_range"] = ic50_range
 
-    ## Convert to schema
+    # Convert to schema
     exp_data_compounds = [
         ExperimentalCompoundData(
             compound_id=r["External ID"],
@@ -730,19 +704,17 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
         for _, r in exp_df.iterrows()
     ]
 
-    ## Dump JSON file
+    # Dump JSON file
     with open(json_fn, "w") as fp:
-        fp.write(
-            ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json()
-        )
+        fp.write(ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json())
 
 
 def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
-    ## Load in csv
+    # Load in csv
     sars2_structures = pandas.read_csv(frag_fn).fillna("")
 
     if cmpd_ids is not None:
-        ## Filter fragalysis dataset by the compounds we want to test
+        # Filter fragalysis dataset by the compounds we want to test
         sars2_filtered = sars2_structures[
             sars2_structures["Compound ID"].isin(cmpd_ids)
         ]
@@ -757,12 +729,12 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
             ["Compound ID", "SMILES", "Dataset"]
         ]
 
-        ## Use utils function to get sdf file from dataset
+        # Use utils function to get sdf file from dataset
         mols_w_sars2_xtal["SDF"] = mols_w_sars2_xtal["Dataset"].apply(
             get_sdf_fn_from_dataset, fragalysis_dir=x_dir
         )
 
-        ## Save csv files for each dataset
+        # Save csv files for each dataset
         mols_wo_sars2_xtal.to_csv(
             os.path.join(o_dir, "mers_ligands_without_SARS2_structures.csv"),
             index=False,
@@ -773,13 +745,14 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
             index=False,
         )
 
-    ## Construct sars_xtal list
+    # Construct sars_xtal list
     sars_xtals = {}
     for data in sars2_filtered.to_dict("index").values():
         cmpd_id = data["Compound ID"]
         dataset = data["Dataset"]
         if len(dataset) > 0:
-            ## TODO: is this the behaviour we want? this will build an empty object if there isn't a dataset
+            # TODO: is this the behaviour we want? this will build an empty object if
+            # there isn't a dataset
             if not sars_xtals.get(cmpd_id) or "-P" in dataset:
                 sars_xtals[cmpd_id] = CrystalCompoundData(
                     smiles=data["SMILES"],
@@ -843,12 +816,12 @@ def trim_small_chains(input_mol, cutoff_len=10):
     oechem.OEGraphMol
         Trimmed molecule
     """
-    ## Copy the molecule
+    # Copy the molecule
     mol_copy = input_mol.CreateCopy()
 
-    ## Remove chains from mol_copy that are too short (possibly a better way of
-    ##  doing this with OpenEye functions)
-    ## Get number of residues per chain
+    # Remove chains from mol_copy that are too short (possibly a better way of
+    #  doing this with OpenEye functions)
+    # Get number of residues per chain
     chain_len_dict = {}
     hv = oechem.OEHierView(mol_copy)
     for chain in hv.GetChains():
@@ -860,12 +833,10 @@ def trim_small_chains(input_mol, cutoff_len=10):
             except KeyError:
                 chain_len_dict[chain_id] = frag_len
 
-    ## Remove short chains atom by atom
+    # Remove short chains atom by atom
     for a in mol_copy.GetAtoms():
         chain_id = oechem.OEAtomGetResidue(a).GetExtChainID()
-        if (chain_id not in chain_len_dict) or (
-            chain_len_dict[chain_id] <= cutoff_len
-        ):
+        if (chain_id not in chain_len_dict) or (chain_len_dict[chain_id] <= cutoff_len):
             mol_copy.DeleteAtom(a)
 
     return mol_copy
@@ -917,8 +888,8 @@ def filter_docking_inputs(
         Dict containing SMILES entries and ligand names to filter using smarts_queries.
     drop_commented_smarts_strings : bool
         How to handle first-character hashtags ('commented') on SMARTS entries. False
-        ignores hashtags so all SMARTS filters are always applied; if True (default), the code ignores
-        SMARTS filters that are commented (hashtagged).
+        ignores hashtags so all SMARTS filters are always applied; if True (default),
+        the code ignores SMARTS filters that are commented (hashtagged).
     verbose : bool
         Whether or not to print a message stating the number of compounds filtered.
 
@@ -987,12 +958,10 @@ def load_exp_from_sdf(fn):
     List[ExperimentalCompoundData]
         List of ExperimentalCompoundData objects parsed from SDF file.
     """
-    ## Open SDF file and load all SMILES
+    # Open SDF file and load all SMILES
     suppl = Chem.rdmolfiles.SDMolSupplier(fn)
     exp_data_compounds = [
-        ExperimentalCompoundData(
-            compound_id=str(i), smiles=Chem.MolToSmiles(mol)
-        )
+        ExperimentalCompoundData(compound_id=str(i), smiles=Chem.MolToSmiles(mol))
         for i, mol in enumerate(suppl)
     ]
 
@@ -1000,10 +969,11 @@ def load_exp_from_sdf(fn):
 
 
 def check_filelist_has_elements(
-    filelist: Union[glob.glob, List], tag: Optional[str] = "untagged"
+    filelist: Union[glob.glob, list], tag: Optional[str] = "untagged"
 ) -> None:
     """
-    Check that a glob or list of files actually contains some elements - if not, raise an error.
+    Check that a glob or list of files actually contains some elements - if not, raise
+    an error.
 
     Parameters
     ----------

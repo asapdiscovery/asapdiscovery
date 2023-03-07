@@ -1,14 +1,14 @@
 import argparse
 import os
-from openeye import oechem, oespruce
 
-################################################################################
+from asapdiscovery.data.openeye import oechem, oespruce
+
+
+########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    parser.add_argument(
-        "-target", required=True, help="PDB file for target protein."
-    )
+    parser.add_argument("-target", required=True, help="PDB file for target protein.")
     parser.add_argument("-ref", help="PDB file for reference protein")
     parser.add_argument("-loop", help="SPRUCE loop database.")
     parser.add_argument("-o", required=True, help="Output directory.")
@@ -19,7 +19,7 @@ def get_args():
 def main():
     args = get_args()
 
-    ## Load target molecule
+    # Load target molecule
     ifs = oechem.oemolistream()
     ifs.SetFlavor(
         oechem.OEFormat_PDB,
@@ -31,37 +31,34 @@ def main():
     ifs.close()
 
     if args.ref is not None:
-        ## Load reference molecule
+        # Load reference molecule
         ifs.open(args.ref)
         ref_mol = oechem.OEGraphMol()
         oechem.OEReadMolecule(ifs, ref_mol)
         ifs.close()
 
-        ##Extract and align protein
+        # Extract and align protein
         bio_opts = oespruce.OEBioUnitExtractionOptions()
         bio_opts.SetSuperpose(True)
 
         biounits = oespruce.OEExtractBioUnits(in_mol, ref_mol, bio_opts)
         in_mol = list(biounits)[0]
 
-    ## Set up options for building DesignUnits
+    # Set up options for building DesignUnits
     opts = oespruce.OEMakeDesignUnitOptions()
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
-        False
-    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(False)
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(
         args.loop
     )
     opts.GetPrepOptions().GetEnumerateSitesOptions().SetRestrictToRefSite(True)
 
-    ## Build DesignUnits
+    # Build DesignUnits
     design_units = oespruce.OEMakeDesignUnits(
         in_mol, oespruce.OEStructureMetadata(), opts
     )
     design_units = list(design_units)
     out_base_du = (
-        f"{args.o}/"
-        f"{os.path.splitext(os.path.basename(args.target))[0]}_{{}}.oedu"
+        f"{args.o}/" f"{os.path.splitext(os.path.basename(args.target))[0]}_{{}}.oedu"
     )
     out_base = (
         f"{args.o}/"
@@ -77,10 +74,10 @@ def main():
     design_units = list(design_units)
     for i, du in enumerate(design_units):
         print(i)
-        ## Save the DesignUnit object
+        # Save the DesignUnit object
         oechem.OEWriteDesignUnit(out_base_du.format(i), du)
 
-        ## Save the protein as a PDB file
+        # Save the protein as a PDB file
         prot_mol.Clear()
         du.GetProtein(prot_mol)
 
