@@ -1,6 +1,6 @@
 def test_forcefield_generation(input_pdb_path):
-    from openmm.app import PDBFile, ForceField, PME, HBonds, Modeller
-    from openmm.unit import nanometers, amu
+    from openmm.app import PME, ForceField, HBonds, Modeller, PDBFile
+    from openmm.unit import amu, nanometers
 
     # Input Files
     pdb = PDBFile(input_pdb_path)
