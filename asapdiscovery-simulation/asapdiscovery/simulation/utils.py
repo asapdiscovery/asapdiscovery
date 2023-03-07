@@ -1,0 +1,35 @@
+def test_forcefield_generation(input_pdb_path):
+    from openmm.app import PDBFile, ForceField, PME, HBonds, Modeller
+    from openmm.unit import nanometers, amu
+
+    # Input Files
+    pdb = PDBFile(input_pdb_path)
+    forcefield = ForceField(
+        "amber14-all.xml",
+        "amber14/tip3pfb.xml",
+    )
+
+    # System Configuration
+
+    nonbondedMethod = PME
+    nonbondedCutoff = 1.0 * nanometers
+    ewaldErrorTolerance = 0.000001
+    constraints = HBonds
+    rigidWater = True
+    hydrogenMass = 4.0 * amu
+
+    # Prepare the Simulation
+
+    print("Building system...")
+    modeller = Modeller(pdb.topology, pdb.positions)
+    modeller.addSolvent(forcefield, padding=0.9 * nanometers, model="tip3p")
+    system = forcefield.createSystem(
+        modeller.topology,
+        nonbondedMethod=nonbondedMethod,
+        nonbondedCutoff=nonbondedCutoff,
+        constraints=constraints,
+        rigidWater=rigidWater,
+        ewaldErrorTolerance=ewaldErrorTolerance,
+        hydrogenMass=hydrogenMass,
+    )
+    print("Success!")

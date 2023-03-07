@@ -3,51 +3,15 @@ Created on Sat Jan 28 18:10:15 2023
 @author: kendalllemons
 Edited by: Alex Payne
 """
-from openmm.app import *
-from openmm.app import PDBFile
-from openmm.unit import *
-
-
-def main(input_pdb_path):
-    # Input Files
-
-    pdb = PDBFile(input_pdb_path)
-    forcefield = ForceField(
-        "amber14-all.xml",
-        "amber14/tip3pfb.xml",
-    )
-
-    # System Configuration
-
-    nonbondedMethod = PME
-    nonbondedCutoff = 1.0 * nanometers
-    ewaldErrorTolerance = 0.000001
-    constraints = HBonds
-    rigidWater = True
-    hydrogenMass = 4.0 * amu
-
-    # Prepare the Simulation
-
-    print("Building system...")
-    modeller = Modeller(pdb.topology, pdb.positions)
-    modeller.addSolvent(forcefield, padding=0.9 * nanometers, model="tip3p")
-    system = forcefield.createSystem(
-        modeller.topology,
-        nonbondedMethod=nonbondedMethod,
-        nonbondedCutoff=nonbondedCutoff,
-        constraints=constraints,
-        rigidWater=rigidWater,
-        ewaldErrorTolerance=ewaldErrorTolerance,
-        hydrogenMass=hydrogenMass,
-    )
-    print("Success!")
-
+from asapdiscovery.simulation.utils import test_forcefield_generation
 
 if __name__ == "__main__":
 
     ## Original Prepped P2660 structure
     try:
-        main("inputs/01_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_prepped_receptor_0.pdb")
+        test_forcefield_generation(
+            "inputs/01_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_prepped_receptor_0.pdb"
+        )
     except ValueError as error:
         print(f"Error was: {error}")
         if (
@@ -60,7 +24,9 @@ if __name__ == "__main__":
 
     ## Fauxalysis output
     try:
-        main("inputs/02_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_4RSP_fauxalysis.pdb")
+        test_forcefield_generation(
+            "inputs/02_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_4RSP_fauxalysis.pdb"
+        )
     except ValueError as error:
         print(f"Error was: {error}")
         if (
@@ -73,23 +39,8 @@ if __name__ == "__main__":
 
     ## After running perses prep script
     try:
-        main(
+        test_forcefield_generation(
             "inputs/03_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_4RSP_fauxalysis_protonated.pdb"
-        )
-    except ValueError as error:
-        print(f"Error was: {error}")
-        if (
-            error.__str__()
-            == "No template found for residue 8 (HIS).  The set of atoms matches HIP, but the bonds are different."
-        ):
-            print("Expected Error")
-        else:
-            print("Unexpected Error")
-
-    ## MERS Mpro Models, ay need to run the mers prep test first
-    try:
-        main(
-            "../../../asapdiscovery-modeling/asapdiscovery/modeling/tests/prep_mers_files/outputs/rcsb_8DGY-assembly1-openmm-oespruced-loops-and-seqres.pdb"
         )
     except ValueError as error:
         print(f"Error was: {error}")
