@@ -10,9 +10,9 @@
 source ~/.bashrc
 conda activate /home/lemonsk/miniconda3/envs/asap-simulation
 
-python /data/chodera/lemonsk/covid-moonshot-ml/asapdiscovery/simulation/scripts/MProSimulation.py -n 12 \
--p /data/chodera/lemonsk/asap-datasets/openmm_setup_processed/prepped_receptor_0-processed.pdb \
--l /data/chodera/lemonsk/covid-moonshot-ml/asapdiscovery/simulation/tests/inputs/MAT-POS-f2460aef-1.sdf \
--o /data/chodera/lemonsk/asap-datasets/MPro_Simulations
+python /data/chodera/lemonsk/covid-moonshot-ml/asapdiscovery/simulation/scripts/MProSimulation.py -n 50 \
+-p /data/chodera/asap-datasets/current/sars_01_prepped_v3/Mpro-P0008_0A_ERI-UCB-ce40166b-17/Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb \
+-l /data/chodera/asap-datasets/current/sars_01_prepped_v3/Mpro-P0008_0A_ERI-UCB-ce40166b-17/Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf \
+-o /data/chodera/lemonsk/asap-datasets/MPro_Simulations/
 echo date
 echo done
