@@ -1,9 +1,9 @@
-COVIDMoonshotML
-==============================
+asapdiscovery
+=============
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/asapdiscovery/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/asapdiscovery/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/COVIDMoonshotML/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/COVIDMoonshotML/branch/master)
-
+[![GitHub Actions Build Status](https://github.com/choderalalb/asapdiscovery/workflows/CI/badge.svg)](https://github.com/choderalab/asapdiscovery/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/choderalab/asapdiscovery/branch/main/graph/badge.svg)](https://codecov.io/gh/choderalab/asapdiscovery/branch/main)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/choderalab/asapdiscovery/main.svg)](https://results.pre-commit.ci/latest/github/choderalab/asapdiscovery/main)
 
 Scripts and models for ML with COVID Moonshot data.
 
@@ -11,7 +11,7 @@ Scripts and models for ML with COVID Moonshot data.
 ## How to use
 
 ### Intro
-This is a brief depiction of an example run through the pipeline in the [`covid-moonshot-ml` repo](https://github.com/choderalab/covid-moonshot-ml). All Python scripts mentioned in this tutorial are located in the top-level `scripts/` directory in the repo. I will also use the variable `CML_DIR` as the directory where the repo has been downloaded. The steps in the pipeline are:
+This is a brief depiction of an example run through the pipeline in the [`asapdiscovery` repo](https://github.com/choderalab/asapdiscovery). All Python scripts mentioned in this tutorial are located in the top-level `scripts/` directory in the repo. I will also use the variable `CML_DIR` as the directory where the repo has been downloaded. The steps in the pipeline are:
 1. Download Fragalysis and COVID Moonshot data
 2. Parse data into correct format for ML
 3. Run the docking pipeline
@@ -142,12 +142,31 @@ Train the model with the docked structures.
 
 **Script:** `train_dd.py`
 
+### Contributing
+
+### [pre-commit](https://pre-commit.com/#intro)
+
+We use pre-commit to automate code formatting and other fixes.
+You do not need to install pre-commit as we run it on our CI.
+If you want to run it locally:
+```bash
+# install
+$ mamba install -c conda-forge pre-commit
+# check
+$ pre-commit --version
+pre-commit 3.0.4 # your version may be different
+$ pre-commit install
+```
+
+Now every time you make a commit, the hooks will run on just the files you changed.
+See [here](https://pre-commit.com/#usage) for more details.
+
 ### Copyright
 
 Copyright (c) 2022, kaminow
 
 
 #### Acknowledgements
- 
-Project based on the 
+
+Project based on the
 [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.6.
