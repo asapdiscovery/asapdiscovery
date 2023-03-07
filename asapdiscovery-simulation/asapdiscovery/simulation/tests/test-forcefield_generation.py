@@ -1,53 +1,58 @@
 """
-Created on Sat Jan 28 18:10:15 2023
-@author: kendalllemons
-Edited by: Alex Payne
+@author: Alex Payne
+
+Example usage:
+python test-forcefield_generation.py \
+-i /lila/data/chodera/asap-datasets/mers_fauxalysis/20230307_prepped_mers_pdbs/ \
+-g "*_0.pdb"
+
+python test-forcefield_generation.py \
+-i "/Users/alexpayne/lilac-mount-point/asap-datasets/mers_fauxalysis/20230307_prepped_mers_pdbs/" \
+-g "*_0.pdb"
+
+# To run the basic test, just run without any arguments:
+python test-forcefield_generation.py
+
 """
 from asapdiscovery.simulation.utils import test_forcefield_generation
+from pathlib import Path
+import argparse
+from tqdm import tqdm
+import yaml
+
+
+def get_args():
+    parser = argparse.ArgumentParser(description="")
+    ## Input arguments
+    parser.add_argument(
+        "-i",
+        "--input_pdb_dir",
+        default="inputs",
+        type=str,
+        help="Path to directory of pdb files.",
+    )
+    parser.add_argument(
+        "-g",
+        "--glob_string",
+        default="*.pdb",
+        type=str,
+        help="String that selects the correct pdb files.",
+    )
+    parser.add_argument("-l", "--log_file", default="outputs/log.yaml")
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
-
-    ## Original Prepped P2660 structure
-    try:
-        test_forcefield_generation(
-            "inputs/01_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_prepped_receptor_0.pdb"
-        )
-    except ValueError as error:
-        print(f"Error was: {error}")
-        if (
-            error.__str__()
-            == "No template found for residue 307 (LIG).  This might mean your input topology is missing some atoms or bonds, or possibly that you are using the wrong force field."
-        ):
-            print("Expected Error")
-        else:
-            print("Unexpected Error")
-
-    ## Fauxalysis output
-    try:
-        test_forcefield_generation(
-            "inputs/02_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_4RSP_fauxalysis.pdb"
-        )
-    except ValueError as error:
-        print(f"Error was: {error}")
-        if (
-            error.__str__()
-            == "No template found for residue 145 (CSO).  The set of atoms matches CCYS, but the bonds are different."
-        ):
-            print("Expected Error")
-        else:
-            print("Unexpected Error")
-
-    ## After running perses prep script
-    try:
-        test_forcefield_generation(
-            "inputs/03_Mpro-P2660_0A_EDG-MED-b1ef7fe3-1_4RSP_fauxalysis_protonated.pdb"
-        )
-    except ValueError as error:
-        print(f"Error was: {error}")
-        if (
-            error.__str__()
-            == "No template found for residue 8 (HIS).  The set of atoms matches HIP, but the bonds are different."
-        ):
-            print("Expected Error")
-        else:
-            print("Unexpected Error")
+    args = get_args()
+    paths = [pdb_path for pdb_path in Path(args.input_pdb_dir).glob(args.glob_string)]
+    error_dict = {}
+    print(f"Preparing {len(paths)} structures")
+    for path in tqdm(paths):
+        try:
+            test_forcefield_generation(str(path))
+            outstr = "Success"
+        except ValueError as error:
+            outstr = error.__str__()
+        error_dict[path.name] = outstr
+    with open(args.log_file, "w") as f:
+        yaml.safe_dump(error_dict, f)

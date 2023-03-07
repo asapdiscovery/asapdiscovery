@@ -19,8 +19,6 @@ def test_forcefield_generation(input_pdb_path):
     hydrogenMass = 4.0 * amu
 
     # Prepare the Simulation
-
-    print("Building system...")
     modeller = Modeller(pdb.topology, pdb.positions)
     modeller.addSolvent(forcefield, padding=0.9 * nanometers, model="tip3p")
     system = forcefield.createSystem(
@@ -32,4 +30,4 @@ def test_forcefield_generation(input_pdb_path):
         ewaldErrorTolerance=ewaldErrorTolerance,
         hydrogenMass=hydrogenMass,
     )
-    print("Success!")
+    return True
