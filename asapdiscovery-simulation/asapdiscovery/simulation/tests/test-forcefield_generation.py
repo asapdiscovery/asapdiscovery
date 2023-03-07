@@ -14,11 +14,12 @@ python test-forcefield_generation.py \
 python test-forcefield_generation.py
 
 """
-from asapdiscovery.simulation.utils import test_forcefield_generation
-from pathlib import Path
 import argparse
-from tqdm import tqdm
+from pathlib import Path
+
 import yaml
+from asapdiscovery.simulation.utils import test_forcefield_generation
+from tqdm import tqdm
 
 
 def get_args():
