@@ -1,19 +1,20 @@
-from asapdiscovery.docking.modeling import (
-    remove_extra_ligands,
-    mutate_residues,
-    align_receptor,
-    prep_receptor,
+from pathlib import Path
+
+import yaml
+from asapdiscovery.data.openeye import (
+    load_openeye_cif,
+    load_openeye_pdb,
+    save_openeye_design_unit,
+    save_openeye_pdb,
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.data.openeye import (
-    load_openeye_cif,
-    save_openeye_pdb,
-    load_openeye_pdb,
-    save_openeye_design_unit,
+from asapdiscovery.docking.modeling import (
+    align_receptor,
+    mutate_residues,
+    prep_receptor,
+    remove_extra_ligands,
 )
-from pathlib import Path
-import yaml
 
 out_path = Path("")
 in_path = Path("../inputs")

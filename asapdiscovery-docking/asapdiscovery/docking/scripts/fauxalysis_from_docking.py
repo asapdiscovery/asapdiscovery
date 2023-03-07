@@ -23,8 +23,8 @@ from asapdiscovery.data.openeye import oechem
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(repo_path)
 
-from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
+from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import split_openeye_design_unit
@@ -169,7 +169,9 @@ def write_fragalysis_output(
         du.GetProtein(prot)
         lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
-        lig, prot, complex = split_openeye_design_unit(du, lig=lig, lig_title=complex_id)
+        lig, prot, complex = split_openeye_design_unit(
+            du, lig=lig, lig_title=complex_id
+        )
 
         # First save apo
         save_openeye_pdb(prot, f"{compound_out_dir}/{complex_id}_apo.pdb")

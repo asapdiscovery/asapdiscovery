@@ -3,13 +3,16 @@ Load in oedu design unit files, and write out the ligand sdf and protein-only pd
 """
 import argparse
 from pathlib import Path
-from tqdm import tqdm
+
+import oechem
+import oedocking
 from asapdiscovery.data.openeye import (
-    split_openeye_design_unit,
-    save_openeye_sdf,
     save_openeye_pdb,
+    save_openeye_sdf,
+    split_openeye_design_unit,
 )
-import oechem, oedocking
+from tqdm import tqdm
+
 
 ################################################################################
 def get_args():

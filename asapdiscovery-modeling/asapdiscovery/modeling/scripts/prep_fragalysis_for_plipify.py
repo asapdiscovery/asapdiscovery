@@ -14,19 +14,18 @@ Example Usage:
 """
 import argparse
 import datetime
+import logging
 import multiprocessing as mp
 import os
 import sys
+
 import yaml
-import logging
-from pydantic import BaseModel, Field
 from openeye import oechem, oedocking, oespruce
+from pydantic import BaseModel, Field
 
 sys.path.append(
     os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        )
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
 )
 ########################################################################################################################
@@ -69,15 +68,11 @@ class CrystalCompoundData(BaseModel):
         None, description="Chain identifying the active site of interest."
     )
     output_name: str = Field(None, description="Name of output structure.")
-    active_site: str = Field(
-        None, description="OpenEye formatted active site residue."
-    )
+    active_site: str = Field(None, description="OpenEye formatted active site residue.")
     oligomeric_state: str = Field(
         None, description="Oligomeric state of the asymmetric unit."
     )
-    chains: list = Field(
-        None, description="List of chainids in the asymmetric unit."
-    )
+    chains: list = Field(None, description="List of chainids in the asymmetric unit.")
     protein_chains: list = Field(
         None, description="List of chains corresponding to protein residues."
     )
@@ -260,9 +255,7 @@ def trim_small_chains(input_mol, cutoff_len=10):
     ## Remove short chains atom by atom
     for a in mol_copy.GetAtoms():
         chain_id = oechem.OEAtomGetResidue(a).GetExtChainID()
-        if (chain_id not in chain_len_dict) or (
-            chain_len_dict[chain_id] <= cutoff_len
-        ):
+        if (chain_id not in chain_len_dict) or (chain_len_dict[chain_id] <= cutoff_len):
             mol_copy.DeleteAtom(a)
 
     return mol_copy
@@ -324,9 +317,7 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
 
     ## Set water filter (keep all waters in A, B, or W chains)
     ##  (is this sufficient? are there other common water chain ids?)
-    wat_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Water
-    )
+    wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
     w_chain = oechem.OERoleMolComplexFilterFactory(
         oechem.OEMolComplexChainRoleFactory("W")
     )
@@ -451,9 +442,7 @@ def align_receptor(
 
     """
     if (not dimer) and (not mobile_chain):
-        raise ValueError(
-            "If dimer is False, a value must be given for mobile_chain."
-        )
+        raise ValueError("If dimer is False, a value must be given for mobile_chain.")
 
     ## Load initial_complex from file if necessary
     if type(initial_complex) is str:
@@ -538,13 +527,9 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
     ## Create a copy of the molecule to avoid modifying original molecule
     mut_prot = input_mol.CreateCopy()
     ## Get sequence of input protein
-    input_mol_chain = [
-        r.GetExtChainID() for r in oechem.OEGetResidues(input_mol)
-    ]
+    input_mol_chain = [r.GetExtChainID() for r in oechem.OEGetResidues(input_mol)]
     input_mol_seq = [r.GetName() for r in oechem.OEGetResidues(input_mol)]
-    input_mol_num = [
-        r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)
-    ]
+    input_mol_num = [r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)]
 
     ## Build mutation map from OEResidue to new res name by indexing from res num
     mut_map = {}
@@ -636,9 +621,7 @@ def prep_receptor(
     opts.GetSplitOptions().SetMinLigAtoms(5)
 
     # also consider alternate locations outside binding pocket, important for later filtering
-    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
-        False
-    )
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(False)
 
     # alignment options, only matches are important
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
@@ -675,9 +658,7 @@ def prep_receptor(
     metadata = oespruce.OEStructureMetadata()
 
     ## Allow for adding residues at the beginning/end if they're missing
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
-        True
-    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(True)
     if seqres:
         all_prot_chains = {
             res.GetExtChainID()
@@ -691,9 +672,7 @@ def prep_receptor(
             metadata.AddSequenceMetadata(seq_metadata)
 
     ## Finally make new DesignUnit
-    dus = list(
-        oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
-    )
+    dus = list(oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue))
     assert dus[0].HasProtein()
     if not protein_only:
         assert dus[0].HasLigand()
@@ -792,8 +771,7 @@ def du_to_complex(du, include_solvent=False):
     """
     complex_mol = oechem.OEGraphMol()
     comp_tag = (
-        oechem.OEDesignUnitComponents_Protein
-        | oechem.OEDesignUnitComponents_Ligand
+        oechem.OEDesignUnitComponents_Protein | oechem.OEDesignUnitComponents_Ligand
     )
     if include_solvent:
         comp_tag |= oechem.OEDesignUnitComponents_Solvent
@@ -829,9 +807,10 @@ def parse_fragalysis(
     List[schema.CrystalCompoundData]
         List of parsed crystal structures
     """
+    from pathlib import Path
+
     import pandas
     from tqdm import tqdm
-    from pathlib import Path
 
     x_dir = Path(x_dir)
 
@@ -853,9 +832,7 @@ def parse_fragalysis(
     ## Build argument dicts for the CrystalCompoundData objects
     xtal_dicts = [
         dict(zip(("smiles", "dataset", "compound_id"), r[1].values))
-        for r in df.loc[
-            :, ["smiles", "crystal_name", "alternate_name"]
-        ].iterrows()
+        for r in df.loc[:, ["smiles", "crystal_name", "alternate_name"]].iterrows()
     ]
 
     ## Add structure filename information and filter if not found
@@ -900,9 +877,7 @@ def check_completed(d, prefix):
         True if both files exist and can be loaded, otherwise False.
     """
 
-    if (
-        not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"))
-    ) or (
+    if (not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"))) or (
         not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
     ):
         return False
@@ -916,9 +891,7 @@ def check_completed(d, prefix):
         return False
 
     try:
-        _ = load_openeye_pdb(
-            os.path.join(d, f"{prefix}_prepped_receptor_0.pdb")
-        )
+        _ = load_openeye_pdb(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
     except Exception:
         return False
 
@@ -959,14 +932,10 @@ def prep_mp(
         prep_logger.info("Mutating to provided seqres")
 
         ## Mutate the residues to match the residue list
-        initial_prot = mutate_residues(
-            initial_prot, res_list, xtal.protein_chains
-        )
+        initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
 
     ## Delete extra copies of ligand in the complex
-    initial_prot = remove_extra_ligands(
-        initial_prot, lig_chain=xtal.active_site_chain
-    )
+    initial_prot = remove_extra_ligands(initial_prot, lig_chain=xtal.active_site_chain)
 
     if ref_prot:
         prep_logger.info("Aligning receptor")
@@ -999,14 +968,10 @@ def prep_mp(
     du = design_units[0]
     for i, du in enumerate(design_units):
         success = oechem.OEWriteDesignUnit(
-            os.path.join(
-                out_dir, f"{xtal.output_name}_prepped_receptor_{i}.oedu"
-            ),
+            os.path.join(out_dir, f"{xtal.output_name}_prepped_receptor_{i}.oedu"),
             du,
         )
-        prep_logger.info(
-            f"{xtal.output_name} DU successfully written out: {success}"
-        )
+        prep_logger.info(f"{xtal.output_name} DU successfully written out: {success}")
 
         ## Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
@@ -1019,9 +984,7 @@ def prep_mp(
 
         save_openeye_pdb(
             complex_mol,
-            os.path.join(
-                out_dir, f"{xtal.output_name}_prepped_receptor_{i}.pdb"
-            ),
+            os.path.join(out_dir, f"{xtal.output_name}_prepped_receptor_{i}.pdb"),
         )
 
     prep_logger.info(

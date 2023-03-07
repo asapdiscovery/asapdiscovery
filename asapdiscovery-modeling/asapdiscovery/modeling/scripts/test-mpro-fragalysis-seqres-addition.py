@@ -7,24 +7,23 @@ python test-mpro-fragalysis-seqres-addition.py
     -s /Users/alexpayne/Scientific_Projects/covid-moonshot-ml/metadata/mpro_sars2_seqres.yaml
 """
 
-import sys, os, argparse, yaml
+import argparse
+import os
+import sys
 from tempfile import NamedTemporaryFile
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
+import yaml
+
+sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
+from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
+from asapdiscovery.data.schema import CrystalCompoundData
+from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
 from asapdiscovery.docking.modeling import (
     align_receptor,
-    prep_receptor,
     du_to_complex,
     mutate_residues,
+    prep_receptor,
 )
-from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.data.utils import (
-    edit_pdb_file,
-    seqres_to_res_list,
-)
-from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
 from openeye import oechem
 
 
@@ -123,9 +122,7 @@ def main():
     if mutate:
         print("Mutating to provided seqres")
         ## Mutate the residues to match the residue list
-        initial_prot = mutate_residues(
-            initial_prot, res_list, xtal.protein_chains
-        )
+        initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
         save_openeye_pdb(
             initial_prot, os.path.join(args.output_dir, "mutated_test.pdb")
         )

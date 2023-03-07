@@ -9,23 +9,23 @@ Example Usage
         -r '/data/chodera/asap-datasets/full_frag_prepped_mpro_12_2022/*/prepped_receptor_0.pdb'
 """
 import argparse
-from glob import glob
 import multiprocessing as mp
+import os
+import sys
+from glob import glob
+
 import pandas as pd
 from openeye import oechem
-import sys, os
 
 sys.path.append(
     os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        )
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
 )
 from asapdiscovery.data.openeye import (
-    load_openeye_sdfs,
-    load_openeye_sdf,
     load_openeye_pdb,
+    load_openeye_sdf,
+    load_openeye_sdfs,
     split_openeye_mol,
 )
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
@@ -84,9 +84,7 @@ def main():
     ## get unique compound_ids
     compound_ids = [oechem.OEGetSDData(mol, f"Compound_ID") for mol in mols]
     unique_compound_ids = list(set(compound_ids))
-    print(
-        f"Using {len(compound_ids)} compound ids to find reference structures"
-    )
+    print(f"Using {len(compound_ids)} compound ids to find reference structures")
 
     ## TODO: Maybe something better would be to just pass a
     ## TODO: yaml file that maps compound_ids to desired reference structures

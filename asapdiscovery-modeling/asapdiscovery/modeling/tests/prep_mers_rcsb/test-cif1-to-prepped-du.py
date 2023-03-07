@@ -1,8 +1,9 @@
 from pathlib import Path
+
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
-    save_openeye_pdb,
     openeye_perceive_residues,
+    save_openeye_pdb,
     split_openeye_design_unit,
     split_openeye_mol,
 )
@@ -12,7 +13,7 @@ cifpath = inputs / "rcsb_8DGY-assembly1.cif"
 output = Path("outputs")
 
 print("Loading cif and writing to pdb file")
-from openmm.app import PDBxFile, PDBFile
+from openmm.app import PDBFile, PDBxFile
 
 cif = PDBxFile(str(cifpath))
 

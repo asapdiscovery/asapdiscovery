@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-import requests
 from zipfile import ZipFile
 
 import requests
@@ -149,8 +148,9 @@ def parse_fragalysis(
         List of parsed crystal structures
     """
     import pandas
-    from .schema import CrystalCompoundData
     from tqdm import tqdm
+
+    from .schema import CrystalCompoundData
 
     x_dir = Path(x_dir)
 

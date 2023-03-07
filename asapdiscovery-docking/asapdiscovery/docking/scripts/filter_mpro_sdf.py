@@ -7,7 +7,10 @@ Example Usage:
     -s /Users/alexpayne/Scientific_Projects/mers-drug-discovery/mpro-paper-ligand/aligned/ \
     -o /Volumes/Rohirrim/local_test/sars_docking/fragalysis_correct_bond_orders.sdf
 """
-import argparse, os, sys
+import argparse
+import os
+import sys
+
 from openeye import oechem
 
 repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

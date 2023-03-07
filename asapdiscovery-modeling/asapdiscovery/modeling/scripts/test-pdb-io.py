@@ -1,9 +1,11 @@
-import sys, os, argparse, yaml
+import argparse
+import os
+import sys
 
-sys.path.append(
-    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"
-)
-from asapdiscovery.data.openeye import save_openeye_pdb, load_openeye_pdb
+import yaml
+
+sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
+from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
 
 
 def get_args():

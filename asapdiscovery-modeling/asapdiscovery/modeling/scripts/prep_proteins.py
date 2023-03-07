@@ -13,23 +13,22 @@ Example Usage:
     --protein_only
 """
 import argparse
+import logging
 import multiprocessing as mp
 import os
 import sys
+
 import yaml
-import logging
 
 sys.path.append(
     os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        )
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
 )
-from asapdiscovery.docking import prep_mp
-from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data import pdb
 from asapdiscovery.data.fragalysis import parse_fragalysis
+from asapdiscovery.data.schema import CrystalCompoundData
+from asapdiscovery.docking import prep_mp
 
 
 ################################################################################
@@ -169,9 +168,7 @@ def main():
                 protein_chains=values.get("protein_chains", ["A", "B"]),
             )
             for pdb_id, values in pdb_dict.items()
-            if os.path.exists(
-                os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb")
-            )
+            if os.path.exists(os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"))
         ]
     else:
         raise NotImplementedError("Crystal CSV or PDB yaml file needed")

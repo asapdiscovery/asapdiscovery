@@ -5,7 +5,8 @@ def spruce_protein(
     loop_db=None,
     site_residue="HIS:41: :A:0: ",
 ):
-    import oechem, oespruce
+    import oechem
+    import oespruce
     from asapdiscovery.data.openeye import openeye_perceive_residues
 
     ## Add Hs to prep protein and ligand
@@ -21,9 +22,7 @@ def spruce_protein(
     opts.GetSplitOptions().SetMinLigAtoms(5)
 
     # also consider alternate locations outside binding pocket, important for later filtering
-    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
-        True
-    )
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(True)
 
     # alignment options, only matches are important
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
@@ -57,9 +56,7 @@ def spruce_protein(
     loop_opts.SetBuildTails(True)
 
     ## Allow for adding residues at the beginning/end if they're missing
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(
-        True
-    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(True)
 
     if loop_db is not None:
         print("Adding loop")
@@ -103,9 +100,7 @@ def spruce_protein(
 
     if return_du:
         dus = list(
-            oespruce.OEMakeDesignUnits(
-                initial_prot, metadata, opts, site_residue
-            )
+            oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
         )
         try:
             return dus[0]
