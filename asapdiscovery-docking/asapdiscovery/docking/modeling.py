@@ -652,9 +652,7 @@ def check_completed(d, prefix):
         True if both files exist and can be loaded, otherwise False.
     """
 
-    if (
-        not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"))
-    ) or (
+    if (not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"))) or (
         not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
     ):
         return False
@@ -668,9 +666,7 @@ def check_completed(d, prefix):
         return False
 
     try:
-        _ = load_openeye_pdb(
-            os.path.join(d, f"{prefix}_prepped_receptor_0.pdb")
-        )
+        _ = load_openeye_pdb(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
     except Exception:
         return False
 
@@ -691,7 +687,9 @@ def prep_mp(
         os.makedirs(out_dir)
 
     ## Prepare logger
-    handler = logging.FileHandler(os.path.join(out_dir, f"{xtal.output_name}-log.txt"), mode="w")
+    handler = logging.FileHandler(
+        os.path.join(out_dir, f"{xtal.output_name}-log.txt"), mode="w"
+    )
     prep_logger = logging.getLogger(xtal.output_name)
     prep_logger.setLevel(logging.INFO)
     prep_logger.addHandler(handler)
@@ -711,14 +709,10 @@ def prep_mp(
         prep_logger.info("Mutating to provided seqres")
 
         ## Mutate the residues to match the residue list
-        initial_prot = mutate_residues(
-            initial_prot, res_list, xtal.protein_chains
-        )
+        initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
 
     ## Delete extra copies of ligand in the complex
-    initial_prot = remove_extra_ligands(
-        initial_prot, lig_chain=xtal.active_site_chain
-    )
+    initial_prot = remove_extra_ligands(initial_prot, lig_chain=xtal.active_site_chain)
 
     if ref_prot:
         prep_logger.info("Aligning receptor")
@@ -753,14 +747,10 @@ def prep_mp(
     du = design_units[0]
     for i, du in enumerate(design_units):
         success = oechem.OEWriteDesignUnit(
-            os.path.join(
-                out_dir, f"{xtal.output_name}_prepped_receptor_{i}.oedu"
-            ),
+            os.path.join(out_dir, f"{xtal.output_name}_prepped_receptor_{i}.oedu"),
             du,
         )
-        prep_logger.info(
-            f"{xtal.output_name} DU successfully written out: {success}"
-        )
+        prep_logger.info(f"{xtal.output_name} DU successfully written out: {success}")
 
         ## Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
@@ -776,9 +766,7 @@ def prep_mp(
 
         save_openeye_pdb(
             complex_mol,
-            os.path.join(
-                out_dir, f"{xtal.output_name}_prepped_receptor_{i}.pdb"
-            ),
+            os.path.join(out_dir, f"{xtal.output_name}_prepped_receptor_{i}.pdb"),
         )
 
     prep_logger.info(
