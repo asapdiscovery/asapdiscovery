@@ -1,4 +1,20 @@
 import argparse
+import multiprocessing as mp
+from pathlib import Path
+from asapdiscovery.data.openeye import (
+    load_openeye_pdb,
+    openeye_perceive_residues,
+    save_openeye_pdb,
+    split_openeye_design_unit,
+    split_openeye_mol,
+)
+from openmm.app import PDBFile, PDBxFile
+from asapdiscovery.docking.modeling import align_receptor
+import yaml
+from asapdiscovery.data.utils import seqres_to_res_list
+from asapdiscovery.docking.modeling import mutate_residues
+from asapdiscovery.modeling.modeling import spruce_protein
+from asapdiscovery.data.openeye import oechem
 
 
 def get_args():
@@ -51,20 +67,101 @@ def get_args():
         default="prep_proteins_log.txt",
         help="Path to high level log file.",
     )
+    parser.add_argument(
+        "-n",
+        "--num_cores",
+        type=int,
+        default=1,
+        help="Number of concurrent processes to run.",
+    )
     return parser.parse_args()
 
 
-def main():
-    from pathlib import Path
+def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
+    du_fn = output / f"{cifpath.stem}-prepped_receptor_0.oedu"
+    if du_fn.exists():
+        print(f"Already made {du_fn}!")
+        return
 
-    from asapdiscovery.data.openeye import (
-        load_openeye_pdb,
-        openeye_perceive_residues,
-        save_openeye_pdb,
-        split_openeye_design_unit,
-        split_openeye_mol,
+    print("Loading cif and writing to pdb file")
+
+    cif = PDBxFile(str(cifpath))
+
+    outfile = output / f"{cifpath.stem}-openmm.pdb"
+
+    ## the keep ids flag is critical to make sure the residue numbers are correct
+    with open(outfile, "w") as f:
+        PDBFile.writeFile(cif.topology, cif.positions, f, keepIds=True)
+
+    print("Loading pdb to OpenEye")
+    prot = load_openeye_pdb(str(outfile))
+
+    print("Aligning to ref")
+
+    ref_path = Path(ref_prot)
+    prot = align_receptor(
+        initial_complex=prot,
+        ref_prot=ref_path.as_posix(),
+        dimer=True,
+        split_initial_complex=True,
+        mobile_chain="A",  # TODO: make this not hardcoded? not sure what logic to use though
+        ref_chain="A",
+    )
+    # aligned = str(output / f"{cifpath.stem}-01.pdb")
+    # save_openeye_pdb(prot, aligned)
+
+    print("Preparing Sprucing options")
+    loop_path = Path(loop_db)
+
+    seqres_path = Path(seqres_yaml)
+    with open(seqres_path) as f:
+        seqres_dict = yaml.safe_load(f)
+    seqres = seqres_dict["SEQRES"]
+
+    res_list = seqres_to_res_list(seqres)
+    seqres = " ".join(res_list)
+
+    print("Making mutations")
+
+    prot = mutate_residues(prot, res_list, place_h=True)
+
+    print("Sprucing protein")
+
+    du = spruce_protein(
+        initial_prot=prot,
+        seqres=seqres,
+        loop_db=str(loop_path),
+        return_du=True,
     )
 
+    if type(du) == oechem.OEDesignUnit:
+
+        print("Saving Design Unit")
+
+        du_fn = output / f"{cifpath.stem}-prepped_receptor_0.oedu"
+        oechem.OEWriteDesignUnit(str(du_fn), du)
+
+        print("Saving PDB")
+
+        prot = oechem.OEGraphMol()
+        du.GetProtein(prot)
+
+        ## Add SEQRES entries if they're not present
+        if (not oechem.OEHasPDBData(prot, "SEQRES")) and seqres:
+            for seqres_line in seqres.split("\n"):
+                if seqres_line != "":
+                    oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
+
+        prot_fn = output / f"{cifpath.stem}-prepped_receptor_0.pdb"
+        save_openeye_pdb(prot, str(prot_fn))
+
+    elif type(du) == oechem.OEGraphMol:
+        print("Design Unit preparation failed. Saving spruced protein")
+        prot_fn = output / f"{cifpath.stem}-failed-spruced.pdb"
+        save_openeye_pdb(du, str(prot_fn))
+
+
+def main():
     args = get_args()
 
     inputs = Path(args.structure_dir)
@@ -72,99 +169,14 @@ def main():
     output = Path(args.output_dir)
     output.mkdir(exist_ok=True)
 
-    for cifpath in cifpaths:
-
-        du_fn = output / f"{cifpath.stem}-prepped_receptor_0.oedu"
-        if du_fn.exists():
-            print(f"Already made {du_fn}!")
-            continue
-
-        print("Loading cif and writing to pdb file")
-        from openmm.app import PDBFile, PDBxFile
-
-        cif = PDBxFile(str(cifpath))
-
-        outfile = output / f"{cifpath.stem}-openmm.pdb"
-
-        ## the keep ids flag is critical to make sure the residue numbers are correct
-        with open(outfile, "w") as f:
-            PDBFile.writeFile(cif.topology, cif.positions, f, keepIds=True)
-
-        print("Loading pdb to OpenEye")
-        prot = load_openeye_pdb(str(outfile))
-
-        print("Aligning to ref")
-        from asapdiscovery.docking.modeling import align_receptor
-
-        ref_path = Path(args.ref_prot)
-        prot = align_receptor(
-            initial_complex=prot,
-            ref_prot=ref_path.as_posix(),
-            dimer=True,
-            split_initial_complex=True,
-            ref_chain="A",
-        )
-        # aligned = str(output / f"{cifpath.stem}-01.pdb")
-        # save_openeye_pdb(prot, aligned)
-
-        print("Preparing Sprucing options")
-        loop_path = Path(args.loop_db)
-        import yaml
-
-        seqres_path = Path(args.seqres_yaml)
-        with open(seqres_path) as f:
-            seqres_dict = yaml.safe_load(f)
-        seqres = seqres_dict["SEQRES"]
-
-        from asapdiscovery.data.utils import seqres_to_res_list
-
-        res_list = seqres_to_res_list(seqres)
-        seqres = " ".join(res_list)
-
-        print("Making mutations")
-        from asapdiscovery.docking.modeling import mutate_residues
-
-        prot = mutate_residues(prot, res_list, place_h=True)
-
-        print("Sprucing protein")
-        from asapdiscovery.modeling.modeling import spruce_protein
-
-        du = spruce_protein(
-            initial_prot=prot,
-            seqres=seqres,
-            loop_db=str(loop_path),
-            return_du=True,
-        )
-
-        from openeye import oechem
-
-        if type(du) == oechem.OEDesignUnit:
-
-            print("Saving Design Unit")
-            from openeye import oechem
-
-            du_fn = output / f"{cifpath.stem}-prepped_receptor_0.oedu"
-            oechem.OEWriteDesignUnit(str(du_fn), du)
-
-            print("Saving PDB")
-            from openeye import oechem
-
-            prot = oechem.OEGraphMol()
-            du.GetProtein(prot)
-
-            ## Add SEQRES entries if they're not present
-            if (not oechem.OEHasPDBData(prot, "SEQRES")) and seqres:
-                for seqres_line in seqres.split("\n"):
-                    if seqres_line != "":
-                        oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
-
-            prot_fn = output / f"{cifpath.stem}-prepped_receptor_0.pdb"
-            save_openeye_pdb(prot, str(prot_fn))
-
-        elif type(du) == oechem.OEGraphMol:
-            print("Design Unit preparation failed. Saving spruced protein")
-            prot_fn = output / f"{cifpath.stem}-failed-spruced.pdb"
-            save_openeye_pdb(du, str(prot_fn))
+    mp_args = [
+        [cifpath, output, args.loop_db, args.ref_prot, args.seqres_yaml]
+        for cifpath in cifpaths
+    ]
+    nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+    print(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
+    with mp.Pool(processes=nprocs) as pool:
+        pool.starmap(prep_mp, mp_args)
 
 
 if __name__ == "__main__":
