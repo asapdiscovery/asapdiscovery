@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from pydantic.typing import Dict, List
 
+
 # From FAH ###################################
 class Model(BaseModel):
     class Config:
