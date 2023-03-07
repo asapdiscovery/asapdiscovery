@@ -20,10 +20,10 @@
 source ~/.bashrc
 conda activate mers-docking
 
-python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
--d /Users/alexpayne/Scientific_Projects/covid-moonshot-ml/asapdiscovery-data/asapdiscovery/data/tests/pdb_download \
+python prep_mers_pdbs.py -n 10 \
+-d /data/chodera/asap-datasets/mers_fauxalysis/mers_pdb_download \
 -r /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
--o prepped_mers_pdbs \
+-o /data/chodera/asap-datasets/mers_fauxalysis/20230307_prepped_mers_pdbs \
 -l /data/chodera/asap-datasets/rcsb_spruce.loop_db \
 -s "../../../../metadata/mpro_mers_seqres.yaml" \
 --protein_only \
