@@ -66,12 +66,12 @@ color_dict = {
 "subP1" : "yellow",
 "subP1_prime" : "orange",
 "subP2" : "skyblue",
-"subP3_4_5" : "aquamarine" 
-} 
+"subP3_4_5" : "aquamarine"
+}
 # TODO: pick color-blind-friendly scheme, e.g. using https://colorbrewer2.org/#type=qualitative&scheme=Pastel1&n=4
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-## load pdb file of interest. Currently needs minimized PDB. 
+## load pdb file of interest. Currently needs minimized PDB.
 from pymol import cmd
 log.info(':thinking_face:  Loading system into PyMol and applying aesthetics...')
 complex_name = 'complex'
@@ -149,13 +149,13 @@ import tempfile
 with tempfile.TemporaryDirectory() as tmpdirname:
     log.info(f':file_folder: Creating temporary directory {tmpdirname}')
 
-    ## now make the movie. 
+    ## now make the movie.
     log.info(':camera_with_flash:  Rendering images for frames...')
     cmd.set("ray_trace_frames", 0) # ray tracing with surface representation is too expensive.
     cmd.set("defer_builds_mode", 1) # this saves memory for large trajectories
     cmd.set("cache_frames", 0)
     cmd.set("max_threads", 4) # limit to 4 threads so PyMOL doesn't try to use too many threads
-    cmd.mclear()   # clears cache 
+    cmd.mclear()   # clears cache
     prefix = f"{tmpdirname}/frame"
     cmd.mpng(prefix)   # saves png of each frame as "frame001.png, frame002.png, .."
     # TODO: higher resolution on the pngs.
@@ -168,8 +168,8 @@ with tempfile.TemporaryDirectory() as tmpdirname:
     log.info(f':videocassette:  Creating animated GIF {gif_filename} from images...')
     png_files = glob(f"{prefix}*.png")
     if len(png_files) == 0:
-        raise IOError(f"No {prefix}*.png files found - did PyMol not generate any?")
-    
+        raise OSError(f"No {prefix}*.png files found - did PyMol not generate any?")
+
     with iio.get_writer(gif_filename, mode='I') as writer:
         for filename in png_files:
             image = iio.imread(filename)
