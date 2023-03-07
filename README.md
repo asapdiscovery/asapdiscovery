@@ -16,18 +16,24 @@ To install an `asapdiscovery` package hosted in this repository, we recommend th
 
 1. Clone the repository, then enter the source tree:
 
+    ```
     git clone https://github.com/choderalab/asapdiscovery.git
     cd asapdiscovery
+    ```
 
 2. Install the dependencies into a new `conda` environment, and activate it:
 
+    ```
     conda install -n asapdiscovery -f devtools/conda-envs/asapdiscovery.yaml
     conda activate asapdiscovery
+    ```
 
 3. Install the individual `asapdiscovery` packages you want to use with `pip` into the environment.
    For example, `asapdiscovery-data`:
 
+    ```
     pip install asapdiscovery-data
+    ```
 
 
 ## How to use
