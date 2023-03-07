@@ -4,8 +4,8 @@ Prepare all SARS-CoV-2 Mpro structures for docking and simulation in monomer and
 This should be run from the covid-moonshot/scripts directory
 
 """
-import rich
 import openeye
+import rich
 
 
 def read_pdb_file(pdb_file):
@@ -56,14 +56,12 @@ def prepare_receptor(
 
     # Read in PDB file, skipping UNK atoms (left over from processing covalent ligands)
     pdbfile_lines = [
-        line for line in open(complex_pdb_filename, "r") if "UNK" not in line
+        line for line in open(complex_pdb_filename) if "UNK" not in line
     ]
 
     # If monomer is specified, drop crystal symmetry lines
     if not dimer:
-        pdbfile_lines = [
-            line for line in pdbfile_lines if "REMARK 350" not in line
-        ]
+        pdbfile_lines = [line for line in pdbfile_lines if "REMARK 350" not in line]
 
     # Filter out waters
     if not retain_water:
@@ -132,8 +130,9 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
         pdbfile_contents = seqres + pdbfile_contents
 
     # Read the receptor and identify design units
-    from openeye import oespruce, oechem
     from tempfile import NamedTemporaryFile
+
+    from openeye import oechem, oespruce
 
     with NamedTemporaryFile(delete=False, mode="wt", suffix=".pdb") as pdbfile:
         pdbfile.write(pdbfile_contents)
@@ -173,14 +172,10 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
     )  # JS: see https://github.com/choderalab/covid-moonshot-ml/blob/main/asapdiscovery/docking/modeling.py
 
     # Log warnings
-    errfs = (
-        oechem.oeosstream()
-    )  # create a stream that writes internally to a stream
+    errfs = oechem.oeosstream()  # create a stream that writes internally to a stream
     oechem.OEThrow.SetOutputStream(errfs)
     oechem.OEThrow.Clear()
-    oechem.OEThrow.SetLevel(
-        oechem.OEErrorLevel_Verbose
-    )  # capture verbose error output
+    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Verbose)  # capture verbose error output
 
     opts = oespruce.OEMakeDesignUnitOptions()
     # print(f'ligand atoms: min {opts.GetSplitOptions().GetMinLigAtoms()}, max {opts.GetSplitOptions().GetMaxLigAtoms()}')
@@ -194,9 +189,7 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
     # set minimal number of ligand atoms to 5, e.g. a 5-membered ring fragment
     opts.GetSplitOptions().SetMinLigAtoms(5)
     # also consider alternate locations outside binding pocket, important for later filtering
-    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(
-        False
-    )
+    opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(False)
 
     # alignment options, only matches are important
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
@@ -254,9 +247,7 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
     place_hydrogens_opts = protonate_opts.GetPlaceHydrogensOptions()
     place_hydrogens_opts.SetBypassPredicate(pred)
     place_hydrogens_opts.SetNoFlipPredicate(pred)
-    protonate_opts = oespruce.OEProtonateDesignUnitOptions(
-        place_hydrogens_opts
-    )  # ?
+    protonate_opts = oespruce.OEProtonateDesignUnitOptions(place_hydrogens_opts)  # ?
     opts.GetPrepOptions().SetProtonateOptions(protonate_opts)  # ?
 
     # Make design units
@@ -418,18 +409,17 @@ if __name__ == "__main__":
     # Load setup.yaml
     import yaml
 
-    with open("setup.yaml", "r") as infile:
+    with open("setup.yaml") as infile:
         setup_options = yaml.safe_load(infile)
     # Extract setup options
-    fragments = [
-        entry["fragalysis_id"] for entry in setup_options["source_structures"]
-    ]
+    fragments = [entry["fragalysis_id"] for entry in setup_options["source_structures"]]
     structures_path = setup_options["structures_path"]
     output_basepath = setup_options["receptors_path"]
     # loop_database = '/data/chodera/shallerd/rcsb_spruce.loop_db'
 
     # Prep all receptors
-    import glob, os
+    import glob
+    import os
 
     # Be quiet
     from openeye import oechem
@@ -474,10 +464,11 @@ if __name__ == "__main__":
             prepare_receptor_wrapper(source_pdb_files[0])
         else:
             # Multiprocessing
-            from rich.progress import track
-            from multiprocessing import Pool
-            from tqdm import tqdm
             import os
+            from multiprocessing import Pool
+
+            from rich.progress import track
+            from tqdm import tqdm
 
             processes = None
             if "LSB_DJOB_NUMPROC" in os.environ:
