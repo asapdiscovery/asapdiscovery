@@ -1,6 +1,7 @@
 import logging
 import os
 
+
 class FileLogger:
     def __init__(self, logname: str, path: str, logfile: str = None):
         self.name = logname
