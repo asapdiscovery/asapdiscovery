@@ -1,7 +1,6 @@
 import logging
 import os
-
-from openeye import oechem
+from asapdiscovery.data.openeye import oechem
 
 
 class FileLogger:
