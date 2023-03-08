@@ -233,4 +233,11 @@ def update_graph(
     return fig
 
 
-app.run_server(port=9000, debug=True)
+def main():
+    """Run server for Dash application"""
+    app.run_server(port=9000, debug=True)
+
+
+if __name__ == "__main__":
+    main()
+

@@ -584,4 +584,11 @@ def per_structure_bar_chart(clickData1, clickData2):  # noqa F811
         return fig
 
 
-app.run_server(debug=True)
+def main():
+    """Run server for Dash application"""
+    app.run_server(debug=True)
+
+
+if __name__ == "__main__":
+    main()
+

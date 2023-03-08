@@ -29,6 +29,13 @@ dependencies = [
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
+[project.scripts]
+dash-all-results-exploration = "asapdiscovery.dataviz.scripts.dash_all_results_exploration:main"
+dash-docking-contour-plot = "asapdiscovery.dataviz.scripts.dash_docking_contour_plot:main"
+dash-docking-exploration = "asapdiscovery.dataviz.scripts.dash_docking_exploration:main"
+dash-docking-interactive-scatterplots = "asapdiscovery.dataviz.scripts.dash_docking_interactive_scatterplots:main"
+dash-docking-interactive-table = "asapdiscovery.dataviz.scripts.dash_docking_interactive_table:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 
