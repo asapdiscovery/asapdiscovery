@@ -26,5 +26,4 @@ python prep_mers_pdbs.py -n 10 \
 -o /data/chodera/asap-datasets/mers_fauxalysis/20230308_prepped_mers_pdbs \
 -l /data/chodera/asap-datasets/rcsb_spruce.loop_db \
 -s "../../../../metadata/mpro_mers_seqres.yaml" \
---protein_only \
---log_file .txt
+--protein_only
