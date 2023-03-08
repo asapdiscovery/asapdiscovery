@@ -1,7 +1,8 @@
 import argparse
+import logging
 import multiprocessing as mp
 from pathlib import Path
-import logging
+
 import yaml
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
