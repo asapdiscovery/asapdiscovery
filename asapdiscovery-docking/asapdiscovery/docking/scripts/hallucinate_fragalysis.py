@@ -13,6 +13,8 @@ from glob import glob
 import pandas
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
+from asapdiscovery.data.openeye import save_openeye_pdb
+from asapdiscovery.data.openeye import save_openeye_sdf
 from asapdiscovery.data.openeye import oechem  # noqa: E402
 from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
