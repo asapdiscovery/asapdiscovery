@@ -48,9 +48,9 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        environment-file: devtools/conda-envs/test.yaml
+        environment-file: devtools/conda-envs/asapdiscovery.yaml
         miniforge-variant: Mambaforge
-        activate-environment: test
+        activate-environment: asapdiscovery
         auto-update-conda: false
         auto-activate-base: false
         show-channel-urls: true
