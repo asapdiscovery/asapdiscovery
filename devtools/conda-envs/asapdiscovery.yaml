@@ -1,4 +1,4 @@
-name: test
+name: asapdiscovery
 channels:
   - pytorch
   - pyg
@@ -14,7 +14,7 @@ dependencies:
   - pytest-cov
   - codecov
 
-  # CLI
+  # cli
   - click
 
   # Others
