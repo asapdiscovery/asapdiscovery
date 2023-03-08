@@ -1,7 +1,7 @@
 import argparse
 import multiprocessing as mp
 from pathlib import Path
-
+import logging
 import yaml
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
@@ -63,11 +63,6 @@ def get_args():
         help="If true, generate design units with only the protein in them",
     )
     parser.add_argument(
-        "--log_file",
-        default="prep_proteins_log.txt",
-        help="Path to high level log file.",
-    )
-    parser.add_argument(
         "-n",
         "--num_cores",
         type=int,
@@ -78,25 +73,42 @@ def get_args():
 
 
 def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
-    du_fn = output / f"{cifpath.stem}-prepped_receptor_0.oedu"
-    if du_fn.exists():
-        print(f"Already made {du_fn}!")
-        return
+    # Set up logger
+    name = str(cifpath.stem)
+    logfile = output / f"{name}-log.txt"
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler(str(logfile), mode="w")
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
-    print("Loading cif and writing to pdb file")
+    # Set up logging for OE Functions to redirect Info / Warnings / etc from stdout
+    errfs = oechem.oeofstream(str(output / f"{name}-oelog.txt"))
+    oechem.OEThrow.SetOutputStream(errfs)
+
+    du_fn = output / f"{name}-prepped_receptor_0.oedu"
+    if du_fn.exists():
+        logger.info(f"Already made {du_fn}!")
+        return
+    else:
+        logger.info(f"Preparing {cifpath}")
+
+    logger.info("Loading cif and writing to pdb file")
 
     cif = PDBxFile(str(cifpath))
 
-    outfile = output / f"{cifpath.stem}-openmm.pdb"
+    outfile = output / f"{name}-openmm.pdb"
 
-    ## the keep ids flag is critical to make sure the residue numbers are correct
+    # the keep ids flag is critical to make sure the residue numbers are correct
     with open(outfile, "w") as f:
         PDBFile.writeFile(cif.topology, cif.positions, f, keepIds=True)
 
-    print("Loading pdb to OpenEye")
+    logger.info("Loading pdb to OpenEye")
     prot = load_openeye_pdb(str(outfile))
 
-    print("Aligning to ref")
+    logger.info("Aligning to ref")
 
     ref_path = Path(ref_prot)
     prot = align_receptor(
@@ -107,10 +119,10 @@ def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
         mobile_chain="A",  # TODO: make this not hardcoded? not sure what logic to use though
         ref_chain="A",
     )
-    # aligned = str(output / f"{cifpath.stem}-01.pdb")
+    # aligned = str(output / f"{name}-01.pdb")
     # save_openeye_pdb(prot, aligned)
 
-    print("Preparing Sprucing options")
+    logger.info("Preparing Sprucing options")
     loop_path = Path(loop_db)
 
     seqres_path = Path(seqres_yaml)
@@ -121,11 +133,11 @@ def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
     res_list = seqres_to_res_list(seqres)
     seqres = " ".join(res_list)
 
-    print("Making mutations")
+    logger.info("Making mutations")
 
     prot = mutate_residues(prot, res_list, place_h=True)
 
-    print("Sprucing protein")
+    logger.info("Sprucing protein")
 
     du = spruce_protein(
         initial_prot=prot,
@@ -136,12 +148,12 @@ def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
 
     if type(du) == oechem.OEDesignUnit:
 
-        print("Saving Design Unit")
+        logger.info("Saving Design Unit")
 
-        du_fn = output / f"{cifpath.stem}-prepped_receptor_0.oedu"
+        du_fn = output / f"{name}-prepped_receptor_0.oedu"
         oechem.OEWriteDesignUnit(str(du_fn), du)
 
-        print("Saving PDB")
+        logger.info("Saving PDB")
 
         prot = oechem.OEGraphMol()
         du.GetProtein(prot)
@@ -152,12 +164,12 @@ def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
                 if seqres_line != "":
                     oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
 
-        prot_fn = output / f"{cifpath.stem}-prepped_receptor_0.pdb"
+        prot_fn = output / f"{name}-prepped_receptor_0.pdb"
         save_openeye_pdb(prot, str(prot_fn))
 
     elif type(du) == oechem.OEGraphMol:
-        print("Design Unit preparation failed. Saving spruced protein")
-        prot_fn = output / f"{cifpath.stem}-failed-spruced.pdb"
+        logger.info("Design Unit preparation failed. Saving spruced protein")
+        prot_fn = output / f"{name}-failed-spruced.pdb"
         save_openeye_pdb(du, str(prot_fn))
 
 
