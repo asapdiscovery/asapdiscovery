@@ -1,4 +1,4 @@
 Getting Started
 ===============
 
-This page details how to get started with COVIDMoonshotML. 
+This page details how to get started with COVIDMoonshotML.
