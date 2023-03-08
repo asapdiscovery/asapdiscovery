@@ -20,7 +20,7 @@
 source ~/.bashrc
 conda activate mers-docking
 
-python download_pdbs \
+python download_pdbs.py \
 -d /data/chodera/asap-datasets/mers_fauxalysis/mers_pdb_download \
 --pdb_yaml_path ../../../../metadata/mers-structures.yaml \
 -t cif1
