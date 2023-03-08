@@ -1,7 +1,5 @@
 import logging
 import os
-from asapdiscovery.data.openeye import oechem
-
 
 class FileLogger:
     def __init__(self, logname: str, path: str, logfile: str = None):
