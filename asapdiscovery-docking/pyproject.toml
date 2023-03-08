@@ -47,7 +47,7 @@ prep-pdb-structures = "asapdiscovery.docking.scripts.prep_pdb_structures:main"
 prep-proteins = "asapdiscovery.docking.scripts.prep_proteins:main"
 run-docking-oe = "asapdiscovery.docking.scripts.run_docking_oe:main"
 score-structures = "asapdiscovery.docking.scripts.score_structures:main"
-test-protein-prep = "asapdiscovery.docking.scripts.test-protein-prep:main"
+test-protein-prep = "asapdiscovery.docking.scripts.test_protein_prep:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
