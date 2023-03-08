@@ -11,10 +11,9 @@ import re
 from glob import glob
 
 import pandas
-
-from asapdiscovery.data.openeye import oechem  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
+from asapdiscovery.data.openeye import oechem  # noqa: E402
 from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.data.utils import filter_docking_inputs  # noqa: 402
@@ -22,7 +21,6 @@ from asapdiscovery.data.utils import get_compound_id_xtal_dicts  # noqa: E402
 from asapdiscovery.data.utils import parse_fragalysis_data  # noqa: E402
 from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
 from asapdiscovery.docking.modeling import make_du_from_new_lig  # noqa: 402
-
 from openeye import oedocking, oespruce
 
 

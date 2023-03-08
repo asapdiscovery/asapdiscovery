@@ -17,10 +17,8 @@ import pickle as pkl
 import shutil
 
 import yaml
-
-from asapdiscovery.data.openeye import oechem
-
 from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.utils import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.utils import save_openeye_sdf  # noqa: E402
