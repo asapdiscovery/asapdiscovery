@@ -30,7 +30,7 @@ from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.ml import MSELoss  # noqa: E402
 from asapdiscovery.ml import GAT, E3NNBind, GaussianNLLLoss, SchNetBind  # noqa: E402
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset  # noqa: E402
-from asapdiscovery.ml.utils import calc_e3nn_model_info  # noqa: E402 E501
+from asapdiscovery.ml.utils import calc_e3nn_model_info  # noqa: E402
 from asapdiscovery.ml.utils import find_most_recent  # noqa: 402
 from asapdiscovery.ml.utils import plot_loss  # noqa: E402
 from asapdiscovery.ml.utils import split_molecules, train  # noqa: E402

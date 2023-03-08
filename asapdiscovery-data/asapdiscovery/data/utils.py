@@ -6,6 +6,7 @@ from typing import Optional, Union
 import numpy as np
 import pandas
 import rdkit.Chem as Chem
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import (
     CrystalCompoundData,
     EnantiomerPair,
@@ -13,7 +14,6 @@ from asapdiscovery.data.schema import (
     ExperimentalCompoundData,
     ExperimentalCompoundDataUpdate,
 )
-from openeye import oechem
 
 
 def download_file(url: str, path: str):
@@ -132,7 +132,7 @@ def edit_pdb_file(
     pdbfile_lines = [re.sub("CL", "Cl", l) for l in pdbfile_lines]  # noqa: E741
     if seqres_str:
         pdbfile_lines = [
-            line for line in pdbfile_lines if not "SEQRES" in line  # noqa: E713 E501
+            line for line in pdbfile_lines if not "SEQRES" in line  # noqa: E713
         ]
 
         pdbfile_lines = [
@@ -141,9 +141,7 @@ def edit_pdb_file(
 
     if edit_remark350:
         pdbfile_lines = [
-            line
-            for line in pdbfile_lines
-            if not "REMARK 350" in line  # noqa: E713 E501
+            line for line in pdbfile_lines if not "REMARK 350" in line  # noqa: E713
         ]
         if chains and oligomeric_state:
             remark_str = get_remark_str(chains, oligomeric_state)
@@ -564,7 +562,7 @@ def filter_molecules_dataframe(
         )
         > 0
     )
-    is_enantiopure = lambda smi: (not is_achiral(smi)) and (  # noqa: E731 E501
+    is_enantiopure = lambda smi: (not is_achiral(smi)) and (  # noqa: E731
         not is_racemic(smi)
     )
 
@@ -935,8 +933,8 @@ def filter_docking_inputs(
 
     if verbose:
         print(
-            f"Retained {len(filtered_docking_inputs) / num_input_cpds * 100:.2f}% of compounds after "  # noqa: E501
-            + f"filtering ({len(query_smarts)} SMARTS filter(s); {num_input_cpds}-->"  # noqa: E501
+            f"Retained {len(filtered_docking_inputs) / num_input_cpds * 100:.2f}% of compounds after "
+            + f"filtering ({len(query_smarts)} SMARTS filter(s); {num_input_cpds}-->"
             + f"{len(filtered_docking_inputs)})."
         )
 

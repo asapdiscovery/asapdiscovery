@@ -5,7 +5,7 @@ import argparse
 import glob
 import multiprocessing as mp
 
-from asapdiscovery.data.utils import (  # noqa: E402 E501
+from asapdiscovery.data.utils import (  # noqa: E402
     check_filelist_has_elements,
     edit_pdb_file,
 )

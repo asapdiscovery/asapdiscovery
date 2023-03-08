@@ -1,4 +1,4 @@
-name: test
+name: asapdiscovery
 channels:
   - pytorch
   - pyg
@@ -14,6 +14,9 @@ dependencies:
   - pytest-cov
   - codecov
 
+  # cli
+  - click
+
   # Others
   - appdirs
   - mdanalysis
@@ -25,6 +28,13 @@ dependencies:
   - pytorch
   - rdkit
   - seaborn
+
+  # data
+  - requests
+  - boto3
+  - moto
+  - flask
+  - flask-cors
 
   # Pip-only installs
   - pip:

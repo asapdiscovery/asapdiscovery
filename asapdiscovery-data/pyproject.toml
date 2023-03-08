@@ -27,7 +27,11 @@ dependencies = [
     #"pymol",
     "requests",
     "typing-extensions",
-    "click"
+    "click",
+    "boto3",
+    "moto",
+    "flask",
+    "flask_cors"
 ]
 
 [project.urls]

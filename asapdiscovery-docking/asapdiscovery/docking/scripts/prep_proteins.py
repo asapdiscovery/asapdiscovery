@@ -19,18 +19,19 @@ import os
 import re
 
 import yaml
+from asapdiscovery.data.openeye import oechem
+
 from asapdiscovery.data import pdb  # noqa: E402
 from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.schema import CrystalCompoundData  # noqa: E402
 from asapdiscovery.data.utils import seqres_to_res_list  # noqa: E402
-from asapdiscovery.docking.modeling import align_receptor  # noqa: E402 E501
+from asapdiscovery.docking.modeling import align_receptor  # noqa: E402
 from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
-from asapdiscovery.docking.modeling import mutate_residues  # noqa: E402 E501
+from asapdiscovery.docking.modeling import mutate_residues  # noqa: E402
 from asapdiscovery.docking.modeling import prep_receptor  # noqa: E402
 from asapdiscovery.docking.modeling import remove_extra_ligands  # noqa: E402
-from openeye import oechem
 
 
 def check_completed(d):
@@ -160,7 +161,7 @@ def get_args():
         "-d",
         "--structure_dir",
         required=True,
-        help="Path to fragalysis/aligned/ directory or directory to put PDB structures.",  # noqa: E501
+        help="Path to fragalysis/aligned/ directory or directory to put PDB structures.",
     )
 
     parser.add_argument(
@@ -181,7 +182,7 @@ def get_args():
         "--ref_prot",
         default=None,
         type=str,
-        help="Path to reference pdb to align to. If None, no alignment will be performed",  # noqa: E501
+        help="Path to reference pdb to align to. If None, no alignment will be performed",
     )
 
     # Output arguments
