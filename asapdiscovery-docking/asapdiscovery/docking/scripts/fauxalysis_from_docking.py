@@ -18,11 +18,11 @@ import shutil
 
 import yaml
 from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.utils import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.utils import save_openeye_sdf  # noqa: E402
 from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
-from openeye import oechem
 
 
 def get_args():
@@ -65,7 +65,7 @@ def get_args():
         "--overwrite",
         action="store_true",
         default=False,
-        help="Flag to enable overwriting output data, otherwise it will skip directories that exists already.",  # noqa: E501
+        help="Flag to enable overwriting output data, otherwise it will skip directories that exists already.",
     )
     parser.add_argument(
         "-p",

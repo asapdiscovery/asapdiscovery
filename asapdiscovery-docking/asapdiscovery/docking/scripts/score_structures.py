@@ -1,8 +1,13 @@
 import argparse
 
 import pandas
-from asapdiscovery.data.openeye import load_openeye_pdb, split_openeye_mol
-from openeye import oechem, oedocking, oegrid
+from asapdiscovery.data.openeye import (
+    load_openeye_pdb,
+    oechem,
+    oedocking,
+    oegrid,
+    split_openeye_mol,
+)
 
 SCORE_TYPES = {
     "chemgauss": oedocking.OEScoreType_Chemgauss4,
