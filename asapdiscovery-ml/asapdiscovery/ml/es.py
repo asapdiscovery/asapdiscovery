@@ -3,7 +3,7 @@ Class for handling early stopping in training.
 """
 
 
-class EarlyStopping(object):
+class EarlyStopping:
     """Class for handling early stopping in training."""
 
     def __init__(self, patience):
@@ -14,7 +14,7 @@ class EarlyStopping(object):
             The maximum number of epochs to continue training with no improvement in the
             val loss. If not given, no early stopping will be performed
         """
-        super(EarlyStopping, self).__init__()
+        super().__init__()
         self.patience = patience
 
         # Variables to track early stopping

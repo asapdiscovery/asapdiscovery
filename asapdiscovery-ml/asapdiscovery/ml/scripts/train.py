@@ -17,9 +17,6 @@ python train.py \
     -proj test-model-compare
 """
 import argparse
-from dgllife.utils import CanonicalAtomFeaturizer
-from e3nn import o3
-from e3nn.nn.models.gate_points_2101 import Network
 import json
 import os
 import pickle as pkl
@@ -27,17 +24,11 @@ import re
 import sys
 from glob import glob
 
+import mtenn.conversion_utils
+import mtenn.model
 import numpy as np
 import torch
-from torch_geometric.datasets import QM9
-from torch_geometric.nn import SchNet
-
-from asapdiscovery.ml import (
-    EarlyStopping,
-    GAT,
-    MSELoss,
-    GaussianNLLLoss,
-)
+from asapdiscovery.ml import GAT, EarlyStopping, GaussianNLLLoss, MSELoss
 from asapdiscovery.ml.utils import (
     build_dataset,
     build_model,
@@ -50,9 +41,11 @@ from asapdiscovery.ml.utils import (
     split_dataset,
     train,
 )
-
-import mtenn.conversion_utils
-import mtenn.model
+from dgllife.utils import CanonicalAtomFeaturizer
+from e3nn import o3
+from e3nn.nn.models.gate_points_2101 import Network
+from torch_geometric.datasets import QM9
+from torch_geometric.nn import SchNet
 
 
 def add_one_hot_encodings(ds):
@@ -218,9 +211,7 @@ def get_args():
     )
     parser.add_argument("-irr", help="Hidden irreps for e3nn model.")
     parser.add_argument("-config", help="Model config JSON/YAML file.")
-    parser.add_argument(
-        "-wts_fn", help="Specific model weights file to load from."
-    )
+    parser.add_argument("-wts_fn", help="Specific model weights file to load from.")
 
     # Training arguments
     parser.add_argument(
@@ -298,9 +289,7 @@ def get_args():
             "in that case."
         ),
     )
-    parser.add_argument(
-        "-pred_r", help="Readout method to use for energy predictions."
-    )
+    parser.add_argument("-pred_r", help="Readout method to use for energy predictions.")
     parser.add_argument(
         "-comb_r",
         help=(
@@ -457,9 +446,7 @@ def init(args, rank=False):
         )
 
     ## Update exp_configure to have model info in it
-    exp_configure.update(
-        {f"model_config:{k}": v for k, v in model_config.items()}
-    )
+    exp_configure.update({f"model_config:{k}": v for k, v in model_config.items()})
 
     # Early stopping
     if args.early_stopping:
@@ -574,9 +561,7 @@ def main():
         model_dir = os.path.join(args.model_o, r.id)
 
         ## Log dataset splits
-        for name, split in zip(
-            ["train", "val", "test"], [ds_train, ds_val, ds_test]
-        ):
+        for name, split in zip(["train", "val", "test"], [ds_train, ds_val, ds_test]):
             table = make_wandb_table(split)
             wandb.log({f"dataset_splits/{name}": table})
     elif args.wandb:

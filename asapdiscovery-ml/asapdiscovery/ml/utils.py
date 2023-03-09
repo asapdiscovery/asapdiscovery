@@ -38,13 +38,13 @@ def build_dataset(
     Returns
     -------
     """
-    from glob import glob
     import re
+    from glob import glob
 
     from asapdiscovery.ml.dataset import (
         DockedDataset,
-        GroupedDockedDataset,
         GraphDataset,
+        GroupedDockedDataset,
     )
 
     ## Get all docked structures
@@ -61,9 +61,7 @@ def build_dataset(
     idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
     compounds = [
         (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(
-            xtal_matches, compound_matches, idx
-        )
+        for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
         if both_m
     ]
     num_found = len(compounds)
@@ -91,9 +89,7 @@ def build_dataset(
         ##  fair comparison between 2D and 3D models)
         xtal_compound_ids = {c[1] for c in compounds}
         ## Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [
-            c for c in exp_compounds if c.compound_id in xtal_compound_ids
-        ]
+        exp_compounds = [c for c in exp_compounds if c.compound_id in xtal_compound_ids]
         print("filter", len(exp_compounds), flush=True)
 
         ## Make cache directory as necessary
@@ -269,25 +265,19 @@ def build_model(
                 model_params = pkl.load(open(e3nn_params, "rb"))
             else:
                 raise ValueError(
-                    (
                         "Must provide an appropriate value for e3nn_params "
                         f"(received {e3nn_params})"
-                    )
                 )
             model = build_model_e3nn(100, *model_params[1:], config)
             get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
 
         ## Take MTENN args from config if present, else from args
-        strategy = (
-            config["strat"].lower() if "strat" in config else strat.lower()
-        )
+        strategy = config["strat"].lower() if "strat" in config else strat.lower()
         grouped = config["grouped"] if "grouped" in config else grouped
 
         ## Check and parse combination
         try:
-            combination = (
-                config["comb"].lower() if "comb" in config else comb.lower()
-            )
+            combination = config["comb"].lower() if "comb" in config else comb.lower()
             if combination == "mean":
                 combination = mtenn.model.MeanCombination()
             elif combination == "boltzmann":
@@ -306,9 +296,7 @@ def build_model(
         ## Check and parse pred readout
         try:
             pred_readout = (
-                config["pred_r"].lower()
-                if "pred_r" in config
-                else pred_r.lower()
+                config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
             )
             if pred_readout == "pic50":
                 pred_readout = mtenn.model.PIC50Readout()
@@ -322,9 +310,7 @@ def build_model(
         ## Check and parse comb readout
         try:
             comb_readout = (
-                config["comb_r"].lower()
-                if "comb_r" in config
-                else comb_r.lower()
+                config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
             )
             if comb_readout == "pic50":
                 comb_readout = mtenn.model.PIC50Readout()
@@ -473,9 +459,7 @@ def build_model_schnet(
             atomref = None
             ## Get rid of entries in state_dict that correspond to atomref
             wts = {
-                k: v
-                for k, v in model_qm9.state_dict().items()
-                if "atomref" not in k
+                k: v for k, v in model_qm9.state_dict().items() if "atomref" not in k
             }
         else:
             atomref = model_qm9.atomref.weight.detach().clone()
@@ -538,8 +522,8 @@ def build_model_e3nn(
     mtenn.conversion_utils.e3nn.E3NN
         e3nn model created from input parameters
     """
-    from e3nn.o3 import Irreps
     import mtenn.conversion_utils
+    from e3nn.o3 import Irreps
 
     ## Parse config
     if type(config) is str:
@@ -589,37 +573,27 @@ def build_model_e3nn(
         ## Set up default hidden irreps if none specified
     elif irreps_hidden is None:
         irreps_hidden = [
-            (mul, (l, p))
-            for l, mul in enumerate([10, 3, 2, 1])
-            for p in [-1, 1]
+            (mul, (l, p)) for l, mul in enumerate([10, 3, 2, 1]) for p in [-1, 1]
         ]
 
     ## Handle any conflicts and set defaults if necessary. config will
     ##  override any other parameters
     node_attr = config["lig"] if config and ("lig" in config) else node_attr
     irreps_edge_attr = (
-        config["irreps_edge_attr"]
-        if config and ("irreps_edge_attr" in config)
-        else 3
+        config["irreps_edge_attr"] if config and ("irreps_edge_attr" in config) else 3
     )
     layers = config["layers"] if config and ("layers" in config) else 3
     neighbor_dist = (
-        config["max_radius"]
-        if config and ("max_radius" in config)
-        else neighbor_dist
+        config["max_radius"] if config and ("max_radius" in config) else neighbor_dist
     )
     number_of_basis = (
-        config["number_of_basis"]
-        if config and ("number_of_basis" in config)
-        else 10
+        config["number_of_basis"] if config and ("number_of_basis" in config) else 10
     )
     radial_layers = (
         config["radial_layers"] if config and ("radial_layers" in config) else 1
     )
     radial_neurons = (
-        config["radial_neurons"]
-        if config and ("radial_neurons" in config)
-        else 128
+        config["radial_neurons"] if config and ("radial_neurons" in config) else 128
     )
 
     # input is one-hot encoding of atom type => n_atom_types scalars
@@ -721,6 +695,7 @@ def build_optimizer(model, config=None):
         raise ValueError(f"Unknown optimizer type: {optim_type}")
 
     return optimizer
+
 
 import numpy as np
 
@@ -865,13 +840,12 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         `return_compounds` is True
     """
     import json
+
     from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 
     ## Load all compounds with experimental data and filter to only achiral
     ##  molecules (to start)
-    exp_compounds = ExperimentalCompoundDataUpdate(
-        **json.load(open(fn, "r"))
-    ).compounds
+    exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn))).compounds
     exp_compounds = [c for c in exp_compounds if ((not achiral) or c.achiral)]
 
     exp_dict = {
@@ -1244,6 +1218,7 @@ def train(
     from time import time
 
     import torch
+
     from . import MSELoss
 
     if use_wandb:

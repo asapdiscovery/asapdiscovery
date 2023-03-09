@@ -229,14 +229,12 @@ class GroupedDockedDataset(Dataset):
         """
         import numpy as np
 
-        super(GroupedDockedDataset, self).__init__()
+        super().__init__()
 
         ## Function to extract from extra_dict (just to make the list
         ##  comprehension look a bit nicer)
         get_extra = lambda compound: (
-            extra_dict[compound]
-            if (extra_dict and (compound in extra_dict))
-            else None
+            extra_dict[compound] if (extra_dict and (compound in extra_dict)) else None
         )
         mp_args = [
             (fn, compound, ignore_h, lig_resn, get_extra(compound))
@@ -248,19 +246,13 @@ class GroupedDockedDataset(Dataset):
 
             n_procs = min(num_workers, mp.cpu_count(), len(mp_args))
             with mp.Pool(n_procs) as pool:
-                all_structures = pool.starmap(
-                    DockedDataset._load_structure, mp_args
-                )
+                all_structures = pool.starmap(DockedDataset._load_structure, mp_args)
         else:
-            all_structures = [
-                DockedDataset._load_structure(*args) for args in mp_args
-            ]
+            all_structures = [DockedDataset._load_structure(*args) for args in mp_args]
 
         self.compound_ids = []
         self.structures = {}
-        for i, ((_, compound_id), struct) in enumerate(
-            zip(compounds, all_structures)
-        ):
+        for i, ((_, compound_id), struct) in enumerate(zip(compounds, all_structures)):
             try:
                 self.structures[compound_id].append(struct)
             except KeyError:
@@ -319,9 +311,7 @@ class GroupedDockedDataset(Dataset):
         else:
             compound_id_list = idx
 
-        str_list = [
-            self.structures[compound_id] for compound_id in compound_id_list
-        ]
+        str_list = [self.structures[compound_id] for compound_id in compound_id_list]
         if return_list:
             return compound_id_list, str_list
         else:

@@ -1,7 +1,6 @@
+import torch
 from dgllife.model import GAT as GAT_dgl
 from dgllife.model import WeightedSumAndMax
-
-import torch
 
 
 class GAT(torch.nn.Module):

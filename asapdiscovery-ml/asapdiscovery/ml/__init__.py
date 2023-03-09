@@ -4,6 +4,6 @@ from importlib.metadata import version
 
 __version__ = version("asapdiscovery-ml")
 
+from .es import EarlyStopping
 from .loss import *
 from .models import *
-from .es import EarlyStopping
