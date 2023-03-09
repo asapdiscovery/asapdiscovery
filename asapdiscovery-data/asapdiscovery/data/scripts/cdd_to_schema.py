@@ -1,8 +1,5 @@
 import argparse
-import os
-import sys
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.utils import cdd_to_schema  # noqa: E402
 from asapdiscovery.data.utils import cdd_to_schema_pair  # noqa: E402
 

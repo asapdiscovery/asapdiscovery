@@ -36,7 +36,7 @@ Options:
   --ligand=FILE       Ligand SDF filename.
   --nsteps=INT        Number of steps to run.
   --selection=SELECT  MDTraj selection to use (e.g. 'not water') [default: all].
-  --initial=FILE      Write initial complex PDB file.
+  --initial=FILE      Write initial complex PDB file.  
   --minimized=FILE    Write minimized complex PDB file.
   --final=FILE        Write final complex PDB file.
   --xtctraj=FILE      Generate XTC trajectory file.
@@ -211,7 +211,7 @@ for snapshot_index in track(range(n_snapshots), ':rocket: Running production sim
 if arguments['--final']:
     log.info(f":page_facing_up:  Writing final PDB to {arguments['--final']}")
     output_positions = context.getState(getPositions=True, enforcePeriodicBox=False).getPositions(asNumpy=True)
-    with open(arguments['--final'], 'w') as outfile:
+    with open(arguments['--final'], 'w') as outfile:    
         PDBFile.writeFile(output_topology, output_positions[output_indices,:], file=outfile, keepIds=False);
 
 # Flush trajectories to force files to be closed

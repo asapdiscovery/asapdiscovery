@@ -1,8 +1,8 @@
 # Simulating a protein:ligand complex to generate a trajectory and movie
 
-This script will run
+This script will run 
 
-Inputs:
+Inputs:  
 * Protein PDB : must be fully protonated (e.g. Spruced Fragalysis structure)
 * Ligand SDF (or other format RDKit can read) : does not need to be protonated
 
