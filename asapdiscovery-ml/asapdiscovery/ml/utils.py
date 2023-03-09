@@ -581,8 +581,10 @@ def build_model_e3nn(
         # Set up default hidden irreps if none specified
     elif irreps_hidden is None:
         irreps_hidden = [
-            (mul, (l, p)) for l, mul in enumerate([10, 3, 2, 1]) for p in [-1, 1]
-        ]  # noqa: E741
+            (mul, (l, p))  # noqa: E741
+            for l, mul in enumerate([10, 3, 2, 1])  # noqa: E741
+            for p in [-1, 1]  # noqa: E741
+        ]
 
     # Handle any conflicts and set defaults if necessary. config will
     #  override any other parameters
