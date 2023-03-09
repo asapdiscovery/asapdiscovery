@@ -4,11 +4,8 @@ Function to test implementation of ligand filtering
 
 import argparse
 import os
-import sys
 
 import yaml
-
-sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import oechem  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402

@@ -29,6 +29,26 @@ dependencies = [
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
+[project.scripts]
+#build-design-units = "asapdiscovery.docking.scripts.build_design_units:main"
+clean-results-csv = "asapdiscovery.docking.scripts.clean_results_csv:main"
+collate-results = "asapdiscovery.docking.scripts.collate_results:main"
+create-fauxalysis-subset-from-yaml = "asapdiscovery.docking.scripts.create_fauxalysis_subset_from_yaml:main"
+fauxalysis-from-docking = "asapdiscovery.docking.scripts.fauxalysis_from_docking:main"
+find-all-mcs = "asapdiscovery.docking.scripts.find_all_mcs:main"
+#find-mcs-mers = "asapdiscovery.docking.scripts.find_mcs_mers:main"
+hallucinate-fragalysis = "asapdiscovery.docking.scripts.hallucinate_fragalysis:main"
+make-docked-complexes = "asapdiscovery.docking.scripts.make_docked_complexes:main"
+#mass-add-seqres = "asapdiscovery.docking.scripts.mass_add_seqres:main"
+mcs-res-mpro-to-compound = "asapdiscovery.docking.scripts.mcs_res_mpro_to_compound:main"
+plot-docking-results = "asapdiscovery.docking.scripts.plot_docking_results:main"
+prep-fragalysis-dus = "asapdiscovery.docking.scripts.prep_fragalysis_dus:main"
+prep-pdb-structures = "asapdiscovery.docking.scripts.prep_pdb_structures:main"
+prep-proteins = "asapdiscovery.docking.scripts.prep_proteins:main"
+run-docking-oe = "asapdiscovery.docking.scripts.run_docking_oe:main"
+score-structures = "asapdiscovery.docking.scripts.score_structures:main"
+test-protein-prep = "asapdiscovery.docking.scripts.test_protein_prep:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 

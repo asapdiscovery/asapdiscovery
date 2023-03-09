@@ -7,17 +7,14 @@ Example Usage:
     python create_fauxalysis_subset_from_yaml.py
         -d posit_hybrid_no_relax_keep_water_frag
         -o posit_hybrid_no_relax_keep_water_frag_carlsson
+        -y ../../../../metadata/luttens2022ultralarge.yaml
 
 """
 import argparse
 import os
 import shutil
-import sys
 
 import yaml
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
 
 
 def get_args():
@@ -31,11 +28,7 @@ def get_args():
     parser.add_argument(
         "-y",
         "--yaml_file",
-        default=os.path.join(
-            repo_path,
-            "data",
-            "luttens2022ultralarge.yaml",
-        ),
+        required=True,
         help="Path to yaml_file",
     )
 
