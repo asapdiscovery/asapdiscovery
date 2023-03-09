@@ -265,8 +265,8 @@ def build_model(
                 model_params = pkl.load(open(e3nn_params, "rb"))
             else:
                 raise ValueError(
-                        "Must provide an appropriate value for e3nn_params "
-                        f"(received {e3nn_params})"
+                    "Must provide an appropriate value for e3nn_params "
+                    f"(received {e3nn_params})"
                 )
             model = build_model_e3nn(100, *model_params[1:], config)
             get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
