@@ -33,10 +33,8 @@ from torch_geometric.datasets import QM9
 from torch_geometric.nn import SchNet
 
 from asapdiscovery.ml import (
-    E3NNBind,
     EarlyStopping,
     GAT,
-    SchNetBind,
     MSELoss,
     GaussianNLLLoss,
 )
