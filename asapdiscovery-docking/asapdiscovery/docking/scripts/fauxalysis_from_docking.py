@@ -10,6 +10,7 @@ Example usage:
         -i posit_hybrid_no_relax_keep_water_filter
         -o posit_hybrid_no_relax_keep_water_filter_frag
         -f aligned
+        -y ../../../../metadata/cmpd_to_frag.yaml
 """
 import argparse
 import os
@@ -44,9 +45,7 @@ def get_args():
     parser.add_argument(
         "-y",
         "--fragalysis_yaml",
-        default=os.path.join(
-            "cmpd_to_frag.yaml",
-        ),
+        required=True,
         help="Path to yaml file containing a compound-to-fragalysis dictionary.",
     )
     parser.add_argument(
