@@ -47,12 +47,12 @@ def build_dataset(
         GroupedDockedDataset,
     )
 
-    ## Get all docked structures
+    # Get all docked structures
     if os.path.isdir(in_files):
         all_fns = glob(f"{in_files}/*complex.pdb")
     else:
         all_fns = glob(in_files)
-    ## Extract crystal structure and compound id from file name
+    # Extract crystal structure and compound id from file name
     xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
     compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
 
@@ -65,7 +65,7 @@ def build_dataset(
         if both_m
     ]
     num_found = len(compounds)
-    ## Dictionary mapping from compound_id to Mpro dataset(s)
+    # Dictionary mapping from compound_id to Mpro dataset(s)
     compound_id_dict = {}
     for xtal_structure, compound_id in compounds:
         try:
@@ -78,28 +78,28 @@ def build_dataset(
     elif model_type.lower() == "2d":
         from dgllife.utils import CanonicalAtomFeaturizer
 
-        ## Load the experimental compounds
+        # Load the experimental compounds
         exp_data, exp_compounds = load_exp_data(
             exp_fn, achiral=achiral, return_compounds=True
         )
         print("load", len(exp_compounds), flush=True)
 
-        ## Get compounds that have both structure and experimental data (this
-        ##  step isn't actually necessary for performance, but allows a more
-        ##  fair comparison between 2D and 3D models)
+        # Get compounds that have both structure and experimental data (this
+        #  step isn't actually necessary for performance, but allows a more
+        #  fair comparison between 2D and 3D models)
         xtal_compound_ids = {c[1] for c in compounds}
-        ## Filter exp_compounds to make sure we have structures for them
+        # Filter exp_compounds to make sure we have structures for them
         exp_compounds = [c for c in exp_compounds if c.compound_id in xtal_compound_ids]
         print("filter", len(exp_compounds), flush=True)
 
-        ## Make cache directory as necessary
+        # Make cache directory as necessary
         if cache_fn is None:
             raise ValueError("Must provide cache_fn for 2d model.")
         elif os.path.isdir(cache_fn):
             os.makedirs(cache_fn, exist_ok=True)
             cache_fn = os.path.join(cache_fn, "graph.bin")
 
-        ## Build the dataset
+        # Build the dataset
         ds = GraphDataset(
             exp_compounds,
             node_featurizer=CanonicalAtomFeaturizer(),
@@ -108,24 +108,24 @@ def build_dataset(
 
         print(next(iter(ds)), flush=True)
 
-        ## Rename exp_compounds so the number kept is consistent
+        # Rename exp_compounds so the number kept is consistent
         compounds = exp_compounds
     elif cache_fn and os.path.isfile(cache_fn):
-        ## Load from cache
+        # Load from cache
         ds = pkl.load(open(cache_fn, "rb"))
         print("Loaded from cache", flush=True)
 
-        ## Still need to load the experimental affinities
+        # Still need to load the experimental affinities
         exp_data, exp_compounds = load_exp_data(
             exp_fn, achiral=achiral, return_compounds=True
         )
     else:
-        ## Load the experimental affinities
+        # Load the experimental affinities
         exp_data, exp_compounds = load_exp_data(
             exp_fn, achiral=achiral, return_compounds=True
         )
 
-        ## Make dict to access smiles data
+        # Make dict to access smiles data
         smiles_dict = {}
         for c in exp_compounds:
             if c.compound_id not in compound_id_dict:
@@ -133,7 +133,7 @@ def build_dataset(
             for xtal_structure in compound_id_dict[c.compound_id]:
                 smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
 
-        ## Make dict to access experimental compound data
+        # Make dict to access experimental compound data
         exp_data_dict = {}
         for compound_id, d in exp_data.items():
             if compound_id not in compound_id_dict:
@@ -141,13 +141,13 @@ def build_dataset(
             for xtal_structure in compound_id_dict[compound_id]:
                 exp_data_dict[(xtal_structure, compound_id)] = d
 
-        ## Trim docked structures and filenames to remove compounds that don't have
-        ##  experimental data
+        # Trim docked structures and filenames to remove compounds that don't have
+        #  experimental data
         all_fns, compounds = zip(
             *[o for o in zip(all_fns, compounds) if o[1][1] in exp_data]
         )
 
-        ## Build extra info dict
+        # Build extra info dict
         extra_dict = {
             compound: {
                 "smiles": smiles,
@@ -158,7 +158,7 @@ def build_dataset(
             for compound, smiles in smiles_dict.items()
         }
 
-        ## Load the dataset
+        # Load the dataset
         if grouped:
             ds = GroupedDockedDataset(
                 all_fns,
@@ -177,7 +177,7 @@ def build_dataset(
             )
 
         if cache_fn:
-            ## Cache dataset
+            # Cache dataset
             pkl.dump(ds, open(cache_fn, "wb"))
 
     num_kept = len(ds)
@@ -230,10 +230,10 @@ def build_model(
         Build model
     """
 
-    ## Correct model name if needed
+    # Correct model name if needed
     model_type = model_type.lower()
 
-    ## Get config
+    # Get config
     if not config:
         try:
             import wandb
@@ -258,7 +258,7 @@ def build_model(
             model = build_model_schnet(config)
             get_model = mtenn.conversion_utils.schnet.SchNet.get_model
         else:
-            ## Loadmodel parameters
+            # Loadmodel parameters
             if (type(e3nn_params) is list) or (type(e3nn_params) is tuple):
                 model_params = e3nn_params
             elif os.path.isfile(e3nn_params):
@@ -271,11 +271,11 @@ def build_model(
             model = build_model_e3nn(100, *model_params[1:], config)
             get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
 
-        ## Take MTENN args from config if present, else from args
+        # Take MTENN args from config if present, else from args
         strategy = config["strat"].lower() if "strat" in config else strat.lower()
         grouped = config["grouped"] if "grouped" in config else grouped
 
-        ## Check and parse combination
+        # Check and parse combination
         try:
             combination = config["comb"].lower() if "comb" in config else comb.lower()
             if combination == "mean":
@@ -285,15 +285,15 @@ def build_model(
             else:
                 raise ValueError(f"Uknown value for -comb: {combination}")
         except AttributeError:
-            ## This will be triggered if combination is left blank
-            ##  (None.lower() => AttributeError)
+            # This will be triggered if combination is left blank
+            #  (None.lower() => AttributeError)
             if grouped:
                 raise ValueError(
                     f"A value must be provided for -comb if --grouped is set."
                 )
             combination = None
 
-        ## Check and parse pred readout
+        # Check and parse pred readout
         try:
             pred_readout = (
                 config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
@@ -307,7 +307,7 @@ def build_model(
         except AttributeError:
             pred_readout = None
 
-        ## Check and parse comb readout
+        # Check and parse comb readout
         try:
             comb_readout = (
                 config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
@@ -321,7 +321,7 @@ def build_model(
         except AttributeError:
             comb_readout = None
 
-        ## Use previously built model to construct mtenn.model.Model
+        # Use previously built model to construct mtenn.model.Model
         model = get_model(
             model=model,
             grouped=grouped,
@@ -417,7 +417,7 @@ def build_model_schnet(
     import mtenn.conversion_utils
     from torch_geometric.nn import SchNet
 
-    ## Parse config
+    # Parse config
     if type(config) is str:
         config = parse_config(config_fn)
     elif config is None:
@@ -430,11 +430,11 @@ def build_model_schnet(
     elif type(config) != dict:
         raise ValueError(f"Unknown type of config: {type(config)}")
 
-    ## Load pretrained model if requested, otherwise create a new SchNet
+    # Load pretrained model if requested, otherwise create a new SchNet
     if qm9 is None:
         if config:
-            ## Get param values from config if they're there, otherwise just
-            ##  use default SchNet values
+            # Get param values from config if they're there, otherwise just
+            #  use default SchNet values
             model_params = [
                 "hidden_channels",
                 "num_filters",
@@ -457,7 +457,7 @@ def build_model_schnet(
 
         if remove_atomref:
             atomref = None
-            ## Get rid of entries in state_dict that correspond to atomref
+            # Get rid of entries in state_dict that correspond to atomref
             wts = {
                 k: v for k, v in model_qm9.state_dict().items() if "atomref" not in k
             }
@@ -483,7 +483,7 @@ def build_model_schnet(
         model.load_state_dict(wts)
         model = mtenn.conversion_utils.SchNet(model)
 
-    ## Set interatomic cutoff (default of 10) to make the graph smaller
+    # Set interatomic cutoff (default of 10) to make the graph smaller
     if (config is None) or ("cutoff" not in config):
         model.cutoff = neighbor_dist
 
@@ -525,7 +525,7 @@ def build_model_e3nn(
     import mtenn.conversion_utils
     from e3nn.o3 import Irreps
 
-    ## Parse config
+    # Parse config
     if type(config) is str:
         config = parse_config(config_fn)
     elif config is None:
@@ -538,7 +538,7 @@ def build_model_e3nn(
     elif type(config) != dict:
         raise ValueError(f"Unknown type of config: {type(config)}")
 
-    ## Build hidden irreps
+    # Build hidden irreps
     if config:
         if "irreps_0o" in config:
             irreps_hidden = Irreps(
@@ -570,14 +570,14 @@ def build_model_e3nn(
                     (config["irreps_4"], "4e"),
                 ]
             )
-        ## Set up default hidden irreps if none specified
+        # Set up default hidden irreps if none specified
     elif irreps_hidden is None:
         irreps_hidden = [
             (mul, (l, p)) for l, mul in enumerate([10, 3, 2, 1]) for p in [-1, 1]
         ]
 
-    ## Handle any conflicts and set defaults if necessary. config will
-    ##  override any other parameters
+    # Handle any conflicts and set defaults if necessary. config will
+    #  override any other parameters
     node_attr = config["lig"] if config and ("lig" in config) else node_attr
     irreps_edge_attr = (
         config["irreps_edge_attr"] if config and ("irreps_edge_attr" in config) else 3
@@ -642,7 +642,7 @@ def build_optimizer(model, config=None):
     """
     import torch
 
-    ## Parse config
+    # Parse config
     if type(config) is str:
         config = parse_config(config_fn)
     elif config is None:
@@ -656,16 +656,16 @@ def build_optimizer(model, config=None):
     elif type(config) != dict:
         raise ValueError(f"Unknown type of config: {type(config)}")
 
-    ## Return None (use script default) if not present
+    # Return None (use script default) if not present
     if "optimizer" not in config:
         print("No optimizer specified, using standard Adam.", flush=True)
         return None
 
-    ## Correct model name if needed
+    # Correct model name if needed
     optim_type = config["optimizer"].lower()
 
     if optim_type == "adam":
-        ## Defaults from torch if not present in config
+        # Defaults from torch if not present in config
         b1 = config["b1"] if "b1" in config else 0.9
         b2 = config["b2"] if "b2" in config else 0.999
         eps = config["eps"] if "eps" in config else 1e-8
@@ -679,7 +679,7 @@ def build_optimizer(model, config=None):
             weight_decay=weight_decay,
         )
     elif optim_type == "sgd":
-        ## Defaults from torch if not present in config
+        # Defaults from torch if not present in config
         momentum = config["momentum"] if "momentum" in config else 0
         weight_decay = config["weight_decay"] if "weight_decay" in config else 0
         dampening = config["dampening"] if "dampening" in config else 0
@@ -843,8 +843,8 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
 
     from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 
-    ## Load all compounds with experimental data and filter to only achiral
-    ##  molecules (to start)
+    # Load all compounds with experimental data and filter to only achiral
+    #  molecules (to start)
     exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn))).compounds
     exp_compounds = [c for c in exp_compounds if ((not achiral) or c.achiral)]
 
@@ -862,7 +862,7 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
     }
 
     if return_compounds:
-        ## Filter compounds
+        # Filter compounds
         exp_compounds = [c for c in exp_compounds if c.compound_id in exp_dict]
         return exp_dict, exp_compounds
     else:
@@ -887,13 +887,13 @@ def load_weights(model, wts_fn):
     """
     import torch
 
-    ## Load weights
+    # Load weights
     try:
         wts_dict = torch.load(wts_fn)
     except RuntimeError:
         wts_dict = torch.load(wts_fn, map_location="cpu")
 
-    ## Initialize linear module in ConcatStrategy
+    # Initialize linear module in ConcatStrategy
     if "strategy.reduce_nn.weight" in wts_dict:
         model.strategy.reduce_nn = torch.nn.Linear(
             wts_dict["strategy.reduce_nn.weight"].shape[1],
@@ -905,11 +905,11 @@ def load_weights(model, wts_fn):
     print("extra parameters:", loaded_params - model_params)
     print("missing parameters:", model_params - loaded_params)
 
-    ## Get rid of extra params
+    # Get rid of extra params
     for p in loaded_params - model_params:
         del wts_dict[p]
 
-    ## Load model parameters
+    # Load model parameters
     model.load_state_dict(wts_dict)
     print(f"Loaded model weights from {wts_fn}", flush=True)
 
@@ -1006,7 +1006,7 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
     """
     import torch
 
-    ## Check that fractions add to 1
+    # Check that fractions add to 1
     if sum([train_frac, val_frac, test_frac]) != 1:
         from warnings import warn
 
@@ -1018,7 +1018,7 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
             RuntimeWarning,
         )
 
-    ## Split dataset into train/val/test (80/10/10 split)
+    # Split dataset into train/val/test (80/10/10 split)
     # use fixed seed for reproducibility
     if grouped:
         n_train = int(len(ds) * train_frac)
@@ -1231,14 +1231,14 @@ def train(
     if test_loss is None:
         test_loss = []
 
-    ## Send model to desired device if it's not there already
+    # Send model to desired device if it's not there already
     model = model.to(device)
 
-    ## Save initial model weights for debugging
+    # Save initial model weights for debugging
     if os.path.isdir(save_file):
         torch.save(model.state_dict(), os.path.join(save_file, "init.th"))
 
-    ## Set up optimizer and loss function
+    # Set up optimizer and loss function
     if optimizer is None:
         optimizer = torch.optim.Adam(model.parameters(), lr)
     print("Using optimizer", optimizer, flush=True)
@@ -1385,7 +1385,7 @@ def train(
         else:
             torch.save(model.state_dict(), save_file)
 
-        ## Stop if loss has gone to infinity or is NaN
+        # Stop if loss has gone to infinity or is NaN
         if (
             np.isnan(epoch_val_loss)
             or (epoch_val_loss == np.inf)

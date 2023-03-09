@@ -17,18 +17,13 @@ python train.py \
     -proj test-model-compare
 """
 import argparse
-import json
 import os
 import pickle as pkl
-import re
-import sys
-from glob import glob
 
 import mtenn.conversion_utils
-import mtenn.model
 import numpy as np
 import torch
-from asapdiscovery.ml import GAT, EarlyStopping, GaussianNLLLoss, MSELoss
+from asapdiscovery.ml import EarlyStopping, GaussianNLLLoss, MSELoss
 from asapdiscovery.ml.utils import (
     build_dataset,
     build_model,
@@ -41,11 +36,6 @@ from asapdiscovery.ml.utils import (
     split_dataset,
     train,
 )
-from dgllife.utils import CanonicalAtomFeaturizer
-from e3nn import o3
-from e3nn.nn.models.gate_points_2101 import Network
-from torch_geometric.datasets import QM9
-from torch_geometric.nn import SchNet
 
 
 def add_one_hot_encodings(ds):
@@ -102,7 +92,7 @@ def make_wandb_table(ds_split):
     table = wandb.Table(
         columns=["crystal", "compound_id", "molecule", "smiles", "pIC50"]
     )
-    ## Build table and add each molecule
+    # Build table and add each molecule
     for compound, d in ds_split:
         if type(compound) is tuple:
             xtal_id, compound_id = compound
@@ -275,7 +265,7 @@ def get_args():
         help="This run is part of a WandB sweep.",
     )
 
-    ## MTENN arguments
+    # MTENN arguments
     parser.add_argument(
         "-strat",
         default="delta",
@@ -306,7 +296,7 @@ def init(args, rank=False):
     Initialization steps that are common to all analyses.
     """
 
-    ## Parse model config file
+    # Parse model config file
     if args.sweep:
         import wandb
 
@@ -319,9 +309,9 @@ def init(args, rank=False):
         model_config = {}
     print("Using model config:", model_config, flush=True)
 
-    ## Override args parameters with model_config parameters\
-    ## This shouldn't strictly be necessary, as model_config should override
-    ##  everything, but just to be safe
+    # Override args parameters with model_config parameters\
+    # This shouldn't strictly be necessary, as model_config should override
+    #  everything, but just to be safe
     if "grouped" in model_config:
         args.grouped = model_config["grouped"]
     if "lig" in model_config:
@@ -339,7 +329,7 @@ def init(args, rank=False):
     if "cutoff" in model_config:
         args.n_dist = model_config["cutoff"]
 
-    ## Load full dataset
+    # Load full dataset
     ds, exp_data = build_dataset(
         in_files=args.i,
         model_type=args.model,
@@ -353,20 +343,20 @@ def init(args, rank=False):
     )
     ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
 
-    ## Need to augment the datasets if using e3nn
+    # Need to augment the datasets if using e3nn
     if args.model.lower() == "e3nn":
-        ## Add one-hot encodings to the dataset
+        # Add one-hot encodings to the dataset
         ds_train = add_one_hot_encodings(ds_train)
         ds_val = add_one_hot_encodings(ds_val)
         ds_test = add_one_hot_encodings(ds_test)
 
-        ## Add lig labels as node attributes if requested
+        # Add lig labels as node attributes if requested
         if args.lig:
             ds_train = add_lig_labels(ds_train)
             ds_val = add_lig_labels(ds_val)
             ds_test = add_lig_labels(ds_test)
 
-        ## Load or calculate model parameters
+        # Load or calculate model parameters
         if args.model_params is None:
             e3nn_params = calc_e3nn_model_info(ds_train, args.n_dist)
         elif os.path.isfile(args.model_params):
@@ -389,12 +379,12 @@ def init(args, rank=False):
     )
     print("Model", model, flush=True)
 
-    ## Set up optimizer
+    # Set up optimizer
     optimizer = build_optimizer(model, model_config)
 
-    ## Update exp_configure with model parameters
+    # Update exp_configure with model parameters
     if args.model == "e3nn":
-        ## Experiment configuration
+        # Experiment configuration
         exp_configure = {
             "model": "e3nn",
             "n_atom_types": 100,
@@ -405,7 +395,7 @@ def init(args, rank=False):
             "irreps_hidden": model.representation.irreps_hidden,
         }
     elif args.model == "schnet":
-        ## Experiment configuration
+        # Experiment configuration
         exp_configure = {
             "model": "schnet",
             "qm9": args.qm9,
@@ -414,7 +404,7 @@ def init(args, rank=False):
             "neighbor_dist": args.n_dist,
         }
     elif args.model == "2d":
-        ## Update experiment configuration
+        # Update experiment configuration
         exp_configure = {"model": "GAT"}
     else:
         raise ValueError(f"Unknown model type {args.model}.")
@@ -434,7 +424,7 @@ def init(args, rank=False):
         }
     )
 
-    ## Add MTENN options
+    # Add MTENN options
     if (args.model.lower() == "schnet") or (args.model.lower() == "e3nn"):
         exp_configure.update(
             {
@@ -445,7 +435,7 @@ def init(args, rank=False):
             }
         )
 
-    ## Update exp_configure to have model info in it
+    # Update exp_configure to have model info in it
     exp_configure.update({f"model_config:{k}": v for k, v in model_config.items()})
 
     # Early stopping
@@ -517,14 +507,14 @@ def main():
         val_loss = None
         test_loss = None
 
-    ## Load weights
+    # Load weights
     if wts_fn:
         model = load_weights(model, wts_fn)
 
-        ## Update experiment configuration
+        # Update experiment configuration
         exp_configure.update({"wts_fn": wts_fn})
 
-    ## Update experiment configuration
+    # Update experiment configuration
     exp_configure.update({"start_epoch": start_epoch})
 
     # Set up the loss function
@@ -547,20 +537,20 @@ def main():
     loss_str = args.loss.lower() if args.loss else "mse"
     exp_configure.update({"loss_func": loss_str, "sq": args.sq})
 
-    ## Add any extra user-supplied config options
+    # Add any extra user-supplied config options
     if args.extra_config:
         exp_configure.update(
             {a.split(",")[0]: a.split(",")[1] for a in args.extra_config}
         )
 
-    ## Start wandb
+    # Start wandb
     if args.sweep:
         import wandb
 
         r = wandb.init()
         model_dir = os.path.join(args.model_o, r.id)
 
-        ## Log dataset splits
+        # Log dataset splits
         for name, split in zip(["train", "val", "test"], [ds_train, ds_val, ds_test]):
             table = make_wandb_table(split)
             wandb.log({f"dataset_splits/{name}": table})
@@ -573,22 +563,22 @@ def main():
         else:
             project_name = f"train-{args.model}"
 
-        ## Get project name
+        # Get project name
         if args.proj:
             project_name = args.proj
         else:
             project_name = f"train-{args.model}"
 
-        ## Load run_id to resume run
+        # Load run_id to resume run
         if args.cont:
             run_id = open(run_id_fn).read().strip()
-            run = wandb.init(project=project_name, id=run_id, resume="must")
+            wandb.init(project=project_name, id=run_id, resume="must")
             wandb.config.update(
                 {"continue": True},
                 allow_val_change=True,
             )
         else:
-            ## Get project name
+            # Get project name
             run_id = wandb_init(
                 project_name,
                 args.name,
@@ -602,7 +592,7 @@ def main():
     else:
         model_dir = args.model_o
 
-    ## Make output dir if necessary
+    # Make output dir if necessary
     os.makedirs(model_dir, exist_ok=True)
 
     # Train the model
@@ -634,7 +624,7 @@ def main():
     # Save model weights
     torch.save(model.state_dict(), f"{model_dir}/final.th")
 
-    ## Plot loss
+    # Plot loss
     if args.plot_o is not None:
         plot_loss(
             train_loss.mean(axis=1),

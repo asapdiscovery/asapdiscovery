@@ -231,11 +231,15 @@ class GroupedDockedDataset(Dataset):
 
         super().__init__()
 
-        ## Function to extract from extra_dict (just to make the list
-        ##  comprehension look a bit nicer)
-        get_extra = lambda compound: (
-            extra_dict[compound] if (extra_dict and (compound in extra_dict)) else None
-        )
+        # Function to extract from extra_dict (just to make the list
+        #  comprehension look a bit nicer)
+        def get_extra(compound):
+            return (
+                extra_dict[compound]
+                if (extra_dict and (compound in extra_dict))
+                else None
+            )
+
         mp_args = [
             (fn, compound, ignore_h, lig_resn, get_extra(compound))
             for i, (fn, compound) in enumerate(zip(str_fns, compounds))
@@ -281,15 +285,15 @@ class GroupedDockedDataset(Dataset):
         """
         import torch
 
-        ## Extract idx from inside the tensor object
+        # Extract idx from inside the tensor object
         if torch.is_tensor(idx):
             try:
                 idx = idx.item()
             except ValueError:
                 idx = idx.tolist()
 
-        ## Figure out the type of the index, and keep note of whether a list was
-        ##  passed in or not
+        # Figure out the type of the index, and keep note of whether a list was
+        #  passed in or not
         if (type(idx) is int) or (type(idx) is str):
             return_list = False
             idx_type = type(idx)
@@ -304,8 +308,8 @@ class GroupedDockedDataset(Dataset):
                 err_type = type(idx)
             raise TypeError(f"Unknown indexing type {err_type}")
 
-        ## If idx is integral, assume it is indexing the structures list,
-        ##  otherwise assume it's giving structure name
+        # If idx is integral, assume it is indexing the structures list,
+        #  otherwise assume it's giving structure name
         if idx_type is int:
             compound_id_list = self.compound_ids[idx]
         else:
