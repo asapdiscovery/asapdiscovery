@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0", "versioningit"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asapdiscovery-ml"
+#version = "0.0.1"
+dynamic = ["version"]
+authors = [
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
+]
+description = "API and scripts related to machine learning training and inference using the ASAP data"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+dependencies = [
+    "torch",
+    "pandas",
+    "upsetplot",
+    "seaborn",
+    "dgllife",
+    "torch-cluster",
+    "e3nn"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/choderalab/asapdiscovery"
+"Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
+
+[project.scripts]
+pred-comp = "asapdiscovery.ml.scripts.pred_comp:main"
+rank-enantiomers = "asapdiscovery.ml.scripts.rank_enantiomers:main"
+train = "asapdiscovery.ml.scripts.train:main"
+upset-plot-ranked = "asapdiscovery.ml.scripts.upset_plot_ranked:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*"
+]
+
+[tool.versioningit]
+
+
+[tool.versioningit.vcs]
+default-tag = "0.0.99" # useful for CI/shallow clones

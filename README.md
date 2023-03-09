@@ -1,23 +1,57 @@
-COVIDMoonshotML
-==============================
+asapdiscovery
+=============
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/asapdiscovery/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/asapdiscovery/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/COVIDMoonshotML/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/COVIDMoonshotML/branch/master)
+[![GitHub Actions Build Status](https://github.com/choderalalb/asapdiscovery/workflows/CI/badge.svg)](https://github.com/choderalab/asapdiscovery/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/choderalab/asapdiscovery/branch/main/graph/badge.svg)](https://codecov.io/gh/choderalab/asapdiscovery/branch/main)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/choderalab/asapdiscovery/main.svg)](https://results.pre-commit.ci/latest/github/choderalab/asapdiscovery/main)
 
+A collection of libraries for structure-based open science antiviral drug discovery.
 
-Scripts and models for ML with COVID Moonshot data.
+## Installation
+
+`asapdiscovery` is a namespace package, composed of individual Python packages with their own dependencies.
+Each of these packages follows the `asapdiscovery-*` convention for the package name, e.g. `asapdiscovery-data`.
+
+To install an `asapdiscovery` package hosted in this repository, we recommend the following:
+
+1. Clone the repository, then enter the source tree:
+
+    ```
+    git clone https://github.com/choderalab/asapdiscovery.git
+    cd asapdiscovery
+    ```
+
+2. Install the dependencies into a new `conda` environment, and activate it:
+
+    ```
+    conda install -n asapdiscovery -f devtools/conda-envs/asapdiscovery.yaml
+    conda activate asapdiscovery
+    ```
+
+3. Install the individual `asapdiscovery` packages you want to use with `pip` into the environment.
+   For example, `asapdiscovery-data`:
+
+    ```
+    pip install asapdiscovery-data
+    ```
 
 
 ## How to use
 
 ### Intro
-This is a brief depiction of an example run through the pipeline in the [`covid-moonshot-ml` repo](https://github.com/choderalab/covid-moonshot-ml). All Python scripts mentioned in this tutorial are located in the top-level `scripts/` directory in the repo. I will also use the variable `CML_DIR` as the directory where the repo has been downloaded. The steps in the pipeline are:
+This is a brief depiction of an example run through the pipeline in the [`asapdiscovery` repo](https://github.com/choderalab/asapdiscovery).
+All Python scripts mentioned in this tutorial are located in the top-level `scripts/` directory in the repo.
+I will also use the variable `CML_DIR` as the directory where the repo has been downloaded.
+The steps in the pipeline are:
 1. Download Fragalysis and COVID Moonshot data
 2. Parse data into correct format for ML
 3. Run the docking pipeline
 4. ML
+
+
 ### Downloading the data
 The steps in this section are independent and can be run concurrently.
+
 #### Download Fragalysis Data
 **Script:** `download_fragalysis_data.py`
 
@@ -32,6 +66,7 @@ python ${CML_DIR}/scripts/download_fragalysis_data.py -o ./fragalysis/fragalysis
 ```
 
 If this code executes successully, you will be left with a `fragalysis/` directory containing the `fragalysis.zip` file as well as its contents.
+
 #### Download Moonshot Data
 **Script:** `download_moonshot_data.py`
 
@@ -46,6 +81,7 @@ python ${CML_DIR}/scripts/download_moonshot_data.py -tok ./cdd_vault_token.txt -
 
 ### Parse data into correct format
 The steps in this section are independent and can be run concurrently.
+
 #### Parse Fragalysis Data
 As of the time of writing, the PDB files downloaded from Fragalysis do not include the `SEQRES` header, so we need to add it.
 
@@ -78,6 +114,7 @@ python ${CML_DIR}/scripts/cdd_to_schema.py -i ./cdd_moonshot_achiral.csv -o ./cd
 
 ### Run the docking pipeline
 The steps in this section are **not** independent and must be run in the order they're listed.
+
 #### Running the MCS search
 Run an MCS search between all experimental compounds and all crystal structure compounds.
 
@@ -142,12 +179,31 @@ Train the model with the docked structures.
 
 **Script:** `train_dd.py`
 
+### Contributing
+
+### [pre-commit](https://pre-commit.com/#intro)
+
+We use pre-commit to automate code formatting and other fixes.
+You do not need to install pre-commit as we run it on our CI.
+If you want to run it locally:
+```bash
+# install
+$ mamba install -c conda-forge pre-commit
+# check
+$ pre-commit --version
+pre-commit 3.0.4 # your version may be different
+$ pre-commit install
+```
+
+Now every time you make a commit, the hooks will run on just the files you changed.
+See [here](https://pre-commit.com/#usage) for more details.
+
 ### Copyright
 
-Copyright (c) 2022, kaminow
+Copyright (c) 2023, ASAP Discovery
 
 
 #### Acknowledgements
- 
-Project based on the 
+
+Project based on the
 [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.6.
