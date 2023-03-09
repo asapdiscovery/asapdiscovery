@@ -9,6 +9,7 @@ Example Usage:
         -o posit_hybrid_no_relax_keep_water_filter_frag
         -d
         -s
+        -r ../../../../metadata/mers_structures.csv
 """
 import argparse
 import os
@@ -47,9 +48,8 @@ def get_args():
     parser.add_argument(
         "-r",
         "--resolution_csv",
-        default=os.path.join(
-            "mers_structures.csv",
-        ),
+        required=False,
+        help="CSV which has the resolution of the structures used in docking",
     )
     # TODO: this should be expandable to filter based on multiple different scores and
     # values
