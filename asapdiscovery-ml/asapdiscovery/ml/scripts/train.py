@@ -20,7 +20,6 @@ import argparse
 import os
 import pickle as pkl
 
-import mtenn.conversion_utils
 import numpy as np
 import torch
 from asapdiscovery.ml import EarlyStopping, GaussianNLLLoss, MSELoss

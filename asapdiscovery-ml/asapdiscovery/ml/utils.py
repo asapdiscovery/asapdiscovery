@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import pickle as pkl
 
@@ -247,9 +248,10 @@ def build_model(
         import torch
 
         model = build_model_2d(config)
-        model_call = lambda model, d: torch.reshape(
-            model(d["g"], d["g"].ndata["h"]), (-1, 1)
-        )
+
+        def model_call(model, d):
+            return torch.reshape(model(d["g"], d["g"].ndata["h"]), (-1, 1))
+
     elif (model_type == "schnet") or (model_type == "e3nn"):
         import mtenn.conversion_utils
         import mtenn.model
@@ -265,8 +267,8 @@ def build_model(
                 model_params = pkl.load(open(e3nn_params, "rb"))
             else:
                 raise ValueError(
-                        "Must provide an appropriate value for e3nn_params "
-                        f"(received {e3nn_params})"
+                    "Must provide an appropriate value for e3nn_params "
+                    f"(received {e3nn_params})"
                 )
             model = build_model_e3nn(100, *model_params[1:], config)
             get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
@@ -289,7 +291,7 @@ def build_model(
             #  (None.lower() => AttributeError)
             if grouped:
                 raise ValueError(
-                    f"A value must be provided for -comb if --grouped is set."
+                    "A value must be provided for -comb if --grouped is set."
                 )
             combination = None
 
@@ -331,7 +333,10 @@ def build_model(
             comb_readout=comb_readout,
             fix_device=True,
         )
-        model_call = lambda model, d: model(d)
+
+        def model_call(model, d):
+            return model(d)
+
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
@@ -357,7 +362,7 @@ def build_model_2d(config=None):
     from dgllife.utils import CanonicalAtomFeaturizer
 
     if type(config) is str:
-        config = json.load(open(config_fn))
+        config = parse_config(config)
     elif config is None:
         try:
             import wandb
@@ -419,7 +424,7 @@ def build_model_schnet(
 
     # Parse config
     if type(config) is str:
-        config = parse_config(config_fn)
+        config = parse_config(config)
     elif config is None:
         try:
             import wandb
@@ -450,6 +455,8 @@ def build_model_schnet(
             model = SchNet()
         model = mtenn.conversion_utils.SchNet(model)
     else:
+        from torch_geometric.datasets import QM9
+
         qm9_dataset = QM9(qm9)
 
         # target=10 is free energy (eV)
@@ -527,7 +534,7 @@ def build_model_e3nn(
 
     # Parse config
     if type(config) is str:
-        config = parse_config(config_fn)
+        config = parse_config(config)
     elif config is None:
         try:
             import wandb
@@ -574,7 +581,7 @@ def build_model_e3nn(
     elif irreps_hidden is None:
         irreps_hidden = [
             (mul, (l, p)) for l, mul in enumerate([10, 3, 2, 1]) for p in [-1, 1]
-        ]
+        ]  # noqa: E741
 
     # Handle any conflicts and set defaults if necessary. config will
     #  override any other parameters
@@ -644,7 +651,7 @@ def build_optimizer(model, config=None):
 
     # Parse config
     if type(config) is str:
-        config = parse_config(config_fn)
+        config = parse_config(config)
     elif config is None:
         try:
             import wandb
@@ -695,9 +702,6 @@ def build_optimizer(model, config=None):
         raise ValueError(f"Unknown optimizer type: {optim_type}")
 
     return optimizer
-
-
-import numpy as np
 
 
 def calc_e3nn_model_info(ds, r):
