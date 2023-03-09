@@ -1,9 +1,5 @@
 import argparse
 import os
-import sys
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
 
 from asapdiscovery.data.pdb import load_pdbs_from_yaml  # noqa: E402
 from asapdiscovery.data.schema import CrystalCompoundData  # noqa: E402

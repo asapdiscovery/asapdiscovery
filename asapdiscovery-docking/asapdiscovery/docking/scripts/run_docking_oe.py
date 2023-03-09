@@ -7,15 +7,12 @@ import os
 import pickle as pkl
 import re
 import shutil
-import sys
 from glob import glob
 
 import pandas
-from asapdiscovery.data.openeye import oechem
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
 

@@ -4,13 +4,10 @@ Script to download the COVID Moonshot data from CDD.
 import argparse
 import logging
 import os
-import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.moonshot import download_molecules  # noqa: E402
 
 
-########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
