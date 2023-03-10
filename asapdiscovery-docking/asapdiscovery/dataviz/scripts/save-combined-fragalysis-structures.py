@@ -1,12 +1,14 @@
 """
 """
 import argparse
-import multiprocessing as mp
-import mdtraj as md
-from pathlib import Path
 import logging
+import multiprocessing as mp
 from datetime import datetime
+from pathlib import Path
+
+import mdtraj as md
 import numpy as np
+
 
 ################################################################################
 def get_args():
@@ -62,9 +64,7 @@ def analyze_mp(fn, out_dir):
     def check_output():
         for fn_suffix in ["_acive_site", "_full_protein"]:
             for extension in [".pdb", ".npy"]:
-                if not (
-                    out_dir / f"{output_name}{fn_suffix}{extension}"
-                ).exists():
+                if not (out_dir / f"{output_name}{fn_suffix}{extension}").exists():
                     return False
         return True
 
