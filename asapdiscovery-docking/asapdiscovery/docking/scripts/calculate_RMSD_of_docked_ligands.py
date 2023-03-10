@@ -14,7 +14,6 @@ import os
 from glob import glob
 
 import pandas as pd
-from openeye import oechem
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
@@ -22,6 +21,7 @@ from asapdiscovery.data.openeye import (
     split_openeye_mol,
 )
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+from openeye import oechem
 
 
 def get_args():
