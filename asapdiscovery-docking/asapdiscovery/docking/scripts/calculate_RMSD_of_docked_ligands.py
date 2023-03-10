@@ -14,12 +14,12 @@ import os
 from glob import glob
 
 import pandas as pd
-from openeye import oechem
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     load_openeye_sdfs,
     split_openeye_mol,
+    oechem,
 )
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
