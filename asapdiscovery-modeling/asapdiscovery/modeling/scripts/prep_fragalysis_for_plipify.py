@@ -29,7 +29,7 @@ sys.path.append(
     )
 )
 ########################################################################################################################
-### CODE THAT WAS PREVIOUSLY IN IMPORTED METHODS
+# CODE THAT WAS PREVIOUSLY IN IMPORTED METHODS
 # from asapdiscovery.data.schema import CrystalCompoundData
 # from asapdiscovery.data import pdb
 # from asapdiscovery.data.utils import seqres_to_res_list
@@ -101,11 +101,11 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
         lig = oechem.OEGraphMol()
         du.GetLigand(lig)
 
-    ## Set ligand title, useful for the combined sdf file
+    # Set ligand title, useful for the combined sdf file
     if lig_title:
         lig.SetTitle(f"{lig_title}")
 
-    ## Give ligand atoms their own chain "L" and set the resname to "LIG"
+    # Give ligand atoms their own chain "L" and set the resname to "LIG"
     residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
     residue.SetChainID("L")
     residue.SetName("LIG")
@@ -113,12 +113,12 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
     for atom in list(lig.GetAtoms()):
         oechem.OEAtomSetResidue(atom, residue)
 
-    ## Combine protein and ligand and save
-    ## TODO: consider saving water as well
+    # Combine protein and ligand and save
+    # TODO: consider saving water as well
     oechem.OEAddMols(complex, prot)
     oechem.OEAddMols(complex, lig)
 
-    ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
+    # Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
     openeye_perceive_residues(prot)
     return lig, prot, complex
 
@@ -126,7 +126,7 @@ def save_openeye_design_unit(du, lig=None, lig_title=None):
 def load_openeye_pdb(pdb_fn, alt_loc=False):
     ifs = oechem.oemolistream()
     ifs_flavor = oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA
-    ## Add option for keeping track of alternat locations in PDB file
+    # Add option for keeping track of alternat locations in PDB file
     if alt_loc:
         ifs_flavor |= oechem.OEIFlavor_PDB_ALTLOC
     ifs.SetFlavor(
@@ -206,7 +206,7 @@ def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
     prot: oechem.OEGraphMol
 
     """
-    ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
+    # Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
     preserve = (
         oechem.OEPreserveResInfo_ChainID
         | oechem.OEPreserveResInfo_ResidueNumber
@@ -235,7 +235,7 @@ def trim_small_chains(input_mol, cutoff_len=10):
     oechem.OEGraphMol
         Trimmed molecule
     """
-    ## Copy the molecule
+    # Copy the molecule
     mol_copy = input_mol.CreateCopy()
 
     ## Remove chains from mol_copy that are too short (possibly a better way of

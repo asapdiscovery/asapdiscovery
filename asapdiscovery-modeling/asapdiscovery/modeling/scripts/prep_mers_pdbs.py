@@ -21,7 +21,7 @@ from openmm.app import PDBFile, PDBxFile
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d",
         "--structure_dir",
@@ -36,7 +36,7 @@ def get_args():
         help="Path to reference pdb to align to. If None, no alignment will be performed",
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument(
         "-o",
         "--output_dir",
@@ -44,7 +44,7 @@ def get_args():
         help="Path to output_dir.",
     )
 
-    ## Model-building arguments
+    # Model-building arguments
     parser.add_argument(
         "-l",
         "--loop_db",
@@ -159,7 +159,7 @@ def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
         prot = oechem.OEGraphMol()
         du.GetProtein(prot)
 
-        ## Add SEQRES entries if they're not present
+        # Add SEQRES entries if they're not present
         if (not oechem.OEHasPDBData(prot, "SEQRES")) and seqres:
             for seqres_line in seqres.split("\n"):
                 if seqres_line != "":

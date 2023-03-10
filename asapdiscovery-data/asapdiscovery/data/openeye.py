@@ -101,8 +101,8 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
 def load_openeye_cif(cif_fn, alt_loc=False):
     ifs = oechem.oemolistream()
     ifs_flavor = oechem.OEIFlavor_MMCIF_DEFAULT
-    ## Add option for keeping track of alternat locations in PDB file
-    ## TODO: check if this is a thing in mmcif
+    # Add option for keeping track of alternat locations in PDB file
+    # TODO: check if this is a thing in mmcif
     if not alt_loc:
         ifs_flavor |= oechem.OEIFlavor_MMCIF_NoAltLoc
     ifs.SetFlavor(
@@ -182,7 +182,7 @@ def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
     prot: oechem.OEGraphMol
 
     """
-    ## Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
+    # Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
     preserve = (
         oechem.OEPreserveResInfo_ChainID
         | oechem.OEPreserveResInfo_ResidueNumber
@@ -406,10 +406,10 @@ def openeye_copy_pdb_data(
     -------
 
     """
-    ## first, delete data with that tag
+    # first, delete data with that tag
     oechem.OEDeletePDBData(destination, tag)
 
-    ## now, add over all the data with the tag
+    # now, add over all the data with the tag
     for data_pair in oechem.OEGetPDBDataPairs(source):
         if data_pair.GetTag() == tag:
             oechem.OEAddPDBData(destination, data_pair)

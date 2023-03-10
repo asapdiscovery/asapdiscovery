@@ -11,7 +11,7 @@ from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-i",
         "--input_prot",

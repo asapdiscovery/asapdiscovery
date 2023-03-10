@@ -35,7 +35,7 @@ from asapdiscovery.docking import prep_mp
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d",
         "--structure_dir",
@@ -64,7 +64,7 @@ def get_args():
         help="Path to reference pdb to align to. If None, no alignment will be performed",
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument(
         "-o",
         "--output_dir",
@@ -72,7 +72,7 @@ def get_args():
         help="Path to output_dir.",
     )
 
-    ## Model-building arguments
+    # Model-building arguments
     parser.add_argument(
         "-l",
         "--loop_db",
@@ -101,7 +101,7 @@ def get_args():
         help="Path to high level log file.",
     )
 
-    ## Performance arguments
+    # Performance arguments
     parser.add_argument(
         "-n",
         "--num_cores",
@@ -136,27 +136,27 @@ def main():
             )
 
         for xtal in xtal_compounds:
-            ## Get chain
-            ## The parentheses in this string are the capture group
+            # Get chain
+            # The parentheses in this string are the capture group
 
             xtal.output_name = f"{xtal.dataset}_{xtal.compound_id}"
 
             frag_chain = xtal.dataset[-2:]
 
-            ## We also want the chain in the form of a single letter ('A', 'B'), etc
+            # We also want the chain in the form of a single letter ('A', 'B'), etc
             xtal.active_site_chain = frag_chain[-1]
 
-            ## If we aren't keeping the ligands, then we want to give it a site residue to use
+            # If we aren't keeping the ligands, then we want to give it a site residue to use
             if args.protein_only:
                 xtal.active_site = f"His:41: :{xtal.active_site_chain}"
 
     elif args.pdb_yaml_path:
-        ## First, get list of pdbs from yaml file
+        # First, get list of pdbs from yaml file
         pdb_dict = pdb.load_pdbs_from_yaml(args.pdb_yaml_path)
         pdb_list = list(pdb_dict.keys())
         pdb.download_PDBs(pdb_list, args.structure_dir)
         active_site_chain = "A"
-        ## If the yaml file doesn't have any options for the pdb file, then assume it is a dimer
+        # If the yaml file doesn't have any options for the pdb file, then assume it is a dimer
         xtal_compounds = [
             CrystalCompoundData(
                 str_fn=os.path.join(args.structure_dir, f"rcsb_{pdb_id}.pdb"),

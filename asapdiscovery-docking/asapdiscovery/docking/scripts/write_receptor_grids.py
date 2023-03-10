@@ -10,7 +10,7 @@ from asapdiscovery.data.openeye import save_receptor_grid
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-i",
         "--input_glob",
@@ -36,7 +36,7 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     for du_fn in glob(args.input_glob):
-        ## get name of directory
+        # get name of directory
         fn_header = os.path.split(os.path.dirname(du_fn))[1]
         out_fn = os.path.join(args.output_dir, f"{fn_header}.ccp4")
         print(f"Writing {du_fn} to {out_fn}")

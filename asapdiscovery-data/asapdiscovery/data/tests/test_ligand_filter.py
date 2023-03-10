@@ -10,7 +10,7 @@ from asapdiscovery.data import utils
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-f",
         "--fragalysis_dir",

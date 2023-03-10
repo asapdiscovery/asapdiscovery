@@ -19,7 +19,7 @@ cif = PDBxFile(str(cifpath))
 
 outfile = output / f"{cifpath.stem}-00.pdb"
 
-## the keep ids flag is critical to make sure the residue numbers are correct
+# the keep ids flag is critical to make sure the residue numbers are correct
 with open(outfile, "w") as f:
     PDBFile.writeFile(cif.topology, cif.positions, f, keepIds=True)
 
@@ -79,7 +79,7 @@ from openeye import oechem
 prot = oechem.OEGraphMol()
 du.GetProtein(prot)
 
-## Add SEQRES entries if they're not present
+# Add SEQRES entries if they're not present
 if (not oechem.OEHasPDBData(prot, "SEQRES")) and seqres:
     for seqres_line in seqres.split("\n"):
         if seqres_line != "":

@@ -30,7 +30,7 @@ from openeye import oechem
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-i",
         "--input_prot",
@@ -71,7 +71,7 @@ def main():
 
     active_site_chain = args.active_site_chain
 
-    ## Load PDB File
+    # Load PDB File
 
     xtal = CrystalCompoundData(
         str_fn=args.input_prot,
@@ -88,15 +88,15 @@ def main():
     else:
         seqres = None
 
-    ## Option to add SEQRES header
+    # Option to add SEQRES header
     if seqres:
         print("Editing PDB file")
-        ## Get a list of 3-letter codes for the sequence
+        # Get a list of 3-letter codes for the sequence
         res_list = seqres_to_res_list(seqres)
 
-        ## Generate a new (temporary) pdb file with the SEQRES we want
+        # Generate a new (temporary) pdb file with the SEQRES we want
         with NamedTemporaryFile(mode="w", suffix=".pdb") as tmp_pdb:
-            ## Add the SEQRES
+            # Add the SEQRES
             edit_pdb_file(
                 xtal.str_fn,
                 seqres_str=seqres,
@@ -106,7 +106,7 @@ def main():
                 pdb_out=tmp_pdb.name,
             )
 
-            ## Load in the pdb file as an OE object
+            # Load in the pdb file as an OE object
             seqres_prot = load_openeye_pdb(tmp_pdb.name)
 
             save_openeye_pdb(
@@ -121,7 +121,7 @@ def main():
 
     if mutate:
         print("Mutating to provided seqres")
-        ## Mutate the residues to match the residue list
+        # Mutate the residues to match the residue list
         initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
         save_openeye_pdb(
             initial_prot, os.path.join(args.output_dir, "mutated_test.pdb")

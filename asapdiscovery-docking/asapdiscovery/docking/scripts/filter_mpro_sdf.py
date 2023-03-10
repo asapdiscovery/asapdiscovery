@@ -23,7 +23,7 @@ from asapdiscovery.data.openeye import save_openeye_sdfs
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-csv",
         "--xtal_csv",
@@ -51,10 +51,10 @@ def main():
     xtal_compounds = parse_xtal(args.xtal_csv, args.structure_dir)
     print(f"Example: \n{xtal_compounds[0]}")
 
-    ## TODO: Might want to add ability to include input positions
-    ## TODO: Might also want to add more data to the output SDF files
+    # TODO: Might want to add ability to include input positions
+    # TODO: Might also want to add more data to the output SDF files
 
-    ## Make OEGraphMol for each compound and include some of the data
+    # Make OEGraphMol for each compound and include some of the data
     print(f"Creating {len(xtal_compounds)} OEGraphMol objects")
     mols = []
     for c in xtal_compounds:

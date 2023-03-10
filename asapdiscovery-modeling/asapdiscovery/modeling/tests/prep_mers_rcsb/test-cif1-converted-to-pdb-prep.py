@@ -29,9 +29,9 @@ active_site_chain = "A"
 
 mol = load_openeye_pdb(pdb_path.as_posix())
 
-## Align protein
-## TODO: This currently only keeps waters for one of the chains
-## it would be nice to have both
+# Align protein
+# TODO: This currently only keeps waters for one of the chains
+# it would be nice to have both
 mol = align_receptor(
     initial_complex=mol,
     ref_prot=ref_path.as_posix(),
@@ -42,12 +42,12 @@ mol = align_receptor(
 )
 save_openeye_pdb(mol, str(out_path / "align_test.pdb"))
 
-## Delete extra copies of ligand in the complex
+# Delete extra copies of ligand in the complex
 # removed = remove_extra_ligands(mol, lig_chain=active_site_chain)
 
-## TODO: this doesn't work for these structures because the ligand isn't named "LIG"
-## Fine for now since we want to get rid of the ligand anyway
-## but it would be nice to do this intelligently
+# TODO: this doesn't work for these structures because the ligand isn't named "LIG"
+# Fine for now since we want to get rid of the ligand anyway
+# but it would be nice to do this intelligently
 
 
 # res_list = seqres_to_res_list(seqres)

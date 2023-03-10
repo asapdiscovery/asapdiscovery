@@ -18,7 +18,7 @@ from tqdm import tqdm
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d",
         "--structure_dir",
@@ -29,7 +29,7 @@ def get_args():
         "-g", "--glob_str", default="*/*.oedu", help="String used to find files"
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument(
         "-o",
         "--output_dir",
@@ -52,21 +52,21 @@ def main():
 
     for fn in tqdm(fns):
 
-        ## Load in design units
+        # Load in design units
         du = oechem.OEDesignUnit()
         oechem.OEReadDesignUnit(str(fn), du)
 
-        ## Get name of complex from parent directory name
+        # Get name of complex from parent directory name
         complex_id = fn.parent.name
 
-        ## Use this function to split up design unit into different components
+        # Use this function to split up design unit into different components
         lig, prot, complex = split_openeye_design_unit(du, lig_title=complex_id)
 
-        ## Get output names
+        # Get output names
         sdf_path = fn.parent / f"{complex_id}.sdf"
         prot_only = fn.parent / f"{complex_id}_protein.pdb"
 
-        ## Write out outputs
+        # Write out outputs
         save_openeye_sdf(lig, str(sdf_path))
         save_openeye_pdb(prot, str(prot_only))
 

@@ -28,7 +28,7 @@ from openeye import oechem
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-sdf", "--sdf_fn", required=False, help="Path to combined sdf file."
     )
@@ -63,7 +63,7 @@ def get_args():
 
 def main():
     args = get_args()
-    ## Either load all from one big sdf file or from a glob that represents many
+    # Either load all from one big sdf file or from a glob that represents many
     if args.sdf_fn:
         print(f"Loading molecules from {args.sdf_fn}")
         mols = load_openeye_sdfs(args.sdf_fn)
@@ -75,21 +75,21 @@ def main():
 
     print(f"Loaded {len(mols)} molecules")
 
-    ## get unique compound_ids
+    # get unique compound_ids
     compound_ids = [oechem.OEGetSDData(mol, f"Compound_ID") for mol in mols]
     unique_compound_ids = list(set(compound_ids))
     print(f"Using {len(compound_ids)} compound ids to find reference structures")
 
-    ## TODO: Maybe something better would be to just pass a
-    ## TODO: yaml file that maps compound_ids to desired reference structures
+    # TODO: Maybe something better would be to just pass a
+    # TODO: yaml file that maps compound_ids to desired reference structures
 
-    ## is it an sdf or a pdb?
+    # is it an sdf or a pdb?
     ref_fns = glob(args.ref_glob)
     ref_type = args.ref_glob[-3:]
     if ref_type == "pdb":
         print("Loading reference PDBs")
 
-        ## This maps each compound id to the corresponding reference
+        # This maps each compound id to the corresponding reference
         ref_mols = {
             compound_id: split_openeye_mol(load_openeye_pdb(ref_fn))["lig"]
             for compound_id in unique_compound_ids
@@ -103,7 +103,7 @@ def main():
     complex_ids = []
     final_compound_ids = []
 
-    ## Now map each input sdf file to a reference
+    # Now map each input sdf file to a reference
     for query_mol in mols:
         compound_id = oechem.OEGetSDData(query_mol, f"Compound_ID")
         try:
