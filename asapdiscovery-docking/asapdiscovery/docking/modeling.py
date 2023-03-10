@@ -14,7 +14,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
-from openeye import oechem, oedocking, oespruce
 
 
 def du_to_complex(du, include_solvent=False):

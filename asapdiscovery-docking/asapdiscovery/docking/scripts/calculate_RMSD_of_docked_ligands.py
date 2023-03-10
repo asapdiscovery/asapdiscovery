@@ -11,17 +11,10 @@ Example Usage
 import argparse
 import multiprocessing as mp
 import os
-import sys
 from glob import glob
 
 import pandas as pd
 from openeye import oechem
-
-sys.path.append(
-    os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    )
-)
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
