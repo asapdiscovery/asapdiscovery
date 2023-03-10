@@ -238,9 +238,9 @@ def trim_small_chains(input_mol, cutoff_len=10):
     # Copy the molecule
     mol_copy = input_mol.CreateCopy()
 
-    ## Remove chains from mol_copy that are too short (possibly a better way of
-    ##  doing this with OpenEye functions)
-    ## Get number of residues per chain
+    # Remove chains from mol_copy that are too short (possibly a better way of
+    #  doing this with OpenEye functions)
+    # Get number of residues per chain
     chain_len_dict = {}
     hv = oechem.OEHierView(mol_copy)
     for chain in hv.GetChains():
@@ -252,7 +252,7 @@ def trim_small_chains(input_mol, cutoff_len=10):
             except KeyError:
                 chain_len_dict[chain_id] = frag_len
 
-    ## Remove short chains atom by atom
+    # Remove short chains atom by atom
     for a in mol_copy.GetAtoms():
         chain_id = oechem.OEAtomGetResidue(a).GetExtChainID()
         if (chain_id not in chain_len_dict) or (chain_len_dict[chain_id] <= cutoff_len):
@@ -278,19 +278,19 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     -------
     """
 
-    ## Test splitting
+    # Test splitting
     lig_mol = oechem.OEGraphMol()
     prot_mol = oechem.OEGraphMol()
     water_mol = oechem.OEGraphMol()
     oth_mol = oechem.OEGraphMol()
 
-    ## Make splitting split out covalent ligands
-    ## TODO: look into different covalent-related options here
+    # Make splitting split out covalent ligands
+    # TODO: look into different covalent-related options here
     opts = oechem.OESplitMolComplexOptions()
     opts.SetSplitCovalent(True)
     opts.SetSplitCovalentCofactors(True)
 
-    ## Select protein as all protein atoms in chain A or chain B
+    # Select protein as all protein atoms in chain A or chain B
     prot_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_Protein
     )
@@ -303,7 +303,7 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     a_or_b_chain = oechem.OEOrRoleSet(a_chain, b_chain)
     opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
 
-    ## Select ligand as all residues with resn LIG
+    # Select ligand as all residues with resn LIG
     lig_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_Ligand
     )
@@ -315,8 +315,8 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
         )
         opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
 
-    ## Set water filter (keep all waters in A, B, or W chains)
-    ##  (is this sufficient? are there other common water chain ids?)
+    # Set water filter (keep all waters in A, B, or W chains)
+    #  (is this sufficient? are there other common water chain ids?)
     wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
     w_chain = oechem.OERoleMolComplexFilterFactory(
         oechem.OEMolComplexChainRoleFactory("W")
@@ -367,24 +367,24 @@ def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
         RMSD between `ref_mol` and `mobile_mol` after alignment.
     """
 
-    ## Default atom predicates
+    # Default atom predicates
     if ref_pred is None:
         ref_pred = oechem.OEIsTrueAtom()
     if mobile_pred is None:
         mobile_pred = oechem.OEIsTrueAtom()
 
-    ## Create object to store results
+    # Create object to store results
     aln_res = oespruce.OESuperposeResults()
 
-    ## Set up superposing object and set reference molecule
+    # Set up superposing object and set reference molecule
     superpos = oespruce.OESuperpose()
     superpos.SetupRef(ref_mol, ref_pred)
 
-    ## Perform superposing
+    # Perform superposing
     superpos.Superpose(aln_res, mobile_mol, mobile_pred)
     # print(f"RMSD: {aln_res.GetRMSD()}")
 
-    ## Create copy of molecule and transform it to the aligned position
+    # Create copy of molecule and transform it to the aligned position
     mobile_mol_aligned = mobile_mol.CreateCopy()
     aln_res.Transform(mobile_mol_aligned)
 
@@ -444,25 +444,25 @@ def align_receptor(
     if (not dimer) and (not mobile_chain):
         raise ValueError("If dimer is False, a value must be given for mobile_chain.")
 
-    ## Load initial_complex from file if necessary
+    # Load initial_complex from file if necessary
     if type(initial_complex) is str:
         initial_complex = load_openeye_pdb(initial_complex, alt_loc=True)
-        ## If alt locations are present in PDB file, set positions to highest
-        ##  occupancy ALT
+        # If alt locations are present in PDB file, set positions to highest
+        #  occupancy ALT
         alf = oechem.OEAltLocationFactory(initial_complex)
         if alf.GetGroupCount() != 0:
             alf.MakePrimaryAltMol(initial_complex)
 
-    ## Load reference protein from file if necessary
+    # Load reference protein from file if necessary
     if type(ref_prot) is str:
         ref_prot = load_openeye_pdb(ref_prot, alt_loc=True)
-        ## If alt locations are present in PDB file, set positions to highest
-        ##  occupancy ALT
+        # If alt locations are present in PDB file, set positions to highest
+        #  occupancy ALT
         alf = oechem.OEAltLocationFactory(ref_prot)
         if alf.GetGroupCount() != 0:
             alf.MakePrimaryAltMol(ref_prot)
 
-    ## Split out protein components and align if requested
+    # Split out protein components and align if requested
 
     if split_initial_complex:
         split_dict = split_openeye_mol(initial_complex)
@@ -472,12 +472,12 @@ def align_receptor(
     else:
         initial_prot_temp = initial_complex
 
-    ## Extract if not dimer
+    # Extract if not dimer
     if dimer:
         initial_prot = initial_prot_temp
     else:
-        ### TODO: Have to figure out how to handle water here if it's in a
-        ###  different chain from the protein
+        ## TODO: Have to figure out how to handle water here if it's in a
+        ##  different chain from the protein
         initial_prot = oechem.OEGraphMol()
         chain_pred = oechem.OEHasChainID(mobile_chain)
         oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
@@ -485,7 +485,7 @@ def align_receptor(
         if split_ref:
             ref_prot = split_openeye_mol(ref_prot)["pro"]
 
-        ## Set up predicates
+        # Set up predicates
         if ref_chain is not None:
             not_water = oechem.OENotAtom(oechem.OEIsWater())
             ref_chain = oechem.OEHasChainID(ref_chain)
@@ -524,14 +524,14 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
     oechem.OEGraphMol
         Newly mutated molecule
     """
-    ## Create a copy of the molecule to avoid modifying original molecule
+    # Create a copy of the molecule to avoid modifying original molecule
     mut_prot = input_mol.CreateCopy()
-    ## Get sequence of input protein
+    # Get sequence of input protein
     input_mol_chain = [r.GetExtChainID() for r in oechem.OEGetResidues(input_mol)]
     input_mol_seq = [r.GetName() for r in oechem.OEGetResidues(input_mol)]
     input_mol_num = [r.GetResidueNumber() for r in oechem.OEGetResidues(input_mol)]
 
-    ## Build mutation map from OEResidue to new res name by indexing from res num
+    # Build mutation map from OEResidue to new res name by indexing from res num
     mut_map = {}
     for old_res_name, res_num, chain, r in zip(
         input_mol_seq,
@@ -539,36 +539,36 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
         input_mol_chain,
         oechem.OEGetResidues(mut_prot),
     ):
-        ## Skip if not in identified protein chains
+        # Skip if not in identified protein chains
         if protein_chains:
             if chain not in protein_chains:
                 continue
-        ## Skip if we're looking at a water
+        # Skip if we're looking at a water
         if old_res_name == "HOH":
             continue
         try:
             new_res = res_list[res_num - 1]
         except IndexError:
-            ## If the residue number is out of range (because its a water or something weird)
-            ## then we can skip right on by it
+            # If the residue number is out of range (because its a water or something weird)
+            # then we can skip right on by it
             continue
         if new_res != old_res_name:
             print(res_num, old_res_name, new_res)
             mut_map[r] = new_res
 
-    ## Return early if no mutations found
+    # Return early if no mutations found
     if len(mut_map) == 0:
         print("No mutations found", flush=True)
         return input_mol
 
-    ## Mutate and build sidechains
+    # Mutate and build sidechains
     oespruce.OEMutateResidues(mut_prot, mut_map)
 
-    ## Place hydrogens
+    # Place hydrogens
     if place_h:
         oechem.OEPlaceHydrogens(mut_prot)
 
-    ## Re-percieve residues so that atom number and connect records dont get screwed up
+    # Re-percieve residues so that atom number and connect records dont get screwed up
     openeye_perceive_residues(mut_prot)
 
     return mut_prot
@@ -603,10 +603,10 @@ def prep_receptor(
     """
     # initial_prot = build_dimer_from_monomer(initial_prot)
 
-    ## Add Hs to prep protein and ligand
+    # Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
 
-    ## Set up DU building options
+    # Set up DU building options
     opts = oespruce.OEMakeDesignUnitOptions()
     opts.SetSuperpose(False)
     if loop_db is not None:
@@ -614,8 +614,8 @@ def prep_receptor(
             loop_db
         )
 
-    ## Options set from John's function ########################################
-    ## (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
+    # Options set from John's function ########################################
+    # (https://github.com/FoldingAtHome/covid-moonshot/blob/454098f4255467f4655102e0330ebf9da0d09ccb/synthetic-enumeration/sprint-14-quinolones/00-prep-receptor.py)
     opts.GetPrepOptions().SetStrictProtonationMode(True)
     # set minimal number of ligand atoms to 5, e.g. a 5-membered ring fragment\
     opts.GetSplitOptions().SetMinLigAtoms(5)
@@ -654,10 +654,10 @@ def prep_receptor(
 
     ############################################################################
 
-    ## Structure metadata object
+    # Structure metadata object
     metadata = oespruce.OEStructureMetadata()
 
-    ## Allow for adding residues at the beginning/end if they're missing
+    # Allow for adding residues at the beginning/end if they're missing
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(True)
     if seqres:
         all_prot_chains = {
@@ -671,13 +671,13 @@ def prep_receptor(
             seq_metadata.SetSequence(seqres)
             metadata.AddSequenceMetadata(seq_metadata)
 
-    ## Finally make new DesignUnit
+    # Finally make new DesignUnit
     dus = list(oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue))
     assert dus[0].HasProtein()
     if not protein_only:
         assert dus[0].HasLigand()
 
-    ## Generate docking receptor for each DU
+    # Generate docking receptor for each DU
     for du in dus:
         oedocking.OEMakeReceptor(du)
 
@@ -705,12 +705,12 @@ def remove_extra_ligands(mol, lig_chain=None):
     oechem.OEMolBase
         Molecule with extra ligand copies removed.
     """
-    ## Atom filter to match all atoms in residue with name LIG
+    # Atom filter to match all atoms in residue with name LIG
     all_lig_match = oechem.OEAtomMatchResidueID()
     all_lig_match.SetName("LIG")
     all_lig_filter = oechem.OEAtomMatchResidue(all_lig_match)
 
-    ## Detect ligand chain to keep if none is given
+    # Detect ligand chain to keep if none is given
     if lig_chain is None:
         lig_chain = sorted(
             {
@@ -719,7 +719,7 @@ def remove_extra_ligands(mol, lig_chain=None):
             }
         )[0]
 
-    ## Copy molecule and delete all lig atoms that don't have the desired chain
+    # Copy molecule and delete all lig atoms that don't have the desired chain
     mol_copy = mol.CreateCopy()
     for a in mol_copy.GetAtoms(all_lig_filter):
         if oechem.OEAtomGetResidue(a).GetExtChainID() != lig_chain:
@@ -738,8 +738,8 @@ def seqres_to_res_list(seqres_str):
     -------
 
     """
-    ## Grab the sequence from the sequence str
-    ## use chain ID column
+    # Grab the sequence from the sequence str
+    # use chain ID column
     seqres_chain_column = 11
     seq_lines = [
         line[19:]
@@ -816,7 +816,7 @@ def parse_fragalysis(
 
     df = pandas.read_csv(x_fn)
 
-    ## Only keep rows of dataframe where the name_filter_column includes the name_filter string
+    # Only keep rows of dataframe where the name_filter_column includes the name_filter string
     if name_filter:
         if type(name_filter) == str:
             idx = df[name_filter_column].apply(lambda x: name_filter in x)
@@ -825,17 +825,17 @@ def parse_fragalysis(
             for filter in name_filter:
                 idx = df[name_filter_column].apply(lambda x: filter in x)
                 df = df[idx]
-    ## Drop duplicates, keeping only the first one.
+    # Drop duplicates, keeping only the first one.
     if drop_duplicate_datasets:
         df = df.drop_duplicates("RealCrystalName")
 
-    ## Build argument dicts for the CrystalCompoundData objects
+    # Build argument dicts for the CrystalCompoundData objects
     xtal_dicts = [
         dict(zip(("smiles", "dataset", "compound_id"), r[1].values))
         for r in df.loc[:, ["smiles", "crystal_name", "alternate_name"]].iterrows()
     ]
 
-    ## Add structure filename information and filter if not found
+    # Add structure filename information and filter if not found
     filtered_xtal_dicts = []
     for d in tqdm(xtal_dicts):
         glob_str = f"{d['dataset']}*/*.pdb"
@@ -843,14 +843,14 @@ def parse_fragalysis(
         for fn in fns:
             d["str_fn"] = str(fn)
 
-            ## This should basically always be true since we're getting the filenames from glob but just in case.
+            # This should basically always be true since we're getting the filenames from glob but just in case.
             if os.path.isfile(fn):
                 filtered_xtal_dicts.append(d)
     assert (
         len(filtered_xtal_dicts) > 0
     ), "No structure filenames were found by parse_fragalysis"
 
-    ## Build CrystalCompoundData objects for each row
+    # Build CrystalCompoundData objects for each row
     print(f"Loading {len(filtered_xtal_dicts)} structures")
     xtal_compounds = [CrystalCompoundData(**d) for d in filtered_xtal_dicts]
 
@@ -906,32 +906,32 @@ def prep_mp(
     loop_db,
     protein_only: bool,
 ):
-    ## Make output directory
+    # Make output directory
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    ## Prepare logger
+    # Prepare logger
     handler = logging.FileHandler(os.path.join(out_dir, "log.txt"), mode="w")
     prep_logger = logging.getLogger(xtal.output_name)
     prep_logger.setLevel(logging.INFO)
     prep_logger.addHandler(handler)
     prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
 
-    ## Check if results already exist
+    # Check if results already exist
     if check_completed(out_dir, xtal.output_name):
         prep_logger.info("Already completed! Finishing.")
         return
     prep_logger.info(f"Prepping {xtal.output_name}")
 
-    ## Load protein from pdb
+    # Load protein from pdb
     initial_prot = load_openeye_pdb(xtal.str_fn)
 
     if seqres:
         res_list = seqres_to_res_list(seqres)
         prep_logger.info("Mutating to provided seqres")
 
-        ## Mutate the residues to match the residue list
+        # Mutate the residues to match the residue list
         initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
 
     ## Delete extra copies of ligand in the complex

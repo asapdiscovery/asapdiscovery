@@ -451,7 +451,7 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
     if place_h:
         oechem.OEPlaceHydrogens(mut_prot)
 
-    ## Re-percieve residues so that atom number and connect records dont get screwed up
+    # Re-percieve residues so that atom number and connect records dont get screwed up
     openeye_perceive_residues(mut_prot)
 
     return mut_prot
@@ -679,12 +679,12 @@ def prep_mp(
     loop_db,
     protein_only: bool,
 ):
-    ## Make output directory
+    # Make output directory
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    ## Prepare logger
+    # Prepare logger
     handler = logging.FileHandler(
         os.path.join(out_dir, f"{xtal.output_name}-log.txt"), mode="w"
     )
@@ -693,23 +693,23 @@ def prep_mp(
     prep_logger.addHandler(handler)
     prep_logger.info(datetime.datetime.isoformat(datetime.datetime.now()))
 
-    ## Check if results already exist
+    # Check if results already exist
     if check_completed(out_dir, xtal.output_name):
         prep_logger.info("Already completed! Finishing.")
         return
     prep_logger.info(f"Prepping {xtal.output_name}")
 
-    ## Load protein from pdb
+    # Load protein from pdb
     initial_prot = load_openeye_pdb(xtal.str_fn)
 
     if seqres:
         res_list = seqres_to_res_list(seqres)
         prep_logger.info("Mutating to provided seqres")
 
-        ## Mutate the residues to match the residue list
+        # Mutate the residues to match the residue list
         initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
 
-    ## Delete extra copies of ligand in the complex
+    # Delete extra copies of ligand in the complex
     initial_prot = remove_extra_ligands(initial_prot, lig_chain=xtal.active_site_chain)
 
     if ref_prot:
@@ -725,7 +725,7 @@ def prep_mp(
         # prone to race condition if multiple processes are writing to same file
         # so need a file prefix
         save_openeye_pdb(initial_prot, f"{xtal.output_name}-align_test.pdb")
-    ## Take the first returned DU and save it
+    # Take the first returned DU and save it
     try:
         prep_logger.info("Attempting to prepare design units")
         site_residue = xtal.active_site if xtal.active_site else ""
@@ -750,13 +750,13 @@ def prep_mp(
         )
         prep_logger.info(f"{xtal.output_name} DU successfully written out: {success}")
 
-        ## Save complex as PDB file
+        # Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
 
-        ## TODO: Compare this function to Ben's code below
+        # TODO: Compare this function to Ben's code below
         # openeye_copy_pdb_data(complex_mol, initial_prot, "SEQRES")
 
-        ## Add SEQRES entries if they're not present
+        # Add SEQRES entries if they're not present
         if (not oechem.OEHasPDBData(complex_mol, "SEQRES")) and seqres:
             for seqres_line in seqres.split("\n"):
                 if seqres_line != "":
