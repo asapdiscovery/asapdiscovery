@@ -1,4 +1,5 @@
 """
+This script combines all the fragalysis models into a single 
 """
 import argparse
 import multiprocessing as mp
@@ -62,9 +63,7 @@ def analyze_mp(fn, out_dir):
     def check_output():
         for fn_suffix in ["_acive_site", "_full_protein"]:
             for extension in [".pdb", ".npy"]:
-                if not (
-                    out_dir / f"{output_name}{fn_suffix}{extension}"
-                ).exists():
+                if not (out_dir / f"{output_name}{fn_suffix}{extension}").exists():
                     return False
         return True
 
