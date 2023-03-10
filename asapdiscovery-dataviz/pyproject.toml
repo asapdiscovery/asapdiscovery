@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=61.0", "versioningit"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asapdiscovery-dataviz"
+#version = "0.0.1"
+dynamic = ["version"]
+authors = [
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
+]
+description = "API and scripts related to visualizing docking results"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+dependencies = [
+    "plotly",
+    "dash",
+    "pandas",
+    #"pymol",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/choderalab/asapdiscovery"
+"Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
+
+[project.scripts]
+dash-all-results-exploration = "asapdiscovery.dataviz.scripts.dash_all_results_exploration:main"
+dash-docking-contour-plot = "asapdiscovery.dataviz.scripts.dash_docking_contour_plot:main"
+#dash-docking-exploration = "asapdiscovery.dataviz.scripts.dash_docking_exploration:main"
+dash-docking-interactive-scatterplots = "asapdiscovery.dataviz.scripts.dash_docking_interactive_scatterplots:main"
+dash-docking-interactive-table = "asapdiscovery.dataviz.scripts.dash_docking_interactive_table:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*"
+]
+
+[tool.versioningit]
+
+
+[tool.versioningit.vcs]
+default-tag = "0.0.99" # useful for CI/shallow clones
