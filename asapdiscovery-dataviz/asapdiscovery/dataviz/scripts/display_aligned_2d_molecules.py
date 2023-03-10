@@ -6,15 +6,18 @@ python display_aligned_2d_molecules.py
     -o ~/asap-datasets/test_ligand_visualization
 
 """
-import os, sys, argparse
+import argparse
+import os
+import sys
 
-from openeye import oechem, oespruce, oedepict
+from openeye import oechem, oedepict, oespruce
 
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 from asapdiscovery.data.openeye import load_openeye_sdf, load_openeye_sdfs
 from asapdiscovery.dataviz.plotting_molecules import display_openeye_ligand
+
 
 ################################################################################
 def get_args():
@@ -26,9 +29,7 @@ def get_args():
         required=True,
         help="SDF file containing molecules of interest.",
     )
-    parser.add_argument(
-        "-o", "--output_dir", required=True, help="Output directory."
-    )
+    parser.add_argument("-o", "--output_dir", required=True, help="Output directory.")
     parser.add_argument(
         "-r",
         "--ref_mol",
@@ -56,8 +57,10 @@ def main():
     for mol in mols:
         ## Prepare mcss
         if not args.do_not_align:
-            out_fn = f"{os.path.join(args.output_dir, mol.GetTitle())}_aligned.png".replace(
-                " ", "_"
+            out_fn = (
+                f"{os.path.join(args.output_dir, mol.GetTitle())}_aligned.png".replace(
+                    " ", "_"
+                )
             )
             ## this code is mostly taken from the mcsalign2d.py example from openeye
             ## <https://docs.eyesopen.com/toolkits/python/depicttk/examples_summary_mcsalign2D.html>
@@ -74,10 +77,8 @@ def main():
             if alignres.IsValid():
                 display_openeye_ligand(mol, out_fn=out_fn, aligned=True)
         else:
-            out_fn = (
-                f"{os.path.join(args.output_dir, mol.GetTitle())}.png".replace(
-                    " ", "_"
-                )
+            out_fn = f"{os.path.join(args.output_dir, mol.GetTitle())}.png".replace(
+                " ", "_"
             )
             display_openeye_ligand(mol, out_fn=out_fn)
 

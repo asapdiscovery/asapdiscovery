@@ -2,12 +2,14 @@
 This script combines all the fragalysis models into a single 
 """
 import argparse
-import multiprocessing as mp
-import mdtraj as md
-from pathlib import Path
 import logging
+import multiprocessing as mp
 from datetime import datetime
+from pathlib import Path
+
+import mdtraj as md
 import numpy as np
+
 
 ################################################################################
 def get_args():
