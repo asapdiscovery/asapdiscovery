@@ -9,16 +9,12 @@ Example Usage:
         -o posit_hybrid_no_relax_keep_water_filter_frag
         -d
         -s
+        -r ../../../../metadata/mers_structures.csv
 """
 import argparse
 import os
-import sys
 
 import numpy as np
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
-
 from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
 
 
@@ -52,11 +48,8 @@ def get_args():
     parser.add_argument(
         "-r",
         "--resolution_csv",
-        default=os.path.join(
-            repo_path,
-            "data",
-            "mers_structures.csv",
-        ),
+        required=False,
+        help="CSV which has the resolution of the structures used in docking",
     )
     # TODO: this should be expandable to filter based on multiple different scores and
     # values

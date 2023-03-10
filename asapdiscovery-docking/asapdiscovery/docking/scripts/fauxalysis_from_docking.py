@@ -10,21 +10,16 @@ Example usage:
         -i posit_hybrid_no_relax_keep_water_filter
         -o posit_hybrid_no_relax_keep_water_filter_frag
         -f aligned
+        -y ../../../../metadata/cmpd_to_frag.yaml
 """
 import argparse
 import os
 import pickle as pkl
 import shutil
-import sys
 
 import yaml
-from asapdiscovery.data.openeye import oechem
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
-
-from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import split_openeye_design_unit
@@ -50,11 +45,7 @@ def get_args():
     parser.add_argument(
         "-y",
         "--fragalysis_yaml",
-        default=os.path.join(
-            repo_path,
-            "data",
-            "cmpd_to_frag.yaml",
-        ),
+        required=True,
         help="Path to yaml file containing a compound-to-fragalysis dictionary.",
     )
     parser.add_argument(
