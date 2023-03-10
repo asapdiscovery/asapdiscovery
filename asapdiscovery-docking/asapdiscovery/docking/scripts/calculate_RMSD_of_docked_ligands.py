@@ -18,8 +18,8 @@ from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     load_openeye_sdfs,
-    split_openeye_mol,
     oechem,
+    split_openeye_mol,
 )
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 from openeye import oechem
