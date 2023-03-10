@@ -4,12 +4,8 @@ Function to test implementation of ligand filtering
 
 import argparse
 import os
-import sys
 
 import yaml
-from openeye import oechem
-
-sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
 from asapdiscovery.data import pdb  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
@@ -19,6 +15,7 @@ from asapdiscovery.docking.modeling import align_receptor  # noqa: E402
 from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
 from asapdiscovery.docking.modeling import mutate_residues  # noqa: E402
 from asapdiscovery.docking.modeling import prep_receptor  # noqa: E402
+from openeye import oechem
 
 
 def get_args():

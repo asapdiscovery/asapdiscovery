@@ -4,17 +4,12 @@ matches the given SMARTS string(s). Output is a CSV file with all kept
 structures.
 """
 import argparse
-import os
-import sys
 
 import pandas
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.utils import filter_docking_inputs  # noqa: E402
 from asapdiscovery.data.utils import parse_fragalysis_data  # noqa: E402
 
 
-########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 

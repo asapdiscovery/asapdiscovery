@@ -29,6 +29,10 @@ dependencies = [
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
+[project.scripts]
+blast-search = "asapdiscovery.modeling.scripts.blast_search:main"
+make-foldalysis = "asapdiscovery.modeling.scripts.make_foldalysis:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 

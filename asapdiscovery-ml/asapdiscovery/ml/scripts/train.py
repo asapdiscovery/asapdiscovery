@@ -21,19 +21,10 @@ import json
 import os
 import pickle as pkl
 import re
-import sys
 from glob import glob
 
 import numpy as np
 import torch
-from dgllife.utils import CanonicalAtomFeaturizer
-from e3nn import o3
-from e3nn.nn.models.gate_points_2101 import Network
-from torch_geometric.datasets import QM9
-from torch_geometric.nn import SchNet
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.ml import MSELoss  # noqa: E402
@@ -43,6 +34,11 @@ from asapdiscovery.ml.utils import calc_e3nn_model_info  # noqa: E402
 from asapdiscovery.ml.utils import find_most_recent  # noqa: 402
 from asapdiscovery.ml.utils import plot_loss  # noqa: E402
 from asapdiscovery.ml.utils import split_molecules, train  # noqa: E402
+from dgllife.utils import CanonicalAtomFeaturizer
+from e3nn import o3
+from e3nn.nn.models.gate_points_2101 import Network
+from torch_geometric.datasets import QM9
+from torch_geometric.nn import SchNet
 
 
 def add_one_hot_encodings(ds):

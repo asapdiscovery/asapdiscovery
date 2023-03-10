@@ -1,12 +1,8 @@
 import argparse
-import os
-import sys
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.fragalysis import download  # noqa: E402
 
 
-########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
