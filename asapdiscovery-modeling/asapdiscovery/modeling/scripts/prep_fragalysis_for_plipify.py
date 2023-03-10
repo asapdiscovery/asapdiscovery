@@ -476,8 +476,8 @@ def align_receptor(
     if dimer:
         initial_prot = initial_prot_temp
     else:
-        ## TODO: Have to figure out how to handle water here if it's in a
-        ##  different chain from the protein
+        # TODO: Have to figure out how to handle water here if it's in a
+        #  different chain from the protein
         initial_prot = oechem.OEGraphMol()
         chain_pred = oechem.OEHasChainID(mobile_chain)
         oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
@@ -934,7 +934,7 @@ def prep_mp(
         # Mutate the residues to match the residue list
         initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
 
-    ## Delete extra copies of ligand in the complex
+    # Delete extra copies of ligand in the complex
     initial_prot = remove_extra_ligands(initial_prot, lig_chain=xtal.active_site_chain)
 
     if ref_prot:
@@ -948,7 +948,7 @@ def prep_mp(
             ref_chain="A",
         )
         save_openeye_pdb(initial_prot, "align_test.pdb")
-    ## Take the first returned DU and save it
+    # Take the first returned DU and save it
     try:
         prep_logger.info("Attempting to prepare design units")
         site_residue = xtal.active_site if xtal.active_site else ""
@@ -973,10 +973,10 @@ def prep_mp(
         )
         prep_logger.info(f"{xtal.output_name} DU successfully written out: {success}")
 
-        ## Save complex as PDB file
+        # Save complex as PDB file
         complex_mol = du_to_complex(du, include_solvent=True)
 
-        ## Add SEQRES entries if they're not present
+        # Add SEQRES entries if they're not present
         if (not oechem.OEHasPDBData(complex_mol, "SEQRES")) and seqres:
             for seqres_line in seqres.split("\n"):
                 if seqres_line != "":
@@ -996,7 +996,7 @@ def prep_mp(
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d",
         "--structure_dir",
@@ -1019,7 +1019,7 @@ def get_args():
         help="Path to reference pdb to align to. If None, no alignment will be performed",
     )
 
-    ## Output arguments
+    # Output arguments
     parser.add_argument(
         "-o",
         "--output_dir",
@@ -1027,7 +1027,7 @@ def get_args():
         help="Path to output_dir.",
     )
 
-    ## Model-building arguments
+    # Model-building arguments
     parser.add_argument(
         "-l",
         "--loop_db",
@@ -1056,7 +1056,7 @@ def get_args():
         help="Path to high level log file.",
     )
 
-    ## Performance arguments
+    # Performance arguments
     parser.add_argument(
         "-n",
         "--num_cores",
@@ -1090,17 +1090,17 @@ def main():
         )
 
     for xtal in xtal_compounds:
-        ## Get chain
-        ## The parentheses in this string are the capture group
+        # Get chain
+        # The parentheses in this string are the capture group
 
         xtal.output_name = f"{xtal.dataset}_{xtal.compound_id}"
 
         frag_chain = xtal.dataset[-2:]
 
-        ## We also want the chain in the form of a single letter ('A', 'B'), etc
+        # We also want the chain in the form of a single letter ('A', 'B'), etc
         xtal.active_site_chain = frag_chain[-1]
 
-        ## If we aren't keeping the ligands, then we want to give it a site residue to use
+        # If we aren't keeping the ligands, then we want to give it a site residue to use
         if args.protein_only:
             xtal.active_site = f"His:41: :{xtal.active_site_chain}"
 
