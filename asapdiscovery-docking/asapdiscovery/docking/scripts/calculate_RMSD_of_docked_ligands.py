@@ -22,6 +22,7 @@ from asapdiscovery.data.openeye import (
     oechem,
 )
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+from openeye import oechem
 
 
 def get_args():
