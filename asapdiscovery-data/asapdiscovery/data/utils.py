@@ -709,9 +709,7 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
         fp.write(ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json())
 
 
-def parse_fragalysis_data(
-    frag_fn, x_dir, cmpd_ids=None, o_dir=False, xtals_only=True
-):
+def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False, xtals_only=True):
     # Load in csv
     sars2_structures = pandas.read_csv(frag_fn).fillna("")
 
