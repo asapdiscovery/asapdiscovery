@@ -1,11 +1,12 @@
 from pathlib import Path
-from pytest import skip
+
 import numpy as np
 from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.docking.analysis import (
     calculate_rmsd_openeye,
     write_all_rmsds_to_reference,
 )
+from pytest import skip
 
 
 @skip("No OELicense in CI yet")
