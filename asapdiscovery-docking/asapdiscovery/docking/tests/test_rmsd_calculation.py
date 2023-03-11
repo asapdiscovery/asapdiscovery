@@ -1,16 +1,13 @@
 from pathlib import Path
-
 import numpy as np
-from asapdiscovery.data.openeye import load_openeye_sdf
-from asapdiscovery.docking.analysis import (
-    calculate_rmsd_openeye,
-    write_all_rmsds_to_reference,
-)
 from pytest import skip
 
 
 @skip("No OELicense in CI yet")
 def test_rmsd_calculation():
+    from asapdiscovery.data.openeye import load_openeye_sdf
+    from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+
     input_dir = Path("inputs")
 
     ref_mol = load_openeye_sdf(str(input_dir / "Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
@@ -27,6 +24,9 @@ def test_rmsd_calculation():
 
 @skip("No OELicense in CI yet")
 def test_writing_rmsd_calculation():
+    from asapdiscovery.data.openeye import load_openeye_sdf
+    from asapdiscovery.docking.analysis import write_all_rmsds_to_reference
+
     output_dir = Path("outputs")
     input_dir = Path("inputs")
 
