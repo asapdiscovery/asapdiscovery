@@ -54,7 +54,7 @@ where = ["."]
 
 [tool.coverage.run]
 omit = [
-    "*/*/tests/*"
+    "*/tests/*"
 ]
 
 [tool.versioningit]
