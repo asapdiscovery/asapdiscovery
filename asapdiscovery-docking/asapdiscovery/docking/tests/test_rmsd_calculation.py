@@ -1,11 +1,11 @@
-import numpy as np
-
-from asapdiscovery.docking.analysis import (
-    write_all_rmsds_to_reference,
-    calculate_rmsd_openeye,
-)
-from asapdiscovery.data.openeye import load_openeye_sdf
 from pathlib import Path
+
+import numpy as np
+from asapdiscovery.data.openeye import load_openeye_sdf
+from asapdiscovery.docking.analysis import (
+    calculate_rmsd_openeye,
+    write_all_rmsds_to_reference,
+)
 
 output_dir = Path("outputs")
 input_dir = Path("inputs")
