@@ -68,11 +68,13 @@ def get_args():
 
 def main():
     args = get_args()
-    logger = FileLogger("calculate_RMSD_of_docked_ligands", path="").getLogger()
-
     output_dir = Path(args.output_dir)
     if not output_dir.exists():
         output_dir.mkdir()
+    logger = FileLogger(
+        "calculate_RMSD_of_docked_ligands", path=str(output_dir)
+    ).getLogger()
+
     # Either load all from one big sdf file or from a glob that represents many
     if args.sdf_fn:
         logger.info(f"Loading molecules from {args.sdf_fn}")
