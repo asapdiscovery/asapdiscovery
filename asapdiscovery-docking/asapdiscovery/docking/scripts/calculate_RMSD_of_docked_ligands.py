@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
@@ -23,7 +24,6 @@ from asapdiscovery.data.openeye import (
     oechem,
     split_openeye_mol,
 )
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.docking.analysis import (
     calculate_rmsd_openeye,
     write_all_rmsds_to_reference,
