@@ -109,7 +109,7 @@ def main():
             if compound_id in ref_fn
         }
     elif ref_type == "sdf":
-        logger.info("Loading reference PDBs")
+        logger.info("Loading reference SDFs")
         ref_mols = {
             compound_id: load_openeye_sdf(ref_fn)
             for compound_id in unique_compound_ids
@@ -130,7 +130,10 @@ def main():
 
     mp_args = []
     for compound_id in unique_compound_ids:
-        ref_mol = ref_mols[compound_id]
+        try:
+            ref_mol = ref_mols[compound_id]
+        except KeyError:
+            logger.error(f"{compound_id} not found in {ref_mols.keys()}")
         query_mols = list(mol_array[cmpd_id_array == compound_id])
         mp_args = (ref_mol, query_mols, output_dir, compound_id)
 
