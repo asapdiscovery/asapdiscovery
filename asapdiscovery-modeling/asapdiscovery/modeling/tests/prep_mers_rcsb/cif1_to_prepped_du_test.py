@@ -1,9 +1,6 @@
 from pathlib import Path
 
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    save_openeye_pdb,
-)
+from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
 
 inputs = Path("inputs")
 cifpath = inputs / "rcsb_8DGY-assembly1.cif"

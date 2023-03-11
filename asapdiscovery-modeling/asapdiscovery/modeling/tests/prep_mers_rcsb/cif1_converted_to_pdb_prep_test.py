@@ -1,14 +1,8 @@
 from pathlib import Path
 
 import yaml
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    save_openeye_pdb,
-)
-from asapdiscovery.docking.modeling import (
-    align_receptor,
-    prep_receptor,
-)
+from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
+from asapdiscovery.docking.modeling import align_receptor, prep_receptor
 
 out_path = Path("")
 in_path = Path("inputs")
