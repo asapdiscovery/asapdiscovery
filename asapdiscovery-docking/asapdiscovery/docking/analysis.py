@@ -405,7 +405,7 @@ def calculate_rmsd_openeye(reference_ligand: oechem.OEMol, docked_ligand: oechem
 
 def write_all_rmsds_to_reference(
     ref_mol: oechem.OEGraphMol,
-    docked_mols: list[oechem.OEGraphMol],
+    docked_mols: [oechem.OEGraphMol],
     output_dir: Path,
     compound_id,
 ):
