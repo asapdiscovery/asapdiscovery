@@ -5,13 +5,13 @@ from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pd
 from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.docking.modeling import align_receptor, mutate_residues
 from asapdiscovery.modeling.modeling import spruce_protein
+from openmm.app import PDBFile, PDBxFile
 
 inputs = Path("inputs")
 cifpath = inputs / "rcsb_8DGY-assembly1.cif"
 output = Path("outputs")
 
 print("Loading cif and writing to pdb file")
-from openmm.app import PDBFile, PDBxFile
 
 cif = PDBxFile(str(cifpath))
 
