@@ -1,5 +1,5 @@
 """
-This script combines all the fragalysis models into a single 
+This script combines all the fragalysis models into a single
 """
 import argparse
 import logging
