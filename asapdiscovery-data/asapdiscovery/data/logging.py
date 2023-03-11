@@ -4,6 +4,7 @@ import os
 
 class FileLogger:
     def __init__(self, logname: str, path: str, logfile: str = None):
+        self.logname = logname
         self.name = logname
         self.logfile = logfile
         if self.logfile is None:
