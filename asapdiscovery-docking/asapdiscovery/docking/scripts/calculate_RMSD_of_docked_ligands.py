@@ -120,31 +120,42 @@ def main():
     complex_ids = []
     final_compound_ids = []
 
-    # Now map each input sdf file to a reference
-    for query_mol in mols:
-        compound_id = oechem.OEGetSDData(query_mol, "Compound_ID")
-        try:
-            ref_mol = ref_mols[compound_id]
-            final_compound_ids.append(compound_id)
-            complex_ids.append(query_mol.GetTitle())
-            mp_args.append([query_mol, ref_mol])
-        except KeyError:
-            logger.info(f"Skipping missing reference structure: {compound_id}")
+    # Now make a list of query mols with the same compound id
+    cmpd_id_array = np.array(compound_ids)
+    mol_array = np.array(mols)
+
+    mp_args = []
+    for compound_id in unique_compound_ids:
+        ref_mol = ref_mols[compound_id]
+        query_mols = list(mol_array[cmpd_id_array == compound_id])
+        mp_args = (ref_mol, query_mols, output_dir, compound_id)
+
+    # # Now map each input sdf file to a reference
+    # for query_mol in mols:
+    #     compound_id = oechem.OEGetSDData(query_mol, "Compound_ID")
+    #     try:
+    #         ref_mol = ref_mols[compound_id]
+    #         final_compound_ids.append(compound_id)
+    #         complex_ids.append(query_mol.GetTitle())
+    #         mp_args.append([query_mol, ref_mol])
+    #     except KeyError:
+    #         logger.info(f"Skipping missing reference structure: {compound_id}")
 
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     logger.info(f"Running {len(mp_args)} RMSD calculations over {nprocs} cores.")
-    with mp.Pool(processes=nprocs) as pool:
-        rmsds = pool.starmap(calculate_rmsd_openeye, mp_args)
-    df = pd.DataFrame(
-        {
-            "Compound_ID": final_compound_ids,
-            "RMSD": rmsds,
-            "Complex_ID": complex_ids,
-        },
-    )
-    output_path = output_dir / "rmsds.csv"
-    logger.info(f"Writing results to {output_path}")
-    df.to_csv(str(output_path))
+    logger.info(f"{mp_args[0]}")
+    # with mp.Pool(processes=nprocs) as pool:
+    #     rmsds = pool.starmap(calculate_rmsd_openeye, mp_args)
+    # df = pd.DataFrame(
+    #     {
+    #         "Compound_ID": final_compound_ids,
+    #         "RMSD": rmsds,
+    #         "Complex_ID": complex_ids,
+    #     },
+    # )
+    # output_path = output_dir / "rmsds.csv"
+    # logger.info(f"Writing results to {output_path}")
+    # df.to_csv(str(output_path))
 
 
 if __name__ == "__main__":
