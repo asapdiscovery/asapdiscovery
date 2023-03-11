@@ -1,7 +1,7 @@
 import os
 import pickle as pkl
 import re
-
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.openeye import get_ligand_rmsd_from_pdb_and_sdf, oechem
@@ -400,3 +400,18 @@ def calculate_rmsd_openeye(reference_ligand: oechem.OEMol, docked_ligand: oechem
         len(predocked_coords) // 3,
     )
     return rmsd
+
+
+def write_all_rmsds_to_reference(
+    ref_mol: oechem.OEGraphMol,
+    docked_mols: list[oechem.OEGraphMol],
+    output_dir: Path,
+    compound_id,
+):
+
+    rmsds = [
+        (docked_mol.GetTitle(), calculate_rmsd_openeye(ref_mol, docked_mol))
+        for docked_mol in docked_mols
+    ]
+
+    np.save(str(output_dir / f"{compound_id}.npy"), rmsds)

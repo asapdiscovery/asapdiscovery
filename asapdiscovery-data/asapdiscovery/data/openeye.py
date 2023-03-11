@@ -1,4 +1,5 @@
 from openeye import oechem, oedepict, oedocking, oegrid, oespruce  # noqa: F401
+from pathlib import Path
 
 # exec on module import
 if not oechem.OEChemIsLicensed("python"):
@@ -117,7 +118,10 @@ def load_openeye_cif(cif_fn, alt_loc=False):
     return in_mol
 
 
-def load_openeye_sdf(sdf_fn):
+def load_openeye_sdf(sdf_fn) -> oechem.OEGraphMol:
+    if not Path(sdf_fn).exists():
+        raise FileNotFoundError(f"{sdf_fn} does not appear to exist!")
+
     ifs = oechem.oemolistream()
     ifs.SetFlavor(
         oechem.OEFormat_SDF,

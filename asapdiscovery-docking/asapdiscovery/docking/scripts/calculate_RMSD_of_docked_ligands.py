@@ -11,7 +11,9 @@ Example Usage
 import argparse
 import multiprocessing as mp
 import os
+from pathlib import Path
 from glob import glob
+import numpy as np
 
 import pandas as pd
 from asapdiscovery.data.openeye import (
@@ -21,7 +23,10 @@ from asapdiscovery.data.openeye import (
     oechem,
     split_openeye_mol,
 )
-from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+from asapdiscovery.docking.analysis import (
+    calculate_rmsd_openeye,
+    write_all_rmsds_to_reference,
+)
 
 
 def get_args():
@@ -62,6 +67,8 @@ def get_args():
 
 def main():
     args = get_args()
+
+    output_dir = Path(args.output_dir)
     # Either load all from one big sdf file or from a glob that represents many
     if args.sdf_fn:
         print(f"Loading molecules from {args.sdf_fn}")
@@ -124,9 +131,9 @@ def main():
             "Complex_ID": complex_ids,
         },
     )
-    output_path = os.path.join(args.output_dir, "rmsds.csv")
+    output_path = output_dir / "rmsds.csv"
     print(f"Writing results to {output_path}")
-    df.to_csv(output_path)
+    df.to_csv(str(output_path))
 
 
 if __name__ == "__main__":
