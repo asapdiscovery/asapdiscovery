@@ -3,8 +3,9 @@ from pathlib import Path
 import numpy as np
 from pytest import skip
 
+skip("No OELicense in CI yet", allow_module_level=True)
 
-@skip("No OELicense in CI yet")
+
 def test_rmsd_calculation():
     from asapdiscovery.data.openeye import load_openeye_sdf
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
@@ -23,7 +24,6 @@ def test_rmsd_calculation():
     assert rmsd == 5.791467472680422
 
 
-@skip("No OELicense in CI yet")
 def test_writing_rmsd_calculation():
     from asapdiscovery.data.openeye import load_openeye_sdf
     from asapdiscovery.docking.analysis import write_all_rmsds_to_reference
