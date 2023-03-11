@@ -1,9 +1,10 @@
 from pathlib import Path
-
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    save_openeye_pdb,
-)
+from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb, oechem
+from asapdiscovery.modeling.modeling import spruce_protein
+from asapdiscovery.docking.modeling import mutate_residues
+from asapdiscovery.docking.modeling import align_receptor
+import yaml
+from asapdiscovery.data.utils import seqres_to_res_list
 
 inputs = Path("inputs")
 cifpath = inputs / "rcsb_8DGY-assembly1.cif"
@@ -24,7 +25,6 @@ print("Loading pdb to OpenEye")
 prot = load_openeye_pdb(str(outfile))
 
 print("Aligning to ref")
-from asapdiscovery.docking.modeling import align_receptor
 
 ref_path = inputs / "reference.pdb"
 prot = align_receptor(
@@ -41,37 +41,36 @@ print("Preparing Sprucing options")
 loop_path = Path(
     "/Users/alexpayne/Scientific_Projects/mers-drug-discovery/spruce_bace.loop_db"
 )
-import yaml
+
 
 seqres_path = Path("../../../../../metadata/mpro_mers_seqres.yaml")
 with open(seqres_path) as f:
     seqres_dict = yaml.safe_load(f)
 seqres = seqres_dict["SEQRES"]
 
-from asapdiscovery.data.utils import seqres_to_res_list
 
 res_list = seqres_to_res_list(seqres)
 sequence = " ".join(res_list)
 
 print("Making mutations")
-from asapdiscovery.docking.modeling import mutate_residues
+
 
 prot = mutate_residues(prot, res_list, place_h=True)
 
 print("Sprucing protein")
-from asapdiscovery.modeling.modeling import spruce_protein
+
 
 du = spruce_protein(
     initial_prot=prot, seqres=sequence, loop_db=str(loop_path), return_du=True
 )
 print("Saving Design Unit")
-from openeye import oechem
+
 
 du_fn = output / f"{cifpath.stem}-02.oedu"
 oechem.OEWriteDesignUnit(str(du_fn), du)
 
 print("Saving PDB")
-from openeye import oechem
+
 
 prot = oechem.OEGraphMol()
 du.GetProtein(prot)
