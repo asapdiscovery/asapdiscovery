@@ -22,9 +22,7 @@ from asapdiscovery.data.openeye import (
     oechem,
     split_openeye_mol,
 )
-from asapdiscovery.docking.analysis import (
-    write_all_rmsds_to_reference,
-)
+from asapdiscovery.docking.analysis import write_all_rmsds_to_reference
 
 
 def get_args():
