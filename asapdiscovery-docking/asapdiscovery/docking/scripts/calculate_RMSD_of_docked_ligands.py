@@ -110,9 +110,12 @@ def main():
         }
     elif ref_type == "sdf":
         logger.info("Loading reference SDFs")
-        ref_mols = [load_openeye_sdf(ref_fn) for ref_fn in ref_fns]
+        # ref_mols = [load_openeye_sdf(ref_fn) for ref_fn in ref_fns]
         ref_dict = {
-            oechem.OEGetSDData(ref_mol, "Compound_ID"): ref_mol for ref_mol in ref_mols
+            compound_id: load_openeye_sdf(ref_fn)
+            for ref_fn in ref_fns
+            for compound_id in unique_compound_ids
+            if compound_id in ref_fn
         }
     else:
         raise NotImplementedError("Sorry I've only done this for PDBs")
@@ -131,8 +134,9 @@ def main():
             ref_mol = ref_dict[compound_id]
         except KeyError:
             logger.error(f"{compound_id} not found in {ref_dict.keys()}")
+            continue
         query_mols = list(mol_array[cmpd_id_array == compound_id])
-        mp_args = (ref_mol, query_mols, output_dir, compound_id)
+        mp_args.append((ref_mol, query_mols, output_dir, compound_id))
 
     # # Now map each input sdf file to a reference
     # for query_mol in mols:
@@ -148,8 +152,8 @@ def main():
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     logger.info(f"Running {len(mp_args)} RMSD calculations over {nprocs} cores.")
     logger.info(f"{mp_args[0]}")
-    # with mp.Pool(processes=nprocs) as pool:
-    #     rmsds = pool.starmap(calculate_rmsd_openeye, mp_args)
+    with mp.Pool(processes=nprocs) as pool:
+        pool.starmap(write_all_rmsds_to_reference, mp_args)
     # df = pd.DataFrame(
     #     {
     #         "Compound_ID": final_compound_ids,
