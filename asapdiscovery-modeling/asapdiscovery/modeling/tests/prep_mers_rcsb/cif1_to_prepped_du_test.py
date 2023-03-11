@@ -1,10 +1,10 @@
 from pathlib import Path
-from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb, oechem
-from asapdiscovery.modeling.modeling import spruce_protein
-from asapdiscovery.docking.modeling import mutate_residues
-from asapdiscovery.docking.modeling import align_receptor
+
 import yaml
+from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pdb
 from asapdiscovery.data.utils import seqres_to_res_list
+from asapdiscovery.docking.modeling import align_receptor, mutate_residues
+from asapdiscovery.modeling.modeling import spruce_protein
 
 inputs = Path("inputs")
 cifpath = inputs / "rcsb_8DGY-assembly1.cif"
