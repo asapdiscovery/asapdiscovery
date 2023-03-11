@@ -102,7 +102,7 @@ def main():
         logger.info("Loading reference PDBs")
 
         # This maps each compound id to the corresponding reference
-        ref_mols = {
+        ref_dict = {
             compound_id: split_openeye_mol(load_openeye_pdb(ref_fn))["lig"]
             for compound_id in unique_compound_ids
             for ref_fn in ref_fns
@@ -110,16 +110,13 @@ def main():
         }
     elif ref_type == "sdf":
         logger.info("Loading reference SDFs")
-        ref_mols = {
-            compound_id: load_openeye_sdf(ref_fn)
-            for compound_id in unique_compound_ids
-            for ref_fn in ref_fns
-            if compound_id in ref_fn
+        ref_mols = [load_openeye_sdf(ref_fn) for ref_fn in ref_fns]
+        ref_dict = {
+            oechem.OEGetSDData(ref_mol, "Compound_ID"): ref_mol for ref_mol in ref_mols
         }
-
     else:
         raise NotImplementedError("Sorry I've only done this for PDBs")
-    logger.info(f"{len(ref_mols)} references found")
+    logger.info(f"{len(ref_dict)} references found")
     mp_args = []
     complex_ids = []
     final_compound_ids = []
@@ -131,9 +128,9 @@ def main():
     mp_args = []
     for compound_id in unique_compound_ids:
         try:
-            ref_mol = ref_mols[compound_id]
+            ref_mol = ref_dict[compound_id]
         except KeyError:
-            logger.error(f"{compound_id} not found in {ref_mols.keys()}")
+            logger.error(f"{compound_id} not found in {ref_dict.keys()}")
         query_mols = list(mol_array[cmpd_id_array == compound_id])
         mp_args = (ref_mol, query_mols, output_dir, compound_id)
 
@@ -141,7 +138,7 @@ def main():
     # for query_mol in mols:
     #     compound_id = oechem.OEGetSDData(query_mol, "Compound_ID")
     #     try:
-    #         ref_mol = ref_mols[compound_id]
+    #         ref_mol = ref_dict[compound_id]
     #         final_compound_ids.append(compound_id)
     #         complex_ids.append(query_mol.GetTitle())
     #         mp_args.append([query_mol, ref_mol])
