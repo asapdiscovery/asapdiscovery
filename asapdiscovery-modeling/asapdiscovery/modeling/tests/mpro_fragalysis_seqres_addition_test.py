@@ -12,12 +12,10 @@ import os
 from tempfile import NamedTemporaryFile
 
 import yaml
-from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb, oechem
+from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pdb
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
-from asapdiscovery.docking.modeling import (
-    mutate_residues,
-)
+from asapdiscovery.docking.modeling import mutate_residues
 
 
 def get_args():

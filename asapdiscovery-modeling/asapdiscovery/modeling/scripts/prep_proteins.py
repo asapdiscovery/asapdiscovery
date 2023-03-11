@@ -16,6 +16,7 @@ import argparse
 import logging
 import multiprocessing as mp
 import os
+
 import yaml
 from asapdiscovery.data import pdb
 from asapdiscovery.data.fragalysis import parse_fragalysis

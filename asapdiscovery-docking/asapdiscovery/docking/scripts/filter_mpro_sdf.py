@@ -10,7 +10,7 @@ Example Usage:
 import argparse
 
 from asapdiscovery.data.fragalysis import parse_xtal
-from asapdiscovery.data.openeye import save_openeye_sdfs, oechem
+from asapdiscovery.data.openeye import oechem, save_openeye_sdfs
 
 
 def get_args():
