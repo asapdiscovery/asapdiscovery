@@ -7,10 +7,7 @@ import yaml
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     oechem,
-    openeye_perceive_residues,
     save_openeye_pdb,
-    split_openeye_design_unit,
-    split_openeye_mol,
 )
 from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.docking.modeling import align_receptor, mutate_residues

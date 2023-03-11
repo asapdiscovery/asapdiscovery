@@ -17,17 +17,11 @@ import datetime
 import logging
 import multiprocessing as mp
 import os
-import sys
 
 import yaml
 from openeye import oechem, oedocking, oespruce
 from pydantic import BaseModel, Field
 
-sys.path.append(
-    os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    )
-)
 ########################################################################################################################
 # CODE THAT WAS PREVIOUSLY IN IMPORTED METHODS
 # from asapdiscovery.data.schema import CrystalCompoundData
@@ -961,7 +955,7 @@ def prep_mp(
         )
     except IndexError as e:
         prep_logger.error(
-            f"DU generation failed for {xtal.output_name}",
+            f"DU generation failed for {xtal.output_name} with error {str(e)}",
         )
         return
 

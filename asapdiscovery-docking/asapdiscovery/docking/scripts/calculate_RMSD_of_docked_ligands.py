@@ -75,7 +75,7 @@ def main():
     print(f"Loaded {len(mols)} molecules")
 
     # get unique compound_ids
-    compound_ids = [oechem.OEGetSDData(mol, f"Compound_ID") for mol in mols]
+    compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
     unique_compound_ids = list(set(compound_ids))
     print(f"Using {len(compound_ids)} compound ids to find reference structures")
 
@@ -96,7 +96,7 @@ def main():
             if compound_id in ref_fn
         }
     else:
-        raise NotImplementedError(f"Sorry I've only done this for PDBs")
+        raise NotImplementedError("Sorry I've only done this for PDBs")
     print(f"{len(ref_mols)} references found")
     mp_args = []
     complex_ids = []
@@ -104,7 +104,7 @@ def main():
 
     # Now map each input sdf file to a reference
     for query_mol in mols:
-        compound_id = oechem.OEGetSDData(query_mol, f"Compound_ID")
+        compound_id = oechem.OEGetSDData(query_mol, "Compound_ID")
         try:
             ref_mol = ref_mols[compound_id]
             final_compound_ids.append(compound_id)

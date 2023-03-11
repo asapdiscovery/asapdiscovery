@@ -16,15 +16,7 @@ import argparse
 import logging
 import multiprocessing as mp
 import os
-import sys
-
 import yaml
-
-sys.path.append(
-    os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    )
-)
 from asapdiscovery.data import pdb
 from asapdiscovery.data.fragalysis import parse_fragalysis
 from asapdiscovery.data.schema import CrystalCompoundData

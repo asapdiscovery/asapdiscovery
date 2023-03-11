@@ -8,16 +8,9 @@ Example Usage:
     -o /Volumes/Rohirrim/local_test/sars_docking/fragalysis_correct_bond_orders.sdf
 """
 import argparse
-import os
-import sys
-
-from openeye import oechem
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
 
 from asapdiscovery.data.fragalysis import parse_xtal
-from asapdiscovery.data.openeye import save_openeye_sdfs
+from asapdiscovery.data.openeye import save_openeye_sdfs, oechem
 
 
 def get_args():
@@ -60,9 +53,9 @@ def main():
     for c in xtal_compounds:
         new_mol = oechem.OEGraphMol()
         oechem.OESmilesToMol(new_mol, c.smiles)
-        oechem.OESetSDData(new_mol, f"SMILES", c.smiles)
-        oechem.OESetSDData(new_mol, f"Dataset", c.dataset)
-        oechem.OESetSDData(new_mol, f"Compound_ID", c.compound_id)
+        oechem.OESetSDData(new_mol, "SMILES", c.smiles)
+        oechem.OESetSDData(new_mol, "Dataset", c.dataset)
+        oechem.OESetSDData(new_mol, "Compound_ID", c.compound_id)
         new_mol.SetTitle(c.compound_id)
         mols.append(new_mol)
 

@@ -738,7 +738,7 @@ def prep_mp(
         )
     except IndexError as e:
         prep_logger.error(
-            f"DU generation failed for {xtal.output_name}",
+            f"DU generation failed for {xtal.output_name} with error {str(e)}",
         )
         return
 

@@ -19,7 +19,6 @@ import shutil
 
 import yaml
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
-from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem, split_openeye_design_unit

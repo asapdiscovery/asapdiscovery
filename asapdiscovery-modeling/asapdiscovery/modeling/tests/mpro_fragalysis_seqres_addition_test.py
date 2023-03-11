@@ -9,22 +9,15 @@ python mpro_fragalysis_seqres_addition_test.py
 
 import argparse
 import os
-import sys
 from tempfile import NamedTemporaryFile
 
 import yaml
-
-sys.path.append(f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
-from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
+from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb, oechem
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import edit_pdb_file, seqres_to_res_list
 from asapdiscovery.docking.modeling import (
-    align_receptor,
-    du_to_complex,
     mutate_residues,
-    prep_receptor,
 )
-from openeye import oechem
 
 
 def get_args():

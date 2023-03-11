@@ -361,9 +361,9 @@ def main():
             )
     else:
         # Check to see if the SDF files have a Compound_ID Column
-        if all(len(oechem.OEGetSDData(mol, f"Compound_ID")) > 0 for mol in mols):
+        if all(len(oechem.OEGetSDData(mol, "Compound_ID")) > 0 for mol in mols):
             print("Using Compound_ID column from sdf file")
-            compound_ids = [oechem.OEGetSDData(mol, f"Compound_ID") for mol in mols]
+            compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
         else:
             # Use index as compound_id
             compound_ids = [str(i) for i in range(n_mols)]
