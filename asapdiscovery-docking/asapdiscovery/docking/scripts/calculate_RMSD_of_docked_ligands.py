@@ -23,6 +23,7 @@ from asapdiscovery.data.openeye import (
     oechem,
     split_openeye_mol,
 )
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.docking.analysis import (
     calculate_rmsd_openeye,
     write_all_rmsds_to_reference,
@@ -67,24 +68,25 @@ def get_args():
 
 def main():
     args = get_args()
+    logger = FileLogger("calculate_RMSD_of_docked_ligands", path="").getLogger()
 
     output_dir = Path(args.output_dir)
     # Either load all from one big sdf file or from a glob that represents many
     if args.sdf_fn:
-        print(f"Loading molecules from {args.sdf_fn}")
+        logger.info(f"Loading molecules from {args.sdf_fn}")
         mols = load_openeye_sdfs(args.sdf_fn)
     elif args.sdf_glob:
-        print(f"Loading molecules using {args.sdf_glob}")
+        logger.info(f"Loading molecules using {args.sdf_glob}")
         mols = [load_openeye_sdf(sdf_fn) for sdf_fn in glob(args.sdf_glob)]
     else:
         raise NotImplementedError("Must pass either -sdf or -g flag")
 
-    print(f"Loaded {len(mols)} molecules")
+    logger.info(f"Loaded {len(mols)} molecules")
 
     # get unique compound_ids
     compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
     unique_compound_ids = list(set(compound_ids))
-    print(f"Using {len(compound_ids)} compound ids to find reference structures")
+    logger.info(f"Using {len(compound_ids)} compound ids to find reference structures")
 
     # TODO: Maybe something better would be to just pass a
     # TODO: yaml file that maps compound_ids to desired reference structures
@@ -93,7 +95,7 @@ def main():
     ref_fns = glob(args.ref_glob)
     ref_type = args.ref_glob[-3:]
     if ref_type == "pdb":
-        print("Loading reference PDBs")
+        logger.info("Loading reference PDBs")
 
         # This maps each compound id to the corresponding reference
         ref_mols = {
@@ -102,9 +104,18 @@ def main():
             for ref_fn in ref_fns
             if compound_id in ref_fn
         }
+    elif ref_type == "sdf":
+        logger.info("Loading reference PDBs")
+        ref_mols = {
+            compound_id: load_openeye_sdf(ref_fn)
+            for compound_id in unique_compound_ids
+            for ref_fn in ref_fns
+            if compound_id in ref_fn
+        }
+
     else:
         raise NotImplementedError("Sorry I've only done this for PDBs")
-    print(f"{len(ref_mols)} references found")
+    logger.info(f"{len(ref_mols)} references found")
     mp_args = []
     complex_ids = []
     final_compound_ids = []
@@ -118,10 +129,10 @@ def main():
             complex_ids.append(query_mol.GetTitle())
             mp_args.append([query_mol, ref_mol])
         except KeyError:
-            print(f"Skipping missing reference structure: {compound_id}")
+            logger.info(f"Skipping missing reference structure: {compound_id}")
 
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    print(f"Running {len(mp_args)} RMSD calculations over {nprocs} cores.")
+    logger.info(f"Running {len(mp_args)} RMSD calculations over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         rmsds = pool.starmap(calculate_rmsd_openeye, mp_args)
     df = pd.DataFrame(
@@ -132,7 +143,7 @@ def main():
         },
     )
     output_path = output_dir / "rmsds.csv"
-    print(f"Writing results to {output_path}")
+    logger.info(f"Writing results to {output_path}")
     df.to_csv(str(output_path))
 
 
