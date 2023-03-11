@@ -11,10 +11,10 @@ Example Usage
 import argparse
 import multiprocessing as mp
 import os
-from pathlib import Path
 from glob import glob
-import numpy as np
+from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
