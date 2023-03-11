@@ -2,10 +2,7 @@ from pathlib import Path
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
-    openeye_perceive_residues,
     save_openeye_pdb,
-    split_openeye_design_unit,
-    split_openeye_mol,
 )
 
 inputs = Path("inputs")
@@ -29,7 +26,7 @@ prot = load_openeye_pdb(str(outfile))
 print("Aligning to ref")
 from asapdiscovery.docking.modeling import align_receptor
 
-ref_path = inputs / f"reference.pdb"
+ref_path = inputs / "reference.pdb"
 prot = align_receptor(
     initial_complex=prot,
     ref_prot=ref_path.as_posix(),

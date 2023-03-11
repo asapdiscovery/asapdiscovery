@@ -2,17 +2,12 @@ from pathlib import Path
 
 import yaml
 from asapdiscovery.data.openeye import (
-    load_openeye_cif,
     load_openeye_pdb,
     save_openeye_pdb,
 )
-from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.docking.modeling import (
     align_receptor,
-    mutate_residues,
     prep_receptor,
-    remove_extra_ligands,
 )
 
 out_path = Path("")
