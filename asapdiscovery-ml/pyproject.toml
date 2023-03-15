@@ -32,6 +32,12 @@ dependencies = [
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
+[project.scripts]
+pred-comp = "asapdiscovery.ml.scripts.pred_comp:main"
+rank-enantiomers = "asapdiscovery.ml.scripts.rank_enantiomers:main"
+train = "asapdiscovery.ml.scripts.train:main"
+upset-plot-ranked = "asapdiscovery.ml.scripts.upset_plot_ranked:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 

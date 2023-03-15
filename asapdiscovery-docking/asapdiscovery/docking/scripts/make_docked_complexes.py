@@ -12,7 +12,6 @@ from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem
 
 
-################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
