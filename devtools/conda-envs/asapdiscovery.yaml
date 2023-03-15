@@ -1,4 +1,4 @@
-name: asapdiscovery-test
+name: asapdiscovery
 channels:
   - openeye
   - conda-forge
