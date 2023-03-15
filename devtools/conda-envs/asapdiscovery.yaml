@@ -1,7 +1,5 @@
 name: asapdiscovery
 channels:
-  - pytorch
-  - pyg
   - openeye
   - conda-forge
   - defaults
@@ -24,8 +22,6 @@ dependencies:
   - openeye-toolkits
   - pandas
   - pydantic
-  - pyg
-  - pytorch
   - rdkit
   - seaborn
 
@@ -36,11 +32,20 @@ dependencies:
   - flask
   - flask-cors
 
+  # ml
+  - pytorch
+  - pytorch_geometric
+  - pytorch_cluster
+  - pytorch_scatter
+  - pytorch_sparse
+  - numpy
+  - h5py
+  - e3nn
+
   # Pip-only installs
   - pip:
-    - e3nn
     - biopython
     - ase
     - schnetpack
     - https://github.com/openkinome/kinoml/archive/master.tar.gz
-    - https://github.com/choderalab/mtenn.git
+    - git+https://github.com/choderalab/mtenn@0.1.0
