@@ -3,7 +3,6 @@ channels:
   - openeye
   - conda-forge
   - defaults
-  - dglteam
 dependencies:
   # Base depends
   - pip
@@ -43,6 +42,7 @@ dependencies:
   - h5py
   - e3nn
   - dgl
+  - dgllife
 
 
   # Pip-only installs
@@ -50,5 +50,4 @@ dependencies:
     - biopython
     - ase
     # ml
-    - schnetpack
     - git+https://github.com/choderalab/mtenn@0.1.0
