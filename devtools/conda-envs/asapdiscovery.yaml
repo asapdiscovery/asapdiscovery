@@ -49,7 +49,7 @@ dependencies:
   - pip:
     - biopython
     - ase
-    # ml 
+    # ml
     - schnetpack
     - https://github.com/openkinome/kinoml/archive/master.tar.gz
     - git+https://github.com/choderalab/mtenn@0.1.0
