@@ -1,8 +1,9 @@
-name: asapdiscovery
+name: asapdiscovery-test
 channels:
   - openeye
   - conda-forge
   - defaults
+  - dglteam
 dependencies:
   # Base depends
   - pip
