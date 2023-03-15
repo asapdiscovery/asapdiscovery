@@ -21,11 +21,19 @@ import os
 import pickle as pkl
 import re
 from glob import glob
+
 import numpy as np
 import torch
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
-from asapdiscovery.ml import GAT, E3NNBind, GaussianNLLLoss, SchNetBind, MSELoss, EarlyStopping  # noqa: E402
+from asapdiscovery.ml import (  # noqa: E402
+    GAT,
+    E3NNBind,
+    EarlyStopping,
+    GaussianNLLLoss,
+    MSELoss,
+    SchNetBind,
+)
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset  # noqa: E402
 from asapdiscovery.ml.utils import (
     build_dataset,
