@@ -3,6 +3,7 @@ channels:
   - openeye
   - conda-forge
   - defaults
+  - dglteam
 dependencies:
   # Base depends
   - pip
@@ -41,11 +42,14 @@ dependencies:
   - numpy
   - h5py
   - e3nn
+  - dgl
+
 
   # Pip-only installs
   - pip:
     - biopython
     - ase
+    # ml 
     - schnetpack
     - https://github.com/openkinome/kinoml/archive/master.tar.gz
     - git+https://github.com/choderalab/mtenn@0.1.0
