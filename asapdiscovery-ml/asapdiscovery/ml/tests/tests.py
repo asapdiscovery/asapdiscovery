@@ -13,7 +13,7 @@ def weights_yaml():
 
 @pytest.mark.parametrize("force_fetch", [True, False])
 def test_fetch_weights(weights_yaml, force_fetch):
-    w = asapdiscovery.ml.weights.fetch_weights_from_spec(
+    _ = asapdiscovery.ml.weights.fetch_weights_from_spec(
         weights_yaml,
         ["schnet", "schnet2"],
         local_path="./_weights/",
