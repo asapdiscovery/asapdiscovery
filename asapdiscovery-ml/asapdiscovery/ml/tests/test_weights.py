@@ -1,12 +1,13 @@
 import shutil
-
+import os
 import asapdiscovery.ml
 import pytest
 
 
 @pytest.fixture()
 def weights_yaml():
-    weights = "test_weights.yaml"
+    # ugly hack to make the directory relative
+    weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
     yield weights
     shutil.rmtree("./_weights", ignore_errors=True)
 
