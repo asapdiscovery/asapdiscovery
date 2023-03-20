@@ -1,5 +1,6 @@
-import shutil
 import os
+import shutil
+
 import asapdiscovery.ml
 import pytest
 
