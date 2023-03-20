@@ -1,8 +1,8 @@
 # This file is used to specify the path to the weights file for each model.
 
-schnet:
+model1:
   # Path to the weights file for the schnet model.
   weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model.pth
-schnet2:
+model2:
   # Path to the weights file for the schnet model.
   weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_copy.pth
