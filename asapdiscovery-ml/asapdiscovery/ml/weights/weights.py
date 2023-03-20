@@ -9,10 +9,10 @@ import yaml
 
 def fetch_weights_from_spec(
     yamlfile: str,
-    models: Union[list[str], str],
+    models: Union[List[str], str],
     local_path: str = "./_weights/",
     force_fetch: bool = False,
-) -> dict[str, Path]:
+) -> Dict[str, Path]:
     """Fetch weights from yaml spec file.
 
     Parameters
@@ -49,11 +49,11 @@ def fetch_weights_from_spec(
     for model in models:
         model_spec = spec[model]
         weights = model_spec["weights"]
-        weights_files[model] = fetch_weights(weights, local_path, force_fetch)
         if weights in filename_set:
             raise ValueError(
                 f"Duplicate file {weights} in spec file. Please specify a unique filename for each model."
             )
+        weights_files[model] = fetch_weights(weights, local_path, force_fetch)
         filename_set.add(weights)
     return weights_files
 
@@ -130,7 +130,7 @@ def download_file(url: str, path: str) -> None:
     path : str
         Local path to save file to.
     """
-    if os.path.isdir(path):
+    if Path(path).is_dir():
         local_filename = url.split("/")[-1]
         path = Path(path + local_filename)
     else:
