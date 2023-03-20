@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Union # noqa: F401
+from typing import List, Union  # noqa: F401
 
 import requests
 import validators
