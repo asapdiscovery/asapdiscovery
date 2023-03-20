@@ -22,7 +22,7 @@ import pickle as pkl
 
 import numpy as np
 import torch
-from asapdiscovery.ml import EarlyStopping, GaussianNLLLoss, MSELoss
+from asapdiscovery.ml import EarlyStopping, GaussianNLLLoss, MSELoss  # noqa: E402
 from asapdiscovery.ml.utils import (
     build_dataset,
     build_model,

@@ -1,17 +1,13 @@
 import argparse
 import json
 import multiprocessing as mp
-import os
-import sys
 
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: 402
 
 
-########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
