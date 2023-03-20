@@ -21,9 +21,9 @@ def fetch_weights_from_spec(
         Path to yaml spec file.
     models : List[str]
         Model names to fetch weights for.
-    local_path : str, optional
+    local_path : str, default="./_weights/"
         Local path to save weights if a remote url is provided. or to check if weights exist locally, by default "./_weights/"
-    force_fetch : bool, optional
+    force_fetch : bool, default=False
         Force fetch weights from remote, by default False
 
     Raises
@@ -67,7 +67,7 @@ def fetch_weights(weights: str, path: str = None, force_fetch: bool = False) -> 
         Remote url or local path to weights.
     path : str, optional
         Local path to save weights if a remote url is provided. or to check if weights exist locally, by default None
-    force_fetch : bool, optional
+    force_fetch : bool, default=False
         Force fetch weights from remote, by default False
 
     Returns
@@ -130,8 +130,11 @@ def download_file(url: str, path: str) -> None:
     path : str
         Local path to save file to.
     """
-    local_filename = url.split("/")[-1]
-    path = Path(path + local_filename)
+    if os.path.isdir(path):
+        local_filename = url.split("/")[-1]
+        path = Path(path + local_filename)
+    else:
+        path = Path(path)
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         with open(path, "wb") as f:
