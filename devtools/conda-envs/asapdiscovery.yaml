@@ -50,5 +50,7 @@ dependencies:
   - pip:
     - biopython
     - ase
+    - validators
+    - pyyaml
     # ml
     - git+https://github.com/choderalab/mtenn@0.1.0
