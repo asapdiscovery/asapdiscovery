@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Union, Dict  # noqa: F401
+from typing import Dict, List, Union  # noqa: F401
 
 import requests
 import validators
@@ -12,7 +12,7 @@ def fetch_weights_from_spec(
     models: Union[list[str], str],
     local_path: str = "./_weights/",
     force_fetch: bool = False,
-) -> Dict[str, Path] :
+) -> dict[str, Path]:
     """Fetch weights from yaml spec file.
 
     Parameters
