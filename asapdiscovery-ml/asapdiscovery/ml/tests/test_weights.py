@@ -20,6 +20,6 @@ def test_fetch_weights(weights_yaml, force_fetch):
         force_fetch=force_fetch,
     )
     # now fetch just one model that is already fetched, should not fetch again
-    w = asapdiscovery.ml.weights.fetch_weights_from_spec(
+    _ = asapdiscovery.ml.weights.fetch_weights_from_spec(
         weights_yaml, "schnet", local_path="./_weights/", force_fetch=force_fetch
     )
