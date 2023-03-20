@@ -10,7 +10,7 @@ import yaml
 def fetch_weights_from_spec(
     yamlfile: str,
     models: Union[List[str], str],
-    local_path: str = "./_weights/",
+    local_dir: str = "./_weights/",
     force_fetch: bool = False,
 ) -> Dict[str, Path]:
     """Fetch weights from yaml spec file.
@@ -21,7 +21,7 @@ def fetch_weights_from_spec(
         Path to yaml spec file.
     models : List[str]
         Model names to fetch weights for.
-    local_path : str, default="./_weights/"
+    local_dir : str, default="./_weights/"
         Local path to save weights if a remote url is provided. or to check if weights exist locally, by default "./_weights/"
     force_fetch : bool, default=False
         Force fetch weights from remote, by default False
@@ -53,19 +53,21 @@ def fetch_weights_from_spec(
             raise ValueError(
                 f"Duplicate file {weights} in spec file. Please specify a unique filename for each model."
             )
-        weights_files[model] = fetch_weights(weights, local_path, force_fetch)
+        weights_files[model] = fetch_weights(weights, local_dir, force_fetch)
         filename_set.add(weights)
     return weights_files
 
 
-def fetch_weights(weights: str, path: str = None, force_fetch: bool = False) -> Path:
+def fetch_weights(
+    weights: str, file_dir: str = "./_weights/", force_fetch: bool = False
+) -> Path:
     """Fetch weights from remote and save to local path.
 
     Parameters
     ----------
     weights : str
         Remote url or local path to weights.
-    path : str, optional
+    file_dir : str, default="./_weights/"
         Local path to save weights if a remote url is provided. or to check if weights exist locally, by default None
     force_fetch : bool, default=False
         Force fetch weights from remote, by default False
@@ -77,46 +79,52 @@ def fetch_weights(weights: str, path: str = None, force_fetch: bool = False) -> 
 
     is_url = validators.url(weights)
 
+    if not file_dir:
+        raise ValueError("file_dir must be provided and must not be falsy.")
+
     if is_url:
         logging.info("Weights are a remote url")
         logging.info(f"Fetching weights from {weights}")
         if force_fetch:
             logging.info("Force fetching weights from remote")
-            if not Path(path).exists():
-                logging.info(f"Local path {path} does not exist, creating")
-                Path(path).mkdir(parents=True, exist_ok=True)
+            if not Path(file_dir).exists():
+                logging.info(f"Local path {file_dir} does not exist, creating")
+                Path(file_dir).mkdir(parents=True, exist_ok=True)
             # fetch from remote
-            weights_file = download_file(weights, path)
+            weights_file = download_file(weights, file_dir)
             return weights_file
         else:
             # check if weights exist locally
             local_filename = weights.split("/")[-1]
-            if Path(path + local_filename).exists():
+            local_path = Path(file_dir).joinpath(Path(local_filename))
+            if local_path.exists():
                 # exists locally, skip fetch from remote
                 logging.info(
-                    f"weights exist locally at {path + local_filename}, skipping fetch from remote"
+                    f"weights exist locally at {local_path}, skipping fetch from remote"
                 )
-                return Path(path + local_filename)
+                return Path(local_path)
             else:
                 # fetch from remote
                 logging.info("weights do not exist locally, fetching from remote")
-                if not Path(path).exists():
-                    logging.info(f"Local path {path} does not exist, creating")
-                    Path(path).mkdir(parents=True, exist_ok=True)
-                weights_file = download_file(weights, path)
+                if not Path(file_dir).exists():
+                    logging.info(f"Local path {file_dir} does not exist, creating")
+                    Path(file_dir).mkdir(parents=True, exist_ok=True)
+                weights_file = download_file(weights, file_dir)
                 return weights_file
     else:
-        logging.info(f"Fetching weights from {path + weights}")
-        if not Path(path + weights).exists():
+        local_path = Path(file_dir).joinpath(Path(weights))
+
+        logging.info(f"Fetching weights from {local_path}")
+        if not Path(local_path).exists():
             raise FileNotFoundError(
-                f"Local weights file {path + weights} does not exist, provide a valid remote url or local path to weights"
+                f"Local weights file {local_path} does not exist, provide a valid remote url or local path to weights"
             )
 
         else:
             logging.info(
-                f"weights exist locally at {path + weights}, skipping fetch from remote"
+                f"weights exist locally at {local_path}, skipping fetch from remote"
             )
-            return Path(path + weights)
+            return Path(local_path)
 
 
 # https://stackoverflow.com/questions/16694907/
@@ -132,7 +140,7 @@ def download_file(url: str, path: str) -> None:
     """
     if Path(path).is_dir():
         local_filename = url.split("/")[-1]
-        path = Path(path + local_filename)
+        path = Path(path).joinpath(Path(local_filename))
     else:
         path = Path(path)
     with requests.get(url, stream=True) as r:
