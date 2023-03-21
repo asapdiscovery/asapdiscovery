@@ -9,7 +9,7 @@ import yaml
 
 def fetch_weights_from_spec(
     yamlfile: str,
-    models: Union[List[str], str],
+    models: Union[list[str], str],
     local_dir: str = "./_weights/",
     force_fetch: bool = False,
 ) -> dict[str, Path]:
