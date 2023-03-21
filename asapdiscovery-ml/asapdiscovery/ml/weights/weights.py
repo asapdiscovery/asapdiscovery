@@ -12,7 +12,7 @@ def fetch_weights_from_spec(
     models: Union[List[str], str],
     local_dir: str = "./_weights/",
     force_fetch: bool = False,
-) -> Dict[str, Path]:
+) -> dict[str, Path]:
     """Fetch weights from yaml spec file.
 
     Parameters
