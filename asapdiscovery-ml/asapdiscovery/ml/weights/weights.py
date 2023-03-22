@@ -9,7 +9,7 @@ import yaml
 
 def fetch_weights_from_spec(
     yamlfile: str,
-    models: Union[List[str], str],
+    models: Union[list[str], str],
     local_dir: str = "./_weights/",
     force_fetch: bool = False,
 ) -> dict[str, Path]:
@@ -69,7 +69,7 @@ def fetch_weights(
     weights : str
         Remote url or local path to weights.
     file_dir : str, default="./_weights/"
-        Local path to save weights if a remote url is provided. or to check if weights exist locally, by default None
+        Local path to save weights if a remote url is provided, or to check if weights exist locally, by default "./_weights/"
     force_fetch : bool, default=False
         Force fetch weights from remote, by default False
 
