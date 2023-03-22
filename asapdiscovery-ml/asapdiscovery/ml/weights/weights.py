@@ -45,7 +45,8 @@ def fetch_weights_from_spec(
         models = [models]
 
     weights_files = {}
-    filename_set = set()
+    # cannot specify the same weights file for multiple models
+    weights_set = set()
     for model in models:
         model_spec = spec[model]
         weights = model_spec["weights"]
@@ -54,7 +55,7 @@ def fetch_weights_from_spec(
                 f"Duplicate file {weights} in spec file. Please specify a unique filename for each model."
             )
         weights_files[model] = fetch_weights(weights, local_dir, force_fetch)
-        filename_set.add(weights)
+        weights_set.add(weights)
     return weights_files
 
 
