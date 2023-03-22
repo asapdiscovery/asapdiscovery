@@ -50,7 +50,7 @@ def fetch_weights_from_spec(
     for model in models:
         model_spec = spec[model]
         weights = model_spec["weights"]
-        if weights in filename_set:
+        if weights in weights_set:
             raise ValueError(
                 f"Duplicate file {weights} in spec file. Please specify a unique filename for each model."
             )
@@ -88,9 +88,6 @@ def fetch_weights(
         logging.info(f"Fetching weights from {weights}")
         if force_fetch:
             logging.info("Force fetching weights from remote")
-            if not Path(file_dir).exists():
-                logging.info(f"Local path {file_dir} does not exist, creating")
-                Path(file_dir).mkdir(parents=True, exist_ok=True)
             # fetch from remote
             weights_file = download_file(weights, file_dir)
             return weights_file
@@ -107,9 +104,6 @@ def fetch_weights(
             else:
                 # fetch from remote
                 logging.info("weights do not exist locally, fetching from remote")
-                if not Path(file_dir).exists():
-                    logging.info(f"Local path {file_dir} does not exist, creating")
-                    Path(file_dir).mkdir(parents=True, exist_ok=True)
                 weights_file = download_file(weights, file_dir)
                 return weights_file
     else:
@@ -139,6 +133,10 @@ def download_file(url: str, path: str) -> None:
     path : str
         Local path to save file to.
     """
+    if not Path(path).exists():
+        logging.info(f"Local path {path} does not exist, creating")
+        Path(path).mkdir(parents=True, exist_ok=True)
+
     if Path(path).is_dir():
         local_filename = url.split("/")[-1]
         path = Path(path).joinpath(Path(local_filename))
