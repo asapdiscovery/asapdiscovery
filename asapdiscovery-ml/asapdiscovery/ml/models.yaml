@@ -1,0 +1,5 @@
+# This file is used to specify the path to the weights file for each model.
+
+#model1:
+  # Path to the weights file for the model1.
+  # weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model.pth

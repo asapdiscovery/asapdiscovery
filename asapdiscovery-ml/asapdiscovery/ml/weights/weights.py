@@ -6,6 +6,7 @@ import requests
 import validators
 import yaml
 
+all_models_spec = Path("../models.yaml")
 
 def fetch_weights_from_spec(
     yamlfile: str,
