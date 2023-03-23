@@ -1,16 +1,15 @@
-from typing import Optional
 import logging
+from typing import Optional
 
 import torch
+from asapdiscovery.ml.utils import build_model, load_weights
 
 # static import of models from base yaml here
 from asapdiscovery.ml.weights import (
-    fetch_weights_from_spec,
-    fetch_weights,
     all_models_spec,
+    fetch_weights,
+    fetch_weights_from_spec,
 )
-
-from asapdiscovery.ml.utils import load_weights, build_model
 
 
 class InferenceBase:
