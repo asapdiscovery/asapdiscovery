@@ -28,17 +28,20 @@ def weights_yaml():
 def test_fetch_weights(weights_yaml, force_fetch, path, should_raise):
     if should_raise:
         with pytest.raises(ValueError):
-            _ = asapdiscovery.ml.weights.fetch_weights_from_spec(
+            _, _ = asapdiscovery.ml.weights.fetch_weights_from_spec(
                 weights_yaml, "model1", local_dir=path, force_fetch=force_fetch
             )
     else:
-        _ = asapdiscovery.ml.weights.fetch_weights_from_spec(
+        models, types = asapdiscovery.ml.weights.fetch_weights_from_spec(
             weights_yaml,
             ["model1", "model2"],
             local_dir=path,
             force_fetch=force_fetch,
         )
+        assert models  # make sure it's not empty
+        assert types == {"model1": "GAT", "model2": "blah"}
         # now fetch just one model that is already fetched, should not fetch again
-        _ = asapdiscovery.ml.weights.fetch_weights_from_spec(
+        _, types = asapdiscovery.ml.weights.fetch_weights_from_spec(
             weights_yaml, "model1", local_dir=path, force_fetch=force_fetch
         )
+        assert types == {"model1": "GAT"}

@@ -8,6 +8,7 @@ import yaml
 
 all_models_spec = Path("../models.yaml")
 
+
 def fetch_weights_from_spec(
     yamlfile: str,
     models: Union[list[str], str],
@@ -46,18 +47,21 @@ def fetch_weights_from_spec(
         models = [models]
 
     weights_files = {}
+    model_types = {}
     # cannot specify the same weights file for multiple models
     weights_set = set()
     for model in models:
         model_spec = spec[model]
         weights = model_spec["weights"]
+        model_type = model_spec["type"]
         if weights in weights_set:
             raise ValueError(
                 f"Duplicate file {weights} in spec file. Please specify a unique filename for each model."
             )
         weights_files[model] = fetch_weights(weights, local_dir, force_fetch)
+        model_types[model] = model_type
         weights_set.add(weights)
-    return weights_files
+    return weights_files, model_types
 
 
 def fetch_weights(
