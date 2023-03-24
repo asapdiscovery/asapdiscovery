@@ -131,9 +131,9 @@ def parse_fragalysis(
     Load all crystal structures into schema.CrystalCompoundData objects.
     Parameters
     ----------
-    x_fn : str
+    x_fn : str or Path
         metadata.CSV file giving information on each crystal structure
-    x_dir : str
+    x_dir : str or Path
         Path to directory containing directories with crystal structure PDB
         files
     name_filter : str or list
