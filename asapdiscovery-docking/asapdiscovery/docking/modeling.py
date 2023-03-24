@@ -679,6 +679,33 @@ def prep_mp(
     loop_db,
     protein_only: bool,
 ):
+    """
+    Prepare a crystal structure for docking simulations.
+
+    The function pre-processes a crystal structure file in PDB format, prepares a design unit (DU)
+    for docking simulations, and saves the pre-processed structures and DUs in the specified output
+    directory. The pre-processing steps include:
+    - Creating the output directory if it does not exist
+    - Setting up a logger for tracking progress and errors
+    - Checking if the output files already exist, and exiting early if they do
+    - Loading the protein from the input PDB file
+    - Mutating the residues of the protein to match the provided SEQRES sequence (if any)
+    - Removing extra copies of the ligand in the protein-ligand complex
+    - Aligning the protein to a reference protein (if provided)
+    - Preparing a DU for docking simulations using the initial protein structure and loop database
+    - Saving the DU and pre-processed structures in the output directory
+
+    Args:
+        xtal (CrystalCompoundData): An object containing information about the crystal structure.
+        ref_prot (Optional): A reference protein structure to align the input protein to.
+        seqres (Optional): A string containing the SEQRES sequence to mutate the protein to.
+        out_base (str): The base output directory for the pre-processed files.
+        loop_db (str): The path to the loop database file.
+        protein_only (bool): Whether to include only the protein in the DU, or also include the ligand.
+
+    Returns:
+        None: The function writes the pre-processed files to disk but does not return any value.
+    """
     # Make output directory
     out_dir = os.path.join(out_base, f"{xtal.output_name}")
     if not os.path.exists(out_dir):
