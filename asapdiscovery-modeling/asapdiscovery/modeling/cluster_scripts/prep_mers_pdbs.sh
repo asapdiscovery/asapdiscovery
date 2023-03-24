@@ -20,7 +20,7 @@
 source ~/.bashrc
 conda activate mers-docking
 
-python prep_mers_pdbs.py -n 10 \
+prep-mers-pdbs -n 10 \
 -d /data/chodera/asap-datasets/mers_fauxalysis/mers_pdb_download \
 -r /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
 -o /data/chodera/asap-datasets/mers_fauxalysis/20230308_prepped_mers_pdbs \

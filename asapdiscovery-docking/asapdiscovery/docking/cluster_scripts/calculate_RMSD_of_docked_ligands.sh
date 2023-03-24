@@ -8,7 +8,7 @@
 #BSUB -W 1:00
 source ~/.bashrc
 conda activate ad-3.9
-python calculate_RMSD_of_docked_ligands.py \
+calculate-RMSD-of-docked-ligands \
 -sdf /data/chodera/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221208/combined.sdf \
 -o /data/chodera/asap-datasets/retro_docking/sars_fragalysis_retrospective/20221208 \
 -r '/data/chodera/asap-datasets/full_frag_prepped_mpro_20230122/*/sdf' \

@@ -105,8 +105,7 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
     oechem.OEError
         If the CIF file cannot be opened.
     """
-    pdb_fn = Path(pdb_fn)
-    if not pdb_fn.exists():
+    if not Path(pdb_fn).exists():
         raise FileNotFoundError(f"{pdb_fn} does not exist!")
     ifs = oechem.oemolistream()
     ifs_flavor = oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA
@@ -157,8 +156,7 @@ def load_openeye_cif(cif_fn, alt_loc=False):
     if the CIF file cannot be opened. If `alt_loc` is True, the resulting OEGraphMol
     object will include alternative locations for atoms.
     """
-    cif_fn = Path(cif_fn)
-    if not cif_fn.exists():
+    if not Path(cif_fn).exists():
         raise FileNotFoundError(f"{cif_fn} does not exist!")
 
     ifs = oechem.oemolistream()
