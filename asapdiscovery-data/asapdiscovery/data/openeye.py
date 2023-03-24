@@ -379,8 +379,10 @@ def save_receptor_grid(du_fn, out_fn):
     Load in a design unit from a file and write out the receptor grid as a .ccp4 grid file.
     Parameters
     ----------
-    du_fn
-    out_fn: Works with a .ccp4 extension
+    du_fn: str
+        File name/path with the design units.
+    out_fn: str
+        Works with a .ccp4 extension
 
     Returns
     -------
