@@ -48,6 +48,7 @@ prep-proteins = "asapdiscovery.docking.scripts.prep_proteins:main"
 run-docking-oe = "asapdiscovery.docking.scripts.run_docking_oe:main"
 score-structures = "asapdiscovery.docking.scripts.score_structures:main"
 test-protein-prep = "asapdiscovery.docking.scripts.test_protein_prep:main"
+write-receptor-grids = "asapdiscovery.docking.scripts.write_receptor_grids:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
