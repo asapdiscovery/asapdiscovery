@@ -19,13 +19,6 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 dependencies = [
-    "torch",
-    "pandas",
-    "upsetplot",
-    "seaborn",
-    "dgllife",
-    "torch-cluster",
-    "e3nn"
 ]
 
 [project.urls]

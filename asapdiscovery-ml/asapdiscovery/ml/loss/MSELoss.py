@@ -79,12 +79,18 @@ class MSELoss(TorchMSELoss):
         #  1.0 - If input or data is semiquant and prediction is inside the
         #    assay range
         #  0.0 - If data is semiquant and prediction is outside the assay range
+        # r < 0 -> measurement is below thresh, want to count if pred > target
+        # r > 0 -> measurement is above thresh, want to count if pred < target
         mask = torch.tensor(
             [
                 1.0 if r == 0 else ((r < 0) == (t < i))
                 for i, t, r in zip(input, target, in_range)
             ]
         )
-        mask = mask.to(loss.device)
+        mask = mask.to(input.device)
 
-        return (mask * loss).mean()
+        # Need to add the max in the denominator in case there are no values that we
+        #  want to calculate loss for
+        loss = (loss * mask) / max(torch.sum(mask), 1)
+
+        return loss
