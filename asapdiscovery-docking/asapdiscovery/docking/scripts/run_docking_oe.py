@@ -198,6 +198,80 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     return results
 
+def dock_sequentially(out_dir, lig_name, du_name, *args, **kwargs):
+    """
+    Sequential function for docking. 
+
+    Parameters
+    ----------
+    out_dir : str
+        Output file
+    lig_name : str
+        Ligand name
+    du_name : str
+        DesignUnit name
+
+    Returns
+    -------
+    """
+    if check_results(out_dir):
+        print(f"Loading found results for {lig_name}_{du_name}", flush=True)
+        return pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
+    os.makedirs(out_dir, exist_ok=True)
+
+    success, posed_mol, docking_id = run_docking_oe(*args, **kwargs)
+    if success:
+        out_fn = os.path.join(out_dir, "docked.sdf")
+        save_openeye_sdf(posed_mol, out_fn)
+
+        rmsds = []
+        posit_probs = []
+        posit_methods = []
+        chemgauss_scores = []
+
+        for conf in posed_mol.GetConfs():
+            rmsds.append(float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD")))
+            posit_probs.append(
+                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
+            )
+            posit_methods.append(
+                oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT_method")
+            )
+            chemgauss_scores.append(
+                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4"))
+            )
+        smiles = oechem.OEGetSDData(conf, "SMILES")
+        clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
+    else:
+        out_fn = ""
+        rmsds = [-1.0]
+        posit_probs = [-1.0]
+        posit_methods = [""]
+        chemgauss_scores = [-1.0]
+        clash = -1
+        smiles = "None"
+
+    results = [
+        (
+            lig_name,
+            du_name,
+            out_fn,
+            i,
+            rmsd,
+            prob,
+            method,
+            chemgauss,
+            clash,
+            smiles,
+        )
+        for i, (rmsd, prob, method, chemgauss) in enumerate(
+            zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
+        )
+    ]
+
+    pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
+    return results
+
 
 ########################################
 def get_args():
@@ -404,9 +478,17 @@ def main():
         "SMILES",
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
-    with mp.Pool(processes=nprocs) as pool:
-        results_df = pool.starmap(mp_func, mp_args)
+    if nprocs == 0:
+        print(f"Running {len(mp_args)} docking runs sequentially.")
+        results_df = dock_sequentially(mp_args)
+
+
+
+        
+    else:
+        print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+        with mp.Pool(processes=nprocs) as pool:
+            results_df = pool.starmap(mp_func, mp_args)
     results_df = [res for res_list in results_df for res in res_list]
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 
