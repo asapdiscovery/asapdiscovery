@@ -398,16 +398,19 @@ def save_receptor_grid(du_fn, out_fn):
 
 
 def openeye_copy_pdb_data(
-    destination: oechem.OEGraphMol, source: oechem.OEGraphMol, tag: str
+    source: oechem.OEGraphMol, destination: oechem.OEGraphMol, tag: str
 ):
     """
     Copy over the PDB data from one object to another. Tag examples include "SEQRES"
 
     Parameters
     ----------
-    destination: oechem.OEGraphMol
     source: oechem.OEGraphMol
+        Source molecule to copy the data from
+    destination: oechem.OEGraphMol
+        Destination molecule to copy the data
     tag: str
+        Tag identifier for the data/metadata.
 
     Returns
     -------
