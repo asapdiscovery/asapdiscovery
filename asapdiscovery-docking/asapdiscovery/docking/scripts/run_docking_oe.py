@@ -198,9 +198,10 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     return results
 
+
 def dock_sequentially(out_dir, lig_name, du_name, *args, **kwargs):
     """
-    Sequential function for docking. 
+    Sequential function for docking.
 
     Parameters
     ----------
@@ -482,9 +483,6 @@ def main():
         print(f"Running {len(mp_args)} docking runs sequentially.")
         results_df = dock_sequentially(mp_args)
 
-
-
-        
     else:
         print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
         with mp.Pool(processes=nprocs) as pool:
