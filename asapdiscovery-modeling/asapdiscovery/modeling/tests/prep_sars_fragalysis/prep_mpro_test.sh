@@ -3,7 +3,7 @@
 rm -r prepped
 
 # run protein prepped script
-python ../../scripts/prep_proteins.py \
+prep-proteins \
 -d aligned \
 -x metadata.csv \
 -o prepped \
