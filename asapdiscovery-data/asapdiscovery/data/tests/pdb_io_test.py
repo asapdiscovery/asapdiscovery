@@ -1,3 +1,6 @@
+from pytest import skip
+
+skip("No OELicense in CI yet", allow_module_level=True)
 """
 Very simple script just to test that we can load and save a file using the openeye wrapper methods we've made.
 TODO: Perhaps make this a unit test in asapdiscovery.data?
@@ -5,9 +8,6 @@ TODO: Perhaps make this a unit test in asapdiscovery.data?
 import argparse
 
 from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
-from pytest import skip
-
-skip("No OELicense in CI yet", allow_module_level=True)
 
 
 def get_args():

@@ -1,3 +1,6 @@
+from pytest import skip
+
+skip("No OELicense in CI yet", allow_module_level=True)
 """
 Function to test implementation of ligand filtering
 """
@@ -5,9 +8,6 @@ Function to test implementation of ligand filtering
 import argparse
 
 from asapdiscovery.data import utils
-from pytest import skip
-
-skip("No OELicense in CI yet", allow_module_level=True)
 
 
 def get_args():
