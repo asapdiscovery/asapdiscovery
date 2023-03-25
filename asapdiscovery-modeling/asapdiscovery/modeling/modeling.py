@@ -109,7 +109,7 @@ def spruce_protein(
     # Spruce!
     from openeye import oegrid
 
-    ## This object is for some reason needed in order to run spruce
+    # This object is for some reason needed in order to run spruce
     grid = oegrid.OESkewGrid()
 
     oespruce.OEBuildLoops(initial_prot, metadata, sc_opts, loop_opts)
