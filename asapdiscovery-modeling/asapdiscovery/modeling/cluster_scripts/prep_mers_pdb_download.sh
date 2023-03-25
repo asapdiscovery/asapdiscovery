@@ -28,7 +28,7 @@ conda activate mers-docking
 #-s ../data/mpro_mers_seqres.yaml \
 #--protein_only
 
-python ../asapdiscovery/docking/scripts/prep_proteins.py -n 10 \
+prep-proteins -n 10 \
 -d /data/chodera/asap-datasets/mers_pdb_download \
 -p ../metadata/mers-structures-dimers.yaml \
 -r /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
