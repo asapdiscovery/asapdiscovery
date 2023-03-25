@@ -1,5 +1,4 @@
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.openeye import oespruce
+from asapdiscovery.data.openeye import oechem, oespruce
 
 
 def spruce_protein(
