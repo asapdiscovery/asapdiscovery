@@ -15,13 +15,8 @@ Adding new functions would require 3 steps (as far as I understand it):
 plotly creator
 """
 import argparse
-import os
-import sys
 
 from dash import Input, Output, html
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
 
 from asapdiscovery.dataviz import plotly_dash_functions, plotting  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402

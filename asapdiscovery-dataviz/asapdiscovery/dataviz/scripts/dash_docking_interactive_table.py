@@ -2,14 +2,7 @@
 This gives an example of how to add a very basic interactive table
 """
 import argparse
-import os
-import sys
-
 from dash import html
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
-
 from asapdiscovery.dataviz import plotly_dash_functions  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
 
