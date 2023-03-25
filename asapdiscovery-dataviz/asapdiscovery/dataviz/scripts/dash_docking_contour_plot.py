@@ -16,10 +16,9 @@ plotly creator
 """
 import argparse
 
-from dash import Input, Output, html
-
 from asapdiscovery.dataviz import plotly_dash_functions, plotting  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
+from dash import Input, Output, html
 
 
 def get_args():

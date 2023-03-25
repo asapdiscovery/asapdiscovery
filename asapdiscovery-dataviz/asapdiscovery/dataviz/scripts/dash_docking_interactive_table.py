@@ -2,9 +2,10 @@
 This gives an example of how to add a very basic interactive table
 """
 import argparse
-from dash import html
+
 from asapdiscovery.dataviz import plotly_dash_functions  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
+from dash import html
 
 
 def get_args():

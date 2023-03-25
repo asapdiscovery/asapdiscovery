@@ -5,10 +5,11 @@ the others
 """
 import argparse
 import json
+
 import pandas as pd
-from dash import Input, Output, dcc, html
 from asapdiscovery.dataviz import plotly_dash_functions, plotting  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
+from dash import Input, Output, dcc, html
 
 
 def get_args():

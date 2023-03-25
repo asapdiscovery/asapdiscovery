@@ -13,9 +13,8 @@ import json
 
 import pandas as pd
 import plotly.express as px
-from dash import Dash, Input, Output, ctx, dash_table, dcc, html
-
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
+from dash import Dash, Input, Output, ctx, dash_table, dcc, html
 
 parser = argparse.ArgumentParser(description="")
 # Input arguments
