@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from pytest import skip
 
-# skip("No OELicense in CI yet", allow_module_level=True)
+skip("No OELicense in CI yet", allow_module_level=True)
 
 
 def test_rmsd_calculation():
