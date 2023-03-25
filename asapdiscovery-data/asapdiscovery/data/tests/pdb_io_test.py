@@ -5,6 +5,9 @@ TODO: Perhaps make this a unit test in asapdiscovery.data?
 import argparse
 
 from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
+from pytest import skip
+
+skip("No OELicense in CI yet", allow_module_level=True)
 
 
 def get_args():
