@@ -8,4 +8,3 @@ model1:
   # Date tag of the weights file, must be in the format of YYYY-MM-DD.
   # used to determine if the weights file is up-to-date.
   last_updated: 2023-01-01
-
