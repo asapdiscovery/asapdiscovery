@@ -65,8 +65,19 @@ class InferenceBase:
                 )
             self.weights = weights[model_name]
         else:
-            logging.info("using weights from specified local file")
-            self.weights = fetch_weights(model_name)
+            logging.info("using weights from specified local file or spec")
+            if self.model_name.split(".")[-1] in ["yaml", "yml"]:
+                logging.info("local yaml file specified, fetching weights from spec")
+                weights, types = fetch_weights_from_spec(self.model_name, model_name)
+                if types[model_name] != self.model_type:
+                    raise ValueError(
+                        f"Model type {types[model_name]} does not match {self.model_type}"
+                    )
+                self.weights = weights[model_name]
+            else:
+                logging.info("local weights file specified, fetching weights from file")
+                self.weights = fetch_weights(model_name)
+
         logging.info(f"found weights {self.weights}")
 
         # build model, this needs a bit of cleaning up in the function itself.
