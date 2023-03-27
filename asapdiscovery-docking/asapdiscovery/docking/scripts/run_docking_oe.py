@@ -400,10 +400,13 @@ def main():
         "clash",
         "SMILES",
     ]
-    nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
-    with mp.Pool(processes=nprocs) as pool:
-        results_df = pool.starmap(mp_func, mp_args)
+    if args.num_cores > 0:
+        nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+        print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+        with mp.Pool(processes=nprocs) as pool:
+            results_df = pool.starmap(mp_func, mp_args)
+    else:
+        results_df = [mp_func(*args_list) for args_list in mp_args]
     results_df = [res for res_list in results_df for res in res_list]
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 
