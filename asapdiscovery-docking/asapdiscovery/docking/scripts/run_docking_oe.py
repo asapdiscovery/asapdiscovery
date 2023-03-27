@@ -2,8 +2,10 @@
 Script to dock an SDF file of ligands to prepared structures.
 """
 import argparse
+from concurrent.futures import TimeoutError
 import multiprocessing as mp
 import os
+import pebble
 import pickle as pkl
 import re
 import shutil
@@ -403,8 +405,45 @@ def main():
     if args.num_cores > 0:
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
         print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
-        with mp.Pool(processes=nprocs) as pool:
-            results_df = pool.starmap(mp_func, mp_args)
+        with pebble.ProcessPool(max_workers=nprocs) as pool:
+            # Need to flip args structure for pebble
+            res = pool.map(mp_func, *zip(*mp_args), timeout=30)
+
+            # List to keep track of successful results
+            results_df = []
+            # List to keep track of which runs failed
+            failed_runs = []
+
+            # TimeoutError is only raised when we try to access the result. Do things
+            #  this way so we can keep track of which compound:xtals timed out
+            res_iter = res.result()
+            for args_list in mp_args:
+                try:
+                    cur_res = next(res_iter)
+                    results_df += [cur_res]
+                except StopIteration:
+                    # We've reached the end of the results iterator so just break
+                    break
+                except TimeoutError:
+                    # This compound:xtal combination timed out
+                    print("Docking timed out for", args_list[8], flush=True)
+                    failed_runs += [args_list[8]]
+                except pebble.ProcessExpired as e:
+                    print("Docking failed for", args_list[8], flush=True)
+                    print(f"\t{e}. Exit code {e.exitcode}", flush=True)
+                    failed_runs += [args_list[8]]
+                except Exception as e:
+                    print(
+                        "Docking failed for",
+                        args_list[8],
+                        "with Exception",
+                        e,
+                        flush=True,
+                    )
+                    print(e.traceback, flush=True)
+                    failed_runs += [args_list[8]]
+            print(f"Docking failed for {len(failed_runs)} runs", flush=True)
+
     else:
         results_df = [mp_func(*args_list) for args_list in mp_args]
     results_df = [res for res_list in results_df for res in res_list]
