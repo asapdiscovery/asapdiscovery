@@ -1,3 +1,6 @@
+import os
+from typing import Union
+
 def load_pdbs_from_yaml(pdb_list_yaml):
     """
     Load a pdb list from yaml file
@@ -17,7 +20,7 @@ def load_pdbs_from_yaml(pdb_list_yaml):
     return pdb_dict
 
 
-def download_pdb_structure(pdb_id: str, directory: str, file_format: str = "pdb"):
+def download_pdb_structure(pdb_id: str, directory: Union[str, os.PathLike], file_format: str = "pdb"):
     """
     Download a structure, using the specified format/type.
 
