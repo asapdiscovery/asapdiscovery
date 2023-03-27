@@ -94,6 +94,9 @@ class InferenceBase:
         self.model = load_weights(self.model, self.weights)
         logging.info(f"loaded weights {self.weights}")
 
+        self.model.eval()
+        logging.info("set model to eval mode")
+
     def build_model(self, model_type: str, **kwargs):
         """can be overloaded in child classes for more complex setups,
         but most uses should be fine with this, needs to return a
@@ -116,6 +119,7 @@ class InferenceBase:
 
     def predict(self, input_data):
         # feed in data in whatever format is required by the model
+        
         with torch.no_grad():
             input_tensor = torch.tensor(input_data).to(self.device)
             output_tensor = self.model(input_tensor)
