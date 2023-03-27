@@ -1,6 +1,8 @@
 """
-Create oedu binary DesignUnit files for input protein structures.
-This was designed to be able to be used for either molecules from the PDB or from fragalysis.
+Create oedu binary DesignUnit files for input protein structures, with all methods copied into this script in order
+to make it a single script for the COVID Moonshot paper. This script is copied in the covid-moonshot-manuscript but
+just in case it is saved here.
+It is not intended to be an entry point in this repo or maintained with updated methods.
 
 Example Usage:
     python prep_proteins.py \

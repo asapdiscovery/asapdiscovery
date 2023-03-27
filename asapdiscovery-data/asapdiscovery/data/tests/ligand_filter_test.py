@@ -1,3 +1,6 @@
+from pytest import skip
+
+skip("No OELicense in CI yet", allow_module_level=True)
 """
 Function to test implementation of ligand filtering
 """

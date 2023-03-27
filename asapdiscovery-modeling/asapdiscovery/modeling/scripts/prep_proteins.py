@@ -4,11 +4,11 @@ This was designed to be able to be used for either molecules from the PDB or fro
 
 Example Usage:
     python prep_proteins.py \
-    -d /Users/alexpayne/lilac-mount-point/asap-datasets/mers_pdb_download \
+    -d ~/asap-datasets/mers_pdb_download \
     -p ../../../metadata/mers-structures-dimers.yaml \
-    -r /Users/alexpayne/lilac-mount-point/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
-    -l /Users/alexpayne/lilac-mount-point/asap-datasets/rcsb_spruce.loop_db \
-    -o /Users/alexpayne/lilac-mount-point/asap-datasets/mers_fauxalysis/mers_prepped_structures_dimers_only \
+    -r ~/asap-datasets/mpro_fragalysis_2022_10_12/extra_files/reference.pdb \
+    -l ~/asap-datasets/rcsb_spruce.loop_db \
+    -o ~/asap-datasets/mers_fauxalysis/mers_prepped_structures_dimers_only \
     -s ../../../metadata/mpro_mers_seqres.yaml \
     --protein_only
 """

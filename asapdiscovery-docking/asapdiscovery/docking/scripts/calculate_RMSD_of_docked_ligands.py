@@ -10,12 +10,10 @@ Example Usage
 """
 import argparse
 import multiprocessing as mp
-import os
 from glob import glob
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
@@ -24,10 +22,7 @@ from asapdiscovery.data.openeye import (
     oechem,
     split_openeye_mol,
 )
-from asapdiscovery.docking.analysis import (
-    calculate_rmsd_openeye,
-    write_all_rmsds_to_reference,
-)
+from asapdiscovery.docking.analysis import write_all_rmsds_to_reference
 
 
 def get_args():
@@ -118,11 +113,8 @@ def main():
             if compound_id in ref_fn
         }
     else:
-        raise NotImplementedError("Sorry I've only done this for PDBs")
+        raise NotImplementedError("Only implemented for pdb and sdf files")
     logger.info(f"{len(ref_dict)} references found")
-    mp_args = []
-    complex_ids = []
-    final_compound_ids = []
 
     # Now make a list of query mols with the same compound id
     cmpd_id_array = np.array(compound_ids)
@@ -137,33 +129,11 @@ def main():
             continue
         query_mols = list(mol_array[cmpd_id_array == compound_id])
         mp_args.append((ref_mol, query_mols, output_dir, compound_id))
-
-    # # Now map each input sdf file to a reference
-    # for query_mol in mols:
-    #     compound_id = oechem.OEGetSDData(query_mol, "Compound_ID")
-    #     try:
-    #         ref_mol = ref_dict[compound_id]
-    #         final_compound_ids.append(compound_id)
-    #         complex_ids.append(query_mol.GetTitle())
-    #         mp_args.append([query_mol, ref_mol])
-    #     except KeyError:
-    #         logger.info(f"Skipping missing reference structure: {compound_id}")
-
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     logger.info(f"Running {len(mp_args)} RMSD calculations over {nprocs} cores.")
     logger.info(f"{mp_args[0]}")
     with mp.Pool(processes=nprocs) as pool:
         pool.starmap(write_all_rmsds_to_reference, mp_args)
-    # df = pd.DataFrame(
-    #     {
-    #         "Compound_ID": final_compound_ids,
-    #         "RMSD": rmsds,
-    #         "Complex_ID": complex_ids,
-    #     },
-    # )
-    # output_path = output_dir / "rmsds.csv"
-    # logger.info(f"Writing results to {output_path}")
-    # df.to_csv(str(output_path))
 
 
 if __name__ == "__main__":

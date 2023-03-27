@@ -1,3 +1,21 @@
+"""
+This script prepares MERS biological assembly cif1 files downloaded from the PDB and prepared spruced design units.
+
+Loading CIF1 Files:
+    Currently it handles this by loading with OpenMM PDBxFile object and saving to a pdb file.
+    CIF1 files are used because biological assembly files in pdb format come with two states,
+    which OpenEye doesn't handle well.
+    However, currently there is a bug in OpenEye that causes it to fail due to some alternate locations in the files.
+    The OpenMM PDBxFile object seems to handle these without problem.
+
+Protein preparation:
+    The protein is 1) aligned, 2) mutated to the canonical mers sequence, and 3) prepared using spruce using OpenEye
+    toolkit methods.
+
+Example usage is found in ..cluster_scripts/prep_mers_pdbs.sh
+
+"""
+
 import argparse
 import logging
 import multiprocessing as mp

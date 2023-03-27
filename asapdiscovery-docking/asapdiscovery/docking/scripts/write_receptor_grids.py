@@ -1,3 +1,8 @@
+"""
+This script takes a globbed set of design units (DUs) and
+writes out the receptor grids in .ccp4 format for each DU.
+"""
+
 import argparse
 import os
 from glob import glob
