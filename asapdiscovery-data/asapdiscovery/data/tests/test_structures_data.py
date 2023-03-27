@@ -70,6 +70,7 @@ class TestLigands:
     def test_ligand_filtering(self):
         """Test SMARTS pattern matching ligand filtering"""
         from asapdiscovery.data import utils
+
         # First, parse the fragalysis directory and
         csv_file = "CSV_FILE_NEEDED_HERE.csv"
         fragalysis_dir = "FRAGALYSIS_DIR_NEEDED_HERE"
@@ -82,7 +83,9 @@ class TestLigands:
             if data.smiles
         }
 
-        smarts_queries_csv = pkg_resources.resource_filename("asapdiscovery.data", "data/smarts_queries.csv")
+        smarts_queries_csv = pkg_resources.resource_filename(
+            "asapdiscovery.data", "data/smarts_queries.csv"
+        )
 
         # Filter based on the smiles using this OpenEye function
         filtered_inputs = utils.filter_docking_inputs(

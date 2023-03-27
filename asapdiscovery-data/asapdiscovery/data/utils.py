@@ -873,7 +873,9 @@ def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
 
 
 def filter_docking_inputs(
-    smarts_queries=pkg_resources.resource_filename("asapdiscovery.data", "data/smarts_queries.csv"),
+    smarts_queries=pkg_resources.resource_filename(
+        "asapdiscovery.data", "data/smarts_queries.csv"
+    ),
     docking_inputs=None,
     drop_commented_smarts_strings=True,
     verbose=True,
