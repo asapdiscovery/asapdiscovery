@@ -8,3 +8,4 @@ from .es import EarlyStopping  # noqa: F401
 from .loss import *  # noqa: F401,F403
 from .models import *  # noqa: F401,F403
 from .weights import *  # noqa: F401,F403
+from .inference import *  # noqa: F401,F403

@@ -1,5 +1,6 @@
 import logging
-from typing import Optional
+from typing import Optional, Dict
+from pathlib import Path
 
 import torch
 from asapdiscovery.ml.utils import build_model, load_weights
@@ -41,7 +42,7 @@ class InferenceBase:
         self,
         model_name: str,
         model_type: str,
-        from_spec: bool = True,
+        model_spec: Path = None,
         build_model_kwargs: Optional[Dict] = None,
         device: str = "cpu",
     ):
@@ -52,12 +53,18 @@ class InferenceBase:
 
         self.model_name = model_name
         self.model_type = model_type
-        logging.info(f"using model {self.model_name} of type {self.model_type}")
+        self.model_spec = model_spec
+
+        logging.info(
+            f"using model {self.model_name} of type {self.model_type} from spec {self.model_spec}"
+        )
 
         # load model weights or fetch them
-        if from_spec:
-            logging.info("using weights from asapdiscovery.ml models.yaml spec file")
-            weights, types = fetch_weights_from_spec(all_models_spec, model_name)
+        if not self.model_spec:
+            logging.info(
+                " no model spec specified, using spec from asapdiscovery.ml models.yaml spec file"
+            )
+            weights, types = fetch_weights_from_spec(self.model_spec, model_name)
             if types[model_name] != self.model_type:
                 raise ValueError(
                     f"Model type {types[model_name]} does not match {self.model_type}"
@@ -65,9 +72,9 @@ class InferenceBase:
             self.weights = weights[model_name]
         else:
             logging.info("using weights from specified local file or spec")
-            if self.model_name.split(".")[-1] in ["yaml", "yml"]:
+            if self.model_spec.split(".")[-1] in ["yaml", "yml"]:
                 logging.info("local yaml file specified, fetching weights from spec")
-                weights, types = fetch_weights_from_spec(self.model_name, model_name)
+                weights, types = fetch_weights_from_spec(self.model_spec, model_name)
                 if types[model_name] != self.model_type:
                     raise ValueError(
                         f"Model type {types[model_name]} does not match {self.model_type}"
@@ -75,7 +82,7 @@ class InferenceBase:
                 self.weights = weights[model_name]
             else:
                 logging.info("local weights file specified, fetching weights from file")
-                self.weights = fetch_weights(model_name)
+                self.weights = fetch_weights(self.model_name)
 
         logging.info(f"found weights {self.weights}")
 
@@ -107,13 +114,13 @@ class GATInference(InferenceBase):
 
     model_type = "GAT"
 
-    def __init__(self, model_name: str, from_spec: bool = True, device: str = "cpu"):
+    def __init__(self, model_name: str, model_spec: Path, device: str = "cpu"):
         # build model kwargs specific to the GAT model, alternatively we can allow these to be passed in
         build_model_kwargs = {}
         super().__init__(
             model_name,
             self.model_type,
-            from_spec=from_spec,
+            model_spec,
             build_model_kwargs=build_model_kwargs,
             device=device,
         )

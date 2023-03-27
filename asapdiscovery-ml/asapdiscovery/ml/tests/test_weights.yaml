@@ -8,3 +8,6 @@ model2:
   # Path to the weights file for the schnet model.
   weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_copy.pth
   type: blah
+gatmodel_test:
+  weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example.pth
+  type: GAT
