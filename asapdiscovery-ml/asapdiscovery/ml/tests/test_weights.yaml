@@ -14,7 +14,7 @@ model2:
   # Path to the weights file for the schnet model.
   weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_copy.pth
   config: blah
-  last_updated: 2023-01-01  
+  last_updated: 2023-01-01
   type: blah
 gatmodel_test:
   weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example.pth

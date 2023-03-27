@@ -1,6 +1,6 @@
 import logging
-from typing import Optional, Dict
 from pathlib import Path
+from typing import Dict, Optional
 
 import torch
 from asapdiscovery.ml.utils import build_model, load_weights
@@ -43,7 +43,7 @@ class InferenceBase:
         model_name: str,
         model_type: str,
         model_spec: Path = None,
-        build_model_kwargs: Optional[Dict] = None,
+        build_model_kwargs: Optional[dict] = None,
         device: str = "cpu",
     ):
         logging.info(f"initializing {self.__class__.__name__} class")
@@ -119,7 +119,7 @@ class InferenceBase:
 
     def predict(self, input_data):
         # feed in data in whatever format is required by the model
-        
+
         with torch.no_grad():
             input_tensor = torch.tensor(input_data).to(self.device)
             output_tensor = self.model(input_tensor)
