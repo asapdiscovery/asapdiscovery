@@ -245,7 +245,7 @@ def build_model(
         except Exception:
             config = {}
 
-    if model_type == "2d":
+    if model_type == "gat":
         import torch
 
         model = build_model_2d(config)

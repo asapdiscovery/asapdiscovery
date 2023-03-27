@@ -87,12 +87,32 @@ class InferenceBase:
         logging.info(f"found weights {self.weights}")
 
         # build model, this needs a bit of cleaning up in the function itself.
-        self.model, _ = build_model(model_type, **build_model_kwargs)
+        self.model = self.build_model(self.model_type, **build_model_kwargs)
         logging.info(f"built model {self.model}")
 
         # load weights
         self.model = load_weights(self.model, self.weights)
         logging.info(f"loaded weights {self.weights}")
+
+    def build_model(self, model_type: str, **kwargs):
+        """can be overloaded in child classes for more complex setups,
+        but most uses should be fine with this, needs to return a
+        torch.nn.Module is only real requirement.
+
+        Parameters
+        ----------
+        model_type : str
+            Type of model to use.
+        **kwargs
+            Keyword arguments to pass to build_model function.
+
+        Returns
+        -------
+        model: torch.nn.Module
+            PyTorch model.
+        """
+        model, model_call = build_model(model_type, **kwargs)
+        return model
 
     def predict(self, input_data):
         # feed in data in whatever format is required by the model
