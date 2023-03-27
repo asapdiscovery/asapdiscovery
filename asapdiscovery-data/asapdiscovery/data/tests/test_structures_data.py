@@ -60,3 +60,42 @@ class TestAsapPDB:
         out_path = f"{tmp_path}/test_oe_save.pdb"
         save_openeye_pdb(mol, out_path)
         assert pathlib.Path(out_path).is_file(), "Could not save OE PDB file."
+
+
+# TODO: Finish test once we have a good example data
+@pytest.mark.skip(reason="No example input required for test yet.")
+class TestLigands:
+    """Class to test ligand specific functionality, such as ligand filtering."""
+
+    def test_ligand_filtering(self):
+        """Test SMARTS pattern matching ligand filtering"""
+        from asapdiscovery.data import utils
+        # First, parse the fragalysis directory and
+        csv_file = "CSV_FILE_NEEDED_HERE.csv"
+        fragalysis_dir = "FRAGALYSIS_DIR_NEEDED_HERE"
+        sars_xtals = utils.parse_fragalysis_data(csv_file, fragalysis_dir)
+
+        # For the compounds for which we have smiles strings, get a dictionary mapping the Compound_ID to the smiles
+        cmp_to_smiles_dict = {
+            compound_id: data.smiles
+            for compound_id, data in sars_xtals.items()
+            if data.smiles
+        }
+
+        smarts_queries_csv = pkg_resources.resource_filename("asapdiscovery.data", "data/smarts_queries.csv")
+
+        # Filter based on the smiles using this OpenEye function
+        filtered_inputs = utils.filter_docking_inputs(
+            smarts_queries=smarts_queries_csv,
+            docking_inputs=cmp_to_smiles_dict,
+        )
+
+        # Get a new dictionary of sars xtals based on the filtered inputs
+        print(filtered_inputs)
+        sars_xtals_filtered = {
+            compound_id: data
+            for compound_id, data in sars_xtals.items()
+            if compound_id in filtered_inputs
+        }
+        print(sars_xtals_filtered)
+        print(len(sars_xtals_filtered))
