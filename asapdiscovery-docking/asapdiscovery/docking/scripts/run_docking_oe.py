@@ -241,6 +241,13 @@ def get_args():
         help="Number of concurrent processes to run.",
     )
     parser.add_argument(
+        "-m",
+        "--timeout",
+        type=int,
+        default=30,
+        help="Timeout (in seconds) for each docking thread.",
+    )
+    parser.add_argument(
         "-t",
         "--top_n",
         type=int,
@@ -406,8 +413,10 @@ def main():
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
         print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
         with pebble.ProcessPool(max_workers=nprocs) as pool:
+            if args.timeout <= 0:
+                args.timeout = None
             # Need to flip args structure for pebble
-            res = pool.map(mp_func, *zip(*mp_args), timeout=30)
+            res = pool.map(mp_func, *zip(*mp_args), timeout=args.timeout)
 
             # List to keep track of successful results
             results_df = []
