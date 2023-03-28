@@ -53,6 +53,7 @@
 7DR8: {} #Apo
 7DR9: {} #Apo, catalytically inactive
 7DRA: {} #Apo, catalytically inactive, pH 9
+7ENE: {}
 7T3Y: {}
 7T3Z: # This one is weird, it has the dimer in the asymetric unit but with chain B on the wrong side
   protein_chains:

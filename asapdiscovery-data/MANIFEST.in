@@ -3,3 +3,5 @@ include MANIFEST.in
 
 graft asapdiscovery
 global-exclude *.py[cod] __pycache__ *.so
+
+include data/*.yaml
