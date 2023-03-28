@@ -307,9 +307,7 @@ def main():
     output_dir = Path(args.output_dir)
     if not output_dir.exists():
         output_dir.mkdir()
-    logger = FileLogger(
-        "calculate_RMSD_of_docked_ligands", path=str(output_dir)
-    ).getLogger()
+    logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
     if args.exp_file:
         import json
 
