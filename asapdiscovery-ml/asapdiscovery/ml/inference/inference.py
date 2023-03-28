@@ -6,11 +6,8 @@ import torch
 from asapdiscovery.ml.utils import build_model, load_weights
 
 # static import of models from base yaml here
-from asapdiscovery.ml.weights import (
-    all_models_spec,
-    fetch_weights,
-    fetch_weights_from_spec,
-)
+from asapdiscovery.ml.pretrained_models import all_models
+from asapdiscovery.ml.weights import fetch_file, fetch_model_from_spec, ModelSpec
 
 
 class InferenceBase:
@@ -55,6 +52,8 @@ class InferenceBase:
         self.model_type = model_type
         self.model_spec = model_spec
 
+        self.model_components = None
+
         logging.info(
             f"using model {self.model_name} of type {self.model_type} from spec {self.model_spec}"
         )
@@ -64,35 +63,38 @@ class InferenceBase:
             logging.info(
                 " no model spec specified, using spec from asapdiscovery.ml models.yaml spec file"
             )
-            weights, types = fetch_weights_from_spec(self.model_spec, model_name)
-            if types[model_name] != self.model_type:
-                raise ValueError(
-                    f"Model type {types[model_name]} does not match {self.model_type}"
-                )
-            self.weights = weights[model_name]
+            self.model_spec = all_models
         else:
-            logging.info("using weights from specified local file or spec")
-            if self.model_spec.split(".")[-1] in ["yaml", "yml"]:
-                logging.info("local yaml file specified, fetching weights from spec")
-                weights, types = fetch_weights_from_spec(self.model_spec, model_name)
-                if types[model_name] != self.model_type:
-                    raise ValueError(
-                        f"Model type {types[model_name]} does not match {self.model_type}"
-                    )
-                self.weights = weights[model_name]
-            else:
-                logging.info("local weights file specified, fetching weights from file")
-                self.weights = fetch_weights(self.model_name)
+            logging.info("local yaml file specified, fetching weights from spec")
+            if not self.model_spec.split(".")[-1] in ["yaml", "yml"]:
+                raise ValueError(
+                    f"Model spec file {self.model_spec} is not a yaml file"
+                )
 
-        logging.info(f"found weights {self.weights}")
+        self.model_components = fetch_model_from_spec(self.model_spec, model_name)[
+            model_name
+        ]
+        if self.model_components.type != self.model_type:
+            raise ValueError(
+                f"Model type {self.model_components.type} does not match {self.model_type}"
+            )
+
+        logging.info(f"found weights {self.model_components.weights}")
+
+        # build model kwargs
+        if not build_model_kwargs:
+            build_model_kwargs = {}
+            build_model_kwargs["config"] = self.model_components.config
+
+        # otherwise just roll with what we have
 
         # build model, this needs a bit of cleaning up in the function itself.
-        self.model = self.build_model(self.model_type, **build_model_kwargs)
+        self.model = self.build_model(self.model_components.type, **build_model_kwargs)
         logging.info(f"built model {self.model}")
 
         # load weights
-        self.model = load_weights(self.model, self.weights)
-        logging.info(f"loaded weights {self.weights}")
+        self.model = load_weights(self.model, self.model_components.weights)
+        logging.info(f"loaded weights {self.model_components.weights}")
 
         self.model.eval()
         logging.info("set model to eval mode")
@@ -114,7 +116,7 @@ class InferenceBase:
         model: torch.nn.Module
             PyTorch model.
         """
-        model, model_call = build_model(model_type, **kwargs)
+        model, _ = build_model(model_type, **kwargs)
         return model
 
     def predict(self, input_data):
@@ -138,9 +140,13 @@ class GATInference(InferenceBase):
 
     model_type = "GAT"
 
-    def __init__(self, model_name: str, model_spec: Path, device: str = "cpu"):
-        # build model kwargs specific to the GAT model, alternatively we can allow these to be passed in
-        build_model_kwargs = {}
+    def __init__(
+        self,
+        model_name: str,
+        model_spec: Path,
+        device: str = "cpu",
+        build_model_kwargs: Optional[dict] = None,
+    ):
         super().__init__(
             model_name,
             self.model_type,

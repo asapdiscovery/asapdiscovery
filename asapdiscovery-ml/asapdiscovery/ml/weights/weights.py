@@ -1,20 +1,21 @@
 import logging
+from collections import namedtuple
 from pathlib import Path
-from typing import Dict, List, Union  # noqa: F401
+from typing import Dict, List, Union, Tuple  # noqa: F401
 
 import requests
 import validators
 import yaml
 
-all_models_spec = Path("../models.yaml")
+ModelSpec = namedtuple("ModelSpec", ["name", "type", "weights", "config"])
 
 
-def fetch_weights_from_spec(
+def fetch_model_from_spec(
     yamlfile: str,
     models: Union[list[str], str],
     local_dir: str = "./_weights/",
     force_fetch: bool = False,
-) -> dict[str, Path]:
+) -> Dict[str, Tuple[Path, Path, str]]:
     """Fetch weights from yaml spec file.
 
     Parameters
@@ -35,7 +36,7 @@ def fetch_weights_from_spec(
 
     Returns
     -------
-    Dict of model names and paths to weights files.
+    Dict of model names and weights paths.
     """
     if not Path(yamlfile).exists():
         raise FileNotFoundError(f"Yaml spec file {yamlfile} does not exist")
@@ -46,83 +47,87 @@ def fetch_weights_from_spec(
     if isinstance(models, str):
         models = [models]
 
-    weights_files = {}
-    model_types = {}
+    specs = {}
     # cannot specify the same weights file for multiple models
     weights_set = set()
     for model in models:
         model_spec = spec[model]
         weights = model_spec["weights"]
         model_type = model_spec["type"]
+        if "config" in model_spec:
+            config = model_spec["config"]
+            config = fetch_file(config, local_dir, force_fetch)
+        else:
+            config = None
         if weights in weights_set:
             raise ValueError(
                 f"Duplicate file {weights} in spec file. Please specify a unique filename for each model."
             )
-        weights_files[model] = fetch_weights(weights, local_dir, force_fetch)
-        model_types[model] = model_type
+        weight_file = fetch_file(weights, local_dir, force_fetch)
         weights_set.add(weights)
-    return weights_files, model_types
+        specs[model] = ModelSpec(model, model_type, weight_file, config)
+    return specs
 
 
-def fetch_weights(
-    weights: str, file_dir: str = "./_weights/", force_fetch: bool = False
+def fetch_file(
+    filename: str, file_dir: str = "./_weights/", force_fetch: bool = False
 ) -> Path:
     """Fetch weights from remote and save to local path.
 
     Parameters
     ----------
-    weights : str
-        Remote url or local path to weights.
+    filename : str
+        Remote url or local path to file.
     file_dir : str, default="./_weights/"
         Local path to save weights if a remote url is provided, or to check if weights exist locally, by default "./_weights/"
     force_fetch : bool, default=False
-        Force fetch weights from remote, by default False
+        Force fetch file from remote, by default False
 
     Returns
     -------
-    Path to weights file.
+    Path to file.
     """
 
-    is_url = validators.url(weights)
+    is_url = validators.url(filename)
 
     if not file_dir:
         raise ValueError("file_dir must be provided and must not be falsy.")
 
     if is_url:
-        logging.info("Weights are a remote url")
-        logging.info(f"Fetching weights from {weights}")
+        logging.info("file is a remote url")
+        logging.info(f"Fetching file from {filename}")
         if force_fetch:
-            logging.info("Force fetching weights from remote")
+            logging.info("Force fetching file from remote")
             # fetch from remote
-            weights_file = download_file(weights, file_dir)
-            return weights_file
+            target_file = download_file(filename, file_dir)
+            return target_file
         else:
-            # check if weights exist locally
-            local_filename = weights.split("/")[-1]
+            # check if file exists locally
+            local_filename = filename.split("/")[-1]
             local_path = Path(file_dir).joinpath(Path(local_filename))
             if local_path.exists():
                 # exists locally, skip fetch from remote
                 logging.info(
-                    f"weights exist locally at {local_path}, skipping fetch from remote"
+                    f"filename exist locally at {local_path}, skipping fetch from remote"
                 )
                 return Path(local_path)
             else:
                 # fetch from remote
-                logging.info("weights do not exist locally, fetching from remote")
-                weights_file = download_file(weights, file_dir)
-                return weights_file
+                logging.info("filename does not exist locally, fetching from remote")
+                target_file = download_file(filename, file_dir)
+                return target_file
     else:
-        local_path = Path(file_dir).joinpath(Path(weights))
+        local_path = Path(file_dir).joinpath(Path(filename))
 
-        logging.info(f"Fetching weights from {local_path}")
+        logging.info(f"Fetching file from {local_path}")
         if not Path(local_path).exists():
             raise FileNotFoundError(
-                f"Local weights file {local_path} does not exist, provide a valid remote url or local path to weights"
+                f"Local file {local_path} does not exist, provide a valid remote url or local path to file"
             )
 
         else:
             logging.info(
-                f"weights exist locally at {local_path}, skipping fetch from remote"
+                f"file exists locally at {local_path}, skipping fetch from remote"
             )
             return Path(local_path)
 

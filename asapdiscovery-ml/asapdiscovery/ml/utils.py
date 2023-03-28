@@ -1,7 +1,9 @@
 import os
 import pickle as pkl
-
 import numpy as np
+import torch
+
+from pathlib import Path
 
 
 def build_dataset(
@@ -362,7 +364,7 @@ def build_model_2d(config=None):
     from asapdiscovery.ml import GAT
     from dgllife.utils import CanonicalAtomFeaturizer
 
-    if type(config) is str:
+    if (type(config) is str) or (isinstance(config, Path)):
         config = parse_config(config)
     elif config is None:
         try:
@@ -895,11 +897,10 @@ def check_model_file_compatibility(model, file_path, check_weights=False):
 
     """
     # Load the PyTorch file
-    pytorch_file = torch.load(file_path, map_location=torch.device("cpu"))
+    file_state_dict = torch.load(file_path, map_location=torch.device("cpu"))
 
     # Get the state dicts of the model and the PyTorch file
     model_state_dict = model.state_dict()
-    file_state_dict = pytorch_file["state_dict"]
 
     # Check the model architecture
     if set(model_state_dict.keys()) != set(file_state_dict.keys()):
@@ -984,7 +985,16 @@ def parse_config(config_fn):
     dict
         Loaded config
     """
-    fn_ext = config_fn.split(".")[-1].lower()
+
+    if type(config_fn) is str:
+        fn_ext = config_fn.split(".")[-1].lower()
+
+    elif isinstance(config_fn, Path):
+        fn_ext = config_fn.suffix[1:].lower()
+
+    else:
+        raise ValueError(f"Unknown config file type: {type(config_fn)}")
+
     if fn_ext == "json":
         import json
 
