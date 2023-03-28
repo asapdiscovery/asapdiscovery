@@ -1,7 +1,7 @@
 import logging
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, List, Union, Tuple  # noqa: F401
+from typing import Dict, List, Tuple, Union  # noqa: F401
 
 import requests
 import validators
@@ -15,7 +15,7 @@ def fetch_model_from_spec(
     models: Union[list[str], str],
     local_dir: str = "./_weights/",
     force_fetch: bool = False,
-) -> Dict[str, Tuple[Path, Path, str]]:
+) -> dict[str, tuple[Path, Path, str]]:
     """Fetch weights from yaml spec file.
 
     Parameters

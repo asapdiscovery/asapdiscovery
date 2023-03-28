@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import torch
-from asapdiscovery.ml.utils import build_model, load_weights
 
 # static import of models from base yaml here
 from asapdiscovery.ml.pretrained_models import all_models
-from asapdiscovery.ml.weights import fetch_file, fetch_model_from_spec, ModelSpec
+from asapdiscovery.ml.utils import build_model, load_weights
+from asapdiscovery.ml.weights import ModelSpec, fetch_file, fetch_model_from_spec
 
 
 class InferenceBase:

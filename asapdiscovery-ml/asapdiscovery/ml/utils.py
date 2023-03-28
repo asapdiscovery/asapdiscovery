@@ -1,9 +1,9 @@
 import os
 import pickle as pkl
+from pathlib import Path
+
 import numpy as np
 import torch
-
-from pathlib import Path
 
 
 def build_dataset(
