@@ -7,6 +7,7 @@ import os
 import pickle as pkl
 import re
 import shutil
+from pathlib import Path
 from glob import glob
 
 import pandas
@@ -14,6 +15,7 @@ from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
 
 
@@ -49,7 +51,7 @@ def check_results(d):
     return True
 
 
-def load_dus(file_base, by_compound=False):
+def load_dus(file_base, logger: FileLogger, by_compound=False):
     """
     Load all present oedu files. If `file_base` is a directory, os.walk will be
     used to find all .oedu files in the directory. Otherwise, it will be
@@ -60,6 +62,8 @@ def load_dus(file_base, by_compound=False):
     file_base : str
         Directory/base filepath for .oedu files, or best_results.csv file if
         `by_compound` is True.
+    logger : FileLogger
+        Logger object used to log messages instead of printing them.
     by_compound : bool, default=False
         Whether to load by dataset (False) or by compound_id (True).
 
@@ -74,7 +78,7 @@ def load_dus(file_base, by_compound=False):
     """
 
     if os.path.isdir(file_base):
-        print(f"Using {file_base} as directory")
+        logger.info(f"Using {file_base} as directory")
         all_fns = [
             os.path.join(file_base, fn)
             for _, _, files in os.walk(file_base)
@@ -82,14 +86,14 @@ def load_dus(file_base, by_compound=False):
             if fn[-4:] == "oedu"
         ]
     elif os.path.isfile(file_base) and by_compound:
-        print(f"Using {file_base} as file")
+        logger.info(f"Using {file_base} as file")
         df = pandas.read_csv(file_base)
         all_fns = [
             os.path.join(os.path.dirname(fn), "predocked.oedu")
             for fn in df["Docked_File"]
         ]
     else:
-        print(f"Using {file_base} as glob")
+        logger.info(f"Using {file_base} as glob")
         all_fns = glob(file_base)
 
     # check that we actually have loaded in prepped receptors.
@@ -101,26 +105,26 @@ def load_dus(file_base, by_compound=False):
         re_pat = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
     else:
         re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
-    print(f"Loading {len(all_fns)} design units")
+    logger.info(f"Loading {len(all_fns)} design units")
     for fn in all_fns:
         m = re.search(re_pat, fn)
         if m is None:
             search_type = "compound_id" if by_compound else "Mpro dataset"
-            print(f"No {search_type} found for {fn}", flush=True)
+            logger.info(f"No {search_type} found for {fn}", flush=True)
             continue
 
         dataset = m.groups()[0]
         full_name = m.group()
         du = oechem.OEDesignUnit()
         if not oechem.OEReadDesignUnit(fn, du):
-            print(f"Failed to read DesignUnit {fn}", flush=True)
+            logger.info(f"Failed to read DesignUnit {fn}", flush=True)
             continue
         du_dict[full_name] = du
         try:
             dataset_dict[dataset].append(full_name)
         except KeyError:
             dataset_dict[dataset] = [full_name]
-    print(f"{len(du_dict.keys())} design units loaded")
+    logger.info(f"{len(du_dict.keys())} design units loaded")
     return dataset_dict, du_dict
 
 
@@ -300,8 +304,12 @@ def main():
     args = get_args()
 
     # Parse symlinks in output_dir
-    args.output_dir = os.path.realpath(args.output_dir)
-
+    output_dir = Path(args.output_dir)
+    if not output_dir.exists():
+        output_dir.mkdir()
+    logger = FileLogger(
+        "calculate_RMSD_of_docked_ligands", path=str(output_dir)
+    ).getLogger()
     if args.exp_file:
         import json
 
@@ -323,7 +331,7 @@ def main():
             mols.append(new_mol)
     if args.lig_file:
         if args.exp_file:
-            print(
+            logger.info(
                 (
                     "WARNING: Arguments passed for both --exp_file and "
                     "--lig_file, using --exp_file."
@@ -340,9 +348,11 @@ def main():
     n_mols = len(mols)
 
     # Load all receptor DesignUnits
-    dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
-    print(f"{n_mols} molecules found")
-    print(f"{len(du_dict.keys())} receptor structures found")
+    dataset_dict, du_dict = load_dus(
+        file_base=args.receptor, logger=logger, by_compound=args.by_compound
+    )
+    logger.info(f"{n_mols} molecules found")
+    logger.info(f"{len(du_dict.keys())} receptor structures found")
     assert n_mols > 0
     assert len(du_dict.keys()) > 0
 
@@ -368,7 +378,7 @@ def main():
     else:
         # Check to see if the SDF files have a Compound_ID Column
         if all(len(oechem.OEGetSDData(mol, "Compound_ID")) > 0 for mol in mols):
-            print("Using Compound_ID column from sdf file")
+            logger.info("Using Compound_ID column from sdf file")
             compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
         else:
             # Use index as compound_id
@@ -419,13 +429,12 @@ def main():
         "SMILES",
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    print(
-        f"CPUs: {mp.cpu_count()}\n"
-        f"N Processes: {len(mp_args)}\n"
-        f"N Cores: {args.num_cores}"
-    )
+    logger.info(f"CPUs: {mp.cpu_count()}")
+    logger.info(f"N Processes: {len(mp_args)}")
+    logger.info(f"N Cores: {args.num_cores}")
+
     mp_args = mp_args[: args.debug_num]
-    print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+    logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         results_df = pool.starmap(mp_func, mp_args)
     results_df = [res for res_list in results_df for res in res_list]
