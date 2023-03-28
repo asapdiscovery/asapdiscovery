@@ -25,11 +25,11 @@ def test_gatinference_construct(weights_yaml):
     )
     assert inference_cls is not None
 
+
 def test_inference_construct_no_spec(weights_yaml):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "model1"
-    )
+    inference_cls = asapdiscovery.ml.inference.GATInference("model1")
     assert inference_cls is not None
+
 
 def test_gatinference_predict(weights_yaml, test_data):
     inference_cls = asapdiscovery.ml.inference.GATInference(
