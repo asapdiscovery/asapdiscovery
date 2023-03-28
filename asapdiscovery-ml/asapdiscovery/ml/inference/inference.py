@@ -143,7 +143,7 @@ class GATInference(InferenceBase):
     def __init__(
         self,
         model_name: str,
-        model_spec: Path,
+        model_spec: Optional[Path] = None,
         device: str = "cpu",
         build_model_kwargs: Optional[dict] = None,
     ):
