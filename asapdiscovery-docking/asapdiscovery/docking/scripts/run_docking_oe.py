@@ -286,6 +286,12 @@ def get_args():
         default=1,
         help="Number of poses to return from docking.",
     )
+    parser.add_argument(
+        "--debug_num",
+        type=int,
+        default=-1,
+        help="Number of docking runs to run. Useful for debugging and testing.",
+    )
 
     return parser.parse_args()
 
@@ -415,9 +421,10 @@ def main():
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(
         f"CPUs: {mp.cpu_count()}\n"
-        f"N Processes: {mp_args}\n"
+        f"N Processes: {len(mp_args)}\n"
         f"N Cores: {args.num_cores}"
     )
+    mp_args = mp_args[: args.debug_num]
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         results_df = pool.starmap(mp_func, mp_args)
