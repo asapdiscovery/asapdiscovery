@@ -19,7 +19,7 @@
 
 source ~/.bashrc
 conda activate mers-docking
-python ../asapdiscovery/docking/scripts/fauxalysis_from_docking.py \
+fauxalysis-from-docking \
 -c /lila/data/chodera/asap-datasets/posit_hybrid_no_relax_keep_water_frag/best_results.csv \
 -i /lila/data/chodera/kaminowb/stereochemistry_pred/mers/mers_fragalysis/posit_hybrid_no_relax_keep_water \
 -f /lila/data/chodera/kaminowb/stereochemistry_pred/fragalysis/aligned \
