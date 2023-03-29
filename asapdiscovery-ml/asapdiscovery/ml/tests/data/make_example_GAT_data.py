@@ -13,40 +13,32 @@ from dgllife.utils import CanonicalAtomFeaturizer
 from rdkit import Chem
 
 
-def load_data(file):
-    with open(file, "rb") as f:
-        data = pickle.load(f)
-    return data
+# lets make a synthetic dataset using a smiles from Fragalysis
 
+# we will use a smiles from P0045_0A:TRY-UNI-2EDDB1FF-7 Fragalysis ID
+input_smiles = "Cc1ccncc1NC(=O)Cc1cc(Cl)cc(O[C@H]2CC(=O)N2)c1"
 
-data = load_data("./achiral_enantiopure_best_02_13_23_dd.pkl")
-
-print(data)
-
-# we will only take a single value
-compound, pose = data[0]
-
-# randomly shuffle the smiles string
-mol = Chem.MolFromSmiles(pose["smiles"])
-newsmiles = Chem.MolToSmiles(mol, doRandom=True)
+mol = Chem.MolFromSmiles(input_smiles)
+# randomly shuffle the smiles string to test equivariance
+reorder_smiles = Chem.MolToSmiles(mol, doRandom=True)
 
 
 data = {
-    "compound_id": compound[1],
-    "smiles": pose["smiles"],
+    "compound_id": "c1",
+    "smiles": input_smiles,
     "experimental_data": {
-        "pIC50": pose["pIC50"],
-        "pIC50_range": pose["pIC50_range"],
-        "pIC50_stderr": pose["pIC50_stderr"],
+        "pIC50": 1,
+        "pIC50_range": 1,
+        "pIC50_stderr": 1,
     },
 }
 data_reorder = {
-    "compound_id": compound[1],
-    "smiles": newsmiles,
+    "compound_id": "c2",
+    "smiles": reorder_smiles,
     "experimental_data": {
-        "pIC50": pose["pIC50"],
-        "pIC50_range": pose["pIC50_range"],
-        "pIC50_stderr": pose["pIC50_stderr"],
+        "pIC50": 1,
+        "pIC50_range": 1,
+        "pIC50_stderr": 1,
     },
 }
 
@@ -65,6 +57,6 @@ print(ecd_reorder)
 print(gds)
 
 
-# dump val to a pickle file
-with open("graph_ds.pkl", "wb") as f:
+# dump data to a pickle file
+with open("fragalysis_GAT_test_ds.pkl", "wb") as f:
     pickle.dump(gds, f)
