@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import torch
+import dgl
 
 # static import of models from base yaml here
 from asapdiscovery.ml.pretrained_models import all_models
@@ -154,3 +155,21 @@ class GATInference(InferenceBase):
             build_model_kwargs=build_model_kwargs,
             device=device,
         )
+
+    def predict(self, g: dgl.DGLGraph):
+        """Predict on a graph, requires a DGLGraph object with the `ndata`
+        attribute `h` containing the node features. This is done by constucting
+        the `GraphDataset` with the node_featurizer=`dgllife.utils.CanonicalAtomFeaturizer()`
+        argument.
+
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            DGLGraph object.
+
+        """
+        with torch.no_grad():
+            output_tensor = self.model(g, g.ndata["h"])
+            output_tensor = torch.reshape(output_tensor, (-1, 1))
+            return output_tensor.cpu().numpy()
