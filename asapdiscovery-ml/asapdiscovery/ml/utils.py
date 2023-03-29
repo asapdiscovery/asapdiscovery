@@ -921,7 +921,7 @@ def check_model_file_compatibility(model, file_path, check_weights=False):
     return None
 
 
-def load_weights(model, wts_fn):
+def load_weights(model, wts_fn, check_compatibility=False):
     """
     Load weights for an MTENN model, initializing internal layers as necessary.
 
@@ -931,6 +931,9 @@ def load_weights(model, wts_fn):
         Model to load weights into
     wts_fn: str
         Weights file to load from
+    check_compatibility: bool, default=False
+        Whether to check if the weights file is compatible with the model.
+        May not work if using a `ConcatStrategy` block.
 
     Returns
     -------
@@ -939,7 +942,8 @@ def load_weights(model, wts_fn):
     """
     import torch
 
-    check_model_file_compatibility(model, wts_fn, check_weights=False)
+    if check_compatibility:
+        check_model_file_compatibility(model, wts_fn, check_weights=False)
 
     # Load weights
     try:

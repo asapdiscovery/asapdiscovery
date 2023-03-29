@@ -94,7 +94,9 @@ class InferenceBase:
         logging.info(f"built model {self.model}")
 
         # load weights
-        self.model = load_weights(self.model, self.model_components.weights)
+        self.model = load_weights(
+            self.model, self.model_components.weights, check_compatibility=False
+        )
         logging.info(f"loaded weights {self.model_components.weights}")
 
         self.model.eval()
