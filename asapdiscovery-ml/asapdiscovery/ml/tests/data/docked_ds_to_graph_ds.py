@@ -1,15 +1,15 @@
 """Convert a DockedDataset to a GraphDataset with just a few entries for testing purposes."""
 
 import pickle
+
 import numpy as np
+from asapdiscovery.data.schema import (
+    ExperimentalCompoundData,
+    ExperimentalCompoundDataUpdate,
+)
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml.utils import split_dataset
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundDataUpdate,
-    ExperimentalCompoundData,
-)
 from dgllife.utils import CanonicalAtomFeaturizer
-
 from rdkit import Chem
 
 
