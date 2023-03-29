@@ -5,6 +5,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas
+import pkg_resources
 import rdkit.Chem as Chem
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import (
@@ -163,7 +164,7 @@ def seqres_to_res_list(seqres_str):
     https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#SEQRES
     Parameters
     ----------
-    SEQRES_str
+    seqres_str
 
     Returns
     -------
@@ -872,7 +873,9 @@ def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
 
 
 def filter_docking_inputs(
-    smarts_queries="../../data/smarts_queries.csv",
+    smarts_queries=pkg_resources.resource_filename(
+        "asapdiscovery.data", "data/smarts_queries.csv"
+    ),
     docking_inputs=None,
     drop_commented_smarts_strings=True,
     verbose=True,

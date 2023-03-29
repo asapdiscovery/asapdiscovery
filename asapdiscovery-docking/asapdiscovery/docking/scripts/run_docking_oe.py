@@ -74,6 +74,7 @@ def load_dus(file_base, by_compound=False):
     """
 
     if os.path.isdir(file_base):
+        print(f"Using {file_base} as directory")
         all_fns = [
             os.path.join(file_base, fn)
             for _, _, files in os.walk(file_base)
@@ -81,12 +82,14 @@ def load_dus(file_base, by_compound=False):
             if fn[-4:] == "oedu"
         ]
     elif os.path.isfile(file_base) and by_compound:
+        print(f"Using {file_base} as file")
         df = pandas.read_csv(file_base)
         all_fns = [
             os.path.join(os.path.dirname(fn), "predocked.oedu")
             for fn in df["Docked_File"]
         ]
     else:
+        print(f"Using {file_base} as glob")
         all_fns = glob(file_base)
 
     # check that we actually have loaded in prepped receptors.
@@ -98,6 +101,7 @@ def load_dus(file_base, by_compound=False):
         re_pat = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
     else:
         re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
+    print(f"Loading {len(all_fns)} design units")
     for fn in all_fns:
         m = re.search(re_pat, fn)
         if m is None:
@@ -116,7 +120,7 @@ def load_dus(file_base, by_compound=False):
             dataset_dict[dataset].append(full_name)
         except KeyError:
             dataset_dict[dataset] = [full_name]
-
+    print(f"{len(du_dict.keys())} design units loaded")
     return dataset_dict, du_dict
 
 
@@ -331,6 +335,10 @@ def main():
 
     # Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
+    print(f"{n_mols} molecules found")
+    print(f"{len(du_dict.keys())} receptor structures found")
+    assert n_mols > 0
+    assert len(du_dict.keys()) > 0
 
     # Load sort indices if given
     if args.sort_res:
@@ -352,14 +360,18 @@ def main():
                 "compound_ids in --exp_file."
             )
     else:
-        # Use index as compound_id
-        compound_ids = [str(i) for i in range(n_mols)]
+        # Check to see if the SDF files have a Compound_ID Column
+        if all(len(oechem.OEGetSDData(mol, "Compound_ID")) > 0 for mol in mols):
+            print("Using Compound_ID column from sdf file")
+            compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
+        else:
+            # Use index as compound_id
+            compound_ids = [str(i) for i in range(n_mols)]
         # Get dataset values from DesignUnit filenames
         xtal_ids = list(dataset_dict.keys())
         # Arbitrary sort index, same for each ligand
         sort_idxs = [list(range(len(xtal_ids)))] * n_mols
         args.top_n = len(xtal_ids)
-
     mp_args = []
     for i, m in enumerate(mols):
         dock_dus = []
@@ -401,6 +413,11 @@ def main():
         "SMILES",
     ]
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+    print(
+        f"CPUs: {mp.cpu_count()}\n"
+        f"N Processes: {mp_args}\n"
+        f"N Cores: {args.num_cores}"
+    )
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         results_df = pool.starmap(mp_func, mp_args)

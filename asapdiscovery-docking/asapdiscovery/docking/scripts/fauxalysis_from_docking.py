@@ -18,11 +18,10 @@ import pickle as pkl
 import shutil
 
 import yaml
-from asapdiscovery.data.openeye import save_openeye_design_unit  # noqa: E402
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.utils import load_openeye_sdf  # noqa: 402
-from asapdiscovery.data.utils import save_openeye_pdb  # noqa: E402
-from asapdiscovery.data.utils import save_openeye_sdf  # noqa: E402
+from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
+from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
+from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
+from asapdiscovery.data.openeye import oechem, split_openeye_design_unit
 from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
 
 
@@ -160,7 +159,9 @@ def write_fragalysis_output(
         du.GetProtein(prot)
         lig = load_openeye_sdf(f"{compound_in_dir}/docked.sdf")
 
-        lig, prot, complex = save_openeye_design_unit(du, lig=lig, lig_title=complex_id)
+        lig, prot, complex = split_openeye_design_unit(
+            du, lig=lig, lig_title=complex_id
+        )
 
         # First save apo
         save_openeye_pdb(prot, f"{compound_out_dir}/{complex_id}_apo.pdb")

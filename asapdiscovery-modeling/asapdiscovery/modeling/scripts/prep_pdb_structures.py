@@ -7,9 +7,9 @@ import os
 
 import yaml
 from asapdiscovery.data import pdb  # noqa: E402
+from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
+from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.utils import edit_pdb_file  # noqa: E402
-from asapdiscovery.data.utils import load_openeye_pdb  # noqa: E402
-from asapdiscovery.data.utils import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.utils import seqres_to_res_list  # noqa: E402
 from asapdiscovery.docking.modeling import align_receptor  # noqa: E402
 from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
