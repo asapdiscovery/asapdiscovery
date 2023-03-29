@@ -196,7 +196,12 @@ def get_args():
         help="Fraction of dataset to use for testing.",
     )
     parser.add_argument(
-        "-ds_seed", type=int, default=42, help="Random seed for splitting the dataset."
+        "-ds_seed", type=int, default=42, help="Manual seed for splitting the dataset."
+    )
+    parser.add_argument(
+        "--rand_seed",
+        action="store_true",
+        help="Use a random seed for splitting the dataset. Will override -ds_seed.",
     )
 
     # Model parameters
@@ -369,7 +374,7 @@ def init(args, rank=False):
         train_frac=args.tr_frac,
         val_frac=args.val_frac,
         test_frac=args.te_frac,
-        rand_seed=args.ds_seed,
+        rand_seed=(None if args.rand_seed else args.ds_seed),
     )
 
     # Need to augment the datasets if using e3nn
