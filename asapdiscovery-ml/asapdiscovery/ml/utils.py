@@ -984,7 +984,9 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
     fig.savefig(out_fn, dpi=200, bbox_inches="tight")
 
 
-def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
+def split_dataset(
+    ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1, rand_seed=42
+):
     """
     Split a dataset into train, val, and test splits. A warning will be raised
     if fractions don't add to 1.
@@ -1001,6 +1003,8 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
         Fraction of dataset to put in the val split
     test_frac: float, default=0.1
         Fraction of dataset to put in the test split
+    rand_seed: int, default=42
+        Seed for dataset splitting
 
     Returns
     -------
@@ -1025,6 +1029,7 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
             RuntimeWarning,
         )
 
+    print("using random seed:", rand_seed, flush=True)
     # Split dataset into train/val/test (80/10/10 split)
     # use fixed seed for reproducibility
     if grouped:
@@ -1032,7 +1037,7 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
         n_val = int(len(ds) * val_frac)
         n_test = len(ds) - n_train - n_val
         ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(rand_seed)
         )
         print(
             (
@@ -1045,7 +1050,7 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
         ds_train, ds_val, ds_test = split_molecules(
             ds,
             [train_frac, val_frac, test_frac],
-            torch.Generator().manual_seed(42),
+            torch.Generator().manual_seed(rand_seed),
         )
 
         train_compound_ids = {c[1] for c, _ in ds_train}
@@ -1101,6 +1106,7 @@ def split_molecules(ds, split_fracs, generator=None):
     if generator is None:
         generator = torch.default_generator
 
+    print("splitting with random seed:", generator.initial_seed(), flush=True)
     # Shuffle the indices
     indices = torch.randperm(len(all_compound_ids), generator=generator)
 
