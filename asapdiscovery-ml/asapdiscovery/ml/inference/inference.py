@@ -33,6 +33,8 @@ class InferenceBase:
     -------
     predict
         Predict on a batch of data.
+    build_model
+        Build model from arguments
 
     """
 
