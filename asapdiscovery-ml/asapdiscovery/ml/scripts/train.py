@@ -176,6 +176,29 @@ def get_args():
     parser.add_argument("-plot_o", help="Where to save training loss plot.")
     parser.add_argument("-cache", help="Cache directory for dataset.")
 
+    # Dataset arguments
+    parser.add_argument(
+        "-tr_frac",
+        type=float,
+        default=0.8,
+        help="Fraction of dataset to use for training.",
+    )
+    parser.add_argument(
+        "-val_frac",
+        type=float,
+        default=0.1,
+        help="Fraction of dataset to use for validation.",
+    )
+    parser.add_argument(
+        "-te_frac",
+        type=float,
+        default=0.1,
+        help="Fraction of dataset to use for testing.",
+    )
+    parser.add_argument(
+        "-ds_seed", type=int, default=42, help="Random seed for splitting the dataset."
+    )
+
     # Model parameters
     parser.add_argument(
         "-model",
@@ -340,7 +363,14 @@ def init(args, rank=False):
         num_workers=args.w,
         rank=rank,
     )
-    ds_train, ds_val, ds_test = split_dataset(ds, args.grouped)
+    ds_train, ds_val, ds_test = split_dataset(
+        ds,
+        args.grouped,
+        train_frac=args.tr_frac,
+        val_frac=args.val_frac,
+        test_frac=args.te_frac,
+        rand_seed=args.ds_seed,
+    )
 
     # Need to augment the datasets if using e3nn
     if args.model.lower() == "e3nn":
