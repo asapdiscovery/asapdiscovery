@@ -11,6 +11,7 @@ from glob import glob
 from pathlib import Path
 
 import pandas
+import logging
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
@@ -51,7 +52,7 @@ def check_results(d):
     return True
 
 
-def load_dus(file_base, logger: FileLogger, by_compound=False):
+def load_dus(file_base, by_compound=False):
     """
     Load all present oedu files. If `file_base` is a directory, os.walk will be
     used to find all .oedu files in the directory. Otherwise, it will be
@@ -62,8 +63,6 @@ def load_dus(file_base, logger: FileLogger, by_compound=False):
     file_base : str
         Directory/base filepath for .oedu files, or best_results.csv file if
         `by_compound` is True.
-    logger : FileLogger
-        Logger object used to log messages instead of printing them.
     by_compound : bool, default=False
         Whether to load by dataset (False) or by compound_id (True).
 
@@ -76,6 +75,7 @@ def load_dus(file_base, logger: FileLogger, by_compound=False):
         Dictionary mapping full Mpro name/compound id (including chain) to its
         design unit
     """
+    logger = logging.getLogger("run_docking_oe")
 
     if os.path.isdir(file_base):
         logger.info(f"Using {file_base} as directory")
@@ -110,14 +110,14 @@ def load_dus(file_base, logger: FileLogger, by_compound=False):
         m = re.search(re_pat, fn)
         if m is None:
             search_type = "compound_id" if by_compound else "Mpro dataset"
-            logger.info(f"No {search_type} found for {fn}", flush=True)
+            logger.warning(f"No {search_type} found for {fn}")
             continue
 
         dataset = m.groups()[0]
         full_name = m.group()
         du = oechem.OEDesignUnit()
         if not oechem.OEReadDesignUnit(fn, du):
-            logger.info(f"Failed to read DesignUnit {fn}", flush=True)
+            logger.warning(f"Failed to read DesignUnit {fn}")
             continue
         du_dict[full_name] = du
         try:
@@ -128,7 +128,7 @@ def load_dus(file_base, logger: FileLogger, by_compound=False):
     return dataset_dict, du_dict
 
 
-def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
+def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
     """
     Wrapper function for multiprocessing. Everything other than the named args
     will be passed directly to run_docking_oe.
@@ -141,14 +141,21 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         Ligand name
     du_name : str
         DesignUnit name
+    compound_name : str
+        Compound name, used for error messages if given
 
     Returns
     -------
     """
+    logname = f"run_docking_oe.{compound_name}"
+
     if check_results(out_dir):
-        print(f"Loading found results for {lig_name}_{du_name}", flush=True)
+        logger = FileLogger(logname, path=str(out_dir)).getLogger()
+        logger.info(f"Loading found results for {compound_name}")
         return pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
-    os.makedirs(out_dir, exist_ok=True)
+    else:
+        os.makedirs(out_dir, exist_ok=True)
+        logger = FileLogger(logname, path=str(out_dir)).getLogger()
 
     success, posed_mol, docking_id = run_docking_oe(*args, **kwargs)
     if success:
@@ -334,7 +341,6 @@ def main():
                     "WARNING: Arguments passed for both --exp_file and "
                     "--lig_file, using --exp_file."
                 ),
-                flush=True,
             )
         else:
             # Load all ligands to dock
@@ -347,7 +353,7 @@ def main():
 
     # Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(
-        file_base=args.receptor, logger=logger, by_compound=args.by_compound
+        file_base=args.receptor, by_compound=args.by_compound
     )
     logger.info(f"{n_mols} molecules found")
     logger.info(f"{len(du_dict.keys())} receptor structures found")
@@ -401,6 +407,7 @@ def main():
                 os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
                 compound_ids[i],
                 x,
+                f"{compound_ids[i]}_{x}",
                 du,
                 m,
                 args.docking_sys.lower(),

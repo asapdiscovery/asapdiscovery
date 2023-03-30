@@ -1,3 +1,6 @@
+import logging
+
+
 def run_docking_oe(
     du,
     orig_mol,
@@ -46,6 +49,12 @@ def run_docking_oe(
     str
         Generated docking_id, used to access SD tag data
     """
+    if compound_name:
+        logger = logging.getLogger(f"run_oe_docking.{compound_name}")
+        print(compound_name)
+
+    else:
+        raise NotImplementedError
     from asapdiscovery.data.openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
@@ -62,10 +71,7 @@ def run_docking_oe(
         omega = oeomega.OEOmega()
         ret_code = omega.Build(dock_lig)
         if ret_code:
-            print(
-                f"Omega failed with error {oeomega.OEGetOmegaError(ret_code)}",
-                flush=True,
-            )
+            logger.error(f"Omega failed with error {oeomega.OEGetOmegaError(ret_code)}")
 
     # Set docking string id (for SD tags)
     docking_id = [dock_sys]
@@ -101,10 +107,9 @@ def run_docking_oe(
         docking_id.append(relax)
 
         if compound_name:
-            print(
+            logger.info(
                 f"Running POSIT {'hybrid' if hybrid else 'all'} docking with "
-                f"{relax} relaxation for {compound_name}",
-                flush=True,
+                f"{relax} relaxation for {compound_name}"
             )
 
         # Set up poser object
@@ -116,11 +121,11 @@ def run_docking_oe(
         try:
             ret_code = poser.Dock(pose_res, dock_lig, num_poses)
         except TypeError as e:
-            print(pose_res, dock_lig, type(dock_lig), flush=True)
+            logger.error(pose_res, dock_lig, type(dock_lig))
             raise e
     elif dock_sys == "hybrid":
         if compound_name:
-            print(f"Running Hybrid docking for {compound_name}", flush=True)
+            logger.info(f"Running Hybrid docking for {compound_name}")
 
         # Set up poser object
         poser = oedocking.OEHybrid()
@@ -145,10 +150,9 @@ def run_docking_oe(
         clash = 1
 
         if compound_name:
-            print(
+            logger.info(
                 f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking",
                 f"with no relaxation for {compound_name}",
-                flush=True,
             )
 
         # Set up poser object
@@ -173,9 +177,8 @@ def run_docking_oe(
     else:
         err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
         if compound_name:
-            print(
+            logger.error(
                 f"Pose generation failed for {compound_name} ({err_type})",
-                flush=True,
             )
         return False, None, None
 
