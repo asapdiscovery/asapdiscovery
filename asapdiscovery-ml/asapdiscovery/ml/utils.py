@@ -984,7 +984,9 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
     fig.savefig(out_fn, dpi=200, bbox_inches="tight")
 
 
-def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
+def split_dataset(
+    ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1, rand_seed=42
+):
     """
     Split a dataset into train, val, and test splits. A warning will be raised
     if fractions don't add to 1.
@@ -1001,6 +1003,8 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
         Fraction of dataset to put in the val split
     test_frac: float, default=0.1
         Fraction of dataset to put in the test split
+    rand_seed: int, default=42
+        Seed for dataset splitting
 
     Returns
     -------
@@ -1025,14 +1029,20 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
             RuntimeWarning,
         )
 
-    # Split dataset into train/val/test (80/10/10 split)
-    # use fixed seed for reproducibility
+    print("using random seed:", rand_seed, flush=True)
+    # Create generator
+    if rand_seed is None:
+        g = torch.Generator()
+    else:
+        g = torch.Generator().manual_seed(rand_seed)
+
+    # Split dataset into train/val/test
     if grouped:
         n_train = int(len(ds) * train_frac)
         n_val = int(len(ds) * val_frac)
         n_test = len(ds) - n_train - n_val
         ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+            ds, [n_train, n_val, n_test], g
         )
         print(
             (
@@ -1043,9 +1053,7 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
         )
     else:
         ds_train, ds_val, ds_test = split_molecules(
-            ds,
-            [train_frac, val_frac, test_frac],
-            torch.Generator().manual_seed(42),
+            ds, [train_frac, val_frac, test_frac], g
         )
 
         train_compound_ids = {c[1] for c, _ in ds_train}
@@ -1095,12 +1103,13 @@ def split_molecules(ds, split_fracs, generator=None):
             compound_ids_dict[c[1]].append(c)
         except KeyError:
             compound_ids_dict[c[1]] = [c]
-    all_compound_ids = list(compound_ids_dict.keys())
+    all_compound_ids = np.asarray(list(compound_ids_dict.keys()))
 
     # Set up generator
     if generator is None:
         generator = torch.default_generator
 
+    print("splitting with random seed:", generator.initial_seed(), flush=True)
     # Shuffle the indices
     indices = torch.randperm(len(all_compound_ids), generator=generator)
 
@@ -1111,7 +1120,8 @@ def split_molecules(ds, split_fracs, generator=None):
     #  float rounding
     for frac in split_fracs[:-1]:
         split_len = int(np.floor(frac * len(indices)))
-        incl_compounds = all_compound_ids[offset : offset + split_len]
+        incl_indices = indices[offset : offset + split_len]
+        incl_compounds = all_compound_ids[incl_indices]
         offset += split_len
 
         # Get subset indices
@@ -1122,7 +1132,8 @@ def split_molecules(ds, split_fracs, generator=None):
         all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
     # Finish up anything leftover
-    incl_compounds = all_compound_ids[offset:]
+    incl_indices = indices[offset:]
+    incl_compounds = all_compound_ids[incl_indices]
 
     # Get subset indices
     subset_idx = []
