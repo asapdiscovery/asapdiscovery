@@ -17,6 +17,8 @@ def build_dataset(
     num_workers=1,
     rank=False,
     str_only=False,
+    check_range_nan=True,
+    check_stderr_nan=True,
 ):
     """
     Build a Dataset object from input structure files.
@@ -48,6 +50,10 @@ def build_dataset(
     str_only : bool, default=False
         If building a 2D dataset, whether to limit to only experimental compounds that
         also have structural data
+    check_range_nan : bool, default=True
+        Check that the "pIC50_range" value is not NaN
+    check_stderr_nan : bool, default=True
+        Check that the "pIC50_stderr" value is not NaN
 
     Returns
     -------
@@ -70,7 +76,11 @@ def build_dataset(
 
     # Load the experimental compounds
     exp_data, exp_compounds = load_exp_data(
-        exp_fn, achiral=achiral, return_compounds=True
+        exp_fn,
+        achiral=achiral,
+        return_compounds=True,
+        check_range_nan=check_range_nan,
+        check_stderr_nan=check_stderr_nan,
     )
 
     # Parse structure filenames
@@ -835,7 +845,13 @@ def find_most_recent(model_wts):
     return (epoch_use, f"{model_wts}/{epoch_use}.th")
 
 
-def load_exp_data(fn, achiral=False, return_compounds=False):
+def load_exp_data(
+    fn,
+    achiral=False,
+    return_compounds=False,
+    check_range_nan=True,
+    check_stderr_nan=True,
+):
     """
     Load all experimental data from JSON file of
     schema.ExperimentalCompoundDataUpdate.
@@ -848,6 +864,10 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         Whether to only take achiral molecules
     return_compounds : bool, default=False
         Whether to return the compounds in addition to the experimental data
+    check_range_nan : bool, default=True
+        Check that the "pIC50_range" value is not NaN
+    check_stderr_nan : bool, default=True
+        Check that the "pIC50_stderr" value is not NaN
 
     Returns
     -------
@@ -871,11 +891,17 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         for c in exp_compounds
         if (
             ("pIC50" in c.experimental_data)
-            # and (not np.isnan(c.experimental_data["pIC50"]))
+            and (not np.isnan(c.experimental_data["pIC50"]))
             and ("pIC50_range" in c.experimental_data)
-            # and (not np.isnan(c.experimental_data["pIC50_range"]))
+            and (
+                (not check_range_nan)
+                or (not np.isnan(c.experimental_data["pIC50_range"]))
+            )
             and ("pIC50_stderr" in c.experimental_data)
-            # and (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            and (
+                (not check_stderr_nan)
+                or (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            )
         )
     }
 
