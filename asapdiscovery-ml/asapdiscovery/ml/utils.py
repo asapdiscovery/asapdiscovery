@@ -878,16 +878,16 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         return exp_dict
 
 
-def check_model_file_compatibility(model, file_path, check_weights=False):
+def check_model_compatibility(model, to_load, check_weights=False):
     """
-    Checks if a PyTorch file is compatible with a model.
+    Checks if a PyTorch file or state_dict is compatible with a model.
 
     Parameters
     ----------
     model : torch.nn.Module
         The model to check.
-    file_path : str
-        The path to the PyTorch file.
+    to_load : Union[str, Path, Dict[str, torch.Tensor]]
+        The path to the PyTorch file, or a dictionary of the state dict.
     check_weights : bool, default=False
         Whether to check the weights of the model and the PyTorch file.
 
@@ -897,23 +897,27 @@ def check_model_file_compatibility(model, file_path, check_weights=False):
 
     """
     # Load the PyTorch file
-    file_state_dict = torch.load(file_path, map_location=torch.device("cpu"))
+    if isinstance(to_load, str) or isinstance(to_load, Path):
+        test_state_dict = torch.load(file_path, map_location=torch.device("cpu"))
+
+    elif isinstance(to_load, dict):
+        test_state_dict = to_load
 
     # Get the state dicts of the model and the PyTorch file
     model_state_dict = model.state_dict()
 
     # Check the model architecture
-    if set(model_state_dict.keys()) != set(file_state_dict.keys()):
-        raise ValueError("Model architecture doesn't match the file.")
+    if set(model_state_dict.keys()) != set(test_state_dict.keys()):
+        raise ValueError("Model architecture doesn't match.")
 
     # Check the model weights
     if check_weights:
         for key in model_state_dict.keys():
-            if model_state_dict[key].shape != file_state_dict[key].shape:
+            if model_state_dict[key].shape != test_state_dict[key].shape:
                 raise ValueError("Model weights shape doesn't match the file.")
 
             if not torch.allclose(
-                model_state_dict[key], file_state_dict[key], atol=1e-4
+                model_state_dict[key], test_state_dict[key], atol=1e-4
             ):
                 raise ValueError("Model weights don't match the file.")
 
@@ -942,9 +946,6 @@ def load_weights(model, wts_fn, check_compatibility=False):
     """
     import torch
 
-    if check_compatibility:
-        check_model_file_compatibility(model, wts_fn, check_weights=False)
-
     # Load weights
     try:
         wts_dict = torch.load(wts_fn)
@@ -967,6 +968,9 @@ def load_weights(model, wts_fn, check_compatibility=False):
     for p in loaded_params - model_params:
         del wts_dict[p]
 
+    # Check compatibility
+    if check_compatibility:
+        check_model_compatibility(model, wts_dict)
     # Load model parameters
     model.load_state_dict(wts_dict)
     print(f"Loaded model weights from {wts_fn}", flush=True)

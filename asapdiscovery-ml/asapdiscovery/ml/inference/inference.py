@@ -21,8 +21,9 @@ class InferenceBase:
         Name of model to use.
     model_type : str
         Type of model to use.
-    from_spec : bool, default=True
-        Whether to fetch weights from asapdiscovery.ml spec file or from local file.
+    model_spec : Path, default=None
+        The path to the model spec yaml file. If not specified, the default
+        asapdiscovery.ml models.yaml file will be used.
     build_model_kwargs : Optional[Dict], default=None
         Keyword arguments to pass to build_model function.
     device : str, default='cpu'
@@ -95,7 +96,7 @@ class InferenceBase:
 
         # load weights
         self.model = load_weights(
-            self.model, self.model_components.weights, check_compatibility=False
+            self.model, self.model_components.weights, check_compatibility=True
         )
         logging.info(f"loaded weights {self.model_components.weights}")
 

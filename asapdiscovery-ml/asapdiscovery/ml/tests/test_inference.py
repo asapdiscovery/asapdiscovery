@@ -28,7 +28,9 @@ def weights_yaml():
 def test_data():
     # ugly hack to make the directory relative
     # contains two data points in a GraphDataset, both the same with the smiles order changed in the second one
-    data = load_data(os.path.join(os.path.dirname(__file__), "data/graph_ds.pkl"))
+    data = load_data(
+        os.path.join(os.path.dirname(__file__), "data/fragalysis_GAT_test_ds.pkl")
+    )
     # has structure ((design_unit, compound),  {smiles: smiles, g: graph, **kwargs})
     # we want the graph
     g1 = data[0][1]["g"]
