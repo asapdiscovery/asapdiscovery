@@ -50,10 +50,14 @@ jobs:
         extra-specs: |
           python==${{ matrix.python-version }}
 
-    - name: Install packages
+    - name: Test OE License & Write License to File
+      env:
+        OE_LICENSE_TEXT: ${{ secrets.OE_LICENSE }}
+      run: |
+        echo "${OE_LICENSE_TEXT}" > ${OE_LICENSE}
+        python -c "import openeye; assert openeye.oechem.OEChemIsLicensed(), 'OpenEye license checks failed!'"
 
-      # conda setup requires this special shell
-      shell: bash -l {0}
+    - name: Install packages
       run: |
         python -m pip install ./asapdiscovery-data --no-deps
         python -m pip install ./asapdiscovery-dataviz --no-deps
