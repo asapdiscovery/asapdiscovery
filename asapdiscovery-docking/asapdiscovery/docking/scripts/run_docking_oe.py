@@ -2,6 +2,7 @@
 Script to dock an SDF file of ligands to prepared structures.
 """
 import argparse
+import logging
 import multiprocessing as mp
 import os
 import pickle as pkl
@@ -11,7 +12,6 @@ from glob import glob
 from pathlib import Path
 
 import pandas
-import logging
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
