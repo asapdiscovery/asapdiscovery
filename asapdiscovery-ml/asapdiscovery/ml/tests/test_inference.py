@@ -1,10 +1,9 @@
 import os
+import pickle
 import shutil
-
 
 import asapdiscovery.ml
 import pytest
-import pickle
 import torch
 from numpy.testing import assert_allclose
 

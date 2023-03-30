@@ -2,8 +2,8 @@ import logging
 from pathlib import Path
 from typing import Dict, Optional
 
-import torch
 import dgl
+import torch
 
 # static import of models from base yaml here
 from asapdiscovery.ml.pretrained_models import all_models
@@ -34,6 +34,8 @@ class InferenceBase:
     -------
     predict
         Predict on a batch of data.
+    build_model
+        Build model from arguments
 
     """
 
