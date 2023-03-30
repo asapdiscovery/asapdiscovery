@@ -1,11 +1,12 @@
 """
 The purpose of this script is to make a multi-ligand SDF file which would be an input to the run_docking_oe.py script.
-Currently, the point is to process the fragalysis dataset.
+Currently, the point is to process the fragalysis dataset, with labels added from the information in metadata.csv.
 Example Usage:
     python combine_and_label_mpro_sdf.py \
-    -csv /Users/alexpayne/Scientific_Projects/mers-drug-discovery/mpro-paper-ligand/extra_files/Mpro_compound_tracker_csv.csv \
-    -s /Users/alexpayne/Scientific_Projects/mers-drug-discovery/mpro-paper-ligand/aligned/ \
-    -o /Volumes/Rohirrim/local_test/sars_docking/fragalysis_correct_bond_orders.sdf
+    -csv ~/asap-datasets/current/sars_00_fragalysis/metadata.csv \
+    -s ~/asap-datasets/current/sars_00_fragalysis/aligned/ \
+    --glob_str ~asap-datasets/current/sars_01_prepped_v3/*/*.sdf \
+    -o ~/asap-datasets/current/sars_01_prepped_v3/Mpro_combined_labeled.sdf
 """
 import argparse, glob
 import numpy as np
