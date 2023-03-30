@@ -12,7 +12,6 @@ from asapdiscovery.ml.utils import split_dataset
 from dgllife.utils import CanonicalAtomFeaturizer
 from rdkit import Chem
 
-
 # lets make a synthetic dataset using a smiles from Fragalysis
 
 # we will use a smiles from P0045_0A:TRY-UNI-2EDDB1FF-7 Fragalysis ID
