@@ -915,13 +915,14 @@ def check_model_compatibility(model, to_load, check_weights=False):
     if check_weights:
         for key in model_state_dict.keys():
             if model_state_dict[key].shape != test_state_dict[key].shape:
-                raise ValueError(f"Model weights shape of \"{key}\" doesn't match the file.")
+                raise ValueError(
+                    f'Model weights shape of "{key}" doesn\'t match the file.'
+                )
 
             if not torch.allclose(
                 model_state_dict[key], test_state_dict[key], atol=1e-4
             ):
                 raise ValueError("Model weights don't match the file.")
-
 
 
 def load_weights(model, wts_fn, check_compatibility=False):
