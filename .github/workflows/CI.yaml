@@ -56,7 +56,7 @@ jobs:
       env:
         OE_LICENSE_TEXT: ${{ secrets.OE_LICENSE }}
       run: |
-        echo "${OE_LICENSE_TEXT}" > ${OE_LICENSE}
+        echo "${OE_LICENSE_TEXT}" > ${{ github.workspace }}/oe_license.txt
         python -c "import openeye; assert openeye.oechem.OEChemIsLicensed(), 'OpenEye license checks failed!'"
 
     - name: Install packages
