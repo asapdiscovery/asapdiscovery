@@ -55,7 +55,7 @@ jobs:
         python -m pip install ./asapdiscovery-dataviz --no-deps
         python -m pip install ./asapdiscovery-docking --no-deps
         python -m pip install ./asapdiscovery-ml --no-deps
-        conda list
+        micromamba list
 
 
     - name: Run tests
