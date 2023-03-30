@@ -16,6 +16,11 @@ from asapdiscovery.data.schema import (
     ExperimentalCompoundDataUpdate,
 )
 
+# Not sure if this is the right place for these
+# Regex patterns for extracting Mpro dataset ID and Moonshot CDD style compound ID
+MOONSHOT_CDD_ID_REGEX = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+MPRO_ID_REGEX = r"Mpro-.*?_[0-9][A-Z]"
+
 
 def download_file(url: str, path: str):
     """
