@@ -995,10 +995,6 @@ def check_filelist_has_elements(
         )
 
 
-if __name__ == "__main__":
-    filter_docking_inputs()
-
-
 def combine_sdf_files(glob_string, output_sdf):
     import shutil
 
