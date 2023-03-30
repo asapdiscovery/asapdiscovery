@@ -6,18 +6,14 @@ The input is the compound_tracker.csv file, the output is a yaml file (default i
 data/cmpd_to_frag.yaml).
 This generates a required input for the `fauxalysis_from_docking.py` script.
 Example Usage:
-    python write_cmpd_to_frag_dict.py -f Mpro_compound_tracker_csv.csv
-
+    python write_cmpd_to_frag_dict.py \
+    -f ~/asap-datasets/current/sars_00_fragalysis/extra_files/Mpro_compound_tracker_csv.csv \
+    -o ../../../../metadata/cmpd_to_frag.yaml
 """
 import argparse
 import os
-import sys
 
 import yaml
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
-
 from asapdiscovery.data.utils import get_compound_id_xtal_dicts  # noqa: E402
 from asapdiscovery.data.utils import parse_fragalysis_data  # noqa: E402
 
@@ -34,11 +30,7 @@ def get_args():
     parser.add_argument(
         "-o",
         "--out_yaml",
-        default=os.path.join(
-            repo_path,
-            "data",
-            "cmpd_to_frag.yaml",
-        ),
+        required=True,
         help="Path to output yaml file.",
     )
 

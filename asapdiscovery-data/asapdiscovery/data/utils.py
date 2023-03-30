@@ -5,6 +5,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas
+import pkg_resources
 import rdkit.Chem as Chem
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import (
@@ -163,7 +164,7 @@ def seqres_to_res_list(seqres_str):
     https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#SEQRES
     Parameters
     ----------
-    SEQRES_str
+    seqres_str
 
     Returns
     -------
@@ -225,6 +226,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     #  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
     df = df.loc[~df[pic50_key].isna(), :]
+    df.loc[:, pic50_key] = df[pic50_key].astype(str)
     pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c.strip("<> ")) for c in df[pic50_key]]
     df["pIC50"] = pic50_vals
@@ -353,6 +355,8 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     # Get rid of the </> signs, since we really only need the values to sort
     #  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    df = df.loc[~df[pic50_key].isna(), :]
+    df.loc[:, pic50_key] = df[pic50_key].astype(str)
     pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c[pic50_key].strip("<> ")) for _, c in df.iterrows()]
     df["pIC50"] = pic50_vals
@@ -872,7 +876,9 @@ def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
 
 
 def filter_docking_inputs(
-    smarts_queries="../../data/smarts_queries.csv",
+    smarts_queries=pkg_resources.resource_filename(
+        "asapdiscovery.data", "data/smarts_queries.csv"
+    ),
     docking_inputs=None,
     drop_commented_smarts_strings=True,
     verbose=True,
