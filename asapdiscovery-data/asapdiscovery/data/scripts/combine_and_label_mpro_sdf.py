@@ -8,11 +8,13 @@ Example Usage:
     --glob_str ~asap-datasets/current/sars_01_prepped_v3/*/*.sdf \
     -o ~/asap-datasets/current/sars_01_prepped_v3/Mpro_combined_labeled.sdf
 """
-import argparse, glob
+import argparse
+import glob
+
 import numpy as np
-from asapdiscovery.data.utils import check_filelist_has_elements
 from asapdiscovery.data.fragalysis import parse_fragalysis
 from asapdiscovery.data.openeye import oechem, save_openeye_sdfs
+from asapdiscovery.data.utils import check_filelist_has_elements
 
 
 def get_args():
@@ -58,8 +60,8 @@ def main():
         sdfs = list([f for f in glob.glob(args.glob_str) if f.endswith(".sdf")])
         check_filelist_has_elements(sdfs)
         print(f"Loading {len(sdfs)} SDF files")
-        from tqdm.notebook import tqdm
         from asapdiscovery.data.openeye import load_openeye_sdf
+        from tqdm.notebook import tqdm
 
         mols = [load_openeye_sdf(sdf) for sdf in tqdm(sdfs)]
 
