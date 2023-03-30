@@ -29,10 +29,8 @@ jobs:
         python-version: ["3.9", "3.10"]
 
     steps:
-    - uses: actions/checkout@v1
-
-    - name: Additional info about the build
-      shell: bash
+    - name: Checkout Repository & Get Info About Runner
+      uses: actions/checkout@v3
       run: |
         uname -a
         df -h
