@@ -16,6 +16,7 @@ def build_dataset(
     lig_name="LIG",
     num_workers=1,
     rank=False,
+    str_only=False,
 ):
     """
     Build a Dataset object from input structure files.
@@ -44,6 +45,9 @@ def build_dataset(
         Residue name for ligand atoms in PDB files
     num_workers : int, default=1
         Number of threads to use for dataset loading
+    str_only : bool, default=False
+        If building a 2D dataset, whether to limit to only experimental compounds that
+        also have structural data
 
     Returns
     -------
@@ -63,44 +67,53 @@ def build_dataset(
         all_fns = glob(f"{in_files}/*complex.pdb")
     else:
         all_fns = glob(in_files)
-    check_filelist_has_elements(all_fns, "ml_dataset")
 
-    # Extract crystal structure and compound id from file name
-    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
-    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
-    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
-    compounds = [
-        (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
-        if both_m
-    ]
-    num_found = len(compounds)
-    # Dictionary mapping from compound_id to Mpro dataset(s)
-    compound_id_dict = {}
-    for xtal_structure, compound_id in compounds:
-        try:
-            compound_id_dict[compound_id].append(xtal_structure)
-        except KeyError:
-            compound_id_dict[compound_id] = [xtal_structure]
+    # Load the experimental compounds
+    exp_data, exp_compounds = load_exp_data(
+        exp_fn, achiral=achiral, return_compounds=True
+    )
+
+    # Parse structure filenames
+    if (model_type.lower() != "2d") or str_only:
+        check_filelist_has_elements(all_fns, "ml_dataset")
+
+        # Extract crystal structure and compound id from file name
+        xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
+        compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
+        idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
+        compounds = [
+            (xtal_m.group(), compound_m.group())
+            for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
+            if both_m
+        ]
+        num_found = len(compounds)
+        # Dictionary mapping from compound_id to Mpro dataset(s)
+        compound_id_dict = {}
+        for xtal_structure, compound_id in compounds:
+            try:
+                compound_id_dict[compound_id].append(xtal_structure)
+            except KeyError:
+                compound_id_dict[compound_id] = [xtal_structure]
+    else:
+        num_found = len(exp_compounds)
 
     if rank:
         exp_data = None
     elif model_type.lower() == "2d":
         from dgllife.utils import CanonicalAtomFeaturizer
 
-        # Load the experimental compounds
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
         print("load", len(exp_compounds), flush=True)
 
-        # Get compounds that have both structure and experimental data (this
-        #  step isn't actually necessary for performance, but allows a more
-        #  fair comparison between 2D and 3D models)
-        xtal_compound_ids = {c[1] for c in compounds}
-        # Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [c for c in exp_compounds if c.compound_id in xtal_compound_ids]
-        print("filter", len(exp_compounds), flush=True)
+        if str_only:
+            # Get compounds that have both structure and experimental data (this
+            #  step isn't actually necessary for performance, but allows a more
+            #  fair comparison between 2D and 3D models)
+            xtal_compound_ids = {c[1] for c in compounds}
+            # Filter exp_compounds to make sure we have structures for them
+            exp_compounds = [
+                c for c in exp_compounds if c.compound_id in xtal_compound_ids
+            ]
+            print("filter", len(exp_compounds), flush=True)
 
         # Make cache directory as necessary
         if cache_fn is None:
@@ -124,17 +137,7 @@ def build_dataset(
         # Load from cache
         ds = pkl.load(open(cache_fn, "rb"))
         print("Loaded from cache", flush=True)
-
-        # Still need to load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
     else:
-        # Load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
-
         # Make dict to access smiles data
         smiles_dict = {}
         for c in exp_compounds:
@@ -868,11 +871,11 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         for c in exp_compounds
         if (
             ("pIC50" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50"]))
+            # and (not np.isnan(c.experimental_data["pIC50"]))
             and ("pIC50_range" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_range"]))
+            # and (not np.isnan(c.experimental_data["pIC50_range"]))
             and ("pIC50_stderr" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            # and (not np.isnan(c.experimental_data["pIC50_stderr"]))
         )
     }
 
