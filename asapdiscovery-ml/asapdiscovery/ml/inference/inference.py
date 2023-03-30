@@ -150,8 +150,8 @@ class GATInference(InferenceBase):
         self,
         model_name: str,
         model_spec: Optional[Path] = None,
-        device: str = "cpu",
         build_model_kwargs: Optional[dict] = None,
+        device: str = "cpu",
     ):
         super().__init__(
             model_name,
