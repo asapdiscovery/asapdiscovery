@@ -367,6 +367,17 @@ def init(args, rank=False):
     if "cutoff" in model_config:
         args.n_dist = model_config["cutoff"]
 
+    # Decide which nan values to filter
+    if args.loss is None:
+        check_range_nan = False
+        check_stderr_nan = False
+    elif args.loss.lower() == "step":
+        check_range_nan = True
+        check_stderr_nan = False
+    else:
+        check_range_nan = True
+        check_stderr_nan = True
+
     # Load full dataset
     ds, exp_data = build_dataset(
         in_files=args.i,
@@ -380,6 +391,8 @@ def init(args, rank=False):
         lig_name=args.n,
         num_workers=args.w,
         rank=rank,
+        check_range_nan=check_range_nan,
+        check_stderr_nan=check_stderr_nan,
     )
     ds_train, ds_val, ds_test = split_dataset(
         ds,
