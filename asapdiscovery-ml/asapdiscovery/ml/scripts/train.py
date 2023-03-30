@@ -22,6 +22,7 @@ import pickle as pkl
 
 import numpy as np
 import torch
+from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml import EarlyStopping, GaussianNLLLoss, MSELoss  # noqa: E402
 from asapdiscovery.ml.utils import (
     build_dataset,
@@ -203,6 +204,16 @@ def get_args():
         action="store_true",
         help="Use a random seed for splitting the dataset. Will override -ds_seed.",
     )
+    parser.add_argument(
+        "-x_re",
+        "--xtal_regex",
+        help="Regex for extracting crystal structure name from filename.",
+    )
+    parser.add_argument(
+        "-c_re",
+        "--cpd_regex",
+        help="Regex for extracting compound ID from filename.",
+    )
 
     # Model parameters
     parser.add_argument(
@@ -361,6 +372,8 @@ def init(args, rank=False):
         in_files=args.i,
         model_type=args.model,
         exp_fn=args.exp,
+        xtal_pat=args.xtal_regex if args.xtal_regex else MPRO_ID_REGEX,
+        compound_pat=args.cpd_regex if args.cpd_regex else MOONSHOT_CDD_ID_REGEX,
         achiral=args.achiral,
         cache_fn=args.cache,
         grouped=args.grouped,
