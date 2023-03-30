@@ -898,7 +898,7 @@ def check_model_compatibility(model, to_load, check_weights=False):
     """
     # Load the PyTorch file
     if isinstance(to_load, str) or isinstance(to_load, Path):
-        test_state_dict = torch.load(file_path, map_location=torch.device("cpu"))
+        test_state_dict = torch.load(to_load, map_location=torch.device("cpu"))
 
     elif isinstance(to_load, dict):
         test_state_dict = to_load
@@ -970,7 +970,7 @@ def load_weights(model, wts_fn, check_compatibility=False):
 
     # Check compatibility
     if check_compatibility:
-        check_model_compatibility(model, wts_dict)
+        check_model_compatibility(model, wts_dict, check_weights=False)
     # Load model parameters
     model.load_state_dict(wts_dict)
     print(f"Loaded model weights from {wts_fn}", flush=True)
