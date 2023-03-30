@@ -8,6 +8,8 @@ def build_dataset(
     in_files,
     model_type,
     exp_fn,
+    xtal_pat=r"[^/]+$",
+    compound_pat=r"[^/]+$",
     achiral=False,
     cache_fn=None,
     grouped=False,
@@ -26,6 +28,12 @@ def build_dataset(
         Which model to create. Current options are ["2d", "schnet", "e3nn"]
     exp_fn : str
         JSON file giving experimental results
+    xtal_pat : str, default=r"[^/]+$"
+        Regex pattern for extracting crystal structure ID from filename. Defaults to
+        taking the entire file basename (on *nix platforms)
+    compound_pat : str, default=r"[^/]+$"
+        Regex pattern for extracting compound ID from filename. Defaults to
+        taking the entire file basename (on *nix platforms)
     achiral : bool, default=False
         Only keep achiral molecules
     cache_fn : str, optional
@@ -43,6 +51,7 @@ def build_dataset(
     import re
     from glob import glob
 
+    from asapdiscovery.data.utils import check_filelist_has_elements
     from asapdiscovery.ml.dataset import (
         DockedDataset,
         GraphDataset,
@@ -54,10 +63,9 @@ def build_dataset(
         all_fns = glob(f"{in_files}/*complex.pdb")
     else:
         all_fns = glob(in_files)
-    # Extract crystal structure and compound id from file name
-    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
-    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+    check_filelist_has_elements(all_fns, "ml_dataset")
 
+    # Extract crystal structure and compound id from file name
     xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
     compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
     idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
