@@ -4,7 +4,6 @@ import shutil
 
 import asapdiscovery.ml
 import pytest
-import torch
 from numpy.testing import assert_allclose
 
 
@@ -47,15 +46,6 @@ def test_gatinference_construct(weights_yaml):
 def test_inference_construct_no_spec(weights_yaml):
     inference_cls = asapdiscovery.ml.inference.GATInference("model1")
     assert inference_cls is not None
-
-
-def test_gatinference_predict(weights_yaml, test_data):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml
-    )
-    assert inference_cls is not None
-    output = inference_cls.predict(test_data)
-    assert output is not None
 
 
 def test_gatinference_predict(weights_yaml, test_data):

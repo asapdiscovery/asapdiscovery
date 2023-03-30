@@ -1,7 +1,6 @@
 """Computational chemistry packages developed by the ASAP Discovery Consortium."""
 from importlib.metadata import version
 
-import pkg_resources
 
 __version__ = version("asapdiscovery-ml")
 

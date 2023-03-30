@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional  # noqa: F401
 
 import dgl
 import torch
@@ -8,7 +8,7 @@ import torch
 # static import of models from base yaml here
 from asapdiscovery.ml.pretrained_models import all_models
 from asapdiscovery.ml.utils import build_model, load_weights
-from asapdiscovery.ml.weights import ModelSpec, fetch_file, fetch_model_from_spec
+from asapdiscovery.ml.weights import fetch_model_from_spec
 
 
 class InferenceBase:
