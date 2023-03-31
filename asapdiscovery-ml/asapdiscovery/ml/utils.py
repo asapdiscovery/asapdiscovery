@@ -1,7 +1,9 @@
 import os
 import pickle as pkl
+from pathlib import Path
 
 import numpy as np
+import torch
 
 
 def build_dataset(
@@ -245,7 +247,7 @@ def build_model(
         except Exception:
             config = {}
 
-    if model_type == "2d":
+    if model_type == "gat":
         import torch
 
         model = build_model_2d(config)
@@ -362,7 +364,7 @@ def build_model_2d(config=None):
     from asapdiscovery.ml import GAT
     from dgllife.utils import CanonicalAtomFeaturizer
 
-    if type(config) is str:
+    if (type(config) is str) or (isinstance(config, Path)):
         config = parse_config(config)
     elif config is None:
         try:
@@ -876,7 +878,54 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         return exp_dict
 
 
-def load_weights(model, wts_fn):
+def check_model_compatibility(model, to_load, check_weights=False):
+    """
+    Checks if a PyTorch file or state_dict is compatible with a model.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to check.
+    to_load : Union[str, Path, Dict[str, torch.Tensor]]
+        The path to the PyTorch file, or a dictionary of the state dict.
+    check_weights : bool, default=False
+        Whether to check the weights of the model and the PyTorch file.
+
+    Returns
+    -------
+    None
+
+    """
+    # Load the PyTorch file
+    if isinstance(to_load, str) or isinstance(to_load, Path):
+        test_state_dict = torch.load(to_load, map_location=torch.device("cpu"))
+
+    elif isinstance(to_load, dict):
+        test_state_dict = to_load
+    else:
+        raise ValueError(f"Invalid type of to_load: {type(to_load)}")
+    # Get the state dicts of the model and the PyTorch file
+    model_state_dict = model.state_dict()
+
+    # Check the model architecture
+    if set(model_state_dict.keys()) != set(test_state_dict.keys()):
+        raise ValueError("Model architecture doesn't match.")
+
+    # Check the model weights
+    if check_weights:
+        for key in model_state_dict.keys():
+            if model_state_dict[key].shape != test_state_dict[key].shape:
+                raise ValueError(
+                    f'Model weights shape of "{key}" doesn\'t match the file.'
+                )
+
+            if not torch.allclose(
+                model_state_dict[key], test_state_dict[key], atol=1e-4
+            ):
+                raise ValueError("Model weights don't match the file.")
+
+
+def load_weights(model, wts_fn, check_compatibility=False):
     """
     Load weights for an MTENN model, initializing internal layers as necessary.
 
@@ -886,6 +935,9 @@ def load_weights(model, wts_fn):
         Model to load weights into
     wts_fn: str
         Weights file to load from
+    check_compatibility: bool, default=False
+        Whether to check if the weights file is compatible with the model.
+        May not work if using a `ConcatStrategy` block.
 
     Returns
     -------
@@ -916,6 +968,9 @@ def load_weights(model, wts_fn):
     for p in loaded_params - model_params:
         del wts_dict[p]
 
+    # Check compatibility
+    if check_compatibility:
+        check_model_compatibility(model, wts_dict, check_weights=False)
     # Load model parameters
     model.load_state_dict(wts_dict)
     print(f"Loaded model weights from {wts_fn}", flush=True)
@@ -938,7 +993,16 @@ def parse_config(config_fn):
     dict
         Loaded config
     """
-    fn_ext = config_fn.split(".")[-1].lower()
+
+    if type(config_fn) is str:
+        fn_ext = config_fn.split(".")[-1].lower()
+
+    elif isinstance(config_fn, Path):
+        fn_ext = config_fn.suffix[1:].lower()
+
+    else:
+        raise ValueError(f"Unknown config file type: {type(config_fn)}")
+
     if fn_ext == "json":
         import json
 
