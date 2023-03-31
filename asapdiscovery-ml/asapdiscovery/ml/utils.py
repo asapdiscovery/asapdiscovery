@@ -35,10 +35,12 @@ def build_dataset(
         JSON file giving experimental results
     xtal_pat : str, default=r"[^/]+$"
         Regex pattern for extracting crystal structure ID from filename. Defaults to
-        taking the entire file basename (on *nix platforms)
+        taking all trailing characters up to the final "/" (ie the entire file
+        basename on *nix platforms)
     compound_pat : str, default=r"[^/]+$"
         Regex pattern for extracting compound ID from filename. Defaults to
-        taking the entire file basename (on *nix platforms)
+        taking all trailing characters up to the final "/" (ie the entire file
+        basename on *nix platforms)
     achiral : bool, default=False
         Only keep achiral molecules
     cache_fn : str, optional
