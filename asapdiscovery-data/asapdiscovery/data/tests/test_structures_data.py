@@ -8,6 +8,7 @@ import pathlib
 
 import pkg_resources
 import pytest
+
 from asapdiscovery.data.pdb import download_pdb_structure
 
 
@@ -23,7 +24,6 @@ def pdbs_from_yaml():
     return pdb_dict
 
 
-@pytest.mark.skip(reason="No OE License in CI yet.")
 class TestAsapPDB:
     """Class for testing PDB munging in ASAP discovery data package"""
 
