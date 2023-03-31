@@ -369,12 +369,15 @@ def init(args, rank=False):
 
     # Decide which nan values to filter
     if args.loss is None:
+        # Plain MSE loss, so don't need to worry about the in range or stderr values
         check_range_nan = False
         check_stderr_nan = False
     elif args.loss.lower() == "step":
+        # Step MSE loss, so only need to worry about the in range value
         check_range_nan = True
         check_stderr_nan = False
     else:
+        # Using the stderr information in loss calculations, so need to include both
         check_range_nan = True
         check_stderr_nan = True
 
