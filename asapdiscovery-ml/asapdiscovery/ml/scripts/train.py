@@ -17,12 +17,18 @@ python train.py \
     -proj test-model-compare
 """
 import argparse
+from glob import glob
 import os
 import pickle as pkl
 
 import numpy as np
 import torch
-from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
+from asapdiscovery.data.utils import (
+    MOONSHOT_CDD_ID_REGEX,
+    MPRO_ID_REGEX,
+    check_filelist_has_elements,
+    extract_compounds_from_filenames,
+)
 from asapdiscovery.ml import EarlyStopping, GaussianNLLLoss, MSELoss  # noqa: E402
 from asapdiscovery.ml.utils import (
     build_dataset,
@@ -381,13 +387,31 @@ def init(args, rank=False):
         check_range_nan = True
         check_stderr_nan = True
 
+    # Parse compounds from args.i
+    if os.path.isdir(args.i):
+        all_fns = glob(f"{args.i}/*complex.pdb")
+    else:
+        all_fns = glob(args.i)
+    check_filelist_has_elements(all_fns, "ml_dataset")
+
+    # Parse compound filenames
+    xtal_regex = args.xtal_regex if args.xtal_regex else MPRO_ID_REGEX
+    compound_regex = args.cpd_regex if args.cpd_regex else MOONSHOT_CDD_ID_REGEX
+    compounds = extract_compounds_from_filenames(
+        all_fns, xtal_pat=xtal_regex, compound_pat=compound_regex, fail_val="NA"
+    )
+
+    # Trim compounds and all_fns to ones that were successfully parse
+    idx = [(c[0] != "NA") and (c[1] != "NA") for c in compounds]
+    compounds = [c for c, i in zip(compounds, idx)]
+    all_fns = [fn for fn, i in zip(all_fns, idx)]
+
     # Load full dataset
     ds, exp_data = build_dataset(
-        in_files=args.i,
         model_type=args.model,
         exp_fn=args.exp,
-        xtal_pat=args.xtal_regex if args.xtal_regex else MPRO_ID_REGEX,
-        compound_pat=args.cpd_regex if args.cpd_regex else MOONSHOT_CDD_ID_REGEX,
+        all_fns=all_fns,
+        compounds=compounds,
         achiral=args.achiral,
         cache_fn=args.cache,
         grouped=args.grouped,
