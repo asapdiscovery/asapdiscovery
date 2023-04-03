@@ -7,11 +7,10 @@ import torch
 
 
 def build_dataset(
-    in_files,
+    all_fns,
     model_type,
     exp_fn,
-    xtal_pat=r"[^/]+$",
-    compound_pat=r"[^/]+$",
+    compounds=[],
     achiral=False,
     cache_fn=None,
     grouped=False,
@@ -27,20 +26,14 @@ def build_dataset(
 
     Parameters
     ----------
-    in_files : str
-        Input directory/glob for docked PDB files
+    all_fns : List[str]
+        List of input docked PDB files
     model_type : str
         Which model to create. Current options are ["gat", "schnet", "e3nn"]
     exp_fn : str
         JSON file giving experimental results
-    xtal_pat : str, default=r"[^/]+$"
-        Regex pattern for extracting crystal structure ID from filename. Defaults to
-        taking all trailing characters up to the final "/" (ie the entire file
-        basename on *nix platforms)
-    compound_pat : str, default=r"[^/]+$"
-        Regex pattern for extracting compound ID from filename. Defaults to
-        taking all trailing characters up to the final "/" (ie the entire file
-        basename on *nix platforms)
+    compounds : List[Tuple[str, str]]
+        List of (xtal_id, compound_id) that correspond 1:1 to in_files
     achiral : bool, default=False
         Only keep achiral molecules
     cache_fn : str, optional
@@ -62,21 +55,12 @@ def build_dataset(
     Returns
     -------
     """
-    import re
-    from glob import glob
-
     from asapdiscovery.data.utils import check_filelist_has_elements
     from asapdiscovery.ml.dataset import (
         DockedDataset,
         GraphDataset,
         GroupedDockedDataset,
     )
-
-    # Get all docked structures
-    if os.path.isdir(in_files):
-        all_fns = glob(f"{in_files}/*complex.pdb")
-    else:
-        all_fns = glob(in_files)
 
     # Load the experimental compounds
     exp_data, exp_compounds = load_exp_data(
@@ -89,18 +73,6 @@ def build_dataset(
 
     # Parse structure filenames
     if (model_type.lower() != "gat") or str_only:
-        check_filelist_has_elements(all_fns, "ml_dataset")
-
-        # Extract crystal structure and compound id from file name
-        xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
-        compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
-        idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
-        compounds = [
-            (xtal_m.group(), compound_m.group())
-            for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
-            if both_m
-        ]
-        num_found = len(compounds)
         # Dictionary mapping from compound_id to Mpro dataset(s)
         compound_id_dict = {}
         for xtal_structure, compound_id in compounds:
@@ -108,8 +80,6 @@ def build_dataset(
                 compound_id_dict[compound_id].append(xtal_structure)
             except KeyError:
                 compound_id_dict[compound_id] = [xtal_structure]
-    else:
-        num_found = len(exp_compounds)
 
     if rank:
         exp_data = None
@@ -144,9 +114,6 @@ def build_dataset(
         )
 
         print(next(iter(ds)), flush=True)
-
-        # Rename exp_compounds so the number kept is consistent
-        compounds = exp_compounds
     elif cache_fn and os.path.isfile(cache_fn):
         # Load from cache
         ds = pkl.load(open(cache_fn, "rb"))
@@ -207,8 +174,7 @@ def build_dataset(
             # Cache dataset
             pkl.dump(ds, open(cache_fn, "wb"))
 
-    num_kept = len(ds)
-    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
+    print(f"Kept {len(ds)} compounds", flush=True)
 
     return ds, exp_data
 
