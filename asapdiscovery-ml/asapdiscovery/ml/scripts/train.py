@@ -466,7 +466,7 @@ def init(args, rank=False):
             "rm_atomref": args.rm_atomref,
             "neighbor_dist": args.n_dist,
         }
-    elif args.model == "2d":
+    elif args.model == "gat":
         # Update experiment configuration
         exp_configure = {"model": "GAT"}
     else:

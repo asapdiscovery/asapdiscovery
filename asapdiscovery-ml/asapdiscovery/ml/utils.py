@@ -30,7 +30,7 @@ def build_dataset(
     in_files : str
         Input directory/glob for docked PDB files
     model_type : str
-        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+        Which model to create. Current options are ["gat", "schnet", "e3nn"]
     exp_fn : str
         JSON file giving experimental results
     xtal_pat : str, default=r"[^/]+$"
@@ -86,7 +86,7 @@ def build_dataset(
     )
 
     # Parse structure filenames
-    if (model_type.lower() != "2d") or str_only:
+    if (model_type.lower() != "gat") or str_only:
         check_filelist_has_elements(all_fns, "ml_dataset")
 
         # Extract crystal structure and compound id from file name
@@ -111,7 +111,7 @@ def build_dataset(
 
     if rank:
         exp_data = None
-    elif model_type.lower() == "2d":
+    elif model_type.lower() == "gat":
         from dgllife.utils import CanonicalAtomFeaturizer
 
         print("load", len(exp_compounds), flush=True)
@@ -228,7 +228,7 @@ def build_model(
     Parameters
     ----------
     model_type : str
-        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+        Which model to create. Current options are ["gat", "schnet", "e3nn"]
     e3nn_params : Union[str, list], optional
         Pickle file containing model parameters for the e3nn model, or just the
         parameters themselves.
