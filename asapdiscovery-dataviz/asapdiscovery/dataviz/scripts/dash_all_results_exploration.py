@@ -10,17 +10,11 @@ based on what complex is picked by the user.
 
 import argparse
 import json
-import os
-import sys
 
 import pandas as pd
 import plotly.express as px
-from dash import Dash, Input, Output, ctx, dash_table, dcc, html
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
-
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
+from dash import Dash, Input, Output, ctx, dash_table, dcc, html
 
 parser = argparse.ArgumentParser(description="")
 # Input arguments

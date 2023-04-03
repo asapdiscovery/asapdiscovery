@@ -1,0 +1,25 @@
+# This file is used to specify the path to the weights file for each model.
+
+model1:
+  # Path to the weights file.
+  weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model.pth
+  # Path to the config file, can be absent
+  # config:
+  # Date tag of the weights file, must be in the format of YYYY-MM-DD.
+  # used to determine if the weights file is up-to-date.
+  last_updated: 2023-01-01
+  # Type of the model, must be one of the following: GAT, ....
+  type: GAT
+
+model2:
+  # Path to the weights file for the schnet model.
+  weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_copy.pth
+  last_updated: 2023-01-01
+  type: blah
+  config: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_config.json
+
+gatmodel_test:
+  weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example.pth
+  config: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example_config.json
+  last_updated: 2023-01-01
+  type: GAT
