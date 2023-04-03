@@ -15,6 +15,8 @@ from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
+from asapdiscovery.ml.dataset import GraphInferenceDataset  # noqa: E402
+from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
 
 def check_results(d):
@@ -169,6 +171,13 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
             )
         smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
+
+        # extremely hacky way to get GAT score
+        data = ExperimentalCompoundData(**{"compound_id": lig_name, "smiles": smiles})
+        gi_ds = GraphInferenceDataset([data])
+        # has structure (("NA", compound),  {smiles: smiles, g: graph, **kwargs})
+        graph = gi_ds[0][1]["g"]
+        GAT_score = GAT_model.predict(graph)
     else:
         out_fn = ""
         rmsds = [-1.0]
@@ -177,6 +186,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         chemgauss_scores = [-1.0]
         clash = -1
         smiles = "None"
+        GAT_score = np.nan
 
     results = [
         (
@@ -190,6 +200,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
             chemgauss,
             clash,
             smiles,
+            GAT_score,
         )
         for i, (rmsd, prob, method, chemgauss) in enumerate(
             zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
@@ -411,7 +422,11 @@ def main():
         "chemgauss4_score",
         "clash",
         "SMILES",
+        "GAT_score",
     ]
+
+    GAT_model = GATInference("model1")
+
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(
         f"CPUs: {mp.cpu_count()}\n"
