@@ -151,9 +151,7 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     # Input arguments
-    parser.add_argument(
-        "-i", required=True, help="Input directory/glob for docked PDB files."
-    )
+    parser.add_argument("-i", help="Input directory/glob for docked PDB files.")
     parser.add_argument(
         "-exp", required=True, help="JSON file giving experimental results."
     )
@@ -387,24 +385,32 @@ def init(args, rank=False):
         check_range_nan = True
         check_stderr_nan = True
 
-    # Parse compounds from args.i
-    if os.path.isdir(args.i):
-        all_fns = glob(f"{args.i}/*complex.pdb")
+    if args.i:
+        # Parse compounds from args.i
+        if os.path.isdir(args.i):
+            all_fns = glob(f"{args.i}/*complex.pdb")
+        else:
+            all_fns = glob(args.i)
+        check_filelist_has_elements(all_fns, "ml_dataset")
+
+        # Parse compound filenames
+        xtal_regex = args.xtal_regex if args.xtal_regex else MPRO_ID_REGEX
+        compound_regex = args.cpd_regex if args.cpd_regex else MOONSHOT_CDD_ID_REGEX
+        compounds = extract_compounds_from_filenames(
+            all_fns, xtal_pat=xtal_regex, compound_pat=compound_regex, fail_val="NA"
+        )
+
+        # Trim compounds and all_fns to ones that were successfully parse
+        idx = [(c[0] != "NA") and (c[1] != "NA") for c in compounds]
+        compounds = [c for c, i in zip(compounds, idx)]
+        all_fns = [fn for fn, i in zip(all_fns, idx)]
+    elif args.model.lower() != "gat":
+        # If we're using a structure-based model, can't continue without structure files
+        raise ValueError("-i must be specified for structure-based models")
     else:
-        all_fns = glob(args.i)
-    check_filelist_has_elements(all_fns, "ml_dataset")
-
-    # Parse compound filenames
-    xtal_regex = args.xtal_regex if args.xtal_regex else MPRO_ID_REGEX
-    compound_regex = args.cpd_regex if args.cpd_regex else MOONSHOT_CDD_ID_REGEX
-    compounds = extract_compounds_from_filenames(
-        all_fns, xtal_pat=xtal_regex, compound_pat=compound_regex, fail_val="NA"
-    )
-
-    # Trim compounds and all_fns to ones that were successfully parse
-    idx = [(c[0] != "NA") and (c[1] != "NA") for c in compounds]
-    compounds = [c for c, i in zip(compounds, idx)]
-    all_fns = [fn for fn, i in zip(all_fns, idx)]
+        # Using a 2d model, so no need for structure files
+        all_fns = []
+        compounds = []
 
     # Load full dataset
     ds, exp_data = build_dataset(
