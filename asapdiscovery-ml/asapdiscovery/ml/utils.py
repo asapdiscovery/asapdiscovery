@@ -744,64 +744,6 @@ def calc_e3nn_model_info(ds, r):
     )
 
 
-def extract_compounds_from_filenames(fn_list, xtal_pat, compound_pat, fail_val=None):
-    """
-    Extract a list of (xtal, compound_id) from fn_list.
-
-    Parameters
-    ----------
-    fn_list : List[str]
-        List of filenames
-    xtal_pat : Union[str, function]
-        Regex pattern or function for extracting crystal structure ID from filename. If
-        a function is passed, it is expected to return a single str giving the xtal name
-    compound_pat : Union[str, function]
-        Regex pattern or function for extracting crystal structure ID from filename. If
-        a function is passed, it is expected to return a single str giving the
-        compound_id
-    fail_val : str, optional
-        If a value is passed, this value will be returned from the re searches if a
-        match isn't found. If None (default), a ValueError will be raised from the re
-        search
-
-    Returns
-    -------
-    List[Tuple[str, str]]
-        List of (xtal, compound_id)
-    """
-    import re
-
-    if callable(xtal_pat):
-        # Just use the passed function
-        xtal_func = xtal_pat
-    else:
-        # Construct a function for re searching
-        def xtal_func(fn):
-            m = re.search(xtal_pat, fn)
-            if m:
-                return m.group()
-            elif fail_val is not None:
-                return fail_val
-            else:
-                return ValueError(f"No match found for pattern {xtal_pat} in {fn}.")
-
-    if callable(compound_pat):
-        # Just use the passed function
-        compound_func = compound_pat
-    else:
-        # Construct a function for re searching
-        def compound_func(fn):
-            m = re.search(compound_pat, fn)
-            if m:
-                return m.group()
-            elif fail_val is not None:
-                return fail_val
-            else:
-                return ValueError(f"No match found for pattern {compound_pat} in {fn}.")
-
-    return [(xtal_func(fn), compound_func(fn)) for fn in fn_list]
-
-
 def find_all_models(model_base):
     """
     Helper script to find all existing models in the given directory/file base
