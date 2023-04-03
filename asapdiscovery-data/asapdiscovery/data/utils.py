@@ -226,6 +226,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     #  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
     df = df.loc[~df[pic50_key].isna(), :]
+    df.loc[:, pic50_key] = df[pic50_key].astype(str)
     pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c.strip("<> ")) for c in df[pic50_key]]
     df["pIC50"] = pic50_vals
@@ -354,6 +355,8 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     # Get rid of the </> signs, since we really only need the values to sort
     #  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    df = df.loc[~df[pic50_key].isna(), :]
+    df.loc[:, pic50_key] = df[pic50_key].astype(str)
     pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c[pic50_key].strip("<> ")) for _, c in df.iterrows()]
     df["pIC50"] = pic50_vals
