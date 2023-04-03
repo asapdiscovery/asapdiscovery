@@ -51,12 +51,9 @@ print(ecd_reorder)
 print(gds)
 
 
-
-
 # dump data to a pickle file
 with open("fragalysis_GAT_test_ds.pkl", "wb") as f:
     pickle.dump(gds, f)
-
 
 
 gids = GraphInferenceDataset(
