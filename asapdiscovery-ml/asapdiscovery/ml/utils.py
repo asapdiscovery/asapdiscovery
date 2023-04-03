@@ -1,7 +1,9 @@
 import os
 import pickle as pkl
+from pathlib import Path
 
 import numpy as np
+import torch
 
 
 def build_dataset(
@@ -245,7 +247,7 @@ def build_model(
         except Exception:
             config = {}
 
-    if model_type == "2d":
+    if model_type == "gat":
         import torch
 
         model = build_model_2d(config)
@@ -362,7 +364,7 @@ def build_model_2d(config=None):
     from asapdiscovery.ml import GAT
     from dgllife.utils import CanonicalAtomFeaturizer
 
-    if type(config) is str:
+    if (type(config) is str) or (isinstance(config, Path)):
         config = parse_config(config)
     elif config is None:
         try:
@@ -876,7 +878,54 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         return exp_dict
 
 
-def load_weights(model, wts_fn):
+def check_model_compatibility(model, to_load, check_weights=False):
+    """
+    Checks if a PyTorch file or state_dict is compatible with a model.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to check.
+    to_load : Union[str, Path, Dict[str, torch.Tensor]]
+        The path to the PyTorch file, or a dictionary of the state dict.
+    check_weights : bool, default=False
+        Whether to check the weights of the model and the PyTorch file.
+
+    Returns
+    -------
+    None
+
+    """
+    # Load the PyTorch file
+    if isinstance(to_load, str) or isinstance(to_load, Path):
+        test_state_dict = torch.load(to_load, map_location=torch.device("cpu"))
+
+    elif isinstance(to_load, dict):
+        test_state_dict = to_load
+    else:
+        raise ValueError(f"Invalid type of to_load: {type(to_load)}")
+    # Get the state dicts of the model and the PyTorch file
+    model_state_dict = model.state_dict()
+
+    # Check the model architecture
+    if set(model_state_dict.keys()) != set(test_state_dict.keys()):
+        raise ValueError("Model architecture doesn't match.")
+
+    # Check the model weights
+    if check_weights:
+        for key in model_state_dict.keys():
+            if model_state_dict[key].shape != test_state_dict[key].shape:
+                raise ValueError(
+                    f'Model weights shape of "{key}" doesn\'t match the file.'
+                )
+
+            if not torch.allclose(
+                model_state_dict[key], test_state_dict[key], atol=1e-4
+            ):
+                raise ValueError("Model weights don't match the file.")
+
+
+def load_weights(model, wts_fn, check_compatibility=False):
     """
     Load weights for an MTENN model, initializing internal layers as necessary.
 
@@ -886,6 +935,9 @@ def load_weights(model, wts_fn):
         Model to load weights into
     wts_fn: str
         Weights file to load from
+    check_compatibility: bool, default=False
+        Whether to check if the weights file is compatible with the model.
+        May not work if using a `ConcatStrategy` block.
 
     Returns
     -------
@@ -916,6 +968,9 @@ def load_weights(model, wts_fn):
     for p in loaded_params - model_params:
         del wts_dict[p]
 
+    # Check compatibility
+    if check_compatibility:
+        check_model_compatibility(model, wts_dict, check_weights=False)
     # Load model parameters
     model.load_state_dict(wts_dict)
     print(f"Loaded model weights from {wts_fn}", flush=True)
@@ -938,7 +993,16 @@ def parse_config(config_fn):
     dict
         Loaded config
     """
-    fn_ext = config_fn.split(".")[-1].lower()
+
+    if type(config_fn) is str:
+        fn_ext = config_fn.split(".")[-1].lower()
+
+    elif isinstance(config_fn, Path):
+        fn_ext = config_fn.suffix[1:].lower()
+
+    else:
+        raise ValueError(f"Unknown config file type: {type(config_fn)}")
+
     if fn_ext == "json":
         import json
 
@@ -984,7 +1048,9 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
     fig.savefig(out_fn, dpi=200, bbox_inches="tight")
 
 
-def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
+def split_dataset(
+    ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1, rand_seed=42
+):
     """
     Split a dataset into train, val, and test splits. A warning will be raised
     if fractions don't add to 1.
@@ -1001,6 +1067,8 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
         Fraction of dataset to put in the val split
     test_frac: float, default=0.1
         Fraction of dataset to put in the test split
+    rand_seed: int, default=42
+        Seed for dataset splitting
 
     Returns
     -------
@@ -1025,14 +1093,20 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
             RuntimeWarning,
         )
 
-    # Split dataset into train/val/test (80/10/10 split)
-    # use fixed seed for reproducibility
+    print("using random seed:", rand_seed, flush=True)
+    # Create generator
+    if rand_seed is None:
+        g = torch.Generator()
+    else:
+        g = torch.Generator().manual_seed(rand_seed)
+
+    # Split dataset into train/val/test
     if grouped:
         n_train = int(len(ds) * train_frac)
         n_val = int(len(ds) * val_frac)
         n_test = len(ds) - n_train - n_val
         ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], torch.Generator().manual_seed(42)
+            ds, [n_train, n_val, n_test], g
         )
         print(
             (
@@ -1043,9 +1117,7 @@ def split_dataset(ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1):
         )
     else:
         ds_train, ds_val, ds_test = split_molecules(
-            ds,
-            [train_frac, val_frac, test_frac],
-            torch.Generator().manual_seed(42),
+            ds, [train_frac, val_frac, test_frac], g
         )
 
         train_compound_ids = {c[1] for c, _ in ds_train}
@@ -1095,12 +1167,13 @@ def split_molecules(ds, split_fracs, generator=None):
             compound_ids_dict[c[1]].append(c)
         except KeyError:
             compound_ids_dict[c[1]] = [c]
-    all_compound_ids = list(compound_ids_dict.keys())
+    all_compound_ids = np.asarray(list(compound_ids_dict.keys()))
 
     # Set up generator
     if generator is None:
         generator = torch.default_generator
 
+    print("splitting with random seed:", generator.initial_seed(), flush=True)
     # Shuffle the indices
     indices = torch.randperm(len(all_compound_ids), generator=generator)
 
@@ -1111,7 +1184,8 @@ def split_molecules(ds, split_fracs, generator=None):
     #  float rounding
     for frac in split_fracs[:-1]:
         split_len = int(np.floor(frac * len(indices)))
-        incl_compounds = all_compound_ids[offset : offset + split_len]
+        incl_indices = indices[offset : offset + split_len]
+        incl_compounds = all_compound_ids[incl_indices]
         offset += split_len
 
         # Get subset indices
@@ -1122,7 +1196,8 @@ def split_molecules(ds, split_fracs, generator=None):
         all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
     # Finish up anything leftover
-    incl_compounds = all_compound_ids[offset:]
+    incl_indices = indices[offset:]
+    incl_compounds = all_compound_ids[incl_indices]
 
     # Get subset indices
     subset_idx = []
