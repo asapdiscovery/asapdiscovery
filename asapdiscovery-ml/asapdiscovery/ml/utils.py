@@ -7,9 +7,9 @@ import torch
 
 
 def build_dataset(
-    all_fns,
     model_type,
     exp_fn,
+    all_fns=[],
     compounds=[],
     achiral=False,
     cache_fn=None,
@@ -26,13 +26,13 @@ def build_dataset(
 
     Parameters
     ----------
-    all_fns : List[str]
-        List of input docked PDB files
     model_type : str
         Which model to create. Current options are ["gat", "schnet", "e3nn"]
     exp_fn : str
         JSON file giving experimental results
-    compounds : List[Tuple[str, str]]
+    all_fns : List[str], optional
+        List of input docked PDB files
+    compounds : List[Tuple[str, str]], optional
         List of (xtal_id, compound_id) that correspond 1:1 to in_files
     achiral : bool, default=False
         Only keep achiral molecules
@@ -73,6 +73,12 @@ def build_dataset(
 
     # Parse structure filenames
     if (model_type.lower() != "gat") or str_only:
+        # Make sure the files passed match exist and match with compounds
+        check_filelist_has_elements(all_fns, "ml_dataset")
+        assert len(all_fns) == len(
+            compounds
+        ), "Different number of filenames and compound tuples."
+
         # Dictionary mapping from compound_id to Mpro dataset(s)
         compound_id_dict = {}
         for xtal_structure, compound_id in compounds:
