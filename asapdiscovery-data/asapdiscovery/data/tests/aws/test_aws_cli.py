@@ -29,7 +29,6 @@ def set_env_vars(env):
 
 class TestS3CLI:
     def test_s3_push_file(self, s3_fresh, tmpdir):
-
         s3 = s3_fresh
 
         filename = f"{str(uuid.uuid4())}.txt"

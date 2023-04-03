@@ -50,7 +50,6 @@ def main():
         )
 
     for fn in tqdm(fns):
-
         # Load in design units
         du = oechem.OEDesignUnit()
         oechem.OEReadDesignUnit(str(fn), du)

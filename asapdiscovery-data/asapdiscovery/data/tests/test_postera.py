@@ -14,7 +14,6 @@ from requests import Session
 
 class TestMoleculeList:
     def test_from_pandas_df(self):
-
         expected_molecule_list = [
             {
                 "smiles": "SMILES1",
@@ -50,7 +49,6 @@ class TestMoleculeList:
 
 class TestMoleculeUpdateList:
     def test_from_pandas_df(self):
-
         expected_molecule_update_list = [
             {
                 "id": "1",
@@ -92,7 +90,6 @@ class TestMoleculeSet:
 
     @patch.object(Session, "post")
     def test_create(self, mock_post, moleculesetapi):
-
         # create a MoleculeList for submission
         moleculeset_id = str(uuid.uuid4())
 
@@ -154,7 +151,6 @@ class TestMoleculeSet:
 
     @patch.object(Session, "get")
     def test_get_molecules(self, mock_get, moleculesetapi):
-
         mock_get.return_value.json.side_effect = [
             {
                 # page with 2 molecules
