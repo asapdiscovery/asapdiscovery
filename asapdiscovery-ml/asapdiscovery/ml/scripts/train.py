@@ -17,9 +17,9 @@ python train.py \
     -proj test-model-compare
 """
 import argparse
-from glob import glob
 import os
 import pickle as pkl
+from glob import glob
 
 import numpy as np
 import torch
