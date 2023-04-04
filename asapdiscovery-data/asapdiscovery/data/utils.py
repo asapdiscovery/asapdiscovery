@@ -1,14 +1,13 @@
-import logging
 import glob
+import logging
 import os.path
 import re
 from typing import Optional, Union
 
 import numpy as np
 import pandas
-import pydantic
-import re
 import pkg_resources
+import pydantic
 import rdkit.Chem as Chem
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import (
@@ -236,11 +235,9 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     missing_cols = [c for c in reqd_cols if c not in df.columns]
     if len(missing_cols) > 0:
         raise ValueError(
-            (
                 f"Required columns not present in CSV file: {missing_cols}. "
                 "Please use `filter_molecules_dataframe` to properly populate "
                 "the dataframe."
-            )
         )
 
     ## Make extra sure nothing snuck by
@@ -305,12 +302,8 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                     smiles=smiles,
                     racemic=c["racemic"],
                     achiral=c["achiral"],
-                    absolute_stereochemistry_enantiomerically_pure=(
-                        not c["racemic"]
-                    ),
-                    relative_stereochemistry_enantiomerically_pure=(
-                        not c["racemic"]
-                    ),
+                    absolute_stereochemistry_enantiomerically_pure=(not c["racemic"]),
+                    relative_stereochemistry_enantiomerically_pure=(not c["racemic"]),
                     experimental_data=experimental_data,
                 )
             )
@@ -394,11 +387,9 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     missing_cols = [c for c in reqd_cols if c not in df.columns]
     if len(missing_cols) > 0:
         raise ValueError(
-            (
                 f"Required columns not present in CSV file: {missing_cols}. "
                 "Please use `filter_molecules_dataframe` to properly populate "
                 "the dataframe."
-            )
         )
 
     ## Make extra sure nothing snuck by
@@ -668,10 +659,8 @@ def filter_molecules_dataframe(
     # Get rid of any molecules that snuck through without SMILES field specified
     mol_df = mol_df.dropna(subset=smiles_fieldname).copy()
     logging.debug(
-        (
             f"  dataframe contains {mol_df.shape[0]} entries after removing "
             f"molecules with unspecified {smiles_fieldname} field"
-        )
     )
 
     ## Add new columns so we can keep the original names
@@ -707,9 +696,7 @@ def filter_molecules_dataframe(
     mol_df["semiquant"] = semiquant_label
 
     mol_df = mol_df.loc[keep_idx, :]
-    logging.debug(
-        f"  dataframe contains {mol_df.shape[0]} entries after filtering"
-    )
+    logging.debug(f"  dataframe contains {mol_df.shape[0]} entries after filtering")
 
     # Compute pIC50s and uncertainties from 95% CIs
     IC50_series = []
@@ -786,9 +773,7 @@ def filter_molecules_dataframe(
         pIC50_series.append(float(pIC50.strip("<> ")))
         pIC50_stderr_series.append(float(pIC50_stderr))
         ## Add label indicating whether pIC50 values were out of the assay range
-        pIC50_range_series.append(
-            -1 if "<" in pIC50 else (1 if ">" in pIC50 else 0)
-        )
+        pIC50_range_series.append(-1 if "<" in pIC50 else (1 if ">" in pIC50 else 0))
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
 
@@ -804,12 +789,10 @@ def filter_molecules_dataframe(
 
     ## Compute binding affinity in kcal/mol
     try:
-        from simtk.unit import (
-            MOLAR_GAS_CONSTANT_R as R_const,
-            kilocalorie as kcal,
-            mole as mol,
-            kelvin as K,
-        )
+        from simtk.unit import MOLAR_GAS_CONSTANT_R as R_const
+        from simtk.unit import kelvin as K
+        from simtk.unit import kilocalorie as kcal
+        from simtk.unit import mole as mol
 
         R = R_const.in_units_of(kcal / mol / K)._value
     except ModuleNotFoundError:
@@ -822,13 +805,10 @@ def filter_molecules_dataframe(
         logging.debug("Using Cheng-Prussoff equation for delta G calculations")
         # IC50 in M
         deltaG = (
-            lambda IC50: R
-            * dG_T
-            * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
+            lambda IC50: R * dG_T * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
         )
         mol_df["exp_binding_affinity_kcal_mol"] = [
-            deltaG(IC50) if not np.isnan(IC50) else np.nan
-            for IC50 in mol_df["IC50"]
+            deltaG(IC50) if not np.isnan(IC50) else np.nan for IC50 in mol_df["IC50"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
             deltaG(IC50_lower) if not np.isnan(IC50_lower) else np.nan
