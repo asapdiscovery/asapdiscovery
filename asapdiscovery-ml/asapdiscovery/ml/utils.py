@@ -17,7 +17,7 @@ def build_dataset(
     lig_name="LIG",
     num_workers=1,
     rank=False,
-    str_only=False,
+    structure_only=False,
     check_range_nan=True,
     check_stderr_nan=True,
 ):
@@ -44,7 +44,7 @@ def build_dataset(
         Residue name for ligand atoms in PDB files
     num_workers : int, default=1
         Number of threads to use for dataset loading
-    str_only : bool, default=False
+    structure_only : bool, default=False
         If building a 2D dataset, whether to limit to only experimental compounds that
         also have structural data
     check_range_nan : bool, default=True
@@ -72,7 +72,7 @@ def build_dataset(
     )
 
     # Parse structure filenames
-    if (model_type.lower() != "gat") or str_only:
+    if (model_type.lower() != "gat") or structure_only:
         # Make sure the files passed match exist and match with compounds
         check_filelist_has_elements(all_fns, "ml_dataset")
         assert len(all_fns) == len(
@@ -94,7 +94,7 @@ def build_dataset(
 
         print("load", len(exp_compounds), flush=True)
 
-        if str_only:
+        if structure_only:
             # Get compounds that have both structure and experimental data (this
             #  step isn't actually necessary for performance, but allows a more
             #  fair comparison between 2D and 3D models)
