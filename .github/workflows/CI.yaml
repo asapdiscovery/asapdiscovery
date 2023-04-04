@@ -19,14 +19,19 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macOS-latest, ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [ "3.9", "3.10"]
 
     steps:
     - uses: actions/checkout@v1
@@ -43,21 +48,23 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        environment-file: devtools/conda-envs/moonshot_ml.yaml
-
-        channels: conda-forge,defaults
-
-        activate-environment: test
+        environment-file: devtools/conda-envs/asapdiscovery.yaml
+        miniforge-variant: Mambaforge
+        activate-environment: asapdiscovery
         auto-update-conda: false
         auto-activate-base: false
         show-channel-urls: true
+        use-mamba: true
 
-    - name: Install package
+    - name: Install packages
 
       # conda setup requires this special shell
       shell: bash -l {0}
       run: |
-        python -m pip install . --no-deps
+        python -m pip install ./asapdiscovery-data --no-deps
+        python -m pip install ./asapdiscovery-dataviz --no-deps
+        python -m pip install ./asapdiscovery-docking --no-deps
+        python -m pip install ./asapdiscovery-ml --no-deps
         conda list
 
 
@@ -67,7 +74,14 @@ jobs:
       shell: bash -l {0}
 
       run: |
-        pytest -v --cov=asapdiscovery --cov-report=xml --color=yes asapdiscovery/tests/
+        # run each package test suite; append to coverage file
+        coverage run --append --source=./asapdiscovery-data/asapdiscovery/data/ -m pytest -v  --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
+        coverage run --append --source=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -m pytest -v  --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
+        coverage run --append --source=./asapdiscovery-docking/asapdiscovery/docking/ -m pytest -v  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
+        coverage run --append --source=./asapdiscovery-ml/asapdiscovery/ml/ -m pytest -v  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
+
+        # generate xml report from .coverage file
+        coverage xml
 
     - name: CodeCov
       uses: codecov/codecov-action@v1
