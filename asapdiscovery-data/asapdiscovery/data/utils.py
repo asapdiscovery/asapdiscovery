@@ -219,7 +219,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     # Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
 
-    ## Check that all required columns are present
+    # Check that all required columns are present
     reqd_cols = [
         "name",
         "smiles",
@@ -235,33 +235,33 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     missing_cols = [c for c in reqd_cols if c not in df.columns]
     if len(missing_cols) > 0:
         raise ValueError(
-                f"Required columns not present in CSV file: {missing_cols}. "
-                "Please use `filter_molecules_dataframe` to properly populate "
-                "the dataframe."
+            f"Required columns not present in CSV file: {missing_cols}. "
+            "Please use `filter_molecules_dataframe` to properly populate "
+            "the dataframe."
         )
 
-    ## Make extra sure nothing snuck by
+    # Make extra sure nothing snuck by
     idx = df["smiles"].isna()
     logging.debug(f"Removing {idx.sum()} entries with no SMILES", flush=True)
     df = df.loc[~idx, :]
 
-    ## Fill standard error for semi-qunatitative data with the mean of others
+    # Fill standard error for semi-qunatitative data with the mean of others
     df.loc[df["semiquant"], "pIC50_stderr"] = df.loc[
         ~df["semiquant"], "pIC50_stderr"
     ].mean()
 
-    ## For now just keep the first measure for each compound_id (should be the
-    ##  only one if `keep_best_per_mol` was set when running
-    ##  `filter_molecules_dataframe`.)
+    # For now just keep the first measure for each compound_id (should be the
+    #  only one if `keep_best_per_mol` was set when running
+    #  `filter_molecules_dataframe`.)
     compounds = []
     seen_compounds = {}
     for i, (_, c) in enumerate(df.iterrows()):
         compound_id = c["name"]
-        ## Replace long dash unicode character with regular - sign (only
-        ##  one compound like this I think)
+        # Replace long dash unicode character with regular - sign (only
+        #  one compound like this I think)
         if "\u2212" in compound_id:
             print(
-                f"Replacing unicode character with - in",
+                "Replacing unicode character with - in",
                 compound_id,
                 flush=True,
             )
@@ -277,7 +277,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
             "pIC50_range": c["pIC50_range"],
             "pIC50_stderr": c["pIC50_stderr"],
         }
-        ## Add delta G values if present
+        # Add delta G values if present
         if "exp_binding_affinity_kcal_mol" in c:
             experimental_data.update(
                 {
@@ -286,13 +286,12 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                 }
             )
 
-        ## Keep track of if there are any NaN values
+        # Keep track of if there are any NaN values
         try:
             seen_compounds[compound_id] = np.isnan(
                 list(experimental_data.values())
             ).any()
-        except TypeError as e:
-
+        except TypeError:
             seen_compounds[compound_id] = True
 
         try:
@@ -371,7 +370,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     # Load and remove any straggling compounds w/o SMILES data
     df = pandas.read_csv(cdd_csv)
 
-    ## Check that all required columns are present
+    # Check that all required columns are present
     reqd_cols = [
         "name",
         "smiles",
@@ -387,33 +386,33 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     missing_cols = [c for c in reqd_cols if c not in df.columns]
     if len(missing_cols) > 0:
         raise ValueError(
-                f"Required columns not present in CSV file: {missing_cols}. "
-                "Please use `filter_molecules_dataframe` to properly populate "
-                "the dataframe."
+            f"Required columns not present in CSV file: {missing_cols}. "
+            "Please use `filter_molecules_dataframe` to properly populate "
+            "the dataframe."
         )
 
-    ## Make extra sure nothing snuck by
+    # Make extra sure nothing snuck by
     idx = df["smiles"].isna()
     logging.debug(f"Removing {idx.sum()} entries with no SMILES", flush=True)
     df = df.loc[~idx, :]
 
-    ## Fill standard error for semi-qunatitative data with the mean of others
+    # Fill standard error for semi-qunatitative data with the mean of others
     df.loc[df["semiquant"], "pIC50_stderr"] = df.loc[
         ~df["semiquant"], "pIC50_stderr"
     ].mean()
 
-    ## Remove stereochemistry tags and get canonical SMILES values (to help
-    ##  group stereoisomers)
+    # Remove stereochemistry tags and get canonical SMILES values (to help
+    #  group stereoisomers)
     smi_nostereo = [CanonSmiles(s, useChiral=False) for s in df["smiles"]]
     df["smiles_nostereo"] = smi_nostereo
 
-    ## Sort by non-stereo SMILES to put the enantiomer pairs together
+    # Sort by non-stereo SMILES to put the enantiomer pairs together
     df = df.sort_values("smiles_nostereo")
 
     enant_pairs = []
-    ## Loop through the enantiomer pairs and rank them
+    # Loop through the enantiomer pairs and rank them
     for ep in df.groupby("smiles_nostereo"):
-        ## Make sure there aren't any singletons
+        # Make sure there aren't any singletons
         if ep[1].shape[0] != 2:
             print(f"{ep[1].shape[0]} mols for {ep[0]}", flush=True)
             continue
@@ -423,11 +422,11 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
         ep = ep[1].sort_values("pIC50", ascending=False)
         for _, c in ep.iterrows():
             compound_id = c["name"]
-            ## Replace long dash unicode character with regular - sign (only
-            ##  one compound like this I think)
+            # Replace long dash unicode character with regular - sign (only
+            #  one compound like this I think)
             if "\u2212" in compound_id:
                 print(
-                    f"Replacing unicode character with - in",
+                    "Replacing unicode character with - in",
                     compound_id,
                     flush=True,
                 )
@@ -438,7 +437,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
                 "pIC50_range": c["pIC50_range"],
                 "pIC50_stderr": c["pIC50_stderr"],
             }
-            ## Add delta G values if present
+            # Add delta G values if present
             if "exp_binding_affinity_kcal_mol" in c:
                 experimental_data.update(
                     {
@@ -650,20 +649,20 @@ def filter_molecules_dataframe(
         try:
             _ = float(ic50)
             return False
-        except ValueError as e:
+        except ValueError:
             return True
 
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries")
 
-    ## Drop any rows with no SMILES (need the copy to make pandas happy)
+    # Drop any rows with no SMILES (need the copy to make pandas happy)
     # Get rid of any molecules that snuck through without SMILES field specified
     mol_df = mol_df.dropna(subset=smiles_fieldname).copy()
     logging.debug(
-            f"  dataframe contains {mol_df.shape[0]} entries after removing "
-            f"molecules with unspecified {smiles_fieldname} field"
+        f"  dataframe contains {mol_df.shape[0]} entries after removing "
+        f"molecules with unspecified {smiles_fieldname} field"
     )
 
-    ## Add new columns so we can keep the original names
+    # Add new columns so we can keep the original names
     logging.debug("Stripping salts")
     mol_df.loc[:, "smiles"] = (
         mol_df.loc[:, smiles_fieldname].astype(str).apply(strip_smiles_salts)
@@ -674,8 +673,8 @@ def filter_molecules_dataframe(
     mol_df.loc[:, "smiles"] = [s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]]
 
     logging.debug("Filtering molecules dataframe")
-    ## Determine which molecules will be retained and add corresponding labels
-    ##  to the data frame
+    # Determine which molecules will be retained and add corresponding labels
+    #  to the data frame
     achiral_label = [is_achiral(smiles) for smiles in mol_df["smiles"]]
     racemic_label = [is_racemic(smiles) for smiles in mol_df["smiles"]]
     enantiopure_label = [is_enantiopure(smiles) for smiles in mol_df["smiles"]]
@@ -735,7 +734,7 @@ def filter_molecules_dataframe(
                     pIC50, uncertainty=pIC50_stderr, sep=tuple
                 )  # strings
             except ModuleNotFoundError:
-                ## Just round to 4 digits if sigfig pacakge not present
+                # Just round to 4 digits if sigfig pacakge not present
                 IC50 = str(round(IC50, 4))
                 IC50_stderr = str(round(IC50_stderr, 4))
                 pIC50 = str(round(pIC50, 4))
@@ -758,7 +757,7 @@ def filter_molecules_dataframe(
             # Keep pIC50 string
             # Use default pIC50 error
             # print(row)
-            ## Set as high number so sorting works but still puts this at end
+            # Set as high number so sorting works but still puts this at end
             IC50_stderr = 100
             IC50_lower = np.nan
             IC50_upper = np.nan
@@ -772,7 +771,7 @@ def filter_molecules_dataframe(
         IC50_upper_series.append(IC50_upper * 1e-6)
         pIC50_series.append(float(pIC50.strip("<> ")))
         pIC50_stderr_series.append(float(pIC50_stderr))
-        ## Add label indicating whether pIC50 values were out of the assay range
+        # Add label indicating whether pIC50 values were out of the assay range
         pIC50_range_series.append(-1 if "<" in pIC50 else (1 if ">" in pIC50 else 0))
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
@@ -787,7 +786,7 @@ def filter_molecules_dataframe(
     mol_df["pIC50_95ci_lower"] = pIC50_lower_series
     mol_df["pIC50_95ci_upper"] = pIC50_upper_series
 
-    ## Compute binding affinity in kcal/mol
+    # Compute binding affinity in kcal/mol
     try:
         from simtk.unit import MOLAR_GAS_CONSTANT_R as R_const
         from simtk.unit import kelvin as K
@@ -800,13 +799,14 @@ def filter_molecules_dataframe(
         R = 0.001987
         logging.debug("simtk package not found, using R value of", R)
 
-    ## Calculate Ki using Cheng-Prussoff
+    # Calculate Ki using Cheng-Prussoff
     if cp_values:
         logging.debug("Using Cheng-Prussoff equation for delta G calculations")
+
         # IC50 in M
-        deltaG = (
-            lambda IC50: R * dG_T * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
-        )
+        def deltaG(IC50):
+            return R * dG_T * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
+
         mol_df["exp_binding_affinity_kcal_mol"] = [
             deltaG(IC50) if not np.isnan(IC50) else np.nan for IC50 in mol_df["IC50"]
         ]
@@ -820,12 +820,15 @@ def filter_molecules_dataframe(
         ]
     else:
         logging.debug("Using pIC50 values for delta G calculations")
-        deltaG = lambda pIC50: -R * dG_T * np.log(10.0) * pIC50
+
+        def deltaG(pIC50):
+            return -R * dG_T * np.log(10.0) * pIC50
+
         mol_df["exp_binding_affinity_kcal_mol"] = [
             deltaG(pIC50) if not np.isnan(pIC50) else np.nan
             for pIC50 in mol_df["pIC50"]
         ]
-        ## Need to flip upper/lower bounds again
+        # Need to flip upper/lower bounds again
         mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
             deltaG(pIC50_upper) if not np.isnan(pIC50_upper) else np.nan
             for pIC50_upper in mol_df["pIC50_95ci_upper"]
@@ -834,7 +837,7 @@ def filter_molecules_dataframe(
             deltaG(pIC50_lower) if not np.isnan(pIC50_lower) else np.nan
             for pIC50_lower in mol_df["pIC50_95ci_lower"]
         ]
-    ## Based on already calculated dG values so can be the same for both
+    # Based on already calculated dG values so can be the same for both
     mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
         abs(affinity_upper - affinity_lower) / 4.0
         if ((not np.isnan(affinity_lower)) and (not np.isnan(affinity_upper)))
@@ -847,7 +850,7 @@ def filter_molecules_dataframe(
         ].iterrows()
     ]
 
-    ## Keep only the best measurement for each molecule
+    # Keep only the best measurement for each molecule
     if keep_best_per_mol:
         for mol_name, g in mol_df.groupby("name"):
             g.sort_values(
