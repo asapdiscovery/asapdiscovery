@@ -22,6 +22,40 @@ MOONSHOT_CDD_ID_REGEX = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
 MPRO_ID_REGEX = r"Mpro-.*?_[0-9][A-Z]"
 
 
+def construct_regex_function(pat, fail_val=None):
+    """
+    Construct a function that searches for the given regex pattern, either returning
+    fail_val or raising an error if no match is found.
+
+    Parameters
+    ----------
+    pat : str
+        Regular expression to search for
+    fail_val : str, optional
+        If a value is passed, this value will be returned from the re searches if a
+        match isn't found. If None (default), a ValueError will be raised from the re
+        search
+
+    Returns
+    -------
+    str
+        Found match
+    """
+
+    def regex_func(s):
+        import re
+
+        m = re.search(pat, s)
+        if m:
+            return m.group()
+        elif fail_val is not None:
+            return fail_val
+        else:
+            return ValueError(f"No match found for pattern {pat} in {s}.")
+
+    return regex_func
+
+
 def download_file(url: str, path: str):
     """
     Download a file and save it locally.
@@ -195,29 +229,15 @@ def extract_compounds_from_filenames(fn_list, xtal_pat, compound_pat, fail_val=N
         # Just use the passed function
         xtal_func = xtal_pat
     else:
-        # Construct a function for re searching
-        def xtal_func(fn):
-            m = re.search(xtal_pat, fn)
-            if m:
-                return m.group()
-            elif fail_val is not None:
-                return fail_val
-            else:
-                return ValueError(f"No match found for pattern {xtal_pat} in {fn}.")
+        # Construct function for re searching
+        xtal_func = construct_regex_function(xtal_pat, fail_val)
 
     if callable(compound_pat):
         # Just use the passed function
         compound_func = compound_pat
     else:
-        # Construct a function for re searching
-        def compound_func(fn):
-            m = re.search(compound_pat, fn)
-            if m:
-                return m.group()
-            elif fail_val is not None:
-                return fail_val
-            else:
-                return ValueError(f"No match found for pattern {compound_pat} in {fn}.")
+        # Construct function for re searching
+        compound_func = construct_regex_function(compound_pat, fail_val)
 
     return [(xtal_func(fn), compound_func(fn)) for fn in fn_list]
 
