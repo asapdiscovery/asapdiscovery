@@ -9,6 +9,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from asapdiscovery.data.moonshot import download_molecules
 
+
 ################################################################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
@@ -67,8 +68,10 @@ def get_args():
         type=float,
         default=[0.375, 9.5],
         help=(
-            "[S] and Km values to use in the Cheng-Prusoff equation. "
-            "Pass 0 for both values to disable and use the pIC50 approximation."
+            "[S] and Km values to use in the Cheng-Prusoff equation (assumed to be in "
+            "the same units). Default values are those used in the SARS-CoV-2 "
+            "fluorescence experiments from the COVID Moonshot project. Pass 0 for both "
+            "values to disable and use the pIC50 approximation."
         ),
     )
 
@@ -88,9 +91,7 @@ def main():
     if "CDDTOKEN" in os.environ:
         header = {"X-CDD-token": os.environ["CDDTOKEN"]}
     elif args.token:
-        header = {
-            "X-CDD-token": "".join(open(args.token, "r").readlines()).strip()
-        }
+        header = {"X-CDD-token": "".join(open(args.token, "r").readlines()).strip()}
     else:
         raise ValueError(
             (
