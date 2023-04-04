@@ -777,10 +777,10 @@ def filter_molecules_dataframe(
             pIC50_lower = np.nan
             pIC50_upper = np.nan
 
-        IC50_series.append(float(IC50.strip("<> ")))
-        IC50_stderr_series.append(float(IC50_stderr))
-        IC50_lower_series.append(IC50_lower)
-        IC50_upper_series.append(IC50_upper)
+        IC50_series.append(float(IC50.strip("<> ")) * 1e-6)
+        IC50_stderr_series.append(float(IC50_stderr) * 1e-6)
+        IC50_lower_series.append(IC50_lower * 1e-6)
+        IC50_upper_series.append(IC50_upper * 1e-6)
         pIC50_series.append(float(pIC50.strip("<> ")))
         pIC50_stderr_series.append(float(pIC50_stderr))
         ## Add label indicating whether pIC50 values were out of the assay range
@@ -790,10 +790,10 @@ def filter_molecules_dataframe(
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
 
-    mol_df["IC50"] = IC50_series
-    mol_df["IC50_stderr"] = IC50_stderr_series
-    mol_df["IC50_95ci_lower"] = IC50_lower_series
-    mol_df["IC50_95ci_upper"] = IC50_upper_series
+    mol_df["IC50 (M)"] = IC50_series
+    mol_df["IC50_stderr (M)"] = IC50_stderr_series
+    mol_df["IC50_95ci_lower (M)"] = IC50_lower_series
+    mol_df["IC50_95ci_upper (M)"] = IC50_upper_series
     mol_df["pIC50"] = pIC50_series
     mol_df["pIC50_stderr"] = pIC50_stderr_series
     mol_df["pIC50_range"] = pIC50_range_series
@@ -818,21 +818,22 @@ def filter_molecules_dataframe(
     ## Calculate Ki using Cheng-Prussoff
     if cp_values:
         logging.debug("Using Cheng-Prussoff equation for delta G calculations")
+        # IC50 in M
         deltaG = (
             lambda IC50: R
             * dG_T
             * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
         )
         mol_df["exp_binding_affinity_kcal_mol"] = [
-            deltaG(IC50 * 1e-6) if not np.isnan(IC50) else np.nan
+            deltaG(IC50) if not np.isnan(IC50) else np.nan
             for IC50 in mol_df["IC50"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
-            deltaG(IC50_lower * 1e-6) if not np.isnan(IC50_lower) else np.nan
+            deltaG(IC50_lower) if not np.isnan(IC50_lower) else np.nan
             for IC50_lower in mol_df["IC50_95ci_lower"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
-            deltaG(IC50_upper * 1e-6) if not np.isnan(IC50_upper) else np.nan
+            deltaG(IC50_upper) if not np.isnan(IC50_upper) else np.nan
             for IC50_upper in mol_df["IC50_95ci_upper"]
         ]
     else:
