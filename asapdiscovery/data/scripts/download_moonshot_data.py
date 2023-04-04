@@ -70,8 +70,8 @@ def get_args():
         help=(
             "[S] and Km values to use in the Cheng-Prusoff equation (assumed to be in "
             "the same units). Default values are those used in the SARS-CoV-2 "
-            "fluorescence experiments from the COVID Moonshot project. Pass 0 for both "
-            "values to disable and use the pIC50 approximation."
+            "fluorescence experiments from the COVID Moonshot project (in uM here). "
+            "Pass 0 for both values to disable and use the pIC50 approximation."
         ),
     )
 
