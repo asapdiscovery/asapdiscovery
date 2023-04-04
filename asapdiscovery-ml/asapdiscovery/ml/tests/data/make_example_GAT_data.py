@@ -3,7 +3,7 @@
 import pickle
 
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from asapdiscovery.ml.dataset import GraphDataset
+from asapdiscovery.ml.dataset import GraphDataset, GraphInferenceDataset
 from dgllife.utils import CanonicalAtomFeaturizer
 from rdkit import Chem
 
@@ -54,3 +54,15 @@ print(gds)
 # dump data to a pickle file
 with open("fragalysis_GAT_test_ds.pkl", "wb") as f:
     pickle.dump(gds, f)
+
+
+gids = GraphInferenceDataset(
+    [ecd, ecd_reorder],
+    cache_file="./cache.bin",
+    node_featurizer=CanonicalAtomFeaturizer(),
+)
+
+
+# dump data to a pickle file
+with open("fragalysis_GAT_test_inference_ds.pkl", "wb") as f:
+    pickle.dump(gids, f)
