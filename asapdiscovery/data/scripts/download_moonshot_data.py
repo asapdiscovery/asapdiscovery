@@ -62,12 +62,12 @@ def get_args():
     )
     parser.add_argument(
         "-cp",
-        "--cheng_prussof",
+        "--cheng_prusoff",
         nargs=2,
         type=float,
         default=[0.375, 9.5],
         help=(
-            "[S] and Km values to use in the Cheng-Prussof equation. "
+            "[S] and Km values to use in the Cheng-Prusoff equation. "
             "Pass 0 for both values to disable and use the pIC50 approximation."
         ),
     )
@@ -79,8 +79,8 @@ def main():
     args = get_args()
 
     ## Set to None to force pIC50 usage
-    if args.cheng_prussof == [0, 0]:
-        args.cheng_prussof = None
+    if args.cheng_prusoff == [0, 0]:
+        args.cheng_prusoff = None
 
     ## Set up logging
     logging.basicConfig(level=logging.DEBUG)
@@ -110,7 +110,7 @@ def main():
         retain_semiquantitative_data=args.retain_semiquant,
         assay_name=args.assay_name,
         dG_T=args.temp,
-        cp_values=args.cheng_prussof,
+        cp_values=args.cheng_prusoff,
     )
 
 

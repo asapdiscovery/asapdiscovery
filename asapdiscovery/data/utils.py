@@ -603,7 +603,7 @@ def filter_molecules_dataframe(
         Temperature in Kelvin for converting pIC50 values to delta G values
     cp_values : Tuple[int], optional
         Substrate concentration and Km values for calculating Ki using the
-        Cheng-Prussof equation. These values are assumed to be in the same
+        Cheng-Prussoff equation. These values are assumed to be in the same
         concentration units. If no values are passed for this, pIC50 values
         will be used as an approximation of the Ki
 
@@ -815,9 +815,9 @@ def filter_molecules_dataframe(
         R = 0.001987
         logging.debug("simtk package not found, using R value of", R)
 
-    ## Calculate Ki using Cheng-Prussof
+    ## Calculate Ki using Cheng-Prussoff
     if cp_values:
-        logging.debug("Using Cheng-Prussof equation for delta G calculations")
+        logging.debug("Using Cheng-Prussoff equation for delta G calculations")
         deltaG = (
             lambda IC50: R
             * dG_T
