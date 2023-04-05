@@ -38,8 +38,8 @@ def construct_regex_function(pat, fail_val=None):
 
     Returns
     -------
-    str
-        Found match
+    regex_func: Callable
+        Fucntion that searches for pattern in `pat`
     """
 
     def regex_func(s):
