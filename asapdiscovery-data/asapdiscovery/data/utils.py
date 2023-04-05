@@ -223,8 +223,6 @@ def extract_compounds_from_filenames(fn_list, xtal_pat, compound_pat, fail_val=N
     List[Tuple[str, str]]
         List of (xtal, compound_id)
     """
-    import re
-
     if callable(xtal_pat):
         # Just use the passed function
         xtal_func = xtal_pat
