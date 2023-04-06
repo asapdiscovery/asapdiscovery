@@ -128,6 +128,10 @@ def run_docking_oe(
         pose_res = oedocking.OEPositResults()
         try:
             ret_code = poser.Dock(pose_res, dock_lig, num_poses)
+            # TODO: Make something like this work
+            # ranked_design_units = [
+            #     du.GetTitle() for du in poser.RankDesignUnits(dock_lig)
+            # ]
         except TypeError as e:
             logger.error(pose_res, dock_lig, type(dock_lig))
             raise e
@@ -182,6 +186,11 @@ def run_docking_oe(
         pose_res = oedocking.OEPositResults()
         ret_code = poser.Dock(pose_res, dock_lig, num_poses)
 
+        # TODO: Make something like this work
+        # ranked_design_units = [
+        #     du.GetTitle() for du in poser.RankDesignUnits(dock_lig)
+        # ]
+
     # Check results
     if ret_code == oedocking.OEDockingReturnCode_Success and dock_sys == "posit":
         posed_mols = []
@@ -233,6 +242,9 @@ def run_docking_oe(
         oechem.OESetSDData(mol, f"Docking_{docking_id}_clash", str(clash))
         oechem.OESetSDData(mol, "SMILES", oechem.OEMolToSmiles(mol))
         oechem.OESetSDData(mol, f"Docking_{docking_id}_Receptor_ID", du.GetTitle())
+        # oechem.OESetSDData(
+        #     mol, f"Docking_{docking_id}_Ranked_Receptors", ranked_design_units
+        # )
 
         # Set molecule name if given
         if compound_name:
