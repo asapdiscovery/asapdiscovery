@@ -1,31 +1,39 @@
 import os
 import pickle as pkl
+from pathlib import Path
 
 import numpy as np
+import torch
 
 
 def build_dataset(
-    in_files,
     model_type,
     exp_fn,
+    all_fns=[],
+    compounds=[],
     achiral=False,
     cache_fn=None,
     grouped=False,
     lig_name="LIG",
     num_workers=1,
     rank=False,
+    structure_only=False,
+    check_range_nan=True,
+    check_stderr_nan=True,
 ):
     """
     Build a Dataset object from input structure files.
 
     Parameters
     ----------
-    in_files : str
-        Input directory/glob for docked PDB files
     model_type : str
-        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+        Which model to create. Current options are ["gat", "schnet", "e3nn"]
     exp_fn : str
         JSON file giving experimental results
+    all_fns : List[str], optional
+        List of input docked PDB files
+    compounds : List[Tuple[str, str]], optional
+        List of (xtal_id, compound_id) that correspond 1:1 to in_files
     achiral : bool, default=False
         Only keep achiral molecules
     cache_fn : str, optional
@@ -36,63 +44,66 @@ def build_dataset(
         Residue name for ligand atoms in PDB files
     num_workers : int, default=1
         Number of threads to use for dataset loading
+    structure_only : bool, default=False
+        If building a 2D dataset, whether to limit to only experimental compounds that
+        also have structural data
+    check_range_nan : bool, default=True
+        Check that the "pIC50_range" value is not NaN
+    check_stderr_nan : bool, default=True
+        Check that the "pIC50_stderr" value is not NaN
 
     Returns
     -------
     """
-    import re
-    from glob import glob
-
+    from asapdiscovery.data.utils import check_filelist_has_elements
     from asapdiscovery.ml.dataset import (
         DockedDataset,
         GraphDataset,
         GroupedDockedDataset,
     )
 
-    # Get all docked structures
-    if os.path.isdir(in_files):
-        all_fns = glob(f"{in_files}/*complex.pdb")
-    else:
-        all_fns = glob(in_files)
-    # Extract crystal structure and compound id from file name
-    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
-    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+    # Load the experimental compounds
+    exp_data, exp_compounds = load_exp_data(
+        exp_fn,
+        achiral=achiral,
+        return_compounds=True,
+        check_range_nan=check_range_nan,
+        check_stderr_nan=check_stderr_nan,
+    )
 
-    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
-    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
-    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
-    compounds = [
-        (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
-        if both_m
-    ]
-    num_found = len(compounds)
-    # Dictionary mapping from compound_id to Mpro dataset(s)
-    compound_id_dict = {}
-    for xtal_structure, compound_id in compounds:
-        try:
-            compound_id_dict[compound_id].append(xtal_structure)
-        except KeyError:
-            compound_id_dict[compound_id] = [xtal_structure]
+    # Parse structure filenames
+    if (model_type.lower() != "gat") or structure_only:
+        # Make sure the files passed match exist and match with compounds
+        check_filelist_has_elements(all_fns, "ml_dataset")
+        assert len(all_fns) == len(
+            compounds
+        ), "Different number of filenames and compound tuples."
+
+        # Dictionary mapping from compound_id to Mpro dataset(s)
+        compound_id_dict = {}
+        for xtal_structure, compound_id in compounds:
+            try:
+                compound_id_dict[compound_id].append(xtal_structure)
+            except KeyError:
+                compound_id_dict[compound_id] = [xtal_structure]
 
     if rank:
         exp_data = None
-    elif model_type.lower() == "2d":
+    elif model_type.lower() == "gat":
         from dgllife.utils import CanonicalAtomFeaturizer
 
-        # Load the experimental compounds
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
         print("load", len(exp_compounds), flush=True)
 
-        # Get compounds that have both structure and experimental data (this
-        #  step isn't actually necessary for performance, but allows a more
-        #  fair comparison between 2D and 3D models)
-        xtal_compound_ids = {c[1] for c in compounds}
-        # Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [c for c in exp_compounds if c.compound_id in xtal_compound_ids]
-        print("filter", len(exp_compounds), flush=True)
+        if structure_only:
+            # Get compounds that have both structure and experimental data (this
+            #  step isn't actually necessary for performance, but allows a more
+            #  fair comparison between 2D and 3D models)
+            xtal_compound_ids = {c[1] for c in compounds}
+            # Filter exp_compounds to make sure we have structures for them
+            exp_compounds = [
+                c for c in exp_compounds if c.compound_id in xtal_compound_ids
+            ]
+            print("filter", len(exp_compounds), flush=True)
 
         # Make cache directory as necessary
         if cache_fn is None:
@@ -109,24 +120,11 @@ def build_dataset(
         )
 
         print(next(iter(ds)), flush=True)
-
-        # Rename exp_compounds so the number kept is consistent
-        compounds = exp_compounds
     elif cache_fn and os.path.isfile(cache_fn):
         # Load from cache
         ds = pkl.load(open(cache_fn, "rb"))
         print("Loaded from cache", flush=True)
-
-        # Still need to load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
     else:
-        # Load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
-
         # Make dict to access smiles data
         smiles_dict = {}
         for c in exp_compounds:
@@ -182,8 +180,7 @@ def build_dataset(
             # Cache dataset
             pkl.dump(ds, open(cache_fn, "wb"))
 
-    num_kept = len(ds)
-    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
+    print(f"Kept {len(ds)} compounds", flush=True)
 
     return ds, exp_data
 
@@ -205,7 +202,7 @@ def build_model(
     Parameters
     ----------
     model_type : str
-        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+        Which model to create. Current options are ["gat", "schnet", "e3nn"]
     e3nn_params : Union[str, list], optional
         Pickle file containing model parameters for the e3nn model, or just the
         parameters themselves.
@@ -245,7 +242,7 @@ def build_model(
         except Exception:
             config = {}
 
-    if model_type == "2d":
+    if model_type == "gat":
         import torch
 
         model = build_model_2d(config)
@@ -362,7 +359,7 @@ def build_model_2d(config=None):
     from asapdiscovery.ml import GAT
     from dgllife.utils import CanonicalAtomFeaturizer
 
-    if type(config) is str:
+    if (type(config) is str) or (isinstance(config, Path)):
         config = parse_config(config)
     elif config is None:
         try:
@@ -824,7 +821,13 @@ def find_most_recent(model_wts):
     return (epoch_use, f"{model_wts}/{epoch_use}.th")
 
 
-def load_exp_data(fn, achiral=False, return_compounds=False):
+def load_exp_data(
+    fn,
+    achiral=False,
+    return_compounds=False,
+    check_range_nan=True,
+    check_stderr_nan=True,
+):
     """
     Load all experimental data from JSON file of
     schema.ExperimentalCompoundDataUpdate.
@@ -837,6 +840,10 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         Whether to only take achiral molecules
     return_compounds : bool, default=False
         Whether to return the compounds in addition to the experimental data
+    check_range_nan : bool, default=True
+        Check that the "pIC50_range" value is not NaN
+    check_stderr_nan : bool, default=True
+        Check that the "pIC50_stderr" value is not NaN
 
     Returns
     -------
@@ -862,9 +869,15 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
             ("pIC50" in c.experimental_data)
             and (not np.isnan(c.experimental_data["pIC50"]))
             and ("pIC50_range" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_range"]))
+            and (
+                (not check_range_nan)
+                or (not np.isnan(c.experimental_data["pIC50_range"]))
+            )
             and ("pIC50_stderr" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            and (
+                (not check_stderr_nan)
+                or (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            )
         )
     }
 
@@ -876,7 +889,54 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         return exp_dict
 
 
-def load_weights(model, wts_fn):
+def check_model_compatibility(model, to_load, check_weights=False):
+    """
+    Checks if a PyTorch file or state_dict is compatible with a model.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to check.
+    to_load : Union[str, Path, Dict[str, torch.Tensor]]
+        The path to the PyTorch file, or a dictionary of the state dict.
+    check_weights : bool, default=False
+        Whether to check the weights of the model and the PyTorch file.
+
+    Returns
+    -------
+    None
+
+    """
+    # Load the PyTorch file
+    if isinstance(to_load, str) or isinstance(to_load, Path):
+        test_state_dict = torch.load(to_load, map_location=torch.device("cpu"))
+
+    elif isinstance(to_load, dict):
+        test_state_dict = to_load
+    else:
+        raise ValueError(f"Invalid type of to_load: {type(to_load)}")
+    # Get the state dicts of the model and the PyTorch file
+    model_state_dict = model.state_dict()
+
+    # Check the model architecture
+    if set(model_state_dict.keys()) != set(test_state_dict.keys()):
+        raise ValueError("Model architecture doesn't match.")
+
+    # Check the model weights
+    if check_weights:
+        for key in model_state_dict.keys():
+            if model_state_dict[key].shape != test_state_dict[key].shape:
+                raise ValueError(
+                    f'Model weights shape of "{key}" doesn\'t match the file.'
+                )
+
+            if not torch.allclose(
+                model_state_dict[key], test_state_dict[key], atol=1e-4
+            ):
+                raise ValueError("Model weights don't match the file.")
+
+
+def load_weights(model, wts_fn, check_compatibility=False):
     """
     Load weights for an MTENN model, initializing internal layers as necessary.
 
@@ -886,6 +946,9 @@ def load_weights(model, wts_fn):
         Model to load weights into
     wts_fn: str
         Weights file to load from
+    check_compatibility: bool, default=False
+        Whether to check if the weights file is compatible with the model.
+        May not work if using a `ConcatStrategy` block.
 
     Returns
     -------
@@ -916,6 +979,9 @@ def load_weights(model, wts_fn):
     for p in loaded_params - model_params:
         del wts_dict[p]
 
+    # Check compatibility
+    if check_compatibility:
+        check_model_compatibility(model, wts_dict, check_weights=False)
     # Load model parameters
     model.load_state_dict(wts_dict)
     print(f"Loaded model weights from {wts_fn}", flush=True)
@@ -938,7 +1004,16 @@ def parse_config(config_fn):
     dict
         Loaded config
     """
-    fn_ext = config_fn.split(".")[-1].lower()
+
+    if type(config_fn) is str:
+        fn_ext = config_fn.split(".")[-1].lower()
+
+    elif isinstance(config_fn, Path):
+        fn_ext = config_fn.suffix[1:].lower()
+
+    else:
+        raise ValueError(f"Unknown config file type: {type(config_fn)}")
+
     if fn_ext == "json":
         import json
 

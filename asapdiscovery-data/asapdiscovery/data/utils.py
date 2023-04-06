@@ -16,6 +16,45 @@ from asapdiscovery.data.schema import (
     ExperimentalCompoundDataUpdate,
 )
 
+# Not sure if this is the right place for these
+# Regex patterns for extracting Mpro dataset ID and Moonshot CDD style compound ID
+MOONSHOT_CDD_ID_REGEX = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+MPRO_ID_REGEX = r"Mpro-.*?_[0-9][A-Z]"
+
+
+def construct_regex_function(pat, fail_val=None):
+    """
+    Construct a function that searches for the given regex pattern, either returning
+    fail_val or raising an error if no match is found.
+
+    Parameters
+    ----------
+    pat : str
+        Regular expression to search for
+    fail_val : str, optional
+        If a value is passed, this value will be returned from the re searches if a
+        match isn't found. If None (default), a ValueError will be raised from the re
+        search
+
+    Returns
+    -------
+    regex_func: Callable
+        Fucntion that searches for pattern in `pat`
+    """
+
+    def regex_func(s):
+        import re
+
+        m = re.search(pat, s)
+        if m:
+            return m.group()
+        elif fail_val is not None:
+            return fail_val
+        else:
+            return ValueError(f"No match found for pattern {pat} in {s}.")
+
+    return regex_func
+
 
 def download_file(url: str, path: str):
     """
@@ -159,6 +198,48 @@ def edit_pdb_file(
     print(f"Wrote {pdb_out}", flush=True)
 
 
+def extract_compounds_from_filenames(fn_list, xtal_pat, compound_pat, fail_val=None):
+    """
+    Extract a list of (xtal, compound_id) from fn_list.
+
+    Parameters
+    ----------
+    fn_list : List[str]
+        List of filenames
+    xtal_pat : Union[str, function]
+        Regex pattern or function for extracting crystal structure ID from filename. If
+        a function is passed, it is expected to return a single str giving the xtal name
+    compound_pat : Union[str, function]
+        Regex pattern or function for extracting crystal structure ID from filename. If
+        a function is passed, it is expected to return a single str giving the
+        compound_id
+    fail_val : str, optional
+        If a value is passed, this value will be returned from the re searches if a
+        match isn't found. If None (default), a ValueError will be raised from the re
+        search
+
+    Returns
+    -------
+    List[Tuple[str, str]]
+        List of (xtal, compound_id)
+    """
+    if callable(xtal_pat):
+        # Just use the passed function
+        xtal_func = xtal_pat
+    else:
+        # Construct function for re searching
+        xtal_func = construct_regex_function(xtal_pat, fail_val)
+
+    if callable(compound_pat):
+        # Just use the passed function
+        compound_func = compound_pat
+    else:
+        # Construct function for re searching
+        compound_func = construct_regex_function(compound_pat, fail_val)
+
+    return [(xtal_func(fn), compound_func(fn)) for fn in fn_list]
+
+
 def seqres_to_res_list(seqres_str):
     """
     https://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#SEQRES
@@ -226,6 +307,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None, achiral=False):
     #  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
     df = df.loc[~df[pic50_key].isna(), :]
+    df.loc[:, pic50_key] = df[pic50_key].astype(str)
     pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c.strip("<> ")) for c in df[pic50_key]]
     df["pIC50"] = pic50_vals
@@ -354,6 +436,8 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     # Get rid of the </> signs, since we really only need the values to sort
     #  enantiomer pairs
     pic50_key = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50"
+    df = df.loc[~df[pic50_key].isna(), :]
+    df.loc[:, pic50_key] = df[pic50_key].astype(str)
     pic50_range = [-1 if "<" in c else (1 if ">" in c else 0) for c in df[pic50_key]]
     pic50_vals = [float(c[pic50_key].strip("<> ")) for _, c in df.iterrows()]
     df["pIC50"] = pic50_vals
