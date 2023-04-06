@@ -1,18 +1,17 @@
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Union  # noqa: F401
-import numpy as np
 
 import dgl
+import numpy as np
 import torch
-
-from dgllife.utils import CanonicalAtomFeaturizer
+from asapdiscovery.ml.dataset import GraphInferenceDataset
 
 # static import of models from base yaml here
 from asapdiscovery.ml.pretrained_models import all_models
 from asapdiscovery.ml.utils import build_model, load_weights
 from asapdiscovery.ml.weights import fetch_model_from_spec
-from asapdiscovery.ml.dataset import GraphInferenceDataset
+from dgllife.utils import CanonicalAtomFeaturizer
 
 
 class InferenceBase:
@@ -190,7 +189,7 @@ class GATInference(InferenceBase):
             return output_tensor.cpu().numpy().ravel()
 
     def predict_from_smiles(
-        self, smiles: Union[str, List[str]], **kwargs
+        self, smiles: Union[str, list[str]], **kwargs
     ) -> np.ndarray:
         """Predict on a list of SMILES strings, or a single SMILES string.
 
