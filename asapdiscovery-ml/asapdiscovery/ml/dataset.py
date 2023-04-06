@@ -1,5 +1,5 @@
-from torch.utils.data import Dataset
 from asapdiscovery.data.schema import ExperimentalCompoundData
+from torch.utils.data import Dataset
 
 
 class DockedDataset(Dataset):
@@ -595,5 +595,4 @@ class GraphInferenceDataset(Dataset):
             raise TypeError("idx must be a string, int, list, or slice")
 
     def __iter__(self):
-        for s in self.graphs:
-            yield s
+        yield from self.graphs
