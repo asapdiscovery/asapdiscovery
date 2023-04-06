@@ -11,21 +11,18 @@ from glob import glob
 
 import numpy as np
 import pandas
-
-from dgllife.utils import CanonicalAtomFeaturizer
-
-
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundDataUpdate,
+from asapdiscovery.data.schema import (  # noqa: E402
     ExperimentalCompoundData,
-)  # noqa: E402
+    ExperimentalCompoundDataUpdate,
+)
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
 from asapdiscovery.ml.dataset import GraphInferenceDataset  # noqa: E402
 from asapdiscovery.ml.inference import GATInference  # noqa: E402
+from dgllife.utils import CanonicalAtomFeaturizer
 
 
 def check_results(d):
