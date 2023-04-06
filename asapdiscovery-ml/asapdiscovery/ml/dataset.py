@@ -498,7 +498,7 @@ class GraphInferenceDataset(Dataset):
         exp_compounds,
         node_featurizer=None,
         edge_featurizer=None,
-        cache_file=None,
+        cache_file="./cache.bin",
     ):
         """
         Parameters
@@ -523,7 +523,7 @@ class GraphInferenceDataset(Dataset):
 
         if all([type(exp) == str for exp in exp_compounds]):
             exp_compounds = [
-                schema.ExperimentalCompoundData(compound_id=i, smiles=c)
+                ExperimentalCompoundData(compound_id=i, smiles=c)
                 for i, c in enumerate(exp_compounds)
             ]
         elif all([type(exp) == ExperimentalCompoundData for exp in exp_compounds]):

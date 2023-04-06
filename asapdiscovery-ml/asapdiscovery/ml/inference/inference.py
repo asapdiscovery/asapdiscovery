@@ -6,6 +6,8 @@ import numpy as np
 import dgl
 import torch
 
+from dgllife.utils import CanonicalAtomFeaturizer
+
 # static import of models from base yaml here
 from asapdiscovery.ml.pretrained_models import all_models
 from asapdiscovery.ml.utils import build_model, load_weights
@@ -182,10 +184,14 @@ class GATInference(InferenceBase):
         """
         with torch.no_grad():
             output_tensor = self.model(g, g.ndata["h"])
+            # unsure exactly why this reshape is done
             output_tensor = torch.reshape(output_tensor, (-1, 1))
+            # we ravel it away to get a 1D array
             return output_tensor.cpu().numpy().ravel()
 
-    def predict_from_smiles(self, smiles: Union[str, List[str]]) -> np.ndarray:
+    def predict_from_smiles(
+        self, smiles: Union[str, List[str]], **kwargs
+    ) -> np.ndarray:
         """Predict on a list of SMILES strings, or a single SMILES string.
 
         Parameters
@@ -201,7 +207,9 @@ class GATInference(InferenceBase):
         if isinstance(smiles, str):
             smiles = [smiles]
 
-        gids = GraphInferenceDataset(smiles)
+        gids = GraphInferenceDataset(
+            smiles, node_featurizer=CanonicalAtomFeaturizer(), **kwargs
+        )
 
-        data = [self.predict(g).numpy() for g in gids]
-        return np.concatenate(data)
+        data = [self.predict(g) for g in gids]
+        return np.concatenate(np.asarray(data))

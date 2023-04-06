@@ -183,7 +183,7 @@ def mp_func(out_dir, lig_name, du_name, GAT_model, *args, **kwargs):
         smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
         if not GAT_model is None:
-            GAT_score = GAT_model.predict_from_smiles(smiles)
+            GAT_score = GAT_model.predict_from_smiles(smiles)[0]
         else:
             GAT_score = np.nan
     else:
