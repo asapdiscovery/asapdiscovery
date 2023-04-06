@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
-from typing import Dict, Optional  # noqa: F401
+from typing import Dict, List, Optional, Union  # noqa: F401
+import numpy as np
 
 import dgl
 import torch
@@ -9,6 +10,7 @@ import torch
 from asapdiscovery.ml.pretrained_models import all_models
 from asapdiscovery.ml.utils import build_model, load_weights
 from asapdiscovery.ml.weights import fetch_model_from_spec
+from asapdiscovery.ml.dataset import GraphInferenceDataset
 
 
 class InferenceBase:
@@ -173,8 +175,33 @@ class GATInference(InferenceBase):
         g : dgl.DGLGraph
             DGLGraph object.
 
+        Returns
+        -------
+        np.ndarray
+            Predictions for each graph.
         """
         with torch.no_grad():
             output_tensor = self.model(g, g.ndata["h"])
             output_tensor = torch.reshape(output_tensor, (-1, 1))
-            return output_tensor.cpu().numpy()
+            return output_tensor.cpu().numpy().ravel()
+
+    def predict_from_smiles(self, smiles: Union[str, List[str]]) -> np.ndarray:
+        """Predict on a list of SMILES strings, or a single SMILES string.
+
+        Parameters
+        ----------
+        smiles : Union[str, List[str]]
+            SMILES string or list of SMILES strings.
+
+        Returns
+        -------
+        np.ndarray
+            Predictions for each SMILES string.
+        """
+        if isinstance(smiles, str):
+            smiles = [smiles]
+
+        gids = GraphInferenceDataset(smiles)
+
+        data = [self.predict(g).numpy() for g in gids]
+        return np.concatenate(data)

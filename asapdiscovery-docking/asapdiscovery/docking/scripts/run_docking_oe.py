@@ -183,18 +183,7 @@ def mp_func(out_dir, lig_name, du_name, GAT_model, *args, **kwargs):
         smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
         if not GAT_model is None:
-            # extremely hacky way to get GAT score
-            data = ExperimentalCompoundData(
-                **{"compound_id": lig_name, "smiles": smiles}
-            )
-            gi_ds = GraphInferenceDataset(
-                [data],
-                cache_file="./cache.bin",
-                node_featurizer=CanonicalAtomFeaturizer(),
-            )
-            # has structure (("NA", compound),  {smiles: smiles, g: graph, **kwargs})
-            graph = gi_ds[0][1]["g"]
-            GAT_score = GAT_model.predict(graph)[0][0]
+            GAT_score = GAT_model.predict_from_smiles(smiles)
         else:
             GAT_score = np.nan
     else:

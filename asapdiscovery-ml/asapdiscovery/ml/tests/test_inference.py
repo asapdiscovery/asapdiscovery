@@ -29,11 +29,11 @@ def test_data():
     data = load_data(
         os.path.join(os.path.dirname(__file__), "data/fragalysis_GAT_test_ds.pkl")
     )
-    # has structure ((design_unit, compound),  {smiles: smiles, g: graph, **kwargs})
+    # has structure: ((design_unit, compound),  {smiles: smiles, g: graph, **kwargs})
     # we want the graph
     g1 = data[0][1]["g"]
     g2 = data[1][1]["g"]
-    return g1, g2
+    return g1, g2, data
 
 
 @pytest.fixture()
@@ -45,11 +45,10 @@ def test_inference_data():
             os.path.dirname(__file__), "data/fragalysis_GAT_test_inference_ds.pkl"
         )
     )
-    # has structure ((design_unit, compound),  {smiles: smiles, g: graph, **kwargs})
-    # we want the graph
-    g1 = data[0][1]["g"]
-    g2 = data[1][1]["g"]
-    return g1, g2
+    # has structure: graph
+    g1 = data[0]
+    g2 = data[1]
+    return g1, g2, data
 
 
 def test_gatinference_construct(weights_yaml):
@@ -68,7 +67,7 @@ def test_gatinference_predict(weights_yaml, test_data):
     inference_cls = asapdiscovery.ml.inference.GATInference(
         "gatmodel_test", weights_yaml
     )
-    g1, _ = test_data
+    g1, _, _ = test_data
     assert inference_cls is not None
     output = inference_cls.predict(g1)
     assert output is not None
@@ -78,7 +77,7 @@ def test_gatinference_predict_smiles_equivariant(weights_yaml, test_data):
     inference_cls = asapdiscovery.ml.inference.GATInference(
         "gatmodel_test", weights_yaml
     )
-    g1, g2 = test_data
+    g1, g2, _ = test_data
     # same data different smiles order
     assert inference_cls is not None
     output1 = inference_cls.predict(g1)
@@ -93,8 +92,8 @@ def test_gatinference_predict_dataset_equal(
     inference_cls = asapdiscovery.ml.inference.GATInference(
         "gatmodel_test", weights_yaml
     )
-    g1, g2 = test_data
-    g1_infds, g2_infds = test_inference_data
+    g1, g2, _ = test_data
+    g1_infds, g2_infds, _ = test_inference_data
     # same data different smiles order
     assert inference_cls is not None
     output1 = inference_cls.predict(g1)
@@ -107,3 +106,22 @@ def test_gatinference_predict_dataset_equal(
     assert_allclose(output1, output_infds_1)
     assert_allclose(output2, output_infds_2)
     # everything is the same :)
+
+
+def test_gatinference_predict_from_smiles_dataset_equal(
+    weights_yaml, test_data, test_inference_data
+):
+    inference_cls = asapdiscovery.ml.inference.GATInference(
+        "gatmodel_test", weights_yaml
+    )
+    g1, g2, _ = test_data
+    g1_infds, g2_infds, gids = test_inference_data
+    # same data different smiles order
+    assert inference_cls is not None
+    smiles = list(gids.smiles_dict.keys())
+    assert len(smiles) == 2
+    s1 = smiles[0]
+    s2 = smiles[1]
+    output1 = inference_cls.predict(gids[s1])
+    output2 = inference_cls.predict(gids[s2])
+    assert_allclose(output1, output2)
