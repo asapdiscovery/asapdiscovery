@@ -7,27 +7,33 @@ import torch
 
 
 def build_dataset(
-    in_files,
     model_type,
     exp_fn,
+    all_fns=[],
+    compounds=[],
     achiral=False,
     cache_fn=None,
     grouped=False,
     lig_name="LIG",
     num_workers=1,
     rank=False,
+    structure_only=False,
+    check_range_nan=True,
+    check_stderr_nan=True,
 ):
     """
     Build a Dataset object from input structure files.
 
     Parameters
     ----------
-    in_files : str
-        Input directory/glob for docked PDB files
     model_type : str
-        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+        Which model to create. Current options are ["gat", "schnet", "e3nn"]
     exp_fn : str
         JSON file giving experimental results
+    all_fns : List[str], optional
+        List of input docked PDB files
+    compounds : List[Tuple[str, str]], optional
+        List of (xtal_id, compound_id) that correspond 1:1 to in_files
     achiral : bool, default=False
         Only keep achiral molecules
     cache_fn : str, optional
@@ -38,63 +44,66 @@ def build_dataset(
         Residue name for ligand atoms in PDB files
     num_workers : int, default=1
         Number of threads to use for dataset loading
+    structure_only : bool, default=False
+        If building a 2D dataset, whether to limit to only experimental compounds that
+        also have structural data
+    check_range_nan : bool, default=True
+        Check that the "pIC50_range" value is not NaN
+    check_stderr_nan : bool, default=True
+        Check that the "pIC50_stderr" value is not NaN
 
     Returns
     -------
     """
-    import re
-    from glob import glob
-
+    from asapdiscovery.data.utils import check_filelist_has_elements
     from asapdiscovery.ml.dataset import (
         DockedDataset,
         GraphDataset,
         GroupedDockedDataset,
     )
 
-    # Get all docked structures
-    if os.path.isdir(in_files):
-        all_fns = glob(f"{in_files}/*complex.pdb")
-    else:
-        all_fns = glob(in_files)
-    # Extract crystal structure and compound id from file name
-    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
-    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+    # Load the experimental compounds
+    exp_data, exp_compounds = load_exp_data(
+        exp_fn,
+        achiral=achiral,
+        return_compounds=True,
+        check_range_nan=check_range_nan,
+        check_stderr_nan=check_stderr_nan,
+    )
 
-    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
-    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
-    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
-    compounds = [
-        (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
-        if both_m
-    ]
-    num_found = len(compounds)
-    # Dictionary mapping from compound_id to Mpro dataset(s)
-    compound_id_dict = {}
-    for xtal_structure, compound_id in compounds:
-        try:
-            compound_id_dict[compound_id].append(xtal_structure)
-        except KeyError:
-            compound_id_dict[compound_id] = [xtal_structure]
+    # Parse structure filenames
+    if (model_type.lower() != "gat") or structure_only:
+        # Make sure the files passed match exist and match with compounds
+        check_filelist_has_elements(all_fns, "ml_dataset")
+        assert len(all_fns) == len(
+            compounds
+        ), "Different number of filenames and compound tuples."
+
+        # Dictionary mapping from compound_id to Mpro dataset(s)
+        compound_id_dict = {}
+        for xtal_structure, compound_id in compounds:
+            try:
+                compound_id_dict[compound_id].append(xtal_structure)
+            except KeyError:
+                compound_id_dict[compound_id] = [xtal_structure]
 
     if rank:
         exp_data = None
-    elif model_type.lower() == "2d":
+    elif model_type.lower() == "gat":
         from dgllife.utils import CanonicalAtomFeaturizer
 
-        # Load the experimental compounds
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
         print("load", len(exp_compounds), flush=True)
 
-        # Get compounds that have both structure and experimental data (this
-        #  step isn't actually necessary for performance, but allows a more
-        #  fair comparison between 2D and 3D models)
-        xtal_compound_ids = {c[1] for c in compounds}
-        # Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [c for c in exp_compounds if c.compound_id in xtal_compound_ids]
-        print("filter", len(exp_compounds), flush=True)
+        if structure_only:
+            # Get compounds that have both structure and experimental data (this
+            #  step isn't actually necessary for performance, but allows a more
+            #  fair comparison between 2D and 3D models)
+            xtal_compound_ids = {c[1] for c in compounds}
+            # Filter exp_compounds to make sure we have structures for them
+            exp_compounds = [
+                c for c in exp_compounds if c.compound_id in xtal_compound_ids
+            ]
+            print("filter", len(exp_compounds), flush=True)
 
         # Make cache directory as necessary
         if cache_fn is None:
@@ -111,24 +120,11 @@ def build_dataset(
         )
 
         print(next(iter(ds)), flush=True)
-
-        # Rename exp_compounds so the number kept is consistent
-        compounds = exp_compounds
     elif cache_fn and os.path.isfile(cache_fn):
         # Load from cache
         ds = pkl.load(open(cache_fn, "rb"))
         print("Loaded from cache", flush=True)
-
-        # Still need to load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
     else:
-        # Load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
-
         # Make dict to access smiles data
         smiles_dict = {}
         for c in exp_compounds:
@@ -184,8 +180,7 @@ def build_dataset(
             # Cache dataset
             pkl.dump(ds, open(cache_fn, "wb"))
 
-    num_kept = len(ds)
-    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
+    print(f"Kept {len(ds)} compounds", flush=True)
 
     return ds, exp_data
 
@@ -207,7 +202,7 @@ def build_model(
     Parameters
     ----------
     model_type : str
-        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+        Which model to create. Current options are ["gat", "schnet", "e3nn"]
     e3nn_params : Union[str, list], optional
         Pickle file containing model parameters for the e3nn model, or just the
         parameters themselves.
@@ -826,7 +821,13 @@ def find_most_recent(model_wts):
     return (epoch_use, f"{model_wts}/{epoch_use}.th")
 
 
-def load_exp_data(fn, achiral=False, return_compounds=False):
+def load_exp_data(
+    fn,
+    achiral=False,
+    return_compounds=False,
+    check_range_nan=True,
+    check_stderr_nan=True,
+):
     """
     Load all experimental data from JSON file of
     schema.ExperimentalCompoundDataUpdate.
@@ -839,6 +840,10 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         Whether to only take achiral molecules
     return_compounds : bool, default=False
         Whether to return the compounds in addition to the experimental data
+    check_range_nan : bool, default=True
+        Check that the "pIC50_range" value is not NaN
+    check_stderr_nan : bool, default=True
+        Check that the "pIC50_stderr" value is not NaN
 
     Returns
     -------
@@ -864,9 +869,15 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
             ("pIC50" in c.experimental_data)
             and (not np.isnan(c.experimental_data["pIC50"]))
             and ("pIC50_range" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_range"]))
+            and (
+                (not check_range_nan)
+                or (not np.isnan(c.experimental_data["pIC50_range"]))
+            )
             and ("pIC50_stderr" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            and (
+                (not check_stderr_nan)
+                or (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            )
         )
     }
 
