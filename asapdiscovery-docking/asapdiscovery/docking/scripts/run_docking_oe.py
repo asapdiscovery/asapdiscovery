@@ -9,10 +9,19 @@ import re
 import shutil
 from glob import glob
 
+import numpy as np
 import pandas
+
+from dgllife.utils import CanonicalAtomFeaturizer
+
+
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.schema import (
+    ExperimentalCompoundDataUpdate,
+    ExperimentalCompoundData,
+)  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
 from asapdiscovery.ml.dataset import GraphInferenceDataset  # noqa: E402
@@ -126,7 +135,7 @@ def load_dus(file_base, by_compound=False):
     return dataset_dict, du_dict
 
 
-def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
+def mp_func(out_dir, lig_name, du_name, GAT_model, *args, **kwargs):
     """
     Wrapper function for multiprocessing. Everything other than the named args
     will be passed directly to run_docking_oe.
@@ -139,6 +148,8 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         Ligand name
     du_name : str
         DesignUnit name
+    GAT_model : GATInference
+        GAT model to use for inference. If None, will not perform inference.
 
     Returns
     -------
@@ -171,13 +182,21 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
             )
         smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
-
-        # extremely hacky way to get GAT score
-        data = ExperimentalCompoundData(**{"compound_id": lig_name, "smiles": smiles})
-        gi_ds = GraphInferenceDataset([data])
-        # has structure (("NA", compound),  {smiles: smiles, g: graph, **kwargs})
-        graph = gi_ds[0][1]["g"]
-        GAT_score = GAT_model.predict(graph)
+        if not GAT_model is None:
+            # extremely hacky way to get GAT score
+            data = ExperimentalCompoundData(
+                **{"compound_id": lig_name, "smiles": smiles}
+            )
+            gi_ds = GraphInferenceDataset(
+                [data],
+                cache_file="./cache.bin",
+                node_featurizer=CanonicalAtomFeaturizer(),
+            )
+            # has structure (("NA", compound),  {smiles: smiles, g: graph, **kwargs})
+            graph = gi_ds[0][1]["g"]
+            GAT_score = GAT_model.predict(graph)[0][0]
+        else:
+            GAT_score = np.nan
     else:
         out_fn = ""
         rmsds = [-1.0]
@@ -344,6 +363,10 @@ def main():
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
 
+    # load ml models
+
+    GAT_model = GATInference("model1")
+
     # Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
     print(f"{n_mols} molecules found")
@@ -383,6 +406,8 @@ def main():
         # Arbitrary sort index, same for each ligand
         sort_idxs = [list(range(len(xtal_ids)))] * n_mols
         args.top_n = len(xtal_ids)
+
+    # make multiprocessing args
     mp_args = []
     for i, m in enumerate(mols):
         dock_dus = []
@@ -398,6 +423,7 @@ def main():
                 os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
                 compound_ids[i],
                 x,
+                GAT_model,
                 du,
                 m,
                 args.docking_sys.lower(),
@@ -424,8 +450,6 @@ def main():
         "SMILES",
         "GAT_score",
     ]
-
-    GAT_model = GATInference("model1")
 
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(
