@@ -112,7 +112,6 @@ class MoleculeSetAPI(PostEraAPI):
             return response["id"]
 
     def _read_page(self, url: str, page: int) -> (pd.DataFrame, str):
-
         response = self._session.get(url, params={"page": page}).json()
 
         return response["results"], response["paginationInfo"]["hasNext"]
