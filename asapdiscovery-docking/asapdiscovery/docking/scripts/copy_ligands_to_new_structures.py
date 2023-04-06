@@ -11,6 +11,7 @@ from asapdiscovery.data.openeye import (
     save_openeye_pdb,
     oechem,
     load_openeye_sdfs,
+    combine_protein_ligand,
 )
 
 
@@ -44,6 +45,26 @@ def main():
     # Load molecules
     mols = load_openeye_sdfs(args.ligand_sdf)
     logger.info(f"Loaded {len(mols)} ligands from {args.ligand_sdf}")
+
+    # Load proteins
+    protein_files = list(Path().glob(args.protein_glob))
+    logger.info(f"Loaded {len(protein_files)} proteins from {args.protein_glob}")
+
+    for protein_file in protein_files:
+        # Load protein
+        du = oechem.OEDesignUnit()
+        if not oechem.OEReadDesignUnit(str(protein_file), du):
+            logger.warning(f"Failed to read DesignUnit {protein_file}")
+            continue
+        prot = oechem.OEGraphMol()
+        du.GetProtein(prot)
+
+        for mol in mols:
+            # Combine protein and ligand
+            combined = combine_protein_ligand(prot, mol)
+            # Save combined molecule
+            save_openeye_pdb(combined, str(output_dir / f"{mol.GetTitle()}.pdb"))
+            logger.info(f"Saved {mol.GetTitle()}.pdb")
 
 
 if __name__ == "__main__":
