@@ -9,6 +9,7 @@ from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     save_openeye_pdb,
+    save_openeye_sdf,
     oechem,
     load_openeye_sdfs,
     combine_protein_ligand,
@@ -64,13 +65,15 @@ def main():
         dus[protein_name] = du
     logger.info(f"Loaded {len(dus)} proteins from {args.protein_glob}")
 
-    for mol in mols[0:1]:
+    for mol in mols[0:3]:
         out_dir = output_dir / mol.GetTitle()
+        if not out_dir.exists():
+            out_dir.mkdir()
 
         # Use posit to dock against each DU
         for name, du in dus.items():
             success, posed_mol, docking_id = run_docking_oe(
-                du=du,
+                design_units=[du],
                 orig_mol=mol,
                 dock_sys="posit",
                 relax="clash",
@@ -79,9 +82,9 @@ def main():
                 use_omega=True,
                 num_poses=1,
             )
-    #         if success:
-    #             out_fn = os.path.join(out_dir, "docked.sdf")
-    #             save_openeye_sdf(posed_mol, out_fn)
+            if success:
+                out_fn = out_dir / "docked.sdf"
+                save_openeye_sdf(posed_mol, str(out_fn))
     #
     #             rmsds = []
     #             posit_probs = []

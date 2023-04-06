@@ -408,7 +408,7 @@ def main():
                 compound_ids[i],
                 x,
                 f"{compound_ids[i]}_{x}",
-                du,
+                [du],
                 m,
                 args.docking_sys.lower(),
                 args.relax.lower(),

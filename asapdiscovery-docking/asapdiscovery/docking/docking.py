@@ -1,8 +1,10 @@
 import logging
+from asapdiscovery.data.openeye import oechem
+from typing import Union
 
 
 def run_docking_oe(
-    du,
+    design_units: list[oechem.OEDesignUnit],
     orig_mol,
     dock_sys,
     relax="none",
@@ -22,8 +24,8 @@ def run_docking_oe(
 
     Parameters
     ----------
-    du : oechem.OEDesignUnit
-        DesignUnit receptor to dock to
+    design_units : [oechem.OEDesignUnit]
+        List of DesignUnit receptors to dock to
     orig_mol : oechem.OEMol
         Mol object to dock
     dock_sys : str
@@ -49,6 +51,11 @@ def run_docking_oe(
     str
         Generated docking_id, used to access SD tag data
     """
+    if type(design_units) != list:
+        raise TypeError("design_units must be a list of OEDesignUnits")
+    if len(design_units) == 0:
+        raise ValueError("design_units must have at least one OEDesignUnit")
+
     if compound_name:
         logger = logging.getLogger(f"run_oe_docking.{compound_name}")
         print(compound_name)
@@ -114,7 +121,8 @@ def run_docking_oe(
 
         # Set up poser object
         poser = oedocking.OEPosit(opts)
-        poser.AddReceptor(du)
+        for du in design_units:
+            poser.AddReceptor(du)
 
         # Run posing
         pose_res = oedocking.OEPositResults()
@@ -124,6 +132,16 @@ def run_docking_oe(
             logger.error(pose_res, dock_lig, type(dock_lig))
             raise e
     elif dock_sys == "hybrid":
+        # Check if multiple dus have been passed
+        if len(design_units) > 1:
+            raise NotImplementedError(
+                "Multiple design units passed to Hybrid docking, "
+                "but only one is supported. Please consider using "
+                "POSIT instead."
+            )
+        else:
+            du = design_units[0]
+
         if compound_name:
             logger.info(f"Running Hybrid docking for {compound_name}")
 
@@ -157,7 +175,8 @@ def run_docking_oe(
 
         # Set up poser object
         poser = oedocking.OEPosit(opts)
-        poser.AddReceptor(du)
+        for du in design_units:
+            poser.AddReceptor(du)
 
         # Run posing
         pose_res = oedocking.OEPositResults()
@@ -168,12 +187,15 @@ def run_docking_oe(
         posed_mols = []
         posit_probs = []
         posit_methods = []
+        docked_design_units = []
+
         for single_res in pose_res.GetSinglePoseResults():
             posed_mols.append(single_res.GetPose())
             posit_probs.append(single_res.GetProbability())
             posit_methods.append(
                 oedocking.OEPositMethodGetName(single_res.GetPositMethod())
             )
+            docked_design_units.append(design_units[single_res.GetReceptorIndex()])
     else:
         err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
         if compound_name:
@@ -185,8 +207,8 @@ def run_docking_oe(
     # Set docking_id key for SD tags
     docking_id = "_".join(docking_id)
 
-    for i, (mol, prob, method) in enumerate(
-        zip(posed_mols, posit_probs, posit_methods)
+    for i, (mol, prob, method, du) in enumerate(
+        zip(posed_mols, posit_probs, posit_methods, docked_design_units)
     ):
         # Get the Chemgauss4 score (adapted from kinoml)
         pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
@@ -210,6 +232,7 @@ def run_docking_oe(
         )
         oechem.OESetSDData(mol, f"Docking_{docking_id}_clash", str(clash))
         oechem.OESetSDData(mol, "SMILES", oechem.OEMolToSmiles(mol))
+        oechem.OESetSDData(mol, f"Docking_{docking_id}_Receptor_ID", du.GetTitle())
 
         # Set molecule name if given
         if compound_name:
