@@ -14,15 +14,10 @@ import pandas
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema import (  # noqa: E402
-    ExperimentalCompoundData,
-    ExperimentalCompoundDataUpdate,
-)
+from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
-from asapdiscovery.ml.dataset import GraphInferenceDataset  # noqa: E402
 from asapdiscovery.ml.inference import GATInference  # noqa: E402
-from dgllife.utils import CanonicalAtomFeaturizer
 
 
 def check_results(d):
@@ -179,7 +174,7 @@ def mp_func(out_dir, lig_name, du_name, GAT_model, *args, **kwargs):
             )
         smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
-        if not GAT_model is None:
+        if GAT_model is not None:
             GAT_score = GAT_model.predict_from_smiles(smiles)[0]
         else:
             GAT_score = np.nan
@@ -314,8 +309,6 @@ def main():
 
     if args.exp_file:
         import json
-
-        from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 
         # Load compounds
         exp_compounds = [
