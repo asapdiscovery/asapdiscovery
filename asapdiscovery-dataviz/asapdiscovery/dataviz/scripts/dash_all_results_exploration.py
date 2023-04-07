@@ -488,7 +488,6 @@ def update_by_structure(
     Input("by-compound", "clickData"),
 )
 def per_structure_bar_chart(clickData1, clickData2):
-
     # Get "Count" Columns"
     count_columns = [
         column
@@ -537,7 +536,6 @@ def per_structure_bar_chart(clickData1, clickData2):
     Input("by-compound", "clickData"),
 )
 def per_structure_bar_chart(clickData1, clickData2):  # noqa F811
-
     # Get "Values" Columns"
     count_columns = [
         column for column in by_structure.columns if "Min" in column or "Mean" in column

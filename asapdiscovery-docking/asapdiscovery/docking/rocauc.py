@@ -166,7 +166,6 @@ class Rock:
         return self.auc
 
     def get_bootstrapped_error_bars(self, n_bootstraps):
-
         # First, make sure we have calculated values for data
         self.get_auc_from_df(self.df, bootstrap=False)
 
@@ -271,7 +270,6 @@ class Rocks:
         self.poses_df = pd.concat(poses_dfs)
 
     def get_auc_cis(self):
-
         lower_bound_list = []
         upper_bound_list = []
         auc_list = []
