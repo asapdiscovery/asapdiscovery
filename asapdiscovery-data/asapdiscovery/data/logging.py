@@ -3,10 +3,16 @@ import os
 
 
 class FileLogger:
-    def __init__(self, logname: str, path: str, logfile: str = None):
+    def __init__(
+        self,
+        logname: str,
+        path: str,
+        logfile: str = None,
+        format: str = "%(asctime)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
+    ):
         self.name = logname
         self.logfile = logfile
-        self.format = "%(asctime)s | %(levelname)s | %(message)s"
+        self.format = format
         if self.logfile is None:
             self.logfile = self.name + "-log.txt"
 

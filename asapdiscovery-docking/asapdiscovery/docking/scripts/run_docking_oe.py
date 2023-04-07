@@ -156,6 +156,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
     else:
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
+        logger.info(f"No results for {compound_name} found, running docking")
 
     success, posed_mol, docking_id = run_docking_oe(*args, **kwargs)
     if success:
