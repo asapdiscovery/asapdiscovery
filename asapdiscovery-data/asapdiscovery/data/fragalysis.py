@@ -177,7 +177,9 @@ def parse_fragalysis(
         ]
     except KeyError as e:
         raise Exception(
-            "Did you use 'Mpro_compound_tracker_csv.csv'? Use 'metadata.csv' instead."
+            "Did you use 'Mpro_compound_tracker_csv.csv'? Use 'metadata.csv' instead. "
+            "This CSV is expected to contain columns 'smiles', 'crystal_name', and 'alternate_name', which correspond "
+            "to the SD tags 'smiles', 'dataset', and 'compound_id' respectively."
         ) from e
 
     # Add structure filename information and filter if not found
