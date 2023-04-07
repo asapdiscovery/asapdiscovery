@@ -152,6 +152,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
     if check_results(out_dir):
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
         logger.info(f"Found results for {compound_name}")
+        exit()
     else:
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
