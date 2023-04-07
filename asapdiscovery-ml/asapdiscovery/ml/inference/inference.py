@@ -190,7 +190,7 @@ class GATInference(InferenceBase):
 
     def predict_from_smiles(
         self, smiles: Union[str, list[str]], **kwargs
-    ) -> np.ndarray:
+    ) -> Union[np.ndarray, float]:
         """Predict on a list of SMILES strings, or a single SMILES string.
 
         Parameters
@@ -200,8 +200,8 @@ class GATInference(InferenceBase):
 
         Returns
         -------
-        np.ndarray
-            Predictions for each SMILES string.
+        np.ndarray or float
+            Predictions for each graph, or a single prediction if only one SMILES string is provided.
         """
         if isinstance(smiles, str):
             smiles = [smiles]
@@ -211,4 +211,8 @@ class GATInference(InferenceBase):
         )
 
         data = [self.predict(g) for g in gids]
-        return np.concatenate(np.asarray(data))
+        data = np.concatenate(np.asarray(data))
+        # return a scalar float value if we only have one input
+        if len(data) == 1:
+            data = data[0]
+        return data
