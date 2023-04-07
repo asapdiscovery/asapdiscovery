@@ -7,4 +7,4 @@ run-docking-oe \
 -n 2 \
 --omega \
 --relax clash \
---debug_num 4
+--debug_num 5
