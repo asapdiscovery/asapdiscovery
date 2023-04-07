@@ -23,7 +23,6 @@ def pdbs_from_yaml():
     return pdb_dict
 
 
-@pytest.mark.skip(reason="No OE License in CI yet.")
 class TestAsapPDB:
     """Class for testing PDB munging in ASAP discovery data package"""
 

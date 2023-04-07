@@ -97,7 +97,6 @@ def s3(ctx, bucket, prefix, endpoint_url):
 @click.pass_context
 @click.argument("files", type=click.Path(exists=True), nargs=-1)
 def push(ctx, files):
-
     s3 = ctx.obj["s3"]
 
     click.echo(f"Pushing {len(files)} to 's3://{s3.bucket}/{s3.prefix}'")
