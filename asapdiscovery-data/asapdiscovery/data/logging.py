@@ -8,7 +8,7 @@ class FileLogger:
         logname: str,
         path: str,
         logfile: str = None,
-        format: str = "%(asctime)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
+        format: str = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
     ):
         self.name = logname
         self.logfile = logfile

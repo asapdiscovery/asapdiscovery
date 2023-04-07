@@ -49,12 +49,25 @@ def run_docking_oe(
     str
         Generated docking_id, used to access SD tag data
     """
-    if compound_name:
-        logger = logging.getLogger(f"run_oe_docking.{compound_name}")
-        print(compound_name)
+    import sys
 
+    if compound_name:
+        logname = f"run_docking_oe.{compound_name}"
     else:
-        raise NotImplementedError
+        logname = "run_docking_oe"
+    logger = logging.getLogger(logname)
+
+    if not logger.hasHandlers():
+        logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s"
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
+    logger.info(f"Running docking for {compound_name}")
     from asapdiscovery.data.openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
