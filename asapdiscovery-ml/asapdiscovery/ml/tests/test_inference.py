@@ -2,8 +2,8 @@ import os
 import pickle
 import shutil
 
-import numpy as np
 import asapdiscovery.ml
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
