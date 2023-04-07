@@ -151,8 +151,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
 
     if check_results(out_dir):
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
-        logger.info(f"Loading found results for {compound_name}")
-        return pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
+        logger.info(f"Found results for {compound_name}")
     else:
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
@@ -213,7 +212,6 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
     ]
 
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
-    return results
 
 
 ########################################
@@ -446,20 +444,7 @@ def main():
     mp_args = mp_args[: args.debug_num]
     logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
-        results_df = pool.starmap(mp_func, mp_args)
-    results_df = [res for res_list in results_df for res in res_list]
-    results_df = pandas.DataFrame(results_df, columns=results_cols)
-
-    results_df.to_csv(f"{args.output_dir}/all_results.csv")
-
-    # Concatenate all individual SDF files
-    combined_sdf = f"{args.output_dir}/combined.sdf"
-    with open(combined_sdf, "wb") as wfd:
-        for f in results_df["docked_file"]:
-            if f == "":
-                continue
-            with open(f, "rb") as fd:
-                shutil.copyfileobj(fd, wfd)
+        pool.starmap(mp_func, mp_args)
 
 
 if __name__ == "__main__":
