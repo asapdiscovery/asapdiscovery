@@ -159,7 +159,6 @@ def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
     )
 
     if type(du) == oechem.OEDesignUnit:
-
         logger.info("Saving Design Unit")
 
         du_fn = output / f"{name}-prepped_receptor_0.oedu"
