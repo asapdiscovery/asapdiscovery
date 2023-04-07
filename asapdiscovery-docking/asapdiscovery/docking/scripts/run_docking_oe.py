@@ -445,7 +445,7 @@ def main():
     mp_args = mp_args[: args.debug_num]
     logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs, maxtasksperchild=1) as pool:
-        pool.starmap(mp_func, mp_args)
+        pool.starmap_async(mp_func, mp_args, chunksize=4)
 
 
 if __name__ == "__main__":
