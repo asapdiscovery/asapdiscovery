@@ -157,6 +157,10 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
         logger.info(f"No results for {compound_name} found, running docking")
+        errfs = oechem.oeofstream(os.path.join(out_dir, f"openeye_{logname}-log.txt"))
+        oechem.OEThrow.SetOutputStream(errfs)
+        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+        oechem.OEThrow.Info(f"Starting docking for {logname}")
 
     success, posed_mol, docking_id = run_docking_oe(*args, **kwargs)
     if success:
