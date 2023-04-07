@@ -1,6 +1,7 @@
-from asapdiscovery.data.logging import FileLogger
 import logging
 from pathlib import Path
+
+from asapdiscovery.data.logging import FileLogger
 
 
 def run_func(name):
@@ -13,7 +14,7 @@ def internal_func(name: str):
     logger = file_logger.getLogger()
     logger.info("Running run_func")
     run_func(name)
-    with open(file_logger.logfile, "r") as f:
+    with open(file_logger.logfile) as f:
         assert "Default test" in f.read()
 
 
