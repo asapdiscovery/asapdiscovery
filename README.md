@@ -9,6 +9,8 @@ A collection of libraries for structure-based open science antiviral drug discov
 
 ## Installation
 
+**Note**: currently all `asapdiscovery` packages support Python 3.9 and 3.10 only.
+
 `asapdiscovery` is a namespace package, composed of individual Python packages with their own dependencies.
 Each of these packages follows the `asapdiscovery-*` convention for the package name, e.g. `asapdiscovery-data`.
 

@@ -54,7 +54,6 @@ def main():
 
     sdf_list = []
     for flag in pdb_dict.keys():
-
         # if our flag of interest is in any complex, include it!
         # TODO: replace with REGEX?
         complexes = [

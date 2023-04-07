@@ -485,3 +485,84 @@ class GraphDataset(Dataset):
     def __iter__(self):
         for s in self.structures:
             yield (s["compound"], s)
+
+
+class GraphInferenceDataset(GraphDataset):
+    """
+    Class for loading SMILES as graphs without experimental data
+    """
+
+    def __init__(
+        self,
+        exp_compounds,
+        node_featurizer=None,
+        edge_featurizer=None,
+        cache_file=None,
+    ):
+        """
+        Parameters
+        ----------
+        exp_compounds : List[schema.ExperimentalCompoundData]
+            List of compounds
+        node_featurizer : BaseAtomFeaturizer, optional
+            Featurizer for node data
+        edge_featurizer : BaseBondFeaturizer, optional
+            Featurizer for edges
+        cache_file : str, optional
+            Cache file for graph dataset
+
+        """
+        import pandas
+        from dgllife.data import MoleculeCSVDataset
+        from dgllife.utils import SMILESToBigraph
+
+        # Build dataframe
+        all_compound_ids, all_smiles = zip(
+            *[
+                (
+                    c.compound_id,
+                    c.smiles,
+                )
+                for c in exp_compounds
+            ]
+        )
+        df = pandas.DataFrame(
+            {
+                "compound_id": all_compound_ids,
+                "smiles": all_smiles,
+            }
+        )
+
+        # Build dataset
+        smiles_to_g = SMILESToBigraph(
+            add_self_loop=True,
+            node_featurizer=node_featurizer,
+            edge_featurizer=edge_featurizer,
+        )
+        dataset = MoleculeCSVDataset(
+            df=df,
+            smiles_to_graph=smiles_to_g,
+            smiles_column="smiles",
+            cache_file_path=cache_file,
+            task_names=[],
+        )
+
+        self.compounds = {}
+        self.structures = []
+        for i, (compound_id, g) in enumerate(zip(all_compound_ids, dataset)):
+            # Need a tuple to match DockedDataset, but the graph objects aren't
+            #  attached to a protein structure at all
+            compound = ("NA", compound_id)
+
+            # Add data
+            try:
+                self.compounds[compound].append(i)
+            except KeyError:
+                self.compounds[compound] = [i]
+            self.structures.append(
+                {
+                    "smiles": g[0],
+                    "g": g[1],
+                    "compound": compound,
+                }
+            )
