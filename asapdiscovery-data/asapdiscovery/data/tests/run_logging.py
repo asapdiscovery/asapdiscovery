@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 from asapdiscovery.data.logging import FileLogger
 
