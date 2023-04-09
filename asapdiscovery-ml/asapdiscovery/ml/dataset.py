@@ -580,6 +580,8 @@ class GraphInferenceDataset(Dataset):
         elif isinstance(idx, list):
             return [self.graphs[i] for i in idx]
         elif isinstance(idx, slice):
+            start, stop, step = idx.indices(len(self))
+            idx = list(range(start, stop, step))
             subset = Subset(self, idx)
             return subset
         else:

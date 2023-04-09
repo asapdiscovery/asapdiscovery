@@ -121,3 +121,15 @@ def test_gatinference_predict_from_smiles_dataset(
     assert_allclose(
         output_arr, np.asarray([output_smiles_1, output_smiles_2, output_smiles_3])
     )
+
+
+def test_gatinference_predict_from_subset(weights_yaml, test_data, test_inference_data):
+    inference_cls = asapdiscovery.ml.inference.GATInference(
+        "gatmodel_test", weights_yaml
+    )
+
+    _, _, _, gids = test_inference_data
+    gids_subset = gids[0:2:1]
+    for g in gids_subset:
+        res = inference_cls.predict(g)
+        assert res
