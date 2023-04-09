@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import pytest
 from asapdiscovery.data.schema import ExperimentalCompoundData
