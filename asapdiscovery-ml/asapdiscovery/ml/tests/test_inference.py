@@ -103,3 +103,21 @@ def test_gatinference_predict_from_smiles_dataset(
     s3 = smiles[2]
     output3 = inference_cls.predict(gids[s3])
     assert not np.allclose(output3, output1)
+
+    # test predicting directly from smiles
+    output_smiles_1 = inference_cls.predict_from_smiles(s1)
+    output_smiles_2 = inference_cls.predict_from_smiles(s2)
+    output_smiles_3 = inference_cls.predict_from_smiles(s3)
+
+    assert_allclose(output_smiles_1, output_smiles_2)
+    assert_allclose(output1, output_smiles_1)
+
+    assert_allclose(output3, output_smiles_3)
+    assert not np.allclose(output_smiles_3, output_smiles_1)
+    assert not np.allclose(output3, output_smiles_1)
+
+    # test predicting list of similes
+    output_arr = inference_cls.predict_from_smiles([s1, s2, s3])
+    assert_allclose(
+        output_arr, np.asarray([output_smiles_1, output_smiles_2, output_smiles_3])
+    )

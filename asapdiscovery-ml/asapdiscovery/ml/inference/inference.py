@@ -183,9 +183,7 @@ class GATInference(InferenceBase):
         """
         with torch.no_grad():
             output_tensor = self.model(g, g.ndata["h"])
-            # unsure exactly why this reshape is done
-            output_tensor = torch.reshape(output_tensor, (-1, 1))
-            # we ravel it away to get a 1D array
+            # we ravel to always get a 1D array
             return output_tensor.cpu().numpy().ravel()
 
     def predict_from_smiles(
@@ -211,7 +209,7 @@ class GATInference(InferenceBase):
         )
 
         data = [self.predict(g) for g in gids]
-        data = np.concatenate(np.asarray(data))
+        data = np.asarray(data)
         # return a scalar float value if we only have one input
         if len(data) == 1:
             data = data[0]
