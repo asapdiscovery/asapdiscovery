@@ -7,8 +7,8 @@ import os
 import pickle as pkl
 import re
 import shutil
-from glob import glob
 from functools import partial
+from glob import glob
 
 import numpy as np
 import pandas

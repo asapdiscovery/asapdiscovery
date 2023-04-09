@@ -1,7 +1,7 @@
 import os
 import shutil
-import pytest
 
+import pytest
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.ml.dataset import GraphDataset, GraphInferenceDataset
 from dgllife.utils import CanonicalAtomFeaturizer
