@@ -8,12 +8,6 @@ import pytest
 from numpy.testing import assert_allclose
 
 
-def load_data(file):
-    with open(file, "rb") as f:
-        data = pickle.load(f)
-    return data
-
-
 @pytest.fixture()
 def weights_yaml():
     # ugly hack to make the directory relative
@@ -21,37 +15,6 @@ def weights_yaml():
     weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
     yield weights
     shutil.rmtree("./_weights", ignore_errors=True)
-
-
-@pytest.fixture()
-def test_data():
-    # ugly hack to make the directory relative
-    # contains two data points in a GraphDataset, both the same with the smiles order changed in the second one
-    data = load_data(
-        os.path.join(os.path.dirname(__file__), "data/fragalysis_GAT_test_ds.pkl")
-    )
-    # has structure: ((design_unit, compound),  {smiles: smiles, g: graph, **kwargs})
-    # we want the graph
-    g1 = data[0][1]["g"]
-    g2 = data[1][1]["g"]
-    g3 = data[2][1]["g"]
-    return g1, g2, g3, data
-
-
-@pytest.fixture()
-def test_inference_data():
-    # ugly hack to make the directory relative
-    # contains two data points in a GraphInferenceDataset, both the same with the smiles order changed in the second one
-    data = load_data(
-        os.path.join(
-            os.path.dirname(__file__), "data/fragalysis_GAT_test_inference_ds.pkl"
-        )
-    )
-    # has structure: graph
-    g1 = data[0]
-    g2 = data[1]
-    g3 = data[2]
-    return g1, g2, g3, data
 
 
 def test_gatinference_construct(weights_yaml):
