@@ -127,7 +127,7 @@ def load_dus(file_base, by_compound=False):
     return dataset_dict, du_dict
 
 
-def mp_func(out_dir, lig_name, du_name, GAT_model, *args, **kwargs):
+def mp_func(out_dir, lig_name, du_name, *args, GAT_model=None, **kwargs):
     """
     Wrapper function for multiprocessing. Everything other than the named args
     will be passed directly to run_docking_oe.
@@ -140,7 +140,7 @@ def mp_func(out_dir, lig_name, du_name, GAT_model, *args, **kwargs):
         Ligand name
     du_name : str
         DesignUnit name
-    GAT_model : GATInference
+    GAT_model : GATInference, optional
         GAT model to use for inference. If None, will not perform inference.
 
     Returns
