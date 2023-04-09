@@ -1,5 +1,5 @@
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset
 
 
 class DockedDataset(Dataset):
@@ -580,17 +580,8 @@ class GraphInferenceDataset(Dataset):
         elif isinstance(idx, list):
             return [self.graphs[i] for i in idx]
         elif isinstance(idx, slice):
-            # Use the slice indices to slice the list of graphs and create a new GraphInferenceDataset
-            start, stop, step = idx.indices(len(self.graphs))
-            indices = range(start, stop, step)
-            new_dataset = GraphInferenceDataset(
-                exp_compounds=[],  # empty list since we're creating a new dataset
-                node_featurizer=self.node_featurizer,
-                edge_featurizer=self.edge_featurizer,
-                cache_file=self.cache_file,
-            )
-            new_dataset.graphs = [self.graphs[i] for i in indices]
-            return new_dataset
+            subset = Subset(self, idx)
+            return subset
         else:
             raise TypeError("idx must be a string, int, list, or slice")
 

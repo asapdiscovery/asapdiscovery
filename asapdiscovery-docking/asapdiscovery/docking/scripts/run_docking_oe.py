@@ -8,6 +8,7 @@ import pickle as pkl
 import re
 import shutil
 from glob import glob
+from functools import partial
 
 import numpy as np
 import pandas
@@ -297,6 +298,12 @@ def get_args():
         default=1,
         help="Number of poses to return from docking.",
     )
+    parser.add_argument(
+        "-gat",
+        "--gat",
+        action="store_true",
+        help="Whether to use GAT model to score docked poses.",
+    )
 
     return parser.parse_args()
 
@@ -343,8 +350,10 @@ def main():
     n_mols = len(mols)
 
     # load ml models
-
-    GAT_model = GATInference("model1")
+    if args.gat:
+        GAT_model = GATInference("model1")
+    else:
+        GAT_model = None
 
     # Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
@@ -402,7 +411,6 @@ def main():
                 os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
                 compound_ids[i],
                 x,
-                GAT_model,
                 du,
                 m,
                 args.docking_sys.lower(),
@@ -430,6 +438,9 @@ def main():
         "GAT_score",
     ]
 
+    # Apply ML arguments as kwargs to mp_func
+    mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
+
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     print(
         f"CPUs: {mp.cpu_count()}\n"
@@ -438,7 +449,7 @@ def main():
     )
     print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
-        results_df = pool.starmap(mp_func, mp_args)
+        results_df = pool.starmap(mp_func_ml_applied, mp_args)
     results_df = [res for res_list in results_df for res in res_list]
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 

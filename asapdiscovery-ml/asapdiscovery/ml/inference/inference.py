@@ -209,7 +209,7 @@ class GATInference(InferenceBase):
         )
 
         data = [self.predict(g) for g in gids]
-        data = np.asarray(data)
+        data = np.concatenate(np.asarray(data))
         # return a scalar float value if we only have one input
         if len(data) == 1:
             data = data[0]
