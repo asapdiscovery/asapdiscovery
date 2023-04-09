@@ -6,7 +6,6 @@ class PostEraAPI:
     """Base class for connection to PostEra Manifold API"""
 
     def __init__(self, url, api_version, api_key):
-
         self.url = url
         self.version = api_version
         self.api_url = f"{self.url}/api/{self.version}"
@@ -14,7 +13,6 @@ class PostEraAPI:
         self._setup_requests_session()
 
     def _setup_requests_session(self, retries=3, backoff_factor=0.5):
-
         self._session = requests.Session()
         self._session.headers.update({"X-API-KEY": self.token})
         retry = Retry(connect=retries, backoff_factor=backoff_factor)
