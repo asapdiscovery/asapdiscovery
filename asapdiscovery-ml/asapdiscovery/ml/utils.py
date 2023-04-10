@@ -1220,6 +1220,30 @@ def split_molecules(ds, split_fracs, generator=None):
     return all_subsets
 
 
+def split_temporal(ds, split_fracs, generator=None, reverse=False):
+    """
+    Split molecules temporally by date created. Earlier molecules will be placed in the
+    training set and later molecules will be placed in the val/test sets (unless
+    `reverse` is set).
+
+    Parameters
+    ----------
+    ds : Union[cml.data.DockedDataset, cml.data.GraphDataset]
+        Molecular dataset to split
+    split_fracs : List[float]
+        List of fraction of compounds to put in each split
+    generator : torch.Generator, optional
+        Torch Generator object to use for randomness. If none is supplied, use
+        torch.default_generator
+    reverse : bool, default=False
+        Reverse sorting of data
+
+    Returns
+    -------
+    """
+    pass
+
+
 def train(
     model,
     ds_train,
