@@ -402,8 +402,8 @@ def init(args, rank=False):
 
         # Trim compounds and all_fns to ones that were successfully parse
         idx = [(c[0] != "NA") and (c[1] != "NA") for c in compounds]
-        compounds = [c for c, i in zip(compounds, idx)]
-        all_fns = [fn for fn, i in zip(all_fns, idx)]
+        compounds = [c for c, i in zip(compounds, idx) if i]
+        all_fns = [fn for fn, i in zip(all_fns, idx) if i]
     elif args.model.lower() != "gat":
         # If we're using a structure-based model, can't continue without structure files
         raise ValueError("-i must be specified for structure-based models")
