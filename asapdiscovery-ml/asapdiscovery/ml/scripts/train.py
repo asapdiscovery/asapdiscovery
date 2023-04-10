@@ -19,9 +19,16 @@ python train.py \
 import argparse
 import os
 import pickle as pkl
+from glob import glob
 
 import numpy as np
 import torch
+from asapdiscovery.data.utils import (
+    MOONSHOT_CDD_ID_REGEX,
+    MPRO_ID_REGEX,
+    check_filelist_has_elements,
+    extract_compounds_from_filenames,
+)
 from asapdiscovery.ml import EarlyStopping, GaussianNLLLoss, MSELoss  # noqa: E402
 from asapdiscovery.ml.utils import (
     build_dataset,
@@ -144,9 +151,7 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     # Input arguments
-    parser.add_argument(
-        "-i", required=True, help="Input directory/glob for docked PDB files."
-    )
+    parser.add_argument("-i", help="Input directory/glob for docked PDB files.")
     parser.add_argument(
         "-exp", required=True, help="JSON file giving experimental results."
     )
@@ -202,6 +207,16 @@ def get_args():
         "--rand_seed",
         action="store_true",
         help="Use a random seed for splitting the dataset. Will override -ds_seed.",
+    )
+    parser.add_argument(
+        "-x_re",
+        "--xtal_regex",
+        help="Regex for extracting crystal structure name from filename.",
+    )
+    parser.add_argument(
+        "-c_re",
+        "--cpd_regex",
+        help="Regex for extracting compound ID from filename.",
     )
 
     # Model parameters
@@ -356,17 +371,61 @@ def init(args, rank=False):
     if "cutoff" in model_config:
         args.n_dist = model_config["cutoff"]
 
+    # Decide which nan values to filter
+    if args.loss is None:
+        # Plain MSE loss, so don't need to worry about the in range or stderr values
+        check_range_nan = False
+        check_stderr_nan = False
+    elif args.loss.lower() == "step":
+        # Step MSE loss, so only need to worry about the in range value
+        check_range_nan = True
+        check_stderr_nan = False
+    else:
+        # Using the stderr information in loss calculations, so need to include both
+        check_range_nan = True
+        check_stderr_nan = True
+
+    if args.i:
+        # Parse compounds from args.i
+        if os.path.isdir(args.i):
+            all_fns = glob(f"{args.i}/*complex.pdb")
+        else:
+            all_fns = glob(args.i)
+        check_filelist_has_elements(all_fns, "ml_dataset")
+
+        # Parse compound filenames
+        xtal_regex = args.xtal_regex if args.xtal_regex else MPRO_ID_REGEX
+        compound_regex = args.cpd_regex if args.cpd_regex else MOONSHOT_CDD_ID_REGEX
+        compounds = extract_compounds_from_filenames(
+            all_fns, xtal_pat=xtal_regex, compound_pat=compound_regex, fail_val="NA"
+        )
+
+        # Trim compounds and all_fns to ones that were successfully parse
+        idx = [(c[0] != "NA") and (c[1] != "NA") for c in compounds]
+        compounds = [c for c, i in zip(compounds, idx)]
+        all_fns = [fn for fn, i in zip(all_fns, idx)]
+    elif args.model.lower() != "gat":
+        # If we're using a structure-based model, can't continue without structure files
+        raise ValueError("-i must be specified for structure-based models")
+    else:
+        # Using a 2d model, so no need for structure files
+        all_fns = []
+        compounds = []
+
     # Load full dataset
     ds, exp_data = build_dataset(
-        in_files=args.i,
         model_type=args.model,
         exp_fn=args.exp,
+        all_fns=all_fns,
+        compounds=compounds,
         achiral=args.achiral,
         cache_fn=args.cache,
         grouped=args.grouped,
         lig_name=args.n,
         num_workers=args.w,
         rank=rank,
+        check_range_nan=check_range_nan,
+        check_stderr_nan=check_stderr_nan,
     )
     ds_train, ds_val, ds_test = split_dataset(
         ds,
@@ -437,7 +496,7 @@ def init(args, rank=False):
             "rm_atomref": args.rm_atomref,
             "neighbor_dist": args.n_dist,
         }
-    elif args.model == "2d":
+    elif args.model == "gat":
         # Update experiment configuration
         exp_configure = {"model": "GAT"}
     else:
