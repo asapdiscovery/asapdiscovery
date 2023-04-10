@@ -1,3 +1,4 @@
+#!/bin/bash
 # I know we'd rather use pytest, but this was much faster to write
 rm -rf ./outputs/retro_docking_test
 run-docking-oe \
