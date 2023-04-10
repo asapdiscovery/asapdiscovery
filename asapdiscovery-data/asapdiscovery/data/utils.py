@@ -26,7 +26,7 @@ MOONSHOT_CDD_ID_REGEX_CAPT = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
 MPRO_ID_REGEX_CAPT = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
 
 
-def construct_regex_function(pat, fail_val=None):
+def construct_regex_function(pat, fail_val=None, ret_groups=False):
     """
     Construct a function that searches for the given regex pattern, either returning
     fail_val or raising an error if no match is found.
@@ -39,6 +39,8 @@ def construct_regex_function(pat, fail_val=None):
         If a value is passed, this value will be returned from the re searches if a
         match isn't found. If None (default), a ValueError will be raised from the re
         search
+    ret_groups : bool, default=False
+        If True, return the whole match, as well as any groups that were captured
 
     Returns
     -------
@@ -51,7 +53,10 @@ def construct_regex_function(pat, fail_val=None):
 
         m = re.search(pat, s)
         if m:
-            return m.group()
+            if ret_groups:
+                return m.group(), m.groups()
+            else:
+                return m.group()
         elif fail_val is not None:
             return fail_val
         else:
