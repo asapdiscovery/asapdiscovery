@@ -2,12 +2,9 @@
 Script to dock an SDF file of ligands to prepared structures. Example usage:
 python run_docking_oe.py \
 -e /path/to/experimental_data.json \
--r '/path/to/receptors/*.oedu' \
+-r /path/to/receptors/*.oedu \
 -s /path/to/mcs_sort_results.pkl \
 -o /path/to/docking/output/
-Note that the single ticks around the receptors argument is necessary, as without it the
-OS will automatically try to expand the wildcard, which will results in a list of files
-being passed and will cause an error.
 """
 import argparse
 import multiprocessing as mp
@@ -81,7 +78,10 @@ def load_dus(file_base, by_compound=False):
         design unit
     """
 
-    if os.path.isdir(file_base):
+    if type(file_base) is list:
+        print("Using files as given")
+        all_fns = file_base
+    elif os.path.isdir(file_base):
         print(f"Using {file_base} as directory")
         all_fns = [
             os.path.join(file_base, fn)
@@ -223,6 +223,7 @@ def get_args():
         "-r",
         "--receptor",
         required=True,
+        nargs="+",
         help=(
             "Path/glob to prepped receptor(s), or best_results.csv file if "
             "--by_compound is given."
@@ -341,6 +342,9 @@ def main():
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
 
+    # In case a glob string or directory was actually passed in
+    if len(args.receptor) == 1:
+        args.receptor = args.receptor[0]
     # Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
     print(f"{n_mols} molecules found")
