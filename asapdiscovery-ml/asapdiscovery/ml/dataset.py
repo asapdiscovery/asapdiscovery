@@ -369,7 +369,6 @@ class GraphDataset(Dataset):
                 for c in exp_compounds
             ]
         )
-        df
         df = pandas.DataFrame(
             {
                 "compound_id": all_compound_ids,
