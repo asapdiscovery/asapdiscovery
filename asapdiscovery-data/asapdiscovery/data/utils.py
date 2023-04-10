@@ -809,10 +809,10 @@ def filter_molecules_dataframe(
                 import sigfig
 
                 IC50, IC50_stderr = sigfig.round(
-                    IC50, uncertainty=IC50_stderr, sep=tuple
+                    IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
                 )  # strings
                 pIC50, pIC50_stderr = sigfig.round(
-                    pIC50, uncertainty=pIC50_stderr, sep=tuple
+                    pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
                 )  # strings
             except ModuleNotFoundError:
                 # Just round to 4 digits if sigfig pacakge not present
@@ -839,10 +839,10 @@ def filter_molecules_dataframe(
             # Use default pIC50 error
             # print(row)
             # Set as high number so sorting works but still puts this at end
-            IC50_stderr = 100
+            IC50_stderr = "100"
             IC50_lower = np.nan
             IC50_upper = np.nan
-            pIC50_stderr = 100
+            pIC50_stderr = "100"
             pIC50_lower = np.nan
             pIC50_upper = np.nan
 
@@ -889,15 +889,16 @@ def filter_molecules_dataframe(
             return R * dG_T * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
 
         mol_df["exp_binding_affinity_kcal_mol"] = [
-            deltaG(IC50) if not np.isnan(IC50) else np.nan for IC50 in mol_df["IC50"]
+            deltaG(IC50) if not np.isnan(IC50) else np.nan
+            for IC50 in mol_df["IC50 (M)"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
             deltaG(IC50_lower) if not np.isnan(IC50_lower) else np.nan
-            for IC50_lower in mol_df["IC50_95ci_lower"]
+            for IC50_lower in mol_df["IC50_95ci_lower (M)"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
             deltaG(IC50_upper) if not np.isnan(IC50_upper) else np.nan
-            for IC50_upper in mol_df["IC50_95ci_upper"]
+            for IC50_upper in mol_df["IC50_95ci_upper (M)"]
         ]
     else:
         logging.debug("Using pIC50 values for delta G calculations")
