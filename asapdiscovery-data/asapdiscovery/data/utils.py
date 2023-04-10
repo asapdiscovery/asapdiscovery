@@ -367,6 +367,12 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                 }
             )
 
+        # Add date created if present
+        if "Batch Created Date" in c.index:
+            date_created = pandas.to_datetime(c["Batch Created Date"]).date()
+        else:
+            date_created = None
+
         # Keep track of if there are any NaN values
         try:
             seen_compounds[compound_id] = np.isnan(
@@ -384,6 +390,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                     achiral=c["achiral"],
                     absolute_stereochemistry_enantiomerically_pure=(not c["racemic"]),
                     relative_stereochemistry_enantiomerically_pure=(not c["racemic"]),
+                    date_created=date_created,
                     experimental_data=experimental_data,
                 )
             )
@@ -411,6 +418,8 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
             "pIC50_95ci_upper",
             "pIC50_stderr",
         ]
+        if "Batch Created Date" in df.columns:
+            out_cols += ["Batch Created Date"]
         df[out_cols].to_csv(out_csv)
         print(f"Wrote {out_csv}", flush=True)
 
@@ -527,6 +536,12 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
                     }
                 )
 
+            # Add date created if present
+            if "Batch Created Date" in c.index:
+                date_created = pandas.to_datetime(c["Batch Created Date"]).date()
+            else:
+                date_created = None
+
             p.append(
                 ExperimentalCompoundData(
                     compound_id=compound_id,
@@ -535,6 +550,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
                     achiral=False,
                     absolute_stereochemistry_enantiomerically_pure=True,
                     relative_stereochemistry_enantiomerically_pure=True,
+                    date_created=date_created,
                     experimental_data=experimental_data,
                 )
             )
@@ -558,6 +574,9 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
             "pIC50_95ci_upper",
             "pIC50_stderr",
         ]
+        if "Batch Created Date" in df.columns:
+            out_cols += ["Batch Created Date"]
+
         df[out_cols].to_csv(out_csv)
         print(f"Wrote {out_csv}", flush=True)
 
