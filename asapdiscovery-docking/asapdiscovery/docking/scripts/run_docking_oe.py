@@ -10,7 +10,6 @@ import argparse
 import multiprocessing as mp
 import os
 import pickle as pkl
-import re
 import shutil
 from glob import glob
 
@@ -225,8 +224,8 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
 
         try:
             dataset = dataset[0]
-        except IndexError as e:
-            raise ValueError(f"No capturing group in regex", regex)
+        except IndexError:
+            raise ValueError(f"No capturing group in regex {regex}")
 
         try:
             dataset_dict[dataset].append(full_name)
