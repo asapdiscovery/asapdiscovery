@@ -356,7 +356,7 @@ class GraphDataset(Dataset):
         from dgllife.utils import SMILESToBigraph
 
         # Build dataframe
-        all_compound_ids, all_smiles, all_pic50, all_range, all_stderr = zip(
+        all_compound_ids, all_smiles, all_pic50, all_range, all_stderr, all_dates = zip(
             *[
                 (
                     c.compound_id,
@@ -364,14 +364,17 @@ class GraphDataset(Dataset):
                     c.experimental_data["pIC50"],
                     c.experimental_data["pIC50_range"],
                     c.experimental_data["pIC50_stderr"],
+                    c.date_created,
                 )
                 for c in exp_compounds
             ]
         )
+        df
         df = pandas.DataFrame(
             {
                 "compound_id": all_compound_ids,
                 "smiles": all_smiles,
+                "date_created": all_dates,
                 "pIC50": all_pic50,
                 "pIC50_range": all_range,
                 "pIC50_stderr": all_stderr,
@@ -389,7 +392,7 @@ class GraphDataset(Dataset):
             smiles_to_graph=smiles_to_g,
             smiles_column="smiles",
             cache_file_path=cache_file,
-            task_names=["pIC50", "pIC50_range", "pIC50_stderr"],
+            task_names=["pIC50", "pIC50_range", "pIC50_stderr", "date_created"],
         )
 
         self.compounds = {}
@@ -411,6 +414,7 @@ class GraphDataset(Dataset):
                     "pIC50": g[2][0],
                     "pIC50_range": g[2][1],
                     "pIC50_stderr": g[2][2],
+                    "date_created": g[2][3],
                     "compound": compound,
                 }
             )
