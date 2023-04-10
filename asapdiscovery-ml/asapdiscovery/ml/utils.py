@@ -125,13 +125,15 @@ def build_dataset(
         ds = pkl.load(open(cache_fn, "rb"))
         print("Loaded from cache", flush=True)
     else:
-        # Make dict to access smiles data
+        # Make dicts to access smiles and date_created data
         smiles_dict = {}
+        dates_dict = {}
         for c in exp_compounds:
             if c.compound_id not in compound_id_dict:
                 continue
             for xtal_structure in compound_id_dict[c.compound_id]:
                 smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
+                dates_dict[(xtal_structure, c.compound_id)] = c.date_created
 
         # Make dict to access experimental compound data
         exp_data_dict = {}
@@ -154,6 +156,7 @@ def build_dataset(
                 "pIC50": exp_data_dict[compound]["pIC50"],
                 "pIC50_range": exp_data_dict[compound]["pIC50_range"],
                 "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
+                "date_created": dates_dict[compound]["date_created"],
             }
             for compound, smiles in smiles_dict.items()
         }
