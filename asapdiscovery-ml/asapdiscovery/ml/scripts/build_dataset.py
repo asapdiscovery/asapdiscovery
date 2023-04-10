@@ -5,6 +5,7 @@ the same as the relevant args in train.py.
 import argparse
 from glob import glob
 import os
+import pickle as pkl
 
 from asapdiscovery.data.utils import (
     MOONSHOT_CDD_ID_REGEX,
@@ -109,7 +110,7 @@ def main():
         compounds = []
 
     # Load full dataset
-    ds, exp_data = build_dataset(
+    ds, _ = build_dataset(
         model_type=args.model,
         exp_fn=args.exp,
         all_fns=all_fns,
@@ -122,6 +123,10 @@ def main():
         check_range_nan=args.check_range_nan,
         check_stderr_nan=args.check_stderr_nan,
     )
+
+    # GAT model creates a bin file, need to dump the pickle file
+    if args.model.lower() == "gat":
+        pkl.dump(ds, open(args.o, "wb"))
 
 
 if __name__ == "__main__":
