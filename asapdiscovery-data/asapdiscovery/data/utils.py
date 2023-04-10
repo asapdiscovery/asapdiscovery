@@ -21,6 +21,10 @@ from asapdiscovery.data.schema import (
 MOONSHOT_CDD_ID_REGEX = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
 MPRO_ID_REGEX = r"Mpro-.*?_[0-9][A-Z]"
 
+# Regex patterns that match chains as well, but only capture the main part
+MOONSHOT_CDD_ID_REGEX_CAPT = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
+MPRO_ID_REGEX_CAPT = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
+
 
 def construct_regex_function(pat, fail_val=None):
     """
