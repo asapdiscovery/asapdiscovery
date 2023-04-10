@@ -25,6 +25,12 @@ def test_toplevel(file_logger, name: str):
 
 
 @pytest.mark.parametrize("name", ["test1", "test2"])
+def test_set_as_default(file_logger, name: str):
+    file_logger.set_as_default()
+    assert file_logger
+
+
+@pytest.mark.parametrize("name", ["test1", "test2"])
 def test_internal_func(file_logger, name: str):
     file_logger = FileLogger(f"internal_logger.{name}", ".")
     logger = file_logger.getLogger()
