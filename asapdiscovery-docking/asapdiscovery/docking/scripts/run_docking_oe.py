@@ -1,5 +1,13 @@
 """
-Script to dock an SDF file of ligands to prepared structures.
+Script to dock an SDF file of ligands to prepared structures. Example usage:
+python run_docking_oe.py \
+-e /path/to/experimental_data.json \
+-r '/path/to/receptors/*.oedu' \
+-s /path/to/mcs_sort_results.pkl \
+-o /path/to/docking/output/
+Note that the single ticks around the receptors argument is necessary, as without it the
+OS will automatically try to expand the wildcard, which will results in a list of files
+being passed and will cause an error.
 """
 import argparse
 import multiprocessing as mp
