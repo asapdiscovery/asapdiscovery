@@ -85,24 +85,26 @@ def main():
             oespruce.OEMakeDesignUnit(du, prot_mol, mol)
             logger.info(f"Making Receptor for {prot_mol.GetTitle()}")
             oedocking.OEMakeReceptor(du)
-            out_fn = out_dir / f"{mol.GetTitle}_{prot_mol.GetTitle()}.oedu"
-            oechem.OEWriteDesignUnit(du, str(out_fn))
+            out_fn = out_dir / f"{mol.GetTitle()}_{prot_mol.GetTitle()}.oedu"
+            oechem.OEWriteDesignUnit(str(out_fn), du)
             dus.append(du)
-
+        # test reversed order
+        dus.reverse()
         # Use posit to dock against each DU
-        # success, posed_mol, docking_id = run_docking_oe(
-        #     design_units=dus,
-        #     orig_mol=mol,
-        #     dock_sys="posit",
-        #     relax="clash",
-        #     hybrid=False,
-        #     compound_name=mol.GetTitle(),
-        #     use_omega=True,
-        #     num_poses=1,
-        # )
-        # if success:
-        #     out_fn = out_dir / "docked.sdf"
-        #     save_openeye_sdf(posed_mol, str(out_fn))
+        logger.info("Running docking for all DUs")
+        success, posed_mol, docking_id = run_docking_oe(
+            design_units=dus,
+            orig_mol=mol,
+            dock_sys="posit",
+            relax="clash",
+            hybrid=False,
+            compound_name=mol.GetTitle(),
+            use_omega=True,
+            num_poses=1,
+        )
+        if success:
+            out_fn = out_dir / "docked.sdf"
+            save_openeye_sdf(posed_mol, str(out_fn))
     logger.info("Done")
 
 
