@@ -1,13 +1,11 @@
 import yaml
+import pooch
 
 from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List, Tuple, Union  # noqa: F401
 
 ModelSpec = namedtuple("ModelSpec", ["name", "type", "weights", "config"])
-
-
-import pooch
 
 
 def fetch_model_from_spec(
