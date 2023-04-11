@@ -8,6 +8,7 @@ import os
 import pickle as pkl
 import re
 import shutil
+import tracemalloc
 from functools import partial
 from glob import glob
 from pathlib import Path
@@ -21,7 +22,6 @@ from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
-import tracemalloc
 from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
 
