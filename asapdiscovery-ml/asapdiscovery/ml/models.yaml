@@ -1,9 +1,9 @@
 # This file is used to specify the path to the weights file for each model.
 
-model1:
+gat_test_v0:
   # type of the model, must be one of the following: [GAT]
   type: GAT
-  # Path to the weights file for model1.
+  # Path to the weights file for gat_test_model_v0.
   weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example.pth
   # Path to the config file.
   config: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example_config.json

@@ -351,7 +351,7 @@ def main():
 
     # load ml models
     if args.gat:
-        GAT_model = GATInference("model1")
+        GAT_model = GATInference("gat_test_v0")
     else:
         GAT_model = None
 
