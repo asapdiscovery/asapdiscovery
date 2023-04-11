@@ -199,9 +199,12 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
     elif os.path.isfile(receptors):
         print(f"Using {receptors} as file")
         df = pandas.read_csv(receptors)
-        all_fns = [
-            os.path.join(os.path.dirname(fn), basefile) for fn in df["Docked_File"]
-        ]
+        try:
+            all_fns = [
+                os.path.join(os.path.dirname(fn), basefile) for fn in df["Docked_File"]
+            ]
+        except KeyError:
+            raise ValueError("Docked_File column not found in given CSV file.")
     else:
         print(f"Using {receptors} as glob")
         all_fns = glob(receptors)
