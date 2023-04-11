@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional
 
 
 class FileLogger:
@@ -7,28 +8,32 @@ class FileLogger:
         self,
         logname: str,
         path: str,
-        logfile: str = None,
-        format: str = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
+        logfile: Optional[str] = None,
+        level: Optional[int] = logging.DEBUG,
+        format: Optional[
+            str
+        ] = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
     ):
         self.name = logname
         self.logfile = logfile
         self.format = format
+        self.level = level
         if self.logfile is None:
             self.logfile = self.name + "-log.txt"
 
         self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(self.level)
         self.handler = logging.FileHandler(os.path.join(path, self.logfile), mode="w")
-        self.handler.setLevel(logging.DEBUG)
+        self.handler.setLevel(self.level)
         self.formatter = logging.Formatter(self.format)
         self.handler.setFormatter(self.formatter)
         self.logger.addHandler(self.handler)
 
-    def getLogger(self):
+    def getLogger(self) -> logging.Logger:
         return self.logger
 
-    def set_as_default(self):
-        logging.basicConfig(filename=self.logfile, level=logging.DEBUG)
+    def set_as_default(self) -> None:
+        logging.basicConfig(filename=self.logfile, level=self.level, format=self.format)
 
 
 """
