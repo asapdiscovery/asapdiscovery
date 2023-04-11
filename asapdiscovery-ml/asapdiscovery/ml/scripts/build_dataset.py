@@ -3,9 +3,9 @@ Script to simply build a dataset, pickle it, and exit. CLI args for this script 
 the same as the relevant args in train.py.
 """
 import argparse
-from glob import glob
 import os
 import pickle as pkl
+from glob import glob
 
 from asapdiscovery.data.utils import (
     MOONSHOT_CDD_ID_REGEX,
