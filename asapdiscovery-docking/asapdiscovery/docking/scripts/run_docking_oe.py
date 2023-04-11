@@ -8,17 +8,21 @@ import os
 import pickle as pkl
 import re
 import shutil
+import tracemalloc
+from functools import partial
 from glob import glob
 from pathlib import Path
 
+import numpy as np
 import pandas
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
-import tracemalloc
+from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
 
 def check_results(d):
@@ -118,7 +122,7 @@ def load_dus(file_base, by_compound=False):
         full_name = m.group()
         du = oechem.OEDesignUnit()
         if not oechem.OEReadDesignUnit(fn, du):
-            logger.warning(f"Failed to read DesignUnit {fn}")
+            logger.error(f"Failed to read DesignUnit {fn}")
             continue
         du_dict[full_name] = du
         try:
@@ -129,7 +133,7 @@ def load_dus(file_base, by_compound=False):
     return dataset_dict, du_dict
 
 
-def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
+def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **kwargs):
     """
     Wrapper function for multiprocessing. Everything other than the named args
     will be passed directly to run_docking_oe.
@@ -144,6 +148,8 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
         DesignUnit name
     compound_name : str
         Compound name, used for error messages if given
+    GAT_model : GATInference, optional
+        GAT model to use for inference. If None, will not perform inference.
 
     Returns
     -------
@@ -186,6 +192,10 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
             )
         smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
+        if GAT_model is not None:
+            GAT_score = GAT_model.predict_from_smiles(smiles)
+        else:
+            GAT_score = np.nan
     else:
         out_fn = ""
         rmsds = [-1.0]
@@ -194,6 +204,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
         chemgauss_scores = [-1.0]
         clash = -1
         smiles = "None"
+        GAT_score = np.nan
 
     results = [
         (
@@ -207,6 +218,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, **kwargs):
             chemgauss,
             clash,
             smiles,
+            GAT_score,
         )
         for i, (rmsd, prob, method, chemgauss) in enumerate(
             zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
@@ -308,6 +320,12 @@ def get_args():
         default=-1,
         help="Number of docking runs to run. Useful for debugging and testing.",
     )
+    parser.add_argument(
+        "-gat",
+        "--gat",
+        action="store_true",
+        help="Whether to use GAT model to score docked poses.",
+    )
 
     return parser.parse_args()
 
@@ -322,8 +340,6 @@ def main():
     logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
     if args.exp_file:
         import json
-
-        from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 
         # Load compounds
         exp_compounds = [
@@ -355,6 +371,12 @@ def main():
     elif args.exp_file is None:
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
+
+    # load ml models
+    if args.gat:
+        GAT_model = GATInference("model1")
+    else:
+        GAT_model = None
 
     # Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(
@@ -397,6 +419,8 @@ def main():
         # Arbitrary sort index, same for each ligand
         sort_idxs = [list(range(len(xtal_ids)))] * n_mols
         args.top_n = len(xtal_ids)
+
+    # make multiprocessing args
     mp_args = []
     for i, m in enumerate(mols):
         dock_dus = []
@@ -437,7 +461,12 @@ def main():
         "chemgauss4_score",
         "clash",
         "SMILES",
+        "GAT_score",
     ]
+
+    # Apply ML arguments as kwargs to mp_func
+    mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
+
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     logger.info(f"CPUs: {mp.cpu_count()}")
     logger.info(f"N Processes: {len(mp_args)}")
@@ -447,7 +476,7 @@ def main():
     logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
 
     with mp.Pool(processes=nprocs) as pool:
-        pool.starmap(mp_func, mp_args)
+        pool.starmap(mp_func_ml_applied, mp_args)
     logger.info("Done!")
 
 

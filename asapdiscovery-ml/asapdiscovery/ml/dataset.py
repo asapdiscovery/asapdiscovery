@@ -1,4 +1,5 @@
-from torch.utils.data import Dataset
+from asapdiscovery.data.schema import ExperimentalCompoundData
+from torch.utils.data import Dataset, Subset
 
 
 class DockedDataset(Dataset):
@@ -487,7 +488,7 @@ class GraphDataset(Dataset):
             yield (s["compound"], s)
 
 
-class GraphInferenceDataset(GraphDataset):
+class GraphInferenceDataset(Dataset):
     """
     Class for loading SMILES as graphs without experimental data
     """
@@ -497,13 +498,13 @@ class GraphInferenceDataset(GraphDataset):
         exp_compounds,
         node_featurizer=None,
         edge_featurizer=None,
-        cache_file=None,
+        cache_file="./cache.bin",
     ):
         """
         Parameters
         ----------
-        exp_compounds : List[schema.ExperimentalCompoundData]
-            List of compounds
+        exp_compounds : Union[List[schema.ExperimentalCompoundData], List[str]]
+            List of compounds or smiles
         node_featurizer : BaseAtomFeaturizer, optional
             Featurizer for node data
         edge_featurizer : BaseBondFeaturizer, optional
@@ -515,6 +516,22 @@ class GraphInferenceDataset(GraphDataset):
         import pandas
         from dgllife.data import MoleculeCSVDataset
         from dgllife.utils import SMILESToBigraph
+
+        self.compounds_dict = {}
+        self.smiles_dict = {}
+        self.graphs = []
+
+        if all([type(exp) == str for exp in exp_compounds]):
+            exp_compounds = [
+                ExperimentalCompoundData(compound_id=i, smiles=c)
+                for i, c in enumerate(exp_compounds)
+            ]
+        elif all([type(exp) == ExperimentalCompoundData for exp in exp_compounds]):
+            pass
+        else:
+            raise TypeError(
+                "exp_compounds must be a list of strings or ExperimentalCompoundData"
+            )
 
         # Build dataframe
         all_compound_ids, all_smiles = zip(
@@ -547,22 +564,28 @@ class GraphInferenceDataset(GraphDataset):
             task_names=[],
         )
 
-        self.compounds = {}
-        self.structures = []
-        for i, (compound_id, g) in enumerate(zip(all_compound_ids, dataset)):
-            # Need a tuple to match DockedDataset, but the graph objects aren't
-            #  attached to a protein structure at all
-            compound = ("NA", compound_id)
+        for compound_id, g in zip(all_compound_ids, dataset):
+            self.compounds_dict[compound_id] = g[1]
+            self.graphs.append(g[1])
+            self.smiles_dict[g[0]] = g[1]
 
-            # Add data
-            try:
-                self.compounds[compound].append(i)
-            except KeyError:
-                self.compounds[compound] = [i]
-            self.structures.append(
-                {
-                    "smiles": g[0],
-                    "g": g[1],
-                    "compound": compound,
-                }
-            )
+    def __len__(self):
+        return len(self.graphs)
+
+    def __getitem__(self, idx):
+        if isinstance(idx, str):
+            return self.smiles_dict[idx]
+        elif isinstance(idx, int):
+            return self.graphs[idx]
+        elif isinstance(idx, list):
+            return [self.graphs[i] for i in idx]
+        elif isinstance(idx, slice):
+            start, stop, step = idx.indices(len(self))
+            idx = list(range(start, stop, step))
+            subset = Subset(self, idx)
+            return subset
+        else:
+            raise TypeError("idx must be a string, int, list, or slice")
+
+    def __iter__(self):
+        yield from self.graphs
