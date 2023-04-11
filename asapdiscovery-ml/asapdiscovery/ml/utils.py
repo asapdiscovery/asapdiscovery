@@ -1124,12 +1124,20 @@ def split_dataset(
 
     # Split dataset into train/val/test
     if grouped:
-        n_train = int(len(ds) * train_frac)
-        n_val = int(len(ds) * val_frac)
-        n_test = len(ds) - n_train - n_val
-        ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], g
-        )
+        if temporal:
+            ds_train, ds_val, ds_test = split_temporal(
+                ds, [train_frac, val_frac, test_frac], grouped=True
+            )
+            n_train = len(ds_train)
+            n_val = len(ds_val)
+            n_test = len(ds_test)
+        else:
+            ds_train, ds_val, ds_test = torch.utils.data.random_split(
+                ds, [n_train, n_val, n_test], g
+            )
+            n_train = int(len(ds) * train_frac)
+            n_val = int(len(ds) * val_frac)
+            n_test = len(ds) - n_train - n_val
         print(
             (
                 f"{n_train} training molecules, {n_val} validation molecules, "
@@ -1236,7 +1244,7 @@ def split_molecules(ds, split_fracs, generator=None):
     return all_subsets
 
 
-def split_temporal(ds, split_fracs, reverse=False):
+def split_temporal(ds, split_fracs, grouped=False, reverse=False):
     """
     Split molecules temporally by date created. Earlier molecules will be placed in the
     training set and later molecules will be placed in the val/test sets (unless
@@ -1248,6 +1256,8 @@ def split_temporal(ds, split_fracs, reverse=False):
         Molecular dataset to split
     split_fracs : List[float]
         List of fraction of compounds to put in each split
+    grouped : bool, default=False
+        Splitting a GroupedDockedDataset object
     reverse : bool, default=False
         Reverse sorting of data
 
@@ -1271,11 +1281,27 @@ def split_temporal(ds, split_fracs, reverse=False):
     # TODO: make this whole process more compact
     # First get all the unique created dates
     dates_dict = {}
-    for i, s in enumerate(ds.structures):
-        try:
-            date_created = s["date_created"]
-        except KeyError:
-            raise ValueError("Dataset doesn't contain dates.")
+
+    if grouped:
+        iter_list = ds.compound_ids
+    else:
+        iter_list = ds.structures
+    for i, iter_item in enumerate(iter_list):
+        if grouped:
+            all_dates = [
+                s["date_created"]
+                for s in ds.structures[iter_item]
+                if "date_created" in s
+            ]
+            if len(all_dates) == 0:
+                raise ValueError("Dataset doesn't contain dates.")
+            else:
+                date_created = min(all_dates)
+        else:
+            try:
+                date_created = iter_item["date_created"]
+            except KeyError:
+                raise ValueError("Dataset doesn't contain dates.")
         try:
             dates_dict[date_created].append(i)
         except KeyError:
