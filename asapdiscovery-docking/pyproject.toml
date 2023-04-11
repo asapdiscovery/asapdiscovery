@@ -33,6 +33,7 @@ dependencies = [
 #build-design-units = "asapdiscovery.docking.scripts.build_design_units:main"
 clean-results-csv = "asapdiscovery.docking.scripts.clean_results_csv:main"
 collate-results = "asapdiscovery.docking.scripts.collate_results:main"
+copy-ligands-to-new-structures = "asapdiscovery.docking.scripts.copy_ligands_to_new_structures:main"
 create-fauxalysis-subset-from-yaml = "asapdiscovery.docking.scripts.create_fauxalysis_subset_from_yaml:main"
 fauxalysis-from-docking = "asapdiscovery.docking.scripts.fauxalysis_from_docking:main"
 find-all-mcs = "asapdiscovery.docking.scripts.find_all_mcs:main"
