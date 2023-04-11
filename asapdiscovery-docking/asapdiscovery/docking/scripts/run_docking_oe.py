@@ -399,7 +399,10 @@ def main():
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
 
-    # In case a glob string or directory was actually passed in
+    # The receptor args are captured as a list, but we still want to handle the case of
+    #  a glob/directory/filename being passed. If there's only one thing in the list,
+    #  assume it is a glob/directory/filename, and pull it out of the list so it's
+    #  properly handled in `parse_du_filenames`
     if len(args.receptor) == 1:
         args.receptor = args.receptor[0]
     # Handle default regex
