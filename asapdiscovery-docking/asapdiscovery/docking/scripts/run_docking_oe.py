@@ -18,6 +18,7 @@ from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
+import tracemalloc
 
 
 def check_results(d):
@@ -443,12 +444,10 @@ def main():
     logger.info(f"N Cores: {args.num_cores}")
 
     mp_args = mp_args[: args.debug_num]
-    chunk_size = int(len(mp_args) / nprocs)
-    logger.info(
-        f"Running {len(mp_args)} docking runs over {nprocs} cores with a chunksize of {chunk_size}."
-    )
-    with mp.Pool(processes=nprocs, maxtasksperchild=1) as pool:
-        pool.starmap(mp_func, mp_args, chunksize=chunk_size)
+    logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+
+    with mp.Pool(processes=nprocs) as pool:
+        pool.starmap(mp_func, mp_args)
     logger.info("Done!")
 
 

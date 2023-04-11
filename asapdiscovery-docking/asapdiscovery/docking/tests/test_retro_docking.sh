@@ -8,3 +8,4 @@ run-docking-oe \
 --omega \
 --relax clash \
 --debug_num 5
+echo done
