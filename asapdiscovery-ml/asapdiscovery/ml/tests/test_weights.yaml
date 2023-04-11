@@ -2,26 +2,28 @@
 
 model1:
   type: GAT
-  # Path to the weights file.
-  weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model.pth
+  weights:
+    resource: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model.pth
     sha256hash: f54a68248cb907a2cf1dbf709580abd99a73af852a404a36b603ae02a47a34e2
-  # Path to the config file, can be absent
-  # config:
-  # Date tag of the weights file, must be in the format of YYYY-MM-DD.
+  # config: # config can be absent
   last_updated: 2023-01-01
 
 model2:
   type: blah
-  weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_copy.pth
+  weights:
+    resource: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_copy.pth
     sha256hash: f54a68248cb907a2cf1dbf709580abd99a73af852a404a36b603ae02a47a34e2
-  last_updated: 2023-01-01
-  config: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_config.json
+  config:
+    resource: https://asap-discovery-ml-weights.s3.amazonaws.com/test/model_config.json
     sha256hash: d0b4d6c1f74b3e9caacea50af6ff6927803143842a72e74ebc7dbefdb2bcf444
+  last_updated: 2023-01-01
 
 gatmodel_test:
   type: GAT
-  weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example.pth
+  weights:
+    resource: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example.pth
     sha256hash: 38e5476ede0ed67ad0951d5d1c7c913ecf0aeaa6a1913d16ee9dca28b5d9795b
-  config: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example_config.json
+  config:
+    resource: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example_config.json
     sha256hash: d0b4d6c1f74b3e9caacea50af6ff6927803143842a72e74ebc7dbefdb2bcf444
   last_updated: 2023-01-01

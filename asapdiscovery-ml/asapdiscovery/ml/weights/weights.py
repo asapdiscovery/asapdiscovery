@@ -7,6 +7,8 @@ import requests
 import validators
 import yaml
 
+from asapdiscovery.data.hash_utils import compare_file_sha256_hashes
+
 ModelSpec = namedtuple("ModelSpec", ["name", "type", "weights", "config"])
 
 
@@ -52,20 +54,35 @@ def fetch_model_from_spec(
     weights_set = set()
     for model in models:
         model_spec = spec[model]
-        weights = model_spec["weights"]
         model_type = model_spec["type"]
+
+        weights = model_spec["weights"]
+        weights_resource = weights["resource"]
+        weights_hash = weights["sha256hash"]
+
+        # fetch config if provided
         if "config" in model_spec:
             config = model_spec["config"]
-            config = fetch_file(config, local_dir, force_fetch)
+            config_resource = config["resource"]
+            config_hash = config["sha256hash"]
+            config_file = fetch_file(config_resource, local_dir, force_fetch)
+            compare_file_sha256_hashes(config_file, config_hash)
+
         else:
-            config = None
-        if weights in weights_set:
+            config_file = None
+        if weights_resource in weights_set:
             raise ValueError(
                 f"Duplicate file {weights} in spec file. Please specify a unique filename for each model."
             )
-        weight_file = fetch_file(weights, local_dir, force_fetch)
-        weights_set.add(weights)
-        specs[model] = ModelSpec(model, model_type, weight_file, config)
+
+        # fetch weights
+        weights_file = fetch_file(weights_resource, local_dir, force_fetch)
+        compare_file_sha256_hashes(weights_file, weights_hash)
+
+        weights_set.add(weights_resource)
+        # make model spec
+        specs[model] = ModelSpec(model, model_type, weights_file, config_file)
+
     return specs
 
 
