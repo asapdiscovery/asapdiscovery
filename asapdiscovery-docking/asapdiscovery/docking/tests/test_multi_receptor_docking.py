@@ -1,9 +1,9 @@
 from pathlib import Path
-import pytest
 from asapdiscovery.docking import run_docking_oe
 from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
     load_openeye_pdb,
+    load_openeye_sdf,
     save_openeye_pdb,
     save_openeye_sdf,
     oechem,
@@ -14,60 +14,39 @@ from asapdiscovery.data.openeye import (
 from asapdiscovery.data.logging import FileLogger
 
 
-def test_multi_receptor_docking():
+def test_loading_inputs():
     # Make output directory
-    output_dir = Path("outputs/fauxalysis_generation_test")
+    output_dir = Path("outputs/multireceptor_docking_test")
     if not output_dir.exists():
         output_dir.mkdir()
 
     # Load molecules
-    ligand_sdf = "inputs/Mpro_combined_labeled.sdf"
-    mols = load_openeye_sdfs(ligand_sdf)
-    print(f"Loaded {len(mols)} ligands from {ligand_sdf}")
+    ligand_sdf = "inputs/multireceptor_docking_test/docked.sdf"
+    mol = load_openeye_sdf(ligand_sdf)
 
-    # Load proteins
-    protein_glob = "inputs/prepped_mers_receptors/*.pdb"
-    protein_files = list(Path().glob(protein_glob))
-    prot_mols = []
-    for protein_file in protein_files[3:5]:
-        # Get protein name
-        # TODO: replace this by fetching name directly from OEDU file
-        protein_name = protein_file.stem
-        if protein_file.suffix == ".pdb":
-            # Load protein
-            mol = load_openeye_pdb(str(protein_file))
-            if mol is None:
-                raise RuntimeError(f"Failed to read protein {protein_file}")
-            mol.SetTitle(protein_name)
-            prot_mols.append(mol)
-        else:
-            raise NotImplementedError("Only PDB files are supported for now")
+    # Load design units
+    du_glob = "inputs/multireceptor_docking_test/*.oedu"
+    du_files = list(Path().glob(du_glob))
 
-    print(f"Loaded {len(prot_mols)} proteins from {protein_glob}")
+    dus = []
+    for du_fn in du_files:
+        du = oechem.OEDesignUnit()
+        oechem.OEReadDesignUnit(str(du_fn), du)
+        dus.append(du)
 
-    for mol in mols[0:1]:
-        out_dir = output_dir / mol.GetTitle()
-        if not out_dir.exists():
-            out_dir.mkdir()
+    print(
+        f"Loaded {len(dus)} proteins from {du_glob} and {mol.GetTitle()} ligands from {ligand_sdf}"
+    )
+    return dus, mol, output_dir
 
-        # Make new Receptors
-        dus = []
-        for prot_mol in prot_mols:
-            print(f"Making DU for {prot_mol.GetTitle()}")
-            # combined = combine_protein_ligand(prot_mol, mol)
-            du = oechem.OEDesignUnit()
-            du.SetTitle(prot_mol.GetTitle())
-            oespruce.OEMakeDesignUnit(du, prot_mol, mol)
-            print(f"Making Receptor for {prot_mol.GetTitle()}")
-            oedocking.OEMakeReceptor(du)
-            out_fn = out_dir / f"{mol.GetTitle()}_{prot_mol.GetTitle()}.oedu"
-            oechem.OEWriteDesignUnit(str(out_fn), du)
-            dus.append(du)
 
-        # Use posit to dock against each DU
-        print("Running docking for all DUs")
+def test_single_receptor_docking():
+    dus, mol, out_dir = test_loading_inputs()
+    # Use posit to dock against each DU
+    print("Running docking for all DUs")
+    for du in dus:
         success, posed_mol, docking_id = run_docking_oe(
-            design_units=dus,
+            design_units=[du],
             orig_mol=mol,
             dock_sys="posit",
             relax="clash",
@@ -76,24 +55,44 @@ def test_multi_receptor_docking():
             use_omega=True,
             num_poses=1,
         )
-        out_fn = out_dir / "docked.sdf"
+        out_fn = out_dir / f"{du.GetTitle()}_docked.sdf"
         save_openeye_sdf(posed_mol, str(out_fn))
 
-        # test reversed order
-        dus.reverse()
-        # Use posit to dock against each DU
-        print("Running docking for all DUs")
-        success, posed_mol, docking_id = run_docking_oe(
-            design_units=dus,
-            orig_mol=mol,
-            dock_sys="posit",
-            relax="clash",
-            hybrid=False,
-            compound_name=mol.GetTitle(),
-            use_omega=True,
-            num_poses=1,
-        )
-        out_fn = out_dir / "docked_reversed.sdf"
-        save_openeye_sdf(posed_mol, str(out_fn))
+    print("Done")
 
-        print("Done")
+
+def test_multireceptor_docking():
+    dus, mol, out_dir = test_loading_inputs()
+    # Use posit to dock against each DU
+    print("Running docking for all DUs")
+    success, posed_mol, docking_id = run_docking_oe(
+        design_units=dus,
+        orig_mol=mol,
+        dock_sys="posit",
+        relax="clash",
+        hybrid=False,
+        compound_name=mol.GetTitle(),
+        use_omega=True,
+        num_poses=1,
+    )
+    out_fn = out_dir / "docked.sdf"
+    save_openeye_sdf(posed_mol, str(out_fn))
+
+    # test reversed order
+    dus.reverse()
+    # Use posit to dock against each DU
+    print("Running docking for all DUs")
+    success, posed_mol, docking_id = run_docking_oe(
+        design_units=dus,
+        orig_mol=mol,
+        dock_sys="posit",
+        relax="clash",
+        hybrid=False,
+        compound_name=mol.GetTitle(),
+        use_omega=True,
+        num_poses=1,
+    )
+    out_fn = out_dir / "docked_reversed.sdf"
+    save_openeye_sdf(posed_mol, str(out_fn))
+
+    print("Done")
