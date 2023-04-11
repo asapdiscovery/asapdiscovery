@@ -1,17 +1,18 @@
 from pathlib import Path
-from asapdiscovery.docking import run_docking_oe
+
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
-    load_openeye_sdfs,
+    combine_protein_ligand,
     load_openeye_pdb,
     load_openeye_sdf,
-    save_openeye_pdb,
-    save_openeye_sdf,
+    load_openeye_sdfs,
     oechem,
     oedocking,
     oespruce,
-    combine_protein_ligand,
+    save_openeye_pdb,
+    save_openeye_sdf,
 )
-from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.docking import run_docking_oe
 
 
 def test_loading_inputs():
