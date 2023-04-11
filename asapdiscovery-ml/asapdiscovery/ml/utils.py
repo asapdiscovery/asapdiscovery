@@ -1063,7 +1063,13 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
 
 
 def split_dataset(
-    ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1, rand_seed=42
+    ds,
+    grouped,
+    temporal=False,
+    train_frac=0.8,
+    val_frac=0.1,
+    test_frac=0.1,
+    rand_seed=42,
 ):
     """
     Split a dataset into train, val, and test splits. A warning will be raised
@@ -1075,6 +1081,8 @@ def split_dataset(
         Dataset object to split
     grouped: bool
         If data objects should be grouped by compound_id
+    temporal: bool, default=False
+        Split data temporally instead of randomly
     train_frac: float, default=0.8
         Fraction of dataset to put in the train split
     val_frac: float, default=0.1
@@ -1130,9 +1138,14 @@ def split_dataset(
             flush=True,
         )
     else:
-        ds_train, ds_val, ds_test = split_molecules(
-            ds, [train_frac, val_frac, test_frac], g
-        )
+        if temporal:
+            ds_train, ds_val, ds_test = split_temporal(
+                ds, [train_frac, val_frac, test_frac]
+            )
+        else:
+            ds_train, ds_val, ds_test = split_molecules(
+                ds, [train_frac, val_frac, test_frac], g
+            )
 
         train_compound_ids = {c[1] for c, _ in ds_train}
         val_compound_ids = {c[1] for c, _ in ds_val}
