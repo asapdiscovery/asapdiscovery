@@ -56,12 +56,25 @@ def run_docking_oe(
     if len(design_units) == 0:
         raise ValueError("design_units must have at least one OEDesignUnit")
 
-    if compound_name:
-        logger = logging.getLogger(f"run_oe_docking.{compound_name}")
-        print(compound_name)
+    import sys
 
+    if compound_name:
+        logname = f"run_docking_oe.{compound_name}"
     else:
-        raise NotImplementedError
+        logname = "run_docking_oe"
+    logger = logging.getLogger(logname)
+
+    if not logger.hasHandlers():
+        logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s"
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
+    logger.info(f"Running docking for {compound_name}")
     from asapdiscovery.data.openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
@@ -122,6 +135,7 @@ def run_docking_oe(
         # Set up poser object
         poser = oedocking.OEPosit(opts)
         for du in design_units:
+            logger.info(f"Adding {du.GetTitle()} to receptor list")
             poser.AddReceptor(du)
 
         # Run posing
@@ -132,6 +146,8 @@ def run_docking_oe(
             # ranked_design_units = [
             #     du.GetTitle() for du in poser.RankDesignUnits(dock_lig)
             # ]
+            # logger.info(f"Ranked design units: {ranked_design_units}")
+
         except TypeError as e:
             logger.error(pose_res, dock_lig, type(dock_lig))
             raise e
@@ -204,7 +220,9 @@ def run_docking_oe(
             posit_methods.append(
                 oedocking.OEPositMethodGetName(single_res.GetPositMethod())
             )
-            docked_design_units.append(design_units[single_res.GetReceptorIndex()])
+            docked_du = design_units[single_res.GetReceptorIndex()].CreateCopy()
+            logger.info(f"Docked to {docked_du.GetTitle()}")
+            docked_design_units.append(docked_du)
     else:
         err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
         if compound_name:
