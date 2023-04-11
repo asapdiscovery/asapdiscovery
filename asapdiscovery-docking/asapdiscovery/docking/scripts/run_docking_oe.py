@@ -2,18 +2,18 @@
 Script to dock an SDF file of ligands to prepared structures.
 """
 import argparse
-from concurrent.futures import TimeoutError
 import multiprocessing as mp
 import os
-import pebble
 import pickle as pkl
 import re
 import shutil
+from concurrent.futures import TimeoutError
 from functools import partial
 from glob import glob
 
 import numpy as np
 import pandas
+import pebble
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
