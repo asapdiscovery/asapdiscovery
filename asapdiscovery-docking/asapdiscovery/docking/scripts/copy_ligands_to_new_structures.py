@@ -4,7 +4,6 @@ to a new set of structures
 """
 import argparse
 from pathlib import Path
-import logging
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
@@ -14,6 +13,7 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
 )
 import multiprocessing as mp
+from glob import glob
 
 
 def get_args():
@@ -114,7 +114,7 @@ def main():
     logger.info(f"Loaded {len(mols)} ligands from {args.ligand_sdf}")
 
     # Load proteins
-    protein_files = list(Path().glob(args.protein_glob))
+    protein_files = [Path(fn) for fn in glob(args.protein_glob)]
     prot_mols = []
     for protein_file in protein_files:
         # Get protein name
