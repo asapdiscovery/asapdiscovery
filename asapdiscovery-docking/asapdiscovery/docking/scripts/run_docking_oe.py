@@ -117,7 +117,7 @@ def load_dus(file_base, by_compound=False):
         full_name = m.group()
         du = oechem.OEDesignUnit()
         if not oechem.OEReadDesignUnit(fn, du):
-            logger.warning(f"Failed to read DesignUnit {fn}")
+            logger.error(f"Failed to read DesignUnit {fn}")
             continue
         du_dict[full_name] = du
         try:
