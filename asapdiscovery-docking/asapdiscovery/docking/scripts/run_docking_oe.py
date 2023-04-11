@@ -286,7 +286,10 @@ def get_args():
     parser.add_argument(
         "-re",
         "--regex",
-        help="Regex for extracting DesignUnit identifiers from the filename.",
+        help=(
+            "Regex for extracting DesignUnit identifiers from the "
+            "OpenEye DesignUnit filenames."
+        ),
     )
 
     # Output arguments
