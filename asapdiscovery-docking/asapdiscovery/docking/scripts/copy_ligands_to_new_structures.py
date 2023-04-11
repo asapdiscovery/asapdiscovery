@@ -14,6 +14,7 @@ from asapdiscovery.data.openeye import (
 )
 import multiprocessing as mp
 from glob import glob
+from asapdiscovery.data.utils import check_filelist_has_elements
 
 
 def get_args():
@@ -115,6 +116,7 @@ def main():
 
     # Load proteins
     protein_files = [Path(fn) for fn in glob(args.protein_glob)]
+    check_filelist_has_elements(protein_files, "protein files")
     prot_mols = []
     for protein_file in protein_files:
         # Get protein name
