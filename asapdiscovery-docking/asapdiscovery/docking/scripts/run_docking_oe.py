@@ -263,7 +263,7 @@ def get_args():
         help="Pickle file giving compound_ids, xtal_ids, and sort_idxs.",
     )
     parser.add_argument(
-        "-x",
+        "-re",
         "--regex",
         help="Regex for extracting DesignUnit identifiers from the filename.",
     )
