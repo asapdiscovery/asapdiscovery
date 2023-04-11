@@ -11,7 +11,7 @@ authors = [
 ]
 description = "API and scripts related to running docking and preparing the input structures"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9,<3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -42,12 +42,9 @@ make-docked-complexes = "asapdiscovery.docking.scripts.make_docked_complexes:mai
 #mass-add-seqres = "asapdiscovery.docking.scripts.mass_add_seqres:main"
 mcs-res-mpro-to-compound = "asapdiscovery.docking.scripts.mcs_res_mpro_to_compound:main"
 plot-docking-results = "asapdiscovery.docking.scripts.plot_docking_results:main"
-prep-fragalysis-dus = "asapdiscovery.docking.scripts.prep_fragalysis_dus:main"
-prep-pdb-structures = "asapdiscovery.docking.scripts.prep_pdb_structures:main"
-prep-proteins = "asapdiscovery.docking.scripts.prep_proteins:main"
 run-docking-oe = "asapdiscovery.docking.scripts.run_docking_oe:main"
 score-structures = "asapdiscovery.docking.scripts.score_structures:main"
-test-protein-prep = "asapdiscovery.docking.scripts.test_protein_prep:main"
+write-receptor-grids = "asapdiscovery.docking.scripts.write_receptor_grids:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

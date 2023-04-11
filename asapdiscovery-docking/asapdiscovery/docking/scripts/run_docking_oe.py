@@ -9,14 +9,18 @@ import pebble
 import pickle as pkl
 import re
 import shutil
+from functools import partial
 from glob import glob
 
+import numpy as np
 import pandas
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
+from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
 
 def check_results(d):
@@ -76,6 +80,7 @@ def load_dus(file_base, by_compound=False):
     """
 
     if os.path.isdir(file_base):
+        print(f"Using {file_base} as directory")
         all_fns = [
             os.path.join(file_base, fn)
             for _, _, files in os.walk(file_base)
@@ -83,12 +88,14 @@ def load_dus(file_base, by_compound=False):
             if fn[-4:] == "oedu"
         ]
     elif os.path.isfile(file_base) and by_compound:
+        print(f"Using {file_base} as file")
         df = pandas.read_csv(file_base)
         all_fns = [
             os.path.join(os.path.dirname(fn), "predocked.oedu")
             for fn in df["Docked_File"]
         ]
     else:
+        print(f"Using {file_base} as glob")
         all_fns = glob(file_base)
 
     # check that we actually have loaded in prepped receptors.
@@ -100,6 +107,7 @@ def load_dus(file_base, by_compound=False):
         re_pat = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
     else:
         re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
+    print(f"Loading {len(all_fns)} design units")
     for fn in all_fns:
         m = re.search(re_pat, fn)
         if m is None:
@@ -118,11 +126,11 @@ def load_dus(file_base, by_compound=False):
             dataset_dict[dataset].append(full_name)
         except KeyError:
             dataset_dict[dataset] = [full_name]
-
+    print(f"{len(du_dict.keys())} design units loaded")
     return dataset_dict, du_dict
 
 
-def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
+def mp_func(out_dir, lig_name, du_name, *args, GAT_model=None, **kwargs):
     """
     Wrapper function for multiprocessing. Everything other than the named args
     will be passed directly to run_docking_oe.
@@ -135,6 +143,8 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         Ligand name
     du_name : str
         DesignUnit name
+    GAT_model : GATInference, optional
+        GAT model to use for inference. If None, will not perform inference.
 
     Returns
     -------
@@ -167,6 +177,10 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
             )
         smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
+        if GAT_model is not None:
+            GAT_score = GAT_model.predict_from_smiles(smiles)
+        else:
+            GAT_score = np.nan
     else:
         out_fn = ""
         rmsds = [-1.0]
@@ -175,6 +189,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
         chemgauss_scores = [-1.0]
         clash = -1
         smiles = "None"
+        GAT_score = np.nan
 
     results = [
         (
@@ -188,6 +203,7 @@ def mp_func(out_dir, lig_name, du_name, *args, **kwargs):
             chemgauss,
             clash,
             smiles,
+            GAT_score,
         )
         for i, (rmsd, prob, method, chemgauss) in enumerate(
             zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
@@ -245,7 +261,10 @@ def get_args():
         "--timeout",
         type=int,
         default=30,
-        help="Timeout (in seconds) for each docking thread.",
+        help=(
+            "Timeout (in seconds) for each docking thread. "
+            "Set to a negative number to disable."
+        ),
     )
     parser.add_argument(
         "-t",
@@ -291,6 +310,12 @@ def get_args():
         default=1,
         help="Number of poses to return from docking.",
     )
+    parser.add_argument(
+        "-gat",
+        "--gat",
+        action="store_true",
+        help="Whether to use GAT model to score docked poses.",
+    )
 
     return parser.parse_args()
 
@@ -303,8 +328,6 @@ def main():
 
     if args.exp_file:
         import json
-
-        from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 
         # Load compounds
         exp_compounds = [
@@ -338,8 +361,18 @@ def main():
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
 
+    # load ml models
+    if args.gat:
+        GAT_model = GATInference("model1")
+    else:
+        GAT_model = None
+
     # Load all receptor DesignUnits
     dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
+    print(f"{n_mols} molecules found")
+    print(f"{len(du_dict.keys())} receptor structures found")
+    assert n_mols > 0
+    assert len(du_dict.keys()) > 0
 
     # Load sort indices if given
     if args.sort_res:
@@ -361,14 +394,20 @@ def main():
                 "compound_ids in --exp_file."
             )
     else:
-        # Use index as compound_id
-        compound_ids = [str(i) for i in range(n_mols)]
+        # Check to see if the SDF files have a Compound_ID Column
+        if all(len(oechem.OEGetSDData(mol, "Compound_ID")) > 0 for mol in mols):
+            print("Using Compound_ID column from sdf file")
+            compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
+        else:
+            # Use index as compound_id
+            compound_ids = [str(i) for i in range(n_mols)]
         # Get dataset values from DesignUnit filenames
         xtal_ids = list(dataset_dict.keys())
         # Arbitrary sort index, same for each ligand
         sort_idxs = [list(range(len(xtal_ids)))] * n_mols
         args.top_n = len(xtal_ids)
 
+    # make multiprocessing args
     mp_args = []
     for i, m in enumerate(mols):
         dock_dus = []
@@ -397,6 +436,9 @@ def main():
         ]
         mp_args.extend(new_args)
 
+    # Apply ML arguments as kwargs to mp_func
+    mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
+
     results_cols = [
         "ligand_id",
         "du_structure",
@@ -408,15 +450,21 @@ def main():
         "chemgauss4_score",
         "clash",
         "SMILES",
+        "GAT_score",
     ]
     if args.num_cores > 0:
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+        print(
+            f"CPUs: {mp.cpu_count()}\n"
+            f"N Processes: {mp_args}\n"
+            f"N Cores: {args.num_cores}"
+        )
         print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
         with pebble.ProcessPool(max_workers=nprocs) as pool:
             if args.timeout <= 0:
                 args.timeout = None
             # Need to flip args structure for pebble
-            res = pool.map(mp_func, *zip(*mp_args), timeout=args.timeout)
+            res = pool.map(mp_func_ml_applied, *zip(*mp_args), timeout=args.timeout)
 
             # List to keep track of successful results
             results_df = []
@@ -454,7 +502,7 @@ def main():
             print(f"Docking failed for {len(failed_runs)} runs", flush=True)
 
     else:
-        results_df = [mp_func(*args_list) for args_list in mp_args]
+        results_df = [mp_func_ml_applied(*args_list) for args_list in mp_args]
     results_df = [res for res_list in results_df for res in res_list]
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 

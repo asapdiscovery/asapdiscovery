@@ -7,7 +7,7 @@ class FileLogger:
         self.name = logname
         self.logfile = logfile
         if self.logfile is None:
-            self.logfile = self.logname + "-log.txt"
+            self.logfile = self.name + "-log.txt"
 
         self.logger = logging.getLogger(self.logfile)
         self.logger.setLevel(logging.DEBUG)

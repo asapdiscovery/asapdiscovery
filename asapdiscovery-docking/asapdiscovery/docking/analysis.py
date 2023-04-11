@@ -1,6 +1,7 @@
 import os
 import pickle as pkl
 import re
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -65,7 +66,6 @@ class DockingDataset:
                     mcss_rank = info[9]
 
                 except IndexError:
-
                     # however its a convenient way of identifying which is the original
                     # xtal
                     ref_xtal = xtal
@@ -375,7 +375,26 @@ def load_dataframes(input_dir):
     }
 
 
-def calculate_rmsd_openeye(reference_ligand: oechem.OEMol, docked_ligand: oechem.OEMol):
+def calculate_rmsd_openeye(
+    reference_ligand: oechem.OEMol or oechem.OEGraphMol,
+    docked_ligand: oechem.OEMol or oechem.OEGraphMol,
+) -> float:
+    """
+    Calculate the root-mean-square deviation (RMSD) between the coordinates of two OpenEye molecules. The OEMol or
+    OEGraphMol objects are converted to coordinates using the .GetCoords() method and then oechem.OERMSD is used.
+
+    Parameters
+    ----------
+    reference_ligand : oechem.OEMol or oechem.OEGraphMol
+        The reference molecule to which the docked molecule is compared.
+    docked_ligand : oechem.OEMol or oechem.OEGraphMol
+        The docked molecule to be compared to the reference molecule.
+
+    Returns
+    -------
+    float
+        The RMSD between the two molecules' coordinates, with hydrogens excluded.
+    """
     # Calculate RMSD
     oechem.OECanonicalOrderAtoms(reference_ligand)
     oechem.OECanonicalOrderBonds(reference_ligand)
@@ -400,3 +419,36 @@ def calculate_rmsd_openeye(reference_ligand: oechem.OEMol, docked_ligand: oechem
         len(predocked_coords) // 3,
     )
     return rmsd
+
+
+def write_all_rmsds_to_reference(
+    ref_mol: oechem.OEGraphMol,
+    docked_mols: [oechem.OEGraphMol],
+    output_dir: Path,
+    compound_id,
+):
+    """
+    Calculates the RMSD between a reference molecule and a list of docked molecules,
+    and saves the results to a .npy file.
+
+    Parameters
+    ----------
+    ref_mol: oechem.OEGraphMol
+        The reference molecule, for which the RMSD is calculated.
+    docked_mols: [oechem.OEGraphMol]
+        A list of docked molecules, for which the RMSD is calculated with respect to the reference molecule.
+    output_dir: Path
+        The directory where the output file will be saved.
+    compound_id: str
+        A unique identifier for the compound being analyzed, used as the name of the output file.
+
+    Returns
+    -------
+    None
+    """
+    rmsds = [
+        (docked_mol.GetTitle(), calculate_rmsd_openeye(ref_mol, docked_mol))
+        for docked_mol in docked_mols
+    ]
+
+    np.save(str(output_dir / f"{compound_id}.npy"), rmsds)

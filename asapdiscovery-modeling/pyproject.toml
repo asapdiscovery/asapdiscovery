@@ -11,7 +11,7 @@ authors = [
 ]
 description = "API and scripts for preparing protein and ligand models for downstream applications"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9,<3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -32,6 +32,12 @@ dependencies = [
 [project.scripts]
 blast-search = "asapdiscovery.modeling.scripts.blast_search:main"
 make-foldalysis = "asapdiscovery.modeling.scripts.make_foldalysis:main"
+prep-fragalysis-dus = "asapdiscovery.modeling.scripts.prep_fragalysis_dus:main"
+prep-fragalysis-for-plipify = "asapdiscovery.modeling.scripts.prep_fragalysis_for_plipify:main"
+prep-mers-pdbs = "asapdiscovery.modeling.scripts.prep_mers_pdbs:main"
+prep-pdb-structures = "asapdiscovery.modeling.scripts.prep_pdb_structures:main"
+prep-proteins = "asapdiscovery.modeling.scripts.prep_proteins:main"
+split-oedu-and-save = "asapdiscovery.modeling.scripts.split_oedu_and_save:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

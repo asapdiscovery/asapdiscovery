@@ -115,3 +115,6 @@ oe_license.txt
 
 # Figures
 *.png
+
+# Log Files
+cluster_scripts/log_files

@@ -10,17 +10,11 @@ based on what complex is picked by the user.
 
 import argparse
 import json
-import os
-import sys
 
 import pandas as pd
 import plotly.express as px
-from dash import Dash, Input, Output, ctx, dash_table, dcc, html
-
-repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(repo_path)
-
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
+from dash import Dash, Input, Output, ctx, dash_table, dcc, html
 
 parser = argparse.ArgumentParser(description="")
 # Input arguments
@@ -494,7 +488,6 @@ def update_by_structure(
     Input("by-compound", "clickData"),
 )
 def per_structure_bar_chart(clickData1, clickData2):
-
     # Get "Count" Columns"
     count_columns = [
         column
@@ -543,7 +536,6 @@ def per_structure_bar_chart(clickData1, clickData2):
     Input("by-compound", "clickData"),
 )
 def per_structure_bar_chart(clickData1, clickData2):  # noqa F811
-
     # Get "Values" Columns"
     count_columns = [
         column for column in by_structure.columns if "Min" in column or "Mean" in column
