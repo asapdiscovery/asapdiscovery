@@ -1,20 +1,21 @@
 """
-This is the first step of the fauxalysis pipeline. It copies the ligands from the prepped structures 
+This is the first step of the fauxalysis pipeline. It copies the ligands from the prepped structures
 to a new set of structures
 """
 import argparse
-from pathlib import Path
 import logging
+from pathlib import Path
+
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
+    combine_protein_ligand,
     load_openeye_pdb,
-    save_openeye_pdb,
-    save_openeye_sdf,
+    load_openeye_sdfs,
     oechem,
     oedocking,
     oespruce,
-    load_openeye_sdfs,
-    combine_protein_ligand,
+    save_openeye_pdb,
+    save_openeye_sdf,
 )
 from asapdiscovery.docking.docking import run_docking_oe
 

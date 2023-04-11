@@ -1,6 +1,7 @@
 import logging
-from asapdiscovery.data.openeye import oechem
 from typing import Union
+
+from asapdiscovery.data.openeye import oechem
 
 
 def run_docking_oe(
