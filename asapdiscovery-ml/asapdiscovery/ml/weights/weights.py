@@ -6,7 +6,6 @@ from typing import Dict, List, Tuple, Union  # noqa: F401
 import requests
 import validators
 import yaml
-
 from asapdiscovery.data.hash_utils import compare_file_sha256_hashes
 
 ModelSpec = namedtuple("ModelSpec", ["name", "type", "weights", "config"])
