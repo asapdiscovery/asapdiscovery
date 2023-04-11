@@ -44,15 +44,15 @@ def check_results(d):
     ):
         return False
 
-    try:
-        _ = load_openeye_sdf(os.path.join(d, "docked.sdf"))
-    except Exception:
-        return False
-
-    try:
-        _ = pkl.load(open(os.path.join(d, "results.pkl"), "rb"))
-    except Exception:
-        return False
+    # try:
+    #     _ = load_openeye_sdf(os.path.join(d, "docked.sdf"))
+    # except Exception:
+    #     return False
+    #
+    # try:
+    #     _ = pkl.load(open(os.path.join(d, "results.pkl"), "rb"))
+    # except Exception:
+    #     return False
 
     return True
 
