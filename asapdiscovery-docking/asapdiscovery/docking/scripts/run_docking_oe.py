@@ -22,7 +22,6 @@ from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
-from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
 
 def check_results(d):
@@ -374,6 +373,8 @@ def main():
 
     # load ml models
     if args.gat:
+        from asapdiscovery.ml.inference import GATInference  # noqa: E402
+
         GAT_model = GATInference("model1")
     else:
         GAT_model = None
