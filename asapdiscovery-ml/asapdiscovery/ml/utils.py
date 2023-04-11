@@ -1613,7 +1613,7 @@ def train(
                 ),
                 flush=True,
             )
-            model = model.load_state_dict(es.best_wts)
+            model.load_state_dict(es.best_wts)
             break
 
     return (
