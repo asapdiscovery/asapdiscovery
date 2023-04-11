@@ -5,6 +5,24 @@ python run_docking_oe.py \
 -r /path/to/receptors/*.oedu \
 -s /path/to/mcs_sort_results.pkl \
 -o /path/to/docking/output/
+
+Example usage with a custom regex for parsing your DU filenames:
+Suppose your receptors are named
+ - /path/to/receptors/Structure0_0.oedu
+ - /path/to/receptors/Structure0_1.oedu
+ - /path/to/receptors/Structure0_2.oedu
+ - ...
+where each Structure<i> is a unique crystal structure, and each Structure<i>_<j> is a
+different DesignUnit for that structure. You might construct your regex as
+'(Compound[0-9]+)_[0-9]+', which will capture the Structure<i> as the unique structure
+ID, and Structure<i>_<j> as the full name. Note that single quotes should be used around
+the regex in order to avoid any accidental wildcard expansion by the OS:
+python run_docking_oe.py \
+-e /path/to/experimental_data.json \
+-r /path/to/receptors/*.oedu \
+-s /path/to/mcs_sort_results.pkl \
+-o /path/to/docking/output/ \
+-re '(Compound[0-9]+)_[0-9]+'
 """
 import argparse
 import multiprocessing as mp
