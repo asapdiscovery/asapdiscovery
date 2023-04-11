@@ -320,7 +320,7 @@ def get_args():
         default=-1,
         help="Number of docking runs to run. Useful for debugging and testing.",
     )
-    parser.add_argument( 
+    parser.add_argument(
         "-gat",
         "--gat",
         action="store_true",

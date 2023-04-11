@@ -56,4 +56,3 @@ dependencies:
     # testing
     - pytest-console-scripts
     - pytest-timeout
-

@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Union, Optional
+from typing import Optional, Union
 
 
 class FileLogger:
@@ -10,7 +10,9 @@ class FileLogger:
         path: str,
         logfile: Optional[str] = None,
         level: Optional[int] = logging.DEBUG,
-        format: Optional[str] = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
+        format: Optional[
+            str
+        ] = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
     ):
         self.name = logname
         self.logfile = logfile

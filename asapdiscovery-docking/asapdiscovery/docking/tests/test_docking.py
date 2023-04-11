@@ -1,6 +1,7 @@
-import pytest
 import os
 import subprocess
+
+import pytest
 
 
 def finalizer_function():
