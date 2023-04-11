@@ -254,7 +254,10 @@ def get_args():
         "--num_cores",
         type=int,
         default=1,
-        help="Number of concurrent processes to run.",
+        help=(
+            "Number of concurrent processes to run. "
+            "Set to <= 0 to disable multiprocessing."
+        ),
     )
     parser.add_argument(
         "-m",
