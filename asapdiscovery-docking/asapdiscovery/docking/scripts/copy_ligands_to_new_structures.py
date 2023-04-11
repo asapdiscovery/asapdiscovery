@@ -54,9 +54,16 @@ def make_dus_for_protein(prot_mol, lig_mols, output_dir):
     logger = FileLogger(
         f"copy_ligand_to_new_structures.{prot_mol.GetTitle()}", out_dir
     ).getLogger()
+
     for lig_mol in lig_mols:
-        logger.info(f"Making DU for {lig_mol.GetTitle()}")
-        # combined = combine_protein_ligand(prot_mol, mol)
+        logger.info(f"Making DUs for {lig_mol.GetTitle()}")
+        errfs = oechem.oeofstream(
+            str(out_dir / f"openeye_{lig_mol.GetTitle()}_{prot_mol.GetTitle()}-log.txt")
+        )
+        oechem.OEThrow.SetOutputStream(errfs)
+        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+        oechem.OEThrow.Info(f"Making DU for {lig_mol.GetTitle()}")
+
         du = oechem.OEDesignUnit()
         du.SetTitle(f"{prot_mol.GetTitle()}_{lig_mol.GetTitle()}")
         oespruce.OEMakeDesignUnit(du, prot_mol, lig_mol)
@@ -73,9 +80,15 @@ def make_dus_for_ligand(lig_mol, prot_mols, output_dir):
     logger = FileLogger(
         f"copy_ligand_to_new_structures.{lig_mol.GetTitle()}", out_dir
     ).getLogger()
+
     for prot_mol in prot_mols:
-        logger.info(f"Making DU for {lig_mol.GetTitle()}")
-        # combined = combine_protein_ligand(prot_mol, mol)
+        logger.info(f"Making DU for {prot_mol.GetTitle()}")
+        errfs = oechem.oeofstream(
+            str(out_dir / f"openeye_{prot_mol.GetTitle()}_{lig_mol.GetTitle()}-log.txt")
+        )
+        oechem.OEThrow.SetOutputStream(errfs)
+        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+        oechem.OEThrow.Info(f"Making DU for {prot_mol.GetTitle()}")
         du = oechem.OEDesignUnit()
         du.SetTitle(f"{prot_mol.GetTitle()}_{lig_mol.GetTitle()}")
         oespruce.OEMakeDesignUnit(du, prot_mol, lig_mol)
