@@ -477,7 +477,7 @@ def main():
         for prot_name, apo_prot, apo_chains in zip(
             all_apo_names, all_prots, prot_chain_ids
         ):
-            for (dimer, apo_chain) in it.product([True, False], apo_chains):
+            for dimer, apo_chain in it.product([True, False], apo_chains):
                 dimer_s = "dimer" if dimer else "monomer"
                 out_dir = f"{args.o}/{lig_name}/{dimer_s}"
                 os.makedirs(out_dir, exist_ok=True)
