@@ -1243,8 +1243,94 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
 
     Returns
     -------
+    List[torch.utils.data.Subset]
+        List of Subsets of original dataset
     """
-    pass
+    import torch
+
+    if sum(split_fracs) != 1:
+        from warnings import warn
+
+        warn(
+            (
+                "Split fraction add to "
+                f"{sum([train_frac, val_frac, test_frac]):0.2f}, not 1"
+            ),
+            RuntimeWarning,
+        )
+
+    # TODO: make this whole process more compact
+    # First get all the unique created dates
+    dates_dict = {}
+    for i, s in ds.structures:
+        try:
+            date_created = s["date_created"]
+        except KeyError:
+            raise ValueError("Dataset doesn't contain dates.")
+        try:
+            dates_dict[date_created].append(i)
+        except KeyError:
+            dates_dict[date_created] = [i]
+    all_dates = np.asarray(list(dates_dict.keys()))
+
+    # Calculate how many molecules we want covered through each split
+    # By the end of each split, we should cumulatively covered the cumulative sum of all
+    #  splits up to and including that one
+    n_mols_split = np.cumsum(split_fracs) * len(ds)
+
+    # Set up generator
+    if generator is None:
+        generator = torch.default_generator
+
+    print("splitting with random seed:", generator.initial_seed(), flush=True)
+    # Shuffle the indices
+    indices = torch.randperm(len(all_dates), generator=generator)
+    all_dates_reordered = all_dates[indices]
+
+    # Number of molecules for each date
+    date_counts = {len(dates_dict[c]) for c in all_dates_reordered}
+
+    # Cumulative counts of dates
+    # We will keep adding dates to a split until the appropratei number of molecules
+    #  have been added to that split
+    cum_date_counts = np.cumsum(date_counts)
+    assert cum_date_counts[-1] == len(ds), "Something went wrong in dataset splitting."
+
+    # For each Subset, grab all molecules with the included compound_ids
+    all_subsets = []
+    prev_idx = 0
+    # Go up to the last split so we can add anything that got left out from
+    #  float rounding
+    for n_mols in n_mols_split[:-1]:
+        # Find the first point in the cumsum where there are at least as many molecules
+        #  as required for this split. We want to include molecules from all dates up to
+        #  and including this date (+1 for including the date found)
+        idx = np.nonzero(cum_date_counts >= n_mols)[0][0] + 1
+
+        # Get dates to include
+        incl_dates = all_dates_reordered[prev_idx:idx]
+
+        # Get subset indices
+        subset_idx = []
+        for d in incl_dates:
+            for compound in dates_dict[d]:
+                subset_idx.extend([i for i in ds.compounds[compound]])
+        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+        # Update counter
+        prev_idx = idx
+
+    # Finish up anything leftover
+    incl_dates = all_dates_reordered[prev_idx:]
+
+    # Get subset indices
+    subset_idx = []
+    for d in incl_dates:
+        for compound in dates_dict[d]:
+            subset_idx.extend([i for i in ds.compounds[compound]])
+    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    return all_subsets
 
 
 def train(
