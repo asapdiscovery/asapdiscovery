@@ -1262,7 +1262,7 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
     # TODO: make this whole process more compact
     # First get all the unique created dates
     dates_dict = {}
-    for i, s in ds.structures:
+    for i, s in enumerate(ds.structures):
         try:
             date_created = s["date_created"]
         except KeyError:
@@ -1288,7 +1288,7 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
     all_dates_reordered = all_dates[indices]
 
     # Number of molecules for each date
-    date_counts = {len(dates_dict[c]) for c in all_dates_reordered}
+    date_counts = [len(dates_dict[c]) for c in all_dates_reordered]
 
     # Cumulative counts of dates
     # We will keep adding dates to a split until the appropratei number of molecules
@@ -1311,10 +1311,7 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
         incl_dates = all_dates_reordered[prev_idx:idx]
 
         # Get subset indices
-        subset_idx = []
-        for d in incl_dates:
-            for compound in dates_dict[d]:
-                subset_idx.extend([i for i in ds.compounds[compound]])
+        subset_idx = [i for d in incl_dates for i in dates_dict[d]]
         all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
         # Update counter
@@ -1324,10 +1321,7 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
     incl_dates = all_dates_reordered[prev_idx:]
 
     # Get subset indices
-    subset_idx = []
-    for d in incl_dates:
-        for compound in dates_dict[d]:
-            subset_idx.extend([i for i in ds.compounds[compound]])
+    subset_idx = [i for d in incl_dates for i in dates_dict[d]]
     all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
     return all_subsets
