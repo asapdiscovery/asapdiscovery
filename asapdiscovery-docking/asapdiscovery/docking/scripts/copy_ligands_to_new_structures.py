@@ -8,10 +8,10 @@ import logging
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
-    save_openeye_pdb,
     oechem,
+    oespruce,
+    oedocking,
     load_openeye_sdfs,
-    combine_protein_ligand,
 )
 from asapdiscovery.docking.docking import run_docking_oe
 
@@ -49,91 +49,43 @@ def main():
 
     # Load proteins
     protein_files = list(Path().glob(args.protein_glob))
-    dus = {}
-    for protein_file in protein_files:
+    prot_mols = []
+    for protein_file in protein_files[3:5]:
         # Get protein name
         # TODO: replace this by fetching name directly from OEDU file
         protein_name = protein_file.stem
+        if protein_file.suffix == ".pdb":
+            # Load protein
+            mol = load_openeye_pdb(str(protein_file))
+            if mol is None:
+                logger.warning(f"Failed to read protein {protein_file}")
+                continue
+            mol.SetTitle(protein_name)
+            prot_mols.append(mol)
+        else:
+            raise NotImplementedError("Only PDB files are supported for now")
 
-        # Load protein
-        du = oechem.OEDesignUnit()
-        if not oechem.OEReadDesignUnit(str(protein_file), du):
-            logger.warning(f"Failed to read DesignUnit {protein_file}")
-            continue
-        du.SetTitle(protein_name)
-        dus[protein_name] = du
-    logger.info(f"Loaded {len(dus)} proteins from {args.protein_glob}")
+    logger.info(f"Loaded {len(prot_mols)} proteins from {args.protein_glob}")
 
-    for mol in mols[0:1]:
+    for mol in mols:
         out_dir = output_dir / mol.GetTitle()
+        if not out_dir.exists():
+            out_dir.mkdir()
 
-        # Use posit to dock against each DU
-        for name, du in dus.items():
-            success, posed_mol, docking_id = run_docking_oe(
-                du=du,
-                orig_mol=mol,
-                dock_sys="posit",
-                relax="clash",
-                hybrid=True,
-                compound_name=mol.GetTitle(),
-                use_omega=True,
-                num_poses=1,
-            )
-    #         if success:
-    #             out_fn = os.path.join(out_dir, "docked.sdf")
-    #             save_openeye_sdf(posed_mol, out_fn)
-    #
-    #             rmsds = []
-    #             posit_probs = []
-    #             posit_methods = []
-    #             chemgauss_scores = []
-    #
-    #             for conf in posed_mol.GetConfs():
-    #                 rmsds.append(float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD")))
-    #                 posit_probs.append(
-    #                     float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
-    #                 )
-    #                 posit_methods.append(
-    #                     oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT_method")
-    #                 )
-    #                 chemgauss_scores.append(
-    #                     float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4"))
-    #                 )
-    #             smiles = oechem.OEGetSDData(conf, "SMILES")
-    #             clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
-    #         else:
-    #             out_fn = ""
-    #             rmsds = [-1.0]
-    #             posit_probs = [-1.0]
-    #             posit_methods = [""]
-    #             chemgauss_scores = [-1.0]
-    #             clash = -1
-    #             smiles = "None"
-    #
-    #         results = [
-    #             (
-    #                 lig_name,
-    #                 du_name,
-    #                 out_fn,
-    #                 i,
-    #                 rmsd,
-    #                 prob,
-    #                 method,
-    #                 chemgauss,
-    #                 clash,
-    #                 smiles,
-    #             )
-    #             for i, (rmsd, prob, method, chemgauss) in enumerate(
-    #                 zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
-    #             )
-    #         ]
-    #
-    #         pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
-    # # Combine protein and ligand
-    # combined = combine_protein_ligand(prot, mol)
-    # # Save combined molecule
-    # save_openeye_pdb(combined, str(output_dir / f"{mol.GetTitle()}.pdb"))
-    # logger.info(f"Saved {mol.GetTitle()}.pdb")
+        # Make new Receptors
+        dus = []
+        for prot_mol in prot_mols:
+            logger.info(f"Making DU for {prot_mol.GetTitle()}")
+            # combined = combine_protein_ligand(prot_mol, mol)
+            du = oechem.OEDesignUnit()
+            du.SetTitle(prot_mol.GetTitle())
+            oespruce.OEMakeDesignUnit(du, prot_mol, mol)
+            logger.info(f"Making Receptor for {prot_mol.GetTitle()}")
+            oedocking.OEMakeReceptor(du)
+            out_fn = out_dir / f"{mol.GetTitle()}_{prot_mol.GetTitle()}.oedu"
+            oechem.OEWriteDesignUnit(str(out_fn), du)
+            dus.append(du)
+
     logger.info("Done")
 
 
