@@ -13,7 +13,7 @@ from asapdiscovery.data.openeye import (
     oedocking,
     load_openeye_sdfs,
 )
-from asapdiscovery.docking.docking import run_docking_oe
+import multiprocessing as mp
 
 
 def get_args():
@@ -24,12 +24,65 @@ def get_args():
         "-l", "--ligand_sdf", required=True, help="Path to ligand SDF file"
     )
     parser.add_argument(
-        "-p", "--protein_glob", required=True, help="Glob string for protein oedu files"
+        "-p", "--protein_glob", required=True, help="Glob string for protein pdb files"
     )
     parser.add_argument(
         "-o", "--output_dir", required=True, help="Path to output directory"
     )
+    parser.add_argument(
+        "-n", "--num_cores", default=1, type=int, help="Number of processes to use"
+    )
+    parser.add_argument(
+        "--debug_num",
+        type=int,
+        default=-1,
+        help="Number of tasks to pass to multiprocessing. Useful for debugging and testing.",
+    )
+    parser.add_argument(
+        "--by_compound",
+        action="store_true",
+        default=False,
+        help="If true, sort design units for each ligand, otherwise sort design units for each protein",
+    )
     return parser.parse_args()
+
+
+def make_dus_for_protein(prot_mol, lig_mols, output_dir):
+    out_dir = output_dir / prot_mol.GetTitle()
+    if not out_dir.exists():
+        out_dir.mkdir()
+    logger = FileLogger(
+        f"copy_ligand_to_new_structures.{prot_mol.GetTitle()}", out_dir
+    ).getLogger()
+    for lig_mol in lig_mols:
+        logger.info(f"Making DU for {lig_mol.GetTitle()}")
+        # combined = combine_protein_ligand(prot_mol, mol)
+        du = oechem.OEDesignUnit()
+        du.SetTitle(f"{prot_mol.GetTitle()}_{lig_mol.GetTitle()}")
+        oespruce.OEMakeDesignUnit(du, prot_mol, lig_mol)
+        logger.info(f"Making Receptor for {prot_mol.GetTitle()}")
+        oedocking.OEMakeReceptor(du)
+        out_fn = out_dir / f"{lig_mol.GetTitle()}_{prot_mol.GetTitle()}.oedu"
+        oechem.OEWriteDesignUnit(str(out_fn), du)
+
+
+def make_dus_for_ligand(lig_mol, prot_mols, output_dir):
+    out_dir = output_dir / lig_mol.GetTitle()
+    if not out_dir.exists():
+        out_dir.mkdir()
+    logger = FileLogger(
+        f"copy_ligand_to_new_structures.{lig_mol.GetTitle()}", out_dir
+    ).getLogger()
+    for prot_mol in prot_mols:
+        logger.info(f"Making DU for {lig_mol.GetTitle()}")
+        # combined = combine_protein_ligand(prot_mol, mol)
+        du = oechem.OEDesignUnit()
+        du.SetTitle(f"{prot_mol.GetTitle()}_{lig_mol.GetTitle()}")
+        oespruce.OEMakeDesignUnit(du, prot_mol, lig_mol)
+        logger.info(f"Making Receptor for {prot_mol.GetTitle()}")
+        oedocking.OEMakeReceptor(du)
+        out_fn = out_dir / f"{lig_mol.GetTitle()}_{prot_mol.GetTitle()}.oedu"
+        oechem.OEWriteDesignUnit(str(out_fn), du)
 
 
 def main():
@@ -50,7 +103,7 @@ def main():
     # Load proteins
     protein_files = list(Path().glob(args.protein_glob))
     prot_mols = []
-    for protein_file in protein_files[3:5]:
+    for protein_file in protein_files:
         # Get protein name
         # TODO: replace this by fetching name directly from OEDU file
         protein_name = protein_file.stem
@@ -67,24 +120,22 @@ def main():
 
     logger.info(f"Loaded {len(prot_mols)} proteins from {args.protein_glob}")
 
-    for mol in mols:
-        out_dir = output_dir / mol.GetTitle()
-        if not out_dir.exists():
-            out_dir.mkdir()
+    if args.by_compound:
+        mp_args = [(lig_mol, prot_mols, output_dir) for lig_mol in mols]
+        func_ = make_dus_for_ligand
+    else:
+        mp_args = [(prot_mol, mols, output_dir) for prot_mol in prot_mols]
+        func_ = make_dus_for_protein
 
-        # Make new Receptors
-        dus = []
-        for prot_mol in prot_mols:
-            logger.info(f"Making DU for {prot_mol.GetTitle()}")
-            # combined = combine_protein_ligand(prot_mol, mol)
-            du = oechem.OEDesignUnit()
-            du.SetTitle(prot_mol.GetTitle())
-            oespruce.OEMakeDesignUnit(du, prot_mol, mol)
-            logger.info(f"Making Receptor for {prot_mol.GetTitle()}")
-            oedocking.OEMakeReceptor(du)
-            out_fn = out_dir / f"{mol.GetTitle()}_{prot_mol.GetTitle()}.oedu"
-            oechem.OEWriteDesignUnit(str(out_fn), du)
-            dus.append(du)
+    nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+    logger.info(f"CPUs: {mp.cpu_count()}")
+    logger.info(f"N Processes: {len(mp_args)}")
+    logger.info(f"N Cores: {args.num_cores}")
+
+    mp_args = mp_args[: args.debug_num]
+    logger.info(f"Running {len(mp_args)} tasks over {nprocs} cores.")
+    with mp.Pool(processes=nprocs) as pool:
+        pool.starmap(func_, mp_args)
 
     logger.info("Done")
 
