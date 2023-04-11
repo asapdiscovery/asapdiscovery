@@ -156,7 +156,7 @@ def build_dataset(
                 "pIC50": exp_data_dict[compound]["pIC50"],
                 "pIC50_range": exp_data_dict[compound]["pIC50_range"],
                 "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
-                "date_created": dates_dict[compound]["date_created"],
+                "date_created": dates_dict[compound],
             }
             for compound, smiles in smiles_dict.items()
         }
