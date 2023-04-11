@@ -1261,13 +1261,7 @@ def split_temporal(ds, split_fracs, reverse=False):
     if sum(split_fracs) != 1:
         from warnings import warn
 
-        warn(
-            (
-                "Split fraction add to "
-                f"{sum([train_frac, val_frac, test_frac]):0.2f}, not 1"
-            ),
-            RuntimeWarning,
-        )
+        warn(f"Split fraction add to {sum(split_fracs):0.2f}, not 1", RuntimeWarning)
 
     # Calculate how many molecules we want covered through each split
     # By the end of each split, we should cumulatively covered the cumulative sum of all
