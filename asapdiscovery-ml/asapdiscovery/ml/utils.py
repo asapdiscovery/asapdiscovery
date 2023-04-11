@@ -1223,7 +1223,7 @@ def split_molecules(ds, split_fracs, generator=None):
     return all_subsets
 
 
-def split_temporal(ds, split_fracs, generator=None, reverse=False):
+def split_temporal(ds, split_fracs, reverse=False):
     """
     Split molecules temporally by date created. Earlier molecules will be placed in the
     training set and later molecules will be placed in the val/test sets (unless
@@ -1235,9 +1235,6 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
         Molecular dataset to split
     split_fracs : List[float]
         List of fraction of compounds to put in each split
-    generator : torch.Generator, optional
-        Torch Generator object to use for randomness. If none is supplied, use
-        torch.default_generator
     reverse : bool, default=False
         Reverse sorting of data
 
@@ -1259,6 +1256,11 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
             RuntimeWarning,
         )
 
+    # Calculate how many molecules we want covered through each split
+    # By the end of each split, we should cumulatively covered the cumulative sum of all
+    #  splits up to and including that one
+    n_mols_split = np.cumsum(split_fracs) * len(ds)
+
     # TODO: make this whole process more compact
     # First get all the unique created dates
     dates_dict = {}
@@ -1273,22 +1275,11 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
             dates_dict[date_created] = [i]
     all_dates = np.asarray(list(dates_dict.keys()))
 
-    # Calculate how many molecules we want covered through each split
-    # By the end of each split, we should cumulatively covered the cumulative sum of all
-    #  splits up to and including that one
-    n_mols_split = np.cumsum(split_fracs) * len(ds)
-
-    # Set up generator
-    if generator is None:
-        generator = torch.default_generator
-
-    print("splitting with random seed:", generator.initial_seed(), flush=True)
-    # Shuffle the indices
-    indices = torch.randperm(len(all_dates), generator=generator)
-    all_dates_reordered = all_dates[indices]
+    # Sort the dates
+    all_dates_sorted = sorted(all_dates, reverse=reverse)
 
     # Number of molecules for each date
-    date_counts = [len(dates_dict[c]) for c in all_dates_reordered]
+    date_counts = [len(dates_dict[c]) for c in all_dates_sorted]
 
     # Cumulative counts of dates
     # We will keep adding dates to a split until the appropratei number of molecules
@@ -1308,7 +1299,7 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
         idx = np.nonzero(cum_date_counts >= n_mols)[0][0] + 1
 
         # Get dates to include
-        incl_dates = all_dates_reordered[prev_idx:idx]
+        incl_dates = all_dates_sorted[prev_idx:idx]
 
         # Get subset indices
         subset_idx = [i for d in incl_dates for i in dates_dict[d]]
@@ -1318,7 +1309,7 @@ def split_temporal(ds, split_fracs, generator=None, reverse=False):
         prev_idx = idx
 
     # Finish up anything leftover
-    incl_dates = all_dates_reordered[prev_idx:]
+    incl_dates = all_dates_sorted[prev_idx:]
 
     # Get subset indices
     subset_idx = [i for d in incl_dates for i in dates_dict[d]]
