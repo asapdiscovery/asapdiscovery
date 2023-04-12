@@ -8,8 +8,8 @@ import os
 import pickle as pkl
 import re
 import shutil
-from datetime import datetime
 from concurrent.futures import TimeoutError
+from datetime import datetime
 from functools import partial
 from glob import glob
 from pathlib import Path
