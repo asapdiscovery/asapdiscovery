@@ -84,12 +84,26 @@ def fetch_model_from_spec(
         )
 
         # fetch weights
-        weights_file = Path(registry.fetch(weights_resource))
+        try:
+            weights_file = Path(registry.fetch(weights_resource))
+        except:
+            raise ValueError(
+                f"Model {model} weights file {weights_resource} download failed, please check your yaml spec file for errors."
+            )
         # fetch config
         if config_resource:
-            config_file = Path(registry.fetch(config_resource))
+            try:
+                config_file = Path(registry.fetch(config_resource))
+            except:
+                raise ValueError(
+                    f"Model {model} config file {config_resource} download failed, please check your yaml spec file for errors."
+                )
         else:
             config_file = None
+        if model in specs:
+            raise ValueError(
+                f"Model {model} already exists in specs, please check your yaml spec file for duplicates."
+            )
         # make model spec
         specs[model] = ModelSpec(model, model_type, weights_file, config_file)
 
