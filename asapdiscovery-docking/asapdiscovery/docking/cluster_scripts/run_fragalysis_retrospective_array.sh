@@ -8,7 +8,7 @@
 #BSUB -n 32
 #BSUB -q cpuqueue
 #BSUB -R rusage[mem=3]
-#BSUB -W 1:00
+#BSUB -W 2:00
 source ~/.bashrc
 conda activate ad-3.9
 run-docking-oe \
