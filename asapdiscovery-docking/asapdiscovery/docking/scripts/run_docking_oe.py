@@ -256,7 +256,7 @@ def get_args():
         default=1,
         help=(
             "Number of concurrent processes to run. "
-            "Set to <= 0 to disable multiprocessing."
+            "Set to <= 1 to disable multiprocessing."
         ),
     )
     parser.add_argument(
@@ -455,7 +455,7 @@ def main():
         "SMILES",
         "GAT_score",
     ]
-    if args.num_cores > 0:
+    if args.num_cores > 1:
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
         print(
             f"CPUs: {mp.cpu_count()}\n"
