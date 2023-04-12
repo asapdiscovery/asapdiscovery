@@ -10,6 +10,41 @@ import yaml
 ModelSpec = namedtuple("ModelSpec", ["name", "type", "weights", "config"])
 
 
+def check_spec_validity(model: str, spec: dict) -> None:
+    """Check if model spec is valid.
+
+    Parameters
+    ----------
+    model : str
+        Model name.
+    spec : dict
+        Model spec.
+
+    Raises
+    ------
+    ValueError
+        If model spec is invalid.
+    """
+    if model not in spec:
+        raise ValueError(f"Model {model} not found in spec file.")
+    model_spec = spec[model]
+    if "type" not in model_spec:
+        raise ValueError(f"Model {model} type not found in spec file.")
+    if "base_url" not in model_spec:
+        raise ValueError(f"Model {model} base_url not found in spec file.")
+    if "weights" not in model_spec:
+        raise ValueError(f"Model {model} weights not found in spec file.")
+    if "resource" not in model_spec["weights"]:
+        raise ValueError(f"Model {model} weights resource not found in spec file.")
+    if "sha256hash" not in model_spec["weights"]:
+        raise ValueError(f"Model {model} weights sha256hash not found in spec file.")
+    if "config" in model_spec:
+        if "resource" not in model_spec["config"]:
+            raise ValueError(f"Model {model} config resource not found in spec file.")
+        if "sha256hash" not in model_spec["config"]:
+            raise ValueError(f"Model {model} config sha256hash not found in spec file.")
+
+
 def fetch_model_from_spec(
     yamlfile: str,
     models: Union[list[str], str],
@@ -55,6 +90,7 @@ def fetch_model_from_spec(
 
     specs = {}
     for model in models:
+        check_spec_validity(model, spec)
         model_spec = spec[model]
         model_type = model_spec["type"]
         base_url = model_spec["base_url"]
