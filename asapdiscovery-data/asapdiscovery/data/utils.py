@@ -1276,5 +1276,15 @@ def check_filelist_has_elements(
         )
 
 
-if __name__ == "__main__":
-    filter_docking_inputs()
+def combine_sdf_files(glob_string, output_sdf):
+    import shutil
+
+    # Concatenate all individual SDF files
+    sdfs = [f for f in glob.glob(glob_string) if f.endswith(".sdf")]
+    check_filelist_has_elements(sdfs, "sdfs")
+    with open(output_sdf, "wb") as wfd:
+        for f in sdfs:
+            if f == "":
+                continue
+            with open(f, "rb") as fd:
+                shutil.copyfileobj(fd, wfd)
