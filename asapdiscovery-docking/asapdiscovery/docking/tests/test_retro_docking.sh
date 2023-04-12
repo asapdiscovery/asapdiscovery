@@ -9,6 +9,5 @@ run-docking-oe \
 -n 2 \
 --omega \
 --relax clash \
---debug_num 5 \
--log 'run_docking_oe_logtest'
+-log 'run_docking_oe'
 echo done

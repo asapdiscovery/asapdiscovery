@@ -323,7 +323,7 @@ def get_args():
     parser.add_argument(
         "--debug_num",
         type=int,
-        default=-1,
+        default=None,
         help="Number of docking runs to run. Useful for debugging and testing.",
     )
     parser.add_argument(
