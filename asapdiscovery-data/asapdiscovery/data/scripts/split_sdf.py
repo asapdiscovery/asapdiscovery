@@ -1,5 +1,5 @@
 """
-The purpose of this script is to split up a multi-ligand SDF file into individual SDF files with integer names in 
+The purpose of this script is to split up a multi-ligand SDF file into individual SDF files with integer names in
 order to be used in a job array
 """
 import argparse
@@ -38,9 +38,9 @@ def main():
 
     mols = load_openeye_sdfs(args.sdf_fn)
     print(f"Saving {len(mols)} SDF files to '{args.out_dir}'")
-    from asapdiscovery.data.openeye import save_openeye_sdfs
-
     from math import ceil
+
+    from asapdiscovery.data.openeye import save_openeye_sdfs
 
     n_chunks = ceil(
         len(mols) / args.chunk_size,
