@@ -166,8 +166,7 @@ def run_docking_oe(
 
         if compound_name:
             logger.info(
-                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking",
-                f"with no relaxation for {compound_name}",
+                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with no relaxation for {compound_name}",
             )
 
         # Set up poser object
