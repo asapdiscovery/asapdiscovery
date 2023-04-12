@@ -170,10 +170,17 @@ def parse_fragalysis(
         df = df.drop_duplicates("RealCrystalName")
 
     # Build argument dicts for the CrystalCompoundData objects
-    xtal_dicts = [
-        dict(zip(("smiles", "dataset", "compound_id"), r[1].values))
-        for r in df.loc[:, ["smiles", "crystal_name", "alternate_name"]].iterrows()
-    ]
+    try:
+        xtal_dicts = [
+            dict(zip(("smiles", "dataset", "compound_id"), r[1].values))
+            for r in df.loc[:, ["smiles", "crystal_name", "alternate_name"]].iterrows()
+        ]
+    except KeyError as e:
+        raise Exception(
+            "Did you use 'Mpro_compound_tracker_csv.csv'? Use 'metadata.csv' instead. "
+            "This CSV is expected to contain columns 'smiles', 'crystal_name', and 'alternate_name', which correspond "
+            "to the SD tags 'smiles', 'dataset', and 'compound_id' respectively."
+        ) from e
 
     # Add structure filename information and filter if not found
     filtered_xtal_dicts = []
