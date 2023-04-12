@@ -480,67 +480,62 @@ def main():
         ]
         mp_args.extend(new_args)
 
-    if args.debug_num > 0:
-        mp_args = mp_args[: args.debug_num]
+    mp_args = mp_args[: args.debug_num]
 
     # Apply ML arguments as kwargs to mp_func
     mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
 
-    if args.num_cores > 1:
-        nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-        logger.info(f"CPUs: {mp.cpu_count()}")
-        logger.info(f"N Processes: {len(mp_args)}")
-        logger.info(f"N Cores: {args.num_cores}")
-        logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
-        with pebble.ProcessPool(max_workers=nprocs) as pool:
-            if args.timeout <= 0:
-                args.timeout = None
-            # Need to flip args structure for pebble
-            res = pool.map(mp_func_ml_applied, *zip(*mp_args), timeout=args.timeout)
-
-            # List to keep track of successful results
-            results_df = []
-            # List to keep track of which runs failed
-            failed_runs = []
-
-            # TimeoutError is only raised when we try to access the result. Do things
-            #  this way so we can keep track of which compound:xtals timed out
-            res_iter = res.result()
-            for args_list in mp_args:
-                try:
-                    cur_res = next(res_iter)
-                    results_df += [cur_res]
-                except StopIteration:
-                    # We've reached the end of the results iterator so just break
-                    break
-                except TimeoutError:
-                    # This compound:xtal combination timed out
-                    print("Docking timed out for", args_list[8], flush=True)
-                    failed_runs += [args_list[8]]
-                except pebble.ProcessExpired as e:
-                    print("Docking failed for", args_list[8], flush=True)
-                    print(f"\t{e}. Exit code {e.exitcode}", flush=True)
-                    failed_runs += [args_list[8]]
-                except Exception as e:
-                    print(
-                        "Docking failed for",
-                        args_list[8],
-                        "with Exception",
-                        e,
-                        flush=True,
-                    )
-                    print(e.traceback, flush=True)
-                    failed_runs += [args_list[8]]
-            print(f"Docking failed for {len(failed_runs)} runs", flush=True)
-    # Apply ML arguments as kwargs to mp_func
-    mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
-
+    # if args.num_cores > 1:
+    #     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+    #     logger.info(f"CPUs: {mp.cpu_count()}")
+    #     logger.info(f"N Processes: {len(mp_args)}")
+    #     logger.info(f"N Cores: {args.num_cores}")
+    #     logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+    #     with pebble.ProcessPool(max_workers=nprocs) as pool:
+    #         if args.timeout <= 0:
+    #             args.timeout = None
+    #         # Need to flip args structure for pebble
+    #         res = pool.map(mp_func_ml_applied, *zip(*mp_args), timeout=args.timeout)
+    #
+    #         # List to keep track of successful results
+    #         results_df = []
+    #         # List to keep track of which runs failed
+    #         failed_runs = []
+    #
+    #         # TimeoutError is only raised when we try to access the result. Do things
+    #         #  this way so we can keep track of which compound:xtals timed out
+    #         res_iter = res.result()
+    #         for args_list in mp_args:
+    #             try:
+    #                 cur_res = next(res_iter)
+    #                 results_df += [cur_res]
+    #             except StopIteration:
+    #                 # We've reached the end of the results iterator so just break
+    #                 break
+    #             except TimeoutError:
+    #                 # This compound:xtal combination timed out
+    #                 print("Docking timed out for", args_list[8], flush=True)
+    #                 failed_runs += [args_list[8]]
+    #             except pebble.ProcessExpired as e:
+    #                 print("Docking failed for", args_list[8], flush=True)
+    #                 print(f"\t{e}. Exit code {e.exitcode}", flush=True)
+    #                 failed_runs += [args_list[8]]
+    #             except Exception as e:
+    #                 print(
+    #                     "Docking failed for",
+    #                     args_list[8],
+    #                     "with Exception",
+    #                     e,
+    #                     flush=True,
+    #                 )
+    #                 print(e.traceback, flush=True)
+    #                 failed_runs += [args_list[8]]
+    #         print(f"Docking failed for {len(failed_runs)} runs", flush=True)
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     logger.info(f"CPUs: {mp.cpu_count()}")
     logger.info(f"N Processes: {len(mp_args)}")
     logger.info(f"N Cores: {args.num_cores}")
 
-    mp_args = mp_args[: args.debug_num]
     logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
 
     with mp.Pool(processes=nprocs) as pool:
