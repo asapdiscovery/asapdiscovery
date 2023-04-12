@@ -1244,7 +1244,7 @@ def split_molecules(ds, split_fracs, generator=None):
     return all_subsets
 
 
-def split_temporal(ds, split_fracs, grouped=False, reverse=False):
+def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
     """
     Split molecules temporally by date created. Earlier molecules will be placed in the
     training set and later molecules will be placed in the val/test sets (unless
@@ -1260,6 +1260,12 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False):
         Splitting a GroupedDockedDataset object
     reverse : bool, default=False
         Reverse sorting of data
+    end_splits : int, default=2
+        How many splits (starting from the end of `split_fracs`) should be taken from
+        the end of the list (most recent data, or oldest if `reverse` is True). This is
+        in order to allow for the splits to not add up to 1, but still evaluate on the
+        most recent data, which can be used to assess how much temporal data is required
+        to predict on the most recent. Set to 0 to take all splits contiguously
 
     Returns
     -------
@@ -1268,26 +1274,32 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False):
     """
     import torch
 
-    if sum(split_fracs) != 1:
-        from warnings import warn
-
-        warn(f"Split fraction add to {sum(split_fracs):0.2f}, not 1", RuntimeWarning)
+    # Get which splits should be from the front and which should be from the end
+    front_split_fracs = split_fracs[:-end_splits]
+    # Reverse the end splits so it matches when we reverse everything later
+    end_split_fracs = split_fracs[-end_splits:][::-1]
 
     # Calculate how many molecules we want covered through each split
     # By the end of each split, we should cumulatively covered the cumulative sum of all
     #  splits up to and including that one
-    n_mols_split = np.cumsum(split_fracs) * len(ds)
+    n_mols_front_split = np.cumsum(front_split_fracs) * len(ds)
+    # Same but for reverse
+    n_mols_end_split = np.cumsum(end_split_fracs) * len(ds)
 
     # TODO: make this whole process more compact
     # First get all the unique created dates
     dates_dict = {}
-
+    # If we have a grouped dataset, we want to iterate through compound_ids, which will
+    #  allow us to access a group of structures. Otherwise, loop through the structures
+    #  directly
     if grouped:
         iter_list = ds.compound_ids
     else:
         iter_list = ds.structures
     for i, iter_item in enumerate(iter_list):
         if grouped:
+            # Take the earliest date from all structures (they should all be the same,
+            #  but just in case)
             all_dates = [
                 s["date_created"]
                 for s in ds.structures[iter_item]
@@ -1310,22 +1322,34 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False):
 
     # Sort the dates
     all_dates_sorted = sorted(all_dates, reverse=reverse)
+    all_dates_sorted_rev = all_dates_sorted[::-1]
 
     # Number of molecules for each date
     date_counts = [len(dates_dict[c]) for c in all_dates_sorted]
+    date_counts_rev = date_counts[::-1]
 
     # Cumulative counts of dates
     # We will keep adding dates to a split until the appropratei number of molecules
     #  have been added to that split
     cum_date_counts = np.cumsum(date_counts)
-    assert cum_date_counts[-1] == len(ds), "Something went wrong in dataset splitting."
+    cum_date_counts_rev = np.cumsum(date_counts_rev)
+    assert (
+        cum_date_counts[-1] == cum_date_counts_rev[-1] == len(ds)
+    ), "Something went wrong in dataset splitting."
 
     # For each Subset, grab all molecules with the included compound_ids
     all_subsets = []
+    # Keep track of which structure indices we've seen so we don't double count in the
+    #  end splits
+    seen_idx = set()
     prev_idx = 0
-    # Go up to the last split so we can add anything that got left out from
-    #  float rounding
-    for n_mols in n_mols_split[:-1]:
+    # If there are no end splits, go up to the last split so we can add anything that
+    #  got left out from float rounding
+    if end_splits == 0:
+        final_split = n_mols_front_split.pop()
+    else:
+        final_split = None
+    for n_mols in n_mols_front_split:
         # Find the first point in the cumsum where there are at least as many molecules
         #  as required for this split. We want to include molecules from all dates up to
         #  and including this date (+1 for including the date found)
@@ -1336,17 +1360,45 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False):
 
         # Get subset indices
         subset_idx = [i for d in incl_dates for i in dates_dict[d]]
+        # By construction, we don't need to worry about double counting indices in the
+        #  forward direction, only when we're working backward
+        seen_idx.update(subset_idx)
         all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
         # Update counter
         prev_idx = idx
 
     # Finish up anything leftover
-    incl_dates = all_dates_sorted[prev_idx:]
+    if final_split:
+        incl_dates = all_dates_sorted[prev_idx:]
 
-    # Get subset indices
-    subset_idx = [i for d in incl_dates for i in dates_dict[d]]
-    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+        # Get subset indices
+        subset_idx = [i for d in incl_dates for i in dates_dict[d]]
+        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    # Add in the end splits
+    prev_idx = 0
+    end_subsets = []
+    for n_mols in n_mols_end_split:
+        # Find the first point in the cumsum where there are at least as many molecules
+        #  as required for this split. We want to include molecules from all dates up to
+        #  and including this date (+1 for including the date found)
+        idx = np.nonzero(cum_date_counts_rev >= n_mols)[0][0] + 1
+
+        # Get dates to include
+        incl_dates = all_dates_sorted_rev[prev_idx:idx]
+
+        # Get subset indices
+        subset_idx = [i for d in incl_dates for i in dates_dict[d] if i not in seen_idx]
+        # This shouldn't be necessary at this point, but just to make sure
+        seen_idx.update(subset_idx)
+        # Flip subset_idx so molecules are in the right order
+        end_subsets.append(torch.utils.data.Subset(ds, subset_idx[::-1]))
+
+        # Update counter
+        prev_idx = idx
+    # Flip end_subsets so splits are in the right order
+    all_subsets.extend(end_subsets[::-1])
 
     return all_subsets
 
