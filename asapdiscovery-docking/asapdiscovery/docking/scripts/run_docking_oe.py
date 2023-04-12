@@ -7,7 +7,6 @@ import multiprocessing as mp
 import os
 import pickle as pkl
 import re
-import shutil
 from concurrent.futures import TimeoutError
 from datetime import datetime
 from functools import partial
@@ -45,15 +44,15 @@ def check_results(d):
     ):
         return False
 
-    # try:
-    #     _ = load_openeye_sdf(os.path.join(d, "docked.sdf"))
-    # except Exception:
-    #     return False
-    #
-    # try:
-    #     _ = pkl.load(open(os.path.join(d, "results.pkl"), "rb"))
-    # except Exception:
-    #     return False
+    try:
+        _ = load_openeye_sdf(os.path.join(d, "docked.sdf"))
+    except Exception:
+        return False
+
+    try:
+        _ = pkl.load(open(os.path.join(d, "results.pkl"), "rb"))
+    except Exception:
+        return False
 
     return True
 
@@ -487,19 +486,6 @@ def main():
     # Apply ML arguments as kwargs to mp_func
     mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
 
-    results_cols = [
-        "ligand_id",
-        "du_structure",
-        "docked_file",
-        "pose_id",
-        "docked_RMSD",
-        "POSIT_prob",
-        "POSIT_method",
-        "chemgauss4_score",
-        "clash",
-        "SMILES",
-        "GAT_score",
-    ]
     if args.num_cores > 1:
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
         logger.info(f"CPUs: {mp.cpu_count()}")
