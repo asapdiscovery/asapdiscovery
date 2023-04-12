@@ -24,6 +24,7 @@ dependencies:
   - pydantic
   - rdkit
   - seaborn
+  - pebble
 
   # data
   - requests
