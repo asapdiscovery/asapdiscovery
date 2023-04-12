@@ -13,7 +13,6 @@ copy-ligands-to-new-structures \
 -p '/lila/data/chodera/asap-datasets/current/mers_01_prepped_pdbs_v2/*prepped_receptor_0.pdb' \
 -o "/lila/data/chodera/asap-datasets/mers_fauxalysis/20230411_prepped_for_fauxalysis" \
 -n 32 \
---debug_num 32 \
 --by_compound
 
 echo Done
