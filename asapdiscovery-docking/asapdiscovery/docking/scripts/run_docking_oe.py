@@ -485,7 +485,7 @@ def main():
     logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
 
     with mp.Pool(processes=nprocs) as pool:
-        pool.starmap_async(mp_func_ml_applied, mp_args)
+        pool.starmap(mp_func_ml_applied, mp_args)
     end = datetime.now().isoformat()
     logger.info(f"Started at {start}; finished at {end}")
 
