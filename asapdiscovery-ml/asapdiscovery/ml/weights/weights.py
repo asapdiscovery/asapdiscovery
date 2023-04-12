@@ -120,18 +120,18 @@ def fetch_model_from_spec(
         # fetch weights
         try:
             weights_file = Path(registry.fetch(weights_resource))
-        except:
+        except Exception as e:
             raise ValueError(
                 f"Model {model} weights file {weights_resource} download failed, please check your yaml spec file for errors."
-            )
+            ) from e
         # fetch config
         if config_resource:
             try:
                 config_file = Path(registry.fetch(config_resource))
-            except:
+            except Exception as e:
                 raise ValueError(
                     f"Model {model} config file {config_resource} download failed, please check your yaml spec file for errors."
-                )
+                ) from e
         else:
             config_file = None
         if model in specs:
