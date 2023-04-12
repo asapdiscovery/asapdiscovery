@@ -2,6 +2,7 @@
 Script to dock an SDF file of ligands to prepared structures.
 """
 import argparse
+import logging
 import multiprocessing as mp
 import os
 import pickle as pkl
@@ -9,9 +10,11 @@ import re
 import shutil
 from functools import partial
 from glob import glob
+from pathlib import Path
 
 import numpy as np
 import pandas
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
@@ -76,9 +79,10 @@ def load_dus(file_base, by_compound=False):
         Dictionary mapping full Mpro name/compound id (including chain) to its
         design unit
     """
+    logger = logging.getLogger("run_docking_oe")
 
     if os.path.isdir(file_base):
-        print(f"Using {file_base} as directory")
+        logger.info(f"Using {file_base} as directory")
         all_fns = [
             os.path.join(file_base, fn)
             for _, _, files in os.walk(file_base)
@@ -86,14 +90,14 @@ def load_dus(file_base, by_compound=False):
             if fn[-4:] == "oedu"
         ]
     elif os.path.isfile(file_base) and by_compound:
-        print(f"Using {file_base} as file")
+        logger.info(f"Using {file_base} as file")
         df = pandas.read_csv(file_base)
         all_fns = [
             os.path.join(os.path.dirname(fn), "predocked.oedu")
             for fn in df["Docked_File"]
         ]
     else:
-        print(f"Using {file_base} as glob")
+        logger.info(f"Using {file_base} as glob")
         all_fns = glob(file_base)
 
     # check that we actually have loaded in prepped receptors.
@@ -105,30 +109,30 @@ def load_dus(file_base, by_compound=False):
         re_pat = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
     else:
         re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
-    print(f"Loading {len(all_fns)} design units")
+    logger.info(f"Loading {len(all_fns)} design units")
     for fn in all_fns:
         m = re.search(re_pat, fn)
         if m is None:
             search_type = "compound_id" if by_compound else "Mpro dataset"
-            print(f"No {search_type} found for {fn}", flush=True)
+            logger.warning(f"No {search_type} found for {fn}")
             continue
 
         dataset = m.groups()[0]
         full_name = m.group()
         du = oechem.OEDesignUnit()
         if not oechem.OEReadDesignUnit(fn, du):
-            print(f"Failed to read DesignUnit {fn}", flush=True)
+            logger.error(f"Failed to read DesignUnit {fn}")
             continue
         du_dict[full_name] = du
         try:
             dataset_dict[dataset].append(full_name)
         except KeyError:
             dataset_dict[dataset] = [full_name]
-    print(f"{len(du_dict.keys())} design units loaded")
+    logger.info(f"{len(du_dict.keys())} design units loaded")
     return dataset_dict, du_dict
 
 
-def mp_func(out_dir, lig_name, du_name, *args, GAT_model=None, **kwargs):
+def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **kwargs):
     """
     Wrapper function for multiprocessing. Everything other than the named args
     will be passed directly to run_docking_oe.
@@ -141,16 +145,28 @@ def mp_func(out_dir, lig_name, du_name, *args, GAT_model=None, **kwargs):
         Ligand name
     du_name : str
         DesignUnit name
+    compound_name : str
+        Compound name, used for error messages if given
     GAT_model : GATInference, optional
         GAT model to use for inference. If None, will not perform inference.
 
     Returns
     -------
     """
+    logname = f"run_docking_oe.{compound_name}"
+
     if check_results(out_dir):
-        print(f"Loading found results for {lig_name}_{du_name}", flush=True)
+        logger = FileLogger(logname, path=str(out_dir)).getLogger()
+        logger.info(f"Loading found results for {compound_name}")
         return pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
-    os.makedirs(out_dir, exist_ok=True)
+    else:
+        os.makedirs(out_dir, exist_ok=True)
+        logger = FileLogger(logname, path=str(out_dir)).getLogger()
+        logger.info(f"No results for {compound_name} found, running docking")
+        errfs = oechem.oeofstream(os.path.join(out_dir, f"openeye_{logname}-log.txt"))
+        oechem.OEThrow.SetOutputStream(errfs)
+        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+        oechem.OEThrow.Info(f"Starting docking for {logname}")
 
     success, posed_mol, docking_id = run_docking_oe(*args, **kwargs)
     if success:
@@ -299,6 +315,12 @@ def get_args():
         help="Number of poses to return from docking.",
     )
     parser.add_argument(
+        "--debug_num",
+        type=int,
+        default=-1,
+        help="Number of docking runs to run. Useful for debugging and testing.",
+    )
+    parser.add_argument(
         "-gat",
         "--gat",
         action="store_true",
@@ -312,8 +334,10 @@ def main():
     args = get_args()
 
     # Parse symlinks in output_dir
-    args.output_dir = os.path.realpath(args.output_dir)
-
+    output_dir = Path(args.output_dir)
+    if not output_dir.exists():
+        output_dir.mkdir()
+    logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
     if args.exp_file:
         import json
 
@@ -333,12 +357,11 @@ def main():
             mols.append(new_mol)
     if args.lig_file:
         if args.exp_file:
-            print(
+            logger.info(
                 (
                     "WARNING: Arguments passed for both --exp_file and "
                     "--lig_file, using --exp_file."
                 ),
-                flush=True,
             )
         else:
             # Load all ligands to dock
@@ -356,9 +379,11 @@ def main():
         GAT_model = None
 
     # Load all receptor DesignUnits
-    dataset_dict, du_dict = load_dus(args.receptor, args.by_compound)
-    print(f"{n_mols} molecules found")
-    print(f"{len(du_dict.keys())} receptor structures found")
+    dataset_dict, du_dict = load_dus(
+        file_base=args.receptor, by_compound=args.by_compound
+    )
+    logger.info(f"{n_mols} molecules found")
+    logger.info(f"{len(du_dict.keys())} receptor structures found")
     assert n_mols > 0
     assert len(du_dict.keys()) > 0
 
@@ -384,7 +409,7 @@ def main():
     else:
         # Check to see if the SDF files have a Compound_ID Column
         if all(len(oechem.OEGetSDData(mol, "Compound_ID")) > 0 for mol in mols):
-            print("Using Compound_ID column from sdf file")
+            logger.info("Using Compound_ID column from sdf file")
             compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
         else:
             # Use index as compound_id
@@ -411,6 +436,7 @@ def main():
                 os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
                 compound_ids[i],
                 x,
+                f"{compound_ids[i]}_{x}",
                 du,
                 m,
                 args.docking_sys.lower(),
@@ -442,12 +468,12 @@ def main():
     mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
 
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    print(
-        f"CPUs: {mp.cpu_count()}\n"
-        f"N Processes: {mp_args}\n"
-        f"N Cores: {args.num_cores}"
-    )
-    print(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+    logger.info(f"CPUs: {mp.cpu_count()}")
+    logger.info(f"N Processes: {len(mp_args)}")
+    logger.info(f"N Cores: {args.num_cores}")
+
+    mp_args = mp_args[: args.debug_num]
+    logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
         results_df = pool.starmap(mp_func_ml_applied, mp_args)
     results_df = [res for res_list in results_df for res in res_list]
