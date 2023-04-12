@@ -60,7 +60,7 @@ def main():
         start = i * args.chunk_size
         end = (i + 1) * args.chunk_size
         mols_chunk = mols[start:end]
-        save_openeye_sdfs(mols_chunk, os.path.join(args.out_dir, f"{i}.sdf"))
+        save_openeye_sdfs(mols_chunk, os.path.join(args.out_dir, f"{i+1}.sdf"))
 
 
 if __name__ == "__main__":
