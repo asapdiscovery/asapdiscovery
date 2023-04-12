@@ -351,7 +351,7 @@ def main():
 
     # load ml models
     if args.gat:
-        GAT_model = GATInference("gat_test_v0")
+        GAT_model = GATInference("asapdiscovery-GAT-2023.04.12")
     else:
         GAT_model = None
 
