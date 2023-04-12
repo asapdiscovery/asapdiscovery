@@ -1,10 +1,8 @@
-import yaml
-import pooch
-
 from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List, Tuple, Union  # noqa: F401
 
+import pooch
 import yaml
 
 ModelSpec = namedtuple("ModelSpec", ["name", "type", "weights", "config"])
