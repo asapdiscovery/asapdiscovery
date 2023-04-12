@@ -9,10 +9,10 @@ import pickle as pkl
 import re
 import shutil
 import tracemalloc
+from datetime import datetime
 from functools import partial
 from glob import glob
 from pathlib import Path
-from datetime import datetime
 
 import numpy as np
 import pandas
