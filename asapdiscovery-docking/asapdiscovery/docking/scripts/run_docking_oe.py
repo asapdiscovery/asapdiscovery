@@ -332,6 +332,14 @@ def get_args():
         action="store_true",
         help="Whether to use GAT model to score docked poses.",
     )
+    parser.add_argument(
+        "-log",
+        "--log_name",
+        type=str,
+        default="run_docking_oe",
+        help="Base name for high-level log file. Defaults to run_docking_oe, "
+        "which enables propagation of log messages to the root logger.",
+    )
 
     return parser.parse_args()
 
@@ -343,7 +351,7 @@ def main():
     output_dir = Path(args.output_dir)
     if not output_dir.exists():
         output_dir.mkdir()
-    logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
+    logger = FileLogger(args.log_name, path=str(output_dir)).getLogger()
     start = datetime.now().isoformat()
     if args.exp_file:
         import json
