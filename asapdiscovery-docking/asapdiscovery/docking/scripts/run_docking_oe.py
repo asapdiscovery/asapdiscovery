@@ -12,6 +12,7 @@ import tracemalloc
 from functools import partial
 from glob import glob
 from pathlib import Path
+from datetime import datetime
 
 import numpy as np
 import pandas
@@ -155,10 +156,13 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     """
     logname = f"run_docking_oe.{compound_name}"
 
+    before = datetime.now().isoformat()
     if check_results(out_dir):
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
         logger.info(f"Found results for {compound_name}")
-        exit()
+        after = datetime.now().isoformat()
+        logger.info(f"Start: {before}, End: {after}")
+        return
     else:
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
@@ -225,6 +229,9 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     ]
 
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
+    after = datetime.now().isoformat()
+    logger.info(f"Start: {before}, End: {after}")
+    return
 
 
 ########################################
@@ -337,6 +344,7 @@ def main():
     if not output_dir.exists():
         output_dir.mkdir()
     logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
+    start = datetime.now().isoformat()
     if args.exp_file:
         import json
 
@@ -478,7 +486,8 @@ def main():
 
     with mp.Pool(processes=nprocs) as pool:
         pool.starmap(mp_func_ml_applied, mp_args)
-    logger.info("Done!")
+    end = datetime.now().isoformat()
+    logger.info(f"Started at {start}; finished at {end}")
 
 
 if __name__ == "__main__":
