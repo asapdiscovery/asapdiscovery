@@ -11,7 +11,7 @@ authors = [
 ]
 description = "API and scripts related to downloading and interacting with data from the Collaborative Drug Discovery Vault, Fragalysis, and the PDB"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -48,6 +48,7 @@ download-moonshot-data = "asapdiscovery.data.scripts.download_moonshot_data:main
 download-pdbs = "asapdiscovery.data.scripts.download_pdbs:main"
 filter-fragalysis-by-smarts = "asapdiscovery.data.scripts.filter_fragalysis_by_smarts:main"
 write-cmpd-to-frag-dict = "asapdiscovery.data.scripts.write_cmpd_to_frag_dict:main"
+combine-and-label-mpro-sdf = "asapdiscovery.data.scripts.combine_and_label_mpro_sdf:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
