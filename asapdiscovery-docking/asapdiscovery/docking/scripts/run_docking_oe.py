@@ -387,10 +387,13 @@ def main():
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
 
-    # load ml models
+    # setup ML models
+    gat_model_string = "asapdiscovery-GAT-2023.04.12"
     if args.gat:
-        GAT_model = GATInference("asapdiscovery-GAT-2023.04.12")
+        GAT_model = GATInference(gat_model_string)
+        logger.info(f"Using GAT model: {gat_model_string}")
     else:
+        logger.info("Skipping GAT model scoring")
         GAT_model = None
 
     # Load all receptor DesignUnits
