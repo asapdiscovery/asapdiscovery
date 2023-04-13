@@ -1275,16 +1275,16 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
     import torch
 
     # Get which splits should be from the front and which should be from the end
-    front_split_fracs = split_fracs[:-end_splits]
+    front_split_fracs = np.asarray(split_fracs[:-end_splits])
     # Reverse the end splits so it matches when we reverse everything later
-    end_split_fracs = split_fracs[-end_splits:][::-1]
+    end_split_fracs = np.asarray(split_fracs[-end_splits:][::-1])
 
     # Calculate how many molecules we want covered through each split
     # By the end of each split, we should cumulatively covered the cumulative sum of all
     #  splits up to and including that one
-    n_mols_front_split = np.cumsum(front_split_fracs) * len(ds)
+    n_mols_front_split = front_split_fracs * len(ds)
     # Same but for reverse
-    n_mols_end_split = np.cumsum(end_split_fracs) * len(ds)
+    n_mols_end_split = end_split_fracs * len(ds)
 
     # TODO: make this whole process more compact
     # First get all the unique created dates
@@ -1350,13 +1350,16 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
     else:
         final_split = None
     for n_mols in n_mols_front_split:
-        # Find the first point in the cumsum where there are at least as many molecules
-        #  as required for this split. We want to include molecules from all dates up to
-        #  and including this date (+1 for including the date found)
-        idx = np.nonzero(cum_date_counts >= n_mols)[0][0] + 1
+        n_mols_cur = 0
+        date_idx = prev_idx
+        # Keep adding dates until the split is as big as it needs to be, or we reach the
+        #  end of the array
+        while (n_mols_cur < n_mols) and (date_idx < len(all_dates)):
+            n_mols_cur += date_counts[date_idx]
+            date_idx += 1
 
         # Get dates to include
-        incl_dates = all_dates_sorted[prev_idx:idx]
+        incl_dates = all_dates_sorted[prev_idx:date_idx]
 
         # Get subset indices
         subset_idx = [i for d in incl_dates for i in dates_dict[d]]
@@ -1366,7 +1369,7 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
         all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
         # Update counter
-        prev_idx = idx
+        prev_idx = date_idx
 
     # Finish up anything leftover
     if final_split:
@@ -1380,13 +1383,16 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
     prev_idx = 0
     end_subsets = []
     for n_mols in n_mols_end_split:
-        # Find the first point in the cumsum where there are at least as many molecules
-        #  as required for this split. We want to include molecules from all dates up to
-        #  and including this date (+1 for including the date found)
-        idx = np.nonzero(cum_date_counts_rev >= n_mols)[0][0] + 1
+        n_mols_cur = 0
+        date_idx = prev_idx
+        # Keep adding dates until the split is as big as it needs to be, or we reach the
+        #  end of the array
+        while (n_mols_cur < n_mols) and (date_idx < len(all_dates)):
+            n_mols_cur += date_counts_rev[date_idx]
+            date_idx += 1
 
         # Get dates to include
-        incl_dates = all_dates_sorted_rev[prev_idx:idx]
+        incl_dates = all_dates_sorted_rev[prev_idx:date_idx]
 
         # Get subset indices
         subset_idx = [i for d in incl_dates for i in dates_dict[d] if i not in seen_idx]
@@ -1396,7 +1402,7 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
         end_subsets.append(torch.utils.data.Subset(ds, subset_idx[::-1]))
 
         # Update counter
-        prev_idx = idx
+        prev_idx = date_idx
     # Flip end_subsets so splits are in the right order
     all_subsets.extend(end_subsets[::-1])
 
