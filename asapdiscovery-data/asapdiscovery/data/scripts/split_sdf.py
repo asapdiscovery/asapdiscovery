@@ -3,6 +3,10 @@ The purpose of this script is to split up a multi-ligand SDF file into individua
 order to be used in a job array
 """
 import argparse
+from asapdiscovery.data.openeye import load_openeye_sdfs
+from math import ceil
+from asapdiscovery.data.openeye import save_openeye_sdfs
+import os
 
 
 def get_args():
@@ -34,13 +38,9 @@ def get_args():
 def main():
     args = get_args()
     print(f"Reading '{args.sdf_fn}'")
-    from asapdiscovery.data.openeye import load_openeye_sdfs
 
     mols = load_openeye_sdfs(args.sdf_fn)
     print(f"Saving {len(mols)} SDF files to '{args.out_dir}'")
-    from math import ceil
-
-    from asapdiscovery.data.openeye import save_openeye_sdfs
 
     n_chunks = ceil(
         len(mols) / args.chunk_size,
@@ -50,8 +50,6 @@ def main():
     print(f"Saving {n_chunks} files of {args.chunk_size} molecules each")
     if not remainder == 0:
         print(f"Saving {remainder} molecules in the last file")
-
-    import os
 
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
