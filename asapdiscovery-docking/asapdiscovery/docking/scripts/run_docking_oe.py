@@ -283,10 +283,10 @@ def get_args():
         "-m",
         "--timeout",
         type=int,
-        default=30,
+        default=-1,
         help=(
             "Timeout (in seconds) for each docking thread. "
-            "Set to a negative number to disable."
+            "Default is -1, which disables this feature."
         ),
     )
     parser.add_argument(
