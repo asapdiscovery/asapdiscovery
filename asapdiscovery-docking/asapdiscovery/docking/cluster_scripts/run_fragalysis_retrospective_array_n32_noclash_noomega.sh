@@ -3,8 +3,8 @@
 ## bsub -J "run_fragalysis_retrospective[1-576]" < run_fragalysis_retrospective_array.sh
 
 #BSUB -J run_oe_docking
-#BSUB -oo run_fragalysis_retrospective_%I.out
-#BSUB -eo run_fragalysis_retrospective_%I.stderr
+#BSUB -oo run_fragalysis_retrospective_noclash_noomega_%I.out
+#BSUB -eo run_fragalysis_retrospective_noclash_noomega_%I.stderr
 #BSUB -n 32
 #BSUB -q cpuqueue
 #BSUB -R rusage[mem=3]
