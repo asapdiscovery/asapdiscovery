@@ -24,6 +24,8 @@ from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E4
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
 
+log_name = "run_docking_oe"
+
 
 def check_results(d):
     """
@@ -80,7 +82,8 @@ def load_dus(file_base, by_compound=False):
         Dictionary mapping full Mpro name/compound id (including chain) to its
         design unit
     """
-    logger = logging.getLogger("run_docking_oe")
+    global log_name
+    logger = logging.getLogger(log_name)
 
     if os.path.isdir(file_base):
         logger.info(f"Using {file_base} as directory")
@@ -161,8 +164,9 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
         logger.info(f"Found results for {compound_name}")
         after = datetime.now().isoformat()
+        results = pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
         logger.info(f"Start: {before}, End: {after}")
-        return
+        return results
     else:
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
@@ -231,7 +235,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     after = datetime.now().isoformat()
     logger.info(f"Start: {before}, End: {after}")
-    return
+    return results
 
 
 ########################################
@@ -359,12 +363,14 @@ def get_args():
 
 def main():
     args = get_args()
+    global log_name
+    log_name = args.log_name
 
     # Parse symlinks in output_dir
     output_dir = Path(args.output_dir)
     if not output_dir.exists():
         output_dir.mkdir()
-    logger = FileLogger(args.log_name, path=str(output_dir)).getLogger()
+    logger = FileLogger(log_name, path=str(output_dir)).getLogger()
     start = datetime.now().isoformat()
     if args.exp_file:
         import json
@@ -463,7 +469,7 @@ def main():
             xtals.extend(dataset_dict[xtal_ids[xtal]])
         new_args = [
             (
-                os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
+                output_dir / f"{compound_ids[i]}_{x}",
                 compound_ids[i],
                 x,
                 f"{compound_ids[i]}_{x}",
@@ -506,6 +512,7 @@ def main():
             #  this way so we can keep track of which compound:xtals timed out
             res_iter = res.result()
             for args_list in mp_args:
+                docking_run_name = args_list[9]
                 try:
                     cur_res = next(res_iter)
                     results_df += [cur_res]
@@ -514,35 +521,29 @@ def main():
                     break
                 except TimeoutError:
                     # This compound:xtal combination timed out
-                    print("Docking timed out for", args_list[8], flush=True)
-                    failed_runs += [args_list[8]]
-                except pebble.ProcessExpired as e:
-                    print("Docking failed for", args_list[8], flush=True)
-                    print(f"\t{e}. Exit code {e.exitcode}", flush=True)
-                    failed_runs += [args_list[8]]
-                except Exception as e:
-                    print(
-                        "Docking failed for",
-                        args_list[8],
-                        "with Exception",
-                        e,
-                        flush=True,
+                    logger.error(
+                        f"Docking timed out for {docking_run_name} with timeout {args.timeout} seconds"
                     )
-                    print(e.traceback, flush=True)
-                    failed_runs += [args_list[8]]
-            print(f"Docking failed for {len(failed_runs)} runs", flush=True)
+                    failed_runs += [docking_run_name]
+                except pebble.ProcessExpired as e:
+                    logger.error(
+                        f"Docking failed for {docking_run_name} with {e}: {e.exitcode}"
+                    )
+                    failed_runs += [docking_run_name]
+                except Exception as e:
+                    logger.error(
+                        f"Docking failed for {docking_run_name} with Exception {e}"
+                    )
+                    logger.error(e.traceback)
+                    failed_runs += [docking_run_name]
+            if len(failed_runs) > 0:
+                logger.error(f"Docking failed for {len(failed_runs)} runs.")
     else:
         results_df = [mp_func_ml_applied(*args_list) for args_list in mp_args]
 
-    nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    logger.info(f"CPUs: {mp.cpu_count()}")
-    logger.info(f"N Processes: {len(mp_args)}")
-    logger.info(f"N Cores: {args.num_cores}")
-
-    logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
-
-    with mp.Pool(processes=nprocs) as pool:
-        pool.starmap(mp_func_ml_applied, mp_args)
+    logger.info(
+        f"Docking finished for {len(results_df)} runs. Saving results to {args.output_dir}"
+    )
     end = datetime.now().isoformat()
     logger.info(f"Started at {start}; finished at {end}")
 
