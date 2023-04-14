@@ -48,7 +48,7 @@ def main():
     remainder = len(mols) % args.chunk_size
 
     print(f"Saving {n_chunks} files of {args.chunk_size} molecules each")
-    if not remainder == 0:
+    if remainder:
         print(f"Saving {remainder} molecules in the last file")
 
     import os
