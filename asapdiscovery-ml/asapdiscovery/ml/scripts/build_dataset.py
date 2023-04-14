@@ -21,7 +21,13 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     # Input arguments
-    parser.add_argument("-i", help="Input directory/glob for docked PDB files.")
+    parser.add_argument(
+        "-i",
+        help=(
+            "Input directory/glob for docked PDB files. Assumes all files are in the "
+            "top level of this directory with names *complex.pdb."
+        ),
+    )
     parser.add_argument(
         "-exp", required=True, help="JSON file giving experimental results."
     )
@@ -50,7 +56,7 @@ def get_args():
     parser.add_argument(
         "-model",
         required=True,
-        help="Which type of model to use (e3nn or schnet).",
+        help="Which type of model to use (GAT, e3nn, or schnet).",
     )
     parser.add_argument(
         "--grouped",
@@ -97,7 +103,7 @@ def main():
             all_fns, xtal_pat=xtal_regex, compound_pat=compound_regex, fail_val="NA"
         )
 
-        # Trim compounds and all_fns to ones that were successfully parse
+        # Trim compounds and all_fns to ones that were successfully parsed
         idx = [(c[0] != "NA") and (c[1] != "NA") for c in compounds]
         compounds = [c for c, i in zip(compounds, idx) if i]
         all_fns = [fn for fn, i in zip(all_fns, idx) if i]

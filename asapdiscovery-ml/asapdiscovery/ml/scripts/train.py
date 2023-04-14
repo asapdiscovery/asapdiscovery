@@ -416,7 +416,7 @@ def init(args, rank=False):
             all_fns, xtal_pat=xtal_regex, compound_pat=compound_regex, fail_val="NA"
         )
 
-        # Trim compounds and all_fns to ones that were successfully parse
+        # Trim compounds and all_fns to ones that were successfully parsed
         idx = [(c[0] != "NA") and (c[1] != "NA") for c in compounds]
         compounds = [c for c, i in zip(compounds, idx) if i]
         all_fns = [fn for fn, i in zip(all_fns, idx) if i]
