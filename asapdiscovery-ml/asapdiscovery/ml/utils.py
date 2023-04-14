@@ -1336,7 +1336,8 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
     # If there are no end splits, go up to the last split so we can add anything that
     #  got left out from float rounding
     if end_splits == 0:
-        final_split = n_mols_front_split.pop()
+        final_split = n_mols_front_split[-1]
+        n_mols_front_split = n_mols_front_split[:-1]
     else:
         final_split = None
     for n_mols in n_mols_front_split:
