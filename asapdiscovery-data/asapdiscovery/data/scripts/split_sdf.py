@@ -3,10 +3,10 @@ The purpose of this script is to split up a multi-ligand SDF file into individua
 order to be used in a job array
 """
 import argparse
-from asapdiscovery.data.openeye import load_openeye_sdfs
-from math import ceil
-from asapdiscovery.data.openeye import save_openeye_sdfs
 import os
+from math import ceil
+
+from asapdiscovery.data.openeye import load_openeye_sdfs, save_openeye_sdfs
 
 
 def get_args():
