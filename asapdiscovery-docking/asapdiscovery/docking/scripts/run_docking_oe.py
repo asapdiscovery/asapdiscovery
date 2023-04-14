@@ -29,8 +29,6 @@ import logging
 import multiprocessing as mp
 import os
 import pickle as pkl
-import re
-import shutil
 from concurrent.futures import TimeoutError
 from datetime import datetime
 from functools import partial
