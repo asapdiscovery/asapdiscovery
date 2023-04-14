@@ -48,6 +48,8 @@ from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E4
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
 
+log_name = "run_docking_oe"
+
 
 def check_results(d):
     """
@@ -96,7 +98,8 @@ def load_dus(fn_dict):
         Dictionary mapping full Mpro name/compound id (including chain) to its
         design unit
     """
-    logger = logging.getLogger("run_docking_oe")
+    global log_name
+    logger = logging.getLogger(log_name)
 
     du_dict = {}
     for full_name, fn in fn_dict.items():
@@ -138,8 +141,9 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
         logger.info(f"Found results for {compound_name}")
         after = datetime.now().isoformat()
+        results = pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
         logger.info(f"Start: {before}, End: {after}")
-        return
+        return results
     else:
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
@@ -208,7 +212,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     after = datetime.now().isoformat()
     logger.info(f"Start: {before}, End: {after}")
-    return
+    return results
 
 
 def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
@@ -353,10 +357,10 @@ def get_args():
         "-m",
         "--timeout",
         type=int,
-        default=30,
+        default=-1,
         help=(
             "Timeout (in seconds) for each docking thread. "
-            "Set to a negative number to disable."
+            "Default is -1, which disables this feature."
         ),
     )
     parser.add_argument(
@@ -429,12 +433,14 @@ def get_args():
 
 def main():
     args = get_args()
+    global log_name
+    log_name = args.log_name
 
     # Parse symlinks in output_dir
     output_dir = Path(args.output_dir)
     if not output_dir.exists():
         output_dir.mkdir()
-    logger = FileLogger(args.log_name, path=str(output_dir)).getLogger()
+    logger = FileLogger(log_name, path=str(output_dir)).getLogger()
     start = datetime.now().isoformat()
     if args.exp_file:
         import json
@@ -552,7 +558,7 @@ def main():
             xtals.extend(dataset_dict[xtal_ids[xtal]])
         new_args = [
             (
-                os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
+                output_dir / f"{compound_ids[i]}_{x}",
                 compound_ids[i],
                 x,
                 f"{compound_ids[i]}_{x}",
@@ -574,61 +580,84 @@ def main():
     # Apply ML arguments as kwargs to mp_func
     mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
 
-    # if args.num_cores > 1:
-    #     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    #     logger.info(f"CPUs: {mp.cpu_count()}")
-    #     logger.info(f"N Processes: {len(mp_args)}")
-    #     logger.info(f"N Cores: {args.num_cores}")
-    #     logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
-    #     with pebble.ProcessPool(max_workers=nprocs) as pool:
-    #         if args.timeout <= 0:
-    #             args.timeout = None
-    #         # Need to flip args structure for pebble
-    #         res = pool.map(mp_func_ml_applied, *zip(*mp_args), timeout=args.timeout)
-    #
-    #         # List to keep track of successful results
-    #         results_df = []
-    #         # List to keep track of which runs failed
-    #         failed_runs = []
-    #
-    #         # TimeoutError is only raised when we try to access the result. Do things
-    #         #  this way so we can keep track of which compound:xtals timed out
-    #         res_iter = res.result()
-    #         for args_list in mp_args:
-    #             try:
-    #                 cur_res = next(res_iter)
-    #                 results_df += [cur_res]
-    #             except StopIteration:
-    #                 # We've reached the end of the results iterator so just break
-    #                 break
-    #             except TimeoutError:
-    #                 # This compound:xtal combination timed out
-    #                 print("Docking timed out for", args_list[8], flush=True)
-    #                 failed_runs += [args_list[8]]
-    #             except pebble.ProcessExpired as e:
-    #                 print("Docking failed for", args_list[8], flush=True)
-    #                 print(f"\t{e}. Exit code {e.exitcode}", flush=True)
-    #                 failed_runs += [args_list[8]]
-    #             except Exception as e:
-    #                 print(
-    #                     "Docking failed for",
-    #                     args_list[8],
-    #                     "with Exception",
-    #                     e,
-    #                     flush=True,
-    #                 )
-    #                 print(e.traceback, flush=True)
-    #                 failed_runs += [args_list[8]]
-    #         print(f"Docking failed for {len(failed_runs)} runs", flush=True)
-    nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
-    logger.info(f"CPUs: {mp.cpu_count()}")
-    logger.info(f"N Processes: {len(mp_args)}")
-    logger.info(f"N Cores: {args.num_cores}")
+    if args.num_cores > 1:
+        nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
+        logger.info(f"CPUs: {mp.cpu_count()}")
+        logger.info(f"N Processes: {len(mp_args)}")
+        logger.info(f"N Cores: {args.num_cores}")
+        logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+        with pebble.ProcessPool(max_workers=nprocs) as pool:
+            if args.timeout <= 0:
+                args.timeout = None
+            # Need to flip args structure for pebble
+            res = pool.map(mp_func_ml_applied, *zip(*mp_args), timeout=args.timeout)
 
-    logger.info(f"Running {len(mp_args)} docking runs over {nprocs} cores.")
+            # List to keep track of successful results
+            results_list = []
+            # List to keep track of which runs failed
+            failed_runs = []
 
-    with mp.Pool(processes=nprocs) as pool:
-        pool.starmap(mp_func_ml_applied, mp_args)
+            # TimeoutError is only raised when we try to access the result. Do things
+            #  this way so we can keep track of which compound:xtals timed out
+            res_iter = res.result()
+            for args_list in mp_args:
+                docking_run_name = args_list[9]
+                try:
+                    cur_res = next(res_iter)
+                    results_list += [cur_res]
+                except StopIteration:
+                    # We've reached the end of the results iterator so just break
+                    break
+                except TimeoutError:
+                    # This compound:xtal combination timed out
+                    logger.error(
+                        f"Docking timed out for {docking_run_name} with timeout {args.timeout} seconds"
+                    )
+                    failed_runs += [docking_run_name]
+                except pebble.ProcessExpired as e:
+                    logger.error(
+                        f"Docking failed for {docking_run_name} with {e}: {e.exitcode}"
+                    )
+                    failed_runs += [docking_run_name]
+                except Exception as e:
+                    logger.error(
+                        f"Docking failed for {docking_run_name} with Exception {e}"
+                    )
+                    logger.error(e.traceback)
+                    failed_runs += [docking_run_name]
+            if len(failed_runs) > 0:
+                logger.error(f"Docking failed for {len(failed_runs)} runs.")
+    else:
+        results_list = [mp_func_ml_applied(*args_list) for args_list in mp_args]
+
+    logger.info(f"Docking finished for {len(results_list)} runs.")
+    # Preparing results dataframe
+    # TODO: convert these SD tags to live somewhere else
+    results_cols = [
+        "ligand_id",
+        "du_structure",
+        "docked_file",
+        "pose_id",
+        "docked_RMSD",
+        "POSIT_prob",
+        "POSIT_method",
+        "chemgauss4_score",
+        "clash",
+        "SMILES",
+        "GAT_score",
+    ]
+
+    # results_list has the form [[(res1, res2, res3, ...)], [(res1, res2, res3, ...)], ...]
+    # this flattens the list to look like [(res1, res2, res3, ...), (res1, res2, res3, ...), ...]
+    # TODO: make this unnecessary?
+    flattened_results_list = [res for res_list in results_list for res in res_list]
+    results_df = pandas.DataFrame(flattened_results_list, columns=results_cols)
+
+    # Save results to csv
+    csv_name = f"{args.output_dir}/{log_name}-results.csv"
+    results_df.to_csv(csv_name, index=False)
+    logger.info(f"Saved results to {csv_name}")
+
     end = datetime.now().isoformat()
     logger.info(f"Started at {start}; finished at {end}")
 
