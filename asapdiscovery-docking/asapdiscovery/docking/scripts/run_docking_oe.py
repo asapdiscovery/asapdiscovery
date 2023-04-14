@@ -504,7 +504,7 @@ def main():
             res = pool.map(mp_func_ml_applied, *zip(*mp_args), timeout=args.timeout)
 
             # List to keep track of successful results
-            results_df = []
+            results_list = []
             # List to keep track of which runs failed
             failed_runs = []
 
@@ -515,7 +515,7 @@ def main():
                 docking_run_name = args_list[9]
                 try:
                     cur_res = next(res_iter)
-                    results_df += [cur_res]
+                    results_list += [cur_res]
                 except StopIteration:
                     # We've reached the end of the results iterator so just break
                     break
@@ -539,11 +539,36 @@ def main():
             if len(failed_runs) > 0:
                 logger.error(f"Docking failed for {len(failed_runs)} runs.")
     else:
-        results_df = [mp_func_ml_applied(*args_list) for args_list in mp_args]
+        results_list = [mp_func_ml_applied(*args_list) for args_list in mp_args]
 
-    logger.info(
-        f"Docking finished for {len(results_df)} runs. Saving results to {args.output_dir}"
-    )
+    logger.info(f"Docking finished for {len(results_list)} runs.")
+    # Preparing results dataframe
+    # TODO: convert these SD tags to live somewhere else
+    results_cols = [
+        "ligand_id",
+        "du_structure",
+        "docked_file",
+        "pose_id",
+        "docked_RMSD",
+        "POSIT_prob",
+        "POSIT_method",
+        "chemgauss4_score",
+        "clash",
+        "SMILES",
+        "GAT_score",
+    ]
+
+    # results_list has the form [[(res1, res2, res3, ...)], [(res1, res2, res3, ...)], ...]
+    # this flattens the list to look like [(res1, res2, res3, ...), (res1, res2, res3, ...), ...]
+    # TODO: make this unnecessary?
+    flattened_results_list = [res for res_list in results_list for res in res_list]
+    results_df = pandas.DataFrame(flattened_results_list, columns=results_cols)
+
+    # Save results to csv
+    csv_name = f"{args.output_dir}/{log_name}-results.csv"
+    results_df.to_csv(csv_name, index=False)
+    logger.info(f"Saved results to {csv_name}")
+
     end = datetime.now().isoformat()
     logger.info(f"Started at {start}; finished at {end}")
 
