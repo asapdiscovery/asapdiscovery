@@ -1128,23 +1128,13 @@ def split_dataset(
             ds_train, ds_val, ds_test = split_temporal(
                 ds, [train_frac, val_frac, test_frac], grouped=True
             )
-            n_train = len(ds_train)
-            n_val = len(ds_val)
-            n_test = len(ds_test)
         else:
             ds_train, ds_val, ds_test = torch.utils.data.random_split(
-                ds, [n_train, n_val, n_test], g
+                ds, [train_frac, val_frac, test_frac], g
             )
-            n_train = int(len(ds) * train_frac)
-            n_val = int(len(ds) * val_frac)
-            n_test = len(ds) - n_train - n_val
-        print(
-            (
-                f"{n_train} training molecules, {n_val} validation molecules, "
-                f"{n_test} testing molecules"
-            ),
-            flush=True,
-        )
+        train_compound_ids = {c for c, _ in ds_train}
+        val_compound_ids = {c for c, _ in ds_val}
+        test_compound_ids = {c for c, _ in ds_test}
     else:
         if temporal:
             ds_train, ds_val, ds_test = split_temporal(
@@ -1158,15 +1148,15 @@ def split_dataset(
         train_compound_ids = {c[1] for c, _ in ds_train}
         val_compound_ids = {c[1] for c, _ in ds_val}
         test_compound_ids = {c[1] for c, _ in ds_test}
-        print(
-            f"{len(ds_train)} training samples",
-            f"({len(train_compound_ids)}) molecules,",
-            f"{len(ds_val)} validation samples",
-            f"({len(val_compound_ids)}) molecules,",
-            f"{len(ds_test)} test samples",
-            f"({len(test_compound_ids)}) molecules",
-            flush=True,
-        )
+    print(
+        f"{len(ds_train)} training samples",
+        f"({len(train_compound_ids)}) molecules,",
+        f"{len(ds_val)} validation samples",
+        f"({len(val_compound_ids)}) molecules,",
+        f"{len(ds_test)} test samples",
+        f"({len(test_compound_ids)}) molecules",
+        flush=True,
+    )
 
     return ds_train, ds_val, ds_test
 
