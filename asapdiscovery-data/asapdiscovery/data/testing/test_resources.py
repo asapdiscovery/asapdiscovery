@@ -1,6 +1,8 @@
+import pathlib
+from collections import namedtuple
+
 import pkg_resources
 import pooch
-import pathlib
 import yaml
 
 """
