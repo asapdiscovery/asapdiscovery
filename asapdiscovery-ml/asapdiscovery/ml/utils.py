@@ -1115,12 +1115,13 @@ def split_dataset(
             RuntimeWarning,
         )
 
-    print("using random seed:", rand_seed, flush=True)
-    # Create generator
-    if rand_seed is None:
-        g = torch.Generator()
-    else:
-        g = torch.Generator().manual_seed(rand_seed)
+    if not temporal:
+        print("using random seed:", rand_seed, flush=True)
+        # Create generator
+        if rand_seed is None:
+            g = torch.Generator()
+        else:
+            g = torch.Generator().manual_seed(rand_seed)
 
     # Split dataset into train/val/test
     if grouped:
