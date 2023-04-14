@@ -1266,9 +1266,9 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
     import torch
 
     # Get which splits should be from the front and which should be from the end
-    front_split_fracs = np.asarray(split_fracs[:-end_splits])
+    front_split_fracs = np.asarray(split_fracs[: len(split_fracs) - end_splits])
     # Reverse the end splits so it matches when we reverse everything later
-    end_split_fracs = np.asarray(split_fracs[-end_splits:][::-1])
+    end_split_fracs = np.asarray(split_fracs[len(split_fracs) - end_splits :][::-1])
 
     # Calculate how many molecules we want covered through each split
     # By the end of each split, we should cumulatively covered the cumulative sum of all
