@@ -531,6 +531,9 @@ def main():
                     print(e.traceback, flush=True)
                     failed_runs += [args_list[8]]
             print(f"Docking failed for {len(failed_runs)} runs", flush=True)
+    else:
+        results_df = [mp_func_ml_applied(*args_list) for args_list in mp_args]
+
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     logger.info(f"CPUs: {mp.cpu_count()}")
     logger.info(f"N Processes: {len(mp_args)}")
