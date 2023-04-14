@@ -1104,7 +1104,7 @@ def split_dataset(
     import torch
 
     # Check that fractions add to 1
-    if sum([train_frac, val_frac, test_frac]) != 1:
+    if not np.isclose(sum([train_frac, val_frac, test_frac]), 1):
         from warnings import warn
 
         warn(
@@ -1114,6 +1114,11 @@ def split_dataset(
             ),
             RuntimeWarning,
         )
+
+        if temporal:
+            end_splits = 2
+    elif temporal:
+        end_splits = 0
 
     if not temporal:
         print("using random seed:", rand_seed, flush=True)
@@ -1127,7 +1132,10 @@ def split_dataset(
     if grouped:
         if temporal:
             ds_train, ds_val, ds_test = split_temporal(
-                ds, [train_frac, val_frac, test_frac], grouped=True
+                ds,
+                [train_frac, val_frac, test_frac],
+                grouped=True,
+                end_splits=end_splits,
             )
         else:
             ds_train, ds_val, ds_test = torch.utils.data.random_split(
@@ -1139,7 +1147,7 @@ def split_dataset(
     else:
         if temporal:
             ds_train, ds_val, ds_test = split_temporal(
-                ds, [train_frac, val_frac, test_frac]
+                ds, [train_frac, val_frac, test_frac], end_splits=end_splits
             )
         else:
             ds_train, ds_val, ds_test = split_molecules(
@@ -1151,11 +1159,11 @@ def split_dataset(
         test_compound_ids = {c[1] for c, _ in ds_test}
     print(
         f"{len(ds_train)} training samples",
-        f"({len(train_compound_ids)}) molecules,",
+        f"({len(train_compound_ids)} molecules),",
         f"{len(ds_val)} validation samples",
-        f"({len(val_compound_ids)}) molecules,",
+        f"({len(val_compound_ids)} molecules),",
         f"{len(ds_test)} test samples",
-        f"({len(test_compound_ids)}) molecules",
+        f"({len(test_compound_ids)} molecules)",
         flush=True,
     )
 
@@ -1235,7 +1243,7 @@ def split_molecules(ds, split_fracs, generator=None):
     return all_subsets
 
 
-def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
+def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=0):
     """
     Split molecules temporally by date created. Earlier molecules will be placed in the
     training set and later molecules will be placed in the val/test sets (unless
@@ -1251,7 +1259,7 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=2):
         Splitting a GroupedDockedDataset object
     reverse : bool, default=False
         Reverse sorting of data
-    end_splits : int, default=2
+    end_splits : int, default=0
         How many splits (starting from the end of `split_fracs`) should be taken from
         the end of the list (most recent data, or oldest if `reverse` is True). This is
         in order to allow for the splits to not add up to 1, but still evaluate on the
