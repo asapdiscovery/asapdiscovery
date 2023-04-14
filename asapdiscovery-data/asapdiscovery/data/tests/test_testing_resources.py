@@ -2,7 +2,9 @@ import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
-@pytest.mark.parametrize("file", ["file1.txt", "file2.txt", "subdir/file3.txt"])
+@pytest.mark.parametrize(
+    "file", ["internal_testing/file1.txt", "Mpro_combined_labeled.sdf"]
+)
 def test_get_file(file):
     path = fetch_test_file(file)
     assert path.exists()
