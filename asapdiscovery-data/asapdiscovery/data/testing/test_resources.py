@@ -1,0 +1,81 @@
+import pkg_resources
+import pooch
+import yaml
+
+from collections import namedtuple
+from pathlib import Path
+
+
+test_files = pkg_resources.resource_filename(__name__, "test_files.yaml")
+
+
+def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:
+    """
+    Make a pooch repository for test files.
+
+    Parameters
+    ----------
+    test_files : str
+        Path to yaml spec file.
+    
+    Returns
+    -------
+    pooch.Pooch
+        Pooch repository for test files.
+    
+    Raises
+    ------
+    ValueError
+        If test_files spec is invalid.
+    """
+    with open(test_files) as f:
+        test_files = yaml.safe_load(f)
+
+    if "base_url" not in test_files:
+        raise ValueError(f"base_url not found in spec file.")
+    if "files" not in test_files:
+        raise ValueError(f"files not found in spec file.")
+
+    # make the registry
+    reg = {}
+    for f in test_files["files"]:
+        if "resource" not in f:
+            raise ValueError(f"File {f} resource not found in spec file.")
+        if "sha256hash" not in f:
+            raise ValueError(f"File {f} sha256hash not found in spec file.")
+        reg[f["resource"]] = f"sha256:{f["sha256hash"]}"
+    
+    return pooch.create(
+        # use os cache to avoid permission issues and in-tree shenanigans
+        path=pooch.os_cache("asapdiscovery_testing"),
+        base_url=test_files["base_url"],
+        registry=reg,
+    )
+
+# instantiate the pooch repository
+test_file_pooch_repo = make_test_file_pooch_repo(test_files)
+
+def fetch_test_file(filename: str) -> pathlib.Path:
+    """
+    Fetch a test file from the test file pooch repository.
+
+    Parameters
+    ----------
+    filename : str
+        Name of the test file to fetch.
+    
+    Returns
+    -------
+    pathlib.Path
+        Path to the test file.
+
+    Raises
+    ------
+    ValueError
+        If the test file could not be fetched.
+    """
+    try:
+        file = test_file_pooch_repo.fetch(filename)
+    except Exception as e:
+        raise ValueError(f"Could not fetch test file {filename} from {test_files}") from e
+    return pathlib.Path(file)

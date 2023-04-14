@@ -1,0 +1,11 @@
+# testing files for asapdiscovery
+
+base_url: https://asap-discovery-test-files.s3.amazonaws.com/
+
+files:
+  - resource: file1.txt
+    sha256hash: blah
+  - resource: file2.txt
+    sha256hash: blah
+  - resource: subdir/file3.txt
+    sha256hash: blah
