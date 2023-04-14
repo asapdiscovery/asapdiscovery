@@ -1,10 +1,15 @@
 import pkg_resources
 import pooch
+import pathlib
 import yaml
 
 from collections import namedtuple
-from pathlib import Path
 
+"""
+This file contains utilities for fetching test files from the asapdiscovery
+test file repository. We instantiate a pooch repository for the test files on import
+that can then be used to fetch test files.
+"""
 
 test_files = pkg_resources.resource_filename(__name__, "test_files.yaml")
 
@@ -17,12 +22,12 @@ def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:
     ----------
     test_files : str
         Path to yaml spec file.
-    
+
     Returns
     -------
     pooch.Pooch
         Pooch repository for test files.
-    
+
     Raises
     ------
     ValueError
@@ -38,13 +43,15 @@ def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:
 
     # make the registry
     reg = {}
-    for f in test_files["files"]:
-        if "resource" not in f:
-            raise ValueError(f"File {f} resource not found in spec file.")
-        if "sha256hash" not in f:
-            raise ValueError(f"File {f} sha256hash not found in spec file.")
-        reg[f["resource"]] = f"sha256:{f["sha256hash"]}"
-    
+    for fn in test_files["files"]:
+        if "resource" not in fn:
+            raise ValueError(f"File {fn} resource not found in spec file.")
+        if "sha256hash" not in fn:
+            raise ValueError(f"File {fn} sha256hash not found in spec file.")
+        filename = fn["resource"]
+        sha256hash = fn["sha256hash"]
+        reg[filename] = f"sha256:{sha256hash}"
+
     return pooch.create(
         # use os cache to avoid permission issues and in-tree shenanigans
         path=pooch.os_cache("asapdiscovery_testing"),
@@ -52,8 +59,10 @@ def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:
         registry=reg,
     )
 
+
 # instantiate the pooch repository
 test_file_pooch_repo = make_test_file_pooch_repo(test_files)
+
 
 def fetch_test_file(filename: str) -> pathlib.Path:
     """
@@ -63,7 +72,7 @@ def fetch_test_file(filename: str) -> pathlib.Path:
     ----------
     filename : str
         Name of the test file to fetch.
-    
+
     Returns
     -------
     pathlib.Path
@@ -77,5 +86,7 @@ def fetch_test_file(filename: str) -> pathlib.Path:
     try:
         file = test_file_pooch_repo.fetch(filename)
     except Exception as e:
-        raise ValueError(f"Could not fetch test file {filename} from {test_files}") from e
+        raise ValueError(
+            f"Could not fetch test file {filename} from {test_files}"
+        ) from e
     return pathlib.Path(file)
