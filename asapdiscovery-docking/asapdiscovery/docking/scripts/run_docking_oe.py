@@ -474,6 +474,7 @@ def main():
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
     if args.gat:
         from asapdiscovery.ml.inference import GATInference  # noqa: E402
+
         GAT_model = GATInference(gat_model_string)
         logger.info(f"Using GAT model: {gat_model_string}")
     else:
