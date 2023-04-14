@@ -3,8 +3,6 @@ import pooch
 import pathlib
 import yaml
 
-from collections import namedtuple
-
 """
 This file contains utilities for fetching test files from the asapdiscovery
 test file repository. We instantiate a pooch repository for the test files on import
@@ -37,9 +35,9 @@ def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:
         test_files = yaml.safe_load(f)
 
     if "base_url" not in test_files:
-        raise ValueError(f"base_url not found in spec file.")
+        raise ValueError("base_url not found in spec file.")
     if "files" not in test_files:
-        raise ValueError(f"files not found in spec file.")
+        raise ValueError("files not found in spec file.")
 
     # make the registry
     reg = {}

@@ -14,7 +14,7 @@ def test_get_file(file):
 @pytest.mark.parametrize("file", ["file5.txt", "file6.txt", "subdir/file7.txt"])
 def test_get_fake_file(file):
     with pytest.raises(ValueError, match="Could not fetch test file"):
-        path = fetch_test_file(file)
+        _ = fetch_test_file(file)
 
 
 # below is the recommended way to use the fetch_test_file functionality in a test
