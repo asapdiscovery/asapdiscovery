@@ -15,3 +15,17 @@ def test_get_file(file):
 def test_get_fake_file(file):
     with pytest.raises(ValueError, match="Could not fetch test file"):
         path = fetch_test_file(file)
+
+
+# below is the recommended way to use the fetch_test_file functionality in a test
+# to avoid thrashing
+
+
+@pytest.fixture()
+def file1():
+    return fetch_test_file("internal_testing/file1.txt")
+
+
+def test_use_file_fixture(file1):
+    assert file1.exists()
+    assert file1.is_file()
