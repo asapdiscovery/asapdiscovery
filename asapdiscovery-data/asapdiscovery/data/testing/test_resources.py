@@ -1,9 +1,9 @@
+import pathlib
+from collections import namedtuple
+
 import pkg_resources
 import pooch
-import pathlib
 import yaml
-
-from collections import namedtuple
 
 """
 This file contains utilities for fetching test files from the asapdiscovery
