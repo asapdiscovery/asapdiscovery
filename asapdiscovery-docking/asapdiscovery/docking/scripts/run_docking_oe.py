@@ -1,12 +1,34 @@
 """
-Script to dock an SDF file of ligands to prepared structures.
+Script to dock an SDF file of ligands to prepared structures. Example usage:
+python run_docking_oe.py \
+-e /path/to/experimental_data.json \
+-r /path/to/receptors/*.oedu \
+-s /path/to/mcs_sort_results.pkl \
+-o /path/to/docking/output/
+
+Example usage with a custom regex for parsing your DU filenames:
+Suppose your receptors are named
+ - /path/to/receptors/Structure0_0.oedu
+ - /path/to/receptors/Structure0_1.oedu
+ - /path/to/receptors/Structure0_2.oedu
+ - ...
+where each Structure<i> is a unique crystal structure, and each Structure<i>_<j> is a
+different DesignUnit for that structure. You might construct your regex as
+'(Compound[0-9]+)_[0-9]+', which will capture the Structure<i> as the unique structure
+ID, and Structure<i>_<j> as the full name. Note that single quotes should be used around
+the regex in order to avoid any accidental wildcard expansion by the OS:
+python run_docking_oe.py \
+-e /path/to/experimental_data.json \
+-r /path/to/receptors/*.oedu \
+-s /path/to/mcs_sort_results.pkl \
+-o /path/to/docking/output/ \
+-re '(Compound[0-9]+)_[0-9]+'
 """
 import argparse
 import logging
 import multiprocessing as mp
 import os
 import pickle as pkl
-import re
 import shutil
 from concurrent.futures import TimeoutError
 from functools import partial
@@ -58,80 +80,33 @@ def check_results(d):
     return True
 
 
-def load_dus(file_base, by_compound=False):
+def load_dus(fn_dict):
     """
-    Load all present oedu files. If `file_base` is a directory, os.walk will be
-    used to find all .oedu files in the directory. Otherwise, it will be
-    assessed with glob.
+    Load all present oedu files.
 
     Parameters
     ----------
-    file_base : str
-        Directory/base filepath for .oedu files, or best_results.csv file if
-        `by_compound` is True.
-    by_compound : bool, default=False
-        Whether to load by dataset (False) or by compound_id (True).
+    fn_dict : Dict[str, str]
+        Dictionary mapping full DesignUnit name (with chain) to full filename
 
     Returns
     -------
-    Dict[str, List[str]]
-        Dictionary mapping Mpro dataset name/compound id to list of full
-        Mpro names/compound ids (with chain)
     Dict[str, oechem.OEDesignUnit]
         Dictionary mapping full Mpro name/compound id (including chain) to its
         design unit
     """
     logger = logging.getLogger("run_docking_oe")
 
-    if os.path.isdir(file_base):
-        logger.info(f"Using {file_base} as directory")
-        all_fns = [
-            os.path.join(file_base, fn)
-            for _, _, files in os.walk(file_base)
-            for fn in files
-            if fn[-4:] == "oedu"
-        ]
-    elif os.path.isfile(file_base) and by_compound:
-        logger.info(f"Using {file_base} as file")
-        df = pandas.read_csv(file_base)
-        all_fns = [
-            os.path.join(os.path.dirname(fn), "predocked.oedu")
-            for fn in df["Docked_File"]
-        ]
-    else:
-        logger.info(f"Using {file_base} as glob")
-        all_fns = glob(file_base)
-
-    # check that we actually have loaded in prepped receptors.
-    check_filelist_has_elements(all_fns, tag="prepped receptors")
-
     du_dict = {}
-    dataset_dict = {}
-    if by_compound:
-        re_pat = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
-    else:
-        re_pat = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
-    logger.info(f"Loading {len(all_fns)} design units")
-    for fn in all_fns:
-        m = re.search(re_pat, fn)
-        if m is None:
-            search_type = "compound_id" if by_compound else "Mpro dataset"
-            logger.warning(f"No {search_type} found for {fn}")
-            continue
-
-        dataset = m.groups()[0]
-        full_name = m.group()
+    for full_name, fn in fn_dict.items():
         du = oechem.OEDesignUnit()
         if not oechem.OEReadDesignUnit(fn, du):
             logger.error(f"Failed to read DesignUnit {fn}")
             continue
         du_dict[full_name] = du
-        try:
-            dataset_dict[dataset].append(full_name)
-        except KeyError:
-            dataset_dict[dataset] = [full_name]
+
     logger.info(f"{len(du_dict.keys())} design units loaded")
-    return dataset_dict, du_dict
+    return du_dict
 
 
 def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **kwargs):
@@ -230,6 +205,90 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     return results
 
 
+def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
+    """
+    Parse list of DesignUnit filenames and extract identifiers using the given regex.
+    `regex` should have one capturing group (which can be the entire string if desired).
+
+    Parameters
+    ----------
+    receptors : Union[List[str], str]
+        Either list of DesignUnit filenames, or glob/directory/file to load from. If a
+        file is passed, will assume this is a CSV file and will load from the
+        "Docked_File" column using `basefile`
+    regex : str
+        Regex string for parsing
+    basefile : str, default="predocked.oedu"
+        If a CSV file is passed for `receptors`, this is the base filename that will be
+        appended to every directory found in the "Docked_File" column
+
+    Returns
+    -------
+    Dict[str, List[str]]
+        Dictionary mapping Mpro dataset name/compound id to list of full
+        Mpro names/compound ids (with chain)
+    Dict[str, str]
+        Dictionary mapping full name (with chain) to full filename
+    """
+    from asapdiscovery.data.utils import construct_regex_function
+
+    logger = logging.getLogger("run_docking_oe")
+
+    # First get full list of filenames
+    if type(receptors) is list:
+        logger.info("Using files as given")
+        all_fns = receptors
+    elif os.path.isdir(receptors):
+        logger.info(f"Using {receptors} as directory")
+        all_fns = [
+            os.path.join(receptors, fn)
+            for _, _, files in os.walk(receptors)
+            for fn in files
+            if fn[-4:] == "oedu"
+        ]
+    elif os.path.isfile(receptors):
+        logger.info(f"Using {receptors} as file")
+        df = pandas.read_csv(receptors)
+        try:
+            all_fns = [
+                os.path.join(os.path.dirname(fn), basefile) for fn in df["Docked_File"]
+            ]
+        except KeyError:
+            raise ValueError("Docked_File column not found in given CSV file.")
+    else:
+        logger.info(f"Using {receptors} as glob")
+        all_fns = glob(receptors)
+
+    # check that we actually have loaded in prepped receptors.
+    check_filelist_has_elements(all_fns, tag="prepped receptors")
+    logger.info(f"{len(all_fns)} DesignUnit files found", flush=True)
+
+    # Build regex search function
+    regex_func = construct_regex_function(regex, ret_groups=True)
+    # Perform searches and build dicts
+    dataset_dict = {}
+    fn_dict = {}
+    for fn in all_fns:
+        try:
+            full_name, dataset = regex_func(fn)
+        except ValueError:
+            print(f"No regex match found for {fn}", flush=True)
+            continue
+
+        try:
+            dataset = dataset[0]
+        except IndexError:
+            raise ValueError(f"No capturing group in regex {regex}")
+
+        try:
+            dataset_dict[dataset].append(full_name)
+        except KeyError:
+            dataset_dict[dataset] = [full_name]
+        fn_dict[full_name] = fn
+
+    return dataset_dict, fn_dict
+
+
 ########################################
 def get_args():
     parser = argparse.ArgumentParser(description="")
@@ -245,6 +304,7 @@ def get_args():
         "-r",
         "--receptor",
         required=True,
+        nargs="+",
         help=(
             "Path/glob to prepped receptor(s), or best_results.csv file if "
             "--by_compound is given."
@@ -254,6 +314,14 @@ def get_args():
         "-s",
         "--sort_res",
         help="Pickle file giving compound_ids, xtal_ids, and sort_idxs.",
+    )
+    parser.add_argument(
+        "-re",
+        "--regex",
+        help=(
+            "Regex for extracting DesignUnit identifiers from the "
+            "OpenEye DesignUnit filenames."
+        ),
     )
 
     # Output arguments
@@ -387,16 +455,35 @@ def main():
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
     n_mols = len(mols)
 
-    # load ml models
+    # Set up ML model
+    gat_model_string = "asapdiscovery-GAT-2023.04.12"
     if args.gat:
-        GAT_model = GATInference("model1")
+        GAT_model = GATInference(gat_model_string)
+        logger.info(f"Using GAT model: {gat_model_string}")
     else:
+        logger.info("Skipping GAT model scoring")
         GAT_model = None
 
+    # The receptor args are captured as a list, but we still want to handle the case of
+    #  a glob/directory/filename being passed. If there's only one thing in the list,
+    #  assume it is a glob/directory/filename, and pull it out of the list so it's
+    #  properly handled in `parse_du_filenames`
+    if len(args.receptor) == 1:
+        args.receptor = args.receptor[0]
+    # Handle default regex
+    if args.regex is None:
+        if args.by_compound:
+            from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX_CAPT
+
+            args.regex = MOONSHOT_CDD_ID_REGEX_CAPT
+        else:
+            from asapdiscovery.data.utils import MPRO_ID_REGEX_CAPT
+
+            args.regex = MPRO_ID_REGEX_CAPT
+    dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex)
+
     # Load all receptor DesignUnits
-    dataset_dict, du_dict = load_dus(
-        file_base=args.receptor, by_compound=args.by_compound
-    )
+    du_dict = load_dus(fn_dict)
     logger.info(f"{n_mols} molecules found")
     logger.info(f"{len(du_dict.keys())} receptor structures found")
     assert n_mols > 0

@@ -1,13 +1,46 @@
-import logging
 from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List, Tuple, Union  # noqa: F401
 
-import requests
-import validators
+import pooch
 import yaml
 
 ModelSpec = namedtuple("ModelSpec", ["name", "type", "weights", "config"])
+
+
+def check_spec_validity(model: str, spec: dict) -> None:
+    """Check if model spec is valid.
+
+    Parameters
+    ----------
+    model : str
+        Model name.
+    spec : dict
+        Model spec.
+
+    Raises
+    ------
+    ValueError
+        If model spec is invalid.
+    """
+    if model not in spec:
+        raise ValueError(f"Model {model} not found in spec file.")
+    model_spec = spec[model]
+    if "type" not in model_spec:
+        raise ValueError(f"Model {model} type not found in spec file.")
+    if "base_url" not in model_spec:
+        raise ValueError(f"Model {model} base_url not found in spec file.")
+    if "weights" not in model_spec:
+        raise ValueError(f"Model {model} weights not found in spec file.")
+    if "resource" not in model_spec["weights"]:
+        raise ValueError(f"Model {model} weights resource not found in spec file.")
+    if "sha256hash" not in model_spec["weights"]:
+        raise ValueError(f"Model {model} weights sha256hash not found in spec file.")
+    if "config" in model_spec:
+        if "resource" not in model_spec["config"]:
+            raise ValueError(f"Model {model} config resource not found in spec file.")
+        if "sha256hash" not in model_spec["config"]:
+            raise ValueError(f"Model {model} config sha256hash not found in spec file.")
 
 
 def fetch_model_from_spec(
@@ -47,114 +80,65 @@ def fetch_model_from_spec(
     if isinstance(models, str):
         models = [models]
 
+    if not local_dir:
+        raise ValueError("local_dir must be provided and must not be falsy.")
+
+    if not Path(local_dir).exists():
+        Path(local_dir).mkdir(parents=True, exist_ok=True)
+
     specs = {}
-    # cannot specify the same weights file for multiple models
-    weights_set = set()
     for model in models:
+        check_spec_validity(model, spec)
         model_spec = spec[model]
-        weights = model_spec["weights"]
         model_type = model_spec["type"]
+        base_url = model_spec["base_url"]
+
+        weights = model_spec["weights"]
+        weights_resource = weights["resource"]
+        weights_hash = weights["sha256hash"]
+
+        registry = {}
+        registry[weights_resource] = f"sha256:{weights_hash}"
+
+        # fetch config if provided
         if "config" in model_spec:
             config = model_spec["config"]
-            config = fetch_file(config, local_dir, force_fetch)
+            config_resource = config["resource"]
+            config_hash = config["sha256hash"]
+            registry[config_resource] = f"sha256:{config_hash}"
         else:
-            config = None
-        if weights in weights_set:
+            config_resource = None
+
+        # make pooch registry
+        subdir = model
+        registry = pooch.create(
+            path=Path(local_dir).joinpath(Path(subdir)),
+            base_url=base_url,
+            registry=registry,
+        )
+
+        # fetch weights
+        try:
+            weights_file = Path(registry.fetch(weights_resource))
+        except Exception as e:
             raise ValueError(
-                f"Duplicate file {weights} in spec file. Please specify a unique filename for each model."
+                f"Model {model} weights file {weights_resource} download failed, please check your yaml spec file for errors."
+            ) from e
+        # fetch config
+        if config_resource:
+            try:
+                config_file = Path(registry.fetch(config_resource))
+            except Exception as e:
+                raise ValueError(
+                    f"Model {model} config file {config_resource} download failed, please check your yaml spec file for errors."
+                ) from e
+        else:
+            config_file = None
+        if model in specs:
+            raise ValueError(
+                f"Model {model} already exists in specs, please check your yaml spec file for duplicates."
             )
-        weight_file = fetch_file(weights, local_dir, force_fetch)
-        weights_set.add(weights)
-        specs[model] = ModelSpec(model, model_type, weight_file, config)
+        # make model spec
+        specs[model] = ModelSpec(model, model_type, weights_file, config_file)
+
     return specs
-
-
-def fetch_file(
-    filename: str, file_dir: str = "./_weights/", force_fetch: bool = False
-) -> Path:
-    """Fetch weights from remote and save to local path.
-
-    Parameters
-    ----------
-    filename : str
-        Remote url or local path to file.
-    file_dir : str, default="./_weights/"
-        Local path to save weights if a remote url is provided, or to check if weights exist locally, by default "./_weights/"
-    force_fetch : bool, default=False
-        Force fetch file from remote, by default False
-
-    Returns
-    -------
-    Path to file.
-    """
-
-    is_url = validators.url(filename)
-
-    if not file_dir:
-        raise ValueError("file_dir must be provided and must not be falsy.")
-
-    if is_url:
-        logging.info("file is a remote url")
-        logging.info(f"Fetching file from {filename}")
-        if force_fetch:
-            logging.info("Force fetching file from remote")
-            # fetch from remote
-            target_file = download_file(filename, file_dir)
-            return target_file
-        else:
-            # check if file exists locally
-            local_filename = filename.split("/")[-1]
-            local_path = Path(file_dir).joinpath(Path(local_filename))
-            if local_path.exists():
-                # exists locally, skip fetch from remote
-                logging.info(
-                    f"filename exist locally at {local_path}, skipping fetch from remote"
-                )
-                return Path(local_path)
-            else:
-                # fetch from remote
-                logging.info("filename does not exist locally, fetching from remote")
-                target_file = download_file(filename, file_dir)
-                return target_file
-    else:
-        local_path = Path(file_dir).joinpath(Path(filename))
-
-        logging.info(f"Fetching file from {local_path}")
-        if not Path(local_path).exists():
-            raise FileNotFoundError(
-                f"Local file {local_path} does not exist, provide a valid remote url or local path to file"
-            )
-
-        else:
-            logging.info(
-                f"file exists locally at {local_path}, skipping fetch from remote"
-            )
-            return Path(local_path)
-
-
-# https://stackoverflow.com/questions/16694907/
-def download_file(url: str, path: str) -> None:
-    """Download file from url and save to path.
-
-    Parameters
-    ----------
-    url : str
-        Remote url to download file from.
-    path : str
-        Local path to save file to.
-    """
-    if not Path(path).exists():
-        logging.info(f"Local path {path} does not exist, creating")
-        Path(path).mkdir(parents=True, exist_ok=True)
-
-    if Path(path).is_dir():
-        local_filename = url.split("/")[-1]
-        path = Path(path).joinpath(Path(local_filename))
-    else:
-        path = Path(path)
-    with requests.get(url, stream=True) as r:
-        r.raise_for_status()
-        with open(path, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
-    return path

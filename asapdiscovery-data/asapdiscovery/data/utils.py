@@ -20,11 +20,32 @@ from asapdiscovery.data.schema import (
 
 # Not sure if this is the right place for these
 # Regex patterns for extracting Mpro dataset ID and Moonshot CDD style compound ID
+#  from filenames. This is used eg in building ML datasets. For more details on any of
+#  these regexes, you can visit regex101.com and get a full breakdown of what each
+#  component does
+
+# This will match any string that follows the original COVID Moonshot naming convention,
+#  eg: AAR-POS-5507155c-1
 MOONSHOT_CDD_ID_REGEX = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+# This will match any string that follows the Fragalysis naming convention for the Mpro
+#  structures, eg:  Mpro-P2005_0A
 MPRO_ID_REGEX = r"Mpro-.*?_[0-9][A-Z]"
 
+# Regex patterns that match chains as well, but only capture the main part. These
+#  regexes are used when we want to group files based on their unique identifier (ie the
+#  captured group), but still be able to keep track of the full name including the chain
 
-def construct_regex_function(pat, fail_val=None):
+# This will match any string that follows the original COVID Moonshot naming convention
+#  and also contains a PDB chain, eg: AAR-POS-5507155c-1_0A
+# In this example, it will capture AAR-POS-5507155c-1
+MOONSHOT_CDD_ID_REGEX_CAPT = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
+# This will match any string that follows the Fragalysis naming convention for the Mpro
+#  structures, eg:  Mpro-P2005_0A
+# In this example, it will capture Mpro-P2005
+MPRO_ID_REGEX_CAPT = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
+
+
+def construct_regex_function(pat, fail_val=None, ret_groups=False):
     """
     Construct a function that searches for the given regex pattern, either returning
     fail_val or raising an error if no match is found.
@@ -37,6 +58,8 @@ def construct_regex_function(pat, fail_val=None):
         If a value is passed, this value will be returned from the re searches if a
         match isn't found. If None (default), a ValueError will be raised from the re
         search
+    ret_groups : bool, default=False
+        If True, return the whole match, as well as any groups that were captured
 
     Returns
     -------
@@ -49,7 +72,10 @@ def construct_regex_function(pat, fail_val=None):
 
         m = re.search(pat, s)
         if m:
-            return m.group()
+            if ret_groups:
+                return m.group(), m.groups()
+            else:
+                return m.group()
         elif fail_val is not None:
             return fail_val
         else:
