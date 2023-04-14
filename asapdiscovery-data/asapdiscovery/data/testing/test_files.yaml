@@ -4,8 +4,8 @@ base_url: https://asap-discovery-test-files.s3.amazonaws.com/
 
 files:
   - resource: file1.txt
-    sha256hash: blah
+    sha256hash: 8fe3f5e68365b15094d8de3b914ef0f4013e4365e19d857d08ac651a4e71dbfe
   - resource: file2.txt
-    sha256hash: blah
+    sha256hash: 00251921069237819caaf48d1f17406e7228e9f1dd8381cf5d5e35fd2b3418da
   - resource: subdir/file3.txt
-    sha256hash: blah
+    sha256hash: 069fc234d15518cfbc07cca66a3c1596f3bde7785710f649fe9704854bac7c05
