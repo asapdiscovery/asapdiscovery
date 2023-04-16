@@ -32,6 +32,8 @@ def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:
     ValueError
         If test_files spec is invalid.
     """
+    if not pathlib.Path(test_files).exists():
+        raise ValueError(f"Spec file {test_files} does not exist.")
     with open(test_files) as f:
         test_files = yaml.safe_load(f)
 
