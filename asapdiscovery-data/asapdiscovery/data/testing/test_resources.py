@@ -1,8 +1,9 @@
 import pathlib
-
 import pkg_resources
 import pooch
 import yaml
+
+from typing import List, Union
 
 """
 This file contains utilities for fetching test files from the asapdiscovery
@@ -65,14 +66,14 @@ def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:
 test_file_pooch_repo = make_test_file_pooch_repo(test_files)
 
 
-def fetch_test_file(filename: str) -> pathlib.Path:
+def fetch_test_file(filenames: Union[str, List[str]]) -> pathlib.Path:
     """
     Fetch a test file from the test file pooch repository.
 
     Parameters
     ----------
-    filename : str
-        Name of the test file to fetch.
+    filenames : Union[str, List[str]]
+        Name of the test file or files to fetch.
 
     Returns
     -------
@@ -84,10 +85,18 @@ def fetch_test_file(filename: str) -> pathlib.Path:
     ValueError
         If the test file could not be fetched.
     """
-    try:
-        file = test_file_pooch_repo.fetch(filename)
-    except Exception as e:
-        raise ValueError(
-            f"Could not fetch test file {filename} from {test_files}"
-        ) from e
-    return pathlib.Path(file)
+    if isinstance(filenames, str):
+        filenames = [filenames]
+    files = []
+    for filename in filenames:
+        try:
+            file = test_file_pooch_repo.fetch(filename)
+        except Exception as e:
+            raise ValueError(
+                f"Could not fetch test file {filename} from {test_files}"
+            ) from e
+        files.append(pathlib.Path(file))
+    if len(files) == 1:
+        return files[0]
+    else:
+        return files
