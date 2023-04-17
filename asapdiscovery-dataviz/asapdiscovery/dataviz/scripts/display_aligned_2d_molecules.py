@@ -10,13 +10,13 @@ import argparse
 import os
 import sys
 
-from openeye import oechem, oedepict, oespruce
+from openeye import oechem, oedepict
 
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 from asapdiscovery.data.openeye import load_openeye_sdf, load_openeye_sdfs
-from asapdiscovery.dataviz.graphs import display_openeye_ligand
+from asapdiscovery.dataviz.molecules import display_openeye_ligand
 
 
 ################################################################################
@@ -55,25 +55,25 @@ def main():
         ref = mols[0]
 
     for mol in mols:
-        ## Prepare mcss
+        # Prepare mcss
         if not args.do_not_align:
             out_fn = (
                 f"{os.path.join(args.output_dir, mol.GetTitle())}_aligned.png".replace(
                     " ", "_"
                 )
             )
-            ## this code is mostly taken from the mcsalign2d.py example from openeye
-            ## <https://docs.eyesopen.com/toolkits/python/depicttk/examples_summary_mcsalign2D.html>
+            # this code is mostly taken from the mcsalign2d.py example from openeye
+            # <https://docs.eyesopen.com/toolkits/python/depicttk/examples_summary_mcsalign2D.html>
             mcss = oechem.OEMCSSearch(oechem.OEMCSType_Approximate)
             atomexpr = oechem.OEExprOpts_DefaultAtoms
             bondexpr = oechem.OEExprOpts_DefaultBonds
             mcss.Init(ref, atomexpr, bondexpr)
             mcss.SetMCSFunc(oechem.OEMCSMaxBondsCompleteCycles())
 
-            ## Prepare openeye aligned depiction
+            # Prepare openeye aligned depiction
             alignres = oedepict.OEPrepareAlignedDepiction(mol, mcss)
 
-            ## Write out image
+            # Write out image
             if alignres.IsValid():
                 display_openeye_ligand(mol, out_fn=out_fn, aligned=True)
         else:

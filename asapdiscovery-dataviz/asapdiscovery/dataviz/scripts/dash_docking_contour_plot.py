@@ -60,7 +60,7 @@ def main():
     )
     def update_contour(*args):
         print(*args)
-        fig = plotting.contour_plot(df, *args)
+        fig = graphs.contour_plot(df, *args)
         return fig
 
     # Run the server!
