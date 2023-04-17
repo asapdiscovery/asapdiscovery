@@ -1,4 +1,6 @@
 import pathlib
+from typing import List, Union
+
 import pkg_resources
 import pooch
 import yaml
@@ -66,7 +68,7 @@ def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:
 test_file_pooch_repo = make_test_file_pooch_repo(test_files)
 
 
-def fetch_test_file(filenames: Union[str, List[str]]) -> pathlib.Path:
+def fetch_test_file(filenames: Union[str, list[str]]) -> pathlib.Path:
     """
     Fetch a test file from the test file pooch repository.
 
