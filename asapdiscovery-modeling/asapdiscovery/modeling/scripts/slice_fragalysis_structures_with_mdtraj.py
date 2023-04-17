@@ -7,10 +7,10 @@ import logging
 import multiprocessing as mp
 from datetime import datetime
 from pathlib import Path
-from asapdiscovery.data.utils import check_filelist_has_elements
 
 import mdtraj as md
 import numpy as np
+from asapdiscovery.data.utils import check_filelist_has_elements
 
 
 ################################################################################
