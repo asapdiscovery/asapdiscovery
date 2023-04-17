@@ -1,6 +1,6 @@
 """
 Load in a multi-ligand SDF file and write out a txt file with the format `SMILES <space> ligand_name`
-Ligand name expected to be in the Compound_ID field of the sdf file. 
+Ligand name expected to be in the Compound_ID field of the sdf file.
 """
 from argparse import ArgumentParser
 
