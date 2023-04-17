@@ -1,11 +1,9 @@
 import pathlib
-from typing import List, Union
+from typing import List, Union  # noqa: F401
 
 import pkg_resources
 import pooch
 import yaml
-
-from typing import List, Union  # noqa: F401
 
 """
 This file contains utilities for fetching test files from the asapdiscovery
