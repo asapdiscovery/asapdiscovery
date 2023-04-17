@@ -1327,15 +1327,6 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=0):
     date_counts = [len(dates_dict[c]) for c in all_dates_sorted]
     date_counts_rev = date_counts[::-1]
 
-    # Cumulative counts of dates
-    # We will keep adding dates to a split until the appropratei number of molecules
-    #  have been added to that split
-    cum_date_counts = np.cumsum(date_counts)
-    cum_date_counts_rev = np.cumsum(date_counts_rev)
-    assert (
-        cum_date_counts[-1] == cum_date_counts_rev[-1] == len(ds)
-    ), "Something went wrong in dataset splitting."
-
     # For each Subset, grab all molecules with the included compound_ids
     all_subsets = []
     # Keep track of which structure indices we've seen so we don't double count in the
