@@ -1,5 +1,5 @@
 """
-This script combines all the fragalysis models into a single
+This script combines all the fragalysis protein models into a single trajectory file for RMSD, etc analysis.
 """
 import argparse
 import logging
