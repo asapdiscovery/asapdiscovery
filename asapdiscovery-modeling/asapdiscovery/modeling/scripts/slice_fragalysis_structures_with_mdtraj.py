@@ -1,11 +1,13 @@
 """
-This script combines all the fragalysis protein models into a single trajectory file for RMSD, etc analysis.
+This script slices the structures from the fragalysis database into the active site and full protein PDB files,
+as well as the corresponding numpy arrays of the coordinates of the atoms in the active site and full protein.
 """
 import argparse
 import logging
 import multiprocessing as mp
 from datetime import datetime
 from pathlib import Path
+from asapdiscovery.data.utils import check_filelist_has_elements
 
 import mdtraj as md
 import numpy as np
@@ -73,15 +75,19 @@ def analyze_mp(fn, out_dir):
         prep_logger.info("Output already exists!")
         return True
 
+    # Load pdb
     prep_logger.info(f"Loading {fn}")
     pdb = md.load(fn)
 
+    # Slice pdb on active site
     active_site_idx = pdb.topology.select(active_site_string)
     active_site = pdb.atom_slice(active_site_idx)
 
+    # Slice pdb on full protein
     full_protein_idx = pdb.topology.select(full_protein_selection)
     full_protein = pdb.atom_slice(full_protein_idx)
 
+    # Save outputs of sliced structures to arrays of the indexes and pdb files
     prep_logger.info(f"Saving idx arrays to {out_dir}")
     np.save(out_dir / f"{output_name}_active_site.npy", active_site_idx)
     np.save(out_dir / f"{output_name}_full_protein.npy", full_protein_idx)
@@ -103,15 +109,18 @@ def main():
 
     main_logger.info(f"Finding files in {args.structure_dir}")
     fns = list(Path(args.structure_dir).glob("*/*.pdb"))
-    assert len(fns) > 0, "No files were found!"
+    check_filelist_has_elements(fns, "PDB files")
+
     main_logger.info(f"{len(fns)} files found")
 
     out_dir = Path(args.output_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
 
+    # Generate arguments for multiprocessing
     mp_args = [(fn, out_dir) for fn in fns]
 
-    main_logger.info(mp_args[0])
+    main_logger.info(f"Example arguments passed to analyze_mp: {mp_args[0]}")
     nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
     main_logger.info(f"Prepping {len(mp_args)} structures over {nprocs} cores.")
     with mp.Pool(processes=nprocs) as pool:
