@@ -71,7 +71,6 @@ def run_docking_oe(
     from asapdiscovery.data.openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
-    logger.info(oechem.OEThrow.OEErrorHandlerImplBase)
     oechem.OEThrow.Debug("Confirm that OE logging is working")
 
     # Make copy so we can keep the original for RMSD purposes

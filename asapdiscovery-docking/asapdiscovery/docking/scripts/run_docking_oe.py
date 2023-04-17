@@ -261,7 +261,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
 
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")
-    logger.info(f"{len(all_fns)} DesignUnit files found", flush=True)
+    logger.info(f"{len(all_fns)} DesignUnit files found")
 
     # Build regex search function
     regex_func = construct_regex_function(regex, ret_groups=True)
@@ -272,7 +272,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
         try:
             full_name, dataset = regex_func(fn)
         except ValueError:
-            print(f"No regex match found for {fn}", flush=True)
+            logger.warning(f"No regex match found for {fn}")
             continue
 
         try:
@@ -414,14 +414,21 @@ def get_args():
 
 
 def main():
+
     args = get_args()
 
     # Parse symlinks in output_dir
     output_dir = Path(args.output_dir)
-    if not output_dir.exists():
-        output_dir.mkdir()
     logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
+    logger.info("Starting run_docking_oe")
+    logger.info(f"Output directory: {output_dir}")
+
+    if not output_dir.exists():
+        logger.info("Output directory does not exist, creating...")
+        output_dir.mkdir()
+    
     if args.exp_file:
+        logger.info("Loading experimental compounds from JSON file")
         import json
 
         # Load compounds
@@ -439,6 +446,7 @@ def main():
             oechem.OESmilesToMol(new_mol, c.smiles)
             mols.append(new_mol)
     if args.lig_file:
+        logger.info(f"Loading ligands from {args.lig_file}")
         if args.exp_file:
             logger.info(
                 (
@@ -451,9 +459,12 @@ def main():
             ifs = oechem.oemolistream()
             ifs.open(args.lig_file)
             mols = [mol.CreateCopy() for mol in ifs.GetOEGraphMols()]
+            ifs.close()
     elif args.exp_file is None:
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
+    
     n_mols = len(mols)
+    logger.info(f"Loaded {n_mols} ligands, proceeding with docking setup")
 
     # Set up ML model
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
@@ -469,52 +480,71 @@ def main():
     #  assume it is a glob/directory/filename, and pull it out of the list so it's
     #  properly handled in `parse_du_filenames`
     if len(args.receptor) == 1:
+        logger.info(f"Receptor argument is a glob/directory/filename")
         args.receptor = args.receptor[0]
     # Handle default regex
     if args.regex is None:
+        logger.info("No regex specified, using default regex")
         if args.by_compound:
             from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX_CAPT
-
             args.regex = MOONSHOT_CDD_ID_REGEX_CAPT
+            logger.info(f"--by_compound specified, using MOONSHOT_CDD_ID_REGEX_CAPT regex: {MOONSHOT_CDD_ID_REGEX_CAPT}")
+
         else:
             from asapdiscovery.data.utils import MPRO_ID_REGEX_CAPT
-
             args.regex = MPRO_ID_REGEX_CAPT
+            logger.info(f"Using MPRO_ID_REGEX_CAPT regex: {MPRO_ID_REGEX_CAPT}")
+    else:
+        logger.info(f"Using custom regex: {args.regex}")
+
+    logger.info(f"Parsing receptor desing units with arguments: {args.receptor}, {args.regex}")
     dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex)
 
     # Load all receptor DesignUnits
+    logger.info("Loading receptor DesignUnits")
     du_dict = load_dus(fn_dict)
     logger.info(f"{n_mols} molecules found")
     logger.info(f"{len(du_dict.keys())} receptor structures found")
-    assert n_mols > 0
-    assert len(du_dict.keys()) > 0
+   
+    if not n_mols > 0:
+        raise ValueError("No ligands found")
+    if not len(du_dict.keys()) > 0:
+        raise ValueError("No receptor structures found")
 
     # Load sort indices if given
     if args.sort_res:
+        logger.info(f"Loading sort results from {args.sort_res}")
         compound_ids, xtal_ids, sort_idxs = pkl.load(open(args.sort_res, "rb"))
         # If we're docking to all DUs, set top_n appropriately
         if args.top_n == -1:
+            logging.info("Docking to all")
             args.top_n = len(xtal_ids)
+        else:
+            logging.info(f"Docking to top {args.top_n}")
 
         # Make sure that compound_ids match with experimental data if that's
         #  what we're using
         if args.exp_file:
-            assert all(
+            logger.info("Checking that sort results match experimental data")
+            if not all(
                 [
                     compound_id == c.compound_id
                     for (compound_id, c) in zip(compound_ids, exp_compounds)
                 ]
-            ), (
-                "Sort result compound_ids are not equivalent to "
-                "compound_ids in --exp_file."
-            )
+            ):
+                raise ValueError(
+                    "Compound IDs in sort results do not match experimental data"
+                )
+            logger.info("Sort results match experimental data")
     else:
+        logger.info("No sort results given")
         # Check to see if the SDF files have a Compound_ID Column
         if all(len(oechem.OEGetSDData(mol, "Compound_ID")) > 0 for mol in mols):
             logger.info("Using Compound_ID column from sdf file")
             compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
         else:
             # Use index as compound_id
+            logger.info("Using index as compound_id")
             compound_ids = [str(i) for i in range(n_mols)]
         # Get dataset values from DesignUnit filenames
         xtal_ids = list(dataset_dict.keys())
@@ -523,6 +553,7 @@ def main():
         args.top_n = len(xtal_ids)
 
     # make multiprocessing args
+    logger.info("making multiprocessing args")
     mp_args = []
     for i, m in enumerate(mols):
         dock_dus = []
@@ -553,6 +584,7 @@ def main():
         mp_args.extend(new_args)
 
     if args.debug_num > 0:
+        logger.info(f"DEBUG MODE: Only running {args.debug_num} docking runs")
         mp_args = mp_args[: args.debug_num]
 
     # Apply ML arguments as kwargs to mp_func
@@ -571,6 +603,7 @@ def main():
         "SMILES",
         "GAT_score",
     ]
+
     if args.num_cores > 1:
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
         logger.info(f"CPUs: {mp.cpu_count()}")
@@ -600,26 +633,28 @@ def main():
                     break
                 except TimeoutError:
                     # This compound:xtal combination timed out
-                    print("Docking timed out for", args_list[8], flush=True)
+                    logger.error("Docking timed out for", args_list[8])
                     failed_runs += [args_list[8]]
                 except pebble.ProcessExpired as e:
-                    print("Docking failed for", args_list[8], flush=True)
-                    print(f"\t{e}. Exit code {e.exitcode}", flush=True)
+                    logger.error("Docking failed for", args_list[8])
+                    logger.error(f"\t{e}. Exit code {e.exitcode}")
                     failed_runs += [args_list[8]]
                 except Exception as e:
-                    print(
+                    logger.error(
                         "Docking failed for",
                         args_list[8],
                         "with Exception",
-                        e,
-                        flush=True,
+                        e
                     )
-                    print(e.traceback, flush=True)
+                    logger.error(e.traceback)
                     failed_runs += [args_list[8]]
-            print(f"Docking failed for {len(failed_runs)} runs", flush=True)
+            logger.info(f"Docking failed for {len(failed_runs)} runs")
 
     else:
         results_df = [mp_func_ml_applied(*args_list) for args_list in mp_args]
+
+    logger.info("\nDocking complete!\n")
+    logger.info("Writing results")
     results_df = [res for res_list in results_df for res in res_list]
     results_df = pandas.DataFrame(results_df, columns=results_cols)
 
