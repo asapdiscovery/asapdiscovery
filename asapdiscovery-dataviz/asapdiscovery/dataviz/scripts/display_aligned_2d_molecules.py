@@ -8,9 +8,10 @@ python display_aligned_2d_molecules.py
 """
 import argparse
 import os
-from openeye import oechem, oedepict
+
 from asapdiscovery.data.openeye import load_openeye_sdf, load_openeye_sdfs
 from asapdiscovery.dataviz.molecules import display_openeye_ligand
+from openeye import oechem, oedepict
 
 
 ################################################################################
