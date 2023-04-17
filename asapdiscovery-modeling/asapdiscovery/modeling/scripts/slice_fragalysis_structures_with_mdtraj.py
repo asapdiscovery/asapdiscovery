@@ -17,7 +17,7 @@ from asapdiscovery.data.utils import check_filelist_has_elements
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
-    ## Input arguments
+    # Input arguments
     parser.add_argument(
         "-d",
         "--structure_dir",
@@ -39,7 +39,7 @@ def get_args():
         help="Log file",
     )
 
-    ## Performance arguments
+    # Performance arguments
     parser.add_argument(
         "-n",
         "--num_cores",
@@ -56,14 +56,14 @@ def analyze_mp(fn, out_dir):
     active_site_string = "not element H and (chainid 0 or chainid 2) and (residue 140 to 145 or residue 163 or residue 172 or residue 25 to 27 or residue 41 or residue 49 or residue 54 or residue 165 to 168 or residue 189 to 192)"
     output_name = fn.stem
 
-    ## Prepare logger
+    # Prepare logger
     handler = logging.FileHandler(out_dir / f"{output_name}-log.txt", mode="w")
     prep_logger = logging.getLogger(output_name)
     prep_logger.setLevel(logging.INFO)
     prep_logger.addHandler(handler)
     prep_logger.info(datetime.isoformat(datetime.now()))
 
-    ## Check if outputs exists
+    # Check if outputs exists
     def check_output():
         for fn_suffix in ["_acive_site", "_full_protein"]:
             for extension in [".pdb", ".npy"]:

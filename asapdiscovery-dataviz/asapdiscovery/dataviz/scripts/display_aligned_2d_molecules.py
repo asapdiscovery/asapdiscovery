@@ -16,7 +16,7 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 from asapdiscovery.data.openeye import load_openeye_sdf, load_openeye_sdfs
-from asapdiscovery.dataviz.plotting_molecules import display_openeye_ligand
+from asapdiscovery.dataviz.graphs import display_openeye_ligand
 
 
 ################################################################################
