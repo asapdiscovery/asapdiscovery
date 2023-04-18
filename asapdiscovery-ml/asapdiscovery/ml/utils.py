@@ -1115,11 +1115,6 @@ def split_dataset(
             RuntimeWarning,
         )
 
-        if temporal:
-            end_splits = 2
-    elif temporal:
-        end_splits = 0
-
     if not temporal:
         print("using random seed:", rand_seed, flush=True)
         # Create generator
@@ -1135,7 +1130,6 @@ def split_dataset(
                 ds,
                 [train_frac, val_frac, test_frac],
                 grouped=True,
-                end_splits=end_splits,
             )
         else:
             ds_train, ds_val, ds_test = torch.utils.data.random_split(
@@ -1147,7 +1141,7 @@ def split_dataset(
     else:
         if temporal:
             ds_train, ds_val, ds_test = split_temporal(
-                ds, [train_frac, val_frac, test_frac], end_splits=end_splits
+                ds, [train_frac, val_frac, test_frac]
             )
         else:
             ds_train, ds_val, ds_test = split_molecules(
