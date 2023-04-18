@@ -1164,6 +1164,59 @@ def split_dataset(
     return ds_train, ds_val, ds_test
 
 
+def make_subsets(ds, idx_lists, split_lens):
+    """
+    Helper script for making subsets of a dataset.
+
+    Parameters
+    ----------
+    ds : Union[cml.data.DockedDataset, cml.data.GraphDataset]
+        Molecular dataset to split
+    idx_dict : List[List[int]]
+        List of lists of indices into `ds`
+    split_lens : List[int]
+        List of split lengths
+
+    Returns
+    -------
+    List[torch.utils.data.Subset]
+        List of Subsets of original dataset
+    """
+    import torch
+
+    # For each Subset, grab all molecules with the included compound_ids
+    all_subsets = []
+    # Keep track of which structure indices we've seen so we don't double count in the
+    #  end splits
+    seen_idx = set()
+    prev_idx = 0
+    # Go up to the last split so we can add anything that got left out from rounding
+    for n_mols in split_lens[:-1]:
+        n_mols_cur = 0
+        subset_idx = []
+        cur_idx = prev_idx
+        # Keep adding groups until the split is as big as it needs to be, or we reach
+        #  the end of the array
+        while (n_mols_cur < n_mols) and (cur_idx < len(idx_lists)):
+            subset_idx.extend(idx_lists[cur_idx])
+            n_mols_cur += len(idx_lists[cur_idx])
+            cur_idx += 1
+
+        # Make sure we're not including something that's in another split
+        subset_idx = [i for i in subset_idx if i not in seen_idx]
+        seen_idx.update(subset_idx)
+        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+        # Update counter
+        prev_idx = cur_idx
+
+    # Finish up anything leftover
+    subset_idx = [i for d in idx_lists[prev_idx:] for i in d if i not in seen_idx]
+    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    return all_subsets
+
+
 def split_molecules(ds, split_fracs, generator=None):
     """
     Split a dataset while keeping different poses of the same molecule in the
@@ -1263,8 +1316,6 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, insert_idx=1):
     List[torch.utils.data.Subset]
         List of Subsets of original dataset
     """
-    import torch
-
     # Check that split_fracs adds to 1, padding if it doesn't
     # Add an allowance for floating point inaccuracies
     total_splits = sum(split_fracs)
@@ -1289,9 +1340,8 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, insert_idx=1):
         sink_split = False
 
     # Calculate how many molecules we want covered through each split
-    n_mols_split = np.round(np.asarray(split_fracs) * len(ds))
+    n_mols_split = np.floor(np.asarray(split_fracs) * len(ds))
 
-    # TODO: make this whole process more compact
     # First get all the unique created dates
     dates_dict = {}
     # If we have a grouped dataset, we want to iterate through compound_ids, which will
@@ -1328,45 +1378,9 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, insert_idx=1):
     # Sort the dates
     all_dates_sorted = sorted(all_dates, reverse=reverse)
 
-    # Number of molecules for each date
-    date_counts = [len(dates_dict[c]) for c in all_dates_sorted]
-
-    # For each Subset, grab all molecules with the included compound_ids
-    all_subsets = []
-    # Keep track of which structure indices we've seen so we don't double count in the
-    #  end splits
-    seen_idx = set()
-    prev_idx = 0
-    # Go up to the last split so we can add anything that got left out from rounding
-    ### Send some of this code into its own function
-    for n_mols in n_mols_split[:-1]:
-        n_mols_cur = 0
-        date_idx = prev_idx
-        # Keep adding dates until the split is as big as it needs to be, or we reach the
-        #  end of the array
-        while (n_mols_cur < n_mols) and (date_idx < len(all_dates)):
-            n_mols_cur += date_counts[date_idx]
-            date_idx += 1
-
-        # Get dates to include
-        incl_dates = all_dates_sorted[prev_idx:date_idx]
-
-        # Get subset indices
-        subset_idx = [i for d in incl_dates for i in dates_dict[d]]
-        # By construction, we don't need to worry about double counting indices in the
-        #  forward direction, only when we're working backward
-        seen_idx.update(subset_idx)
-        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
-
-        # Update counter
-        prev_idx = date_idx
-
-    # Finish up anything leftover
-    incl_dates = all_dates_sorted[prev_idx:]
-
-    # Get subset indices
-    subset_idx = [i for d in incl_dates for i in dates_dict[d]]
-    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+    # Make subsets
+    idx_lists = [dates_dict[d] for d in all_dates_sorted]
+    all_subsets = make_subsets(ds, idx_lists, n_mols_split)
 
     # Take out the sink split
     if sink_split:
