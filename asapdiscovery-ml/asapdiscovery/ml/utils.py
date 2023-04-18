@@ -1243,7 +1243,7 @@ def split_molecules(ds, split_fracs, generator=None):
     return all_subsets
 
 
-def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=0):
+def split_temporal(ds, split_fracs, grouped=False, reverse=False, insert_idx=1):
     """
     Split molecules temporally by date created. Earlier molecules will be placed in the
     training set and later molecules will be placed in the val/test sets (unless
@@ -1259,12 +1259,10 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=0):
         Splitting a GroupedDockedDataset object
     reverse : bool, default=False
         Reverse sorting of data
-    end_splits : int, default=0
-        How many splits (starting from the end of `split_fracs`) should be taken from
-        the end of the list (most recent data, or oldest if `reverse` is True). This is
-        in order to allow for the splits to not add up to 1, but still evaluate on the
-        most recent data, which can be used to assess how much temporal data is required
-        to predict on the most recent. Set to 0 to take all splits contiguously
+    insert_idx : int, default=1
+        Where in the list of `split_fracs` to insert the `sink_split`. If set to < 0 or
+        > `len(split_fracs)`, this feature will be disabled and splits will be taken
+        contiguously from the start of the data
 
     Returns
     -------
@@ -1273,17 +1271,31 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=0):
     """
     import torch
 
-    # Get which splits should be from the front and which should be from the end
-    front_split_fracs = np.asarray(split_fracs[: len(split_fracs) - end_splits])
-    # Reverse the end splits so it matches when we reverse everything later
-    end_split_fracs = np.asarray(split_fracs[len(split_fracs) - end_splits :][::-1])
+    # Check that split_fracs adds to 1, padding if it doesn't
+    # Add an allowance for floating point inaccuracies
+    total_splits = sum(split_fracs)
+    if (
+        (not np.isclose(total_splits, 1))
+        or (insert_idx < 0)
+        or (insert_idx > len(split_fracs))
+    ):
+        if total_splits > 1:
+            raise ValueError(f"Sum of split_fracs is {total_splits} > 1")
+        else:
+            sink_frac = 1 - total_splits
+            split_fracs = (
+                split_fracs[:insert_idx] + [sink_frac] + split_fracs[insert_idx:]
+            )
+            sink_split = True
+        print(
+            f"New split_fracs: {split_fracs}, sink frac is at idx {insert_idx}",
+            flush=True,
+        )
+    else:
+        sink_split = False
 
     # Calculate how many molecules we want covered through each split
-    # By the end of each split, we should cumulatively covered the cumulative sum of all
-    #  splits up to and including that one
-    n_mols_front_split = front_split_fracs * len(ds)
-    # Same but for reverse
-    n_mols_end_split = end_split_fracs * len(ds)
+    n_mols_split = np.round(np.asarray(split_fracs) * len(ds))
 
     # TODO: make this whole process more compact
     # First get all the unique created dates
@@ -1321,11 +1333,9 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=0):
 
     # Sort the dates
     all_dates_sorted = sorted(all_dates, reverse=reverse)
-    all_dates_sorted_rev = all_dates_sorted[::-1]
 
     # Number of molecules for each date
     date_counts = [len(dates_dict[c]) for c in all_dates_sorted]
-    date_counts_rev = date_counts[::-1]
 
     # For each Subset, grab all molecules with the included compound_ids
     all_subsets = []
@@ -1333,14 +1343,9 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=0):
     #  end splits
     seen_idx = set()
     prev_idx = 0
-    # If there are no end splits, go up to the last split so we can add anything that
-    #  got left out from float rounding
-    if end_splits == 0:
-        final_split = n_mols_front_split[-1]
-        n_mols_front_split = n_mols_front_split[:-1]
-    else:
-        final_split = None
-    for n_mols in n_mols_front_split:
+    # Go up to the last split so we can add anything that got left out from rounding
+    ### Send some of this code into its own function
+    for n_mols in n_mols_split[:-1]:
         n_mols_cur = 0
         date_idx = prev_idx
         # Keep adding dates until the split is as big as it needs to be, or we reach the
@@ -1363,39 +1368,15 @@ def split_temporal(ds, split_fracs, grouped=False, reverse=False, end_splits=0):
         prev_idx = date_idx
 
     # Finish up anything leftover
-    if final_split:
-        incl_dates = all_dates_sorted[prev_idx:]
+    incl_dates = all_dates_sorted[prev_idx:]
 
-        # Get subset indices
-        subset_idx = [i for d in incl_dates for i in dates_dict[d]]
-        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+    # Get subset indices
+    subset_idx = [i for d in incl_dates for i in dates_dict[d]]
+    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
-    # Add in the end splits
-    prev_idx = 0
-    end_subsets = []
-    for n_mols in n_mols_end_split:
-        n_mols_cur = 0
-        date_idx = prev_idx
-        # Keep adding dates until the split is as big as it needs to be, or we reach the
-        #  end of the array
-        while (n_mols_cur < n_mols) and (date_idx < len(all_dates)):
-            n_mols_cur += date_counts_rev[date_idx]
-            date_idx += 1
-
-        # Get dates to include
-        incl_dates = all_dates_sorted_rev[prev_idx:date_idx]
-
-        # Get subset indices
-        subset_idx = [i for d in incl_dates for i in dates_dict[d] if i not in seen_idx]
-        # This shouldn't be necessary at this point, but just to make sure
-        seen_idx.update(subset_idx)
-        # Flip subset_idx so molecules are in the right order
-        end_subsets.append(torch.utils.data.Subset(ds, subset_idx[::-1]))
-
-        # Update counter
-        prev_idx = date_idx
-    # Flip end_subsets so splits are in the right order
-    all_subsets.extend(end_subsets[::-1])
+    # Take out the sink split
+    if sink_split:
+        all_subsets = all_subsets[:insert_idx] + all_subsets[insert_idx + 1 :]
 
     return all_subsets
 
