@@ -1655,6 +1655,7 @@ def train(
                 flush=True,
             )
             model.load_state_dict(es.best_wts)
+            wandb.log({"best_epoch": es.best_epoch, "best_loss": es.best_loss})
             break
 
     return (

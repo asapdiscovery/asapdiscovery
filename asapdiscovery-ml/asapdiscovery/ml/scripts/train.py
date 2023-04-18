@@ -555,6 +555,15 @@ def init(args, rank=False):
     else:
         es = None
 
+    # Dataset info
+    exp_configure.update(
+        {
+            "train_frac": args.tr_frac,
+            "val_frac": args.val_frac,
+            "test_frac": args.te_frac,
+        }
+    )
+
     return (
         exp_data,
         ds_train,
