@@ -1240,14 +1240,16 @@ def split_molecules(ds, split_fracs, generator=None):
     """
     import torch
 
-    # TODO: make this whole process more compact
+    # Calculate how many molecules we want covered through each split
+    n_mols_split = np.floor(np.asarray(split_fracs) * len(ds))
+
     # First get all the unique compound_ids
     compound_ids_dict = {}
-    for c in ds.compounds.keys():
+    for c, idx_list in ds.compounds.items():
         try:
-            compound_ids_dict[c[1]].append(c)
+            compound_ids_dict[c[1]].extend(idx_list)
         except KeyError:
-            compound_ids_dict[c[1]] = [c]
+            compound_ids_dict[c[1]] = idx_list
     all_compound_ids = np.asarray(list(compound_ids_dict.keys()))
 
     # Set up generator
@@ -1257,35 +1259,10 @@ def split_molecules(ds, split_fracs, generator=None):
     print("splitting with random seed:", generator.initial_seed(), flush=True)
     # Shuffle the indices
     indices = torch.randperm(len(all_compound_ids), generator=generator)
+    idx_lists = [compound_ids_dict[all_compound_ids[i]] for i in indices]
 
     # For each Subset, grab all molecules with the included compound_ids
-    all_subsets = []
-    offset = 0
-    # Go up to the last split so we can add anything that got left out from
-    #  float rounding
-    for frac in split_fracs[:-1]:
-        split_len = int(np.floor(frac * len(indices)))
-        incl_indices = indices[offset : offset + split_len]
-        incl_compounds = all_compound_ids[incl_indices]
-        offset += split_len
-
-        # Get subset indices
-        subset_idx = []
-        for compound_id in incl_compounds:
-            for compound in compound_ids_dict[compound_id]:
-                subset_idx.extend([i for i in ds.compounds[compound]])
-        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
-
-    # Finish up anything leftover
-    incl_indices = indices[offset:]
-    incl_compounds = all_compound_ids[incl_indices]
-
-    # Get subset indices
-    subset_idx = []
-    for compound_id in incl_compounds:
-        for compound in compound_ids_dict[compound_id]:
-            subset_idx.extend([i for i in ds.compounds[compound]])
-    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+    all_subsets = make_subsets(ds, idx_lists, n_mols_split)
 
     return all_subsets
 
