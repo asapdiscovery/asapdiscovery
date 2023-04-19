@@ -261,7 +261,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
 
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")
-    logger.info(f"{len(all_fns)} DesignUnit files found", flush=True)
+    logger.info(f"{len(all_fns)} DesignUnit files found")
 
     # Build regex search function
     regex_func = construct_regex_function(regex, ret_groups=True)
