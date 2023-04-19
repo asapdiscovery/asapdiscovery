@@ -144,7 +144,7 @@ def download_molecules(
         try:
             search_id = MOONSHOT_SEARCH_DICT[search]
         except KeyError:
-            logging.debug(f"Using {search_id} as the search id directly.")
+            logging.debug(f"Using {search} as the search id directly.")
             search_id = search
         url = f"{CDD_URL}/{vault}/searches/{search_id}"
         logging.debug(f"Downloading data from CDD vault from {url}")
