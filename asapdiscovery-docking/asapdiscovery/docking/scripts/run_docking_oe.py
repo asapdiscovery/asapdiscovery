@@ -456,7 +456,7 @@ def main():
     n_mols = len(mols)
 
     # Set up ML model
-    gat_model_string = "asapdiscovery-GAT-2023.04.12"
+    gat_model_string = "asapdiscovery-GAT-2023.04.20"
     if args.gat:
         GAT_model = GATInference(gat_model_string)
         logger.info(f"Using GAT model: {gat_model_string}")
