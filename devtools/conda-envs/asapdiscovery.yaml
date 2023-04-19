@@ -53,4 +53,4 @@ dependencies:
     - validators
     - pyyaml
     # ml
-    - git+https://github.com/choderalab/mtenn@0.1.0
+    - git+https://github.com/choderalab/mtenn@0.2.0
