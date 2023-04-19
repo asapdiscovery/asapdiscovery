@@ -492,7 +492,7 @@ def main():
     #  assume it is a glob/directory/filename, and pull it out of the list so it's
     #  properly handled in `parse_du_filenames`
     if len(args.receptor) == 1:
-        logger.info(f"Receptor argument is a glob/directory/filename")
+        logger.info("Receptor argument is a glob/directory/filename")
         args.receptor = args.receptor[0]
     # Handle default regex
     if args.regex is None:
