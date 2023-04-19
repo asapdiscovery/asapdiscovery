@@ -3,16 +3,19 @@ from io import StringIO
 
 import pandas
 
-VAULT_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
+# Base CDD vault API URL
+CDD_URL = "https://app.collaborativedrug.com/api/v1/vaults"
+# Vault number for the Moonshot vault
+MOONSHOT_VAULT = "5549"
 # All molecules with SMILES (public)
-ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
+ALL_SMI_SEARCH = "9469227-zd2doWwzJ63bZYaI_vkjXg"
 # Noncovalent molecules with experimental measurements (from John)
-NONCOVALENT_SMI_SEARCH = "searches/9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
+NONCOVALENT_SMI_SEARCH = "9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 # Noncovalent with experimental measurements, including batch created date
-NONCOVALENT_W_DATES_SEARCH = "searches/11947939-KXLWU3JLbLzI354es-VKVg"
+NONCOVALENT_W_DATES_SEARCH = "11947939-KXLWU3JLbLzI354es-VKVg"
 
 
-def download_url(search_url, header, timeout=5000, retry_delay=5):
+def download_url(search_url, header, vault=None, timeout=5000, retry_delay=5):
     """
     Make requests to the API using the passed information.
 
@@ -38,6 +41,11 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
 
     import requests
 
+    # If vault is not specified, attempt to parse from URL
+    if not vault:
+        vault = search_url.split("/")[-3]
+        logging.debug(f"Using {vault} as vault.")
+
     # Make the initial download request
     logging.debug(f"download_url : initiating search {search_url}")
     response = requests.get(search_url, headers=header)
@@ -46,7 +54,7 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
     logging.debug(f"  Export id for requested search is {export_id}")
 
     # Check every `retry_delay` seconds to see if the export is ready
-    status_url = f"{VAULT_URL}export_progress/{export_id}"
+    status_url = f"{CDD_URL}/{vault}/export_progress/{export_id}"
     status = None
     total_seconds = 0
     while True:
@@ -74,7 +82,7 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
         sys.exit("Export failed")
 
     # Send GET request for final export
-    result_url = f"{VAULT_URL}exports/{export_id}"
+    result_url = f"{CDD_URL}/{vault}/exports/{export_id}"
     response = requests.get(result_url, headers=header)
 
     return response
@@ -165,9 +173,9 @@ def download_molecules(
             content = infile.read()
     else:
         # Download all molecules to start
-        url = f"{VAULT_URL}{NONCOVALENT_W_DATES_SEARCH}"
+        url = f"{CDD_URL}/{MOONSHOT_VAULT}/searches/{NONCOVALENT_W_DATES_SEARCH}"
         logging.debug(f"Downloading data from CDD vault from {url}")
-        response = download_url(url, header)
+        response = download_url(url, header, vault=MOONSHOT_VAULT)
         content = response.content.decode()
 
         if fn_cache:
