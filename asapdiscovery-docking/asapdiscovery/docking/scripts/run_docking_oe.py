@@ -403,6 +403,19 @@ def get_args():
         default=-1,
         help="Number of docking runs to run. Useful for debugging and testing.",
     )
+
+    parser.add_argument(
+        "--max_failures",
+        type=int,
+        default=20,
+        help="Maximum number of failed docking runs to allow before exiting.",
+    )
+
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Whether to print out verbose logging.",
+    )
     parser.add_argument(
         "-gat",
         "--gat",
@@ -414,7 +427,6 @@ def get_args():
 
 
 def main():
-
     args = get_args()
 
     # Parse symlinks in output_dir
@@ -426,7 +438,7 @@ def main():
     if not output_dir.exists():
         logger.info("Output directory does not exist, creating...")
         output_dir.mkdir()
-    
+
     if args.exp_file:
         logger.info("Loading experimental compounds from JSON file")
         import json
@@ -462,7 +474,7 @@ def main():
             ifs.close()
     elif args.exp_file is None:
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
-    
+
     n_mols = len(mols)
     logger.info(f"Loaded {n_mols} ligands, proceeding with docking setup")
 
@@ -487,17 +499,23 @@ def main():
         logger.info("No regex specified, using default regex")
         if args.by_compound:
             from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX_CAPT
+
             args.regex = MOONSHOT_CDD_ID_REGEX_CAPT
-            logger.info(f"--by_compound specified, using MOONSHOT_CDD_ID_REGEX_CAPT regex: {MOONSHOT_CDD_ID_REGEX_CAPT}")
+            logger.info(
+                f"--by_compound specified, using MOONSHOT_CDD_ID_REGEX_CAPT regex: {MOONSHOT_CDD_ID_REGEX_CAPT}"
+            )
 
         else:
             from asapdiscovery.data.utils import MPRO_ID_REGEX_CAPT
+
             args.regex = MPRO_ID_REGEX_CAPT
             logger.info(f"Using MPRO_ID_REGEX_CAPT regex: {MPRO_ID_REGEX_CAPT}")
     else:
         logger.info(f"Using custom regex: {args.regex}")
 
-    logger.info(f"Parsing receptor desing units with arguments: {args.receptor}, {args.regex}")
+    logger.info(
+        f"Parsing receptor desing units with arguments: {args.receptor}, {args.regex}"
+    )
     dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex)
 
     # Load all receptor DesignUnits
@@ -505,7 +523,7 @@ def main():
     du_dict = load_dus(fn_dict)
     logger.info(f"{n_mols} molecules found")
     logger.info(f"{len(du_dict.keys())} receptor structures found")
-   
+
     if not n_mols > 0:
         raise ValueError("No ligands found")
     if not len(du_dict.keys()) > 0:
@@ -553,14 +571,42 @@ def main():
         args.top_n = len(xtal_ids)
 
     # make multiprocessing args
-    logger.info("making multiprocessing args")
+    logger.info("Making multiprocessing args")
     mp_args = []
+
+    # if we are failing all the time lets capture that before we get too far
+    logger.info(f"max_failures for building MP args: {args.max_failures}")
+    failures = 0
+
+    # figure out what we need to be skipping
+    xtal_set = set(xtal_ids)
+    logger.info(f"Set of xtal ids read from sorting or inferred: {xtal_set}")
+
+    dataset_set = set(dataset_dict.keys())
+    logger.info(f"Set of xtal ids read from receptor files: {dataset_set}")
+
+    diff = xtal_set - dataset_set
+    if len(diff) > 0:
+        logger.warning(
+            f"Xtals that are in sort indices but don't have matching receptors read from file: {diff}"
+        )
+        logger.warning(
+            f"THESE XTALS in sort_res: {args.sort_res} WILL BE SKIPPED {diff} likely due to missing receptor files"
+        )
+
+    skipped = []
     for i, m in enumerate(mols):
         dock_dus = []
         xtals = []
         for xtal in sort_idxs[i][: args.top_n]:
             if xtal_ids[xtal] not in dataset_dict:
+                if args.verbose:
+                    skipped.append(
+                        f"Crystal: {xtal_ids[xtal]} Molecule_title: {m.GetTitle()}, Compound_ID: {compound_ids[i]}, Smiles: {oechem.OECreateIsoSmiString(m)}"
+                    )
+                failures += 1
                 continue
+
             # Get the DU for each full Mpro name associated with this dataset
             dock_dus.extend([du_dict[x] for x in dataset_dict[xtal_ids[xtal]]])
             xtals.extend(dataset_dict[xtal_ids[xtal]])
@@ -582,6 +628,14 @@ def main():
             for du, x in zip(dock_dus, xtals)
         ]
         mp_args.extend(new_args)
+
+    if args.verbose:
+        if len(skipped) > 0:
+            logger.warning(f"Skipped {len(skipped)} receptor/ligand pairs")
+            for s in skipped:
+                logger.warning("Skipped pair: " + s)
+
+    logger.info(f"MP args built, {len(mp_args)} total with {failures} failures")
 
     if args.debug_num > 0:
         logger.info(f"DEBUG MODE: Only running {args.debug_num} docking runs")
@@ -605,6 +659,11 @@ def main():
     ]
 
     if args.num_cores > 1:
+        logger.info("Running docking using multiprocessing")
+        # reset failures
+        logging.info(f"max_failures for running docking using MP : {args.max_failures}")
+        failures = 0
+
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
         logger.info(f"CPUs: {mp.cpu_count()}")
         logger.info(f"N Processes: {len(mp_args)}")
@@ -641,16 +700,23 @@ def main():
                     failed_runs += [args_list[8]]
                 except Exception as e:
                     logger.error(
-                        "Docking failed for",
-                        args_list[8],
-                        "with Exception",
-                        e
+                        "Docking failed for", args_list[8], "with Exception", e
                     )
                     logger.error(e.traceback)
                     failed_runs += [args_list[8]]
-            logger.info(f"Docking failed for {len(failed_runs)} runs")
+
+                # things are going poorly, lets stop
+                if len(failed_runs) > args.max_failures:
+                    raise ValueError(
+                        f"Too many failures ({len(failed_runs)}/{args.max_failures}) while running docking, aborting"
+                    )
+
+            logging.info(f"Docking complete with {len(failed_runs)} failures")
 
     else:
+        logger.info("Running docking using single core this will take a while...")
+        logger.info(f"Running {len(mp_args)} docking runs over 1 core.")
+        logger.info("not using failure counter for single core")
         results_df = [mp_func_ml_applied(*args_list) for args_list in mp_args]
 
     logger.info("\nDocking complete!\n")
