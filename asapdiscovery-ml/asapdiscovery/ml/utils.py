@@ -200,7 +200,7 @@ def build_model(
     config=None,
 ):
     """
-    Dispatch function for building the correct model and setting model_call
+    Dispatch function for building the correct model
     functions.
 
     Parameters
@@ -1372,7 +1372,6 @@ def train(
     target_dict,
     n_epochs,
     device,
-    model_call=lambda model, d: model(d),
     loss_fn=None,
     save_file=None,
     lr=1e-4,
@@ -1407,9 +1406,6 @@ def train(
     loss_fn : cml.nn.MSELoss
         Loss function that takes pred, target, in_range, and uncertainty values
         as inputs
-    model_call : function(model, dict), default=lambda model, d: model(d)
-        Function for calling the model. This is present to account for
-        differences in calling the SchNet and e3nn models
     save_file : str, optional
         Where to save model weights and errors at each epoch. If a directory is
         passed, the weights will be saved as {epoch_idx}.th and the
@@ -1516,7 +1512,7 @@ def train(
             ).float()
 
             # Make prediction and calculate loss
-            pred = model_call(model, pose).reshape(target.shape)
+            pred = model(pose).reshape(target.shape)
             loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Keep track of loss for each sample
@@ -1569,7 +1565,7 @@ def train(
                 ).float()
 
                 # Make prediction and calculate loss
-                pred = model_call(model, pose).reshape(target.shape)
+                pred = model(pose).reshape(target.shape)
                 loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
@@ -1594,7 +1590,7 @@ def train(
                 ).float()
 
                 # Make prediction and calculate loss
-                pred = model_call(model, pose).reshape(target.shape)
+                pred = model(pose).reshape(target.shape)
                 loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             test_loss.append(np.asarray(tmp_loss))
