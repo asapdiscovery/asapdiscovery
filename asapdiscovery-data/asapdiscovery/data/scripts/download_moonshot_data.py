@@ -5,7 +5,7 @@ import argparse
 import logging
 import os
 
-from asapdiscovery.data.moonshot import download_molecules  # noqa: E402
+from asapdiscovery.data.moonshot import download_molecules, MOONSHOT_VAULT  # noqa: E402
 
 
 ################################################################################
@@ -22,6 +22,24 @@ def get_args():
     )
     parser.add_argument("-o", required=True, help="Output CSV file.")
     parser.add_argument("-cache", help="Cache CSV file.")
+
+    # Search arguments
+    parser.add_argument(
+        "-v",
+        "--vault",
+        default=MOONSHOT_VAULT,
+        help="Which CDD vault to download from (defaults to Moonshot vault).",
+    )
+    parser.add_argument(
+        "-s",
+        "--search",
+        default="sars_fluorescence_noncovalent_w_dates",
+        help=(
+            "Either a search id or entry in MOONSHOT_SEARCH_DICT "
+            "(see asapdiscovery.data.moonshot for more details). Defaults to search "
+            "with all noncovalent molecules in the SARS-CoV-2 dose response assay."
+        ),
+    )
 
     # Filtering arguments
     parser.add_argument(
@@ -98,6 +116,8 @@ def main():
 
     _ = download_molecules(
         header,
+        vault=args.vault,
+        search=args.search,
         smiles_fieldname=args.smiles_fieldname,
         fn_out=args.o,
         fn_cache=args.cache,
