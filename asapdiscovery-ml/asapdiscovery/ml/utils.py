@@ -1,3 +1,4 @@
+from functools import partial
 import os
 import pickle as pkl
 from pathlib import Path
@@ -228,9 +229,11 @@ def build_model(
 
     Returns
     -------
-    Union[asapdiscovery.ml.models.GAT, mtenn.model.Model]
-        Build model
+    mtenn.model.Model
+        Built model
     """
+    import mtenn.conversion_utils
+    import mtenn.model
 
     # Correct model name if needed
     model_type = model_type.lower()
@@ -245,103 +248,98 @@ def build_model(
         except Exception:
             config = {}
 
-    if model_type == "gat":
-        import torch
+    # Take MTENN args from config if present, else from args
+    strategy = config["strat"].lower() if "strat" in config else strat.lower()
+    grouped = config["grouped"] if "grouped" in config else grouped
 
-        model = build_model_2d(config)
-
-        def model_call(model, d):
-            return torch.reshape(model(d["g"], d["g"].ndata["h"]), (-1, 1))
-
-    elif (model_type == "schnet") or (model_type == "e3nn"):
-        import mtenn.conversion_utils
-        import mtenn.model
-
-        if model_type == "schnet":
-            model = build_model_schnet(config)
-            get_model = mtenn.conversion_utils.schnet.SchNet.get_model
+    # Check and parse combination
+    try:
+        combination = config["comb"].lower() if "comb" in config else comb.lower()
+        if combination == "mean":
+            combination = mtenn.model.MeanCombination()
+        elif combination == "boltzmann":
+            combination = mtenn.model.BoltzmannCombination()
         else:
-            # Loadmodel parameters
-            if (type(e3nn_params) is list) or (type(e3nn_params) is tuple):
-                model_params = e3nn_params
-            elif os.path.isfile(e3nn_params):
-                model_params = pkl.load(open(e3nn_params, "rb"))
-            else:
-                raise ValueError(
-                    "Must provide an appropriate value for e3nn_params "
-                    f"(received {e3nn_params})"
-                )
-            model = build_model_e3nn(100, *model_params[1:], config)
-            get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
+            raise ValueError(f"Uknown value for -comb: {combination}")
+    except AttributeError:
+        # This will be triggered if combination is left blank
+        #  (None.lower() => AttributeError)
+        if grouped:
+            raise ValueError("A value must be provided for -comb if --grouped is set.")
+        combination = None
 
-        # Take MTENN args from config if present, else from args
-        strategy = config["strat"].lower() if "strat" in config else strat.lower()
-        grouped = config["grouped"] if "grouped" in config else grouped
-
-        # Check and parse combination
-        try:
-            combination = config["comb"].lower() if "comb" in config else comb.lower()
-            if combination == "mean":
-                combination = mtenn.model.MeanCombination()
-            elif combination == "boltzmann":
-                combination = mtenn.model.BoltzmannCombination()
-            else:
-                raise ValueError(f"Uknown value for -comb: {combination}")
-        except AttributeError:
-            # This will be triggered if combination is left blank
-            #  (None.lower() => AttributeError)
-            if grouped:
-                raise ValueError(
-                    "A value must be provided for -comb if --grouped is set."
-                )
-            combination = None
-
-        # Check and parse pred readout
-        try:
-            pred_readout = (
-                config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
-            )
-            if pred_readout == "pic50":
-                pred_readout = mtenn.model.PIC50Readout()
-            elif pred_readout == "none":
-                pred_readout = None
-            else:
-                raise ValueError(f"Uknown value for -pred_r: {pred_readout}")
-        except AttributeError:
+    # Check and parse pred readout
+    try:
+        pred_readout = (
+            config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
+        )
+        if pred_readout == "pic50":
+            pred_readout = mtenn.model.PIC50Readout()
+        elif pred_readout == "none":
             pred_readout = None
+        else:
+            raise ValueError(f"Uknown value for -pred_r: {pred_readout}")
+    except AttributeError:
+        pred_readout = None
 
-        # Check and parse comb readout
-        try:
-            comb_readout = (
-                config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
-            )
-            if comb_readout == "pic50":
-                comb_readout = mtenn.model.PIC50Readout()
-            elif comb_readout == "none":
-                comb_readout = None
-            else:
-                raise ValueError(f"Uknown value for -comb_r: {comb_readout}")
-        except AttributeError:
+    # Check and parse comb readout
+    try:
+        comb_readout = (
+            config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
+        )
+        if comb_readout == "pic50":
+            comb_readout = mtenn.model.PIC50Readout()
+        elif comb_readout == "none":
             comb_readout = None
+        else:
+            raise ValueError(f"Uknown value for -comb_r: {comb_readout}")
+    except AttributeError:
+        comb_readout = None
 
-        # Use previously built model to construct mtenn.model.Model
-        model = get_model(
-            model=model,
+    # Build initial model object, which will be used later in the get_model call
+    if model_type == "gat":
+        model = build_model_2d(config)
+        get_model = mtenn.conversion_utils.gat.GAT.get_model
+    elif model_type == "schnet":
+        model = build_model_schnet(config)
+        get_model = partial(
+            mtenn.conversion_utils.schnet.SchNet.get_model,
             grouped=grouped,
             strategy=strategy,
             combination=combination,
-            pred_readout=pred_readout,
             comb_readout=comb_readout,
-            fix_device=True,
         )
 
-        def model_call(model, d):
-            return model(d)
-
+    elif model_type == "e3nn":
+        # Load model parameters
+        if (type(e3nn_params) is list) or (type(e3nn_params) is tuple):
+            model_params = e3nn_params
+        elif os.path.isfile(e3nn_params):
+            model_params = pkl.load(open(e3nn_params, "rb"))
+        else:
+            raise ValueError(
+                "Must provide an appropriate value for e3nn_params "
+                f"(received {e3nn_params})"
+            )
+        model = build_model_e3nn(100, *model_params[1:], config)
+        get_model = partial(
+            mtenn.conversion_utils.e3nn.E3NN.get_model,
+            grouped=grouped,
+            strategy=strategy,
+            combination=combination,
+            comb_readout=comb_readout,
+        )
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
-    return model, model_call
+    # Use previously built model to construct mtenn.model.Model
+    model = get_model(
+        model=model,
+        pred_readout=pred_readout,
+        fix_device=True,
+    )
+
+    return model
 
 
 def build_model_2d(config=None):
@@ -356,10 +354,10 @@ def build_model_2d(config=None):
 
     Returns
     -------
-    asapdiscovery.ml.models.GAT
+    mtenn.conversion_utils.GAT
         GAT graph model
     """
-    from asapdiscovery.ml import GAT
+    from mtenn.conversion_utils import GAT
     from dgllife.utils import CanonicalAtomFeaturizer
 
     if (type(config) is str) or (isinstance(config, Path)):
@@ -639,7 +637,7 @@ def build_optimizer(model, config=None):
 
     Parameters
     ----------
-    model : Union[asapdiscovery.ml.models.GAT, mtenn.model.Model]
+    model : mtenn.model.Model
         Model to be trained by the optimizer
     config : Union[str, dict], optional
         Either a dict or JSON file with model config options. If not passed,
