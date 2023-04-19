@@ -88,52 +88,6 @@ def download_url(search_url, header, vault=None, timeout=5000, retry_delay=5):
     return response
 
 
-def download_achiral(header, fn_out=None):
-    """
-    Download all molecules and remove any chiral molecules.
-
-    Parameters
-    ----------
-    header : dict
-        Header information passed to GET request. Must contain an entry for
-        'X-CDD-token' that gives the user's CDD API token
-    fn_out : str, optional
-        CSV to save compound information to
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing compound information for all achiral molecules
-    """
-    from .utils import get_achiral_molecules
-
-    # Download all molecules to start
-    response = download_url(f"{VAULT_URL}{NONCOVALENT_SMI_SEARCH}", header)
-    # Parse into DF
-    mol_df = pandas.read_csv(StringIO(response.content.decode()))
-    # Get rid of any molecules that snuck through without SMILES
-    idx = mol_df.loc[:, ["shipment_SMILES", "suspected_SMILES"]].isna().all(axis=1)
-    mol_df = mol_df.loc[~idx, :].copy()
-    # Some of the SMILES from CDD have extra info at the end
-    mol_df.loc[:, "shipment_SMILES"] = [
-        s.strip("|").split()[0] if not pandas.isna(s) else s
-        for s in mol_df.loc[:, "shipment_SMILES"]
-    ]
-    mol_df.loc[:, "suspected_SMILES"] = [
-        s.strip("|").split()[0] if not pandas.isna(s) else s
-        for s in mol_df.loc[:, "suspected_SMILES"]
-    ]
-
-    # Remove chiral molecules
-    achiral_df = get_achiral_molecules(mol_df)
-
-    # Save to CSV as requested
-    if fn_out:
-        achiral_df.to_csv(fn_out, index=False)
-
-    return achiral_df
-
-
 # TODO: Generalize inclusion criteria to something more compact
 def download_molecules(
     header,
