@@ -118,3 +118,6 @@ oe_license.txt
 
 # Log Files
 cluster_scripts/log_files
+*.stderr
+*.out
+*-log.txt

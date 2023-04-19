@@ -43,6 +43,7 @@ dependencies:
   - e3nn
   - dgl
   - dgllife
+  - pooch
 
 
   # Pip-only installs
