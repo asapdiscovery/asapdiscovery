@@ -1,6 +1,6 @@
-from functools import partial
 import os
 import pickle as pkl
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -357,8 +357,8 @@ def build_model_2d(config=None):
     mtenn.conversion_utils.GAT
         GAT graph model
     """
-    from mtenn.conversion_utils import GAT
     from dgllife.utils import CanonicalAtomFeaturizer
+    from mtenn.conversion_utils import GAT
 
     if (type(config) is str) or (isinstance(config, Path)):
         config = parse_config(config)
