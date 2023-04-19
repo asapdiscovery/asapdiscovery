@@ -65,6 +65,14 @@ def get_args():
         help="Keep molecules whose IC50 values are out of range.",
     )
     parser.add_argument(
+        "--retain_all",
+        action="store_true",
+        help=(
+            "Automatically sets retain_achiral, retain_racemic, retain_enantiopure, "
+            "and retain_semiquant."
+        ),
+    )
+    parser.add_argument(
         "-an",
         "--assay_name",
         default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
@@ -96,6 +104,12 @@ def get_args():
 
 def main():
     args = get_args()
+
+    if args.retain_all:
+        args.retain_achiral = True
+        args.retain_racemic = True
+        args.retain_enantiopure = True
+        args.retain_semiquant = True
 
     # Set to None to force pIC50 usage
     if args.cheng_prusoff == [0, 0]:
