@@ -96,7 +96,14 @@ def make_wandb_table(ds_split):
     from rdkit.Chem.Draw import MolToImage
 
     table = wandb.Table(
-        columns=["crystal", "compound_id", "molecule", "smiles", "pIC50"]
+        columns=[
+            "crystal",
+            "compound_id",
+            "molecule",
+            "smiles",
+            "pIC50",
+            "date_created",
+        ]
     )
     # Build table and add each molecule
     for compound, d in ds_split:
@@ -122,7 +129,11 @@ def make_wandb_table(ds_split):
             pic50 = np.nan
         except AttributeError:
             pic50 = tmp_d["pic50"]
-        table.add_data(xtal_id, compound_id, mol, smiles, pic50)
+        try:
+            date_created = tmp_d["date_created"]
+        except KeyError:
+            date_created = None
+        table.add_data(xtal_id, compound_id, mol, smiles, pic50, date_created)
 
     return table
 
@@ -217,6 +228,11 @@ def get_args():
         "-c_re",
         "--cpd_regex",
         help="Regex for extracting compound ID from filename.",
+    )
+    parser.add_argument(
+        "--temporal",
+        action="store_true",
+        help="Split molecules temporally. Overrides random splitting.",
     )
 
     # Model parameters
@@ -400,10 +416,10 @@ def init(args, rank=False):
             all_fns, xtal_pat=xtal_regex, compound_pat=compound_regex, fail_val="NA"
         )
 
-        # Trim compounds and all_fns to ones that were successfully parse
+        # Trim compounds and all_fns to ones that were successfully parsed
         idx = [(c[0] != "NA") and (c[1] != "NA") for c in compounds]
-        compounds = [c for c, i in zip(compounds, idx)]
-        all_fns = [fn for fn, i in zip(all_fns, idx)]
+        compounds = [c for c, i in zip(compounds, idx) if i]
+        all_fns = [fn for fn, i in zip(all_fns, idx) if i]
     elif args.model.lower() != "gat":
         # If we're using a structure-based model, can't continue without structure files
         raise ValueError("-i must be specified for structure-based models")
@@ -430,6 +446,7 @@ def init(args, rank=False):
     ds_train, ds_val, ds_test = split_dataset(
         ds,
         args.grouped,
+        temporal=args.temporal,
         train_frac=args.tr_frac,
         val_frac=args.val_frac,
         test_frac=args.te_frac,
@@ -537,6 +554,15 @@ def init(args, rank=False):
         exp_configure.update({"early_stopping": args.early_stopping})
     else:
         es = None
+
+    # Dataset info
+    exp_configure.update(
+        {
+            "train_frac": args.tr_frac,
+            "val_frac": args.val_frac,
+            "test_frac": args.te_frac,
+        }
+    )
 
     return (
         exp_data,
