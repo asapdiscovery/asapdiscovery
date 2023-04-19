@@ -247,6 +247,8 @@ def build_model(
             print("Using wandb config for model building.", flush=True)
         except Exception:
             config = {}
+    elif (type(config) is str) or isinstance(config, Path):
+        config = parse_config(config)
 
     # Take MTENN args from config if present, else from args
     strategy = config["strat"].lower() if "strat" in config else strat.lower()
@@ -360,7 +362,7 @@ def build_model_2d(config=None):
     from dgllife.utils import CanonicalAtomFeaturizer
     from mtenn.conversion_utils import GAT
 
-    if (type(config) is str) or (isinstance(config, Path)):
+    if (type(config) is str) or isinstance(config, Path):
         config = parse_config(config)
     elif config is None:
         try:
@@ -422,7 +424,7 @@ def build_model_schnet(
     from torch_geometric.nn import SchNet
 
     # Parse config
-    if type(config) is str:
+    if (type(config) is str) or isinstance(config, Path):
         config = parse_config(config)
     elif config is None:
         try:
@@ -532,7 +534,7 @@ def build_model_e3nn(
     from e3nn.o3 import Irreps
 
     # Parse config
-    if type(config) is str:
+    if (type(config) is str) or isinstance(config, Path):
         config = parse_config(config)
     elif config is None:
         try:
