@@ -575,23 +575,25 @@ def main():
     mp_args = []
 
     # if we are failing all the time lets capture that before we get too far
-    logger.info(f"max_failures for building MP args: {args.max_failures}")
     failures = 0
 
     # figure out what we need to be skipping
     xtal_set = set(xtal_ids)
-    logger.info(f"Set of xtal ids read from sorting or inferred: {xtal_set}")
+    xtal_set_str = "\n".join(list(xtal_set))
+    logger.info(f"Set of xtal ids read from sorting or inferred:\n{xtal_set_str}")
 
     dataset_set = set(dataset_dict.keys())
-    logger.info(f"Set of xtal ids read from receptor files: {dataset_set}")
+    dataset_set_str = "\n".join(list(dataset_set))
+    logger.info(f"Set of xtal ids read from receptor files:\n{dataset_set_str}")
 
     diff = xtal_set - dataset_set
+    diff_str = "\n".join(list(diff))
     if len(diff) > 0:
         logger.warning(
-            f"Xtals that are in sort indices but don't have matching receptors read from file: {diff}"
+            f"Xtals that are in sort indices but don't have matching receptors read from file:\n{diff_str}"
         )
         logger.warning(
-            f"THESE XTALS in sort_res: {args.sort_res} WILL BE SKIPPED {diff} likely due to missing receptor files"
+            f"THESE XTALS in WILL BE SKIPPED likely due to missing receptor files.\nTHIS MAY BE NORMAL IF BREAKING A LARGE JOB INTO CHUNKS.\n{diff_str}"
         )
 
     skipped = []
@@ -635,7 +637,9 @@ def main():
             for s in skipped:
                 logger.warning("Skipped pair: " + s)
 
-    logger.info(f"MP args built, {len(mp_args)} total with {failures} failures")
+    logger.info(
+        f"MP args built, {len(mp_args)} total with {failures} failures, most likely due to skipped xtals"
+    )
 
     if args.debug_num > 0:
         logger.info(f"DEBUG MODE: Only running {args.debug_num} docking runs")
@@ -662,7 +666,6 @@ def main():
         logger.info("Running docking using multiprocessing")
         # reset failures
         logging.info(f"max_failures for running docking using MP : {args.max_failures}")
-        failures = 0
 
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
         logger.info(f"CPUs: {mp.cpu_count()}")
