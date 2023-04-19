@@ -14,6 +14,12 @@ NONCOVALENT_SMI_SEARCH = "9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 # Noncovalent with experimental measurements, including batch created date
 NONCOVALENT_W_DATES_SEARCH = "11947939-KXLWU3JLbLzI354es-VKVg"
 
+MOONSHOT_SEARCH_DICT = {
+    "sars_fluorescence_all_smi": ALL_SMI_SEARCH,
+    "sars_fluorescence_noncovalent_no_dates": NONCOVALENT_SMI_SEARCH,
+    "sars_fluorescence_noncovalent_w_dates": NONCOVALENT_W_DATES_SEARCH,
+}
+
 
 def download_url(search_url, header, vault=None, timeout=5000, retry_delay=5):
     """
@@ -91,6 +97,8 @@ def download_url(search_url, header, vault=None, timeout=5000, retry_delay=5):
 # TODO: Generalize inclusion criteria to something more compact
 def download_molecules(
     header,
+    vault=MOONSHOT_VAULT,
+    search="sars_fluorescence_noncovalent_w_dates",
     smiles_fieldname="suspected_SMILES",
     fn_out=None,
     fn_cache=None,
@@ -106,6 +114,11 @@ def download_molecules(
     header : dict
         Header information passed to GET request. Must contain an entry for
         'X-CDD-token' that gives the user's CDD API token
+    vault : str, default=MOONSHOT_VAULT
+        Which CDD vault to search through. By default use the Moonshot vault
+    search : str, default="sars_fluorescence_noncovalent_w_dates"
+        Which entry in MOONSHOT_SEARCH_DICT to use as the search id. If the given value
+        can't be found, assume it's the actual search id and try to download
     smiles_fieldname : str, default='suspected_SMILES'
         Field to use to extract SMILES
     fn_out : str, optional
@@ -126,10 +139,16 @@ def download_molecules(
         with open(fn_cache) as infile:
             content = infile.read()
     else:
-        # Download all molecules to start
-        url = f"{CDD_URL}/{MOONSHOT_VAULT}/searches/{NONCOVALENT_W_DATES_SEARCH}"
+        # First try and get the search id from our known searches, otherwise assume the
+        #  given value is the search id itself
+        try:
+            search_id = MOONSHOT_SEARCH_DICT[search]
+        except KeyError:
+            logging.debug(f"Using {search_id} as the search id directly.")
+            search_id = search
+        url = f"{CDD_URL}/{vault}/searches/{search_id}"
         logging.debug(f"Downloading data from CDD vault from {url}")
-        response = download_url(url, header, vault=MOONSHOT_VAULT)
+        response = download_url(url, header, vault=vault)
         content = response.content.decode()
 
         if fn_cache:
