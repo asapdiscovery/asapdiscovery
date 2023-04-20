@@ -46,8 +46,6 @@ from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E4
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
 
-log_name = "run_docking_oe"
-
 
 def check_results(d):
     """
@@ -81,7 +79,7 @@ def check_results(d):
     return True
 
 
-def load_dus(fn_dict):
+def load_dus(fn_dict, log_name):
     """
     Load all present oedu files.
 
@@ -96,7 +94,6 @@ def load_dus(fn_dict):
         Dictionary mapping full Mpro name/compound id (including chain) to its
         design unit
     """
-    global log_name
     logger = logging.getLogger(log_name)
 
     du_dict = {}
@@ -111,7 +108,9 @@ def load_dus(fn_dict):
     return du_dict
 
 
-def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **kwargs):
+def mp_func(
+    out_dir, lig_name, du_name, log_name, compound_name, *args, GAT_model=None, **kwargs
+):
     """
     Wrapper function for multiprocessing. Everything other than the named args
     will be passed directly to run_docking_oe.
@@ -124,6 +123,8 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
         Ligand name
     du_name : str
         DesignUnit name
+    log_name : str
+        High-level logger name
     compound_name : str
         Compound name, used for error messages if given
     GAT_model : GATInference, optional
@@ -132,7 +133,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     Returns
     -------
     """
-    logname = f"run_docking_oe.{compound_name}"
+    logname = f"{log_name}.{compound_name}"
 
     before = datetime.now().isoformat()
     if check_results(out_dir):
@@ -151,7 +152,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
         oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
         oechem.OEThrow.Info(f"Starting docking for {logname}")
 
-    success, posed_mol, docking_id = run_docking_oe(*args, **kwargs)
+    success, posed_mol, docking_id = run_docking_oe(*args, log_name=log_name, **kwargs)
     if success:
         out_fn = os.path.join(out_dir, "docked.sdf")
         save_openeye_sdf(posed_mol, out_fn)
@@ -213,7 +214,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     return results
 
 
-def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
+def parse_du_filenames(receptors, regex, log_name, basefile="predocked.oedu"):
     """
     Parse list of DesignUnit filenames and extract identifiers using the given regex.
     `regex` should have one capturing group (which can be the entire string if desired).
@@ -240,7 +241,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
     """
     from asapdiscovery.data.utils import construct_regex_function
 
-    logger = logging.getLogger("run_docking_oe")
+    logger = logging.getLogger(log_name)
 
     # First get full list of filenames
     if type(receptors) is list:
@@ -269,7 +270,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
 
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")
-    logger.info(f"{len(all_fns)} DesignUnit files found", flush=True)
+    logger.info(f"{len(all_fns)} DesignUnit files found")
 
     # Build regex search function
     regex_func = construct_regex_function(regex, ret_groups=True)
@@ -280,7 +281,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
         try:
             full_name, dataset = regex_func(fn)
         except ValueError:
-            print(f"No regex match found for {fn}", flush=True)
+            logger.error(f"No regex match found for {fn}")
             continue
 
         try:
@@ -431,13 +432,12 @@ def get_args():
 
 def main():
     args = get_args()
-    global log_name
     log_name = args.log_name
 
     # Parse symlinks in output_dir
     output_dir = Path(args.output_dir)
     if not output_dir.exists():
-        output_dir.mkdir()
+        output_dir.mkdir(parents=True)
     logger = FileLogger(log_name, path=str(output_dir)).getLogger()
     start = datetime.now().isoformat()
     if args.exp_file:
@@ -501,10 +501,10 @@ def main():
             from asapdiscovery.data.utils import MPRO_ID_REGEX_CAPT
 
             args.regex = MPRO_ID_REGEX_CAPT
-    dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex)
+    dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex, log_name)
 
     # Load all receptor DesignUnits
-    du_dict = load_dus(fn_dict)
+    du_dict = load_dus(fn_dict, log_name)
     logger.info(f"{n_mols} molecules found")
     logger.info(f"{len(du_dict.keys())} receptor structures found")
     assert n_mols > 0
@@ -559,6 +559,7 @@ def main():
                 output_dir / f"{compound_ids[i]}_{x}",
                 compound_ids[i],
                 x,
+                log_name,
                 f"{compound_ids[i]}_{x}",
                 du,
                 m,
