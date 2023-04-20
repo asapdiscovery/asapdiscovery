@@ -125,13 +125,15 @@ def build_dataset(
         ds = pkl.load(open(cache_fn, "rb"))
         print("Loaded from cache", flush=True)
     else:
-        # Make dict to access smiles data
+        # Make dicts to access smiles and date_created data
         smiles_dict = {}
+        dates_dict = {}
         for c in exp_compounds:
             if c.compound_id not in compound_id_dict:
                 continue
             for xtal_structure in compound_id_dict[c.compound_id]:
                 smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
+                dates_dict[(xtal_structure, c.compound_id)] = c.date_created
 
         # Make dict to access experimental compound data
         exp_data_dict = {}
@@ -154,6 +156,7 @@ def build_dataset(
                 "pIC50": exp_data_dict[compound]["pIC50"],
                 "pIC50_range": exp_data_dict[compound]["pIC50_range"],
                 "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
+                "date_created": dates_dict[compound],
             }
             for compound, smiles in smiles_dict.items()
         }
@@ -1060,7 +1063,13 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
 
 
 def split_dataset(
-    ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1, rand_seed=42
+    ds,
+    grouped,
+    temporal=False,
+    train_frac=0.8,
+    val_frac=0.1,
+    test_frac=0.1,
+    rand_seed=42,
 ):
     """
     Split a dataset into train, val, and test splits. A warning will be raised
@@ -1072,6 +1081,8 @@ def split_dataset(
         Dataset object to split
     grouped: bool
         If data objects should be grouped by compound_id
+    temporal: bool, default=False
+        Split data temporally instead of randomly
     train_frac: float, default=0.8
         Fraction of dataset to put in the train split
     val_frac: float, default=0.1
@@ -1093,7 +1104,7 @@ def split_dataset(
     import torch
 
     # Check that fractions add to 1
-    if sum([train_frac, val_frac, test_frac]) != 1:
+    if not np.isclose(sum([train_frac, val_frac, test_frac]), 1):
         from warnings import warn
 
         warn(
@@ -1104,47 +1115,106 @@ def split_dataset(
             RuntimeWarning,
         )
 
-    print("using random seed:", rand_seed, flush=True)
-    # Create generator
-    if rand_seed is None:
-        g = torch.Generator()
-    else:
-        g = torch.Generator().manual_seed(rand_seed)
+    if not temporal:
+        print("using random seed:", rand_seed, flush=True)
+        # Create generator
+        if rand_seed is None:
+            g = torch.Generator()
+        else:
+            g = torch.Generator().manual_seed(rand_seed)
 
     # Split dataset into train/val/test
     if grouped:
-        n_train = int(len(ds) * train_frac)
-        n_val = int(len(ds) * val_frac)
-        n_test = len(ds) - n_train - n_val
-        ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], g
-        )
-        print(
-            (
-                f"{n_train} training molecules, {n_val} validation molecules, "
-                f"{n_test} testing molecules"
-            ),
-            flush=True,
-        )
+        if temporal:
+            ds_train, ds_val, ds_test = split_temporal(
+                ds,
+                [train_frac, val_frac, test_frac],
+                grouped=True,
+            )
+        else:
+            ds_train, ds_val, ds_test = torch.utils.data.random_split(
+                ds, [train_frac, val_frac, test_frac], g
+            )
+        train_compound_ids = {c for c, _ in ds_train}
+        val_compound_ids = {c for c, _ in ds_val}
+        test_compound_ids = {c for c, _ in ds_test}
     else:
-        ds_train, ds_val, ds_test = split_molecules(
-            ds, [train_frac, val_frac, test_frac], g
-        )
+        if temporal:
+            ds_train, ds_val, ds_test = split_temporal(
+                ds, [train_frac, val_frac, test_frac]
+            )
+        else:
+            ds_train, ds_val, ds_test = split_molecules(
+                ds, [train_frac, val_frac, test_frac], g
+            )
 
         train_compound_ids = {c[1] for c, _ in ds_train}
         val_compound_ids = {c[1] for c, _ in ds_val}
         test_compound_ids = {c[1] for c, _ in ds_test}
-        print(
-            f"{len(ds_train)} training samples",
-            f"({len(train_compound_ids)}) molecules,",
-            f"{len(ds_val)} validation samples",
-            f"({len(val_compound_ids)}) molecules,",
-            f"{len(ds_test)} test samples",
-            f"({len(test_compound_ids)}) molecules",
-            flush=True,
-        )
+    print(
+        f"{len(ds_train)} training samples",
+        f"({len(train_compound_ids)} molecules),",
+        f"{len(ds_val)} validation samples",
+        f"({len(val_compound_ids)} molecules),",
+        f"{len(ds_test)} test samples",
+        f"({len(test_compound_ids)} molecules)",
+        flush=True,
+    )
 
     return ds_train, ds_val, ds_test
+
+
+def make_subsets(ds, idx_lists, split_lens):
+    """
+    Helper script for making subsets of a dataset.
+
+    Parameters
+    ----------
+    ds : Union[cml.data.DockedDataset, cml.data.GraphDataset]
+        Molecular dataset to split
+    idx_dict : List[List[int]]
+        List of lists of indices into `ds`
+    split_lens : List[int]
+        List of split lengths
+
+    Returns
+    -------
+    List[torch.utils.data.Subset]
+        List of Subsets of original dataset
+    """
+    import torch
+
+    # For each Subset, grab all molecules with the included compound_ids
+    all_subsets = []
+    # Keep track of which structure indices we've seen so we don't double count in the
+    #  end splits
+    seen_idx = set()
+    prev_idx = 0
+    # Go up to the last split so we can add anything that got left out from rounding
+    for n_mols in split_lens[:-1]:
+        n_mols_cur = 0
+        subset_idx = []
+        cur_idx = prev_idx
+        # Keep adding groups until the split is as big as it needs to be, or we reach
+        #  the end of the array
+        while (n_mols_cur < n_mols) and (cur_idx < len(idx_lists)):
+            subset_idx.extend(idx_lists[cur_idx])
+            n_mols_cur += len(idx_lists[cur_idx])
+            cur_idx += 1
+
+        # Make sure we're not including something that's in another split
+        subset_idx = [i for i in subset_idx if i not in seen_idx]
+        seen_idx.update(subset_idx)
+        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+        # Update counter
+        prev_idx = cur_idx
+
+    # Finish up anything leftover
+    subset_idx = [i for d in idx_lists[prev_idx:] for i in d if i not in seen_idx]
+    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    return all_subsets
 
 
 def split_molecules(ds, split_fracs, generator=None):
@@ -1170,14 +1240,16 @@ def split_molecules(ds, split_fracs, generator=None):
     """
     import torch
 
-    # TODO: make this whole process more compact
+    # Calculate how many molecules we want covered through each split
+    n_mols_split = np.floor(np.asarray(split_fracs) * len(ds))
+
     # First get all the unique compound_ids
     compound_ids_dict = {}
-    for c in ds.compounds.keys():
+    for c, idx_list in ds.compounds.items():
         try:
-            compound_ids_dict[c[1]].append(c)
+            compound_ids_dict[c[1]].extend(idx_list)
         except KeyError:
-            compound_ids_dict[c[1]] = [c]
+            compound_ids_dict[c[1]] = idx_list
     all_compound_ids = np.asarray(list(compound_ids_dict.keys()))
 
     # Set up generator
@@ -1187,35 +1259,109 @@ def split_molecules(ds, split_fracs, generator=None):
     print("splitting with random seed:", generator.initial_seed(), flush=True)
     # Shuffle the indices
     indices = torch.randperm(len(all_compound_ids), generator=generator)
+    idx_lists = [compound_ids_dict[all_compound_ids[i]] for i in indices]
 
     # For each Subset, grab all molecules with the included compound_ids
-    all_subsets = []
-    offset = 0
-    # Go up to the last split so we can add anything that got left out from
-    #  float rounding
-    for frac in split_fracs[:-1]:
-        split_len = int(np.floor(frac * len(indices)))
-        incl_indices = indices[offset : offset + split_len]
-        incl_compounds = all_compound_ids[incl_indices]
-        offset += split_len
+    all_subsets = make_subsets(ds, idx_lists, n_mols_split)
 
-        # Get subset indices
-        subset_idx = []
-        for compound_id in incl_compounds:
-            for compound in compound_ids_dict[compound_id]:
-                subset_idx.extend([i for i in ds.compounds[compound]])
-        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+    return all_subsets
 
-    # Finish up anything leftover
-    incl_indices = indices[offset:]
-    incl_compounds = all_compound_ids[incl_indices]
 
-    # Get subset indices
-    subset_idx = []
-    for compound_id in incl_compounds:
-        for compound in compound_ids_dict[compound_id]:
-            subset_idx.extend([i for i in ds.compounds[compound]])
-    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+def split_temporal(ds, split_fracs, grouped=False, reverse=False, insert_idx=1):
+    """
+    Split molecules temporally by date created. Earlier molecules will be placed in the
+    training set and later molecules will be placed in the val/test sets (unless
+    `reverse` is set).
+
+    Parameters
+    ----------
+    ds : Union[cml.data.DockedDataset, cml.data.GraphDataset]
+        Molecular dataset to split
+    split_fracs : List[float]
+        List of fraction of compounds to put in each split
+    grouped : bool, default=False
+        Splitting a GroupedDockedDataset object
+    reverse : bool, default=False
+        Reverse sorting of data
+    insert_idx : int, default=1
+        Where in the list of `split_fracs` to insert the `sink_split`. If set to < 0 or
+        > `len(split_fracs)`, this feature will be disabled and splits will be taken
+        contiguously from the start of the data
+
+    Returns
+    -------
+    List[torch.utils.data.Subset]
+        List of Subsets of original dataset
+    """
+    # Check that split_fracs adds to 1, padding if it doesn't
+    # Add an allowance for floating point inaccuracies
+    total_splits = sum(split_fracs)
+    if (
+        (not np.isclose(total_splits, 1))
+        or (insert_idx < 0)
+        or (insert_idx > len(split_fracs))
+    ):
+        if total_splits > 1:
+            raise ValueError(f"Sum of split_fracs is {total_splits} > 1")
+        else:
+            sink_frac = 1 - total_splits
+            split_fracs = (
+                split_fracs[:insert_idx] + [sink_frac] + split_fracs[insert_idx:]
+            )
+            sink_split = True
+        print(
+            f"New split_fracs: {split_fracs}, sink frac is at idx {insert_idx}",
+            flush=True,
+        )
+    else:
+        sink_split = False
+
+    # Calculate how many molecules we want covered through each split
+    n_mols_split = np.floor(np.asarray(split_fracs) * len(ds))
+
+    # First get all the unique created dates
+    dates_dict = {}
+    # If we have a grouped dataset, we want to iterate through compound_ids, which will
+    #  allow us to access a group of structures. Otherwise, loop through the structures
+    #  directly
+    if grouped:
+        iter_list = ds.compound_ids
+    else:
+        iter_list = ds.structures
+    for i, iter_item in enumerate(iter_list):
+        if grouped:
+            # Take the earliest date from all structures (they should all be the same,
+            #  but just in case)
+            all_dates = [
+                s["date_created"]
+                for s in ds.structures[iter_item]
+                if "date_created" in s
+            ]
+            if len(all_dates) == 0:
+                raise ValueError("Dataset doesn't contain dates.")
+            else:
+                date_created = min(all_dates)
+        else:
+            try:
+                date_created = iter_item["date_created"]
+            except KeyError:
+                raise ValueError("Dataset doesn't contain dates.")
+        try:
+            dates_dict[date_created].append(i)
+        except KeyError:
+            dates_dict[date_created] = [i]
+    all_dates = np.asarray(list(dates_dict.keys()))
+
+    # Sort the dates
+    all_dates_sorted = sorted(all_dates, reverse=reverse)
+
+    # Make subsets
+    idx_lists = [dates_dict[d] for d in all_dates_sorted]
+    all_subsets = make_subsets(ds, idx_lists, n_mols_split)
+
+    # Take out the sink split
+    if sink_split:
+        all_subsets = all_subsets[:insert_idx] + all_subsets[insert_idx + 1 :]
 
     return all_subsets
 
@@ -1509,6 +1655,8 @@ def train(
                 flush=True,
             )
             model.load_state_dict(es.best_wts)
+            if use_wandb:
+                wandb.log({"best_epoch": es.best_epoch, "best_loss": es.best_loss})
             break
 
     return (

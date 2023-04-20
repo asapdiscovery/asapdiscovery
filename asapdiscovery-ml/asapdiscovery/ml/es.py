@@ -1,6 +1,7 @@
 """
 Class for handling early stopping in training.
 """
+from copy import deepcopy
 
 
 class EarlyStopping:
@@ -42,13 +43,15 @@ class EarlyStopping:
         # If this is the first epoch, just set internal variables and return
         if self.best_loss is None:
             self.best_loss = loss
-            self.best_wts = wts_dict
+            # Need to deepcopy so it doesn't update with the model weights
+            self.best_wts = deepcopy(wts_dict)
             return False
 
         # Update best loss and best weights
         if loss < self.best_loss:
             self.best_loss = loss
-            self.best_wts = wts_dict
+            # Need to deepcopy so it doesn't update with the model weights
+            self.best_wts = deepcopy(wts_dict)
             self.best_epoch = epoch
 
             # Reset counter
