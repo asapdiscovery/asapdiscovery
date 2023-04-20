@@ -681,38 +681,31 @@ def filter_molecules_dataframe(
     retain_racemic=False,
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
-    keep_best_per_mol=True,
-    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
-    dG_T=298.0,
-    cp_values=None,
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
-        * `smiles_fieldname`
         * "Canonical PostEra ID"
-        * "`assay_name` IC50 (µM)"
-        * "`assay_name` IC50 CI (Lower) (µM)"
-        * "`assay_name` IC50 CI (Upper) (µM)"
+        * `smiles_fieldname`
     Columns that are added to the dataframe by this function:
-        * name
-        * smiles
-        * achiral
-        * racemic
-        * enantiopure
-        * semiquant
-        * IC50 (M)
-        * IC50_stderr (M)
-        * IC50_95ci_lower (M)
-        * IC50_95ci_upper (M)
-        * pIC50
-        * pIC50_stderr
-        * pIC50_range
-        * pIC50_95ci_lower
-        * pIC50_95ci_upper
-        * exp_binding_affinity_kcal_mol
-        * exp_binding_affinity_kcal_mol_95ci_lower
-        * exp_binding_affinity_kcal_mol_95ci_upper
-        * exp_binding_affinity_kcal_mol_stderr
+        * "name"
+        * "smiles"
+        * "achiral"
+        * "racemic"
+        * "enantiopure"
+        * "semiquant"
+        * "IC50 (M)"
+        * "IC50_stderr (M)"
+        * "IC50_95ci_lower (M)"
+        * "IC50_95ci_upper (M)"
+        * "pIC50"
+        * "pIC50_stderr"
+        * "pIC50_range"
+        * "pIC50_95ci_lower"
+        * "pIC50_95ci_upper"
+        * "exp_binding_affinity_kcal_mol"
+        * "exp_binding_affinity_kcal_mol_95ci_lower"
+        * "exp_binding_affinity_kcal_mol_95ci_upper"
+        * "exp_binding_affinity_kcal_mol_stderr"
 
     For example, to filter a DF of molecules so that it only contains achiral
     molecules while allowing for measurements that are semiquantitative:
@@ -848,6 +841,23 @@ def filter_molecules_dataframe(
     mol_df = mol_df.loc[keep_idx, :]
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries after filtering")
 
+    return mol_df
+
+
+def parse_fluorescence_data_cdd(
+    mol_df,
+    keep_best_per_mol=True,
+    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
+    dG_T=298.0,
+    cp_values=None,
+):
+    """
+    Filter a dataframe of molecules to retain those specified. Required columns are:
+        * "name"
+        * "`assay_name` IC50 (µM)"
+        * "`assay_name` IC50 CI (Lower) (µM)"
+        * "`assay_name` IC50 CI (Upper) (µM)"
+    """
     # Compute pIC50s and uncertainties from 95% CIs
     IC50_series = []
     IC50_stderr_series = []
@@ -1011,8 +1021,6 @@ def filter_molecules_dataframe(
                 ascending=True,
             )
         mol_df = mol_df.groupby("name", as_index=False).first()
-
-    return mol_df
 
 
 def get_sdf_fn_from_dataset(
