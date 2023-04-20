@@ -1,12 +1,41 @@
 # This file is used to specify the path to the weights file for each model.
+# and example is given below.
 
-model1:
-  # type of the model, must be one of the following: [GAT]
+
+# The model name is the key for each model, for production models we prefer CalVer (https://calver.org/)
+# the below is a test model that also has annotations to indicate what each field is.
+
+# model name is the key for each model
+gat_test_v0:
+  # The model type is used to determine which model class to use.
   type: GAT
-  # Path to the weights file for model1.
-  weights: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example.pth
-  # Path to the config file.
-  config: https://asap-discovery-ml-weights.s3.amazonaws.com/test/gat_example_config.json
-  # Date tag of the weights file, must be in the format of YYYY-MM-DD.
-  # used to determine if the weights file is up-to-date.
+  # The base url is used to determine where to look for the weights and config files
+  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/test/
+  # The weights key has the name of the weights file and the sha256 hash of the file.
+  weights:
+    # resource is the name of the file
+    resource: gat_example.pth
+    # sha256hash is the sha256 hash of the file
+    sha256hash: 38e5476ede0ed67ad0951d5d1c7c913ecf0aeaa6a1913d16ee9dca28b5d9795b
+  # The config key has the name of the config file and the sha256 hash of the file.
+  # This key is optional
+  config:
+    # resource is the name of the file
+    resource: gat_example_config.json
+    # sha256hash is the sha256 hash of the file
+    sha256hash: d0b4d6c1f74b3e9caacea50af6ff6927803143842a72e74ebc7dbefdb2bcf444
+  # The last_updated key is the date the model was last updated. in the format YYYY-MM-DD
   last_updated: 2023-01-01
+
+
+# asapdiscovery-GAT-2023.04.12 model
+asapdiscovery-GAT-2023.04.12:
+  type: GAT
+  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/GAT/
+  weights:
+    resource: asapdiscovery-GAT-2023.04.12.th
+    sha256hash: 735e8eea9dbd7267827f3be84f685d64102e66e0e39554c5b6a6fecb7d80aed6
+  config:
+    resource: asapdiscovery-GAT-config-2023.04.12.json
+    sha256hash: d0b4d6c1f74b3e9caacea50af6ff6927803143842a72e74ebc7dbefdb2bcf444
+  last_updated: 2023-04-12

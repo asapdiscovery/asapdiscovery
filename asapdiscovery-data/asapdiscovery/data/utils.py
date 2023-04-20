@@ -20,11 +20,32 @@ from asapdiscovery.data.schema import (
 
 # Not sure if this is the right place for these
 # Regex patterns for extracting Mpro dataset ID and Moonshot CDD style compound ID
+#  from filenames. This is used eg in building ML datasets. For more details on any of
+#  these regexes, you can visit regex101.com and get a full breakdown of what each
+#  component does
+
+# This will match any string that follows the original COVID Moonshot naming convention,
+#  eg: AAR-POS-5507155c-1
 MOONSHOT_CDD_ID_REGEX = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+# This will match any string that follows the Fragalysis naming convention for the Mpro
+#  structures, eg:  Mpro-P2005_0A
 MPRO_ID_REGEX = r"Mpro-.*?_[0-9][A-Z]"
 
+# Regex patterns that match chains as well, but only capture the main part. These
+#  regexes are used when we want to group files based on their unique identifier (ie the
+#  captured group), but still be able to keep track of the full name including the chain
 
-def construct_regex_function(pat, fail_val=None):
+# This will match any string that follows the original COVID Moonshot naming convention
+#  and also contains a PDB chain, eg: AAR-POS-5507155c-1_0A
+# In this example, it will capture AAR-POS-5507155c-1
+MOONSHOT_CDD_ID_REGEX_CAPT = r"([A-Z]{3}-[A-Z]{3}-[a-z0-9]+-[0-9]+)_[0-9][A-Z]"
+# This will match any string that follows the Fragalysis naming convention for the Mpro
+#  structures, eg:  Mpro-P2005_0A
+# In this example, it will capture Mpro-P2005
+MPRO_ID_REGEX_CAPT = r"(Mpro-[A-Za-z][0-9]+)_[0-9][A-Z]"
+
+
+def construct_regex_function(pat, fail_val=None, ret_groups=False):
     """
     Construct a function that searches for the given regex pattern, either returning
     fail_val or raising an error if no match is found.
@@ -37,6 +58,8 @@ def construct_regex_function(pat, fail_val=None):
         If a value is passed, this value will be returned from the re searches if a
         match isn't found. If None (default), a ValueError will be raised from the re
         search
+    ret_groups : bool, default=False
+        If True, return the whole match, as well as any groups that were captured
 
     Returns
     -------
@@ -49,7 +72,10 @@ def construct_regex_function(pat, fail_val=None):
 
         m = re.search(pat, s)
         if m:
-            return m.group()
+            if ret_groups:
+                return m.group(), m.groups()
+            else:
+                return m.group()
         elif fail_val is not None:
             return fail_val
         else:
@@ -367,6 +393,12 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                 }
             )
 
+        # Add date created if present
+        if "Batch Created Date" in c.index:
+            date_created = pandas.to_datetime(c["Batch Created Date"]).date()
+        else:
+            date_created = None
+
         # Keep track of if there are any NaN values
         try:
             seen_compounds[compound_id] = np.isnan(
@@ -384,6 +416,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                     achiral=c["achiral"],
                     absolute_stereochemistry_enantiomerically_pure=(not c["racemic"]),
                     relative_stereochemistry_enantiomerically_pure=(not c["racemic"]),
+                    date_created=date_created,
                     experimental_data=experimental_data,
                 )
             )
@@ -411,6 +444,8 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
             "pIC50_95ci_upper",
             "pIC50_stderr",
         ]
+        if "Batch Created Date" in df.columns:
+            out_cols += ["Batch Created Date"]
         df[out_cols].to_csv(out_csv)
         print(f"Wrote {out_csv}", flush=True)
 
@@ -527,6 +562,12 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
                     }
                 )
 
+            # Add date created if present
+            if "Batch Created Date" in c.index:
+                date_created = pandas.to_datetime(c["Batch Created Date"]).date()
+            else:
+                date_created = None
+
             p.append(
                 ExperimentalCompoundData(
                     compound_id=compound_id,
@@ -535,6 +576,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
                     achiral=False,
                     absolute_stereochemistry_enantiomerically_pure=True,
                     relative_stereochemistry_enantiomerically_pure=True,
+                    date_created=date_created,
                     experimental_data=experimental_data,
                 )
             )
@@ -558,6 +600,9 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
             "pIC50_95ci_upper",
             "pIC50_stderr",
         ]
+        if "Batch Created Date" in df.columns:
+            out_cols += ["Batch Created Date"]
+
         df[out_cols].to_csv(out_csv)
         print(f"Wrote {out_csv}", flush=True)
 
@@ -809,10 +854,10 @@ def filter_molecules_dataframe(
                 import sigfig
 
                 IC50, IC50_stderr = sigfig.round(
-                    IC50, uncertainty=IC50_stderr, sep=tuple
+                    IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
                 )  # strings
                 pIC50, pIC50_stderr = sigfig.round(
-                    pIC50, uncertainty=pIC50_stderr, sep=tuple
+                    pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
                 )  # strings
             except ModuleNotFoundError:
                 # Just round to 4 digits if sigfig pacakge not present
@@ -839,10 +884,10 @@ def filter_molecules_dataframe(
             # Use default pIC50 error
             # print(row)
             # Set as high number so sorting works but still puts this at end
-            IC50_stderr = 100
+            IC50_stderr = "100"
             IC50_lower = np.nan
             IC50_upper = np.nan
-            pIC50_stderr = 100
+            pIC50_stderr = "100"
             pIC50_lower = np.nan
             pIC50_upper = np.nan
 
@@ -889,15 +934,16 @@ def filter_molecules_dataframe(
             return R * dG_T * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
 
         mol_df["exp_binding_affinity_kcal_mol"] = [
-            deltaG(IC50) if not np.isnan(IC50) else np.nan for IC50 in mol_df["IC50"]
+            deltaG(IC50) if not np.isnan(IC50) else np.nan
+            for IC50 in mol_df["IC50 (M)"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
             deltaG(IC50_lower) if not np.isnan(IC50_lower) else np.nan
-            for IC50_lower in mol_df["IC50_95ci_lower"]
+            for IC50_lower in mol_df["IC50_95ci_lower (M)"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
             deltaG(IC50_upper) if not np.isnan(IC50_upper) else np.nan
-            for IC50_upper in mol_df["IC50_95ci_upper"]
+            for IC50_upper in mol_df["IC50_95ci_upper (M)"]
         ]
     else:
         logging.debug("Using pIC50 values for delta G calculations")
@@ -1276,5 +1322,15 @@ def check_filelist_has_elements(
         )
 
 
-if __name__ == "__main__":
-    filter_docking_inputs()
+def combine_sdf_files(glob_string, output_sdf):
+    import shutil
+
+    # Concatenate all individual SDF files
+    sdfs = [f for f in glob.glob(glob_string) if f.endswith(".sdf")]
+    check_filelist_has_elements(sdfs, "sdfs")
+    with open(output_sdf, "wb") as wfd:
+        for f in sdfs:
+            if f == "":
+                continue
+            with open(f, "rb") as fd:
+                shutil.copyfileobj(fd, wfd)
