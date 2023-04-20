@@ -99,13 +99,12 @@ def download_molecules(
     header,
     vault=MOONSHOT_VAULT,
     search="sars_fluorescence_noncovalent_w_dates",
-    smiles_fieldname="suspected_SMILES",
     fn_out=None,
     fn_cache=None,
-    **filter_kwargs,
+    **kwargs,
 ):
     """
-    Download all molecules and filter based on args in `filter_kwargs`. Saves
+    Download all molecules and filter based on args in `kwargs`. Saves
     and loads unfiltered CSV file to `fn_cache` if provided, and saves filtered
     CSV file to `fn_out` if provided.
 
@@ -119,8 +118,6 @@ def download_molecules(
     search : str, default="sars_fluorescence_noncovalent_w_dates"
         Which entry in MOONSHOT_SEARCH_DICT to use as the search id. If the given value
         can't be found, assume it's the actual search id and try to download
-    smiles_fieldname : str, default='suspected_SMILES'
-        Field to use to extract SMILES
     fn_out : str, optional
         If specified, filename to write CSV to
     fn_cache : str, optional
@@ -161,9 +158,22 @@ def download_molecules(
 
     # Remove chiral molecules
     logging.debug("Filtering dataframe...")
-    from .utils import filter_molecules_dataframe
+    from .utils import filter_molecules_dataframe, parse_fluorescence_data_cdd
 
+    filter_kwargs = [
+        "smiles_fieldname",
+        "assay_name",
+        "retain_achiral",
+        "retain_achiral",
+        "retain_racemic",
+        "retain_enantiopure",
+        "retain_semiquantitative_data",
+    ]
+    filter_kwargs = {k: kwargs[k] for k in filter_kwargs if k in kwargs}
     filtered_df = filter_molecules_dataframe(mol_df, **filter_kwargs)
+    parse_kwargs = ["keep_best_per_mol", "assay_name", "dG_T", "cp_values"]
+    parse_kwargs = {k: kwargs[k] for k in parse_kwargs if k in kwargs}
+    parsed_df = parse_fluorescence_data_cdd(filtered_df, **parse_kwargs)
 
     # Save to CSV as requested
     if fn_out:
