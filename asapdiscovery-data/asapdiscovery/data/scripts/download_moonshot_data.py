@@ -5,7 +5,7 @@ import argparse
 import logging
 import os
 
-from asapdiscovery.data.moonshot import download_molecules, MOONSHOT_VAULT  # noqa: E402
+from asapdiscovery.data.moonshot import MOONSHOT_VAULT, download_molecules  # noqa: E402
 
 
 ################################################################################
