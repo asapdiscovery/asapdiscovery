@@ -73,9 +73,14 @@ def test_docking_kwargs(
     ]
     if omega:
         args.append(omega)
-    if by_compound:
-        args.append(by_compound)
+
     if hybrid:
         args.append(hybrid)
-    ret = script_runner.run(*args)
-    assert ret.success
+    if by_compound:
+        # should fail when specifying a single receptor and by_compound
+        args.append(by_compound)
+        ret = script_runner.run(*args)
+        assert not ret.success
+    else:
+        ret = script_runner.run(*args)
+        assert ret.success
