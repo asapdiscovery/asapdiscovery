@@ -1,6 +1,5 @@
 import os
 import shutil
-import subprocess
 
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
@@ -70,7 +69,7 @@ def test_docking_kwargs(
         "-o",
         "./outputs",
         "-n",
-        f"1",
+        "1",
     ]
     if omega:
         args.append(omega)
