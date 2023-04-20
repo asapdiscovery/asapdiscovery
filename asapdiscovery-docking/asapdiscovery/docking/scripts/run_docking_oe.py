@@ -205,7 +205,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     return results
 
 
-def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
+def parse_du_filenames(receptors, regex, basefile="predocked.oedu", by_compound=False):
     """
     Parse list of DesignUnit filenames and extract identifiers using the given regex.
     `regex` should have one capturing group (which can be the entire string if desired).
@@ -221,6 +221,8 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
     basefile : str, default="predocked.oedu"
         If a CSV file is passed for `receptors`, this is the base filename that will be
         appended to every directory found in the "Docked_File" column
+
+    by_compound : bool, default=False
 
     Returns
     -------
@@ -246,22 +248,33 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
             for fn in files
             if fn[-4:] == "oedu"
         ]
-    elif os.path.isfile(receptors):
-        logger.info(f"Using {receptors} as file")
-        df = pandas.read_csv(receptors)
-        try:
-            all_fns = [
-                os.path.join(os.path.dirname(fn), basefile) for fn in df["Docked_File"]
-            ]
-        except KeyError:
-            raise ValueError("Docked_File column not found in given CSV file.")
+
+    if os.path.isfile(receptors):
+        logger.info(f"Using {receptors} as individual file")
+        file_extn = os.path.splitext(receptors)[1]
+        if file_extn == ".csv":
+            logger.info(f"Using {receptors} as CSV file")
+            df = pandas.read_csv(receptors)
+            try:
+                all_fns = [
+                    os.path.join(os.path.dirname(fn), basefile)
+                    for fn in df["Docked_File"]
+                ]
+            except KeyError:
+                raise ValueError("Docked_File column not found in given CSV file.")
+        elif file_extn == ".oedu":
+            all_fns = [receptors]
+            if by_compound:
+                raise ValueError("Cannot use with a single DesignUnit file.")
+        else:
+            raise ValueError("File must be either .csv or .oedu")
     else:
         logger.info(f"Using {receptors} as glob")
         all_fns = glob(receptors)
 
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")
-    logger.info(f"{len(all_fns)} DesignUnit files found", flush=True)
+    logger.info(f"{len(all_fns)} DesignUnit files found")
 
     # Build regex search function
     regex_func = construct_regex_function(regex, ret_groups=True)
@@ -480,7 +493,9 @@ def main():
             from asapdiscovery.data.utils import MPRO_ID_REGEX_CAPT
 
             args.regex = MPRO_ID_REGEX_CAPT
-    dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex)
+    dataset_dict, fn_dict = parse_du_filenames(
+        args.receptor, args.regex, by_compound=args.by_compound
+    )
 
     # Load all receptor DesignUnits
     du_dict = load_dus(fn_dict)
