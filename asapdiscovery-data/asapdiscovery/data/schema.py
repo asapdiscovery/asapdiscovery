@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel, Field
 
 
@@ -38,6 +40,8 @@ class ExperimentalCompoundData(Model):
         False,
         description="If True, the compound was enantiopure, but unknown if stereochemistry recorded in SMILES is correct",
     )
+
+    date_created: date = Field(None, description="Date the molecule was created.")
 
     experimental_data: dict[str, float] = Field(
         dict(),
