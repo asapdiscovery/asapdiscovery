@@ -431,6 +431,10 @@ def main():
 
     # Parse symlinks in output_dir
     output_dir = Path(args.output_dir)
+    # check that output_dir exists, otherwise create it
+    if not output_dir.exists():
+        output_dir.mkdir()
+
     logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
     logger.info("Starting run_docking_oe")
     logger.info(f"Output directory: {output_dir}")
@@ -715,9 +719,10 @@ def main():
 
                 # things are going poorly, lets stop
                 if len(failed_runs) > args.max_failures:
-                    raise ValueError(
-                        f"Too many failures ({len(failed_runs)}/{args.max_failures}) while running docking, aborting"
+                    logger.critical(
+                        f"CRITICAL: Too many failures ({len(failed_runs)}/{args.max_failures}) while running docking, aborting"
                     )
+                    res.cancel()
 
             logging.info(f"Docking complete with {len(failed_runs)} failures")
 
