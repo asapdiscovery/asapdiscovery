@@ -958,6 +958,7 @@ def load_weights(model, wts_fn, check_compatibility=False):
     mtenn.Model
         Model with loaded weights
     """
+    import mtenn
     import torch
 
     # Load weights
@@ -965,6 +966,12 @@ def load_weights(model, wts_fn, check_compatibility=False):
         wts_dict = torch.load(wts_fn)
     except RuntimeError:
         wts_dict = torch.load(wts_fn, map_location="cpu")
+
+    # Backwards compatibility for old GAT models
+    if isinstance(model, mtenn.model.LigandOnlyModel) and (
+        next(iter(wts_dict.keys())).split(".")[0] != "representation"
+    ):
+        wts_dict = {f"representation.{k}": v for k, v in wts_dict.items()}
 
     # Initialize linear module in ConcatStrategy
     if "strategy.reduce_nn.weight" in wts_dict:
