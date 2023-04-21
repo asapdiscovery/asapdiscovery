@@ -10,6 +10,7 @@ def run_docking_oe(
     compound_name=None,
     use_omega=False,
     num_poses=1,
+    log_name="run_docking_oe",
 ):
     """
     Run docking using OpenEye. The returned OEGraphMol object will have the
@@ -32,6 +33,8 @@ def run_docking_oe(
         When to check for relaxation ["clash", "all", "none"]
     hybrid : bool, default=False
         Set POSIT methods to only use Hybrid
+    log_name : str, optional
+        Name of high-level logger to use
     compound_name : str, optional
         Compound name, used for error messages if given
     use_omega : bool, default=False
@@ -52,9 +55,9 @@ def run_docking_oe(
     import sys
 
     if compound_name:
-        logname = f"run_docking_oe.{compound_name}"
+        logname = f"{log_name}.{compound_name}"
     else:
-        logname = "run_docking_oe"
+        logname = log_name
     logger = logging.getLogger(logname)
 
     if not logger.hasHandlers():
@@ -71,7 +74,6 @@ def run_docking_oe(
     from asapdiscovery.data.openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
-    logger.info(oechem.OEThrow.OEErrorHandlerImplBase)
     oechem.OEThrow.Debug("Confirm that OE logging is working")
 
     # Make copy so we can keep the original for RMSD purposes
@@ -167,8 +169,7 @@ def run_docking_oe(
 
         if compound_name:
             logger.info(
-                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking",
-                f"with no relaxation for {compound_name}",
+                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with no relaxation for {compound_name}",
             )
 
         # Set up poser object

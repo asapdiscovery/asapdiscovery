@@ -23,6 +23,7 @@ dependencies = [
     "rdkit",
     #"openeye-toolkit",
     "plotly",
+    "pebble",
 ]
 
 [project.urls]
