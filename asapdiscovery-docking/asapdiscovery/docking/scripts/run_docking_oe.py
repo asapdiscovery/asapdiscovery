@@ -704,18 +704,19 @@ def main():
                     break
                 except TimeoutError:
                     # This compound:xtal combination timed out
-                    logger.error("Docking timed out for", args_list[8])
-                    failed_runs += [args_list[8]]
+                    logger.error("Docking timed out for", args_list[9])
+                    failed_runs += [args_list[9]]
                 except pebble.ProcessExpired as e:
-                    logger.error("Docking failed for", args_list[8])
+                    logger.error("Docking failed for", args_list[9])
                     logger.error(f"\t{e}. Exit code {e.exitcode}")
-                    failed_runs += [args_list[8]]
+                    failed_runs += [args_list[9]]
                 except Exception as e:
                     logger.error(
-                        "Docking failed for", args_list[8], "with Exception", e
+                        f"Docking failed for {args_list[9]}, with Exception: {e.__class__.__name__}"
                     )
-                    logger.error(e.traceback)
-                    failed_runs += [args_list[8]]
+                    if hasattr(e, "traceback"):
+                        logger.error(e.traceback)
+                    failed_runs += [args_list[9]]
 
                 # things are going poorly, lets stop
                 if len(failed_runs) > args.max_failures:
@@ -724,7 +725,11 @@ def main():
                     )
                     res.cancel()
 
-            logging.info(f"Docking complete with {len(failed_runs)} failures")
+            logging.info(f"Docking complete with {len(failed_runs)} failures, use --verbose to see which ones.")
+            if args.verbose:
+                if len(failed_runs) > 0:
+                    failed_run_str = "\n".join(failed_runs)
+                    logger.error(f"Failed runs:\n{failed_run_str}\n")
 
     else:
         logger.info("Running docking using single core this will take a while...")
