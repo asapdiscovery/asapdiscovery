@@ -36,6 +36,7 @@ dash-docking-contour-plot = "asapdiscovery.dataviz.scripts.dash_docking_contour_
 dash-docking-interactive-scatterplots = "asapdiscovery.dataviz.scripts.dash_docking_interactive_scatterplots:main"
 dash-docking-interactive-table = "asapdiscovery.dataviz.scripts.dash_docking_interactive_table:main"
 display-aligned-2d-molecules = "asapdiscovery.dataviz.scripts.display_aligned_2d_molecules:main"
+split-sdf = "asapdiscovery.dataviz.scripts.split_sdf:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
