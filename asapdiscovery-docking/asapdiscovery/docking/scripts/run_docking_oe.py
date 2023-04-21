@@ -725,7 +725,9 @@ def main():
                     )
                     res.cancel()
 
-            logging.info(f"Docking complete with {len(failed_runs)} failures, use --verbose to see which ones.")
+            logging.info(
+                f"Docking complete with {len(failed_runs)} failures, use --verbose to see which ones."
+            )
             if args.verbose:
                 if len(failed_runs) > 0:
                     failed_run_str = "\n".join(failed_runs)
