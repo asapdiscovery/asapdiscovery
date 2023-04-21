@@ -637,6 +637,11 @@ def main():
             for s in skipped:
                 logger.warning("Skipped pair: " + s)
 
+    if len(mp_args) == 0:
+        raise ValueError(
+            "No MP args built, likely due to no xtals found, check logs and increase verbosity with --verbose for more info. "
+        )
+
     logger.info(
         f"MP args built, {len(mp_args)} total with {failures} failures, most likely due to skipped xtals"
     )
