@@ -164,7 +164,6 @@ def download_molecules(
         "smiles_fieldname",
         "assay_name",
         "retain_achiral",
-        "retain_achiral",
         "retain_racemic",
         "retain_enantiopure",
         "retain_semiquantitative_data",
