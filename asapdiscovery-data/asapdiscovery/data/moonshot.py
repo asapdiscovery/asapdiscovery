@@ -8,6 +8,8 @@ VAULT_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
 ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
 # Noncovalent molecules with experimental measurements (from John)
 NONCOVALENT_SMI_SEARCH = "searches/9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
+# Noncovalent with experimental measurements, including batch created date
+NONCOVALENT_W_DATES_SEARCH = "searches/11947939-KXLWU3JLbLzI354es-VKVg"
 
 
 def download_url(search_url, header, timeout=5000, retry_delay=5):
@@ -163,7 +165,7 @@ def download_molecules(
             content = infile.read()
     else:
         # Download all molecules to start
-        url = f"{VAULT_URL}{NONCOVALENT_SMI_SEARCH}"
+        url = f"{VAULT_URL}{NONCOVALENT_W_DATES_SEARCH}"
         logging.debug(f"Downloading data from CDD vault from {url}")
         response = download_url(url, header)
         content = response.content.decode()
