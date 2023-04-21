@@ -263,6 +263,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu", by_compound=
             except KeyError:
                 raise ValueError("Docked_File column not found in given CSV file.")
         elif file_extn == ".oedu":
+            logger.info(f"Using {receptors} as single DesignUnit file")
             all_fns = [receptors]
             if by_compound:
                 raise ValueError("Cannot use with a single DesignUnit file.")
