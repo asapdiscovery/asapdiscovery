@@ -21,7 +21,7 @@ import yaml
 from asapdiscovery.data import pdb
 from asapdiscovery.data.fragalysis import parse_fragalysis
 from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.docking import prep_mp
+from asapdiscovery.modeling.modeling import prep_mp
 
 
 ################################################################################
@@ -172,6 +172,8 @@ def main():
         seqres = seqres_dict["SEQRES"]
     else:
         seqres = None
+
+    print(xtal_compounds[0])
 
     mp_args = [
         (
