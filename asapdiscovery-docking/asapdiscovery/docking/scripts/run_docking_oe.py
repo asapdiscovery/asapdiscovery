@@ -431,17 +431,13 @@ def main():
 
     # Parse symlinks in output_dir
     output_dir = Path(args.output_dir)
+
     # check that output_dir exists, otherwise create it
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
     logger.info("Starting run_docking_oe")
     logger.info(f"Output directory: {output_dir}")
-
-    if not output_dir.exists():
-        logger.info("Output directory does not exist, creating...")
-        output_dir.mkdir()
 
     if args.exp_file:
         logger.info("Loading experimental compounds from JSON file")
@@ -647,14 +643,12 @@ def main():
         )
 
     if failures > 0:
-          logger.info(
-              f"MP args built, {len(mp_args)} total with {failures} failures, most likely due to skipped xtals.\n"
-              "Use --verbose flag to find out more"
-          )
+        logger.info(
+            f"MP args built, {len(mp_args)} total with {failures} failures, most likely due to skipped xtals.\n"
+            "Use --verbose flag to find out more"
+        )
     else:
-          logger.info(
-              f"{len(mp_args)} multiprocessing args built.
-          )
+        logger.info(f"{len(mp_args)} multiprocessing args built.")
 
     if args.debug_num > 0:
         logger.info(f"DEBUG MODE: Only running {args.debug_num} docking runs")
@@ -740,7 +734,6 @@ def main():
                 logging.info(
                     f"Docking complete with {len(failed_runs)} failures, use --verbose to see which ones."
                 )
-
 
     else:
         logger.info("Running docking using single core this will take a while...")
