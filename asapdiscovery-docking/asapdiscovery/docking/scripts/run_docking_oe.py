@@ -725,13 +725,16 @@ def main():
                     )
                     res.cancel()
 
-            logging.info(
-                f"Docking complete with {len(failed_runs)} failures, use --verbose to see which ones."
-            )
             if args.verbose:
+                logging.info(f"Docking complete with {len(failed_runs)} failures.")
                 if len(failed_runs) > 0:
                     failed_run_str = "\n".join(failed_runs)
                     logger.error(f"Failed runs:\n{failed_run_str}\n")
+            else:
+                logging.info(
+                    f"Docking complete with {len(failed_runs)} failures, use --verbose to see which ones."
+                )
+
 
     else:
         logger.info("Running docking using single core this will take a while...")
