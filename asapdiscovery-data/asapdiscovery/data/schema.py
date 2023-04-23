@@ -59,10 +59,7 @@ class ExperimentalCompoundDataUpdate(Model):
 
 
 class CrystalCompoundData(BaseModel):
-    smiles: str = Field(
-        None,
-        description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",
-    )
+    output_name: str = Field(None, description="Name of output structure.")
 
     compound_id: str = Field(
         None, description="The unique compound identifier of the ligand."
@@ -71,14 +68,17 @@ class CrystalCompoundData(BaseModel):
     dataset: str = Field(
         None, description="Dataset name from Fragalysis (name of structure)."
     )
-
+    smiles: str = Field(
+        None,
+        description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",
+    )
     str_fn: str = Field(None, description="Filename of the PDB structure.")
 
     sdf_fn: str = Field(None, description="Filename of the SDF file")
     active_site_chain: str = Field(
         None, description="Chain identifying the active site of interest."
     )
-    output_name: str = Field(None, description="Name of output structure.")
+
     active_site: str = Field(None, description="OpenEye formatted active site residue.")
     oligomeric_state: str = Field(
         None, description="Oligomeric state of the asymmetric unit."
@@ -87,6 +87,27 @@ class CrystalCompoundData(BaseModel):
     protein_chains: list = Field(
         None, description="List of chains corresponding to protein residues."
     )
+
+
+class CrystalCompoundDataset(BaseModel):
+    structures: list[CrystalCompoundData] = Field(
+        [CrystalCompoundData()], description="List of CrystalCompoundData objects."
+    )
+
+    def to_csv(self, fn):
+        import pandas as pd
+
+        df = pd.DataFrame([vars(structure) for structure in self.structures])
+
+        df.to_csv(fn, index=False)
+
+    def from_csv(self, fn):
+        import pandas as pd, numpy as np
+
+        df = pd.read_csv(fn)
+        df = df.replace(np.nan, None)
+
+        self.structures = [CrystalCompoundData(**row) for row in df.to_dict("records")]
 
 
 class PDBStructure(Model):
