@@ -412,6 +412,19 @@ def get_args():
         default=None,
         help="Number of docking runs to run. Useful for debugging and testing.",
     )
+
+    parser.add_argument(
+        "--max_failures",
+        type=int,
+        default=20,
+        help="Maximum number of failed docking runs to allow before exiting.",
+    )
+
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Whether to print out verbose logging.",
+    )
     parser.add_argument(
         "-gat",
         "--gat",
@@ -436,11 +449,17 @@ def main():
 
     # Parse symlinks in output_dir
     output_dir = Path(args.output_dir)
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
-    logger = FileLogger(log_name, path=str(output_dir)).getLogger()
+
+    # check that output_dir exists, otherwise create it
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
+    logger.info(f"Output directory: {output_dir}")
     start = datetime.now().isoformat()
+    logger.info(f"Starting run_docking_oe at {start}")
+
     if args.exp_file:
+        logger.info("Loading experimental compounds from JSON file")
         import json
 
         # Load compounds
@@ -458,6 +477,7 @@ def main():
             oechem.OESmilesToMol(new_mol, c.smiles)
             mols.append(new_mol)
     if args.lig_file:
+        logger.info(f"Loading ligands from {args.lig_file}")
         if args.exp_file:
             logger.info(
                 (
@@ -470,9 +490,12 @@ def main():
             ifs = oechem.oemolistream()
             ifs.open(args.lig_file)
             mols = [mol.CreateCopy() for mol in ifs.GetOEGraphMols()]
+            ifs.close()
     elif args.exp_file is None:
         raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
+
     n_mols = len(mols)
+    logger.info(f"Loaded {n_mols} ligands, proceeding with docking setup")
 
     # Set up ML model
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
@@ -490,52 +513,77 @@ def main():
     #  assume it is a glob/directory/filename, and pull it out of the list so it's
     #  properly handled in `parse_du_filenames`
     if len(args.receptor) == 1:
+        logger.info("Receptor argument is a glob/directory/filename")
         args.receptor = args.receptor[0]
     # Handle default regex
     if args.regex is None:
+        logger.info("No regex specified, using default regex")
         if args.by_compound:
             from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX_CAPT
 
             args.regex = MOONSHOT_CDD_ID_REGEX_CAPT
+            logger.info(
+                f"--by_compound specified, using MOONSHOT_CDD_ID_REGEX_CAPT regex: {MOONSHOT_CDD_ID_REGEX_CAPT}"
+            )
+
         else:
             from asapdiscovery.data.utils import MPRO_ID_REGEX_CAPT
 
             args.regex = MPRO_ID_REGEX_CAPT
+            logger.info(f"Using MPRO_ID_REGEX_CAPT regex: {MPRO_ID_REGEX_CAPT}")
+    else:
+        logger.info(f"Using custom regex: {args.regex}")
+
+    logger.info(
+        f"Parsing receptor design units with arguments: {args.receptor}, {args.regex}"
+    )
     dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex, log_name)
 
     # Load all receptor DesignUnits
+    logger.info("Loading receptor DesignUnits")
     du_dict = load_dus(fn_dict, log_name)
     logger.info(f"{n_mols} molecules found")
     logger.info(f"{len(du_dict.keys())} receptor structures found")
-    assert n_mols > 0
-    assert len(du_dict.keys()) > 0
+
+    if not n_mols > 0:
+        raise ValueError("No ligands found")
+    if not len(du_dict.keys()) > 0:
+        raise ValueError("No receptor structures found")
 
     # Load sort indices if given
     if args.sort_res:
+        logger.info(f"Loading sort results from {args.sort_res}")
         compound_ids, xtal_ids, sort_idxs = pkl.load(open(args.sort_res, "rb"))
         # If we're docking to all DUs, set top_n appropriately
         if args.top_n == -1:
+            logging.info("Docking to all")
             args.top_n = len(xtal_ids)
+        else:
+            logging.info(f"Docking to top {args.top_n}")
 
         # Make sure that compound_ids match with experimental data if that's
         #  what we're using
         if args.exp_file:
-            assert all(
+            logger.info("Checking that sort results match experimental data")
+            if not all(
                 [
                     compound_id == c.compound_id
                     for (compound_id, c) in zip(compound_ids, exp_compounds)
                 ]
-            ), (
-                "Sort result compound_ids are not equivalent to "
-                "compound_ids in --exp_file."
-            )
+            ):
+                raise ValueError(
+                    "Compound IDs in sort results do not match experimental data"
+                )
+            logger.info("Sort results match experimental data")
     else:
+        logger.info("No sort results given")
         # Check to see if the SDF files have a Compound_ID Column
         if all(len(oechem.OEGetSDData(mol, "Compound_ID")) > 0 for mol in mols):
             logger.info("Using Compound_ID column from sdf file")
             compound_ids = [oechem.OEGetSDData(mol, "Compound_ID") for mol in mols]
         else:
             # Use index as compound_id
+            logger.info("Using index as compound_id")
             compound_ids = [str(i) for i in range(n_mols)]
         # Get dataset values from DesignUnit filenames
         xtal_ids = list(dataset_dict.keys())
@@ -544,13 +592,44 @@ def main():
         args.top_n = len(xtal_ids)
 
     # make multiprocessing args
+    logger.info("Making multiprocessing args")
     mp_args = []
+
+    # if we are failing to read all the design units lets capture that before we get too far
+    failures = 0
+
+    # figure out what we need to be skipping
+    xtal_set = set(xtal_ids)
+    xtal_set_str = "\n".join(list(xtal_set))
+    logger.info(f"Set of xtal ids read from sorting or inferred:\n{xtal_set_str}")
+
+    dataset_set = set(dataset_dict.keys())
+    dataset_set_str = "\n".join(list(dataset_set))
+    logger.info(f"Set of xtal ids read from receptor files:\n{dataset_set_str}")
+
+    diff = xtal_set - dataset_set
+    diff_str = "\n".join(list(diff))
+    if len(diff) > 0:
+        logger.warning(
+            f"Xtals that are in sort indices but don't have matching receptors read from file:\n{diff_str}"
+        )
+        logger.warning(
+            f"THESE XTALS in WILL BE SKIPPED likely due to missing receptor files.\nTHIS MAY BE NORMAL IF BREAKING A LARGE JOB INTO CHUNKS.\n{diff_str}"
+        )
+
+    skipped = []
     for i, m in enumerate(mols):
         dock_dus = []
         xtals = []
         for xtal in sort_idxs[i][: args.top_n]:
             if xtal_ids[xtal] not in dataset_dict:
+                if args.verbose:
+                    skipped.append(
+                        f"Crystal: {xtal_ids[xtal]} Molecule_title: {m.GetTitle()}, Compound_ID: {compound_ids[i]}, Smiles: {oechem.OECreateIsoSmiString(m)}"
+                    )
+                failures += 1
                 continue
+
             # Get the DU for each full Mpro name associated with this dataset
             dock_dus.extend([du_dict[x] for x in dataset_dict[xtal_ids[xtal]]])
             xtals.extend(dataset_dict[xtal_ids[xtal]])
@@ -574,12 +653,37 @@ def main():
         ]
         mp_args.extend(new_args)
 
-    mp_args = mp_args[: args.debug_num]
+    if args.verbose:
+        if len(skipped) > 0:
+            logger.warning(f"Skipped {len(skipped)} receptor/ligand pairs")
+            for s in skipped:
+                logger.warning("Skipped pair: " + s)
+
+    if len(mp_args) == 0:
+        raise ValueError(
+            "No MP args built, likely due to no xtals found, check logs and increase verbosity with --verbose for more info. "
+        )
+
+    if failures > 0:
+        logger.info(
+            f"MP args built, {len(mp_args)} total with {failures} failures, most likely due to skipped xtals.\n"
+            "Use --verbose flag to find out more"
+        )
+    else:
+        logger.info(f"{len(mp_args)} multiprocessing args built successfully.")
+
+    if (args.debug_num is not None) and (args.debug_num > 0):
+        logger.info(f"DEBUG MODE: Only running {args.debug_num} docking runs")
+        mp_args = mp_args[: args.debug_num]
 
     # Apply ML arguments as kwargs to mp_func
     mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
 
     if args.num_cores > 1:
+        logger.info("Running docking using multiprocessing")
+        # reset failures
+        logging.info(f"max_failures for running docking using MP : {args.max_failures}")
+
         nprocs = min(mp.cpu_count(), len(mp_args), args.num_cores)
         logger.info(f"CPUs: {mp.cpu_count()}")
         logger.info(f"N Processes: {len(mp_args)}")
@@ -609,25 +713,45 @@ def main():
                     break
                 except TimeoutError:
                     # This compound:xtal combination timed out
-                    logger.error(
-                        f"Docking timed out for {docking_run_name} with timeout {args.timeout} seconds"
-                    )
+                    logger.error("Docking timed out for", docking_run_name)
                     failed_runs += [docking_run_name]
                 except pebble.ProcessExpired as e:
-                    logger.error(
-                        f"Docking failed for {docking_run_name} with {e}: {e.exitcode}"
-                    )
+                    logger.error("Docking failed for", docking_run_name)
+                    logger.error(f"\t{e}. Exit code {e.exitcode}")
                     failed_runs += [docking_run_name]
                 except Exception as e:
                     logger.error(
-                        f"Docking failed for {docking_run_name} with Exception {e}"
+                        f"Docking failed for {docking_run_name}, with Exception: {e.__class__.__name__}"
                     )
-                    logger.error(e.traceback)
+                    if hasattr(e, "traceback"):
+                        logger.error(e.traceback)
                     failed_runs += [docking_run_name]
-            if len(failed_runs) > 0:
-                logger.error(f"Docking failed for {len(failed_runs)} runs.")
+
+                # things are going poorly, lets stop
+                if len(failed_runs) > args.max_failures:
+                    logger.critical(
+                        f"CRITICAL: Too many failures ({len(failed_runs)}/{args.max_failures}) while running docking, aborting"
+                    )
+                    res.cancel()
+
+            if args.verbose:
+                logging.info(f"Docking complete with {len(failed_runs)} failures.")
+                if len(failed_runs) > 0:
+                    failed_run_str = "\n".join(failed_runs)
+                    logger.error(f"Failed runs:\n{failed_run_str}\n")
+            else:
+                logging.info(
+                    f"Docking complete with {len(failed_runs)} failures, use --verbose to see which ones."
+                )
+
     else:
+        logger.info("Running docking using single core this will take a while...")
+        logger.info(f"Running {len(mp_args)} docking runs over 1 core.")
+        logger.info("not using failure counter for single core")
         results_list = [mp_func_ml_applied(*args_list) for args_list in mp_args]
+
+    logger.info("\nDocking complete!\n")
+    logger.info("Writing results")
 
     logger.info(f"Docking finished for {len(results_list)} runs.")
     # Preparing results dataframe
