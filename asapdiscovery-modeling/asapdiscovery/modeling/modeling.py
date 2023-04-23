@@ -1,21 +1,45 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 from openeye import oechem, oespruce, oedocking
 
-from asapdiscovery.data.openeye import oechem, oespruce, load_openeye_pdb, split_openeye_mol, openeye_perceive_residues, \
-    save_openeye_pdb
+from asapdiscovery.data.openeye import (
+    oechem,
+    oespruce,
+    load_openeye_pdb,
+    split_openeye_mol,
+    openeye_perceive_residues,
+    save_openeye_pdb,
+    du_to_complex,
+)
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.docking import du_to_complex
+
+
+def add_seqres_to_openeye_protein(
+    prot: oechem.OEGraphMol, seqres: str = None
+) -> oechem.OEGraphMol:
+    """
+    Adds the SEQRES metadata to the given protein structure.
+
+    Args:
+    - prot (oechem.OEDesignUnit): the protein structure to add the SEQRES metadata to.
+    """
+    # Add SEQRES entries if they're not present
+    if (not oechem.OEHasPDBData(prot, "SEQRES")) and seqres:
+        for seqres_line in seqres.split("\n"):
+            if seqres_line != "":
+                oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
+    return prot
 
 
 def spruce_protein(
     initial_prot: oechem.OEGraphMol,
     return_du=False,
     seqres: str = None,
-    loop_db: str = None,
+    loop_db: Path = None,
     site_residue="HIS:41: :A:0: ",
 ) -> oechem.OEDesignUnit or oechem.OEGraphMol:
     """
@@ -91,7 +115,7 @@ def spruce_protein(
 
     if loop_db is not None:
         print("Adding loop db")
-        loop_opts.SetLoopDBFilename(loop_db)
+        loop_opts.SetLoopDBFilename(str(loop_db))
 
     # Structure metadata object
     metadata = oespruce.OEStructureMetadata()
