@@ -29,8 +29,11 @@ from asapdiscovery.data.openeye import (
     load_openeye_cif1,
 )
 from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.docking.modeling import align_receptor, mutate_residues
-from asapdiscovery.modeling.modeling import spruce_protein
+from asapdiscovery.modeling.modeling import (
+    spruce_protein,
+    align_receptor,
+    mutate_residues,
+)
 from openmm.app import PDBFile, PDBxFile
 
 

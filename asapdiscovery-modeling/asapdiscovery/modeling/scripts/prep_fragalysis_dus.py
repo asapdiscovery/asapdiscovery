@@ -17,8 +17,7 @@ from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import edit_pdb_file  # noqa: E402
 from asapdiscovery.data.utils import seqres_to_res_list  # noqa: E402
 from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
-from asapdiscovery.docking.modeling import mutate_residues  # noqa: 402
-from asapdiscovery.docking.modeling import prep_receptor  # noqa: E402
+from asapdiscovery.modeling.modeling import mutate_residues, prep_receptor
 
 
 def check_completed(d):
