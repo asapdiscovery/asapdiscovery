@@ -578,7 +578,7 @@ def main():
     logger.info("Making multiprocessing args")
     mp_args = []
 
-    # if we are failing all the time lets capture that before we get too far
+    # if we are failing to read all the design units lets capture that before we get too far
     failures = 0
 
     # figure out what we need to be skipping
