@@ -104,7 +104,7 @@ def prep_protein(xtal: CrystalCompoundData, args):
             prot,
             dimer=True,
             ref_prot=str(args.ref_prot),
-            split_initial_complex=True,
+            split_initial_complex=args.protein_only,
             split_ref=True,
             ref_chain=args.ref_chain,
             mobile_chain=args.mobile_chain,
@@ -147,16 +147,29 @@ def prep_protein(xtal: CrystalCompoundData, args):
 
         logger.info("Saving PDB")
 
-        from asapdiscovery.data.openeye import split_openeye_design_unit
+        from asapdiscovery.data.openeye import (
+            split_openeye_design_unit,
+            save_openeye_sdf,
+        )
+        from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
 
+        # TODO: Make sure this doesn't fail if there is no ligand
         lig, prot, complex_ = split_openeye_design_unit(du)
+        prot = add_seqres_to_openeye_protein(prot, seqres)
+        complex_ = add_seqres_to_openeye_protein(complex_, seqres)
 
-        prot_fn = args.output_dir / f"{xtal.output_name}-prepped_receptor_0.pdb"
+        prot_fn = args.output_dir / f"{xtal.output_name}-prepped_protein.pdb"
         save_openeye_pdb(prot, str(prot_fn))
 
+        complex_fn = args.output_dir / f"{xtal.output_name}-prepped_complex.pdb"
+        save_openeye_pdb(complex_, str(complex_fn))
+
+        lig_fn = args.output_dir / f"{xtal.output_name}-prepped_ligand.sdf"
+        save_openeye_sdf(lig, str(lig_fn))
+
     elif type(du) == oechem.OEGraphMol:
-        logger.info("Design Unit preparation failed. Saving spruced protein")
-        prot_fn = output / f"{name}-failed-spruced.pdb"
+        logger.error("Design Unit preparation failed. Saving spruced protein")
+        prot_fn = args.output_dir / f"{xtal.output_name}-failed-spruced.pdb"
         save_openeye_pdb(du, str(prot_fn))
     return xtal
 
