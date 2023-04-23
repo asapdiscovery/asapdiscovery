@@ -25,6 +25,7 @@ dependencies:
   - pydantic
   - rdkit
   - seaborn
+  - pebble
 
   # data
   - requests
@@ -55,3 +56,6 @@ dependencies:
     - pyyaml
     # ml
     - git+https://github.com/choderalab/mtenn@0.1.0
+    # testing
+    - pytest-console-scripts
+    - pytest-timeout

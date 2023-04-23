@@ -29,8 +29,8 @@ import logging
 import multiprocessing as mp
 import os
 import pickle as pkl
-import shutil
 from concurrent.futures import TimeoutError
+from datetime import datetime
 from functools import partial
 from glob import glob
 from pathlib import Path
@@ -45,7 +45,6 @@ from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
-from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
 
 def check_results(d):
@@ -80,7 +79,7 @@ def check_results(d):
     return True
 
 
-def load_dus(fn_dict):
+def load_dus(fn_dict, log_name):
     """
     Load all present oedu files.
 
@@ -95,7 +94,7 @@ def load_dus(fn_dict):
         Dictionary mapping full Mpro name/compound id (including chain) to its
         design unit
     """
-    logger = logging.getLogger("run_docking_oe")
+    logger = logging.getLogger(log_name)
 
     du_dict = {}
     for full_name, fn in fn_dict.items():
@@ -109,7 +108,9 @@ def load_dus(fn_dict):
     return du_dict
 
 
-def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **kwargs):
+def mp_func(
+    out_dir, lig_name, du_name, log_name, compound_name, *args, GAT_model=None, **kwargs
+):
     """
     Wrapper function for multiprocessing. Everything other than the named args
     will be passed directly to run_docking_oe.
@@ -122,6 +123,8 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
         Ligand name
     du_name : str
         DesignUnit name
+    log_name : str
+        High-level logger name
     compound_name : str
         Compound name, used for error messages if given
     GAT_model : GATInference, optional
@@ -130,12 +133,16 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     Returns
     -------
     """
-    logname = f"run_docking_oe.{compound_name}"
+    logname = f"{log_name}.{compound_name}"
 
+    before = datetime.now().isoformat()
     if check_results(out_dir):
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
-        logger.info(f"Loading found results for {compound_name}")
-        return pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
+        logger.info(f"Found results for {compound_name}")
+        after = datetime.now().isoformat()
+        results = pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
+        logger.info(f"Start: {before}, End: {after}")
+        return results
     else:
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
@@ -145,7 +152,7 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
         oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
         oechem.OEThrow.Info(f"Starting docking for {logname}")
 
-    success, posed_mol, docking_id = run_docking_oe(*args, **kwargs)
+    success, posed_mol, docking_id = run_docking_oe(*args, log_name=log_name, **kwargs)
     if success:
         out_fn = os.path.join(out_dir, "docked.sdf")
         save_openeye_sdf(posed_mol, out_fn)
@@ -202,10 +209,12 @@ def mp_func(out_dir, lig_name, du_name, compound_name, *args, GAT_model=None, **
     ]
 
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
+    after = datetime.now().isoformat()
+    logger.info(f"Start: {before}, End: {after}")
     return results
 
 
-def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
+def parse_du_filenames(receptors, regex, log_name, basefile="predocked.oedu"):
     """
     Parse list of DesignUnit filenames and extract identifiers using the given regex.
     `regex` should have one capturing group (which can be the entire string if desired).
@@ -232,7 +241,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
     """
     from asapdiscovery.data.utils import construct_regex_function
 
-    logger = logging.getLogger("run_docking_oe")
+    logger = logging.getLogger(log_name)
 
     # First get full list of filenames
     if type(receptors) is list:
@@ -272,7 +281,7 @@ def parse_du_filenames(receptors, regex, basefile="predocked.oedu"):
         try:
             full_name, dataset = regex_func(fn)
         except ValueError:
-            logger.warning(f"No regex match found for {fn}")
+            logger.error(f"No regex match found for {fn}")
             continue
 
         try:
@@ -347,10 +356,10 @@ def get_args():
         "-m",
         "--timeout",
         type=int,
-        default=30,
+        default=300,
         help=(
             "Timeout (in seconds) for each docking thread. "
-            "Set to a negative number to disable."
+            "Setting to a number <=0 disables this feature."
         ),
     )
     parser.add_argument(
@@ -400,7 +409,7 @@ def get_args():
     parser.add_argument(
         "--debug_num",
         type=int,
-        default=-1,
+        default=None,
         help="Number of docking runs to run. Useful for debugging and testing.",
     )
 
@@ -422,12 +431,21 @@ def get_args():
         action="store_true",
         help="Whether to use GAT model to score docked poses.",
     )
+    parser.add_argument(
+        "-log",
+        "--log_name",
+        type=str,
+        default="run_docking_oe",
+        help="Base name for high-level log file. Defaults to run_docking_oe, "
+        "which enables propagation of log messages to the root logger.",
+    )
 
     return parser.parse_args()
 
 
 def main():
     args = get_args()
+    log_name = args.log_name
 
     # Parse symlinks in output_dir
     output_dir = Path(args.output_dir)
@@ -436,8 +454,9 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
-    logger.info("Starting run_docking_oe")
     logger.info(f"Output directory: {output_dir}")
+    start = datetime.now().isoformat()
+    logger.info(f"Starting run_docking_oe at {start}")
 
     if args.exp_file:
         logger.info("Loading experimental compounds from JSON file")
@@ -481,6 +500,8 @@ def main():
     # Set up ML model
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
     if args.gat:
+        from asapdiscovery.ml.inference import GATInference  # noqa: E402
+
         GAT_model = GATInference(gat_model_string)
         logger.info(f"Using GAT model: {gat_model_string}")
     else:
@@ -516,11 +537,11 @@ def main():
     logger.info(
         f"Parsing receptor design units with arguments: {args.receptor}, {args.regex}"
     )
-    dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex)
+    dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex, log_name)
 
     # Load all receptor DesignUnits
     logger.info("Loading receptor DesignUnits")
-    du_dict = load_dus(fn_dict)
+    du_dict = load_dus(fn_dict, log_name)
     logger.info(f"{n_mols} molecules found")
     logger.info(f"{len(du_dict.keys())} receptor structures found")
 
@@ -614,9 +635,10 @@ def main():
             xtals.extend(dataset_dict[xtal_ids[xtal]])
         new_args = [
             (
-                os.path.join(args.output_dir, f"{compound_ids[i]}_{x}"),
+                output_dir / f"{compound_ids[i]}_{x}",
                 compound_ids[i],
                 x,
+                log_name,
                 f"{compound_ids[i]}_{x}",
                 du,
                 m,
@@ -648,28 +670,14 @@ def main():
             "Use --verbose flag to find out more"
         )
     else:
-        logger.info(f"{len(mp_args)} multiprocessing args built.")
+        logger.info(f"{len(mp_args)} multiprocessing args built successfully.")
 
-    if args.debug_num > 0:
+    if (args.debug_num is not None) and (args.debug_num > 0):
         logger.info(f"DEBUG MODE: Only running {args.debug_num} docking runs")
         mp_args = mp_args[: args.debug_num]
 
     # Apply ML arguments as kwargs to mp_func
     mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
-
-    results_cols = [
-        "ligand_id",
-        "du_structure",
-        "docked_file",
-        "pose_id",
-        "docked_RMSD",
-        "POSIT_prob",
-        "POSIT_method",
-        "chemgauss4_score",
-        "clash",
-        "SMILES",
-        "GAT_score",
-    ]
 
     if args.num_cores > 1:
         logger.info("Running docking using multiprocessing")
@@ -688,7 +696,7 @@ def main():
             res = pool.map(mp_func_ml_applied, *zip(*mp_args), timeout=args.timeout)
 
             # List to keep track of successful results
-            results_df = []
+            results_list = []
             # List to keep track of which runs failed
             failed_runs = []
 
@@ -696,27 +704,28 @@ def main():
             #  this way so we can keep track of which compound:xtals timed out
             res_iter = res.result()
             for args_list in mp_args:
+                docking_run_name = args_list[9]
                 try:
                     cur_res = next(res_iter)
-                    results_df += [cur_res]
+                    results_list += [cur_res]
                 except StopIteration:
                     # We've reached the end of the results iterator so just break
                     break
                 except TimeoutError:
                     # This compound:xtal combination timed out
-                    logger.error("Docking timed out for", args_list[9])
-                    failed_runs += [args_list[9]]
+                    logger.error("Docking timed out for", docking_run_name)
+                    failed_runs += [docking_run_name]
                 except pebble.ProcessExpired as e:
-                    logger.error("Docking failed for", args_list[9])
+                    logger.error("Docking failed for", docking_run_name)
                     logger.error(f"\t{e}. Exit code {e.exitcode}")
-                    failed_runs += [args_list[9]]
+                    failed_runs += [docking_run_name]
                 except Exception as e:
                     logger.error(
-                        f"Docking failed for {args_list[9]}, with Exception: {e.__class__.__name__}"
+                        f"Docking failed for {docking_run_name}, with Exception: {e.__class__.__name__}"
                     )
                     if hasattr(e, "traceback"):
                         logger.error(e.traceback)
-                    failed_runs += [args_list[9]]
+                    failed_runs += [docking_run_name]
 
                 # things are going poorly, lets stop
                 if len(failed_runs) > args.max_failures:
@@ -739,23 +748,41 @@ def main():
         logger.info("Running docking using single core this will take a while...")
         logger.info(f"Running {len(mp_args)} docking runs over 1 core.")
         logger.info("not using failure counter for single core")
-        results_df = [mp_func_ml_applied(*args_list) for args_list in mp_args]
+        results_list = [mp_func_ml_applied(*args_list) for args_list in mp_args]
 
     logger.info("\nDocking complete!\n")
     logger.info("Writing results")
-    results_df = [res for res_list in results_df for res in res_list]
-    results_df = pandas.DataFrame(results_df, columns=results_cols)
 
-    results_df.to_csv(f"{args.output_dir}/all_results.csv")
+    logger.info(f"Docking finished for {len(results_list)} runs.")
+    # Preparing results dataframe
+    # TODO: convert these SD tags to live somewhere else
+    results_cols = [
+        "ligand_id",
+        "du_structure",
+        "docked_file",
+        "pose_id",
+        "docked_RMSD",
+        "POSIT_prob",
+        "POSIT_method",
+        "chemgauss4_score",
+        "clash",
+        "SMILES",
+        "GAT_score",
+    ]
 
-    # Concatenate all individual SDF files
-    combined_sdf = f"{args.output_dir}/combined.sdf"
-    with open(combined_sdf, "wb") as wfd:
-        for f in results_df["docked_file"]:
-            if f == "":
-                continue
-            with open(f, "rb") as fd:
-                shutil.copyfileobj(fd, wfd)
+    # results_list has the form [[(res1, res2, res3, ...)], [(res1, res2, res3, ...)], ...]
+    # this flattens the list to look like [(res1, res2, res3, ...), (res1, res2, res3, ...), ...]
+    # TODO: make this unnecessary?
+    flattened_results_list = [res for res_list in results_list for res in res_list]
+    results_df = pandas.DataFrame(flattened_results_list, columns=results_cols)
+
+    # Save results to csv
+    csv_name = f"{args.output_dir}/{log_name}-results.csv"
+    results_df.to_csv(csv_name, index=False)
+    logger.info(f"Saved results to {csv_name}")
+
+    end = datetime.now().isoformat()
+    logger.info(f"Started at {start}; finished at {end}")
 
 
 if __name__ == "__main__":
