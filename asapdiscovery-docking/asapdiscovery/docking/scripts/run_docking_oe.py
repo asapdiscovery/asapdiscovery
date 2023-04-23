@@ -433,7 +433,7 @@ def main():
     output_dir = Path(args.output_dir)
     # check that output_dir exists, otherwise create it
     if not output_dir.exists():
-        output_dir.mkdir()
+        output_dir.mkdir(parents=True)
 
     logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
     logger.info("Starting run_docking_oe")
