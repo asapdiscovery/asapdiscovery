@@ -518,7 +518,7 @@ def main():
         logger.info(f"Using custom regex: {args.regex}")
 
     logger.info(
-        f"Parsing receptor desing units with arguments: {args.receptor}, {args.regex}"
+        f"Parsing receptor design units with arguments: {args.receptor}, {args.regex}"
     )
     dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex)
 
