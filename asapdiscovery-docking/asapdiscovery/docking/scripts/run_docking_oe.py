@@ -646,9 +646,15 @@ def main():
             "No MP args built, likely due to no xtals found, check logs and increase verbosity with --verbose for more info. "
         )
 
-    logger.info(
-        f"MP args built, {len(mp_args)} total with {failures} failures, most likely due to skipped xtals"
-    )
+    if failures > 0:
+          logger.info(
+              f"MP args built, {len(mp_args)} total with {failures} failures, most likely due to skipped xtals.\n"
+              "Use --verbose flag to find out more"
+          )
+    else:
+          logger.info(
+              f"{len(mp_args)} multiprocessing args built.
+          )
 
     if args.debug_num > 0:
         logger.info(f"DEBUG MODE: Only running {args.debug_num} docking runs")
