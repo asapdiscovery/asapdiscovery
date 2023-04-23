@@ -126,6 +126,29 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
         oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
 
 
+def load_openeye_cif1(fn: str) -> oechem.OEGraphMol:
+    """
+    Loads a biological assembly file into an OEGraphMol object.
+    Current version requires going through an OpenMM intermediate.
+
+    Args:
+    - fn (str): the filename of the biological assembly file.
+
+    Returns:
+    - oechem.OEGraphMol: the biological assembly as an OEGraphMol object.
+    """
+    from openmm.app import PDBxFile, PDBFile
+    from tempfile import NamedTemporaryFile
+
+    cif = PDBxFile(fn)
+
+    # the keep ids flag is critical to make sure the residue numbers are correct
+    with NamedTemporaryFile("w", suffix=".pdb") as f:
+        PDBFile.writeFile(cif.topology, cif.positions, f, keepIds=True)
+        prot = load_openeye_pdb(f.name)
+    return prot
+
+
 def load_openeye_cif(cif_fn, alt_loc=False):
     """
     Load an OpenEye OEGraphMol object from a CIF file.

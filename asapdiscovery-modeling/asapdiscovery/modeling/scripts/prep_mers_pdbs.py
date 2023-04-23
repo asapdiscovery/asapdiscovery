@@ -22,7 +22,12 @@ import multiprocessing as mp
 from pathlib import Path
 
 import yaml
-from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pdb
+from asapdiscovery.data.openeye import (
+    load_openeye_pdb,
+    oechem,
+    save_openeye_pdb,
+    load_openeye_cif1,
+)
 from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.docking.modeling import align_receptor, mutate_residues
 from asapdiscovery.modeling.modeling import spruce_protein
@@ -107,18 +112,8 @@ def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
     else:
         logger.info(f"Preparing {cifpath}")
 
-    logger.info("Loading cif and writing to pdb file")
-
-    cif = PDBxFile(str(cifpath))
-
-    outfile = output / f"{name}-openmm.pdb"
-
-    # the keep ids flag is critical to make sure the residue numbers are correct
-    with open(outfile, "w") as f:
-        PDBFile.writeFile(cif.topology, cif.positions, f, keepIds=True)
-
-    logger.info("Loading pdb to OpenEye")
-    prot = load_openeye_pdb(str(outfile))
+    logger.info("Loading cif, saving to PDB with OpenMM, and loading with OpenEye")
+    prot = load_openeye_cif1(str(cifpath))
 
     logger.info("Aligning to ref")
 
