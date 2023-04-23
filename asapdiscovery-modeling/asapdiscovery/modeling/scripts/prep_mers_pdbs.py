@@ -152,7 +152,7 @@ def prep_mp(cifpath, output, loop_db, ref_prot, seqres_yaml):
     du = spruce_protein(
         initial_prot=prot,
         seqres=seqres,
-        loop_db=str(loop_path),
+        loop_db=loop_path,
         return_du=True,
     )
 
