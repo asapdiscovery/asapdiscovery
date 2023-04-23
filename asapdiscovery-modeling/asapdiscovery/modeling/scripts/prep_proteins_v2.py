@@ -8,6 +8,7 @@ Example Usage:
 from argparse import ArgumentParser
 from pathlib import Path
 from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
+from asapdiscovery.modeling.modeling import spruce_protein
 
 
 def parse_args():
@@ -30,20 +31,28 @@ def parse_args():
         type=Path,
         help="Path to reference pdb to align to. If None, no alignment will be performed",
     )
+    parser.add_argument(
+        "--ref_chain", default="A", help="Chain of reference protein to align to."
+    )
+    parser.add_argument(
+        "--mobile_chain",
+        default="A",
+        help="Chain of prepped protein to align to reference.",
+    )
 
     # Model Building Options
     parser.add_argument(
         "-l",
         "--loop_db",
-        default=Path(
-            "/Users/alexpayne/Scientific_Projects/mers-drug-discovery/spruce_bace.loop_db"
-        ),
+        default=None,
+        type=Path,
         help="Path to loop database.",
     )
     parser.add_argument(
         "-s",
         "--seqres_yaml",
-        default=Path("../../../../metadata/mpro_mers_seqres.yaml"),
+        default=None,
+        type=Path,
         help="Path to yaml file of SEQRES.",
     )
     parser.add_argument(
@@ -51,6 +60,9 @@ def parse_args():
         action="store_true",
         default=True,
         help="If true, generate design units with only the protein in them",
+    )
+    parser.add_argument(
+        "--keep_water", default=True, help="If true, keep crystallographic water."
     )
 
     # Output
@@ -72,40 +84,80 @@ def prep_protein(xtal: CrystalCompoundData, args):
     Prep a protein.
     """
     # Load structure
-    if xtal.str_fn.suffix == ".cif1":
+    fn = Path(xtal.str_fn)
+    if fn.suffix == ".cif1":
         from asapdiscovery.data.openeye import load_openeye_cif1
 
         prot = load_openeye_cif1(xtal.str_fn)
-    elif xtal.str_fn.suffix == ".pdb":
+    elif fn.suffix == ".pdb":
         from asapdiscovery.data.openeye import load_openeye_pdb
 
         prot = load_openeye_pdb(xtal.str_fn)
+    else:
+        raise ValueError(f"Unrecognized file type: {fn.suffix}")
 
     # Align to reference
     if args.ref_prot:
         from asapdiscovery.modeling.modeling import align_receptor
 
-        ref_path = Path(args.ref_prot)
         prot = align_receptor(
-            initial_complex=prot,
-            ref_prot=str(ref_path),
+            prot,
             dimer=True,
+            ref_prot=str(args.ref_prot),
             split_initial_complex=True,
-            mobile_chain="A",  # TODO: make this not hardcoded? not sure what logic to use though
-            ref_chain="A",
+            split_ref=True,
+            ref_chain=args.ref_chain,
+            mobile_chain=args.mobile_chain,
+            keep_water=args.keep_water,
         )
 
-    # Build model
-    xtal.build_model(
+    if args.seqres_yaml:
+        import yaml
+        from asapdiscovery.modeling.modeling import mutate_residues
+        from asapdiscovery.data.utils import seqres_to_res_list
+
+        with open(args.seqres_path) as f:
+            seqres_dict = yaml.safe_load(f)
+        seqres = seqres_dict["SEQRES"]
+
+        res_list = seqres_to_res_list(seqres)
+        logger.info("Making mutations")
+
+        prot = mutate_residues(prot, res_list, place_h=True)
+        seqres = " ".join(res_list)
+    else:
+        seqres = None
+
+    logger.info("Sprucing protein")
+
+    du = spruce_protein(
+        initial_prot=prot,
+        seqres=seqres,
         loop_db=args.loop_db,
-        seqres_yaml=args.seqres_yaml,
-        protein_only=args.protein_only,
+        return_du=True,
     )
 
-    # Save
-    xtal.save_design_unit(args.output_dir / f"{xtal.rcsb_id}.oedu")
-    xtal.save_pdb(args.output_dir / f"{xtal.rcsb_id}.pdb")
-    xtal.save_sdf(args.output_dir / f"{xtal.rcsb_id}.sdf")
+    from asapdiscovery.data.openeye import oechem, save_openeye_pdb
+
+    if type(du) == oechem.OEDesignUnit:
+        logger.info("Saving Design Unit")
+
+        du_fn = args.output_dir / f"{xtal.output_name}-prepped_receptor_0.oedu"
+        oechem.OEWriteDesignUnit(str(du_fn), du)
+
+        logger.info("Saving PDB")
+
+        from asapdiscovery.data.openeye import split_openeye_design_unit
+
+        lig, prot, complex_ = split_openeye_design_unit(du)
+
+        prot_fn = args.output_dir / f"{xtal.output_name}-prepped_receptor_0.pdb"
+        save_openeye_pdb(prot, str(prot_fn))
+
+    elif type(du) == oechem.OEGraphMol:
+        logger.info("Design Unit preparation failed. Saving spruced protein")
+        prot_fn = output / f"{name}-failed-spruced.pdb"
+        save_openeye_pdb(du, str(prot_fn))
     return xtal
 
 
