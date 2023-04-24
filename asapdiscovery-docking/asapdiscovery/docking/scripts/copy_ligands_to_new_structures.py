@@ -1,19 +1,20 @@
 """
-This is the first step of the fauxalysis pipeline. It copies the ligands from the prepped structures 
+This is the first step of the fauxalysis pipeline. It copies the ligands from the prepped structures
 to a new set of structures
 """
 import argparse
+import multiprocessing as mp
+from glob import glob
 from pathlib import Path
+
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
-    oechem,
-    oespruce,
-    oedocking,
     load_openeye_sdfs,
+    oechem,
+    oedocking,
+    oespruce,
 )
-import multiprocessing as mp
-from glob import glob
 from asapdiscovery.data.utils import check_filelist_has_elements
 
 

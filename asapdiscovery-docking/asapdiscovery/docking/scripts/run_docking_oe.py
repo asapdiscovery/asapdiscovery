@@ -39,7 +39,6 @@ import numpy as np
 import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem
