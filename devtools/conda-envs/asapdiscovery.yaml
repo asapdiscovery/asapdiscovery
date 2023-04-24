@@ -21,6 +21,7 @@ dependencies:
   - openff-toolkit
   - openeye-toolkits
   - pandas
+  - pebble
   - pydantic
   - rdkit
   - seaborn
