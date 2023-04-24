@@ -263,8 +263,8 @@ def build_model(
             combination = mtenn.model.BoltzmannCombination()
         else:
             raise ValueError(
-                    f"Unknown value for -comb: {combination}, "
-                    "must be one of [mean, boltzmann]."
+                f"Unknown value for -comb: {combination}, "
+                "must be one of [mean, boltzmann]."
             )
     except AttributeError:
         # This will be triggered if combination is left blank
@@ -284,8 +284,8 @@ def build_model(
             pred_readout = None
         else:
             raise ValueError(
-                    f"Unknown value for -pred_r: {pred_readout}, "
-                    "must be one of [pic50, none]."
+                f"Unknown value for -pred_r: {pred_readout}, "
+                "must be one of [pic50, none]."
             )
     except AttributeError:
         pred_readout = None
@@ -301,8 +301,8 @@ def build_model(
             comb_readout = None
         else:
             raise ValueError(
-                    f"Unknown value for -comb_r: {comb_readout}, "
-                    "must be one of [pic50, none]."
+                f"Unknown value for -comb_r: {comb_readout}, "
+                "must be one of [pic50, none]."
             )
     except AttributeError:
         comb_readout = None
