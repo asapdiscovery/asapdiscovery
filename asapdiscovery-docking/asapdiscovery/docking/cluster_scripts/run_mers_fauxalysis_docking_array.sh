@@ -2,13 +2,12 @@
 ## Example Usage:
 ## bsub -J "run_mers_fauxalysis_docking[1-554]" < run_fragalysis_retrospective_array.sh
 
-#BSUB -J run_mers_fauxalysis_docking
 #BSUB -oo run_mers_fauxalysis_docking_%I.out
 #BSUB -eo run_mers_fauxalysis_docking_%I.stderr
-#BSUB -n 72
+#BSUB -n 1
 #BSUB -q cpuqueue
 #BSUB -R rusage[mem=2]
-#BSUB -W 168:00
+#BSUB -W 2:00
 #source ~/.bashrc
 #conda activate ad-3.9
 dir='/lila/data/chodera/asap-datasets/mers_fauxalysis/20230411_prepped_for_fauxalysis/*/'
