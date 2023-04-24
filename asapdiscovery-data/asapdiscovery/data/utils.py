@@ -79,7 +79,7 @@ def construct_regex_function(pat, fail_val=None, ret_groups=False):
         elif fail_val is not None:
             return fail_val
         else:
-            return ValueError(f"No match found for pattern {pat} in {s}.")
+            raise ValueError(f"No match found for pattern {pat} in {s}.")
 
     return regex_func
 
