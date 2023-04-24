@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Example Usage:
-## bsub -J "run_mers_fauxalysis_docking[1-554]" < run_fragalysis_retrospective_array.sh
+## bsub -J "run_mers_fauxalysis_docking[1-554]" < run_mers_fauxalysis_docking_array.sh
 
 #BSUB -oo run_mers_fauxalysis_docking_%I.out
 #BSUB -eo run_mers_fauxalysis_docking_%I.stderr
@@ -11,7 +11,7 @@
 #source ~/.bashrc
 #conda activate ad-3.9
 dir='/lila/data/chodera/asap-datasets/mers_fauxalysis/20230411_prepped_for_fauxalysis/*/'
-i=%I
+i=$LSB_JOBINDEX
 array=( $(ls -d $dir) )
 f=${array[$i]}
 realpath $f
