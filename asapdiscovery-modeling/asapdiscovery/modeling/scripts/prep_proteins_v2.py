@@ -7,6 +7,7 @@ Example Usage:
 
 from argparse import ArgumentParser
 from pathlib import Path
+
 from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
 from asapdiscovery.modeling.modeling import spruce_protein
 
@@ -83,9 +84,10 @@ def prep_protein(xtal: CrystalCompoundData, args):
     """
     Prep a protein.
     """
-    from asapdiscovery.data.openeye import oechem
     import logging
+
     from asapdiscovery.data.logging import FileLogger
+    from asapdiscovery.data.openeye import oechem
 
     # Set up logger
     name = xtal.output_name
@@ -149,8 +151,8 @@ def prep_protein(xtal: CrystalCompoundData, args):
 
     if args.seqres_yaml:
         import yaml
-        from asapdiscovery.modeling.modeling import mutate_residues
         from asapdiscovery.data.utils import seqres_to_res_list
+        from asapdiscovery.modeling.modeling import mutate_residues
 
         with open(args.seqres_yaml) as f:
             seqres_dict = yaml.safe_load(f)
@@ -185,8 +187,8 @@ def prep_protein(xtal: CrystalCompoundData, args):
         logger.info("Saving PDB")
 
         from asapdiscovery.data.openeye import (
-            split_openeye_design_unit,
             save_openeye_sdf,
+            split_openeye_design_unit,
         )
         from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
 

@@ -137,8 +137,9 @@ def load_openeye_cif1(fn: str) -> oechem.OEGraphMol:
     Returns:
     - oechem.OEGraphMol: the biological assembly as an OEGraphMol object.
     """
-    from openmm.app import PDBxFile, PDBFile
     from tempfile import NamedTemporaryFile
+
+    from openmm.app import PDBFile, PDBxFile
 
     cif = PDBxFile(fn)
 

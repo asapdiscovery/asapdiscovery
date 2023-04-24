@@ -3,19 +3,18 @@ import logging
 import os
 from pathlib import Path
 
-from openeye import oechem, oespruce, oedocking
-
 from asapdiscovery.data.openeye import (
+    du_to_complex,
+    load_openeye_pdb,
     oechem,
     oespruce,
-    load_openeye_pdb,
-    split_openeye_mol,
     openeye_perceive_residues,
     save_openeye_pdb,
-    du_to_complex,
+    split_openeye_mol,
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
+from openeye import oechem, oedocking, oespruce
 
 
 def add_seqres_to_openeye_protein(

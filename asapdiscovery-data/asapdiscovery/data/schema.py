@@ -103,7 +103,8 @@ class CrystalCompoundDataset(BaseModel):
         df.to_csv(fn, index=False)
 
     def from_csv(self, fn):
-        import pandas as pd, numpy as np
+        import numpy as np
+        import pandas as pd
 
         df = pd.read_csv(fn)
         df = df.replace(np.nan, None)

@@ -11,11 +11,15 @@ import re
 from glob import glob
 
 import pandas
-from asapdiscovery.data.openeye import load_openeye_pdb, du_to_complex  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import oechem  # noqa: E402
 from asapdiscovery.data.openeye import split_openeye_mol  # noqa: E402
-from asapdiscovery.data.openeye import save_openeye_pdb, save_openeye_sdf
+from asapdiscovery.data.openeye import (  # noqa: E402
+    du_to_complex,
+    load_openeye_pdb,
+    save_openeye_pdb,
+    save_openeye_sdf,
+)
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.data.utils import filter_docking_inputs  # noqa: 402
 from asapdiscovery.data.utils import get_compound_id_xtal_dicts  # noqa: E402

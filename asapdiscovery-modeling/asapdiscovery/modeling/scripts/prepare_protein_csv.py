@@ -4,10 +4,11 @@ The idea here is to split up the process of preparing structures into two steps:
 1. Prepare a csv file containing the structures to prepare and information related to the preparation
 2. Actually prepare the structures using the csv file from step 1
 """
-from pathlib import Path
 from argparse import ArgumentParser
+from pathlib import Path
+
 from asapdiscovery.data.fragalysis import parse_fragalysis
-from asapdiscovery.data.schema import CrystalCompoundDataset, CrystalCompoundData
+from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
 
 
 def parse_args():
@@ -56,6 +57,7 @@ def main():
 
     elif args.pdb_glob:
         from glob import glob
+
         from asapdiscovery.data.utils import check_filelist_has_elements
 
         filelist = glob(args.pdb_glob)

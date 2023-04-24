@@ -7,8 +7,8 @@ import os
 
 import yaml
 from asapdiscovery.data import pdb  # noqa: E402
-from asapdiscovery.data.openeye import load_openeye_pdb, du_to_complex  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
+from asapdiscovery.data.openeye import du_to_complex, load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.utils import edit_pdb_file  # noqa: E402
 from asapdiscovery.data.utils import seqres_to_res_list  # noqa: E402
 from asapdiscovery.modeling.modeling import (
