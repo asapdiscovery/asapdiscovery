@@ -152,19 +152,29 @@ def spruce_protein(
     # Re-percieve residues so that atom number and connect records dont get screwed up
     openeye_perceive_residues(initial_prot)
 
-    if return_du:
-        if site_residue:
-            dus = list(
-                oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
-            )
-        else:
-            dus = list(oespruce.OEMakeDesignUnits(initial_prot, metadata, opts))
-        try:
-            return dus[0]
-        except IndexError:
-            return initial_prot
+    # If we don't want to return a DU, just return the spruced protein
+    if not return_du:
+        return initial_prot
 
-    return initial_prot
+    if site_residue:
+        dus = list(
+            oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
+        )
+    else:
+        dus = list(oespruce.OEMakeDesignUnits(initial_prot, metadata, opts))
+    try:
+        du = dus[0]
+        if not du.HasProtein():
+            raise ValueError(f"Resulting design unit '{du.GetTitle()}' has no protein.")
+        if not site_residue and not du.HasLigand():
+            raise ValueError(f"Resulting design unit '{du.GetTitle()}' has no ligand.")
+        # Generate docking receptor for each DU
+        oedocking.OEMakeReceptor(du)
+
+        return du
+
+    except IndexError:
+        return initial_prot
 
 
 def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
