@@ -149,7 +149,11 @@ def run_docking_oe(
 
         # Set up poser object
         poser = oedocking.OEHybrid()
-        poser.Initialize(du)
+
+        # Ensure poser is initialized
+        if not poser.Initialize(du):
+            logger.critical("Failed to add receptor to HYBRID object")
+            raise RuntimeError("Failed to add receptor to HYBRID object")
 
         # Run posing
         posed_mol = oechem.OEMol()
