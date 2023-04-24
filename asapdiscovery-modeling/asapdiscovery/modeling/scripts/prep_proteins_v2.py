@@ -58,7 +58,7 @@ def parse_args():
     parser.add_argument(
         "--protein_only",
         action="store_true",
-        default=True,
+        default=False,
         help="If true, generate design units with only the protein in them",
     )
     parser.add_argument(
@@ -83,6 +83,36 @@ def prep_protein(xtal: CrystalCompoundData, args):
     """
     Prep a protein.
     """
+    from asapdiscovery.data.openeye import oechem
+    import logging
+    from asapdiscovery.data.logging import FileLogger
+
+    # Set up logger
+    name = xtal.output_name
+    output_dir = args.output_dir / xtal.output_name
+
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True)
+
+    logfile = output_dir / f"{name}-log.txt"
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler(str(logfile), mode="w")
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    # Set up logging for OE Functions to redirect Info / Warnings / etc from stdout
+    errfs = oechem.oeofstream(str(output_dir / f"{name}-oelog.txt"))
+    oechem.OEThrow.SetOutputStream(errfs)
+
+    du_fn = output_dir / f"{name}-prepped_receptor_0.oedu"
+    if du_fn.exists():
+        logger.info(f"Already made {du_fn}!")
+        return
+    else:
+        logger.info(f"Preparing {xtal.str_fn}")
     # Load structure
     fn = Path(xtal.str_fn)
     if fn.suffix == ".cif1":
@@ -95,6 +125,12 @@ def prep_protein(xtal: CrystalCompoundData, args):
         prot = load_openeye_pdb(xtal.str_fn)
     else:
         raise ValueError(f"Unrecognized file type: {fn.suffix}")
+
+    if xtal.lig_chain:
+        from asapdiscovery.modeling.modeling import remove_extra_ligands
+
+        logger.info(f"Removing ligands except for chain {xtal.lig_chain}")
+        prot = remove_extra_ligands(prot, lig_chain=xtal.lig_chain)
 
     # Align to reference
     if args.ref_prot:
@@ -116,7 +152,7 @@ def prep_protein(xtal: CrystalCompoundData, args):
         from asapdiscovery.modeling.modeling import mutate_residues
         from asapdiscovery.data.utils import seqres_to_res_list
 
-        with open(args.seqres_path) as f:
+        with open(args.seqres_yaml) as f:
             seqres_dict = yaml.safe_load(f)
         seqres = seqres_dict["SEQRES"]
 
@@ -135,6 +171,7 @@ def prep_protein(xtal: CrystalCompoundData, args):
         seqres=seqres,
         loop_db=args.loop_db,
         return_du=True,
+        site_residue=xtal.active_site,
     )
 
     from asapdiscovery.data.openeye import oechem, save_openeye_pdb
@@ -142,7 +179,7 @@ def prep_protein(xtal: CrystalCompoundData, args):
     if type(du) == oechem.OEDesignUnit:
         logger.info("Saving Design Unit")
 
-        du_fn = args.output_dir / f"{xtal.output_name}-prepped_receptor_0.oedu"
+        du_fn = output_dir / f"{xtal.output_name}-prepped_receptor_0.oedu"
         oechem.OEWriteDesignUnit(str(du_fn), du)
 
         logger.info("Saving PDB")
@@ -154,22 +191,22 @@ def prep_protein(xtal: CrystalCompoundData, args):
         from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
 
         # TODO: Make sure this doesn't fail if there is no ligand
-        lig, prot, complex_ = split_openeye_design_unit(du)
+        lig, prot, complex_ = split_openeye_design_unit(du, lig_title=xtal.compound_id)
         prot = add_seqres_to_openeye_protein(prot, seqres)
         complex_ = add_seqres_to_openeye_protein(complex_, seqres)
 
-        prot_fn = args.output_dir / f"{xtal.output_name}-prepped_protein.pdb"
+        prot_fn = output_dir / f"{xtal.output_name}-prepped_protein.pdb"
         save_openeye_pdb(prot, str(prot_fn))
 
-        complex_fn = args.output_dir / f"{xtal.output_name}-prepped_complex.pdb"
+        complex_fn = output_dir / f"{xtal.output_name}-prepped_complex.pdb"
         save_openeye_pdb(complex_, str(complex_fn))
 
-        lig_fn = args.output_dir / f"{xtal.output_name}-prepped_ligand.sdf"
+        lig_fn = output_dir / f"{xtal.output_name}-prepped_ligand.sdf"
         save_openeye_sdf(lig, str(lig_fn))
 
     elif type(du) == oechem.OEGraphMol:
         logger.error("Design Unit preparation failed. Saving spruced protein")
-        prot_fn = args.output_dir / f"{xtal.output_name}-failed-spruced.pdb"
+        prot_fn = output_dir / f"{xtal.output_name}-failed-spruced.pdb"
         save_openeye_pdb(du, str(prot_fn))
     return xtal
 
@@ -181,9 +218,10 @@ def main():
     dataset.from_csv(args.prep_csv)
     if not args.output_dir.exists():
         args.output_dir.mkdir(parents=True)
-    dataset.to_csv(args.output_dir / "prepped_structures.csv")
 
-    #
+    for xtal in dataset.structures:
+        print(xtal)
+        prep_protein(xtal, args)
 
 
 if __name__ == "__main__":

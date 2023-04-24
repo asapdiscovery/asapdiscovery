@@ -267,6 +267,7 @@ def parse_du_filenames(receptors, regex, log_name, basefile="predocked.oedu"):
     else:
         logger.info(f"Using {receptors} as glob")
         all_fns = glob(receptors)
+        logger.info(all_fns)
 
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")

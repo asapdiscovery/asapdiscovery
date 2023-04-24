@@ -80,6 +80,7 @@ class CrystalCompoundData(BaseModel):
     )
 
     active_site: str = Field(None, description="OpenEye formatted active site residue.")
+    lig_chain: str = Field(None, description="Chain identifying the ligand.")
     oligomeric_state: str = Field(
         None, description="Oligomeric state of the asymmetric unit."
     )

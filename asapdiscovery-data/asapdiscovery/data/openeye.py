@@ -532,12 +532,18 @@ def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_result
     return return_dict
 
 
-def split_openeye_design_unit(du, lig=None, lig_title=None):
+def split_openeye_design_unit(du, lig=None, lig_title=None, include_solvent=True):
     """
     Parameters
     ----------
     du : oechem.OEDesignUnit
         Design Unit to be saved
+    lig : oechem.OEGraphMol, optional
+
+    lig_title : str, optional
+        ID of Ligand to be saved to the Title tag in the SDF, by default None
+    include_solvent : bool, optional
+        Whether to include solvent in the complex, by default True
 
     Returns
     -------
@@ -549,7 +555,8 @@ def split_openeye_design_unit(du, lig=None, lig_title=None):
         OE object containing ligand + protein
     """
     prot = oechem.OEGraphMol()
-    complex = oechem.OEGraphMol()
+    complex_ = oechem.OEGraphMol()
+    # complex_ = du_to_complex(du, include_solvent=include_solvent)
     du.GetProtein(prot)
     if not lig:
         lig = oechem.OEGraphMol()
@@ -569,13 +576,14 @@ def split_openeye_design_unit(du, lig=None, lig_title=None):
 
     # Combine protein and ligand and save
     # TODO: consider saving water as well
-    oechem.OEAddMols(complex, prot)
-    oechem.OEAddMols(complex, lig)
+    oechem.OEAddMols(complex_, prot)
+    oechem.OEAddMols(complex_, lig)
 
     # Clean up PDB info by re-perceiving, perserving chain ID,
     # residue number, and residue name
     openeye_perceive_residues(prot)
-    return lig, prot, complex
+    openeye_perceive_residues(complex_)
+    return lig, prot, complex_
 
 
 def save_receptor_grid(du_fn, out_fn):
@@ -653,5 +661,7 @@ def du_to_complex(du, include_solvent=False):
     if include_solvent:
         comp_tag |= oechem.OEDesignUnitComponents_Solvent
     du.GetComponents(complex_mol, comp_tag)
+
+    complex_mol = openeye_perceive_residues(complex_mol)
 
     return complex_mol

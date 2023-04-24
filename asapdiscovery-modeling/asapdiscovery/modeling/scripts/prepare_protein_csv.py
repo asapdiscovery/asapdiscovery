@@ -7,16 +7,18 @@ The idea here is to split up the process of preparing structures into two steps:
 from pathlib import Path
 from argparse import ArgumentParser
 from asapdiscovery.data.fragalysis import parse_fragalysis
-from asapdiscovery.data.schema import CrystalCompoundDataset
+from asapdiscovery.data.schema import CrystalCompoundDataset, CrystalCompoundData
 
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument("-csv", "--fragalysis_csv", type=Path, required=True)
-    parser.add_argument("-d", "--structure_dir", type=Path, required=True)
+    parser.add_argument("-csv", "--fragalysis_csv", type=Path, required=False)
+    parser.add_argument("-d", "--structure_dir", type=Path, required=False)
     parser.add_argument("--include_non_Pseries", action="store_true", required=False)
     parser.add_argument("-o", "--output_csv", type=Path, required=True)
     parser.add_argument("--protein_only", action="store_true", required=False)
+    parser.add_argument("--active_site", type=str, default=None, required=False)
+    parser.add_argument("--pdb_glob", type=str, default=None, required=False)
     return parser.parse_args()
 
 
@@ -25,19 +27,19 @@ def main():
     if args.fragalysis_csv:
         p_only = False if args.include_non_Pseries else True
         if p_only:
-            xtal_compounds = parse_fragalysis(
+            xtals = parse_fragalysis(
                 args.fragalysis_csv,
                 args.structure_dir,
                 name_filter="Mpro-P",
                 drop_duplicate_datasets=True,
             )
         else:
-            xtal_compounds = parse_fragalysis(
+            xtals = parse_fragalysis(
                 args.fragalysis_csv,
                 args.structure_dir,
             )
 
-        for xtal in xtal_compounds:
+        for xtal in xtals:
             # Get chain
             # The parentheses in this string are the capture group
 
@@ -52,8 +54,23 @@ def main():
             if args.protein_only:
                 xtal.active_site = f"His:41: :{xtal.active_site_chain}"
 
-        xtal_dataset = CrystalCompoundDataset(compounds=xtal_compounds)
-        xtal_dataset.to_csv(args.output_csv)
+    elif args.pdb_glob:
+        from glob import glob
+        from asapdiscovery.data.utils import check_filelist_has_elements
+
+        filelist = glob(args.pdb_glob)
+        check_filelist_has_elements(filelist)
+        xtals = []
+        for fn in filelist:
+            active_site = args.active_site
+            xtals.append(
+                CrystalCompoundData(
+                    str_fn=fn, active_site=active_site, output_name=Path(fn).stem
+                )
+            )
+    print(xtals)
+    xtal_dataset = CrystalCompoundDataset(structures=xtals)
+    xtal_dataset.to_csv(args.output_csv)
 
 
 if __name__ == "__main__":

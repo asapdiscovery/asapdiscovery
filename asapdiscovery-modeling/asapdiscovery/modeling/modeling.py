@@ -40,7 +40,7 @@ def spruce_protein(
     return_du=False,
     seqres: str = None,
     loop_db: Path = None,
-    site_residue="HIS:41: :A:0: ",
+    site_residue=None,  # e.g. "HIS:41: :A:0: "
 ) -> oechem.OEDesignUnit or oechem.OEGraphMol:
     """
     Applies the OESpruce protein preparation pipeline to the given protein structure.
@@ -153,9 +153,12 @@ def spruce_protein(
     openeye_perceive_residues(initial_prot)
 
     if return_du:
-        dus = list(
-            oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
-        )
+        if site_residue:
+            dus = list(
+                oespruce.OEMakeDesignUnits(initial_prot, metadata, opts, site_residue)
+            )
+        else:
+            dus = list(oespruce.OEMakeDesignUnits(initial_prot, metadata, opts))
         try:
             return dus[0]
         except IndexError:
