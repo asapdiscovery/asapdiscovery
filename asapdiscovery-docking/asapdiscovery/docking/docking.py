@@ -10,6 +10,7 @@ def run_docking_oe(
     compound_name=None,
     use_omega=False,
     num_poses=1,
+    log_name="run_docking_oe",
 ):
     """
     Run docking using OpenEye. The returned OEGraphMol object will have the
@@ -32,6 +33,8 @@ def run_docking_oe(
         When to check for relaxation ["clash", "all", "none"]
     hybrid : bool, default=False
         Set POSIT methods to only use Hybrid
+    log_name : str, optional
+        Name of high-level logger to use
     compound_name : str, optional
         Compound name, used for error messages if given
     use_omega : bool, default=False
@@ -49,14 +52,29 @@ def run_docking_oe(
     str
         Generated docking_id, used to access SD tag data
     """
-    if compound_name:
-        logger = logging.getLogger(f"run_oe_docking.{compound_name}")
-        print(compound_name)
+    import sys
 
+    if compound_name:
+        logname = f"{log_name}.{compound_name}"
     else:
-        raise NotImplementedError
+        logname = log_name
+    logger = logging.getLogger(logname)
+
+    if not logger.hasHandlers():
+        logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s"
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
+    logger.info(f"Running docking for {compound_name}")
     from asapdiscovery.data.openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+
+    oechem.OEThrow.Debug("Confirm that OE logging is working")
 
     # Make copy so we can keep the original for RMSD purposes
     orig_mol = orig_mol.CreateCopy()
@@ -114,7 +132,9 @@ def run_docking_oe(
 
         # Set up poser object
         poser = oedocking.OEPosit(opts)
-        poser.AddReceptor(du)
+        if not poser.AddReceptor(du):
+            logger.critical("Failed to add receptor to POSIT object")
+            raise RuntimeError("Failed to add receptor to POSIT object")
 
         # Run posing
         pose_res = oedocking.OEPositResults()
@@ -129,7 +149,11 @@ def run_docking_oe(
 
         # Set up poser object
         poser = oedocking.OEHybrid()
-        poser.Initialize(du)
+
+        # Ensure poser is initialized
+        if not poser.Initialize(du):
+            logger.critical("Failed to add receptor to HYBRID object")
+            raise RuntimeError("Failed to add receptor to HYBRID object")
 
         # Run posing
         posed_mol = oechem.OEMol()
@@ -151,8 +175,7 @@ def run_docking_oe(
 
         if compound_name:
             logger.info(
-                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking",
-                f"with no relaxation for {compound_name}",
+                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with no relaxation for {compound_name}",
             )
 
         # Set up poser object

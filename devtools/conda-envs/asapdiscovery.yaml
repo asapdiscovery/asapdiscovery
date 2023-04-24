@@ -21,9 +21,11 @@ dependencies:
   - openff-toolkit
   - openeye-toolkits
   - pandas
+  - pebble
   - pydantic
   - rdkit
   - seaborn
+  - pebble
 
   # data
   - requests
@@ -43,6 +45,7 @@ dependencies:
   - e3nn
   - dgl
   - dgllife
+  - pooch
 
 
   # Pip-only installs
@@ -53,3 +56,6 @@ dependencies:
     - pyyaml
     # ml
     - git+https://github.com/choderalab/mtenn@0.1.0
+    # testing
+    - pytest-console-scripts
+    - pytest-timeout
