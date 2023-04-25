@@ -117,7 +117,9 @@ def main():
                 args.output_csv.parent / f"{protein}_docking_input.csv", index=False
             )
     elif args.split_by_n_rows:
-        import math, numpy as np
+        import math
+
+        import numpy as np
 
         for i, chunk in enumerate(
             np.array_split(df, math.ceil(len(df) / args.split_by_n_rows))
@@ -126,7 +128,9 @@ def main():
                 args.output_csv.parent / f"{i+1}_docking_input.csv", index=False
             )
     elif args.split_by_n_files:
-        import math, numpy as np
+        import math
+
+        import numpy as np
 
         for i, chunk in enumerate(np.array_split(df, args.split_by_n_files)):
             chunk.to_csv(
