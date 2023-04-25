@@ -7,7 +7,7 @@ def run_docking_oe(
     dock_sys,
     relax="none",
     hybrid=False,
-    compound_name=None,
+    complex_name=None,
     use_omega=False,
     num_poses=1,
     log_name="run_docking_oe",
@@ -35,7 +35,7 @@ def run_docking_oe(
         Set POSIT methods to only use Hybrid
     log_name : str, optional
         Name of high-level logger to use
-    compound_name : str, optional
+    complex_name : str, optional
         Compound name, used for error messages if given
     use_omega : bool, default=False
         Use OEOmega to manually generate conformations
@@ -54,8 +54,8 @@ def run_docking_oe(
     """
     import sys
 
-    if compound_name:
-        logname = f"{log_name}.{compound_name}"
+    if complex_name:
+        logname = f"{log_name}.{complex_name}"
     else:
         logname = log_name
     logger = logging.getLogger(logname)
@@ -70,7 +70,7 @@ def run_docking_oe(
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
-    logger.info(f"Running docking for {compound_name}")
+    logger.info(f"Running docking for {complex_name}")
     from asapdiscovery.data.openeye import oechem, oedocking
     from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
@@ -124,10 +124,10 @@ def run_docking_oe(
             raise ValueError(f'Unknown arg for relaxation "{relax}"')
         docking_id.append(relax)
 
-        if compound_name:
+        if complex_name:
             logger.info(
                 f"Running POSIT {'hybrid' if hybrid else 'all'} docking with "
-                f"{relax} relaxation for {compound_name}"
+                f"{relax} relaxation for {complex_name}"
             )
 
         # Set up poser object
@@ -144,8 +144,8 @@ def run_docking_oe(
             logger.error(pose_res, dock_lig, type(dock_lig))
             raise e
     elif dock_sys == "hybrid":
-        if compound_name:
-            logger.info(f"Running Hybrid docking for {compound_name}")
+        if complex_name:
+            logger.info(f"Running Hybrid docking for {complex_name}")
 
         # Set up poser object
         poser = oedocking.OEHybrid()
@@ -173,9 +173,9 @@ def run_docking_oe(
         opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
         clash = 1
 
-        if compound_name:
+        if complex_name:
             logger.info(
-                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with no relaxation for {compound_name}",
+                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with no relaxation for {complex_name}",
             )
 
         # Set up poser object
@@ -199,9 +199,9 @@ def run_docking_oe(
             )
     else:
         err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
-        if compound_name:
+        if complex_name:
             logger.error(
-                f"Pose generation failed for {compound_name} ({err_type})",
+                f"Pose generation failed for {complex_name} ({err_type})",
             )
         return False, None, None
 
@@ -235,8 +235,8 @@ def run_docking_oe(
         oechem.OESetSDData(mol, "SMILES", oechem.OEMolToSmiles(mol))
 
         # Set molecule name if given
-        if compound_name:
-            mol.SetTitle(f"{compound_name}_{i}")
+        if complex_name:
+            mol.SetTitle(f"{complex_name}_{i}")
 
     # Combine all the conformations into one
     combined_mol = oechem.OEMol(posed_mols[0])

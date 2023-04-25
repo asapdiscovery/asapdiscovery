@@ -353,6 +353,7 @@ def main():
         run_docking_oe_args["dock_sys"] = args.docking_sys
         run_docking_oe_args["relax"] = args.relax
         run_docking_oe_args["hybrid"] = args.hybrid
+        run_docking_oe_args["complex_name"] = complex_name
         run_docking_oe_args["use_omega"] = args.omega
         run_docking_oe_args["num_poses"] = args.num_poses
         run_docking_oe_args["log_name"] = log_name
