@@ -1,12 +1,12 @@
 import argparse
-from functools import partial
 import logging
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import pickle as pkl
-import seaborn as sns
+from functools import partial
 
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 
 # Compute R value in kcal/mol/K
 try:
