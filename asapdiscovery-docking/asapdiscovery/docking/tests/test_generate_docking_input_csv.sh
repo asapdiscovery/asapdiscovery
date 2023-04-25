@@ -13,4 +13,3 @@ python ../scripts/generate_docking_input_csv.py \
 --ligand_regex "\/([\w-]*)_rcsb" \
 --split_by_ligand \
 --complex_name_pattern "ligand_protein"
-
