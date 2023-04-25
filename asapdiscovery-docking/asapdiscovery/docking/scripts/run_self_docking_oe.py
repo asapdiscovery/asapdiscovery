@@ -338,11 +338,14 @@ def main():
 
         prot = oechem.OEGraphMol()
         du.GetProtein(prot)
+        prot_name = prot.GetTitle()
+        lig_name = lig.GetTitle()
+        complex_name = f"{prot_name}_{lig_name}"
 
         mp_args = {}
         mp_args["out_dir"] = output_dir / complex_name
-        mp_args["lig_name"] = lig.GetTitle()
-        mp_args["du_name"] = prot.GetTitle()
+        mp_args["lig_name"] = lig_name
+        mp_args["du_name"] = prot_name
         mp_args["log_name"] = log_name
         mp_args["complex_name"] = complex_name
         mp_args["GAT_model"] = GAT_model
