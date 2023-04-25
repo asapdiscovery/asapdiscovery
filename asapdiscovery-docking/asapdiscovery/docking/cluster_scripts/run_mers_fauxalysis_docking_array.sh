@@ -17,7 +17,7 @@ f=${array[$i]}
 realpath $f
 run-self-docking-oe \
 -r $f'/*_prepped_receptor_0.oedu' \
--o /lila/data/chodera/asap-datasets/retro_docking/sars_fragalysis_retrospective/20230330/ \
+-o  /lila/data/chodera/asap-datasets/mers_fauxalysis/20230425_docked_for_fauxalysis \
 -n 1 \
 --omega \
 --relax clash \
