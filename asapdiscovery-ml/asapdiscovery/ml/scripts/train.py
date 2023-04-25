@@ -477,7 +477,7 @@ def init(args, rank=False):
     else:
         e3nn_params = None
 
-    model, model_call = build_model(
+    model = build_model(
         model_type=args.model,
         e3nn_params=e3nn_params,
         strat=args.strat,
@@ -570,7 +570,6 @@ def init(args, rank=False):
         ds_val,
         ds_test,
         model,
-        model_call,
         optimizer,
         es,
         exp_configure,
@@ -586,7 +585,6 @@ def main():
         ds_val,
         ds_test,
         model,
-        model_call,
         optimizer,
         es,
         exp_configure,
@@ -723,7 +721,6 @@ def main():
         target_dict=exp_data,
         n_epochs=args.n_epochs,
         device=torch.device(args.device),
-        model_call=model_call,
         loss_fn=loss_func,
         save_file=model_dir,
         lr=args.lr,

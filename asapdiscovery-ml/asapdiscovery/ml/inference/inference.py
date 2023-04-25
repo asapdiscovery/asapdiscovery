@@ -125,7 +125,7 @@ class InferenceBase:
         model: torch.nn.Module
             PyTorch model.
         """
-        model, _ = build_model(model_type, **kwargs)
+        model = build_model(model_type, **kwargs)
         return model
 
     def predict(self, input_data):
@@ -182,7 +182,7 @@ class GATInference(InferenceBase):
             Predictions for each graph.
         """
         with torch.no_grad():
-            output_tensor = self.model(g, g.ndata["h"])
+            output_tensor = self.model({"g": g})
             # we ravel to always get a 1D array
             return output_tensor.cpu().numpy().ravel()
 
