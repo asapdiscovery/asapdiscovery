@@ -1,13 +1,67 @@
 import argparse
-import logging
-import os
-import pickle as pkl
 from functools import partial
-
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import pickle as pkl
 import seaborn as sns
+from pathlib import Path
+
 from asapdiscovery.ml.scripts.plot_loss import convert_pic50
+
+
+def load_losses(loss_dir, conv_function=None):
+    """
+    Load train, val, and test losses from `loss_dir`, converting as necessary. Take loss
+    from epoch with best original val loss.
+
+    Parameters
+    ----------
+    loss_dir : str
+        Directory containing pickle files
+    conv_function : callable, optional
+        If present, will use to convert mean absolute loss values
+
+    Returns
+    -------
+    float
+        Train loss
+    float
+        Val loss
+    float
+        Test loss
+    """
+    p = Path(loss_dir)
+    loss_arrays = {}
+    for sp in ["train", "val", "test"]:
+        fn = p / f"{sp}_err.pkl"
+        try:
+            loss_arrays[sp] = pkl.load(fn.open("rb"))
+        except FileNotFoundError:
+            raise FileNotFoundError(f"No {sp} loss found for {loss_dir}.")
+
+    best_idx = np.argmin(loss_arrays["val"].mean(axis=1))
+
+    if conv_function:
+        for sp, loss_arr in loss_arrays.items():
+            # First convert from squared loss to mean abs loss
+            tmp_loss = np.sqrt(loss_arr).mean(axis=1)
+            # Then convert from pIC50 to dG
+            tmp_loss = conv_function(tmp_loss)
+            # Store back into dict
+            loss_arrays[sp] = tmp_loss
+    else:
+        # Just take mean
+        loss_arrays = {
+            sp: loss_arr.mean(axis=1) for sp, loss_arr in loss_arrays.items()
+        }
+
+    return (
+        loss_arrays["train"][best_idx],
+        loss_arrays["val"][best_idx],
+        loss_arrays["test"][best_idx],
+    )
 
 
 ################################################################################
@@ -28,6 +82,13 @@ def get_args():
         required=True,
         nargs="+",
         help="List of labels (one for each loss dir).",
+    )
+    parser.add_argument(
+        "-t",
+        "--train_fracs",
+        required=True,
+        nargs="+",
+        help="List of training fractions (one for each loss dir).",
     )
 
     parser.add_argument(
