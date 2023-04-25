@@ -76,6 +76,12 @@ def get_args():
         default=None,
         help="Split out csv into that many files.",
     )
+    parser.add_argument(
+        "--complex_name_pattern",
+        type=str,
+        default="ligand_protein",
+        help="Pattern for naming complex.",
+    )
     return parser.parse_args()
 
 
@@ -97,7 +103,14 @@ def main():
             ligand = args.ligand_name
         else:
             raise ValueError("Must provide either ligand_regex or ligand_name.")
-        complex_name = f"{protein}_{ligand}"
+        if args.complex_name_pattern == "ligand_protein":
+            complex_name = f"{ligand}_{protein}"
+        elif args.complex_name_pattern == "protein_ligand":
+            complex_name = f"{protein}_{ligand}"
+        else:
+            raise NotImplementedError(
+                "Only ligand_protein and protein_ligand supported."
+            )
         rows.append([protein, ligand, complex_name, du_fn])
 
     if not args.output_csv.parent.exists():
