@@ -45,6 +45,7 @@ make-docked-complexes = "asapdiscovery.docking.scripts.make_docked_complexes:mai
 mcs-res-mpro-to-compound = "asapdiscovery.docking.scripts.mcs_res_mpro_to_compound:main"
 plot-docking-results = "asapdiscovery.docking.scripts.plot_docking_results:main"
 run-docking-oe = "asapdiscovery.docking.scripts.run_docking_oe:main"
+run-self-docking-oe = "asapdiscovery.docking.scripts.run_self_docking_oe:main"
 score-structures = "asapdiscovery.docking.scripts.score_structures:main"
 write-receptor-grids = "asapdiscovery.docking.scripts.write_receptor_grids:main"
 
