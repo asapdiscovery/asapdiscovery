@@ -314,7 +314,7 @@ def main():
         GAT_model = None
 
     # Load all receptor DesignUnits
-    logger.info("Loading receptor DesignUnits")
+    logger.info(f"Loading receptor DesignUnits from '{args.receptors}'")
 
     du_fns = glob(args.receptors)
     check_filelist_has_elements(du_fns, "receptors")
