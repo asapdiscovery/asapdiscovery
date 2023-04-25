@@ -295,7 +295,13 @@ def main():
 
     # check that output_dir exists, otherwise create it
     if not output_dir.exists():
-        output_dir.mkdir(parents=True)
+        try:
+            output_dir.mkdir(parents=True)
+        except FileExistsError:
+            logging.warning(
+                f"Output directory {output_dir} already exists."
+                f"This can happen if multiple processes are running in parallel."
+            )
 
     logger = FileLogger(log_name, path=str(output_dir)).getLogger()
     logger.info(f"Output directory: {output_dir}")
@@ -329,7 +335,6 @@ def main():
         if not du.HasReceptor():
             logger.error(f"DesignUnit {fn} has no receptor")
             continue
-        complex_name = du.GetTitle()
 
         lig = oechem.OEGraphMol()
         if not du.GetLigand(lig):
