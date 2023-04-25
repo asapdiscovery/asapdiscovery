@@ -1,12 +1,12 @@
 import argparse
-import logging
-import os
-import pickle as pkl
 from functools import partial
-
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import pickle as pkl
 import seaborn as sns
+
 
 # Compute R value in kcal/mol/K
 try:
@@ -137,10 +137,10 @@ def main():
 
     assert len(args.loss_dirs) == len(args.labels), "Incorrect number of labels"
 
-    ## Set up figure and axes
+    # Set up figure and axes
     fig, ax = plt.subplots(figsize=(12, 8))
 
-    ## Combined lists for plotting
+    # Combined lists for plotting
     all_epoch = []
     all_loss = []
     all_lab = []
@@ -154,7 +154,7 @@ def main():
     )
 
     for d, l in zip(args.loss_dirs, args.labels):
-        ## Load and convert train and test loss
+        # Load and convert train and test loss
         if not args.test_only:
             train_loss = pkl.load(open(os.path.join(d, "train_err.pkl"), "rb"))
             if args.conv:
@@ -163,7 +163,7 @@ def main():
             else:
                 train_loss = train_loss.mean(axis=1)
 
-            ## Add data to the combined lists
+            # Add data to the combined lists
             all_epoch.extend(range(len(train_loss)))
             all_loss.extend(train_loss)
             all_lab.extend([l] * len(train_loss))
@@ -178,13 +178,13 @@ def main():
         if args.test_only:
             best_loss[l] = min(test_loss)
 
-        ## Add data to the combined lists
+        # Add data to the combined lists
         all_epoch.extend(range(len(test_loss)))
         all_loss.extend(test_loss)
         all_lab.extend([l] * len(test_loss))
         all_type.extend(["test"] * len(test_loss))
 
-        ## Try to load val loss, but ignore if it's not there
+        # Try to load val loss, but ignore if it's not there
         if not args.test_only:
             try:
                 val_loss = pkl.load(open(os.path.join(d, "val_err.pkl"), "rb"))
@@ -194,7 +194,7 @@ def main():
                 else:
                     val_loss = val_loss.mean(axis=1)
 
-                ## Add data to the combined lists
+                # Add data to the combined lists
                 all_epoch.extend(range(len(val_loss)))
                 all_loss.extend(val_loss)
                 all_lab.extend([l] * len(val_loss))
@@ -217,7 +217,7 @@ def main():
     all_lab = all_lab[idx]
     all_type = all_type[idx]
 
-    ## Plot
+    # Plot
     styles = ["test", "best"] if args.test_only else ["train", "val", "test"]
     sns.lineplot(
         x=all_epoch,
@@ -239,14 +239,14 @@ def main():
     if args.max is not None:
         ax.set_ylim(0, args.max)
 
-    ## Fix axes
+    # Fix axes
     ylab = "MAE (delta G in kcal/mol)" if args.conv else "MSE (squared pIC50)"
     ax.set_ylabel(ylab)
     ax.set_xlabel("Epoch")
     title = "delta G MAE Loss" if args.conv else "pIC50 MSE Loss"
     ax.set_title(title)
 
-    ## Save plot
+    # Save plot
     fig.savefig(args.out_fn, dpi=200, bbox_inches="tight")
 
 
