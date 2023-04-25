@@ -176,9 +176,16 @@ def get_args():
     parser.add_argument(
         "-r",
         "--receptors",
-        required=True,
+        required=False,
         type=str,
         help="Path/glob to prepped receptor(s)",
+    )
+    parser.add_argument(
+        "-csv",
+        "--input_csv",
+        required=True,
+        type=str,
+        help="Path to csv containing necessary inputs.",
     )
 
     # Output arguments
@@ -319,34 +326,82 @@ def main():
         logger.info("Skipping GAT model scoring")
         GAT_model = None
 
-    # Load all receptor DesignUnits
-    logger.info(f"Loading receptor DesignUnits from '{args.receptors}'")
+    complex_names = []
+    lig_names = []
+    prot_names = []
+    dus = []
+    ligs = []
+    if args.receptors:
+        # Load all receptor DesignUnits
+        logger.info(f"Loading DesignUnits from '{args.receptors}'")
 
-    du_fns = glob(args.receptors)
-    check_filelist_has_elements(du_fns, "receptors")
+        du_fns = glob(args.receptors)
+        check_filelist_has_elements(du_fns, "receptors")
 
+        for fn in du_fns:
+            du = oechem.OEDesignUnit()
+            if not oechem.OEReadDesignUnit(fn, du):
+                logger.error(f"Failed to read DesignUnit {fn}")
+                continue
+            if not du.HasReceptor():
+                logger.error(f"DesignUnit {fn} has no receptor")
+                continue
+
+            lig = oechem.OEGraphMol()
+            if not du.GetLigand(lig):
+                logger.error(f"DesignUnit {fn} has no ligand")
+                continue
+
+            prot = oechem.OEGraphMol()
+            du.GetProtein(prot)
+            prot_name = prot.GetTitle()
+            lig_name = lig.GetTitle()
+            complex_name = f"{prot_name}_{lig_name}"
+
+            complex_names.append(complex_name)
+            lig_names.append(lig_name)
+            prot_names.append(prot_name)
+            dus.append(du)
+            ligs.append(lig)
+    elif args.input_csv:
+        # Load all receptor DesignUnits from csv
+        import pandas as pd
+
+        logger.info(f"Loading DesignUnits from '{args.input_csv}'")
+
+        df = pd.read_csv(args.input_csv)
+
+        # Iterate through rows of csv
+        for du_info in df.to_dict("index").values():
+            fn = du_info["du_fn"]
+            du = oechem.OEDesignUnit()
+            if not oechem.OEReadDesignUnit(fn, du):
+                logger.error(f"Failed to read DesignUnit {fn}")
+                continue
+            if not du.HasReceptor():
+                logger.error(f"DesignUnit {fn} has no receptor")
+                continue
+
+            lig = oechem.OEGraphMol()
+            if not du.GetLigand(lig):
+                logger.error(f"DesignUnit {fn} has no ligand")
+                continue
+
+            prot_name = du_info["protein"]
+            lig_name = du_info["ligand"]
+            complex_name = du_info["complex"]
+
+            complex_names.append(complex_name)
+            lig_names.append(lig_name)
+            prot_names.append(prot_name)
+            dus.append(du)
+            ligs.append(lig)
+
+    # Make mp args
     mp_kwargs_list = []
-
-    for fn in du_fns:
-        du = oechem.OEDesignUnit()
-        if not oechem.OEReadDesignUnit(fn, du):
-            logger.error(f"Failed to read DesignUnit {fn}")
-            continue
-        if not du.HasReceptor():
-            logger.error(f"DesignUnit {fn} has no receptor")
-            continue
-
-        lig = oechem.OEGraphMol()
-        if not du.GetLigand(lig):
-            logger.error(f"DesignUnit {fn} has no ligand")
-            continue
-
-        prot = oechem.OEGraphMol()
-        du.GetProtein(prot)
-        prot_name = prot.GetTitle()
-        lig_name = lig.GetTitle()
-        complex_name = f"{prot_name}_{lig_name}"
-
+    for complex_name, lig_name, prot_name, du, lig in zip(
+        complex_names, lig_names, prot_names, dus, ligs
+    ):
         mp_args = {}
         mp_args["out_dir"] = output_dir / complex_name
         mp_args["lig_name"] = lig_name

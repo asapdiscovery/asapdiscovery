@@ -10,13 +10,12 @@
 #BSUB -W 2:00
 source ~/.bashrc
 conda activate ad-3.9
-dir='/lila/data/chodera/asap-datasets/mers_fauxalysis/20230411_prepped_for_fauxalysis/*/'
 i=$LSB_JOBINDEX
-array=( $(ls -d $dir) )
+array=( $(ls /lila/data/chodera/asap-datasets/mers_fauxalysis/20230411_prepped_for_fauxalysis/docking_input_csvs/*_docking_input.csv) )
 f=${array[$i]}
-realpath $f
+echo "using $f as input"
 run-self-docking-oe \
--r $f'/*prepped_receptor_0.oedu' \
+-csv "$f" \
 -o  /lila/data/chodera/asap-datasets/mers_fauxalysis/20230425_docked_for_fauxalysis \
 -n 1 \
 --omega \
