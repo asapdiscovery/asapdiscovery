@@ -297,7 +297,7 @@ def main():
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
-    logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
+    logger = FileLogger(log_name, path=str(output_dir)).getLogger()
     logger.info(f"Output directory: {output_dir}")
     start = datetime.now().isoformat()
     logger.info(f"Starting run_docking_oe at {start}")
