@@ -2,10 +2,11 @@
 
 """
 
-from argparse import ArgumentParser
-from pathlib import Path
-from glob import glob
 import re
+from argparse import ArgumentParser
+from glob import glob
+from pathlib import Path
+
 import pandas as pd
 
 
