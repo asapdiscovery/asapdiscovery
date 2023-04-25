@@ -11,4 +11,6 @@ python ../scripts/generate_docking_input_csv.py \
 -o '/lila/data/chodera/asap-datasets/mers_fauxalysis/20230411_prepped_for_fauxalysis/docking_input_csvs/docking_input.csv' \
 --protein_regex "rcsb_([A-Za-z0-9]{4})" \
 --ligand_regex "\/([\w-]*)_rcsb" \
---split_by_ligand
+--split_by_ligand \
+--complex_name_pattern "ligand_protein"
+
