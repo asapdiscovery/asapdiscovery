@@ -16,7 +16,7 @@ array=( $(ls -d $dir) )
 f=${array[$i]}
 realpath $f
 run-self-docking-oe \
--r $f'/*_prepped_receptor_0.oedu' \
+-r $f'/*prepped_receptor_0.oedu' \
 -o  /lila/data/chodera/asap-datasets/mers_fauxalysis/20230425_docked_for_fauxalysis \
 -n 1 \
 --omega \
