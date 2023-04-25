@@ -1283,7 +1283,7 @@ def split_molecules(ds, split_fracs, generator=None):
     return all_subsets
 
 
-def split_temporal(ds, split_fracs, grouped=False, reverse=False, insert_idx=1):
+def split_temporal(ds, split_fracs, grouped=False, reverse=False, insert_idx=2):
     """
     Split molecules temporally by date created. Earlier molecules will be placed in the
     training set and later molecules will be placed in the val/test sets (unless
