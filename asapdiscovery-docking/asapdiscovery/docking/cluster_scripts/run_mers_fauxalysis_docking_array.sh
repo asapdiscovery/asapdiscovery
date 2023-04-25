@@ -21,6 +21,7 @@ run-self-docking-oe \
 -n 1 \
 --omega \
 --relax clash \
+--log_name "run_docking_oe.$LSB_JOBINDEX" \
 --debug_num 1
 echo Done
 date
