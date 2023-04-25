@@ -56,6 +56,22 @@ def check_results(d):
     return True
 
 
+def mp_func_wrapper(mp_kwargs):
+    """
+    Wrapper function for multiprocessing. Everything other than the named args
+    will be passed directly to run_docking_oe.
+
+    Parameters
+    ----------
+    mp_kwargs : dict
+        Dictionary of kwargs to pass to run_docking_oe
+
+    Returns
+    -------
+    """
+    return mp_func(**mp_kwargs)
+
+
 def mp_func(
     out_dir,
     lig_name,
@@ -402,6 +418,8 @@ def main():
     for complex_name, lig_name, prot_name, du, lig in zip(
         complex_names, lig_names, prot_names, dus, ligs
     ):
+        # TODO: for the options that are the same for every run, move them out of the loop
+        # and apply them using partial function
         mp_args = {}
         mp_args["out_dir"] = output_dir / complex_name
         mp_args["lig_name"] = lig_name
@@ -410,18 +428,18 @@ def main():
         mp_args["complex_name"] = complex_name
         mp_args["GAT_model"] = GAT_model
 
-        run_docking_oe_args = {}
-        run_docking_oe_args["du"] = du
-        run_docking_oe_args["orig_mol"] = lig
-        run_docking_oe_args["dock_sys"] = args.docking_sys
-        run_docking_oe_args["relax"] = args.relax
-        run_docking_oe_args["hybrid"] = args.hybrid
-        run_docking_oe_args["complex_name"] = complex_name
-        run_docking_oe_args["use_omega"] = args.omega
-        run_docking_oe_args["num_poses"] = args.num_poses
-        run_docking_oe_args["log_name"] = log_name
+        run_docking_oe_kwargs = {}
+        run_docking_oe_kwargs["du"] = du
+        run_docking_oe_kwargs["orig_mol"] = lig
+        run_docking_oe_kwargs["dock_sys"] = args.docking_sys
+        run_docking_oe_kwargs["relax"] = args.relax
+        run_docking_oe_kwargs["hybrid"] = args.hybrid
+        run_docking_oe_kwargs["complex_name"] = complex_name
+        run_docking_oe_kwargs["use_omega"] = args.omega
+        run_docking_oe_kwargs["num_poses"] = args.num_poses
+        run_docking_oe_kwargs["log_name"] = log_name
 
-        mp_args["run_docking_oe_kwargs"] = run_docking_oe_args
+        mp_args["run_docking_oe_kwargs"] = run_docking_oe_kwargs
 
         mp_kwargs_list.append(mp_args)
 
@@ -440,9 +458,6 @@ def main():
         logger.info("DEBUG MODE: Skipping docking runs")
         mp_kwargs_list = []
 
-    # Apply ML arguments as kwargs to mp_func
-    mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
-
     if args.num_cores > 1:
         logger.info("Running docking using multiprocessing")
         # reset failures
@@ -457,9 +472,7 @@ def main():
             if args.timeout <= 0:
                 args.timeout = None
             # Need to flip args structure for pebble
-            res = pool.map(
-                mp_func_ml_applied, *zip(*mp_kwargs_list), timeout=args.timeout
-            )
+            res = pool.map(mp_func_wrapper, mp_kwargs_list, timeout=args.timeout)
 
             # List to keep track of successful results
             results_list = []
@@ -469,8 +482,8 @@ def main():
             # TimeoutError is only raised when we try to access the result. Do things
             #  this way so we can keep track of which compound:xtals timed out
             res_iter = res.result()
-            for args_list in mp_kwargs_list:
-                docking_run_name = args_list[9]
+            for mp_kwargs in mp_kwargs_list:
+                docking_run_name = mp_kwargs["complex_name"]
                 try:
                     cur_res = next(res_iter)
                     results_list += [cur_res]
@@ -514,7 +527,7 @@ def main():
         logger.info("Running docking using single core this will take a while...")
         logger.info(f"Running {len(mp_kwargs_list)} docking runs over 1 core.")
         logger.info("not using failure counter for single core")
-        results_list = [mp_func_ml_applied(**mp_kwargs) for mp_kwargs in mp_kwargs_list]
+        results_list = [mp_func_wrapper(mp_kwargs) for mp_kwargs in mp_kwargs_list]
 
     logger.info("\nDocking complete!\n")
     logger.info("Writing results")
