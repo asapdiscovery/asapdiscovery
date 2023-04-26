@@ -63,8 +63,9 @@ def main():
     ):
         new_dir = args.output_dir / dir_name
         new_dir.mkdir()
-        shutil.copy(sdf_path, new_dir)
-        shutil.copy(structure_path, new_dir)
+        logger.info(f"Copying {sdf_path} and {structure_path} to {new_dir}")
+        shutil.copy2(sdf_path, new_dir)
+        shutil.copy2(structure_path, new_dir)
 
 
 if __name__ == "__main__":
