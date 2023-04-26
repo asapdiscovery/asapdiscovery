@@ -259,7 +259,7 @@ class DockingResults:
     def get_grouped_df(
         self,
         groupby_ID_column="Compound_ID",
-        score_columns=["RMSD", "POSIT_R", "Chemgauss4", "MCSS_Rank"],
+        score_columns=("RMSD", "POSIT_R", "Chemgauss4", "MCSS_Rank"),
     ):
         """
         The purpose of this function is to get a dataframe with meaningful information
