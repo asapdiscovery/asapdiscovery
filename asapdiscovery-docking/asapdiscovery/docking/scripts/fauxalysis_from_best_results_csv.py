@@ -27,6 +27,16 @@ def parse_args():
         type=Path,
         help="Directory to save output files to",
     )
+    parser.add_argument(
+        "--combine_sdfs_only",
+        action="store_true",
+        help="Only combine sdf files, do not copy protein pdbs",
+    )
+    parser.add_argument(
+        "--move_pdbs_only",
+        action="store_true",
+        help="Only move protein pdbs, do not combine sdf files",
+    )
     args = parser.parse_args()
     return args
 
@@ -63,20 +73,24 @@ def main():
             logger.error(f"Input csv is missing an sdf path for {dir_name}!")
             continue
 
-        if not sdf_path.exists():
-            logger.error(f"{sdf_path} does not exist for {dir_name}!")
-            raise FileNotFoundError(f"{sdf_path} does not exist for {dir_name}!")
-        if not structure_path.exists():
+        # if not sdf_path.exists():
+        #     logger.error(f"{sdf_path} does not exist for {dir_name}!")
+        #     raise FileNotFoundError(f"{sdf_path} does not exist for {dir_name}!")
+        if not structure_path.exists() and not args.combine_sdfs_only:
             logger.error(f"{structure_path} does not exist for {dir_name}!")
             raise FileNotFoundError(f"{structure_path} does not exist for {dir_name}!")
 
         new_dir = args.output_dir / dir_name
         if not new_dir.exists():
             new_dir.mkdir()
-        logger.info(f"Copying {sdf_path.name} and {structure_path.name} to {new_dir}")
-        shutil.copy2(sdf_path, new_dir)
-        shutil.copy2(structure_path, new_dir)
-        sdfs_per_structure[structure_name].append(new_dir / sdf_path.name)
+        if not args.combine_sdfs_only:
+            logger.info(
+                f"Copying {sdf_path.name} and {structure_path.name} to {new_dir}"
+            )
+            shutil.copy2(sdf_path, new_dir)
+            shutil.copy2(structure_path, new_dir)
+        if not args.move_pdbs_only:
+            sdfs_per_structure[structure_name].append(new_dir / sdf_path.name)
 
     # Combine sdfs into one file
     logger.info(f"Combining sdfs into one per structure source")
