@@ -13,6 +13,7 @@ class FileLogger:
         format: Optional[
             str
         ] = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
+        stdout: Optional[bool] = False,
     ):
         self.name = logname
         self.logfile = logfile
@@ -23,11 +24,18 @@ class FileLogger:
 
         self.logger = logging.getLogger(self.name)
         self.logger.setLevel(self.level)
+
         self.handler = logging.FileHandler(os.path.join(path, self.logfile), mode="w")
         self.handler.setLevel(self.level)
         self.formatter = logging.Formatter(self.format)
         self.handler.setFormatter(self.formatter)
         self.logger.addHandler(self.handler)
+
+        if stdout:
+            self.streamhandler = logging.StreamHandler()
+            self.streamhandler.setLevel(self.level)
+            self.streamhandler.setFormatter(self.formatter)
+            self.logger.addHandler(self.streamhandler)
 
     def getLogger(self) -> logging.Logger:
         return self.logger

@@ -9,9 +9,11 @@ from typing import List
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import oe_load_exp_from_file, is_valid_smiles
 from asapdiscovery.docking import prep_mp
-
+from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
+from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: E402
 
 # setup input arguments
 parser = argparse.ArgumentParser(description="Run single target docking.")
@@ -149,7 +151,9 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # setup logging
-    logger = FileLogger("single_target_workflow", path=output_dir).getLogger()
+    logger = FileLogger(
+        "single_target_workflow", path=output_dir, stdout=True
+    ).getLogger()
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
 
@@ -166,10 +170,10 @@ def main():
         mol_file_path = Path(args.mols)
         if mol_file_path.suffix == ".smi":
             logger.info(f"Input molecules is a SMILES file: {args.mols}")
-            exp_data = oe_load_exp_from_file(args.mols)
+            exp_data = oe_load_exp_from_file(args.mols, "smi")
         elif mol_file_path.suffix == ".sdf":
             logger.info(f"Input molecules is a SDF file: {args.mols}")
-            exp_data = oe_load_exp_from_file(args.mols)
+            exp_data = oe_load_exp_from_file(args.mols, "sdf")
         else:
             raise ValueError(
                 f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
@@ -178,7 +182,11 @@ def main():
     logger.info(f"Loaded {len(exp_data)} molecules.")
 
     # parse prep arguments
-    logger.info(f"Prepping receptor at {datetime.now().isoformat()}")
+    prep_dir = output_dir / "prep"
+    prep_dir.mkdir(parents=True, exist_ok=True)
+    intermediate_files.append(prep_dir)
+
+    logger.info(f"Prepping receptor in {prep_dir} at {datetime.now().isoformat()}")
 
     receptor = Path(args.receptor)
     if receptor.suffix != ".pdb":
@@ -215,17 +223,22 @@ def main():
 
     # load receptor, may need to work on how to provide arguments to this
     # check with @jenke
+    receptor_name = receptor.stem
     xtal = CrystalCompoundData(
-        str_fn=args.receptor, smiles=None, output_name="target_xtal"
+        str_fn=args.receptor, smiles=None, output_name=str(receptor_name)
     )
 
-    logger.info(f"Loaded receptor {xtal} from {receptor}")
+    logger.info(f"Loaded receptor {receptor_name} from {receptor}")
     prep_mp(
-        xtal, args.ref_prof, seqres, args.output_dir, args.loop_db, args.protein_only
+        xtal, args.ref_prot, seqres, args.output_dir, args.loop_db, args.protein_only
     )
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
     # grab the files that were created
+    prepped_oedu = prep_dir / f"{receptor_name}_prepped_receptor_0.oedu"
+    prepped_pdb = prep_dir / f"{receptor_name}_prepped_receptor_0.pdb"
+
+    logger.info(f"Prepped receptor: {prepped_pdb}, {prepped_oedu}")
 
     # setup MCS search
     if args.mcs_sys == "rdkit":
