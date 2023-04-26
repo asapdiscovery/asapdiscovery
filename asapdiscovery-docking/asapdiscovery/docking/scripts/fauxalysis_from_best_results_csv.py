@@ -85,10 +85,9 @@ def main():
         for structure, paths in sdfs_per_structure.items():
             structure_sdf = args.output_dir / f"{structure}_combined.sdf"
             with open(structure_sdf, "wb") as structure_sdf_fd:
-                for f in paths:
-                    if f == "":
-                        continue
-                    with open(f, "rb") as fd:
+                for sdf_to_copy in paths:
+                    logger.info(f"Copying {sdf_to_copy} to {structure_sdf}")
+                    with open(sdf_to_copy, "rb") as fd:
                         shutil.copyfileobj(fd, combined_sdf_fd)
                         shutil.copyfileobj(fd, structure_sdf_fd)
 
