@@ -1334,3 +1334,46 @@ def combine_sdf_files(glob_string, output_sdf):
                 continue
             with open(f, "rb") as fd:
                 shutil.copyfileobj(fd, wfd)
+
+
+def is_valid_smiles(smiles):
+    # Create an OEMol object
+    mol = oechem.OEMol()
+
+    # Attempt to parse the SMILES string
+    if not oechem.OEParseSmiles(mol, smiles):
+        return False
+
+    # Check if the parsed molecule is valid
+    if not mol.IsValid():
+        return False
+
+    return True
+
+
+def oe_load_exp_from_file(fn) -> List[ExperimentalCompoundData]:
+    """
+    Use OpenEye toBuild a list of ExperimentalCompoundData objects from an SDF or SMILES file.
+    Everything other than `compound_id` and `smiles` will be left as default.
+
+    Parameters
+    ----------
+    fn : str
+        SDF or SMI file name.
+
+    Returns
+    -------
+    List[ExperimentalCompoundData]
+        List of ExperimentalCompoundData objects parsed from file.
+    """
+    # Open SDF file and load all SMILES
+    suppl = oechem.oemolistream(fn)
+    suppl.open()
+    exp_data_compounds = [
+        ExperimentalCompoundData(compound_id=mol.GetTitle(), smiles=oechem.OEMolToSmiles(mol))
+        for mol in suppl.GetOEMols()
+    ]
+    suppl.close()
+
+    return exp_data_compounds
+
