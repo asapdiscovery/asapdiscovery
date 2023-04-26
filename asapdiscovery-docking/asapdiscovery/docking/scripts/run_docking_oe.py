@@ -255,15 +255,25 @@ def parse_du_filenames(receptors, regex, log_name, basefile="predocked.oedu"):
             for fn in files
             if fn[-4:] == "oedu"
         ]
+
     elif os.path.isfile(receptors):
-        logger.info(f"Using {receptors} as file")
-        df = pandas.read_csv(receptors)
-        try:
-            all_fns = [
-                os.path.join(os.path.dirname(fn), basefile) for fn in df["Docked_File"]
-            ]
-        except KeyError:
-            raise ValueError("Docked_File column not found in given CSV file.")
+        logger.info(f"Using {receptors} as individual file")
+        file_extn = os.path.splitext(receptors)[1]
+        if file_extn == ".csv":
+            logger.info(f"Using {receptors} as CSV file")
+            df = pandas.read_csv(receptors)
+            try:
+                all_fns = [
+                    os.path.join(os.path.dirname(fn), basefile)
+                    for fn in df["Docked_File"]
+                ]
+            except KeyError:
+                raise ValueError("Docked_File column not found in given CSV file.")
+        elif file_extn == ".oedu":
+            logger.info(f"Using {receptors} as single DesignUnit file")
+            all_fns = [receptors]
+        else:
+            raise ValueError("File must be either .csv or .oedu")
     else:
         logger.info(f"Using {receptors} as glob")
         all_fns = glob(receptors)
@@ -315,8 +325,7 @@ def get_args():
         required=True,
         nargs="+",
         help=(
-            "Path/glob to prepped receptor(s), or best_results.csv file if "
-            "--by_compound is given."
+            "Path/glob to prepped receptor(s), or CSV file containing receptor paths"
         ),
     )
     parser.add_argument(
