@@ -1,15 +1,16 @@
 import argparse
-import datetime
 import uuid
 import shutil
 
+from datetime import datetime
 from pathlib import Path
 from typing import List
+
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import oe_load_exp_from_file, is_valid_smiles
-
+from asapdiscovery.docking import prep_mp
 
 
 # setup input arguments
@@ -17,23 +18,24 @@ parser = argparse.ArgumentParser(description="Run single target docking.")
 parser.add_argument("-l", "--lig_file", help="SDF file containing ligands.")
 
 parser.add_argument(
-    "-r",
-    "--receptor",
-    required=True,
-    help=("Path to receptor to prep and dock to")
+    "-r", "--receptor", required=True, help=("Path to receptor to prep and dock to")
 )
 
 parser.add_argument(
     "-m",
     "--mols",
     required=True,
-    help=("Path to the molecules to dock to the receptor as an SDF or SMILES file, or SMILES string.")
+    help=(
+        "Path to the molecules to dock to the receptor as an SDF or SMILES file, or SMILES string."
+    ),
 )
 
 parser.add_argument(
     "--title",
     default="TARGET_MOL_" + str(uuid.uuid4()),
-    help=("Title of molecule to use if a SMILES string is passed in as input, default is to generate a new random UUID")
+    help=(
+        "Title of molecule to use if a SMILES string is passed in as input, default is to generate a new random UUID"
+    ),
 )
 
 parser.add_argument(
@@ -43,11 +45,27 @@ parser.add_argument(
     help="Path to output_dir, will overwrite if exists.",
 )
 
+
+# Prep arguments
 parser.add_argument(
-    "--keep_intermediate",
-    required=True,
+    "--loop_db",
+    help="Path to loop database.",
+)
+parser.add_argument(
+    "--seqres_yaml",
+    help="Path to yaml file of SEQRES.",
+)
+parser.add_argument(
+    "--protein_only",
     action="store_true",
-    help="Whether to keep intermediate files.",
+    default=False,
+    help="If true, generate design units with only the protein in them",
+)
+parser.add_argument(
+    "--ref_prot",
+    default=None,
+    type=str,
+    help="Path to reference pdb to align to. If None, no alignment will be performed",
 )
 
 
@@ -61,9 +79,7 @@ parser.add_argument(
 parser.add_argument(
     "--mcs_structural",
     action="store_true",
-    help=(
-        "Use structure-based matching instead of element-based matching for MCS."
-    )
+    help=("Use structure-based matching instead of element-based matching for MCS."),
 )
 
 
@@ -121,7 +137,6 @@ parser.add_argument(
 )
 
 
-
 def docking_func():
     pass
 
@@ -130,23 +145,22 @@ def main():
     args = parser.parse_args()
 
     # setup output directory
-    output_dir = pathlib.Path(args.output_dir)
+    output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # setup logging
-    log_name = args.log_name
     logger = FileLogger("single_target_workflow", path=output_dir).getLogger()
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
 
-
     # paths to remove if not keeping intermediate files
     intermediate_files = []
 
-
     # parse input molecules
     if is_valid_smiles(args.mols):
-        logger.info(f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}")
+        logger.info(
+            f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}"
+        )
         exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
     else:
         mol_file_path = Path(args.mols)
@@ -160,26 +174,59 @@ def main():
             raise ValueError(
                 f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
             )
-    
+
     logger.info(f"Loaded {len(exp_data)} molecules.")
 
-
-
-    # setup receptor
-
-
-    # prep receptor
+    # parse prep arguments
     logger.info(f"Prepping receptor at {datetime.now().isoformat()}")
-    prep_receptor(args.receptor)
+
+    receptor = Path(args.receptor)
+    if receptor.suffix != ".pdb":
+        raise ValueError(f"Receptor must be a PDB file. Got {args.receptor}")
+
+    if not receptor.exists():
+        raise ValueError(f"Receptor file does not exist: {args.receptor}")
+
+    if args.ref_prot is not None:
+        ref_prot = Path(args.ref_prot)
+        if ref_prot.suffix != ".pdb":
+            raise ValueError(
+                f"Reference protein must be a PDB file. Got {args.ref_prot}"
+            )
+
+    if args.loop_db is not None:
+        loop_db = Path(args.loop_db)
+        if not loop_db.exists():
+            raise ValueError(f"Loop database file does not exist: {args.loop_db}")
+
+    if args.seqres_yaml is not None:
+        seqres_yaml = Path(args.seqres_yaml)
+        # check it exists
+        if not seqres_yaml.exists():
+            raise ValueError(f"SEQRES yaml file does not exist: {args.seqres_yaml}")
+
+        # load it
+        logger.info(f"Using SEQRES from {args.seqres_yaml}")
+        with open(args.seqres_yaml) as f:
+            seqres_dict = yaml.safe_load(f)
+        seqres = seqres_dict["SEQRES"]
+    else:
+        seqres = None
+
+    # load receptor, may need to work on how to provide arguments to this
+    # check with @jenke
+    xtal = CrystalCompoundData(
+        str_fn=args.receptor, smiles=None, output_name="target_xtal"
+    )
+
+    logger.info(f"Loaded receptor {xtal} from {receptor}")
+    prep_mp(
+        xtal, args.ref_prof, seqres, args.output_dir, args.loop_db, args.protein_only
+    )
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
-    
+    # grab the files that were created
 
-
-
-
-
-    
     # setup MCS search
     if args.mcs_sys == "rdkit":
         logger.info(f"Using RDKit for MCS search.")
@@ -195,12 +242,7 @@ def main():
     mcs_rank_fn()
     logger.info(f"Finished MCS search at {datetime.now().isoformat()}")
 
-    
-
-
-
-
-    # ML stuff for docking 
+    # ML stuff for docking
     logger.info(f"Setup ML for docking")
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
     e3nn_model_string = None
@@ -230,15 +272,10 @@ def main():
         schnet_model=schnet_model,
     )
 
-
     # run docking
     logger.info(f"Running docking at {datetime.now().isoformat()}")
     full_docking_func()
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
-    
-
-
-
 
     logger.info(f"Finish single target prep+docking at {datetime.now().isoformat()}")
 
@@ -252,5 +289,4 @@ def main():
 
 
 if __name__ == "__main__":
-   main()
-
+    main()

@@ -2,7 +2,7 @@ import glob
 import logging
 import os.path
 import re
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 import numpy as np
 import pandas
@@ -1370,10 +1370,11 @@ def oe_load_exp_from_file(fn) -> List[ExperimentalCompoundData]:
     suppl = oechem.oemolistream(fn)
     suppl.open()
     exp_data_compounds = [
-        ExperimentalCompoundData(compound_id=mol.GetTitle(), smiles=oechem.OEMolToSmiles(mol))
+        ExperimentalCompoundData(
+            compound_id=mol.GetTitle(), smiles=oechem.OEMolToSmiles(mol)
+        )
         for mol in suppl.GetOEMols()
     ]
     suppl.close()
 
     return exp_data_compounds
-

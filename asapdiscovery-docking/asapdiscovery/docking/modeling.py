@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,

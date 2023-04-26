@@ -46,6 +46,7 @@ plot-docking-results = "asapdiscovery.docking.scripts.plot_docking_results:main"
 run-docking-oe = "asapdiscovery.docking.scripts.run_docking_oe:main"
 score-structures = "asapdiscovery.docking.scripts.score_structures:main"
 write-receptor-grids = "asapdiscovery.docking.scripts.write_receptor_grids:main"
+single-target-docking = "asapdiscovery.docking.scripts.single_target_docking:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
