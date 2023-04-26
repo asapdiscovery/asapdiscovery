@@ -1384,3 +1384,26 @@ def oe_load_exp_from_file(fn, ftype) -> List[ExperimentalCompoundData]:
     ifs.close()
 
     return exp_data_compounds
+
+
+def exp_data_to_oe_mols(exp_data: List[ExperimentalCompoundData]) -> List[oechem.OEMol]:
+    """
+    Convert an ExperimentalCompoundData object to an OEMol object
+
+    Parameters
+    ----------
+    exp_data : ExperimentalCompoundData
+        ExperimentalCompoundData object
+
+    Returns
+    -------
+    oechem.OEMol
+        OEMol object
+    """
+    mols = []
+    for ed in exp_data:
+        mol = oechem.OEMol()
+        oechem.OESmilesToMol(mol, ed.smiles)
+        mol.SetTitle(ed.compound_id)
+        mols.append(mol)
+    return mols

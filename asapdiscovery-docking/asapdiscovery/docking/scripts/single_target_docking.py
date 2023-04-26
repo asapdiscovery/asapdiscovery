@@ -1,6 +1,7 @@
 import argparse
-import uuid
+import pickle as pkl
 import shutil
+
 
 from datetime import datetime
 from pathlib import Path
@@ -10,10 +11,15 @@ from typing import List
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.data.utils import oe_load_exp_from_file, is_valid_smiles
+from asapdiscovery.data.utils import (
+    oe_load_exp_from_file,
+    is_valid_smiles,
+    exp_data_to_oe_mols,
+)
 from asapdiscovery.docking import prep_mp
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: E402
+from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
 
 # setup input arguments
 parser = argparse.ArgumentParser(description="Run single target docking.")
@@ -34,7 +40,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--title",
-    default="TARGET_MOL_" + str(uuid.uuid4()),
+    default="TARGET_MOL",
     help=(
         "Title of molecule to use if a SMILES string is passed in as input, default is to generate a new random UUID"
     ),
@@ -47,6 +53,19 @@ parser.add_argument(
     help="Path to output_dir, will overwrite if exists.",
 )
 
+# general arguments
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="enable debug mode, with more files saved and more verbose logging",
+)
+
+# general arguments
+parser.add_argument(
+    "--cleanup",
+    action="store_true",
+    help="clean up intermediate files",
+)
 
 # Prep arguments
 parser.add_argument(
@@ -82,6 +101,12 @@ parser.add_argument(
     "--mcs_structural",
     action="store_true",
     help=("Use structure-based matching instead of element-based matching for MCS."),
+)
+parser.add_argument(
+    "--n_draw",
+    type=int,
+    default=10,
+    help="Number of MCS compounds to draw for each query molecule.",
 )
 
 
@@ -126,22 +151,6 @@ parser.add_argument(
     help="Whether to use GAT model to score docked poses.",
 )
 
-parser.add_argument(
-    "--e3nn",
-    action="store_true",
-    help="Whether to use e3nn model to score docked poses.",
-)
-
-parser.add_argument(
-    "--schnet",
-    action="store_true",
-    help="Whether to use schnet model to score docked poses.",
-)
-
-
-def docking_func():
-    pass
-
 
 def main():
     args = parser.parse_args()
@@ -150,12 +159,21 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    logname = "prep-mcs-dock-single-target"
     # setup logging
-    logger = FileLogger(
-        "single_target_workflow", path=output_dir, stdout=True
-    ).getLogger()
+    logger = FileLogger(logname, path=output_dir, stdout=True).getLogger()
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
+
+    # openeye logging handling
+    errfs = oechem.oeofstream(output_dir / f"openeye-{logname}-log.txt")
+    oechem.OEThrow.SetOutputStream(errfs)
+    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+
+    if args.debug:
+        logger.info("Running in debug mode.")
+        logger.info(f"Input arguments: {args}")
+        args.keep_intermediate = True
 
     # paths to remove if not keeping intermediate files
     intermediate_files = []
@@ -240,6 +258,21 @@ def main():
 
     logger.info(f"Prepped receptor: {prepped_pdb}, {prepped_oedu}")
 
+    # read design unit and split it
+    du = oechem.OEDesignUnit()
+    oechem.OEReadDesignUnit(str(prepped_oedu), du)
+
+    lig, prot, complexed = split_openeye_design_unit(du, lig=True)
+
+    if args.debug:
+        # write out the ligand and protein
+        save_openeye_sdf(str(prep_dir / f"{receptor_name}_ligand.sdf"), lig)
+        save_openeye_pdb(str(prep_dir / f"{receptor_name}_protein.pdb"), prot)
+
+    ligand_smiles = oechem.OEMolToSmiles(lig)
+
+    logger.info(f"Xtal ligand: {ligand_smiles}")
+
     # setup MCS search
     if args.mcs_sys == "rdkit":
         logger.info(f"Using RDKit for MCS search.")
@@ -252,8 +285,39 @@ def main():
 
     # run MCS search
     logger.info(f"Running MCS search at {datetime.now().isoformat()}")
-    mcs_rank_fn()
+    sort_idxs = []
+    for compound in exp_data:
+        sort_idxs.append(
+            mcs_rank_fn(
+                compound.smiles,
+                c.compound_id,
+                ligand_smiles,
+                receptor_name,
+                None,
+                args.mcs_structural,
+                None,
+                args.n_draw,
+            )
+        )
     logger.info(f"Finished MCS search at {datetime.now().isoformat()}")
+    if args.debug:
+        logger.info(
+            f"Saving MCS search results to {args.o}/mcs_sort_index.pkl for debugging."
+        )
+        compound_ids = [c.compound_id for c in exp_compounds]
+        xtal_ids = [x.dataset for x in xtal_compounds]
+
+        pkl.dump(
+            [compound_ids, xtal_ids, sort_idxs],
+            open(f"{args.o}/mcs_sort_index.pkl", "wb"),
+        )
+
+    # setup docking
+    logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
+
+    dock_dir = output_dir / "docking"
+    dock_dir.mkdir(parents=True, exist_ok=True)
+    intermediate_files.append(dock_dir)
 
     # ML stuff for docking
     logger.info(f"Setup ML for docking")
@@ -270,35 +334,27 @@ def main():
         logger.info("Skipping GAT model scoring")
         gat_model = None
 
-    if args.e3nn:
-        logger.warning("e3nn model not implemented yet, skipping")
-        e3nn_model = None
-
-    if args.schnet:
-        logger.warning("schnet model not implemented yet, skipping")
-        schnet_model = None
-
-    full_docking_func = partial(
-        docking_func,
-        GAT_model=gat_model,
-        e3nn_model=e3nn_model,
-        schnet_model=schnet_model,
-    )
-
     # run docking
     logger.info(f"Running docking at {datetime.now().isoformat()}")
-    full_docking_func()
+
+    results = []
+    for mol in exp_data:
+        results.append(
+            oe_docking_function(
+                docking_dir,
+            )
+        )
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
 
     logger.info(f"Finish single target prep+docking at {datetime.now().isoformat()}")
 
-    if args.keep_intermediate:
-        logger.info(f"Keeping intermediate files.")
-    else:
+    if args.cleanup:
         if len(intermediate_files) > 0:
             logger.info(f"Removing intermediate files.")
             for path in intermediate_files:
                 shutil.rmtree(path)
+    else:
+        logger.info(f"Keeping intermediate files.")
 
 
 if __name__ == "__main__":
