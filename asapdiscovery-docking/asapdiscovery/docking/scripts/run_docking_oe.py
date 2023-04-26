@@ -214,8 +214,7 @@ def mp_func(
     return results
 
 
-def parse_du_filenames(
-    receptors, regex, log_name, basefile="predocked.oedu"):
+def parse_du_filenames(receptors, regex, log_name, basefile="predocked.oedu"):
     """
     Parse list of DesignUnit filenames and extract identifiers using the given regex.
     `regex` should have one capturing group (which can be the entire string if desired).
@@ -257,7 +256,7 @@ def parse_du_filenames(
             if fn[-4:] == "oedu"
         ]
 
-    if os.path.isfile(receptors):
+    elif os.path.isfile(receptors):
         logger.info(f"Using {receptors} as individual file")
         file_extn = os.path.splitext(receptors)[1]
         if file_extn == ".csv":
@@ -547,8 +546,7 @@ def main():
     logger.info(
         f"Parsing receptor design units with arguments: {args.receptor}, {args.regex}"
     )
-    dataset_dict, fn_dict = parse_du_filenames(
-        args.receptor, args.regex, log_name)
+    dataset_dict, fn_dict = parse_du_filenames(args.receptor, args.regex, log_name)
 
     # Load all receptor DesignUnits
     logger.info("Loading receptor DesignUnits")
