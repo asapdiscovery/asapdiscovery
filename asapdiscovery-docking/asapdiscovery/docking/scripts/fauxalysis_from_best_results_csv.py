@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.utils import combine_sdf_files
+from asapdiscovery.data.utils import combine_files
 
 
 def parse_args():
@@ -73,7 +73,7 @@ def main():
             logger.error(f"Input csv is missing an sdf path for {dir_name}!")
             continue
 
-        if not sdf_path.exists():
+        if not sdf_path.exists() and not args.combine_sdfs_only:
             logger.error(f"{sdf_path} does not exist for {dir_name}!")
             raise FileNotFoundError(f"{sdf_path} does not exist for {dir_name}!")
         if not structure_path.exists() and not args.combine_sdfs_only:
@@ -93,20 +93,15 @@ def main():
             sdfs_per_structure[structure_name].append(new_dir / sdf_path.name)
 
     # Combine sdfs into one file
-    logger.info(f"Combining sdfs into one per structure source")
-    combined_sdf = args.output_dir / "combined.sdf"
-    combined_sdf_fd = open(combined_sdf, "wb")
-    for structure, paths in sdfs_per_structure.items():
-        structure_sdf = args.output_dir / f"{structure}_combined.sdf"
-        structure_sdf_fd = open(structure_sdf, "wb")
-        for sdf_to_copy in paths:
-            logger.info(f"Copying {sdf_to_copy} to {structure_sdf}")
-            fd = open(sdf_to_copy, "rb")
-            shutil.copyfileobj(fd, combined_sdf_fd)
-            shutil.copyfileobj(fd, structure_sdf_fd)
-            fd.close()
-        structure_sdf_fd.close()
-    combined_sdf_fd.close()
+    if not args.move_pdbs_only:
+        logger.info(f"Combining sdfs into one per structure source")
+        for structure, paths in sdfs_per_structure.items():
+            structure_sdf = args.output_dir / f"{structure}_combined.sdf"
+            combine_files(paths, structure_sdf)
+
+        logger.info(f"Combining sdfs into one per structure source")
+        allpaths = [path for paths in sdfs_per_structure.values() for path in paths]
+        combine_files(allpaths, args.output_dir / "combined.sdf")
 
 
 if __name__ == "__main__":

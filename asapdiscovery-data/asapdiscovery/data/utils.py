@@ -1,6 +1,7 @@
 import glob
 import logging
 import os.path
+from pathlib import Path
 import re
 from typing import Optional, Union
 
@@ -1322,15 +1323,8 @@ def check_filelist_has_elements(
         )
 
 
-def combine_sdf_files(glob_string, output_sdf):
-    import shutil
-
-    # Concatenate all individual SDF files
-    sdfs = [f for f in glob.glob(glob_string) if f.endswith(".sdf")]
-    check_filelist_has_elements(sdfs, "sdfs")
-    with open(output_sdf, "wb") as wfd:
-        for f in sdfs:
-            if f == "":
-                continue
-            with open(f, "rb") as fd:
-                shutil.copyfileobj(fd, wfd)
+def combine_files(paths: list[Union[Path, str]], output_file):
+    with open(output_file, "w") as ofs:
+        for file_to_copy in paths:
+            with open(file_to_copy, "r") as file_to_copy_fd:
+                ofs.write(file_to_copy_fd.read())
