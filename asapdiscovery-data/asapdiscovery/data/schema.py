@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel, Field
 
 
@@ -9,7 +11,6 @@ class Model(BaseModel):
 
 
 class ExperimentalCompoundData(Model):
-
     compound_id: str = Field(
         None,
         description="The unique compound identifier (PostEra or enumerated ID)",
@@ -40,6 +41,8 @@ class ExperimentalCompoundData(Model):
         description="If True, the compound was enantiopure, but unknown if stereochemistry recorded in SMILES is correct",
     )
 
+    date_created: date = Field(None, description="Date the molecule was created.")
+
     experimental_data: dict[str, float] = Field(
         dict(),
         description='Experimental data fields, including "pIC50" and uncertainty (either "pIC50_stderr" or  "pIC50_{lower|upper}"',
@@ -56,7 +59,6 @@ class ExperimentalCompoundDataUpdate(Model):
 
 
 class CrystalCompoundData(BaseModel):
-
     smiles: str = Field(
         None,
         description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",

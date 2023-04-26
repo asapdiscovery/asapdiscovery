@@ -1,14 +1,17 @@
 import logging
 from pathlib import Path
-from typing import Dict, Optional  # noqa: F401
+from typing import Dict, List, Optional, Union  # noqa: F401
 
 import dgl
+import numpy as np
 import torch
+from asapdiscovery.ml.dataset import GraphInferenceDataset
 
 # static import of models from base yaml here
 from asapdiscovery.ml.pretrained_models import all_models
 from asapdiscovery.ml.utils import build_model, load_weights
 from asapdiscovery.ml.weights import fetch_model_from_spec
+from dgllife.utils import CanonicalAtomFeaturizer
 
 
 class InferenceBase:
@@ -122,7 +125,7 @@ class InferenceBase:
         model: torch.nn.Module
             PyTorch model.
         """
-        model, _ = build_model(model_type, **kwargs)
+        model = build_model(model_type, **kwargs)
         return model
 
     def predict(self, input_data):
@@ -173,8 +176,41 @@ class GATInference(InferenceBase):
         g : dgl.DGLGraph
             DGLGraph object.
 
+        Returns
+        -------
+        np.ndarray
+            Predictions for each graph.
         """
         with torch.no_grad():
-            output_tensor = self.model(g, g.ndata["h"])
-            output_tensor = torch.reshape(output_tensor, (-1, 1))
-            return output_tensor.cpu().numpy()
+            output_tensor = self.model({"g": g})
+            # we ravel to always get a 1D array
+            return output_tensor.cpu().numpy().ravel()
+
+    def predict_from_smiles(
+        self, smiles: Union[str, list[str]], **kwargs
+    ) -> Union[np.ndarray, float]:
+        """Predict on a list of SMILES strings, or a single SMILES string.
+
+        Parameters
+        ----------
+        smiles : Union[str, List[str]]
+            SMILES string or list of SMILES strings.
+
+        Returns
+        -------
+        np.ndarray or float
+            Predictions for each graph, or a single prediction if only one SMILES string is provided.
+        """
+        if isinstance(smiles, str):
+            smiles = [smiles]
+
+        gids = GraphInferenceDataset(
+            smiles, node_featurizer=CanonicalAtomFeaturizer(), **kwargs
+        )
+
+        data = [self.predict(g) for g in gids]
+        data = np.concatenate(np.asarray(data))
+        # return a scalar float value if we only have one input
+        if len(data) == 1:
+            data = data[0]
+        return data

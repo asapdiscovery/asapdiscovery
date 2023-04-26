@@ -736,6 +736,9 @@ def prep_mp(
         # Mutate the residues to match the residue list
         initial_prot = mutate_residues(initial_prot, res_list, xtal.protein_chains)
 
+        # Build seqres here
+        seqres = " ".join(res_list)
+
     # Delete extra copies of ligand in the complex
     initial_prot = remove_extra_ligands(initial_prot, lig_chain=xtal.active_site_chain)
 
@@ -761,7 +764,7 @@ def prep_mp(
             site_residue=site_residue,
             loop_db=loop_db,
             protein_only=protein_only,
-            seqres=" ".join(res_list),
+            seqres=seqres,
         )
     except IndexError as e:
         prep_logger.error(

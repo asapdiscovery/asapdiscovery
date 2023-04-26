@@ -1,5 +1,6 @@
 import os
 import pickle as pkl
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -7,27 +8,33 @@ import torch
 
 
 def build_dataset(
-    in_files,
     model_type,
     exp_fn,
+    all_fns=[],
+    compounds=[],
     achiral=False,
     cache_fn=None,
     grouped=False,
     lig_name="LIG",
     num_workers=1,
     rank=False,
+    structure_only=False,
+    check_range_nan=True,
+    check_stderr_nan=True,
 ):
     """
     Build a Dataset object from input structure files.
 
     Parameters
     ----------
-    in_files : str
-        Input directory/glob for docked PDB files
     model_type : str
-        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+        Which model to create. Current options are ["gat", "schnet", "e3nn"]
     exp_fn : str
         JSON file giving experimental results
+    all_fns : List[str], optional
+        List of input docked PDB files
+    compounds : List[Tuple[str, str]], optional
+        List of (xtal_id, compound_id) that correspond 1:1 to in_files
     achiral : bool, default=False
         Only keep achiral molecules
     cache_fn : str, optional
@@ -38,63 +45,66 @@ def build_dataset(
         Residue name for ligand atoms in PDB files
     num_workers : int, default=1
         Number of threads to use for dataset loading
+    structure_only : bool, default=False
+        If building a 2D dataset, whether to limit to only experimental compounds that
+        also have structural data
+    check_range_nan : bool, default=True
+        Check that the "pIC50_range" value is not NaN
+    check_stderr_nan : bool, default=True
+        Check that the "pIC50_stderr" value is not NaN
 
     Returns
     -------
     """
-    import re
-    from glob import glob
-
+    from asapdiscovery.data.utils import check_filelist_has_elements
     from asapdiscovery.ml.dataset import (
         DockedDataset,
         GraphDataset,
         GroupedDockedDataset,
     )
 
-    # Get all docked structures
-    if os.path.isdir(in_files):
-        all_fns = glob(f"{in_files}/*complex.pdb")
-    else:
-        all_fns = glob(in_files)
-    # Extract crystal structure and compound id from file name
-    xtal_pat = r"Mpro-.*?_[0-9][A-Z]"
-    compound_pat = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
+    # Load the experimental compounds
+    exp_data, exp_compounds = load_exp_data(
+        exp_fn,
+        achiral=achiral,
+        return_compounds=True,
+        check_range_nan=check_range_nan,
+        check_stderr_nan=check_stderr_nan,
+    )
 
-    xtal_matches = [re.search(xtal_pat, fn) for fn in all_fns]
-    compound_matches = [re.search(compound_pat, fn) for fn in all_fns]
-    idx = [bool(m1 and m2) for m1, m2 in zip(xtal_matches, compound_matches)]
-    compounds = [
-        (xtal_m.group(), compound_m.group())
-        for xtal_m, compound_m, both_m in zip(xtal_matches, compound_matches, idx)
-        if both_m
-    ]
-    num_found = len(compounds)
-    # Dictionary mapping from compound_id to Mpro dataset(s)
-    compound_id_dict = {}
-    for xtal_structure, compound_id in compounds:
-        try:
-            compound_id_dict[compound_id].append(xtal_structure)
-        except KeyError:
-            compound_id_dict[compound_id] = [xtal_structure]
+    # Parse structure filenames
+    if (model_type.lower() != "gat") or structure_only:
+        # Make sure the files passed match exist and match with compounds
+        check_filelist_has_elements(all_fns, "ml_dataset")
+        assert len(all_fns) == len(
+            compounds
+        ), "Different number of filenames and compound tuples."
+
+        # Dictionary mapping from compound_id to Mpro dataset(s)
+        compound_id_dict = {}
+        for xtal_structure, compound_id in compounds:
+            try:
+                compound_id_dict[compound_id].append(xtal_structure)
+            except KeyError:
+                compound_id_dict[compound_id] = [xtal_structure]
 
     if rank:
         exp_data = None
-    elif model_type.lower() == "2d":
+    elif model_type.lower() == "gat":
         from dgllife.utils import CanonicalAtomFeaturizer
 
-        # Load the experimental compounds
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
         print("load", len(exp_compounds), flush=True)
 
-        # Get compounds that have both structure and experimental data (this
-        #  step isn't actually necessary for performance, but allows a more
-        #  fair comparison between 2D and 3D models)
-        xtal_compound_ids = {c[1] for c in compounds}
-        # Filter exp_compounds to make sure we have structures for them
-        exp_compounds = [c for c in exp_compounds if c.compound_id in xtal_compound_ids]
-        print("filter", len(exp_compounds), flush=True)
+        if structure_only:
+            # Get compounds that have both structure and experimental data (this
+            #  step isn't actually necessary for performance, but allows a more
+            #  fair comparison between 2D and 3D models)
+            xtal_compound_ids = {c[1] for c in compounds}
+            # Filter exp_compounds to make sure we have structures for them
+            exp_compounds = [
+                c for c in exp_compounds if c.compound_id in xtal_compound_ids
+            ]
+            print("filter", len(exp_compounds), flush=True)
 
         # Make cache directory as necessary
         if cache_fn is None:
@@ -111,31 +121,20 @@ def build_dataset(
         )
 
         print(next(iter(ds)), flush=True)
-
-        # Rename exp_compounds so the number kept is consistent
-        compounds = exp_compounds
     elif cache_fn and os.path.isfile(cache_fn):
         # Load from cache
         ds = pkl.load(open(cache_fn, "rb"))
         print("Loaded from cache", flush=True)
-
-        # Still need to load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
     else:
-        # Load the experimental affinities
-        exp_data, exp_compounds = load_exp_data(
-            exp_fn, achiral=achiral, return_compounds=True
-        )
-
-        # Make dict to access smiles data
+        # Make dicts to access smiles and date_created data
         smiles_dict = {}
+        dates_dict = {}
         for c in exp_compounds:
             if c.compound_id not in compound_id_dict:
                 continue
             for xtal_structure in compound_id_dict[c.compound_id]:
                 smiles_dict[(xtal_structure, c.compound_id)] = c.smiles
+                dates_dict[(xtal_structure, c.compound_id)] = c.date_created
 
         # Make dict to access experimental compound data
         exp_data_dict = {}
@@ -158,6 +157,7 @@ def build_dataset(
                 "pIC50": exp_data_dict[compound]["pIC50"],
                 "pIC50_range": exp_data_dict[compound]["pIC50_range"],
                 "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
+                "date_created": dates_dict[compound],
             }
             for compound, smiles in smiles_dict.items()
         }
@@ -184,8 +184,7 @@ def build_dataset(
             # Cache dataset
             pkl.dump(ds, open(cache_fn, "wb"))
 
-    num_kept = len(ds)
-    print(f"Kept {num_kept} out of {num_found} found structures", flush=True)
+    print(f"Kept {len(ds)} compounds", flush=True)
 
     return ds, exp_data
 
@@ -201,13 +200,13 @@ def build_model(
     config=None,
 ):
     """
-    Dispatch function for building the correct model and setting model_call
+    Dispatch function for building the correct model
     functions.
 
     Parameters
     ----------
     model_type : str
-        Which model to create. Current options are ["2d", "schnet", "e3nn"]
+        Which model to create. Current options are ["gat", "schnet", "e3nn"]
     e3nn_params : Union[str, list], optional
         Pickle file containing model parameters for the e3nn model, or just the
         parameters themselves.
@@ -230,9 +229,11 @@ def build_model(
 
     Returns
     -------
-    Union[asapdiscovery.ml.models.GAT, mtenn.model.Model]
-        Build model
+    mtenn.model.Model
+        Built model
     """
+    import mtenn.conversion_utils
+    import mtenn.model
 
     # Correct model name if needed
     model_type = model_type.lower()
@@ -246,104 +247,110 @@ def build_model(
             print("Using wandb config for model building.", flush=True)
         except Exception:
             config = {}
+    elif (type(config) is str) or isinstance(config, Path):
+        config = parse_config(config)
 
-    if model_type == "gat":
-        import torch
+    # Take MTENN args from config if present, else from args
+    strategy = config["strat"].lower() if "strat" in config else strat.lower()
+    grouped = config["grouped"] if "grouped" in config else grouped
 
-        model = build_model_2d(config)
-
-        def model_call(model, d):
-            return torch.reshape(model(d["g"], d["g"].ndata["h"]), (-1, 1))
-
-    elif (model_type == "schnet") or (model_type == "e3nn"):
-        import mtenn.conversion_utils
-        import mtenn.model
-
-        if model_type == "schnet":
-            model = build_model_schnet(config)
-            get_model = mtenn.conversion_utils.schnet.SchNet.get_model
+    # Check and parse combination
+    try:
+        combination = config["comb"].lower() if "comb" in config else comb.lower()
+        if combination == "mean":
+            combination = mtenn.model.MeanCombination()
+        elif combination == "boltzmann":
+            combination = mtenn.model.BoltzmannCombination()
         else:
-            # Loadmodel parameters
-            if (type(e3nn_params) is list) or (type(e3nn_params) is tuple):
-                model_params = e3nn_params
-            elif os.path.isfile(e3nn_params):
-                model_params = pkl.load(open(e3nn_params, "rb"))
-            else:
-                raise ValueError(
-                    "Must provide an appropriate value for e3nn_params "
-                    f"(received {e3nn_params})"
-                )
-            model = build_model_e3nn(100, *model_params[1:], config)
-            get_model = mtenn.conversion_utils.e3nn.E3NN.get_model
-
-        # Take MTENN args from config if present, else from args
-        strategy = config["strat"].lower() if "strat" in config else strat.lower()
-        grouped = config["grouped"] if "grouped" in config else grouped
-
-        # Check and parse combination
-        try:
-            combination = config["comb"].lower() if "comb" in config else comb.lower()
-            if combination == "mean":
-                combination = mtenn.model.MeanCombination()
-            elif combination == "boltzmann":
-                combination = mtenn.model.BoltzmannCombination()
-            else:
-                raise ValueError(f"Uknown value for -comb: {combination}")
-        except AttributeError:
-            # This will be triggered if combination is left blank
-            #  (None.lower() => AttributeError)
-            if grouped:
-                raise ValueError(
-                    "A value must be provided for -comb if --grouped is set."
-                )
-            combination = None
-
-        # Check and parse pred readout
-        try:
-            pred_readout = (
-                config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
+            raise ValueError(
+                f"Unknown value for -comb: {combination}, "
+                "must be one of [mean, boltzmann]."
             )
-            if pred_readout == "pic50":
-                pred_readout = mtenn.model.PIC50Readout()
-            elif pred_readout == "none":
-                pred_readout = None
-            else:
-                raise ValueError(f"Uknown value for -pred_r: {pred_readout}")
-        except AttributeError:
+    except AttributeError:
+        # This will be triggered if combination is left blank
+        #  (None.lower() => AttributeError)
+        if grouped:
+            raise ValueError("A value must be provided for -comb if --grouped is set.")
+        combination = None
+
+    # Check and parse pred readout
+    try:
+        pred_readout = (
+            config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
+        )
+        if pred_readout == "pic50":
+            pred_readout = mtenn.model.PIC50Readout()
+        elif pred_readout == "none":
             pred_readout = None
-
-        # Check and parse comb readout
-        try:
-            comb_readout = (
-                config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
+        else:
+            raise ValueError(
+                f"Unknown value for -pred_r: {pred_readout}, "
+                "must be one of [pic50, none]."
             )
-            if comb_readout == "pic50":
-                comb_readout = mtenn.model.PIC50Readout()
-            elif comb_readout == "none":
-                comb_readout = None
-            else:
-                raise ValueError(f"Uknown value for -comb_r: {comb_readout}")
-        except AttributeError:
-            comb_readout = None
+    except AttributeError:
+        pred_readout = None
 
-        # Use previously built model to construct mtenn.model.Model
-        model = get_model(
-            model=model,
+    # Check and parse comb readout
+    try:
+        comb_readout = (
+            config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
+        )
+        if comb_readout == "pic50":
+            comb_readout = mtenn.model.PIC50Readout()
+        elif comb_readout == "none":
+            comb_readout = None
+        else:
+            raise ValueError(
+                f"Unknown value for -comb_r: {comb_readout}, "
+                "must be one of [pic50, none]."
+            )
+    except AttributeError:
+        comb_readout = None
+
+    # Build initial model object, which will be used later in the get_model call
+    if model_type == "gat":
+        model = build_model_2d(config)
+        get_model = mtenn.conversion_utils.gat.GAT.get_model
+    elif model_type == "schnet":
+        model = build_model_schnet(config)
+        get_model = partial(
+            mtenn.conversion_utils.schnet.SchNet.get_model,
             grouped=grouped,
             strategy=strategy,
             combination=combination,
-            pred_readout=pred_readout,
             comb_readout=comb_readout,
-            fix_device=True,
         )
 
-        def model_call(model, d):
-            return model(d)
-
+    elif model_type == "e3nn":
+        # Load model parameters
+        if (type(e3nn_params) is list) or (type(e3nn_params) is tuple):
+            model_params = e3nn_params
+        elif os.path.isfile(e3nn_params):
+            model_params = pkl.load(open(e3nn_params, "rb"))
+        else:
+            raise ValueError(
+                "Must provide an appropriate value for e3nn_params "
+                f"(received {e3nn_params})"
+            )
+        model = build_model_e3nn(100, *model_params[1:], config)
+        get_model = partial(
+            mtenn.conversion_utils.e3nn.E3NN.get_model,
+            grouped=grouped,
+            strategy=strategy,
+            combination=combination,
+            comb_readout=comb_readout,
+        )
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
-    return model, model_call
+    # Use previously built model to construct mtenn.model.Model
+    model = get_model(
+        model=model,
+        pred_readout=pred_readout,
+        fix_device=True,
+    )
+
+    return model
 
 
 def build_model_2d(config=None):
@@ -358,13 +365,13 @@ def build_model_2d(config=None):
 
     Returns
     -------
-    asapdiscovery.ml.models.GAT
+    mtenn.conversion_utils.GAT
         GAT graph model
     """
-    from asapdiscovery.ml import GAT
     from dgllife.utils import CanonicalAtomFeaturizer
+    from mtenn.conversion_utils import GAT
 
-    if (type(config) is str) or (isinstance(config, Path)):
+    if (type(config) is str) or isinstance(config, Path):
         config = parse_config(config)
     elif config is None:
         try:
@@ -426,7 +433,7 @@ def build_model_schnet(
     from torch_geometric.nn import SchNet
 
     # Parse config
-    if type(config) is str:
+    if (type(config) is str) or isinstance(config, Path):
         config = parse_config(config)
     elif config is None:
         try:
@@ -536,7 +543,7 @@ def build_model_e3nn(
     from e3nn.o3 import Irreps
 
     # Parse config
-    if type(config) is str:
+    if (type(config) is str) or isinstance(config, Path):
         config = parse_config(config)
     elif config is None:
         try:
@@ -641,7 +648,7 @@ def build_optimizer(model, config=None):
 
     Parameters
     ----------
-    model : Union[asapdiscovery.ml.models.GAT, mtenn.model.Model]
+    model : mtenn.model.Model
         Model to be trained by the optimizer
     config : Union[str, dict], optional
         Either a dict or JSON file with model config options. If not passed,
@@ -826,7 +833,13 @@ def find_most_recent(model_wts):
     return (epoch_use, f"{model_wts}/{epoch_use}.th")
 
 
-def load_exp_data(fn, achiral=False, return_compounds=False):
+def load_exp_data(
+    fn,
+    achiral=False,
+    return_compounds=False,
+    check_range_nan=True,
+    check_stderr_nan=True,
+):
     """
     Load all experimental data from JSON file of
     schema.ExperimentalCompoundDataUpdate.
@@ -839,6 +852,10 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
         Whether to only take achiral molecules
     return_compounds : bool, default=False
         Whether to return the compounds in addition to the experimental data
+    check_range_nan : bool, default=True
+        Check that the "pIC50_range" value is not NaN
+    check_stderr_nan : bool, default=True
+        Check that the "pIC50_stderr" value is not NaN
 
     Returns
     -------
@@ -864,9 +881,15 @@ def load_exp_data(fn, achiral=False, return_compounds=False):
             ("pIC50" in c.experimental_data)
             and (not np.isnan(c.experimental_data["pIC50"]))
             and ("pIC50_range" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_range"]))
+            and (
+                (not check_range_nan)
+                or (not np.isnan(c.experimental_data["pIC50_range"]))
+            )
             and ("pIC50_stderr" in c.experimental_data)
-            and (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            and (
+                (not check_stderr_nan)
+                or (not np.isnan(c.experimental_data["pIC50_stderr"]))
+            )
         )
     }
 
@@ -944,6 +967,7 @@ def load_weights(model, wts_fn, check_compatibility=False):
     mtenn.Model
         Model with loaded weights
     """
+    import mtenn
     import torch
 
     # Load weights
@@ -951,6 +975,12 @@ def load_weights(model, wts_fn, check_compatibility=False):
         wts_dict = torch.load(wts_fn)
     except RuntimeError:
         wts_dict = torch.load(wts_fn, map_location="cpu")
+
+    # Backwards compatibility for old GAT models
+    if isinstance(model, mtenn.model.LigandOnlyModel) and (
+        next(iter(wts_dict.keys())).split(".")[0] != "representation"
+    ):
+        wts_dict = {f"representation.{k}": v for k, v in wts_dict.items()}
 
     # Initialize linear module in ConcatStrategy
     if "strategy.reduce_nn.weight" in wts_dict:
@@ -1049,7 +1079,13 @@ def plot_loss(train_loss, val_loss, test_loss, out_fn):
 
 
 def split_dataset(
-    ds, grouped, train_frac=0.8, val_frac=0.1, test_frac=0.1, rand_seed=42
+    ds,
+    grouped,
+    temporal=False,
+    train_frac=0.8,
+    val_frac=0.1,
+    test_frac=0.1,
+    rand_seed=42,
 ):
     """
     Split a dataset into train, val, and test splits. A warning will be raised
@@ -1061,6 +1097,8 @@ def split_dataset(
         Dataset object to split
     grouped: bool
         If data objects should be grouped by compound_id
+    temporal: bool, default=False
+        Split data temporally instead of randomly
     train_frac: float, default=0.8
         Fraction of dataset to put in the train split
     val_frac: float, default=0.1
@@ -1082,7 +1120,7 @@ def split_dataset(
     import torch
 
     # Check that fractions add to 1
-    if sum([train_frac, val_frac, test_frac]) != 1:
+    if not np.isclose(sum([train_frac, val_frac, test_frac]), 1):
         from warnings import warn
 
         warn(
@@ -1093,47 +1131,106 @@ def split_dataset(
             RuntimeWarning,
         )
 
-    print("using random seed:", rand_seed, flush=True)
-    # Create generator
-    if rand_seed is None:
-        g = torch.Generator()
-    else:
-        g = torch.Generator().manual_seed(rand_seed)
+    if not temporal:
+        print("using random seed:", rand_seed, flush=True)
+        # Create generator
+        if rand_seed is None:
+            g = torch.Generator()
+        else:
+            g = torch.Generator().manual_seed(rand_seed)
 
     # Split dataset into train/val/test
     if grouped:
-        n_train = int(len(ds) * train_frac)
-        n_val = int(len(ds) * val_frac)
-        n_test = len(ds) - n_train - n_val
-        ds_train, ds_val, ds_test = torch.utils.data.random_split(
-            ds, [n_train, n_val, n_test], g
-        )
-        print(
-            (
-                f"{n_train} training molecules, {n_val} validation molecules, "
-                f"{n_test} testing molecules"
-            ),
-            flush=True,
-        )
+        if temporal:
+            ds_train, ds_val, ds_test = split_temporal(
+                ds,
+                [train_frac, val_frac, test_frac],
+                grouped=True,
+            )
+        else:
+            ds_train, ds_val, ds_test = torch.utils.data.random_split(
+                ds, [train_frac, val_frac, test_frac], g
+            )
+        train_compound_ids = {c for c, _ in ds_train}
+        val_compound_ids = {c for c, _ in ds_val}
+        test_compound_ids = {c for c, _ in ds_test}
     else:
-        ds_train, ds_val, ds_test = split_molecules(
-            ds, [train_frac, val_frac, test_frac], g
-        )
+        if temporal:
+            ds_train, ds_val, ds_test = split_temporal(
+                ds, [train_frac, val_frac, test_frac]
+            )
+        else:
+            ds_train, ds_val, ds_test = split_molecules(
+                ds, [train_frac, val_frac, test_frac], g
+            )
 
         train_compound_ids = {c[1] for c, _ in ds_train}
         val_compound_ids = {c[1] for c, _ in ds_val}
         test_compound_ids = {c[1] for c, _ in ds_test}
-        print(
-            f"{len(ds_train)} training samples",
-            f"({len(train_compound_ids)}) molecules,",
-            f"{len(ds_val)} validation samples",
-            f"({len(val_compound_ids)}) molecules,",
-            f"{len(ds_test)} test samples",
-            f"({len(test_compound_ids)}) molecules",
-            flush=True,
-        )
+    print(
+        f"{len(ds_train)} training samples",
+        f"({len(train_compound_ids)} molecules),",
+        f"{len(ds_val)} validation samples",
+        f"({len(val_compound_ids)} molecules),",
+        f"{len(ds_test)} test samples",
+        f"({len(test_compound_ids)} molecules)",
+        flush=True,
+    )
 
     return ds_train, ds_val, ds_test
+
+
+def make_subsets(ds, idx_lists, split_lens):
+    """
+    Helper script for making subsets of a dataset.
+
+    Parameters
+    ----------
+    ds : Union[cml.data.DockedDataset, cml.data.GraphDataset]
+        Molecular dataset to split
+    idx_dict : List[List[int]]
+        List of lists of indices into `ds`
+    split_lens : List[int]
+        List of split lengths
+
+    Returns
+    -------
+    List[torch.utils.data.Subset]
+        List of Subsets of original dataset
+    """
+    import torch
+
+    # For each Subset, grab all molecules with the included compound_ids
+    all_subsets = []
+    # Keep track of which structure indices we've seen so we don't double count in the
+    #  end splits
+    seen_idx = set()
+    prev_idx = 0
+    # Go up to the last split so we can add anything that got left out from rounding
+    for n_mols in split_lens[:-1]:
+        n_mols_cur = 0
+        subset_idx = []
+        cur_idx = prev_idx
+        # Keep adding groups until the split is as big as it needs to be, or we reach
+        #  the end of the array
+        while (n_mols_cur < n_mols) and (cur_idx < len(idx_lists)):
+            subset_idx.extend(idx_lists[cur_idx])
+            n_mols_cur += len(idx_lists[cur_idx])
+            cur_idx += 1
+
+        # Make sure we're not including something that's in another split
+        subset_idx = [i for i in subset_idx if i not in seen_idx]
+        seen_idx.update(subset_idx)
+        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+        # Update counter
+        prev_idx = cur_idx
+
+    # Finish up anything leftover
+    subset_idx = [i for d in idx_lists[prev_idx:] for i in d if i not in seen_idx]
+    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+
+    return all_subsets
 
 
 def split_molecules(ds, split_fracs, generator=None):
@@ -1159,14 +1256,16 @@ def split_molecules(ds, split_fracs, generator=None):
     """
     import torch
 
-    # TODO: make this whole process more compact
+    # Calculate how many molecules we want covered through each split
+    n_mols_split = np.floor(np.asarray(split_fracs) * len(ds))
+
     # First get all the unique compound_ids
     compound_ids_dict = {}
-    for c in ds.compounds.keys():
+    for c, idx_list in ds.compounds.items():
         try:
-            compound_ids_dict[c[1]].append(c)
+            compound_ids_dict[c[1]].extend(idx_list)
         except KeyError:
-            compound_ids_dict[c[1]] = [c]
+            compound_ids_dict[c[1]] = idx_list
     all_compound_ids = np.asarray(list(compound_ids_dict.keys()))
 
     # Set up generator
@@ -1176,35 +1275,109 @@ def split_molecules(ds, split_fracs, generator=None):
     print("splitting with random seed:", generator.initial_seed(), flush=True)
     # Shuffle the indices
     indices = torch.randperm(len(all_compound_ids), generator=generator)
+    idx_lists = [compound_ids_dict[all_compound_ids[i]] for i in indices]
 
     # For each Subset, grab all molecules with the included compound_ids
-    all_subsets = []
-    offset = 0
-    # Go up to the last split so we can add anything that got left out from
-    #  float rounding
-    for frac in split_fracs[:-1]:
-        split_len = int(np.floor(frac * len(indices)))
-        incl_indices = indices[offset : offset + split_len]
-        incl_compounds = all_compound_ids[incl_indices]
-        offset += split_len
+    all_subsets = make_subsets(ds, idx_lists, n_mols_split)
 
-        # Get subset indices
-        subset_idx = []
-        for compound_id in incl_compounds:
-            for compound in compound_ids_dict[compound_id]:
-                subset_idx.extend([i for i in ds.compounds[compound]])
-        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+    return all_subsets
 
-    # Finish up anything leftover
-    incl_indices = indices[offset:]
-    incl_compounds = all_compound_ids[incl_indices]
 
-    # Get subset indices
-    subset_idx = []
-    for compound_id in incl_compounds:
-        for compound in compound_ids_dict[compound_id]:
-            subset_idx.extend([i for i in ds.compounds[compound]])
-    all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
+def split_temporal(ds, split_fracs, grouped=False, reverse=False, insert_idx=2):
+    """
+    Split molecules temporally by date created. Earlier molecules will be placed in the
+    training set and later molecules will be placed in the val/test sets (unless
+    `reverse` is set).
+
+    Parameters
+    ----------
+    ds : Union[cml.data.DockedDataset, cml.data.GraphDataset]
+        Molecular dataset to split
+    split_fracs : List[float]
+        List of fraction of compounds to put in each split
+    grouped : bool, default=False
+        Splitting a GroupedDockedDataset object
+    reverse : bool, default=False
+        Reverse sorting of data
+    insert_idx : int, default=1
+        Where in the list of `split_fracs` to insert the `sink_split`. If set to < 0 or
+        > `len(split_fracs)`, this feature will be disabled and splits will be taken
+        contiguously from the start of the data
+
+    Returns
+    -------
+    List[torch.utils.data.Subset]
+        List of Subsets of original dataset
+    """
+    # Check that split_fracs adds to 1, padding if it doesn't
+    # Add an allowance for floating point inaccuracies
+    total_splits = sum(split_fracs)
+    if (
+        (not np.isclose(total_splits, 1))
+        or (insert_idx < 0)
+        or (insert_idx > len(split_fracs))
+    ):
+        if total_splits > 1:
+            raise ValueError(f"Sum of split_fracs is {total_splits} > 1")
+        else:
+            sink_frac = 1 - total_splits
+            split_fracs = (
+                split_fracs[:insert_idx] + [sink_frac] + split_fracs[insert_idx:]
+            )
+            sink_split = True
+        print(
+            f"New split_fracs: {split_fracs}, sink frac is at idx {insert_idx}",
+            flush=True,
+        )
+    else:
+        sink_split = False
+
+    # Calculate how many molecules we want covered through each split
+    n_mols_split = np.floor(np.asarray(split_fracs) * len(ds))
+
+    # First get all the unique created dates
+    dates_dict = {}
+    # If we have a grouped dataset, we want to iterate through compound_ids, which will
+    #  allow us to access a group of structures. Otherwise, loop through the structures
+    #  directly
+    if grouped:
+        iter_list = ds.compound_ids
+    else:
+        iter_list = ds.structures
+    for i, iter_item in enumerate(iter_list):
+        if grouped:
+            # Take the earliest date from all structures (they should all be the same,
+            #  but just in case)
+            all_dates = [
+                s["date_created"]
+                for s in ds.structures[iter_item]
+                if "date_created" in s
+            ]
+            if len(all_dates) == 0:
+                raise ValueError("Dataset doesn't contain dates.")
+            else:
+                date_created = min(all_dates)
+        else:
+            try:
+                date_created = iter_item["date_created"]
+            except KeyError:
+                raise ValueError("Dataset doesn't contain dates.")
+        try:
+            dates_dict[date_created].append(i)
+        except KeyError:
+            dates_dict[date_created] = [i]
+    all_dates = np.asarray(list(dates_dict.keys()))
+
+    # Sort the dates
+    all_dates_sorted = sorted(all_dates, reverse=reverse)
+
+    # Make subsets
+    idx_lists = [dates_dict[d] for d in all_dates_sorted]
+    all_subsets = make_subsets(ds, idx_lists, n_mols_split)
+
+    # Take out the sink split
+    if sink_split:
+        all_subsets = all_subsets[:insert_idx] + all_subsets[insert_idx + 1 :]
 
     return all_subsets
 
@@ -1217,7 +1390,6 @@ def train(
     target_dict,
     n_epochs,
     device,
-    model_call=lambda model, d: model(d),
     loss_fn=None,
     save_file=None,
     lr=1e-4,
@@ -1252,9 +1424,6 @@ def train(
     loss_fn : cml.nn.MSELoss
         Loss function that takes pred, target, in_range, and uncertainty values
         as inputs
-    model_call : function(model, dict), default=lambda model, d: model(d)
-        Function for calling the model. This is present to account for
-        differences in calling the SchNet and e3nn models
     save_file : str, optional
         Where to save model weights and errors at each epoch. If a directory is
         passed, the weights will be saved as {epoch_idx}.th and the
@@ -1361,7 +1530,7 @@ def train(
             ).float()
 
             # Make prediction and calculate loss
-            pred = model_call(model, pose).reshape(target.shape)
+            pred = model(pose).reshape(target.shape)
             loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Keep track of loss for each sample
@@ -1414,7 +1583,7 @@ def train(
                 ).float()
 
                 # Make prediction and calculate loss
-                pred = model_call(model, pose).reshape(target.shape)
+                pred = model(pose).reshape(target.shape)
                 loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             val_loss.append(np.asarray(tmp_loss))
@@ -1439,7 +1608,7 @@ def train(
                 ).float()
 
                 # Make prediction and calculate loss
-                pred = model_call(model, pose).reshape(target.shape)
+                pred = model(pose).reshape(target.shape)
                 loss = loss_fn(pred, target, in_range, uncertainty)
                 tmp_loss.append(loss.item())
             test_loss.append(np.asarray(tmp_loss))
@@ -1498,6 +1667,8 @@ def train(
                 flush=True,
             )
             model.load_state_dict(es.best_wts)
+            if use_wandb:
+                wandb.log({"best_epoch": es.best_epoch, "best_loss": es.best_loss})
             break
 
     return (
