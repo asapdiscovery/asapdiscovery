@@ -55,12 +55,16 @@ def main():
     for sdf_path, structure_path, dir_name in zip(
         sdf_paths, structure_paths, dir_names
     ):
+        if sdf_path.name == "None":
+            logger.error(f"Input csv is missing an sdf path for {dir_name}!")
+            continue
+
         if not sdf_path.exists():
-            logger.error(f"{sdf_path} does not exist!")
-            continue
+            logger.error(f"{sdf_path} does not exist for {dir_name}!")
+            raise FileNotFoundError(f"{sdf_path} does not exist for {dir_name}!")
         if not structure_path.exists():
-            logger.error(f"{structure_path} does not exist!")
-            continue
+            logger.error(f"{structure_path} does not exist for {dir_name}!")
+            raise FileNotFoundError(f"{structure_path} does not exist for {dir_name}!")
 
         new_dir = args.output_dir / dir_name
         if not new_dir.exists():
