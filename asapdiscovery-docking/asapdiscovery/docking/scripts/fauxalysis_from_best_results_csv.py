@@ -2,12 +2,12 @@
 Generate fragalysis-like data from a csv file of best results
 """
 import argparse
+import shutil
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.logging import FileLogger
-import shutil
 
 
 def parse_args():
