@@ -151,13 +151,13 @@ def load_all_losses(in_df, rel_dir=None, conv_function=None):
     all_dirs = [os.path.join(rel_dir, d) if rel_dir else d for d in in_df["loss_dir"]]
 
     # Load losses and build DF
-    df_rows = [load_losses(d) for d in all_dirs]
+    df_rows = [load_losses_param(d) for d in all_dirs]
     df = pandas.DataFrame(df_rows, columns=["train", "val", "test"])
 
     return pandas.concat([in_df, df], axis=1)
 
 
-def plot_data_efficiency(plot_df, out_fn):
+def plot_data_efficiency(plot_df, out_fn, max_loss=None, conv=False):
     """
     Plot loss as a function of data efficiency. Data points will be grouped by label,
     with each split having a different line style.
@@ -177,9 +177,16 @@ def plot_data_efficiency(plot_df, out_fn):
 
     sns.lineplot(plot_df, x="train_frac", y="loss", hue="label", style="split", ax=ax)
 
+    # Set upper y limit
+    if max_loss:
+        ax.set_ylim(0, max_loss)
+
     # Set axes
-    ax.set_ylabel("Loss")
+    ylab = "MAE (delta G in kcal/mol)" if conv else "MSE (squared pIC50)"
+    ax.set_ylabel(ylab)
     ax.set_xlabel("Fraction of Data in Training Split")
+    title = "delta G MAE Loss" if conv else "pIC50 MSE Loss"
+    ax.set_title(title)
 
     fig.savefig(out_fn, dpi=200, bbox_inches="tight")
 
@@ -255,11 +262,11 @@ def main():
 
     # Prepare for plotting
     plot_df = loss_df.melt(
-        id_vars=["label", "train_frac"], var_name="split", value_name="loss"
+        id_vars=["loss_dir", "label", "train_frac"], var_name="split", value_name="loss"
     )
 
     # Plot
-    plot_data_efficiency(plot_df, args.out_fn)
+    plot_data_efficiency(plot_df, args.out_fn, args.max, args.conv)
 
 
 if __name__ == "__main__":
