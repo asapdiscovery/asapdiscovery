@@ -215,8 +215,7 @@ def mp_func(
 
 
 def parse_du_filenames(
-    receptors, regex, log_name, basefile="predocked.oedu", by_compound=False
-):
+    receptors, regex, log_name, basefile="predocked.oedu"):
     """
     Parse list of DesignUnit filenames and extract identifiers using the given regex.
     `regex` should have one capturing group (which can be the entire string if desired).
@@ -232,8 +231,6 @@ def parse_du_filenames(
     basefile : str, default="predocked.oedu"
         If a CSV file is passed for `receptors`, this is the base filename that will be
         appended to every directory found in the "Docked_File" column
-
-    by_compound : bool, default=False
 
     Returns
     -------
@@ -276,8 +273,6 @@ def parse_du_filenames(
         elif file_extn == ".oedu":
             logger.info(f"Using {receptors} as single DesignUnit file")
             all_fns = [receptors]
-            if by_compound:
-                raise ValueError("Cannot use with a single DesignUnit file.")
         else:
             raise ValueError("File must be either .csv or .oedu")
     else:
@@ -331,8 +326,7 @@ def get_args():
         required=True,
         nargs="+",
         help=(
-            "Path/glob to prepped receptor(s), or best_results.csv file if "
-            "--by_compound is given."
+            "Path/glob to prepped receptor(s), or CSV file containing receptor paths"
         ),
     )
     parser.add_argument(
@@ -554,8 +548,7 @@ def main():
         f"Parsing receptor design units with arguments: {args.receptor}, {args.regex}"
     )
     dataset_dict, fn_dict = parse_du_filenames(
-        args.receptor, args.regex, log_name, by_compound=args.by_compound
-    )
+        args.receptor, args.regex, log_name)
 
     # Load all receptor DesignUnits
     logger.info("Loading receptor DesignUnits")
