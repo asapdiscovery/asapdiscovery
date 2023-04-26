@@ -353,7 +353,7 @@ def update_table(clickData):
         complex_ID = clickData["points"][0]["customdata"][0]
 
         # Get Compound
-        compound = df.loc[complex_ID, "Compound_ID"][0]
+        compound = df.loc[complex_ID, "Compound_ID"]
 
     else:
         compound = df["Compound_ID"][0]
@@ -375,6 +375,8 @@ def update_table(clickData):
     Input("crossfilter-xaxis-type", "value"),
     Input("crossfilter-yaxis-type", "value"),
     Input("crossfilter-color", "value"),
+    Input("x-axis-slider", "value"),
+    Input("y-axis-slider", "value"),
 )
 def update_filtered_scatter(
     data_dict,
@@ -383,8 +385,12 @@ def update_filtered_scatter(
     xaxis_type,
     yaxis_type,
     color_column,
+    xrange,
+    yrange,
 ):
     filtered = pd.DataFrame(data_dict)
+    Input("x-axis-slider", "value"),
+    Input("y-axis-slider", "value"),
     fig = px.scatter(
         filtered,
         x=xaxis_column_name,
@@ -397,11 +403,13 @@ def update_filtered_scatter(
     fig.update_xaxes(
         title=xaxis_column_name,
         type="linear" if xaxis_type == "Linear" else "log",
+        range=xrange,
     )
 
     fig.update_yaxes(
         title=yaxis_column_name,
         type="linear" if yaxis_type == "Linear" else "log",
+        range=yrange,
     )
 
     fig.update_layout(margin={"l": 40, "b": 40, "t": 40, "r": 40}, hovermode="closest")
