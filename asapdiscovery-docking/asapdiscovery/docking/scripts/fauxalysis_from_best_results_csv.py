@@ -73,9 +73,9 @@ def main():
             logger.error(f"Input csv is missing an sdf path for {dir_name}!")
             continue
 
-        # if not sdf_path.exists():
-        #     logger.error(f"{sdf_path} does not exist for {dir_name}!")
-        #     raise FileNotFoundError(f"{sdf_path} does not exist for {dir_name}!")
+        if not sdf_path.exists():
+            logger.error(f"{sdf_path} does not exist for {dir_name}!")
+            raise FileNotFoundError(f"{sdf_path} does not exist for {dir_name}!")
         if not structure_path.exists() and not args.combine_sdfs_only:
             logger.error(f"{structure_path} does not exist for {dir_name}!")
             raise FileNotFoundError(f"{structure_path} does not exist for {dir_name}!")
@@ -95,15 +95,18 @@ def main():
     # Combine sdfs into one file
     logger.info(f"Combining sdfs into one per structure source")
     combined_sdf = args.output_dir / "combined.sdf"
-    with open(combined_sdf, "wb") as combined_sdf_fd:
-        for structure, paths in sdfs_per_structure.items():
-            structure_sdf = args.output_dir / f"{structure}_combined.sdf"
-            with open(structure_sdf, "wb") as structure_sdf_fd:
-                for sdf_to_copy in paths:
-                    logger.info(f"Copying {sdf_to_copy} to {structure_sdf}")
-                    with open(sdf_to_copy, "rb") as fd:
-                        shutil.copyfileobj(fd, combined_sdf_fd)
-                        shutil.copyfileobj(fd, structure_sdf_fd)
+    combined_sdf_fd = open(combined_sdf, "wb")
+    for structure, paths in sdfs_per_structure.items():
+        structure_sdf = args.output_dir / f"{structure}_combined.sdf"
+        structure_sdf_fd = (structure_sdf, "wb")
+        for sdf_to_copy in paths:
+            logger.info(f"Copying {sdf_to_copy} to {structure_sdf}")
+            fd = open(sdf_to_copy, "rb")
+            shutil.copyfileobj(fd, combined_sdf_fd)
+            shutil.copyfileobj(fd, structure_sdf_fd)
+            fd.close()
+        structure_sdf_fd.close()
+    combined_sdf_fd.close()
 
 
 if __name__ == "__main__":
