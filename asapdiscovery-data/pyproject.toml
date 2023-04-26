@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=61.0", "versioningit"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asapdiscovery-data"
+#version = "0.0.1"
+dynamic = ["version"]
+authors = [
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
+]
+description = "API and scripts related to downloading and interacting with data from the Collaborative Drug Discovery Vault, Fragalysis, and the PDB"
+readme = "README.md"
+requires-python = ">=3.9,<3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+dependencies = [
+    "pandas",
+    "rdkit",
+    "mdtraj",
+    #"openeye-toolkit",
+    "sigfig",
+    #"pymol",
+    "requests",
+    "typing-extensions",
+    "click",
+    "boto3",
+    "moto",
+    "flask",
+    "flask_cors"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/choderalab/asapdiscovery"
+"Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
+
+[project.scripts]
+asapdiscovery-data = "asapdiscovery.data.cli:cli"
+cdd-to-schema = "asapdiscovery.data.scripts.cdd_to_schema:main"
+create-mers-schema = "asapdiscovery.data.scripts.create_mers_schema:main"
+docking-data-to-csv = "asapdiscovery.data.scripts.docking_data_to_csv:main"
+download-fragalysis-data = "asapdiscovery.data.scripts.download_fragalysis_data:main"
+download-moonshot-data = "asapdiscovery.data.scripts.download_moonshot_data:main"
+download-pdbs = "asapdiscovery.data.scripts.download_pdbs:main"
+filter-fragalysis-by-smarts = "asapdiscovery.data.scripts.filter_fragalysis_by_smarts:main"
+write-cmpd-to-frag-dict = "asapdiscovery.data.scripts.write_cmpd_to_frag_dict:main"
+combine-and-label-mpro-sdf = "asapdiscovery.data.scripts.combine_and_label_mpro_sdf:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*"
+]
+
+[tool.versioningit]
+
+
+[tool.versioningit.vcs]
+default-tag = "0.0.99" # useful for CI/shallow clones

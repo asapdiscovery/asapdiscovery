@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61.0", "versioningit"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asapdiscovery-modeling"
+#version = "0.0.1"
+dynamic = ["version"]
+authors = [
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
+]
+description = "API and scripts for preparing protein and ligand models for downstream applications"
+readme = "README.md"
+requires-python = ">=3.9,<3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+dependencies = [
+    "pandas",
+    "rdkit",
+    #"openeye-toolkit",
+    "plotly",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/choderalab/asapdiscovery"
+"Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
+
+[project.scripts]
+blast-search = "asapdiscovery.modeling.scripts.blast_search:main"
+make-foldalysis = "asapdiscovery.modeling.scripts.make_foldalysis:main"
+prep-fragalysis-dus = "asapdiscovery.modeling.scripts.prep_fragalysis_dus:main"
+prep-fragalysis-for-plipify = "asapdiscovery.modeling.scripts.prep_fragalysis_for_plipify:main"
+prep-mers-pdbs = "asapdiscovery.modeling.scripts.prep_mers_pdbs:main"
+prep-pdb-structures = "asapdiscovery.modeling.scripts.prep_pdb_structures:main"
+prep-proteins = "asapdiscovery.modeling.scripts.prep_proteins:main"
+split-oedu-and-save = "asapdiscovery.modeling.scripts.split_oedu_and_save:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*"
+]
+
+[tool.versioningit]
+
+
+[tool.versioningit.vcs]
+default-tag = "0.0.99" # useful for CI/shallow clones

@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=61.0", "versioningit"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asapdiscovery-docking"
+#version = "0.0.1"
+dynamic = ["version"]
+authors = [
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
+]
+description = "API and scripts related to running docking and preparing the input structures"
+readme = "README.md"
+requires-python = ">=3.9,<3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+dependencies = [
+    "pandas",
+    "rdkit",
+    #"openeye-toolkit",
+    "plotly",
+    "pebble",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/choderalab/asapdiscovery"
+"Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
+
+[project.scripts]
+#build-design-units = "asapdiscovery.docking.scripts.build_design_units:main"
+clean-results-csv = "asapdiscovery.docking.scripts.clean_results_csv:main"
+collate-results = "asapdiscovery.docking.scripts.collate_results:main"
+create-fauxalysis-subset-from-yaml = "asapdiscovery.docking.scripts.create_fauxalysis_subset_from_yaml:main"
+fauxalysis-from-docking = "asapdiscovery.docking.scripts.fauxalysis_from_docking:main"
+find-all-mcs = "asapdiscovery.docking.scripts.find_all_mcs:main"
+#find-mcs-mers = "asapdiscovery.docking.scripts.find_mcs_mers:main"
+hallucinate-fragalysis = "asapdiscovery.docking.scripts.hallucinate_fragalysis:main"
+make-docked-complexes = "asapdiscovery.docking.scripts.make_docked_complexes:main"
+#mass-add-seqres = "asapdiscovery.docking.scripts.mass_add_seqres:main"
+mcs-res-mpro-to-compound = "asapdiscovery.docking.scripts.mcs_res_mpro_to_compound:main"
+plot-docking-results = "asapdiscovery.docking.scripts.plot_docking_results:main"
+run-docking-oe = "asapdiscovery.docking.scripts.run_docking_oe:main"
+score-structures = "asapdiscovery.docking.scripts.score_structures:main"
+write-receptor-grids = "asapdiscovery.docking.scripts.write_receptor_grids:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*"
+]
+
+[tool.versioningit]
+
+
+[tool.versioningit.vcs]
+default-tag = "0.0.99" # useful for CI/shallow clones

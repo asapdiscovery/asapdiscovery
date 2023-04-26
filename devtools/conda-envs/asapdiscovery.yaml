@@ -1,0 +1,61 @@
+name: asapdiscovery
+channels:
+  - openeye
+  - conda-forge
+  - dglteam
+dependencies:
+  # Base depends
+  - pip
+
+  # Testing
+  - pytest
+  - pytest-cov
+  - codecov
+
+  # cli
+  - click
+
+  # Others
+  - appdirs
+  - mdanalysis
+  - openff-toolkit
+  - openeye-toolkits
+  - pandas
+  - pebble
+  - pydantic
+  - rdkit
+  - seaborn
+  - pebble
+
+  # data
+  - requests
+  - boto3
+  - moto
+  - flask
+  - flask-cors
+
+  # ml
+  - pytorch
+  - pytorch_geometric
+  - pytorch_cluster
+  - pytorch_scatter
+  - pytorch_sparse
+  - numpy
+  - h5py
+  - e3nn
+  - dgl
+  - dgllife
+  - pooch
+
+
+  # Pip-only installs
+  - pip:
+    - biopython
+    - ase
+    - validators
+    - pyyaml
+    # ml
+    - git+https://github.com/choderalab/mtenn@0.2.0
+    # testing
+    - pytest-console-scripts
+    - pytest-timeout
