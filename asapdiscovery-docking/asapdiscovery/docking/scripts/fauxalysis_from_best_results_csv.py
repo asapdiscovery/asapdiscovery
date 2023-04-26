@@ -98,7 +98,7 @@ def main():
     combined_sdf_fd = open(combined_sdf, "wb")
     for structure, paths in sdfs_per_structure.items():
         structure_sdf = args.output_dir / f"{structure}_combined.sdf"
-        structure_sdf_fd = (structure_sdf, "wb")
+        structure_sdf_fd = open(structure_sdf, "wb")
         for sdf_to_copy in paths:
             logger.info(f"Copying {sdf_to_copy} to {structure_sdf}")
             fd = open(sdf_to_copy, "rb")
