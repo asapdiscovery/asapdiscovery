@@ -62,7 +62,8 @@ def main():
         sdf_paths, structure_paths, dir_names
     ):
         new_dir = args.output_dir / dir_name
-        new_dir.mkdir()
+        if not new_dir.exists():
+            new_dir.mkdir()
         logger.info(f"Copying {sdf_path} and {structure_path} to {new_dir}")
         shutil.copy2(sdf_path, new_dir)
         shutil.copy2(structure_path, new_dir)
