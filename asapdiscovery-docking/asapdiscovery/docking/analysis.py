@@ -363,8 +363,8 @@ class DockingResults:
         self,
         filter_score="RMSD",
         filter_value=2.5,
-        score_order=["POSIT_R", "Chemgauss4", "RMSD"],
-        score_ascending=[True, True, True],
+        score_order=("POSIT_R", "Chemgauss4", "RMSD"),
+        score_ascending=(True, True, True),
     ):
         """
         Gets the best structure by first filtering based on the filter_score and
@@ -395,7 +395,7 @@ class DockingResults:
 
         # sort dataframe, ascending (smaller / better scores will move to the top)
         sorted_df = filtered_df.sort_values(
-            sort_list, ascending=[True, True, True, True]
+            sort_list, ascending=[True] + score_ascending
         )
 
         # group by compound id and return the top row for each group
