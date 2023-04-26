@@ -38,7 +38,7 @@ def main():
     logger.info(f"Loading files from {args.best_results_csv}")
 
     # Load CSV
-    df = pd.read_csv(args.best_results_csv).replace(np.nan, "")
+    df = pd.read_csv(args.best_results_csv).replace(np.nan, "None")
     logger.info(f"Loaded {len(df)} rows from {args.best_results_csv}")
 
     # Get list of sdfs and protein pdbs
@@ -64,7 +64,7 @@ def main():
         new_dir = args.output_dir / dir_name
         if not new_dir.exists():
             new_dir.mkdir()
-        logger.info(f"Copying {sdf_path} and {structure_path} to {new_dir}")
+        logger.info(f"Copying {sdf_path.name} and {structure_path.name} to {new_dir}")
         shutil.copy2(sdf_path, new_dir)
         shutil.copy2(structure_path, new_dir)
 
