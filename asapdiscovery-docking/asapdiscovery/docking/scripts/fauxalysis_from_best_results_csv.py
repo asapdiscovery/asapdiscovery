@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from asapdiscovery.data.logging import FileLogger
+import shutil
 
 
 def parse_args():
@@ -47,9 +48,23 @@ def main():
     ]
     dir_names = df["Compound_ID"] + "_" + df["Structure_Source"]
 
+    if not len(sdf_paths) == len(structure_paths):
+        raise ValueError(
+            f"Found {len(sdf_paths)} sdf files and {len(structure_paths)} protein pdbs, looks like some are missing!"
+        )
+
     logger.info(
         f"Found {len(sdf_paths)} sdf files and {len(structure_paths)} protein pdbs"
     )
+
+    # Copy sdfs and protein pdbs to output dir
+    for sdf_path, structure_path, dir_name in zip(
+        sdf_paths, structure_paths, dir_names
+    ):
+        new_dir = args.output_dir / dir_name
+        new_dir.mkdir()
+        shutil.copy(sdf_path, new_dir)
+        shutil.copy(structure_path, new_dir)
 
 
 if __name__ == "__main__":
