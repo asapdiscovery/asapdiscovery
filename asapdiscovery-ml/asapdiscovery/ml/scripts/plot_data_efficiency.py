@@ -7,13 +7,13 @@ Input CSV must have the columns:
 import argparse
 import logging
 import os
-import pandas
 import pickle as pkl
 from functools import partial
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas
 import seaborn as sns
 
 # from asapdiscovery.ml.scripts.plot_loss import convert_pic50
