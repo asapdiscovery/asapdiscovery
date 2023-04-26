@@ -1,6 +1,13 @@
+"""
+Input CSV must have the columns:
+ * loss_dir
+ * label
+ * train_frac
+"""
 import argparse
 import logging
 import os
+import pandas
 import pickle as pkl
 from functools import partial
 from pathlib import Path
@@ -8,7 +15,62 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from asapdiscovery.ml.scripts.plot_loss import convert_pic50
+
+# from asapdiscovery.ml.scripts.plot_loss import convert_pic50
+
+
+# Compute R value in kcal/mol/K
+try:
+    from simtk.unit import MOLAR_GAS_CONSTANT_R as R_const
+    from simtk.unit import kelvin as K
+    from simtk.unit import kilocalorie as kcal
+    from simtk.unit import mole as mol
+
+    R = R_const.in_units_of(kcal / mol / K)._value
+except ModuleNotFoundError:
+    # use R = .001987 kcal/mol/K
+    R = 0.001987
+    logging.debug("simtk package not found, using R value of", R)
+
+
+def convert_pic50(pic50, T=298.0, cp_values=None):
+    """
+    Function to convert pIC50 value to delta G value (in kcal/mol).
+
+    Conversion:
+    IC50 value = exp(dG/kT) => pic50 = -log10(exp(dG/kT))
+    exp(dg/kT) = 10**(-pic50)
+    dg = kT * ln(10**(-pic50))
+    change of base => dg = kT * -pic50 / log10(e)
+
+    Parameters
+    ----------
+    pic50 : float
+        pIC50 value to convert
+    T : float, default=298.0
+        Temperature for conversion
+    cp_values : Tuple[int], optional
+        Substrate concentration and Km values for calculating Ki using the
+        Cheng-Prussoff equation. These values are assumed to be in the same
+        concentration units. If no values are passed for this, pIC50 values
+        will be used as an approximation of the Ki
+
+    Returns
+    -------
+    float
+        Converted delta G value in kT
+    """
+    # Calculate Ki using Cheng-Prussoff
+    if cp_values:
+        # Convert pIC50 -> IC50
+        ic50 = 10 ** (-pic50)
+        dG = R * T * np.log(ic50 / (1 + cp_values[0] / cp_values[1]))
+    # Use Ki = pIC50 approximation
+    else:
+        dG = -R * T * np.log(10.0) * pic50
+
+    # Plotting MAE so return absolute value
+    return np.abs(dG)
 
 
 def load_losses(loss_dir, conv_function=None):
@@ -25,8 +87,12 @@ def load_losses(loss_dir, conv_function=None):
 
     Returns
     -------
-    List[float, float, float]
-        Train, val, test losses
+    float
+        Train loss
+    float
+        Val loss
+    float
+        Test loss
     """
     p = Path(loss_dir)
     loss_arrays = {}
@@ -53,25 +119,24 @@ def load_losses(loss_dir, conv_function=None):
             sp: loss_arr.mean(axis=1) for sp, loss_arr in loss_arrays.items()
         }
 
-    return [
+    return (
         loss_arrays["train"][best_idx],
         loss_arrays["val"][best_idx],
         loss_arrays["test"][best_idx],
-    ]
+    )
 
 
-def load_all_losses(loss_dirs, labels, train_fracs, conv_function=None):
+def load_all_losses(in_df, rel_dir=None, conv_function=None):
     """
     Load all train, val, and test losses, and build DataFrame.
 
     Parameters
     ----------
-    loss_dirs : List[str]
-        List of directories containing loss pickle files
-    labels : List[str]
-        List of labels for each dir (one to one)
-    train_fracs : List[float]
-        List of train fractions for each dir (one to one)
+    in_df : pandas.DataFrame
+        DataFrame containing loss_dir, label, train_frac
+    rel_dir : str, optional
+        Directory to which all paths in in_df are relative to. If present, will be
+        prepended to each path
     conv_function : callable, optional
         If present, will use to convert mean absolute loss values
 
@@ -83,13 +148,13 @@ def load_all_losses(loss_dirs, labels, train_fracs, conv_function=None):
     # Parametrize load_losses function
     load_losses_param = partial(load_losses, conv_function=conv_function)
 
-    df_rows = [
-        load_losses(d) + [l, train_frac]
-        for d, l, train_frac in zip(loss_dirs, labels, train_fracs)
-    ]
-    return pandas.DataFrame(
-        df_rows, columns=["train", "val", "test", "label", "train_frac"]
-    )
+    all_dirs = [os.path.join(rel_dir, d) if rel_dir else d for d in in_df["loss_dir"]]
+
+    # Load losses and build DF
+    df_rows = [load_losses(d) for d in all_dirs]
+    df = pandas.DataFrame(df_rows, columns=["train", "val", "test"])
+
+    return pandas.concat([in_df, df], axis=1)
 
 
 def plot_data_efficiency(plot_df, out_fn):
@@ -124,27 +189,14 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     parser.add_argument(
-        "-d",
-        "--loss_dirs",
+        "-i",
+        "--in_csv",
         required=True,
-        nargs="+",
-        help="Top-level directories containing train, val, and test losses.",
+        help="CSV file giving directories, labels, and train fracs.",
     )
     parser.add_argument("-o", "--out_fn", required=True, help="Output plot file.")
     parser.add_argument(
-        "-l",
-        "--labels",
-        required=True,
-        nargs="+",
-        help="List of labels (one for each loss dir).",
-    )
-    parser.add_argument(
-        "-t",
-        "--train_fracs",
-        required=True,
-        type=float,
-        nargs="+",
-        help="List of training fractions (one for each loss dir).",
+        "-d", "--rel_dir", help="Relative directory for all loss_dir in in_csv."
     )
 
     parser.add_argument(
@@ -187,11 +239,6 @@ def get_args():
 def main():
     args = get_args()
 
-    if len(args.loss_dirs) != len(args.labels):
-        raise ValueError("Incorrect number of labels.")
-    if len(args.loss_dirs) != len(args.train_fracs):
-        raise ValueError("Incorrect number of train fracs.")
-
     if args.conv:
         # Parametrized function
         convert_pic50_param = partial(
@@ -200,10 +247,11 @@ def main():
     else:
         convert_pic50_param = None
 
+    # Load inputs
+    in_df = pandas.read_csv(args.in_csv)
+
     # Build DF from losses
-    loss_df = load_all_losses(
-        args.loss_dirs, args.labels, args.train_fracs, convert_pic50_param
-    )
+    loss_df = load_all_losses(in_df, args.rel_dir, convert_pic50_param)
 
     # Prepare for plotting
     plot_df = loss_df.melt(
