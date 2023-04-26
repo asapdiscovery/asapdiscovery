@@ -42,25 +42,26 @@ def main():
     logger.info(f"Loaded {len(df)} rows from {args.best_results_csv}")
 
     # Get list of sdfs and protein pdbs
-    sdf_paths = [Path(path_) for path_ in df["Docked_File"] if Path(path_).exists()]
-    structure_paths = [
-        Path(path_) for path_ in df["Structure_Path"] if Path(path_).exists()
-    ]
+    sdf_paths = [Path(path_) for path_ in df["Docked_File"]]
+    structure_paths = [Path(path_) for path_ in df["Structure_Path"]]
     dir_names = df["Compound_ID"] + "_" + df["Structure_Source"]
 
     if not len(sdf_paths) == len(structure_paths):
         raise ValueError(
-            f"Found {len(sdf_paths)} sdf files and {len(structure_paths)} protein pdbs, looks like some are missing!"
+            f"Loaded {len(sdf_paths)} sdf paths and {len(structure_paths)} structure paths, looks like some are missing!"
         )
-
-    logger.info(
-        f"Found {len(sdf_paths)} sdf files and {len(structure_paths)} protein pdbs"
-    )
 
     # Copy sdfs and protein pdbs to output dir
     for sdf_path, structure_path, dir_name in zip(
         sdf_paths, structure_paths, dir_names
     ):
+        if not sdf_path.exists():
+            logger.error(f"{sdf_path} does not exist!")
+            continue
+        if not structure_path.exists():
+            logger.error(f"{structure_path} does not exist!")
+            continue
+
         new_dir = args.output_dir / dir_name
         if not new_dir.exists():
             new_dir.mkdir()
