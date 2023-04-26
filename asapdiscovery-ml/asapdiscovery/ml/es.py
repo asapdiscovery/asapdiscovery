@@ -68,3 +68,61 @@ class BestEarlyStopping:
             return True
 
         return False
+
+
+class ConvergedEarlyStopping:
+    """
+    Class for handling early stopping in training based on whether loss is still
+    changing. Check that all differences of the past n losses from the average of
+    those losses are within tolerance.
+    """
+
+    def __init__(self, n_check, divergence):
+        """
+        Parameters
+        ----------
+        n_check : int
+            Number of past epochs to keep track of when calculating divergence
+        divergence : float
+            Max allowable difference from the mean of the losses as a fraction of the
+            average loss
+        """
+        super().__init__()
+        self.n_check = n_check
+        self.divergence = divergence
+
+        # Variables to track early stopping
+        self.losses = []
+
+    def check(self, loss):
+        """
+        Check if training should be stopped. Return True to stop, False to keep going.
+
+        Parameters
+        ----------
+        loss : float
+            Loss from the previous training epoch
+
+        Returns
+        -------
+        bool
+            Whether to stop training
+        """
+        import numpy as np
+
+        # Add most recent loss
+        self.losses += [loss]
+
+        # Don't have enough samples yet, so keep training
+        if len(self.losses) < self.n_check:
+            return False
+
+        # Full loss buffer, so get rid of earliest loss
+        if len(self.losses) > self.n_check:
+            self.losses = self.losses[1:]
+
+        # Check for early stopping
+        mean_loss = np.mean(self.losses)
+        all_abs_diff = np.abs(np.asarray(self.losses) - mean_loss)
+
+        return np.all(all_abs_diff < (self.divergence * mean_loss))
