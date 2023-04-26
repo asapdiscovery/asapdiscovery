@@ -5,6 +5,7 @@ the others
 """
 import argparse
 import json
+import socket
 
 import pandas as pd
 from asapdiscovery.dataviz import plotly_dash_functions, plotting  # noqa: E402
@@ -169,7 +170,7 @@ def main():
         return fig
 
     # Run the server!
-    app.run_server(port=9001, debug=True)
+    app.run(host=socket.gethostbyname("localhost"), port=9001, debug=True)
 
 
 if __name__ == "__main__":

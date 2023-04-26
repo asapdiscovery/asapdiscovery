@@ -349,6 +349,7 @@ def update_contour(
 )
 def update_table(clickData):
     if clickData:
+        print("Updating Table")
         complex_ID = clickData["points"][0]["customdata"][0]
 
         # Get Compound
@@ -358,7 +359,7 @@ def update_table(clickData):
         compound = df["Compound_ID"][0]
 
     # Filter by compound
-    dff = df[df["Compound_ID"] == compound]
+    dff = df.loc[df["Compound_ID"] == compound, :]
 
     return dff.to_dict("records")
 
@@ -501,14 +502,18 @@ def per_structure_bar_chart(clickData1, clickData2):
         "crossfilter-indicator-scatter",
         "by-compound",
     ]:
+        print(input_source)
         if not input_source:
             complex_ID = df["Complex_ID"][0]
+            print(complex_ID)
         else:
             click_data = ctx.triggered[0]["value"]
+            print(f"trying to update per structure bar chart with {click_data}")
             complex_ID = click_data["points"][0]["customdata"][0]
 
         # Get Structure
-        structure = df.loc[complex_ID, "Structure_Source"][0]
+        structure = df.loc[complex_ID, "Structure_Source"]
+        print(structure)
 
         # Filter by structure
         dff = by_structure_tidy[by_structure_tidy["Structure_Source"] == structure]
@@ -554,7 +559,7 @@ def per_structure_bar_chart(clickData1, clickData2):  # noqa F811
             complex_ID = click_data["points"][0]["customdata"][0]
 
         # Get Structure
-        structure = df.loc[complex_ID, "Structure_Source"][0]
+        structure = df.loc[complex_ID, "Structure_Source"]
 
         # Filter by structure
         dff = by_structure_tidy[by_structure_tidy["Structure_Source"] == structure]
@@ -578,7 +583,9 @@ def per_structure_bar_chart(clickData1, clickData2):  # noqa F811
 
 def main():
     """Run server for Dash application"""
-    app.run_server(debug=True)
+    import socket
+
+    app.run(host=socket.gethostbyname("localhost"), debug=True)
 
 
 if __name__ == "__main__":
