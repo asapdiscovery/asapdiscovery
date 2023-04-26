@@ -4,8 +4,10 @@ Class for handling early stopping in training.
 from copy import deepcopy
 
 
-class EarlyStopping:
-    """Class for handling early stopping in training."""
+class BestEarlyStopping:
+    """
+    Class for handling early stopping in training based on improvement over best loss.
+    """
 
     def __init__(self, patience):
         """
