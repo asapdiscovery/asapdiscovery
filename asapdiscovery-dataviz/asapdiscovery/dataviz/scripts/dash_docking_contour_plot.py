@@ -15,11 +15,11 @@ Adding new functions would require 3 steps (as far as I understand it):
 plotly creator
 """
 import argparse
+import socket
 
 from asapdiscovery.dataviz import plotly_dash_functions, plotting  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
 from dash import Input, Output, html
-import socket
 
 
 def get_args():
