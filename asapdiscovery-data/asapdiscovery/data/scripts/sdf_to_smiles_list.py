@@ -3,9 +3,10 @@ Load in a multi-ligand SDF file and write out a txt file with the format `SMILES
 Ligand name expected to be in the Compound_ID field of the sdf file.
 """
 from argparse import ArgumentParser
-from asapdiscovery.data.openeye import load_openeye_sdfs, oechem
-from asapdiscovery.data.logging import FileLogger
 from pathlib import Path
+
+from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.openeye import load_openeye_sdfs, oechem
 
 
 def get_args():
@@ -34,7 +35,6 @@ def main():
 
     output_lines = []
     for i, mol in enumerate(mols):
-
         # Get the compound ID from the SD data if it exists, otherwise use the index
         compound_id = oechem.OEGetSDData(mol, "Compound_ID").rstrip()
         if not compound_id:
