@@ -2,7 +2,7 @@ import glob
 import logging
 import os.path
 import re
-from typing import List, Optional, Union
+from typing import List, Optional, Union  # noqa: F401
 
 import numpy as np
 import pandas

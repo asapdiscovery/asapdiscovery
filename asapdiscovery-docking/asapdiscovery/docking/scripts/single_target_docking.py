@@ -421,8 +421,6 @@ def main():
     # ML stuff for docking
     logger.info("Setup ML for docking")
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
-    e3nn_model_string = None
-    schnet_model_string = None
 
     if args.gat:
         from asapdiscovery.ml.inference import GATInference  # noqa: E402
@@ -456,6 +454,7 @@ def main():
                 f"{compound.compound_id}_{receptor_name}",
                 args.omega,
                 args.num_poses,
+                gat_model=gat_model,
             )
         )
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
