@@ -1353,7 +1353,7 @@ def is_valid_smiles(smiles):
 
 def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
     """
-    Use OpenEye toBuild a list of ExperimentalCompoundData objects from an SDF or SMILES file.
+    Use OpenEye to build a list of ExperimentalCompoundData objects from an SDF or SMILES file.
     Everything other than `compound_id` and `smiles` will be left as default.
 
     Parameters
@@ -1361,6 +1361,7 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
     fn : str
         SDF or SMI file name.
     ftype : str
+        File type, either "sdf" or "smi"
 
     Returns
     -------
@@ -1386,19 +1387,20 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
     return exp_data_compounds
 
 
-def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem.OEMol]:
+def exp_data_to_oe_mols(exp_data: List[ExperimentalCompoundData]) -> List[oechem.OEMol]:
     """
-    Convert an ExperimentalCompoundData object to an OEMol object
+    Convert a list of  ExperimentalCompoundData objects to OEMol objects
+    via SMILES strings.
 
     Parameters
     ----------
-    exp_data : ExperimentalCompoundData
-        ExperimentalCompoundData object
+    exp_data : List[ExperimentalCompoundData]
+        List of ExperimentalCompoundData objects
 
     Returns
     -------
-    oechem.OEMol
-        OEMol object
+    List[oechem.OEMol]
+        List of OEMol objects
     """
     mols = []
     for ed in exp_data:
