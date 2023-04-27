@@ -27,9 +27,62 @@ from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: E402
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
 
+"""
+Script to run single target prep + docking.
+
+Input:
+    - receptor: path to receptor to prep and dock to
+    - mols: path to the molecules to dock to the receptor as an SDF or SMILES file, or SMILES string.
+    - title: title of molecule to use if a SMILES string is passed in as input, default is to hash the SMILES string to avoid accidental caching.
+    - output_dir: path to output_dir, will NOT overwrite if exists.
+    - debug: enable debug mode, with more files saved and more verbose logging
+    - verbose: whether to print out verbose logging.
+    - cleanup: clean up intermediate files
+
+    # Prep arguments
+    - loop_db: path to loop database.
+    - seqres_yaml: path to yaml file of SEQRES.
+    - protein_only: if true, generate design units with only the protein in them
+    - ref_prot: path to reference pdb to align to. If None, no alignment will be performed
+    
+    # MCS arguments
+    - mcs_sys: which package to use for MCS search [rdkit, oe].
+    - mcs_structural: use structure-based matching instead of element-based matching for MCS.
+    - n_draw: number of MCS compounds to draw for each query molecule.
+    
+    # Docking arguments
+    - top_n: number of top matches to dock. Set to -1 to dock all.
+    - docking_sys: which docking system to use [posit, hybrid]. Defaults to posit.
+    - relax: when to run relaxation [none, clash, all]. Defaults to none.
+    - omega: use Omega conformer enumeration.
+    - hybrid: whether to only use hybrid docking protocol in POSIT.
+    - num_poses: number of poses to return from docking.
+    - gat: whether to use GAT model to score docked poses.
+
+
+Example usage:
+
+    # with an SDF or SMILES file
+
+    python single_target_docking.py \
+        -r /path/to/receptor.pdb \
+        -m /path/to/mols.[sdf/smi] \
+        -o /path/to/output_dir \
+
+    # with a SMILES string
+
+    python single_target_docking.py \
+        -r /path/to/receptor.pdb \
+        -m 'COC(=O)COc1cc(cc2c1OCC[C@H]2C(=O)Nc3cncc4c3cccc4)Cl'
+        -o /path/to/output_dir \
+        --title 'my_fancy_molecule' \ # without a title you will be given a hash of the SMILES string
+        --debug \
+
+"""
+
+
 # setup input arguments
 parser = argparse.ArgumentParser(description="Run single target docking.")
-parser.add_argument("-l", "--lig_file", help="SDF file containing ligands.")
 
 parser.add_argument(
     "-r", "--receptor", required=True, help=("Path to receptor to prep and dock to")
@@ -55,7 +108,7 @@ parser.add_argument(
     "-o",
     "--output_dir",
     required=True,
-    help="Path to output_dir, will overwrite if exists.",
+    help="Path to output_dir, will NOT overwrite if exists.",
 )
 
 # general arguments
@@ -331,7 +384,6 @@ def main():
     logger.info(f"Running MCS search at {datetime.now().isoformat()}")
     sort_idxs = []
     for compound in exp_data:
-
         sort_idxs.append(
             mcs_rank_fn(
                 compound.smiles,
@@ -345,8 +397,7 @@ def main():
             )
         )
         if args.verbose:
-            logger.info(f"Searching for MCS with {compound}")
-            logger.info(f"got sort_idxs: {sort_idxs}")
+            logger.info(f"Searching for MCS with {compound.compound_id}")
     logger.info(f"Finished MCS search at {datetime.now().isoformat()}")
     if args.debug:
         logger.info(
@@ -387,20 +438,22 @@ def main():
 
     results = []
     oe_mols = exp_data_to_oe_mols(exp_data)
-    for mol, ed in zip(oe_mols, exp_data):
+    for mol, compound in zip(oe_mols, exp_data):
+        if args.verbose:
+            logger.info(f"Running docking for {compound.compound_id}")
         results.append(
             oe_docking_function(
                 dock_dir / f"{ed.compound_id}_{receptor_name}",
-                ed.compound_id,
+                compound.compound_id,
                 prepped_oedu,
                 logname,
-                f"{ed.compound_id}_{receptor_name}",
+                f"{compound.compound_id}_{receptor_name}",
                 du,
                 mol,
                 args.docking_sys.lower(),
                 args.relax.lower(),
                 args.hybrid,
-                f"{ed.compound_id}_{receptor_name}",
+                f"{compound.compound_id}_{receptor_name}",
                 args.omega,
                 args.num_poses,
             )
