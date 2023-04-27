@@ -2,7 +2,7 @@ import glob
 import logging
 import os.path
 import re
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas
@@ -1351,7 +1351,7 @@ def is_valid_smiles(smiles):
     return True
 
 
-def oe_load_exp_from_file(fn, ftype) -> List[ExperimentalCompoundData]:
+def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
     """
     Use OpenEye toBuild a list of ExperimentalCompoundData objects from an SDF or SMILES file.
     Everything other than `compound_id` and `smiles` will be left as default.
@@ -1386,7 +1386,7 @@ def oe_load_exp_from_file(fn, ftype) -> List[ExperimentalCompoundData]:
     return exp_data_compounds
 
 
-def exp_data_to_oe_mols(exp_data: List[ExperimentalCompoundData]) -> List[oechem.OEMol]:
+def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem.OEMol]:
     """
     Convert an ExperimentalCompoundData object to an OEMol object
 

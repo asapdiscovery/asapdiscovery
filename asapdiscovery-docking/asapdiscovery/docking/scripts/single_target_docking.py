@@ -1,27 +1,26 @@
 import argparse
-import pandas
+import hashlib
 import pickle as pkl
 import shutil
 import hashlib
 import yaml
 
-
 from datetime import datetime
 from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
-
+import pandas
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
-    oechem,
     extract_ligand_from_design_unit,
+    oechem,
     save_openeye_sdf,
 )
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
-    oe_load_exp_from_file,
-    is_valid_smiles,
     exp_data_to_oe_mols,
+    is_valid_smiles,
+    oe_load_exp_from_file,
 )
 from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
@@ -45,12 +44,12 @@ Input:
     - seqres_yaml: path to yaml file of SEQRES.
     - protein_only: if true, generate design units with only the protein in them
     - ref_prot: path to reference pdb to align to. If None, no alignment will be performed
-    
+
     # MCS arguments
     - mcs_sys: which package to use for MCS search [rdkit, oe].
     - mcs_structural: use structure-based matching instead of element-based matching for MCS.
     - n_draw: number of MCS compounds to draw for each query molecule.
-    
+
     # Docking arguments
     - top_n: number of top matches to dock. Set to -1 to dock all.
     - docking_sys: which docking system to use [posit, hybrid]. Defaults to posit.
@@ -76,7 +75,7 @@ Example usage:
         -r /path/to/receptor.pdb \
         -m 'COC(=O)COc1cc(cc2c1OCC[C@H]2C(=O)Nc3cncc4c3cccc4)Cl'
         -o /path/to/output_dir \
-        --title 'my_fancy_molecule' \ # without a title you will be given a hash of the SMILES string
+        --title 'my_fancy_molecule' \\ # without a title you will be given a hash of the SMILES string
         --debug \
 
 """
