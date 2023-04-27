@@ -2,6 +2,7 @@
 This script slices the structures from the fragalysis database into the active site and full protein PDB files,
 as well as the corresponding numpy arrays of the coordinates of the atoms in the active site and full protein.
 """
+# TODO: Take indices to use for slicing as input
 import argparse
 import logging
 import multiprocessing as mp
@@ -11,6 +12,7 @@ from pathlib import Path
 import mdtraj as md
 import numpy as np
 from asapdiscovery.data.utils import check_filelist_has_elements
+from asapdiscovery.data.logging import FileLogger
 
 
 ################################################################################
@@ -33,10 +35,10 @@ def get_args():
 
     parser.add_argument(
         "-l",
-        "--log_file",
+        "--log_name",
         type=str,
-        default="save_combined_frag_structures.log",
-        help="Log file",
+        default="splice_fragalysis_structures_with_mdtraj",
+        help="Log name to use for the output log file.",
     )
 
     # Performance arguments
@@ -53,14 +55,15 @@ def get_args():
 
 def analyze_mp(fn, out_dir):
     full_protein_selection = "not element H and (chainid 0 or chainid 2)"
-    active_site_string = "not element H and (chainid 0 or chainid 2) and (residue 140 to 145 or residue 163 or residue 172 or residue 25 to 27 or residue 41 or residue 49 or residue 54 or residue 165 to 168 or residue 189 to 192)"
+    active_site_string = (
+        "not element H and (chainid 0 or chainid 2) and (residue 140 to 145 or residue 163 or "
+        "residue 172 or residue 25 to 27 or residue 41 or residue 49 or residue 54 or "
+        "residue 165 to 168 or residue 189 to 192)"
+    )
     output_name = fn.stem
 
     # Prepare logger
-    handler = logging.FileHandler(out_dir / f"{output_name}-log.txt", mode="w")
-    prep_logger = logging.getLogger(output_name)
-    prep_logger.setLevel(logging.INFO)
-    prep_logger.addHandler(handler)
+    prep_logger = FileLogger(f"{out_dir}.{output_name}", out_dir).getLogger()
     prep_logger.info(datetime.isoformat(datetime.now()))
 
     # Check if outputs exists
@@ -102,10 +105,7 @@ def analyze_mp(fn, out_dir):
 def main():
     args = get_args()
 
-    handler = logging.FileHandler(args.log_file, mode="w")
-    main_logger = logging.getLogger("main")
-    main_logger.setLevel(logging.INFO)
-    main_logger.addHandler(handler)
+    main_logger = FileLogger(args.log_name, args.output_dir).getLogger()
 
     main_logger.info(f"Finding files in {args.structure_dir}")
     fns = list(Path(args.structure_dir).glob("*/*.pdb"))
