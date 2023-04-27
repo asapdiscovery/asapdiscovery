@@ -442,6 +442,12 @@ def main():
     for mol, compound in zip(oe_mols, exp_data):
         if args.verbose:
             logger.info(f"Running docking for {compound.compound_id}")
+        if args.debug:
+            # check smiles match
+            if compound.smiles != oechem.OEMolToSmiles(mol):
+                raise ValueError(
+                    f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()}"
+                )
         results.append(
             full_oe_docking_function(
                 dock_dir / f"{compound.compound_id}_{receptor_name}",
