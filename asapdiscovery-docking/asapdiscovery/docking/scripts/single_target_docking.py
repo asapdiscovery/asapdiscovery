@@ -1,6 +1,8 @@
 import argparse
+import pandas
 import pickle as pkl
 import shutil
+import hashlib
 
 
 from datetime import datetime
@@ -20,7 +22,7 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     exp_data_to_oe_mols,
 )
-from asapdiscovery.docking import prep_mp
+from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: E402
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
@@ -44,9 +46,8 @@ parser.add_argument(
 
 parser.add_argument(
     "--title",
-    default="TARGET_MOL",
     help=(
-        "Title of molecule to use if a SMILES string is passed in as input, default is to generate a new random UUID"
+        "Title of molecule to use if a SMILES string is passed in as input, default is to hash the SMILES string to avoid accidental caching."
     ),
 )
 
@@ -196,6 +197,15 @@ def main():
         logger.info(
             f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}"
         )
+        # hash the smiles to generate a unique title and avoid accidentally caching different outputs as the same
+        if not args.title:
+            logger.info(
+                "No title provided, MD5 hashing SMILES string to generate title, consider providing a title with --title"
+            )
+            args.title = (
+                "TARGET_MOL-" + hashlib.md5(args.mols.encode("utf-8")).hexdigest()
+            )
+
         exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
     else:
         mol_file_path = Path(args.mols)
@@ -265,7 +275,9 @@ def main():
     )
 
     logger.info(f"Loaded receptor {receptor_name} from {receptor}")
-    prep_mp(xtal, args.ref_prot, seqres, prep_dir, args.loop_db, args.protein_only)
+    oe_prep_function(
+        xtal, args.ref_prot, seqres, prep_dir, args.loop_db, args.protein_only
+    )
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
     # grab the files that were created
@@ -394,7 +406,29 @@ def main():
             )
         )
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
+    logger.info(f"Docking finished for {len(results)} runs.")
 
+    results_cols = [
+        "ligand_id",
+        "du_structure",
+        "docked_file",
+        "pose_id",
+        "docked_RMSD",
+        "POSIT_prob",
+        "POSIT_method",
+        "chemgauss4_score",
+        "clash",
+        "SMILES",
+        "GAT_score",
+    ]
+
+    flattened_results_list = [res for res_list in results for res in res_list]
+    results_df = pandas.DataFrame(flattened_results_list, columns=results_cols)
+
+    # Save results to csv
+    csv = output_dir / "results.csv"
+    results_df.to_csv(csv, index=False)
+    logger.info(f"Saved results to {csv}")
     logger.info(f"Finish single target prep+docking at {datetime.now().isoformat()}")
 
     if args.cleanup:
