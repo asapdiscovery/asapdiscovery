@@ -1,8 +1,8 @@
 import glob
 import logging
 import os.path
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
@@ -1326,5 +1326,5 @@ def check_filelist_has_elements(
 def combine_files(paths: list[Union[Path, str]], output_file):
     with open(output_file, "w") as ofs:
         for file_to_copy in paths:
-            with open(file_to_copy, "r") as file_to_copy_fd:
+            with open(file_to_copy) as file_to_copy_fd:
                 ofs.write(file_to_copy_fd.read())
