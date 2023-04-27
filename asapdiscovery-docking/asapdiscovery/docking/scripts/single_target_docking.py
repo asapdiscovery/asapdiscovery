@@ -3,6 +3,7 @@ import hashlib
 import pickle as pkl
 import shutil
 from datetime import datetime
+from functools import partial
 from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
@@ -20,7 +21,10 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
-from asapdiscovery.docking import prep_mp as oe_prep_function
+from asapdiscovery.docking import (
+    prep_mp as oe_prep_function,
+    make_docking_result_dataframe,
+)
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: E402
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
@@ -416,7 +420,7 @@ def main():
     dock_dir.mkdir(parents=True, exist_ok=True)
     intermediate_files.append(dock_dir)
 
-    # ML stuff for docking
+    # ML stuff for docking, fill out others as we make them
     logger.info("Setup ML for docking")
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
 
@@ -429,6 +433,9 @@ def main():
         logger.info("Skipping GAT model scoring")
         gat_model = None
 
+    # use partial to bind the ML models to the docking function
+    full_oe_docking_function = partial(oe_docking_function, GAT_model=gat_model)
+
     # run docking
     logger.info(f"Running docking at {datetime.now().isoformat()}")
 
@@ -438,7 +445,7 @@ def main():
         if args.verbose:
             logger.info(f"Running docking for {compound.compound_id}")
         results.append(
-            oe_docking_function(
+            full_oe_docking_function(
                 dock_dir / f"{compound.compound_id}_{receptor_name}",
                 compound.compound_id,
                 prepped_oedu,
@@ -452,32 +459,13 @@ def main():
                 f"{compound.compound_id}_{receptor_name}",
                 args.omega,
                 args.num_poses,
-                gat_model=gat_model,
             )
         )
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
     logger.info(f"Docking finished for {len(results)} runs.")
 
-    results_cols = [
-        "ligand_id",
-        "du_structure",
-        "docked_file",
-        "pose_id",
-        "docked_RMSD",
-        "POSIT_prob",
-        "POSIT_method",
-        "chemgauss4_score",
-        "clash",
-        "SMILES",
-        "GAT_score",
-    ]
-
-    flattened_results_list = [res for res_list in results for res in res_list]
-    results_df = pandas.DataFrame(flattened_results_list, columns=results_cols)
-
-    # Save results to csv
-    csv = output_dir / "results.csv"
-    results_df.to_csv(csv, index=False)
+    # save results
+    _, csv = make_docking_result_dataframe(results, output_dir, save_csv=True)
     logger.info(f"Saved results to {csv}")
     logger.info(f"Finish single target prep+docking at {datetime.now().isoformat()}")
 

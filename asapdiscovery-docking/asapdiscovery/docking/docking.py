@@ -1,4 +1,7 @@
 import logging
+import pandas as pd
+from pathlib import Path  # noqa: F401
+from typing import Optional, List, Tuple  # noqa: F401
 
 
 def run_docking_oe(
@@ -245,3 +248,59 @@ def run_docking_oe(
     assert combined_mol.NumConfs() == len(posed_mols)
 
     return True, combined_mol, docking_id
+
+
+def docking_result_cols() -> List[str]:
+    return [
+        "ligand_id",
+        "du_structure",
+        "docked_file",
+        "pose_id",
+        "docked_RMSD",
+        "POSIT_prob",
+        "POSIT_method",
+        "chemgauss4_score",
+        "clash",
+        "SMILES",
+        "GAT_score",
+    ]
+
+
+def make_docking_result_dataframe(
+    results: List,
+    output_dir: Path,
+    save_csv: bool = True,
+    results_cols: Optional[List[str]] = docking_result_cols(),
+    csv_name: Optional[str] = "results.csv",
+) -> Tuple[pd.DataFrame, Path]:
+    """
+    Save results to a CSV file
+
+    Parameters
+    ----------
+    results : List
+        List of results from docking
+    output_dir : Path
+        Path to output directory
+    results_cols : Optional[List[str]], optional
+        List of column names for results, by default will use a set of hardcoded column names
+    csv_name : Optional[str], optional
+        Name of CSV file, by default "results.csv"
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame of results
+    Path
+        Path to CSV file
+    """
+    _results_cols = results_cols
+
+    flattened_results_list = [res for res_list in results for res in res_list]
+    results_df = pd.DataFrame(flattened_results_list, columns=_results_cols)
+    if save_csv:
+        csv = output_dir / csv_name
+        results_df.to_csv(csv, index=False)
+    else:
+        csv = None
+    return results_df, csv
