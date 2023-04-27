@@ -1387,7 +1387,7 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
     return exp_data_compounds
 
 
-def exp_data_to_oe_mols(exp_data: List[ExperimentalCompoundData]) -> List[oechem.OEMol]:
+def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem.OEMol]:
     """
     Convert a list of  ExperimentalCompoundData objects to OEMol objects
     via SMILES strings.
