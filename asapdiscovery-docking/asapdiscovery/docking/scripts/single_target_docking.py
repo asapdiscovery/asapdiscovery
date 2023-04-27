@@ -2,14 +2,12 @@ import argparse
 import hashlib
 import pickle as pkl
 import shutil
-import hashlib
-import yaml
-
 from datetime import datetime
 from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
 import pandas
+import yaml
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     extract_ligand_from_design_unit,
