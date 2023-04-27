@@ -3,11 +3,12 @@ import pandas
 import pickle as pkl
 import shutil
 import hashlib
+import yaml
 
 
 from datetime import datetime
-from pathlib import Path
-from typing import List
+from pathlib import Path  # noqa: F401
+from typing import List  # noqa: F401
 
 
 from asapdiscovery.data.logging import FileLogger
@@ -358,7 +359,7 @@ def main():
 
     if args.debug:
         # write out the ligand and protein
-        logger.info(f"Writing out ligand for debugging")
+        logger.info("Writing out ligand for debugging")
         save_openeye_sdf(lig, str(prep_dir / f"{receptor_name}_ligand.sdf"))
 
     ligand_smiles = oechem.OEMolToSmiles(lig)
@@ -372,10 +373,10 @@ def main():
     logger.info(f"Setting up MCS search in {mcs_dir} at {datetime.now().isoformat()}")
 
     if args.mcs_sys == "rdkit":
-        logger.info(f"Using RDKit for MCS search.")
+        logger.info("Using RDKit for MCS search.")
         mcs_rank_fn = rank_structures_rdkit
     elif args.mcs_sys == "oe":
-        logger.info(f"Using OpenEye for MCS search.")
+        logger.info("Using OpenEye for MCS search.")
         mcs_rank_fn = rank_structures_openeye
     else:
         raise ValueError(f"Invalid MCS search system: {args.mcs_sys}")
@@ -419,7 +420,7 @@ def main():
     intermediate_files.append(dock_dir)
 
     # ML stuff for docking
-    logger.info(f"Setup ML for docking")
+    logger.info("Setup ML for docking")
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
     e3nn_model_string = None
     schnet_model_string = None
@@ -443,7 +444,7 @@ def main():
             logger.info(f"Running docking for {compound.compound_id}")
         results.append(
             oe_docking_function(
-                dock_dir / f"{ed.compound_id}_{receptor_name}",
+                dock_dir / f"{compound.compound_id}_{receptor_name}",
                 compound.compound_id,
                 prepped_oedu,
                 logname,
@@ -486,11 +487,11 @@ def main():
 
     if args.cleanup:
         if len(intermediate_files) > 0:
-            logger.info(f"Removing intermediate files.")
+            logger.info("Removing intermediate files.")
             for path in intermediate_files:
                 shutil.rmtree(path)
     else:
-        logger.info(f"Keeping intermediate files.")
+        logger.info("Keeping intermediate files.")
 
 
 if __name__ == "__main__":
