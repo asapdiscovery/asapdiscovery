@@ -9,8 +9,12 @@ from typing import List
 
 
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema import CrystalCompoundData
+from asapdiscovery.data.openeye import (
+    oechem,
+    extract_ligand_from_design_unit,
+    save_openeye_sdf,
+)
+from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     oe_load_exp_from_file,
     is_valid_smiles,
@@ -58,6 +62,12 @@ parser.add_argument(
     "--debug",
     action="store_true",
     help="enable debug mode, with more files saved and more verbose logging",
+)
+
+parser.add_argument(
+    "--verbose",
+    action="store_true",
+    help="Whether to print out verbose logging.",
 )
 
 # general arguments
@@ -133,6 +143,13 @@ parser.add_argument(
     action="store_true",
     help="Use Omega conformer enumeration.",
 )
+
+parser.add_argument(
+    "--hybrid",
+    action="store_true",
+    help="Whether to only use hybrid docking protocol in POSIT.",
+)
+
 parser.add_argument(
     "--num_poses",
     type=int,
@@ -140,11 +157,6 @@ parser.add_argument(
     help="Number of poses to return from docking.",
 )
 
-parser.add_argument(
-    "--verbose",
-    action="store_true",
-    help="Whether to print out verbose logging.",
-)
 parser.add_argument(
     "--gat",
     action="store_true",
@@ -166,14 +178,15 @@ def main():
     logger.info(f"Output directory: {output_dir}")
 
     # openeye logging handling
-    errfs = oechem.oeofstream(output_dir / f"openeye-{logname}-log.txt")
+    errfs = oechem.oeofstream(str(output_dir / f"openeye-{logname}-log.txt"))
     oechem.OEThrow.SetOutputStream(errfs)
     oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
 
     if args.debug:
-        logger.info("Running in debug mode.")
+        logger.info("Running in debug mode. enabling --verbose and disabling --cleanup")
         logger.info(f"Input arguments: {args}")
-        args.keep_intermediate = True
+        args.verbose = True
+        args.cleanup = False
 
     # paths to remove if not keeping intermediate files
     intermediate_files = []
@@ -199,6 +212,10 @@ def main():
 
     logger.info(f"Loaded {len(exp_data)} molecules.")
 
+    if args.verbose:
+        for exp in exp_data:
+            logger.info(f"Loaded molecule {exp.compound_id}: {exp.smiles}")
+
     # parse prep arguments
     prep_dir = output_dir / "prep"
     prep_dir.mkdir(parents=True, exist_ok=True)
@@ -206,6 +223,7 @@ def main():
 
     logger.info(f"Prepping receptor in {prep_dir} at {datetime.now().isoformat()}")
 
+    # check inputs
     receptor = Path(args.receptor)
     if receptor.suffix != ".pdb":
         raise ValueError(f"Receptor must be a PDB file. Got {args.receptor}")
@@ -247,14 +265,22 @@ def main():
     )
 
     logger.info(f"Loaded receptor {receptor_name} from {receptor}")
-    prep_mp(
-        xtal, args.ref_prot, seqres, args.output_dir, args.loop_db, args.protein_only
-    )
+    prep_mp(xtal, args.ref_prot, seqres, prep_dir, args.loop_db, args.protein_only)
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
     # grab the files that were created
-    prepped_oedu = prep_dir / f"{receptor_name}_prepped_receptor_0.oedu"
-    prepped_pdb = prep_dir / f"{receptor_name}_prepped_receptor_0.pdb"
+    prepped_oedu = (
+        prep_dir / f"{receptor_name}" / f"{receptor_name}_prepped_receptor_0.oedu"
+    )
+    prepped_pdb = (
+        prep_dir / f"{receptor_name}" / f"{receptor_name}_prepped_receptor_0.pdb"
+    )
+
+    # check the prepped receptors exist
+    if not prepped_oedu.exists() or not prepped_pdb.exists():
+        raise ValueError(
+            f"Prepped receptor files do not exist: {prepped_oedu}, {prepped_pdb}"
+        )
 
     logger.info(f"Prepped receptor: {prepped_pdb}, {prepped_oedu}")
 
@@ -262,18 +288,24 @@ def main():
     du = oechem.OEDesignUnit()
     oechem.OEReadDesignUnit(str(prepped_oedu), du)
 
-    lig, prot, complexed = split_openeye_design_unit(du, lig=True)
+    # extract the ligand
+    lig = extract_ligand_from_design_unit(du)
 
     if args.debug:
         # write out the ligand and protein
-        save_openeye_sdf(str(prep_dir / f"{receptor_name}_ligand.sdf"), lig)
-        save_openeye_pdb(str(prep_dir / f"{receptor_name}_protein.pdb"), prot)
+        logger.info(f"Writing out ligand for debugging")
+        save_openeye_sdf(lig, str(prep_dir / f"{receptor_name}_ligand.sdf"))
 
     ligand_smiles = oechem.OEMolToSmiles(lig)
 
     logger.info(f"Xtal ligand: {ligand_smiles}")
 
     # setup MCS search
+    mcs_dir = output_dir / "mcs"
+    mcs_dir.mkdir(parents=True, exist_ok=True)
+    intermediate_files.append(mcs_dir)
+    logger.info(f"Setting up MCS search in {mcs_dir} at {datetime.now().isoformat()}")
+
     if args.mcs_sys == "rdkit":
         logger.info(f"Using RDKit for MCS search.")
         mcs_rank_fn = rank_structures_rdkit
@@ -287,29 +319,33 @@ def main():
     logger.info(f"Running MCS search at {datetime.now().isoformat()}")
     sort_idxs = []
     for compound in exp_data:
+
         sort_idxs.append(
             mcs_rank_fn(
                 compound.smiles,
-                c.compound_id,
-                ligand_smiles,
+                compound.compound_id,
+                [ligand_smiles],  # must be a list
                 receptor_name,
                 None,
                 args.mcs_structural,
-                None,
+                None if args.n_draw == 0 else f"{mcs_dir}/{compound.compound_id}",
                 args.n_draw,
             )
         )
+        if args.verbose:
+            logger.info(f"Searching for MCS with {compound}")
+            logger.info(f"got sort_idxs: {sort_idxs}")
     logger.info(f"Finished MCS search at {datetime.now().isoformat()}")
     if args.debug:
         logger.info(
-            f"Saving MCS search results to {args.o}/mcs_sort_index.pkl for debugging."
+            f"Saving MCS search results to {mcs_dir}/mcs_sort_index.pkl for debugging."
         )
-        compound_ids = [c.compound_id for c in exp_compounds]
-        xtal_ids = [x.dataset for x in xtal_compounds]
+        compound_ids = [c.compound_id for c in exp_data]
+        xtal_ids = [receptor_name] * len(exp_data)
 
         pkl.dump(
             [compound_ids, xtal_ids, sort_idxs],
-            open(f"{args.o}/mcs_sort_index.pkl", "wb"),
+            open(f"{mcs_dir}/mcs_sort_index.pkl", "wb"),
         )
 
     # setup docking
@@ -338,10 +374,23 @@ def main():
     logger.info(f"Running docking at {datetime.now().isoformat()}")
 
     results = []
-    for mol in exp_data:
+    oe_mols = exp_data_to_oe_mols(exp_data)
+    for mol, ed in zip(oe_mols, exp_data):
         results.append(
             oe_docking_function(
-                docking_dir,
+                dock_dir / f"{ed.compound_id}_{receptor_name}",
+                ed.compound_id,
+                prepped_oedu,
+                logname,
+                f"{ed.compound_id}_{receptor_name}",
+                du,
+                mol,
+                args.docking_sys.lower(),
+                args.relax.lower(),
+                args.hybrid,
+                f"{ed.compound_id}_{receptor_name}",
+                args.omega,
+                args.num_poses,
             )
         )
     logger.info(f"Finished docking at {datetime.now().isoformat()}")

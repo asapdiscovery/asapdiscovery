@@ -604,3 +604,10 @@ def openeye_copy_pdb_data(
     for data_pair in oechem.OEGetPDBDataPairs(source):
         if data_pair.GetTag() == tag:
             oechem.OEAddPDBData(destination, data_pair)
+
+
+def extract_ligand_from_design_unit(du: oechem.OEDesignUnit) -> oechem.OEGraphMol:
+    lig = oechem.OEGraphMol()
+    if not du.GetLigand(lig):
+        oechem.OEThrow.Fatal("Error: Could not extract ligand from the OEDesignUnit.")
+    return lig
