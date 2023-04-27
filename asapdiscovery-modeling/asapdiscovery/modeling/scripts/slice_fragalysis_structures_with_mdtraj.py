@@ -11,8 +11,8 @@ from pathlib import Path
 
 import mdtraj as md
 import numpy as np
-from asapdiscovery.data.utils import check_filelist_has_elements
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.utils import check_filelist_has_elements
 
 
 ################################################################################
