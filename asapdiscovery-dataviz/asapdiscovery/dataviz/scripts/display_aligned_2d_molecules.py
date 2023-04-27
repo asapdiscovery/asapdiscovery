@@ -34,8 +34,10 @@ def get_args():
         "--do_not_align",
         action="store_true",
         default=False,
-        help="If flag is passed, script will skip the "
-        "mcss-based alignment and just write out the positions in the sdf file.",
+        help=(
+            "If flag is passed, script will skip the "
+            "mcss-based alignment and just write out the positions in the sdf file."
+        ),
     )
 
     return parser.parse_args()

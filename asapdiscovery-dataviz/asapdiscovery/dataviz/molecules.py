@@ -1,5 +1,5 @@
 def display_openeye_ligand(mol, out_fn="test.png", aligned=False):
-    from openeye import oedepict
+    from asapdiscovery.data.openeye import oedepict
 
     if not aligned:
         oedepict.OEPrepareDepiction(mol)
