@@ -21,10 +21,8 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
-from asapdiscovery.docking import (
-    prep_mp as oe_prep_function,
-    make_docking_result_dataframe,
-)
+from asapdiscovery.docking import make_docking_result_dataframe
+from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: E402
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function

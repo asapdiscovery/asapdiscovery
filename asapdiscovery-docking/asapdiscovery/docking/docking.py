@@ -1,7 +1,8 @@
 import logging
-import pandas as pd
 from pathlib import Path  # noqa: F401
-from typing import Optional, List, Tuple  # noqa: F401
+from typing import List, Optional, Tuple  # noqa: F401
+
+import pandas as pd
 
 
 def run_docking_oe(
@@ -250,7 +251,7 @@ def run_docking_oe(
     return True, combined_mol, docking_id
 
 
-def docking_result_cols() -> List[str]:
+def docking_result_cols() -> list[str]:
     return [
         "ligand_id",
         "du_structure",
@@ -267,12 +268,12 @@ def docking_result_cols() -> List[str]:
 
 
 def make_docking_result_dataframe(
-    results: List,
+    results: list,
     output_dir: Path,
     save_csv: bool = True,
-    results_cols: Optional[List[str]] = docking_result_cols(),
+    results_cols: Optional[list[str]] = docking_result_cols(),
     csv_name: Optional[str] = "results.csv",
-) -> Tuple[pd.DataFrame, Path]:
+) -> tuple[pd.DataFrame, Path]:
     """
     Save results to a CSV file
 
