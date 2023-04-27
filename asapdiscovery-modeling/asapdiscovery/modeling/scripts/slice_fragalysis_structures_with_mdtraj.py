@@ -105,6 +105,10 @@ def analyze_mp(fn, out_dir):
 def main():
     args = get_args()
 
+    out_dir = Path(args.output_dir)
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
+
     main_logger = FileLogger(args.log_name, args.output_dir).getLogger()
 
     main_logger.info(f"Finding files in {args.structure_dir}")
@@ -112,10 +116,6 @@ def main():
     check_filelist_has_elements(fns, "PDB files")
 
     main_logger.info(f"{len(fns)} files found")
-
-    out_dir = Path(args.output_dir)
-    if not out_dir.exists():
-        out_dir.mkdir(parents=True)
 
     # Generate arguments for multiprocessing
     mp_args = [(fn, out_dir) for fn in fns]
