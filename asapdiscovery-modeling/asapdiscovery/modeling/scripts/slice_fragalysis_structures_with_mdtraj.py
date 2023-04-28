@@ -4,7 +4,6 @@ as well as the corresponding numpy arrays of the coordinates of the atoms in the
 """
 # TODO: Take indices to use for slicing as input
 import argparse
-import logging
 import multiprocessing as mp
 from datetime import datetime
 from pathlib import Path
