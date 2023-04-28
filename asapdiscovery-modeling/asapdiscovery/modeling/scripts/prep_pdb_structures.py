@@ -15,7 +15,7 @@ from asapdiscovery.docking.modeling import align_receptor  # noqa: E402
 from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
 from asapdiscovery.docking.modeling import mutate_residues  # noqa: E402
 from asapdiscovery.docking.modeling import prep_receptor  # noqa: E402
-from openeye import oechem
+from asapdiscovery.data.openeye import oechem
 
 
 def get_args():

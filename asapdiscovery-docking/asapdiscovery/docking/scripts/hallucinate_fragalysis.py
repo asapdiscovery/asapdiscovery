@@ -22,7 +22,7 @@ from asapdiscovery.data.utils import get_compound_id_xtal_dicts  # noqa: E402
 from asapdiscovery.data.utils import parse_fragalysis_data  # noqa: E402
 from asapdiscovery.docking.modeling import du_to_complex  # noqa: E402
 from asapdiscovery.docking.modeling import make_du_from_new_lig  # noqa: 402
-from openeye import oedocking, oespruce
+from asapdiscovery.data.openeye import oedocking, oespruce
 
 
 def check_output(d):
