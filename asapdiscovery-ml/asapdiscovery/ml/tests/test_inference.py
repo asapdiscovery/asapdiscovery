@@ -132,3 +132,8 @@ def test_gatinference_predict_from_subset(weights_yaml, test_data, test_inferenc
     for g in gids_subset:
         res = inference_cls.predict(g)
         assert res
+
+
+def test_schnet_inference_construct():
+    inference_cls = asapdiscovery.ml.inference.GATInference("asapdiscovery-schnet-2023.04.29")
+    assert inference_cls is not None

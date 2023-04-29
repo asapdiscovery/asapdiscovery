@@ -214,3 +214,27 @@ class GATInference(InferenceBase):
         if len(data) == 1:
             data = data[0]
         return data
+
+
+class SchnetInference(InferenceBase):
+    """
+    Inference class for Schnet model.
+
+    """
+
+    model_type = "schnet"
+
+    def __init__(
+        self,
+        model_name: str,
+        model_spec: Optional[Path] = None,
+        build_model_kwargs: Optional[dict] = None,
+        device: str = "cpu",
+    ):
+        super().__init__(
+            model_name,
+            self.model_type,
+            model_spec,
+            build_model_kwargs=build_model_kwargs,
+            device=device,
+        )
