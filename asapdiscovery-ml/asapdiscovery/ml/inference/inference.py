@@ -258,7 +258,7 @@ class StructuralInference(InferenceBase):
 
         pose = [
             DockedDataset._load_structure(
-                p,
+                p, None
             )
             for p in pose
         ]

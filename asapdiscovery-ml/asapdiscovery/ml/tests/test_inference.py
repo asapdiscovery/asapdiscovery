@@ -5,6 +5,7 @@ import asapdiscovery.ml
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.fixture()
@@ -14,6 +15,10 @@ def weights_yaml():
     weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
     yield weights
     shutil.rmtree("./_weights", ignore_errors=True)
+
+@pytest.fixture()
+def docked_structure_file():
+    return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
 
 
 def test_gatinference_construct(weights_yaml):
@@ -141,21 +146,20 @@ def test_schnet_inference_construct():
     assert inference_cls is not None
 
 
-def test_schnet_inference_predict_from_structure_file(test_data):
+def test_schnet_inference_predict_from_structure_file(docked_structure_file):
     inference_cls = asapdiscovery.ml.inference.SchnetInference(
         "asapdiscovery-schnet-2023.04.29"
     )
-    g1, _, _, _ = test_data
     assert inference_cls is not None
-    output = inference_cls.predict(g1)
+    output = inference_cls.predict_from_structure_file(docked_structure_file)
     assert output is not None
 
 
-def test_schnet_inference_predict_from_pose(test_data):
+def test_schnet_inference_predict_from_pose(docked_structure_file):
     inference_cls = asapdiscovery.ml.inference.SchnetInference(
         "asapdiscovery-schnet-2023.04.29"
     )
-    g1, _, _, _ = test_data
+
     assert inference_cls is not None
     output = inference_cls.predict(g1)
     assert output is not None
