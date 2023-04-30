@@ -118,7 +118,12 @@ edges = [Edge(ligand, complex) for ligand in ligands for complex in
          DataQuery(similarities.get_top_n(ligand.model_id, args.top_n))]
 
 # run multiprocessing, etc
-
+multiprocessor = Multiprocessor(func=docking_function,
+                                arguments=edges,
+                                n=args.num_nodes,
+                                timeout=args.timeout,
+                                max_failures=args.max_failures,
+                                log_name = args.log_name)
 
 
 
