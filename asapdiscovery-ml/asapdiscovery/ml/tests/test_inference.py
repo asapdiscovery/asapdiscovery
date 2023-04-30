@@ -135,5 +135,20 @@ def test_gatinference_predict_from_subset(weights_yaml, test_data, test_inferenc
 
 
 def test_schnet_inference_construct():
-    inference_cls = asapdiscovery.ml.inference.GATInference("asapdiscovery-schnet-2023.04.29")
+    inference_cls = asapdiscovery.ml.inference.SchnetInference("asapdiscovery-schnet-2023.04.29")
     assert inference_cls is not None
+
+def test_schnet_inference_predict_from_structure_file(test_data):
+    inference_cls = asapdiscovery.ml.inference.SchnetInference("asapdiscovery-schnet-2023.04.29")
+    g1, _, _, _ = test_data
+    assert inference_cls is not None
+    output = inference_cls.predict(g1)
+    assert output is not None
+
+
+def test_schnet_inference_predict_from_pose(test_data):
+    inference_cls = asapdiscovery.ml.inference.SchnetInference("asapdiscovery-schnet-2023.04.29")
+    g1, _, _, _ = test_data
+    assert inference_cls is not None
+    output = inference_cls.predict(g1)
+    assert output is not None
