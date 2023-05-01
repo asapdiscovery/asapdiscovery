@@ -26,6 +26,8 @@ def test_gatinference_construct(weights_yaml):
         "gatmodel_test", weights_yaml
     )
     assert inference_cls is not None
+    assert inference_cls.model_type == "GAT"
+
 
 
 def test_inference_construct_no_spec(weights_yaml):
@@ -144,6 +146,7 @@ def test_schnet_inference_construct():
         "asapdiscovery-schnet-2023.04.29"
     )
     assert inference_cls is not None
+    assert inference_cls.model_type == "schnet"
 
 
 def test_schnet_inference_predict_from_structure_file(docked_structure_file):
