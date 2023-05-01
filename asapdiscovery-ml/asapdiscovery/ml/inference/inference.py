@@ -135,7 +135,7 @@ class InferenceBase:
         with torch.no_grad():
             input_tensor = torch.tensor(input_data).to(self.device)
             output_tensor = self.model(input_tensor)
-            return output_tensor.cpu().numpy()
+            return output_tensor.cpu().numpy().ravel()
 
 
 # this is just an example of how to use the base class, we may want to specialise this for each model type
@@ -212,8 +212,8 @@ class GATInference(InferenceBase):
         data = [self.predict(g) for g in gids]
         data = np.concatenate(np.asarray(data))
         # return a scalar float value if we only have one input
-        if len(data) == 1:
-            data = data[0]
+        if np.all(np.array(data.shape) == 1):
+            data = data.item()
         return data
 
 
@@ -236,6 +236,12 @@ class StructuralInference(InferenceBase):
             build_model_kwargs=build_model_kwargs,
             device=device,
         )
+
+    def predict(self, pose_dict: Dict):
+        with torch.no_grad():
+            output_tensor = self.model(pose_dict)
+            # we ravel to always get a 1D array
+            return output_tensor.cpu().numpy().ravel()
 
     def predict_from_structure_file(
         self, pose: Union[Path, List[Path]]
@@ -266,9 +272,8 @@ class StructuralInference(InferenceBase):
 
         data = np.concatenate(np.asarray(data))
         # return a scalar float value if we only have one input
-        if len(data) == 1:
-            data = data[0]
-
+        if np.all(np.array(data.shape) == 1):
+            data = data.item()
         return data
 
     def predict_from_pose(
@@ -296,8 +301,8 @@ class StructuralInference(InferenceBase):
 
         data = np.concatenate(np.asarray(data))
         # return a scalar float value if we only have one input
-        if len(data) == 1:
-            data = data[0]
+        if np.all(np.array(data.shape) == 1):
+            data = data.item()
         return data
 
 

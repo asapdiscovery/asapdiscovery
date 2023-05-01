@@ -160,6 +160,8 @@ def test_schnet_inference_predict_from_pose(docked_structure_file):
         "asapdiscovery-schnet-2023.04.29"
     )
 
+    dataset = asapdiscovery.ml.dataset.DockedDataset([docked_structure_file], [("Mpro-P0008_0A", "ERI-UCB-ce40166b-17")])
     assert inference_cls is not None
-    output = inference_cls.predict(g1)
+    c, pose = dataset[0]
+    output = inference_cls.predict(pose)
     assert output is not None
