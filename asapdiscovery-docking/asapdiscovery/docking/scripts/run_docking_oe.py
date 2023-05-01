@@ -109,7 +109,15 @@ def load_dus(fn_dict, log_name):
 
 
 def mp_func(
-    out_dir, lig_name, du_name, log_name, compound_name, *args, GAT_model=None, Schnet_model=None, **kwargs
+    out_dir,
+    lig_name,
+    du_name,
+    log_name,
+    compound_name,
+    *args,
+    GAT_model=None,
+    Schnet_model=None,
+    **kwargs,
 ):
     """
     Wrapper function for multiprocessing. Everything other than the named args
@@ -181,11 +189,13 @@ def mp_func(
             GAT_score = GAT_model.predict_from_smiles(smiles)
         else:
             GAT_score = np.nan
-        
+
         if Schnet_model is not None:
             pdb_file = Path(du_name.split(".")[0] + ".pdb")
             if not pdb_file.exists():
-                raise FileNotFoundError(f"Could not find structure file {pdb_file} for Schnet inference")
+                raise FileNotFoundError(
+                    f"Could not find structure file {pdb_file} for Schnet inference"
+                )
             Schnet_score = Schnet_model.predict_from_structure_file(pdb_file)
         else:
             Schnet_score = np.nan
@@ -534,7 +544,7 @@ def main():
     else:
         logger.info("Skipping GAT model scoring")
         GAT_model = None
-    
+
     schnet_model_string = "asapdiscovery-schnet-2023.04.29"
     if args.schnet:
         from asapdiscovery.ml.inference import SchnetInference  # noqa: E402

@@ -60,7 +60,7 @@ def test_docking_kwargs(
     omega,
     by_compound,
     hybrid,
-    ml
+    ml,
 ):
     sdf, oedu, _, _ = docking_files_single
     args = [
