@@ -1,9 +1,9 @@
 from .inference import (
+    E3nnInference,
     GATInference,
     InferenceBase,
-    StructuralInference,
     SchnetInference,
-    E3nnInference,
+    StructuralInference,
 )
 
 __all__ = [

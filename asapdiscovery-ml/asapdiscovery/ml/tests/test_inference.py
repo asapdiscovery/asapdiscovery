@@ -4,8 +4,8 @@ import shutil
 import asapdiscovery.ml
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from numpy.testing import assert_allclose
 
 
 @pytest.fixture()
@@ -15,6 +15,7 @@ def weights_yaml():
     weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
     yield weights
     shutil.rmtree("./_weights", ignore_errors=True)
+
 
 @pytest.fixture()
 def docked_structure_file():
@@ -27,7 +28,6 @@ def test_gatinference_construct(weights_yaml):
     )
     assert inference_cls is not None
     assert inference_cls.model_type == "GAT"
-
 
 
 def test_inference_construct_no_spec(weights_yaml):
@@ -163,7 +163,9 @@ def test_schnet_inference_predict_from_pose(docked_structure_file):
         "asapdiscovery-schnet-2023.04.29"
     )
 
-    dataset = asapdiscovery.ml.dataset.DockedDataset([docked_structure_file], [("Mpro-P0008_0A", "ERI-UCB-ce40166b-17")])
+    dataset = asapdiscovery.ml.dataset.DockedDataset(
+        [docked_structure_file], [("Mpro-P0008_0A", "ERI-UCB-ce40166b-17")]
+    )
     assert inference_cls is not None
     c, pose = dataset[0]
     output = inference_cls.predict(pose)
