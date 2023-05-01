@@ -543,7 +543,7 @@ def main():
         logger.info(f"Using GAT model: {gat_model_string}")
     else:
         logger.info("Skipping GAT model scoring")
-        GAT_model = None
+        GAT_model = None  # noqa: F841
 
     schnet_model_string = "asapdiscovery-schnet-2023.04.29"
     if args.schnet:
@@ -553,7 +553,7 @@ def main():
         logger.info(f"Using Schnet model: {schnet_model_string}")
     else:
         logger.info("Skipping Schnet model scoring")
-        Schnet_model = None
+        Schnet_model = None  # noqa: F841
 
     # The receptor args are captured as a list, but we still want to handle the case of
     #  a glob/directory/filename being passed. If there's only one thing in the list,
