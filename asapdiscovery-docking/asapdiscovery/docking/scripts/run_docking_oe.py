@@ -109,7 +109,7 @@ def load_dus(fn_dict, log_name):
 
 
 def mp_func(
-    out_dir, lig_name, du_name, log_name, compound_name, *args, GAT_model=None, **kwargs
+    out_dir, lig_name, du_name, log_name, compound_name, *args, GAT_model=None, Schnet_model=None, **kwargs
 ):
     """
     Wrapper function for multiprocessing. Everything other than the named args
@@ -129,6 +129,8 @@ def mp_func(
         Compound name, used for error messages if given
     GAT_model : GATInference, optional
         GAT model to use for inference. If None, will not perform inference.
+    Schnet_model : SchNetInference, optional
+        SchNet model to use for inference. If None, will not perform inference.
 
     Returns
     -------
@@ -179,6 +181,14 @@ def mp_func(
             GAT_score = GAT_model.predict_from_smiles(smiles)
         else:
             GAT_score = np.nan
+        
+        if Schnet_model is not None:
+            pdb_file = Path(du_name.split(".")[0] + ".pdb")
+            if not pdb_file.exists():
+                raise FileNotFoundError(f"Could not find structure file {pdb_file} for Schnet inference")
+            Schnet_score = Schnet_model.predict_from_structure_file(pdb_file)
+        else:
+            Schnet_score = np.nan
     else:
         out_fn = ""
         rmsds = [-1.0]
@@ -188,6 +198,7 @@ def mp_func(
         clash = -1
         smiles = "None"
         GAT_score = np.nan
+        Schnet_score = np.nan
 
     results = [
         (
@@ -202,6 +213,7 @@ def mp_func(
             clash,
             smiles,
             GAT_score,
+            Schnet_score,
         )
         for i, (rmsd, prob, method, chemgauss) in enumerate(
             zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
@@ -441,6 +453,12 @@ def get_args():
         help="Whether to use GAT model to score docked poses.",
     )
     parser.add_argument(
+        "-schnet",
+        "--schnet",
+        action="store_true",
+        help="Whether to use Schnet model to score docked poses.",
+    )
+    parser.add_argument(
         "-log",
         "--log_name",
         type=str,
@@ -516,6 +534,16 @@ def main():
     else:
         logger.info("Skipping GAT model scoring")
         GAT_model = None
+    
+    schnet_model_string = "asapdiscovery-schnet-2023.04.29"
+    if args.schnet:
+        from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
+
+        Schnet_model = SchnetInference(schnet_model_string)
+        logger.info(f"Using Schnet model: {schnet_model_string}")
+    else:
+        logger.info("Skipping Schnet model scoring")
+        Schnet_model = None
 
     # The receptor args are captured as a list, but we still want to handle the case of
     #  a glob/directory/filename being passed. If there's only one thing in the list,
@@ -777,6 +805,7 @@ def main():
         "clash",
         "SMILES",
         "GAT_score",
+        "Schnet_score",
     ]
 
     # results_list has the form [[(res1, res2, res3, ...)], [(res1, res2, res3, ...)], ...]
