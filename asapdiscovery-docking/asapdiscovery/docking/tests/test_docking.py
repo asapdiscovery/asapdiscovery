@@ -18,8 +18,9 @@ def make_output_dir_and_cleanup():
 def docking_files_single():
     sdf = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf")
     oedu = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu")
+    pdb = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
     oedu_glob = os.path.join(os.path.dirname(oedu), "*.oedu")
-    return sdf, oedu, oedu_glob
+    return sdf, oedu, oedu_glob, pdb
 
 
 @pytest.mark.timeout(200)
@@ -29,7 +30,7 @@ def docking_files_single():
 def test_docking_base(
     script_runner, make_output_dir_and_cleanup, docking_files_single, n, use_glob
 ):
-    sdf, oedu, oedu_glob = docking_files_single
+    sdf, oedu, oedu_glob, _ = docking_files_single
     if use_glob:
         oedu = oedu_glob
     ret = script_runner.run(
@@ -59,7 +60,7 @@ def test_docking_kwargs(
     by_compound,
     hybrid,
 ):
-    sdf, oedu, _ = docking_files_single
+    sdf, oedu, _, _ = docking_files_single
     args = [
         "run-docking-oe",
         "-l",
@@ -84,3 +85,24 @@ def test_docking_kwargs(
     else:
         ret = script_runner.run(*args)
         assert ret.success
+
+
+@pytest.mark.timeout(200)
+@pytest.mark.script_launch_mode("subprocess")
+def test_single_target_docking(
+    script_runner,
+    make_output_dir_and_cleanup,
+    docking_files_single,
+):
+    sdf, oedu, _, pdb = docking_files_single
+    args = [
+        "single-target-docking",
+        "-m",
+        f"{sdf}",
+        "-r",
+        f"{pdb}",
+        "-o",
+        "./outputs",
+    ]
+    ret = script_runner.run(*args)
+    assert ret.success
