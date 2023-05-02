@@ -364,52 +364,6 @@ def main():
 
     logger.info(f"Xtal ligand: {ligand_smiles}")
 
-    # setup MCS search
-    mcs_dir = output_dir / "mcs"
-    mcs_dir.mkdir(parents=True, exist_ok=True)
-    intermediate_files.append(mcs_dir)
-    logger.info(f"Setting up MCS search in {mcs_dir} at {datetime.now().isoformat()}")
-
-    if args.mcs_sys == "rdkit":
-        logger.info("Using RDKit for MCS search.")
-        mcs_rank_fn = rank_structures_rdkit
-    elif args.mcs_sys == "oe":
-        logger.info("Using OpenEye for MCS search.")
-        mcs_rank_fn = rank_structures_openeye
-    else:
-        raise ValueError(f"Invalid MCS search system: {args.mcs_sys}")
-
-    # run MCS search
-    logger.info(f"Running MCS search at {datetime.now().isoformat()}")
-    sort_idxs = []
-    for compound in exp_data:
-        sort_idxs.append(
-            mcs_rank_fn(
-                compound.smiles,
-                compound.compound_id,
-                [ligand_smiles],  # must be a list
-                receptor_name,
-                None,
-                args.mcs_structural,
-                None if args.n_draw == 0 else f"{mcs_dir}/{compound.compound_id}",
-                args.n_draw,
-            )
-        )
-        if args.verbose:
-            logger.info(f"Searching for MCS with {compound.compound_id}")
-    logger.info(f"Finished MCS search at {datetime.now().isoformat()}")
-    if args.debug:
-        logger.info(
-            f"Saving MCS search results to {mcs_dir}/mcs_sort_index.pkl for debugging."
-        )
-        compound_ids = [c.compound_id for c in exp_data]
-        xtal_ids = [receptor_name] * len(exp_data)
-
-        pkl.dump(
-            [compound_ids, xtal_ids, sort_idxs],
-            open(f"{mcs_dir}/mcs_sort_index.pkl", "wb"),
-        )
-
     # setup docking
     logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
 
