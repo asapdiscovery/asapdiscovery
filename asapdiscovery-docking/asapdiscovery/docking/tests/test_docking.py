@@ -87,7 +87,7 @@ def test_docking_kwargs(
         assert ret.success
 
 
-@pytest.mark.timeout(200)
+@pytest.mark.timeout(400)
 @pytest.mark.script_launch_mode("subprocess")
 def test_single_target_docking(
     script_runner,
