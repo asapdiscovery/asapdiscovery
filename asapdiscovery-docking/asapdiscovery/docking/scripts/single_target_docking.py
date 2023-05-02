@@ -152,27 +152,6 @@ parser.add_argument(
     help="Path to reference pdb to align to. If None, no alignment will be performed",
 )
 
-
-# MCS arguments
-parser.add_argument(
-    "--mcs_sys",
-    default="rdkit",
-    help="Which package to use for MCS search [rdkit, oe].",
-)
-
-parser.add_argument(
-    "--mcs_structural",
-    action="store_true",
-    help=("Use structure-based matching instead of element-based matching for MCS."),
-)
-parser.add_argument(
-    "--n_draw",
-    type=int,
-    default=10,
-    help="Number of MCS compounds to draw for each query molecule.",
-)
-
-
 # Docking arguments
 parser.add_argument(
     "--top_n",
@@ -319,8 +298,7 @@ def main():
     else:
         seqres = None
 
-    # load receptor, may need to work on how to provide arguments to this
-    # check with @jenke
+    # load the receptor
     receptor_name = receptor.stem
     xtal = CrystalCompoundData(
         str_fn=args.receptor, smiles=None, output_name=str(receptor_name)
