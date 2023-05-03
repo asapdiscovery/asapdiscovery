@@ -43,7 +43,7 @@ def download(out_fn, extract=True):
     """
     # First send POST request to prepare the download file and get its URL
     r = requests.post(BASE_URL, json=MPRO_API_CALL)
-    url_dl = r.text.split(':"')[1].strip('"}')
+    url_dl = r.json()["file_url"]
     print("Downloading archive", flush=True)
     # Send GET request for the zip archive
     r_dl = requests.get(BASE_URL, params={"file_url": url_dl})
