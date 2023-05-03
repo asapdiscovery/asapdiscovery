@@ -39,9 +39,12 @@ import numpy as np
 import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
-from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
-from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.openeye import (
+    oechem,
+    load_openeye_sdf,
+    save_openeye_sdf,
+    save_openeye_pdb,
+)  # noqa: E402
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
@@ -191,12 +194,12 @@ def mp_func(
             GAT_score = np.nan
 
         if schnet_model is not None:
-            pdb_file = Path(du_name.split(".")[0] + ".pdb")
+            pdb_temp = save_openeye_pdb(posed_mol, Path("posed_mol_schnet_temp.pdb"))
             if not pdb_file.exists():
                 raise FileNotFoundError(
                     f"Could not find structure file {pdb_file} for Schnet inference"
                 )
-            schnet_score = schnet_model.predict_from_structure_file(pdb_file)
+            schnet_score = schnet_model.predict_from_structure_file(pdb_temp)
         else:
             schnet_score = np.nan
     else:
