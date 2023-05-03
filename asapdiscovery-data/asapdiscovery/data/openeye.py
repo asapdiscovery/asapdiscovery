@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from openeye import oechem, oedepict, oedocking, oegrid, oespruce  # noqa: F401
+from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
 # exec on module import
 if not oechem.OEChemIsLicensed("python"):
