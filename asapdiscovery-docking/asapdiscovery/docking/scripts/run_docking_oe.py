@@ -41,9 +41,11 @@ import pebble
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     oechem,
+    combine_protein_ligand,
     load_openeye_sdf,
     save_openeye_sdf,
     save_openeye_pdb,
+    split_openeye_design_unit,
 )  # noqa: E402
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
@@ -174,8 +176,12 @@ def mp_func(
         posit_probs = []
         posit_methods = []
         chemgauss_scores = []
+        schnet_scores = []
 
-        for conf in posed_mol.GetConfs():
+        # grab the du passed in and split it
+        lig, prot, complex = split_openeye_design_unit(args[0].CreateCopy())
+
+        for i, conf in enumerate(posed_mol.GetConfs()):
             rmsds.append(float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD")))
             posit_probs.append(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
@@ -186,6 +192,18 @@ def mp_func(
             chemgauss_scores.append(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4"))
             )
+            if schnet_model is not None:
+                # TODO: this is a hack, we should be able to do this without saving
+                # the file to disk see # 253
+                outpath = Path(out_dir) / Path(f".posed_mol_schnet_temp_{i}.pdb")
+                # join with the protein only structure
+                combined = combine_protein_ligand(prot, conf)
+                pdb_temp = save_openeye_pdb(combined, outpath)
+                schnet_score = schnet_model.predict_from_structure_file(pdb_temp)
+                schnet_scores.append(schnet_score)
+            else:
+                schnet_scores.append(np.nan)
+
         smiles = oechem.OEGetSDData(conf, "SMILES")
         clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
         if GAT_model is not None:
@@ -193,15 +211,6 @@ def mp_func(
         else:
             GAT_score = np.nan
 
-        if schnet_model is not None:
-            pdb_temp = save_openeye_pdb(posed_mol, Path("posed_mol_schnet_temp.pdb"))
-            if not pdb_file.exists():
-                raise FileNotFoundError(
-                    f"Could not find structure file {pdb_file} for Schnet inference"
-                )
-            schnet_score = schnet_model.predict_from_structure_file(pdb_temp)
-        else:
-            schnet_score = np.nan
     else:
         out_fn = ""
         rmsds = [-1.0]
@@ -226,10 +235,10 @@ def mp_func(
             clash,
             smiles,
             GAT_score,
-            schnet_score,
+            schnet,
         )
-        for i, (rmsd, prob, method, chemgauss) in enumerate(
-            zip(rmsds, posit_probs, posit_methods, chemgauss_scores)
+        for i, (rmsd, prob, method, chemgauss, schnet) in enumerate(
+            zip(rmsds, posit_probs, posit_methods, chemgauss_scores, schnet_scores)
         )
     ]
 
@@ -727,7 +736,9 @@ def main():
         mp_args = mp_args[: args.debug_num]
 
     # Apply ML arguments as kwargs to mp_func
-    mp_func_ml_applied = partial(mp_func, GAT_model=GAT_model)
+    mp_func_ml_applied = partial(
+        mp_func, GAT_model=GAT_model, schnet_model=schnet_model
+    )
 
     if args.num_cores > 1:
         logger.info("Running docking using multiprocessing")
