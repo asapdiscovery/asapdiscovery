@@ -9,22 +9,22 @@ BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
 MPRO_API_CALL = {
     "target_name": "Mpro",
     "proteins": "",
-    "event_info": "false",
-    "sigmaa_info": "false",
-    "diff_info": "false",
-    "trans_matrix_info": "false",
-    "NAN": "false",
-    "mtz_info": "false",
-    "cif_info": "false",
-    "NAN2": "false",
-    "map_info": "false",
-    "single_sdf_file": "false",
-    "sdf_info": "true",
-    "pdb_info": "true",
-    "bound_info": "true",
-    "metadata_info": "true",
-    "smiles_info": "true",
-    "static_link": "false",
+    "event_info": False,
+    "sigmaa_info": False,
+    "diff_info": False,
+    "trans_matrix_info": False,
+    "NAN": False,
+    "mtz_info": False,
+    "cif_info": False,
+    "NAN2": False,
+    "map_info": False,
+    "single_sdf_file": True,
+    "sdf_info": True,
+    "pdb_info": False,
+    "bound_info": True,
+    "metadata_info": True,
+    "smiles_info": True,
+    "static_link": False,
     "file_url": "",
 }
 
@@ -42,7 +42,7 @@ def download(out_fn, extract=True):
         directory given by `dirname(out_fn)`
     """
     # First send POST request to prepare the download file and get its URL
-    r = requests.post(BASE_URL, data=MPRO_API_CALL)
+    r = requests.post(BASE_URL, json=MPRO_API_CALL)
     url_dl = r.text.split(':"')[1].strip('"}')
     print("Downloading archive", flush=True)
     # Send GET request for the zip archive
