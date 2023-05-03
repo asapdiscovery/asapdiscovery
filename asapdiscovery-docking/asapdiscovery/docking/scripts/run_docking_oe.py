@@ -201,6 +201,7 @@ def mp_func(
                 pdb_temp = save_openeye_pdb(combined, outpath)
                 schnet_score = schnet_model.predict_from_structure_file(pdb_temp)
                 schnet_scores.append(schnet_score)
+                outpath.unlink()
             else:
                 schnet_scores.append(np.nan)
 
