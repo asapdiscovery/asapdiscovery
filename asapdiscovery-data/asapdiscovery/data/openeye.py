@@ -281,7 +281,8 @@ def save_openeye_pdb(mol, pdb_fn):
 
     Returns
     -------
-    None
+    Path
+        The path of the PDB file that was written.
 
     Notes
     -----
@@ -309,7 +310,8 @@ def save_openeye_sdf(mol, sdf_fn):
 
     Returns
     -------
-    None
+    Path
+        The path of the SDF file that was written.
 
     Notes
     -----
@@ -337,7 +339,8 @@ def save_openeye_sdfs(mols, sdf_fn):
 
     Returns
     -------
-    None
+    Path
+        The path of the SDF file that was written.
 
     Raises
     ------

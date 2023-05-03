@@ -129,8 +129,20 @@ class InferenceBase:
         return model
 
     def predict(self, input_data):
-        # feed in data in whatever format is required by the model
+        """Predict on data, needs to be overloaded in child classes most of
+        the time
 
+        Parameters
+        ----------
+
+        input_data: pytorch.Tensor
+
+        Returns
+        -------
+        np.ndarray
+            Prediction from model.
+        """
+        # feed in data in whatever format is required by the model
         with torch.no_grad():
             input_tensor = torch.tensor(input_data).to(self.device)
             output_tensor = self.model(input_tensor)
@@ -237,6 +249,19 @@ class StructuralInference(InferenceBase):
         )
 
     def predict(self, pose_dict: dict):
+        """Predict on a pose, requires a dictionary with the pose data with
+        the keys: "z", "pos", "lig" with the required tensors in each
+
+        Parameters
+        ----------
+        pose_dict : dict
+            Dictionary with pose data.
+
+        Returns
+        -------
+        np.ndarray
+            Predictions for a pose.
+        """
         with torch.no_grad():
             output_tensor = self.model(pose_dict)
             # we ravel to always get a 1D array
