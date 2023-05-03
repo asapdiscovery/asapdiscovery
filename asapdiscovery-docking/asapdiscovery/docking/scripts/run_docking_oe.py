@@ -181,7 +181,7 @@ def mp_func(
         # grab the du passed in and split it
         lig, prot, complex = split_openeye_design_unit(args[0].CreateCopy())
 
-        for i, conf in enumerate(posed_mol.GetConfs()):
+        for conf in posed_mol.GetConfs():
             rmsds.append(float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD")))
             posit_probs.append(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
@@ -195,7 +195,7 @@ def mp_func(
             if schnet_model is not None:
                 # TODO: this is a hack, we should be able to do this without saving
                 # the file to disk see # 253
-                outpath = Path(out_dir) / Path(f".posed_mol_schnet_temp_{i}.pdb")
+                outpath = Path(out_dir) / Path(f".posed_mol_schnet_temp.pdb")
                 # join with the protein only structure
                 combined = combine_protein_ligand(prot, conf)
                 pdb_temp = save_openeye_pdb(combined, outpath)
