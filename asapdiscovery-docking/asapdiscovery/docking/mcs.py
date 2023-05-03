@@ -297,7 +297,7 @@ def _smi_conv_rdkit(s):
 
 
 def _smi_conv_oe(s):
-    from openeye import oechem
+    from asapdiscovery.data.openeye import oechem
 
     mol = oechem.OEGraphMol()
     oechem.OESmilesToMol(mol, s)
