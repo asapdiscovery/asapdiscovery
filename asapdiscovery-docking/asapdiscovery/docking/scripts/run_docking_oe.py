@@ -39,14 +39,14 @@ import numpy as np
 import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import (
-    oechem,
+from asapdiscovery.data.openeye import (  # noqa: E402
     combine_protein_ligand,
     load_openeye_sdf,
-    save_openeye_sdf,
+    oechem,
     save_openeye_pdb,
+    save_openeye_sdf,
     split_openeye_design_unit,
-)  # noqa: E402
+)
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
