@@ -28,8 +28,30 @@ MPRO_API_CALL = {
     "file_url": "",
 }
 
+MAC1_API_CALL = {
+    "target_name": "Mac1",
+    "proteins": "",
+    "event_info": False,
+    "sigmaa_info": False,
+    "diff_info": False,
+    "trans_matrix_info": False,
+    "NAN": False,
+    "mtz_info": False,
+    "cif_info": False,
+    "NAN2": False,
+    "map_info": False,
+    "single_sdf_file": True,
+    "sdf_info": True,
+    "pdb_info": False,
+    "bound_info": True,
+    "metadata_info": True,
+    "smiles_info": True,
+    "static_link": False,
+    "file_url": "",
+}
 
-def download(out_fn, extract=True):
+
+def download(out_fn, api_call, extract=True):
     """
     Download Mpro structures from fragalysis.
 
@@ -37,12 +59,14 @@ def download(out_fn, extract=True):
     ----------
     out_fn : str
         Where to save the downloaded zip file
+    api_call : dict
+        Dict containing args for the POST request
     extract : bool, default=True
         Whether to extract the zip file after downloading. Extracts to the
         directory given by `dirname(out_fn)`
     """
     # First send POST request to prepare the download file and get its URL
-    r = requests.post(BASE_URL, data=MPRO_API_CALL)
+    r = requests.post(BASE_URL, data=api_call)
     url_dl = r.text.split(':"')[1].strip('"}')
     print("Downloading archive", flush=True)
     # Send GET request for the zip archive
