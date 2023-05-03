@@ -9,44 +9,44 @@ BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
 MPRO_API_CALL = {
     "target_name": "Mpro",
     "proteins": "",
-    "event_info": "false",
-    "sigmaa_info": "false",
-    "diff_info": "false",
-    "trans_matrix_info": "false",
-    "NAN": "false",
-    "mtz_info": "false",
-    "cif_info": "false",
-    "NAN2": "false",
-    "map_info": "false",
-    "single_sdf_file": "false",
-    "sdf_info": "true",
-    "pdb_info": "true",
-    "bound_info": "true",
-    "metadata_info": "true",
-    "smiles_info": "true",
-    "static_link": "false",
+    "event_info": False,
+    "sigmaa_info": False,
+    "diff_info": False,
+    "trans_matrix_info": False,
+    "NAN": False,
+    "mtz_info": False,
+    "cif_info": False,
+    "NAN2": False,
+    "map_info": False,
+    "single_sdf_file": False,
+    "sdf_info": True,
+    "pdb_info": True,
+    "bound_info": True,
+    "metadata_info": True,
+    "smiles_info": True,
+    "static_link": False,
     "file_url": "",
 }
 
 MAC1_API_CALL = {
     "target_name": "Mac1",
     "proteins": "",
-    "event_info": "false",
-    "sigmaa_info": "false",
-    "diff_info": "false",
-    "trans_matrix_info": "false",
-    "NAN": "false",
-    "mtz_info": "false",
-    "cif_info": "false",
-    "NAN2": "false",
-    "map_info": "false",
-    "single_sdf_file": "true",
-    "sdf_info": "true",
-    "pdb_info": "false",
-    "bound_info": "true",
-    "metadata_info": "true",
-    "smiles_info": "true",
-    "static_link": "false",
+    "event_info": False,
+    "sigmaa_info": False,
+    "diff_info": False,
+    "trans_matrix_info": False,
+    "NAN": False,
+    "mtz_info": False,
+    "cif_info": False,
+    "NAN2": False,
+    "map_info": False,
+    "single_sdf_file": True,
+    "sdf_info": True,
+    "pdb_info": False,
+    "bound_info": True,
+    "metadata_info": True,
+    "smiles_info": True,
+    "static_link": False,
     "file_url": "",
 }
 
@@ -66,8 +66,8 @@ def download(out_fn, api_call, extract=True):
         directory given by `dirname(out_fn)`
     """
     # First send POST request to prepare the download file and get its URL
-    r = requests.post(BASE_URL, data=api_call)
-    url_dl = r.text.split(':"')[1].strip('"}')
+    r = requests.post(BASE_URL, json=api_call)
+    url_dl = r.json()["file_url"]
     print("Downloading archive", flush=True)
     # Send GET request for the zip archive
     r_dl = requests.get(BASE_URL, params={"file_url": url_dl})
