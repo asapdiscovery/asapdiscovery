@@ -4,6 +4,7 @@ import shutil
 import asapdiscovery.ml
 import numpy as np
 import pytest
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 from numpy.testing import assert_allclose
 
 
@@ -16,11 +17,17 @@ def weights_yaml():
     shutil.rmtree("./_weights", ignore_errors=True)
 
 
+@pytest.fixture()
+def docked_structure_file():
+    return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
+
+
 def test_gatinference_construct(weights_yaml):
     inference_cls = asapdiscovery.ml.inference.GATInference(
         "gatmodel_test", weights_yaml
     )
     assert inference_cls is not None
+    assert inference_cls.model_type == "GAT"
 
 
 def test_inference_construct_no_spec(weights_yaml):
@@ -132,3 +139,34 @@ def test_gatinference_predict_from_subset(weights_yaml, test_data, test_inferenc
     for g in gids_subset:
         res = inference_cls.predict(g)
         assert res
+
+
+def test_schnet_inference_construct():
+    inference_cls = asapdiscovery.ml.inference.SchnetInference(
+        "asapdiscovery-schnet-2023.04.29"
+    )
+    assert inference_cls is not None
+    assert inference_cls.model_type == "schnet"
+
+
+def test_schnet_inference_predict_from_structure_file(docked_structure_file):
+    inference_cls = asapdiscovery.ml.inference.SchnetInference(
+        "asapdiscovery-schnet-2023.04.29"
+    )
+    assert inference_cls is not None
+    output = inference_cls.predict_from_structure_file(docked_structure_file)
+    assert output is not None
+
+
+def test_schnet_inference_predict_from_pose(docked_structure_file):
+    inference_cls = asapdiscovery.ml.inference.SchnetInference(
+        "asapdiscovery-schnet-2023.04.29"
+    )
+
+    dataset = asapdiscovery.ml.dataset.DockedDataset(
+        [docked_structure_file], [("Mpro-P0008_0A", "ERI-UCB-ce40166b-17")]
+    )
+    assert inference_cls is not None
+    c, pose = dataset[0]
+    output = inference_cls.predict(pose)
+    assert output is not None

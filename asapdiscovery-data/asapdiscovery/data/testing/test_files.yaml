@@ -22,3 +22,7 @@ files:
   # prepped openeye DU
   - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu
     sha256hash: 075775f55efb7daa07ca0b3fa6a9f522483b432850196c6c5a31f8d45b4452d0
+
+  # prepped PDB
+  - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb
+    sha256hash: d4bf45cd72583ee63cd61c0367db1ac0e648d3f4d8f82cb483e0ab222041a90d
