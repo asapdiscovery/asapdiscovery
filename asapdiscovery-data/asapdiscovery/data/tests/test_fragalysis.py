@@ -45,7 +45,7 @@ class TestFragalysisDownload:
         # Make sure there are sdf and pdb files in the extracted files
         assert glob.glob(
             f"{zip_file.parent}/**/*.sdf", recursive=True
-        ), f"No SDF files found on extracted fragalysis target zip."
+        ), "No SDF files found on extracted fragalysis target zip."
         assert glob.glob(
             f"{zip_file.parent}/**/*.pdb", recursive=True
-        ), f"No PDB files found on extracted fragalysis target zip."
+        ), "No PDB files found on extracted fragalysis target zip."
