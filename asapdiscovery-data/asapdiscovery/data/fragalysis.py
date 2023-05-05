@@ -46,8 +46,10 @@ def download(out_fn, api_call, extract=True):
     # First send POST request to prepare the download file and get its URL
     r = requests.post(BASE_URL, json=api_call)
     if not r.ok:
-        raise requests.HTTPError(f"Post request to {BASE_URL} failed with {r.status_code} error code, "
-                                 f"using the following API call {api_call}.")
+        raise requests.HTTPError(
+            f"Post request to {BASE_URL} failed with {r.status_code} error code, "
+            f"using the following API call {api_call}."
+        )
     url_dl = r.json()["file_url"]
     print("Downloading archive", flush=True)
     # Send GET request for the zip archive

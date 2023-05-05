@@ -1,9 +1,6 @@
 import argparse
 
-from asapdiscovery.data.fragalysis import (  # noqa: E402
-    API_CALL_BASE,
-    download,
-)
+from asapdiscovery.data.fragalysis import API_CALL_BASE, download  # noqa: E402
 
 
 def get_args():
