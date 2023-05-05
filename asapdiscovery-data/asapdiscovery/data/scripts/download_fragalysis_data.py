@@ -1,8 +1,7 @@
 import argparse
 
 from asapdiscovery.data.fragalysis import (  # noqa: E402
-    MAC1_API_CALL,
-    MPRO_API_CALL,
+    API_CALL_BASE,
     download,
 )
 
@@ -27,14 +26,10 @@ def get_args():
 def main():
     args = get_args()
 
-    if args.target.lower() == "mpro":
-        api_call = MPRO_API_CALL
-    elif args.target.lower() == "mac1":
-        api_call = MAC1_API_CALL
-    else:
-        raise ValueError(f"Unknown target: {args.target}")
+    # Overwrite the base target with the cli-specified target
+    API_CALL_BASE["target_name"] = args.target.capitalize()
 
-    download(args.o, api_call, args.x)
+    download(args.o, API_CALL_BASE, args.x)
 
 
 if __name__ == "__main__":
