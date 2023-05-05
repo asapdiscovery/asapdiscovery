@@ -16,7 +16,7 @@ plotly creator
 """
 import argparse
 
-from asapdiscovery.dataviz import plotly_dash_functions, plotting  # noqa: E402
+from asapdiscovery.dataviz import graphs, plotly_dash_functions  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
 from dash import Input, Output, html
 
@@ -60,7 +60,7 @@ def main():
     )
     def update_contour(*args):
         print(*args)
-        fig = plotting.contour_plot(df, *args)
+        fig = graphs.contour_plot(df, *args)
         return fig
 
     # Run the server!
