@@ -16,6 +16,16 @@ def mpro_fragalysis_api_call():
     return api_call
 
 
+@pytest.fixture
+def mac1_fragalysis_api_call():
+    """Fragalysis API call for downloading target data"""
+    from asapdiscovery.data.fragalysis import API_CALL_BASE
+
+    api_call = API_CALL_BASE
+    api_call["target_name"] = "Mac1"
+    return api_call
+
+
 class TestFragalysisDownload:
     """Class to test the download of data from Fragalysis."""
 
@@ -24,6 +34,14 @@ class TestFragalysisDownload:
         zip_file = tmp_path / "mpro_fragalysis.zip"
         fragalysis.download(
             zip_file, mpro_fragalysis_api_call, extract=False
+        )  # don't extract
+        assert os.path.exists(zip_file)
+
+    def test_download_fragalysis_mac1_zip(self, tmp_path, mac1_fragalysis_api_call):
+        """Checks downloading target zip file dataset from fragalysis"""
+        zip_file = tmp_path / "mpro_fragalysis.zip"
+        fragalysis.download(
+            zip_file, mac1_fragalysis_api_call, extract=False
         )  # don't extract
         assert os.path.exists(zip_file)
 
