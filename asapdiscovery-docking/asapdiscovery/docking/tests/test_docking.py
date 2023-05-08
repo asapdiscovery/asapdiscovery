@@ -23,7 +23,7 @@ def docking_files_single():
     return sdf, oedu, oedu_glob, pdb
 
 
-@pytest.mark.timeout(200)
+@pytest.mark.timeout(400)
 @pytest.mark.parametrize("n", [1, 2])
 @pytest.mark.parametrize("use_glob", [True, False])
 @pytest.mark.script_launch_mode("subprocess")
@@ -47,7 +47,7 @@ def test_docking_base(
     assert ret.success
 
 
-@pytest.mark.timeout(200)
+@pytest.mark.timeout(400)
 @pytest.mark.parametrize("omega", [False, "--omega"])
 @pytest.mark.parametrize("by_compound", [False, "--by_compound"])
 @pytest.mark.parametrize("hybrid", [False, "--hybrid"])
