@@ -39,7 +39,7 @@ class TestFragalysisDownload:
 
     def test_download_fragalysis_mac1_zip(self, tmp_path, mac1_fragalysis_api_call):
         """Checks downloading target zip file dataset from fragalysis"""
-        zip_file = tmp_path / "mpro_fragalysis.zip"
+        zip_file = tmp_path / "mac1_fragalysis.zip"
         fragalysis.download(
             zip_file, mac1_fragalysis_api_call, extract=False
         )  # don't extract
