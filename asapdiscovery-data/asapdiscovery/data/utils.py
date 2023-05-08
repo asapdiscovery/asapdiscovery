@@ -1378,11 +1378,11 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
         raise ValueError(f"ftype: {ftype} not supported")
 
     exp_data_compounds = []
-    for mol in ifs.GetOEGraphMols():
+    for i, mol in enumerate(ifs.GetOEGraphMols()):
         smiles = oechem.OEMolToSmiles(mol)
 
         if not mol.GetTitle():
-            exp = ExperimentalCompoundData(compound_id=smiles, smiles=smiles)
+            exp = ExperimentalCompoundData(compound_id=f"unk_lig_idx_{i}" smiles=smiles)
         else:
             exp = ExperimentalCompoundData(compound_id=mol.GetTitle(), smiles=smiles)
 
