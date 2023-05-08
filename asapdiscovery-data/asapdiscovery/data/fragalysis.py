@@ -7,7 +7,7 @@ import requests
 BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
 # Info for the POST call
 API_CALL_BASE = {
-    "target_name": "Mpro",
+    "target_name": "",
     "proteins": "",
     "event_info": False,
     "sigmaa_info": False,
