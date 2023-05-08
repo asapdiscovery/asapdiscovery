@@ -84,7 +84,7 @@ def run_docking_oe(
 
     # Perform OMEGA sampling
     if use_omega:
-        from openeye import oeomega
+        from asapdiscovery.data.openeye import oeomega
 
         omega = oeomega.OEOmega()
         ret_code = omega.Build(dock_lig)
