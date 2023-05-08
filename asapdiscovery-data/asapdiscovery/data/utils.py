@@ -1376,12 +1376,18 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
         ifs.SetFormat(oechem.OEFormat_SMI)
     else:
         raise ValueError(f"ftype: {ftype} not supported")
-    exp_data_compounds = [
-        ExperimentalCompoundData(
-            compound_id=mol.GetTitle(), smiles=oechem.OEMolToSmiles(mol)
-        )
-        for mol in ifs.GetOEGraphMols()
-    ]
+
+    exp_data_compounds = []
+    for mol in ifs.GetOEGraphMols():
+        smiles = oechem.OEMolToSmiles(mol)
+
+        if not mol.GetTitle():
+            exp = ExperimentalCompoundData(compound_id=smiles, smiles=smiles)
+        else:
+            exp = ExperimentalCompoundData(compound_id=mol.GetTitle(), smiles=smiles)
+
+        exp_data_compounds.append(exp)
+
     ifs.close()
 
     return exp_data_compounds
