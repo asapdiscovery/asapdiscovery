@@ -1351,7 +1351,7 @@ def is_valid_smiles(smiles):
     return True
 
 
-def oe_load_exp_from_file(fn, ftype) -> List[ExperimentalCompoundData]:
+def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
     """
     Use OpenEye to build a list of ExperimentalCompoundData objects from an SDF or SMILES file.
     Everything other than `compound_id` and `smiles` will be left as default.
