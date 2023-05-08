@@ -261,4 +261,3 @@ class Complex(Model):
         self.constructor(model_data)
         self.ligand = Ligand(self.ligand_id)
         self.target = Target(self.target_id)
-

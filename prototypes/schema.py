@@ -1,5 +1,3 @@
-
-
 from enum import Enum
 from pydantic import BaseModel, Field
 
@@ -18,19 +16,19 @@ class Ligand(BaseModel):
 
     def to_sdf():
         ...
-    
+
     def to_smiles():
         ...
-    
+
     def to_oemol():
         ...
 
     @staticmethod
     def from_smiles():
-    
+
     @staticmethod
     def from_sdf():
-    
+
     @staticmethod
     def from_design_unit():
 
@@ -118,7 +116,7 @@ class DockingOutput(BaseModel):
 class DockingResults:
     chemgauss4:
     rmsd:
-    posit: 
+    posit:
     GAT:
     clash:
     schnet:
