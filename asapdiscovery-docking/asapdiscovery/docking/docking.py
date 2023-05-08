@@ -264,6 +264,7 @@ def docking_result_cols() -> list[str]:
         "clash",
         "SMILES",
         "GAT_score",
+        "SCHNET_score"
     ]
 
 
