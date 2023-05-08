@@ -107,7 +107,7 @@ def spruce_protein(
     spruce = oespruce.OESpruceFilter(spruce_opts, opts)
 
     # Spruce!
-    from openeye import oegrid
+    from asapdiscovery.data.openeye import oegrid
 
     # This object is for some reason needed in order to run spruce
     grid = oegrid.OESkewGrid()

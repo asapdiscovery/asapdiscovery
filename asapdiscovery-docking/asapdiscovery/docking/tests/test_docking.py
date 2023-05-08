@@ -51,6 +51,7 @@ def test_docking_base(
 @pytest.mark.parametrize("omega", [False, "--omega"])
 @pytest.mark.parametrize("by_compound", [False, "--by_compound"])
 @pytest.mark.parametrize("hybrid", [False, "--hybrid"])
+@pytest.mark.parametrize("ml", [False, ["--gat", "--schnet"]])
 @pytest.mark.script_launch_mode("subprocess")
 def test_docking_kwargs(
     script_runner,
@@ -59,6 +60,7 @@ def test_docking_kwargs(
     omega,
     by_compound,
     hybrid,
+    ml,
 ):
     sdf, oedu, _, _ = docking_files_single
     args = [
@@ -77,6 +79,10 @@ def test_docking_kwargs(
 
     if hybrid:
         args.append(hybrid)
+
+    if ml:
+        args += ml
+
     if by_compound:
         # should fail when specifying a single receptor and by_compound
         args.append(by_compound)

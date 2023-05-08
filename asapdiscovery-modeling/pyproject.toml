@@ -38,6 +38,7 @@ prep-mers-pdbs = "asapdiscovery.modeling.scripts.prep_mers_pdbs:main"
 prep-pdb-structures = "asapdiscovery.modeling.scripts.prep_pdb_structures:main"
 prep-proteins = "asapdiscovery.modeling.scripts.prep_proteins:main"
 split-oedu-and-save = "asapdiscovery.modeling.scripts.split_oedu_and_save:main"
+slice-fragalysis-structures-with-mdtraj = "asapdiscovery.modeling.scripts.slice_fragalysis_structures_with_mdtraj:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
