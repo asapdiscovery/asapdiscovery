@@ -1382,7 +1382,9 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
         smiles = oechem.OEMolToSmiles(mol)
 
         if not mol.GetTitle():
-            exp = ExperimentalCompoundData(compound_id=f"unk_lig_idx_{i}", smiles=smiles)
+            exp = ExperimentalCompoundData(
+                compound_id=f"unk_lig_idx_{i}", smiles=smiles
+            )
         else:
             exp = ExperimentalCompoundData(compound_id=mol.GetTitle(), smiles=smiles)
 
