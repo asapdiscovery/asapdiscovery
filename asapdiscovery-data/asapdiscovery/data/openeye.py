@@ -1,13 +1,24 @@
 from pathlib import Path
 
-from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
+from openeye import (
+    oechem,
+    oedepict,
+    oedocking,
+    oegrid,
+    oeomega,
+    oespruce,
+)  # noqa: F401
 
 # exec on module import
 if not oechem.OEChemIsLicensed("python"):
-    raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
+    raise RuntimeError(
+        "OpenEye license required to use asapdiscovery openeye module"
+    )
 
 
-def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=None):
+def combine_protein_ligand(
+    prot, lig, lig_name="LIG", resid=None, start_atom_id=None
+):
     """
     Combine a protein OEMol and ligand OEMol into one, handling residue/atom
     numbering, and HetAtom status.
@@ -37,13 +48,20 @@ def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=
     if resid is None:
         # Find max resid for numbering the ligand residue
         # Add 1 so we start numbering at the next residue id
-        resid = max([r.GetResidueNumber() for r in oechem.OEGetResidues(prot)]) + 1
+        resid = (
+            max([r.GetResidueNumber() for r in oechem.OEGetResidues(prot)]) + 1
+        )
 
     # Calculate atom number if necessary
     if start_atom_id is None:
         # Same with atom numbering
         start_atom_id = (
-            max([oechem.OEAtomGetResidue(a).GetSerialNumber() for a in prot.GetAtoms()])
+            max(
+                [
+                    oechem.OEAtomGetResidue(a).GetSerialNumber()
+                    for a in prot.GetAtoms()
+                ]
+            )
             + 1
         )
 
@@ -297,6 +315,34 @@ def save_openeye_pdb(mol, pdb_fn):
     return Path(pdb_fn)
 
 
+def save_openeye_pdb_string(mol):
+    """
+    Return a PDB string of an OpenEye OEGraphMol object.
+
+    Parameters
+    ----------
+    mol : oechem.OEGraphMol
+        The OEGraphMol object to write to the PDB file.
+
+    Returns
+    -------
+    str
+        The full PDB contents of mol
+
+    Notes
+    -----
+    This function will overwrite any existing file with the same name as `pdb_fn`.
+    """
+    ofs = oechem.oemolostream()
+    ofs.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
+    ofs.openstring()
+    oechem.OEWriteMolecule(ofs, mol)
+    contents = ofs.GetString()
+    ofs.close()
+
+    return contents
+
+
 def save_openeye_sdf(mol, sdf_fn):
     """
     Write an OpenEye OEGraphMol object to an SDF file.
@@ -326,6 +372,34 @@ def save_openeye_sdf(mol, sdf_fn):
     return Path(sdf_fn)
 
 
+def save_openeye_sdf_string(mol):
+    """
+    Return an SDF string of an OpenEye OEGraphMol object.
+
+    Parameters
+    ----------
+    mol : oechem.OEGraphMol
+        The OEGraphMol object to write to the SDF file.
+
+    Returns
+    -------
+    str
+        The full SDF contents of mol
+
+    Notes
+    -----
+    This function will overwrite any existing file with the same name as `sdf_fn`.
+    """
+    ofs = oechem.oemolostream()
+    ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
+    ofs.openstring()
+    oechem.OEWriteMolecule(ofs, mol)
+    contents = ofs.GetString()
+    ofs.close()
+
+    return contents
+
+
 def save_openeye_sdfs(mols, sdf_fn):
     """
     Write a list of OpenEye OEGraphMol objects to a single SDF file.
@@ -352,10 +426,7 @@ def save_openeye_sdfs(mols, sdf_fn):
     This function will overwrite any existing file with the same name as `sdf_fn`.
     """
     ofs = oechem.oemolostream()
-    ofs.SetFlavor(
-        oechem.OEFormat_SDF,
-        oechem.OEOFlavor_SDF_Default,
-    )
+    ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
     if ofs.open(sdf_fn):
         for mol in mols:
             oechem.OEWriteMolecule(ofs, mol)
@@ -364,6 +435,35 @@ def save_openeye_sdfs(mols, sdf_fn):
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
     return Path(sdf_fn)
+
+
+def save_openeye_sdfs_string(mols):
+    """
+    Return an SDF string of a list of OpenEye OEGraphMol objects.
+
+    Parameters
+    ----------
+    mol : oechem.OEGraphMol
+        The OEGraphMol object to write to the SDF file.
+
+    Returns
+    -------
+    str
+        The full SDF contents of mols
+
+    Notes
+    -----
+    This function will overwrite any existing file with the same name as `sdf_fn`.
+    """
+    ofs = oechem.oemolostream()
+    ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
+    ofs.openstring()
+    for mol in mols:
+        oechem.OEWriteMolecule(ofs, mol)
+    contents = ofs.GetString()
+    ofs.close()
+
+    return contents
 
 
 def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
@@ -449,7 +549,9 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
 
     # Set water filter (keep all waters in A, B, or W chains)
     #  (is this sufficient? are there other common water chain ids?)
-    wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
+    wat_only = oechem.OEMolComplexFilterFactory(
+        oechem.OEMolComplexFilterCategory_Water
+    )
     w_chain = oechem.OERoleMolComplexFilterFactory(
         oechem.OEMolComplexChainRoleFactory("W")
     )
@@ -476,7 +578,9 @@ def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
     }
 
 
-def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_results=True):
+def get_ligand_rmsd_from_pdb_and_sdf(
+    ref_path, mobile_path, fetch_docking_results=True
+):
     """
     TODO: This should be deprecated in favor of the functions in docking.analysis
     Calculates the RMSD between a reference ligand from a PDB file and a mobile ligand from an SDF file.
