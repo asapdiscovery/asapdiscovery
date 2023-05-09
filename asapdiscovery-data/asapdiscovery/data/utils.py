@@ -1351,7 +1351,9 @@ def is_valid_smiles(smiles):
     return True
 
 
-def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
+def oe_load_exp_from_file(
+    fn, ftype, return_mols=False
+) -> list[ExperimentalCompoundData]:
     """
     Use OpenEye to build a list of ExperimentalCompoundData objects from an SDF or SMILES file.
     Everything other than `compound_id` and `smiles` will be left as default.
@@ -1363,6 +1365,8 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
         SDF or SMI file name.
     ftype : str
         File type, either "sdf" or "smi"
+    return_mols : bool
+        Whether to return the list of molecules as well as the list of ExperimentalCompoundData objects
 
     Returns
     -------
@@ -1379,7 +1383,10 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
         raise ValueError(f"File type: {ftype} not supported")
 
     exp_data_compounds = []
+
+    mols = []
     for i, mol in enumerate(ifs.GetOEGraphMols()):
+        mols.append(mol)
         smiles = oechem.OEMolToSmiles(mol)
 
         if not mol.GetTitle():
@@ -1393,7 +1400,10 @@ def oe_load_exp_from_file(fn, ftype) -> list[ExperimentalCompoundData]:
 
     ifs.close()
 
-    return exp_data_compounds
+    if return_mols:
+        return exp_data_compounds, mols
+    else:
+        return exp_data_compounds
 
 
 def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem.OEMol]:

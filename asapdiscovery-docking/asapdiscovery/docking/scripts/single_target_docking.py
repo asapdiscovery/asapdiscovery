@@ -1,5 +1,6 @@
 import argparse
 import hashlib
+import logging
 import shutil
 from datetime import datetime
 from functools import partial
@@ -49,7 +50,6 @@ Input:
     - n_draw: number of MCS compounds to draw for each query molecule.
 
     # Docking arguments
-    - top_n: number of top matches to dock. Set to -1 to dock all.
     - docking_sys: which docking system to use [posit, hybrid]. Defaults to posit.
     - relax: when to run relaxation [none, clash, all]. Defaults to none.
     - omega: use Omega conformer enumeration.
@@ -98,7 +98,7 @@ parser.add_argument(
 parser.add_argument(
     "--title",
     help=(
-        "Title of molecule to use if a SMILES string is passed in as input, default is to hash the SMILES string to avoid accidental caching."
+        "Title of molecule to use if a SMILES string is passed in as input, default is to use the SMILES string."
     ),
 )
 
@@ -160,11 +160,11 @@ parser.add_argument(
 
 # Docking arguments
 parser.add_argument(
-    "--top_n",
-    type=int,
-    default=1,
-    help="Number of top matches to dock. Set to -1 to dock all.",
+    "--use_3d",
+    action="store_true",
+    help="Whether to use 3D coordinates from SDF input file for docking, default is to use 2D representation.",
 )
+
 parser.add_argument(
     "--docking_sys",
     default="posit",
@@ -218,7 +218,6 @@ parser.add_argument(
 )
 
 
-
 def main():
     args = parser.parse_args()
 
@@ -229,7 +228,7 @@ def main():
     logname = args.logname if args.logname else "single_target_docking"
     # setup logging
     logger_cls = FileLogger(logname, path=output_dir, stdout=True)
-    logger = logger_cls.get_logger()
+    logger = logger_cls.getLogger()
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
 
@@ -242,17 +241,18 @@ def main():
         logger.info("Running in debug mode. enabling --verbose and disabling --cleanup")
         args.verbose = True
         args.cleanup = False
-    
+
     if args.verbose:
         logger_cls.set_level(logging.DEBUG)
-        logger = logger_cls.get_logger()
+        logger = logger_cls.getLogger()
         logger.debug("Debug logging enabled")
         logger.debug(f"Input arguments: {args}")
-
 
     # paths to remove if not keeping intermediate files
     intermediate_files = []
 
+    # set internal flag to seed whether we used 3D or 2D chemistry input
+    used_3d = False
     # parse input molecules
     if is_valid_smiles(args.mols):
         logger.info(
@@ -261,11 +261,9 @@ def main():
         # hash the smiles to generate a unique title and avoid accidentally caching different outputs as the same
         if not args.title:
             logger.info(
-                "No title provided, MD5 hashing SMILES string to generate title, consider providing a title with --title"
+                "No title provided, using SMILES string to generate title, consider providing a title with --title"
             )
-            args.title = (
-                "TARGET_MOL-" + hashlib.md5(args.mols.encode("utf-8")).hexdigest()
-            )
+            args.title = "TARGET_MOL-" + args.mols
 
         exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
     else:
@@ -275,7 +273,18 @@ def main():
             exp_data = oe_load_exp_from_file(args.mols, "smi")
         elif mol_file_path.suffix == ".sdf":
             logger.info(f"Input molecules is a SDF file: {args.mols}")
-            exp_data = oe_load_exp_from_file(args.mols, "sdf")
+            if args.use_3d:
+                logger.info("Using 3D coordinates from SDF file")
+                # we need to keep the molecules around to retain their coordinates
+                exp_data, oe_mols = oe_load_exp_from_file(
+                    args.mols, "sdf", return_mols=True
+                )
+                used_3d = True
+                logger.info("setting used_3d to True")
+            else:
+                logger.info("Using 2D representation from SDF file")
+                exp_data = oe_load_exp_from_file(args.mols, "sdf")
+
         else:
             raise ValueError(
                 f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
@@ -400,7 +409,14 @@ def main():
     logger.info(f"Running docking at {datetime.now().isoformat()}")
 
     results = []
-    oe_mols = exp_data_to_oe_mols(exp_data)
+
+    # if we havn't already made the OE representation of the molecules, do it now
+    if not used_3d:
+        logger.info("Loading molecules from SMILES")
+        oe_mols = exp_data_to_oe_mols(exp_data)
+    else:
+        logger.info("Using 3D molecules from input")
+
     for mol, compound in zip(oe_mols, exp_data):
         logger.debug(f"Running docking for {compound.compound_id}")
         if args.debug:
@@ -434,23 +450,22 @@ def main():
     logger.info(f"Saved results to {csv}")
     logger.info(f"Finish single target prep+docking at {datetime.now().isoformat()}")
 
-
     # parse prep arguments
     processing_dir = output_dir / "processing"
     processing_dir.mkdir(parents=True, exist_ok=True)
     intermediate_files.append(processing_dir)
     logging.info(f"Starting docking result processing at {datetime.now().isoformat()}")
-    # do some checks. 
+    # do some checks.
     if 0 < len(results_df) < args.num_hits:
-        logger.info(f"Fewer than {args.num_hits} docked compounds, keeping top {len(results_df)} hits with soft filtering (Chemgauss < 0 instead of {args.chemgauss_threshold}).")
+        logger.info(
+            f"Fewer than {args.num_hits} docked compounds, keeping top {len(results_df)} hits with soft filtering (Chemgauss < 0 instead of {args.chemgauss_threshold})."
+        )
         num_hits = num_hits
         chemgauss_threshold = 0
     elif len(results_df) == 0:
         raise RuntimeError("No docked compounds detected, skipping.")
     else:
         logger.info(f"Detected {len(results_df)} docked compounds.")
-
-        
 
     if args.cleanup:
         if len(intermediate_files) > 0:

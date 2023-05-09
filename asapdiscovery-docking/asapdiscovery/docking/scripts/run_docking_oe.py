@@ -224,7 +224,7 @@ def mp_func(
         clash = -1
         smiles = "None"
         GAT_score = np.nan
-        schnet_score = np.nan
+        schnet_scores = [np.nan]
 
     results = [
         (
