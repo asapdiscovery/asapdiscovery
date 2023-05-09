@@ -1,7 +1,7 @@
-from asapdiscovery.data.openeye import load_openeye_pdb
-from asapdiscovery.data.schema import ExperimentalCompoundData, Target, Ligand
-from asapdiscovery.data.testing.test_resources import fetch_test_file
 import pytest
+from asapdiscovery.data.openeye import load_openeye_pdb
+from asapdiscovery.data.schema import ExperimentalCompoundData, Ligand, Target
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 def test_classes():
@@ -12,26 +12,18 @@ def test_classes():
 @pytest.fixture
 def target_files():
     sdf = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf")
-    oedu = fetch_test_file(
-        "Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu"
-    )
-    pdb = fetch_test_file(
-        "Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb"
-    )
+    oedu = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu")
+    pdb = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
     return sdf, oedu, pdb
 
 
 def test_ligand():
-    l = Ligand(
-        smiles="CC", id="XX112233", source="test", vc_id_postera="XX112233"
-    )
+    l = Ligand(smiles="CC", id="XX112233", source="test", vc_id_postera="XX112233")
 
 
 def test_ligand_invalid_smiles():
     with pytest.raises(ValueError):
-        l = Ligand(
-            smiles="GG", id="XX112233", source="test", vc_id_postera="XX112233"
-        )
+        l = Ligand(smiles="GG", id="XX112233", source="test", vc_id_postera="XX112233")
 
 
 def test_ligand_from_sdf(target_files):

@@ -1,14 +1,6 @@
-from pathlib import Path
 from datetime import date
-from typing import Optional, Union, List, Dict
-from pydantic import BaseModel, ValidationError, validator, Field
-from .validation import (
-    is_valid_smiles,
-    read_file_as_str,
-    write_file_from_string,
-    is_multiligand_sdf,
-    is_single_molecule_sdf,
-)
+from pathlib import Path
+from typing import Dict, List, Optional, Union
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
@@ -18,6 +10,15 @@ from asapdiscovery.data.openeye import (
     split_openeye_mol,
 )
 from asapdiscovery.docking.modeling import du_to_complex
+from pydantic import BaseModel, Field, ValidationError, validator
+
+from .validation import (
+    is_multiligand_sdf,
+    is_single_molecule_sdf,
+    is_valid_smiles,
+    read_file_as_str,
+    write_file_from_string,
+)
 
 
 # From FAH ###################################
@@ -58,9 +59,7 @@ class ExperimentalCompoundData(Model):
         description="If True, the compound was enantiopure, but unknown if stereochemistry recorded in SMILES is correct",
     )
 
-    date_created: date = Field(
-        None, description="Date the molecule was created."
-    )
+    date_created: date = Field(None, description="Date the molecule was created.")
 
     experimental_data: dict[str, float] = Field(
         dict(),
@@ -98,15 +97,11 @@ class CrystalCompoundData(BaseModel):
         None, description="Chain identifying the active site of interest."
     )
     output_name: str = Field(None, description="Name of output structure.")
-    active_site: str = Field(
-        None, description="OpenEye formatted active site residue."
-    )
+    active_site: str = Field(None, description="OpenEye formatted active site residue.")
     oligomeric_state: str = Field(
         None, description="Oligomeric state of the asymmetric unit."
     )
-    chains: list = Field(
-        None, description="List of chainids in the asymmetric unit."
-    )
+    chains: list = Field(None, description="List of chainids in the asymmetric unit.")
     protein_chains: list = Field(
         None, description="List of chains corresponding to protein residues."
     )
@@ -124,9 +119,7 @@ class PDBStructure(Model):
 
 class EnantiomerPair(Model):
     active: ExperimentalCompoundData = Field(description="Active enantiomer.")
-    inactive: ExperimentalCompoundData = Field(
-        description="Inactive enantiomer."
-    )
+    inactive: ExperimentalCompoundData = Field(description="Inactive enantiomer.")
 
 
 class EnantiomerPairList(Model):
@@ -143,12 +136,8 @@ class ProvenanceBase(Model):
 class Ligand(BaseModel):
     smiles: str
     id: str = Field(None, description="the compound identifier")
-    vc_id_postera: str = Field(
-        None, description="the PostERA master compound ID"
-    )
-    moonshot_compound_id: str = Field(
-        None, description="the Moonshot compound ID"
-    )
+    vc_id_postera: str = Field(None, description="the PostERA master compound ID")
+    moonshot_compound_id: str = Field(None, description="the Moonshot compound ID")
     target_id: str = Field(None, description="the target protein ID")
     source: str = None  # the source sdf file contents
 
