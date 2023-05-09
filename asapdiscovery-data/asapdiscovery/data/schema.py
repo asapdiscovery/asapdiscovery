@@ -1,7 +1,8 @@
+from pathlib import Path
 from datetime import date
-from typing import Optional, Union
+from typing import Optional, Union, List, Dict
 from pydantic import BaseModel, ValidationError, validator, Field
-from .validation import is_valid_smiles, read_file_as_str
+from .validation import is_valid_smiles, read_file_as_str, write_file_from_string, is_multiligand_sdf, is_single_molecule_sdf
 from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_sdf, oechem
 
 
@@ -173,12 +174,12 @@ class Ligand(BaseModel):
         return Ligand(smiles=smiles, id=id)
 
     @staticmethod
-    def from_multiligand_sdf(sdf_fn: Union[str, Path]) -> List[Ligand]:
+    def from_multiligand_sdf(sdf_fn: Union[str, Path]):
         mols = load_openeye_sdf(sdf_fn)
         ligands = [self.from_oemol(mol) for mol in mols]
 
     @staticmethod
-    def from_sdf(sdf_fn: Union[str, Path]) -> Ligand:
+    def from_sdf(sdf_fn: Union[str, Path]):
         if not is_single_molecule_sdf(sdf_fn):
             raise ValueError("SDF file must contain a single molecule")
         mol = load_openeye_sdf(sdf_fn)

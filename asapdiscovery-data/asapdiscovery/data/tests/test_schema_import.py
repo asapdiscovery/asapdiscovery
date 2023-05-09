@@ -33,7 +33,7 @@ def test_ligand_from_sdf(target_files):
     assert l.smiles == "CC"
 
 
-def test_target_from_pdb():
+def test_target_from_pdb(target_files):
     _, pdb_fn = target_files
 
     target = Target.from_pdb(pdb_fn, "test")
