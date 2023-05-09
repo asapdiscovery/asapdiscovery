@@ -1,7 +1,7 @@
 from datetime import date
-
-from pydantic import BaseModel, Field
-
+from typing import Optional, Union
+from pydantic import BaseModel, ValidationError, validator, Field
+from .validation import is_valid_smiles
 
 # From FAH ###################################
 class Model(BaseModel):
@@ -106,3 +106,58 @@ class EnantiomerPair(Model):
 
 class EnantiomerPairList(Model):
     pairs: list[EnantiomerPair]
+
+
+class ProvenanceBase(Model):
+    ...
+
+
+#########################################
+
+
+
+
+class Ligand(BaseModel):
+    smiles: str
+    id: str = Field(None, description="the compound identifier")
+    vc_id_postera: str = Field(None, description="the PostERA master compound ID")
+    moonshot_compound_id: str = Field(None, description="the Moonshot compound ID")
+    target_id: str = Field(None, description="the target protein ID")
+    source: str = None
+
+    ligand_provenance: Optional[ProvenanceBase] = None
+
+    @validator("smiles")
+    def smiles_must_be_valid(cls, v):
+        if not is_valid_smiles(v):
+            raise ValueError("Invalid SMILES string")
+
+    def to_sdf():
+        ...
+
+    def to_smiles():
+        ...
+
+    def to_oemol():
+        ...
+
+    @staticmethod
+    def from_smiles():
+        ...
+
+    @staticmethod
+    def from_sdf():
+        ...
+
+    @staticmethod
+    def from_design_unit():
+        ...
+
+    @staticmethod
+    def from_pdb():
+        ...
+    
+    @staticmethod
+    def from_multiligand_sdf():
+        ...
+
