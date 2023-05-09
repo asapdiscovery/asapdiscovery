@@ -43,7 +43,7 @@ class FileLogger:
 
     def set_as_default(self) -> None:
         logging.basicConfig(filename=self.logfile, level=self.level, format=self.format)
-    
+
     def set_level(self, level: int) -> None:
         self.logger.setLevel(level)
         self.handler.setLevel(level)
