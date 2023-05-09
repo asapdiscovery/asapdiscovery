@@ -2,13 +2,20 @@ from pathlib import Path
 from datetime import date
 from typing import Optional, Union, List, Dict
 from pydantic import BaseModel, ValidationError, validator, Field
-from .validation import is_valid_smiles, read_file_as_str, write_file_from_string, is_multiligand_sdf, is_single_molecule_sdf
+from .validation import (
+    is_valid_smiles,
+    read_file_as_str,
+    write_file_from_string,
+    is_multiligand_sdf,
+    is_single_molecule_sdf,
+)
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     oechem,
     save_openeye_pdb_string,
+    split_openeye_mol,
 )
 from asapdiscovery.docking.modeling import du_to_complex
 
@@ -241,7 +248,7 @@ class Target(BaseModel):
         chain = next(oechem.OEHierView(pdb_mol).GetChains()).GetChainID()
 
         # Construct ligand using already loaded OEMol
-        reference_ligand = Ligand.from_oemol(pdb_mol)
+        reference_ligand = Ligand.from_oemol(split_openeye_mol(pdb_mol)["lig"])
 
         return Target(
             id=id, chain=chain, source=source, reference_ligand=reference_ligand
@@ -316,7 +323,7 @@ class Target(BaseModel):
         source = save_openeye_pdb_string(pdb_mol)
 
         # Construct ligand using already loaded OEMol
-        reference_ligand = Ligand.from_oemol(pdb_mol)
+        reference_ligand = Ligand.from_oemol(split_openeye_mol(pdb_mol)["lig"])
 
         return Target(
             id=id, chain=chain, source=source, reference_ligand=reference_ligand
