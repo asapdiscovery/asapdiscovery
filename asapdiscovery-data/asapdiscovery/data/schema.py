@@ -3,7 +3,14 @@ from datetime import date
 from typing import Optional, Union, List, Dict
 from pydantic import BaseModel, ValidationError, validator, Field
 from .validation import is_valid_smiles, read_file_as_str, write_file_from_string, is_multiligand_sdf, is_single_molecule_sdf
-from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_sdf, oechem
+
+from asapdiscovery.data.openeye import (
+    load_openeye_pdb,
+    load_openeye_sdf,
+    oechem,
+    save_openeye_pdb_string,
+)
+from asapdiscovery.docking.modeling import du_to_complex
 
 
 # From FAH ###################################
@@ -126,15 +133,17 @@ class ProvenanceBase(Model):
 #########################################
 
 
-
-
 class Ligand(BaseModel):
     smiles: str
     id: str = Field(None, description="the compound identifier")
-    vc_id_postera: str = Field(None, description="the PostERA master compound ID")
-    moonshot_compound_id: str = Field(None, description="the Moonshot compound ID")
+    vc_id_postera: str = Field(
+        None, description="the PostERA master compound ID"
+    )
+    moonshot_compound_id: str = Field(
+        None, description="the Moonshot compound ID"
+    )
     target_id: str = Field(None, description="the target protein ID")
-    source: str = None # the source sdf file contents
+    source: str = None  # the source sdf file contents
 
     ligand_provenance: Optional[ProvenanceBase] = None
 
@@ -159,7 +168,7 @@ class Ligand(BaseModel):
         return pdb_fn
 
     def to_oemol():
-        mol =  oechem.OEMolFromSmiles(self.smiles)
+        mol = oechem.OEMolFromSmiles(self.smiles)
         mol.SetTitle(self.id)
         return mol
 
@@ -184,9 +193,8 @@ class Ligand(BaseModel):
             raise ValueError("SDF file must contain a single molecule")
         mol = load_openeye_sdf(sdf_fn)
         return self.from_oemol(mol)
-    
 
-    
+
 ################################################################################
 class Target(BaseModel):
     id: str = Field(description="ID for the target.")
@@ -200,7 +208,6 @@ class Target(BaseModel):
         None, description="Provenance."
     )
 
- 
     def get_ligand(self):
         if not self.reference_ligand:
             raise ValueError("Target does not have a reference ligand")
@@ -215,17 +222,20 @@ class Target(BaseModel):
         ----------
         pdb_fn : Union[str, Path]
             PDB file to use for construction
+        id : str
+            Target ID
 
         Returns
         -------
         Target
         """
         # Get PDB source
-        source = open(pdb_fn).read()
+        source = Path(pdb_fn).open().read()
 
         # Load OE mol
         pdb_mol = load_openeye_pdb(pdb_fn)
 
+        # Don't just use from_oemol because we already have the actual PDB source
         # Take first chain ID in the PDB file
         # (is this what we actually want to do?)
         chain = next(oechem.OEHierView(pdb_mol).GetChains()).GetChainID()
@@ -238,12 +248,76 @@ class Target(BaseModel):
         )
 
     @staticmethod
-    def from_design_unit():
-        ...
+    def from_oedu(du_fn, id):
+        """
+        Construct a Target from an oedu file.
+
+        Parameters
+        ----------
+        du_fn : Union[str, Path]
+            oedu file to use for construction
+        id : str
+            Target ID
+
+        Returns
+        -------
+        Target
+        """
+        # Load DU
+        du = oechem.OEDesignUnit()
+        if not oechem.OEReadDesignUnit(str(du_fn), du):
+            raise RuntimeError(f"Unable to read OEDU file {du_fn}")
+
+        return Target.from_design_unit(du, id)
 
     @staticmethod
-    def from_pdb():
-        ...
+    def from_design_unit(du, id):
+        """
+        Construct a Target from a DesignUnit object.
 
-    def from_oemol():
-        ...
+        Parameters
+        ----------
+        du : oechem.OEDesignUnit
+            DesignUnit input
+        id : str
+            Target ID
+
+        Returns
+        -------
+        Target
+        """
+        # Convert DU to OEMol
+        pdb_mol = du_to_complex(du, include_solvent=True)
+
+        # Use from_oemol function
+        return Target.from_oemol(pdb_mol, id)
+
+    @staticmethod
+    def from_oemol(pdb_mol, id):
+        """
+        Construct a Target from an OEMol object.
+
+        Parameters
+        ----------
+        mol : oechem.OEMol
+            OEMol input
+        id : str
+            Target ID
+
+        Returns
+        -------
+        Target
+        """
+        # Take first chain ID in the PDB file
+        # (is this what we actually want to do?)
+        chain = next(oechem.OEHierView(pdb_mol).GetChains()).GetChainID()
+
+        # Get PDB string
+        source = save_openeye_pdb_string(pdb_mol)
+
+        # Construct ligand using already loaded OEMol
+        reference_ligand = Ligand.from_oemol(pdb_mol)
+
+        return Target(
+            id=id, chain=chain, source=source, reference_ligand=reference_ligand
+        )
