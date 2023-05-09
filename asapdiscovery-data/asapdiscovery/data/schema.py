@@ -1,12 +1,12 @@
 from datetime import date
-from io import StringIO
 from pathlib import Path
 from pydantic import BaseModel, ValidationError, validator, Field
 from typing import Optional, Union
-from .validation import is_valid_smiles
+from .validation import is_valid_smiles, read_file_as_str
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
+    load_openeye_sdf,
     oechem,
     save_openeye_pdb_string,
 )
@@ -143,7 +143,7 @@ class Ligand(BaseModel):
         None, description="the Moonshot compound ID"
     )
     target_id: str = Field(None, description="the target protein ID")
-    source: str = None
+    source: str = None  # the source sdf file contents
 
     ligand_provenance: Optional[ProvenanceBase] = None
 
@@ -152,36 +152,47 @@ class Ligand(BaseModel):
         if not is_valid_smiles(v):
             raise ValueError("Invalid SMILES string")
 
-    def to_sdf():
-        ...
+    def to_sdf(sdf_fn: Union[str, Path]) -> Path:
+        if self.source is None:
+            mol = self.to_oemol()
+            return save_openeye_sdf(mol)
+        else:
+            write_file_from_string(self.source, "ligand.sdf")
 
     def to_smiles():
-        ...
+        return self.smiles
 
-    def to_pdb():
-        ...
-
-    def to_design_unit():
-        ...
+    def to_pdb(pdb_fn: Union[str, Path]) -> Path:
+        mol = self.to_oemol()
+        save_openeye_pdb(mol, pdb_fn)
+        return pdb_fn
 
     def to_oemol():
-        ...
+        mol = oechem.OEMolFromSmiles(self.smiles)
+        mol.SetTitle(self.id)
+        return mol
 
     @staticmethod
-    def from_smiles():
-        ...
+    def from_smiles(smiles):
+        return Ligand(smiles=smiles)
 
     @staticmethod
-    def from_multiligand_sdf():
-        ...
+    def from_oemol(mol):
+        smiles = ochem.OEMolToSmiles(mol)
+        id = mol.GetTitle()
+        return Ligand(smiles=smiles, id=id)
 
     @staticmethod
-    def from_sdf(sdf_fn: Union[str, Path]):
+    def from_multiligand_sdf(sdf_fn: Union[str, Path]) -> List[Ligand]:
+        mols = load_openeye_sdf(sdf_fn)
+        ligands = [self.from_oemol(mol) for mol in mols]
+
+    @staticmethod
+    def from_sdf(sdf_fn: Union[str, Path]) -> Ligand:
         if not is_single_molecule_sdf(sdf_fn):
             raise ValueError("SDF file must contain a single molecule")
-        mol = load_openeye_molecule(sdf_fn)
-        smiles = get_canonical_smiles(mol)
-        return Ligand(smiles=smiles, source=sdf_fn)
+        mol = load_openeye_sdf(sdf_fn)
+        return self.from_oemol(mol)
 
 
 ################################################################################
