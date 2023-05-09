@@ -129,6 +129,13 @@ parser.add_argument(
     help="clean up intermediate files",
 )
 
+parser.add_argument(
+    "--logname",
+    default="single_target_docking",
+    type=str,
+    help="Name of log file",
+)
+
 # Prep arguments
 parser.add_argument(
     "--loop_db",
@@ -195,6 +202,23 @@ parser.add_argument(
 )
 
 
+# processing  arguments
+parser.add_argument(
+    "--num-hits",
+    type=int,
+    default=500,
+    help="number of top hits to process",
+)
+
+parser.add_argument(
+    "--chemgauss-threshold",
+    type=float,
+    default=-3,
+    help="threshold for Chemgauss4 score",
+)
+
+
+
 def main():
     args = parser.parse_args()
 
@@ -202,9 +226,10 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logname = "prep-mcs-dock-single-target"
+    logname = args.logname if args.logname else "single_target_docking"
     # setup logging
-    logger = FileLogger(logname, path=output_dir, stdout=True).getLogger()
+    logger_cls = FileLogger(logname, path=output_dir, stdout=True)
+    logger = logger_cls.get_logger()
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
 
@@ -215,9 +240,15 @@ def main():
 
     if args.debug:
         logger.info("Running in debug mode. enabling --verbose and disabling --cleanup")
-        logger.info(f"Input arguments: {args}")
         args.verbose = True
         args.cleanup = False
+    
+    if args.verbose:
+        logger_cls.set_level(logging.DEBUG)
+        logger = logger_cls.get_logger()
+        logger.debug("Debug logging enabled")
+        logger.debug(f"Input arguments: {args}")
+
 
     # paths to remove if not keeping intermediate files
     intermediate_files = []
@@ -253,8 +284,9 @@ def main():
     logger.info(f"Loaded {len(exp_data)} molecules.")
 
     if args.verbose:
+        # we could make this just a debug statement but avoid looping over all molecules if not needed
         for exp in exp_data:
-            logger.info(f"Loaded molecule {exp.compound_id}: {exp.smiles}")
+            logger.debug(f"Loaded molecule {exp.compound_id}: {exp.smiles}")
 
     # parse prep arguments
     prep_dir = output_dir / "prep"
@@ -370,8 +402,7 @@ def main():
     results = []
     oe_mols = exp_data_to_oe_mols(exp_data)
     for mol, compound in zip(oe_mols, exp_data):
-        if args.verbose:
-            logger.info(f"Running docking for {compound.compound_id}")
+        logger.debug(f"Running docking for {compound.compound_id}")
         if args.debug:
             # check smiles match
             if compound.smiles != oechem.OEMolToSmiles(mol):
@@ -399,9 +430,27 @@ def main():
     logger.info(f"Docking finished for {len(results)} runs.")
 
     # save results
-    _, csv = make_docking_result_dataframe(results, output_dir, save_csv=True)
+    results_df, csv = make_docking_result_dataframe(results, output_dir, save_csv=True)
     logger.info(f"Saved results to {csv}")
     logger.info(f"Finish single target prep+docking at {datetime.now().isoformat()}")
+
+
+    # parse prep arguments
+    processing_dir = output_dir / "processing"
+    processing_dir.mkdir(parents=True, exist_ok=True)
+    intermediate_files.append(processing_dir)
+    logging.info(f"Starting docking result processing at {datetime.now().isoformat()}")
+    # do some checks. 
+    if 0 < len(results_df) < args.num_hits:
+        logger.info(f"Fewer than {args.num_hits} docked compounds, keeping top {len(results_df)} hits with soft filtering (Chemgauss < 0 instead of {args.chemgauss_threshold}).")
+        num_hits = num_hits
+        chemgauss_threshold = 0
+    elif len(results_df) == 0:
+        raise RuntimeError("No docked compounds detected, skipping.")
+    else:
+        logger.info(f"Detected {len(results_df)} docked compounds.")
+
+        
 
     if args.cleanup:
         if len(intermediate_files) > 0:

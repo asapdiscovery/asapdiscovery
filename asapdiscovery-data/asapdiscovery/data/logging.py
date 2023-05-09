@@ -19,6 +19,7 @@ class FileLogger:
         self.logfile = logfile
         self.format = format
         self.level = level
+        self.stdout = stdout
         if self.logfile is None:
             self.logfile = self.name + "-log.txt"
 
@@ -31,7 +32,7 @@ class FileLogger:
         self.handler.setFormatter(self.formatter)
         self.logger.addHandler(self.handler)
 
-        if stdout:
+        if self.stdout:
             self.streamhandler = logging.StreamHandler()
             self.streamhandler.setLevel(self.level)
             self.streamhandler.setFormatter(self.formatter)
@@ -42,6 +43,12 @@ class FileLogger:
 
     def set_as_default(self) -> None:
         logging.basicConfig(filename=self.logfile, level=self.level, format=self.format)
+    
+    def set_level(self, level: int) -> None:
+        self.logger.setLevel(level)
+        self.handler.setLevel(level)
+        if self.stdout:
+            self.streamhandler.setLevel(level)
 
 
 """
