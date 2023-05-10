@@ -624,7 +624,12 @@ def remove_extra_ligands(mol, lig_chain=None):
                 oechem.OEAtomGetResidue(a).GetExtChainID()
                 for a in mol.GetAtoms(all_lig_filter)
             }
-        )[0]
+        )
+        # If no ligand chains are found, just return the molecule as is
+        if len(lig_chain) > 0:
+            lig_chain = lig_chain[0]
+        else:
+            return mol
 
     # Copy molecule and delete all lig atoms that don't have the desired chain
     mol_copy = mol.CreateCopy()
