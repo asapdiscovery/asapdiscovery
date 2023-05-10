@@ -1,4 +1,5 @@
 """Tests for the fragalysis data fetching/wrangling/processing"""
+import copy
 import glob
 import os
 
@@ -11,7 +12,7 @@ def mpro_fragalysis_api_call():
     """Fragalysis API call for downloading target data"""
     from asapdiscovery.data.fragalysis import API_CALL_BASE
 
-    api_call = API_CALL_BASE
+    api_call = copy.deepcopy(API_CALL_BASE)
     api_call["target_name"] = "Mpro"
     return api_call
 
@@ -21,7 +22,7 @@ def mac1_fragalysis_api_call():
     """Fragalysis API call for downloading target data"""
     from asapdiscovery.data.fragalysis import API_CALL_BASE
 
-    api_call = API_CALL_BASE
+    api_call = copy.deepcopy(API_CALL_BASE)
     api_call["target_name"] = "Mac1"
     return api_call
 

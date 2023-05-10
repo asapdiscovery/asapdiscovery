@@ -1,4 +1,5 @@
 import argparse
+import copy
 
 from asapdiscovery.data.fragalysis import API_CALL_BASE, download  # noqa: E402
 
@@ -23,8 +24,9 @@ def get_args():
 def main():
     args = get_args()
 
-    # Overwrite the base target with the cli-specified target
-    API_CALL_BASE["target_name"] = args.target.capitalize()
+    # Copy the base call and update the base target with the cli-specified target
+    api_call = copy.deepcopy(API_CALL_BASE)
+    api_call["target_name"] = args.target.capitalize()
 
     download(args.o, API_CALL_BASE, args.x)
 
