@@ -24,7 +24,7 @@ gatmodel_test:
   base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/test/
   type: GAT
   weights:
-    resource: gat_example.pth
+    resource: gat_example_dgl1.1.pth
     sha256hash: 38e5476ede0ed67ad0951d5d1c7c913ecf0aeaa6a1913d16ee9dca28b5d9795b
   config:
     resource: gat_example_config.json

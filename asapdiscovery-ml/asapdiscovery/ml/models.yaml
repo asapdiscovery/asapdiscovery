@@ -14,7 +14,7 @@ gat_test_v0:
   # The weights key has the name of the weights file and the sha256 hash of the file.
   weights:
     # resource is the name of the file
-    resource: gat_example.pth
+    resource: gat_example_dgl1.1.pth
     # sha256hash is the sha256 hash of the file
     sha256hash: 38e5476ede0ed67ad0951d5d1c7c913ecf0aeaa6a1913d16ee9dca28b5d9795b
   # The config key has the name of the config file and the sha256 hash of the file.
