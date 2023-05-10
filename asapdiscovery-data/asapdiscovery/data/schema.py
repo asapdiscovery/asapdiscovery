@@ -88,6 +88,11 @@ class CrystalCompoundData(BaseModel):
         None, description="List of chains corresponding to protein residues."
     )
 
+    series: str = Field(
+        None,
+        description="Name of COVID Moonshot series associated with this molecule",
+    )
+
 
 class PDBStructure(Model):
     pdb_id: str = Field(None, description="PDB identification code.")
