@@ -460,7 +460,7 @@ def main():
         logger.info(
             f"Fewer than {args.num_hits} docked compounds, keeping top {len(results_df)} hits with soft filtering (Chemgauss < 0 instead of {args.chemgauss_threshold})."
         )
-        num_hits = num_hits
+        num_hits = args.num_hits
         chemgauss_threshold = 0
     elif len(results_df) == 0:
         raise RuntimeError("No docked compounds detected, skipping.")
