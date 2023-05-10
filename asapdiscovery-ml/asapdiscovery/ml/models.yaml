@@ -63,6 +63,8 @@ asapdiscovery-schnet-2023.04.29:
     sha256hash: be13aeaea6c9d21dad7a82ee4a614999622e901b097a895144ee34a1ff8b5fba
   last_updated: 2023-04-29
 
+
+# Earlier models will not work with DGL >1.1 due to changes in their code
 # asapdiscovery-GAT-2023.05.09 model
 asapdiscovery-GAT-2023.05.09:
   type: GAT
