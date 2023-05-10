@@ -176,7 +176,7 @@ def main():
         else:
             test_loss = test_loss.mean(axis=1)
         if args.test_only:
-            best_loss[l] = min(test_loss)
+            best_loss[l] = test_loss[-1]
 
         # Add data to the combined lists
         all_epoch.extend(range(len(test_loss)))
