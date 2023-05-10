@@ -16,7 +16,7 @@ gat_test_v0:
     # resource is the name of the file
     resource: gat_example_dgl1.1.pth
     # sha256hash is the sha256 hash of the file
-    sha256hash: 38e5476ede0ed67ad0951d5d1c7c913ecf0aeaa6a1913d16ee9dca28b5d9795b
+    sha256hash: 4294902bcfbf95224edf1003207de839cdd2893772973aacc2a7ecbeb277da76
   # The config key has the name of the config file and the sha256 hash of the file.
   # This key is optional
   config:
