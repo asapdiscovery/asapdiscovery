@@ -97,7 +97,13 @@ class DockedDataset(Dataset):
 
         table = GetPeriodicTable()
 
-        s = PDBParser().get_structure(f"{compound[0]}_{compound[1]}", fn)
+        if compound is None:
+            # use the stem of the name of the file as the PDB id
+            id = str(fn).split("/")[-1].split(".")[0]
+        else:
+            # use the compound info as the PDB id
+            id = f"{compound[0]}_{compound[1]}"
+        s = PDBParser().get_structure(id, fn)
         # Filter out water residues
         all_atoms = [a for a in s.get_atoms() if a.parent.resname != "HOH"]
         if ignore_h:
