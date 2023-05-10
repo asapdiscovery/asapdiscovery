@@ -16,61 +16,7 @@ import numpy as np
 import pandas
 import seaborn as sns
 
-# from asapdiscovery.ml.scripts.plot_loss import convert_pic50
-
-
-# Compute R value in kcal/mol/K
-try:
-    from simtk.unit import MOLAR_GAS_CONSTANT_R as R_const
-    from simtk.unit import kelvin as K
-    from simtk.unit import kilocalorie as kcal
-    from simtk.unit import mole as mol
-
-    R = R_const.in_units_of(kcal / mol / K)._value
-except ModuleNotFoundError:
-    # use R = .001987 kcal/mol/K
-    R = 0.001987
-    logging.debug("simtk package not found, using R value of", R)
-
-
-def convert_pic50(pic50, T=298.0, cp_values=None):
-    """
-    Function to convert pIC50 value to delta G value (in kcal/mol).
-
-    Conversion:
-    IC50 value = exp(dG/kT) => pic50 = -log10(exp(dG/kT))
-    exp(dg/kT) = 10**(-pic50)
-    dg = kT * ln(10**(-pic50))
-    change of base => dg = kT * -pic50 / log10(e)
-
-    Parameters
-    ----------
-    pic50 : float
-        pIC50 value to convert
-    T : float, default=298.0
-        Temperature for conversion
-    cp_values : Tuple[int], optional
-        Substrate concentration and Km values for calculating Ki using the
-        Cheng-Prussoff equation. These values are assumed to be in the same
-        concentration units. If no values are passed for this, pIC50 values
-        will be used as an approximation of the Ki
-
-    Returns
-    -------
-    float
-        Converted delta G value in kT
-    """
-    # Calculate Ki using Cheng-Prussoff
-    if cp_values:
-        # Convert pIC50 -> IC50
-        ic50 = 10 ** (-pic50)
-        dG = R * T * np.log(ic50 / (1 + cp_values[0] / cp_values[1]))
-    # Use Ki = pIC50 approximation
-    else:
-        dG = -R * T * np.log(10.0) * pic50
-
-    # Plotting MAE so return absolute value
-    return np.abs(dG)
+from asapdiscovery.ml.scripts.plot_loss import convert_pic50
 
 
 def load_losses(loss_dir, conv_function=None):
