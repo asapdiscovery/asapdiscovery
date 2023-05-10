@@ -5,7 +5,6 @@ Input CSV must have the columns:
  * train_frac
 """
 import argparse
-import logging
 import os
 import pickle as pkl
 from functools import partial
