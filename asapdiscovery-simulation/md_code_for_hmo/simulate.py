@@ -33,9 +33,14 @@ reporting_interval = 1250  # 5 ps
 num_steps = 2500000  # 10ns; number of integrator steps
 n_snapshots = int(num_steps / reporting_interval) * reporting_interval # recalculate number of steps to run
 
+ligand_path = ""
+protein_path = ""
 
 # log.info(f":gear:  Processing {arguments['--receptor']} and {arguments['--ligand']}")
 # log.info( f":clock1:  Will run {num_steps*timestep / unit.nanoseconds:3f} ns of production simulation to generate {n_snapshots} snapshots")
+
+
+
 
 # check whether we have a GPU platform and if so set the precision to mixed
 speed = 0
@@ -51,10 +56,14 @@ if platform.getName() == "CUDA" or platform.getName() == "OpenCL":
     platform.setPropertyDefaultValue("Precision", "mixed")
     # log.info(f":dart:  Setting precision for platform {platform.getName()} to mixed")
 
+
+
+
+
 # Read the molfile into RDKit, add Hs and create an openforcefield Molecule object
 # log.info(":pill:  Reading ligand")
 
-rdkitmol = Chem.SDMolSupplier(arguments["--ligand"])[0]
+rdkitmol = Chem.SDMolSupplier(ligand_path)[0]
 # log.info(f":mage:  Adding hydrogens")
 rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True)
 # ensure the chiral centers are all defined
@@ -88,7 +97,7 @@ system_generator = SystemGenerator(
 # log.info(":cut_of_meat:  Reading protein")
 from openmm.app import PDBFile
 
-protein_pdb = PDBFile(arguments["--receptor"])
+protein_pdb = PDBFile(protein_path)
 # log.info(":sandwich:  Preparing complex")
 from openmm.app import Modeller
 
@@ -125,9 +134,7 @@ modeller.addSolvent(
 import mdtraj
 
 mdtop = mdtraj.Topology.from_openmm(modeller.topology)
-atom_selection = arguments["--selection"]
-# log.info(f":clipboard:  Using selection: {atom_selection}")
-output_indices = mdtop.select(atom_selection)
+output_indices = mdtop.select("not water")
 output_topology = mdtop.subset(output_indices).to_openmm()
 
 # Create the system using the SystemGenerator
@@ -167,72 +174,38 @@ simulation = Simulation(modeller.topology, system, integrator, platform=platform
 context = simulation.context
 context.setPositions(modeller.positions)
 
-# Write initial PDB, if requested.
-if arguments["--initial"]:
-    # log.info(f":page_facing_up:  Writing initial PDB to {arguments['--initial']}")
-    output_positions = context.getState(
-        getPositions=True, enforcePeriodicBox=False
-    ).getPositions(asNumpy=True)
-    with open(arguments["--initial"], "w") as outfile:
-        PDBFile.writeFile(
-            output_topology,
-            output_positions[output_indices, :],
-            file=outfile,
-            keepIds=False,
-        )
-
 # Minimize energy
 # log.info(":skier:  Minimizing ...")
 simulation.minimizeEnergy()
 
-# Write minimized PDB, if requested
-if arguments["--minimized"]:
-    # log.info(f":page_facing_up:  Writing minimized PDB to {arguments['--minimized']}")
-    output_positions = context.getState(
-        getPositions=True, enforcePeriodicBox=False
-    ).getPositions(asNumpy=True)
-    with open(arguments["--minimized"], "w") as outfile:
-        PDBFile.writeFile(
-            output_topology,
-            output_positions[output_indices, :],
-            file=outfile,
-            keepIds=False,
-        )
+# Write minimized PDB
+# log.info(f":page_facing_up:  Writing minimized PDB to {arguments['--minimized']}")
+output_positions = context.getState(
+    getPositions=True, enforcePeriodicBox=False
+).getPositions(asNumpy=True)
+with open("minimized.pdb", "w") as outfile:
+    PDBFile.writeFile(
+        output_topology,
+        output_positions[output_indices, :],
+        file=outfile,
+        keepIds=False,
+    )
 
 # Equilibrate
 # log.info(":fire:  Heating ...")
 simulation.context.setVelocitiesToTemperature(temperature)
 simulation.step(equilibration_steps)
 
-# Add reporter to generate DCD trajectory, if requested
-if arguments["--dcdtraj"]:
-    # log.info(f":page_facing_up:  Will write DCD trajectory to {arguments['--dcdtraj']}")
-    from mdtraj.reporters import DCDReporter
+# Add reporter to generate XTC trajectory
 
-    simulation.reporters.append(
-        DCDReporter(
-            arguments["--dcdtraj"], reporting_interval, atomSubset=output_indices
-        )
+# log.info(f":page_facing_up:  Will write XTC trajectory to {arguments['--xtctraj']}")
+from mdtraj.reporters import XTCReporter
+
+simulation.reporters.append(
+    XTCReporter(
+        "traj.xtc", reporting_interval, atomSubset=output_indices
     )
-
-# Add reporter to generate XTC trajectory, if requested
-if arguments["--xtctraj"]:
-    # log.info(f":page_facing_up:  Will write XTC trajectory to {arguments['--xtctraj']}")
-    from mdtraj.reporters import XTCReporter
-
-    simulation.reporters.append(
-        XTCReporter(
-            arguments["--xtctraj"], reporting_interval, atomSubset=output_indices
-        )
-    )
-
-# Add reporter to generate PDB trajectory, if requested
-# NOTE: The PDBReporter does not currently support atom subsets
-if arguments["--pdbtraj"]:
-    # log.info(f":page_facing_up:  Will write PDB trajectory to {arguments['--pdbtraj']}")
-    from openmm.app import PDBReporter
-
-    simulation.reporters.append(PDBReporter(arguments["--pdbtraj"], reporting_interval))
+)
 
 # Run simulation
 # log.info(":coffee:  Starting simulation...")
@@ -243,19 +216,18 @@ for snapshot_index in track(
 ):
     simulation.step(reporting_interval)
 
-# Write final PDB, if requested
-if arguments["--final"]:
-    # log.info(f":page_facing_up:  Writing final PDB to {arguments['--final']}")
-    output_positions = context.getState(
-        getPositions=True, enforcePeriodicBox=False
-    ).getPositions(asNumpy=True)
-    with open(arguments["--final"], "w") as outfile:
-        PDBFile.writeFile(
-            output_topology,
-            output_positions[output_indices, :],
-            file=outfile,
-            keepIds=False,
-        )
+# Write final PDB
+# log.info(f":page_facing_up:  Writing final PDB to {arguments['--final']}")
+output_positions = context.getState(
+    getPositions=True, enforcePeriodicBox=False
+).getPositions(asNumpy=True)
+with open("final.pdb", "w") as outfile:
+    PDBFile.writeFile(
+        output_topology,
+        output_positions[output_indices, :],
+        file=outfile,
+        keepIds=False,
+    )
 
 # Flush trajectories to force files to be closed
 for reporter in simulation.reporters:
