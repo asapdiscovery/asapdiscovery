@@ -3,7 +3,7 @@ Runs a simulation with OpenMM.
 """
 # Configure logging
 import logging
-import sys
+from rdkit import Chem
 
 from rich.logging import RichHandler
 
@@ -34,10 +34,8 @@ num_steps = 2500000  # 10ns; number of integrator steps
 n_snapshots = int(num_steps / reporting_interval) * reporting_interval # recalculate number of steps to run
 
 
-log.info(f":gear:  Processing {arguments['--receptor']} and {arguments['--ligand']}")
-log.info(
-    f":clock1:  Will run {num_steps*timestep / unit.nanoseconds:3f} ns of production simulation to generate {n_snapshots} snapshots"
-)
+# log.info(f":gear:  Processing {arguments['--receptor']} and {arguments['--ligand']}")
+# log.info( f":clock1:  Will run {num_steps*timestep / unit.nanoseconds:3f} ns of production simulation to generate {n_snapshots} snapshots")
 
 # check whether we have a GPU platform and if so set the precision to mixed
 speed = 0
@@ -45,21 +43,19 @@ from openmm import Platform
 
 for i in range(Platform.getNumPlatforms()):
     p = Platform.getPlatform(i)
-    # print(p.getName(), p.getSpeed())
     if p.getSpeed() > speed:
         platform = p
         speed = p.getSpeed()
 
 if platform.getName() == "CUDA" or platform.getName() == "OpenCL":
     platform.setPropertyDefaultValue("Precision", "mixed")
-    log.info(f":dart:  Setting precision for platform {platform.getName()} to mixed")
+    # log.info(f":dart:  Setting precision for platform {platform.getName()} to mixed")
 
 # Read the molfile into RDKit, add Hs and create an openforcefield Molecule object
-log.info(":pill:  Reading ligand")
-from rdkit import Chem
+# log.info(":pill:  Reading ligand")
 
 rdkitmol = Chem.SDMolSupplier(arguments["--ligand"])[0]
-log.info(f":mage:  Adding hydrogens")
+# log.info(f":mage:  Adding hydrogens")
 rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True)
 # ensure the chiral centers are all defined
 Chem.AssignAtomChiralTagsFromStructure(rdkitmolh)
@@ -68,7 +64,7 @@ from openff.toolkit.topology import Molecule
 ligand_mol = Molecule(rdkitmolh)
 
 # Initialize a SystemGenerator
-log.info(":wrench:  Initializing SystemGenerator")
+# log.info(":wrench:  Initializing SystemGenerator")
 from openmm import app
 from openmmforcefields.generators import SystemGenerator
 
@@ -89,11 +85,11 @@ system_generator = SystemGenerator(
 )
 
 # Use Modeller to combine the protein and ligand into a complex
-log.info(":cut_of_meat:  Reading protein")
+# log.info(":cut_of_meat:  Reading protein")
 from openmm.app import PDBFile
 
 protein_pdb = PDBFile(arguments["--receptor"])
-log.info(":sandwich:  Preparing complex")
+# log.info(":sandwich:  Preparing complex")
 from openmm.app import Modeller
 
 modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
@@ -105,7 +101,7 @@ modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
 modeller.add(ligand_mol.to_topology().to_openmm(), ligand_mol.conformers[0].to_openmm())
 
 # We need to temporarily create a Context in order to identify molecules for adding virtual bonds
-log.info(f":microscope:  Identifying molecules")
+# log.info(f":microscope:  Identifying molecules")
 import openmm
 
 integrator = openmm.VerletIntegrator(1 * unit.femtoseconds)
@@ -117,29 +113,29 @@ molecules_atom_indices = context.getMolecules()
 del context, integrator, system
 
 # Solvate
-log.info(":droplet:  Adding solvent...")
+# log.info(":droplet:  Adding solvent...")
 # we use the 'padding' option to define the periodic box. The PDB file does not contain any
 # unit cell information so we just create a box that has a 9A padding around the complex.
 modeller.addSolvent(
     system_generator.forcefield, model="tip3p", padding=9.0 * unit.angstroms
 )
-log.info(":package:  System has %d atoms" % modeller.topology.getNumAtoms())
+# log.info(":package:  System has %d atoms" % modeller.topology.getNumAtoms())
 
 # Determine which atom indices we want to use
 import mdtraj
 
 mdtop = mdtraj.Topology.from_openmm(modeller.topology)
 atom_selection = arguments["--selection"]
-log.info(f":clipboard:  Using selection: {atom_selection}")
+# log.info(f":clipboard:  Using selection: {atom_selection}")
 output_indices = mdtop.select(atom_selection)
 output_topology = mdtop.subset(output_indices).to_openmm()
 
 # Create the system using the SystemGenerator
-log.info(":globe_showing_americas:  Creating system...")
+# log.info(":globe_showing_americas:  Creating system...")
 system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
 
 # Add virtual bonds so solute is imaged together
-log.info(f":chains:  Adding virtual bonds between molecules")
+# log.info(f":chains:  Adding virtual bonds between molecules")
 custom_bond_force = openmm.CustomBondForce("0")
 for molecule_index in range(len(molecules_atom_indices) - 1):
     custom_bond_force.addBond(
@@ -153,18 +149,18 @@ system.addForce(custom_bond_force)
 from openmm import MonteCarloBarostat
 
 system.addForce(MonteCarloBarostat(pressure, temperature))
-log.info(f":game_die: Default Periodic box:")
-for dim in range(3):
-    log.info(f"  :small_blue_diamond: {system.getDefaultPeriodicBoxVectors()[dim]}")
+# log.info(f":game_die: Default Periodic box:")
+# for dim in range(3):
+#     log.info(f"  :small_blue_diamond: {system.getDefaultPeriodicBoxVectors()[dim]}")
 
 # Create integrator
-log.info(":building_construction:  Creating integrator...")
+# log.info(":building_construction:  Creating integrator...")
 from openmm import LangevinMiddleIntegrator
 
 integrator = LangevinMiddleIntegrator(temperature, collision_rate, timestep)
 
 # Create simulation
-log.info(":mage:  Creating simulation...")
+# log.info(":mage:  Creating simulation...")
 from openmm.app import Simulation
 
 simulation = Simulation(modeller.topology, system, integrator, platform=platform)
@@ -173,7 +169,7 @@ context.setPositions(modeller.positions)
 
 # Write initial PDB, if requested.
 if arguments["--initial"]:
-    log.info(f":page_facing_up:  Writing initial PDB to {arguments['--initial']}")
+    # log.info(f":page_facing_up:  Writing initial PDB to {arguments['--initial']}")
     output_positions = context.getState(
         getPositions=True, enforcePeriodicBox=False
     ).getPositions(asNumpy=True)
@@ -186,12 +182,12 @@ if arguments["--initial"]:
         )
 
 # Minimize energy
-log.info(":skier:  Minimizing ...")
+# log.info(":skier:  Minimizing ...")
 simulation.minimizeEnergy()
 
 # Write minimized PDB, if requested
 if arguments["--minimized"]:
-    log.info(f":page_facing_up:  Writing minimized PDB to {arguments['--minimized']}")
+    # log.info(f":page_facing_up:  Writing minimized PDB to {arguments['--minimized']}")
     output_positions = context.getState(
         getPositions=True, enforcePeriodicBox=False
     ).getPositions(asNumpy=True)
@@ -204,13 +200,13 @@ if arguments["--minimized"]:
         )
 
 # Equilibrate
-log.info(":fire:  Heating ...")
+# log.info(":fire:  Heating ...")
 simulation.context.setVelocitiesToTemperature(temperature)
 simulation.step(equilibration_steps)
 
 # Add reporter to generate DCD trajectory, if requested
 if arguments["--dcdtraj"]:
-    log.info(f":page_facing_up:  Will write DCD trajectory to {arguments['--dcdtraj']}")
+    # log.info(f":page_facing_up:  Will write DCD trajectory to {arguments['--dcdtraj']}")
     from mdtraj.reporters import DCDReporter
 
     simulation.reporters.append(
@@ -221,7 +217,7 @@ if arguments["--dcdtraj"]:
 
 # Add reporter to generate XTC trajectory, if requested
 if arguments["--xtctraj"]:
-    log.info(f":page_facing_up:  Will write XTC trajectory to {arguments['--xtctraj']}")
+    # log.info(f":page_facing_up:  Will write XTC trajectory to {arguments['--xtctraj']}")
     from mdtraj.reporters import XTCReporter
 
     simulation.reporters.append(
@@ -233,23 +229,23 @@ if arguments["--xtctraj"]:
 # Add reporter to generate PDB trajectory, if requested
 # NOTE: The PDBReporter does not currently support atom subsets
 if arguments["--pdbtraj"]:
-    log.info(f":page_facing_up:  Will write PDB trajectory to {arguments['--pdbtraj']}")
+    # log.info(f":page_facing_up:  Will write PDB trajectory to {arguments['--pdbtraj']}")
     from openmm.app import PDBReporter
 
     simulation.reporters.append(PDBReporter(arguments["--pdbtraj"], reporting_interval))
 
 # Run simulation
-log.info(":coffee:  Starting simulation...")
+# log.info(":coffee:  Starting simulation...")
 from rich.progress import track
 
 for snapshot_index in track(
-    range(n_snapshots), ":rocket: Running production simulation..."
+    # range(n_snapshots), ":rocket: Running production simulation..."
 ):
     simulation.step(reporting_interval)
 
 # Write final PDB, if requested
 if arguments["--final"]:
-    log.info(f":page_facing_up:  Writing final PDB to {arguments['--final']}")
+    # log.info(f":page_facing_up:  Writing final PDB to {arguments['--final']}")
     output_positions = context.getState(
         getPositions=True, enforcePeriodicBox=False
     ).getPositions(asNumpy=True)
