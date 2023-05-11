@@ -28,7 +28,7 @@ def main():
     api_call = copy.deepcopy(API_CALL_BASE)
     api_call["target_name"] = args.target.capitalize()
 
-    download(args.o, API_CALL_BASE, args.x)
+    download(args.o, api_call, args.x)
 
 
 if __name__ == "__main__":
