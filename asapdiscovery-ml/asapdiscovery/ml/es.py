@@ -2,6 +2,30 @@
 Class for handling early stopping in training.
 """
 from copy import deepcopy
+import numpy as np
+
+
+def _sanitize_loss(loss):
+    """
+    Helper function for the ES classes to make sure that they receive a single float as
+    their loss value. If an iterable of floats is passed, the mean loss will be returned
+
+    Parameters
+    ----------
+    loss : Union[float, List[float], np.ndarray, torch.Tensor]
+        Loss value(s)
+
+    Returns
+    -------
+    float
+        Sanitized loss value
+    """
+    try:
+        # This should work for common types of numeric values (single float, list,
+        #  tensor, etc of floats)
+        return np.asarray(loss).mean()
+    except Exception:
+        raise ValueError(f"Bad value passed for loss: {loss}")
 
 
 class BestEarlyStopping:
@@ -42,6 +66,9 @@ class BestEarlyStopping:
         bool
             Whether to stop training
         """
+        # Make sure we've got a reasonable value for loss
+        loss = _sanitize_loss(loss)
+
         # If this is the first epoch, just set internal variables and return
         if self.best_loss is None:
             self.best_loss = loss
@@ -107,7 +134,8 @@ class ConvergedEarlyStopping:
         bool
             Whether to stop training
         """
-        import numpy as np
+        # Make sure we've got a reasonable value for loss
+        loss = _sanitize_loss(loss)
 
         # Add most recent loss
         self.losses += [loss]
