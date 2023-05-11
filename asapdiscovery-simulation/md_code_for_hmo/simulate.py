@@ -21,6 +21,7 @@ log = logging.getLogger("rich")
 # Set parameters for simulation
 from openmm import unit
 
+# define some standards. 
 temperature = 300 * unit.kelvin
 pressure = 1 * unit.atmospheres
 collision_rate = 1.0 / unit.picoseconds
@@ -28,37 +29,10 @@ timestep = 4.0 * unit.femtoseconds
 equilibration_steps = 5000  # 20 ps
 reporting_interval = 1250  # 5 ps
 
-# Use docopt for CLI handling
-# TODO: Once we refactor this to encapsulate behavior in functions (or classes) migrate to click: https://click.palletsprojects.com/en/8.1.x/
-__doc__ = """Generate explicit-solvent molecular dynamics simulation for a given receptor and ligand.
+# some less standard parameters. These should be in CLI.
+num_steps = 2500000  # 10ns; number of integrator steps
+n_snapshots = int(num_steps / reporting_interval) * reporting_interval # recalculate number of steps to run
 
-Usage:
-  simulate.py --receptor=FILE --ligand=FILE --nsteps=INT [--selection=SELECT] [--initial=FILE] [--minimized=FILE] [--final=FILE] [--xtctraj=FILE] [--dcdtraj=FILE] [--pdbtraj=FILE]
-  simulate.py (-h | --help)
-
-Options:
-  -h --help           Show this screen.
-  --receptor=FILE     Receptor PDB filename.
-  --ligand=FILE       Ligand SDF filename.
-  --nsteps=INT        Number of steps to run.
-  --selection=SELECT  MDTraj selection to use (e.g. 'not water') [default: all].
-  --initial=FILE      Write initial complex PDB file.
-  --minimized=FILE    Write minimized complex PDB file.
-  --final=FILE        Write final complex PDB file.
-  --xtctraj=FILE      Generate XTC trajectory file.
-  --dcdtraj=FILE      Generate DCD trajectory file.
-  --pdbfile=FILE      Generate PDB trajectory file.
-
-"""
-from docopt import docopt
-
-arguments = docopt(__doc__, version="simulate 0.1")
-
-num_steps = int(arguments["--nsteps"])  # number of integrator steps
-n_snapshots = int(
-    num_steps / reporting_interval
-)  # calculate number of snapshots that will be generated
-num_steps = n_snapshots * reporting_interval  # recalculate number of steps to run
 
 log.info(f":gear:  Processing {arguments['--receptor']} and {arguments['--ligand']}")
 log.info(
