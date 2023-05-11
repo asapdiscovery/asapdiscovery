@@ -3,6 +3,9 @@ Runs a simulation with OpenMM.
 """
 # Configure logging
 import logging
+
+# Set parameters for simulation
+from openmm import unit
 from rdkit import Chem
 
 # from rich.logging import RichHandler
@@ -18,10 +21,8 @@ from rdkit import Chem
 # )
 # log = logging.getLogger("rich")
 
-# Set parameters for simulation
-from openmm import unit
 
-# define some standards. 
+# define some standards.
 temperature = 300 * unit.kelvin
 pressure = 1 * unit.atmospheres
 collision_rate = 1.0 / unit.picoseconds
@@ -31,14 +32,15 @@ reporting_interval = 1250  # 5 ps
 
 # some less standard parameters. These should be in CLI.
 num_steps = 2500000  # 10ns; number of integrator steps
-n_snapshots = int(num_steps / reporting_interval) * reporting_interval # recalculate number of steps to run
+n_snapshots = (
+    int(num_steps / reporting_interval) * reporting_interval
+)  # recalculate number of steps to run
 
 ligand_path = ""
 protein_path = ""
 
 # log.info(f":gear:  Processing {arguments['--receptor']} and {arguments['--ligand']}")
 # log.info( f":clock1:  Will run {num_steps*timestep / unit.nanoseconds:3f} ns of production simulation to generate {n_snapshots} snapshots")
-
 
 
 def set_platform():
@@ -59,7 +61,7 @@ def set_platform():
 
 
 def create_system_generator():
-    # this could do with some structuring to improve flexibility. 
+    # this could do with some structuring to improve flexibility.
 
     # Initialize a SystemGenerator
     # log.info(":wrench:  Initializing SystemGenerator")
@@ -82,7 +84,6 @@ def create_system_generator():
         periodic_forcefield_kwargs=periodic_forcefield_kwargs,
     )
     return system_generator
-
 
 
 def get_complex_model(ligand_path, protein_path):
@@ -114,15 +115,14 @@ def get_complex_model(ligand_path, protein_path):
     # an openforcefield Molecule object that was created from a RDKit molecule.
     # The topology part is described in the openforcefield API but the positions part grabs the first (and only)
     # conformer and passes it to Modeller. It works. Don't ask why!
-    modeller.add(ligand_mol.to_topology().to_openmm(), ligand_mol.conformers[0].to_openmm())
+    modeller.add(
+        ligand_mol.to_topology().to_openmm(), ligand_mol.conformers[0].to_openmm()
+    )
 
     return modeller
 
 
-
 def setup_and_solvate(modeller):
-        
-
     # We need to temporarily create a Context in order to identify molecules for adding virtual bonds
     # log.info(f":microscope:  Identifying molecules")
     import openmm
@@ -171,7 +171,6 @@ def create_system(modeller):
     system.addForce(custom_bond_force)
 
     return system, output_indices
-
 
 
 def setup_simulation(modeller, system):
@@ -225,16 +224,13 @@ def equilibrate(simulation):
     return simulation
 
 
-
 def run_production_simulation(simulation, context, output_indices):
     # Add reporter to generate XTC trajectory
     # log.info(f":page_facing_up:  Will write XTC trajectory to {arguments['--xtctraj']}")
     from mdtraj.reporters import XTCReporter
 
     simulation.reporters.append(
-        XTCReporter(
-            "traj.xtc", reporting_interval, atomSubset=output_indices
-        )
+        XTCReporter("traj.xtc", reporting_interval, atomSubset=output_indices)
     )
 
     # Run simulation
@@ -268,6 +264,7 @@ def run_production_simulation(simulation, context, output_indices):
     del simulation
 
     # return some sort of success/fail code
+
 
 if __name__ == "__main__":
     set_platform()
