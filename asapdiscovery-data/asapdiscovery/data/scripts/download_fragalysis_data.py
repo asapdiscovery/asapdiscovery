@@ -26,6 +26,8 @@ def main():
 
     # Copy the base call and update the base target with the cli-specified target
     api_call = copy.deepcopy(API_CALL_BASE)
+    if args.target.lower() not in {"mpro", "mac1"}:
+        raise ValueError("Target must be one of [mpro, mac1].")
     api_call["target_name"] = args.target.capitalize()
 
     download(args.o, api_call, args.x)
