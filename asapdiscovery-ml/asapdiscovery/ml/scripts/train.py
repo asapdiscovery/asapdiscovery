@@ -586,7 +586,9 @@ def init(args, rank=False):
         es_type = args.es_type.lower()
         if es_type == "best":
             if args.es_patience <= 0:
-                raise ValueError("Option to --es_patience must be > 0.")
+                raise ValueError(
+                    "Option to --es_patience must be > 0 if `best` es_type is used."
+                )
             es = BestEarlyStopping(args.es_patience)
             exp_configure.update(
                 {
@@ -596,9 +598,13 @@ def init(args, rank=False):
             )
         elif es_type == "converged":
             if args.es_n_check <= 0:
-                raise ValueError("Option to --es_n_check must be > 0.")
+                raise ValueError(
+                    "Option to --es_n_check must be > 0 if `converged` es_type is used."
+                )
             if args.es_divergence <= 0:
-                raise ValueError("Option to --es_divergence must be > 0.")
+                raise ValueError(
+                    "Option to --es_divergence must be > 0 if `converged` es_type is used."
+                )
             es = ConvergedEarlyStopping(args.es_n_check, args.es_divergence)
             exp_configure.update(
                 {
