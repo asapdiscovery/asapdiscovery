@@ -204,6 +204,10 @@ def main():
     # Build DF from losses
     loss_df = load_all_losses(in_df, args.rel_dir, convert_pic50_param)
 
+    # Get rid of other cols if we only want test
+    if args.test_only:
+        loss_df = loss_df.drop(columns=["train", "val"])
+
     # Prepare for plotting
     plot_df = loss_df.melt(
         id_vars=["loss_dir", "label", "train_frac"], var_name="split", value_name="loss"
