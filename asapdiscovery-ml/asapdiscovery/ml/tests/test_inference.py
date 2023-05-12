@@ -126,7 +126,7 @@ def test_gatinference_predict_from_smiles_dataset(
     output_arr = inference_cls.predict_from_smiles([s1, s2, s3])
     assert_allclose(
         output_arr,
-        np.asarray([output_smiles_1, output_smiles_2, output_smiles_3], rtol=1e-5),
+        np.asarray([output_smiles_1, output_smiles_2, output_smiles_3]),
     )
 
 
