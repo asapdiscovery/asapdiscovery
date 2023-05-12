@@ -40,7 +40,7 @@ def convert_pic50(pic50, T=298.0, cp_values=None):
         Temperature for conversion
     cp_values : Tuple[int], optional
         Substrate concentration and Km values for calculating Ki using the
-        Cheng-Prussoff equation. These values are assumed to be in the same
+        Cheng-Prusoff equation. These values are assumed to be in the same
         concentration units. If no values are passed for this, pIC50 values
         will be used as an approximation of the Ki
 
@@ -49,7 +49,7 @@ def convert_pic50(pic50, T=298.0, cp_values=None):
     float
         Converted delta G value in kT
     """
-    # Calculate Ki using Cheng-Prussoff
+    # Calculate Ki using Cheng-Prusoff
     if cp_values:
         # Convert pIC50 -> IC50
         ic50 = 10 ** (-pic50)
