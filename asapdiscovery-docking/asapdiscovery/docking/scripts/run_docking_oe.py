@@ -551,7 +551,7 @@ def main():
     logger.info(f"Loaded {n_mols} ligands, proceeding with docking setup")
 
     # Set up ML model
-    gat_model_string = "asapdiscovery-GAT-2023.04.12"
+    gat_model_string = "asapdiscovery-GAT-2023.05.09"
     if args.gat:
         from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
