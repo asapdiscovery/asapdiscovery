@@ -455,17 +455,8 @@ def main():
     processing_dir.mkdir(parents=True, exist_ok=True)
     intermediate_files.append(processing_dir)
     logging.info(f"Starting docking result processing at {datetime.now().isoformat()}")
-    # do some checks.
-    if 0 < len(results_df) < args.num_hits:
-        logger.info(
-            f"Fewer than {args.num_hits} docked compounds, keeping top {len(results_df)} hits with soft filtering (Chemgauss < 0 instead of {args.chemgauss_threshold})."
-        )
-        num_hits = args.num_hits
-        chemgauss_threshold = 0
-    elif len(results_df) == 0:
-        raise RuntimeError("No docked compounds detected, skipping.")
-    else:
-        logger.info(f"Detected {len(results_df)} docked compounds.")
+    logger.info(f"Processing {len(results_df)} docking results")
+
 
     if args.cleanup:
         if len(intermediate_files) > 0:
