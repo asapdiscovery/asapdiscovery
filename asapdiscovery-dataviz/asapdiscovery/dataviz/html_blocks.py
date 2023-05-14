@@ -11,11 +11,22 @@ data-backgroundcolor="white"></div>
               crossorigin="anonymous" type="text/javascript"></script>
 <script src="https://unpkg.com/ngl@2.0.0-dev.34/dist/ngl.js" type="text/javascript"></script>
 <script src="https://michelanglo.sgc.ox.ac.uk/michelanglo.js" type="text/javascript"></script>
+
+"""
+
+
+def _vis_core(pdb_body):
+    core = f"""
 <script type="text/javascript">
-    var mike_combined =     
+    var mike_combined = {pdb_body}    
         `.replace(/^ +/gm, '');
 </script>
 
+"""
+    return core
+
+
+visualisation_tail = """\
 <script type="text/javascript">
 
 
@@ -53,6 +64,10 @@ function loadmike_combined (protein) {
 """
 
 
+def make_core_html(pdb_body):
+    return visualisation_header + _vis_core(pdb_body) + visualisation_tail
+
+
 orient_tail_7ene = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([-47.411552767443936, 18.160442129079684, 45.864598141236, 0.0, 33.734451290915786, -34.476765704662284, 48.52362967346835, 0.0, 35.99080588204288, 56.238428207759625, 14.936708193081358, 0.0, 1.14170241355896, 9.264076232910156, -58.5212287902832, 1.0]));
@@ -84,7 +99,6 @@ orient_tail_html_sars2 = """\
 
 
 </script> """
-
 
 
 coloring_mers = """\
@@ -165,6 +179,3 @@ coloring_sars2 = """\
         protein.addRepresentation( 'contact', {sele: neigh_sele});
 
 """
-
-
-

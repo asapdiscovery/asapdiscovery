@@ -204,19 +204,15 @@ parser.add_argument(
 )
 
 
-# processing  arguments
 parser.add_argument(
-    "--num-hits",
-    type=int,
-    default=500,
-    help="number of top hits to process",
+    "--target",
+    type=str,
+    required=True,
+    help="Target to write visualisations for, one of (sars2, mers, 7ene)",
 )
 
 parser.add_argument(
-    "--chemgauss-threshold",
-    type=float,
-    default=-3,
-    help="threshold for Chemgauss4 score",
+    "--md", action="store_true", help="Whether to run MD after docking."
 )
 
 
@@ -452,24 +448,20 @@ def main():
     logger.info(f"Saved results to {csv}")
     logger.info(f"Finish single target prep+docking at {datetime.now().isoformat()}")
 
-    # parse prep arguments
-    processing_dir = output_dir / "processing"
-    processing_dir.mkdir(parents=True, exist_ok=True)
-    intermediate_files.append(processing_dir)
+    poses_dir = output_dir / "poses"
+    poses_dir.mkdir(parents=True, exist_ok=True)
+    intermediate_files.append(poses_dir)
     logging.info(f"Starting docking result processing at {datetime.now().isoformat()}")
     logger.info(f"Processing {len(results_df)} docking results")
 
-
-    def load_molecule(file_path):
-        suppl = Chem.SDMolSupplier(file_path)
-        return suppl
-
     # add mol column
-    results_df["mol"] = results_df["docked_file"].apply(load_molecule)
-    results_df["outpath"] = presults_df["ligand_id"].apply(lambda x: processing_dir/Path(x)/"_visualisation.html")
-    html_visualiser = HTMLVisualiser(results_df["mol"], results_df["outpath"],  args.target)
+    results_df["outpath"] = presults_df["ligand_id"].apply(
+        lambda x: poses_dir / Path(x) / "_visualisation.html"
+    )
+    html_visualiser = HTMLVisualiser(
+        results_df["docked_file"], results_df["outpath"], args.target, prepped_pdb
+    )
     html_visualiser.write_pose_visualisations()
-
 
     if args.run_md:
         logger.info("Running MD")
@@ -477,9 +469,8 @@ def main():
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
-    
-        logger.info(f"Finished MD at {datetime.now().isoformat()}")
 
+        logger.info(f"Finished MD at {datetime.now().isoformat()}")
 
     if args.cleanup:
         if len(intermediate_files) > 0:
