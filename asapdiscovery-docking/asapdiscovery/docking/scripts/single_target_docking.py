@@ -25,6 +25,8 @@ from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
+from asapdiscovery.dataviz.html_viz import HTMLVisualiser
+from rdkit import Chem
 
 """
 Script to run single target prep + docking.
@@ -456,6 +458,27 @@ def main():
     intermediate_files.append(processing_dir)
     logging.info(f"Starting docking result processing at {datetime.now().isoformat()}")
     logger.info(f"Processing {len(results_df)} docking results")
+
+
+    def load_molecule(file_path):
+        suppl = Chem.SDMolSupplier(file_path)
+        return suppl
+
+    # add mol column
+    results_df["mol"] = results_df["docked_file"].apply(load_molecule)
+    results_df["outpath"] = presults_df["ligand_id"].apply(lambda x: processing_dir/Path(x)/"_visualisation.html")
+    html_visualiser = HTMLVisualiser(results_df["mol"], results_df["outpath"],  args.target)
+    html_visualiser.write_pose_visualisations()
+
+
+    if args.run_md:
+        logger.info("Running MD")
+        md_dir = output_dir / "md"
+        md_dir.mkdir(parents=True, exist_ok=True)
+        intermediate_files.append(md_dir)
+        logger.info(f"Starting MD at {datetime.now().isoformat()}")
+    
+        logger.info(f"Finished MD at {datetime.now().isoformat()}")
 
 
     if args.cleanup:

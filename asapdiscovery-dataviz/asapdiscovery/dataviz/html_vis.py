@@ -4,22 +4,26 @@ from .html_blocks import visualisation_header, colour_sars2, colour_mers, colour
 class HTMLVisualiser:
     allowed_targets = ("sars2", "mers", "7ene")
 
-    def __init__(self, poses, target):
+    def __init__(self, poses, paths, target):
         self.poses = poses
         if target not in self.allowed_targets:
             raise ValueError("Target must be one of: {}".format(self.allowed_targets))
         self.target = target
 
 
+    @staticmethod
+    def write_html(html, path):
+        with open(path, "w") as f:
+            f.write(html)
 
     def write_pose_visualisations(self):
-        for pose in self.poses:
-            self.write_pose_visualisation(pose)
+        for pose, path in zip(self.poses, self.paths):
+            self.write_pose_visualisation(pose, path)
 
     
-    def write_pose_visualisation(self, pose):
+    def write_pose_visualisation(self, pose, path):
         html = self.get_html(pose)
-        self.write_html(html, pose)
+        self.write_html(html, path)
 
     def get_html(self, pose):
         return self.get_html_header() + self.get_html_body(pose) + self.get_html_footer()
@@ -29,7 +33,7 @@ class HTMLVisualiser:
         return visualisation_header
 
 
-    def get_html_body(self):
+    def get_html_body(self, pose):
         return 
 
     
