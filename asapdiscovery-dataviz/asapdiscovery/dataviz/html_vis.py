@@ -14,8 +14,9 @@ from .html_blocks import (
 )
 
 
-def _load_molecule(file_path: Path):
-    return Chem.SDMolSupplier(file_path)
+def _load_first_molecule(file_path: Path):
+    mols = Chem.SDMolSupplier(file_path)
+    return mols[0]
 
 
 class HTMLVisualiser:
@@ -25,13 +26,14 @@ class HTMLVisualiser:
 
     allowed_targets = ("sars2", "mers", "7ene")
 
+    # TODO: replace input with a schema rather than paths.
     def __init__(
         self, poses: List[Path], paths: List[Path], target: str, protein: Path
     ):
         """
         Parameters
         ----------
-        poses : List[Chem.Mol]
+        poses : List[Path]
             List of poses to visualise.
         paths : List[Path]
             List of paths to write the visualisations to.
@@ -39,12 +41,14 @@ class HTMLVisualiser:
             Target to visualise poses for. Must be one of: "sars2", "mers", "7ene".
 
         """
-        self.poses = [_load_molecule(pose) for pose in poses]
+        if not len(poses) == len(paths):
+            raise ValueError("Number of poses and paths must be equal.")
+        self.poses = [_load_first_molecule(pose) for pose in poses]
         if target not in self.allowed_targets:
             raise ValueError("Target must be one of: {}".format(self.allowed_targets))
         self.paths = paths
         self.target = target
-        self.protein = Chem.SDMolSupplier(protein)
+        self.protein = Chem.MolFromPDBFile(str(protein))
 
     @staticmethod
     def write_html(html, path):
@@ -79,15 +83,7 @@ class HTMLVisualiser:
         """
         Get HTML for visualising a single pose.
         """
-        return (
-            self.get_html_header() + self.get_html_body(pose) + self.get_html_footer()
-        )
-
-    def get_html_header(self):
-        """
-        Get HTML header for pose visualisation
-        """
-        return visualisation_header
+        return self.get_html_body(pose) + self.get_html_footer()
 
     def get_html_body(self, pose):
         """
@@ -96,8 +92,8 @@ class HTMLVisualiser:
         protein_pdb = Chem.MolToPDBBlock(self.protein)
         mol_pdb = Chem.MolToPDBBlock(pose)
         joint_pdb = protein_pdb + mol_pdb
-
-        return protein_pdb + mol_pdb
+        html_body = make_core_html(joint_pdb)
+        return html_body
 
     def get_html_footer(self):
         """

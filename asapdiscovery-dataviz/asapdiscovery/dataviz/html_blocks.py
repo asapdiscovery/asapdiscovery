@@ -11,16 +11,20 @@ data-backgroundcolor="white"></div>
               crossorigin="anonymous" type="text/javascript"></script>
 <script src="https://unpkg.com/ngl@2.0.0-dev.34/dist/ngl.js" type="text/javascript"></script>
 <script src="https://michelanglo.sgc.ox.ac.uk/michelanglo.js" type="text/javascript"></script>
-
 """
 
 
-def _vis_core(pdb_body):
-    core = f"""
-<script type="text/javascript">
-    var mike_combined = {pdb_body}    
+def _indent(indent_me: str) -> str:
+    return indent_me.replace("\n", "\n" + "    ")
+
+
+def _vis_core(pdb_body: str) -> str:
+    core = f"""<script type="text/javascript">
+    var mike_combined =     `{_indent(pdb_body)}    
         `.replace(/^ +/gm, '');
+
 </script>
+
 
 """
     return core
@@ -55,16 +59,14 @@ function loadmike_combined (protein) {
     
     protein.removeAllRepresentations();
 
-    // Show the ligand.
-    let sticks = new NGL.Selection( 'ligand' );
-    protein.addRepresentation( 'licorice', {color: schemeId, sele: sticks.string, opacity: 1.0} );
-
-}
+        // Show the ligand.
+        let sticks = new NGL.Selection( 'ligand' );
+        protein.addRepresentation( 'licorice', {color: schemeId, sele: sticks.string, opacity: 1.0} );
 
 """
 
 
-def make_core_html(pdb_body):
+def make_core_html(pdb_body: str) -> str:
     return visualisation_header + _vis_core(pdb_body) + visualisation_tail
 
 
@@ -79,7 +81,7 @@ orient_tail_7ene = """\
 </script> """
 
 
-orient_tail_html_mers = """\
+orient_tail_mers = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([27.892651485688475, -17.496836682191315, 27.842153246574526, 0.0, 4.645958152833828, -34.046145151871315, -26.049992638068943, 0.0, 32.55357881447708, 19.850633421900966, -20.137968094041753, 0.0, -9.070898056030273, 0.7458584308624268, -23.088354110717773, 1.0]));
     stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 67.24873352050781, clipNear: -67.247802734375
@@ -90,7 +92,7 @@ orient_tail_html_mers = """\
 </script> """
 
 
-orient_tail_html_sars2 = """\
+orient_tail_sars2 = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([32.700534186404866, -23.332587195321253, 28.280957904108163, 0.0, 2.9287225438600046, -36.11192126726678, -33.179842577844965, 0.0, 36.54640101226278, 23.77111378788311, -22.645942287727394, 0.0, -9.279577255249023, 1.1916427612304688, -23.425792694091797, 1.0]));
     stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 28.732975006103516, clipNear: -28.735034942626953
@@ -101,7 +103,7 @@ orient_tail_html_sars2 = """\
 </script> """
 
 
-coloring_mers = """\
+colour_mers = """\
         // Define the binding pocket.
         const data = {
         'color_dict': {
@@ -141,7 +143,7 @@ coloring_mers = """\
 """
 
 
-coloring_sars2 = """\
+colour_sars2 = """\
         // Define the binding pocket.
         const data = {
         'color_dict': {
@@ -179,3 +181,5 @@ coloring_sars2 = """\
         protein.addRepresentation( 'contact', {sele: neigh_sele});
 
 """
+
+colour_7ene = colour_sars2
