@@ -10,6 +10,7 @@ from .html_blocks import (
     orient_tail_sars2,
     orient_tail_mers,
     orient_tail_7ene,
+    orient_tail_272,
     make_core_html,
 )
 
@@ -24,7 +25,7 @@ class HTMLVisualiser:
     Class for generating HTML visualisations of poses.
     """
 
-    allowed_targets = ("sars2", "mers", "7ene")
+    allowed_targets = ("sars2", "mers", "7ene", "272")
 
     # TODO: replace input with a schema rather than paths.
     def __init__(
@@ -38,7 +39,7 @@ class HTMLVisualiser:
         paths : List[Path]
             List of paths to write the visualisations to.
         target : str
-            Target to visualise poses for. Must be one of: "sars2", "mers", "7ene".
+            Target to visualise poses for. Must be one of: "sars2", "mers", "7ene", "272".
 
         """
         if not len(poses) == len(paths):
@@ -107,3 +108,5 @@ class HTMLVisualiser:
             return colour_mers + orient_tail_mers
         elif self.target == "7ene":
             return colour_7ene + orient_tail_7ene
+        elif self.target == "272":
+            return colour_mers + orient_tail_272

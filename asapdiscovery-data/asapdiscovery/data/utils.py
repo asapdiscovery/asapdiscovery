@@ -1352,7 +1352,7 @@ def is_valid_smiles(smiles):
 
 
 def oe_load_exp_from_file(
-    fn, ftype, return_mols=False
+    fn, ftype, return_mols=False, smiles_as_title=False,
 ) -> list[ExperimentalCompoundData]:
     """
     Use OpenEye to build a list of ExperimentalCompoundData objects from an SDF or SMILES file.
@@ -1390,9 +1390,12 @@ def oe_load_exp_from_file(
         smiles = oechem.OEMolToSmiles(mol)
 
         if not mol.GetTitle():
-            exp = ExperimentalCompoundData(
-                compound_id=f"unk_lig_idx_{i}", smiles=smiles
-            )
+            if not smiles_as_title:
+                exp = ExperimentalCompoundData(
+                    compound_id=f"unk_lig_idx_{i}", smiles=smiles
+                )
+            else:
+                exp = ExperimentalCompoundData(compound_id=smiles, smiles=smiles)
         else:
             exp = ExperimentalCompoundData(compound_id=mol.GetTitle(), smiles=smiles)
 

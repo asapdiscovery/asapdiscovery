@@ -103,6 +103,20 @@ orient_tail_sars2 = """\
 </script> """
 
 
+#TODO: change to proper name once it has one
+orient_tail_272 = """\
+    //orient
+    stage.viewerControls.orient((new NGL.Matrix4).fromArray([27.379894279306995, -38.3384651476274, 35.99831312046376, 0.0, -2.131373802248433, -41.360394640088316, -42.42809094617655, 0.0, 52.546711765211285, 18.298874302466288, -20.47814494185161, 0.0, -13.712335586547852, 4.014099597930908, -21.26261329650879, 1.0]));
+    stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 6315.492679595947, clipNear: -6315.499507904053
+}
+
+
+
+</script> """
+
+
+
+
 colour_mers = """\
         // Define the binding pocket.
         const data = {

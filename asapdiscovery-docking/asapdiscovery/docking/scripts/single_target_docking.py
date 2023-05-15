@@ -99,8 +99,18 @@ parser.add_argument(
 
 parser.add_argument(
     "--title",
+    default=None,
+    type=str,
     help=(
         "Title of molecule to use if a SMILES string is passed in as input, default is to use the SMILES string."
+    ),
+)
+
+parser.add_argument(
+    "--smiles_as_title",
+    action="store_true",
+    help=(
+        "use smiles strings as titles for molecules in .smi or .sdf file if none provided"
     ),
 )
 
@@ -268,20 +278,20 @@ def main():
         mol_file_path = Path(args.mols)
         if mol_file_path.suffix == ".smi":
             logger.info(f"Input molecules is a SMILES file: {args.mols}")
-            exp_data = oe_load_exp_from_file(args.mols, "smi")
+            exp_data = oe_load_exp_from_file(args.mols, "smi", smiles_as_title=args.smiles_as_title)
         elif mol_file_path.suffix == ".sdf":
             logger.info(f"Input molecules is a SDF file: {args.mols}")
             if args.use_3d:
                 logger.info("Using 3D coordinates from SDF file")
                 # we need to keep the molecules around to retain their coordinates
                 exp_data, oe_mols = oe_load_exp_from_file(
-                    args.mols, "sdf", return_mols=True
+                    args.mols, "sdf", return_mols=True, smiles_as_title=args.smiles_as_title
                 )
                 used_3d = True
                 logger.info("setting used_3d to True")
             else:
                 logger.info("Using 2D representation from SDF file")
-                exp_data = oe_load_exp_from_file(args.mols, "sdf")
+                exp_data = oe_load_exp_from_file(args.mols, "sdf", smiles_as_title=args.smiles_as_title)
 
         else:
             raise ValueError(
@@ -485,7 +495,7 @@ def main():
         # md_runner.run_md()
         logger.info(f"Finished MD at {datetime.now().isoformat()}")
 
-    top_posit.to_csv("top_poses.csv", index=False)
+    top_posit.to_csv(output_dir/"top_poses.csv", index=False)
 
     if args.cleanup:
         if len(intermediate_files) > 0:
