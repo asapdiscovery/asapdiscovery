@@ -70,6 +70,8 @@ class HTMLVisualiser:
         Write HTML visualisations for all poses.
         """
         for pose, path in zip(self.poses, self.paths):
+            if not path.parent.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
             self.write_pose_visualisation(pose, path)
 
     def write_pose_visualisation(self, pose, path):

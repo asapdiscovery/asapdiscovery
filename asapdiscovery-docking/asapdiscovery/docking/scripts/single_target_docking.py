@@ -25,7 +25,7 @@ from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
-from asapdiscovery.dataviz.html_viz import HTMLVisualiser
+from asapdiscovery.dataviz.html_vis import HTMLVisualiser
 from rdkit import Chem
 
 """
@@ -454,23 +454,38 @@ def main():
     logging.info(f"Starting docking result processing at {datetime.now().isoformat()}")
     logger.info(f"Processing {len(results_df)} docking results")
 
-    # add mol column
-    results_df["outpath"] = presults_df["ligand_id"].apply(
-        lambda x: poses_dir / Path(x) / "_visualisation.html"
+    # only write out visualisation for the best posit score for each ligand
+    # sort by posit  score
+    sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
+    top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
+    logger.info(f"Writing out {len(top_posit)} poses")
+
+    # add pose output column
+    top_posit["outpath_pose"] = top_posit["ligand_id"].apply(
+        lambda x: poses_dir / Path(x) / "visualisation.html"
     )
+
     html_visualiser = HTMLVisualiser(
-        results_df["docked_file"], results_df["outpath"], args.target, prepped_pdb
+        top_posit["docked_file"], top_posit["outpath_pose"], args.target, prepped_pdb
     )
     html_visualiser.write_pose_visualisations()
 
-    if args.run_md:
+    if args.md:
         logger.info("Running MD")
         md_dir = output_dir / "md"
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
-        logger.info(f"Starting MD at {datetime.now().isoformat()}")
 
+        top_posit["outpath_md"] = top_posit["ligand_id"].apply(
+            lambda x: md_dir / Path(x)
+        )
+
+        logger.info(f"Starting MD at {datetime.now().isoformat()}")
+        # md_runner = MDRunner(top_posit["docked_file"], top_posit["outpath_md"], prepped_pdb)
+        # md_runner.run_md()
         logger.info(f"Finished MD at {datetime.now().isoformat()}")
+
+    top_posit.to_csv("top_poses.csv", index=False)
 
     if args.cleanup:
         if len(intermediate_files) > 0:
