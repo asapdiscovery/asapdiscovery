@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Union  # noqa: F401
 import dgl
 import numpy as np
 import torch
-from asapdiscovery.ml.dataset import GraphInferenceDataset
+from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
 
 # static import of models from base yaml here
 from asapdiscovery.ml.pretrained_models import all_models
@@ -129,12 +129,24 @@ class InferenceBase:
         return model
 
     def predict(self, input_data):
-        # feed in data in whatever format is required by the model
+        """Predict on data, needs to be overloaded in child classes most of
+        the time
 
+        Parameters
+        ----------
+
+        input_data: pytorch.Tensor
+
+        Returns
+        -------
+        np.ndarray
+            Prediction from model.
+        """
+        # feed in data in whatever format is required by the model
         with torch.no_grad():
             input_tensor = torch.tensor(input_data).to(self.device)
             output_tensor = self.model(input_tensor)
-            return output_tensor.cpu().numpy()
+            return output_tensor.cpu().numpy().ravel()
 
 
 # this is just an example of how to use the base class, we may want to specialise this for each model type
@@ -211,6 +223,90 @@ class GATInference(InferenceBase):
         data = [self.predict(g) for g in gids]
         data = np.concatenate(np.asarray(data))
         # return a scalar float value if we only have one input
-        if len(data) == 1:
-            data = data[0]
+        if np.all(np.array(data.shape) == 1):
+            data = data.item()
         return data
+
+
+class StructuralInference(InferenceBase):
+    """
+    Inference class for models that take a structure as input.
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        model_spec: Optional[Path] = None,
+        build_model_kwargs: Optional[dict] = None,
+        device: str = "cpu",
+    ):
+        super().__init__(
+            model_name,
+            self.model_type,
+            model_spec,
+            build_model_kwargs=build_model_kwargs,
+            device=device,
+        )
+
+    def predict(self, pose_dict: dict):
+        """Predict on a pose, requires a dictionary with the pose data with
+        the keys: "z", "pos", "lig" with the required tensors in each
+
+        Parameters
+        ----------
+        pose_dict : dict
+            Dictionary with pose data.
+
+        Returns
+        -------
+        np.ndarray
+            Predictions for a pose.
+        """
+        with torch.no_grad():
+            output_tensor = self.model(pose_dict)
+            # we ravel to always get a 1D array
+            return output_tensor.cpu().numpy().ravel()
+
+    def predict_from_structure_file(
+        self, pose: Union[Path, list[Path]]
+    ) -> Union[np.ndarray, float]:
+        """Predict on a list of poses or a single pose.
+
+        Parameters
+        ----------
+        pose : Union[Path, List[Path]]
+            Path to pose file or list of paths to pose files.
+
+        Returns
+        -------
+        np.ndarray or float
+            Prediction for poses, or a single prediction if only one pose is provided.
+        """
+
+        if isinstance(pose, Path):
+            pose = [pose]
+
+        pose = [DockedDataset._load_structure(p, None) for p in pose]
+        data = [self.predict(p) for p in pose]
+
+        data = np.concatenate(np.asarray(data))
+        # return a scalar float value if we only have one input
+        if np.all(np.array(data.shape) == 1):
+            data = data.item()
+        return data
+
+
+class SchnetInference(StructuralInference):
+    """
+    Inference class for SchNet model.
+    """
+
+    model_type = "schnet"
+
+
+class E3nnInference(StructuralInference):
+    """
+    Inference class for E3NN model.
+    """
+
+    model_type = "e3nn"

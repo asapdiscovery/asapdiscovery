@@ -1089,8 +1089,8 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
                     dataset=dataset,
                     sdf_fn=get_sdf_fn_from_dataset(dataset, x_dir),
                 )
-        else:
-            sars_xtals[cmpd_id] = CrystalCompoundData()
+            else:
+                sars_xtals[cmpd_id] = CrystalCompoundData()
 
     return sars_xtals
 
