@@ -7,7 +7,7 @@ import argparse
 import json
 
 import pandas as pd
-from asapdiscovery.dataviz import plotly_dash_functions, plotting  # noqa: E402
+from asapdiscovery.dataviz import graphs, plotly_dash_functions  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
 from dash import Input, Output, dcc, html
 
@@ -81,7 +81,7 @@ def main():
         Input("crossfilter-color", "value"),
     )
     def update_scatterplot(*args):
-        fig = plotting.scatter_plot(df, *args)
+        fig = graphs.scatter_plot(df, *args)
         return fig
 
     # Use dash decorator syntax to pass arguments into the update_contour function
@@ -96,7 +96,7 @@ def main():
     )
     def update_contour(*args):
         print(*args)
-        fig = plotting.contour_plot(df, *args)
+        fig = graphs.contour_plot(df, *args)
         return fig
 
     # Instead of processing the dataframe separately in every scatterplot/table function
@@ -143,7 +143,7 @@ def main():
     def update_plot(df_data, structure, *args):
         df = pd.read_json(df_data, orient="split")
         structure = json.loads(structure)
-        fig = plotting.scatter_plot(df, *args)
+        fig = graphs.scatter_plot(df, *args)
         fig.update_layout(title=structure)
         return fig
 
@@ -164,7 +164,7 @@ def main():
     def update_plot(df_data, compound, *args):  # noqa: F811
         df = pd.read_json(df_data, orient="split")
         compound = json.loads(compound)
-        fig = plotting.scatter_plot(df, *args)
+        fig = graphs.scatter_plot(df, *args)
         fig.update_layout(title=compound)
         return fig
 
