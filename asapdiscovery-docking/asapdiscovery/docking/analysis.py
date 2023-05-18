@@ -384,8 +384,6 @@ class DockingResults:
 
         """
         # TODO: also this is really fragile
-        # TODO: default argument `score_order` is a mutable. This can lead to unexpected
-        # behavior in python.
         # first do filtering
         print(filter_score, filter_value)
         if filter_score and type(filter_value) == float:
