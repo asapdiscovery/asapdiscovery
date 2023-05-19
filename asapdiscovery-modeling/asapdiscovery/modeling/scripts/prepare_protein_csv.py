@@ -3,6 +3,11 @@ The purpose of this script is to prepare a csv file containing a set of structur
 The idea here is to split up the process of preparing structures into two steps:
 1. Prepare a csv file containing the structures to prepare and information related to the preparation
 2. Actually prepare the structures using the csv file from step 1
+This script does the first thing.
+
+One note, for Fragalysis parsing, the "--include_non_Pseries" flag should be set to True because it appears that
+my current code returns the B dataset if remove_duplicates is true. I'm not sure why this is the case.
+
 """
 from argparse import ArgumentParser
 from pathlib import Path

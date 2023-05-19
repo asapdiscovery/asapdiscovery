@@ -1,5 +1,8 @@
 """
 Prepare proteins.
+Combines ideas from the previous prep_proteins and prep_mers_pdbs scripts.
+Requires a csv file generated using the CrystalCompoundDataset class; i.e. the columns of the csv file
+must be the same as the attributes of the CrystalCompoundData class.
 Creates oedu binary DesignUnit files, complex and protein-only pdb files, and ligand-only sdf files.
 
 Example Usage:
