@@ -94,12 +94,12 @@ def main():
 
     # Combine sdfs into one file
     if not args.move_pdbs_only:
-        logger.info(f"Combining sdfs into one per structure source")
+        logger.info("Combining sdfs into one per structure source")
         for structure, paths in sdfs_per_structure.items():
             structure_sdf = args.output_dir / f"{structure}_combined.sdf"
             combine_files(paths, structure_sdf)
 
-        logger.info(f"Combining sdfs into one per structure source")
+        logger.info("Combining sdfs")
         allpaths = [path for paths in sdfs_per_structure.values() for path in paths]
         combine_files(allpaths, args.output_dir / "combined.sdf")
 
