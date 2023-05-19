@@ -1,46 +1,50 @@
 # Configure logging
 import logging
 
-# Set parameters for simulation
+import mdtraj
+from mdtraj.reporters import XTCReporter
+
+
+from openff.toolkit.topology import Molecule
+
+import openmm
 from openmm import unit
-from rdkit import Chem
+from openmm import Platform
+from openmm import app
+from openmmforcefields.generators import SystemGenerator
+from openmm.app import PDBFile
+from openmm.app import Modeller
+from openmm import MonteCarloBarostat
+from openmm import LangevinMiddleIntegrator
+from openmm.app import Simulation
+
+
 from pathlib import Path
+
+
+from rdkit import Chem
 from typing import List
 
-
-# define some standards.
-temperature = 300 * unit.kelvin
-pressure = 1 * unit.atmospheres
-collision_rate = 1.0 / unit.picoseconds
-timestep = 4.0 * unit.femtoseconds
-equilibration_steps = 5000  # 20 ps
-reporting_interval = 1250  # 5 ps
-
-# some less standard parameters. These should be in CLI.
-num_steps = 2500000  # 10ns; number of integrator steps
-n_snapshots = (
-    int(num_steps / reporting_interval) * reporting_interval
-)  # recalculate number of steps to run
-
-ligand_path = ""
-protein_path = ""
+from asapdiscovery.data.logging import FileLogger
 
 
 class MDRunner:
     def __init__(
         self,
-        ligand_path: Path,
+        ligand_paths: List[Path],
         protein_path: Path,
         temperature: float = 300,
         pressure: float = 1,
         collision_rate: float = 1,
         timestep: float = 4,
         equilibration_steps: int = 5000,
-        reporting_interval: int = 1250, 
-        num_steps: int =  2500000
+        reporting_interval: int = 1250,
+        num_steps: int = 2500000,
+        output_paths: List[Path] = None,
+        logger: FileLogger = None,
     ):
-        self.ligand_path = ligand_path
-        self.protein_paths = protein_path
+        self.ligand_paths = ligand_paths
+        self.protein_path = protein_path
         # thermo
         self.temperature = temperature * unit.kelvin
         self.pressure = pressure * unit.atmospheres
@@ -49,17 +53,33 @@ class MDRunner:
         self.equilibration_steps = equilibration_steps
         self.reporting_interval = reporting_interval
         self.num_steps = num_steps
-        self.n_snapshots =  int(self.num_steps / self.reporting_interval) * self.reporting_interval
+        self.n_snapshots = (
+            int(self.num_steps / self.reporting_interval) * self.reporting_interval
+        )
 
-        # init 
+        if output_paths is None:
+            outdir = Path("md").mkdir(exist_ok=True)
+            self.output_paths = [outdir / l.parent for l in ligand_paths]
+        else:
+            self.output_paths = output_paths
+
+        # init
+        if logger is None:
+            self.logger = FileLogger("md_log.txt", stdout=True, level=logging.INFO)
+        else:
+            self.logger = logger
+
+        self.logger.info("Starting MD run")
         self.set_platform()
-
 
     def set_platform(self):
         # could use structuring to increase flexibility
         # check whether we have a GPU platform and if so set the precision to mixed
+        self.logger.info(f"Setting platform for MD run")
         speed = 0
-        from openmm import Platform
+
+        if Platform.getNumPlatforms() == 0:
+            raise ValueError("No compatible OpenMM patforms detected")
 
         for i in range(Platform.getNumPlatforms()):
             p = Platform.getPlatform(i)
@@ -69,13 +89,16 @@ class MDRunner:
 
         if platform.getName() == "CUDA" or platform.getName() == "OpenCL":
             platform.setPropertyDefaultValue("Precision", "mixed")
-            # log.info(f":dart:  Setting precision for platform {platform.getName()} to mixed")
+            self.logger.info(
+                f"Setting precision for platform {platform.getName()} to mixed"
+            )
 
-    def create_system_generator(self):
-        # log.info(":wrench:  Initializing SystemGenerator")
-        from openmm import app
-        from openmmforcefields.generators import SystemGenerator
+        self.logger.info(f"Using platform {platform.getName()}")
+        self.platform = platform
 
+    def create_system_generator(self, ligand_mol, outpath):
+        self.logger.info("Initializing SystemGenerator")
+        self.logger.info(f"Creating system generator for {ligand_mol}")
         forcefield_kwargs = {
             "constraints": app.HBonds,
             "rigidWater": True,
@@ -96,22 +119,21 @@ class MDRunner:
     def get_complex_model(self, ligand_path, protein_path):
         # load in ligand, protein, then combine them into an openmm object.
 
+        self.logger.info(f"Creating complex model for {ligand_path} and {protein_path}")
+
         rdkitmol = Chem.SDMolSupplier(ligand_path)[0]
-        # log.info(f":mage:  Adding hydrogens")
+        self.logger.info("Adding hydrogens")
         rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True)
         # ensure the chiral centers are all defined
         Chem.AssignAtomChiralTagsFromStructure(rdkitmolh)
-        from openff.toolkit.topology import Molecule
 
         ligand_mol = Molecule(rdkitmolh)
 
         # Use Modeller to combine the protein and ligand into a complex
-        # log.info(":cut_of_meat:  Reading protein")
-        from openmm.app import PDBFile
+        self.logger.info("Reading protein")
 
         protein_pdb = PDBFile(protein_path)
-        # log.info(":sandwich:  Preparing complex")
-        from openmm.app import Modeller
+        self.logger.info("Preparing complex")
 
         modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
         # This next bit is black magic.
@@ -125,11 +147,10 @@ class MDRunner:
 
         return modeller
 
-    def setup_and_solvate(self, modeller, ):
+    def setup_and_solvate(self, system_generator, modeller, ligand_mol):
         # We need to temporarily create a Context in order to identify molecules for adding virtual bonds
         # log.info(f":microscope:  Identifying molecules")
-        import openmm
-
+        self.logger.info(f"Setup and solvate")
         integrator = openmm.VerletIntegrator(1 * unit.femtoseconds)
         system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
         context = openmm.Context(
@@ -139,76 +160,77 @@ class MDRunner:
         del context, integrator, system
 
         # Solvate
-        # log.info(":droplet:  Adding solvent...")
+        self.logger.info("Adding solvent...")
         # we use the 'padding' option to define the periodic box. The PDB file does not contain any
         # unit cell information so we just create a box that has a 9A padding around the complex.
         modeller.addSolvent(
             system_generator.forcefield, model="tip3p", padding=9.0 * unit.angstroms
         )
-        # log.info(":package:  System has %d atoms" % modeller.topology.getNumAtoms())
+        self.logger.info(f"System has {modeller.topology.getNumAtoms()} atoms")
+        return modeller, molecules_atom_indices
 
-        return modeller
-
-    def create_system(self, modeller):
+    def create_system(
+        self, system_generator, modeller, molecule_atom_indices, ligand_mol
+    ):
+        self.logger.info("Creating system...")
         # Determine which atom indices we want to use
-        import mdtraj
 
         mdtop = mdtraj.Topology.from_openmm(modeller.topology)
         output_indices = mdtop.select("not water")
         output_topology = mdtop.subset(output_indices).to_openmm()
 
         # Create the system using the SystemGenerator
-        # log.info(":globe_showing_americas:  Creating system...")
         system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
 
         # Add virtual bonds so solute is imaged together
-        # log.info(f":chains:  Adding virtual bonds between molecules")
+        self.logger.info("Adding virtual bonds between molecules")
         custom_bond_force = openmm.CustomBondForce("0")
-        for molecule_index in range(len(molecules_atom_indices) - 1):
+        for molecule_index in range(len(molecule_atom_indices) - 1):
             custom_bond_force.addBond(
-                molecules_atom_indices[molecule_index][0],
-                molecules_atom_indices[molecule_index + 1][0],
+                molecule_atom_indices[molecule_index][0],
+                molecule_atom_indices[molecule_index + 1][0],
                 [],
             )
         system.addForce(custom_bond_force)
 
-        return system, output_indices
+        return system, output_indices, output_topology
 
-    def setup_simulation(self, modeller, system):
+    def setup_simulation(
+        self, modeller, system, output_indices, output_topology, outpath
+    ):
         # Add barostat
-        from openmm import MonteCarloBarostat
 
-        system.addForce(MonteCarloBarostat(pressure, temperature))
-        # log.info(f":game_die: Default Periodic box:")
-        # for dim in range(3):
-        #     log.info(f"  :small_blue_diamond: {system.getDefaultPeriodicBoxVectors()[dim]}")
+        system.addForce(MonteCarloBarostat(self.pressure, self.temperature))
+        self.logger.info(f"Default Periodic box:")
+        for dim in range(3):
+            self.logger.info(f" {system.getDefaultPeriodicBoxVectors()[dim]}")
 
         # Create integrator
-        # log.info(":building_construction:  Creating integrator...")
-        from openmm import LangevinMiddleIntegrator
+        self.logger.info(":building_construction:  Creating integrator...")
 
-        integrator = LangevinMiddleIntegrator(temperature, collision_rate, timestep)
+        integrator = LangevinMiddleIntegrator(
+            self.temperature, self.collision_rate, self.timestep
+        )
 
         # Create simulation
-        # log.info(":mage:  Creating simulation...")
-        from openmm.app import Simulation
+        self.logger.info(":mage:  Creating simulation...")
 
         simulation = Simulation(
-            modeller.topology, system, integrator, platform=platform
+            modeller.topology, system, integrator, platform=self.platform
         )
         context = simulation.context
         context.setPositions(modeller.positions)
 
         # Minimize energy
-        # log.info(":skier:  Minimizing ...")
+        self.logger.info("Minimizing ...")
         simulation.minimizeEnergy()
 
         # Write minimized PDB
-        # log.info(f":page_facing_up:  Writing minimized PDB to {arguments['--minimized']}")
+        self.logger.info("Writing minimized PDB")
         output_positions = context.getState(
             getPositions=True, enforcePeriodicBox=False
         ).getPositions(asNumpy=True)
-        with open("minimized.pdb", "w") as outfile:
+        with open(outpath / "minimized.pdb", "w") as outfile:
             PDBFile.writeFile(
                 output_topology,
                 output_positions[output_indices, :],
@@ -219,36 +241,37 @@ class MDRunner:
 
     def equilibrate(self, simulation):
         # Equilibrate
-        # log.info(":fire:  Heating ...")
-        simulation.context.setVelocitiesToTemperature(temperature)
-        simulation.step(equilibration_steps)
+        self.logger.info("Starting equilibration...")
+        simulation.context.setVelocitiesToTemperature(self.temperature)
+        simulation.step(self.equilibration_steps)
+        self.logger.info("Finished")
 
         return simulation
 
-    def run_production_simulation(self, simulation, context, output_indices):
+    def run_production_simulation(
+        self, simulation, context, output_indices, output_topology, outpath
+    ):
         # Add reporter to generate XTC trajectory
-        # log.info(f":page_facing_up:  Will write XTC trajectory to {arguments['--xtctraj']}")
-        from mdtraj.reporters import XTCReporter
-
         simulation.reporters.append(
-            XTCReporter("traj.xtc", reporting_interval, atomSubset=output_indices)
+            XTCReporter(
+                outpath / "traj.xtc", self.reporting_interval, atomSubset=output_indices
+            )
         )
 
         # Run simulation
-        # log.info(":coffee:  Starting simulation...")
-        # from rich.progress import track
+        self.logger.info("Starting simulation...")
 
-        # for snapshot_index in track(
-        #     # range(n_snapshots), ":rocket: Running production simulation..."
-        # ):
-        #     simulation.step(reporting_interval)
+        for snapshot_index in range(self.n_snapshots):
+            simulation.step(self.reporting_interval)
+
+        self.logger.info("Finished")
 
         # Write final PDB
-        # log.info(f":page_facing_up:  Writing final PDB to {arguments['--final']}")
+        self.logger.info("Writing final PDB")
         output_positions = context.getState(
             getPositions=True, enforcePeriodicBox=False
         ).getPositions(asNumpy=True)
-        with open("final.pdb", "w") as outfile:
+        with open(outpath / "final.pdb", "w") as outfile:
             PDBFile.writeFile(
                 output_topology,
                 output_positions[output_indices, :],
@@ -267,11 +290,19 @@ class MDRunner:
         # return some sort of success/fail code
 
     def run_simulations(self):
-        for ligand in self.ligand_path:
-            system_generator = self.create_system_generator()
-            modeller = self.get_complex_model(ligand, protein_path)
-            modeller = self.setup_and_solvate(modeller)
-            system, output_indices = self.create_system(modeller)
-            simulation, context = self.setup_simulation(modeller, system)
+        for ligand, outpath in zip(self.ligand_paths, self.output_paths):
+            system_generator = self.create_system_generator(ligand, outpath)
+            modeller = self.get_complex_model(ligand, self.protein_path)
+            modeller, mol_atom_indices = self.setup_and_solvate(
+                system_generator, modeller, ligand
+            )
+            system, output_indices, output_topology = self.create_system(
+                system_generator, modeller, mol_atom_indices, ligand
+            )
+            simulation, context = self.setup_simulation(
+                modeller, system, output_indices, output_topology, outpath
+            )
             simulation = self.equilibrate(simulation)
-            self.run_production_simulation(simulation, context, output_indices)
+            self.run_production_simulation(
+                simulation, context, output_indices, output_topology, outpath
+            )
