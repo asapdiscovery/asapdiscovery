@@ -22,11 +22,7 @@ import multiprocessing as mp
 from pathlib import Path
 
 import yaml
-from asapdiscovery.data.openeye import (
-    load_openeye_cif1,
-    oechem,
-    save_openeye_pdb,
-)
+from asapdiscovery.data.openeye import load_openeye_cif1, oechem, save_openeye_pdb
 from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.modeling.modeling import (
     align_receptor,
