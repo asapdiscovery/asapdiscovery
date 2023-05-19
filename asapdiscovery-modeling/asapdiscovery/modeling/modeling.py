@@ -8,13 +8,13 @@ from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     oechem,
     oespruce,
+    oedocking,
     openeye_perceive_residues,
     save_openeye_pdb,
     split_openeye_mol,
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
-from openeye import oechem, oedocking, oespruce
 
 
 def add_seqres_to_openeye_protein(

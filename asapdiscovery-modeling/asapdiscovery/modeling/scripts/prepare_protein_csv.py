@@ -75,7 +75,6 @@ def main():
                     str_fn=fn, active_site=active_site, output_name=Path(fn).stem
                 )
             )
-    print(xtals)
     xtal_dataset = CrystalCompoundDataset(structures=xtals)
     xtal_dataset.to_csv(args.output_csv)
 

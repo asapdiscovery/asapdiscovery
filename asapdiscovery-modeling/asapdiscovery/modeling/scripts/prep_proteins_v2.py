@@ -88,8 +88,6 @@ def prep_protein(xtal: CrystalCompoundData, args):
     Prep a protein.
     """
     import logging
-
-    from asapdiscovery.data.logging import FileLogger
     from asapdiscovery.data.openeye import oechem
 
     # Set up logger
@@ -225,7 +223,6 @@ def main():
         args.output_dir.mkdir(parents=True)
 
     for xtal in dataset.structures:
-        print(xtal)
         prep_protein(xtal, args)
 
 
