@@ -28,7 +28,7 @@ from typing import List
 from asapdiscovery.data.logging import FileLogger
 
 
-class MDRunner:
+class VanillaMDSimulator:
     def __init__(
         self,
         ligand_paths: List[Path],

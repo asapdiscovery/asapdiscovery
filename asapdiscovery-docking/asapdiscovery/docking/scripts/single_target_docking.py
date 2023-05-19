@@ -26,6 +26,8 @@ from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
 from asapdiscovery.dataviz.html_vis import HTMLVisualiser
+from asapdiscovery.simulation.simulate import VanillaMDSimulator
+
 from rdkit import Chem
 
 """
@@ -468,7 +470,9 @@ def main():
     # sort by posit  score
     sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
     top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
-    logger.info(f"Writing out {len(top_posit)} poses")
+    top_posit.to_csv(output_dir/"top_poses.csv", index=False)
+
+    logger.info(f"Writing out visualisation for top pose for each ligand (n={len(top_posit)})")
 
     # add pose output column
     top_posit["outpath_pose"] = top_posit["ligand_id"].apply(
@@ -481,7 +485,7 @@ def main():
     html_visualiser.write_pose_visualisations()
 
     if args.md:
-        logger.info("Running MD")
+        logger.info(f"Running MD on top pose for each ligand (n={len(top_posit)})")
         md_dir = output_dir / "md"
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
@@ -491,11 +495,9 @@ def main():
         )
 
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
-        # md_runner = MDRunner(top_posit["docked_file"], top_posit["outpath_md"], prepped_pdb)
-        # md_runner.run_md()
+        # simulator = VanillaMDSimulator(top_posit["docked_file"], prepped_pdb, logger=logger, output_paths=top_posit["outpath_md"])
+        # simulator.run_simulations()
         logger.info(f"Finished MD at {datetime.now().isoformat()}")
-
-    top_posit.to_csv(output_dir/"top_poses.csv", index=False)
 
     if args.cleanup:
         if len(intermediate_files) > 0:

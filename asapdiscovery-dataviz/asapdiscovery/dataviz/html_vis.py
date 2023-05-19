@@ -28,6 +28,7 @@ class HTMLVisualiser:
     allowed_targets = ("sars2", "mers", "7ene", "272")
 
     # TODO: replace input with a schema rather than paths.
+    # TODO: add logging
     def __init__(
         self, poses: List[Path], paths: List[Path], target: str, protein: Path
     ):
@@ -44,10 +45,19 @@ class HTMLVisualiser:
         """
         if not len(poses) == len(paths):
             raise ValueError("Number of poses and paths must be equal.")
-        self.poses = [_load_first_molecule(pose) for pose in poses]
+
+        self.poses = []
+        self.paths = []
+        for pose, path in zip(poses, paths):
+            if pose and Path(pose).exists():
+                self.poses.append(_load_first_molecule(pose))
+                self.paths.append(path)
+            else:
+                # log this
+                pass
+
         if target not in self.allowed_targets:
             raise ValueError("Target must be one of: {}".format(self.allowed_targets))
-        self.paths = paths
         self.target = target
         self.protein = Chem.MolFromPDBFile(str(protein))
 

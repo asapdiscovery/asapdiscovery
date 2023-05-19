@@ -48,6 +48,13 @@ dependencies:
   - pooch
 
 
+  # md 
+  - openmm
+  - openmmforcefields
+  - mdtraj
+  - openff-toolkit
+
+
   # Pip-only installs
   - pip:
     - biopython
