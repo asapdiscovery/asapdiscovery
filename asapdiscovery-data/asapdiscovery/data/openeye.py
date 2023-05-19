@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from openeye import oechem, oedepict, oedocking, oegrid, oespruce  # noqa: F401
+from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
 # exec on module import
 if not oechem.OEChemIsLicensed("python"):
@@ -300,12 +300,13 @@ def save_openeye_pdb(mol, pdb_fn):
     ----------
     mol : oechem.OEGraphMol
         The OEGraphMol object to write to the PDB file.
-    pdb_fn : str
+    pdb_fn : Union[str, Path]
         The path of the PDB file to create or overwrite.
 
     Returns
     -------
-    None
+    Path
+        The path of the PDB file that was written.
 
     Notes
     -----
@@ -313,9 +314,11 @@ def save_openeye_pdb(mol, pdb_fn):
     """
     ofs = oechem.oemolostream()
     ofs.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
-    ofs.open(pdb_fn)
+    ofs.open(str(pdb_fn))
     oechem.OEWriteMolecule(ofs, mol)
     ofs.close()
+
+    return Path(pdb_fn)
 
 
 def save_openeye_sdf(mol, sdf_fn):
@@ -331,7 +334,8 @@ def save_openeye_sdf(mol, sdf_fn):
 
     Returns
     -------
-    None
+    Path
+        The path of the SDF file that was written.
 
     Notes
     -----
@@ -342,6 +346,8 @@ def save_openeye_sdf(mol, sdf_fn):
     ofs.open(sdf_fn)
     oechem.OEWriteMolecule(ofs, mol)
     ofs.close()
+
+    return Path(sdf_fn)
 
 
 def save_openeye_sdfs(mols, sdf_fn):
@@ -357,7 +363,8 @@ def save_openeye_sdfs(mols, sdf_fn):
 
     Returns
     -------
-    None
+    Path
+        The path of the SDF file that was written.
 
     Raises
     ------
@@ -379,6 +386,8 @@ def save_openeye_sdfs(mols, sdf_fn):
         ofs.close()
     else:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
+
+    return Path(sdf_fn)
 
 
 def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:

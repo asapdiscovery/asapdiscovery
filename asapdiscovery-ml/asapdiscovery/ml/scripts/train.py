@@ -29,7 +29,12 @@ from asapdiscovery.data.utils import (
     check_filelist_has_elements,
     extract_compounds_from_filenames,
 )
-from asapdiscovery.ml import EarlyStopping, GaussianNLLLoss, MSELoss  # noqa: E402
+from asapdiscovery.ml import (  # noqa: E402
+    BestEarlyStopping,
+    ConvergedEarlyStopping,
+    GaussianNLLLoss,
+    MSELoss,
+)
 from asapdiscovery.ml.utils import (
     build_dataset,
     build_model,
@@ -296,11 +301,39 @@ def get_args():
         action="store_true",
         help="Group poses for the same compound into one prediction.",
     )
+
+    # Early stopping argumens
     parser.add_argument(
-        "-es",
-        "--early_stopping",
+        "-es_t",
+        "--es_type",
+        help="Which early stopping strategy to use. Options are [best, converged].",
+    )
+    parser.add_argument(
+        "-es_p",
+        "--es_patience",
         type=int,
-        help="Number of training epochs to allow with no improvement in val loss.",
+        help=(
+            "Number of training epochs to allow with no improvement in val loss. "
+            "Used if --es_type is best."
+        ),
+    )
+    parser.add_argument(
+        "-es_n",
+        "--es_n_check",
+        type=int,
+        help=(
+            "Number of past epoch losses to keep track of when determining "
+            "convergence. Used if --es_type is converged."
+        ),
+    )
+    parser.add_argument(
+        "-es_d",
+        "--es_divergence",
+        type=float,
+        help=(
+            "Max allowable difference from the mean of the losses as a fraction of the "
+            "average loss. Used if --es_type is converged."
+        ),
     )
 
     # WandB arguments
@@ -477,7 +510,7 @@ def init(args, rank=False):
     else:
         e3nn_params = None
 
-    model, model_call = build_model(
+    model = build_model(
         model_type=args.model,
         e3nn_params=e3nn_params,
         strat=args.strat,
@@ -549,9 +582,39 @@ def init(args, rank=False):
     exp_configure.update({f"model_config:{k}": v for k, v in model_config.items()})
 
     # Early stopping
-    if args.early_stopping:
-        es = EarlyStopping(args.early_stopping)
-        exp_configure.update({"early_stopping": args.early_stopping})
+    if args.es_type:
+        es_type = args.es_type.lower()
+        if es_type == "best":
+            if args.es_patience <= 0:
+                raise ValueError(
+                    "Option to --es_patience must be > 0 if `best` es_type is used."
+                )
+            es = BestEarlyStopping(args.es_patience)
+            exp_configure.update(
+                {
+                    "early_stopping:method": "best",
+                    "early_stopping:patience": args.es_patience,
+                }
+            )
+        elif es_type == "converged":
+            if args.es_n_check <= 0:
+                raise ValueError(
+                    "Option to --es_n_check must be > 0 if `converged` es_type is used."
+                )
+            if args.es_divergence <= 0:
+                raise ValueError(
+                    "Option to --es_divergence must be > 0 if `converged` es_type is used."
+                )
+            es = ConvergedEarlyStopping(args.es_n_check, args.es_divergence)
+            exp_configure.update(
+                {
+                    "early_stopping:method": "converged",
+                    "early_stopping:n_check": args.es_n_check,
+                    "early_stopping:divergence": args.es_divergence,
+                }
+            )
+        else:
+            raise ValueError(f"Unknown value for --es_type: {args.es_type}.")
     else:
         es = None
 
@@ -570,7 +633,6 @@ def init(args, rank=False):
         ds_val,
         ds_test,
         model,
-        model_call,
         optimizer,
         es,
         exp_configure,
@@ -586,7 +648,6 @@ def main():
         ds_val,
         ds_test,
         model,
-        model_call,
         optimizer,
         es,
         exp_configure,
@@ -723,7 +784,6 @@ def main():
         target_dict=exp_data,
         n_epochs=args.n_epochs,
         device=torch.device(args.device),
-        model_call=model_call,
         loss_fn=loss_func,
         save_file=model_dir,
         lr=args.lr,

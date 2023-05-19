@@ -89,6 +89,11 @@ class CrystalCompoundData(BaseModel):
         None, description="List of chains corresponding to protein residues."
     )
 
+    series: str = Field(
+        None,
+        description="Name of COVID Moonshot series associated with this molecule",
+    )
+
 
 class CrystalCompoundDataset(BaseModel):
     structures: list[CrystalCompoundData] = Field(
