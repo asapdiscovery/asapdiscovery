@@ -43,7 +43,7 @@ dependencies:
   - numpy
   - h5py
   - e3nn
-  - dgl <=1.0.2
+  - dgl
   - dgllife
   - pooch
 
