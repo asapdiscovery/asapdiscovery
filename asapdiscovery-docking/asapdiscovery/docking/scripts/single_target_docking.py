@@ -20,14 +20,13 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
+from asapdiscovery.dataviz.html_vis import HTMLVisualiser
 from asapdiscovery.docking import make_docking_result_dataframe
 from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
-from asapdiscovery.dataviz.html_vis import HTMLVisualiser
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
-
 from rdkit import Chem
 
 """
@@ -280,20 +279,27 @@ def main():
         mol_file_path = Path(args.mols)
         if mol_file_path.suffix == ".smi":
             logger.info(f"Input molecules is a SMILES file: {args.mols}")
-            exp_data = oe_load_exp_from_file(args.mols, "smi", smiles_as_title=args.smiles_as_title)
+            exp_data = oe_load_exp_from_file(
+                args.mols, "smi", smiles_as_title=args.smiles_as_title
+            )
         elif mol_file_path.suffix == ".sdf":
             logger.info(f"Input molecules is a SDF file: {args.mols}")
             if args.use_3d:
                 logger.info("Using 3D coordinates from SDF file")
                 # we need to keep the molecules around to retain their coordinates
                 exp_data, oe_mols = oe_load_exp_from_file(
-                    args.mols, "sdf", return_mols=True, smiles_as_title=args.smiles_as_title
+                    args.mols,
+                    "sdf",
+                    return_mols=True,
+                    smiles_as_title=args.smiles_as_title,
                 )
                 used_3d = True
                 logger.info("setting used_3d to True")
             else:
                 logger.info("Using 2D representation from SDF file")
-                exp_data = oe_load_exp_from_file(args.mols, "sdf", smiles_as_title=args.smiles_as_title)
+                exp_data = oe_load_exp_from_file(
+                    args.mols, "sdf", smiles_as_title=args.smiles_as_title
+                )
 
         else:
             raise ValueError(
@@ -470,9 +476,11 @@ def main():
     # sort by posit  score
     sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
     top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
-    top_posit.to_csv(output_dir/"top_poses.csv", index=False)
+    top_posit.to_csv(output_dir / "top_poses.csv", index=False)
 
-    logger.info(f"Writing out visualisation for top pose for each ligand (n={len(top_posit)})")
+    logger.info(
+        f"Writing out visualisation for top pose for each ligand (n={len(top_posit)})"
+    )
 
     # add pose output column
     top_posit["outpath_pose"] = top_posit["ligand_id"].apply(

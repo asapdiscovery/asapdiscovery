@@ -1352,7 +1352,10 @@ def is_valid_smiles(smiles):
 
 
 def oe_load_exp_from_file(
-    fn, ftype, return_mols=False, smiles_as_title=False,
+    fn,
+    ftype,
+    return_mols=False,
+    smiles_as_title=False,
 ) -> list[ExperimentalCompoundData]:
     """
     Use OpenEye to build a list of ExperimentalCompoundData objects from an SDF or SMILES file.

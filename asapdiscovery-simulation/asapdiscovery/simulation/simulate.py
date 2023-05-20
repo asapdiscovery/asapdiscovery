@@ -1,37 +1,23 @@
 # Configure logging
 import logging
-
-import mdtraj
-from mdtraj.reporters import XTCReporter
-
-
-from openff.toolkit.topology import Molecule
-
-import openmm
-from openmm import unit
-from openmm import Platform
-from openmm import app
-from openmmforcefields.generators import SystemGenerator
-from openmm.app import PDBFile
-from openmm.app import Modeller
-from openmm import MonteCarloBarostat
-from openmm import LangevinMiddleIntegrator
-from openmm.app import Simulation
-
-
 from pathlib import Path
-
-
-from rdkit import Chem
 from typing import List
 
+import mdtraj
+import openmm
 from asapdiscovery.data.logging import FileLogger
+from mdtraj.reporters import XTCReporter
+from openff.toolkit.topology import Molecule
+from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
+from openmm.app import Modeller, PDBFile, Simulation
+from openmmforcefields.generators import SystemGenerator
+from rdkit import Chem
 
 
 class VanillaMDSimulator:
     def __init__(
         self,
-        ligand_paths: List[Path],
+        ligand_paths: list[Path],
         protein_path: Path,
         temperature: float = 300,
         pressure: float = 1,
@@ -40,7 +26,7 @@ class VanillaMDSimulator:
         equilibration_steps: int = 5000,
         reporting_interval: int = 1250,
         num_steps: int = 2500000,
-        output_paths: List[Path] = None,
+        output_paths: list[Path] = None,
         logger: FileLogger = None,
     ):
         self.ligand_paths = ligand_paths

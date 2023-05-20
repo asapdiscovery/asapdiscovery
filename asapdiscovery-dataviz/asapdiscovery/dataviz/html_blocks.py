@@ -20,7 +20,7 @@ def _indent(indent_me: str) -> str:
 
 def _vis_core(pdb_body: str) -> str:
     core = f"""<script type="text/javascript">
-    var mike_combined =     `{_indent(pdb_body)}    
+    var mike_combined =     `{_indent(pdb_body)}
         `.replace(/^ +/gm, '');
 
 </script>
@@ -56,7 +56,7 @@ function loadmike_combined (protein) {
     });
 
     //representations
-    
+
     protein.removeAllRepresentations();
 
         // Show the ligand.
@@ -103,7 +103,7 @@ orient_tail_sars2 = """\
 </script> """
 
 
-#TODO: change to proper name once it has one
+# TODO: change to proper name once it has one
 orient_tail_272 = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([-55.43715359724729, 19.154542778222776, 24.429636441852836, 0.0, -26.507044110580864, -55.2321834848874, -16.845374934225674, 0.0, 16.158030311277685, -24.889572286518273, 56.18196582121527, 0.0, 0.7490043640136719, 0.8194751739501953, -22.965221405029297, 1.0]));
@@ -113,8 +113,6 @@ orient_tail_272 = """\
 
 
 </script> """
-
-
 
 
 colour_mers = """\
@@ -137,7 +135,7 @@ colour_mers = """\
         // Color the BP by subpocket definitions.
         const othercolor = 'white'; // resi not selected
         const uncolored = 'gainsboro'; // sars_unique is not assigned a color.
-        let selecol = Object.entries(data.pocket_dict).map(([name, pymol_sele]) => [data.color_dict[name] || uncolored, pymol_sele.replace(/\+/g, ' or ')]);
+        let selecol = Object.entries(data.pocket_dict).map(([name, pymol_sele]) => [data.color_dict[name] || uncolored, pymol_sele.replace(/\\+/g, ' or ')]);
         selecol.push([othercolor, '*']);  // default
         const pocket_scheme = NGL.ColormakerRegistry.addSelectionScheme(selecol);
         protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front',} );
@@ -177,7 +175,7 @@ colour_sars2 = """\
         // Color the BP by subpocket definitions.
         const othercolor = 'white'; // resi not selected
         const uncolored = 'gainsboro'; // sars_unique is not assigned a color.
-        let selecol = Object.entries(data.pocket_dict).map(([name, pymol_sele]) => [data.color_dict[name] || uncolored, pymol_sele.replace(/\+/g, ' or ')]);
+        let selecol = Object.entries(data.pocket_dict).map(([name, pymol_sele]) => [data.color_dict[name] || uncolored, pymol_sele.replace(/\\+/g, ' or ')]);
         selecol.push([othercolor, '*']);  // default
         const pocket_scheme = NGL.ColormakerRegistry.addSelectionScheme(selecol);
         protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front',} );

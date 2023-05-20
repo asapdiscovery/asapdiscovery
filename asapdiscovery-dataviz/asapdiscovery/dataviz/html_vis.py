@@ -1,17 +1,18 @@
-from typing import List, Union, Optional
-from rdkit import Chem
 from pathlib import Path
+from typing import List, Optional, Union
+
+from rdkit import Chem
 
 from .html_blocks import (
-    visualisation_header,
-    colour_sars2,
-    colour_mers,
     colour_7ene,
-    orient_tail_sars2,
-    orient_tail_mers,
+    colour_mers,
+    colour_sars2,
+    make_core_html,
     orient_tail_7ene,
     orient_tail_272,
-    make_core_html,
+    orient_tail_mers,
+    orient_tail_sars2,
+    visualisation_header,
 )
 
 
@@ -30,7 +31,7 @@ class HTMLVisualiser:
     # TODO: replace input with a schema rather than paths.
     # TODO: add logging
     def __init__(
-        self, poses: List[Path], paths: List[Path], target: str, protein: Path
+        self, poses: list[Path], paths: list[Path], target: str, protein: Path
     ):
         """
         Parameters
@@ -57,7 +58,7 @@ class HTMLVisualiser:
                 pass
 
         if target not in self.allowed_targets:
-            raise ValueError("Target must be one of: {}".format(self.allowed_targets))
+            raise ValueError(f"Target must be one of: {self.allowed_targets}")
         self.target = target
         self.protein = Chem.MolFromPDBFile(str(protein))
 
