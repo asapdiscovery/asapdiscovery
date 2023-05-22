@@ -82,6 +82,16 @@ class VanillaMDSimulator:
         self.logger.info(f"Using platform {platform.getName()}")
         self.platform = platform
 
+    def process_ligand(self, ligand_path) -> Molecule:
+        rdkitmol = Chem.SDMolSupplier(ligand_path)[0]
+        self.logger.info("Adding hydrogens")
+        rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True)
+        # ensure the chiral centers are all defined
+        Chem.AssignAtomChiralTagsFromStructure(rdkitmolh)
+
+        ligand_mol = Molecule(rdkitmolh)
+        return ligand_mol
+
     def create_system_generator(self, ligand_mol, outpath):
         self.logger.info("Initializing SystemGenerator")
         self.logger.info(f"Creating system generator for {ligand_mol}")
@@ -96,29 +106,19 @@ class VanillaMDSimulator:
             forcefields=["amber/ff14SB.xml", "amber/tip3p_standard.xml"],
             small_molecule_forcefield="openff-1.3.1",
             molecules=[ligand_mol],
-            cache="cache.json",
+            cache=outpath / "cache.json",
             forcefield_kwargs=forcefield_kwargs,
             periodic_forcefield_kwargs=periodic_forcefield_kwargs,
         )
-        return system_generator
+        return system_generator, ligand_mol
 
-    def get_complex_model(self, ligand_path, protein_path):
+    def get_complex_model(self, ligand_mol, protein_path):
         # load in ligand, protein, then combine them into an openmm object.
-
-        self.logger.info(f"Creating complex model for {ligand_path} and {protein_path}")
-
-        rdkitmol = Chem.SDMolSupplier(ligand_path)[0]
-        self.logger.info("Adding hydrogens")
-        rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True)
-        # ensure the chiral centers are all defined
-        Chem.AssignAtomChiralTagsFromStructure(rdkitmolh)
-
-        ligand_mol = Molecule(rdkitmolh)
-
+        self.logger.info(f"Creating complex model for {ligand_mol} and {protein_path}")
         # Use Modeller to combine the protein and ligand into a complex
         self.logger.info("Reading protein")
 
-        protein_pdb = PDBFile(protein_path)
+        protein_pdb = PDBFile(str(protein_path))
         self.logger.info("Preparing complex")
 
         modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
@@ -130,12 +130,10 @@ class VanillaMDSimulator:
         modeller.add(
             ligand_mol.to_topology().to_openmm(), ligand_mol.conformers[0].to_openmm()
         )
-
-        return modeller
+        return modeller, ligand_mol
 
     def setup_and_solvate(self, system_generator, modeller, ligand_mol):
         # We need to temporarily create a Context in order to identify molecules for adding virtual bonds
-        # log.info(f":microscope:  Identifying molecules")
         self.logger.info(f"Setup and solvate")
         integrator = openmm.VerletIntegrator(1 * unit.femtoseconds)
         system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
@@ -275,20 +273,29 @@ class VanillaMDSimulator:
 
         # return some sort of success/fail code
 
-    def run_simulations(self):
+    def run_simulation(self, ligand, outpath):
+        if not outpath.exists():
+            outpath.mkdir(parents=True)
+        self.logger.info(f"writing simulation to {outpath}")
+        processed_ligand = self.process_ligand(ligand)
+        system_generator, ligand_mol = self.create_system_generator(
+            processed_ligand, outpath
+        )
+        modeller, ligand_mol = self.get_complex_model(ligand_mol, self.protein_path)
+        modeller, mol_atom_indices = self.setup_and_solvate(
+            system_generator, modeller, ligand_mol
+        )
+        system, output_indices, output_topology = self.create_system(
+            system_generator, modeller, mol_atom_indices, processed_ligand
+        )
+        simulation, context = self.setup_simulation(
+            modeller, system, output_indices, output_topology, outpath
+        )
+        simulation = self.equilibrate(simulation)
+        self.run_production_simulation(
+            simulation, context, output_indices, output_topology, outpath
+        )
+
+    def run_all_simulations(self):
         for ligand, outpath in zip(self.ligand_paths, self.output_paths):
-            system_generator = self.create_system_generator(ligand, outpath)
-            modeller = self.get_complex_model(ligand, self.protein_path)
-            modeller, mol_atom_indices = self.setup_and_solvate(
-                system_generator, modeller, ligand
-            )
-            system, output_indices, output_topology = self.create_system(
-                system_generator, modeller, mol_atom_indices, ligand
-            )
-            simulation, context = self.setup_simulation(
-                modeller, system, output_indices, output_topology, outpath
-            )
-            simulation = self.equilibrate(simulation)
-            self.run_production_simulation(
-                simulation, context, output_indices, output_topology, outpath
-            )
+            self.run_simulation(ligand, outpath)

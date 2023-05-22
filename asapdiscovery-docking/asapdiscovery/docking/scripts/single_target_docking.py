@@ -11,8 +11,10 @@ import yaml
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     extract_ligand_from_design_unit,
+    split_openeye_design_unit,
     oechem,
     save_openeye_sdf,
+    save_openeye_pdb,
 )
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
@@ -232,12 +234,20 @@ def main():
 
     # setup output directory
     output_dir = Path(args.output_dir)
+    overwrote_dir = False
+    if output_dir.exists():
+        overwrote_dir = True
+        shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logname = args.logname if args.logname else "single_target_docking"
     # setup logging
     logger_cls = FileLogger(logname, path=output_dir, stdout=True)
     logger = logger_cls.getLogger()
+
+    if overwrote_dir:
+        logger.warning(f"Overwriting output directory: {output_dir}")
+
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
 
@@ -386,13 +396,23 @@ def main():
     du = oechem.OEDesignUnit()
     oechem.OEReadDesignUnit(str(prepped_oedu), du)
 
-    # extract the ligand
-    lig = extract_ligand_from_design_unit(du)
+    # extract the ligand, protein and complex
+    lig, protein, lig_prot_complex = split_openeye_design_unit(du)
 
-    if args.debug:
-        # write out the ligand and protein
-        logger.info("Writing out ligand for debugging")
-        save_openeye_sdf(lig, str(prep_dir / f"{receptor_name}_ligand.sdf"))
+    # write out the protein
+    protein_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_protein.pdb"
+    logger.info(f"Writing out protein to {protein_path}")
+    save_openeye_pdb(protein, str(protein_path))
+
+    # write out the complex
+    complex_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_complex.pdb"
+    logger.info(f"Writing out complex to {complex_path}")
+    save_openeye_pdb(lig_prot_complex, str(complex_path))
+
+    # write out the ligand
+    ligand_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_ligand.sdf"
+    logger.info(f"Writing out ligand to {ligand_path}")
+    save_openeye_sdf(lig, str(ligand_path))
 
     ligand_smiles = oechem.OEMolToSmiles(lig)
 
@@ -488,7 +508,7 @@ def main():
     )
 
     html_visualiser = HTMLVisualiser(
-        top_posit["docked_file"], top_posit["outpath_pose"], args.target, prepped_pdb
+        top_posit["docked_file"], top_posit["outpath_pose"], args.target, protein_path
     )
     html_visualiser.write_pose_visualisations()
 
@@ -503,8 +523,13 @@ def main():
         )
 
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
-        # simulator = VanillaMDSimulator(top_posit["docked_file"], prepped_pdb, logger=logger, output_paths=top_posit["outpath_md"])
-        # simulator.run_simulations()
+        simulator = VanillaMDSimulator(
+            top_posit["docked_file"],
+            protein_path,
+            logger=logger,
+            output_paths=top_posit["outpath_md"],
+        )
+        simulator.run_all_simulations()
         logger.info(f"Finished MD at {datetime.now().isoformat()}")
 
     if args.cleanup:
