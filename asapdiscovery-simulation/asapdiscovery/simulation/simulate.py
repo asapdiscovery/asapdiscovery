@@ -28,6 +28,7 @@ class VanillaMDSimulator:
         num_steps: int = 2500000,
         output_paths: list[Path] = None,
         logger: FileLogger = None,
+        debug: bool = True
     ):
         self.ligand_paths = ligand_paths
         self.protein_path = protein_path
@@ -51,11 +52,12 @@ class VanillaMDSimulator:
 
         # init
         if logger is None:
-            self.logger = FileLogger("md_log.txt", stdout=True, level=logging.INFO)
+            self.logger = FileLogger("md_log.txt", "./", stdout=True, level=logging.INFO).getLogger()
         else:
             self.logger = logger
 
         self.logger.info("Starting MD run")
+        self.debug = debug
         self.set_platform()
 
     def set_platform(self):
@@ -81,9 +83,13 @@ class VanillaMDSimulator:
 
         self.logger.info(f"Using platform {platform.getName()}")
         self.platform = platform
+        if self.debug:
+            self.logger.info(f"Setting platform to CPU for debugging")
+            self.platform = Platform.getPlatformByName("CPU")
+
 
     def process_ligand(self, ligand_path) -> Molecule:
-        rdkitmol = Chem.SDMolSupplier(ligand_path)[0]
+        rdkitmol = Chem.SDMolSupplier(str(ligand_path))[0]
         self.logger.info("Adding hydrogens")
         rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True)
         # ensure the chiral centers are all defined
@@ -106,7 +112,7 @@ class VanillaMDSimulator:
             forcefields=["amber/ff14SB.xml", "amber/tip3p_standard.xml"],
             small_molecule_forcefield="openff-1.3.1",
             molecules=[ligand_mol],
-            cache=outpath / "cache.json",
+            cache=None,
             forcefield_kwargs=forcefield_kwargs,
             periodic_forcefield_kwargs=periodic_forcefield_kwargs,
         )
@@ -190,14 +196,14 @@ class VanillaMDSimulator:
             self.logger.info(f" {system.getDefaultPeriodicBoxVectors()[dim]}")
 
         # Create integrator
-        self.logger.info(":building_construction:  Creating integrator...")
+        self.logger.info("Creating integrator...")
 
         integrator = LangevinMiddleIntegrator(
             self.temperature, self.collision_rate, self.timestep
         )
 
         # Create simulation
-        self.logger.info(":mage:  Creating simulation...")
+        self.logger.info("Creating simulation...")
 
         simulation = Simulation(
             modeller.topology, system, integrator, platform=self.platform
@@ -298,4 +304,5 @@ class VanillaMDSimulator:
 
     def run_all_simulations(self):
         for ligand, outpath in zip(self.ligand_paths, self.output_paths):
+            print(ligand, outpath, type(ligand), type(outpath)  )
             self.run_simulation(ligand, outpath)

@@ -252,9 +252,9 @@ def main():
     logger.info(f"Output directory: {output_dir}")
 
     # openeye logging handling
-    errfs = oechem.oeofstream(str(output_dir / f"openeye-{logname}-log.txt"))
-    oechem.OEThrow.SetOutputStream(errfs)
-    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+    # errfs = oechem.oeofstream(str(output_dir / f"openeye-{logname}-log.txt"))
+    # oechem.OEThrow.SetOutputStream(errfs)
+    # oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
 
     if args.debug:
         logger.info("Running in debug mode. enabling --verbose and disabling --cleanup")
@@ -478,11 +478,15 @@ def main():
                 args.num_poses,
             )
         )
+    del oe_mols
+    del exp_data
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
     logger.info(f"Docking finished for {len(results)} runs.")
 
     # save results
     results_df, csv = make_docking_result_dataframe(results, output_dir, save_csv=True)
+    del results
+
     logger.info(f"Saved results to {csv}")
     logger.info(f"Finish single target prep+docking at {datetime.now().isoformat()}")
 
@@ -512,6 +516,8 @@ def main():
     )
     html_visualiser.write_pose_visualisations()
 
+    del html_visualiser
+
     if args.md:
         logger.info(f"Running MD on top pose for each ligand (n={len(top_posit)})")
         md_dir = output_dir / "md"
@@ -521,7 +527,9 @@ def main():
         top_posit["outpath_md"] = top_posit["ligand_id"].apply(
             lambda x: md_dir / Path(x)
         )
-
+        print(top_posit["docked_file"])
+        print(protein_path)
+        print(top_posit["outpath_md"])
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
         simulator = VanillaMDSimulator(
             top_posit["docked_file"],
