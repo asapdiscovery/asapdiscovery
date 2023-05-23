@@ -101,6 +101,6 @@ def test_single_target_docking(
     docking_files_single,
 ):
     sdf, oedu, _, pdb = docking_files_single
-    args = ["dock-small-scale-e2e", "-m", f"{sdf}", "-r", f"{pdb}", "-o", "./outputs"]
+    args = ["dock-small-scale-e2e", "-m", f"{sdf}", "-r", f"{pdb}", "-o", "./outputs", "--target", "--272"]
     ret = script_runner.run(*args)
     assert ret.success
