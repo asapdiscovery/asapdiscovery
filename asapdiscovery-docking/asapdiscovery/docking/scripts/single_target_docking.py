@@ -1,5 +1,4 @@
 import argparse
-import hashlib
 import logging
 import shutil
 from datetime import datetime
@@ -10,7 +9,6 @@ from typing import List  # noqa: F401
 import yaml
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
-    extract_ligand_from_design_unit,
     oechem,
     save_openeye_pdb,
     save_openeye_sdf,
@@ -29,7 +27,6 @@ from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
-from rdkit import Chem
 
 """
 Script to run single target prep + docking.

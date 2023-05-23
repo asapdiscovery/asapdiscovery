@@ -1,7 +1,7 @@
 # Configure logging
 import logging
 from pathlib import Path
-from typing import List
+from typing import List  # noqa: F401
 
 import mdtraj
 import openmm
@@ -9,12 +9,6 @@ import tqdm
 from asapdiscovery.data.logging import FileLogger
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
-from openff.toolkit.utils.toolkits import GLOBAL_TOOLKIT_REGISTRY as toolkit_registry
-from openff.toolkit.utils.toolkits import (
-    AmberToolsToolkitWrapper,
-    OpenEyeToolkitWrapper,
-    RDKitToolkitWrapper,
-)
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation
 from openmmforcefields.generators import SystemGenerator
@@ -54,7 +48,7 @@ class VanillaMDSimulator:
 
         if output_paths is None:
             outdir = Path("md").mkdir(exist_ok=True)
-            self.output_paths = [outdir / l.parent for l in ligand_paths]
+            self.output_paths = [outdir / ligand.parent for ligand in ligand_paths]
         else:
             self.output_paths = output_paths
 
@@ -73,7 +67,7 @@ class VanillaMDSimulator:
     def set_platform(self):
         # could use structuring to increase flexibility
         # check whether we have a GPU platform and if so set the precision to mixed
-        self.logger.info(f"Setting platform for MD run")
+        self.logger.info("Setting platform for MD run")
         speed = 0
 
         if Platform.getNumPlatforms() == 0:
@@ -91,10 +85,10 @@ class VanillaMDSimulator:
                 f"Setting precision for platform {platform.getName()} to mixed"
             )
 
-        self.logger.info(f"Using platform {platform.getName()}")
+        self.logger.info("Using platform {platform.getName()}")
         self.platform = platform
         if self.debug:
-            self.logger.info(f"Setting platform to CPU for debugging")
+            self.logger.info("Setting platform to CPU for debugging")
             self.platform = Platform.getPlatformByName("CPU")
 
     def process_ligand(self, ligand_path) -> Molecule:
@@ -149,7 +143,7 @@ class VanillaMDSimulator:
 
     def setup_and_solvate(self, system_generator, modeller, ligand_mol):
         # We need to temporarily create a Context in order to identify molecules for adding virtual bonds
-        self.logger.info(f"Setup and solvate")
+        self.logger.info("Setup and solvate")
         integrator = openmm.VerletIntegrator(1 * unit.femtoseconds)
         system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
         context = openmm.Context(
@@ -200,7 +194,7 @@ class VanillaMDSimulator:
         # Add barostat
 
         system.addForce(MonteCarloBarostat(self.pressure, self.temperature))
-        self.logger.info(f"Default Periodic box:")
+        self.logger.info("Default Periodic box:")
         for dim in range(3):
             self.logger.info(f" {system.getDefaultPeriodicBoxVectors()[dim]}")
 

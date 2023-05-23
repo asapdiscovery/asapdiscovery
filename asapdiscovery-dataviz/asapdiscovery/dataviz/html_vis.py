@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union  # noqa: F401
 
 from rdkit import Chem
 
@@ -12,7 +12,6 @@ from .html_blocks import (
     orient_tail_272,
     orient_tail_mers,
     orient_tail_sars2,
-    visualisation_header,
 )
 
 
