@@ -3,20 +3,18 @@ import logging
 from pathlib import Path
 from typing import List
 
-from openff.toolkit.utils.toolkits import GLOBAL_TOOLKIT_REGISTRY as toolkit_registry
-from openff.toolkit.utils.toolkits import (
-    OpenEyeToolkitWrapper,
-    RDKitToolkitWrapper,
-    AmberToolsToolkitWrapper,
-)
-
-
 import mdtraj
 import openmm
 import tqdm
 from asapdiscovery.data.logging import FileLogger
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
+from openff.toolkit.utils.toolkits import GLOBAL_TOOLKIT_REGISTRY as toolkit_registry
+from openff.toolkit.utils.toolkits import (
+    AmberToolsToolkitWrapper,
+    OpenEyeToolkitWrapper,
+    RDKitToolkitWrapper,
+)
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation
 from openmmforcefields.generators import SystemGenerator
