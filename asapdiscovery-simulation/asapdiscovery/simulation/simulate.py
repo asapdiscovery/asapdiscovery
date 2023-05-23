@@ -3,8 +3,17 @@ import logging
 from pathlib import Path
 from typing import List
 
+from openff.toolkit.utils.toolkits import GLOBAL_TOOLKIT_REGISTRY as toolkit_registry
+from openff.toolkit.utils.toolkits import (
+    OpenEyeToolkitWrapper,
+    RDKitToolkitWrapper,
+    AmberToolsToolkitWrapper,
+)
+
+
 import mdtraj
 import openmm
+import tqdm
 from asapdiscovery.data.logging import FileLogger
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
@@ -28,7 +37,8 @@ class VanillaMDSimulator:
         num_steps: int = 2500000,
         output_paths: list[Path] = None,
         logger: FileLogger = None,
-        debug: bool = True
+        debug: bool = False,
+        manipulate_toolkits: bool = False,
     ):
         self.ligand_paths = ligand_paths
         self.protein_path = protein_path
@@ -52,7 +62,9 @@ class VanillaMDSimulator:
 
         # init
         if logger is None:
-            self.logger = FileLogger("md_log.txt", "./", stdout=True, level=logging.INFO).getLogger()
+            self.logger = FileLogger(
+                "md_log.txt", "./", stdout=True, level=logging.INFO
+            ).getLogger()
         else:
             self.logger = logger
 
@@ -86,7 +98,6 @@ class VanillaMDSimulator:
         if self.debug:
             self.logger.info(f"Setting platform to CPU for debugging")
             self.platform = Platform.getPlatformByName("CPU")
-
 
     def process_ligand(self, ligand_path) -> Molecule:
         rdkitmol = Chem.SDMolSupplier(str(ligand_path))[0]
@@ -244,14 +255,16 @@ class VanillaMDSimulator:
         # Add reporter to generate XTC trajectory
         simulation.reporters.append(
             XTCReporter(
-                outpath / "traj.xtc", self.reporting_interval, atomSubset=output_indices
+                str(outpath / "traj.xtc"),
+                self.reporting_interval,
+                atomSubset=output_indices,
             )
         )
 
         # Run simulation
-        self.logger.info("Starting simulation...")
+        self.logger.info("Running simulation...")
 
-        for snapshot_index in range(self.n_snapshots):
+        for snapshot_index in tqdm.trange(self.n_snapshots):
             simulation.step(self.reporting_interval)
 
         self.logger.info("Finished")
@@ -304,5 +317,4 @@ class VanillaMDSimulator:
 
     def run_all_simulations(self):
         for ligand, outpath in zip(self.ligand_paths, self.output_paths):
-            print(ligand, outpath, type(ligand), type(outpath)  )
             self.run_simulation(ligand, outpath)

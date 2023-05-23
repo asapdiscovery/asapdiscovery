@@ -163,10 +163,11 @@ def mp_func(
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
         logger.info(f"No results for {compound_name} found, running docking")
-        errfs = oechem.oeofstream(os.path.join(out_dir, f"openeye_{logname}-log.txt"))
-        oechem.OEThrow.SetOutputStream(errfs)
-        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-        oechem.OEThrow.Info(f"Starting docking for {logname}")
+        # this interferes with OEOmega see https://github.com/openforcefield/openff-toolkit/issues/1615
+        # errfs = oechem.oeofstream(os.path.join(out_dir, f"openeye_{logname}-log.txt"))
+        # oechem.OEThrow.SetOutputStream(errfs)
+        # oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+        # # oechem.OEThrow.Info(f"Starting docking for {logname}")
 
     success, posed_mol, docking_id = run_docking_oe(
         du, *args, log_name=log_name, **kwargs
