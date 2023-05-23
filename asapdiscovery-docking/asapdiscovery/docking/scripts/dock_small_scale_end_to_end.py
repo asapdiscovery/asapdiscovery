@@ -6,6 +6,8 @@ from functools import partial
 from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
+import dask
+
 import yaml
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
@@ -111,6 +113,14 @@ parser.add_argument(
     action="store_true",
     help=(
         "use smiles strings as titles for molecules in .smi or .sdf file if none provided"
+    ),
+)
+
+parser.add_argument(
+    "--dask",
+    action="store_true",
+    help=(
+        "use dask to parallelise docking"
     ),
 )
 
@@ -264,6 +274,16 @@ def main():
         logger.debug("Debug logging enabled")
         logger.debug(f"Input arguments: {args}")
 
+    if args.dask:
+        logger.info("Using dask to parallelise docking")
+        from dask.distributed import Client
+
+        client = Client()
+        logger.info("Dask client created ...")
+        logger.info(client.dashboard_link)
+        logger.info("strongly recommend you open the dashboard link in a browser tab to monitor progress")
+
+
     # paths to remove if not keeping intermediate files
     intermediate_files = []
 
@@ -314,6 +334,9 @@ def main():
             )
 
     logger.info(f"Loaded {len(exp_data)} molecules.")
+    if len(exp_data) == 0:
+        logger.error("No molecules loaded.")
+        raise ValueError("No molecules loaded.")
 
     if args.verbose:
         # we could make this just a debug statement but avoid looping over all molecules if not needed
@@ -438,6 +461,9 @@ def main():
     # use partial to bind the ML models to the docking function
     full_oe_docking_function = partial(oe_docking_function, GAT_model=gat_model)
 
+    if args.dask:
+        full_oe_docking_function = dask.delayed(full_oe_docking_function)
+
     # run docking
     logger.info(f"Running docking at {datetime.now().isoformat()}")
 
@@ -458,8 +484,7 @@ def main():
                 raise ValueError(
                     f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()}"
                 )
-        results.append(
-            full_oe_docking_function(
+        res = full_oe_docking_function(
                 dock_dir / f"{compound.compound_id}_{receptor_name}",
                 compound.compound_id,
                 prepped_oedu,
@@ -473,8 +498,13 @@ def main():
                 f"{compound.compound_id}_{receptor_name}",
                 args.omega,
                 args.num_poses,
-            )
         )
+        results.append(res)
+
+
+    if args.dask:# make concrete
+        results = dask.compute(*results)
+
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
     logger.info(f"Docking finished for {len(results)} runs.")
 

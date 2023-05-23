@@ -103,6 +103,10 @@ class HTMLVisualiser:
         Get HTML body for pose visualisation
         """
         protein_pdb = Chem.MolToPDBBlock(self.protein)
+        # if there is an END line, remove it
+        for line in protein_pdb.split("\n"):
+            if line.startswith("END"):
+                protein_pdb = protein_pdb.replace(line, "")
         mol_pdb = Chem.MolToPDBBlock(pose)
         joint_pdb = protein_pdb + mol_pdb
         html_body = make_core_html(joint_pdb)

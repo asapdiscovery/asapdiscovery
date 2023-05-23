@@ -54,6 +54,10 @@ dependencies:
   - mdtraj
   - openff-toolkit
 
+  # execution
+  - distributed
+  - dask
+
 
   # Pip-only installs
   - pip:
