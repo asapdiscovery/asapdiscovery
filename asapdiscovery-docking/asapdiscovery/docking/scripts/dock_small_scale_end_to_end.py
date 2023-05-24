@@ -7,7 +7,6 @@ from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
 import dask
-
 import yaml
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
@@ -550,8 +549,8 @@ def main():
         if args.dask:
             logger.info("Starting Dask GPU client")
             # spawn new GPU client
-            from dask_cuda import LocalCUDACluster
             from dask.distributed import Client
+            from dask_cuda import LocalCUDACluster
 
             cluster = LocalCUDACluster()
             client = Client(cluster)
