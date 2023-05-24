@@ -58,6 +58,7 @@ dependencies:
   - distributed
   - dask
   - dask-cuda
+  - dask-jobqueue
 
 
   # Pip-only installs

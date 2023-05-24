@@ -122,6 +122,12 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--dask-lilac",
+    action="store_true",
+    help=("Run dask for lilac config"),
+)
+
+parser.add_argument(
     "-o",
     "--output_dir",
     required=True,
@@ -275,7 +281,16 @@ def main():
         logger.info("Using dask to parallelise docking")
         from dask.distributed import Client
 
-        client = Client()
+        if args.dask_lilac:
+            from dask_jobqueue import LSFCluster
+
+            cluster = LSFCluster()
+            # assume we will have about 10 jobs
+            cluster.scale(10)
+            cluster.adapt(min=1, max=40, interval="10s", target_duration="60s")
+            client = Client(cluster)
+        else:
+            client = Client()
         logger.info("Dask client created ...")
         logger.info(client.dashboard_link)
         logger.info(
@@ -524,7 +539,7 @@ def main():
     # save with the failed ones in so its clear which ones failed
     top_posit.to_csv(output_dir / "top_poses.csv", index=False)
     # only keep the ones that worked for the rest of workflow
-    top_posit = top_posit[top_posit.docked_file != '']
+    top_posit = top_posit[top_posit.docked_file != ""]
     top_posit.to_csv(output_dir / "top_poses_clean.csv", index=False)
 
     logger.info(
@@ -544,24 +559,31 @@ def main():
     del html_visualiser
 
     if args.dask:
-        # clean CPU dask client
-        client.close()
+        if args.dask_lilac:
+            logger.info("dask lilac setup means we don't need to spawn a new client")
+        else:  # cleanup CPU dask client and spawn new GPU-CUDA client
+            client.close()
 
     if args.md:
         logger.info(f"Running MD on top pose for each ligand (n={len(top_posit)})")
 
         if args.dask:
-            logger.info("Starting Dask GPU client")
-            # spawn new GPU client
-            from dask.distributed import Client
-            from dask_cuda import LocalCUDACluster
+            if args.dask_lilac:
+                logger.info(
+                    "dask lilac setup means we don't need to spawn a new client"
+                )
+            else:
+                logger.info("Starting seperate Dask GPU client")
+                # spawn new GPU client
+                from dask.distributed import Client
+                from dask_cuda import LocalCUDACluster
 
-            cluster = LocalCUDACluster()
-            client = Client(cluster)
-            logger.info(client.dashboard_link)
-            logger.info(
-                "strongly recommend you open the dashboard link in a browser tab to monitor progress"
-            )
+                cluster = LocalCUDACluster()
+                client = Client(cluster)
+                logger.info(client.dashboard_link)
+                logger.info(
+                    "strongly recommend you open the dashboard link in a browser tab to monitor progress"
+                )
 
         md_dir = output_dir / "md"
         md_dir.mkdir(parents=True, exist_ok=True)
