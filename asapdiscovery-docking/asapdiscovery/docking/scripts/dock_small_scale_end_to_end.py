@@ -524,7 +524,7 @@ def main():
     # save with the failed ones in so its clear which ones failed
     top_posit.to_csv(output_dir / "top_poses.csv", index=False)
     # only keep the ones that worked for the rest of workflow
-    top_posit = top_posit[top_posit.docked_file != '']
+    top_posit = top_posit[top_posit.docked_file != ""]
     top_posit.to_csv(output_dir / "top_poses_clean.csv", index=False)
 
     logger.info(
