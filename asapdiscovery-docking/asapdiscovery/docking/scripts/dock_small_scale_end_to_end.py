@@ -522,7 +522,11 @@ def main():
     # sort by posit  score
     sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
     top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
+    # save with the failed ones in so its clear which ones failed
     top_posit.to_csv(output_dir / "top_poses.csv", index=False)
+    # only keep the ones that worked for the rest of workflow
+    top_posit = top_posit[top_posit.docked_file != '']
+    top_posit.to_csv(output_dir / "top_poses_clean.csv", index=False)
 
     logger.info(
         f"Writing out visualisation for top pose for each ligand (n={len(top_posit)})"
