@@ -119,7 +119,7 @@ def prep_protein(xtal: CrystalCompoundData, args):
         logger.info(f"Preparing {xtal.str_fn}")
     # Load structure
     fn = Path(xtal.str_fn)
-    if fn.suffix == ".cif1":
+    if fn.suffix == ".cif":
         from asapdiscovery.data.openeye import load_openeye_cif1
 
         prot = load_openeye_cif1(xtal.str_fn)
