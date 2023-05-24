@@ -57,6 +57,7 @@ dependencies:
   # execution
   - distributed
   - dask
+  - dask-cuda
 
 
   # Pip-only installs

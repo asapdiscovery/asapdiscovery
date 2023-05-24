@@ -119,9 +119,7 @@ parser.add_argument(
 parser.add_argument(
     "--dask",
     action="store_true",
-    help=(
-        "use dask to parallelise docking"
-    ),
+    help=("use dask to parallelise docking"),
 )
 
 parser.add_argument(
@@ -281,8 +279,9 @@ def main():
         client = Client()
         logger.info("Dask client created ...")
         logger.info(client.dashboard_link)
-        logger.info("strongly recommend you open the dashboard link in a browser tab to monitor progress")
-
+        logger.info(
+            "strongly recommend you open the dashboard link in a browser tab to monitor progress"
+        )
 
     # paths to remove if not keeping intermediate files
     intermediate_files = []
@@ -485,24 +484,23 @@ def main():
                     f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()}"
                 )
         res = full_oe_docking_function(
-                dock_dir / f"{compound.compound_id}_{receptor_name}",
-                compound.compound_id,
-                prepped_oedu,
-                logname,
-                f"{compound.compound_id}_{receptor_name}",
-                du,
-                mol,
-                args.docking_sys.lower(),
-                args.relax.lower(),
-                args.hybrid,
-                f"{compound.compound_id}_{receptor_name}",
-                args.omega,
-                args.num_poses,
+            dock_dir / f"{compound.compound_id}_{receptor_name}",
+            compound.compound_id,
+            prepped_oedu,
+            logname,
+            f"{compound.compound_id}_{receptor_name}",
+            du,
+            mol,
+            args.docking_sys.lower(),
+            args.relax.lower(),
+            args.hybrid,
+            f"{compound.compound_id}_{receptor_name}",
+            args.omega,
+            args.num_poses,
         )
         results.append(res)
 
-
-    if args.dask:# make concrete
+    if args.dask:  # make concrete
         results = dask.compute(*results)
 
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
@@ -542,8 +540,26 @@ def main():
 
     del html_visualiser
 
+    if args.dask:
+        # clean CPU dask client
+        client.close()
+
     if args.md:
         logger.info(f"Running MD on top pose for each ligand (n={len(top_posit)})")
+
+        if args.dask:
+            logger.info("Starting Dask GPU client")
+            # spawn new GPU client
+            from dask_cuda import LocalCUDACluster
+            from dask.distributed import Client
+
+            cluster = LocalCUDACluster()
+            client = Client(cluster)
+            logger.info(client.dashboard_link)
+            logger.info(
+                "strongly recommend you open the dashboard link in a browser tab to monitor progress"
+            )
+
         md_dir = output_dir / "md"
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
@@ -552,13 +568,49 @@ def main():
             lambda x: md_dir / Path(x)
         )
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
-        simulator = VanillaMDSimulator(
-            top_posit["docked_file"],
-            protein_path,
-            logger=logger,
-            output_paths=top_posit["outpath_md"],
-        )
-        simulator.run_all_simulations()
+
+        if args.dask:
+            logger.info("Running MD with Dask")
+
+            @dask.delayed
+            def dask_adaptor(pose, protein_path, logger, output_path):
+                simulator = VanillaMDSimulator(
+                    [pose],
+                    protein_path,
+                    logger=logger,
+                    output_paths=[output_path],
+                )
+                retcode = simulator.run_all_simulations()
+                if len(retcode) != 1:
+                    raise ValueError(
+                        "Somehow ran more than one simulation and got more than one retcode"
+                    )
+                return retcode[0]
+
+            # make a list of simulator results that we then compute in parallel
+            retcodes = []
+            for pose, output_path in zip(
+                top_posit["docked_file"], top_posit["outpath_md"]
+            ):
+                retcode = dask_adaptor(pose, protein_path, logger, output_path)
+                retcodes.append(retcode)
+
+            # run in parallel
+            retcodes = client.compute(retcodes)
+            # gather results
+            retcodes = client.gather(retcodes)
+
+        else:
+            logger.info("Running MD with in serial")
+            logger.warning("This will take a long time")
+            simulator = VanillaMDSimulator(
+                top_posit["docked_file"],
+                protein_path,
+                logger=logger,
+                output_paths=top_posit["outpath_md"],
+            )
+            simulator.run_all_simulations()
+
         logger.info(f"Finished MD at {datetime.now().isoformat()}")
 
     if args.cleanup:

@@ -281,8 +281,8 @@ class VanillaMDSimulator:
         # Clean up to release GPU resources
         del simulation.context
         del simulation
-
         # return some sort of success/fail code
+        return 0
 
     def run_simulation(self, ligand, outpath):
         if not outpath.exists():
@@ -303,10 +303,14 @@ class VanillaMDSimulator:
             modeller, system, output_indices, output_topology, outpath
         )
         simulation = self.equilibrate(simulation)
-        self.run_production_simulation(
+        retcode = self.run_production_simulation(
             simulation, context, output_indices, output_topology, outpath
         )
+        return retcode
 
     def run_all_simulations(self):
+        retcodes = []
         for ligand, outpath in zip(self.ligand_paths, self.output_paths):
-            self.run_simulation(ligand, outpath)
+            retcode = self.run_simulation(ligand, outpath)
+            retcodes.append(retcode)
+        return retcodes
