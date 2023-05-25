@@ -240,7 +240,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--md-steps", action="store", type=int, help="Number of MD steps to run."
+    "--md-steps",
+    action="store",
+    type=int,
+    default=2500000,
+    help="Number of MD steps to run.",
 )
 
 
@@ -289,10 +293,18 @@ def main():
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
 
+            logger.info("Using dask-jobqueue to run on lilac")
+            logger.warning(
+                "make sure you have a config file for lilac's dask-jobqueue cluster installed in your environment, contact @hmacdope"
+            )
+            # NOTE you will need a config file that defines the dask-jobqueue for the cluster
             cluster = LSFCluster()
             # assume we will have about 10 jobs
             cluster.scale(10)
-            cluster.adapt(minimum=10, maximum=40, interval="10s", target_duration="60s")
+            # cluster is adaptive, and will scale between 5 and 40 workers depending on load
+            # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
+            # which can cause thrashing in the LSF queue
+            cluster.adapt(minimum=5, maximum=40, interval="10s", target_duration="60s")
             client = Client(cluster)
         else:
             client = Client()
@@ -565,7 +577,7 @@ def main():
 
     if args.dask:
         if args.dask_lilac:
-            logger.info("dask lilac setup means we don't need to spawn a new client")
+            logger.info("Checking if we need to spawn a new client")
         else:  # cleanup CPU dask client and spawn new GPU-CUDA client
             client.close()
 
@@ -602,8 +614,10 @@ def main():
         if args.dask:
             logger.info("Running MD with Dask")
 
+            # make a dask delayed function that runs the MD
+            # must make the simulator inside the loop as it is not serialisable
             @dask.delayed
-            def dask_adaptor(pose, protein_path, logger, output_path):
+            def dask_md_adaptor(pose, protein_path, logger, output_path):
                 simulator = VanillaMDSimulator(
                     [pose],
                     protein_path,
@@ -623,15 +637,16 @@ def main():
             for pose, output_path in zip(
                 top_posit["docked_file"], top_posit["outpath_md"]
             ):
-                retcode = dask_adaptor(pose, protein_path, logger, output_path)
+                retcode = dask_md_adaptor(pose, protein_path, logger, output_path)
                 retcodes.append(retcode)
 
-            # run in parallel
+            # run in parallel sending out a bunch of Futures
             retcodes = client.compute(retcodes)
-            # gather results
+            # gather results back to the client, blocking until all are done
             retcodes = client.gather(retcodes)
 
         else:
+            # don't do this if you can avoid it
             logger.info("Running MD with in serial")
             logger.warning("This will take a long time")
             simulator = VanillaMDSimulator(
@@ -647,7 +662,7 @@ def main():
 
     if args.cleanup:
         if len(intermediate_files) > 0:
-            logger.info("Removing intermediate files.")
+            logger.warning("Removing intermediate files.")
             for path in intermediate_files:
                 shutil.rmtree(path)
     else:
