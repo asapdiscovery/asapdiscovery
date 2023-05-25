@@ -520,8 +520,7 @@ def main():
         results.append(res)
 
     if args.dask:  # make concrete
-        with performance_report(filename="dask-docking-perf-report.html"):
-            results = dask.compute(*results)
+        results = dask.compute(*results)
 
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
     logger.info(f"Docking finished for {len(results)} runs.")
@@ -602,35 +601,35 @@ def main():
 
         if args.dask:
             logger.info("Running MD with Dask")
-            with performance_report(filename="dask-md-perf-report.html"):
 
-                @dask.delayed
-                def dask_adaptor(pose, protein_path, logger, output_path):
-                    simulator = VanillaMDSimulator(
-                        [pose],
-                        protein_path,
-                        logger=logger,
-                        output_paths=[output_path],
-                        num_steps=args.md_steps,
+            @dask.delayed
+            def dask_adaptor(pose, protein_path, logger, output_path):
+                simulator = VanillaMDSimulator(
+                    [pose],
+                    protein_path,
+                    logger=logger,
+                    output_paths=[output_path],
+                    num_steps=args.md_steps,
+                )
+                retcode = simulator.run_all_simulations()
+                if len(retcode) != 1:
+                    raise ValueError(
+                        "Somehow ran more than one simulation and got more than one retcode"
                     )
-                    retcode = simulator.run_all_simulations()
-                    if len(retcode) != 1:
-                        raise ValueError(
-                            "Somehow ran more than one simulation and got more than one retcode"
-                        )
-                    return retcode[0]
+                return retcode[0]
 
-                # make a list of simulator results that we then compute in parallel
-                retcodes = []
-                for pose, output_path in zip(
-                    top_posit["docked_file"], top_posit["outpath_md"]
-                ):
-                    retcode = dask_adaptor(pose, protein_path, logger, output_path)
-                    retcodes.append(retcode)
+            # make a list of simulator results that we then compute in parallel
+            retcodes = []
+            for pose, output_path in zip(
+                top_posit["docked_file"], top_posit["outpath_md"]
+            ):
+                retcode = dask_adaptor(pose, protein_path, logger, output_path)
+                retcodes.append(retcode)
 
-                # run in parallel
-                retcodes = dask.compute(*retcodes)
-
+            # run in parallel
+            retcodes = client.compute(retcodes)
+            # gather results
+            retcodes = client.gather(retcodes)
 
         else:
             logger.info("Running MD with in serial")
@@ -638,7 +637,7 @@ def main():
             simulator = VanillaMDSimulator(
                 top_posit["docked_file"],
                 protein_path,
-                logger=logger,
+                logger=None,
                 output_paths=top_posit["outpath_md"],
                 num_steps=args.md_steps,
             )

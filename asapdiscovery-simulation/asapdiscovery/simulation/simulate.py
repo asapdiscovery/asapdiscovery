@@ -55,7 +55,7 @@ class VanillaMDSimulator:
         # init
         if logger is None:
             self.logger = FileLogger(
-                "md_log.txt", "./", stdout=True, level=logging.INFO
+                "md_log.txt", "./", stdout=True, level=logging.DEBUG
             ).getLogger()
         else:
             self.logger = logger
