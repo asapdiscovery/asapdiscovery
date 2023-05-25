@@ -631,7 +631,6 @@ def main():
                 # run in parallel
                 retcodes = dask.compute(*retcodes)
 
-
         else:
             logger.info("Running MD with in serial")
             logger.warning("This will take a long time")
