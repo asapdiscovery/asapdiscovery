@@ -289,7 +289,7 @@ def main():
             cluster = LSFCluster()
             # assume we will have about 10 jobs
             cluster.scale(10)
-            cluster.adapt(minimum=1, maximum=40, interval="10s", target_duration="60s")
+            cluster.adapt(minimum=10, maximum=40, interval="10s", target_duration="60s")
             client = Client(cluster)
         else:
             client = Client()
