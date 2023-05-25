@@ -5,7 +5,6 @@ from typing import List  # noqa: F401
 
 import mdtraj
 import openmm
-import tqdm
 from asapdiscovery.data.logging import FileLogger
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
