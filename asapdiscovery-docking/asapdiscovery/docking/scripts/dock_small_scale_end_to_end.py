@@ -239,6 +239,10 @@ parser.add_argument(
     "--md", action="store_true", help="Whether to run MD after docking."
 )
 
+parser.add_argument(
+    "--md-steps", action="store", type=int, help="Number of MD steps to run."
+)
+
 
 def main():
     args = parser.parse_args()
@@ -607,6 +611,7 @@ def main():
                         protein_path,
                         logger=logger,
                         output_paths=[output_path],
+                        num_steps=args.md_steps,
                     )
                     retcode = simulator.run_all_simulations()
                     if len(retcode) != 1:
@@ -624,9 +629,8 @@ def main():
                     retcodes.append(retcode)
 
                 # run in parallel
-                retcodes = client.compute(retcodes)
-                # gather results
-                retcodes = client.gather(retcodes)
+                retcodes = dask.compute(*retcodes)
+
 
         else:
             logger.info("Running MD with in serial")
@@ -636,6 +640,7 @@ def main():
                 protein_path,
                 logger=logger,
                 output_paths=top_posit["outpath_md"],
+                num_steps=args.md_steps,
             )
             simulator.run_all_simulations()
 
