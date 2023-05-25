@@ -7,8 +7,6 @@ from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
 import dask
-from dask.distributed import performance_report
-
 import yaml
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
@@ -30,6 +28,7 @@ from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
+from dask.distributed import performance_report
 
 """
 Script to run single target prep + docking.
@@ -600,6 +599,7 @@ def main():
         if args.dask:
             logger.info("Running MD with Dask")
             with performance_report(filename="dask-md-perf-report.html"):
+
                 @dask.delayed
                 def dask_adaptor(pose, protein_path, logger, output_path):
                     simulator = VanillaMDSimulator(
