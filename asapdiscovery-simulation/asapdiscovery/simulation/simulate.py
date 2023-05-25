@@ -18,7 +18,7 @@ from rdkit import Chem
 class VanillaMDSimulator:
     def __init__(
         self,
-        ligand_paths: List[Path],
+        ligand_paths: list[Path],
         protein_path: Path,
         temperature: float = 300,
         pressure: float = 1,
@@ -27,7 +27,7 @@ class VanillaMDSimulator:
         equilibration_steps: int = 5000,
         reporting_interval: int = 1250,
         num_steps: int = 2500000,
-        output_paths: List[Path] = None,
+        output_paths: list[Path] = None,
         logger: FileLogger = None,
         openmm_logname: str = "openmm_log.tsv",
         debug: bool = False,
