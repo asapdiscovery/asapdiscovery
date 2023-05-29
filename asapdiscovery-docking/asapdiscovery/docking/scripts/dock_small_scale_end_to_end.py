@@ -28,7 +28,6 @@ from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
-from dask.distributed import performance_report
 
 """
 Script to run single target prep + docking.
