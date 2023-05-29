@@ -1,6 +1,6 @@
-from dask import delayed 
+from dask import delayed
 
-# inputs to the delayed functions are 
+# inputs to the delayed functions are
 # probably length 1 lists of the objects
 
 @delayed
@@ -22,12 +22,12 @@ def docking_wf(docking_inputs: List[DockingInput]):
 
    docker: Docker_OE = Docker_OE(docking_inputs)
    docking_results: List[DockingResults] = docker.dock_all()
-   
+
    return docking_results
 
 
 
-# main 
+# main
 
 def main():
     ligand_fr = FileReader(ligand_fn, type="ligand", format='sdf')

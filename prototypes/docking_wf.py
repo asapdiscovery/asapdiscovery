@@ -1,9 +1,9 @@
-from dask import delayed 
+from dask import delayed
 
-    
+
 @delayed
 def docking_wf(ligand, target, ..):
-    # all these lists have length 1 in this case 
+    # all these lists have length 1 in this case
 
     lp: LigandPrepper = LigandPrepper(ligand)
     prepped_ligand: List[Ligand] = lp.prep_all()
@@ -20,7 +20,7 @@ def docking_wf(ligand, target, ..):
     return docking_results
 
 
-# main 
+# main
 
 def main():
     ligand_fr = FileReader(ligand_fn, type="ligand", format='sdf')
@@ -54,6 +54,3 @@ docking_inputs: List[DockingInput] = ligand_selector.select()
 
 docker: Docker_OE = Docker_OE(docking_inputs)
 docking_results: List[DockingResults] = docker.dock_all()
-
-
-
