@@ -3,7 +3,7 @@ from typing import List, Optional, Union  # noqa: F401
 
 from rdkit import Chem
 
-from .html_blocks import (
+from ._html_blocks import (
     colour_7ene,
     colour_mers,
     colour_sars2,
@@ -28,38 +28,63 @@ class HTMLVisualiser:
     allowed_targets = ("sars2", "mers", "7ene", "272")
 
     # TODO: replace input with a schema rather than paths.
-    # TODO: add logging
     def __init__(
-        self, poses: list[Path], paths: list[Path], target: str, protein: Path
+        self,
+        poses: list[Path],
+        output_paths: list[Path],
+        target: str,
+        protein: Path,
+        logger: FileLogger = None,
+        debug: bool = False,
     ):
         """
         Parameters
         ----------
         poses : List[Path]
-            List of poses to visualise.
-        paths : List[Path]
+            List of poses to visualise, in SDF format.
+        output_paths : List[Path]
             List of paths to write the visualisations to.
         target : str
             Target to visualise poses for. Must be one of: "sars2", "mers", "7ene", "272".
+        logger : FileLogger
+            Logger to use
 
         """
-        if not len(poses) == len(paths):
+        if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")
 
-        self.poses = []
-        self.paths = []
-        for pose, path in zip(poses, paths):
-            if pose and Path(pose).exists():
-                self.poses.append(_load_first_molecule(pose))
-                self.paths.append(path)
-            else:
-                # log this
-                pass
+        # init loggers
+        if logger is None:
+            self.logger = FileLogger(
+                "gif_visualiser_log.txt", "./", stdout=True, level=logging.INFO
+            ).getLogger()
+        else:
+            self.logger = logger
 
         if target not in self.allowed_targets:
             raise ValueError(f"Target must be one of: {self.allowed_targets}")
         self.target = target
+        self.logger.info(f"Visualising poses for {self.target}")
+
+        self.poses = []
+        self.output_paths = []
+        # make sure all paths exist, otherwise skip
+        for pose, path in zip(poses, output_paths):
+            if pose and Path(pose).exists():
+                self.poses.append(_load_first_molecule(pose))
+                self.output_paths.append(path)
+            else:
+                self.logger.warning(f"Pose {pose} does not exist, skipping.")
+
         self.protein = Chem.MolFromPDBFile(str(protein))
+
+        if self.debug:
+            self.logger.SetLevel(logging.DEBUG)
+            self.logger.debug("Running in debug mode")
+        self.logger.debug(
+            f"Writing HTML visualisations for {len(self.output_paths)} ligands"
+        )
+        self.logger.debug(f"Writing to  {self.output_paths}")
 
     @staticmethod
     def write_html(html, path):
@@ -80,7 +105,7 @@ class HTMLVisualiser:
         """
         Write HTML visualisations for all poses.
         """
-        for pose, path in zip(self.poses, self.paths):
+        for pose, path in zip(self.poses, self.output_paths):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
             self.write_pose_visualisation(pose, path)
