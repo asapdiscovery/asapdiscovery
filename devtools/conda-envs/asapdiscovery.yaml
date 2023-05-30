@@ -62,9 +62,9 @@ dependencies:
   - dask-jobqueue
 
   # viz
-  - gifsicle
   - imageio
   - pymol-open-source
+  - gifsicle
 
 
   # Pip-only installs

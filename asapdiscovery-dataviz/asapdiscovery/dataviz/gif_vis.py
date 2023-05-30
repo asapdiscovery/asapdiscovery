@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from pymol import cmd
 from typing import List, Optional, Union
+
 from asapdiscovery.data.logging import FileLogger
 
 from ._gif_blocks import (
@@ -130,7 +133,6 @@ class GIFVisualiser:
         self.logger.debug(
             f"Writing GIF visualisations for {len(self.output_paths)} ligands"
         )
-        self.logger.debug(f"Writing to  {self.output_paths}")
 
     def write_traj_visualisations(self):
         """
@@ -141,12 +143,15 @@ class GIFVisualiser:
         ):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
-            self.write_traj_visualisation(traj, path)
+            self.write_traj_visualisation(traj, system, path)
 
     def write_traj_visualisation(self, traj, system, path):
         """
         Write GIF visualisation for a single trajectory.
         """
+        parent_path = (
+            path.parent
+        )  # use parent so we can write the pse files to the same directory
         complex_name = "complex"
         cmd.load(str(system), object=complex_name)
 
@@ -154,7 +159,7 @@ class GIFVisualiser:
             self.logger.info(
                 f"Writing PyMol ensemble to session_1_loaded_system.pse..."
             )
-            cmd.save(str(path / "session_1_loaded_system.pse"))
+            cmd.save(str(parent_path / "session_1_loaded_system.pse"))
 
         # now select the residues, name them and color them.
         for subpocket_name, residues in self.pocket_dict.items():
@@ -170,7 +175,7 @@ class GIFVisualiser:
             self.logger.info(
                 "Writing PyMol ensemble to session_2_colored_subpockets.pse"
             )
-            cmd.save(str(path / "session_2_colored_subpockets.pse"))
+            cmd.save(str(parent_path / "session_2_colored_subpockets.pse"))
 
         # Select ligand and receptor
         cmd.select("ligand", "resn UNK")
@@ -204,12 +209,12 @@ class GIFVisualiser:
 
         cmd.set_view(self.view_coords)
         if self.pse or self.pse_share:
-            cmd.save(str(path / "session_3_set_ligand_view.pse"))
+            cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
         ## load trajectory; center the system in the simulation and smoothen between frames.
-        cmd.load_traj(f"{traj}", object=complex_name, start=1, interval=self.interval)
+        cmd.load_traj(str(traj), object=complex_name, start=1, interval=self.interval)
         if self.pse:
-            cmd.save(str(path / "session_4_loaded_trajectory.pse"))
+            cmd.save(str(parent_path / "session_4_loaded_trajectory.pse"))
 
         self.logger.info("Intrafitting simulation...")
         cmd.intra_fit("binding_site")
@@ -220,14 +225,12 @@ class GIFVisualiser:
         cmd.zoom("resn UNK", buffer=1)  # zoom to ligand
 
         if self.contacts:
-            from show_contacts import show_contacts
-
             self.logger.info("Showing contacts...")
             show_contacts("ligand", "receptor")
 
         if self.pse:
             self.logger.info(f"Writing PyMol ensemble to session_5_intrafitted.pse...")
-            cmd.save(str(path / "session_5_intrafitted.pse"))
+            cmd.save(str(parent_path / "session_5_intrafitted.pse"))
 
         # Process the trajectory in a temporary directory
         import tempfile
@@ -244,7 +247,7 @@ class GIFVisualiser:
             cmd.set("defer_builds_mode", 1)  # this saves memory for large trajectories
             cmd.set("cache_frames", 0)
             cmd.set(
-                "max_threads", 4
+                "max_threads", 1
             )  # limit to 4 threads to prevent PyMOL from oversubscribing
             cmd.mclear()  # clears cache
             prefix = f"{tmpdirname}/frame"
@@ -271,11 +274,11 @@ class GIFVisualiser:
             png_files = png_files[
                 -100:
             ]  # take only last .5ns of trajectory to get nicely equilibrated pose.
-            with iio.get_writer(path, mode="I") as writer:
+            with iio.get_writer(str(path), mode="I") as writer:
                 for filename in png_files:
                     image = iio.imread(filename)
                     writer.append_data(image)
 
             # now compress the GIF with the method that imagio recommends (https://imageio.readthedocs.io/en/stable/examples.html).
             self.logger.info("Compressing animated gif...")
-            optimize(path)  # this is in-place.
+            optimize(str(path))  # this is in-place.

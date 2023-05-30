@@ -22,6 +22,7 @@ from asapdiscovery.data.utils import (
     oe_load_exp_from_file,
 )
 from asapdiscovery.dataviz.html_vis import HTMLVisualiser
+from asapdiscovery.dataviz.gif_vis import GIFVisualiser
 from asapdiscovery.docking import make_docking_result_dataframe
 from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
@@ -662,6 +663,37 @@ def main():
             simulator.run_all_simulations()
 
         logger.info(f"Finished MD at {datetime.now().isoformat()}")
+
+        logger.info("making GIF visualisations")
+
+        gif_dir = output_dir / "gif"
+        gif_dir.mkdir(parents=True, exist_ok=True)
+        intermediate_files.append(gif_dir)
+
+        top_posit["outpath_md_sys"] = top_posit["outpath_md"].apply(
+            lambda x: Path(x) / "minimized.pdb"
+        )
+
+        top_posit["outpath_md_traj"] = top_posit["outpath_md"].apply(
+            lambda x: Path(x) / "traj.xtc"
+        )
+
+        top_posit["outpath_gif"] = top_posit["ligand_id"].apply(
+            lambda x: gif_dir / Path(x) / "trajectory.gif"
+        )
+
+        gif_visualiser = GIFVisualiser(
+            top_posit["outpath_md_traj"],
+            top_posit["outpath_md_sys"],
+            top_posit["outpath_gif"],
+            args.target,
+            smooth=5,
+            logger=logger,
+            pse=True,
+        )
+        gif_visualiser.write_traj_visualisations()
+
+        del gif_visualiser
 
     if args.cleanup:
         if len(intermediate_files) > 0:

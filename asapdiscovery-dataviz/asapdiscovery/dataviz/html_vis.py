@@ -88,7 +88,6 @@ class HTMLVisualiser:
         self.logger.debug(
             f"Writing HTML visualisations for {len(self.output_paths)} ligands"
         )
-        self.logger.debug(f"Writing to  {self.output_paths}")
 
     @staticmethod
     def write_html(html, path):
