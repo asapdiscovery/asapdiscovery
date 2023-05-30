@@ -1,0 +1,804 @@
+,crystal_name,RealCrystalName,smiles,new_smiles,alternate_name,site_name,pdb_entry
+1,Mpro-x11271_0A,Mpro-x11271,COC=1C=C(Cl)C=C(CC(=O)NC=2C=NC=CC2C)C1,nan,MAT-POS-c9973a83-1,Aminopyridine-like,nan
+2,Mpro-x11041_0A,Mpro-x11041,CN(C(=O)CC=1C=CC=C(Cl)C1)C=2C=NC=CC2C,nan,JAN-GHE-83b26c96-15,Aminopyridine-like,nan
+3,Mpro-x1002_0A,Mpro-x1002,OC=1C=CC=CN1,nan,AAR-POS-0daf6b7e-37,XChem Screen - xtal contact,5RF4
+4,Mpro-x10155_0A,Mpro-x10155,CC(N1CCN(Cc2cnc(Cc3ccccc3)s2)CC1)=O,CC(N1CCN(Cc2cnc(Cc3ccccc3)s2)CC1)=O,MED-COV-4280ac29-25,Chloroacetamide,nan
+5,Mpro-x1101_1A,Mpro-x1101,CC(C)N(C)C=1N=CN=C2N(C)N=CC12,nan,AAR-POS-0daf6b7e-40,XChem Screen - xtal contact,5RGR
+6,Mpro-x1187_0A,Mpro-x1187,CN1C=CC(=N1)C(=O)NC[C@@H]2CCCO2,nan,AAR-POS-0daf6b7e-23,XChem screen - dimer interface,5RFA
+7,Mpro-x10338_0A,Mpro-x10338,OCC=1C=CN=CC1NC(=O)C2COC=3C=CC(Cl)=CC23,nan,JAG-UCB-a3ef7265-3,Aminopyridine-like,nan
+8,Mpro-x11894_0A,Mpro-x11894,O=CC(NC(=O)C1=CC=CS1)=CC1=CC=C(S1)N1CCOCC1,O=CC(NC(=O)C1=CC=CS1)=CC1=CC=C(S1)N1CCOCC1,MAT-POS-fa06b69f-6,Moonshot - other active site,
+9,Mpro-x1425_0A,Mpro-x1425,COc1ccc(cc1)N2CCN(CC2)C(=O)C,COc1ccc(cc1)N2CCN(CC2)C(=O)C,AAR-POS-0daf6b7e-18,Chloroacetamide,5RFX
+10,Mpro-x0354_0A,Mpro-x0354,CN1CCN(CC1)C(=O)COC=2C=CC(C)=CC2,nan,AAR-POS-d2a4d1df-6,XChem Screen - active site,5RE9
+11,Mpro-x3117_0A,Mpro-x3117,CCC(N(C(C(NC1CCOCC1)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,CCC(N(C(C(NC1CCOCC1)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,LON-WEI-adc59df6-39,Ugi,5RL3
+12,Mpro-x0708_0A,Mpro-x0708,CC(=O)NNC(=O)c1cc2CCCCc2s1,CC(=O)NNC(=O)c1cc2CCCCc2s1,AAR-POS-d2a4d1df-26,Chloroacetamide,5RGM
+13,Mpro-x0774_0A,Mpro-x0774,CC(=O)N1CCN(CC1)S(=O)(=O)c2ccccc2C#N,CC(=O)N1CCN(CC1)S(=O)(=O)c2ccccc2C#N,AAR-POS-d2a4d1df-37,Chloroacetamide,5REU
+14,Mpro-x0426_0A,Mpro-x0426,FC=1C=CC=CC1C(=O)NCCC=2C=CN=CC2,nan,AAR-POS-d2a4d1df-10,XChem Screen - active site,5RGK
+15,Mpro-x10555_0A,Mpro-x10555,CC=1C=CN=CC1NC(=O)C2CCC32CCC3,nan,MAT-POS-590ac91e-22,Aminopyridine-like,nan
+16,Mpro-x10679_0A,Mpro-x10679,CC=1C=CN=CC1NC(=O)CN2C=CC=3C=CC(Cl)=CC23,nan,BAR-COM-0f94fc3d-41,Aminopyridine-like,nan
+17,Mpro-x10566_0A,Mpro-x10566,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(C2)C3CC3,nan,ALP-POS-95b75b4d-4,Aminopyridine-like,nan
+18,Mpro-x1132_0A,Mpro-x1132,CC1CN(CCO1)C(=O)CN2C=CC=N2,nan,AAR-POS-0daf6b7e-38,XChem Screen - xtal contact,5RF9
+19,Mpro-x10959_0A,Mpro-x10959,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,ADA-UCB-6c2cb422-1,Isoquinoline,nan
+20,Mpro-x1308_0A,Mpro-x1308,CC(=O)N1CCN(CC1)S(=O)(=O)c2ccc(Cl)cc2,CC(=O)N1CCN(CC1)S(=O)(=O)c2ccc(Cl)cc2,AAR-POS-d2a4d1df-44,Chloroacetamide,5RFF
+21,Mpro-x10889_0A,Mpro-x10889,CS(=O)(=O)NCCC(C(=O)NC=1C=CC=NC1)C=2C=CC=CC2,nan,ADA-UNI-f8e79267-2,Aminopyridine-like,nan
+22,Mpro-x0104_0A,Mpro-x0104,CC(=O)NCCC1=CNC=2C=CC(F)=CC12,nan,AAR-POS-d2a4d1df-2,XChem Screen - active site,5R7Z
+23,Mpro-x0887_0A,Mpro-x0887,OCC1(C2=NC=CC=C2)CCCC1,nan,AAR-POS-0daf6b7e-22,XChem screen - dimer interface,5RF0
+24,Mpro-x11809_0A,Mpro-x11809,CC=1C=CN=CC1NC(=O)[C@@H]2CCOC=3C=CC(Cl)=CC23,nan,MAT-POS-b3e365b9-4,Aminopyridine-like,nan
+25,Mpro-x11001_0A,Mpro-x11001,NS(=O)(=O)C1=CC2=C(NC(=O)C2O)C=C1,NS(=O)(=O)C1=CC2=C(NC(=O)C2O)C=C1,LOR-NEU-c8f11034-6,Isatin,nan
+26,Mpro-x2754_0A,Mpro-x2754,CN(C(=O)C1CCN(CC1)C(C)=O)C1=CC=CC=C1,CN(C(=O)C1CCN(CC1)C(C)=O)C1=CC=CC=C1,LON-WEI-120e5cf5-5,Chloroacetamide,5RHF
+27,Mpro-x11541_0A,Mpro-x11541,CC(=O)N1CCN(CC(=O)NC=2C=NC=C3C=CC=CC23)CC1,nan,ALP-POS-6747fa38-1,Isoquinoline,nan
+28,Mpro-x0434_0A,Mpro-x0434,O=C(NC=1C=CC=CC1)NC=2C=CC=NC2,nan,AAR-POS-d2a4d1df-11,Aminopyridine-like,5R83
+29,Mpro-x3324_0A,Mpro-x3324,CC(=O)NC(CO)C1=CC(Cl)=CC=C1,CC(=O)NC(CO)C1=CC(Cl)=CC=C1,DAV-CRI-3edb475e-4,Chloroacetamide,nan
+30,Mpro-x0464_0A,Mpro-x0464,CC1C(O)CCCN1CC=2C=CC=CC2,nan,MAK-UNK-6435e6c2-9,XChem screen - surface,5REE
+31,Mpro-x3124_0A,Mpro-x3124,CCC(N(C(C(NC)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,CCC(N(C(C(NC)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,LON-WEI-adc59df6-3,Ugi,5RL4
+32,Mpro-x10789_0A,Mpro-x10789,CC=1C=CN=CC1NC(=O)CC=2C=C(Cl)C=C(OC3CC(=O)N3)C2,nan,TRY-UNI-2eddb1ff-7,Aminopyridine-like,nan
+33,Mpro-x0771_0A,Mpro-x0771,CC(=O)N1CCN(CC1)S(=O)(=O)c1ccc(C)cc1C,CC(=O)N1CCN(CC1)S(=O)(=O)c1ccc(C)cc1C,AAR-POS-d2a4d1df-36,Chloroacetamide,5RGP
+34,Mpro-x11317_0A,Mpro-x11317,CC=1C(N)=CN=CC1NC(=O)CC=2C=CC=C(Cl)C2,nan,TRY-UNI-714a760b-3,Aminopyridine-like,nan
+35,Mpro-x11612_0A,Mpro-x11612,O=C(Nc1cncc2ccccc12)[C@@H]1CCOc2ccc(Cl)cc21,nan,MAT-POS-b3e365b9-1,Isoquinoline,nan
+36,Mpro-x10236_0A,Mpro-x10236,ClC=1C=CC=C(C1)N(CCC2CCCCC2)C(=O)NC=3C=CC=NC3,nan,JOR-UNI-2fc98d0b-12,Aminopyridine-like,nan
+37,Mpro-x10403_0A,Mpro-x10403,O=C(NCCNC=1C=CC=CC1)C2=CC(=O)NC=3C=CC=CC23,nan,BEN-DND-7e92b6ca-4,Quinolone,nan
+38,Mpro-x1375_0A,Mpro-x1375,Fc1ccc(cc1)N(C2CS(=O)(=O)C=C2)C(=O)C,Fc1ccc(cc1)N(C2CS(=O)(=O)C=C2)C(=O)C,AAR-POS-0daf6b7e-8,Chloroacetamide,5RFN
+39,Mpro-x10610_0A,Mpro-x10610,CC=1C=CN=CC1NC(=O)C2(CCOC2)C#N,nan,MAT-POS-590ac91e-27,Aminopyridine-like,nan
+40,Mpro-x11723_0A,Mpro-x11723,CC1=NOC(COC=2C=C(Cl)C=C(CC(=O)NC=3C=NC=CC3C)C2)=N1,nan,CHO-MSK-6e55470f-5,Aminopyridine-like,nan
+41,Mpro-x10899_0A,Mpro-x10899,ClCC(=O)NC1=NC=2C(=CC=CC2S1)S(=O)(=O)NCCC=3C=CC=CC3,CC(=O)NC1=NC=2C(=CC=CC2S1)S(=O)(=O)NCCC=3C=CC=CC3,DUN-NEW-f8ce3686-23,Chloroacetamide,nan
+42,Mpro-x11044_0A,Mpro-x11044,CC(C1CCCCC1)C(=O)NC=2C=NC=CC2C,nan,TRY-UNI-714a760b-16,Aminopyridine-like,nan
+43,Mpro-x1392_0A,Mpro-x1392,CC(=O)N1CC(c2ccccc2)c3ccccc3C1,CC(=O)N1CC(c2ccccc2)c3ccccc3C1,AAR-POS-0daf6b7e-14,Chloroacetamide,5RFT
+44,Mpro-x10942_0A,Mpro-x10942,OCC=1C=CN=CC1NC(=O)C2CCOC=3C=CC(Cl)=CC23,nan,LON-WEI-0a73fcb8-7,Aminopyridine-like,nan
+45,Mpro-x11458_0A,Mpro-x11458,O=C(CC=1C=CC=C(C#C)C1)NC=2C=NC=C3C=CC=CC23,nan,PET-UNK-c9c1e0d8-2,Isoquinoline,nan
+46,Mpro-x11473_0A,Mpro-x11473,CN1C=NC=C1NC(=O)CC=2C=CC=C(Cl)C2,nan,PET-UNK-8df914d1-4,Aminopyridine-like,nan
+47,Mpro-x0195_0A,Mpro-x0195,CN1CCCC=2C=CC(=CC12)S(=O)(=O)N,nan,AAR-POS-d2a4d1df-4,XChem Screen - active site,5R81
+48,Mpro-x0669_0A,Mpro-x0669,ClC=1C=CC=C(CN2CCOCC2)C1,nan,AAR-POS-0daf6b7e-29,XChem screen - surface,5REI
+49,Mpro-x2912_0A,Mpro-x2912,CC(C(=O)NC=1C=NC=CC1C)C=2C=CC=C(C#N)C2,nan,TRY-UNI-714a760b-22,Aminopyridine-like,nan
+50,Mpro-x0107_0A,Mpro-x0107,CC(=O)NC=1C=NC=CC1C,nan,MAK-UNK-6435e6c2-8,Aminopyridine-like,5RE4
+51,Mpro-x10513_0A,Mpro-x10513,CC=1C=CC=C(C1)C2CN(CC=3C=CC=CC23)C(=O)CCl,CC=1C=CC=C(C1)C2CN(CC=3C=CC=CC23)C(=O)C,NIR-THE-c331be7a-6,Chloroacetamide,nan
+52,Mpro-x2097_0A,Mpro-x2097,N=CC1=NC=CC=N1,N=CC1=NC=CC=N1,AAR-POS-f650c5f2-3,XChem Screen - Covalent hits,5RHB
+53,Mpro-x2659_0A,Mpro-x2659,CC(C(=O)O)C=1C=CC2=C(C1)NC=3C=CC(Cl)=CC32,,MAK-UNK-0d6072ac-4,Moonshot - allosteric,
+54,Mpro-x1086_0A,Mpro-x1086,CC=1C=C(F)C=CC1CS(=O)(=O)N,nan,AAR-POS-0daf6b7e-46,XChem screen - dimer interface,5RGQ
+55,Mpro-x11233_0A,Mpro-x11233,CC1(CCOC=2C=CC=CC21)C(=O)NC3=NN=CN3C4CC4,nan,BRU-THA-a358fbdd-2,Aminopyridine-like,nan
+56,Mpro-x10355_0A,Mpro-x10355,COC=1C=CC=CC1OCCNC(=O)C2=CC(=O)NC=3C=C(F)C=CC23,nan,MAT-POS-590ac91e-32,Quinolone,nan
+57,Mpro-x10334_0A,Mpro-x10334,CC=1C=CN=C(C)C1NC(=O)CC=2C=CC=C(Cl)C2,nan,EDJ-MED-49816e9b-2,Aminopyridine-like,nan
+58,Mpro-x12073_0A,Mpro-x12073,C[C@@H]1COC2=C(C=C(Cl)C=C2)[C@@H]1C(=O)NC1=C2C=CC=CC2=CN=C1,nan,MAT-POS-8a69d52e-7,Isoquinoline,nan
+59,Mpro-x10889_1A,Mpro-x10889,CS(=O)(=O)NCCC(C(=O)NC=1C=CC=NC1)C=2C=CC=CC2,nan,ADA-UNI-f8e79267-2,Aminopyridine-like,nan
+60,Mpro-x1348_0A,Mpro-x1348,COc1cccc2sc(NC(=O)C)nc12,COc1cccc2sc(NC(=O)C)nc12,AAR-POS-0daf6b7e-4,Chloroacetamide,5RFJ
+61,Mpro-x0820_0A,Mpro-x0820,CC(NC(=O)C)c1cccc2ccccc12,CC(NC(=O)C)c1cccc2ccccc12,AAR-POS-d2a4d1df-39,Chloroacetamide,5REW
+62,Mpro-x1412_0A,Mpro-x1412,CC(=O)N1CCN(CC1)C(=O)c2cccs2,CC(=O)N1CCN(CC1)C(=O)c2cccs2,AAR-POS-0daf6b7e-16,Chloroacetamide,5RFV
+63,Mpro-x1374_0A,Mpro-x1374,Cc1ccc(cc1)N(C2CS(=O)(=O)C=C2)C(=O)C,Cc1ccc(cc1)N(C2CS(=O)(=O)C=C2)C(=O)C,AAR-POS-0daf6b7e-7,Chloroacetamide,5RFM
+64,Mpro-x0769_0A,Mpro-x0769,Fc1ccccc1S(=O)(=O)N2CCN(CC2)C(=O)C,Fc1ccccc1S(=O)(=O)N2CCN(CC2)C(=O)C,AAR-POS-d2a4d1df-34,Chloroacetamide,5RES
+65,Mpro-x11186_0A,Mpro-x11186,ClC=1C=CC=2OCC(C(=O)NC3=NN=CN3C4CC4)C2C1,nan,NAU-LAT-8502cac5-2,Aminopyridine-like,nan
+66,Mpro-x10638_0A,Mpro-x10638,CC=1C=CN=CC1NC(=O)CN2C(=O)COC=3C=CC(Cl)=CC23,nan,BAR-COM-0f94fc3d-48,Aminopyridine-like,nan
+67,Mpro-x0736_0A,Mpro-x0736,CC(=O)N1CCN(CC1)C(=O)c1ccco1,CC(=O)N1CCN(CC1)C(=O)c1ccco1,AAR-POS-d2a4d1df-29,Chloroacetamide,5RGO
+68,Mpro-x10377_0A,Mpro-x10377,CC(C(=O)NC=1C=NC=CC1N2C=CC=N2)C=3C=CC=C(Cl)C3,nan,JAN-GHE-83b26c96-3,Aminopyridine-like,nan
+69,Mpro-x10049_0A,Mpro-x10049,CS(=O)(=O)NCCN1CCCC=2C=CC(=CC12)S(=O)(=O)N,,DUN-NEW-f8ce3686-14,Moonshot - other active site,
+70,Mpro-x11258_0A,Mpro-x11258,CCOC1=C(CN2C(=O)C(O)C3=C2C=CC(Br)=C3)C=CC=C1,CCOC1=C(CN2C(=O)C(O)C3=C2C=CC(Br)=C3)C=CC=C1,LOR-NOR-30067bb9-6,Isatin,nan
+71,Mpro-x0398_0A,Mpro-x0398,C(CN1CCOCC1)SC=2C=CC=CC2,nan,AAR-POS-0daf6b7e-28,XChem screen - surface,5RED
+72,Mpro-x0691_0A,Mpro-x0691,Fc1cccc(c1)S(=O)(=O)N2CCN(CC2)C(=O)C,Fc1cccc(c1)S(=O)(=O)N2CCN(CC2)C(=O)C,LON-WEI-8f408cad-4,Chloroacetamide,5REK
+73,Mpro-x0770_0A,Mpro-x0770,CC(=O)N1CCN(Cc2cccc(Cl)c2)CC1,CC(=O)N1CCN(Cc2cccc(Cl)c2)CC1,MED-COV-4280ac29-15,Chloroacetamide,5RET
+74,Mpro-x1418_0A,Mpro-x1418,CC(=O)N1CCN(Cc2cccs2)CC1,CC(=O)N1CCN(Cc2cccs2)CC1,LON-WEI-8f408cad-5,Chloroacetamide,5RFW
+75,Mpro-x11485_0A,Mpro-x11485,CC=1C=CN=NC1NC(=O)CC=2C=CC=C(Cl)C2,nan,EDG-MED-0da5ad92-15,Aminopyridine-like,nan
+76,Mpro-x11801_0A,Mpro-x11801,CC(=O)NCC=1C=C(Cl)C=C(CC(=O)NC=2C=NC=CC2C)C1,nan,RAL-THA-6b94ceba-5,Aminopyridine-like,nan
+77,Mpro-x0350_0A,Mpro-x0350,FC=1C=CC=C(CNCC2=CC=CO2)C1,nan,AAR-POS-0daf6b7e-36,XChem Screen - xtal contact,5RE8
+78,Mpro-x11346_0A,Mpro-x11346,CC=1C=C(C)C=C(CC(=O)NC2=NN=CN2C)C1,nan,JAG-UCB-a3ef7265-18,Aminopyridine-like,nan
+79,Mpro-x0376_0A,Mpro-x0376,O=C(N1CCCCCC1)C=2C=CC=3OCOC3C2,nan,AAR-POS-0daf6b7e-43,XChem Screen - xtal contact,5REA
+80,Mpro-x0478_0A,Mpro-x0478,COC(=O)C=1C=CC=C(NS(=O)(=O)C)C1,nan,MAK-UNK-6435e6c2-7,XChem Screen - xtal contact,5REF
+81,Mpro-x12025_0A,Mpro-x12025,COC=1C=CC=CC1NC2CN(C2)C(=O)C3=CC(=O)NC=4C=CC=CC34,nan,ERI-UCB-a0b0dbcb-8,Quinolone,nan
+82,Mpro-x10306_0A,Mpro-x10306,CC(C)CC1CN(CCN1CC=2C=CC=C(Cl)C2)C(=O)CCl,CC(C)CC1CN(CCN1CC=2C=CC=C(Cl)C2)C(=O)C,DAN-LON-a5fc619e-3,Chloroacetamide,nan
+83,Mpro-x1101_0A,Mpro-x1101,CC(C)N(C)C=1N=CN=C2N(C)N=CC12,nan,AAR-POS-0daf6b7e-40,XChem Screen - xtal contact,5RGR
+84,Mpro-x1311_0A,Mpro-x1311,CC(=O)N(C1CS(=O)(=O)C=C1)c2ccccc2,CC(=O)N(C1CS(=O)(=O)C=C1)c2ccccc2,AAR-POS-0daf6b7e-1,Chloroacetamide,5RFG
+85,Mpro-x1237_0A,Mpro-x1237,CS(=O)(=O)CC1=NC=2C=CC=CC2N1,nan,AAR-POS-0daf6b7e-39,XChem Screen - xtal contact,5RFD
+86,Mpro-x2929_0A,Mpro-x2929,NC(=O)[C@@H]1CN(Cc2cccnc2)C[C@H]1c1ccccc1,,DUN-NEW-d8381160-1,Moonshot - allosteric,
+87,Mpro-x11562_0A,Mpro-x11562,CCCCOC=1C=CC(Cl)=CC1CC(=O)NC=2C=NC=CC2C,nan,EDG-MED-0da5ad92-7,Aminopyridine-like,nan
+88,Mpro-x1384_0A,Mpro-x1384,CC(=O)Nc1cccc(c1)N2CCCC2=O,CC(=O)Nc1cccc(c1)N2CCCC2=O,LON-WEI-8f408cad-1,Chloroacetamide,5RFQ
+89,Mpro-x0678_0A,Mpro-x0678,O=C(CC1CCCCC1)NC=2C=CC=NC2,nan,ALE-HEI-f28a35b5-9,Aminopyridine-like,5R84
+90,Mpro-x10506_0A,Mpro-x10506,CC(=O)NCCC1=CNC=2C(CN3CCN(CC3)C(=O)CCl)=CC=CC12,CC(=O)NCCC1=CNC2=C1C=CC=C2CN1CCN(CC1)C(C)=O,DUN-NEW-f8ce3686-24,Chloroacetamide,nan
+91,Mpro-x10019_0A,Mpro-x10019,CC=1C=CN=CC1NC(=O)CNC=2C=CN=C3C=CC=CC23,nan,GAB-REV-70cc3ca5-4,Aminopyridine-like,nan
+92,Mpro-x10324_0A,Mpro-x10324,ClC=1C=CC=2OCCC(C(=O)NC3=NN=CN3C4CC4)C2C1,nan,JAG-UCB-a3ef7265-20,Aminopyridine-like,nan
+93,Mpro-x2705_0A,Mpro-x2705,CCC(=O)N(C(C(=O)NC1=C(CC)C=CC=C1C)C1=CN=CC=C1)C1=CC(=NN1)C(C)(C)C,CCC(=O)N(C(C(=O)NC1=C(CC)C=CC=C1C)C1=CN=CC=C1)C1=CC(=NN1)C(C)(C)C,LON-WEI-b8d98729-20,Ugi,5RH7
+94,Mpro-x2569_0A,Mpro-x2569,O=C(CC=1C=NC=C(C#N)C1)NC=2C=CC=NC2,nan,DAR-DIA-23aa0b97-17,Aminopyridine-like,5RGW
+95,Mpro-x1478_0A,Mpro-x1478,CC(=O)Nc1cccnc1Cl,CC(=O)Nc1cccnc1Cl,AAR-POS-0daf6b7e-20,Chloroacetamide,5RFZ
+96,Mpro-x11366_0A,Mpro-x11366,FC=1C=CC=CC1N2CCN(CC2)C(=O)C3=CC(=O)NC=4C=CC=CC34,nan,BEN-DND-7e92b6ca-16,Quinolone,nan
+97,Mpro-x3303_0A,Mpro-x3303,O=C(N1CCN(CC1)C1=CC=CC=C1)C1=CC(=O)NC2=C1C=CC=C2,nan,MAT-POS-916a2c5a-4,Quinolone,nan
+98,Mpro-x10395_0A,Mpro-x10395,CN(C)C(C(=O)NC=1C=NC=CC1C)C=2C=CC=C(Cl)C2,nan,JAN-GHE-83b26c96-10,Aminopyridine-like,nan
+99,Mpro-x10473_0A,Mpro-x10473,CC(CC1CC1)C(=O)NC=2C=NC=CC2C,nan,MAT-POS-590ac91e-5,Aminopyridine-like,nan
+100,Mpro-x11011_0A,Mpro-x11011,CC=1C=CN=CC1CC(=O)NC=2C=CC=C(Cl)C2,nan,EDJ-MED-49816e9b-1,Aminopyridine-like,nan
+101,Mpro-x11318_0A,Mpro-x11318,CC=1C(N)=CN=CC1NC(=O)CC=2C=CC=C(C#N)C2,nan,TRY-UNI-714a760b-19,Aminopyridine-like,nan
+102,Mpro-x3366_0A,Mpro-x3366,CC=1C=CN=CC1NC(=O)CC=2C=CC=3NC=NC3C2,nan,GAB-REV-70cc3ca5-18,Aminopyridine-like,nan
+103,Mpro-x10898_0A,Mpro-x10898,ClC=1C=CC=2OCC[C@@H](C(=O)NC3=NN=CN3C4CC4)C2C1,nan,JAG-UCB-119787ef-1,Aminopyridine-like,nan
+104,Mpro-x11013_0A,Mpro-x11013,CC=1C=NN=CC1NC(=O)CC=2C=CC=C(Cl)C2,nan,EDG-MED-0da5ad92-16,Aminopyridine-like,nan
+105,Mpro-x11225_0A,Mpro-x11225,CC=1C=CN=CC1NC(=O)CC(N2CCC(O)CC2)C=3C=CSC3,nan,PET-SGC-a8a902d9-1,Aminopyridine-like,nan
+106,Mpro-x10906_0A,Mpro-x10906,ClC=1C=CC=2OCC[C@H](C(=O)NC3=NN=CN3C4CC4)C2C1,nan,MAT-POS-968e8d9c-1,Aminopyridine-like,nan
+107,Mpro-x0072_0A,Mpro-x0072,CS(=O)(=O)NCCC=1C=CC=CC1,nan,AAR-POS-d2a4d1df-1,XChem Screen - active site,5R7Y
+108,Mpro-x10565_0A,Mpro-x10565,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(I)C2,nan,JAN-GHE-83b26c96-13,Aminopyridine-like,nan
+109,Mpro-x1336_0A,Mpro-x1336,Cc1ccc(C)c(c1)S(=O)(=O)N2CCN(CC2)C(=O)C,Cc1ccc(C)c(c1)S(=O)(=O)N2CCN(CC2)C(=O)C,WAR-XCH-79d12f6e-6,Chloroacetamide,5RFI
+110,Mpro-x10476_0A,Mpro-x10476,CC=1C=CN=CC1NC(=O)C2CCC3(CC3)C2,nan,MAT-POS-590ac91e-21,Aminopyridine-like,nan
+111,Mpro-x0305_0A,Mpro-x0305,CCNC=1C=CC(C#N)=CN1,nan,AAR-POS-d2a4d1df-5,XChem Screen - active site,5R82
+112,Mpro-x2581_0A,Mpro-x2581,COC=1C=CN=C(NC(=O)CC=2C=CC=3C=CC=CC3C2)C1,nan,ALV-UNI-7ff1a6f9-47,Aminopyridine-like,5RGY
+113,Mpro-x10834_0A,Mpro-x10834,COC=1C=CN=CC1NC(=O)C(O)C=2C=CC=C(Br)C2,nan,BAR-COM-0f94fc3d-23,Aminopyridine-like,nan
+114,Mpro-x0830_0A,Mpro-x0830,CC(=O)N1CCN(Cc2cccc3ccccc23)CC1,CC(=O)N1CCN(Cc2cccc3ccccc23)CC1,MED-COV-4280ac29-31,Chloroacetamide,5REX
+115,Mpro-x10387_0A,Mpro-x10387,FC=1C=C(NC(=O)CC=2C=NC=NC2)C=C(OC3CC(=O)N3)C1,nan,RAL-MED-2de63afb-14,Aminopyridine-like,nan
+116,Mpro-x0161_0A,Mpro-x0161,COC(=O)C=1C=CC(=CC1)S(=O)(=O)N,nan,MAT-POS-7dfc56d9-1,XChem Screen - active site,5R80
+117,Mpro-x3359_0A,Mpro-x3359,CCNC(=O)C(N(C(=O)CC)C1=CC=C(C=C1)C(C)(C)C)C1=CN=CC=C1,CCNC(=O)C(N(C(=O)CC)C1=CC=C(C=C1)C(C)(C)C)C1=CN=CC=C1,LON-WEI-adc59df6-30,Ugi,5RL5
+118,Mpro-x11475_0A,Mpro-x11475,CC=1C=CN=CC1N2CCN(C2=O)C=3C=CC=C(Cl)C3,nan,JAG-UCB-cedd89ab-1,Aminopyridine-like,nan
+119,Mpro-x10645_0A,Mpro-x10645,CC(=O)NC=1C=CN=CC1NC(=O)C2CC=3C=CC(F)=CC23,nan,BAR-COM-0f94fc3d-59,Aminopyridine-like,nan
+120,Mpro-x10728_0A,Mpro-x10728,OC1CCC(CC1)N(CC2CCCCC2)C3CCCN(C3)C(=O)CCl,OC1CCC(CC1)N(CC2CCCCC2)C3CCCN(C3)C(=O)C,WAR-XCH-72a8c209-5,Chloroacetamide,nan
+121,Mpro-x0692_0A,Mpro-x0692,Cc1cccc(CN2CCN(CC2)C(=O)C)c1,Cc1cccc(CN2CCN(CC2)C(=O)C)c1,AAR-POS-d2a4d1df-24,Chloroacetamide,5REL
+122,Mpro-x10820_0A,Mpro-x10820,CNC=1C=CC(=CC1)N(CC=2C=CSC2)C(=O)CN3N=NC=4C=CC=CC34,nan,ALP-POS-c59291d4-4,Benzotriazole,nan
+123,Mpro-x1012_0A,Mpro-x1012,OC1CS(=O)(=O)C1,nan,AAR-POS-0daf6b7e-24,XChem screen - surface,5RF5
+124,Mpro-x10494_0A,Mpro-x10494,CC=1C=CN=C(N)C1NC(=O)CC=2C=CC=C(Cl)C2,nan,EDG-MED-0da5ad92-18,Aminopyridine-like,nan
+125,Mpro-x1077_0A,Mpro-x1077,N#CC=1C=CC(=CN1)N2CCCOCC2,nan,AAR-POS-d2a4d1df-19,XChem Screen - active site,5RF6
+126,Mpro-x1493_0A,Mpro-x1493,CC(=O)N1CCN(CC1)C(=O)C,CC(=O)N1CCN(CC1)C(=O)C,AAR-POS-0daf6b7e-21,Chloroacetamide,5RG0
+127,Mpro-x2764_0A,Mpro-x2764,O=C(NCC=1C=NSC1)C=2C=CC=CC2OCC#N,,BAR-COM-4e090d3a-49,Moonshot - other active site,
+128,Mpro-x10604_0A,Mpro-x10604,ClC=1C=CC=C(CC(=O)NN2C=NNC2=O)C1,nan,JAN-GHE-5a013bed-4,Aminopyridine-like,nan
+129,Mpro-x11212_0A,Mpro-x11212,OC1C(=O)N(CC2=NOC=N2)C2=C1C=C(Br)C=C2,OC1C(=O)N(CC2=NOC=N2)C2=C1C=C(Br)C=C2,LOR-NOR-30067bb9-18,Isatin,7JR4
+130,Mpro-x0499_0A,Mpro-x0499,NC(=O)C=1C=CC(NC(=O)[C@@H]2CCCO2)=CC1,nan,AAR-POS-0daf6b7e-41,XChem Screen - xtal contact,5REG
+131,Mpro-x10862_1A,Mpro-x10862,COCC(NC(=O)CC1C(=O)NC=2C=CC(F)=CC12)C=3C=CC=C(Br)C3,,BAR-COM-0f94fc3d-3,Moonshot - other active site,
+132,Mpro-x10862_0A,Mpro-x10862,COCC(NC(=O)CC1C(=O)NC=2C=CC(F)=CC12)C=3C=CC=C(Br)C3,,BAR-COM-0f94fc3d-3,Moonshot - other active site,
+133,Mpro-x10710_0A,Mpro-x10710,CC(=O)NNC(=O)C1CC2=C(CN1C(=O)CCl)C=CC=C2,CC(=O)NNC(=O)C1CC2=C(CN1C(=O)CCl)C=CC=C2,NAU-LAT-64f4b287-5,Chloroacetamide,nan
+134,Mpro-x3333_0A,Mpro-x3333,CC(=O)N(CCC(N)=O)C1CCS(=O)(=O)C1,CC(=O)N(CCC(N)=O)C1CCS(=O)(=O)C1,DAN-PUR-6788a628-2,Chloroacetamide,nan
+135,Mpro-x1358_0A,Mpro-x1358,Oc1ccccc1NC(=O)C2CCN(CC2)C(=O)C,Oc1ccccc1NC(=O)C2CCN(CC2)C(=O)C,AAR-POS-0daf6b7e-6,Chloroacetamide,5RFL
+136,Mpro-x10787_0A,Mpro-x10787,CC=1C=CN=CC1NC(=O)C2(CC(=O)C2)C=3C=CC=C(Cl)C3,nan,BAR-COM-0f94fc3d-25,Aminopyridine-like,nan
+137,Mpro-x2643_0A,Mpro-x2643,ClC1=CC=C(CC(=O)NC=2C=CC=NC2)S1,nan,DAR-DIA-842b4336-13,Aminopyridine-like,5RH1
+138,Mpro-x10976_0A,Mpro-x10976,CC=1C=NC=C(NC(=O)CC=2C=CC=C(Cl)C2)C1,nan,EDG-MED-0da5ad92-12,Aminopyridine-like,nan
+139,Mpro-x0705_0A,Mpro-x0705,CC(=O)N1CCN(CC1)C(=O)c1ccc(C)cc1,CC(=O)N1CCN(CC1)C(=O)c1ccc(C)cc1,AAR-POS-d2a4d1df-25,Chloroacetamide,5RGL
+140,Mpro-x0749_0A,Mpro-x0749,CC(=O)N1CCCC(C1)c2nc3ccccc3s2,CC(=O)N1CCCC(C1)c2nc3ccccc3s2,AAR-POS-d2a4d1df-30,Chloroacetamide,5REN
+141,Mpro-x0874_0A,Mpro-x0874,O=C([C@@H]1[C@H](C2=CSC=C2)CCC1)N,nan,AAR-POS-d2a4d1df-14,XChem Screen - active site,5REZ
+142,Mpro-x10876_0A,Mpro-x10876,CN(C)C1=CC=C(C=C1)N(CC1=CSC=C1)C(=O)CN1N=NC2=C1C=CC=C2,nan,ALP-POS-d2866bdf-1,Benzotriazole,nan
+143,Mpro-x2052_0A,Mpro-x2052,COC1=CC=C(NC(=O)C2CCN(CC2)C(C)=O)C=N1,COC1=CC=C(NC(=O)C2CCN(CC2)C(C)=O)C=N1,AAR-POS-5507155c-2,Chloroacetamide,5RHE
+144,Mpro-x2119_0A,Mpro-x2119,N=CC1=NC=CN1,N=CC1=NC=CN1,AAR-POS-f650c5f2-2,XChem Screen - Covalent hits,5RHC
+145,Mpro-x2703_0A,Mpro-x2703,CCC(=O)N(C(C(=O)NC1=C(CC)C=CC=C1C)C1=CN=CC=C1)C1=CN=C(C=C1)C(C)C,CCC(=O)N(C(C(=O)NC1=C(CC)C=CC=C1C)C1=CN=CC=C1)C1=CN=C(C=C1)C(C)C,LON-WEI-b8d98729-18,Ugi,5RH6
+146,Mpro-x3298_0A,Mpro-x3298,OC(C(=O)NC=1C=CC=CC1NS(=O)(=O)C=2C=CC(F)=CC2)C=3C=CC=NC3,nan,BAR-COM-4e090d3a-57,Aminopyridine-like,nan
+147,Mpro-x3113_0A,Mpro-x3113,CCC(N(C(C(NCCCOC)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,CCC(N(C(C(NCCCOC)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,LON-WEI-adc59df6-27,Ugi,5RL1
+148,Mpro-x3351_1A,Mpro-x3351,CNCC1=CNC=2C=CC(F)=CC12,,DAR-DIA-eace69ff-36,Moonshot - allosteric,
+149,Mpro-x10150_0A,Mpro-x10150,CC(N1CCN(CCNC(c2cccc3ccccc23)=O)CC1)=O,CC(N1CCN(CCNC(c2cccc3ccccc23)=O)CC1)=O,STE-KUL-2e0d2e88-2,Chloroacetamide,nan
+150,Mpro-x10900_0A,Mpro-x10900,CC(C(=O)NC=1C=NC=CC1C)C=2C=NC=C(Cl)C2,nan,TRY-UNI-2eddb1ff-3,Aminopyridine-like,nan
+151,Mpro-x10488_0A,Mpro-x10488,O=C(CC=1C=CC=NC1)N2CCCC2C3=NOC(=N3)C4CC4,nan,JAG-UCB-cedd89ab-4,Aminopyridine-like,nan
+152,Mpro-x10870_0A,Mpro-x10870,O=C(CN1N=NC=2C=CC=CC12)N(CC=3C=CSC3)C=4C=CC(NC(=O)C5CC5)=CC4,nan,ALP-POS-c59291d4-3,Benzotriazole,nan
+153,Mpro-x1458_0A,Mpro-x1458,CC(C)N(C)C(=O)C1CCN(CC1)C(=O)C,CC(C)N(C)C(=O)C1CCN(CC1)C(=O)C,VIR-GIT-7b3d3065-3,Chloroacetamide,5RFY
+154,Mpro-x2646_0A,Mpro-x2646,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(Cl)C2,nan,TRY-UNI-714a760b-6,Aminopyridine-like,5RH2
+155,Mpro-x10314_0A,Mpro-x10314,CC=1C=CN=CC1NC(=O)CC=2C=NC=C(C#N)C2,nan,TRY-UNI-2eddb1ff-1,Aminopyridine-like,nan
+156,Mpro-x0425_0A,Mpro-x0425,C1CC2(CCN(C2)C=3C=NC=CN3)CO1,nan,AAR-POS-0daf6b7e-27,XChem screen - surface,5RGJ
+157,Mpro-x11454_0A,Mpro-x11454,ClC=1C=CC=C(CC(=O)NC2=CN=C3C=CC=CN23)C1,nan,PET-UNK-8df914d1-2,Benzotriazole,nan
+158,Mpro-x2908_0A,Mpro-x2908,CC=1C=CN=CC1NC(=O)NC=2C=CC=C(Cl)C2,nan,TRY-UNI-714a760b-12,Aminopyridine-like,nan
+159,Mpro-x11587_0A,Mpro-x11587,CC1=CC(C(=O)CCl)=C(C)N1NC(=O)C2=NNC(=O)C=3C=CC=CC23,CC(=O)C1=C(C)N(NC(=O)C2=NNC(=O)C3=C2C=CC=C3)C(C)=C1,TAT-ENA-80bfd3e5-37,Chloroacetamide,nan
+160,Mpro-x11498_0A,Mpro-x11498,ClC=1C=CC=2OCCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,VLA-UCB-1dbca3b4-15,Isoquinoline,nan
+161,Mpro-x2694_0A,Mpro-x2694,CCC(=O)N(C(C(=O)NC1=C(C)C=C(OC)C=C1)C1=CN=CC=C1)C1=NOC(=C1)C(C)(C)C,CCC(=O)N(C(C(=O)NC1=C(C)C=C(OC)C=C1)C1=CN=CC=C1)C1=NOC(=C1)C(C)(C)C,LON-WEI-b8d98729-43,Ugi,5RH5
+162,Mpro-x1386_0A,Mpro-x1386,CC(=O)N1CCN(Cc2ccsc2)CC1,CC(=O)N1CCN(Cc2ccsc2)CC1,LON-WEI-8f408cad-7,Chloroacetamide,5RFS
+163,Mpro-x2779_0A,Mpro-x2779,CC(=O)N1CCN(CC2=CC=CS2)CC1,CC(=O)N1CCN(CC2=CC=CS2)CC1,LON-WEI-8f408cad-5,Chloroacetamide,5RHA
+164,Mpro-x0689_0A,Mpro-x0689,CC(=O)N1CCN(CC1)S(=O)(=O)c2cccs2,CC(=O)N1CCN(CC1)S(=O)(=O)c2cccs2,LON-WEI-8f408cad-3,Chloroacetamide,5REJ
+165,Mpro-x10700_0A,Mpro-x10700,COC=1C=CC=CC1OCCNC(=O)C=2C=CNC(=O)C2,nan,BEN-DND-7e92b6ca-1,Quinolone,nan
+166,Mpro-x3110_0A,Mpro-x3110,CCC(N(C(C(NCCC(OCC)=O)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,CCC(N(C(C(NCCC(OCC)=O)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,LON-WEI-adc59df6-2,Ugi,5RL0
+167,Mpro-x10888_0A,Mpro-x10888,CCC(O)(C(=O)NC=1C=NC=CC1C)C=2C=CC=C(Cl)C2,nan,BAR-COM-0f94fc3d-38,Aminopyridine-like,nan
+168,Mpro-x11642_0A,Mpro-x11642,COC=1C=CC=C(OC=2C=C(Cl)C=C(NC(=O)CC=3C=NC=C4C=CC=CC34)C2)N1,nan,MAT-POS-6344a35d-1,Isoquinoline,nan
+169,Mpro-x11493_0A,Mpro-x11493,ClC=1C=CC=C(CC(=O)NC=2N=CN3C=CC=CC23)C1,nan,EDJ-MED-50fe53e8-3,Benzotriazole,nan
+170,Mpro-x1249_0A,Mpro-x1249,O=C(NCC=1C=CC(C#N)=CC1)N2CCOCC2,nan,AAR-POS-d2a4d1df-21,XChem Screen - active site,5RFE
+171,Mpro-x2971_0A,Mpro-x2971,CS(=O)(=O)NCCC1CCCCN1CC(=O)NC=2C=CC=NC2,nan,BEN-DND-362d364a-10,Aminopyridine-like,nan
+172,Mpro-x11159_0A,Mpro-x11159,O=C(NC1=NN=CN1C2CC2)C3CCOC=4C=CC=CC34,nan,EDJ-MED-0e996074-1,Aminopyridine-like,nan
+173,Mpro-x10723_0A,Mpro-x10723,CC=1C=CN=CC1NC(=O)CC=2C=NC=C(Cl)C2,nan,TRY-UNI-2eddb1ff-2,Aminopyridine-like,nan
+174,Mpro-x10417_0A,Mpro-x10417,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(F)C2,nan,ALP-POS-95b75b4d-1,Aminopyridine-like,nan
+175,Mpro-x10801_0A,Mpro-x10801,CC=1C=CN=CC1NC(=O)CC2CC3(CC3)C2,nan,MAT-POS-590ac91e-24,Aminopyridine-like,nan
+176,Mpro-x11424_0A,Mpro-x11424,ClC=1C=CC=C(CC(=O)NC=2C=CC=C3NN=CC23)C1,nan,VLA-UCB-00f2c2b3-7,Benzotriazole,nan
+177,Mpro-x11231_0A,Mpro-x11231,ClC=1C=CC=2OCC(C(=O)NC3=NN=CN3C=4C=CC=CC4)C2C1,nan,NAU-LAT-8502cac5-6,Aminopyridine-like,nan
+178,Mpro-x0991_0A,Mpro-x0991,CCC(=N)N,CCC(=N)N,AAR-POS-d2a4d1df-17,XChem Screen - active site,5RF2
+179,Mpro-x10359_0A,Mpro-x10359,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(O)C2,nan,ALP-POS-95b75b4d-2,Aminopyridine-like,nan
+180,Mpro-x2193_0A,Mpro-x2193,CS(=O)(=O)c1ccc(cc1)N1CCNCC1,nan,AAR-POS-5507155c-1,XChem Screen - active site,5RHD
+181,Mpro-x10559_0A,Mpro-x10559,CC=1C=CN=CC1NC(=O)C2CC(C2)C3CC3,nan,MAT-POS-590ac91e-18,Aminopyridine-like,nan
+182,Mpro-x0995_0A,Mpro-x0995,NC=1C=NC=NC1,nan,AAR-POS-d2a4d1df-18,XChem Screen - active site,5RF3
+183,Mpro-x10423_0A,Mpro-x10423,CCCC(C(=O)NC=1C=NC=CC1C)C=2C=CC=C(Cl)C2,nan,JAN-GHE-83b26c96-8,Aminopyridine-like,nan
+184,Mpro-x3305_0A,Mpro-x3305,CN1C=C(CNC(=O)N(CCC=2C=CC=CC2)CC=3C=CC=NC3)N=N1,,BAR-COM-4e090d3a-47,Moonshot - other active site,
+185,Mpro-x11428_0A,Mpro-x11428,CC=1C=CN=CC1NC(=O)CN2CCCCC2,nan,BEN-DND-93268d01-11,Aminopyridine-like,nan
+186,Mpro-x2600_0A,Mpro-x2600,O=C(CC=1C=CC=C(C#N)C1)NC=2C=CC=NC2,nan,ANN-UNI-26382800-5,Aminopyridine-like,5RGZ
+187,Mpro-x2964_0A,Mpro-x2964,NC=1C=NC=C(NC(=O)NC=2C=CC=C(Cl)C2)C1,nan,DAR-DIA-23aa0b97-13,Aminopyridine-like,nan
+188,Mpro-x2563_0A,Mpro-x2563,O=C(CC=1C=NC=C2C=CC=CC12)NC=3C=CC=CC3,nan,DAR-DIA-23aa0b97-20,Isoquinoline,5RGV
+189,Mpro-x0336_0A,Mpro-x0336,CC(=O)NCC=1C=CC(=CC1)S(=O)(=O)N,nan,AAR-POS-0daf6b7e-45,XChem Screen - xtal contact,5RE7
+190,Mpro-x10172_0A,Mpro-x10172,CC(c1cc(Cl)cc(F)c1)NC(C)=O,CC(c1cc(Cl)cc(F)c1)NC(C)=O,DAV-CRI-3edb475e-6,Chloroacetamide,nan
+191,Mpro-x11208_0A,Mpro-x11208,CC1=CC(COC(=O)C2=C3NC(=O)C(O)C3=CC=C2)=CC=C1,CC1=CC(COC(=O)C2=C3NC(=O)C(O)C3=CC=C2)=CC=C1,LOR-NOR-30067bb9-2,Isatin,nan
+192,Mpro-x11432_0A,Mpro-x11432,CN(CC=1C=CC=C(Cl)C1)C(=O)CN2N=NC=3C=CC=CC23,nan,EDJ-MED-06d94977-2,Benzotriazole,nan
+193,Mpro-x10392_0A,Mpro-x10392,CC=1C=CN=CC1NC(=O)C2(CC2)C=3C=CC=C(Cl)C3,nan,JAN-GHE-83b26c96-20,Aminopyridine-like,nan
+194,Mpro-x0752_0A,Mpro-x0752,CC(=O)NCc1ccc2OCOc2c1,CC(=O)NCc1ccc2OCOc2c1,AAR-POS-d2a4d1df-31,Chloroacetamide,5REO
+195,Mpro-x1226_0A,Mpro-x1226,CCNCC1=CN(C)N=N1,nan,AAR-POS-0daf6b7e-34,XChem Screen - xtal contact,5RFB
+196,Mpro-x10247_0A,Mpro-x10247,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(C2)C(F)(F)F,nan,JAN-GHE-83b26c96-14,Aminopyridine-like,nan
+197,Mpro-x0786_0A,Mpro-x0786,CC(=O)Nc1cccc(c1)C(=O)N1CCSCC1,CC(=O)Nc1cccc(c1)C(=O)N1CCSCC1,AAR-POS-d2a4d1df-38,Chloroacetamide,5REV
+198,Mpro-x3305_1A,Mpro-x3305,CN1C=C(CNC(=O)N(CCC=2C=CC=CC2)CC=3C=CC=NC3)N=N1,,BAR-COM-4e090d3a-47,Moonshot - other active site,
+199,Mpro-x10419_0A,Mpro-x10419,COC=1C=CC=CC1OCCN(C)C(=O)C2=CC(=O)NC=3C=CC=CC23,nan,BEN-DND-7e92b6ca-2,Quinolone,nan
+200,Mpro-x0731_0A,Mpro-x0731,CC(=O)N1CCN(CC1)S(=O)(=O)c1ccc(C)cc1,CC(=O)N1CCN(CC1)S(=O)(=O)c1ccc(C)cc1,AAR-POS-d2a4d1df-27,Chloroacetamide,5RGN
+201,Mpro-x10201_0A,Mpro-x10201,ClC=1C=CC=C(CC(=O)NC=2C=CC=NC2)C1,nan,EDG-MED-0da5ad92-2,Aminopyridine-like,nan
+202,Mpro-x0390_0A,Mpro-x0390,OC=1C=CC=CC1CNC2=NC=3C=CC=CC3N2,nan,AAR-POS-0daf6b7e-25,XChem screen - surface,5REC
+203,Mpro-x10756_0A,Mpro-x10756,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(OC3CC(=O)N3)C2,nan,BRU-LEF-c49414a7-1,Aminopyridine-like,nan
+204,Mpro-x3108_0A,Mpro-x3108,CC=1C=CN=CC1NC(=O)CNC(=O)CC=2C=CC=NC2,nan,GAB-REV-70cc3ca5-13,Aminopyridine-like,nan
+205,Mpro-x1385_0A,Mpro-x1385,CC(=O)N1CCN(Cc2ccc(Br)s2)CC1,CC(=O)N1CCN(Cc2ccc(Br)s2)CC1,JOH-UNI-27ac80fd-23,Chloroacetamide,5RFR
+206,Mpro-x11368_0A,Mpro-x11368,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(Br)C2,nan,JAN-GHE-83b26c96-12,Aminopyridine-like,nan
+207,Mpro-x10022_0A,Mpro-x10022,C=C(C(=O)NC=1C=CC=CC1)C=2C=CC=NC2,nan,BEN-DND-031a96cc-8,Aminopyridine-like,nan
+208,Mpro-x10525_0A,Mpro-x10525,COC=1C=CC=CC1OC(C)CNC(=O)C2=CC(=O)NC=3C=CC(F)=CC23,nan,MAT-POS-590ac91e-39,Quinolone,nan
+209,Mpro-x10329_0A,Mpro-x10329,CCC(C(=O)NC=1C=NN=CC1C)C=2C=CC=C(Cl)C2,nan,JAN-GHE-83b26c96-1,Aminopyridine-like,nan
+210,Mpro-x0177_0A,Mpro-x0177,NC(=O)C1CCN(CC1)C(=O)NC=2C=CC=CC2,nan,AAR-POS-0daf6b7e-32,XChem Screen - xtal contact,5RE5
+211,Mpro-x3080_0A,Mpro-x3080,CN(CC(=O)NC=1C=NC=CC1C)S(=O)(=O)C=2C=CC=C3C=CC=NC23,nan,GAB-REV-70cc3ca5-8,Aminopyridine-like,nan
+212,Mpro-x10484_0A,Mpro-x10484,CC=1C=CN=CC1NC(=O)CC(C)(C)C=2C=CC=CC2,nan,BEN-DND-93268d01-13,Aminopyridine-like,nan
+213,Mpro-x11313_0A,Mpro-x11313,COC=1C=CC=CC1OCCNC(=O)C2=CC(=O)NC=3C=CC=C(C)C23,nan,EDJ-MED-6af13d92-1,Quinolone,nan
+214,Mpro-x3077_0A,Mpro-x3077,CC(=O)N1CC2CC1CN2CC1=CC(Cl)=CC=C1,CC(=O)N1CC2CC1CN2CC1=CC(Cl)=CC=C1,DAN-LON-a5fc619e-8,Chloroacetamide,nan
+215,Mpro-x10606_0A,Mpro-x10606,CC=1C=CN=CC1NS(=O)(=O)C=2C=CC=C(Cl)C2,nan,JAN-GHE-83b26c96-21,Aminopyridine-like,nan
+216,Mpro-x1093_0A,Mpro-x1093,CN1CCN(CC1)C(=O)CC1=CNC2=NC=CC=C12,nan,AAR-POS-d2a4d1df-20,XChem Screen - active site,5RF7
+217,Mpro-x2572_0A,Mpro-x2572,CC=1C=CN=CC1NC(=O)CC=2C=CC=C(C#N)C2,nan,TRY-UNI-714a760b-20,Aminopyridine-like,5RGX
+218,Mpro-x0946_0A,Mpro-x0946,BrC1=CC=C(S(N)(=O)=O)C=C1,nan,AAR-POS-d2a4d1df-15,XChem Screen - active site,5RF1
+219,Mpro-x11417_0A,Mpro-x11417,CC(=O)N1CCN(CC(=O)NC=2C=NC=CC2C)CC1,nan,BEN-DND-93268d01-8,Aminopyridine-like,nan
+220,Mpro-x11254_0A,Mpro-x11254,COC1=C(OC)C=C(CN2C(=O)C(O)C3=C2C(C)=CC(Br)=C3)C=C1,COC1=C(OC)C=C(CN2C(=O)C(O)C3=C2C(C)=CC(Br)=C3)C=C1,LOR-NOR-30067bb9-7,Isatin,nan
+221,Mpro-x2776_0A,Mpro-x2776,CCC(=O)N(C(C(=O)NC1=C(C)C=C(OC)C=C1)C1=CN=CC=C1)C1=CC=C(C=C1)C(C)OC,CCC(=O)N(C(C(=O)NC1=C(C)C=C(OC)C=C1)C1=CN=CC=C1)C1=CC=C(C=C1)C(C)OC,LON-WEI-b8d98729-8,Ugi,5RH9
+222,Mpro-x11164_0A,Mpro-x11164,CN1C=CC(CN(C(=O)CC=2C=CC=NC2)C=3C=CC(=CC3)C=4C=CC=CN4)=N1,nan,ALP-POS-c0c213c9-14,Aminopyridine-like,nan
+223,Mpro-x10248_0A,Mpro-x10248,CC=1C=CC(CC(=O)NC=2C=NC=CC2C)=CC1,nan,JAN-GHE-83b26c96-11,Aminopyridine-like,nan
+224,Mpro-x0194_0A,Mpro-x0194,CC(=O)NC=1C=CC(OC=2N=CC=CN2)=CC1,nan,AAR-POS-0daf6b7e-33,XChem Screen - xtal contact,5RE6
+225,Mpro-x10678_0A,Mpro-x10678,ClCC(=O)N1CC(C=2C=CC=C(C#N)C2)C=3C=CC=CC3C1,CC(=O)N1CC(C=2C=CC=C(C#N)C2)C=3C=CC=CC3C1,NIR-THE-c331be7a-2,Chloroacetamide,nan
+226,Mpro-x0165_0A,Mpro-x0165,CN1CCN(CC1)C(=O)NC=2C=CC=CC2,nan,AAR-POS-0daf6b7e-44,XChem Screen - xtal contact,5RGG
+227,Mpro-x11204_0A,Mpro-x11204,COC(=O)C1=C2NC(=O)C(O)C2=CC(Br)=C1,COC(=O)C1=C2NC(=O)C(O)C2=CC(Br)=C1,LOR-NOR-30067bb9-15,Isatin,nan
+228,Mpro-x2562_0A,Mpro-x2562,O=C(CC=1C=NC=NC1)NC=2C=CC=C(OC3CC(=O)N3)C2,nan,BAR-COM-4e090d3a-39,Aminopyridine-like,5RGU
+229,Mpro-x0967_0A,Mpro-x0967,CC(=O)NC(Cc1ccc(cc1)O)C(=O)NCC#CBr,nan,AAR-POS-d2a4d1df-16,XChem Screen - active site,5RG1
+230,Mpro-x11431_0A,Mpro-x11431,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3CCCCC23)C1,nan,EDJ-MED-a364e151-1,Isoquinoline,nan
+231,Mpro-x2649_0A,Mpro-x2649,CC(C(=O)NC=1C=NC=CC1C)C=2C=CC=C(Cl)C2,nan,TRY-UNI-714a760b-18,Aminopyridine-like,5RH3
+232,Mpro-x3325_0A,Mpro-x3325,CC(=O)N1CCN(CC#C)CC1,CC(=O)N1CCN(CC#C)CC1,TOB-UNK-c2aba166-1,Chloroacetamide,nan
+233,Mpro-x2910_0A,Mpro-x2910,COC=1C=CC=CC1OCCNC(=O)C2=CC(=O)NC=3C=CC=CC23,nan,MAT-POS-916a2c5a-2,Quinolone,nan
+234,Mpro-x0978_0A,Mpro-x0978,C[C@@H](O)[C@@H](NC(C)=O)C(=O)NCC=C,C[C@@H](O)[C@@H](NC(C)=O)C(=O)NCC=C,AAR-POS-d2a4d1df-42,XChem Screen - Covalent hits,5RG2
+235,Mpro-x1351_0A,Mpro-x1351,CC(=O)N1CCC(CC1)NC(=O)c2ccccc2,CC(=O)N1CCC(CC1)NC(=O)c2ccccc2,AAR-POS-0daf6b7e-5,Chloroacetamide,5RFK
+236,Mpro-x10996_0A,Mpro-x10996,ClC=1C=CC=C(NC(=O)NC=2C=CC=NC2)C1,nan,DAR-DIA-23aa0b97-14,Aminopyridine-like,nan
+237,Mpro-x10422_0A,Mpro-x10422,CC=1C=CN=CC1NC(=O)C(C)(C)C=2C=CC=C(Cl)C2,nan,JAN-GHE-83b26c96-22,Aminopyridine-like,nan
+238,Mpro-x10396_0A,Mpro-x10396,CC=1C=CN=CC1NC(=O)C(F)(F)C=2C=CC=C(Cl)C2,nan,JAN-GHE-83b26c96-23,Aminopyridine-like,nan
+239,Mpro-x10237_0A,Mpro-x10237,ClC=1C=CC=C(C1)N(CCN2CCOCC2)C(=O)NC=3C=CC=NC3,nan,JOR-UNI-2fc98d0b-6,Aminopyridine-like,nan
+240,Mpro-x0759_0A,Mpro-x0759,Fc1ccc(cc1)C2CN(CCO2)C(=O)C,Fc1ccc(cc1)C2CN(CCO2)C(=O)C,AAR-POS-d2a4d1df-33,Chloroacetamide,5RER
+241,Mpro-x1382_0A,Mpro-x1382,CC(NC(=O)C)c1cccc(Cl)c1,CC(NC(=O)C)c1cccc(Cl)c1,AAR-POS-0daf6b7e-10,Chloroacetamide,5RFP
+242,Mpro-x3115_0A,Mpro-x3115,CCC(N(C(C(NCCOC)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,CCC(N(C(C(NCCOC)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,LON-WEI-adc59df6-26,Ugi,5RL2
+243,Mpro-x3348_0A,Mpro-x3348,CC(=O)N1CCN(CC1)C(C1=CC=CC=C1)C1=CC=CC=C1,CC(=O)N1CCN(CC1)C(C1=CC=CC=C1)C1=CC=CC=C1x,SIM-SYN-f15aaa3a-1,Chloroacetamide,nan
+244,Mpro-x11294_0A,Mpro-x11294,COC=1C=CC=CC1OCCNC(=O)C2=CC(=O)NC=3C=CC=C(OC)C23,nan,EDJ-MED-6af13d92-3,Quinolone,nan
+245,Mpro-x11354_0A,Mpro-x11354,CC=1C=CN=CC1CC(=O)NC=2C=CC=C3CCNCC23,nan,ADA-UCB-6c2cb422-3,Aminopyridine-like,nan
+246,Mpro-x12080_0A,Mpro-x12080,COC1=CC(OC)=NC(C=N)=N1,COC1=CC(OC)=NC(C=N)=N1,AAR-RCN-748c104b-1,Moonshot - other active site,
+247,Mpro-x0395_0A,Mpro-x0395,CC1=NN=C(CN2CCC=C(F)C2)S1,nan,AAR-POS-d2a4d1df-8,XChem Screen - active site,5RGH
+248,Mpro-x1402_0A,Mpro-x1402,CC(=O)N1CCN(CC1)S(=O)(=O)c2ccc(Cl)s2,CC(=O)N1CCN(CC1)S(=O)(=O)c2ccc(Cl)s2,AAR-POS-0daf6b7e-15,Chloroacetamide,5RFU
+249,Mpro-x1119_0A,Mpro-x1119,NC=1C=CC(=CC1)S(=O)(=O)NC=2C=CC=CN2,nan,AAR-POS-0daf6b7e-42,XChem Screen - xtal contact,5RF8
+250,Mpro-x0387_0A,Mpro-x0387,OC1CCN(CC=2C=CSC2)CC1,nan,AAR-POS-d2a4d1df-7,XChem Screen - active site,5REB
+251,Mpro-x10322_0A,Mpro-x10322,CC=1C=C(NC(=O)CC=2C=NC=NC2)C=C(OC3CC(=O)N3)C1,nan,RAL-MED-2de63afb-2,Aminopyridine-like,nan
+252,Mpro-x11790_0A,Mpro-x11790,CN(C)C=1C=CC(=CC1)N(CC=2C=CSC2)C(=O)CC=3C=NC=C4C=CC=CC34,nan,PET-UNK-1901c25b-1,Isoquinoline,nan
+253,Mpro-x0831_0A,Mpro-x0831,Cc1ccccc1CN2CCCN(CC2)C(=O)C,Cc1ccccc1CN2CCCN(CC2)C(=O)C,AAR-POS-d2a4d1df-41,Chloroacetamide,5REY
+254,Mpro-x10871_0A,Mpro-x10871,CCC(=O)NC=1C=CC(=CC1)N(CC=2C=CSC2)C(=O)CN3N=NC=4C=CC=CC34,nan,ALP-POS-c59291d4-2,Benzotriazole,nan
+255,Mpro-x11372_0A,Mpro-x11372,CC(C(=O)NC=1C=NC=CC1NC(=O)C)C=2C=CC=C(Cl)C2,nan,JAN-GHE-83b26c96-2,Aminopyridine-like,nan
+256,Mpro-x0734_0A,Mpro-x0734,[O-][N+](=O)c1ccccc1N2CCN(CC2)C(=O)C,[O-][N+](=O)c1ccccc1N2CCN(CC2)C(=O)C,AAR-POS-d2a4d1df-28,Chloroacetamide,5REM
+257,Mpro-x11339_0A,Mpro-x11339,CC=1C=CN=CC1NC(=O)[C@@H]2C[C@H]2CF,nan,ERI-UCB-5b47150d-6,Aminopyridine-like,nan
+258,Mpro-x12025_1A,Mpro-x12025,COC=1C=CC=CC1NC2CN(C2)C(=O)C3=CC(=O)NC=4C=CC=CC34,nan,ERI-UCB-a0b0dbcb-8,Quinolone,nan
+259,Mpro-x10466_0A,Mpro-x10466,ClC=1C=CC=C(CC(=O)NN2C=NC=3C=CC=CC23)C1,nan,JAN-GHE-5a013bed-2,Benzotriazole,nan
+260,Mpro-x2540_0A,Mpro-x2540,CCC(=O)N(C(C(=O)NC(C)(C)C)C1=CN=CC=C1)C1=NOC(=C1)C(C)(C)C,CCC(=O)N(C(C(=O)NC(C)(C)C)C1=CN=CC=C1)C1=NOC(=C1)C(C)(C)C,LON-WEI-b8d98729-23,Ugi,5RGT
+261,Mpro-x10995_0A,Mpro-x10995,CCC=1C=CN=CC1NC(=O)CC=2C=CC=C(N2)C(F)(F)F,nan,JAG-UCB-a3ef7265-23,Aminopyridine-like,7K0F
+262,Mpro-x10082_0A,Mpro-x10082,CC(C)(C)NC(=O)[C@@H](Nc1ccc(CCC#N)cc1)c1cccnc1,CC(C)(C)NC(=O)[C@@H](Nc1ccc(CCC#N)cc1)c1cccnc1,MAT-POS-c0143b99-1,Ugi,nan
+263,Mpro-x11831_0A,Mpro-x11831,ClC=1C=C2CCOC2=C(CC(=O)NC=3C=NC=C4C=CC=CC34)C1,nan,MAT-POS-bbbbc21a-3,Isoquinoline,nan
+264,Mpro-x11564_0A,Mpro-x11564,CC=1C=CC(=C(F)C1F)C=2C=C(Cl)C=C(CC(=O)NC=3C=NC=CC3C)C2,nan,MAT-POS-f42f3716-6,Aminopyridine-like,nan
+265,Mpro-x0540_0A,Mpro-x0540,O=C(NCCC=1C=CN=CC1)NC2CCCCC2,nan,AAR-POS-d2a4d1df-12,XChem Screen - active site,5REH
+266,Mpro-x10474_0A,Mpro-x10474,CC(C)C(C)CC(=O)NC=1C=NC=CC1C,nan,MAT-POS-590ac91e-11,Aminopyridine-like,nan
+267,Mpro-x10296_0A,Mpro-x10296,CCC(N1CCN(Cc(cc2)ccc2F)CC1)=O,CCC(N1CCN(Cc(cc2)ccc2F)CC1)=O,ANT-OPE-d972fbad-1,Chloroacetamide,nan
+268,Mpro-x11579_0A,Mpro-x11579,CSC1=C(C#N)C2(CCCCC2)C(=C(NC(=O)CCl)N1)C#N,CSC1=C(C#N)C2(CCCCC2)C(C#N)=C(NC(C)=O)N1,TAT-ENA-80bfd3e5-7,Chloroacetamide,nan
+269,Mpro-x1235_0A,Mpro-x1235,COC(=O)NC=1SC(C)=NC1C=2C=CC=CC2,nan,AAR-POS-0daf6b7e-35,XChem Screen - xtal contact,5RFC
+270,Mpro-x11426_0A,Mpro-x11426,OC(CC=1C=CC=C(Cl)C1)CN2C=NC=N2,nan,JAG-UCB-cedd89ab-2,Aminopyridine-like,nan
+271,Mpro-x11798_0A,Mpro-x11798,CNC(=O)NC=1C=CC(=CC1)N(CC=2C=CSC2)C(=O)CN3N=NC=4C=CC=CC34,nan,ROB-IMP-e811baff-1,Benzotriazole,nan
+272,Mpro-x3351_0A,Mpro-x3351,CNCC1=CNC=2C=CC(F)=CC12,,DAR-DIA-eace69ff-36,Moonshot - allosteric,
+273,Mpro-x10575_0A,Mpro-x10575,CC=1C=CN=CC1NC(=O)CC2CC3CC3C2,nan,MAT-POS-590ac91e-23,Aminopyridine-like,nan
+274,Mpro-x1334_0A,Mpro-x1334,CC(=O)N1CCN(Cc2ccc(Cl)s2)CC1,CC(=O)N1CCN(Cc2ccc(Cl)s2)CC1,AAR-POS-0daf6b7e-2,Chloroacetamide,5RFH
+275,Mpro-x11488_0A,Mpro-x11488,COC(=O)C(C(=O)NC=1C=NC=CC1C)C=2C=CC=C(Cl)C2,nan,MAT-POS-1e5f28a7-1,Aminopyridine-like,nan
+276,Mpro-x10478_0A,Mpro-x10478,CC=1C=CN=CC1NC(=O)CC23CC3CCC2,nan,MAT-POS-590ac91e-25,Aminopyridine-like,nan
+277,Mpro-x11427_0A,Mpro-x11427,CC=1C=CN=CC1NC(=O)CCC=2C=CC=C(F)C2,nan,BEN-DND-93268d01-5,Aminopyridine-like,nan
+278,Mpro-x11743_0A,Mpro-x11743,CC=1C=CN=CC1NC(=O)CC=2C=C(Cl)C=C(NS(=O)(=O)N)C2,nan,WIL-MOD-03b86a88-6,Aminopyridine-like,nan
+279,Mpro-x10598_0A,Mpro-x10598,CC=1C=CN=CC1NC(=O)CCC=2C=CC=CC2F,nan,BEN-DND-93268d01-7,Aminopyridine-like,nan
+280,Mpro-x11797_0A,Mpro-x11797,CN(C)C=1C=CC(=CC1)N(CC2=CC=NN2)C(=O)CN3N=NC=4C=CC=CC34,nan,PET-UNK-7374c256-2,Benzotriazole,nan
+281,Mpro-x2608_0A,Mpro-x2608,CC1=CC=C(NC(=O)NC=2C=CC=NC2)S1,nan,DAR-DIA-842b4336-3,Aminopyridine-like,5RH0
+282,Mpro-x10856_0A,Mpro-x10856,COC=1C=CC(Br)=CC1C(N)C(=O)NC=2C=NC=CC2C,nan,BAR-COM-0f94fc3d-58,Aminopyridine-like,nan
+283,Mpro-x10421_0A,Mpro-x10421,CNCCC(C(=O)NC=1C=CC=NC1)C=2C=CC=CC2,nan,ADA-UNI-f8e79267-5,Aminopyridine-like,nan
+284,Mpro-x11025_0A,Mpro-x11025,CC=1NN=CC1NC(=O)CC=2C=CC=C(Cl)C2,nan,EDG-MED-0da5ad92-21,Aminopyridine-like,nan
+285,Mpro-x10626_0A,Mpro-x10626,CC=1C=CN=CC1NC(=O)[C@H]2[C@@H]3CCCC[C@H]23,nan,MAT-POS-590ac91e-19,Aminopyridine-like,nan
+286,Mpro-x10800_0A,Mpro-x10800,O=C(NC=1C=CC=NC1)NC2(CC=3C=CC=CC3)CCOCC2,nan,NAU-LAT-445f63e5-6,Aminopyridine-like,nan
+287,Mpro-x10371_0A,Mpro-x10371,O=C(CC=1C=CC=NC1)NC=2C=CC=C(OC3CC(=O)N3)C2,nan,RAL-MED-2de63afb-1,Aminopyridine-like,nan
+288,Mpro-x10178_0A,Mpro-x10178,O=C(CC=1C=CC=NC1)NC=2C=NC=C(C#N)C2,nan,DAR-DIA-23aa0b97-6,Aminopyridine-like,nan
+289,Mpro-x11223_0A,Mpro-x11223,C[C@@H](C(O)=O)C1=C(C)C2=C(C=C1)C1=C(N2)C=CC(Cl)=C1,,MAK-UNK-0d6072ac-20,Moonshot - allosteric,
+290,Mpro-x1380_0A,Mpro-x1380,CC(=O)N1CCC(CC1)C(=O)N2CCCCC2,CC(=O)N1CCC(CC1)C(=O)N2CCCCC2,VIR-GIT-7b3d3065-2,Chloroacetamide,5RFO
+291,Mpro-x0981_0A,Mpro-x0981,CC(=O)NC(CC(N)=O)C(=O)NCC=C,CC(=O)NC(CC(N)=O)C(=O)NCC=C,AAR-POS-d2a4d1df-43,XChem Screen - Covalent hits,5RG3
+292,Mpro-x11499_0A,Mpro-x11499,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CN=CC23)C1,nan,MAT-POS-f7918075-5,Isoquinoline,nan
+293,Mpro-x0397_0A,Mpro-x0397,CN(CC=1C=C(C)ON1)C(=O)NC2CC2,nan,AAR-POS-d2a4d1df-9,XChem Screen - active site,5RGI
+294,Mpro-x0755_0A,Mpro-x0755,Fc1cccc(F)c1S(=O)(=O)N2CCN(CC2)C(=O)C,Fc1cccc(F)c1S(=O)(=O)N2CCN(CC2)C(=O)C,LON-WEI-8f408cad-2,Chloroacetamide,5REP
+295,Mpro-x10327_0A,Mpro-x10327,CC(C)C(C(=O)NC=1C=NC=CC1C)C=2C=CC=C(Cl)C2,nan,JAN-GHE-83b26c96-9,Aminopyridine-like,nan
+296,Mpro-x1163_0A,Mpro-x1163,OCC1CN(CC=2C=CC=CC2)CCO1,nan,AAR-POS-0daf6b7e-30,XChem Screen - xtal contact,5RGS
+297,Mpro-x11764_0A,Mpro-x11764,CC=1C=CN=CC1NC(=O)CC=2C=C(Cl)C=C(NC3CCCC3O)C2,nan,MAT-POS-044491d2-1,Aminopyridine-like,nan
+298,Mpro-x12423_0A,Mpro-x12423,CN(C)C=1C=CC(=CC1)N(CC=2C=CC=C(Cl)C2)C(=O)CN3N=NC=4C=CC=CC34,nan,ALP-POS-6d04362c-2,Benzotriazole,nan
+299,Mpro-x12177_0A,Mpro-x12177,COC=1C=CC(=CC1)N(CC=2C=CC=C(Cl)C2)C(=O)CN3N=NC=4C=CC=CC34,nan,CHO-MSK-00c5269a-2,Benzotriazole,nan
+300,Mpro-x11812_0A,Mpro-x11812,O=C(N1CCN(CC1)C=2C=CC=CC2)C=3C=NC=C4C=CC=CC34,nan,MAR-UCB-f313ec4d-6,Isoquinoline,nan
+301,Mpro-x11532_0A,Mpro-x11532,ClC=1C=CC=C(CC(=O)NC=2C=NNC2)C1,nan,MIC-UNK-66895286-1,Aminopyridine-like,nan
+302,Mpro-x11590_0A,Mpro-x11590,CC=1C(C(=O)CCl)=C2C=CC=CN2C1C(=O)C=3C=CC(F)=CC3,nan,TAT-ENA-80bfd3e5-4,Chloroacetamide,nan
+303,Mpro-x12207_0A,Mpro-x12207,C[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDJ-MED-e4b030d8-13,Isoquinoline,nan
+304,Mpro-x12321_0A,Mpro-x12321,CC=1C=CN=CC1NC(=O)CC=2C=C(Cl)C=C(NC3CC3C(F)(F)F)C2,nan,MAT-POS-044491d2-3,Aminopyridine-like,nan
+305,Mpro-x12000_0A,Mpro-x12000,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3CCCC32)C1,nan,MAT-POS-199e2e7c-1,Isoquinoline,nan
+306,Mpro-x12064_0A,Mpro-x12064,COC=1C=CC=CC1OC2CN(C2)C(=O)C3=CC(=O)NC=4C=CC=CC34,nan,ERI-UCB-a0b0dbcb-9,Quinolone,nan
+307,Mpro-x11609_0A,Mpro-x11609,COC=1C=CC(Cl)=CC1CC(=O)NC=2C=NC=C3C=CC=CC23,nan,MAT-POS-3b92565d-1,Isoquinoline,nan
+308,Mpro-x12202_0A,Mpro-x12202,NC=1C=NC=C2N(CCCC12)C(=O)CC=3C=CC=C(Cl)C3,nan,ALP-POS-cd485364-2,Isoquinoline,nan
+309,Mpro-x11530_0A,Mpro-x11530,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=NC23)C1,nan,MAT-POS-bb423b95-2,Isoquinoline,nan
+310,Mpro-x11742_0A,Mpro-x11742,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3N=CNC23)C1,nan,MAT-POS-f7918075-8,Isoquinoline,nan
+311,Mpro-x12300_0A,Mpro-x12300,CC=1C=CN=CC1NC(=O)CC=2C=C(Cl)C=C(NCC(C)(C)C#N)C2,nan,MAT-POS-044491d2-7,Aminopyridine-like,nan
+312,Mpro-x11276_0A,Mpro-x11276,COC=1C=CC=CC1OCCNC(=O)C2=CC(=O)NC=3C=CC=C(F)C23,nan,EDJ-MED-6af13d92-2,Quinolone,nan
+313,Mpro-x11507_0A,Mpro-x11507,ClC=1C=CC=C(CC(=O)NC=2C=NC=CC2C=3C=CC=CC3)C1,nan,ALP-POS-0c2c77e1-1,Aminopyridine-like,nan
+314,Mpro-x11813_0A,Mpro-x11813,COC=1C=CC=CC1OCCNC(=O)C=2C=NC=C3C=CC=CC23,nan,MAR-UCB-f313ec4d-2,Isoquinoline,nan
+315,Mpro-x11557_0A,Mpro-x11557,CC=1C=CN=CC1NC(=O)C(CO)C=2C=CC=C(Cl)C2,nan,EDG-MED-0da5ad92-5,Aminopyridine-like,nan
+316,Mpro-x11508_0A,Mpro-x11508,ClC=1C=CC=C(CC(=O)NC=2N=NC=C3C=CC=CC23)C1,nan,EDJ-MED-50fe53e8-1,Isoquinoline,nan
+317,Mpro-x11789_0A,Mpro-x11789,ClC=1C=CC=C(CC(=O)NN2N=NC=3C=CC=CC23)C1,nan,MAT-POS-bfb445d4-2,Benzotriazole,nan
+318,Mpro-x12204_0A,Mpro-x12204,CC1CCN(CC1)C(=O)CN2N=NC=3C=CC=CC23,nan,ANT-DIA-62e4526e-1,Benzotriazole,nan
+319,Mpro-x11708_0A,Mpro-x11708,C[C@@H](OC(F)F)C(=O)NC=1C=NC=CC1C,nan,MAT-POS-5d20d11c-1,Aminopyridine-like,nan
+320,Mpro-x12026_0A,Mpro-x12026,ClC=1C=CC=C(CC(=O)NC2=NN=C3C=CC=CN23)C1,nan,PET-UNK-e44ffd04-1,Benzotriazole,nan
+321,Mpro-x11810_0A,Mpro-x11810,ClC=1C=CN=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,PET-UNK-3c72d439-1,Isoquinoline,nan
+322,Mpro-x11641_0A,Mpro-x11641,CC(C(=O)NC=1C=NC=CC1C)C=2C=C(Cl)C=C(OC3CC(=O)N3)C2,nan,TRY-UNI-2eddb1ff-8,Aminopyridine-like,nan
+323,Mpro-x11540_0A,Mpro-x11540,CC1=NNC=C1CC(=O)NC=2C=CC=C(Cl)C2,nan,MIC-UNK-66895286-3,Aminopyridine-like,nan
+324,Mpro-x12419_0A,Mpro-x12419,CN(C)C=1C=CC(=CC1)N(CC=2C=CC=CC2)C(=O)CN3N=NC=4C=CC=CC34,nan,ALP-POS-6d04362c-1,Benzotriazole,nan
+325,Mpro-x11560_0A,Mpro-x11560,C[C@H](OC(F)F)C(=O)NC=1C=NC=CC1C,nan,MAT-POS-590ac91e-17,Aminopyridine-like,nan
+326,Mpro-x11852_0A,Mpro-x11852,OC=1C=C(Cl)C=C(CN2CCN(CC2)C(=O)CCl)C1,nan,MAT-POS-2db6411e-2,Chloroacetamide,nan
+327,Mpro-x11501_0A,Mpro-x11501,CN(C(=O)CC=1C=CC=C(Cl)C1)C=2C=NC=C3C=CC=CC23,nan,MAT-POS-bb423b95-7,Isoquinoline,nan
+328,Mpro-x11542_0A,Mpro-x11542,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=NC=CC23)C1,nan,MAT-POS-bb423b95-1,Isoquinoline,nan
+329,Mpro-x12143_0A,Mpro-x12143,CN(C)C=1C=CC(=CC1)N(CC2=CSC=N2)C(=O)CN3N=NC=4C=CC=CC34,nan,ALP-POS-87c86d55-1,Benzotriazole,nan
+330,Mpro-x12171_0A,Mpro-x12171,ClC=1C=CC=2NCCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,ALP-POS-477dc5b7-2,Isoquinoline,nan
+331,Mpro-x11616_0A,Mpro-x11616,FC(F)(F)C=1C=CC=C(C1)N2CCN(CC2)C(=O)C3=CC(=O)NC=4C=CC=CC34,CCC(=O)N(C(=O)C1COC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,ERI-UCB-a0b0dbcb-4,Quinolone,nan
+332,Mpro-x10812_0A,Mpro-x10812,O=CC1=C2C=CNC2=CC=C1,O=CC1=C2C=CNC2=CC=C1,ALP-POS-c59291d4-5,Moonshot - other active site,
+333,Mpro-x11548_0A,Mpro-x11548,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3N=CC=CC23)C1,nan,MIC-UNK-08cd9c58-1,Isoquinoline,nan
+334,Mpro-x11513_0A,Mpro-x11513,CC=1C=CN=CC1NC(=O)CCC=2C=CC=C(Cl)C2,nan,ALP-POS-f13221e1-4,Aminopyridine-like,nan
+335,Mpro-x11757_0A,Mpro-x11757,COC=1C=CC=2N=NN(CC(=O)N(CC=3C=CC=CN3)C=4C=CC(=CC4)C5CCNCC5)C2C1,nan,ALP-POS-c0c213c9-1,Benzotriazole,nan
+336,Mpro-x11543_0A,Mpro-x11543,ClC=1C=CC=C(CC(=O)NC=2C=NC=CC2C3CC3)C1,nan,ALP-POS-95b75b4d-5,Aminopyridine-like,nan
+337,Mpro-x12136_0A,Mpro-x12136,CC=1C=CN2C=NN=C2C1NC(=O)C3CCOC=4C=CC(Cl)=CC34,nan,JAG-UCB-52b62a6f-11,Benzotriazole,nan
+338,Mpro-x12350_0A,Mpro-x12350,CC(C)OCCCN(CC1=CC=CO1)C(=O)NC2=CN(C)C(=O)C=3C=CC=CC23,,MAT-POS-b5746674-38,Moonshot - other active site,
+339,Mpro-x12010_0A,Mpro-x12010,CCC1=CC2=C(C=C1)N(CC(O)=O)C(=O)C2O,nan,LOR-NOR-c954e7ad-4,Isatin,nan
+340,Mpro-x12715_0A,Mpro-x12715,CN1C=NC=2C=NC=C(NC(=O)C3CCOC=4C=CC(Cl)=CC34)C12,nan,MAT-POS-2bb0cf2b-2,Isoquinoline,nan
+341,Mpro-x12699_0A,Mpro-x12699,COC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDG-MED-0e5afe9d-3,Isoquinoline,nan
+342,Mpro-x12661_0A,Mpro-x12661,O=C(CC=1C=NC=C2C=CC=CC12)N(CCC3CCCCC3)CC4=CC=CS4,nan,ALP-POS-64a710fa-1,Isoquinoline,nan
+343,Mpro-x12674_0A,Mpro-x12674,ClC=1C=CC(=CC1)C2CCCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,ALP-POS-ce760d3f-8,Isoquinoline,nan
+344,Mpro-x12659_0A,Mpro-x12659,ClC1=CC2=C(OCC[C@H]2C(=O)NC2=C3C=CN=CC3=CN=C2)C=C1,nan,ALP-POS-ce760d3f-2,Isoquinoline,nan
+345,Mpro-x12682_0A,Mpro-x12682,ClC=1C=CC=2OCCC(C(=O)NC3CCNC(=O)C3)C2C1,nan,ALP-POS-8b8a49e1-4,Aminopyridine-like,nan
+346,Mpro-x12582_0A,Mpro-x12582,ClC=1C=CC=C(C1)N2CCN(CC2=O)C(=O)C=3C=NC=C4C=CC=CC34,nan,ERI-UCB-d6de1f3c-2,Isoquinoline,nan
+347,Mpro-x12587_0A,Mpro-x12587,ClC=1C=CC=C(C1)C2CCCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,PET-UNK-c9c1e0d8-3,Isoquinoline,nan
+348,Mpro-x12692_0A,Mpro-x12692,ClC=1C=CC=2NCC[C@@H](C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,CCC(=O)N(C(=O)[C@@H]1CCOC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,EDJ-MED-92e193ae-1,Isoquinoline,nan
+349,Mpro-x12679_0A,Mpro-x12679,ClC=1C=CC=C(C1)N2CCN(CC2=O)C(=O)C3=CC(=O)NC=4C=CC=CC34,nan,ERI-UCB-d6de1f3c-1,Quinolone,nan
+350,Mpro-x12677_0A,Mpro-x12677,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)N1,nan,MAT-POS-afd4d4fd-2,Isoquinoline,nan
+351,Mpro-x12723_0A,Mpro-x12723,[O-][N+]=1C=C(NC(=O)[C@@H]2CCOC=3C=CC(Cl)=CC23)C=4C=CC=CC4C1,nan,EDJ-MED-eff36d94-1,Isoquinoline,nan
+352,Mpro-x12740_0A,Mpro-x12740,CC1CCN(CC(=O)NC=2C=NC=CC2C)CC1,nan,EDJ-MED-3c65e9ce-4,Aminopyridine-like,nan
+353,Mpro-x12710_0A,Mpro-x12710,CN1CCC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,nan,MIC-UNK-91acba05-6,Isoquinoline,nan
+354,Mpro-x12698_0A,Mpro-x12698,ClC=1C=CC=2OCCC(C(=O)NC=3C=NC=C4CCNCC34)C2C1,nan,BEN-DND-c852c98b-10,Isoquinoline,nan
+355,Mpro-x12719_0A,Mpro-x12719,CC(=O)N1CCN(CC(=O)NC=2C=NC=CC2C3CC3)CC1,nan,EDJ-MED-3c65e9ce-2,Aminopyridine-like,nan
+356,Mpro-x12695_0A,Mpro-x12695,OC1(CC(=O)NC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,MAT-POS-c7771779-1,Isoquinoline,nan
+357,Mpro-x12735_0A,Mpro-x12735,CCC(=O)N(C(=O)C1CCOC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,nan,MAT-POS-090737b9-1,Isoquinoline,nan
+358,Mpro-x12731_0A,Mpro-x12731,Cl.Cl.NC[C@@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,NC[C@@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,MAT-POS-2bb0cf2b-1,Isoquinoline,nan
+359,Mpro-x12696_0A,Mpro-x12696,CN1C(=O)NC=2C=NC=C(NC(=O)C3CCOC=4C=CC(Cl)=CC34)C12,nan,EDG-MED-0e5afe9d-1,Isoquinoline,nan
+360,Mpro-z7l14_0A,Mpro-z7l14,NCC1CCCCC1[C@@H]1CC(C2CC(Cl)CC(OCC3CC3)C2)C(O)N(C2CCCNC2)C1,c1ccc(c(c1)C#N)C2=CN(C(=O)C(=C2)c3cc(cc(c3)Cl)OCC4CC4)c5cccnc5,Cmpd26,PDB - SARS-CoV-2 Mpro,7L14
+361,Mpro-z7l11_0B,Mpro-z7l11,CCCOC1CC(Cl)CC(C2C[C@@H](C3CCCCC3CN)CN(C3CCCNC3)C2O)C1,CCCOc1cc(cc(c1)Cl)C2=CC(=CN(C2=O)c3cccnc3)c4ccccc4C#N,Cmpd5,PDB - SARS-CoV-2 Mpro,7L11
+362,Mpro-z2zu2_0A,Mpro-z2zu2,S[Zn](S)S,nan,HCoV-229E,SARS-CoV-2 Mpro homologues,2ZU2
+363,Mpro-z4ylu_0D,Mpro-z4ylu,CCC(O)NC1CCC(N(C[C@H]2CCSC2)C(O)CN2NNC3CCCCC32)CC1,CCC(=O)Nc1ccc(cc1)N(Cc2ccsc2)C(=O)Cn3c4ccccc4nn3,MERS-CoV ,SARS-CoV-2 Mpro homologues,4YLU
+364,Mpro-z4ylu_0A,Mpro-z4ylu,CCC(O)NC1CCC(N(C[C@@H]2CCSC2)C(O)CN2NNC3CCCCC32)CC1,CCC(=O)Nc1ccc(cc1)N(Cc2ccsc2)C(=O)Cn3c4ccccc4nn3,MERS-CoV,SARS-CoV-2 Mpro homologues,4YLU
+365,Mpro-z4ylu_0C,Mpro-z4ylu,CCC(O)NC1CCC(N(C[C@@H]2CCSC2)C(O)CN2NNC3CCCCC32)CC1,CCC(=O)Nc1ccc(cc1)N(Cc2ccsc2)C(=O)Cn3c4ccccc4nn3,MERS-CoV,SARS-CoV-2 Mpro homologues,4YLU
+366,Mpro-z4ylu_0B,Mpro-z4ylu,CCC(O)NC1CCC(N(C[C@@H]2CCSC2)C(O)CN2NNC3CCCCC32)CC1,CCC(=O)Nc1ccc(cc1)N(Cc2ccsc2)C(=O)Cn3c4ccccc4nn3,MERS-CoV,SARS-CoV-2 Mpro homologues,4YLU
+367,Mpro-z2zu2_1A,Mpro-z2zu2,C[C@H](O)CC(C)(C)O,nan,HCoV-229E,SARS-CoV-2 Mpro homologues,2ZU2
+368,Mpro-z2zu2_0B,Mpro-z2zu2,S[Zn](S)S,nan,HCoV-229E,SARS-CoV-2 Mpro homologues,2ZU2
+369,Mpro-z5c5o_0B,Mpro-z5c5o,OC(S)[C@H](CC1CNCN1)NC[C@@H]1C[C@H]2CCCC[C@@H]2CN1C(O)CCNC1CCCCC1,c1ccc(cc1)NCCC(=O)N2C[C@H]3CCCC[C@@H]3C[C@H]2CN[C@@H](Cc4cnc[nH]4)C=O,SARS-CoV-1,SARS-CoV-2 Mpro homologues,5C5O
+370,Mpro-z5c5o_0A,Mpro-z5c5o,OC[C@H](CC1CNCN1S)NC[C@@H]1C[C@H]2CCCC[C@@H]2CN1C(O)CCNC1CCCCC1,c1ccc(cc1)NCCC(=O)N2C[C@H]3CCCC[C@@H]3C[C@H]2CN[C@@H](Cc4cnc[nH]4)C=O,SARS-CoV-1,SARS-CoV-2 Mpro homologues,5C5O
+371,Mpro-z7l12_0A,Mpro-z7l12,OC1NCC(C2CC(C3CC(Cl)CC(OCC4CCCCC4)C3)C(O)N(C3CCCNC3)C2)C(O)N1,c1ccc(cc1)COc2cc(cc(c2)Cl)C3=CC(=CN(C3=O)c4cccnc4)C5=CNC(=O)NC5=O,Cmpd14,PDB - SARS-CoV-2 Mpro,7L12
+372,Mpro-z7l11_0A,Mpro-z7l11,CCCOC1CC(Cl)CC(C2C[C@@H](C3CCCCC3CN)CN(C3CCCNC3)C2O)C1,CCCOc1cc(cc(c1)Cl)C2=CC(=CN(C2=O)c3cccnc3)c4ccccc4C#N,Cmpd5,PDB - SARS-CoV-2 Mpro,7L11
+373,Mpro-z7l14_0B,Mpro-z7l14,NCC1CCCC[C@@H]1[C@@H]1CC(C2CC(Cl)CC(OCC3CC3)C2)C(O)N(C2CCCNC2)C1,c1ccc(c(c1)C#N)C2=CN(C(=O)C(=C2)c3cc(cc(c3)Cl)OCC4CC4)c5cccnc5,Cmpd26,PDB - SARS-CoV-2 Mpro,7L14
+374,Mpro-z7l10_0A,Mpro-z7l10,NCC1CCCCC1C1CC(C2CC(Cl)CC(Cl)C2)C(O)N(C2CCCNC2)C1,c1ccc(c(c1)C#N)C2=CN(C(=O)C(=C2)c3cc(cc(c3)Cl)Cl)c4cccnc4,Cmpd4,PDB - SARS-CoV-2 Mpro,7L10
+375,Mpro-P0157_0A,Mpro-P0157,CO[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,PET-UNK-29afea89-2,Isoquinoline,nan
+376,Mpro-P0208_0A,Mpro-P0208,N[C@@]1(C(=O)Nc2cncc3ccccc23)CCOc2ccc(Cl)cc21,nan,EDG-MED-971238d3-4,Isoquinoline,nan
+377,Mpro-P0208_0B,Mpro-P0208,N[C@@]1(C(=O)Nc2cncc3ccccc23)CCOc2ccc(Cl)cc21,nan,EDG-MED-971238d3-4,Isoquinoline,nan
+378,Mpro-P0187_0A,Mpro-P0187,COCCOC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-de59a476-4,Isoquinoline,nan
+379,Mpro-P0187_0B,Mpro-P0187,COCCOC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-de59a476-4,Isoquinoline,nan
+380,Mpro-P0033_0A,Mpro-P0033,CN1CCC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,nan,MIC-UNK-91acba05-6,Isoquinoline,nan
+381,Mpro-P0047_0A,Mpro-P0047,CCC(=O)N(C(C(=O)NCCC1=CC(F)=CC=C1)C1=CN=CC=C1)C1=CC=C(C=C1)C(C)(C)C,CCC(=O)N(C(C(=O)NCCC1=CC(F)=CC=C1)C1=CN=CC=C1)C1=CC=C(C=C1)C(C)(C)C,LON-WEI-adc59df6-47,Ugi,nan
+382,Mpro-z7ldx_0B,Mpro-z7ldx,O[C@@H]1C[C@@H]2CC[C@H](C1)N2CC1CCCCC1,c1ccc(cc1)CN2[C@@H]3CC[C@H]2CC(C3)O,F2X E06,PDB - SARS-CoV-2 Mpro,7LDX
+383,Mpro-P0578_0A,Mpro-P0578,COCCC1(CCNc2ccc(Cl)cc12)C(=O)Nc1cncc2ccccc12,nan,RAL-THA-4aa06b95-7,Isoquinoline,nan
+384,Mpro-P0034_0A,Mpro-P0034,ClC=1C=CC=2NCC[C@@H](C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,EDJ-MED-92e193ae-1,Isoquinoline,nan
+385,Mpro-P0019_0B,Mpro-P0019,ClC=1C=CC=C(C1)C2CCCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,PET-UNK-c9c1e0d8-3,Isoquinoline,nan
+386,Mpro-P0045_0A,Mpro-P0045,CC=1C=CN=CC1NC(=O)CC=2C=C(Cl)C=C(OC3CC(=O)N3)C2,nan,TRY-UNI-2eddb1ff-7,Aminopyridine-like,nan
+387,Mpro-P0996_0B,Mpro-P0996,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)C5=NC=CN5,nan,MAT-POS-4223bc15-30,Isoquinoline,nan
+388,Mpro-P0016_0B,Mpro-P0016,O=C(CC=1C=NC=C2C=CC=CC12)N(CCC3CCCCC3)CC4=CC=CS4,nan,ALP-POS-64a710fa-1,Isoquinoline,nan
+389,Mpro-P0148_0A,Mpro-P0148,CC(=O)N1CC[C@@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,CC(=O)N1CC[C@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,EDG-MED-5d232de5-3,Isoquinoline,
+390,Mpro-P0068_0A,Mpro-P0068,ClC=1C=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C=C(C#N)C1,nan,RAL-THA-2d450e86-17,Isoquinoline,nan
+391,Mpro-P0108_0A,Mpro-P0108,FC=1C=CC(CC(=O)NC=2C=NC=C3C=CC=CC23)=CC1Cl,nan,RAL-THA-2d450e86-6,Isoquinoline,nan
+392,Mpro-P0031_0A,Mpro-P0031,ClC=1C=CC=2OCCC(C(=O)NC=3C=NC=C4CCNCC34)C2C1,nan,BEN-DND-c852c98b-10,Isoquinoline,nan
+393,Mpro-P0053_0A,Mpro-P0053,CC(C)OC=1C=CC(=CC1)N(C(C(=O)NCCC=2C=CC=C(F)C2)C=3C=CC=NC3)C(=O)C4=CNC=N4,nan,BRU-THA-92256091-17,Ugi,nan
+394,Mpro-P0063_0B,Mpro-P0063,ClC=1C=CC(CC(=O)NC=2C=NC=C3C=CC=CC23)=NC1,nan,RAL-THA-2d450e86-33,Isoquinoline,nan
+395,Mpro-P0030_0B,Mpro-P0030,CN1C(=O)NC=2C=NC=C(NC(=O)C3CCOC=4C=CC(Cl)=CC34)C12,nan,EDG-MED-0e5afe9d-1,Isoquinoline,nan
+396,Mpro-P0179_0A,Mpro-P0179,CCC(=O)N(C(=O)[C@@H]1CCOC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,nan,VLA-UCB-50c39ae8-7,Isoquinoline,nan
+397,Mpro-P0016_0A,Mpro-P0016,O=C(CC=1C=NC=C2C=CC=CC12)N(CCC3CCCCC3)CC4=CC=CS4,nan,ALP-POS-64a710fa-1,Isoquinoline,nan
+398,Mpro-P0602_0A,Mpro-P0602,COC1(CCOC=2C(F)=CC(F)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDJ-MED-37aac4bd-4,Isoquinoline,nan
+399,Mpro-P0121_0A,Mpro-P0121,CC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-fce787c2-3,Isoquinoline,nan
+400,Mpro-P0066_0A,Mpro-P0066,O=C(CC=1C=CC=CC1)NC=2C=NC=C3C=CC=CC23,nan,RAL-THA-2d450e86-1,Isoquinoline,nan
+401,Mpro-P0008_0A,Mpro-P0008,ClC=1C=C(OCCNC(=O)C2=CC(=O)NC=3C=CC=CC23)C=C(OC4CC(=O)N4)C1,nan,ERI-UCB-ce40166b-17,Quinolone,nan
+402,Mpro-P0008_0B,Mpro-P0008,ClC=1C=C(OCCNC(=O)C2=CC(=O)NC=3C=CC=CC23)C=C(OC4CC(=O)N4)C1,nan,ERI-UCB-ce40166b-17,Quinolone,nan
+403,Mpro-P0009_0A,Mpro-P0009,CC(C)(C)C=1C=CC(=CC1)N([C@@H](C(=O)NCCC=2C=CC=C(F)C2)C=3C=CC=NC3)C(=O)C4=CC=CO4,nan,MAT-POS-f2460aef-1,Ugi,nan
+404,Mpro-P0010_0B,Mpro-P0010,ClC=1C=CC=C(C1)C2CCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,PET-UNK-c9c1e0d8-4,Isoquinoline,nan
+405,Mpro-P0010_0A,Mpro-P0010,ClC=1C=CC=C(C1)C2CCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,PET-UNK-c9c1e0d8-4,Isoquinoline,nan
+406,Mpro-P0012_0B,Mpro-P0012,ClC1=CC2=C(OCC[C@H]2C(=O)NC2=C3C=CN=CC3=CN=C2)C=C1,nan,ALP-POS-ce760d3f-2,Isoquinoline,nan
+407,Mpro-P0012_0A,Mpro-P0012,ClC1=CC2=C(OCC[C@H]2C(=O)NC2=C3C=CN=CC3=CN=C2)C=C1,nan,ALP-POS-ce760d3f-2,Isoquinoline,nan
+408,Mpro-P0017_0B,Mpro-P0017,ClC=1C=CC(=CC1)C2CCCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,ALP-POS-ce760d3f-8,Isoquinoline,nan
+409,Mpro-P0017_0A,Mpro-P0017,ClC=1C=CC(=CC1)C2CCCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,ALP-POS-ce760d3f-8,Isoquinoline,nan
+410,Mpro-P0018_0A,Mpro-P0018,ClC=1C=CC=C(C1)N2CCN(CC2=O)C(=O)C=3C=NC=C4C=CC=CC34,nan,ERI-UCB-d6de1f3c-2,Isoquinoline,nan
+411,Mpro-P0019_0A,Mpro-P0019,ClC=1C=CC=C(C1)C2CCCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,PET-UNK-c9c1e0d8-3,Isoquinoline,nan
+412,Mpro-P0026_0A,Mpro-P0026,ClC=1C=CC=2OCCC(C(=O)NC3CCNC(=O)C3)C2C1,,ALP-POS-8b8a49e1-4,Moonshot - other active site,
+413,Mpro-P0030_0A,Mpro-P0030,CN1C(=O)NC=2C=NC=C(NC(=O)C3CCOC=4C=CC(Cl)=CC34)C12,nan,EDG-MED-0e5afe9d-1,Isoquinoline,nan
+414,Mpro-P0031_0B,Mpro-P0031,ClC=1C=CC=2OCCC(C(=O)NC=3C=NC=C4CCNCC34)C2C1,nan,BEN-DND-c852c98b-10,Isoquinoline,nan
+415,Mpro-P0038_0A,Mpro-P0038,COC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDG-MED-0e5afe9d-3,Isoquinoline,nan
+416,Mpro-P0056_0A,Mpro-P0056,NC(=O)N1CCC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,nan,RAL-THA-4aa06b95-1,Isoquinoline,nan
+417,Mpro-P0056_0B,Mpro-P0056,NC(=O)N1CCC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,nan,RAL-THA-4aa06b95-1,Isoquinoline,nan
+418,Mpro-P0057_0B,Mpro-P0057,CN(C)C=1C=CC(=NC1)N(CC=2C=CC=C(Cl)C2)C(=O)CC=3C=NC=C4C=CC=CC34,nan,MAT-POS-6c284e65-1,Isoquinoline,nan
+419,Mpro-P0057_0A,Mpro-P0057,CN(C)C=1C=CC(=NC1)N(CC=2C=CC=C(Cl)C2)C(=O)CC=3C=NC=C4C=CC=CC34,nan,MAT-POS-6c284e65-1,Isoquinoline,nan
+420,Mpro-P0060_0A,Mpro-P0060,ClC=1C=CC=2NC(=O)CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,MIC-UNK-45817b9b-1,Isoquinoline,nan
+421,Mpro-P0060_0B,Mpro-P0060,ClC=1C=CC=2NC(=O)CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,MIC-UNK-45817b9b-1,Isoquinoline,nan
+422,Mpro-P0061_0A,Mpro-P0061,FC=1C=CC(F)=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-26,Isoquinoline,nan
+423,Mpro-P0061_0B,Mpro-P0061,FC=1C=CC(F)=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-26,Isoquinoline,nan
+424,Mpro-P0063_0A,Mpro-P0063,ClC=1C=CC(CC(=O)NC=2C=NC=C3C=CC=CC23)=NC1,nan,RAL-THA-2d450e86-33,Isoquinoline,nan
+425,Mpro-P0064_0A,Mpro-P0064,FC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-10,Isoquinoline,nan
+426,Mpro-P0065_0A,Mpro-P0065,CC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-13,Isoquinoline,nan
+427,Mpro-P0065_0B,Mpro-P0065,CC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-13,Isoquinoline,nan
+428,Mpro-P0069_0A,Mpro-P0069,FC=1C=CC(CC(=O)NC=2C=NC=C3C=CC=CC23)=CC1,nan,RAL-THA-2d450e86-7,Isoquinoline,nan
+429,Mpro-P0069_0B,Mpro-P0069,FC=1C=CC(CC(=O)NC=2C=NC=C3C=CC=CC23)=CC1,nan,RAL-THA-2d450e86-7,Isoquinoline,nan
+430,Mpro-P0075_0B,Mpro-P0075,FC=1C=C(F)C=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-16,Isoquinoline,nan
+431,Mpro-P0075_0A,Mpro-P0075,FC=1C=C(F)C=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-16,Isoquinoline,nan
+432,Mpro-P0141_0A,Mpro-P0141,COC=1C=CC=2C=NC=C(NC(=O)C3CCOC=4C=CC(Cl)=CC34)C2C1,nan,MAT-POS-f9802937-7,Isoquinoline,nan
+433,Mpro-P0171_0A,Mpro-P0171,CN1CC[C@@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,CN1CC[C@@H](C(=O)NC2=CN=CC3=CC=CC=C23)C2=CC(Cl)=CC=C12 ,EDG-MED-5d232de5-6,Isoquinoline,
+434,Mpro-P0129_0A,Mpro-P0129,CNC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-fce787c2-5,Isoquinoline,nan
+435,Mpro-P0111_0A,Mpro-P0111,ClC=1C=C(Cl)C=2OCCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,ALP-UNI-3735e77e-2,Isoquinoline,nan
+436,Mpro-P0125_0A,Mpro-P0125,O[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDG-MED-971238d3-1,Isoquinoline,nan
+437,Mpro-P0108_0B,Mpro-P0108,FC=1C=CC(CC(=O)NC=2C=NC=C3C=CC=CC23)=CC1Cl,nan,RAL-THA-2d450e86-6,Isoquinoline,nan
+438,Mpro-P0130_0A,Mpro-P0130,FC=1C=C2OCCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2=CC1Cl,nan,RAL-THA-05e671eb-10,Isoquinoline,nan
+439,Mpro-P0160_0A,Mpro-P0160,FC=1C=CC=2C=NC=C(NC(=O)[C@@H]3CCOC=4C=CC(Cl)=CC34)C2C1,nan,EDG-MED-5d232de5-1,Isoquinoline,nan
+440,Mpro-P0114_0A,Mpro-P0114,ClC=1C=C2OCCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2=CC1Cl,nan,ALP-POS-869ac754-1,Isoquinoline,nan
+441,Mpro-P0213_0B,Mpro-P0213,CCC(=O)N(C(=O)C1COC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,nan,MAT-POS-e69ad64a-2,Isoquinoline,nan
+442,Mpro-P0243_0A,Mpro-P0243,CO[C@]1(CCOC=2C=C(Cl)C(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,CO[C@]1(CCOC=2C=C(Cl)C(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,EDJ-MED-d08626de-3,Isoquinoline,
+443,Mpro-P0022_0A,Mpro-P0022,ClC=1C=CC=2OCCC3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,VLA-UCB-29506327-1,Spirocycle,nan
+444,Mpro-P0022_0B,Mpro-P0022,ClC=1C=CC=2OCCC3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,VLA-UCB-29506327-1,Spirocycle,nan
+445,Mpro-P0607_0A,Mpro-P0607,FC=1C=C2OCC[C@@H](C(=O)NC=3C=NC=C4C=CC=CC34)C2=CC1Cl,nan,MAT-POS-a13804f0-3,Isoquinoline,nan
+446,Mpro-P0602_0B,Mpro-P0602,COC1(CCOC=2C(F)=CC(F)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDJ-MED-37aac4bd-4,Isoquinoline,nan
+447,Mpro-P0601_0A,Mpro-P0601,C[C@H]1COC=2C=CC(Cl)=CC2[C@@H]1C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDJ-MED-e4b030d8-11,Isoquinoline,nan
+448,Mpro-P0627_0A,Mpro-P0627,ClC=1C=CC=2SCCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,MAT-POS-78e1d523-1,Isoquinoline,nan
+449,Mpro-P0626_0A,Mpro-P0626,COC1(CCOC=2C=C(F)C(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,ALP-POS-fe871b40-11,Isoquinoline,nan
+450,Mpro-P0996_0A,Mpro-P0996,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)C5=NC=CN5,nan,MAT-POS-4223bc15-30,Isoquinoline,nan
+451,Mpro-P1007_0A,Mpro-P1007,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)C5CC5,nan,MAT-POS-4223bc15-3,Isoquinoline,nan
+452,Mpro-P1015_0A,Mpro-P1015,CN(C)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-4223bc15-2,Isoquinoline,nan
+453,Mpro-P1015_0B,Mpro-P1015,CN(C)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-4223bc15-2,Isoquinoline,nan
+454,Mpro-P0224_0B,Mpro-P0224,CN1C=CC(CNCC2(CCOC=3C=CC(Cl)=CC32)C(=O)NC=4C=NC=C5C=CC=CC45)=N1,CN1C=CC(CNCC2(CCOC=3C=CC(Cl)=CC32)C(=O)NC=4C=NC=C5C=CC=CC45)=N1,EDJ-MED-8c98ee63-2,Isoquinoline,nan
+455,Mpro-P0394_0A,Mpro-P0394,CCS(N(CC1)CCN1c1cc(CC(Nc2cncc3ccccc23)=O)cc(Cl)c1)(=O)=O,nan,LON-WEI-9739a092-9 ,Isoquinoline,nan
+456,Mpro-x12777_0A,Mpro-x12777,COC=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,nan,EDJ-MED-00c1612e-1,Isoquinoline,nan
+457,Mpro-P0661_0B,Mpro-P0661,CO[C@]1(CCOC=2C(F)=CC(F)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,MAT-POS-932d1078-3,Isoquinoline,nan
+458,Mpro-P0224_0A,Mpro-P0224,CN1C=CC(CNCC2(CCOC=3C=CC(Cl)=CC32)C(=O)NC=4C=NC=C5C=CC=CC45)=N1,Cl.CN1C=CC(CNCC2(CCOC=3C=CC(Cl)=CC32)C(=O)NC=4C=NC=C5C=CC=CC45)=N1,EDJ-MED-8c98ee63-2,Isoquinoline,nan
+459,Mpro-P0661_0A,Mpro-P0661,CO[C@]1(CCOC=2C(F)=CC(F)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,MAT-POS-932d1078-3,Isoquinoline,nan
+460,Mpro-P0186_0A,Mpro-P0186,CC(=O)NC=1C=CC(=CN1)N(CC=2C=CC=C(Cl)C2)C(=O)CC=3C=NC=C4C=CC=CC34,nan,ALP-POS-c3a96089-4,Isoquinoline,nan
+461,Mpro-z7l13_0A,Mpro-z7l13,OC1NCC([C@@H]2CC(C3CC(Cl)CC(OCC4CCCCC4Cl)C3)C(O)N(C3CCCNC3)C2)C(O)N1,c1ccc(c(c1)COc2cc(cc(c2)Cl)C3=CC(=CN(C3=O)c4cccnc4)C5=CNC(=O)NC5=O)Cl,Cmpd21,PDB - SARS-CoV-2 Mpro,7L13
+462,Mpro-z7d3i_0A,Mpro-z7d3i,OC1NCC[C@H]1C[C@H](N[C@H](O)[C@@H]1[C@H]2CCC[C@H]2CN1C(O)CCC1CC(F)CC(F)C1)C(O)S,c1c(cc(cc1F)F)CCC(=O)N2C[C@@H]3CCC[C@@H]3[C@H]2C(=O)N[C@@H](C[C@@H]4CCNC4=O)C=O,MI-23,PDB - SARS-CoV-2 Mpro,7D3I
+463,Mpro-z7d3i_1A,Mpro-z7d3i,NC(CO)(CO)CO,c1c(cc(cc1F)F)CCC(=O)N2C[C@@H]3CCC[C@@H]3[C@H]2C(=O)N[C@@H](C[C@@H]4CCNC4=O)C=O,MI-23,PDB - SARS-CoV-2 Mpro,7D3I
+464,Mpro-P0041_0A,Mpro-P0041,CCC(=O)N(C(=O)C1CCOC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,CCC(=O)N(C(=O)C1CCOC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,MAT-POS-090737b9-1,Isoquinoline,nan
+465,Mpro-P0213_0A,Mpro-P0213,CCC(=O)N(C(=O)C1COC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,CCC(=O)N(C(=O)C1COC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,MAT-POS-e69ad64a-2,Isoquinoline,nan
+466,Mpro-P1090_0B,Mpro-P1090,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-4223bc15-23,Isoquinoline,nan
+467,Mpro-P1090_0A,Mpro-P1090,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-4223bc15-23,Isoquinoline,nan
+468,Mpro-P1624_0A,Mpro-P1624,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)N5CCC5,nan,EDJ-MED-1981ceba-2,Isoquinoline,nan
+469,Mpro-P1624_0B,Mpro-P1624,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)N5CCC5,nan,EDJ-MED-1981ceba-2,Isoquinoline,nan
+470,Mpro-P1638_0A,Mpro-P1638,COC1CN(C1)S(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2,nan,EDJ-MED-1981ceba-3,Isoquinoline,nan
+471,Mpro-P1638_0B,Mpro-P1638,COC1CN(C1)S(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2,nan,EDJ-MED-1981ceba-3,Isoquinoline,nan
+472,Mpro-P1701_0B,Mpro-P1701,O[C@]1(CCN(C1=O)C=2C=NC=C3C=CC=CC23)C=4C=CC=C(Cl)C4,nan,MAT-POS-8695a11f-1,Isoquinoline,nan
+473,Mpro-P1701_0A,Mpro-P1701,O[C@]1(CCN(C1=O)C=2C=NC=C3C=CC=CC23)C=4C=CC=C(Cl)C4,nan,MAT-POS-8695a11f-1,Isoquinoline,nan
+474,Mpro-P1788_0B,Mpro-P1788,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)CC5(CC5)C#N,nan,MAT-POS-dc2604c4-1,Isoquinoline,nan
+475,Mpro-P1788_0A,Mpro-P1788,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)CC5(CC5)C#N,nan,MAT-POS-dc2604c4-1,Isoquinoline,nan
+476,Mpro-P0185_0B,Mpro-P0185,FC(F)(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-fce787c2-6,Isoquinoline,nan
+477,Mpro-P0793_0B,Mpro-P0793,ClC=1C=CC=C(C1)[C@@H]2CCN(C2=O)C=3C=NC=C4C=CC=CC34,ClC=1C=CC=C(C1)[C@@H]2CCN(C2=O)C=3C=NC=C4C=CC=CC34,EDG-MED-5d232de5-7,Isoquinoline,
+478,Mpro-P0655_0A,Mpro-P0655,CC(NC(=O)CN1CCN(C2CC2)C1=O)(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=CC(Cl)=C(Cl)C5,nan,MAT-POS-e9e99895-6,Isoquinoline,nan
+479,Mpro-z7kvr_0B,Mpro-z7kvr,CN(C)C1CCNC(N)C1,CN(C)c1ccnc(c1)N,FMAX_E09,PDB - SARS-CoV-2 Mpro,7KVR
+480,Mpro-z7kvl_0A,Mpro-z7kvl,NC(O)C1CCNC(Cl)C1,c1cnc(cc1C(=O)N)Cl,FMAX E01,PDB - SARS-CoV-2 Mpro,7KVL
+481,Mpro-z7lfp_0A,Mpro-z7lfp,CC(C)NC(O)NC1CCCCC1,CC(C)NC(=O)Nc1ccccc1,F2X G05,PDB - SARS-CoV-2 Mpro,7LFP
+482,Mpro-z7ldx_0A,Mpro-z7ldx,O[C@@H]1C[C@@H]2CC[C@H](C1)N2CC1CCCCC1,c1ccc(cc1)CN2[C@@H]3CC[C@H]2CC(C3)O,F2X E06,PDB - SARS-CoV-2 Mpro,7LDX
+483,Mpro-P0124_0A,Mpro-P0124,CS(=O)(=O)C=1C=CC=2C=NC=C(NC(=O)C3CCOC=4C=CC(Cl)=CC34)C2C1,nan,BEN-DND-c852c98b-5,Isoquinoline,nan
+484,Mpro-P0039_0B,Mpro-P0039,NC[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,NC[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,EDG-MED-971238d3-5,Isoquinoline,nan
+485,Mpro-x10535_0A,Mpro-x10535,Cl.ClC=1C=CC=C(C1)N2C(=O)NC(C2=O)C=3C=CC=NC3,ClC=1C=CC=C(C1)N2C(=O)NC(C2=O)C=3C=CC=NC3,JAN-GHE-83b26c96-18,Aminopyridine-like,nan
+486,Mpro-P1835_0B,Mpro-P1835,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1=O,nan,EDJ-MED-015fb6b4-2,Isoquinoline,nan
+487,Mpro-P0240_0A,Mpro-P0240,ClC=1C=CC=2CNCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,ClC=1C=CC=2CNCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,BEN-DND-f2e727cd-5,Isoquinoline,nan
+488,Mpro-P0178_0A,Mpro-P0178,OC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-fce787c2-4,Isoquinoline,nan
+489,Mpro-x12716_0A,Mpro-x12716,Cl.Cl.NC[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,NC[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,EDG-MED-971238d3-5,Isoquinoline,nan
+490,Mpro-P0039_0A,Mpro-P0039,NC[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,NC[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,EDG-MED-971238d3-5,Isoquinoline,nan
+491,Mpro-P1835_0A,Mpro-P1835,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1=O,nan,EDJ-MED-015fb6b4-2,Isoquinoline,nan
+492,Mpro-P0185_0A,Mpro-P0185,FC(F)(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-fce787c2-6,Isoquinoline,nan
+493,Mpro-P0207_0A,Mpro-P0207,ClC=1C=CC=2OCCC3(CC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,BEN-BAS-c2bc0d80-6,Spirocycle,nan
+494,Mpro-P0207_0B,Mpro-P0207,ClC=1C=CC=2OCCC3(CC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,BEN-BAS-c2bc0d80-6,Spirocycle,nan
+495,Mpro-P0188_0B,Mpro-P0188,CNC(=O)CC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,MAT-POS-5d65ec79-2,Isoquinoline,nan
+496,Mpro-P0188_0A,Mpro-P0188,CNC(=O)CC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,MAT-POS-5d65ec79-2,Isoquinoline,nan
+497,Mpro-P0126_0A,Mpro-P0126,ClC=1C=NC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-30,Isoquinoline,nan
+498,Mpro-P0126_0B,Mpro-P0126,ClC=1C=NC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-30,Isoquinoline,nan
+499,Mpro-P0122_0A,Mpro-P0122,ClC=1C=CC=2N(CC3=NC=CN3)CCC(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,nan,RAL-THA-8416115c-5,Isoquinoline,nan
+500,Mpro-P0122_0B,Mpro-P0122,ClC=1C=CC=2N(CC3=NC=CN3)CCC(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,nan,RAL-THA-8416115c-5,Isoquinoline,nan
+501,Mpro-P0145_0A,Mpro-P0145,CC=1C=CN=CC1NC(=O)C2CCOC=3C=CC(Cl)=CC23,nan,BRU-CON-c4e3408a-1,Aminopyridine-like,nan
+502,Mpro-P0145_0B,Mpro-P0145,CC=1C=CN=CC1NC(=O)C2CCOC=3C=CC(Cl)=CC23,nan,BRU-CON-c4e3408a-1,Aminopyridine-like,nan
+503,Mpro-P0135_0A,Mpro-P0135,COC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-de59a476-2,Isoquinoline,nan
+504,Mpro-P0153_0A,Mpro-P0153,ClC=1C=CC(CC(=O)NC=2C=NC=C3C=NC=CC23)=CC1Cl,nan,VLA-UNK-82501c2c-1,Isoquinoline,nan
+505,Mpro-P0154_0B,Mpro-P0154,ClC=1C=CC=2OCCC(CNC(=O)CN3C=CN=C3)(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,nan,EDG-MED-70ae9412-1,Isoquinoline,nan
+506,Mpro-P0151_0A,Mpro-P0151,CN(C)CC(=O)NCC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDG-MED-70ae9412-2,Isoquinoline,nan
+507,Mpro-P0151_0B,Mpro-P0151,CN(C)CC(=O)NCC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDG-MED-70ae9412-2,Isoquinoline,nan
+508,Mpro-P0025_0B,Mpro-P0025,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)N1,nan,MAT-POS-afd4d4fd-2,Isoquinoline,nan
+509,Mpro-P0025_0A,Mpro-P0025,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)N1,nan,MAT-POS-afd4d4fd-2,Isoquinoline,nan
+510,Mpro-P0025_1B,Mpro-P0025,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)N1,nan,MAT-POS-afd4d4fd-2,Isoquinoline,nan
+511,Mpro-P0074_0A,Mpro-P0074,O=C(CC=1C=CC=C(C#N)C1)NC=2C=NC=C3C=CC=CC23,nan,RAL-THA-2d450e86-12,Isoquinoline,nan
+512,Mpro-P0091_0B,Mpro-P0091,ClC=1C=CC=2N(CC3=NC=NN3)CCC(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,nan,RAL-THA-8416115c-13,Isoquinoline,nan
+513,Mpro-P0091_0A,Mpro-P0091,ClC=1C=CC=2N(CC3=NC=NN3)CCC(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,nan,RAL-THA-8416115c-13,Isoquinoline,nan
+514,Mpro-P0097_0A,Mpro-P0097,CN(C)C(=O)CC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,MAT-POS-5d65ec79-1,Isoquinoline,nan
+515,Mpro-P0097_1A,Mpro-P0097,CN(C)C(=O)CC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,,MAT-POS-5d65ec79-1,Moonshot - allosteric,
+516,Mpro-P0238_0A,Mpro-P0238,OCCCN1CCN(CC1)C(=O)CC2(CCOC=3C=CC(Cl)=CC32)C(=O)NC=4C=NC=C5C=CC=CC45,nan,ALP-UNI-8e43a71e-8,Isoquinoline,nan
+517,Mpro-P0600_0A,Mpro-P0600,ClC=1C=CC(=CC1Cl)C2CCCN(C2=O)C=3C=NC=C4C=CC=CC34,nan,ALP-UNI-3735e77e-1,Isoquinoline,nan
+518,Mpro-P0630_0A,Mpro-P0630,COCC(=O)NC(C)(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-e9e99895-11,Isoquinoline,nan
+519,Mpro-P0640_0A,Mpro-P0640,CC(C)N1CCOC(C1)C(=O)NC(C)(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=CC(Cl)=C(Cl)C4,nan,MAT-POS-e9e99895-2,Isoquinoline,nan
+520,Mpro-P0642_0A,Mpro-P0642,ClC=1C=CC=2OCCC(CC(=O)N3CCCCC3C=4C=NNC4)(C(=O)NC=5C=NC=C6C=CC=CC56)C2C1,nan,EDG-MED-ba1ac7b9-11,Isoquinoline,nan
+521,Mpro-P0744_0A,Mpro-P0744,ClC=1C=CC=2CNC[C@@H](C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,MAT-POS-3ccb8ef6-1,Isoquinoline,nan
+522,Mpro-P0747_0A,Mpro-P0747,CN1CCC(C1)C(=O)NC(C)(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=CC(Cl)=C(Cl)C4,nan,MAT-POS-e9e99895-13,Isoquinoline,nan
+523,Mpro-P0766_0A,Mpro-P0766,CC1(C(=O)NC=2C=NC=C3C=CC=CC23)C(=O)NC=4C=CC(Cl)=CC41,nan,EDJ-MED-9e38fd34-1,Isoquinoline,nan
+524,Mpro-P0764_0A,Mpro-P0764,ClC=1C=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C=C(C1)N4CCN(CC4)C(=O)C5=CC=CO5,nan,LON-WEI-9739a092-6,Isoquinoline,nan
+525,Mpro-P0764_0B,Mpro-P0764,ClC=1C=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C=C(C1)N4CCN(CC4)C(=O)C5=CC=CO5,nan,LON-WEI-9739a092-6,Isoquinoline,nan
+526,Mpro-P0772_0A,Mpro-P0772,CN1C[C@@H]2C[C@H]1CN2C(=O)CC3(CCOC=4C=CC(Cl)=CC43)C(=O)NC=5C=NC=C6C=CC=CC56,nan,EDG-MED-ba1ac7b9-13,Isoquinoline,nan
+527,Mpro-P0776_0A,Mpro-P0776,CN1CCC=2C=CC(Cl)=CC2C1C(=O)NC=3C=NC=C4C=CC=CC34,nan,MAT-POS-fb82b63d-3,Isoquinoline,nan
+528,Mpro-P0777_0A,Mpro-P0777,CCC=1C=C(Cl)C=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,PET-UNK-bb7ffe78-1,Isoquinoline,nan
+529,Mpro-P0793_0A,Mpro-P0793,ClC=1C=CC=C(C1)[C@@H]2CCN(C2=O)C=3C=NC=C4C=CC=CC34,ClC=1C=CC=C(C1)[C@@H]2CCN(C2=O)C=3C=NC=C4C=CC=CC34,EDG-MED-5d232de5-7,Isoquinoline,
+530,Mpro-P0800_0A,Mpro-P0800,ClC=1C=CC=2CCNC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,MAT-POS-fb82b63d-1,Isoquinoline,nan
+531,Mpro-P0805_0A,Mpro-P0805,ClC=1C=CC=2OCCC(CC(=O)N3CCCC3CN4C=CN=C4)(C(=O)NC=5C=NC=C6C=CC=CC56)C2C1,nan,EDG-MED-ba1ac7b9-21,Isoquinoline,nan
+532,Mpro-P0816_0B,Mpro-P0816,ClC=1C=CC=C(C1)[C@H]2CCN(C2=O)C=3C=NC=C4C=CC=CC34,ClC=1C=CC=C(C1)[C@H]2CCN(C2=O)C=3C=NC=C4C=CC=CC34,EDG-MED-5d232de5-8,Isoquinoline,
+533,Mpro-P0816_0A,Mpro-P0816,ClC=1C=CC=C(C1)[C@H]2CCN(C2=O)C=3C=NC=C4C=CC=CC34,ClC=1C=CC=C(C1)[C@H]2CCN(C2=O)C=3C=NC=C4C=CC=CC34,EDG-MED-5d232de5-8,Isoquinoline,
+534,Mpro-P0808_0B,Mpro-P0808,CC(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-dd3ad2b5-2,Isoquinoline,nan
+535,Mpro-P0808_0A,Mpro-P0808,CC(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-dd3ad2b5-2,Isoquinoline,nan
+536,Mpro-P0906_0B,Mpro-P0906,CC(C)(C)OC=1C=CN=CC1NC(=O)CC=2C=CC=C(Cl)C2,nan,JIN-POS-6dc588a4-6,Aminopyridine-like,nan
+537,Mpro-P0765_0A,Mpro-P0765,CN1C(=O)N(C(=O)C21CCOC=3C=CC(Cl)=CC32)C=4C=NC=C5C=CC=CC45,nan,BEN-BAS-c2bc0d80-7,Spirocycle,nan
+538,Mpro-P0811_0A,Mpro-P0811,ClC=1C=CC=2OCCC3(CCCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,ALP-POS-477dc5b7-5,Spirocycle,nan
+539,Mpro-P0811_0B,Mpro-P0811,ClC=1C=CC=2OCCC3(CCCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,ALP-POS-477dc5b7-5,Spirocycle,nan
+540,Mpro-P0906_0A,Mpro-P0906,CC(C)(C)OC=1C=CN=CC1NC(=O)CC=2C=CC=C(Cl)C2,nan,JIN-POS-6dc588a4-6,Aminopyridine-like,nan
+541,Mpro-P0925_0A,Mpro-P0925,FC(F)(F)C=1C=CN=CC1NC(=O)CC=2C=CC=C(Cl)C2,nan,SAM-UNK-2684b532-12,Aminopyridine-like,nan
+542,Mpro-P0978_0A,Mpro-P0978,CO[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC(F)=CC34,nan,EDJ-MED-611d11e7-4,Isoquinoline,nan
+543,Mpro-P0978_0B,Mpro-P0978,CO[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC(F)=CC34,nan,EDJ-MED-611d11e7-4,Isoquinoline,nan
+544,Mpro-P1200_0A,Mpro-P1200,COC(=O)NCC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,MAT-POS-e6dd326d-6,Isoquinoline,nan
+545,Mpro-P1477_0A,Mpro-P1477,ClC=1C=CC=C(C1)C(NC(=O)[C@@H]2CC[C@@H](O2)C(=O)N3CCCC3)C(=O)NC=4C=NC=C5C=CC=CC45,nan,MAT-POS-a13804f0-4,Isoquinoline,nan
+546,Mpro-P1623_0A,Mpro-P1623,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)N5CC(C5)C#N,nan,EDJ-MED-1981ceba-4,Isoquinoline,nan
+547,Mpro-P1623_0B,Mpro-P1623,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)N5CC(C5)C#N,nan,EDJ-MED-1981ceba-4,Isoquinoline,nan
+548,Mpro-P1661_0B,Mpro-P1661,COC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC(NS(=O)(=O)C)=CC34,nan,EDG-MED-10fcb19e-1,Isoquinoline,nan
+549,Mpro-P1661_0A,Mpro-P1661,COC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC(NS(=O)(=O)C)=CC34,nan,EDG-MED-10fcb19e-1,Isoquinoline,nan
+550,Mpro-P1783_0A,Mpro-P1783,CNS(=O)(=O)C=1C=CC=2C(NC(=O)C3(CCOC=4C=CC(Cl)=CC43)OC)=CN=CC2C1,nan,EDJ-MED-6bf93aa8-1,Isoquinoline,nan
+551,Mpro-P1783_0B,Mpro-P1783,CNS(=O)(=O)C=1C=CC=2C(NC(=O)C3(CCOC=4C=CC(Cl)=CC43)OC)=CN=CC2C1,nan,EDJ-MED-6bf93aa8-1,Isoquinoline,nan
+552,Mpro-P1858_0A,Mpro-P1858,COC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=C(F)C=CC34,nan,ALP-POS-6f6ae286-3,Isoquinoline,nan
+553,Mpro-P2001_0B,Mpro-P2001,ClC=1C=CC=C(CC(=O)NN2C=NC=3C=CC=CC23)C1,nan,JAN-GHE-5a013bed-2,Aminopyridine-like,nan
+554,Mpro-P2001_0A,Mpro-P2001,ClC=1C=CC=C(CC(=O)NN2C=NC=3C=CC=CC23)C1,nan,JAN-GHE-5a013bed-2,Aminopyridine-like,nan
+555,Mpro-P2005_0A,Mpro-P2005,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,ADA-UCB-6c2cb422-1,Isoquinoline,nan
+556,Mpro-P2007_0B,Mpro-P2007,ClC=1C=CC=C(CC(=O)NC2=CN=C3C=CC=CN23)C1,nan,PET-UNK-8df914d1-2,Aminopyridine-like,nan
+557,Mpro-P2007_0A,Mpro-P2007,ClC=1C=CC=C(CC(=O)NC2=CN=C3C=CC=CN23)C1,nan,PET-UNK-8df914d1-2,Aminopyridine-like,nan
+558,Mpro-P2010_0A,Mpro-P2010,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3N=CC=CC23)C1,nan,MIC-UNK-08cd9c58-1,Isoquinoline,nan
+559,Mpro-P2011_0A,Mpro-P2011,ClC=1C=CC=C(CC(=O)NN2N=NC=3C=CC=CC23)C1,nan,MAT-POS-bfb445d4-2,Benzotriazole,nan
+560,Mpro-P0154_0A,Mpro-P0154,ClC=1C=CC=2OCCC(CNC(=O)CN3C=CN=C3)(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,nan,EDG-MED-70ae9412-1,Isoquinoline,nan
+561,Mpro-P1062_0B,Mpro-P1062,CC1CCN(C1)S(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2,nan,MAT-POS-4223bc15-11,Isoquinoline,nan
+562,Mpro-P1062_0A,Mpro-P1062,CC1CCN(C1)S(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2,nan,MAT-POS-4223bc15-11,Isoquinoline,nan
+563,Mpro-P0041_0B,Mpro-P0041,CCC(=O)N(C(=O)C1CCOC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,nan,MAT-POS-090737b9-1,Isoquinoline,nan
+564,Mpro-P0845_0B,Mpro-P0845,CNC(=O)COCC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,ALP-POS-9c80c481-1,Isoquinoline,nan
+565,Mpro-P0179_0B,Mpro-P0179,CCC(=O)N(C(=O)[C@@H]1CCOC2=C1C=C(Cl)C=C2)C1=C2C=CC=CC2=CN=C1,nan,VLA-UCB-50c39ae8-7,Isoquinoline,nan
+566,Mpro-P1991_0B,Mpro-P1991,CCN(C)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-5cd9ea36-16,Isoquinoline,nan
+567,Mpro-P0064_0B,Mpro-P0064,FC=1C=CC=C(CC(=O)NC=2C=NC=C3C=CC=CC23)C1,nan,RAL-THA-2d450e86-10,Isoquinoline,nan
+568,Mpro-P2201_0B,Mpro-P2201,CN(C)C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,PET-UNK-d899bab6-1,Isoquinoline,
+572,Mpro-P1800_0B,Mpro-P1800,ClC=1C=CC=2OCC[C@]3(CC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,VLA-UCB-50c39ae8-2,Spirocycle,nan
+573,Mpro-P1507_0B,Mpro-P1507,FC=1C=CC=2C=NC=C(N3CCC4(COC=5C=CC(Cl)=CC54)C3=O)C2C1,nan,MAT-POS-8293a91a-8,Spirocycle,nan
+574,Mpro-P1507_0A,Mpro-P1507,FC=1C=CC=2C=NC=C(N3CCC4(COC=5C=CC(Cl)=CC54)C3=O)C2C1,nan,MAT-POS-8293a91a-8,Spirocycle,nan
+575,Mpro-P1800_0A,Mpro-P1800,ClC=1C=CC=2OCC[C@]3(CC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,VLA-UCB-50c39ae8-2,Spirocycle,nan
+576,Mpro-P0045_0B,Mpro-P0045,CC=1C=CN=CC1NC(=O)CC=2C=C(Cl)C=C(OC3CC(=O)N3)C2,nan,TRY-UNI-2eddb1ff-7,Aminopyridine-like,nan
+577,Mpro-P2017_0B,Mpro-P2017,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)CC5(CCC5)C#N,nan,MAT-POS-4223bc15-12,Isoquinoline,nan
+578,Mpro-P0098_0A,Mpro-P0098,NC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-1f3f1a6f-1,Isoquinoline,nan
+579,Mpro-P1991_0A,Mpro-P1991,CCN(C)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-5cd9ea36-16,Isoquinoline,nan
+580,Mpro-P1990_0B,Mpro-P1990,CN(CCC#N)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-5cd9ea36-21,Isoquinoline,nan
+581,Mpro-P1879_0A,Mpro-P1879,ClC=1C=CC=2CN(CC(=O)NCC#N)CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,MAT-POS-5cd9ea36-15,Isoquinoline,nan
+582,Mpro-P1889_0A,Mpro-P1889,ClC=1C=CC=2CN(CC(=O)NC3CC3)CC(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,nan,MAT-POS-5cd9ea36-13,Isoquinoline,nan
+583,Mpro-P1470_0A,Mpro-P1470,CN1N=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C12,nan,RUB-POS-1325a9ea-14,Aminopyridine-like,nan
+584,Mpro-P0904_0B,Mpro-P0904,CC1N(CCN2C=NN=C12)C(=O)CC3(CCOC=4C=CC(Cl)=CC43)C(=O)NC=5C=NC=C6C=CC=CC56,nan,EDG-MED-ba1ac7b9-19,Isoquinoline,nan
+585,Mpro-P0026_0B,Mpro-P0026,ClC=1C=CC=2OCCC(C(=O)NC3CCNC(=O)C3)C2C1,,ALP-POS-8b8a49e1-4,Moonshot - other active site,
+586,Mpro-P1202_0A,Mpro-P1202,COCCN1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-4223bc15-28,Isoquinoline,nan
+587,Mpro-P0845_0A,Mpro-P0845,CNC(=O)COCC1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,ALP-POS-9c80c481-1,Isoquinoline,nan
+588,Mpro-P0851_0A,Mpro-P0851,NC(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-dd3ad2b5-3,Isoquinoline,nan
+589,Mpro-P0851_0B,Mpro-P0851,NC(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-dd3ad2b5-3,Isoquinoline,nan
+594,Mpro-P1474_0A,Mpro-P1474,CNC=1C=NC=C(NC(=O)C2CCOC=3C=CC(Cl)=CC23)C1C,,MAT-POS-afb6844f-1,Aminopyridine-like,
+601,Mpro-P1010_0B,Mpro-P1010,CN(C)C(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-4223bc15-18,Isoquinoline,nan
+602,Mpro-P1010_0A,Mpro-P1010,CN(C)C(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-4223bc15-18,Isoquinoline,nan
+606,Mpro-P2177_0B,Mpro-P2177,OC(=O)C=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,MAT-POS-90fd5f68-38,Isoquinoline,
+608,Mpro-P2201_0A,Mpro-P2201,CN(C)C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,PET-UNK-d899bab6-1,Isoquinoline,
+609,Mpro-P2203_0B,Mpro-P2203,CN(C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1)S(=O)(=O)C,,MAT-POS-90fd5f68-28,Isoquinoline,
+610,Mpro-P1982_0B,Mpro-P1982,COC(=O)CN(C)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-af1eef35-2,Isoquinoline,nan
+611,Mpro-P0130_0B,Mpro-P0130,FC=1C=C2OCCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2=CC1Cl,nan,RAL-THA-05e671eb-10,Isoquinoline,nan
+612,Mpro-P0135_0B,Mpro-P0135,COC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-de59a476-2,Isoquinoline,nan
+613,Mpro-P1990_0A,Mpro-P1990,CN(CCC#N)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-5cd9ea36-21,Isoquinoline,nan
+614,Mpro-P1073_0A,Mpro-P1073,ClC=1C=CC=2OCCC(CNC(=O)C=C)(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,MAT-POS-e6dd326d-8,Aminopyridine-like,nan
+615,Mpro-P1986_0A,Mpro-P1986,COC1(CS(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2)CC1,nan,EDJ-MED-76744c27-4,Isoquinoline,nan
+616,Mpro-P0831_0A,Mpro-P0831,FC=1C=CC=2C=NC=C(NC(=O)C3CCOC=4C=C(F)C(Cl)=CC34)C2C1,nan,MAT-POS-96f51285-5,Isoquinoline,nan
+617,Mpro-P0124_0B,Mpro-P0124,CS(=O)(=O)C=1C=CC=2C=NC=C(NC(=O)C3CCOC=4C=CC(Cl)=CC34)C2C1,nan,BEN-DND-c852c98b-5,Isoquinoline,nan
+618,Mpro-P0240_0B,Mpro-P0240,ClC=1C=CC=2CNCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,BEN-DND-f2e727cd-5,Isoquinoline,nan
+619,Mpro-P1982_0A,Mpro-P1982,COC(=O)CN(C)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-af1eef35-2,Isoquinoline,nan
+623,Mpro-P2177_0A,Mpro-P2177,OC(=O)C=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,MAT-POS-90fd5f68-38,Isoquinoline,
+624,Mpro-P2185_0A,Mpro-P2185,CNC(=O)C=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,MAT-POS-90fd5f68-2,Isoquinoline,
+625,Mpro-P2185_0B,Mpro-P2185,CNC(=O)C=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,MAT-POS-90fd5f68-2,Isoquinoline,
+626,Mpro-P2203_0A,Mpro-P2203,CN(C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1)S(=O)(=O)C,,MAT-POS-90fd5f68-28,Isoquinoline,
+629,Mpro-P0872_0A,Mpro-P0872,FC=1C=CC=2C=NC=C(NC(=O)C3CCNC=4C=C(Cl)C(Cl)=CC34)C2C1,nan,ALP-UNI-8d415491-6,Isoquinoline,nan
+630,Mpro-P0129_0B,Mpro-P0129,CNC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-fce787c2-5,Isoquinoline,nan
+631,Mpro-P0743_0A,Mpro-P0743,CC(=O)N1CC2CC1CN2C(=O)CC3(CCOC=4C=CC(Cl)=CC43)C(=O)NC=5C=NC=C6C=CC=CC56,nan,KAD-UNI-80f122c8-2,Isoquinoline,nan
+633,Mpro-P1986_0B,Mpro-P1986,COC1(CS(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2)CC1,nan,EDJ-MED-76744c27-4,Isoquinoline,nan
+634,Mpro-P0831_0B,Mpro-P0831,FC=1C=CC=2C=NC=C(NC(=O)C3CCOC=4C=C(F)C(Cl)=CC34)C2C1,nan,MAT-POS-96f51285-5,Isoquinoline,nan
+635,Mpro-P0887_0A,Mpro-P0887,CC=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,nan,RUB-POS-1325a9ea-4,Isoquinoline,nan
+636,Mpro-P0125_0B,Mpro-P0125,O[C@]1(CCOC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDG-MED-971238d3-1,Isoquinoline,nan
+637,Mpro-P0878_0A,Mpro-P0878,CC1(CNC=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,nan,EDJ-MED-2f867453-1,Isoquinoline,nan
+638,Mpro-P0243_0B,Mpro-P0243,CO[C@]1(CCOC=2C=C(Cl)C(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,CO[C@]1(CCOC=2C=C(Cl)C(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,EDJ-MED-d08626de-3,Isoquinoline,
+639,Mpro-P0904_0A,Mpro-P0904,CC1N(CCN2C=NN=C12)C(=O)CC3(CCOC=4C=CC(Cl)=CC43)C(=O)NC=5C=NC=C6C=CC=CC56,nan,EDG-MED-ba1ac7b9-19,Isoquinoline,nan
+640,Mpro-P1470_0B,Mpro-P1470,CN1N=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C12,nan,RUB-POS-1325a9ea-14,Aminopyridine-like,nan
+641,Mpro-P0186_0B,Mpro-P0186,CC(=O)NC=1C=CC(=CN1)N(CC=2C=CC=C(Cl)C2)C(=O)CC=3C=NC=C4C=CC=CC34,nan,ALP-POS-c3a96089-4,Isoquinoline,nan
+642,Mpro-P0121_0B,Mpro-P0121,CC(C(=O)NC=1C=NC=C2C=CC=CC12)C=3C=CC(Cl)=C(Cl)C3,nan,MAT-POS-fce787c2-3,Isoquinoline,nan
+643,Mpro-P0850_0A,Mpro-P0850,ClC=1C=C2NCCC(C(=O)NC=3C=NC=C4C=NC=CC34)C2=CC1Cl,nan,ALP-UNI-8d415491-3,Isoquinoline,nan
+649,Mpro-P1983_0A,Mpro-P1983,CC1(CS(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2)CS(=O)(=O)C1,nan,EDJ-MED-4fff0a85-3,Isoquinoline,nan
+652,Mpro-P2204_0A,Mpro-P2204,CNC(=O)C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-20,Isoquinoline,
+653,Mpro-P2204_0B,Mpro-P2204,CNC(=O)C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-20,Isoquinoline,
+654,Mpro-P2205_0A,Mpro-P2205,ClC=1C=CC=C(CC(=O)NC=2C=NC=C3C=C(OCCN4CCCC4)C=CC23)C1,,MAT-POS-90fd5f68-14,Isoquinoline,
+658,Mpro-P1983_0B,Mpro-P1983,CC1(CS(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2)CS(=O)(=O)C1,nan,EDJ-MED-4fff0a85-3,Isoquinoline,nan
+659,Mpro-P0018_0B,Mpro-P0018,ClC=1C=CC=C(C1)N2CCN(CC2=O)C(=O)C=3C=NC=C4C=CC=CC34,nan,ERI-UCB-d6de1f3c-2,Isoquinoline,nan
+660,Mpro-P0148_0B,Mpro-P0148,CC(=O)N1CC[C@@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,CC(=O)N1CC[C@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC14,EDG-MED-5d232de5-3,Isoquinoline,
+661,Mpro-P0009_0B,Mpro-P0009,CC(C)(C)C=1C=CC(=CC1)N([C@@H](C(=O)NCCC=2C=CC=C(F)C2)C=3C=CC=NC3)C(=O)C4=CC=CO4,nan,MAT-POS-f2460aef-1,Ugi,nan
+662,Mpro-P0111_0B,Mpro-P0111,ClC=1C=C(Cl)C=2OCCC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1,nan,ALP-UNI-3735e77e-2,Isoquinoline,nan
+663,Mpro-P2017_0A,Mpro-P2017,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)CC5(CCC5)C#N,nan,MAT-POS-4223bc15-12,Isoquinoline,nan
+664,Mpro-P0884_0A,Mpro-P0884,ClC=1C=C2NCCC(C(=O)NC=3C=NC=CC3C4CC4)C2=CC1Cl,nan,ALP-UNI-8d415491-1,Aminopyridine-like,nan
+665,Mpro-P1988_0B,Mpro-P1988,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)CC5CCOCC5,nan,EDJ-MED-4fff0a85-1,Isoquinoline,nan
+666,Mpro-P1988_0A,Mpro-P1988,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)CC5CCOCC5,nan,EDJ-MED-4fff0a85-1,Isoquinoline,nan
+678,Mpro-P1978_0B,Mpro-P1978,COCCN(C)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-5cd9ea36-22,Isoquinoline,
+679,Mpro-P1978_0A,Mpro-P1978,COCCN(C)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-5cd9ea36-22,Isoquinoline,
+680,Mpro-P1980_0A,Mpro-P1980,CN(CC#N)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-5cd9ea36-18,Isoquinoline,nan
+681,Mpro-P1980_0B,Mpro-P1980,CN(CC#N)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,nan,MAT-POS-5cd9ea36-18,Isoquinoline,nan
+682,Mpro-P1981_0A,Mpro-P1981,COC=1C=C2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2=CC1F,nan,PET-UNK-b38839dc-1,Isoquinoline,nan
+685,Mpro-x10733_0A,Mpro-x10733,CC=1C=CN=CC1NC(=O)CN2C=CC=3C=CC(F)=CC23,nan,BAR-COM-0f94fc3d-18,Aminopyridine-like,nan
+689,Mpro-P0143_0A,Mpro-P0143,ClC=1C=CC=2OCC[C@]3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,ClC=1C=CC=2OCC[C@]3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,VLA-UCB-34f3ed0c-11,Spirocycle,
+690,Mpro-P0143_0B,Mpro-P0143,ClC=1C=CC=2OCC[C@]3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,ClC=1C=CC=2OCC[C@]3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,VLA-UCB-34f3ed0c-11,Spirocycle,
+691,Mpro-P0950_0A,Mpro-P0950,ClC=1C=CC=2NCCC3(CCCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,ALP-POS-e0fe77e5-13,Spirocycle,nan
+692,Mpro-P0950_0B,Mpro-P0950,ClC=1C=CC=2NCCC3(CCCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,ALP-POS-e0fe77e5-13,Spirocycle,nan
+693,Mpro-P2113_0B,Mpro-P2113,CNC(=O)CN1CC=2C=CC(Cl)=CC2C3(CC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C1,nan,MAT-POS-1bed62cf-3,Spirocycle,nan
+694,Mpro-P2113_0A,Mpro-P2113,CNC(=O)CN1CC=2C=CC(Cl)=CC2C3(CC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C1,nan,MAT-POS-1bed62cf-3,Spirocycle,nan
+695,Mpro-P2222_0A,Mpro-P2222,CNC(=O)CN1CC=2C=CC(Cl)=CC2C3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C1,,EDJ-MED-8bb691af-4,Spirocycle,
+696,Mpro-P2222_0B,Mpro-P2222,CNC(=O)CN1CC=2C=CC(Cl)=CC2C3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C1,,EDJ-MED-8bb691af-4,Spirocycle,
+697,Mpro-x12686_0A,Mpro-x12686,ClC=1C=CC=2OCCC3(NC(=O)N(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,nan,VLA-UCB-29506327-1,Spirocycle,nan
+698,Mpro-x3110_0B,Mpro-x3110,CCC(N(C(C(NCCC(OCC)=O)=O)c1cnccc1)c1ccc(C(C)(C)C)cc1)=O,,LON-WEI-adc59df6-2,Ugi,
+699,Mpro-P2147_0B,Mpro-P2147,CCNS(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-5cd9ea36-17,Isoquinoline,
+700,Mpro-P2147_0A,Mpro-P2147,CCNS(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-5cd9ea36-17,Isoquinoline,
+701,Mpro-P2178_0A,Mpro-P2178,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=C(C)C23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-e119ab4f-3,Isoquinoline,
+702,Mpro-P2178_0B,Mpro-P2178,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=C(C)C23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-e119ab4f-3,Isoquinoline,
+703,Mpro-P2178_1A,Mpro-P2178,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC=C(C)C23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-e119ab4f-3,Isoquinoline,
+704,Mpro-P2028_0A,Mpro-P2028,CS(=O)(=O)NCC=1C=CC(Cl)=CC1CC(=O)NC=2C=NC=C3C=CC=CC23,,ALP-POS-6479a3a9-2,Isoquinoline,
+705,Mpro-P2028_1A,Mpro-P2028,CS(=O)(=O)NCC=1C=CC(Cl)=CC1CC(=O)NC=2C=NC=C3C=CC=CC23,,ALP-POS-6479a3a9-2,Isoquinoline,
+706,Mpro-P2028_1B,Mpro-P2028,CS(=O)(=O)NCC=1C=CC(Cl)=CC1CC(=O)NC=2C=NC=C3C=CC=CC23,,ALP-POS-6479a3a9-2,Isoquinoline,
+707,Mpro-P2028_0B,Mpro-P2028,CS(=O)(=O)NCC=1C=CC(Cl)=CC1CC(=O)NC=2C=NC=C3C=CC=CC23,,ALP-POS-6479a3a9-2,Isoquinoline,
+708,Mpro-P2036_0A,Mpro-P2036,CC1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,,ALP-POS-1cbc2fae-1,Isoquinoline,
+709,Mpro-P2036_0B,Mpro-P2036,CC1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,,ALP-POS-1cbc2fae-1,Isoquinoline,
+710,Mpro-P2182_0A,Mpro-P2182,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC(F)=CC23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-e119ab4f-2,Isoquinoline,
+711,Mpro-P2182_0B,Mpro-P2182,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC(F)=CC23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-e119ab4f-2,Isoquinoline,
+712,Mpro-P2183_0B,Mpro-P2183,OC(=O)C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-37,Isoquinoline,
+713,Mpro-P2183_0A,Mpro-P2183,OC(=O)C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-37,Isoquinoline,
+714,Mpro-P2218_0A,Mpro-P2218,NC(=O)C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-19,Isoquinoline,
+715,Mpro-P2219_0A,Mpro-P2219,CC(=O)NC=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-22,Isoquinoline,
+716,Mpro-P2224_0A,Mpro-P2224,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(F)C=CC23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-e119ab4f-1,Isoquinoline,
+717,Mpro-P2229_0A,Mpro-P2229,CN(C)C(=O)C=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-21,Isoquinoline,
+718,Mpro-P2284_0A,Mpro-P2284,CS(=O)(=O)OC=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,PET-UNK-7fb4f80a-1,Isoquinoline,
+719,Mpro-P2385_0A,Mpro-P2385,CNC(=O)CN1CC=2C=CC(Cl)=CC2[C@@]3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C1,,MAT-POS-c7726e07-5,Spirocycle,
+720,Mpro-P2385_0B,Mpro-P2385,CNC(=O)CN1CC=2C=CC(Cl)=CC2[C@@]3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C1,,MAT-POS-c7726e07-5,Spirocycle,
+721,Mpro-P2402_0B,Mpro-P2402,CNC(=O)C1(CC1)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2=O,,EDJ-MED-12c4873b-2,Isoquinoline,
+722,Mpro-P2402_0A,Mpro-P2402,CNC(=O)C1(CC1)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2=O,,EDJ-MED-12c4873b-2,Isoquinoline,
+723,Mpro-P2415_0A,Mpro-P2415,ClC=1C=CC2=C(C1)C(CNS2(=O)=O)C(=O)NC=3C=NC=C4CCCCC34,,ALP-POS-4483ae88-4,Isoquinoline,
+724,Mpro-P2468_0B,Mpro-P2468,CNC(=O)CN1C(C)C(C(=O)NC=2C=NC=C3C=C(C=CC23)S(=O)(=O)C)C=4C=C(Cl)C=CC4C1=O,,EDG-MED-ee636701-1,Isoquinoline,
+725,Mpro-P2468_0A,Mpro-P2468,CNC(=O)CN1C(C)C(C(=O)NC=2C=NC=C3C=C(C=CC23)S(=O)(=O)C)C=4C=C(Cl)C=CC4C1=O,,EDG-MED-ee636701-1,Isoquinoline,
+726,Mpro-P2067_0A,Mpro-P2067,CNC(=O)C(C)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-5cd9ea36-14,Isoquinoline,
+727,Mpro-P2067_0B,Mpro-P2067,CNC(=O)C(C)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-5cd9ea36-14,Isoquinoline,
+728,Mpro-P2381_0A,Mpro-P2381,CCC1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4C=CC=CC34,,ALP-POS-1cbc2fae-2,Isoquinoline,
+729,Mpro-P1079_0A,Mpro-P1079,CN1N=CC=C1C(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2,,MAT-POS-4223bc15-40,Isoquinoline,
+730,Mpro-P1079_0B,Mpro-P1079,CN1N=CC=C1C(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2,,MAT-POS-4223bc15-40,Isoquinoline,
+731,Mpro-P2256_0A,Mpro-P2256,ClC=1C=CC=2C(=O)N(CC(=O)NC3COC3)CC(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,,EDJ-MED-43f8f7d6-6,Isoquinoline,
+732,Mpro-P2358_0A,Mpro-P2358,CNC(=O)CN1CC(C)(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4S1(=O)=O,,MAT-POS-e119ab4f-5,Isoquinoline,
+733,Mpro-P1812_0A,Mpro-P1812,CC(C)(O)C=1C=CC=2C=NC=C(NC(=O)C3CCNC=4C=CC(Cl)=CC34)C2C1,,MAT-POS-86c60949-2,Isoquinoline,
+734,Mpro-P1812_0B,Mpro-P1812,CC(C)(O)C=1C=CC=2C=NC=C(NC(=O)C3CCNC=4C=CC(Cl)=CC34)C2C1,,MAT-POS-86c60949-2,Isoquinoline,
+735,Mpro-P2031_0B,Mpro-P2031,CNC(=O)CN1C[C@@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-a54ce14d-2,Isoquinoline,
+736,Mpro-P2031_0A,Mpro-P2031,CNC(=O)CN1C[C@@H](C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-a54ce14d-2,Isoquinoline,
+738,Mpro-P2039_0A,Mpro-P2039,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC(NS(=O)(=O)C)=CC23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-2e8b2191-11,Isoquinoline,
+739,Mpro-P2039_0B,Mpro-P2039,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC(NS(=O)(=O)C)=CC23)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-2e8b2191-11,Isoquinoline,
+742,Mpro-P2057_0A,Mpro-P2057,CN(CCO)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-5cd9ea36-23,Isoquinoline,
+743,Mpro-P2057_0B,Mpro-P2057,CN(CCO)S(=O)(=O)N1CC(C(=O)NC=2C=NC=C3C=CC=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-5cd9ea36-23,Isoquinoline,
+744,Mpro-P2070_0A,Mpro-P2070,CN1N=CC=2C=NC=C(NC(=O)C3CN(CC=4C=CC(Cl)=CC34)S(=O)(=O)CC5(CC5)C#N)C12,,MAT-POS-bfd29aac-1,Aminopyridine-like,
+745,Mpro-P2070_0B,Mpro-P2070,CN1N=CC=2C=NC=C(NC(=O)C3CN(CC=4C=CC(Cl)=CC34)S(=O)(=O)CC5(CC5)C#N)C12,,MAT-POS-bfd29aac-1,Aminopyridine-like,
+746,Mpro-P2072_0A,Mpro-P2072,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=CC(NS(=O)(=O)C)=CC23)C=4C=C(Cl)C=CC4C1,,MAT-POS-2e8b2191-10,Isoquinoline,
+747,Mpro-P2074_0A,Mpro-P2074,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(C=CC23)S(=O)(=O)C)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-2e8b2191-12,Isoquinoline,
+748,Mpro-P2074_0B,Mpro-P2074,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(C=CC23)S(=O)(=O)C)C=4C=C(Cl)C=CC4C1=O,,MAT-POS-2e8b2191-12,Isoquinoline,
+749,Mpro-P2075_0A,Mpro-P2075,CC(C)(O)C=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,MAT-POS-c20a539d-4,Isoquinoline,
+750,Mpro-P2080_0A,Mpro-P2080,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(F)C=CC23)C=4C=C(Cl)C=CC4C1,,ALP-POS-6f6ae286-5,Isoquinoline,
+751,Mpro-P2080_0B,Mpro-P2080,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(F)C=CC23)C=4C=C(Cl)C=CC4C1,,ALP-POS-6f6ae286-5,Isoquinoline,
+752,Mpro-P2089_0A,Mpro-P2089,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)NC5CC5,,MAT-POS-5cd9ea36-2,Isoquinoline,
+753,Mpro-P2089_0B,Mpro-P2089,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)S(=O)(=O)NC5CC5,,MAT-POS-5cd9ea36-2,Isoquinoline,
+754,Mpro-P2090_0A,Mpro-P2090,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(C=CC23)S(=O)(=O)C)C=4C=C(Cl)C=CC4C1,,EDJ-MED-7889e8da-5,Isoquinoline,
+755,Mpro-P2090_0B,Mpro-P2090,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(C=CC23)S(=O)(=O)C)C=4C=C(Cl)C=CC4C1,,EDJ-MED-7889e8da-5,Isoquinoline,
+756,Mpro-P2099_0A,Mpro-P2099,ClC=1C=CC2=C(C1)C(CNS2(=O)=O)C(=O)NC=3C=NC=C4C=CC=CC34,,ALP-POS-a577c8a2-1,Isoquinoline,
+757,Mpro-P2099_0B,Mpro-P2099,ClC=1C=CC2=C(C1)C(CNS2(=O)=O)C(=O)NC=3C=NC=C4C=CC=CC34,,ALP-POS-a577c8a2-1,Isoquinoline,
+758,Mpro-P2101_0A,Mpro-P2101,CNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(Cl)C=CC23)C=4C=C(Cl)C=CC4C1,,EDJ-MED-7889e8da-3,Isoquinoline,
+762,Mpro-P2141_0A,Mpro-P2141,ClC=1C=CC=C(C1)[C@H](NC(=O)[C@@H]2CC[C@@H](O2)C(=O)N3CCCC3)C(=O)NC=4C=NC=C5C=CC=CC45,O=C([C@H](c1cccc(Cl)c1)NC([C@H](CC1)O[C@H]1C(N1CCCC1)=O)=O)Nc1cncc2ccccc12,MAT-POS-7174c657-6,Isoquinoline,
+763,Mpro-P2144_0A,Mpro-P2144,CN(C)CCOC=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-31,Isoquinoline,
+764,Mpro-P2144_0B,Mpro-P2144,CN(C)CCOC=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,MAT-POS-90fd5f68-31,Isoquinoline,
+765,Mpro-P2176_0A,Mpro-P2176,ClC=1C=CC=C(C1)[C@@H](NC(=O)[C@@H]2CC[C@@H](O2)C(=O)N3CCCC3)C(=O)NC=4C=NC=C5C=CC=CC45,,MAT-POS-7174c657-5,Isoquinoline,
+766,Mpro-P2197_0A,Mpro-P2197,ClC=1C=CC=2OCCC3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,,ALP-POS-477dc5b7-4,Isoquinoline,
+767,Mpro-P2197_0B,Mpro-P2197,ClC=1C=CC=2OCCC3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1,,ALP-POS-477dc5b7-4,Isoquinoline,
+770,Mpro-P2206_0A,Mpro-P2206,ClC=1C=CC=2CN(CC(C(=O)NC=3C=NC=C4C=CC=CC34)C2C1)C5CCNC5=O,,EDJ-MED-12c4873b-5,Isoquinoline,
+771,Mpro-P2207_0A,Mpro-P2207,CN(C)C=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,MAT-POS-90fd5f68-7,Isoquinoline,
+772,Mpro-P2210_0A,Mpro-P2210,CN(C)CCOC=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,MAT-POS-90fd5f68-13,Isoquinoline,
+773,Mpro-P2210_0B,Mpro-P2210,CN(C)CCOC=1C=CC=2C(NC(=O)CC=3C=CC=C(Cl)C3)=CN=CC2C1,,MAT-POS-90fd5f68-13,Isoquinoline,
+774,Mpro-P2214_0B,Mpro-P2214,CS(=O)(=O)OC=1C=CC=2C=NC=C(NC(=O)CC=3C=CC=C(Cl)C3)C2C1,,PET-UNK-7fb4f80a-2,Isoquinoline,
+775,Mpro-P2215_0A,Mpro-P2215,CS(=O)(=O)NC=1C=CC=2C(NC(=O)C3CN(CC=4C=CC(Cl)=CC34)S(=O)(=O)CC5(CC5)C#N)=CN=CC2C1,,EDJ-MED-be9e6f63-3,Isoquinoline,
+777,Mpro-P2242_0A,Mpro-P2242,CCCNC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(F)C=CC23)C=4C=C(Cl)C=CC4C1=O,,EDJ-MED-e69ed63d-13,Isoquinoline,
+778,Mpro-P2243_0B,Mpro-P2243,FC=1C=CC=2C(NC(=O)C3(CC4C3)C=5C=C(Cl)C=CC5O4)=CN=CC2C1,,EDJ-MED-c3ea9889-6,Isoquinoline,
+780,Mpro-P2263_0A,Mpro-P2263,ClC=1C=CC=2CN(CC3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1)S(=O)(=O)CC6(CC6)C#N,,EDJ-MED-8bb691af-6,Spirocycle,
+783,Mpro-P2273_0B,Mpro-P2273,CC(C)NC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(F)C=CC23)C=4C=C(Cl)C=CC4C1=O,,EDJ-MED-e69ed63d-1,Isoquinoline,
+790,Mpro-P2291_0A,Mpro-P2291,ClC=1C=CC=2C(=O)N(CC(=O)NC3CC3)CC(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,,EDJ-MED-43f8f7d6-4,Isoquinoline,
+791,Mpro-P2291_0B,Mpro-P2291,ClC=1C=CC=2C(=O)N(CC(=O)NC3CC3)CC(C(=O)NC=4C=NC=C5C=CC=CC45)C2C1,,EDJ-MED-43f8f7d6-4,Isoquinoline,
+792,Mpro-P2295_0A,Mpro-P2295,COC1(CS(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2=O)CC1,,EDJ-MED-968bafd9-1,Isoquinoline,
+793,Mpro-P2295_0B,Mpro-P2295,COC1(CS(=O)(=O)N2CC(C(=O)NC=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C2=O)CC1,,EDJ-MED-968bafd9-1,Isoquinoline,
+794,Mpro-P2601_0A,Mpro-P2601,ClC=1C=CC2=C(C1)[C@@H](CNS2(=O)=O)C(=O)NC=3C=NC=C4CCCCC34,,MIK-UNK-78dbf1b8-1,Aminopyridine-like,
+795,Mpro-P2601_0B,Mpro-P2601,ClC=1C=CC2=C(C1)[C@@H](CNS2(=O)=O)C(=O)NC=3C=NC=C4CCCCC34,,MIK-UNK-78dbf1b8-1,Aminopyridine-like,
+798,Mpro-P2649_0B,Mpro-P2649,CN(C)CCOC=1C=CC=2C=NC=C(N3CCC4(CN(CC=5C=CC(Cl)=CC54)S(=O)(=O)CC6(CC6)C#N)C3=O)C2C1,,MAT-POS-853c0ffa-9,Spirocycle,
+799,Mpro-P2649_0A,Mpro-P2649,CN(C)CCOC=1C=CC=2C=NC=C(N3CCC4(CN(CC=5C=CC(Cl)=CC54)S(=O)(=O)CC6(CC6)C#N)C3=O)C2C1,,MAT-POS-853c0ffa-9,Spirocycle,
+800,Mpro-P2607_0B,Mpro-P2607,CNC(=O)CN1CC=2C=CC(Cl)=CC2C3(CCN(C3=O)C=4C=NC=C5CCCCC45)C1,,EDJ-MED-705e09b8-1,Spirocycle,
+801,Mpro-P2607_0A,Mpro-P2607,CNC(=O)CN1CC=2C=CC(Cl)=CC2C3(CCN(C3=O)C=4C=NC=C5CCCCC45)C1,,EDJ-MED-705e09b8-1,Spirocycle,
+802,Mpro-P2606_0B,Mpro-P2606,C[C@@]1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4CCCCC34,C[C@]1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4CCCCC34,MIK-ENA-5d9157e9-5,Aminopyridine-like,
+803,Mpro-P2606_0A,Mpro-P2606,C[C@@]1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4CCCCC34,C[C@]1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4CCCCC34,MIK-ENA-5d9157e9-5,Aminopyridine-like,
+804,Mpro-P2605_0B,Mpro-P2605,C[C@]1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4CCCCC34,C[C@@]1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4CCCCC34,MIK-ENA-5d9157e9-6,Aminopyridine-like,
+805,Mpro-P2605_0A,Mpro-P2605,C[C@]1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4CCCCC34,C[C@@]1(CNS(=O)(=O)C=2C=CC(Cl)=CC21)C(=O)NC=3C=NC=C4CCCCC34,MIK-ENA-5d9157e9-6,Aminopyridine-like,
+806,Mpro-z7vh8_0A,Mpro-z7vh8,CC(C)(C)[C@H](NC(O)C(F)(F)F)C(O)N1C[C@H]2[C@@H]([C@H]1C(O)N[C@@H](C[C@@H]1CCNC1O)C(N)S)C2(C)C,[H]/N=C/[C@H](C[C@@H]1CCNC1=O)NC(=O)[C@@H]2[C@@H]3[C@@H](C3(C)C)CN2C(=O)[C@H](C(C)(C)C)NC(=O)C(F)(F)F,Nirmatrelvir,PDB - SARS-CoV-2 Mpro,7VH8
+807,Mpro-z7lfe_0A,Mpro-z7lfe,O[C@@H]1CCN(C2CCCCC2)[C@H](O)N1,c1ccc(cc1)N2CC[C@H](N[C@H]2O)O,F2X E03,PDB - SARS-CoV-2 Mpro,7LFE
+809,Mpro-z7rfs_0A,Mpro-z7rfs,CC(C)(C)[C@H](NC(O)C(F)(F)F)C(O)N1C[C@H]2[C@@H]([C@H]1C(O)N[C@@H](C[C@@H]1CCNC1O)C(N)S)C2(C)C,[H]/N=C/[C@H](C[C@@H]1CCNC1=O)NC(=O)[C@@H]2[C@@H]3[C@@H](C3(C)C)CN2C(=O)[C@H](C(C)(C)C)NC(=O)C(F)(F)F,Nirmatrelvir,PDB - SARS-CoV-2 Mpro,7RFS
+810,Mpro-z7rfw_0A,Mpro-z7rfw,CC(C)(C)[C@H](N[C@H](O)C(F)(F)F)C(O)N1C[C@H]2[C@@H]([C@H]1C(O)N[C@@H](C[C@@H]1CCNC1O)C(N)S)C2(C)C,[H]/N=C/[C@H](C[C@@H]1CCNC1=O)NC(=O)[C@@H]2[C@@H]3[C@@H](C3(C)C)CN2C(=O)[C@H](C(C)(C)C)NC(=O)C(F)(F)F,Nirmatrelvir,PDB - SARS-CoV-2 Mpro,7RFW
+811,Mpro-z7rls_0A,Mpro-z7rls,OC1CC(C(O)N2CCN(C3CC(Cl)C(Cl)C(Cl)C3)CC2)NC(O)N1,OC1CC(C(O)N2CCN(C3CC(Cl)C(Cl)C(Cl)C3)CC2)NC(O)N1,HL-3-68,PDB - SARS-CoV-2 Mpro,7RLS
+812,Mpro-z7rm2_0A,Mpro-z7rm2,CC1C(Cl)CC(N2CCN(C(O)C3CC(O)NC(O)N3)CC2)CC1Cl,CC1C(Cl)CC(N2CCN(C(O)C3CC(O)NC(O)N3)CC2)CC1Cl,Mcule-CSR-494190-S1,PDB - SARS-CoV-2 Mpro,7RM2
+813,Mpro-z7rmb_0A,Mpro-z7rmb,OC1CC(C(O)N2CCN(C3CCC(Br)C(Cl)C3)CC2)NC(O)N1,c1cc(c(cc1N2CCN(CC2)C(=O)C3=CC(=O)NC(=O)N3)Cl)Br,HL-3-78,PDB - SARS-CoV-2 Mpro,7RMB
+814,Mpro-z7rme_0A,Mpro-z7rme,OC1CC(C(O)N2CCN(C3CCC(Cl)C(C(F)(F)F)C3)CC2)NC(O)N1,c1cc(c(cc1N2CCN(CC2)C(=O)C3=CC(=O)NC(=O)N3)C(F)(F)F)Cl,HL-3-52,PDB - SARS-CoV-2 Mpro,7RME
+815,Mpro-z7rmt_0A,Mpro-z7rmt,OCC1CCC(N2CCN(C(O)C3CC(O)NC(O)N3)CC2)CC1Cl,c1cc(c(cc1N2CCN(CC2)C(=O)C3=NC(=O)NC(=O)C3)Cl)C=O,HL-3-70,PDB - SARS-CoV-2 Mpro,7RMT
+816,Mpro-z7rmz_0A,Mpro-z7rmz,OC1CC([C@@H](O)N2CCN(C3CCC(C(F)(F)F)C(Cl)C3)CC2)NC(O)N1,c1cc(c(cc1N2CCN(CC2)C(=O)C3=CC(=O)NC(=O)N3)Cl)C(F)(F)F,HL-3-63,PDB - SARS-CoV-2 Mpro,7RMZ
+817,Mpro-z7rn4_0A,Mpro-z7rn4,OC1CC(C(O)N2CCC(C3CCC(Cl)C(Cl)C3)CC2)NC(O)N1,c1cc(c(cc1C2CCN(CC2)C(=O)C3=CC(=O)NC(=O)N3)Cl)Cl,HL-3-69,PDB - SARS-CoV-2 Mpro,7RN4
+818,Mpro-z7rnh_0A,Mpro-z7rnh,OC1CC(C(O)N2CCN(C3CCC(Cl)CC3)CC2)NC(O)N1,c1cc(ccc1N2CCN(CC2)C(=O)C3=CC(=O)NC(=O)N3)Cl,HL-3-45,PDB - SARS-CoV-2 Mpro,7RNH
+819,Mpro-z7rnk_0A,Mpro-z7rnk,OCC1CCC(N2CCN(C(O)C3CC(O)NC(O)N3)CC2)CC1Cl,c1cc(c(cc1N2CCN(CC2)C(=O)C3=NC(=O)NC(=O)C3)Cl)CO,HL-3-71,PDB - SARS-CoV-2 Mpro,7RNK
+820,Mpro-z7si9_0A,Mpro-z7si9,CC(C)(C)[C@H](NC(O)C(F)(F)F)C(O)N1C[C@H]2[C@@H]([C@H]1C(O)N[C@@H](C[C@@H]1CCNC1O)C(N)S)C2(C)C,[H]/N=C/[C@H](C[C@@H]1CCNC1=O)NC(=O)[C@@H]2[C@@H]3[C@@H](C3(C)C)CN2C(=O)[C@H](C(C)(C)C)NC(=O)C(F)(F)F,Nirmatrelvir,PDB - SARS-CoV-2 Mpro,7SI9
+821,Mpro-z7te0_0A,Mpro-z7te0,CC(C)(C)[C@H](NC(O)C(F)(F)F)C(O)N1C[C@H]2[C@@H]([C@H]1C(O)N[C@@H](C[C@@H]1CCNC1O)C(N)S)C2(C)C,[H]/N=C/[C@H](C[C@@H]1CCNC1=O)NC(=O)[C@@H]2[C@@H]3[C@@H](C3(C)C)CN2C(=O)[C@H](C(C)(C)C)NC(=O)C(F)(F)F,Nirmatrelvir,PDB - SARS-CoV-2 Mpro,7TE0
+822,Mpro-z7tll_0A,Mpro-z7tll,CC(C)(C)[C@H](NC(O)C(F)(F)F)C(O)N1C[C@H]2[C@@H]([C@H]1C(O)N[C@H](CN)C[C@@H]1CCNC1O)C2(C)C,[H]/N=C/[C@H](C[C@@H]1CCNC1=O)NC(=O)[C@@H]2[C@@H]3[C@@H](C3(C)C)CN2C(=O)[C@H](C(C)(C)C)NC(=O)C(F)(F)F,Nirmatrelvir,PDB - SARS-CoV-2 Mpro,7TLL
+823,Mpro-z7tll_0B,Mpro-z7tll,CC(C)(C)[C@H](NC(O)C(F)(F)F)C(O)N1C[C@H]2[C@@H]([C@H]1C(O)N[C@@H](C[C@@H]1CCNC1O)C(N)S)C2(C)C,[H]/N=C/[C@H](C[C@@H]1CCNC1=O)NC(=O)[C@@H]2[C@@H]3[C@@H](C3(C)C)CN2C(=O)[C@H](C(C)(C)C)NC(=O)C(F)(F)F,Nirmatrelvir,PDB - SARS-CoV-2 Mpro,7TLL
+824,Mpro-P2487_0A,Mpro-P2487,CNC(=O)CN1CC2(CCN(C2=O)C=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C1=O,,EDJ-MED-8bb691af-8,Isoquinoline,
+825,Mpro-P2487_0B,Mpro-P2487,CNC(=O)CN1CC2(CCN(C2=O)C=3C=NC=C4C=CC=CC34)C=5C=C(Cl)C=CC5C1=O,,EDJ-MED-8bb691af-8,Isoquinoline,
+826,Mpro-P2660_0B,Mpro-P2660,CNC(=O)CN1CC2(CCN(C2=O)C=3C=NC=C4C=CC(Cl)=CC34)C=5C=C(Cl)C=CC5C1=O,,EDG-MED-b1ef7fe3-1,Spirocycle,
+827,Mpro-P2660_0A,Mpro-P2660,CNC(=O)CN1CC2(CCN(C2=O)C=3C=NC=C4C=CC(Cl)=CC34)C=5C=C(Cl)C=CC5C1=O,,EDG-MED-b1ef7fe3-1,Spirocycle,
+828,Mpro-P2273_0A,Mpro-P2273,CC(C)NC(=O)CN1CC(C(=O)NC=2C=NC=C3C=C(F)C=CC23)C=4C=C(Cl)C=CC4C1=O,,EDJ-MED-e69ed63d-1,Isoquinoline,
+830,Mpro-x10513_0B,Mpro-x10513,CC=1C=CC=C(C1)C2CN(CC=3C=CC=CC23)C(=O)CCl,CC=1C=CC=C(C1)C2CN(CC=3C=CC=CC23)C(=O)C,NIR-THE-c331be7a-6,Chloroacetamide,
+831,Mpro-P2724_0A,Mpro-P2724,CNC(=O)C1(CC1)N2CC3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C=6C=C(Cl)C=CC6C2=O,,EDJ-MED-976a33d5-1,Spirocycle,
+832,Mpro-P2724_0B,Mpro-P2724,CNC(=O)C1(CC1)N2CC3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C=6C=C(Cl)C=CC6C2=O,,EDJ-MED-976a33d5-1,Spirocycle,
+833,Mpro-P2730_0A,Mpro-P2730,ClC=1C=CC=2CN(CC(=O)NCC3CC3)CC4(CCN(C4=O)C=5C=NC=C6C=CC=CC56)C2C1,,ALP-POS-ecbed2ba-12,Spirocycle,
+834,Mpro-P2730_0B,Mpro-P2730,ClC=1C=CC=2CN(CC(=O)NCC3CC3)CC4(CCN(C4=O)C=5C=NC=C6C=CC=CC56)C2C1,,ALP-POS-ecbed2ba-12,Spirocycle,
+835,Mpro-P3038_0B,Mpro-P3038,CNC(=O)C1(CC1)N2C[C@@]3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C=6C=C(Cl)C=CC6C2=O,CNC(=O)C1(CC1)N2C[C@]3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C=6C=C(Cl)C=CC6C2=O,MAT-POS-e48723dc-2,Spirocycle,
+836,Mpro-P3038_0A,Mpro-P3038,CNC(=O)C1(CC1)N2C[C@@]3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C=6C=C(Cl)C=CC6C2=O,CNC(=O)C1(CC1)N2C[C@]3(CCN(C3=O)C=4C=NC=C5C=CC=CC45)C=6C=C(Cl)C=CC6C2=O,MAT-POS-e48723dc-2,Spirocycle,
+837,Mpro-P3050_0A,Mpro-P3050,CC1CN(C(=O)C21CN(CC=3C=CC(Cl)=CC32)S(=O)(=O)CC4(CC4)C#N)C=5C=NC=C6C=CC=CC56,,MAT-POS-50a80394-1,Spirocycle,
+838,Mpro-P3074_0A,Mpro-P3074,ClC=1C=CC=2CN(CC3(CCCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1)S(=O)(=O)CC6(CC6)C#N,,ALP-POS-133e7cd9-2,Spirocycle,
+839,Mpro-P3050_0B,Mpro-P3050,CC1CN(C(=O)C21CN(CC=3C=CC(Cl)=CC32)S(=O)(=O)CC4(CC4)C#N)C=5C=NC=C6C=CC=CC56,,MAT-POS-50a80394-1,Spirocycle,
+840,Mpro-P3074_0B,Mpro-P3074,ClC=1C=CC=2CN(CC3(CCCN(C3=O)C=4C=NC=C5C=CC=CC45)C2C1)S(=O)(=O)CC6(CC6)C#N,,ALP-POS-133e7cd9-2,Spirocycle,
+841,Mpro-P3054_0A,Mpro-P3054,CCC1CN(C(=O)C21CN(CC=3C=CC(Cl)=CC32)S(=O)(=O)CC4(CC4)C#N)C=5C=NC=C6C=CC=CC56,,MAT-POS-50a80394-2,Spirocycle,
+842,Mpro-P3054_0B,Mpro-P3054,CCC1CN(C(=O)C21CN(CC=3C=CC(Cl)=CC32)S(=O)(=O)CC4(CC4)C#N)C=5C=NC=C6C=CC=CC56,,MAT-POS-50a80394-2,Spirocycle,
+843,Mpro-J0105_0A,Mpro-J0105,CC(N(C1CC1)C(=O)Cn1nnc2ccccc12)c1cccc(c1)C(F)(F)F,,nsp5_2648068,JEDI - Benzotriazole,
+844,Mpro-J0071_0B,Mpro-J0071,CC(N(C)C(=O)Cn1nnc2ccccc12)c1ccccc1,,nsp5_S5279240,JEDI - Benzotriazole,
+845,Mpro-J0114_0B,Mpro-J0114,CC(N(C)C(=O)Cn1nnc2ccccc12)c1cccc(Cl)c1,,nsp5_15734065,JEDI - Benzotriazole,
+846,Mpro-J0055_0A,Mpro-J0055,CC(N(C1CC1)C(=O)Cn1nnc2ccccc12)c1ccccc1,,nsp5_S3469020,JEDI - Benzotriazole,
+847,Mpro-J0100_0B,Mpro-J0100,CCN(Cc1ccccc1)C(=O)Cn1nnc2ccccc12,,nsp5_S5727679,JEDI - Benzotriazole,
+848,Mpro-J0050_0B,Mpro-J0050,CCN(C(c1ccccc1)c1ccccc1)C(=O)Cn1nnc2ccccc12,,nsp5_S4148358,JEDI - Benzotriazole,
+849,Mpro-J0076_0A,Mpro-J0076,COc1ccc(Cl)cc1CN(C)C(=O)Cn1nnc2ccccc12,,nsp5_35872038,JEDI - Benzotriazole,
+850,Mpro-J0049_0A,Mpro-J0049,O=C(Cn1nnc2ccccc12)N1CCCCCC1c1ccccc1,,nsp5_12421240,JEDI - Benzotriazole,
+851,Mpro-J0049_0B,Mpro-J0049,O=C(Cn1nnc2ccccc12)N1CCCCCC1c1ccccc1,,nsp5_12421240,JEDI - Benzotriazole,
+852,Mpro-J0114_0A,Mpro-J0114,CC(N(C)C(=O)Cn1nnc2ccccc12)c1cccc(Cl)c1,,nsp5_15734065,JEDI - Benzotriazole,
+853,Mpro-J0100_0A,Mpro-J0100,CCN(Cc1ccccc1)C(=O)Cn1nnc2ccccc12,,nsp5_S5727679,JEDI - Benzotriazole,
+854,Mpro-J0054_0A,Mpro-J0054,CC(C)CN(Cc1ccccc1)C(=O)Cn1nnc2ccccc12,,nsp5_84931882,JEDI - Benzotriazole,
+855,Mpro-J0030_0B,Mpro-J0030,CN(Cc1cccc(F)c1)C(=O)Cn1nnc2ccccc12,,nsp5_39432161,JEDI - Benzotriazole,
+856,Mpro-J0073_0A,Mpro-J0073,CC(NC(=O)Cn1nnc2ccccc12)c1cccc(Cl)c1,,nsp5_43858913,JEDI - Benzotriazole,
+857,Mpro-J0101_0A,Mpro-J0101,CN(Cc1ccccc1)C(=O)Cn1nnc2ccccc12,,nsp5_S4641236,JEDI - Benzotriazole,
+858,Mpro-J0013_0A,Mpro-J0013,CC(C)N(Cc1ccccc1)C(=O)Cn1nnc2ccccc12,,nsp5_10432016,JEDI - Benzotriazole,
+859,Mpro-J0162_0A,Mpro-J0162,CCC(N(CC)C(=O)Cn1nnc2ccccc12)c1ccccc1,,nsp5_S489691,JEDI - Benzotriazole,
+860,Mpro-J0030_0A,Mpro-J0030,CN(Cc1cccc(F)c1)C(=O)Cn1nnc2ccccc12,,nsp5_39432161,JEDI - Benzotriazole,
+861,Mpro-J0050_0A,Mpro-J0050,CCN(C(c1ccccc1)c1ccccc1)C(=O)Cn1nnc2ccccc12,,nsp5_S4148358,JEDI - Benzotriazole,
+862,Mpro-J0071_0A,Mpro-J0071,CC(N(C)C(=O)Cn1nnc2ccccc12)c1ccccc1,,nsp5_S5279240,JEDI - Benzotriazole,
+863,Mpro-z7b2u_0B,Mpro-z7b2u,OC1N[C@@H](CC2CCCCC2)C(O)N1C1CNCC(F)C1,,Carlsson 1,PDB - SARS-CoV-2 Mpro,7B2U
+864,Mpro-z7o46_0A,Mpro-z7o46,OC1N[C@]2(C[C@H](C3CCC3)C2)C(O)N1C1CNCC2CCCCC21,,Carlsson 17,PDB - SARS-CoV-2 Mpro,7O46
+865,Mpro-z7neo_0A,Mpro-z7neo,OC1N[C@]2(C[C@H](C3CCC3)C2)C(O)N1C1CNCC(F)C1,,Carlsson 15,PDB - SARS-CoV-2 Mpro,7NEO
+866,Mpro-z7b77_0A,Mpro-z7b77,CCN(CC1CCOC1)C(O)CN1NNC2CCCCC21,,Carlsson 8,PDB - SARS-CoV-2 Mpro,7B77
+867,Mpro-z7b2u_0A,Mpro-z7b2u,OC1N[C@@H](CC2CCCCC2)C(O)N1C1CNCC(F)C1,,Carlsson 1,PDB - SARS-CoV-2 Mpro,7B2U
+868,Mpro-z7b5z_0A,Mpro-z7b5z,CC1CCN(C(O)CN2NNC3CCCC[C@@H]32)CC1,,Carlsson 6,PDB - SARS-CoV-2 Mpro,7B5Z
+869,Mpro-z7nbt_0A,Mpro-z7nbt,C[C@H]1C2CCS[C@H]2CCN1C(O)CN1NNC2CCCCC21,,Carlsson 21,PDB - SARS-CoV-2 Mpro,7NBT
+870,Mpro-z7au4_0A,Mpro-z7au4,OC1N[C@]2(CCC3CC(Cl)CC[C@@H]32)[C@@H](O)N1CC1CCON1,,Carlsson 3,PDB - SARS-CoV-2 Mpro,7AU4
+871,Mpro-z7b2j_0A,Mpro-z7b2j,CC1CCN(C(O)CN2NNC3CCCCC32)CC1,,Carlsson 5,PDB - SARS-CoV-2 Mpro,7B2J
+872,Mpro-z7qbb_0A,Mpro-z7qbb,OC1N[C@]2(C[C@@H](C3CCCCC3)C2)C(O)N1[C@@H]1CNCC2CCCCC21,,Carlsson 18,PDB - SARS-CoV-2 Mpro,7QBB
+873,Mpro-z7neo_0B,Mpro-z7neo,OC1N[C@]2(C[C@H](C3CCC3)C2)C(O)N1C1CNCC(F)C1,,Carlsson 15,PDB - SARS-CoV-2 Mpro,7NEO
+874,Mpro-z7bij_0A,Mpro-z7bij,OC1N([C@@H]2CNCC(F)C2)[C@H](O)N[C@]12CCC1CCCC[C@@H]12,,Carlsson 13,PDB - SARS-CoV-2 Mpro,7BIJ

@@ -1,0 +1,2 @@
+output_name,compound_id,dataset,smiles,str_fn,sdf_fn,active_site_chain,active_site,lig_chain,oligomeric_state,chains,protein_chains,series
+Mpro-P2660_0A_EDG-MED-b1ef7fe3-1,EDG-MED-b1ef7fe3-1,Mpro-P2660_0A,CNC(=O)CN1CC2(CCN(C2=O)C=3C=NC=C4C=CC(Cl)=CC34)C=5C=C(Cl)C=CC5C1=O,/Users/alexpayne/Scientific_Projects/covid-moonshot-ml/asapdiscovery-modeling/asapdiscovery/modeling/tests/test_prepare_protein_csv/aligned/Mpro-P2660_0A/Mpro-P2660_0A_bound.pdb,,A,,,,,,
