@@ -31,7 +31,6 @@ def parse_args():
     parser.add_argument(
         "-r",
         "--ref_prot",
-        default=Path("../tests/prep_mers_rcsb/inputs/reference.pdb"),
         type=Path,
         help="Path to reference pdb to align to. If None, no alignment will be performed",
     )
