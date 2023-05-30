@@ -15,6 +15,10 @@ from rdkit import Chem
 
 
 class VanillaMDSimulator:
+    """
+    Class for running MD simulations using OpenMM.
+    """
+
     def __init__(
         self,
         ligand_paths: list[Path],
@@ -31,6 +35,37 @@ class VanillaMDSimulator:
         openmm_logname: str = "openmm_log.tsv",
         debug: bool = False,
     ):
+        """
+
+        Parameters
+        ----------
+        ligand_paths : list[Path]
+            List of ligand SDFs to simulate.
+        protein_path : Path
+            Path to protein to simulate.
+        temperature : float
+            Temperature to simulate at.
+        pressure : float
+            Pressure to simulate at.
+        collision_rate : float
+            Collision rate
+        timestep : float
+            Timestep to use.
+        equilibration_steps : int
+            Number of equilibration steps to run.
+        reporting_interval : int
+            How many steps between reporting.
+        num_steps : int
+            How many steps to run.
+        output_paths : list[Path]
+            List of paths to write the output to.
+        logger : FileLogger
+            Logger to use.
+        openmm_logname : str
+            Name of the OpenMM log file.
+        debug : bool
+            Whether to run in debug mode.
+        """
         self.ligand_paths = ligand_paths
         self.protein_path = protein_path
         # thermo
@@ -51,7 +86,7 @@ class VanillaMDSimulator:
         else:
             self.output_paths = output_paths
 
-        # init
+        # init logger
         if logger is None:
             self.logger = FileLogger(
                 "md_log.txt", "./", stdout=True, level=logging.INFO
@@ -62,8 +97,8 @@ class VanillaMDSimulator:
         self.logger.info("Starting MD run")
         self.debug = debug
         if self.debug:
-            self.logger.info("Running in debug mode")
             self.logger.SetLevel(logging.DEBUG)
+            self.logger.debug("Running in debug mode")
         self.logger.debug(f"Running MD on {len(self.ligand_paths)} ligands")
         self.logger.debug(f"Running MD on {self.protein_path} protein")
         self.logger.debug(f"Writing to  {self.output_paths}")
