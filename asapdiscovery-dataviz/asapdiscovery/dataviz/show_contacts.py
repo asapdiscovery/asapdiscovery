@@ -1,13 +1,14 @@
 #!/usr/bin/python
 
-"""PyMOL plugin that provides show_contacts command and GUI 
-for highlighting good and bad polar contacts. Factored out of 
+"""PyMOL plugin that provides show_contacts command and GUI
+for highlighting good and bad polar contacts. Factored out of
 clustermols by Matthew Baumgartner.
 The advantage of this package is it requires many fewer dependencies.
 """
-from __future__ import print_function
 
-import sys, os
+import os
+import sys
+
 from pymol import cmd
 
 DEBUG = 1
@@ -270,7 +271,7 @@ class Show_Contacts:
         elif result == "Ok" or result == "Exit" or result == None:
             s1 = self.select_object_combo_box.get()
             s2 = self.select_object_combo_box2.get()
-            show_contacts(s1, s2, "%s_%s" % (s1, s2))
+            show_contacts(s1, s2, "{}_{}".format(s1, s2))
             self.select_dialog.withdraw()
         elif result == "Cancel" or result == None:
             self.select_dialog.withdraw()
@@ -301,13 +302,13 @@ def _get_select_list():
         chains = cmd.get_chains(loaded_objects[0])
         if len(chains) > 1:
             loaded_objects = [
-                "{} & chain {}".format(loaded_objects[0], chain) for chain in chains
+                f"{loaded_objects[0]} & chain {chain}" for chain in chains
             ]
 
     return loaded_objects
 
 
-class Show_Contacts_Qt_Dialog(object):
+class Show_Contacts_Qt_Dialog:
     """Qt version of the Plugin GUI"""
 
     def __init__(self):
@@ -322,7 +323,7 @@ class Show_Contacts_Qt_Dialog(object):
     def accept(self):
         s1 = self.select_object_combo_box.currentText()
         s2 = self.select_object_combo_box2.currentText()
-        show_contacts(s1, s2, "%s_%s" % (s1, s2))
+        show_contacts(s1, s2, "{}_{}".format(s1, s2))
 
     def populate_ligand_select_list(self):
         loaded_objects = _get_select_list()

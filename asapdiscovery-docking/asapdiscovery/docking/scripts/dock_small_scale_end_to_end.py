@@ -21,8 +21,8 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
-from asapdiscovery.dataviz.html_vis import HTMLVisualiser
 from asapdiscovery.dataviz.gif_vis import GIFVisualiser
+from asapdiscovery.dataviz.html_vis import HTMLVisualiser
 from asapdiscovery.docking import make_docking_result_dataframe
 from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
@@ -682,18 +682,17 @@ def main():
             lambda x: gif_dir / Path(x) / "trajectory.gif"
         )
         # take only last .5ns of trajectory to get nicely equilibrated pose.
-       
+
         def dask_gif_adaptor(traj, system, outpath):
-       
             gif_visualiser = GIFVisualiser(
-                    [traj],
-                    [system],
-                    [outpath],
-                    args.target,
-                    smooth=5,
-                    start=args.md_steps - 100,
-                    logger=logger,
-                )
+                [traj],
+                [system],
+                [outpath],
+                args.target,
+                smooth=5,
+                start=args.md_steps - 100,
+                logger=logger,
+            )
             output_paths = gif_visualiser.write_traj_visualisations()
             if len(output_paths) != 1:
                 raise ValueError(
@@ -704,14 +703,18 @@ def main():
         if args.dask:
             logger.info("Running GIF visualisation with Dask")
             delayed_objs = []
-            for traj, system, outpath in zip(top_posit["outpath_md_traj"], top_posit["outpath_md_sys"], top_posit["outpath_gif"]):
+            for traj, system, outpath in zip(
+                top_posit["outpath_md_traj"],
+                top_posit["outpath_md_sys"],
+                top_posit["outpath_gif"],
+            ):
                 delayed_objs.append(dask_gif_adaptor(traj, system, outpath))
 
             # run in parallel sending out a bunch of Futures
             client.compute(delayed_objs)
             # gather results back to the client, blocking until all are done
             client.gather(delayed_objs)
-        
+
         else:
             logger.info("Running GIF visualisation in serial")
             logger.warning("This will take a long time")
