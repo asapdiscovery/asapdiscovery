@@ -103,7 +103,6 @@ class GIFVisualiser:
             self.pocket_dict = pocket_dict_7ene
             self.view_coords = view_coords_7ene
         elif self.target == "272":
-            self.logger.warning("No data for target=272 (yet) - using SARS2")
             self.pocket_dict = pocket_dict_mers
             self.view_coords = view_coords_272
 
@@ -147,12 +146,15 @@ class GIFVisualiser:
         """
         Write GIF visualisations for all trajectories.
         """
+        output_paths = []
         for traj, system, path in zip(
             self.trajectories, self.systems, self.output_paths
         ):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
-            self.write_traj_visualisation(traj, system, path)
+            output_path = self.write_traj_visualisation(traj, system, path)
+            output_paths.append(output_path)
+        return output_paths
 
     def write_traj_visualisation(self, traj, system, path):
         """
@@ -294,3 +296,4 @@ class GIFVisualiser:
             # now compress the GIF with the method that imagio recommends (https://imageio.readthedocs.io/en/stable/examples.html).
             self.logger.info("Compressing animated gif...")
             optimize(str(path))  # this is in-place.
+            return path
