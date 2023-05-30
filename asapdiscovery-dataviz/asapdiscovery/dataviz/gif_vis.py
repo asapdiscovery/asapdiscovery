@@ -9,6 +9,7 @@ from ._gif_blocks import (
     view_coords_sars2,
     view_coord_mers,
     view_coords_7ene,
+    view_coords_272,
     pocket_dict_sars2,
     pocket_dict_mers,
     color_dict,
@@ -40,6 +41,8 @@ class GIFVisualiser:
         pse_share: bool = True,
         smooth: int = 0,
         contacts: bool = True,
+        start: int = 1,
+        stop: int = -1,
         interval: int = 1,
         logger: FileLogger = None,
         debug: bool = False,
@@ -61,6 +64,10 @@ class GIFVisualiser:
             Number of frames to smooth over.
         contacts : bool
             Whether to show contacts.
+        start : int
+            Start frame to load
+        stop : int
+            Stop frame to load
         interval : int
             Interval between frames to load
         logger : FileLogger
@@ -97,8 +104,8 @@ class GIFVisualiser:
             self.view_coords = view_coords_7ene
         elif self.target == "272":
             self.logger.warning("No data for target=272 (yet) - using SARS2")
-            self.pocket_dict = pocket_dict_sars2
-            self.view_coords = view_coords_sars2
+            self.pocket_dict = pocket_dict_mers
+            self.view_coords = view_coords_272
 
         self.trajectories = []
         self.output_paths = []
@@ -123,6 +130,8 @@ class GIFVisualiser:
         self.pse_share = pse_share
         self.smooth = smooth
         self.contacts = contacts
+        self.start = start
+        self.stop = stop
         self.interval = interval
 
         self.debug = debug
@@ -212,7 +221,13 @@ class GIFVisualiser:
             cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
         ## load trajectory; center the system in the simulation and smoothen between frames.
-        cmd.load_traj(str(traj), object=complex_name, start=1, interval=self.interval)
+        cmd.load_traj(
+            str(traj),
+            object=complex_name,
+            start=self.start,
+            stop=self.stop,
+            interval=self.interval,
+        )
         if self.pse:
             cmd.save(str(parent_path / "session_4_loaded_trajectory.pse"))
 
@@ -271,9 +286,6 @@ class GIFVisualiser:
 
             png_files.sort()  # for some reason *sometimes* this list is scrambled messing up the GIF. Sorting fixes the issue.
 
-            png_files = png_files[
-                -100:
-            ]  # take only last .5ns of trajectory to get nicely equilibrated pose.
             with iio.get_writer(str(path), mode="I") as writer:
                 for filename in png_files:
                     image = iio.imread(filename)

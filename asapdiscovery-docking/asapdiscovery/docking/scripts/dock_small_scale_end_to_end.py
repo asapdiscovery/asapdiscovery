@@ -681,15 +681,15 @@ def main():
         top_posit["outpath_gif"] = top_posit["ligand_id"].apply(
             lambda x: gif_dir / Path(x) / "trajectory.gif"
         )
-
+        # take only last .5ns of trajectory to get nicely equilibrated pose.
         gif_visualiser = GIFVisualiser(
             top_posit["outpath_md_traj"],
             top_posit["outpath_md_sys"],
             top_posit["outpath_gif"],
             args.target,
             smooth=5,
+            start=args.md_steps - 100,
             logger=logger,
-            pse=True,
         )
         gif_visualiser.write_traj_visualisations()
 
