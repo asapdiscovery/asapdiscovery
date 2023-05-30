@@ -11,6 +11,8 @@ from ._gif_blocks import (
     color_dict,
 )
 
+from .show_contacts import show_contacts
+
 
 class GIFVisualiser:
     """
@@ -32,9 +34,9 @@ class GIFVisualiser:
         output_paths: List[Path],
         target: str,
         pse: bool = False,
-        pse_share: bool = False,
+        pse_share: bool = True,
         smooth: int = 0,
-        contacts: bool = False,
+        contacts: bool = True,
         interval: int = 1,
         logger: FileLogger = None,
         debug: bool = False,
@@ -202,14 +204,12 @@ class GIFVisualiser:
 
         cmd.set_view(self.view_coords)
         if self.pse or self.pse_share:
-            cmd.save(str(path/"session_3_set_ligand_view.pse"))
+            cmd.save(str(path / "session_3_set_ligand_view.pse"))
 
         ## load trajectory; center the system in the simulation and smoothen between frames.
-        cmd.load_traj(
-            f"{traj}", object=complex_name, start=1, interval=self.interval
-        )
+        cmd.load_traj(f"{traj}", object=complex_name, start=1, interval=self.interval)
         if self.pse:
-            cmd.save(str(path/"session_4_loaded_trajectory.pse"))
+            cmd.save(str(path / "session_4_loaded_trajectory.pse"))
 
         self.logger.info("Intrafitting simulation...")
         cmd.intra_fit("binding_site")
@@ -221,14 +221,13 @@ class GIFVisualiser:
 
         if self.contacts:
             from show_contacts import show_contacts
+
             self.logger.info("Showing contacts...")
             show_contacts("ligand", "receptor")
 
         if self.pse:
-            self.logger.info(
-                f"Writing PyMol ensemble to session_5_intrafitted.pse..."
-            )
-            cmd.save(str(path/"session_5_intrafitted.pse"))
+            self.logger.info(f"Writing PyMol ensemble to session_5_intrafitted.pse...")
+            cmd.save(str(path / "session_5_intrafitted.pse"))
 
         # Process the trajectory in a temporary directory
         import tempfile
@@ -259,9 +258,7 @@ class GIFVisualiser:
             import imageio.v2 as iio
             from glob import glob
 
-            self.logger.info(
-                f"Creating animated GIF {path} from images..."
-            )
+            self.logger.info(f"Creating animated GIF {path} from images...")
             png_files = glob(f"{prefix}*.png")
 
             if len(png_files) == 0:
