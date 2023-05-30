@@ -568,7 +568,11 @@ def main():
     )
 
     html_visualiser = HTMLVisualiser(
-        top_posit["docked_file"], top_posit["outpath_pose"], args.target, protein_path
+        top_posit["docked_file"],
+        top_posit["outpath_pose"],
+        args.target,
+        protein_path,
+        logger=logger,
     )
     html_visualiser.write_pose_visualisations()
 

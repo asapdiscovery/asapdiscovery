@@ -1,7 +1,10 @@
+import logging
+
 from pathlib import Path
+from rdkit import Chem
 from typing import List, Optional, Union  # noqa: F401
 
-from rdkit import Chem
+from asapdiscovery.data.logging import FileLogger
 
 from ._html_blocks import (
     colour_7ene,
@@ -56,7 +59,7 @@ class HTMLVisualiser:
         # init loggers
         if logger is None:
             self.logger = FileLogger(
-                "gif_visualiser_log.txt", "./", stdout=True, level=logging.INFO
+                "html_visualiser_log.txt", "./", stdout=True, level=logging.INFO
             ).getLogger()
         else:
             self.logger = logger
@@ -78,6 +81,7 @@ class HTMLVisualiser:
 
         self.protein = Chem.MolFromPDBFile(str(protein))
 
+        self.debug = debug
         if self.debug:
             self.logger.SetLevel(logging.DEBUG)
             self.logger.debug("Running in debug mode")
