@@ -1,3 +1,6 @@
+# Description: HTML blocks for the visualisations in asapdiscovery/dataviz/html_vis.py
+
+
 visualisation_header = """\
 <div id="viewport"
 role="NGL"
