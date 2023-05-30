@@ -61,6 +61,10 @@ dependencies:
   - dask-cuda
   - dask-jobqueue
 
+  # viz
+  - gifsicle
+  - imageio
+
 
   # Pip-only installs
   - pip:
@@ -73,3 +77,5 @@ dependencies:
     # testing
     - pytest-console-scripts
     - pytest-timeout
+    # viz
+    - pygifsicle
