@@ -7,6 +7,6 @@ run-docking-oe \
 -r './inputs/Mpro-P0008_0A_ERI-UCB-ce40166b-17/*.oedu' \
 -o './outputs/retro_docking_test' \
 -n 2 \
---omega \
---relax clash \
---debug_num 4
+--debug_num 5 \
+-log test_logname
+echo done

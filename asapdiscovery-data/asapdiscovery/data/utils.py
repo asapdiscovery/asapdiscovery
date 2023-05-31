@@ -79,7 +79,7 @@ def construct_regex_function(pat, fail_val=None, ret_groups=False):
         elif fail_val is not None:
             return fail_val
         else:
-            return ValueError(f"No match found for pattern {pat} in {s}.")
+            raise ValueError(f"No match found for pattern {pat} in {s}.")
 
     return regex_func
 
@@ -1142,8 +1142,8 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
                     dataset=dataset,
                     sdf_fn=get_sdf_fn_from_dataset(dataset, x_dir),
                 )
-        else:
-            sars_xtals[cmpd_id] = CrystalCompoundData()
+            else:
+                sars_xtals[cmpd_id] = CrystalCompoundData()
 
     return sars_xtals
 
