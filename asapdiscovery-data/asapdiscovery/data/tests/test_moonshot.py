@@ -13,6 +13,7 @@ from asapdiscovery.data.moonshot import (
     download_molecules,
     download_url,
 )
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.fixture(scope="session")
@@ -37,6 +38,35 @@ def cdd_header():
         pytest.exit("Failed to read CDDTOKEN file.", 1)
 
     return {"X-CDD-token": token}
+
+
+@pytest.fixture
+def filter_df_files():
+    """
+    Fetch all possible combination of output filtering CSV files. Filenames are built by
+    all filter kwargs that are True, put together in the following order:
+     * achiral
+     * racemic
+     * enantiopure
+     * semiquant
+
+    Note that these files don't exist yet.
+    """
+    from itertools import product
+
+    fn_labels = ["achiral", "racemic", "enantiopure", "semiquant"]
+    out_fn_dict = {}
+    # achiral, racemic, enant, semiquant
+    for flags in product([True, False], repeat=len(fn_labels)):
+        out_fn = "_".join([label for label, flag in zip(fn_labels, flags) if flag])
+        out_fn = fetch_test_file(
+            "test_filter" + (f"_{out_fn}" if out_fn else "") + "_out.csv"
+        )
+        out_fn_dict[flags] = out_fn
+
+    in_fn = fetch_test_file("test_filter_in.csv")
+
+    return in_fn, out_fn_dict
 
 
 @pytest.mark.parametrize(
@@ -70,3 +100,38 @@ def test_save(cdd_header, search, dl_dir, fn):
     cache_fn = dl_dir / fn
     with cache_fn.open("w") as outfile:
         outfile.write(content)
+
+
+@pytest.mark.parametrize("retain_achiral", [True, False])
+@pytest.mark.parametrize("retain_racemic", [True, False])
+@pytest.mark.parametrize("retain_enantiopure", [True, False])
+@pytest.mark.parametrize("retain_semiquantitative_data", [True, False])
+def test_filter_df(
+    retain_achiral, retain_racemic, retain_enantiopure, retain_semiquantitative_data
+):
+    import pandas
+
+    from asapdiscovery.data.utils import filter_molecules_dataframe
+
+    in_fn, all_out_fns = filter_df_files
+    flags = (
+        retain_achiral,
+        retain_racemic,
+        retain_enantiopure,
+        retain_semiquantitative_data,
+    )
+    out_fn = all_out_fns[flags]
+
+    in_df = pandas.from_csv(in_fn)
+    out_df = pandas.from_csv(out_fn)
+
+    in_df_filtered = filter_molecules_dataframe(
+        in_df,
+        retain_achiral=retain_achiral,
+        retain_racemic=retain_racemic,
+        retain_enantiopure=retain_enantiopure,
+        retain_semiquantitative_data=retain_semiquantitative_data,
+    )
+
+    assert in_df_filtered.shape == out_df.shape
+    assert (in_df_filtered.index == out_df.index).all()
