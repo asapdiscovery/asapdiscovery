@@ -60,6 +60,7 @@ dependencies:
   - dask
   - dask-cuda
   - dask-jobqueue
+  - netifaces
 
   # viz
   - imageio

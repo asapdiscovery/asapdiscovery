@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
+
 import dask
 import yaml
 from asapdiscovery.data.logging import FileLogger
@@ -21,6 +22,7 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
+from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.dataviz.html_vis import HTMLVisualiser
 from asapdiscovery.dataviz.gif_vis import GIFVisualiser
 from asapdiscovery.docking import make_docking_result_dataframe
@@ -297,9 +299,30 @@ def main():
             logger.warning(
                 "make sure you have a config file for lilac's dask-jobqueue cluster installed in your environment, contact @hmacdope"
             )
+
+            logger.info("Finding dual IP interfaces")
+            # find dual IP interfaces excluding lo loopback interface
+            # technically dask only needs IPV4 but helps us find the right ones
+            # easier. If you have a better way of doing this please let me know!
+            exclude = ["lo"]
+            interfaces = get_interfaces_with_dual_ip(exclude=exclude)
+            logger.info(f"Found IP interfaces: {interfaces}")
+            if len(interfaces) == 0:
+                raise ValueError("Must have at least one network interface to run dask")
+            if len(interfaces) > 1:
+                logger.warning(
+                    f"Found more than one IP interface: {interfaces}, using the first one"
+                )
+            interface = interfaces[0]
+            logger.info(f"Using interface: {interface}")
+            logger.info(f"dask config : {dask.config.config}")
+
             # NOTE you will need a config file that defines the dask-jobqueue for the cluster
-            cluster = LSFCluster()
-            # assume we will have about 10 jobs
+            cluster = LSFCluster(
+                interface=interface, scheduler_options={"interface": interface}
+            )
+
+            # assume we will have about 10 jobs, they will be killed if not used
             cluster.scale(10)
             # cluster is adaptive, and will scale between 5 and 40 workers depending on load
             # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
@@ -630,7 +653,7 @@ def main():
                     logger=logger,
                     output_paths=[output_path],
                     num_steps=args.md_steps,
-                    reporting_interval=reporting_interval
+                    reporting_interval=reporting_interval,
                 )
                 retcode = simulator.run_all_simulations()
                 if len(retcode) != 1:
@@ -662,7 +685,7 @@ def main():
                 logger=None,
                 output_paths=top_posit["outpath_md"],
                 num_steps=args.md_steps,
-                reporting_interval=reporting_interval
+                reporting_interval=reporting_interval,
             )
             simulator.run_all_simulations()
 
@@ -694,31 +717,35 @@ def main():
             start = 1
         else:
             start = n_snapshots - 100
-        
+
         @dask.delayed
         def dask_gif_adaptor(traj, system, outpath):
-       
+
             gif_visualiser = GIFVisualiser(
-                    [traj],
-                    [system],
-                    [outpath],
-                    args.target,
-                    smooth=5,
-                    start=start,
-                    logger=logger,
-                )
+                [traj],
+                [system],
+                [outpath],
+                args.target,
+                smooth=5,
+                start=start,
+                logger=logger,
+            )
             output_paths = gif_visualiser.write_traj_visualisations()
 
             if len(output_paths) != 1:
                 raise ValueError(
                     "Somehow got more than one output path from GIFVisualiser"
                 )
-            return output_paths[0]            
+            return output_paths[0]
 
         if args.dask:
             logger.info("Running GIF visualisation with Dask")
             outpaths = []
-            for traj, system, outpath in zip(top_posit["outpath_md_traj"], top_posit["outpath_md_sys"], top_posit["outpath_gif"]):
+            for traj, system, outpath in zip(
+                top_posit["outpath_md_traj"],
+                top_posit["outpath_md_sys"],
+                top_posit["outpath_gif"],
+            ):
                 outpath = dask_gif_adaptor(traj, system, outpath)
                 outpaths.append(outpath)
 
@@ -726,7 +753,7 @@ def main():
             outpaths = client.compute(outpaths)
             # gather results back to the client, blocking until all are done
             outpaths = client.gather(outpaths)
-        
+
         else:
             logger.info("Running GIF visualisation in serial")
             logger.warning("This will take a long time")
