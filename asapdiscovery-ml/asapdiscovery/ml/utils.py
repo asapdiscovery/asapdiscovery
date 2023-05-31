@@ -1449,7 +1449,7 @@ def train(
     optimizer : torch.optim.Optimizer, optional
         Optimizer to use for model training. If not used, defaults to Adam
         optimizer
-    es : asapdiscovery.ml.EarlyStopping
+    es : Union[asapdiscovery.ml.BestEarlyStopping, asapdiscovery.ml.ConvergedEarlyStopping]
         EarlyStopping object to keep track of early stopping
 
     Returns
@@ -1658,18 +1658,26 @@ def train(
             raise ValueError("Unrecoverable loss value reached.")
 
         # Stop training if EarlyStopping says to
-        if es and es.check(epoch_idx, epoch_val_loss, model.state_dict()):
-            print(
-                (
-                    f"Stopping training after epoch {epoch_idx}, "
-                    f"using weights from epoch {es.best_epoch}"
-                ),
-                flush=True,
-            )
-            model.load_state_dict(es.best_wts)
-            if use_wandb:
-                wandb.log({"best_epoch": es.best_epoch, "best_loss": es.best_loss})
-            break
+        if es:
+            from asapdiscovery.ml import BestEarlyStopping, ConvergedEarlyStopping
+
+            if isinstance(es, BestEarlyStopping) and es.check(
+                epoch_idx, epoch_val_loss, model.state_dict()
+            ):
+                print(
+                    (
+                        f"Stopping training after epoch {epoch_idx}, "
+                        f"using weights from epoch {es.best_epoch}"
+                    ),
+                    flush=True,
+                )
+                model.load_state_dict(es.best_wts)
+                if use_wandb:
+                    wandb.log({"best_epoch": es.best_epoch, "best_loss": es.best_loss})
+                break
+            elif isinstance(es, ConvergedEarlyStopping) and es.check(epoch_val_loss):
+                print(f"Stopping training after epoch {epoch_idx}", flush=True)
+                break
 
     return (
         model,
