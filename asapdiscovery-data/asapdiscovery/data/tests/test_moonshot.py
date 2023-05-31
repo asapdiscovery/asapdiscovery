@@ -2,16 +2,16 @@
 Tests for downloading and processing Moonshot data from CDD.
 """
 import os
-import pytest
 
+import pytest
 from asapdiscovery.data.moonshot import (
     ALL_SMI_SEARCH,
     CDD_URL,
     MOONSHOT_VAULT,
     NONCOVALENT_SMI_SEARCH,
     NONCOVALENT_W_DATES_SEARCH,
-    download_url,
     download_molecules,
+    download_url,
 )
 
 
@@ -33,7 +33,7 @@ def cdd_header():
         pytest.exit("CDDTOKEN environment variable not set.", 1)
     try:
         token = "".join(open(token_fn).readlines()).strip()
-    except IOError:
+    except OSError:
         pytest.exit("Failed to read CDDTOKEN file.", 1)
 
     return {"X-CDD-token": token}
