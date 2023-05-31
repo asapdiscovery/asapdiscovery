@@ -110,7 +110,6 @@ def test_filter_df(
     retain_achiral, retain_racemic, retain_enantiopure, retain_semiquantitative_data
 ):
     import pandas
-
     from asapdiscovery.data.utils import filter_molecules_dataframe
 
     in_fn, all_out_fns = filter_df_files
