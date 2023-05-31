@@ -271,7 +271,7 @@ class Show_Contacts:
         elif result == "Ok" or result == "Exit" or result == None:
             s1 = self.select_object_combo_box.get()
             s2 = self.select_object_combo_box2.get()
-            show_contacts(s1, s2, "{}_{}".format(s1, s2))
+            show_contacts(s1, s2, f"{s1}_{s2}")
             self.select_dialog.withdraw()
         elif result == "Cancel" or result == None:
             self.select_dialog.withdraw()
@@ -323,7 +323,7 @@ class Show_Contacts_Qt_Dialog:
     def accept(self):
         s1 = self.select_object_combo_box.currentText()
         s2 = self.select_object_combo_box2.currentText()
-        show_contacts(s1, s2, "{}_{}".format(s1, s2))
+        show_contacts(s1, s2, f"{s1}_{s2}")
 
     def populate_ligand_select_list(self):
         loaded_objects = _get_select_list()
