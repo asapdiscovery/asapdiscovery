@@ -177,6 +177,6 @@ def download_molecules(
     # Save to CSV as requested
     if fn_out:
         logging.debug(f"Generating CSV file {fn_out}")
-        filtered_df.to_csv(fn_out, index=False)
+        parsed_df.to_csv(fn_out, index=False)
 
-    return filtered_df
+    return parsed_df
