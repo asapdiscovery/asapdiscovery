@@ -1,10 +1,9 @@
 import logging
-
 from pathlib import Path
-from rdkit import Chem
 from typing import List, Optional, Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
+from rdkit import Chem
 
 from ._html_blocks import (
     colour_7ene,
