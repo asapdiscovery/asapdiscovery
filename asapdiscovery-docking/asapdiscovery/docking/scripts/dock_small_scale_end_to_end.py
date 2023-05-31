@@ -315,12 +315,13 @@ def main():
                 )
             interface = interfaces[0]
             logger.info(f"Using interface: {interface}")
-            logger.info(f"dask config : {dask.config.config}")
 
             # NOTE you will need a config file that defines the dask-jobqueue for the cluster
             cluster = LSFCluster(
                 interface=interface, scheduler_options={"interface": interface}
             )
+
+            logger.info(f"dask config : {dask.config.config}")
 
             # assume we will have about 10 jobs, they will be killed if not used
             cluster.scale(10)
@@ -646,7 +647,7 @@ def main():
             # make a dask delayed function that runs the MD
             # must make the simulator inside the loop as it is not serialisable
             @dask.delayed
-            def dask_md_adaptor(pose, protein_path, logger, output_path):
+            def dask_md_adaptor(pose, protein_path, output_path):
                 simulator = VanillaMDSimulator(
                     [pose],
                     protein_path,
@@ -667,7 +668,7 @@ def main():
             for pose, output_path in zip(
                 top_posit["docked_file"], top_posit["outpath_md"]
             ):
-                retcode = dask_md_adaptor(pose, protein_path, logger, output_path)
+                retcode = dask_md_adaptor(pose, protein_path, output_path)
                 retcodes.append(retcode)
 
             # run in parallel sending out a bunch of Futures
@@ -682,7 +683,7 @@ def main():
             simulator = VanillaMDSimulator(
                 top_posit["docked_file"],
                 protein_path,
-                logger=None,
+                logger=logger,
                 output_paths=top_posit["outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
