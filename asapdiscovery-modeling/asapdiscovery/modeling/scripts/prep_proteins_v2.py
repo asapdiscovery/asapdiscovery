@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
-from asapdiscovery.modeling.modeling import spruce_protein, split_openeye_design_unit
+from asapdiscovery.modeling.modeling import split_openeye_design_unit, spruce_protein
 
 
 def parse_args():
@@ -187,9 +187,7 @@ def prep_protein(xtal: CrystalCompoundData, args):
 
         logger.info("Saving PDB")
 
-        from asapdiscovery.data.openeye import (
-            save_openeye_sdf,
-        )
+        from asapdiscovery.data.openeye import save_openeye_sdf
         from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
 
         # TODO: Make sure this doesn't fail if there is no ligand

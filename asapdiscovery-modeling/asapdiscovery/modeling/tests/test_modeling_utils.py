@@ -1,16 +1,13 @@
-import pytest
-from pathlib import Path
 from collections import namedtuple
+from pathlib import Path
+
+import pytest
+from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pdb
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    save_openeye_pdb,
-    oechem,
-)
 from asapdiscovery.modeling.modeling import (
-    remove_extra_ligands,
     find_ligand_chains,
     find_protein_chains,
+    remove_extra_ligands,
     split_openeye_mol,
     split_openeye_mol_alt,
 )

@@ -16,8 +16,8 @@ from asapdiscovery.modeling.modeling import (
     align_receptor,
     mutate_residues,
     remove_extra_ligands,
-    spruce_protein,
     split_openeye_design_unit,
+    spruce_protein,
 )
 
 
@@ -160,9 +160,7 @@ class TestProteinPrep:
         oechem.OEWriteDesignUnit(str(du_fn), du)
 
         # Serialize output!
-        from asapdiscovery.data.openeye import (
-            save_openeye_sdf,
-        )
+        from asapdiscovery.data.openeye import save_openeye_sdf
         from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
 
         # TODO: Use a different way of splitting the design unit
