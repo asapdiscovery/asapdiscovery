@@ -78,6 +78,7 @@ jobs:
         coverage run --append --source=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -m pytest -v  --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
         coverage run --append --source=./asapdiscovery-docking/asapdiscovery/docking/ -m pytest -v  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
         coverage run --append --source=./asapdiscovery-ml/asapdiscovery/ml/ -m pytest -v  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
+        coverage run --append --source=./asapdiscovery-modeling/asapdiscovery/modeling/ -m pytest -v  --color=yes ./asapdiscovery-modeling/asapdiscovery/modeling/tests/
         # generate xml report from .coverage file
         coverage xml
 
