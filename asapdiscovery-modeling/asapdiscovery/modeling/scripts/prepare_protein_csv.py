@@ -22,7 +22,6 @@ def parse_args():
     parser.add_argument("-d", "--structure_dir", type=Path, required=False)
     parser.add_argument("--include_non_Pseries", action="store_true", required=False)
     parser.add_argument("-o", "--output_csv", type=Path, required=True)
-    parser.add_argument("--protein_only", action="store_true", required=False)
     parser.add_argument("--active_site", type=str, default=None, required=False)
     parser.add_argument("--pdb_glob", type=str, default=None, required=False)
     return parser.parse_args()

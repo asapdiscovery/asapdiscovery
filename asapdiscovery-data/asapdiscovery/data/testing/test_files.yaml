@@ -26,3 +26,27 @@ files:
   # prepped PDB
   - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb
     sha256hash: d4bf45cd72583ee63cd61c0367db1ac0e648d3f4d8f82cb483e0ab222041a90d
+
+  # fragalysis SARS-2 reference
+  - resource: reference.pdb
+    sha256hash: 8d8fdf6deaba866727a7c676f95f4e93c3180dfab902f7a3bf248d1f629efe56
+
+  # fragalysis SARS-2 PDB
+  - resource: Mpro-P2660_0A_bound.pdb
+    sha256hash: c7bdf1ba1d63bf65d813b1f1dc8b36b007f44627c6cba1f3f9bcc29c255f336d
+
+  # mers CIF1 biological assembly structure
+  - resource: rcsb_8czv-assembly1.cif
+    sha256hash: ec937cda078a4656a1a11815a555136a6670354d54c37fc966cc9ffca72740e5
+
+  # mers seqres yaml
+  - resource: mpro_mers_seqres.yaml
+    sha256hash: 6c2937fb2a98bc57dd7b239f3b5e6f9dbc3cd2720c259fb23af17f9446a8f356
+
+  # sars seqres yaml
+  - resource: mpro_sars2_seqres.yaml
+    sha256hash: 743d9c975cb70024c50952268a2a6cafdf54b20ef165023a5762a8b91ba4a938
+
+  # fragalysis-mpro_spruce.loop_db
+  - resource: fragalysis-mpro_spruce.loop_db
+    sha256hash: ac0c05f07c7e5d0cafad37074db6b9ba6924c8e276d2d8e0bf8b4ad98a981cec
