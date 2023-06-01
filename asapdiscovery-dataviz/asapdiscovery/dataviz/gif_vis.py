@@ -275,7 +275,7 @@ class GIFVisualiser:
         p.cmd.set("cache_frames", 0)
         p.cmd.set(
             "max_threads", 1
-        )  # limit to 4 threads to prevent PyMOL from oversubscribing
+        )  # limit to 1 threads to prevent PyMOL from oversubscribing
         p.cmd.mclear()  # clears cache
         prefix = str(tmpdir / "frame")
         p.cmd.mpng(
