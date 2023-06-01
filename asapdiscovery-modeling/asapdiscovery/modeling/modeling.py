@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 from pathlib import Path
+from functools import reduce
 from asapdiscovery.modeling.schema import MoleculeFilter
 
 from asapdiscovery.data.openeye import (
@@ -834,10 +835,8 @@ def split_openeye_mol_alt(complex_mol, molecule_filter: MoleculeFilter) -> named
                 )
                 for chain in molecule_filter.protein_chains
             ]
-            if len(chain_filters) > 1:
-                chain_filter = oechem.OEOrRoleSet(*chain_filters)
-            else:
-                chain_filter = chain_filters[0]
+
+            chain_filter = reduce(oechem.OEOrRoleSet, chain_filters)
             prot_filter = oechem.OEAndRoleSet(prot_only, chain_filter)
         else:
             prot_filter = prot_only
@@ -859,16 +858,18 @@ def split_openeye_mol_alt(complex_mol, molecule_filter: MoleculeFilter) -> named
         opts.SetLigandFilter(lig_filter)
         complex_filter.append(lig_filter)
 
-    # If only one argument is passed to OEOrRoleSet, it will throw an error, annoyingly
+    if "water" in molecule_filter.components_to_keep:
+        water_filter = oechem.OEMolComplexFilterFactory(
+            oechem.OEMolComplexFilterCategory_Water
+        )
+        complex_filter.append(water_filter)
+
     if len(complex_filter) == 0:
         raise RuntimeError(
             "No components to keep were specified. Maybe OpenEye wackiness?"
         )
-    if len(complex_filter) == 1:
-        opts.SetProteinFilter(*complex_filter)
-
-    else:
-        opts.SetProteinFilter(oechem.OEOrRoleSet(*complex_filter))
+    # Use python 'reduce' to combine all the filters into one, otherwise OpenEye will throw an error
+    opts.SetProteinFilter(reduce(oechem.OEOrRoleSet, complex_filter))
     oechem.OESplitMolComplex(
         lig_mol,
         prot_mol,
@@ -877,11 +878,6 @@ def split_openeye_mol_alt(complex_mol, molecule_filter: MoleculeFilter) -> named
         complex_mol,
         opts,
     )
-
-    # split_mol = namedtuple(
-    #     "MoleculeSplit", ["protein", "ligand", "water", "other"]
-    # )
-    # return split_mol(prot_mol, lig_mol, water_mol, oth_mol)
     return prot_mol
 
 
