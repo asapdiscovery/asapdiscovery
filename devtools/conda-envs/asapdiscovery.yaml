@@ -58,9 +58,7 @@ dependencies:
   # execution
   - distributed
   - dask
-  {% if 'linux' in platform.system().lower() %}
-  - dask-cuda
-  {% endif %}
+# - dask-cuda # will only work on linux machines and not macs
   - dask-jobqueue
   - netifaces
 
