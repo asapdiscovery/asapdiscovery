@@ -1,8 +1,9 @@
 from pathlib import Path
 from typing import List, Optional, Union
+import logging
+import shutil
 
 from asapdiscovery.data.logging import FileLogger
-from pymol import cmd
 
 from ._gif_blocks import (
     color_dict,
@@ -158,70 +159,83 @@ class GIFVisualiser:
         """
         Write GIF visualisation for a single trajectory.
         """
+        # NOTE very important, need to spawn a new pymol proc for each trajectory
+        # when working in parallel, otherwise they will trip over each other and not work.
+
+        import pymol2
+
+        p = pymol2.PyMOL()
+        p.start()
+
         parent_path = (
             path.parent
         )  # use parent so we can write the pse files to the same directory
+
+        tmpdir = parent_path / "tmp"
+        self.logger.info(f"Creating temporary directory {tmpdir}")
+        tmpdir.mkdir(parents=True, exist_ok=True)
+
         complex_name = "complex"
-        cmd.load(str(system), object=complex_name)
+        p.cmd.load(str(system), object=complex_name)
 
         if self.pse:
             self.logger.info(
                 f"Writing PyMol ensemble to session_1_loaded_system.pse..."
             )
-            cmd.save(str(parent_path / "session_1_loaded_system.pse"))
+            p.cmd.save(str(parent_path / "session_1_loaded_system.pse"))
 
         # now select the residues, name them and color them.
         for subpocket_name, residues in self.pocket_dict.items():
-            cmd.select(
+            p.cmd.select(
                 subpocket_name,
                 f"{complex_name} and resi {residues} and polymer.protein",
             )
 
         for subpocket_name, color in color_dict.items():
-            cmd.set("surface_color", color, f"({subpocket_name})")
+            p.cmd.set("surface_color", color, f"({subpocket_name})")
 
         if self.pse:
             self.logger.info(
                 "Writing PyMol ensemble to session_2_colored_subpockets.pse"
             )
-            cmd.save(str(parent_path / "session_2_colored_subpockets.pse"))
+            p.cmd.save(str(parent_path / "session_2_colored_subpockets.pse"))
 
         # Select ligand and receptor
-        cmd.select("ligand", "resn UNK")
-        cmd.select(
+        p.cmd.select("ligand", "resn UNK")
+        p.cmd.select(
             "receptor", "chain A or chain B"
         )  # TODO: Modify this to generalize to dimer
-        cmd.select(
+        p.cmd.select(
             "binding_site", "name CA within 7 of resn UNK"
         )  # automate selection of the binding site
 
         ## set a bunch of stuff for visualization
-        cmd.set("bg_rgb", "white")
-        cmd.set("surface_color", "grey90")
-        cmd.bg_color("white")
-        cmd.hide("everything")
-        cmd.show("cartoon")
-        cmd.show("surface", "receptor")
-        cmd.set("surface_mode", 3)
-        cmd.set("cartoon_color", "grey")
-        cmd.set("transparency", 0.3)
-        cmd.hide(
+        p.cmd.set("bg_rgb", "white")
+        p.cmd.set("surface_color", "grey90")
+        p.cmd.bg_color("white")
+        p.cmd.hide("everything")
+        p.cmd.show("cartoon")
+        p.cmd.show("surface", "receptor")
+        p.cmd.set("surface_mode", 3)
+        p.cmd.set("cartoon_color", "grey")
+        p.cmd.set("transparency", 0.3)
+        p.cmd.hide(
             "surface", "ligand"
         )  # for some reason sometimes a ligand surface is applied - hide this.
 
         ## select the ligand and subpocket residues, show them as sticks w/o nonpolar Hs
-        cmd.select("resn UNK")
-        cmd.show("sticks", "sele")
-        cmd.show("sticks", "subP*")
-        cmd.hide("sticks", "(elem C extend 1) and (elem H)")
-        cmd.color("pink", "elem C and sele")
+        p.cmd.select("resn UNK")
+        p.cmd.show("sticks", "sele")
+        p.cmd.show("sticks", "subP*")
+        p.cmd.hide("sticks", "(elem C extend 1) and (elem H)")
+        p.cmd.color("pink", "elem C and sele")
 
-        cmd.set_view(self.view_coords)
+        p.cmd.set_view(self.view_coords)
         if self.pse or self.pse_share:
-            cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
+            p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
         ## load trajectory; center the system in the simulation and smoothen between frames.
-        cmd.load_traj(
+        p.cmd.load_traj(
             str(traj),
             object=complex_name,
             start=self.start,
@@ -229,71 +243,65 @@ class GIFVisualiser:
             interval=self.interval,
         )
         if self.pse:
-            cmd.save(str(parent_path / "session_4_loaded_trajectory.pse"))
+            p.cmd.save(str(parent_path / "session_4_loaded_trajectory.pse"))
 
         self.logger.info("Intrafitting simulation...")
-        cmd.intra_fit("binding_site")
+        p.cmd.intra_fit("binding_site")
         if self.smooth:
-            cmd.smooth(
+            p.cmd.smooth(
                 "all", window=int(self.smooth)
             )  # perform some smoothing of frames
-        cmd.zoom("resn UNK", buffer=1)  # zoom to ligand
+        p.cmd.zoom("resn UNK", buffer=1)  # zoom to ligand
 
         if self.contacts:
             self.logger.info("Showing contacts...")
-            show_contacts("ligand", "receptor")
+            show_contacts(p, "ligand", "receptor")
 
         if self.pse:
             self.logger.info(f"Writing PyMol ensemble to session_5_intrafitted.pse...")
-            cmd.save(str(parent_path / "session_5_intrafitted.pse"))
+            p.cmd.save(str(parent_path / "session_5_intrafitted.pse"))
 
         # Process the trajectory in a temporary directory
         import tempfile
 
         from pygifsicle import optimize
 
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            self.logger.info(f"Creating temporary directory {tmpdirname}")
+        ## now make the movie.
+        self.logger.info("Rendering images for frames...")
+        p.cmd.set(
+            "ray_trace_frames", 0
+        )  # ray tracing with surface representation is too expensive.
+        p.cmd.set("defer_builds_mode", 1)  # this saves memory for large trajectories
+        p.cmd.set("cache_frames", 0)
+        p.cmd.set(
+            "max_threads", 1
+        )  # limit to 4 threads to prevent PyMOL from oversubscribing
+        p.cmd.mclear()  # clears cache
+        prefix = str(tmpdir / "frame")
+        p.cmd.mpng(
+            prefix
+        )  # saves png of each frame as "frame001.png, frame002.png, .."
 
-            ## now make the movie.
-            self.logger.info("Rendering images for frames...")
-            cmd.set(
-                "ray_trace_frames", 0
-            )  # ray tracing with surface representation is too expensive.
-            cmd.set("defer_builds_mode", 1)  # this saves memory for large trajectories
-            cmd.set("cache_frames", 0)
-            cmd.set(
-                "max_threads", 1
-            )  # limit to 4 threads to prevent PyMOL from oversubscribing
-            cmd.mclear()  # clears cache
-            prefix = f"{tmpdirname}/frame"
-            cmd.mpng(
-                prefix
-            )  # saves png of each frame as "frame001.png, frame002.png, .."
-            # TODO: higher resolution on the pngs.
-            # TODO: Find way to improve writing speed by e.g. removing atoms not in view. Currently takes ~80sec per .png
+        # stop pymol instance
+        p.stop()
 
-            ## use imagio to create a gif from the .png files generated by pymol
-            from glob import glob
+        # TODO: higher resolution on the pngs.
+        # TODO: Find way to improve writing speed by e.g. removing atoms not in view. Currently takes ~80sec per .png
+        ## use imagio to create a gif from the .png files generated by pymol
+        from glob import glob
+        import imageio.v2 as iio
 
-            import imageio.v2 as iio
-
-            self.logger.info(f"Creating animated GIF {path} from images...")
-            png_files = glob(f"{prefix}*.png")
-
-            if len(png_files) == 0:
-                raise OSError(
-                    f"No {prefix}*.png files found - did PyMol not generate any?"
-                )
-
-            png_files.sort()  # for some reason *sometimes* this list is scrambled messing up the GIF. Sorting fixes the issue.
-
-            with iio.get_writer(str(path), mode="I") as writer:
-                for filename in png_files:
-                    image = iio.imread(filename)
-                    writer.append_data(image)
-
-            # now compress the GIF with the method that imagio recommends (https://imageio.readthedocs.io/en/stable/examples.html).
-            self.logger.info("Compressing animated gif...")
-            optimize(str(path))  # this is in-place.
-            return path
+        self.logger.info(f"Creating animated GIF {path} from images...")
+        png_files = glob(f"{prefix}*.png")
+        if len(png_files) == 0:
+            raise OSError(f"No {prefix}*.png files found - did PyMol not generate any?")
+        png_files.sort()  # for some reason *sometimes* this list is scrambled messing up the GIF. Sorting fixes the issue.
+        with iio.get_writer(str(path), mode="I") as writer:
+            for filename in png_files:
+                image = iio.imread(filename)
+                writer.append_data(image)
+        # now compress the GIF with the method that imagio recommends (https://imageio.readthedocs.io/en/stable/examples.html).
+        self.logger.info("Compressing animated gif...")
+        optimize(str(path))  # this is in-place.
+        shutil.rmtree(tmpdir)
+        return path
