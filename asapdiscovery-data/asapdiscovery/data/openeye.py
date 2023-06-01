@@ -3,7 +3,6 @@ from pathlib import Path
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
 # exec on module import
-from asapdiscovery.modeling.modeling import split_openeye_mol
 
 if not oechem.OEChemIsLicensed("python"):
     raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
@@ -416,48 +415,6 @@ def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
     oechem.OEPerceiveResidues(prot, preserve)
 
     return prot
-
-
-def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_results=True):
-    """
-    TODO: This should be deprecated in favor of the functions in docking.analysis
-    Calculates the RMSD between a reference ligand from a PDB file and a mobile ligand from an SDF file.
-    If `fetch_docking_results` is True, additional docking results from the mobile ligand are returned as a dictionary.
-
-    Parameters
-    ----------
-    ref_path: str
-        Path to the reference PDB file containing the ligand.
-    mobile_path: str
-        Path to the SDF file containing the mobile ligand.
-    fetch_docking_results: bool, optional
-        If True, additional docking results from the mobile ligand are returned. Default is True.
-
-    Returns
-    -------
-    return_dict: dict
-        A dictionary with the following keys:
-            - 'rmsd': the RMSD between the reference and mobile ligands.
-            - 'posit': (if `fetch_docking_results` is True) the docking score from the mobile ligand's 'POSIT::Probability' SD tag.
-            - 'chemgauss': (if `fetch_docking_results` is True) the docking score from the mobile ligand's 'Chemgauss4' SD tag.
-    """
-    ref_pdb = load_openeye_pdb(ref_path)
-    ref = split_openeye_mol(ref_pdb)["lig"]
-    mobile = load_openeye_sdf(mobile_path)
-
-    for a in mobile.GetAtoms():
-        if a.GetAtomicNum() == 1:
-            mobile.DeleteAtom(a)
-
-    rmsd = oechem.OERMSD(ref, mobile)
-
-    return_dict = {"rmsd": rmsd}
-
-    if fetch_docking_results:
-        return_dict["posit"] = oechem.OEGetSDData(mobile, "POSIT::Probability")
-        return_dict["chemgauss"] = oechem.OEGetSDData(mobile, "Chemgauss4")
-
-    return return_dict
 
 
 def save_receptor_grid(du_fn, out_fn):

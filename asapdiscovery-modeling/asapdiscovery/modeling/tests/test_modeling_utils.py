@@ -10,7 +10,9 @@ from asapdiscovery.data.openeye import (
 from asapdiscovery.modeling.modeling import (
     remove_extra_ligands,
     find_ligand_chains,
+    find_protein_chains,
     split_openeye_mol,
+    split_openeye_mol_alt,
 )
 from asapdiscovery.modeling.schema import MoleculeFilter
 
@@ -39,15 +41,67 @@ def files(tmp_path_factory, local_path):
     return files(*paths)
 
 
-def test_pdb_processors(sars_oe, local_path, files):
+# The main use cases for the modeling utils are:
+# Getting just the protein
+# Getting just the ligand in the active site
+# Getting the protein and ligand in the active site
+# Getting the protein and ligand and water
+@pytest.mark.parametrize("ligand_chain", ["A", "B"])
+def test_pdb_processors(sars_oe, local_path, files, ligand_chain):
     # Test removing extra ligands
     assert find_ligand_chains(sars_oe) == ["A", "B"]
-    assert find_ligand_chains(remove_extra_ligands(sars_oe, lig_chain="A")) == ["A"]
-    assert find_ligand_chains(remove_extra_ligands(sars_oe, lig_chain="B")) == ["B"]
+    assert find_ligand_chains(
+        remove_extra_ligands(sars_oe, lig_chain=ligand_chain)
+    ) == [ligand_chain]
+    assert find_ligand_chains(
+        remove_extra_ligands(sars_oe, lig_chain=ligand_chain)
+    ) == [ligand_chain]
 
     # Test getting only the protein and ligand
     split_mol = split_openeye_mol(sars_oe)
     assert find_ligand_chains(split_mol["lig"]) == ["A"]
     assert find_ligand_chains(split_mol["other"]) == ["B"]
 
-    molfilter = MoleculeFilter(components_to_keep=["protein", "ligand", "water"])
+
+@pytest.mark.parametrize("ligand_chain", ["A", "B"])
+@pytest.mark.parametrize(
+    "components",
+    [["ligand"], ["protein", "ligand"], ["protein", "ligand", "water"]],
+)
+def test_pdb_ligand_splitting(sars_oe, local_path, files, ligand_chain, components):
+    molfilter = MoleculeFilter(
+        components_to_keep=components,
+        ligand_chain=ligand_chain,
+    )
+    complex = split_openeye_mol_alt(sars_oe, molfilter)
+    assert find_ligand_chains(complex) == [ligand_chain]
+
+    save_openeye_pdb(
+        complex,
+        Path(
+            local_path,
+            f"split_test_{'-'.join(components)}_lig{ligand_chain}.pdb",
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    "components",
+    [["protein"], ["protein", "ligand"], ["protein", "ligand", "water"]],
+)
+@pytest.mark.parametrize("protein_chains", [["A"], ["B"], ["A", "B"]])
+def test_pdb_protein_splitting(sars_oe, local_path, files, protein_chains, components):
+    molfilter = MoleculeFilter(
+        components_to_keep=components,
+        protein_chains=protein_chains,
+    )
+    complex = split_openeye_mol_alt(sars_oe, molfilter)
+    assert find_protein_chains(complex) == protein_chains
+
+    save_openeye_pdb(
+        complex,
+        Path(
+            local_path,
+            f"split_test_{'-'.join(components)}_prot{''.join(protein_chains)}.pdb",
+        ),
+    )

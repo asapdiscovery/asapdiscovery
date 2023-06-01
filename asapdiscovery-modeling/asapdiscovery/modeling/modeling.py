@@ -2,8 +2,7 @@ import datetime
 import logging
 import os
 from pathlib import Path
-
-from openeye import oechem
+from asapdiscovery.modeling.schema import MoleculeFilter
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
@@ -15,6 +14,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
+from collections import namedtuple
 
 
 def add_seqres_to_openeye_protein(
@@ -563,6 +563,27 @@ def find_ligand_chains(mol: oechem.OEMolBase):
     return list(sorted(lig_chain_ids))
 
 
+def find_protein_chains(mol: oechem.OEMolBase):
+    """
+    Find the chains in a molecule that contain the protein.
+
+    Parameters
+    ----------
+    mol : oechem.OEMolBase
+        Complex molecule.
+
+    Returns
+    -------
+    List[str]
+        List of chain IDs that contain the protein.
+    """
+    prot_chain_ids = set()
+    for res in oechem.OEGetResidues(mol):
+        if oechem.OEIsStandardProteinResidue(res):
+            prot_chain_ids.add(res.GetChainID())
+    return list(sorted(prot_chain_ids))
+
+
 def remove_extra_ligands(mol, lig_chain=None):
     """
     Remove extra ligands from a molecule. Useful in the case where a complex
@@ -768,6 +789,100 @@ def prep_mp(
     prep_logger.info(
         f"Finished protein prep at {datetime.datetime.isoformat(datetime.datetime.now())}"
     )
+
+
+def split_openeye_mol_alt(complex_mol, molecule_filter: MoleculeFilter) -> namedtuple:
+    """
+    Split an OpenEye-loaded molecule into protein, ligand, etc.
+    Uses the OpenEye OESplitMolComplex function, which automatically splits out
+    only the first ligand binding site it sees.
+
+    Parameters
+    ----------
+    complex_mol : oechem.OEMolBase
+        Complex molecule to split.
+    molecule_filter : MoleculeFilter
+        Molecule filter object that contains the filter criteria.
+
+    Returns
+    -------
+    namedtuple
+        A namedtuple containing the protein, ligand, and water molecules.
+    """
+    # These are the objects that will be returned at the end
+    lig_mol = oechem.OEGraphMol()
+    prot_mol = oechem.OEGraphMol()
+    water_mol = oechem.OEGraphMol()
+    oth_mol = oechem.OEGraphMol()
+
+    # Make splitting split out covalent ligands possible
+    # TODO: look into different covalent-related options here
+    opts = oechem.OESplitMolComplexOptions()
+    opts.SetSplitCovalent(True)
+    opts.SetSplitCovalentCofactors(True)
+
+    # Protein splitting options
+    complex_filter = []
+    if "protein" in molecule_filter.components_to_keep:
+        prot_only = oechem.OEMolComplexFilterFactory(
+            oechem.OEMolComplexFilterCategory_Protein
+        )
+        if len(molecule_filter.protein_chains) > 0:
+            chain_filters = [
+                oechem.OERoleMolComplexFilterFactory(
+                    oechem.OEMolComplexChainRoleFactory(chain)
+                )
+                for chain in molecule_filter.protein_chains
+            ]
+            if len(chain_filters) > 1:
+                chain_filter = oechem.OEOrRoleSet(*chain_filters)
+            else:
+                chain_filter = chain_filters[0]
+            prot_filter = oechem.OEAndRoleSet(prot_only, chain_filter)
+        else:
+            prot_filter = prot_only
+        opts.SetProteinFilter(prot_filter)
+        complex_filter.append(prot_filter)
+    # Ligand splitting options
+    # Select ligand as all residues with resn LIG
+    if "ligand" in molecule_filter.components_to_keep:
+        lig_only = oechem.OEMolComplexFilterFactory(
+            oechem.OEMolComplexFilterCategory_Ligand
+        )
+        if molecule_filter.ligand_chain is None:
+            lig_filter = lig_only
+        else:
+            lig_chain = oechem.OERoleMolComplexFilterFactory(
+                oechem.OEMolComplexChainRoleFactory(molecule_filter.ligand_chain)
+            )
+            lig_filter = oechem.OEAndRoleSet(lig_only, lig_chain)
+        opts.SetLigandFilter(lig_filter)
+        complex_filter.append(lig_filter)
+
+    # If only one argument is passed to OEOrRoleSet, it will throw an error, annoyingly
+    if len(complex_filter) == 0:
+        raise RuntimeError(
+            "No components to keep were specified. Maybe OpenEye wackiness?"
+        )
+    if len(complex_filter) == 1:
+        opts.SetProteinFilter(*complex_filter)
+
+    else:
+        opts.SetProteinFilter(oechem.OEOrRoleSet(*complex_filter))
+    oechem.OESplitMolComplex(
+        lig_mol,
+        prot_mol,
+        water_mol,
+        oth_mol,
+        complex_mol,
+        opts,
+    )
+
+    # split_mol = namedtuple(
+    #     "MoleculeSplit", ["protein", "ligand", "water", "other"]
+    # )
+    # return split_mol(prot_mol, lig_mol, water_mol, oth_mol)
+    return prot_mol
 
 
 def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):

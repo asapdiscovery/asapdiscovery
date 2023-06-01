@@ -6,8 +6,8 @@ class MoleculeFilter(BaseModel):
         list(),
         description="List of chains containing the desired protein. An empty list will return all chains.",
     )
-    ligand_chains: list = Field(
-        list(),
+    ligand_chain: str = Field(
+        None,
         description="List of chains containing the desired ligand. An empty list will return all chains.",
     )
     water_chains: list = Field(

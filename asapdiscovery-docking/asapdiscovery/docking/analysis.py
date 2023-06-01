@@ -5,7 +5,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.openeye import get_ligand_rmsd_from_pdb_and_sdf, oechem
+from asapdiscovery.data.openeye import oechem, load_openeye_pdb, load_openeye_sdf
+from asapdiscovery.modeling.modeling import split_openeye_mol
 
 
 class DockingDataset:
@@ -452,3 +453,45 @@ def write_all_rmsds_to_reference(
     ]
 
     np.save(str(output_dir / f"{compound_id}.npy"), rmsds)
+
+
+def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_results=True):
+    """
+    TODO: This should be deprecated in favor of the functions in docking.analysis
+    Calculates the RMSD between a reference ligand from a PDB file and a mobile ligand from an SDF file.
+    If `fetch_docking_results` is True, additional docking results from the mobile ligand are returned as a dictionary.
+
+    Parameters
+    ----------
+    ref_path: str
+        Path to the reference PDB file containing the ligand.
+    mobile_path: str
+        Path to the SDF file containing the mobile ligand.
+    fetch_docking_results: bool, optional
+        If True, additional docking results from the mobile ligand are returned. Default is True.
+
+    Returns
+    -------
+    return_dict: dict
+        A dictionary with the following keys:
+            - 'rmsd': the RMSD between the reference and mobile ligands.
+            - 'posit': (if `fetch_docking_results` is True) the docking score from the mobile ligand's 'POSIT::Probability' SD tag.
+            - 'chemgauss': (if `fetch_docking_results` is True) the docking score from the mobile ligand's 'Chemgauss4' SD tag.
+    """
+    ref_pdb = load_openeye_pdb(ref_path)
+    ref = split_openeye_mol(ref_pdb)["lig"]
+    mobile = load_openeye_sdf(mobile_path)
+
+    for a in mobile.GetAtoms():
+        if a.GetAtomicNum() == 1:
+            mobile.DeleteAtom(a)
+
+    rmsd = oechem.OERMSD(ref, mobile)
+
+    return_dict = {"rmsd": rmsd}
+
+    if fetch_docking_results:
+        return_dict["posit"] = oechem.OEGetSDData(mobile, "POSIT::Probability")
+        return_dict["chemgauss"] = oechem.OEGetSDData(mobile, "Chemgauss4")
+
+    return return_dict
