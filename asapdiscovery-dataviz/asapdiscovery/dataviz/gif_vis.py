@@ -262,7 +262,7 @@ class GIFVisualiser:
         # Process the trajectory in a temporary directory
         from pygifsicle import optimize
 
-        ## now make the movie.
+        # now make the movie.
         self.logger.info("Rendering images for frames...")
         p.cmd.set(
             "ray_trace_frames", 0
