@@ -110,7 +110,7 @@ def test_single_target_docking(
         "-o",
         "./outputs",
         "--target",
-        "--272",
+        "272",
     ]
     ret = script_runner.run(*args)
     assert ret.success
