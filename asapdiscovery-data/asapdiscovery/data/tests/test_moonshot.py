@@ -49,8 +49,6 @@ def filter_df_files():
      * racemic
      * enantiopure
      * semiquant
-
-    Note that these files don't exist yet.
     """
     from itertools import product
 
@@ -102,12 +100,35 @@ def test_save(cdd_header, search, dl_dir, fn):
         outfile.write(content)
 
 
+@pytest.mark.parametrize(
+    "fn",
+    ["all_smi.csv", "noncov_smi.csv", "noncov_smi_dates.csv"],
+)
+def test_saved_files_exist(dl_dir, fn):
+    assert (dl_dir / fn).exists()
+
+
+@pytest.mark.parametrize(
+    "fn",
+    ["all_smi.csv", "noncov_smi.csv", "noncov_smi_dates.csv"],
+)
+def test_saved_files_can_be_loaded(dl_dir, fn):
+    import pandas
+
+    df = pandas.read_csv(dl_dir / fn)
+    print(df.shape, df.columns, flush=True)
+
+
 @pytest.mark.parametrize("retain_achiral", [True, False])
 @pytest.mark.parametrize("retain_racemic", [True, False])
 @pytest.mark.parametrize("retain_enantiopure", [True, False])
 @pytest.mark.parametrize("retain_semiquantitative_data", [True, False])
 def test_filter_df(
-    retain_achiral, retain_racemic, retain_enantiopure, retain_semiquantitative_data
+    retain_achiral,
+    retain_racemic,
+    retain_enantiopure,
+    retain_semiquantitative_data,
+    filter_df_files,
 ):
     import pandas
     from asapdiscovery.data.utils import filter_molecules_dataframe
@@ -121,8 +142,8 @@ def test_filter_df(
     )
     out_fn = all_out_fns[flags]
 
-    in_df = pandas.from_csv(in_fn)
-    out_df = pandas.from_csv(out_fn)
+    in_df = pandas.read_csv(in_fn)
+    out_df = pandas.read_csv(out_fn)
 
     in_df_filtered = filter_molecules_dataframe(
         in_df,
@@ -132,5 +153,5 @@ def test_filter_df(
         retain_semiquantitative_data=retain_semiquantitative_data,
     )
 
-    assert in_df_filtered.shape == out_df.shape
-    assert (in_df_filtered.index == out_df.index).all()
+    assert in_df_filtered.shape[0] == out_df.shape[0]
+    assert (in_df_filtered["name"] == out_df["Canonical PostEra ID"]).all()
