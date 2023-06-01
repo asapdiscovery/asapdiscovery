@@ -6,9 +6,9 @@ from functools import partial
 from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
-
 import dask
 import yaml
+from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     oechem,
@@ -22,7 +22,6 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
-from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.dataviz.gif_vis import GIFVisualiser
 from asapdiscovery.dataviz.html_vis import HTMLVisualiser
 from asapdiscovery.docking import make_docking_result_dataframe
@@ -721,7 +720,6 @@ def main():
 
         @dask.delayed
         def dask_gif_adaptor(traj, system, outpath):
-
             gif_visualiser = GIFVisualiser(
                 [traj],
                 [system],
