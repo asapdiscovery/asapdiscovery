@@ -9,7 +9,6 @@ The advantage of this package is it requires many fewer dependencies.
 import os
 import sys
 
-
 DEBUG = 1
 
 
