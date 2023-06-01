@@ -21,9 +21,8 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
     oechem,
 )
-from asapdiscovery.modeling.schema import MoleculeFilter
-from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.docking.analysis import write_all_rmsds_to_reference
+from asapdiscovery.modeling.modeling import split_openeye_mol
 
 
 def get_args():

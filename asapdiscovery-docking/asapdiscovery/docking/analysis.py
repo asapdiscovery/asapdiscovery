@@ -5,7 +5,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_sdf, oechem
+from asapdiscovery.modeling.modeling import split_openeye_mol
 
 
 class DockingDataset:

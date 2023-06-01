@@ -1,10 +1,11 @@
 import datetime
 import logging
 import os
-from pathlib import Path
+from collections import namedtuple
 from functools import reduce
-from asapdiscovery.modeling.schema import MoleculeFilter
 from typing import Union
+from pathlib import Path
+
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     oechem,
@@ -15,7 +16,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
-from collections import namedtuple
+from asapdiscovery.modeling.schema import MoleculeFilter
 
 
 def add_seqres_to_openeye_protein(

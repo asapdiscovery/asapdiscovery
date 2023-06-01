@@ -1,12 +1,7 @@
 import argparse
 
 import pandas
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    oechem,
-    oedocking,
-    oegrid,
-)
+from asapdiscovery.data.openeye import load_openeye_pdb, oechem, oedocking, oegrid
 from asapdiscovery.modeling.modeling import split_openeye_mol
 
 SCORE_TYPES = {

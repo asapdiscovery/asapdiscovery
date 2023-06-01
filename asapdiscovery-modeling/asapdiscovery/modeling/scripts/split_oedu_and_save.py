@@ -4,11 +4,7 @@ Load in oedu design unit files, and write out the ligand sdf and protein-only pd
 import argparse
 from pathlib import Path
 
-from asapdiscovery.data.openeye import (
-    oechem,
-    save_openeye_pdb,
-    save_openeye_sdf,
-)
+from asapdiscovery.data.openeye import oechem, save_openeye_pdb, save_openeye_sdf
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from tqdm import tqdm
 

@@ -12,16 +12,13 @@ from tempfile import NamedTemporaryFile
 import yaml
 from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
-from asapdiscovery.data.openeye import (  # noqa: E402
-    load_openeye_pdb,
-    oechem,
-)
+from asapdiscovery.data.openeye import load_openeye_pdb, oechem  # noqa: E402
 from asapdiscovery.data.utils import edit_pdb_file  # noqa: E402
 from asapdiscovery.data.utils import seqres_to_res_list  # noqa: E402
 from asapdiscovery.modeling.modeling import (
+    du_to_complex,
     mutate_residues,
     prep_receptor,
-    du_to_complex,
 )
 
 
