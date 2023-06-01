@@ -41,12 +41,12 @@ def loop_db():
 
 # This needs to have a scope of session so that a new tmp file is not created for each test
 @pytest.fixture(scope="session")
-def prepped_files(tmp_path_factory, local_path="."):
-    if not local_path:
-        dir = tmp_path_factory.mktemp("test_prep")
+def prepped_files(tmp_path_factory, local_path):
+    if not type(local_path) == Path:
+        return tmp_path_factory.mktemp("test_prep")
     else:
-        dir = Path(local_path)
-    return dir
+        local_path.mkdir(exist_ok=True)
+        return local_path
 
 
 @pytest.fixture
