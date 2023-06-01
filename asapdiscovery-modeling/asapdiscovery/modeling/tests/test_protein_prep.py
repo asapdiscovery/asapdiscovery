@@ -1,22 +1,23 @@
+from pathlib import Path
+
 import pytest
-from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
 import yaml
+from asapdiscovery.data.openeye import (
+    load_openeye_cif1,
+    load_openeye_pdb,
+    oechem,
+    save_openeye_pdb,
+)
+from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.modeling.modeling import (
-    remove_extra_ligands,
-    align_receptor,
-    spruce_protein,
-    mutate_residues,
     add_seqres_to_openeye_protein,
+    align_receptor,
+    mutate_residues,
+    remove_extra_ligands,
+    spruce_protein,
 )
-from asapdiscovery.data.openeye import (
-    oechem,
-    load_openeye_pdb,
-    save_openeye_pdb,
-    load_openeye_cif1,
-)
-from pathlib import Path
 
 
 @pytest.mark.parametrize(
