@@ -31,4 +31,7 @@ def test_forcefield_generation(input_pdb_path: str):
         ewaldErrorTolerance=ewaldErrorTolerance,
         hydrogenMass=hydrogenMass,
     )
-    return True
+    if system:
+        return True
+    else:
+        return False
