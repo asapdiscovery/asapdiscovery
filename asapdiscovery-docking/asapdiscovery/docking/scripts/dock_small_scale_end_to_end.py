@@ -37,7 +37,10 @@ Script to run single target prep + docking.
 Input:
     - receptor: path to receptor to prep and dock to
     - mols: path to the molecules to dock to the receptor as an SDF or SMILES file, or SMILES string.
-    - title: title of molecule to use if a SMILES string is passed in as input, default is to hash the SMILES string to avoid accidental caching.
+    - title: title of molecule to use if a SMILES string is passed in as input, default is to use an index
+    - smiles_as_title: use smiles strings as titles for molecules in .smi or .sdf file if none provided
+    - dask: use dask to parallelise docking
+    - dask-lilac: run dask in lilac config mode
     - output_dir: path to output_dir, will NOT overwrite if exists.
     - debug: enable debug mode, with more files saved and more verbose logging
     - verbose: whether to print out verbose logging.
@@ -48,11 +51,6 @@ Input:
     - seqres_yaml: path to yaml file of SEQRES.
     - protein_only: if true, generate design units with only the protein in them
     - ref_prot: path to reference pdb to align to. If None, no alignment will be performed
-
-    # MCS arguments
-    - mcs_sys: which package to use for MCS search [rdkit, oe].
-    - mcs_structural: use structure-based matching instead of element-based matching for MCS.
-    - n_draw: number of MCS compounds to draw for each query molecule.
 
     # Docking arguments
     - docking_sys: which docking system to use [posit, hybrid]. Defaults to posit.
