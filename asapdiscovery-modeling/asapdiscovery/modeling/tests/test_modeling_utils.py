@@ -8,11 +8,9 @@ from asapdiscovery.data.openeye import (
     oechem,
 )
 from asapdiscovery.modeling.modeling import (
-    remove_extra_ligands,
     find_ligand_chains,
     find_protein_chains,
     split_openeye_mol,
-    split_openeye_mol_alt,
 )
 from asapdiscovery.modeling.schema import MoleculeFilter
 
@@ -46,26 +44,9 @@ def files(tmp_path_factory, local_path):
 # Getting just the ligand in the active site
 # Getting the protein and ligand in the active site
 # Getting the protein and ligand and water
-@pytest.mark.parametrize("ligand_chain", ["A", "B"])
-def test_pdb_processors(sars_oe, local_path, files, ligand_chain):
-    # Test removing extra ligands
-    assert find_ligand_chains(sars_oe) == ["A", "B"]
-    assert find_ligand_chains(
-        remove_extra_ligands(sars_oe, lig_chain=ligand_chain)
-    ) == [ligand_chain]
-    assert find_ligand_chains(
-        remove_extra_ligands(sars_oe, lig_chain=ligand_chain)
-    ) == [ligand_chain]
-
-    # Test getting only the protein and ligand
-    split_mol = split_openeye_mol(sars_oe)
-    assert find_ligand_chains(split_mol["lig"]) == ["A"]
-    assert find_ligand_chains(split_mol["other"]) == ["B"]
-
-
 @pytest.mark.parametrize("components", ["ligand", "protein", ["ligand", "protein"]])
 def test_simple_splitting(sars_oe, local_path, components):
-    split_mol = split_openeye_mol_alt(sars_oe, components)
+    split_mol = split_openeye_mol(sars_oe, components)
     if "ligand" in components:
         assert find_ligand_chains(split_mol) == ["A", "B"]
     else:
@@ -86,7 +67,7 @@ def test_pdb_ligand_splitting(sars_oe, local_path, files, ligand_chain, componen
         components_to_keep=components,
         ligand_chain=ligand_chain,
     )
-    complex = split_openeye_mol_alt(sars_oe, molfilter)
+    complex = split_openeye_mol(sars_oe, molfilter)
     assert find_ligand_chains(complex) == [ligand_chain]
 
     save_openeye_pdb(
@@ -108,7 +89,7 @@ def test_pdb_protein_splitting(sars_oe, local_path, files, protein_chains, compo
         components_to_keep=components,
         protein_chains=protein_chains,
     )
-    complex = split_openeye_mol_alt(sars_oe, molfilter)
+    complex = split_openeye_mol(sars_oe, molfilter)
     assert find_protein_chains(complex) == protein_chains
 
     save_openeye_pdb(
