@@ -7,7 +7,7 @@ from asapdiscovery.data.openeye import (
     oedocking,
     oegrid,
 )
-from asapdiscovery.modeling.modeling import split_openeye_mol
+from asapdiscovery.modeling.modeling import split_openeye_mol_alt
 
 SCORE_TYPES = {
     "chemgauss": oedocking.OEScoreType_Chemgauss4,
@@ -47,7 +47,7 @@ def main():
     args = get_args()
 
     # Load the protein (and just protein)
-    prot = split_openeye_mol(load_openeye_pdb(args.structure_fn))["pro"]
+    prot = split_openeye_mol_alt(load_openeye_pdb(args.structure_fn), "protein")
 
     # Set up ligand mol stream
     ifs = oechem.oemolistream()

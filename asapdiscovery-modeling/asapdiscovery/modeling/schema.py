@@ -1,4 +1,12 @@
 from pydantic import BaseModel, Field
+from enum import Enum
+
+
+class MoleculeComponents(str, Enum):
+    PROTEIN = "protein"
+    LIGAND = "ligand"
+    WATER = "water"
+    OTHER = "other"
 
 
 class MoleculeFilter(BaseModel):
@@ -20,7 +28,7 @@ class MoleculeFilter(BaseModel):
         list(),
         description="List of chains containing other items. An empty list will return all chains.",
     )
-    components_to_keep: list = Field(
+    components_to_keep: list[MoleculeComponents] = Field(
         ["protein", "ligand", "water", "other"],
         description="List of components to keep. An empty list will return all components.",
     )

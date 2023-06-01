@@ -63,6 +63,19 @@ def test_pdb_processors(sars_oe, local_path, files, ligand_chain):
     assert find_ligand_chains(split_mol["other"]) == ["B"]
 
 
+@pytest.mark.parametrize("components", ["ligand", "protein", ["ligand", "protein"]])
+def test_simple_splitting(sars_oe, local_path, components):
+    split_mol = split_openeye_mol_alt(sars_oe, components)
+    if "ligand" in components:
+        assert find_ligand_chains(split_mol) == ["A", "B"]
+    else:
+        assert find_ligand_chains(split_mol) == []
+    if "protein" in components:
+        assert find_protein_chains(split_mol) == ["A", "B"]
+    else:
+        assert find_protein_chains(split_mol) == []
+
+
 @pytest.mark.parametrize("ligand_chain", ["A", "B"])
 @pytest.mark.parametrize(
     "components",

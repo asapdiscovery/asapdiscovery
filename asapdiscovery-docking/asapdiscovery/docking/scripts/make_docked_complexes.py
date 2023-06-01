@@ -8,7 +8,7 @@ import pandas
 from asapdiscovery.data.openeye import load_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: 402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: 402
-from asapdiscovery.modeling.modeling import split_openeye_mol
+from asapdiscovery.modeling.modeling import split_openeye_mol_alt
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem
 
 
@@ -61,7 +61,7 @@ def main():
 
             # Get rid of non-protein atoms
             if args.prot_only:
-                xtal = split_openeye_mol(xtal, lig_chain=None)["pro"]
+                xtal = split_openeye_mol_alt(xtal, "protein")
 
             # Find max resid for numbering the ligand residue
             new_resid = (

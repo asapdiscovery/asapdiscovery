@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from functools import reduce
 from asapdiscovery.modeling.schema import MoleculeFilter
-
+from typing import Union
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     oechem,
@@ -793,7 +793,9 @@ def prep_mp(
 
 
 def split_openeye_mol_alt(
-    complex_mol, molecule_filter: MoleculeFilter, prot_cutoff_len=10
+    complex_mol,
+    molecule_filter: Union[str, list[str], MoleculeFilter],
+    prot_cutoff_len=10,
 ) -> namedtuple:
     """
     Split an OpenEye-loaded molecule into protein, ligand, etc.
@@ -819,6 +821,13 @@ def split_openeye_mol_alt(
     prot_mol = oechem.OEGraphMol()
     water_mol = oechem.OEGraphMol()
     oth_mol = oechem.OEGraphMol()
+
+    if type(molecule_filter) == str:
+        molecule_filter = MoleculeFilter(components_to_keep=[molecule_filter])
+    elif type(molecule_filter) == list:
+        molecule_filter = MoleculeFilter(components_to_keep=molecule_filter)
+    else:
+        molecule_filter = molecule_filter
 
     # Make splitting split out covalent ligands possible
     # TODO: look into different covalent-related options here
