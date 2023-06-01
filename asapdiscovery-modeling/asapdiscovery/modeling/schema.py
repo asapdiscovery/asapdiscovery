@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field
 
 
 class MoleculeFilter(BaseModel):
+    """Filter for selecting components of a molecule."""
+
     protein_chains: list = Field(
         list(),
         description="List of chains containing the desired protein. An empty list will return all chains.",
