@@ -792,7 +792,9 @@ def prep_mp(
     )
 
 
-def split_openeye_mol_alt(complex_mol, molecule_filter: MoleculeFilter) -> namedtuple:
+def split_openeye_mol_alt(
+    complex_mol, molecule_filter: MoleculeFilter, prot_cutoff_len=10
+) -> namedtuple:
     """
     Split an OpenEye-loaded molecule into protein, ligand, etc.
     Uses the OpenEye OESplitMolComplex function, which automatically splits out
@@ -804,6 +806,8 @@ def split_openeye_mol_alt(complex_mol, molecule_filter: MoleculeFilter) -> named
         Complex molecule to split.
     molecule_filter : MoleculeFilter
         Molecule filter object that contains the filter criteria.
+    prot_cutoff_len : int, default=10
+        Minimum number of residues in a protein chain required in order to keep
 
     Returns
     -------
@@ -878,6 +882,8 @@ def split_openeye_mol_alt(complex_mol, molecule_filter: MoleculeFilter) -> named
         complex_mol,
         opts,
     )
+    if "protein" in molecule_filter.components_to_keep:
+        prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
     return prot_mol
 
 
