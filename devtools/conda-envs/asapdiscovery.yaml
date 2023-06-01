@@ -58,7 +58,9 @@ dependencies:
   # execution
   - distributed
   - dask
+  {% if 'linux' in platform.system().lower() %}
   - dask-cuda
+  {% endif %}
   - dask-jobqueue
   - netifaces
 
