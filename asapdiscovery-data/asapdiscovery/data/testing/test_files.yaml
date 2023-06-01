@@ -26,3 +26,56 @@ files:
   # prepped PDB
   - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb
     sha256hash: d4bf45cd72583ee63cd61c0367db1ac0e648d3f4d8f82cb483e0ab222041a90d
+
+  # input file for testing filtering
+  - resource: test_filter_in.csv
+    sha256hash: 48f75eaf8c36feede6e7a7867b41af80ebd8be5108704bb51d0c1eca81060127
+
+  # output files for testing filtering
+  - resource: test_filter_achiral_enantiopure_out.csv
+    sha256hash: d6fbe1e77f306091142ba1c853c0bf2c4586786042498dbc770a30f795daabe0
+
+  - resource: test_filter_achiral_enantiopure_semiquant_out.csv
+    sha256hash: 8965a8b36c753f59d043313cb6bcc53bea18d6ac8de1f8188646fd4e8f084fa4
+
+  - resource: test_filter_achiral_out.csv
+    sha256hash: f7b8425e20b64a8d42701a2fd666c5f4ffa8ba4e8bc5ba16401990c54c115f7d
+
+  - resource: test_filter_achiral_racemic_enantiopure_out.csv
+    sha256hash: 48f75eaf8c36feede6e7a7867b41af80ebd8be5108704bb51d0c1eca81060127
+
+  - resource: test_filter_achiral_racemic_enantiopure_semiquant_out.csv
+    sha256hash: 48f75eaf8c36feede6e7a7867b41af80ebd8be5108704bb51d0c1eca81060127
+
+  - resource: test_filter_achiral_racemic_out.csv
+    sha256hash: 125842ec72a3a861c874879bd3e12cac972744acdb488f7eff259bd711423dbf
+
+  - resource: test_filter_achiral_racemic_semiquant_out.csv
+    sha256hash: d1da81ee982ac6f3b40f520460711a94e1240fd6fd4bf29d8a48b4631ba84df0
+
+  - resource: test_filter_achiral_semiquant_out.csv
+    sha256hash: 223d018df5fe9e3dbe013b8cd02d4e2206f61ca9429303c1dc01a58bef6d1afc
+
+  - resource: test_filter_enantiopure_out.csv
+    sha256hash: b4e1e4a71831537db0dda7a82a5874aa4a8427050cdaaa581fce4ed88bc72fcb
+
+  - resource: test_filter_enantiopure_semiquant_out.csv
+    sha256hash: 2023963421d626c704fbca663f0c9014992290c0c8f146e5b5126085e4afe02e
+
+  - resource: test_filter_out.csv
+    sha256hash: 6f0fc5096041e06f3daf5754f72760ef05ded36247a6e822af1bbfa34294612b
+
+  - resource: test_filter_racemic_enantiopure_out.csv
+    sha256hash: 19507c742903b0ec11ea0ecd934cf0a61981d256b3f6b02aa22af2259d2e88fd
+
+  - resource: test_filter_racemic_enantiopure_semiquant_out.csv
+    sha256hash: 20db83db30393d332e53c6ad2009afbda79e398213f7727db000e9feec70d402
+
+  - resource: test_filter_racemic_out.csv
+    sha256hash: 8900f160e270ad37302ddecbc154fe51468c13ee0bda8961223fe62c73711528
+
+  - resource: test_filter_racemic_semiquant_out.csv
+    sha256hash: 87b22105b81217dde0b9aab17e98e16e6eafb297b0ef04813f7a7f6e1a95360c
+
+  - resource: test_filter_semiquant_out.csv
+    sha256hash: c6892cda97ae7d9af3ec68bcd7f0dd4b8c7a77b58e6b8ad30e7f7d92186b726c
