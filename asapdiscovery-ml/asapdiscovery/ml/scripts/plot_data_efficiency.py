@@ -17,7 +17,7 @@ import seaborn as sns
 from asapdiscovery.ml.scripts.plot_loss import convert_pic50
 
 
-def load_losses(loss_dir, conv_function=None):
+def load_losses(loss_dir, conv_function=None, agg=np.mean):
     """
     Load train, val, and test losses from `loss_dir`, converting as necessary. Take loss
     from epoch with best original val loss.
@@ -28,6 +28,10 @@ def load_losses(loss_dir, conv_function=None):
         Directory containing pickle files
     conv_function : callable, optional
         If present, will use to convert mean absolute loss values
+    agg : callable, default=mean
+        Function to aggregate loss across molecules. Set to None to return loss for all
+        molecules
+
 
     Returns
     -------
@@ -52,22 +56,20 @@ def load_losses(loss_dir, conv_function=None):
     if conv_function:
         for sp, loss_arr in loss_arrays.items():
             # First convert from squared loss to mean abs loss
-            tmp_loss = np.sqrt(loss_arr).mean(axis=1)
+            tmp_loss = np.sqrt(loss_arr)
             # Then convert from pIC50 to dG
             tmp_loss = conv_function(tmp_loss)
             # Store back into dict
             loss_arrays[sp] = tmp_loss
-    else:
-        # Just take mean
-        loss_arrays = {
-            sp: loss_arr.mean(axis=1) for sp, loss_arr in loss_arrays.items()
-        }
 
-    return (
-        loss_arrays["train"][best_idx],
-        loss_arrays["val"][best_idx],
-        loss_arrays["test"][best_idx],
-    )
+    # Extract losses for best_idx
+    loss_arrays = {sp: loss_arr[best_idx, :] for sp, loss_arr in loss_arrays.items()}
+
+    # Aggregate
+    if agg:
+        loss_arrays = {sp: agg(loss_arr) for sp, loss_arr in loss_arrays.items()}
+
+    return (loss_arrays["train"], loss_arrays["val"], loss_arrays["test"])
 
 
 def load_all_losses(in_df, rel_dir=None, conv_function=None):
