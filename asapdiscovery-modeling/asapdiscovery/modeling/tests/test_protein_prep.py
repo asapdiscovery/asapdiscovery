@@ -43,10 +43,12 @@ def loop_db():
 # This needs to have a scope of session so that a new tmp file is not created for each test
 @pytest.fixture(scope="session")
 def prepped_files(tmp_path_factory, local_path):
-    if not type(local_path) == Path:
+    if not type(local_path) == str:
         return tmp_path_factory.mktemp("test_prep")
     else:
+        local_path = Path(local_path)
         local_path.mkdir(exist_ok=True)
+        assert local_path.exists()
         return local_path
 
 
@@ -184,7 +186,6 @@ class TestProteinPrep:
         # TODO: Add a test to make sure the ligand is in the active site
         # TODO: Add a test to make sure the seqres has been added to the protein
 
-    # @pytest.mark.skip(reason="MERS is not ready yet")
     def test_mers_protein_prep(
         self, mers_xtal, ref, prepped_files, loop_db, ref_chain="A"
     ):

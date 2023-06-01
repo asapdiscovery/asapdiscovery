@@ -5,7 +5,7 @@ from pathlib import Path
 def pytest_addoption(parser):
     parser.addoption(
         "--local_path",
-        type=Path,
+        type=str,
         default=None,
         help="If provided, use this path to output files for tests",
     )
