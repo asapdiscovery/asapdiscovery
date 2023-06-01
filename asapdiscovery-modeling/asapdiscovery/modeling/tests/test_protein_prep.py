@@ -19,15 +19,6 @@ from asapdiscovery.data.openeye import (
 from pathlib import Path
 
 
-@pytest.mark.parametrize(
-    "file", ["Mpro-P2660_0A_bound.pdb", "rcsb_8czv-assembly1.cif", "reference.pdb"]
-)
-def test_get_files(file):
-    path = fetch_test_file(file)
-    assert path.exists()
-    assert path.is_file()
-
-
 @pytest.fixture
 def sars():
     return fetch_test_file("Mpro-P2660_0A_bound.pdb")
@@ -50,15 +41,11 @@ def loop_db():
 
 # This needs to have a scope of session so that a new tmp file is not created for each test
 @pytest.fixture(scope="session")
-def to_prep_csv(tmp_path_factory):
-    fn = tmp_path_factory.mktemp("test_prep") / "to_prep.csv"
-    return fn
-
-
-# This needs to have a scope of session so that a new tmp file is not created for each test
-@pytest.fixture(scope="session")
-def prepped_files(tmp_path_factory):
-    dir = tmp_path_factory.mktemp("test_prep")
+def prepped_files(tmp_path_factory, local_path="."):
+    if not local_path:
+        dir = tmp_path_factory.mktemp("test_prep")
+    else:
+        dir = Path(local_path)
     return dir
 
 
@@ -124,7 +111,6 @@ class TestProteinPrep:
         prot = remove_extra_ligands(prot, lig_chain=xtal.lig_chain)
 
         # TODO add a test to confirm only a ligand in chain A is there
-        print(ref)
 
         # Align to reference
         prot = align_receptor(
@@ -195,6 +181,7 @@ class TestProteinPrep:
             assert Path(fn).is_file()
 
         # TODO: Add a test to make sure the ligand is in the active site
+        # TODO: Add a test to make sure the seqres has been added to the protein
 
     # @pytest.mark.skip(reason="MERS is not ready yet")
     def test_mers_protein_prep(
@@ -268,7 +255,7 @@ class TestProteinPrep:
         ],
     )
     def test_openeye_du_loading(self, du_fn, has_lig, prepped_files):
-        # The purpose of this test is to make sure that the prepared design units
+        # The purpose of this test is to make sure that the prepared design units can be used for docking
 
         # Load the prepared design unit
         sars_du = oechem.OEDesignUnit()
@@ -278,6 +265,8 @@ class TestProteinPrep:
         assert sars_du.HasReceptor()
         if has_lig:
             assert sars_du.HasLigand()
+
+        # TODO: Add a test to make sure the receptor can be added to POSIT
 
     @pytest.mark.parametrize(
         "pdb_fn",
