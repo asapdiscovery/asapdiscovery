@@ -3,15 +3,15 @@ import logging
 import os
 from pathlib import Path
 
+from openeye import oechem
+
 from asapdiscovery.data.openeye import (
-    du_to_complex,
     load_openeye_pdb,
     oechem,
     oedocking,
     oespruce,
     openeye_perceive_residues,
     save_openeye_pdb,
-    split_openeye_mol,
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
@@ -541,6 +541,28 @@ def build_dimer_from_monomer(prot):
     return prot
 
 
+def find_ligand_chains(mol: oechem.OEMolBase):
+    """
+    Find the chains in a molecule that contain the ligand, identified by the resid "LIG". This is useful for
+    cases where the ligand is present in multiple chains.
+
+    Parameters
+    ----------
+    mol : oechem.OEMolBase
+        Complex molecule.
+
+    Returns
+    -------
+    List[str]
+        List of chain IDs that contain the ligand.
+    """
+    lig_chain_ids = set()
+    for res in oechem.OEGetResidues(mol):
+        if res.GetName() == "LIG":
+            lig_chain_ids.add(res.GetChainID())
+    return list(sorted(lig_chain_ids))
+
+
 def remove_extra_ligands(mol, lig_chain=None):
     """
     Remove extra ligands from a molecule. Useful in the case where a complex
@@ -567,14 +589,10 @@ def remove_extra_ligands(mol, lig_chain=None):
     all_lig_match.SetName("LIG")
     all_lig_filter = oechem.OEAtomMatchResidue(all_lig_match)
 
+    lig_chains = find_ligand_chains(mol)
     # Detect ligand chain to keep if none is given
     if lig_chain is None:
-        lig_chain = sorted(
-            {
-                oechem.OEAtomGetResidue(a).GetExtChainID()
-                for a in mol.GetAtoms(all_lig_filter)
-            }
-        )[0]
+        lig_chain = lig_chains[0]
 
     # Copy molecule and delete all lig atoms that don't have the desired chain
     mol_copy = mol.CreateCopy()
@@ -750,3 +768,216 @@ def prep_mp(
     prep_logger.info(
         f"Finished protein prep at {datetime.datetime.isoformat(datetime.datetime.now())}"
     )
+
+
+def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
+    """
+    Split an OpenEye-loaded molecule into protein, ligand, etc.
+    Uses the OpenEye OESplitMolComplex function, which automatically splits out
+    only the first ligand binding site it sees.
+
+    Parameters
+    ----------
+    complex_mol : oechem.OEMolBase
+        Complex molecule to split.
+    lig_chain : str, default="A"
+        Which copy of the ligand to keep. Pass None to keep all ligand atoms.
+    prot_cutoff_len : int, default=10
+        Minimum number of residues in a protein chain required in order to keep
+
+    Returns
+    -------
+    """
+
+    # Test splitting
+    lig_mol = oechem.OEGraphMol()
+    prot_mol = oechem.OEGraphMol()
+    water_mol = oechem.OEGraphMol()
+    oth_mol = oechem.OEGraphMol()
+
+    # Make splitting split out covalent ligands
+    # TODO: look into different covalent-related options here
+    opts = oechem.OESplitMolComplexOptions()
+    opts.SetSplitCovalent(True)
+    opts.SetSplitCovalentCofactors(True)
+
+    # Select protein as all protein atoms in chain A or chain B
+    prot_only = oechem.OEMolComplexFilterFactory(
+        oechem.OEMolComplexFilterCategory_Protein
+    )
+    a_chain = oechem.OERoleMolComplexFilterFactory(
+        oechem.OEMolComplexChainRoleFactory("A")
+    )
+    b_chain = oechem.OERoleMolComplexFilterFactory(
+        oechem.OEMolComplexChainRoleFactory("B")
+    )
+    a_or_b_chain = oechem.OEOrRoleSet(a_chain, b_chain)
+    opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
+
+    # Select ligand as all residues with resn LIG
+    lig_only = oechem.OEMolComplexFilterFactory(
+        oechem.OEMolComplexFilterCategory_Ligand
+    )
+    if lig_chain is None:
+        opts.SetLigandFilter(lig_only)
+    else:
+        lig_chain = oechem.OERoleMolComplexFilterFactory(
+            oechem.OEMolComplexChainRoleFactory(lig_chain)
+        )
+        opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
+
+    # Set water filter (keep all waters in A, B, or W chains)
+    #  (is this sufficient? are there other common water chain ids?)
+    wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
+    w_chain = oechem.OERoleMolComplexFilterFactory(
+        oechem.OEMolComplexChainRoleFactory("W")
+    )
+    all_wat_chains = oechem.OEOrRoleSet(a_or_b_chain, w_chain)
+    opts.SetWaterFilter(oechem.OEAndRoleSet(wat_only, all_wat_chains))
+
+    oechem.OESplitMolComplex(
+        lig_mol,
+        prot_mol,
+        water_mol,
+        oth_mol,
+        complex_mol,
+        opts,
+    )
+
+    prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
+
+    return {
+        "complex": complex_mol,
+        "lig": lig_mol,
+        "pro": prot_mol,
+        "water": water_mol,
+        "other": oth_mol,
+    }
+
+
+def split_openeye_design_unit(du, lig=None, lig_title=None, include_solvent=True):
+    """
+    Parameters
+    ----------
+    du : oechem.OEDesignUnit
+        Design Unit to be saved
+    lig : oechem.OEGraphMol, optional
+
+    lig_title : str, optional
+        ID of Ligand to be saved to the Title tag in the SDF, by default None
+    include_solvent : bool, optional
+        Whether to include solvent in the complex, by default True
+
+    Returns
+    -------
+    lig : oechem.OEGraphMol
+        OE object containing ligand
+    protein : oechem.OEGraphMol
+        OE object containing only protein
+    complex : oechem.OEGraphMol
+        OE object containing ligand + protein
+    """
+    prot = oechem.OEGraphMol()
+    complex_ = oechem.OEGraphMol()
+    # complex_ = du_to_complex(du, include_solvent=include_solvent)
+    du.GetProtein(prot)
+    if not lig:
+        lig = oechem.OEGraphMol()
+        du.GetLigand(lig)
+
+    # Set ligand title, useful for the combined sdf file
+    if lig_title:
+        lig.SetTitle(f"{lig_title}")
+
+    # Give ligand atoms their own chain "L" and set the resname to "LIG"
+    residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
+    residue.SetChainID("L")
+    residue.SetName("LIG")
+    residue.SetHetAtom(True)
+    for atom in list(lig.GetAtoms()):
+        oechem.OEAtomSetResidue(atom, residue)
+
+    # Combine protein and ligand and save
+    # TODO: consider saving water as well
+    oechem.OEAddMols(complex_, prot)
+    oechem.OEAddMols(complex_, lig)
+
+    # Clean up PDB info by re-perceiving, perserving chain ID,
+    # residue number, and residue name
+    openeye_perceive_residues(prot)
+    openeye_perceive_residues(complex_)
+    return lig, prot, complex_
+
+
+def du_to_complex(du, include_solvent=False):
+    """
+    Convert OEDesignUnit to OEGraphMol containing the protein and ligand from
+    `du`.
+
+    Parameters
+    ----------
+    du : oechem.OEDesignUnit
+        OEDesignUnit object to extract from.
+    include_solvent : bool, default=False
+        Whether to include solvent molecules.
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        Molecule with protein and ligand from `du`
+    """
+    complex_mol = oechem.OEGraphMol()
+    comp_tag = (
+        oechem.OEDesignUnitComponents_Protein | oechem.OEDesignUnitComponents_Ligand
+    )
+    if include_solvent:
+        comp_tag |= oechem.OEDesignUnitComponents_Solvent
+    du.GetComponents(complex_mol, comp_tag)
+
+    complex_mol = openeye_perceive_residues(complex_mol)
+
+    return complex_mol
+
+
+def trim_small_chains(input_mol, cutoff_len=10):
+    """
+    Remove short chains from a protein molecule object. The goal is to get rid
+    of any peptide ligands that were mistakenly collected by OESplitMolComplex.
+
+    Parameters
+    ----------
+    input_mol : oechem.OEGraphMol
+        OEGraphMol object containing the protein to trim
+    cutoff_len : int, default=10
+        The cutoff length for peptide chains (chains must have more than this
+        many residues to be included)
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        Trimmed molecule
+    """
+    # Copy the molecule
+    mol_copy = input_mol.CreateCopy()
+
+    # Remove chains from mol_copy that are too short (possibly a better way of
+    #  doing this with OpenEye functions)
+    # Get number of residues per chain
+    chain_len_dict = {}
+    hv = oechem.OEHierView(mol_copy)
+    for chain in hv.GetChains():
+        chain_id = chain.GetChainID()
+        for frag in chain.GetFragments():
+            frag_len = len(list(frag.GetResidues()))
+            try:
+                chain_len_dict[chain_id] += frag_len
+            except KeyError:
+                chain_len_dict[chain_id] = frag_len
+
+    # Remove short chains atom by atom
+    for a in mol_copy.GetAtoms():
+        chain_id = oechem.OEAtomGetResidue(a).GetExtChainID()
+        if (chain_id not in chain_len_dict) or (chain_len_dict[chain_id] <= cutoff_len):
+            mol_copy.DeleteAtom(a)
+
+    return mol_copy

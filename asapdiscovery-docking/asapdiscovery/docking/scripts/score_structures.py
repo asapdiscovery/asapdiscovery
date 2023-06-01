@@ -6,8 +6,8 @@ from asapdiscovery.data.openeye import (
     oechem,
     oedocking,
     oegrid,
-    split_openeye_mol,
 )
+from asapdiscovery.modeling.modeling import split_openeye_mol
 
 SCORE_TYPES = {
     "chemgauss": oedocking.OEScoreType_Chemgauss4,

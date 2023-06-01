@@ -17,6 +17,7 @@ from asapdiscovery.modeling.modeling import (
     mutate_residues,
     remove_extra_ligands,
     spruce_protein,
+    split_openeye_design_unit,
 )
 
 
@@ -161,7 +162,6 @@ class TestProteinPrep:
         # Serialize output!
         from asapdiscovery.data.openeye import (
             save_openeye_sdf,
-            split_openeye_design_unit,
         )
         from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
 

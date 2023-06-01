@@ -8,8 +8,8 @@ from asapdiscovery.data.openeye import (
     oechem,
     save_openeye_pdb,
     save_openeye_sdf,
-    split_openeye_design_unit,
 )
+from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from tqdm import tqdm
 
 

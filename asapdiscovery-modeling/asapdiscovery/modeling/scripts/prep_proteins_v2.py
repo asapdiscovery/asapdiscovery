@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
-from asapdiscovery.modeling.modeling import spruce_protein
+from asapdiscovery.modeling.modeling import spruce_protein, split_openeye_design_unit
 
 
 def parse_args():
@@ -189,7 +189,6 @@ def prep_protein(xtal: CrystalCompoundData, args):
 
         from asapdiscovery.data.openeye import (
             save_openeye_sdf,
-            split_openeye_design_unit,
         )
         from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
 

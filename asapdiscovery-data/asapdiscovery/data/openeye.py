@@ -3,6 +3,8 @@ from pathlib import Path
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
 # exec on module import
+from asapdiscovery.modeling.modeling import split_openeye_mol
+
 if not oechem.OEChemIsLicensed("python"):
     raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
 
@@ -416,90 +418,6 @@ def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
     return prot
 
 
-def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
-    """
-    Split an OpenEye-loaded molecule into protein, ligand, etc.
-
-    Parameters
-    ----------
-    complex_mol : oechem.OEMolBase
-        Complex molecule to split.
-    lig_chain : str, default="A"
-        Which copy of the ligand to keep. Pass None to keep all ligand atoms.
-    prot_cutoff_len : int, default=10
-        Minimum number of residues in a protein chain required in order to keep
-
-    Returns
-    -------
-    """
-    from .utils import trim_small_chains
-
-    # Test splitting
-    lig_mol = oechem.OEGraphMol()
-    prot_mol = oechem.OEGraphMol()
-    water_mol = oechem.OEGraphMol()
-    oth_mol = oechem.OEGraphMol()
-
-    # Make splitting split out covalent ligands
-    # TODO: look into different covalent-related options here
-    opts = oechem.OESplitMolComplexOptions()
-    opts.SetSplitCovalent(True)
-    opts.SetSplitCovalentCofactors(True)
-
-    # Select protein as all protein atoms in chain A or chain B
-    prot_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Protein
-    )
-    a_chain = oechem.OERoleMolComplexFilterFactory(
-        oechem.OEMolComplexChainRoleFactory("A")
-    )
-    b_chain = oechem.OERoleMolComplexFilterFactory(
-        oechem.OEMolComplexChainRoleFactory("B")
-    )
-    a_or_b_chain = oechem.OEOrRoleSet(a_chain, b_chain)
-    opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
-
-    # Select ligand as all residues with resn LIG
-    lig_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Ligand
-    )
-    if lig_chain is None:
-        opts.SetLigandFilter(lig_only)
-    else:
-        lig_chain = oechem.OERoleMolComplexFilterFactory(
-            oechem.OEMolComplexChainRoleFactory(lig_chain)
-        )
-        opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
-
-    # Set water filter (keep all waters in A, B, or W chains)
-    #  (is this sufficient? are there other common water chain ids?)
-    wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
-    w_chain = oechem.OERoleMolComplexFilterFactory(
-        oechem.OEMolComplexChainRoleFactory("W")
-    )
-    all_wat_chains = oechem.OEOrRoleSet(a_or_b_chain, w_chain)
-    opts.SetWaterFilter(oechem.OEAndRoleSet(wat_only, all_wat_chains))
-
-    oechem.OESplitMolComplex(
-        lig_mol,
-        prot_mol,
-        water_mol,
-        oth_mol,
-        complex_mol,
-        opts,
-    )
-
-    prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
-
-    return {
-        "complex": complex_mol,
-        "lig": lig_mol,
-        "pro": prot_mol,
-        "water": water_mol,
-        "other": oth_mol,
-    }
-
-
 def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_results=True):
     """
     TODO: This should be deprecated in favor of the functions in docking.analysis
@@ -540,60 +458,6 @@ def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_result
         return_dict["chemgauss"] = oechem.OEGetSDData(mobile, "Chemgauss4")
 
     return return_dict
-
-
-def split_openeye_design_unit(du, lig=None, lig_title=None, include_solvent=True):
-    """
-    Parameters
-    ----------
-    du : oechem.OEDesignUnit
-        Design Unit to be saved
-    lig : oechem.OEGraphMol, optional
-
-    lig_title : str, optional
-        ID of Ligand to be saved to the Title tag in the SDF, by default None
-    include_solvent : bool, optional
-        Whether to include solvent in the complex, by default True
-
-    Returns
-    -------
-    lig : oechem.OEGraphMol
-        OE object containing ligand
-    protein : oechem.OEGraphMol
-        OE object containing only protein
-    complex : oechem.OEGraphMol
-        OE object containing ligand + protein
-    """
-    prot = oechem.OEGraphMol()
-    complex_ = oechem.OEGraphMol()
-    # complex_ = du_to_complex(du, include_solvent=include_solvent)
-    du.GetProtein(prot)
-    if not lig:
-        lig = oechem.OEGraphMol()
-        du.GetLigand(lig)
-
-    # Set ligand title, useful for the combined sdf file
-    if lig_title:
-        lig.SetTitle(f"{lig_title}")
-
-    # Give ligand atoms their own chain "L" and set the resname to "LIG"
-    residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
-    residue.SetChainID("L")
-    residue.SetName("LIG")
-    residue.SetHetAtom(True)
-    for atom in list(lig.GetAtoms()):
-        oechem.OEAtomSetResidue(atom, residue)
-
-    # Combine protein and ligand and save
-    # TODO: consider saving water as well
-    oechem.OEAddMols(complex_, prot)
-    oechem.OEAddMols(complex_, lig)
-
-    # Clean up PDB info by re-perceiving, perserving chain ID,
-    # residue number, and residue name
-    openeye_perceive_residues(prot)
-    openeye_perceive_residues(complex_)
-    return lig, prot, complex_
 
 
 def save_receptor_grid(du_fn, out_fn):
@@ -645,33 +509,3 @@ def openeye_copy_pdb_data(
     for data_pair in oechem.OEGetPDBDataPairs(source):
         if data_pair.GetTag() == tag:
             oechem.OEAddPDBData(destination, data_pair)
-
-
-def du_to_complex(du, include_solvent=False):
-    """
-    Convert OEDesignUnit to OEGraphMol containing the protein and ligand from
-    `du`.
-
-    Parameters
-    ----------
-    du : oechem.OEDesignUnit
-        OEDesignUnit object to extract from.
-    include_solvent : bool, default=False
-        Whether to include solvent molecules.
-
-    Returns
-    -------
-    oechem.OEGraphMol
-        Molecule with protein and ligand from `du`
-    """
-    complex_mol = oechem.OEGraphMol()
-    comp_tag = (
-        oechem.OEDesignUnitComponents_Protein | oechem.OEDesignUnitComponents_Ligand
-    )
-    if include_solvent:
-        comp_tag |= oechem.OEDesignUnitComponents_Solvent
-    du.GetComponents(complex_mol, comp_tag)
-
-    complex_mol = openeye_perceive_residues(complex_mol)
-
-    return complex_mol
