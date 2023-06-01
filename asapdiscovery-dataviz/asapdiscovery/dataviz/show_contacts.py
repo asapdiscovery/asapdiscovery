@@ -6,8 +6,8 @@ clustermols by Matthew Baumgartner.
 The advantage of this package is it requires many fewer dependencies.
 """
 
-import os
-import sys
+import os  # noqa: F401
+import sys  # noqa: F401
 
 DEBUG = 1
 
@@ -52,7 +52,7 @@ def show_contacts(
         print('all_don_acc2 = "' + all_don_acc2 + '"')
 
     # if theses selections turn out not to have any atoms in them, pymol throws cryptic errors when calling the dist function like:
-    #'Selector-Error: Invalid selection name'
+    # 'Selector-Error: Invalid selection name'
     # So for each one, manually perform the selection and then pass the reference to the distance command and at the end, clean up the selections
     # the return values are the count of the number of atoms
     all1_sele_count = pymol_instance.cmd.select("all_don_acc1_sele", all_don_acc1)
@@ -184,21 +184,21 @@ def show_contacts(
         pymol_instance.cmd.set("dash_color", "red", donres)
         pymol_instance.cmd.set("dash_radius", "0.125", donres)
 
-    ##########################################################
-    ##### find the buried unpaired atoms of the receptor #####
-    ##########################################################
+    ##################################################
+    # find the buried unpaired atoms of the receptor #
+    ##################################################
 
     # initialize the variable for when CALC_SASA is False
     unpaired_atoms = ""
 
-    ## Group
+    # Group
     pymol_instance.cmd.group(
         result,
         "%s %s %s %s %s %s"
         % (polres, allres, accres, donres, pol_ok_res, unpaired_atoms),
     )
 
-    ## Clean up the selection objects
+    # Clean up the selection objects
     # if the show_contacts debug level is high enough, don't delete them.
     if SC_DEBUG < 5:
         pymol_instance.cmd.delete("all_don_acc1_sele")
