@@ -36,6 +36,12 @@ class MoleculeFilter(BaseModel):
         description="List of components to keep. An empty list will return all components.",
     )
 
+class PrepOpts(BaseModel):
+    ref_fn: Path = Field(None, description="Reference structure to align to.")
+    ref_chain: str = Field(None, description="Chain ID to align to.")
+    seqres_yaml: Path = Field(None, description="Path to seqres yaml")
+    loop_db: Path = Field(None, description="Path to loop database to use for prepping")
+    output_dir: Path = Field(None, description="Directory to save output to.")
 
 class PreppedTarget(BaseModel):
     source: CrystalCompoundData = Field(description="Source of model")

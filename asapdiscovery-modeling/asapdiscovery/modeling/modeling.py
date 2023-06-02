@@ -1,9 +1,9 @@
-import os
+import os, yaml
 from collections import namedtuple
 from functools import reduce
 from pathlib import Path
 from typing import Union
-
+from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     oechem,
@@ -17,6 +17,7 @@ from asapdiscovery.modeling.schema import (
     MoleculeComponent,
     MoleculeFilter,
     PreppedTarget,
+    PrepOpts
 )
 
 
@@ -35,6 +36,68 @@ def add_seqres_to_openeye_protein(
             if seqres_line != "":
                 oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
     return prot
+
+def sars_protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts):
+    # Load structure
+    prot = load_openeye_pdb(target.source.str_fn)
+
+    # Get desired components
+    prot = split_openeye_mol(prot, target.molecule_filter)
+
+    # Align
+    if prep_opts.ref_fn:
+        ref = load_openeye_pdb(str(prep_opts.ref_fn))
+        prot, rmsd = superpose_molecule(ref, prot, prep_opts.ref_chain, target.active_site_chain)
+
+    # Mutate Residues
+    if prep_opts.seqres_yaml:
+        with open(prep_opts.seqres_yaml) as f:
+            seqres_dict = yaml.safe_load(f)
+        seqres = seqres_dict["SEQRES"]
+
+        res_list = seqres_to_res_list(seqres)
+
+        prot = mutate_residues(prot, res_list, place_h=True)
+        seqres_list = " ".join(res_list)
+
+    # Spruce Protein
+    du = spruce_protein(
+        initial_prot=prot,
+        seqres=seqres_list,
+        loop_db=prep_opts.loop_db,
+        return_du=True,
+        site_residue=target.active_site,
+    )
+    assert type(du) == oechem.OEDesignUnit
+
+    du_fn = prepped_files / f"{target.output_name}-prepped_receptor_0.oedu"
+    oechem.OEWriteDesignUnit(str(du_fn), du)
+
+    # Serialize output!
+    from asapdiscovery.data.openeye import save_openeye_sdf
+    from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
+
+    # TODO: Use a different way of splitting the design unit
+    lig, prot, complex_ = split_openeye_design_unit(du, lig_title=target.compound_id)
+    prot = add_seqres_to_openeye_protein(prot, seqres)
+    complex_ = add_seqres_to_openeye_protein(complex_, seqres)
+
+    prot_fn = prepped_files / f"{target.output_name}-prepped_protein.pdb"
+    save_openeye_pdb(prot, str(prot_fn))
+
+    complex_fn = prepped_files / f"{target.output_name}-prepped_complex.pdb"
+    save_openeye_pdb(complex_, str(complex_fn))
+
+    lig_fn = prepped_files / f"{target.output_name}-prepped_ligand.sdf"
+    save_openeye_sdf(lig, str(lig_fn))
+
+    for fn in [prot_fn, complex_fn, lig_fn]:
+        assert Path(fn).exists()
+        assert Path(fn).is_file()
+
+    # TODO: Add a test to make sure the ligand is in the active site
+    # TODO: Add a test to make sure the seqres has been added to the protein
+
 
 
 def spruce_protein(
