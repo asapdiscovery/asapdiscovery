@@ -575,45 +575,6 @@ def find_component_chains(mol: oechem.OEMolBase, component: str, res_name=None):
     return chainids
 
 
-def remove_extra_ligands(mol, lig_chain=None):
-    """
-    Remove extra ligands from a molecule. Useful in the case where a complex
-    crystal structure has two copies of the ligand, but we only want one. If
-    `lig_chain` is not specified, we'll automatically select the first chain
-    (as sorted alphabetically) to be the copy to keep.
-
-    Creates a copy of the input molecule, so input molecule is not modified.
-
-    Parameters
-    ----------
-    mol : oechem.OEMolBase
-        Complex molecule.
-    lig_chain : str, optional
-        Ligand chain ID to keep.
-
-    Returns
-    -------
-    oechem.OEMolBase
-        Molecule with extra ligand copies removed.
-    """
-    # Atom filter to match all atoms in residue with name LIG
-    all_lig_match = oechem.OEAtomMatchResidueID()
-    all_lig_match.SetName("LIG")
-    all_lig_filter = oechem.OEAtomMatchResidue(all_lig_match)
-
-    lig_chains = find_component_chains(mol, "ligand")
-    # Detect ligand chain to keep if none is given
-    if lig_chain is None:
-        lig_chain = lig_chains[0]
-
-    # Copy molecule and delete all lig atoms that don't have the desired chain
-    mol_copy = mol.CreateCopy()
-    for a in mol_copy.GetAtoms(all_lig_filter):
-        if oechem.OEAtomGetResidue(a).GetExtChainID() != lig_chain:
-            mol_copy.DeleteAtom(a)
-    return mol_copy
-
-
 def check_completed(d, prefix):
     """
     Check if this prep process has already been run successfully in the given
@@ -720,7 +681,9 @@ def prep_mp(
         seqres = " ".join(res_list)
 
     # Delete extra copies of ligand in the complex
-    initial_prot = remove_extra_ligands(initial_prot, lig_chain=xtal.active_site_chain)
+    initial_prot = split_openeye_mol(
+        initial_prot, MoleculeFilter(ligand_chain=xtal.lig_chain)
+    )
 
     if ref_prot:
         prep_logger.info("Aligning receptor")

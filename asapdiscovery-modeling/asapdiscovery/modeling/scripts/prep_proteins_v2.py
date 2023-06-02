@@ -12,7 +12,12 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
-from asapdiscovery.modeling.modeling import split_openeye_design_unit, spruce_protein
+from asapdiscovery.modeling.schema import MoleculeFilter
+from asapdiscovery.modeling.modeling import (
+    split_openeye_design_unit,
+    spruce_protein,
+    split_openeye_mol,
+)
 
 
 def parse_args():
@@ -130,10 +135,8 @@ def prep_protein(xtal: CrystalCompoundData, args):
         raise ValueError(f"Unrecognized file type: {fn.suffix}")
 
     if xtal.lig_chain:
-        from asapdiscovery.modeling.modeling import remove_extra_ligands
-
         logger.info(f"Removing ligands except for chain {xtal.lig_chain}")
-        prot = remove_extra_ligands(prot, lig_chain=xtal.lig_chain)
+        prot = split_openeye_mol(prot, MoleculeFilter(ligand_chain=xtal.lig_chain))
 
     # Align to reference
     if args.ref_prot:
