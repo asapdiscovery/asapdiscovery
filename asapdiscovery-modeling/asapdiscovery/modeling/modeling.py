@@ -503,6 +503,7 @@ def save_design_unit(
 ) -> PreppedTarget:
     complex_mol = du_to_complex(du)
     target.get_output_files()
+    complex_mol = openeye_perceive_residues(complex_mol)
     if target.complex:
         save_openeye_pdb(complex_mol, target.complex)
 
