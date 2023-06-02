@@ -47,17 +47,6 @@ def oemol_dict(sars_oe, mers_oe):
     return {"sars": sars_oe, "mers": mers_oe}
 
 
-@pytest.fixture
-def files(tmp_path_factory, local_path):
-    if not type(local_path) == str:
-        outdir = tmp_path_factory.mktemp("test_prep")
-    else:
-        outdir = Path(local_path)
-    files = namedtuple("files", ["ligA", "ligB"])
-    paths = [outdir / f"{name}.pdb" for name in files._fields]
-    return files(*paths)
-
-
 # The main use cases for the modeling utils are:
 # Getting just the protein
 # Getting just the ligand in the active site
@@ -67,8 +56,10 @@ def files(tmp_path_factory, local_path):
     "components",
     ["ligand", "protein", ["ligand", "protein"], ["ligand", "protein", "water"]],
 )
-def test_simple_splitting(sars_oe, local_path, components):
-    split_mol = split_openeye_mol(sars_oe, components)
+@pytest.mark.parametrize("target", ["sars"])
+def test_simple_splitting(target, components, oemol_dict):
+    oemol = oemol_dict[target]
+    split_mol = split_openeye_mol(oemol, components)
     for molecular_component in ["protein", "ligand", "water"]:
         res_name, chains = (
             ("HOH", ["W"]) if molecular_component == "water" else (None, ["A", "B"])
@@ -91,9 +82,7 @@ def test_simple_splitting(sars_oe, local_path, components):
     ("target", "ligand_chain"),
     [("sars", "A"), ("sars", "B"), ("mers", "B"), ("mers", "C")],
 )
-def test_pdb_ligand_splitting(
-    target, local_path, files, ligand_chain, components, oemol_dict
-):
+def test_ligand_splitting(target, local_path, ligand_chain, components, oemol_dict):
     oemol = oemol_dict[target]
     molfilter = MoleculeFilter(
         components_to_keep=components,
@@ -101,13 +90,14 @@ def test_pdb_ligand_splitting(
     )
     complex = split_openeye_mol(oemol, molfilter)
 
-    save_openeye_pdb(
-        complex,
-        Path(
-            local_path,
-            f"split_test_{target}_{'-'.join(components)}_lig{ligand_chain}.pdb",
-        ),
-    )
+    if local_path:
+        save_openeye_pdb(
+            complex,
+            Path(
+                local_path,
+                f"split_test_{target}_{'-'.join(components)}_lig{ligand_chain}.pdb",
+            ),
+        )
     assert find_component_chains(complex, "ligand") == [ligand_chain]
 
 
@@ -117,21 +107,19 @@ def test_pdb_ligand_splitting(
 )
 @pytest.mark.parametrize("protein_chains", [["A"], ["B"], ["A", "B"]])
 @pytest.mark.parametrize("target", ["sars", "mers"])
-def test_pdb_protein_splitting(
-    target, local_path, files, protein_chains, components, oemol_dict
-):
+def test_protein_splitting(target, local_path, protein_chains, components, oemol_dict):
     oemol = oemol_dict[target]
     molfilter = MoleculeFilter(
         components_to_keep=components,
         protein_chains=protein_chains,
     )
     complex = split_openeye_mol(oemol, molfilter)
+    if local_path:
+        save_openeye_pdb(
+            complex,
+            Path(
+                local_path,
+                f"split_test_{target}_{'-'.join(components)}_prot{''.join(protein_chains)}.pdb",
+            ),
+        )
     assert find_component_chains(complex, "protein") == protein_chains
-
-    save_openeye_pdb(
-        complex,
-        Path(
-            local_path,
-            f"split_test_{target}_{'-'.join(components)}_prot{''.join(protein_chains)}.pdb",
-        ),
-    )
