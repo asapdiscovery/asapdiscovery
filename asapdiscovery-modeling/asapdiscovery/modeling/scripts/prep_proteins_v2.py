@@ -12,12 +12,12 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
-from asapdiscovery.modeling.schema import MoleculeFilter
 from asapdiscovery.modeling.modeling import (
     split_openeye_design_unit,
-    spruce_protein,
     split_openeye_mol,
+    spruce_protein,
 )
+from asapdiscovery.modeling.schema import MoleculeFilter
 
 
 def parse_args():
