@@ -202,9 +202,9 @@ class TestProteinPrep:
         )
         save_openeye_pdb(prot, prepped_files / f"{xtal.output_name}_split.pdb")
 
-        aligned, rmsd = superpose_molecule(ref, prot, ref_chain, "A")
+        prot, rmsd = superpose_molecule(ref, prot, ref_chain, "A")
 
-        save_openeye_pdb(aligned, prepped_files / f"{xtal.output_name}_align.pdb")
+        save_openeye_pdb(prot, prepped_files / f"{xtal.output_name}_align.pdb")
 
         # Mutate Residues
         seqres_yaml = fetch_test_file("mpro_mers_seqres.yaml")
@@ -266,16 +266,3 @@ class TestProteinPrep:
             assert sars_du.HasLigand()
 
         # TODO: Add a test to make sure the receptor can be added to POSIT
-
-    @pytest.mark.parametrize(
-        "pdb_fn",
-        [
-            "rcsb_8czv-assembly1-prepped_protein.pdb",
-            "Mpro-P2660_0A_bound-prepped_protein.pdb",
-        ],
-    )
-    def test_simulation(self, pdb_fn, prepped_files):
-        pdb_path = prepped_files / pdb_fn
-        from asapdiscovery.simulation.testing import test_forcefield_generation
-
-        test_forcefield_generation(str(pdb_path))

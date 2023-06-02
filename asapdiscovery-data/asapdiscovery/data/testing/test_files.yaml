@@ -50,3 +50,15 @@ files:
   # fragalysis-mpro_spruce.loop_db
   - resource: fragalysis-mpro_spruce.loop_db
     sha256hash: ac0c05f07c7e5d0cafad37074db6b9ba6924c8e276d2d8e0bf8b4ad98a981cec
+
+  # prepped mers structure
+  - resource: rcsb_8czv-assembly1-prepped_protein.pdb
+    sha256hash: 8a8f32f2056547f732bdef30780f2e193254f16af2073297eb31e7c5bdae00e6
+
+  # prepped sars protein only
+  - resource: Mpro-P2660_0A_bound-prepped_protein.pdb
+    sha256hash: cd63351f306afbdfb1fe38c39e69130b80b44cf0fbe683b9ad4d06b9ef723850
+
+  # prepped sars complex
+  - resource: Mpro-P2660_0A_bound-prepped_complex.pdb
+    sha256hash: e452831d3c49f42a0cdc51c754e1177cc356aebaab5bbafdd406aaaf23c5dfa4
