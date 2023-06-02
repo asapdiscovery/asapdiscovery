@@ -171,10 +171,10 @@ def plot_data_efficiency(plot_df, out_fn, max_loss=None, conv=False):
         ax.set_ylim(0, max_loss)
 
     # Set axes
-    ylab = "MAE ($\Delta$G in kcal/mol)" if conv else "MSE (squared pIC50)"
+    ylab = r"MAE ($\Delta$G in kcal/mol)" if conv else "MSE (squared pIC50)"
     ax.set_ylabel(ylab)
     ax.set_xlabel("Fraction of Data in Training Split")
-    title = "$\Delta$G MAE Loss" if conv else "pIC50 MSE Loss"
+    title = r"$\Delta$G MAE Loss" if conv else "pIC50 MSE Loss"
     ax.set_title(title)
 
     fig.savefig(out_fn, dpi=200, bbox_inches="tight")
