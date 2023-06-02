@@ -16,8 +16,8 @@ from asapdiscovery.modeling.modeling import (
     align_receptor,
     mutate_residues,
     split_openeye_design_unit,
-    spruce_protein,
     split_openeye_mol,
+    spruce_protein,
     superpose_molecule,
 )
 from asapdiscovery.modeling.schema import MoleculeFilter

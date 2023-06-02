@@ -3,16 +3,13 @@ from pathlib import Path
 
 import pytest
 from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
     load_openeye_cif1,
+    load_openeye_pdb,
     oechem,
     save_openeye_pdb,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.modeling.modeling import (
-    find_component_chains,
-    split_openeye_mol,
-)
+from asapdiscovery.modeling.modeling import find_component_chains, split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
 
 
