@@ -63,14 +63,24 @@ def files(tmp_path_factory, local_path):
 # Getting just the ligand in the active site
 # Getting the protein and ligand in the active site
 # Getting the protein and ligand and water
-@pytest.mark.parametrize("components", ["ligand", "protein", ["ligand", "protein"]])
+@pytest.mark.parametrize(
+    "components",
+    ["ligand", "protein", ["ligand", "protein"], ["ligand", "protein", "water"]],
+)
 def test_simple_splitting(sars_oe, local_path, components):
     split_mol = split_openeye_mol(sars_oe, components)
-    for molecular_component in ["protein", "ligand"]:
+    for molecular_component in ["protein", "ligand", "water"]:
+        res_name, chains = (
+            ("HOH", ["W"]) if molecular_component == "water" else (None, ["A", "B"])
+        )
+
         if molecular_component in components:
-            assert find_component_chains(split_mol, molecular_component) == ["A", "B"]
+            assert (
+                find_component_chains(split_mol, molecular_component, res_name)
+                == chains
+            )
         else:
-            assert find_component_chains(split_mol, molecular_component) == []
+            assert find_component_chains(split_mol, molecular_component, res_name) == []
 
 
 @pytest.mark.parametrize(
