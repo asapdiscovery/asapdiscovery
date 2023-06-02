@@ -881,9 +881,13 @@ def split_openeye_mol(
         complex_mol,
         opts,
     )
-    if (
-        "protein" in molecule_filter.components_to_keep
-        and not "ligand" in molecule_filter.components_to_keep
+    # TODO: make this nicer?
+    # This is a bit of a hack. If we don't want to keep the ligand, trim_small_chains makes sure
+    # that small peptides which are acting as ligands make it into the final
+    # But it will also remove ligands itself (I guess). So if we do want to keep the ligand
+    # then we don't want to use it.
+    if ("protein" in molecule_filter.components_to_keep) and (
+        not "ligand" in molecule_filter.components_to_keep
     ):
         prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
     return prot_mol
