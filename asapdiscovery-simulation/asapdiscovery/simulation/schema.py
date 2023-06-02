@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
-from openmm.app import PME, HBonds, Modeller, PDBFile, ForceField
-from openmm.unit import amu, nanometers
 from collections import namedtuple
+
+from openmm.app import PME, ForceField, HBonds, Modeller, PDBFile
+from openmm.unit import amu, nanometers
+from pydantic import BaseModel, Field
 
 ForceFieldParams = namedtuple(
     "ForceFieldParams",
