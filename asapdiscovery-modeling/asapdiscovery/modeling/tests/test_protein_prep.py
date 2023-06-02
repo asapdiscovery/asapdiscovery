@@ -108,7 +108,7 @@ class TestCrystalCompoundDataset:
             mers_target.source.str_fn
         )
 
-    def test_dataset_saving(
+    def test_dataset_csv_usage(
         self, target_dataset, prepped_files, csv_name="to_prep.csv"
     ):
         to_prep_csv = prepped_files / csv_name
@@ -116,9 +116,6 @@ class TestCrystalCompoundDataset:
         assert to_prep_csv.exists()
         assert to_prep_csv.is_file()
 
-    def test_dataset_loading(
-        self, target_dataset, prepped_files, csv_name="to_prep.csv"
-    ):
         dataset = PreppedTargets.from_csv(prepped_files / csv_name)
         assert dataset == target_dataset
 
