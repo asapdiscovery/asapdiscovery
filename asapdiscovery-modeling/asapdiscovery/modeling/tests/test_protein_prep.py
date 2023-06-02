@@ -154,7 +154,7 @@ class TestProteinPrep:
         xtal = sars_target
 
         # Load structure
-        prot = load_openeye_pdb(xtal.str_fn)
+        prot = load_openeye_pdb(xtal.source.str_fn)
         ref = load_openeye_pdb(str(ref))
 
         assert type(prot) == oechem.OEGraphMol
@@ -184,14 +184,14 @@ class TestProteinPrep:
         res_list = seqres_to_res_list(seqres)
 
         prot = mutate_residues(prot, res_list, place_h=True)
-        seqres = " ".join(res_list)
+        seqres_list = " ".join(res_list)
 
         save_openeye_pdb(prot, prepped_files / f"{xtal.output_name}_mutate.pdb")
 
         # Spruce Protein
         du = spruce_protein(
             initial_prot=prot,
-            seqres=seqres,
+            seqres=seqres_list,
             loop_db=loop_db,
             return_du=True,
             site_residue=xtal.active_site,
@@ -206,7 +206,7 @@ class TestProteinPrep:
         from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
 
         # TODO: Use a different way of splitting the design unit
-        lig, prot, complex_ = split_openeye_design_unit(du, lig_title=xtal.compound_id)
+        lig, prot, complex_ = split_openeye_design_unit(du, lig_title=xtal.source.compound_id)
         prot = add_seqres_to_openeye_protein(prot, seqres)
         complex_ = add_seqres_to_openeye_protein(complex_, seqres)
 
