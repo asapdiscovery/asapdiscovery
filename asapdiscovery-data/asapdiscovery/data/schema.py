@@ -1,8 +1,8 @@
 import json
 import pickle as pkl
 from datetime import date
-
 from pydantic import BaseModel, Field
+import pandas as pd, numpy as np
 
 
 # From FAH ###################################
@@ -86,7 +86,6 @@ class Dataset(BaseModel):
     iterable: list[data_type]
 
     def to_csv(self, fn):
-        import pandas as pd
 
         df = pd.DataFrame([vars(data) for data in self.iterable])
 
@@ -110,9 +109,6 @@ class Dataset(BaseModel):
 
     @classmethod
     def from_csv(cls, fn):
-        import numpy as np
-        import pandas as pd
-
         df = pd.read_csv(fn)
         df = df.replace(np.nan, None)
 
