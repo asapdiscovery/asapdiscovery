@@ -1,8 +1,9 @@
 from enum import Enum
 from pathlib import Path
-from pydantic import BaseModel, Field
-from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
+
 from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
+from pydantic import BaseModel, Field
 
 
 class MoleculeComponent(str, Enum):

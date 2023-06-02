@@ -6,12 +6,12 @@ from typing import Union
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
-    save_openeye_pdb,
-    save_openeye_sdf,
     oechem,
     oedocking,
     oespruce,
     openeye_perceive_residues,
+    save_openeye_pdb,
+    save_openeye_sdf,
 )
 from asapdiscovery.modeling.schema import (
     MoleculeComponent,
@@ -498,9 +498,7 @@ def split_openeye_mol(
     return prot_mol
 
 
-def save_design_unit(
-    du: oechem.OEDesignUnit, target: PreppedTarget
-) -> PreppedTarget:
+def save_design_unit(du: oechem.OEDesignUnit, target: PreppedTarget) -> PreppedTarget:
     complex_mol = du_to_complex(du)
     target.get_output_files()
     if target.complex:
