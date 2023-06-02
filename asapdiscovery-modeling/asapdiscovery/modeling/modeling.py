@@ -3,8 +3,8 @@ import logging
 import os
 from collections import namedtuple
 from functools import reduce
-from typing import Union
 from pathlib import Path
+from typing import Union
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
