@@ -1,7 +1,8 @@
+import json
+import pickle as pkl
 from datetime import date
 
 from pydantic import BaseModel, Field
-import pickle as pkl, json
 
 
 # From FAH ###################################
@@ -58,8 +59,10 @@ class ExperimentalCompoundDataUpdate(Model):
 
 ########################################
 
+
 class Data(BaseModel):
     pass
+
 
 class CrystalCompoundData(Data):
     compound_id: str = Field(
@@ -96,7 +99,6 @@ class Dataset(BaseModel):
     def to_json(self, fn):
         json.dump(self, fn)
 
-
     @classmethod
     def from_pkl(cls, fn):
         with open(fn, "rb") as file:
@@ -120,14 +122,10 @@ class Dataset(BaseModel):
     def from_list(cls, list_of_data_objects):
         return cls(iterable=[data for data in list_of_data_objects])
 
+
 class CrystalCompoundDataset(Dataset):
     data_type = CrystalCompoundData
     iterable = list[data_type]
-
-
-
-
-
 
 
 class PDBStructure(Model):

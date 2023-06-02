@@ -1,5 +1,6 @@
 from enum import Enum
 from pathlib import Path
+
 from asapdiscovery.data.schema import CrystalCompoundData, Dataset
 from pydantic import BaseModel, Field
 
@@ -69,4 +70,3 @@ class PreppedTarget(BaseModel):
 class PreppedTargets(Dataset):
     data_type = PreppedTarget
     iterable: list[data_type]
-

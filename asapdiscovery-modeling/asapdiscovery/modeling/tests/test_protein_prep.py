@@ -67,14 +67,18 @@ def sars_target(sars_xtal):
         source=sars_xtal,
         active_site_chain="A",
         output_name=Path(sars_xtal.str_fn).stem,
-        molecule_filter=MoleculeFilter(components_to_keep=["protein", "ligand"], ligand_chain="A")
+        molecule_filter=MoleculeFilter(
+            components_to_keep=["protein", "ligand"], ligand_chain="A"
+        ),
     )
+
 
 @pytest.fixture
 def mers_xtal(mers):
     return CrystalCompoundData(
         str_fn=str(mers),
     )
+
 
 @pytest.fixture
 def mers_target(mers_xtal):
@@ -83,7 +87,7 @@ def mers_target(mers_xtal):
         active_site_chain="A",
         output_name=Path(mers_xtal.str_fn).stem,
         active_site="HIS:41: :A:0: ",
-        molecule_filter=MoleculeFilter(components_to_keep=["protein"])
+        molecule_filter=MoleculeFilter(components_to_keep=["protein"]),
     )
 
 
@@ -93,26 +97,37 @@ def target_dataset(sars_target, mers_target):
     print(target_dataset)
     return target_dataset
 
+
 class TestCrystalCompoundDataset:
     def test_dataset_creation(self, target_dataset, sars_target, mers_target):
         assert len(target_dataset.iterable) == 2
-        assert target_dataset.iterable[0].source.str_fn == str(sars_target.source.str_fn)
-        assert target_dataset.iterable[1].source.str_fn == str(mers_target.source.str_fn)
+        assert target_dataset.iterable[0].source.str_fn == str(
+            sars_target.source.str_fn
+        )
+        assert target_dataset.iterable[1].source.str_fn == str(
+            mers_target.source.str_fn
+        )
 
-    def test_dataset_saving(self, target_dataset, prepped_files, csv_name="to_prep.csv"):
+    def test_dataset_saving(
+        self, target_dataset, prepped_files, csv_name="to_prep.csv"
+    ):
         to_prep_csv = prepped_files / csv_name
         target_dataset.to_csv(to_prep_csv)
         assert to_prep_csv.exists()
         assert to_prep_csv.is_file()
 
-    def test_dataset_loading(self, target_dataset, prepped_files, csv_name="to_prep.csv"):
+    def test_dataset_loading(
+        self, target_dataset, prepped_files, csv_name="to_prep.csv"
+    ):
         dataset = PreppedTargets.from_csv(prepped_files / csv_name)
         assert dataset == target_dataset
 
         dataset.iterable[0].active_site_chain = "B"
         assert dataset != target_dataset
 
-    def test_dataset_pickle(self, target_dataset, prepped_files, pkl_name="to_prep.pkl"):
+    def test_dataset_pickle(
+        self, target_dataset, prepped_files, pkl_name="to_prep.pkl"
+    ):
         pkl_file = prepped_files / pkl_name
         target_dataset.to_pkl(pkl_file)
         assert pkl_file.exists()
@@ -122,7 +137,9 @@ class TestCrystalCompoundDataset:
 
         assert loaded_dataset == target_dataset
 
-    def test_dataset_json(self, target_dataset, prepped_files, json_name="to_prep.json"):
+    def test_dataset_json(
+        self, target_dataset, prepped_files, json_name="to_prep.json"
+    ):
         json_file = prepped_files / json_name
         target_dataset.to_json(json_file)
         assert json_file.exists()
@@ -133,10 +150,7 @@ class TestCrystalCompoundDataset:
         assert loaded_dataset == target_dataset
 
 
-
-
 class TestProteinPrep:
-
     def test_sars_protein_prep(
         self, sars_target, ref, prepped_files, loop_db, ref_chain="A"
     ):

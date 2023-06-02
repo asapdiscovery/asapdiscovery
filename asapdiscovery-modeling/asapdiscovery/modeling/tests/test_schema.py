@@ -1,12 +1,12 @@
-import pytest, pydantic
-from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.modeling.schema import (
-    MoleculeFilter,
-    PreppedTarget,
-)
-from asapdiscovery.modeling.modeling import save_design_unit
 from hashlib import sha256
+
+import pydantic
+import pytest
+from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.modeling.modeling import save_design_unit
+from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget
+
 
 @pytest.mark.parametrize(
     "components",
@@ -41,13 +41,11 @@ def test_prepped_target():
     prepped_target = PreppedTarget(
         output_name="test",
         molecule_filter=MoleculeFilter(components_to_keep=["protein", "ligand"]),
-        output_dir="test_prep"
-        )
+        output_dir="test_prep",
+    )
     assert prepped_target.prepped is False
 
     prepped_target.set_prepped()
     assert prepped_target.prepped
 
     prepped_target = save_design_unit(du, prepped_target)
-
-
