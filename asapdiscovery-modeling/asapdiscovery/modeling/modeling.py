@@ -16,7 +16,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.modeling.schema import MoleculeFilter, MoleculeComponent
+from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
 
 
 def add_seqres_to_openeye_protein(
