@@ -16,7 +16,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.modeling.schema import MoleculeFilter
+from asapdiscovery.modeling.schema import MoleculeFilter, MoleculeComponent
 
 
 def add_seqres_to_openeye_protein(
@@ -178,7 +178,7 @@ def spruce_protein(
         return initial_prot
 
 
-def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
+def superpose_molecule(ref_mol, mobile_mol, ref_chain="A", mobile_chain="A"):
     """
     Superpose `mobile_mol` onto `ref_mol`.
 
@@ -202,10 +202,13 @@ def superpose_molecule(ref_mol, mobile_mol, ref_pred=None, mobile_pred=None):
     """
 
     # Default atom predicates
-    if ref_pred is None:
-        ref_pred = oechem.OEIsTrueAtom()
-    if mobile_pred is None:
-        mobile_pred = oechem.OEIsTrueAtom()
+    if not ref_chain in find_component_chains(ref_mol, "protein"):
+        raise ValueError(f"Chain {ref_chain} not found in reference molecule.")
+    if not mobile_chain in find_component_chains(mobile_mol, "protein"):
+        raise ValueError(f"Chain {mobile_chain} not found in mobile molecule.")
+
+    ref_pred = oechem.OEHasChainID(ref_chain)
+    mobile_pred = oechem.OEHasChainID(mobile_chain)
 
     # Create object to store results
     aln_res = oespruce.OESuperposeResults()
@@ -300,10 +303,10 @@ def align_receptor(
     # Split out protein components and align if requested
 
     if split_initial_complex:
-        split_dict = split_openeye_mol(initial_complex)
-        initial_prot_temp = split_dict["pro"]
+        components = ["protein"]
         if keep_water:
-            oechem.OEAddMols(initial_prot_temp, split_dict["water"])
+            components.append("water")
+        initial_prot_temp = split_openeye_mol(initial_complex, components)
     else:
         initial_prot_temp = initial_complex
 
@@ -318,7 +321,7 @@ def align_receptor(
         oechem.OESubsetMol(initial_prot, initial_prot_temp, chain_pred)
     if ref_prot is not None:
         if split_ref:
-            ref_prot = split_openeye_mol(ref_prot)["pro"]
+            ref_prot = split_openeye_mol(ref_prot, "protein")
 
         # Set up predicates
         if ref_chain is not None:
@@ -543,47 +546,33 @@ def build_dimer_from_monomer(prot):
     return prot
 
 
-def find_ligand_chains(mol: oechem.OEMolBase):
-    """
-    Find the chains in a molecule that contain the ligand, identified by the resid "LIG". This is useful for
-    cases where the ligand is present in multiple chains.
-
-    Parameters
-    ----------
-    mol : oechem.OEMolBase
-        Complex molecule.
-
-    Returns
-    -------
-    List[str]
-        List of chain IDs that contain the ligand.
-    """
-    lig_chain_ids = set()
-    for res in oechem.OEGetResidues(mol):
-        if res.GetName() == "LIG":
-            lig_chain_ids.add(res.GetChainID())
-    return list(sorted(lig_chain_ids))
-
-
-def find_protein_chains(mol: oechem.OEMolBase):
-    """
-    Find the chains in a molecule that contain the protein.
-
-    Parameters
-    ----------
-    mol : oechem.OEMolBase
-        Complex molecule.
-
-    Returns
-    -------
-    List[str]
-        List of chain IDs that contain the protein.
-    """
-    prot_chain_ids = set()
-    for res in oechem.OEGetResidues(mol):
-        if oechem.OEIsStandardProteinResidue(res):
-            prot_chain_ids.add(res.GetChainID())
-    return list(sorted(prot_chain_ids))
+def find_component_chains(mol: oechem.OEMolBase, component: str, res_name=None):
+    molcomp = MoleculeComponent(component)
+    if res_name:
+        chainids = sorted(
+            {
+                res.GetChainID()
+                for res in oechem.OEGetResidues(mol)
+                if res.GetName() == res_name
+            }
+        )
+    elif molcomp.name == MoleculeComponent.PROTEIN.name:
+        chainids = sorted(
+            {
+                res.GetChainID()
+                for res in oechem.OEGetResidues(mol)
+                if oechem.OEIsStandardProteinResidue(res)
+            }
+        )
+    elif molcomp.name == MoleculeComponent.LIGAND.name:
+        chainids = sorted(
+            {
+                res.GetChainID()
+                for res in oechem.OEGetResidues(mol)
+                if res.IsHetAtom() and not res.GetName() == "HOH"
+            }
+        )
+    return chainids
 
 
 def remove_extra_ligands(mol, lig_chain=None):
@@ -612,7 +601,7 @@ def remove_extra_ligands(mol, lig_chain=None):
     all_lig_match.SetName("LIG")
     all_lig_filter = oechem.OEAtomMatchResidue(all_lig_match)
 
-    lig_chains = find_ligand_chains(mol)
+    lig_chains = find_component_chains(mol, "ligand")
     # Detect ligand chain to keep if none is given
     if lig_chain is None:
         lig_chain = lig_chains[0]
@@ -892,7 +881,10 @@ def split_openeye_mol(
         complex_mol,
         opts,
     )
-    if "protein" in molecule_filter.components_to_keep:
+    if (
+        "protein" in molecule_filter.components_to_keep
+        and not "ligand" in molecule_filter.components_to_keep
+    ):
         prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
     return prot_mol
 

@@ -2,12 +2,15 @@ from collections import namedtuple
 from pathlib import Path
 
 import pytest
-from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pdb
+from asapdiscovery.data.openeye import (
+    load_openeye_pdb,
+    load_openeye_cif1,
+    oechem,
+    save_openeye_pdb,
+)
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import (
-    find_ligand_chains,
-    find_protein_chains,
-    remove_extra_ligands,
+    find_component_chains,
     split_openeye_mol,
 )
 from asapdiscovery.modeling.schema import MoleculeFilter
@@ -19,11 +22,29 @@ def sars_pdb():
 
 
 @pytest.fixture
+def mers_pdb():
+    return fetch_test_file("rcsb_8czv-assembly1.cif")
+
+
+@pytest.fixture
 def sars_oe(sars_pdb):
     # Load structure
     prot = load_openeye_pdb(str(sars_pdb))
     assert type(prot) == oechem.OEGraphMol
     return prot
+
+
+@pytest.fixture
+def mers_oe(mers_pdb):
+    # Load structure
+    prot = load_openeye_cif1(str(mers_pdb))
+    assert type(prot) == oechem.OEGraphMol
+    return prot
+
+
+@pytest.fixture
+def oemol_dict(sars_oe, mers_oe):
+    return {"sars": sars_oe, "mers": mers_oe}
 
 
 @pytest.fixture
@@ -45,36 +66,39 @@ def files(tmp_path_factory, local_path):
 @pytest.mark.parametrize("components", ["ligand", "protein", ["ligand", "protein"]])
 def test_simple_splitting(sars_oe, local_path, components):
     split_mol = split_openeye_mol(sars_oe, components)
-    if "ligand" in components:
-        assert find_ligand_chains(split_mol) == ["A", "B"]
-    else:
-        assert find_ligand_chains(split_mol) == []
-    if "protein" in components:
-        assert find_protein_chains(split_mol) == ["A", "B"]
-    else:
-        assert find_protein_chains(split_mol) == []
+    for molecular_component in ["protein", "ligand"]:
+        if molecular_component in components:
+            assert find_component_chains(split_mol, molecular_component) == ["A", "B"]
+        else:
+            assert find_component_chains(split_mol, molecular_component) == []
 
 
-@pytest.mark.parametrize("ligand_chain", ["A", "B"])
 @pytest.mark.parametrize(
     "components",
     [["ligand"], ["protein", "ligand"], ["protein", "ligand", "water"]],
 )
-def test_pdb_ligand_splitting(sars_oe, local_path, files, ligand_chain, components):
+@pytest.mark.parametrize(
+    ("target", "ligand_chain"),
+    [("sars", "A"), ("sars", "B"), ("mers", "B"), ("mers", "C")],
+)
+def test_pdb_ligand_splitting(
+    target, local_path, files, ligand_chain, components, oemol_dict
+):
+    oemol = oemol_dict[target]
     molfilter = MoleculeFilter(
         components_to_keep=components,
         ligand_chain=ligand_chain,
     )
-    complex = split_openeye_mol(sars_oe, molfilter)
-    assert find_ligand_chains(complex) == [ligand_chain]
+    complex = split_openeye_mol(oemol, molfilter)
 
     save_openeye_pdb(
         complex,
         Path(
             local_path,
-            f"split_test_{'-'.join(components)}_lig{ligand_chain}.pdb",
+            f"split_test_{target}_{'-'.join(components)}_lig{ligand_chain}.pdb",
         ),
     )
+    assert find_component_chains(complex, "ligand") == [ligand_chain]
 
 
 @pytest.mark.parametrize(
@@ -82,18 +106,22 @@ def test_pdb_ligand_splitting(sars_oe, local_path, files, ligand_chain, componen
     [["protein"], ["protein", "ligand"], ["protein", "ligand", "water"]],
 )
 @pytest.mark.parametrize("protein_chains", [["A"], ["B"], ["A", "B"]])
-def test_pdb_protein_splitting(sars_oe, local_path, files, protein_chains, components):
+@pytest.mark.parametrize("target", ["sars", "mers"])
+def test_pdb_protein_splitting(
+    target, local_path, files, protein_chains, components, oemol_dict
+):
+    oemol = oemol_dict[target]
     molfilter = MoleculeFilter(
         components_to_keep=components,
         protein_chains=protein_chains,
     )
-    complex = split_openeye_mol(sars_oe, molfilter)
-    assert find_protein_chains(complex) == protein_chains
+    complex = split_openeye_mol(oemol, molfilter)
+    assert find_component_chains(complex, "protein") == protein_chains
 
     save_openeye_pdb(
         complex,
         Path(
             local_path,
-            f"split_test_{'-'.join(components)}_prot{''.join(protein_chains)}.pdb",
+            f"split_test_{target}_{'-'.join(components)}_prot{''.join(protein_chains)}.pdb",
         ),
     )
