@@ -154,4 +154,6 @@ def test_filter_df(
     )
 
     assert in_df_filtered.shape[0] == out_df.shape[0]
-    assert (in_df_filtered["name"].values == out_df["Canonical PostEra ID"].values).all()
+    assert (
+        in_df_filtered["name"].values == out_df["Canonical PostEra ID"].values
+    ).all()
