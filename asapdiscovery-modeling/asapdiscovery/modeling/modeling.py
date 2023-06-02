@@ -6,12 +6,18 @@ from typing import Union
 
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
+    save_openeye_pdb,
+    save_openeye_sdf,
     oechem,
     oedocking,
     oespruce,
     openeye_perceive_residues,
 )
-from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
+from asapdiscovery.modeling.schema import (
+    MoleculeComponent,
+    MoleculeFilter,
+    PreppedTarget,
+)
 
 
 def add_seqres_to_openeye_protein(
@@ -490,6 +496,27 @@ def split_openeye_mol(
     ):
         prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
     return prot_mol
+
+
+def save_design_unit(
+    du: oechem.OEDesignUnit, target: PreppedTarget
+) -> PreppedTarget:
+    complex_mol = du_to_complex(du)
+    target.get_output_files()
+    if target.complex:
+        save_openeye_pdb(complex_mol, target.complex)
+
+    if target.sdf:
+        save_openeye_sdf(split_openeye_mol(complex_mol, "ligand"), str(target.sdf))
+
+    if target.protein:
+        save_openeye_pdb(split_openeye_mol(complex_mol, "protein"), str(target.protein))
+
+    if target.design_unit:
+        oechem.OEWriteDesignUnit(str(target.design_unit), du)
+
+    target.set_saved()
+    return target
 
 
 def split_openeye_design_unit(du, lig=None, lig_title=None):

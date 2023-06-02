@@ -62,3 +62,7 @@ files:
   # prepped sars complex
   - resource: Mpro-P2660_0A_bound-prepped_complex.pdb
     sha256hash: e452831d3c49f42a0cdc51c754e1177cc356aebaab5bbafdd406aaaf23c5dfa4
+
+  # prepped sars du
+  - resource: Mpro-P2660_0A_bound-prepped_receptor_0.oedu
+    sha256hash: bd9e657f771c6dc0cdbc7b32ceef076d25dc3bc7f411884fad8b46a50a8e2575

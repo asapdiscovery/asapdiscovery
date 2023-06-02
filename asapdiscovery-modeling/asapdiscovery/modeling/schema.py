@@ -1,6 +1,8 @@
 from enum import Enum
-
+from pathlib import Path
 from pydantic import BaseModel, Field
+from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
+from asapdiscovery.data.openeye import oechem
 
 
 class MoleculeComponent(str, Enum):
@@ -19,7 +21,7 @@ class MoleculeFilter(BaseModel):
     )
     ligand_chain: str = Field(
         None,
-        description="List of chains containing the desired ligand. An empty list will return all chains.",
+        description="Chain containing the desired ligand. An empty list will return all chains.",
     )
     water_chains: list = Field(
         list(),
@@ -33,3 +35,29 @@ class MoleculeFilter(BaseModel):
         ["protein", "ligand", "water", "other"],
         description="List of components to keep. An empty list will return all components.",
     )
+
+
+class PreppedTarget(BaseModel):
+    source: CrystalCompoundData = Field(None, description="Structure that was prepped")
+    output_name: str = Field(None, description="Name to give to output files.")
+    prepped: bool = Field(False, description="Has the target been prepped yet?")
+    saved: bool = Field(False, description="Have the results been saved?")
+    molecule_filter: MoleculeFilter
+    output_dir: Path = Field(description="Output path for serialization")
+    sdf: Path = Field(None, description="Path to prepped sdf file")
+    complex: Path = Field(None, description="Path to prepped complex")
+    protein: Path = Field(None, description="Path to prepped protein-only file")
+    design_unit: Path = Field(None, description="Path to design unit")
+
+    def set_prepped(self):
+        self.prepped = True
+
+    def set_saved(self):
+        self.saved = True
+
+    def get_output_files(self):
+        if "ligand" in self.molecule_filter.components_to_keep:
+            self.sdf = self.output_dir / f"{self.output_name}.sdf"
+            self.complex = self.output_dir / f"{self.output_name}-complex.pdb"
+        self.protein = self.output_dir / f"{self.output_name}-protein.pdb"
+        self.design_unit = self.output_dir / f"{self.output_name}.oedu"
