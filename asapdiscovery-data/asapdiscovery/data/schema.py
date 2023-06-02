@@ -1,6 +1,7 @@
 from datetime import date
 
 from pydantic import BaseModel, Field
+import pickle as pkl, json
 
 
 # From FAH ###################################
@@ -57,10 +58,10 @@ class ExperimentalCompoundDataUpdate(Model):
 
 ########################################
 
+class Data(BaseModel):
+    pass
 
-class CrystalCompoundData(BaseModel):
-    output_name: str = Field(None, description="Name of output structure.")
-
+class CrystalCompoundData(Data):
     compound_id: str = Field(
         None, description="The unique compound identifier of the ligand."
     )
@@ -75,46 +76,58 @@ class CrystalCompoundData(BaseModel):
     str_fn: str = Field(None, description="Filename of the PDB structure.")
 
     sdf_fn: str = Field(None, description="Filename of the SDF file")
-    active_site_chain: str = Field(
-        None, description="Chain identifying the active site of interest."
-    )
-
-    active_site: str = Field(None, description="OpenEye formatted active site residue.")
-    lig_chain: str = Field(None, description="Chain identifying the ligand.")
-    oligomeric_state: str = Field(
-        None, description="Oligomeric state of the asymmetric unit."
-    )
-    chains: list = Field(None, description="List of chainids in the asymmetric unit.")
-    protein_chains: list = Field(
-        None, description="List of chains corresponding to protein residues."
-    )
-
-    series: str = Field(
-        None,
-        description="Name of COVID Moonshot series associated with this molecule",
-    )
 
 
-class CrystalCompoundDataset(BaseModel):
-    structures: list[CrystalCompoundData] = Field(
-        [CrystalCompoundData()], description="List of CrystalCompoundData objects."
-    )
+class Dataset(BaseModel):
+    data_type = Data
+    iterable: list[data_type]
 
     def to_csv(self, fn):
         import pandas as pd
 
-        df = pd.DataFrame([vars(structure) for structure in self.structures])
+        df = pd.DataFrame([vars(data) for data in self.iterable])
 
         df.to_csv(fn, index=False)
 
-    def from_csv(self, fn):
+    def to_pkl(self, fn):
+        with open(fn, "wb") as file:
+            pkl.dump(self, file)
+
+    def to_json(self, fn):
+        json.dump(self, fn)
+
+
+    @classmethod
+    def from_pkl(cls, fn):
+        with open(fn, "rb") as file:
+            return pkl.load(file)
+
+    @classmethod
+    def from_json(cls, fn):
+        return json.load(fn)
+
+    @classmethod
+    def from_csv(cls, fn):
         import numpy as np
         import pandas as pd
 
         df = pd.read_csv(fn)
         df = df.replace(np.nan, None)
 
-        self.structures = [CrystalCompoundData(**row) for row in df.to_dict("records")]
+        return cls(iterable=[cls.data_type(**row) for row in df.to_dict("records")])
+
+    @classmethod
+    def from_list(cls, list_of_data_objects):
+        return cls(iterable=[data for data in list_of_data_objects])
+
+class CrystalCompoundDataset(Dataset):
+    data_type = CrystalCompoundData
+    iterable = list[data_type]
+
+
+
+
+
 
 
 class PDBStructure(Model):

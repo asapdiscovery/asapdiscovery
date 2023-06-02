@@ -222,7 +222,7 @@ def main():
     if not args.output_dir.exists():
         args.output_dir.mkdir(parents=True)
 
-    for xtal in dataset.structures:
+    for xtal in dataset.iterable:
         prep_protein(xtal, args)
 
 

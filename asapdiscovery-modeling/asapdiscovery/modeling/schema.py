@@ -1,7 +1,7 @@
 from enum import Enum
 from pathlib import Path
 from pydantic import BaseModel, Field
-from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
+from asapdiscovery.data.schema import CrystalCompoundData, Dataset
 from asapdiscovery.data.openeye import oechem
 
 
@@ -38,12 +38,16 @@ class MoleculeFilter(BaseModel):
 
 
 class PreppedTarget(BaseModel):
-    source: CrystalCompoundData = Field(None, description="Structure that was prepped")
-    output_name: str = Field(None, description="Name to give to output files.")
+    source: CrystalCompoundData = Field(description="Source of model")
+    output_name: str = Field(None, description="Name of output structure.")
+    active_site_chain: str = Field(
+        None, description="Chain identifying the active site of interest."
+    )
+    active_site: str = Field(None, description="OpenEye formatted active site residue.")
+    lig_chain: str = Field(None, description="Chain identifying the ligand.")
     prepped: bool = Field(False, description="Has the target been prepped yet?")
     saved: bool = Field(False, description="Have the results been saved?")
     molecule_filter: MoleculeFilter
-    output_dir: Path = Field(description="Output path for serialization")
     sdf: Path = Field(None, description="Path to prepped sdf file")
     complex: Path = Field(None, description="Path to prepped complex")
     protein: Path = Field(None, description="Path to prepped protein-only file")
@@ -55,9 +59,15 @@ class PreppedTarget(BaseModel):
     def set_saved(self):
         self.saved = True
 
-    def get_output_files(self):
+    def get_output_files(self, output_dir):
         if "ligand" in self.molecule_filter.components_to_keep:
-            self.sdf = self.output_dir / f"{self.output_name}.sdf"
-            self.complex = self.output_dir / f"{self.output_name}-complex.pdb"
-        self.protein = self.output_dir / f"{self.output_name}-protein.pdb"
-        self.design_unit = self.output_dir / f"{self.output_name}.oedu"
+            self.sdf = output_dir / f"{self.output_name}.sdf"
+            self.complex = output_dir / f"{self.output_name}-complex.pdb"
+        self.protein = output_dir / f"{self.output_name}-protein.pdb"
+        self.design_unit = output_dir / f"{self.output_name}.oedu"
+
+
+class PreppedTargets(Dataset):
+    data_type = PreppedTarget
+    iterable: list[data_type]
+

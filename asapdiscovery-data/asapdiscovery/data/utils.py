@@ -1073,7 +1073,7 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
             index=False,
         )
 
-    # Construct sars_xtal list
+    # Construct sars_target list
     sars_xtals = {}
     for data in sars2_filtered.to_dict("index").values():
         cmpd_id = data["Compound ID"]

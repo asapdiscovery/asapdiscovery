@@ -499,10 +499,10 @@ def split_openeye_mol(
 
 
 def save_design_unit(
-    du: oechem.OEDesignUnit, target: PreppedTarget
+    du: oechem.OEDesignUnit, target: PreppedTarget, output_dir
 ) -> PreppedTarget:
     complex_mol = du_to_complex(du)
-    target.get_output_files()
+    target.get_output_files(output_dir)
     complex_mol = openeye_perceive_residues(complex_mol)
     if target.complex:
         save_openeye_pdb(complex_mol, target.complex)

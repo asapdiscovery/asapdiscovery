@@ -50,7 +50,4 @@ def test_prepped_target():
 
     prepped_target = save_design_unit(du, prepped_target)
 
-    # TODO: Somewhere along the line I broke the part where the SEQRES gets added correctly
-    # TODO: still need to confirm that the final result is what I want
-
 
