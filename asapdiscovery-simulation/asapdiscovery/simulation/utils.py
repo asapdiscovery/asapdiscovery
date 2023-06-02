@@ -1,9 +1,8 @@
 from asapdiscovery.simulation.schema import ForceFieldParams
-from openmm.app import Modeller, PDBFile, ForceField
+from openmm.app import ForceField, Modeller, PDBFile
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
-
     # Input Files
     pdb = PDBFile(input_pdb_path)
     forcefield = ForceField(*ff_params.ff_xmls)
