@@ -53,6 +53,9 @@ def load_losses(loss_dir, conv_function=None, agg=np.mean):
 
     best_idx = np.argmin(loss_arrays["val"].mean(axis=1))
 
+    # Extract losses for best_idx
+    loss_arrays = {sp: loss_arr[best_idx, :] for sp, loss_arr in loss_arrays.items()}
+
     if conv_function:
         for sp, loss_arr in loss_arrays.items():
             # First convert from squared loss to mean abs loss
@@ -62,17 +65,14 @@ def load_losses(loss_dir, conv_function=None, agg=np.mean):
             # Store back into dict
             loss_arrays[sp] = tmp_loss
 
-    # Extract losses for best_idx
-    loss_arrays = {sp: loss_arr[best_idx, :] for sp, loss_arr in loss_arrays.items()}
-
     # Aggregate
     if agg:
-        loss_arrays = {sp: agg(loss_arr) for sp, loss_arr in loss_arrays.items()}
+        loss_arrays = {sp: [agg(loss_arr)] for sp, loss_arr in loss_arrays.items()}
 
     return (loss_arrays["train"], loss_arrays["val"], loss_arrays["test"])
 
 
-def load_all_losses(in_df, rel_dir=None, conv_function=None):
+def load_all_losses(in_df, rel_dir=None, conv_function=None, agg=np.mean):
     """
     Load all train, val, and test losses, and build DataFrame.
 
@@ -85,6 +85,10 @@ def load_all_losses(in_df, rel_dir=None, conv_function=None):
         prepended to each path
     conv_function : callable, optional
         If present, will use to convert mean absolute loss values
+    agg : callable, default=mean
+        Function to aggregate loss across molecules. Set to None to return loss for all
+        molecules
+
 
     Returns
     -------
@@ -92,15 +96,54 @@ def load_all_losses(in_df, rel_dir=None, conv_function=None):
         DataFrame ready with losses, labels, and train fracs
     """
     # Parametrize load_losses function
-    load_losses_param = partial(load_losses, conv_function=conv_function)
+    load_losses_param = partial(load_losses, conv_function=conv_function, agg=agg)
 
-    all_dirs = [os.path.join(rel_dir, d) if rel_dir else d for d in in_df["loss_dir"]]
+    all_dfs = []
+    for _, r in in_df.iterrows():
+        # Set up directory
+        d = r["loss_dir"]
+        if rel_dir:
+            d = os.path.join(rel_dir, d)
 
-    # Load losses and build DF
-    df_rows = [load_losses_param(d) for d in all_dirs]
-    df = pandas.DataFrame(df_rows, columns=["train", "val", "test"])
+        # Build melted loss DF
+        losses = load_losses_param(d)
+        df = losses_to_df(losses)
 
-    return pandas.concat([in_df, df], axis=1)
+        df["label"] = r["label"]
+        df["train_frac"] = r["train_frac"]
+
+        all_dfs.append(df)
+
+    # all_dirs = [os.path.join(rel_dir, d) if rel_dir else d for d in in_df["loss_dir"]]
+
+    # # Load losses and build DF
+    # df_rows = [load_losses_param(d) for d in all_dirs]
+    # df = pandas.DataFrame(df_rows, columns=["train", "val", "test"])
+
+    return pandas.concat(all_dfs, axis=0, ignore_index=True)
+
+
+def losses_to_df(losses):
+    """
+    Convert a list of lists of losses into a DF with each loss labeled by split.
+
+    Parameters
+    ----------
+    losses : List[np.ndarray]
+        List of losses
+
+    Returns
+    -------
+    pandas.DataFrame
+        Loss DF
+    """
+    all_labs = []
+    all_losses = []
+    for lab, loss_arr in zip(["train", "val", "test"], losses):
+        all_losses.extend(loss_arr)
+        all_labs.extend([lab] * len(loss_arr))
+
+    return pandas.DataFrame({"split": all_labs, "loss": all_losses})
 
 
 def plot_data_efficiency(plot_df, out_fn, max_loss=None, conv=False):
@@ -128,10 +171,10 @@ def plot_data_efficiency(plot_df, out_fn, max_loss=None, conv=False):
         ax.set_ylim(0, max_loss)
 
     # Set axes
-    ylab = "MAE (delta G in kcal/mol)" if conv else "MSE (squared pIC50)"
+    ylab = "MAE ($\Delta$G in kcal/mol)" if conv else "MSE (squared pIC50)"
     ax.set_ylabel(ylab)
     ax.set_xlabel("Fraction of Data in Training Split")
-    title = "delta G MAE Loss" if conv else "pIC50 MSE Loss"
+    title = "$\Delta$G MAE Loss" if conv else "pIC50 MSE Loss"
     ax.set_title(title)
 
     fig.savefig(out_fn, dpi=200, bbox_inches="tight")
