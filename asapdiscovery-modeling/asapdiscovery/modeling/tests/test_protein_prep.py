@@ -15,10 +15,12 @@ from asapdiscovery.modeling.modeling import (
     add_seqres_to_openeye_protein,
     align_receptor,
     mutate_residues,
-    remove_extra_ligands,
     split_openeye_design_unit,
     spruce_protein,
+    split_openeye_mol,
+    superpose_molecule,
 )
+from asapdiscovery.modeling.schema import MoleculeFilter
 
 
 @pytest.fixture
@@ -109,28 +111,24 @@ class TestProteinPrep:
 
         # Load structure
         prot = load_openeye_pdb(xtal.str_fn)
+        ref = load_openeye_pdb(str(ref))
 
         assert type(prot) == oechem.OEGraphMol
 
-        prot = remove_extra_ligands(prot, lig_chain=xtal.lig_chain)
-
-        # TODO add a test to confirm only a ligand in chain A is there
-
-        # Align to reference
-        prot = align_receptor(
+        # Get protein and ligand
+        prot = split_openeye_mol(
             prot,
-            dimer=True,
-            ref_prot=str(ref),
-            split_initial_complex=False,
-            split_ref=True,
-            ref_chain=ref_chain,
-            mobile_chain=xtal.active_site_chain,
-            keep_water=False,
+            MoleculeFilter(
+                components_to_keep=["protein", "ligand"],
+                protein_chains=["A", "B"],
+                ligand_chain="B",
+            ),
         )
+        save_openeye_pdb(prot, prepped_files / f"{xtal.output_name}_split.pdb")
 
-        # TODO add test to make sure the active site is aligned
+        aligned, rmsd = superpose_molecule(ref, prot, ref_chain, "A")
 
-        save_openeye_pdb(prot, prepped_files / f"{xtal.output_name}_align.pdb")
+        save_openeye_pdb(aligned, prepped_files / f"{xtal.output_name}_align.pdb")
 
         # Mutate Residues
         seqres_yaml = fetch_test_file("mpro_sars2_seqres.yaml")
@@ -190,22 +188,24 @@ class TestProteinPrep:
         xtal = mers_xtal
         # Load structure
         prot = load_openeye_cif1(xtal.str_fn)
+        ref = load_openeye_pdb(str(ref))
 
         assert type(prot) == oechem.OEGraphMol
 
-        # Align to reference
-        prot = align_receptor(
+        # Get only protein
+        prot = split_openeye_mol(
             prot,
-            dimer=True,
-            ref_prot=str(ref),
-            split_initial_complex=True,
-            split_ref=True,
-            ref_chain=ref_chain,
-            mobile_chain=xtal.active_site_chain,
-            keep_water=False,
+            MoleculeFilter(
+                components_to_keep=["protein", "ligand"],
+                protein_chains=["A", "B"],
+                ligand_chain="B",
+            ),
         )
+        save_openeye_pdb(prot, prepped_files / f"{xtal.output_name}_split.pdb")
 
-        save_openeye_pdb(prot, prepped_files / f"{xtal.output_name}_align.pdb")
+        aligned, rmsd = superpose_molecule(ref, prot, ref_chain, "A")
+
+        save_openeye_pdb(aligned, prepped_files / f"{xtal.output_name}_align.pdb")
 
         # Mutate Residues
         seqres_yaml = fetch_test_file("mpro_mers_seqres.yaml")
