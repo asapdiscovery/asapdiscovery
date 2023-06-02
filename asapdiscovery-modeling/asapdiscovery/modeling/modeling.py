@@ -1,5 +1,3 @@
-import datetime
-import logging
 import os
 from collections import namedtuple
 from functools import reduce
@@ -12,10 +10,7 @@ from asapdiscovery.data.openeye import (
     oedocking,
     oespruce,
     openeye_perceive_residues,
-    save_openeye_pdb,
 )
-from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
 
 
@@ -188,10 +183,8 @@ def superpose_molecule(ref_mol, mobile_mol, ref_chain="A", mobile_chain="A"):
         Reference molecule to align to.
     mobile_mol : oechem.OEGraphMol
         Molecule to align.
-    ref_pred : oechem.OEUnaryPredicate[oechem.OEAtomBase], optional
-        Predicate for which atoms to include from `ref_mol`.
-    mobile_pred : oechem.OEUnaryPredicate[oechem.OEAtomBase], optional
-        Predicate for which atoms to include from `mobile_mol`.
+    ref_chain : Reference chain to align to
+    mobile_chain : Mobile chain to use for alignment (the whole molecule will move as well though)
 
     Returns
     -------
@@ -491,14 +484,15 @@ def split_openeye_mol(
     # that small peptides which are acting as ligands make it into the final
     # But it will also remove ligands itself (I guess). So if we do want to keep the ligand
     # then we don't want to use it.
-    if ("protein" in molecule_filter.components_to_keep) and (
-        not "ligand" in molecule_filter.components_to_keep
+    if (
+        "protein" in molecule_filter.components_to_keep
+        and "ligand" not in molecule_filter.components_to_keep
     ):
         prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
     return prot_mol
 
 
-def split_openeye_design_unit(du, lig=None, lig_title=None, include_solvent=True):
+def split_openeye_design_unit(du, lig=None, lig_title=None):
     """
     Parameters
     ----------

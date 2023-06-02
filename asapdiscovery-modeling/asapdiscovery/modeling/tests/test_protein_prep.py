@@ -13,7 +13,6 @@ from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.modeling.modeling import (
     add_seqres_to_openeye_protein,
-    align_receptor,
     mutate_residues,
     split_openeye_design_unit,
     split_openeye_mol,
