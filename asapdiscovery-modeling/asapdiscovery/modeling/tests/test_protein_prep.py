@@ -16,6 +16,7 @@ from asapdiscovery.modeling.schema import (
     PreppedTargets,
 )
 
+
 # This needs to have a scope of session so that a new tmp file is not created for each test
 @pytest.fixture(scope="session")
 def prepped_files(tmp_path_factory, local_path):
