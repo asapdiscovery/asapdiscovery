@@ -55,6 +55,8 @@ class PreppedTarget(BaseModel):
     lig_chain: str = Field(None, description="Chain identifying the ligand.")
     prepped: bool = Field(False, description="Has the target been prepped yet?")
     saved: bool = Field(False, description="Have the results been saved?")
+    failed: bool = Field(None, description="Did the prep fail?")
+
     molecule_filter: MoleculeFilter
     ligand: Path = Field(None, description="Path to prepped sdf file")
     complex: Path = Field(None, description="Path to prepped complex")

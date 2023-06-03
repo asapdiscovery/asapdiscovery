@@ -29,19 +29,21 @@ def get_args():
 
 def main():
     args = get_args()
+    args.output_dir.mkdir(exist_ok=True, parents=True)
     protein_files = args.structure_dir.glob("*")
     targets = []
     for protein_file in protein_files:
-        targets.append(
-            PreppedTarget(
-                source=CrystalCompoundData(str_fn=str(protein_file)),
-                output_name=protein_file.stem,
-                active_site_chain=args.active_site_chain,
-                molecule_filter=MoleculeFilter(
-                    components_to_keep=args.components_to_keep,
-                    ligand_chain=args.ligand_chain,
-                    protein_chains=args.protein_chains,
-                ),
+        if protein_file.suffix == ".pdb" or protein_file.suffix == ".cif":
+            targets.append(
+                PreppedTarget(
+                    source=CrystalCompoundData(str_fn=str(protein_file)),
+                    output_name=protein_file.stem,
+                    active_site_chain=args.active_site_chain,
+                    molecule_filter=MoleculeFilter(
+                        components_to_keep=args.components_to_keep,
+                        ligand_chain=args.ligand_chain,
+                        protein_chains=args.protein_chains,
+                    ),
+                )
             )
-        )
     PreppedTargets.from_list(targets).to_pkl(args.output_dir / "to_prep.pkl")

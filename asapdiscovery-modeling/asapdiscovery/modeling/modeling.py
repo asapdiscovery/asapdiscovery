@@ -95,9 +95,23 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
         site_residue=target.active_site,
     )
     if type(du) == oechem.OEGraphMol:
-        raise RuntimeError("Failed to prepare protein")
-    prepped_target = save_design_unit(du, target, prep_opts.output_dir, seqres)
-    return prepped_target
+        # Renaming the variable to make it obvious that what was returned is actually a pdb file
+        mol = du
+        target.protein = (
+            prep_opts.output_dir / f"{target.output_name}-failed-spruced.pdb"
+        )
+        if seqres:
+            mol = add_seqres_to_openeye_protein(mol, seqres)
+        mol = openeye_perceive_residues(mol)
+        save_openeye_pdb(mol, str(target.protein))
+
+        target.saved = True
+        target.failed = True
+
+        return target
+    else:
+        prepped_target = save_design_unit(du, target, prep_opts.output_dir, seqres)
+        return prepped_target
 
 
 def spruce_protein(

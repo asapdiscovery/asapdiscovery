@@ -15,7 +15,7 @@ def get_args():
         "--input_file",
         type=Path,
         required=True,
-        description="Path to input file containing the PreppedTargets",
+        help="Path to input file containing the PreppedTargets",
     )
     # Output arguments
     parser.add_argument(
@@ -39,13 +39,13 @@ def get_args():
     parser.add_argument(
         "-l",
         "--loop_db",
-        default="/Users/alexpayne/Scientific_Projects/mers-drug-discovery/spruce_bace.loop_db",
+        required=False,
         help="Path to loop database.",
     )
     parser.add_argument(
         "-s",
         "--seqres_yaml",
-        default="../../../../metadata/mpro_mers_seqres.yaml",
+        required=False,
         help="Path to yaml file of SEQRES.",
     )
 
@@ -62,7 +62,7 @@ def get_args():
 
 def main():
     args = get_args()
-    targets = PreppedTargets.from_pkl(args.input_file)
+    targets: list = PreppedTargets.from_pkl(args.input_file).iterable
     prep_opts = PrepOpts(
         ref_fn=args.ref_prot,
         ref_chain=args.ref_chain,
@@ -71,6 +71,8 @@ def main():
         output_dir=args.output_dir,
     )
 
+    print(f"Running protein prep workflow on {len(targets)} targets using {prep_opts}")
+
     # add prep opts to the prepping function
     protein_prep_workflow_with_opts = partial(
         protein_prep_workflow, prep_opts=prep_opts
@@ -78,7 +80,7 @@ def main():
 
     nprocs = min(mp.cpu_count(), len(targets), args.num_cores)
     with mp.Pool(processes=nprocs) as pool:
-        targets_list = pool.starmap(protein_prep_workflow_with_opts, targets)
+        targets_list = pool.map(protein_prep_workflow_with_opts, targets)
 
     # Write out the prepped targets
     PreppedTargets.from_list(targets_list).to_pkl(
