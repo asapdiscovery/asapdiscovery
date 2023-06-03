@@ -42,6 +42,7 @@ prepare-protein-csv = "asapdiscovery.modeling.scripts.prepare_protein_csv:main"
 prep-proteins-v2 = "asapdiscovery.modeling.scripts.prep_proteins_v2:main"
 slice-fragalysis-structures-with-mdtraj = "asapdiscovery.modeling.scripts.slice_fragalysis_structures_with_mdtraj:main"
 create-prep-inputs = "asapdiscovery.modeling.scripts.create_prep_inputs:main"
+prep-targets = "asapdiscovery.modeling.scripts.prep_targets:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
