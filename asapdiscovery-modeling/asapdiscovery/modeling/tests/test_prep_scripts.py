@@ -102,7 +102,7 @@ def metadata_csv():
 @pytest.fixture
 def local_fragalysis(tmp_path):
     pdb = fetch_test_file("Mpro-P2660_0A_bound.pdb")
-    new_path = tmp_path / f"aligned/Mpro-P2660_0A"
+    new_path = tmp_path / "aligned/Mpro-P2660_0A"
     new_path.mkdir(parents=True)
     shutil.copy(pdb, new_path / "Mpro-P2660_0A_bound.pdb")
     return new_path.parent
