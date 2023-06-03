@@ -51,18 +51,28 @@ files:
   - resource: fragalysis-mpro_spruce.loop_db
     sha256hash: ac0c05f07c7e5d0cafad37074db6b9ba6924c8e276d2d8e0bf8b4ad98a981cec
 
-  # prepped mers structure
-  - resource: rcsb_8czv-assembly1-prepped_protein.pdb
-    sha256hash: 8a8f32f2056547f732bdef30780f2e193254f16af2073297eb31e7c5bdae00e6
-
-  # prepped sars protein only
+  # prepped sars protein
   - resource: Mpro-P2660_0A_bound-prepped_protein.pdb
-    sha256hash: cd63351f306afbdfb1fe38c39e69130b80b44cf0fbe683b9ad4d06b9ef723850
+    sha256hash: 60f1d22ee730adee22c908b07ba96104507e3e8eafc1423c32f60a7cecb881ea
 
   # prepped sars complex
   - resource: Mpro-P2660_0A_bound-prepped_complex.pdb
-    sha256hash: e452831d3c49f42a0cdc51c754e1177cc356aebaab5bbafdd406aaaf23c5dfa4
+    sha256hash: a612bf2bd9f0531160a04b8dd4ecf52bba0ce7ceac722e808719fb74eb9c9d19
 
-  # prepped sars du
-  - resource: Mpro-P2660_0A_bound-prepped_receptor_0.oedu
-    sha256hash: bd9e657f771c6dc0cdbc7b32ceef076d25dc3bc7f411884fad8b46a50a8e2575
+  # prepped sars ligand
+  - resource: Mpro-P2660_0A_bound-prepped_ligand.sdf
+    sha256hash: 6224f6cba2140648498731acadbacc9772a224119c465694e132a905ff0189d8
+
+  # prepped sars design unit
+  - resource: Mpro-P2660_0A_bound-prepped_receptor.oedu
+    sha256hash: 802593b2d741be258b1a1b4ee75d5c582cf56303f9a97ca9c6825d2893f14eb7
+
+  # prepped mers protein
+  - resource: rcsb_8czv-assembly1-prepped_protein.pdb
+    sha256hash: c231b87f149007e8fb84c32dcf31f0f8b562f3583d84deb15e4467785b92ff25
+
+  # prepped mers receptor
+  - resource: rcsb_8czv-assembly1-prepped_receptor.oedu
+    sha256hash: e5aecd38d72566d61a01fdf537ce6fc5e1d5d35ec7bce0a864cc6ca73627d929
+
+

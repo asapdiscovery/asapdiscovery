@@ -6,6 +6,7 @@ from typing import Union
 from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
+    load_openeye_cif1,
     oechem,
     oedocking,
     oespruce,
@@ -17,7 +18,7 @@ from asapdiscovery.modeling.schema import (
     MoleculeComponent,
     MoleculeFilter,
     PreppedTarget,
-    PrepOpts
+    PrepOpts,
 )
 
 
@@ -37,9 +38,27 @@ def add_seqres_to_openeye_protein(
                 oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
     return prot
 
-def sars_protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts):
+
+def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> PreppedTarget:
+    """
+    Prepares a protein for docking.
+
+    Args:
+    - target (PreppedTarget): the target to prepare
+    - prep_opts (PrepOpts): the options for preparing the target
+
+    Returns:
+    - PreppedTarget: the prepared target
+    """
     # Load structure
-    prot = load_openeye_pdb(target.source.str_fn)
+    if Path(target.source.str_fn).suffix == ".pdb":
+        prot = load_openeye_pdb(target.source.str_fn)
+    elif Path(target.source.str_fn).suffix == ".cif":
+        prot = load_openeye_cif1(target.source.str_fn)
+    else:
+        raise NotImplementedError(
+            f"Cannot load structure with extension {Path(target.source.str_fn).suffix}"
+        )
 
     # Get desired components
     prot = split_openeye_mol(prot, target.molecule_filter)
@@ -47,7 +66,9 @@ def sars_protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts):
     # Align
     if prep_opts.ref_fn:
         ref = load_openeye_pdb(str(prep_opts.ref_fn))
-        prot, rmsd = superpose_molecule(ref, prot, prep_opts.ref_chain, target.active_site_chain)
+        prot, rmsd = superpose_molecule(
+            ref, prot, prep_opts.ref_chain, target.active_site_chain
+        )
 
     # Mutate Residues
     if prep_opts.seqres_yaml:
@@ -59,6 +80,9 @@ def sars_protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts):
 
         prot = mutate_residues(prot, res_list, place_h=True)
         seqres_list = " ".join(res_list)
+    else:
+        seqres = None
+        seqres_list = None
 
     # Spruce Protein
     du = spruce_protein(
@@ -68,36 +92,10 @@ def sars_protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts):
         return_du=True,
         site_residue=target.active_site,
     )
-    assert type(du) == oechem.OEDesignUnit
-
-    du_fn = prepped_files / f"{target.output_name}-prepped_receptor_0.oedu"
-    oechem.OEWriteDesignUnit(str(du_fn), du)
-
-    # Serialize output!
-    from asapdiscovery.data.openeye import save_openeye_sdf
-    from asapdiscovery.modeling.modeling import add_seqres_to_openeye_protein
-
-    # TODO: Use a different way of splitting the design unit
-    lig, prot, complex_ = split_openeye_design_unit(du, lig_title=target.compound_id)
-    prot = add_seqres_to_openeye_protein(prot, seqres)
-    complex_ = add_seqres_to_openeye_protein(complex_, seqres)
-
-    prot_fn = prepped_files / f"{target.output_name}-prepped_protein.pdb"
-    save_openeye_pdb(prot, str(prot_fn))
-
-    complex_fn = prepped_files / f"{target.output_name}-prepped_complex.pdb"
-    save_openeye_pdb(complex_, str(complex_fn))
-
-    lig_fn = prepped_files / f"{target.output_name}-prepped_ligand.sdf"
-    save_openeye_sdf(lig, str(lig_fn))
-
-    for fn in [prot_fn, complex_fn, lig_fn]:
-        assert Path(fn).exists()
-        assert Path(fn).is_file()
-
-    # TODO: Add a test to make sure the ligand is in the active site
-    # TODO: Add a test to make sure the seqres has been added to the protein
-
+    if type(du) == oechem.OEGraphMol:
+        raise RuntimeError("Failed to prepare protein")
+    prepped_target = save_design_unit(du, target, prep_opts.output_dir, seqres)
+    return prepped_target
 
 
 def spruce_protein(
@@ -562,16 +560,21 @@ def split_openeye_mol(
 
 
 def save_design_unit(
-    du: oechem.OEDesignUnit, target: PreppedTarget, output_dir
+    du: oechem.OEDesignUnit,
+    target: PreppedTarget,
+    output_dir: Union[str, Path],
+    seqres=None,
 ) -> PreppedTarget:
     complex_mol = du_to_complex(du)
-    target.get_output_files(output_dir)
+    target.get_output_files(Path(output_dir))
     complex_mol = openeye_perceive_residues(complex_mol)
+    if seqres:
+        complex_mol = add_seqres_to_openeye_protein(complex_mol, seqres)
     if target.complex:
         save_openeye_pdb(complex_mol, target.complex)
 
-    if target.sdf:
-        save_openeye_sdf(split_openeye_mol(complex_mol, "ligand"), str(target.sdf))
+    if target.ligand:
+        save_openeye_sdf(split_openeye_mol(complex_mol, "ligand"), str(target.ligand))
 
     if target.protein:
         save_openeye_pdb(split_openeye_mol(complex_mol, "protein"), str(target.protein))

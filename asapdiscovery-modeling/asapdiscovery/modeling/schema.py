@@ -36,12 +36,14 @@ class MoleculeFilter(BaseModel):
         description="List of components to keep. An empty list will return all components.",
     )
 
+
 class PrepOpts(BaseModel):
     ref_fn: Path = Field(None, description="Reference structure to align to.")
     ref_chain: str = Field(None, description="Chain ID to align to.")
     seqres_yaml: Path = Field(None, description="Path to seqres yaml")
     loop_db: Path = Field(None, description="Path to loop database to use for prepping")
     output_dir: Path = Field(None, description="Directory to save output to.")
+
 
 class PreppedTarget(BaseModel):
     source: CrystalCompoundData = Field(description="Source of model")
@@ -54,7 +56,7 @@ class PreppedTarget(BaseModel):
     prepped: bool = Field(False, description="Has the target been prepped yet?")
     saved: bool = Field(False, description="Have the results been saved?")
     molecule_filter: MoleculeFilter
-    sdf: Path = Field(None, description="Path to prepped sdf file")
+    ligand: Path = Field(None, description="Path to prepped sdf file")
     complex: Path = Field(None, description="Path to prepped complex")
     protein: Path = Field(None, description="Path to prepped protein-only file")
     design_unit: Path = Field(None, description="Path to design unit")
@@ -65,12 +67,12 @@ class PreppedTarget(BaseModel):
     def set_saved(self):
         self.saved = True
 
-    def get_output_files(self, output_dir):
+    def get_output_files(self, output_dir: Path):
         if "ligand" in self.molecule_filter.components_to_keep:
-            self.sdf = output_dir / f"{self.output_name}.sdf"
-            self.complex = output_dir / f"{self.output_name}-complex.pdb"
-        self.protein = output_dir / f"{self.output_name}-protein.pdb"
-        self.design_unit = output_dir / f"{self.output_name}.oedu"
+            self.ligand = output_dir / f"{self.output_name}-prepped_ligand.sdf"
+            self.complex = output_dir / f"{self.output_name}-prepped_complex.pdb"
+        self.protein = output_dir / f"{self.output_name}-prepped_protein.pdb"
+        self.design_unit = output_dir / f"{self.output_name}-prepped_receptor.oedu"
 
 
 class PreppedTargets(Dataset):
