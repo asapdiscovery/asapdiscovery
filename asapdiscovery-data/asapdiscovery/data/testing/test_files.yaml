@@ -74,3 +74,7 @@ files:
   # prepped mers receptor
   - resource: rcsb_8czv-assembly1-prepped_receptor.oedu
     sha256hash: e5aecd38d72566d61a01fdf537ce6fc5e1d5d35ec7bce0a864cc6ca73627d929
+
+  # mers pdb IDs to download
+  - resource: mers-structures.yaml
+    sha256hash: 3972d0e4848a15397065cd376be684e895c2ff65f824c9cfac38972fba4d0ab3
