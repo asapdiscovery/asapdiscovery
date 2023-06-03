@@ -1,3 +1,7 @@
+# This test suite can be run with a local path to save the output, ie:
+# pytest test_protein_prep.py --local_path=/path/to/save/files
+# without a local path, output files will be saved to a temporary directory
+# This behaviour is controlled by the prepped_files fixture.
 from pathlib import Path
 
 import pytest
@@ -11,6 +15,17 @@ from asapdiscovery.modeling.schema import (
     PreppedTarget,
     PreppedTargets,
 )
+
+# This needs to have a scope of session so that a new tmp file is not created for each test
+@pytest.fixture(scope="session")
+def prepped_files(tmp_path_factory, local_path):
+    if not type(local_path) == str:
+        return tmp_path_factory.mktemp("test_prep")
+    else:
+        local_path = Path(local_path)
+        local_path.mkdir(exist_ok=True)
+        assert local_path.exists()
+        return local_path
 
 
 @pytest.fixture
@@ -54,18 +69,6 @@ def test_output_file_download(reference_output_files):
 @pytest.fixture
 def loop_db():
     return fetch_test_file("fragalysis-mpro_spruce.loop_db")
-
-
-# This needs to have a scope of session so that a new tmp file is not created for each test
-@pytest.fixture(scope="session")
-def prepped_files(tmp_path_factory, local_path):
-    if not type(local_path) == str:
-        return tmp_path_factory.mktemp("test_prep")
-    else:
-        local_path = Path(local_path)
-        local_path.mkdir(exist_ok=True)
-        assert local_path.exists()
-        return local_path
 
 
 @pytest.fixture

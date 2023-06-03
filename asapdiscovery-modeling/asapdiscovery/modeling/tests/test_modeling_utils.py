@@ -1,3 +1,7 @@
+# This test suite can be run with a local path to save the output, ie:
+# pytest test_modeling_utils.py --local_path=/path/to/save/files
+# without a local path, output files will not be written
+
 from pathlib import Path
 
 import pytest
