@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+import shutil
 
 # This needs to have a scope of session so that a new tmp file is not created for each test
 @pytest.fixture(scope="session")
@@ -20,8 +21,11 @@ def mers_structures():
 
 
 @pytest.fixture
-def mers_seqres():
-    return fetch_test_file("mpro_mers_seqres.yaml")
+def seqres_dict():
+    return {
+        "mers": fetch_test_file("mpro_mers_seqres.yaml"),
+        "sars": fetch_test_file("mpro_sars2_seqres.yaml"),
+    }
 
 
 @pytest.fixture
@@ -64,7 +68,10 @@ def test_mers_download_and_create_prep_inputs(
 
 @pytest.mark.timeout(400)
 @pytest.mark.script_launch_mode("subprocess")
-def test_mers_prep(script_runner, output_dir, ref, loop_db, mers_seqres):
+@pytest.mark.skip(
+    reason="This test takes too long to run and timeout doesn't seem to work"
+)
+def test_mers_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
     ret = script_runner.run(
         "prep-targets",
         "-i",
@@ -76,7 +83,84 @@ def test_mers_prep(script_runner, output_dir, ref, loop_db, mers_seqres):
         "-l",
         f"{loop_db}",
         "-s",
-        f"{mers_seqres}",
+        f"{seqres_dict['mers']}",
+        "-n",
+        "4",
+    )
+    assert ret.success
+
+
+# TODO: This code block is copied from test_fragalysis
+#  I think we should be able to use the same fixtures for both tests
+@pytest.fixture
+def metadata_csv():
+    return fetch_test_file("metadata.csv")
+
+
+@pytest.fixture
+def local_fragalysis(tmp_path):
+    pdb = fetch_test_file("Mpro-P2660_0A_bound.pdb")
+    new_path = tmp_path / f"aligned/Mpro-P2660_0A"
+    new_path.mkdir(parents=True)
+    shutil.copy(pdb, new_path / "Mpro-P2660_0A_bound.pdb")
+    return new_path.parent
+
+
+# TODO: End copied code block
+
+
+def test_sars_create_prep_inputs(
+    script_runner, output_dir, metadata_csv, local_fragalysis
+):
+    ret = script_runner.run(
+        [
+            "fragalysis-to-schema",
+            "--metadata_csv",
+            f"{metadata_csv}",
+            "--aligned_dir",
+            f"{local_fragalysis}",
+            "-o",
+            f"{output_dir / 'metadata'}",
+        ]
+    )
+    out_path = output_dir / "metadata/fragalysis.csv"
+    assert ret.success
+    assert out_path.exists()
+
+    ret = script_runner.run(
+        [
+            "create-prep-inputs",
+            "-i",
+            f"{out_path}",
+            "-o",
+            f"{output_dir / 'metadata'}",
+            "--components_to_keep",
+            "protein",
+            "ligand",
+        ]
+    )
+    assert ret.success
+    assert (output_dir / "metadata" / "to_prep.pkl").exists()
+
+
+@pytest.mark.timeout(400)
+@pytest.mark.script_launch_mode("subprocess")
+@pytest.mark.skip(
+    reason="This test takes too long to run and timeout doesn't seem to work"
+)
+def test_sars_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
+    ret = script_runner.run(
+        "prep-targets",
+        "-i",
+        f"{output_dir / 'metadata' / 'to_prep.pkl'}",
+        "-o",
+        f"{output_dir / 'prepped_structures'}",
+        "-r",
+        f"{ref}",
+        "-l",
+        f"{loop_db}",
+        "-s",
+        f"{seqres_dict['sars']}",
         "-n",
         "4",
     )

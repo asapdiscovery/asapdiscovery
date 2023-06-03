@@ -56,9 +56,9 @@ def main():
     args.output_dir.mkdir(exist_ok=True, parents=True)
     if args.input_file:
         if args.input_file.suffix == ".csv":
-            xtals = CrystalCompoundDataset.from_csv(args.input_file)
+            xtals = CrystalCompoundDataset.from_csv(args.input_file).iterable
         elif args.input_file.suffix == ".pkl":
-            xtals = CrystalCompoundDataset.from_pkl(args.input_file)
+            xtals = CrystalCompoundDataset.from_pkl(args.input_file).iterable
         else:
             raise NotImplementedError
 
