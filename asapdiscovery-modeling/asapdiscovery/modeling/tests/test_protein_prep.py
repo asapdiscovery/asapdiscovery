@@ -1,7 +1,7 @@
 # This test suite can be run with a local path to save the output, ie:
 # pytest test_protein_prep.py --local_path=/path/to/save/files
 # without a local path, output files will be saved to a temporary directory
-# This behaviour is controlled by the prepped_files fixture.
+# This behaviour is controlled by the output_dir fixture.
 from pathlib import Path
 
 import pytest
@@ -19,7 +19,7 @@ from asapdiscovery.modeling.schema import (
 
 # This needs to have a scope of session so that a new tmp file is not created for each test
 @pytest.fixture(scope="session")
-def prepped_files(tmp_path_factory, local_path):
+def output_dir(tmp_path_factory, local_path):
     if not type(local_path) == str:
         return tmp_path_factory.mktemp("test_prep")
     else:
@@ -130,23 +130,21 @@ class TestCrystalCompoundDataset:
         reason="Multiple embedded schema objects need more logic to serialize to csv"
     )
     def test_dataset_csv_usage(
-        self, target_dataset, prepped_files, csv_name="to_prep.csv"
+        self, target_dataset, output_dir, csv_name="to_prep.csv"
     ):
-        to_prep_csv = prepped_files / csv_name
+        to_prep_csv = output_dir / csv_name
         target_dataset.to_csv(to_prep_csv)
         assert to_prep_csv.exists()
         assert to_prep_csv.is_file()
 
-        dataset = PreppedTargets.from_csv(prepped_files / csv_name)
+        dataset = PreppedTargets.from_csv(output_dir / csv_name)
         assert dataset == target_dataset
 
         dataset.iterable[0].active_site_chain = "B"
         assert dataset != target_dataset
 
-    def test_dataset_pickle(
-        self, target_dataset, prepped_files, pkl_name="to_prep.pkl"
-    ):
-        pkl_file = prepped_files / pkl_name
+    def test_dataset_pickle(self, target_dataset, output_dir, pkl_name="to_prep.pkl"):
+        pkl_file = output_dir / pkl_name
         target_dataset.to_pkl(pkl_file)
         assert pkl_file.exists()
         assert pkl_file.is_file()
@@ -158,10 +156,8 @@ class TestCrystalCompoundDataset:
     @pytest.mark.skip(
         reason="Multiple embedded schema objects need more logic to serialize to json"
     )
-    def test_dataset_json(
-        self, target_dataset, prepped_files, json_name="to_prep.json"
-    ):
-        json_file = prepped_files / json_name
+    def test_dataset_json(self, target_dataset, output_dir, json_name="to_prep.json"):
+        json_file = output_dir / json_name
         target_dataset.to_json(json_file)
         assert json_file.exists()
         assert json_file.is_file()
@@ -186,7 +182,7 @@ class TestProteinPrep:
         target_name,
         prep_dict,
         ref,
-        prepped_files,
+        output_dir,
         loop_db,
         reference_output_files,
         ref_chain="A",
@@ -198,7 +194,7 @@ class TestProteinPrep:
             ref_chain=ref_chain,
             loop_db=loop_db,
             seqres_yaml=seqres_yaml,
-            output_dir=prepped_files,
+            output_dir=output_dir,
         )
         prepped_target = protein_prep_workflow(target, prep_opts)
 
