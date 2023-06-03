@@ -27,5 +27,7 @@ def test_mers_download_and_prep(script_runner, output_dir, mers_structures):
     )
     assert ret.success
 
-    ret = script_runner.run("create-prep-inputs", "-d", f"{output_dir}")
+    ret = script_runner.run(
+        "create-prep-inputs", "-d", f"{output_dir}", "-o", f"{output_dir}"
+    )
     assert ret.success

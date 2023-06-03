@@ -22,7 +22,7 @@ def get_args():
         "--components_to_keep", type=list[str], nargs="+", default=["protein", "ligand"]
     )
     parser.add_argument("--active_site_chain", type=str, default="A")
-    parser.add_argument("--ligand_chain", type=str, default=["A"])
+    parser.add_argument("--ligand_chain", type=str, default="A")
     parser.add_argument("--protein_chains", type=str, default=["A", "B"])
     return parser.parse_args()
 
@@ -34,7 +34,7 @@ def main():
     for protein_file in protein_files:
         targets.append(
             PreppedTarget(
-                source=CrystalCompoundData(str_fn=protein_file),
+                source=CrystalCompoundData(str_fn=str(protein_file)),
                 output_name=protein_file.stem,
                 active_site_chain=args.active_site_chain,
                 molecule_filter=MoleculeFilter(
