@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
-from asapdiscovery.data.utils import check_filelist_has_elements
-from asapdiscovery.data.schema import CrystalCompoundDataset
+
 from asapdiscovery.data.fragalysis import parse_fragalysis
+from asapdiscovery.data.schema import CrystalCompoundDataset
+from asapdiscovery.data.utils import check_filelist_has_elements
 
 
 def get_args():

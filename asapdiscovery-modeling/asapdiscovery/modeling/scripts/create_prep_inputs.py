@@ -1,7 +1,8 @@
 import argparse
 from pathlib import Path
+
 from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.modeling.schema import PreppedTarget, PreppedTargets, MoleculeFilter
+from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget, PreppedTargets
 
 
 def get_args():

@@ -5,8 +5,8 @@ import os
 import shutil
 
 import pytest
-from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data import fragalysis
+from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
