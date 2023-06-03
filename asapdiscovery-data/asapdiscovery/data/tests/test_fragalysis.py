@@ -94,3 +94,22 @@ def test_parse_fragalysis(metadata_csv, local_fragalysis):
     print(xtals[0])
     assert len(xtals) == 1
     assert type(xtals[0]) == CrystalCompoundData
+
+
+def test_parse_fragalysis_script(
+    script_runner, tmp_path, metadata_csv, local_fragalysis
+):
+    ret = script_runner.run(
+        [
+            "fragalysis-to-schema",
+            "--metadata_csv",
+            f"{metadata_csv}",
+            "--aligned_dir",
+            f"{local_fragalysis}",
+            "-o",
+            f"{tmp_path}",
+        ]
+    )
+    out_path = tmp_path / "fragalysis.csv"
+    assert ret.success
+    assert out_path.exists()
