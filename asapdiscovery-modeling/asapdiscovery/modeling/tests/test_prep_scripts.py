@@ -34,10 +34,8 @@ def ref():
     return fetch_test_file("reference.pdb")
 
 
-@pytest.mark.timeout(400)
-@pytest.mark.script_launch_mode("subprocess")
-def test_mers_download_and_prep(
-    script_runner, output_dir, mers_structures, ref, loop_db, mers_seqres
+def test_mers_download_and_create_prep_inputs(
+    script_runner, output_dir, mers_structures
 ):
     ret = script_runner.run(
         "download-pdbs",
@@ -63,6 +61,10 @@ def test_mers_download_and_prep(
     )
     assert ret.success
 
+
+@pytest.mark.timeout(400)
+@pytest.mark.script_launch_mode("subprocess")
+def test_mers_prep(script_runner, output_dir, ref, loop_db, mers_seqres):
     ret = script_runner.run(
         "prep-targets",
         "-i",
