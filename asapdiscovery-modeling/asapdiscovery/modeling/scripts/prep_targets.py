@@ -1,9 +1,10 @@
-from asapdiscovery.modeling.schema import PreppedTargets, PrepOpts
-from asapdiscovery.modeling.modeling import protein_prep_workflow
 import argparse
-from pathlib import Path
 import multiprocessing as mp
 from functools import partial
+from pathlib import Path
+
+from asapdiscovery.modeling.modeling import protein_prep_workflow
+from asapdiscovery.modeling.schema import PrepOpts, PreppedTargets
 
 
 def get_args():
