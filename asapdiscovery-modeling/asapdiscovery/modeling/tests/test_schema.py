@@ -1,8 +1,9 @@
+from pathlib import Path
+
 import pydantic
 import pytest
-from pathlib import Path
-from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import save_design_unit
 from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget

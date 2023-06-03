@@ -1,12 +1,13 @@
-import os, yaml
+import os
 from collections import namedtuple
 from functools import reduce
 from pathlib import Path
 from typing import Union
-from asapdiscovery.data.utils import seqres_to_res_list
+
+import yaml
 from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
     load_openeye_cif1,
+    load_openeye_pdb,
     oechem,
     oedocking,
     oespruce,
@@ -14,11 +15,12 @@ from asapdiscovery.data.openeye import (
     save_openeye_pdb,
     save_openeye_sdf,
 )
+from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.modeling.schema import (
     MoleculeComponent,
     MoleculeFilter,
-    PreppedTarget,
     PrepOpts,
+    PreppedTarget,
 )
 
 
