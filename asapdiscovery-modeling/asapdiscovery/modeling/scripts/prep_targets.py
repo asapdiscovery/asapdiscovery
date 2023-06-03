@@ -21,6 +21,7 @@ def get_args():
     parser.add_argument(
         "-o",
         "--output_dir",
+        type=Path,
         required=True,
         help="Path to output_dir.",
     )
@@ -62,6 +63,7 @@ def get_args():
 
 def main():
     args = get_args()
+    args.output_dir.mkdir(exist_ok=True, parents=True)
     targets: list = PreppedTargets.from_pkl(args.input_file).iterable
     prep_opts = PrepOpts(
         ref_fn=args.ref_prot,

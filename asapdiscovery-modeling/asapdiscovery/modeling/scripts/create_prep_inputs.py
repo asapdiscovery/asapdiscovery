@@ -19,11 +19,17 @@ def get_args():
         "-o", "--output_dir", type=Path, required=True, help="Path to output_dir."
     )
     parser.add_argument(
-        "--components_to_keep", type=list[str], nargs="+", default=["protein", "ligand"]
+        "--components_to_keep", type=str, nargs="+", default=["protein", "ligand"]
     )
     parser.add_argument("--active_site_chain", type=str, default="A")
     parser.add_argument("--ligand_chain", type=str, default="A")
-    parser.add_argument("--protein_chains", type=str, default=["A", "B"])
+    parser.add_argument("--protein_chains", type=str, default=[], help="")
+    parser.add_argument(
+        "--active_site",
+        type=str,
+        default=None,
+        help="OpenEye formatted site residue for actve site identification, i.e. 'HIS:41: :A:0: '",
+    )
     return parser.parse_args()
 
 
@@ -39,6 +45,7 @@ def main():
                     source=CrystalCompoundData(str_fn=str(protein_file)),
                     output_name=protein_file.stem,
                     active_site_chain=args.active_site_chain,
+                    active_site=args.active_site,
                     molecule_filter=MoleculeFilter(
                         components_to_keep=args.components_to_keep,
                         ligand_chain=args.ligand_chain,
