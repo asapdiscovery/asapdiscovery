@@ -1,6 +1,8 @@
-import pytest
 from pathlib import Path
+
+import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+
 
 # This needs to have a scope of session so that a new tmp file is not created for each test
 @pytest.fixture(scope="session")
