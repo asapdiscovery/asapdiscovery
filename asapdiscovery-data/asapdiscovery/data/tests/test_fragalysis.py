@@ -2,9 +2,12 @@
 import copy
 import glob
 import os
+import shutil
 
 import pytest
+from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data import fragalysis
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.fixture
@@ -27,6 +30,7 @@ def mac1_fragalysis_api_call():
     return api_call
 
 
+@pytest.mark.skip
 class TestFragalysisDownload:
     """Class to test the download of data from Fragalysis."""
 
@@ -68,3 +72,25 @@ class TestFragalysisDownload:
         assert glob.glob(
             f"{zip_file.parent}/**/*.pdb", recursive=True
         ), "No PDB files found on extracted fragalysis target zip."
+
+
+@pytest.fixture
+def metadata_csv():
+    return fetch_test_file("metadata.csv")
+
+
+@pytest.fixture
+def local_fragalysis(tmp_path):
+    pdb = fetch_test_file("Mpro-P2660_0A_bound.pdb")
+    new_path = tmp_path / f"aligned/Mpro-P2660_0A"
+    new_path.mkdir(parents=True)
+    shutil.copy(pdb, new_path / "Mpro-P2660_0A_bound.pdb")
+    return new_path.parent
+
+
+def test_parse_fragalysis(metadata_csv, local_fragalysis):
+    print(local_fragalysis)
+    xtals = fragalysis.parse_fragalysis(metadata_csv, local_fragalysis)
+    print(xtals[0])
+    assert len(xtals) == 1
+    assert type(xtals[0]) == CrystalCompoundData

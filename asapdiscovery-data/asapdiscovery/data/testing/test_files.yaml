@@ -78,3 +78,7 @@ files:
   # mers pdb IDs to download
   - resource: mers-structures.yaml
     sha256hash: 3972d0e4848a15397065cd376be684e895c2ff65f824c9cfac38972fba4d0ab3
+
+  # fragalysis metadata.csv
+  - resource: metadata.csv
+    sha256hash: 0b8c3f6e3cec7d1a8a6aca34cd870455793812f2c1673cda73b5bf830a581f7f
