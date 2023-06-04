@@ -168,17 +168,6 @@ def spruce_protein(
     # also consider alternate locations outside binding pocket, important for later filtering
     opts.GetPrepOptions().GetEnumerateSitesOptions().SetCollapseNonSiteAlts(True)
 
-    # alignment options, only matches are important
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
-        oechem.OESeqAlignmentMethod_Identity
-    )
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(
-        -1
-    )
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(
-        0
-    )
-
     # Both N- and C-termini should be zwitterionic
     # Mpro cleaves its own N- and C-termini
     # See https://www.pnas.org/content/113/46/12997
@@ -199,8 +188,6 @@ def spruce_protein(
 
     # Allow for adding residues at the beginning/end if they're missing
     loop_opts.SetBuildTails(True)
-
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetBuildTails(True)
 
     if loop_db is not None:
         print("Adding loop db")
