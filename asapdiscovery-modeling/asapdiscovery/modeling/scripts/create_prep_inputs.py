@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
-from asapdiscovery.data.utils import check_filelist_has_elements
+
 from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDataset
-from asapdiscovery.modeling.schema import PreppedTarget, PreppedTargets, MoleculeFilter
+from asapdiscovery.data.utils import check_filelist_has_elements
+from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget, PreppedTargets
 
 # TODO: Add a function to check if the input file is a CrystalCompoundDataset
 # TODO: Probably want to move to requiring that the input is a CrystalCompoundDataset
@@ -75,7 +76,6 @@ def main():
 
     targets = []
     for xtal in xtals:
-
         # TODO: Make this a bit more clever
         output_tags = []
         if xtal.dataset:
