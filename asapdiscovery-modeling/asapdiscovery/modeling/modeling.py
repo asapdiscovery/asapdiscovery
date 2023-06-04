@@ -44,7 +44,16 @@ def add_seqres_to_openeye_protein(
 
 def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> PreppedTarget:
     """
-    Prepares a protein for docking.
+    Prepares a protein for docking. Current implementation uses schema from modeling.schema
+    Automatically logs to a file in the output directory (specified by prep_opts).
+    Contains the following steps:
+    - Load structure (cif or pdb)
+    - Get desired components specified by target.molecule_filter
+    - Align if requested
+    - Mutate Residues using SEQRES
+    - Spruce
+    - Saves either a failed spruced pdb or a complete set of prep outputs
+
 
     Args:
     - target (PreppedTarget): the target to prepare
@@ -61,6 +70,11 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
         logname=f"protein_prep_workflow.{target.output_name}",
         path=str(target.output_dir),
     ).getLogger()
+
+    # TODO: Add back check to make sure that the target is not already prepared
+    #  I'd like to do something clever with reading the output PreppedTargets file so I'll wait until
+    #  We have the schema finalized.
+
     logger.info(f"Preparing {target.output_name}")
 
     # Load structure
