@@ -30,6 +30,7 @@ def get_args():
 def main():
     args = get_args()
     protein_files = args.structure_dir.glob("*")
+    args.output_dir.mkdir(exist_ok=True, parents=True)
     targets = []
     for protein_file in protein_files:
         targets.append(

@@ -52,6 +52,7 @@ def get_args():
 
 def main():
     args = get_args()
+    args.output_dir.mkdir(exist_ok=True, parents=True)
     check_filelist_has_elements([args.metadata_csv, args.aligned_dir])
     xtals = parse_fragalysis(
         args.metadata_csv,
