@@ -47,7 +47,9 @@ class PrepOpts(BaseModel):
 
 class PreppedTarget(BaseModel):
     source: CrystalCompoundData = Field(description="Source of model")
-    output_name: str = Field(None, description="Name of output structure.")
+
+    # Filtering and Prepping options
+    molecule_filter: MoleculeFilter
     active_site_chain: str = Field(
         None, description="Chain identifying the active site of interest."
     )
@@ -55,11 +57,15 @@ class PreppedTarget(BaseModel):
         None, description="OpenEye formatted active site residue."
     )
     lig_chain: str = Field(None, description="Chain identifying the ligand.")
+
+    # Success Tracking
     prepped: bool = Field(False, description="Has the target been prepped yet?")
     saved: bool = Field(False, description="Have the results been saved?")
     failed: bool = Field(None, description="Did the prep fail?")
 
-    molecule_filter: MoleculeFilter
+    # Output Files
+    output_dir: Path = Field(None, description="Path to output directory.")
+    output_name: str = Field(None, description="Name of output structure.")
     ligand: Path = Field(None, description="Path to prepped sdf file")
     complex: Path = Field(None, description="Path to prepped complex")
     protein: Path = Field(None, description="Path to prepped protein-only file")
@@ -71,12 +77,40 @@ class PreppedTarget(BaseModel):
     def set_saved(self):
         self.saved = True
 
-    def get_output_files(self, output_dir: Path):
-        if "ligand" in self.molecule_filter.components_to_keep:
-            self.ligand = output_dir / f"{self.output_name}-prepped_ligand.sdf"
-            self.complex = output_dir / f"{self.output_name}-prepped_complex.pdb"
-        self.protein = output_dir / f"{self.output_name}-prepped_protein.pdb"
-        self.design_unit = output_dir / f"{self.output_name}-prepped_receptor.oedu"
+    def get_output_files(self, success: bool, output_dir: Path = None):
+        """
+        Get output files for a prepped target.
+
+        Parameters
+        ----------
+        success : bool
+            Whether or not the prep was successful.
+        output_dir : Path
+            Directory to save output files to.
+
+        Returns
+        -------
+        None
+
+        """
+        if not output_dir and not self.output_dir:
+            raise ValueError("Must provide output directory.")
+        if not self.output_dir.exists():
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+        if success:
+            self.failed = False
+            if "ligand" in self.molecule_filter.components_to_keep:
+                self.ligand = self.output_dir / f"{self.output_name}-prepped_ligand.sdf"
+                self.complex = (
+                    self.output_dir / f"{self.output_name}-prepped_complex.pdb"
+                )
+            self.protein = self.output_dir / f"{self.output_name}-prepped_protein.pdb"
+            self.design_unit = (
+                self.output_dir / f"{self.output_name}-prepped_receptor.oedu"
+            )
+        else:
+            self.failed = True
+            self.protein = self.output_dir / f"{self.output_name}-failed-spruced.pdb"
 
 
 class PreppedTargets(Dataset):

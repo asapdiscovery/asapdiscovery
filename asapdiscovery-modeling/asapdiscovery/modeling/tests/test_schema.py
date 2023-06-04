@@ -35,7 +35,19 @@ def test_molecule_filter_ligand_chain_failure(ligand_chain):
         MoleculeFilter(ligand_chain=ligand_chain)
 
 
-def test_prepped_target(tmp_path):
+# This needs to have a scope of session so that a new tmp file is not created for each test
+@pytest.fixture(scope="session")
+def output_dir(tmp_path_factory, local_path):
+    if not type(local_path) == str:
+        return tmp_path_factory.mktemp("test_prep")
+    else:
+        local_path = Path(local_path)
+        local_path.mkdir(exist_ok=True)
+        assert local_path.exists()
+        return local_path
+
+
+def test_prepped_target(output_dir):
     du_path = fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu")
     du = oechem.OEDesignUnit()
     oechem.OEReadDesignUnit(str(du_path), du)
@@ -49,7 +61,9 @@ def test_prepped_target(tmp_path):
     prepped_target.set_prepped()
     assert prepped_target.prepped
 
-    saved_target = save_design_unit(du, prepped_target, output_dir=tmp_path)
+    prepped_target.output_dir = output_dir / prepped_target.output_name
+
+    saved_target = save_design_unit(du, prepped_target)
     for fn in [saved_target.ligand, saved_target.complex, saved_target.protein]:
         assert Path(fn).exists()
         assert Path(fn).is_file()

@@ -52,6 +52,8 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
     Returns:
     - PreppedTarget: the prepared target
     """
+    target.output_dir = Path(prep_opts.output_dir / target.output_name)
+
     # Load structure
     if Path(target.source.str_fn).suffix == ".pdb":
         prot = load_openeye_pdb(target.source.str_fn)
@@ -97,20 +99,17 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
     if type(du) == oechem.OEGraphMol:
         # Renaming the variable to make it obvious that what was returned is actually a pdb file
         mol = du
-        target.protein = (
-            prep_opts.output_dir / f"{target.output_name}-failed-spruced.pdb"
-        )
+        target.get_output_files(success=False, output_dir=target.output_dir)
         if seqres:
             mol = add_seqres_to_openeye_protein(mol, seqres)
         mol = openeye_perceive_residues(mol)
         save_openeye_pdb(mol, str(target.protein))
 
         target.saved = True
-        target.failed = True
-
         return target
     else:
-        prepped_target = save_design_unit(du, target, prep_opts.output_dir, seqres)
+        prepped_target = save_design_unit(du, target, seqres)
+        prepped_target.saved = True
         return prepped_target
 
 
@@ -575,11 +574,10 @@ def split_openeye_mol(
 def save_design_unit(
     du: oechem.OEDesignUnit,
     target: PreppedTarget,
-    output_dir: Union[str, Path],
     seqres=None,
 ) -> PreppedTarget:
     complex_mol = du_to_complex(du)
-    target.get_output_files(Path(output_dir))
+    target.get_output_files(success=True, output_dir=target.output_dir)
     complex_mol = openeye_perceive_residues(complex_mol)
     if seqres:
         complex_mol = add_seqres_to_openeye_protein(complex_mol, seqres)
