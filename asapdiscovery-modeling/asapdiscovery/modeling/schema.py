@@ -51,7 +51,9 @@ class PreppedTarget(BaseModel):
     active_site_chain: str = Field(
         None, description="Chain identifying the active site of interest."
     )
-    active_site: str = Field(None, description="OpenEye formatted active site residue.")
+    oe_active_site_residue: str = Field(
+        None, description="OpenEye formatted active site residue."
+    )
     lig_chain: str = Field(None, description="Chain identifying the ligand.")
     prepped: bool = Field(False, description="Has the target been prepped yet?")
     saved: bool = Field(False, description="Have the results been saved?")

@@ -62,7 +62,7 @@ def test_mers_download_and_create_prep_inputs(
         f"{output_dir / 'metadata'}",
         "--components_to_keep",
         "protein",
-        "--active_site",
+        "--oe_active_site_residue",
         "HIS:41: :A:0: ",
     )
     assert ret.success

@@ -37,10 +37,10 @@ def get_args():
     parser.add_argument("--ligand_chain", type=str, default="A")
     parser.add_argument("--protein_chains", type=str, default=[], help="")
     parser.add_argument(
-        "--active_site",
+        "--oe_active_site_residue",
         type=str,
         default=None,
-        help="OpenEye formatted site residue for actve site identification, i.e. 'HIS:41: :A:0: '",
+        help="OpenEye formatted site residue for active site identification, i.e. 'HIS:41: :A:0: '",
     )
     return parser.parse_args()
 
@@ -50,8 +50,8 @@ def main():
 
     if not "ligand" in args.components_to_keep and not args.active_site:
         raise ValueError(
-            f"components_to_keep: {args.components_to_keep} do not include 'ligand' and no active_site provided.\n"
-            "Must provide OpenEye formatted active_site if not keeping ligand."
+            f"components_to_keep: {args.components_to_keep} do not include 'ligand' and no oe_active_site_residue provided.\n"
+            "Must provide OpenEye formatted oe_active_site_residue if not keeping ligand."
         )
 
     args.output_dir.mkdir(exist_ok=True, parents=True)
@@ -89,7 +89,7 @@ def main():
                 source=xtal,
                 output_name=output_name,
                 active_site_chain=args.active_site_chain,
-                active_site=args.active_site,
+                oe_active_site_residue=args.active_site,
                 molecule_filter=MoleculeFilter(
                     components_to_keep=args.components_to_keep,
                     ligand_chain=args.ligand_chain,

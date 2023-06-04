@@ -92,7 +92,7 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
         seqres=seqres_list,
         loop_db=prep_opts.loop_db,
         return_du=True,
-        site_residue=target.active_site,
+        site_residue=target.oe_active_site_residue,
     )
     if type(du) == oechem.OEGraphMol:
         # Renaming the variable to make it obvious that what was returned is actually a pdb file

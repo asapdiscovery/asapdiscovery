@@ -104,7 +104,7 @@ def mers_target(mers_xtal):
         source=mers_xtal,
         active_site_chain="A",
         output_name=Path(mers_xtal.str_fn).stem,
-        active_site="HIS:41: :A:0: ",
+        oe_active_site_residue="HIS:41: :A:0: ",
         molecule_filter=MoleculeFilter(components_to_keep=["protein"]),
     )
 
