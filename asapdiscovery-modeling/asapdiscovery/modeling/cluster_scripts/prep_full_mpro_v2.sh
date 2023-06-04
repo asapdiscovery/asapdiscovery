@@ -17,3 +17,10 @@ fragalysis-to-schema \
 create-prep-inputs \
 -i /data/chodera/asap-datasets/full_frag_prepped_mpro_20230603/metadata/fragalysis.csv \
 -o /data/chodera/asap-datasets/full_frag_prepped_mpro_20230603/metadata \
+
+prep-targets \
+-i /data/chodera/asap-datasets/full_frag_prepped_mpro_20230603/metadata/to_prep.pkl \
+-o /data/chodera/asap-datasets/full_frag_prepped_mpro_20230603/prepped_structures \
+-l /data/chodera/asap-datasets/rcsb_spruce.loop_db \
+-s /data/chodera/paynea/covid-moonshot-ml/metadata/mpro_sars2_seqres.yaml \
+-n 32
