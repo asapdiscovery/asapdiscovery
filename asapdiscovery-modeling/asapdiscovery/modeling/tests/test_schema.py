@@ -35,7 +35,7 @@ def test_molecule_filter_ligand_chain_failure(ligand_chain):
         MoleculeFilter(ligand_chain=ligand_chain)
 
 
-def test_prepped_target():
+def test_prepped_target(tmp_path):
     du_path = fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu")
     du = oechem.OEDesignUnit()
     oechem.OEReadDesignUnit(str(du_path), du)
@@ -49,7 +49,7 @@ def test_prepped_target():
     prepped_target.set_prepped()
     assert prepped_target.prepped
 
-    saved_target = save_design_unit(du, prepped_target, output_dir="test_prep")
+    saved_target = save_design_unit(du, prepped_target, output_dir=tmp_path)
     for fn in [saved_target.ligand, saved_target.complex, saved_target.protein]:
         assert Path(fn).exists()
         assert Path(fn).is_file()
