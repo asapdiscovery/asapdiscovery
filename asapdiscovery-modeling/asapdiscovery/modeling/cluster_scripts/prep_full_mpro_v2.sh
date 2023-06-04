@@ -6,7 +6,7 @@
 #BSUB -R rusage[mem=4]
 #BSUB -W 12:00
 source ~/.bashrc
-conda activate mers-docking
+conda activate ad-3.9
 fragalysis-to-schema \
 --metadata_csv /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/metadata.csv \
 --aligned_dir /data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/aligned/ \
