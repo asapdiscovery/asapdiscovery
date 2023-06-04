@@ -48,7 +48,7 @@ def get_args():
 def main():
     args = get_args()
 
-    if "ligand" not in args.components_to_keep and not args.active_site:
+    if "ligand" not in args.components_to_keep and not args.oe_active_site_residue:
         raise ValueError(
             f"components_to_keep: {args.components_to_keep} do not include 'ligand' and no oe_active_site_residue provided.\n"
             "Must provide OpenEye formatted oe_active_site_residue if not keeping ligand."
@@ -89,7 +89,7 @@ def main():
                 source=xtal,
                 output_name=output_name,
                 active_site_chain=args.active_site_chain,
-                oe_active_site_residue=args.active_site,
+                oe_active_site_residue=args.oe_active_site_residue,
                 molecule_filter=MoleculeFilter(
                     components_to_keep=args.components_to_keep,
                     ligand_chain=args.ligand_chain,
