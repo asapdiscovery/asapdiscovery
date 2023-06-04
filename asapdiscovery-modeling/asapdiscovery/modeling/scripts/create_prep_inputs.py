@@ -48,7 +48,7 @@ def get_args():
 def main():
     args = get_args()
 
-    if not "ligand" in args.components_to_keep and not args.active_site:
+    if "ligand" not in args.components_to_keep and not args.active_site:
         raise ValueError(
             f"components_to_keep: {args.components_to_keep} do not include 'ligand' and no oe_active_site_residue provided.\n"
             "Must provide OpenEye formatted oe_active_site_residue if not keeping ligand."
