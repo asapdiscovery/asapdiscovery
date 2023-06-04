@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Union
 
 import yaml
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     load_openeye_cif1,
     load_openeye_pdb,
@@ -22,7 +23,6 @@ from asapdiscovery.modeling.schema import (
     PrepOpts,
     PreppedTarget,
 )
-from asapdiscovery.data.logging import FileLogger
 
 
 def add_seqres_to_openeye_protein(
