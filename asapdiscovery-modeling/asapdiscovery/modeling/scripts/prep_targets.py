@@ -3,6 +3,7 @@ import multiprocessing as mp
 from functools import partial
 from pathlib import Path
 
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import PrepOpts, PreppedTargets
 
@@ -65,6 +66,12 @@ def get_args():
 def main():
     args = get_args()
     args.output_dir.mkdir(exist_ok=True, parents=True)
+    logger = FileLogger(
+        logname="protein_prep_workflow", path=str(args.output_dir)
+    ).getLogger()
+
+    # Load the targets
+    logger.info(f"Loading targets from {args.input_file}")
     targets: list = PreppedTargets.from_pkl(args.input_file).iterable
     prep_opts = PrepOpts(
         ref_fn=args.ref_prot,
@@ -73,19 +80,22 @@ def main():
         seqres_yaml=args.seqres_yaml,
         output_dir=args.output_dir,
     )
-
-    print(f"Running protein prep workflow on {len(targets)} targets using {prep_opts}")
+    logger.info(f"Prep options: {prep_opts}")
 
     # add prep opts to the prepping function
     protein_prep_workflow_with_opts = partial(
         protein_prep_workflow, prep_opts=prep_opts
     )
 
+    # Run the prepping workflow
+    logger.info(
+        f"Running protein prep workflow on {len(targets)} targets using {args.num_cores} cores"
+    )
     nprocs = min(mp.cpu_count(), len(targets), args.num_cores)
     with mp.Pool(processes=nprocs) as pool:
         targets_list = pool.map(protein_prep_workflow_with_opts, targets)
 
     # Write out the prepped targets
-    PreppedTargets.from_list(targets_list).to_pkl(
-        args.output_dir / "prepped_targets.pkl"
-    )
+    output_pkl = args.output_dir / "prepped_targets.pkl"
+    logger.info(f"Writing prepped targets to {output_pkl}")
+    PreppedTargets.from_list(targets_list).to_pkl(output_pkl)

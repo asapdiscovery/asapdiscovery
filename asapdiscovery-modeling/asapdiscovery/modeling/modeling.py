@@ -22,6 +22,7 @@ from asapdiscovery.modeling.schema import (
     PrepOpts,
     PreppedTarget,
 )
+from asapdiscovery.data.logging import FileLogger
 
 
 def add_seqres_to_openeye_protein(
@@ -53,6 +54,14 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
     - PreppedTarget: the prepared target
     """
     target.output_dir = Path(prep_opts.output_dir / target.output_name)
+    if not target.output_dir.exists():
+        target.output_dir.mkdir(parents=True)
+
+    logger = FileLogger(
+        logname=f"protein_prep_workflow.{target.output_name}",
+        path=str(target.output_dir),
+    ).getLogger()
+    logger.info(f"Preparing {target.output_name}")
 
     # Load structure
     if Path(target.source.str_fn).suffix == ".pdb":
@@ -63,12 +72,15 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
         raise NotImplementedError(
             f"Cannot load structure with extension {Path(target.source.str_fn).suffix}"
         )
+    logger.info(f"Loaded {target.source.str_fn}")
 
     # Get desired components
+    logger.info(f"Splitting molecule using {target.molecule_filter}")
     prot = split_openeye_mol(prot, target.molecule_filter)
 
     # Align
     if prep_opts.ref_fn:
+        logger.info(f"Aligning to {prep_opts.ref_fn}")
         ref = load_openeye_pdb(str(prep_opts.ref_fn))
         prot, rmsd = superpose_molecule(
             ref, prot, prep_opts.ref_chain, target.active_site_chain
@@ -76,6 +88,7 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
 
     # Mutate Residues
     if prep_opts.seqres_yaml:
+        logger.info(f"Mutating residues using {prep_opts.seqres_yaml}")
         with open(prep_opts.seqres_yaml) as f:
             seqres_dict = yaml.safe_load(f)
         seqres = seqres_dict["SEQRES"]
@@ -89,6 +102,7 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
         seqres_list = None
 
     # Spruce Protein
+    logger.info("Running OESpruce using spruce_protein")
     du = spruce_protein(
         initial_prot=prot,
         seqres=seqres_list,
@@ -106,10 +120,12 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
         save_openeye_pdb(mol, str(target.protein))
 
         target.saved = True
+        logger.info(f"FAILED: Saved to {target.protein}")
         return target
     else:
         prepped_target = save_design_unit(du, target, seqres)
         prepped_target.saved = True
+        logger.info(f"SUCCESS: Saved output files to {prepped_target.output_dir}")
         return prepped_target
 
 
