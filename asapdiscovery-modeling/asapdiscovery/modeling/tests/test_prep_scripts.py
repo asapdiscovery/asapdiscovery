@@ -147,9 +147,9 @@ def test_sars_create_prep_inputs(
 
 @pytest.mark.timeout(400)
 @pytest.mark.script_launch_mode("subprocess")
-@pytest.mark.skip(
-    reason="This test takes too long to run and timeout doesn't seem to work"
-)
+# @pytest.mark.skip(
+#     reason="This test takes too long to run and timeout doesn't seem to work"
+# )
 def test_sars_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
     ret = script_runner.run(
         "prep-targets",
