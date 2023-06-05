@@ -103,7 +103,7 @@ parser.add_argument(
     "--postera",
     action="store_true",
     help=(
-        "Indicate that the input to the -m flag is a PostEra MoleculeSet ID, requires POSTERA_API_KEY environment variable to be set."
+        "Indicate that the input to the -m flag is a PostEra MoleculeSet ID or name, requires POSTERA_API_KEY environment variable to be set."
     ),
 )
 
@@ -351,28 +351,43 @@ def main():
 
     if args.postera:
         import os
+
         postera_api_key = os.getenv("POSTERA_API_KEY")
-        
+
         if postera_api_key is None:
             raise ValueError("Environment variable POSTERA_API_KEY not found")
-        
+
         logger.info("Postera API key found")
         logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
-        
 
         from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
-        ms = MoleculeSetAPI('https://api.asap.postera.ai', 'v1', postera_api_key)
 
-        molset_ids = list(ms.list_available().keys())
+        ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
+        avail_molsets = ms.list_available()
 
-        if args.mols not in molset_ids:
+        if (len(args.mols) == 36) and (len(args.mols.split("-")) == 5):
+            logger.info("Molecule Set provided looks like a UUID")
+            molset_id = args.mols
+        else:
+            logger.info(
+                "Molecule Set looks like a name, will try to find it in PostEra"
+            )
+            avail_molsets_rev = {v: k for k, v in avail_molsets.items()}
+            molset_id = avail_molsets_rev[args.mols]
+
+        if molset_id not in avail_molsets:
             raise ValueError(f"Molecule Set with ID: {args.mols} not found in PostEra")
 
-        mols = ms.get_molecules(args.mols)
-        logger.info(f"Found {len(mols)} molecules in Molecule Set: {args.mols}")
+        mols = ms.get_molecules(molset_id)
+        logger.info(
+            f"Found {len(mols)} molecules in Molecule Set ID: {molset_id} with name: {avail_molsets[molset_id]}"
+        )
 
         # make each molecule into a ExperimentalCompoundData object
-        exp_data = [ExperimentalCompoundData(compound_id=mol.id, smiles=mol.smiles) for _, mol in mols.iterrows()]
+        exp_data = [
+            ExperimentalCompoundData(compound_id=mol.id, smiles=mol.smiles)
+            for _, mol in mols.iterrows()
+        ]
 
     else:
         # parse input molecules
@@ -387,7 +402,9 @@ def main():
                 )
                 args.title = "TARGET_MOL-" + args.mols
 
-            exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
+            exp_data = [
+                ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)
+            ]
         else:
             mol_file_path = Path(args.mols)
             if mol_file_path.suffix == ".smi":
@@ -624,6 +641,7 @@ def main():
         lambda x: poses_dir / Path(x) / "visualisation.html"
     )
 
+    # TODO: put inside dask loop
     html_visualiser = HTMLVisualiser(
         top_posit["docked_file"],
         top_posit["outpath_pose"],
