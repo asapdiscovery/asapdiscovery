@@ -65,7 +65,6 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
     target.output_dir = Path(prep_opts.output_dir / target.output_name)
     if not target.output_dir.exists():
         target.output_dir.mkdir(parents=True)
-
     logger = FileLogger(
         logname=f"protein_prep_workflow.{target.output_name}",
         path=str(target.output_dir),

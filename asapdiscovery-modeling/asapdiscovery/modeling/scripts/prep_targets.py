@@ -60,6 +60,12 @@ def get_args():
         default=1,
         help="Number of concurrent processes to run.",
     )
+    parser.add_argument(
+        "--debug_num",
+        type=int,
+        default=None,
+        help="Number of targets to prep. Useful for debugging and testing.",
+    )
     return parser.parse_args()
 
 
@@ -73,6 +79,10 @@ def main():
     # Load the targets
     logger.info(f"Loading targets from {args.input_file}")
     targets: list = PreppedTargets.from_pkl(args.input_file).iterable
+    logger.info(f"Loaded {len(targets)} targets")
+    if args.debug_num is not None:
+        targets = targets[: args.debug_num]
+        logger.info(f"Only prepping {args.debug_num} targets because of --debug_num")
     prep_opts = PrepOpts(
         ref_fn=args.ref_prot,
         ref_chain=args.ref_chain,
