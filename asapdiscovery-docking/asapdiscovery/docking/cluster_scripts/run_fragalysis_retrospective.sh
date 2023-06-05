@@ -7,7 +7,7 @@
 #BSUB -R rusage[mem=8]
 #BSUB -W 24:00
 source ~/.bashrc
-conda activate mers-docking
+conda activate ad-3.9
 run-docking-oe \
 -l /lila/data/chodera/asap-datasets/mpro_fragalysis_2022_10_12/Mpro_combined_labeled.sdf \
 -r '/lila/data/chodera/asap-datasets/current/sars_01_prepped_v3/*/*_prepped_receptor_0.oedu' \
