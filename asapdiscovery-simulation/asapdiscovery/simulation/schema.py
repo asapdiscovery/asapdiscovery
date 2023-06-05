@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field
-
 from openmm.app import PME, HBonds
 from openmm.unit import amu, nanometers
+from pydantic import BaseModel, Field
 
 
 class ForceFieldParams(BaseModel):
