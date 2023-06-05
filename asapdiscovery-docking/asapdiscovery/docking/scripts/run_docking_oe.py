@@ -367,11 +367,6 @@ def get_args():
         ),
     )
     parser.add_argument(
-        "--self_dock",
-        action="store_true",
-        help="Load ligand from the provided DesignUnits.",
-    )
-    parser.add_argument(
         "-s",
         "--sort_res",
         help="Pickle file giving compound_ids, xtal_ids, and sort_idxs.",
@@ -509,8 +504,7 @@ def main():
     output_dir = Path(args.output_dir)
 
     # check that output_dir exists, otherwise create it
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = FileLogger("run_docking_oe", path=str(output_dir)).getLogger()
     logger.info(f"Output directory: {output_dir}")
@@ -550,13 +544,11 @@ def main():
             ifs.open(args.lig_file)
             mols = [mol.CreateCopy() for mol in ifs.GetOEGraphMols()]
             ifs.close()
-    if not args.exp_file and not args.self_dock and not args.lig_file:
-        raise ValueError(
-            "Need to specify exactly one of --exp_file or --lig_file or --self_dock."
-        )
-    elif not args.self_dock:
-        n_mols = len(mols)
-        logger.info(f"Loaded {n_mols} ligands, proceeding with docking setup")
+    elif args.exp_file is None:
+        raise ValueError("Need to specify exactly one of --exp_file or --lig_file.")
+
+    n_mols = len(mols)
+    logger.info(f"Loaded {n_mols} ligands, proceeding with docking setup")
 
     # Set up ML model
     gat_model_string = "asapdiscovery-GAT-2023.05.09"
@@ -613,10 +605,6 @@ def main():
     # Load all receptor DesignUnits
     logger.info("Loading receptor DesignUnits")
     du_dict = load_dus(fn_dict, log_name)
-
-    # We're self docking, we can get all the ligands now
-    if args.self_dock:
-
     logger.info(f"{n_mols} molecules found")
     logger.info(f"{len(du_dict.keys())} receptor structures found")
 
