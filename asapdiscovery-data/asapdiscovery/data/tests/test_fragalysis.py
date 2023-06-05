@@ -30,7 +30,6 @@ def mac1_fragalysis_api_call():
     return api_call
 
 
-@pytest.mark.skip
 class TestFragalysisDownload:
     """Class to test the download of data from Fragalysis."""
 
