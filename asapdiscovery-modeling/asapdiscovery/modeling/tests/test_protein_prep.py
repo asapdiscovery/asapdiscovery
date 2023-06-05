@@ -112,7 +112,6 @@ def mers_target(mers_xtal):
 @pytest.fixture
 def target_dataset(sars_target, mers_target):
     target_dataset = PreppedTargets.from_list([sars_target, mers_target])
-    print(target_dataset)
     return target_dataset
 
 
@@ -188,7 +187,7 @@ class TestProteinPrep:
         ref_chain="A",
     ):
         target, seqres_yaml = prep_dict[target_name]
-        print(target, seqres_yaml)
+
         prep_opts = PrepOpts(
             ref_fn=ref,
             ref_chain=ref_chain,
