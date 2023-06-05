@@ -99,6 +99,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-p",
+    "--postera",
+    action="store_true",
+    help=(
+        "Indicate that the input to the -m flag is a PostEra MoleculeSet ID, requires POSTERA_API_KEY environment variable to be set."
+    ),
+)
+
+parser.add_argument(
     "--title",
     default=None,
     type=str,
@@ -337,52 +346,78 @@ def main():
 
     # paths to remove if not keeping intermediate files
     intermediate_files = []
-
     # set internal flag to seed whether we used 3D or 2D chemistry input
     used_3d = False
-    # parse input molecules
-    if is_valid_smiles(args.mols):
-        logger.info(
-            f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}"
-        )
-        # hash the smiles to generate a unique title and avoid accidentally caching different outputs as the same
-        if not args.title:
-            logger.info(
-                "No title provided, using SMILES string to generate title, consider providing a title with --title"
-            )
-            args.title = "TARGET_MOL-" + args.mols
 
-        exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
+    if args.postera:
+        import os
+        postera_api_key = os.getenv("POSTERA_API_KEY")
+        
+        if postera_api_key is None:
+            raise ValueError("Environment variable POSTERA_API_KEY not found")
+        
+        logger.info("Postera API key found")
+        logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
+        
+
+        from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+        ms = MoleculeSetAPI('https://api.asap.postera.ai', 'v1', postera_api_key)
+
+        molset_ids = list(ms.list_available().keys())
+
+        if args.mols not in molset_ids:
+            raise ValueError(f"Molecule Set with ID: {args.mols} not found in PostEra")
+
+        mols = ms.get_molecules(args.mols)
+        logger.info(f"Found {len(mols)} molecules in Molecule Set: {args.mols}")
+
+        # make each molecule into a ExperimentalCompoundData object
+        exp_data = [ExperimentalCompoundData(compound_id=mol.id, smiles=mol.smiles) for _, mol in mols.iterrows()]
+
     else:
-        mol_file_path = Path(args.mols)
-        if mol_file_path.suffix == ".smi":
-            logger.info(f"Input molecules is a SMILES file: {args.mols}")
-            exp_data = oe_load_exp_from_file(
-                args.mols, "smi", smiles_as_title=args.smiles_as_title
+        # parse input molecules
+        if is_valid_smiles(args.mols):
+            logger.info(
+                f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}"
             )
-        elif mol_file_path.suffix == ".sdf":
-            logger.info(f"Input molecules is a SDF file: {args.mols}")
-            if args.use_3d:
-                logger.info("Using 3D coordinates from SDF file")
-                # we need to keep the molecules around to retain their coordinates
-                exp_data, oe_mols = oe_load_exp_from_file(
-                    args.mols,
-                    "sdf",
-                    return_mols=True,
-                    smiles_as_title=args.smiles_as_title,
+            # hash the smiles to generate a unique title and avoid accidentally caching different outputs as the same
+            if not args.title:
+                logger.info(
+                    "No title provided, using SMILES string to generate title, consider providing a title with --title"
                 )
-                used_3d = True
-                logger.info("setting used_3d to True")
-            else:
-                logger.info("Using 2D representation from SDF file")
-                exp_data = oe_load_exp_from_file(
-                    args.mols, "sdf", smiles_as_title=args.smiles_as_title
-                )
+                args.title = "TARGET_MOL-" + args.mols
 
+            exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
         else:
-            raise ValueError(
-                f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
-            )
+            mol_file_path = Path(args.mols)
+            if mol_file_path.suffix == ".smi":
+                logger.info(f"Input molecules is a SMILES file: {args.mols}")
+                exp_data = oe_load_exp_from_file(
+                    args.mols, "smi", smiles_as_title=args.smiles_as_title
+                )
+            elif mol_file_path.suffix == ".sdf":
+                logger.info(f"Input molecules is a SDF file: {args.mols}")
+                if args.use_3d:
+                    logger.info("Using 3D coordinates from SDF file")
+                    # we need to keep the molecules around to retain their coordinates
+                    exp_data, oe_mols = oe_load_exp_from_file(
+                        args.mols,
+                        "sdf",
+                        return_mols=True,
+                        smiles_as_title=args.smiles_as_title,
+                    )
+                    used_3d = True
+                    logger.info("setting used_3d to True")
+                else:
+                    logger.info("Using 2D representation from SDF file")
+                    exp_data = oe_load_exp_from_file(
+                        args.mols, "sdf", smiles_as_title=args.smiles_as_title
+                    )
+
+            else:
+                raise ValueError(
+                    f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
+                )
 
     logger.info(f"Loaded {len(exp_data)} molecules.")
     if len(exp_data) == 0:
