@@ -309,7 +309,7 @@ class DockingResults:
         grouped_df[groupby_ID_column] = grouped_df.index
         return grouped_df
 
-    def get_compound_df(self, csv_path=False, **kwargs):
+    def get_compound_df(self, csv_path=None, **kwargs):
         if csv_path:
             self.compound_df = pd.read_csv(csv_path)
         else:
@@ -317,7 +317,7 @@ class DockingResults:
                 groupby_ID_column="Compound_ID", **kwargs
             )
 
-    def get_structure_df(self, csv_path=False, resolution_csv=None, **kwargs):
+    def get_structure_df(self, csv_path=None, resolution_csv=None, **kwargs):
         """
         Either pull the structure_df from the csv file or generate it using the
         get_grouped_df function in addition to what the function normally does it also
