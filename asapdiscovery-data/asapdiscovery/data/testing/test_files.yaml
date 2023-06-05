@@ -14,3 +14,15 @@ files:
   # Mpro SDF
   - resource: Mpro_combined_labeled.sdf
     sha256hash: 1e7d68356d3a82ce4104bcfe328dcf67d32dccd64c75820403373cad140e5565
+
+  # single ligand SDF
+  - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf
+    sha256hash: 84398b3bcf741f9a26edf73bb93b3a8b0b555861bab0486f385ff7efacbcf197
+
+  # prepped openeye DU
+  - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu
+    sha256hash: 075775f55efb7daa07ca0b3fa6a9f522483b432850196c6c5a31f8d45b4452d0
+
+  # prepped PDB
+  - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb
+    sha256hash: d4bf45cd72583ee63cd61c0367db1ac0e648d3f4d8f82cb483e0ab222041a90d
