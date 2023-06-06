@@ -36,7 +36,7 @@ class GIFVisualizer:
         systems: list[Path],
         output_paths: list[Path],
         target: str,
-        pse: bool = False,
+        pse: bool = True,
         pse_share: bool = True,
         smooth: int = 0,
         contacts: bool = True,
