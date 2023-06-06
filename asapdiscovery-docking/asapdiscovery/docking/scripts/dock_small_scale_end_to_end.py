@@ -25,8 +25,7 @@ from asapdiscovery.data.utils import (
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import make_docking_result_dataframe
-from asapdiscovery.docking import prep_mp as oe_prep_function
-from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
+from asapdiscovery.docking import dock_and_score_pose_oe
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
 """
@@ -527,10 +526,10 @@ def main():
         gat_model = None
 
     # use partial to bind the ML models to the docking function
-    full_oe_docking_function = partial(oe_docking_function, GAT_model=gat_model)
+    dock_and_score_pose_oe_ml = partial(dock_and_score_pose_oe, GAT_model=gat_model)
 
     if args.dask:
-        full_oe_docking_function = dask.delayed(full_oe_docking_function)
+        dock_and_score_pose_oe_ml = dask.delayed(dock_and_score_pose_oe_ml)
 
     # run docking
     logger.info(f"Running docking at {datetime.now().isoformat()}")
@@ -552,7 +551,7 @@ def main():
                 raise ValueError(
                     f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()}"
                 )
-        res = full_oe_docking_function(
+        res = dock_and_score_pose_oe_ml(
             dock_dir / f"{compound.compound_id}_{receptor_name}",
             compound.compound_id,
             prepped_oedu,
