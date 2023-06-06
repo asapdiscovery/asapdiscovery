@@ -54,7 +54,7 @@ class GIFVisualizer:
         systems : List[Path]
             List of matching PDB files to load the system from
         output_paths : List[Path]
-            List of paths to write the visualisations to.
+            List of paths to write the visualizations to.
         target : str
             Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
         pse : bool
@@ -89,7 +89,7 @@ class GIFVisualizer:
         if target not in self.allowed_targets:
             raise ValueError(f"Target must be one of: {self.allowed_targets}")
         self.target = target
-        self.logger.info(f"Visualising trajectories for {self.target}")
+        self.logger.info(f"Visualizing trajectories for {self.target}")
 
         # setup pocket dict and view_coords for target
         if self.target == "sars2":
@@ -138,12 +138,12 @@ class GIFVisualizer:
             self.logger.debug("Running in debug mode, setting pse=True")
             self.pse = True
         self.logger.debug(
-            f"Writing GIF visualisations for {len(self.output_paths)} ligands"
+            f"Writing GIF visualizations for {len(self.output_paths)} ligands"
         )
 
-    def write_traj_visualisations(self):
+    def write_traj_visualizations(self):
         """
-        Write GIF visualisations for all trajectories.
+        Write GIF visualizations for all trajectories.
         """
         output_paths = []
         for traj, system, path in zip(
@@ -151,13 +151,13 @@ class GIFVisualizer:
         ):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
-            output_path = self.write_traj_visualisation(traj, system, path)
+            output_path = self.write_traj_visualization(traj, system, path)
             output_paths.append(output_path)
         return output_paths
 
-    def write_traj_visualisation(self, traj, system, path):
+    def write_traj_visualization(self, traj, system, path):
         """
-        Write GIF visualisation for a single trajectory.
+        Write GIF visualization for a single trajectory.
         """
         # NOTE very important, need to spawn a new pymol proc for each trajectory
         # when working in parallel, otherwise they will trip over each other and not work.

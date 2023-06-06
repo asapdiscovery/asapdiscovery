@@ -231,7 +231,7 @@ parser.add_argument(
     "--target",
     type=str,
     required=True,
-    help="Target to write visualisations for, one of (sars2, mers, 7ene)",
+    help="Target to write visualizations for, one of (sars2, mers, 7ene)",
 )
 
 parser.add_argument(
@@ -592,7 +592,7 @@ def main():
     logger.info(f"Processing {len(results_df)} docking results")
 
     ###########################
-    # pose HTML visualisation #
+    # pose HTML visualization #
     ###########################
 
     # only write out visualizations and do MD for the best posit score for each ligand
@@ -625,23 +625,23 @@ def main():
     )
 
     if args.dask:
-        logger.info("Running GIF visualisation with Dask")
+        logger.info("Running GIF visualization with Dask")
         outpaths = []
 
         @dask.delayed
         def dask_gif_adaptor(pose, outpath):
-            html_visualiser = HTMLVisualiser(
+            html_visualiser = HTMLVisualizer(
                 [pose],
                 [outpath],
                 args.target,
                 protein_path,
                 logger=logger,
             )
-            output_paths = html_visualiser.write_pose_visualisations()
+            output_paths = html_visualiser.write_pose_visualizations()
 
             if len(output_paths) != 1:
                 raise ValueError(
-                    "Somehow got more than one output path from GIFVisualiser"
+                    "Somehow got more than one output path from GIFVisualizer"
                 )
             return output_paths[0]
 
@@ -655,15 +655,15 @@ def main():
         outpaths = client.gather(outpaths)
 
     else:
-        logger.info("Running GIF visualisation in serial")
-        html_visualiser = HTMLVisualiser(
+        logger.info("Running GIF visualization in serial")
+        html_visualiser = HTMLVisualizer(
             top_posit["docked_file"],
             top_posit["outpath_pose"],
             args.target,
             protein_path,
             logger=logger,
         )
-        html_visualiser.write_pose_visualisations()
+        html_visualiser.write_pose_visualizations()
 
     if args.dask:
         if args.dask_lilac:
@@ -762,7 +762,7 @@ def main():
         #   MD GIF visualization  #
         ###########################
 
-        logger.info("making GIF visualisations")
+        logger.info("making GIF visualizsations")
 
         gif_dir = output_dir / "gif"
         gif_dir.mkdir(parents=True, exist_ok=True)
@@ -791,7 +791,7 @@ def main():
 
         @dask.delayed
         def dask_gif_adaptor(traj, system, outpath):
-            gif_visualiser = GIFVisualiser(
+            gif_visualizer = GIFVisualizer(
                 [traj],
                 [system],
                 [outpath],
@@ -800,16 +800,16 @@ def main():
                 start=start,
                 logger=logger,
             )
-            output_paths = gif_visualiser.write_traj_visualisations()
+            output_paths = gif_visualizer.write_traj_visualizations()
 
             if len(output_paths) != 1:
                 raise ValueError(
-                    "Somehow got more than one output path from GIFVisualiser"
+                    "Somehow got more than one output path from GIFVisualizer"
                 )
             return output_paths[0]
 
         if args.dask:
-            logger.info("Running GIF visualisation with Dask")
+            logger.info("Running GIF visualization with Dask")
             outpaths = []
             for traj, system, outpath in zip(
                 top_posit["outpath_md_traj"],
@@ -825,9 +825,9 @@ def main():
             outpaths = client.gather(outpaths)
 
         else:
-            logger.info("Running GIF visualisation in serial")
+            logger.info("Running GIF visualization in serial")
             logger.warning("This will take a long time")
-            gif_visualiser = GIFVisualiser(
+            gif_visualiser = GIFVisualizer(
                 top_posit["outpath_md_traj"],
                 top_posit["outpath_md_sys"],
                 top_posit["outpath_gif"],
@@ -836,7 +836,7 @@ def main():
                 start=start,
                 logger=logger,
             )
-            gif_visualiser.write_traj_visualisations()
+            gif_visualiser.write_traj_visualizations()
 
     if args.cleanup:
         if len(intermediate_files) > 0:
