@@ -25,6 +25,7 @@ from asapdiscovery.data.utils import (
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import make_docking_result_dataframe
+from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.docking import dock_and_score_pose_oe
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
@@ -41,7 +42,8 @@ Input:
     - output_dir: path to output_dir, will NOT overwrite if exists.
     - debug: enable debug mode, with more files saved and more verbose logging
     - verbose: whether to print out verbose logging.
-    - cleanup: clean up intermediate files
+    - cleanup: clean up intermediate files except for final csv and visualizations
+    - logname: name of logger
 
     # Prep arguments
     - loop_db: path to loop database.
@@ -58,6 +60,9 @@ Input:
     - gat: whether to use GAT model to score docked poses.
 
 
+    # MD arguments
+    - md: whether to run MD after docking.
+    - md-steps: number of MD steps to run, default 2500000 for a 10 ns simulation at 4 fs timestep.
 
 Example usage:
 
@@ -225,7 +230,7 @@ parser.add_argument(
     "--target",
     type=str,
     required=True,
-    help="Target to write visualizations for, one of (sars2, mers, 7ene)",
+    help="Target to write visualizations for, one of (sars2, mers, 7ene, 272)",
 )
 
 parser.add_argument(
@@ -242,7 +247,6 @@ parser.add_argument(
 
 
 def main():
-
     #########################
     # parse input arguments #
     #########################
@@ -509,7 +513,7 @@ def main():
 
     # ML stuff for docking, fill out others as we make them
     logger.info("Setup ML for docking")
-    gat_model_string = "asapdiscovery-GAT-2023.04.12"
+    gat_model_string = "asapdiscovery-GAT-2023.05.09"
 
     from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
@@ -585,7 +589,6 @@ def main():
 
     poses_dir = output_dir / "poses"
     poses_dir.mkdir(parents=True, exist_ok=True)
-    intermediate_files.append(poses_dir)
     logger.info(f"Starting docking result processing at {datetime.now().isoformat()}")
     logger.info(f"Processing {len(results_df)} docking results")
 
@@ -764,7 +767,6 @@ def main():
 
         gif_dir = output_dir / "gif"
         gif_dir.mkdir(parents=True, exist_ok=True)
-        intermediate_files.append(gif_dir)
 
         top_posit["outpath_md_sys"] = top_posit["outpath_md"].apply(
             lambda x: Path(x) / "minimized.pdb"

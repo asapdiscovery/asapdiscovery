@@ -55,38 +55,6 @@ from asapdiscovery.docking.docking import (
 )  # noqa: E402
 
 
-def check_results(d):
-    """
-    Check if results exist already so we can skip.
-
-    Parameters
-    ----------
-    d : str
-        Directory
-
-    Returns
-    -------
-    bool
-        Results already exist
-    """
-    if (not os.path.isfile(os.path.join(d, "docked.sdf"))) or (
-        not os.path.isfile(os.path.join(d, "results.pkl"))
-    ):
-        return False
-
-    try:
-        _ = load_openeye_sdf(os.path.join(d, "docked.sdf"))
-    except Exception:
-        return False
-
-    try:
-        _ = pkl.load(open(os.path.join(d, "results.pkl"), "rb"))
-    except Exception:
-        return False
-
-    return True
-
-
 def load_dus(fn_dict, log_name):
     """
     Load all present oedu files.

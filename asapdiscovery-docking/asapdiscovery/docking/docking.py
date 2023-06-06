@@ -1,8 +1,21 @@
 import logging
 from pathlib import Path  # noqa: F401
 from typing import List, Optional, Tuple  # noqa: F401
-
+import numpy as np
+import os
 import pandas as pd
+import pickle as pkl
+from datetime import datetime
+
+from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.openeye import (
+    oechem,
+    save_openeye_pdb,
+    save_openeye_sdf,
+    split_openeye_design_unit,
+    load_openeye_sdf,
+    combine_protein_ligand,
+)
 
 
 def run_docking_oe(
@@ -305,6 +318,38 @@ def make_docking_result_dataframe(
     else:
         csv = None
     return results_df, csv
+
+
+def check_results(d):
+    """
+    Check if results exist already so we can skip.
+
+    Parameters
+    ----------
+    d : str
+        Directory
+
+    Returns
+    -------
+    bool
+        Results already exist
+    """
+    if (not os.path.isfile(os.path.join(d, "docked.sdf"))) or (
+        not os.path.isfile(os.path.join(d, "results.pkl"))
+    ):
+        return False
+
+    try:
+        _ = load_openeye_sdf(os.path.join(d, "docked.sdf"))
+    except Exception:
+        return False
+
+    try:
+        _ = pkl.load(open(os.path.join(d, "results.pkl"), "rb"))
+    except Exception:
+        return False
+
+    return True
 
 
 def dock_and_score_pose_oe(
