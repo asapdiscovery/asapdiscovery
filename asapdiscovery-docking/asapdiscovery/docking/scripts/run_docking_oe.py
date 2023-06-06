@@ -35,7 +35,6 @@ from functools import partial
 from glob import glob
 from pathlib import Path
 
-import  as np
 import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
