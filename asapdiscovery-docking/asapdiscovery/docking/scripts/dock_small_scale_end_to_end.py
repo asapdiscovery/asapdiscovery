@@ -22,12 +22,10 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
-from asapdiscovery.dataviz.gif_vis import GIFVisualiser
-from asapdiscovery.dataviz.html_vis import HTMLVisualiser
+from asapdiscovery.dataviz.gif_viz import GIFVisualizer
+from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import make_docking_result_dataframe
 from asapdiscovery.docking import prep_mp as oe_prep_function
-from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
-from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
 from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 

@@ -22,7 +22,7 @@ def _load_first_molecule(file_path: Path):
     return mols[0]
 
 
-class HTMLVisualiser:
+class HTMLVisualizer:
     """
     Class for generating HTML visualisations of poses.
     """
@@ -43,11 +43,11 @@ class HTMLVisualiser:
         Parameters
         ----------
         poses : List[Path]
-            List of poses to visualise, in SDF format.
+            List of poses to visualize, in SDF format.
         output_paths : List[Path]
             List of paths to write the visualisations to.
         target : str
-            Target to visualise poses for. Must be one of: "sars2", "mers", "7ene", "272".
+            Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
         logger : FileLogger
             Logger to use
 
@@ -58,7 +58,7 @@ class HTMLVisualiser:
         # init loggers
         if logger is None:
             self.logger = FileLogger(
-                "html_visualiser_log.txt", "./", stdout=True, level=logging.INFO
+                "html_visualizer_log.txt", "./", stdout=True, level=logging.INFO
             ).getLogger()
         else:
             self.logger = logger

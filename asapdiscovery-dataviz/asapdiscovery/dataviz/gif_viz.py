@@ -17,9 +17,9 @@ from ._gif_blocks import (
 from .show_contacts import show_contacts
 
 
-class GIFVisualiser:
+class GIFVisualizer:
     """
-    Class for generating GIF visualisations of MD trajectories.
+    Class for generating GIF visualizations of MD trajectories.
     """
 
     allowed_targets = (
@@ -50,13 +50,13 @@ class GIFVisualiser:
         Parameters
         ----------
         trajectories : List[Path]
-            List of trajectories to visualise.
+            List of trajectories to visualize.
         systems : List[Path]
             List of matching PDB files to load the system from
         output_paths : List[Path]
             List of paths to write the visualisations to.
         target : str
-            Target to visualise poses for. Must be one of: "sars2", "mers", "7ene", "272".
+            Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
         pse : bool
             Whether to write PyMol session files.
         smooth : int
@@ -81,7 +81,7 @@ class GIFVisualiser:
         # init logger
         if logger is None:
             self.logger = FileLogger(
-                "gif_visualiser_log.txt", "./", stdout=True, level=logging.INFO
+                "gif_visualizer_log.txt", "./", stdout=True, level=logging.INFO
             ).getLogger()
         else:
             self.logger = logger
