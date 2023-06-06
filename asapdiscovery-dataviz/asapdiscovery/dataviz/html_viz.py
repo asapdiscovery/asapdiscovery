@@ -107,11 +107,13 @@ class HTMLVisualizer:
         """
         Write HTML visualisations for all poses.
         """
-
+        output_paths = []
         for pose, path in zip(self.poses, self.output_paths):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
             outpath = self.write_pose_visualization(pose, path)
+            output_paths.append(outpath)
+        return output_paths
 
     def write_pose_visualization(self, pose, path):
         """
@@ -119,6 +121,7 @@ class HTMLVisualizer:
         """
         html = self.get_html(pose)
         self.write_html(html, path)
+        return path
 
     def get_html(self, pose):
         """
