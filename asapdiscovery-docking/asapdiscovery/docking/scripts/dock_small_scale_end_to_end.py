@@ -24,9 +24,8 @@ from asapdiscovery.data.utils import (
 )
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.docking import make_docking_result_dataframe
+from asapdiscovery.docking import dock_and_score_pose_oe, make_docking_result_dataframe
 from asapdiscovery.docking import prep_mp as oe_prep_function
-from asapdiscovery.docking import dock_and_score_pose_oe
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
 """

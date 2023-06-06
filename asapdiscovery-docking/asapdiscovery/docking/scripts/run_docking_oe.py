@@ -49,10 +49,10 @@ from asapdiscovery.data.openeye import (  # noqa: E402
 )
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
-from asapdiscovery.docking.docking import (
-    run_docking_oe,
+from asapdiscovery.docking.docking import (  # noqa: E402
     dock_and_score_pose_oe,
-)  # noqa: E402
+    run_docking_oe,
+)
 
 
 def load_dus(fn_dict, log_name):
