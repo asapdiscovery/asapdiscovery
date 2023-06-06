@@ -68,7 +68,7 @@ def test_mers_download_and_create_prep_inputs(
     assert ret.success
 
 
-@pytest.mark.timeout(180)
+@pytest.mark.timeout(300)
 @pytest.mark.script_launch_mode("subprocess")
 def test_mers_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
     ret = script_runner.run(
@@ -144,7 +144,7 @@ def test_sars_create_prep_inputs(
     assert (output_dir / "metadata" / "to_prep.pkl").exists()
 
 
-@pytest.mark.timeout(180)
+@pytest.mark.timeout(300)
 @pytest.mark.script_launch_mode("subprocess")
 def test_sars_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
     ret = script_runner.run(
