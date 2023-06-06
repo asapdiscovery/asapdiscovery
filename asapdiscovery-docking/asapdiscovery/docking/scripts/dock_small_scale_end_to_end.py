@@ -63,19 +63,21 @@ Example usage:
 
     # with an SDF or SMILES file
 
-    python single_target_docking.py \
+    dock-small-scale-e2e \
         -r /path/to/receptor.pdb \
         -m /path/to/mols.[sdf/smi] \
         -o /path/to/output_dir \
 
-    # with a SMILES string
+    # with a SMILES string using dask and requesting MD
 
-    python single_target_docking.py \
+    dock-small-scale-e2e \
         -r /path/to/receptor.pdb \
         -m 'COC(=O)COc1cc(cc2c1OCC[C@H]2C(=O)Nc3cncc4c3cccc4)Cl'
         -o /path/to/output_dir \
         --title 'my_fancy_molecule' \\ # without a title you will be given a hash of the SMILES string
         --debug \
+        --dask \
+        --md
 
 """
 
@@ -116,7 +118,7 @@ parser.add_argument(
 parser.add_argument(
     "--dask",
     action="store_true",
-    help=("use dask to parallelise docking"),
+    help=("use dask to parallelize docking"),
 )
 
 parser.add_argument(
@@ -246,6 +248,11 @@ parser.add_argument(
 
 
 def main():
+
+    #########################
+    # parse input arguments #
+    #########################
+
     args = parser.parse_args()
 
     # setup output directory
@@ -336,6 +343,10 @@ def main():
     # paths to remove if not keeping intermediate files
     intermediate_files = []
 
+    #########################
+    #    load input data    #
+    #########################
+
     # set internal flag to seed whether we used 3D or 2D chemistry input
     used_3d = False
     # parse input molecules
@@ -391,6 +402,10 @@ def main():
         # we could make this just a debug statement but avoid looping over all molecules if not needed
         for exp in exp_data:
             logger.debug(f"Loaded molecule {exp.compound_id}: {exp.smiles}")
+
+    #########################
+    #     protein prep      #
+    #########################
 
     # parse prep arguments
     prep_dir = output_dir / "prep"
@@ -490,6 +505,10 @@ def main():
     # setup docking
     logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
 
+    #########################
+    #        docking        #
+    #########################
+
     dock_dir = output_dir / "docking"
     dock_dir.mkdir(parents=True, exist_ok=True)
     intermediate_files.append(dock_dir)
@@ -553,6 +572,10 @@ def main():
     if args.dask:  # make concrete
         results = dask.compute(*results)
 
+    ###########################
+    # wrangle docking results #
+    ###########################
+
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
     logger.info(f"Docking finished for {len(results)} runs.")
 
@@ -568,41 +591,89 @@ def main():
     logger.info(f"Starting docking result processing at {datetime.now().isoformat()}")
     logger.info(f"Processing {len(results_df)} docking results")
 
-    # only write out visualisation for the best posit score for each ligand
-    # sort by posit  score
+    ###########################
+    # pose HTML visualisation #
+    ###########################
+
+    # only write out visualizations and do MD for the best posit score for each ligand
+    # sort by posit score
+
     sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
     top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
     # save with the failed ones in so its clear which ones failed
     top_posit.to_csv(output_dir / "top_poses.csv", index=False)
-    # only keep the ones that worked for the rest of workflow
+    n_total = len(top_posit)
+
+    # IMPORTANT: only keep the ones that worked for the rest of workflow
     top_posit = top_posit[top_posit.docked_file != ""]
-    top_posit.to_csv(output_dir / "top_poses_clean.csv", index=False)
+    top_posit.to_csv(output_dir / "top_poses_succeded.csv", index=False)
+
+    n_succeded = len(top_posit)
+    n_failed = n_total - n_succeded
 
     logger.info(
-        f"Writing out visualisation for top pose for each ligand (n={len(top_posit)})"
+        f"IMPORTANT: docking failed for {n_failed} poses / {n_total} total poses "
+    )
+
+    logger.info(
+        f"Writing out visualization for top pose for each ligand (n={len(top_posit)})"
     )
 
     # add pose output column
     top_posit["outpath_pose"] = top_posit["ligand_id"].apply(
-        lambda x: poses_dir / Path(x) / "visualisation.html"
+        lambda x: poses_dir / Path(x) / "visualization.html"
     )
 
-    html_visualiser = HTMLVisualiser(
-        top_posit["docked_file"],
-        top_posit["outpath_pose"],
-        args.target,
-        protein_path,
-        logger=logger,
-    )
-    html_visualiser.write_pose_visualisations()
+    if args.dask:
+        logger.info("Running GIF visualisation with Dask")
+        outpaths = []
 
-    del html_visualiser
+        @dask.delayed
+        def dask_gif_adaptor(pose, outpath):
+            html_visualiser = HTMLVisualiser(
+                [pose],
+                [outpath],
+                args.target,
+                protein_path,
+                logger=logger,
+            )
+            output_paths = html_visualiser.write_pose_visualisations()
+
+            if len(output_paths) != 1:
+                raise ValueError(
+                    "Somehow got more than one output path from GIFVisualiser"
+                )
+            return output_paths[0]
+
+        for pose, output_path in zip(
+            top_posit["docked_file"], top_posit["outpath_pose"]
+        ):
+            outpath = dask_gif_adaptor(pose, output_path)
+            outpaths.append(outpath)
+
+        outpaths = client.compute(outpaths)
+        outpaths = client.gather(outpaths)
+
+    else:
+        logger.info("Running GIF visualisation in serial")
+        html_visualiser = HTMLVisualiser(
+            top_posit["docked_file"],
+            top_posit["outpath_pose"],
+            args.target,
+            protein_path,
+            logger=logger,
+        )
+        html_visualiser.write_pose_visualisations()
 
     if args.dask:
         if args.dask_lilac:
             logger.info("Checking if we need to spawn a new client")
         else:  # cleanup CPU dask client and spawn new GPU-CUDA client
             client.close()
+
+    ###########################
+    #   pose MD simulation    #
+    ###########################
 
     if args.md:
         logger.info(f"Running MD on top pose for each ligand (n={len(top_posit)})")
@@ -686,6 +757,10 @@ def main():
             simulator.run_all_simulations()
 
         logger.info(f"Finished MD at {datetime.now().isoformat()}")
+
+        ###########################
+        #   MD GIF visualization  #
+        ###########################
 
         logger.info("making GIF visualisations")
 
