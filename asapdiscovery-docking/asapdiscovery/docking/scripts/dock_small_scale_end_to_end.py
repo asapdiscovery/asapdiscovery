@@ -58,6 +58,7 @@ Input:
     - gat: whether to use GAT model to score docked poses.
 
 
+
 Example usage:
 
     # with an SDF or SMILES file
@@ -217,12 +218,6 @@ parser.add_argument(
     type=int,
     default=1,
     help="Number of poses to return from docking.",
-)
-
-parser.add_argument(
-    "--gat",
-    action="store_true",
-    help="Whether to use GAT model to score docked poses.",
 )
 
 
@@ -516,17 +511,21 @@ def main():
     logger.info("Setup ML for docking")
     gat_model_string = "asapdiscovery-GAT-2023.04.12"
 
-    if args.gat:
-        from asapdiscovery.ml.inference import GATInference  # noqa: E402
+    from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
-        gat_model = GATInference(gat_model_string)
-        logger.info(f"Using GAT model: {gat_model_string}")
-    else:
-        logger.info("Skipping GAT model scoring")
-        gat_model = None
+    gat_model = GATInference(gat_model_string)
+    logger.info(f"Using GAT model: {gat_model_string}")
+
+    schnet_model_string = "asapdiscovery-schnet-2023.04.29"
+    from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
+
+    schnet_model = SchnetInference(schnet_model_string)
+    logger.info(f"Using Schnet model: {schnet_model_string}")
 
     # use partial to bind the ML models to the docking function
-    dock_and_score_pose_oe_ml = partial(dock_and_score_pose_oe, GAT_model=gat_model)
+    dock_and_score_pose_oe_ml = partial(
+        dock_and_score_pose_oe, GAT_model=gat_model, schnet_model=schnet_model
+    )
 
     if args.dask:
         dock_and_score_pose_oe_ml = dask.delayed(dock_and_score_pose_oe_ml)
