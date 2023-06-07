@@ -111,6 +111,7 @@ def test_single_target_docking(
         "./outputs",
         "--target",
         "272",
+        "--no-omega",
     ]
     ret = script_runner.run(*args)
     assert ret.success

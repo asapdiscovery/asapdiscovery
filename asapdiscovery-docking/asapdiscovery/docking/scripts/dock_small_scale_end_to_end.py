@@ -201,14 +201,14 @@ parser.add_argument(
 )
 parser.add_argument(
     "--relax",
-    default="none",
-    help="When to run relaxation [none, clash, all]. Defaults to none.",
+    default="clash",
+    help="When to run relaxation [none, clash, all]. Defaults to clash.",
 )
 
 parser.add_argument(
-    "--omega",
+    "--no-omega",
     action="store_true",
-    help="Use Omega conformer enumeration.",
+    help="Do not use Omega conformer enumeration.",
 )
 
 parser.add_argument(
@@ -545,6 +545,11 @@ def main():
     else:
         logger.info("Using 3D molecules from input")
 
+    if args.no_omega:
+        omega = False
+    else:
+        omega = True
+
     for mol, compound in zip(oe_mols, exp_data):
         logger.debug(f"Running docking for {compound.compound_id}")
         if args.debug:
@@ -565,7 +570,7 @@ def main():
             args.relax.lower(),
             args.hybrid,
             f"{compound.compound_id}_{receptor_name}",
-            args.omega,
+            omega,
             args.num_poses,
         )
         results.append(res)
