@@ -11,7 +11,7 @@ def make_output_dir_and_cleanup():
     os.makedirs("./outputs", exist_ok=True)
     yield
     # clean up
-    shutil.rmtree("./outputs")
+    shutil.rmtree("./outputs", ignore_errors=True)
 
 
 @pytest.fixture()
