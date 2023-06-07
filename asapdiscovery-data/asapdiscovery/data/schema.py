@@ -97,7 +97,8 @@ class Dataset(BaseModel):
             pkl.dump(self, file)
 
     def to_json(self, fn):
-        json.dump(self, fn)
+        with open(fn, "w") as file:
+            json.dump(self.dict(), file)
 
     @classmethod
     def from_pkl(cls, fn):
@@ -106,7 +107,8 @@ class Dataset(BaseModel):
 
     @classmethod
     def from_json(cls, fn):
-        return json.load(fn)
+        with open(fn, "r") as file:
+            return cls(**json.load(file))
 
     @classmethod
     def from_csv(cls, fn):

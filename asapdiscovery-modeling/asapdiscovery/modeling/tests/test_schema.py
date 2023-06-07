@@ -93,9 +93,6 @@ class TestPreppedTargets:
 
         assert loaded_dataset == target_dataset
 
-    @pytest.mark.skip(
-        reason="Multiple embedded schema objects need more logic to serialize to json"
-    )
     def test_dataset_json(self, target_dataset, output_dir, json_name="to_prep.json"):
         json_file = output_dir / json_name
         target_dataset.to_json(json_file)
