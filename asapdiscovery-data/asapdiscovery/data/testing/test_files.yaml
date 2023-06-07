@@ -19,6 +19,10 @@ files:
   - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf
     sha256hash: 84398b3bcf741f9a26edf73bb93b3a8b0b555861bab0486f385ff7efacbcf197
 
+  # query ligand for rmsd calculation
+  - resource: ERI-UCB-ce40166b-17_Mpro-P2201_0A.sdf
+    sha256hash: 8a1205b1c219321d12e364720d0561f69712ece248759e8af72fb3dbfbbf7e82
+
   # prepped openeye DU
   - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu
     sha256hash: 075775f55efb7daa07ca0b3fa6a9f522483b432850196c6c5a31f8d45b4452d0

@@ -1,12 +1,28 @@
-from pathlib import Path
-
 import numpy as np
-from pytest import skip
+import pytest
+from asapdiscovery.data.openeye import load_openeye_sdf
+from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.docking.analysis import (
+    calculate_rmsd_openeye,
+    write_all_rmsds_to_reference,
+)
 
-skip("No OELicense in CI yet", allow_module_level=True)
+
+@pytest.fixture
+def query_mol():
+    return load_openeye_sdf(
+        str(fetch_test_file("ERI-UCB-ce40166b-17_Mpro-P2201_0A.sdf"))
+    )
 
 
-def test_rmsd_calculation():
+@pytest.fixture
+def ref_mol():
+    return load_openeye_sdf(
+        str(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
+    )
+
+
+def test_rmsd_calculation(ref_mol, query_mol):
     """
     This function contains two unit tests that check the correctness of the calculate_rmsd_openeye function.
 
@@ -20,15 +36,6 @@ def test_rmsd_calculation():
     function and passing them to the calculate_rmsd_openeye function.
     It then uses the assert statement to check that the calculated RMSD is equal to the pre-determined value.
     """
-    from asapdiscovery.data.openeye import load_openeye_sdf
-    from asapdiscovery.docking.analysis import calculate_rmsd_openeye
-
-    input_dir = Path("inputs")
-
-    ref_mol = load_openeye_sdf(str(input_dir / "Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
-    query_mol = load_openeye_sdf(
-        str(input_dir / "ERI-UCB-ce40166b-17_Mpro-P2201_0A.sdf")
-    )
 
     rmsd = calculate_rmsd_openeye(ref_mol, ref_mol)
     assert rmsd == 0.0
@@ -37,7 +44,7 @@ def test_rmsd_calculation():
     assert rmsd == 5.791467472680422
 
 
-def test_writing_rmsd_calculation(tmp_path):
+def test_writing_rmsd_calculation(tmp_path, ref_mol, query_mol):
     """
     This function tests the ability to write all RMSD values between a reference molecule and a list of query molecules
     to a NumPy array file. It first loads a reference molecule and a query molecule from SDF files using the
@@ -45,15 +52,6 @@ def test_writing_rmsd_calculation(tmp_path):
     function from the asapdiscovery.docking.analysis module to calculate and write RMSD values to a NumPy array file.
     The function finally loads the NumPy array file and compares to the pre-calculated reference for verification.
     """
-    from asapdiscovery.data.openeye import load_openeye_sdf
-    from asapdiscovery.docking.analysis import write_all_rmsds_to_reference
-
-    input_dir = Path("inputs")
-
-    ref_mol = load_openeye_sdf(str(input_dir / "Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
-    query_mol = load_openeye_sdf(
-        str(input_dir / "ERI-UCB-ce40166b-17_Mpro-P2201_0A.sdf")
-    )
 
     write_all_rmsds_to_reference(
         ref_mol, [query_mol, ref_mol, query_mol], tmp_path, "ERI-UCB-ce40166b-17"
