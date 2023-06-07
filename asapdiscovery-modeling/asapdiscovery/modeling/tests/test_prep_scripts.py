@@ -91,7 +91,7 @@ def test_mers_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
     assert ret.success
 
 
-# TODO: This code block is copied from test_fragalysis
+# TODO: This code block is mostly copied from test_fragalysis
 #  I think we should be able to use the same fixtures for both tests
 @pytest.fixture
 def metadata_csv():
@@ -99,49 +99,76 @@ def metadata_csv():
 
 
 @pytest.fixture
-def local_fragalysis(tmp_path):
-    pdb = fetch_test_file("Mpro-P2660_0A_bound.pdb")
+def structure_file(tmp_path):
+    return fetch_test_file("Mpro-P2660_0A_bound.pdb")
+
+
+@pytest.fixture
+def local_fragalysis(tmp_path, structure_file):
     new_path = tmp_path / "aligned/Mpro-P2660_0A"
     new_path.mkdir(parents=True)
-    shutil.copy(pdb, new_path / "Mpro-P2660_0A_bound.pdb")
+    shutil.copy(structure_file, new_path / "Mpro-P2660_0A_bound.pdb")
     return new_path.parent
 
 
 # TODO: End copied code block
 
 
+@pytest.mark.parametrize("serialized_input", [True, False])
 def test_sars_create_prep_inputs(
-    script_runner, output_dir, metadata_csv, local_fragalysis
+    script_runner,
+    output_dir,
+    metadata_csv,
+    local_fragalysis,
+    structure_file,
+    serialized_input,
 ):
-    ret = script_runner.run(
-        [
-            "fragalysis-to-schema",
-            "--metadata_csv",
-            f"{metadata_csv}",
-            "--aligned_dir",
-            f"{local_fragalysis}",
-            "-o",
-            f"{output_dir / 'metadata'}",
-        ]
-    )
-    out_path = output_dir / "metadata/fragalysis.csv"
-    assert ret.success
-    assert out_path.exists()
+    output_dir = output_dir if serialized_input else output_dir / "non_serialized_input"
+    if serialized_input:
+        ret = script_runner.run(
+            [
+                "fragalysis-to-schema",
+                "--metadata_csv",
+                f"{metadata_csv}",
+                "--aligned_dir",
+                f"{local_fragalysis}",
+                "-o",
+                f"{output_dir / 'metadata'}",
+            ]
+        )
+        out_path = output_dir / "metadata/fragalysis.csv"
+        assert ret.success
+        assert out_path.exists()
 
-    ret = script_runner.run(
-        [
-            "create-prep-inputs",
-            "-i",
-            f"{out_path}",
-            "-o",
-            f"{output_dir / 'metadata'}",
-            "--components_to_keep",
-            "protein",
-            "ligand",
-        ]
-    )
-    assert ret.success
-    assert (output_dir / "metadata" / "to_prep.pkl").exists()
+        ret = script_runner.run(
+            [
+                "create-prep-inputs",
+                "-i",
+                f"{out_path}",
+                "-o",
+                f"{output_dir / 'metadata'}",
+                "--components_to_keep",
+                "protein",
+                "ligand",
+            ]
+        )
+        assert ret.success
+        assert (output_dir / "metadata" / "to_prep.pkl").exists()
+    else:
+        ret = script_runner.run(
+            [
+                "create-prep-inputs",
+                "--structure_file",
+                f"{structure_file}",
+                "-o",
+                f"{output_dir / 'metadata'}",
+                "--components_to_keep",
+                "protein",
+                "ligand",
+            ]
+        )
+        assert ret.success
+        assert (output_dir / "metadata" / "to_prep.pkl").exists()
 
 
 @pytest.mark.timeout(300)

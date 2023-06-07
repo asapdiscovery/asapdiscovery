@@ -1,3 +1,10 @@
+"""
+This script is used to create the input files for the prep script. 
+It can take these inputs:
+1. a single structure file (csv or pdb)
+2. a directory containing structures (csv or pdb)
+3. a serialized CrystalCompoundDataset
+"""
 import argparse
 from pathlib import Path
 
@@ -5,14 +12,18 @@ from asapdiscovery.data.schema import CrystalCompoundData, CrystalCompoundDatase
 from asapdiscovery.data.utils import check_filelist_has_elements
 from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget, PreppedTargets
 
-# TODO: Add a function to check if the input file is a CrystalCompoundDataset
-# TODO: Probably want to move to requiring that the input is a CrystalCompoundDataset
-
 
 def get_args():
     parser = argparse.ArgumentParser(description="")
 
     # Input arguments
+    parser.add_argument(
+        "-s",
+        "--structure_file",
+        type=Path,
+        required=False,
+        help="Path to structure file. Must be either .csv or .pdb.",
+    )
     parser.add_argument(
         "-d",
         "--structure_dir",
@@ -63,8 +74,11 @@ def main():
         else:
             raise NotImplementedError
 
-    elif args.structure_dir:
-        protein_files = list(args.structure_dir.glob("*"))
+    elif args.structure_dir or args.structure_file:
+        if args.structure_file:
+            protein_files = [args.structure_file]
+        else:
+            protein_files = list(args.structure_dir.glob("*"))
         check_filelist_has_elements(protein_files)
         xtals = [
             CrystalCompoundData(dataset=protein_file.stem, str_fn=str(protein_file))
