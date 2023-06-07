@@ -79,3 +79,20 @@ files:
 
   - resource: test_filter_semiquant_out.csv
     sha256hash: c6892cda97ae7d9af3ec68bcd7f0dd4b8c7a77b58e6b8ad30e7f7d92186b726c
+
+  # input file for testing CDD parsing
+  - resource: test_parse_in.csv
+    sha256hash: e28a9202676840ec157d0d1b10b00d0b487cd1f11967a29aa87ddd66b2e49e86
+
+  # output files for testing CDD parsing
+  - resource: test_parse_best_cheng_out.csv
+    sha256hash: bfacfd0ee5d854816f24d3a871424a0a9f418e533a696b99334f7f3800ac1e0b
+
+  - resource: test_parse_best_out.csv
+    sha256hash: 58d8681bf3f72429f5e384ade12d1c4cf460ba4066ae369f738731653ae764a1
+
+  - resource: test_parse_cheng_out.csv
+    sha256hash: 075e76ff923c39cfad1555f172b9c998aacefb05817e6e8cc0a9321d970ad2fe
+
+  - resource: test_parse_out.csv
+    sha256hash: d23d7c0abf66e6eff7895e0d78016e3065d915710c427e461e30be3548ef1ff3
