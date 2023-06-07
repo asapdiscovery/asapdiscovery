@@ -89,10 +89,8 @@ class TestProteinPrep:
 
         success, spruce_error_msg, spruced = spruce_protein(
             initial_prot=prot,
-            return_du=True,
             protein_sequence=protein_sequence,
             loop_db=loop_db,
-            site_residue=target.oe_active_site_residue,
         )
         assert spruce_error_msg == ""
         assert success is True
