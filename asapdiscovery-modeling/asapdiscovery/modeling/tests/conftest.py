@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import pytest
+from asapdiscovery.data.openeye import load_openeye_cif1, load_openeye_pdb, oechem
 from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_cif1, oechem
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget, PreppedTargets
 

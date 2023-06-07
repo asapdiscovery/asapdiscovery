@@ -9,6 +9,7 @@ from asapdiscovery.data.openeye import save_openeye_pdb
 from asapdiscovery.modeling.modeling import find_component_chains, split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
 
+
 # The main use cases for the modeling utils are:
 # Getting just the protein
 # Getting just the ligand in the active site
