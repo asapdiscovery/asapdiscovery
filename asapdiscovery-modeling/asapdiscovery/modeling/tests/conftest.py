@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 from asapdiscovery.data.schema import CrystalCompoundData
+from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_cif1, oechem
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget, PreppedTargets
 
@@ -74,7 +75,7 @@ def mers_target(mers_xtal):
         source=mers_xtal,
         active_site_chain="A",
         output_name=Path(mers_xtal.str_fn).stem,
-        oe_active_site_residue="HIS:41: :A:0: ",
+        oe_active_site_residue="HIS:41: :A",
         molecule_filter=MoleculeFilter(components_to_keep=["protein"]),
     )
 
@@ -83,3 +84,24 @@ def mers_target(mers_xtal):
 def target_dataset(sars_target, mers_target):
     target_dataset = PreppedTargets.from_list([sars_target, mers_target])
     return target_dataset
+
+
+@pytest.fixture
+def sars_oe(sars):
+    # Load structure
+    prot = load_openeye_pdb(str(sars))
+    assert type(prot) == oechem.OEGraphMol
+    return prot
+
+
+@pytest.fixture
+def mers_oe(mers):
+    # Load structure
+    prot = load_openeye_cif1(str(mers))
+    assert type(prot) == oechem.OEGraphMol
+    return prot
+
+
+@pytest.fixture
+def oemol_dict(sars_oe, mers_oe):
+    return {"sars": sars_oe, "mers": mers_oe}
