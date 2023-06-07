@@ -42,6 +42,10 @@ class PrepOpts(BaseModel):
     ref_chain: str = Field(None, description="Chain ID to align to.")
     seqres_yaml: Path = Field(None, description="Path to seqres yaml")
     loop_db: Path = Field(None, description="Path to loop database to use for prepping")
+    make_design_unit: bool = Field(
+        True,
+        description="Whether to make a design unit or just to save the spruced protein.",
+    )
     output_dir: Path = Field(None, description="Directory to save output to.")
 
 

@@ -5,9 +5,18 @@
 from pathlib import Path
 
 import pytest
-from asapdiscovery.data.openeye import oechem
+import yaml
+from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pdb
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.modeling.modeling import protein_prep_workflow
+from asapdiscovery.modeling.modeling import (
+    add_seqres_to_openeye_protein,
+    make_design_unit,
+    mutate_residues,
+    protein_prep_workflow,
+    seqres_to_res_list,
+    split_openeye_mol,
+    spruce_protein,
+)
 from asapdiscovery.modeling.schema import PrepOpts
 
 
@@ -53,6 +62,66 @@ def prep_dict(mers_target, sars_target):
 
 
 class TestProteinPrep:
+    @pytest.mark.parametrize("target_name", ["mers", "sars"])
+    def test_spruce_protein(
+        self,
+        target_name,
+        prep_dict,
+        oemol_dict,
+        loop_db,
+        reference_output_files,
+        output_dir,
+    ):
+        target, seqres_yaml = prep_dict[target_name]
+        prot = oemol_dict[target_name]
+
+        # This is necessary in this test, otherwise the inclusion of the overlapping ligands
+        # in the mers structure will cause a spruce failure
+        prot = split_openeye_mol(prot, target.molecule_filter)
+
+        # convert seqres to string
+        with open(seqres_yaml) as f:
+            seqres_dict = yaml.safe_load(f)
+        seqres = seqres_dict["SEQRES"]
+        res_list = seqres_to_res_list(seqres)
+        protein_sequence = " ".join(res_list)
+        prot = mutate_residues(prot, res_list, place_h=True)
+
+        success, spruce_error_msg, spruced = spruce_protein(
+            initial_prot=prot,
+            return_du=True,
+            protein_sequence=protein_sequence,
+            loop_db=loop_db,
+            site_residue=target.oe_active_site_residue,
+        )
+        assert spruce_error_msg == ""
+        assert success is True
+        assert type(spruced) == oechem.OEGraphMol
+        spruced = add_seqres_to_openeye_protein(spruced, seqres)
+        save_openeye_pdb(spruced, output_dir / f"{target_name}_spruced.pdb")
+
+    @pytest.mark.parametrize("target_name", ["mers", "sars"])
+    def test_make_design_unit(self, target_name, prep_dict, output_dir):
+        target, seqres_yaml = prep_dict[target_name]
+
+        mol = load_openeye_pdb(str(output_dir / f"{target_name}_spruced.pdb"))
+
+        # convert seqres to string
+        with open(seqres_yaml) as f:
+            seqres_dict = yaml.safe_load(f)
+        seqres = seqres_dict["SEQRES"]
+        res_list = seqres_to_res_list(seqres)
+        protein_sequence = " ".join(res_list)
+
+        success, du = make_design_unit(
+            mol, target.oe_active_site_residue, protein_sequence=protein_sequence
+        )
+        assert success is True
+        assert isinstance(du, oechem.OEDesignUnit)
+        assert du.HasReceptor()
+        if "ligand" in target.molecule_filter.components_to_keep:
+            assert du.HasLigand()
+
     @pytest.mark.parametrize("target_name", ["mers", "sars"])
     def test_protein_prep_workflow(
         self,

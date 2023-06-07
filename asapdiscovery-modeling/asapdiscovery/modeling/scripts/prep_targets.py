@@ -51,6 +51,12 @@ def get_args():
         required=False,
         help="Path to yaml file of SEQRES.",
     )
+    parser.add_argument(
+        "--make_design_unit",
+        action="store_true",
+        default=None,
+        help="Whether to make design units during prepping or just save the spruced protein.",
+    )
 
     # Performance and Debugging
     parser.add_argument(
@@ -89,6 +95,7 @@ def main():
         loop_db=args.loop_db,
         seqres_yaml=args.seqres_yaml,
         output_dir=args.output_dir,
+        make_design_unit=args.make_design_unit,
     )
     logger.info(f"Prep options: {prep_opts}")
 

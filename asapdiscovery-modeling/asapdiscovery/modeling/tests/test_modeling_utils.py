@@ -5,35 +5,9 @@
 from pathlib import Path
 
 import pytest
-from asapdiscovery.data.openeye import (
-    load_openeye_cif1,
-    load_openeye_pdb,
-    oechem,
-    save_openeye_pdb,
-)
+from asapdiscovery.data.openeye import save_openeye_pdb
 from asapdiscovery.modeling.modeling import find_component_chains, split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
-
-
-@pytest.fixture
-def sars_oe(sars):
-    # Load structure
-    prot = load_openeye_pdb(str(sars))
-    assert type(prot) == oechem.OEGraphMol
-    return prot
-
-
-@pytest.fixture
-def mers_oe(mers):
-    # Load structure
-    prot = load_openeye_cif1(str(mers))
-    assert type(prot) == oechem.OEGraphMol
-    return prot
-
-
-@pytest.fixture
-def oemol_dict(sars_oe, mers_oe):
-    return {"sars": sars_oe, "mers": mers_oe}
 
 
 # The main use cases for the modeling utils are:
