@@ -13,12 +13,14 @@ def docking_files_single():
     oedu_glob = os.path.join(os.path.dirname(oedu), "*.oedu")
     return sdf, oedu, oedu_glob, pdb
 
+
 @pytest.fixture()
 def outputs(tmp_path):
-    '''Creates outputs directory in temp location and returns path'''
+    """Creates outputs directory in temp location and returns path"""
     outputs = tmp_path / "outputs"
     outputs.mkdir()
     return outputs
+
 
 @pytest.mark.timeout(400)
 @pytest.mark.parametrize("n", [1, 2])
