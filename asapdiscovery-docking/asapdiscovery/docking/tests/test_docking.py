@@ -2,7 +2,6 @@ import os
 
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from pytest import tmp_path
 
 
 @pytest.fixture()
