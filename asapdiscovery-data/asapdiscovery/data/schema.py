@@ -107,7 +107,7 @@ class Dataset(BaseModel):
 
     @classmethod
     def from_json(cls, fn):
-        with open(fn, "r") as file:
+        with open(fn) as file:
             return cls(**json.load(file))
 
     @classmethod
