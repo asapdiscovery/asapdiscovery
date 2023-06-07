@@ -2,6 +2,7 @@ import os
 
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from pytest import tmp_path
 
 
 @pytest.fixture()
@@ -23,9 +24,7 @@ def outputs(tmp_path):
 @pytest.mark.parametrize("n", [1, 2])
 @pytest.mark.parametrize("use_glob", [True, False])
 @pytest.mark.script_launch_mode("subprocess")
-def test_docking_base(
-    script_runner, outputs, docking_files_single, n, use_glob
-):
+def test_docking_base(script_runner, outputs, docking_files_single, n, use_glob):
     sdf, oedu, oedu_glob, _ = docking_files_single
     if use_glob:
         oedu = oedu_glob
