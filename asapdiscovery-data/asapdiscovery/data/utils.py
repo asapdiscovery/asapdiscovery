@@ -847,9 +847,9 @@ def parse_fluorescence_data_cdd(
         * "pIC50_95ci_lower"
         * "pIC50_95ci_upper"
         * "exp_binding_affinity_kcal_mol"
+        * "exp_binding_affinity_kcal_mol_stderr"
         * "exp_binding_affinity_kcal_mol_95ci_lower"
         * "exp_binding_affinity_kcal_mol_95ci_upper"
-        * "exp_binding_affinity_kcal_mol_stderr"
 
     Parameters
     ----------
@@ -1033,13 +1033,14 @@ def parse_fluorescence_data_cdd(
 
     # Keep only the best measurement for each molecule
     if keep_best_per_mol:
-        for mol_name, g in mol_df.groupby("name"):
-            g.sort_values(
-                by=[f"{assay_name}: Curve class", "pIC50_stderr"],
-                inplace=True,
-                ascending=True,
+
+        def get_best_mol(g):
+            g = g.sort_values(
+                by=[f"{assay_name}: Curve class", "pIC50_stderr"], ascending=True
             )
-        mol_df = mol_df.groupby("name", as_index=False).first()
+            return g.iloc[0, :]
+
+        mol_df = mol_df.groupby("name", as_index=False).apply(get_best_mol)
 
     return mol_df
 
