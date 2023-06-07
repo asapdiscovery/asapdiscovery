@@ -1,8 +1,6 @@
 import os
-import shutil
 
 import pytest
-from pytest import tmp_path
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
@@ -14,18 +12,24 @@ def docking_files_single():
     oedu_glob = os.path.join(os.path.dirname(oedu), "*.oedu")
     return sdf, oedu, oedu_glob, pdb
 
+@pytest.fixture()
+def outputs(tmp_path):
+    '''Creates outputs directory in temp location and returns path'''
+    outputs = tmp_path / "outputs"
+    outputs.mkdir()
+    return outputs
 
 @pytest.mark.timeout(400)
 @pytest.mark.parametrize("n", [1, 2])
 @pytest.mark.parametrize("use_glob", [True, False])
 @pytest.mark.script_launch_mode("subprocess")
 def test_docking_base(
-    script_runner, tmp_path, docking_files_single, n, use_glob
+    script_runner, outputs, docking_files_single, n, use_glob
 ):
     sdf, oedu, oedu_glob, _ = docking_files_single
     if use_glob:
         oedu = oedu_glob
-    tmp_path.mkdir("outputs")
+
     ret = script_runner.run(
         "run-docking-oe",
         "-l",
@@ -33,7 +37,7 @@ def test_docking_base(
         "-r",
         f"{oedu}",
         "-o",
-        "./outputs",
+        f"{outputs}",
         "-n",
         f"{n}",
     )
@@ -48,7 +52,7 @@ def test_docking_base(
 @pytest.mark.script_launch_mode("subprocess")
 def test_docking_kwargs(
     script_runner,
-    tmp_path,
+    outputs,
     docking_files_single,
     omega,
     by_compound,
@@ -56,6 +60,7 @@ def test_docking_kwargs(
     ml,
 ):
     sdf, oedu, _, _ = docking_files_single
+
     args = [
         "run-docking-oe",
         "-l",
@@ -63,7 +68,7 @@ def test_docking_kwargs(
         "-r",
         f"{oedu}",
         "-o",
-        "./outputs",
+        f"{outputs}",
         "-n",
         "1",
     ]
@@ -76,7 +81,6 @@ def test_docking_kwargs(
     if ml:
         args += ml
 
-    tmp_path.mkdir("outputs")
     if by_compound:
         # should fail when specifying a single receptor and by_compound
         args.append(by_compound)
