@@ -1,5 +1,5 @@
 """
-This script is used to create the input files for the prep script. 
+This script is used to create the input files for the prep script.
 It can take these inputs:
 1. a single structure file (csv or pdb)
 2. a directory containing structures (csv or pdb)
