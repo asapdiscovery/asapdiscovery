@@ -6,37 +6,11 @@ from pathlib import Path
 
 import pytest
 from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
-    MoleculeFilter,
     PrepOpts,
-    PreppedTarget,
-    PreppedTargets,
 )
-
-
-# This needs to have a scope of session so that a new tmp file is not created for each test
-@pytest.fixture(scope="session")
-def output_dir(tmp_path_factory, local_path):
-    if not type(local_path) == str:
-        return tmp_path_factory.mktemp("test_prep")
-    else:
-        local_path = Path(local_path)
-        local_path.mkdir(exist_ok=True)
-        assert local_path.exists()
-        return local_path
-
-
-@pytest.fixture
-def sars():
-    return fetch_test_file("Mpro-P2660_0A_bound.pdb")
-
-
-@pytest.fixture
-def mers():
-    return fetch_test_file("rcsb_8czv-assembly1.cif")
 
 
 @pytest.fixture
@@ -70,100 +44,6 @@ def test_output_file_download(reference_output_files):
 @pytest.fixture
 def loop_db():
     return fetch_test_file("fragalysis-mpro_spruce.loop_db")
-
-
-@pytest.fixture
-def sars_xtal(sars):
-    return CrystalCompoundData(
-        str_fn=str(sars),
-    )
-
-
-@pytest.fixture
-def sars_target(sars_xtal):
-    return PreppedTarget(
-        source=sars_xtal,
-        active_site_chain="A",
-        output_name=Path(sars_xtal.str_fn).stem,
-        molecule_filter=MoleculeFilter(
-            components_to_keep=["protein", "ligand"], ligand_chain="A"
-        ),
-    )
-
-
-@pytest.fixture
-def mers_xtal(mers):
-    return CrystalCompoundData(
-        str_fn=str(mers),
-    )
-
-
-@pytest.fixture
-def mers_target(mers_xtal):
-    return PreppedTarget(
-        source=mers_xtal,
-        active_site_chain="A",
-        output_name=Path(mers_xtal.str_fn).stem,
-        oe_active_site_residue="HIS:41: :A:0: ",
-        molecule_filter=MoleculeFilter(components_to_keep=["protein"]),
-    )
-
-
-@pytest.fixture
-def target_dataset(sars_target, mers_target):
-    target_dataset = PreppedTargets.from_list([sars_target, mers_target])
-    return target_dataset
-
-
-class TestCrystalCompoundDataset:
-    def test_dataset_creation(self, target_dataset, sars_target, mers_target):
-        assert len(target_dataset.iterable) == 2
-        assert target_dataset.iterable[0].source.str_fn == str(
-            sars_target.source.str_fn
-        )
-        assert target_dataset.iterable[1].source.str_fn == str(
-            mers_target.source.str_fn
-        )
-
-    @pytest.mark.skip(
-        reason="Multiple embedded schema objects need more logic to serialize to csv"
-    )
-    def test_dataset_csv_usage(
-        self, target_dataset, output_dir, csv_name="to_prep.csv"
-    ):
-        to_prep_csv = output_dir / csv_name
-        target_dataset.to_csv(to_prep_csv)
-        assert to_prep_csv.exists()
-        assert to_prep_csv.is_file()
-
-        dataset = PreppedTargets.from_csv(output_dir / csv_name)
-        assert dataset == target_dataset
-
-        dataset.iterable[0].active_site_chain = "B"
-        assert dataset != target_dataset
-
-    def test_dataset_pickle(self, target_dataset, output_dir, pkl_name="to_prep.pkl"):
-        pkl_file = output_dir / pkl_name
-        target_dataset.to_pkl(pkl_file)
-        assert pkl_file.exists()
-        assert pkl_file.is_file()
-
-        loaded_dataset = PreppedTargets.from_pkl(pkl_file)
-
-        assert loaded_dataset == target_dataset
-
-    @pytest.mark.skip(
-        reason="Multiple embedded schema objects need more logic to serialize to json"
-    )
-    def test_dataset_json(self, target_dataset, output_dir, json_name="to_prep.json"):
-        json_file = output_dir / json_name
-        target_dataset.to_json(json_file)
-        assert json_file.exists()
-        assert json_file.is_file()
-
-        loaded_dataset = PreppedTargets.from_json(json_file)
-
-        assert loaded_dataset == target_dataset
 
 
 @pytest.fixture

@@ -5,18 +5,6 @@ import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
-# This needs to have a scope of session so that a new tmp file is not created for each test
-@pytest.fixture(scope="session")
-def output_dir(tmp_path_factory, local_path):
-    if not type(local_path) == str:
-        return tmp_path_factory.mktemp("test_prep")
-    else:
-        local_path = Path(local_path)
-        local_path.mkdir(exist_ok=True)
-        assert local_path.exists()
-        return local_path
-
-
 @pytest.fixture
 def mers_structures():
     return fetch_test_file("mers-structures.yaml")
@@ -92,7 +80,7 @@ def test_mers_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
 
 
 # TODO: This code block is mostly copied from test_fragalysis
-#  I think we should be able to use the same fixtures for both tests
+#  I think we should be able to use the same fixtures for both tests but idk how
 @pytest.fixture
 def metadata_csv():
     return fetch_test_file("metadata.csv")

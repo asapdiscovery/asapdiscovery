@@ -17,27 +17,17 @@ from asapdiscovery.modeling.schema import MoleculeFilter
 
 
 @pytest.fixture
-def sars_pdb():
-    return fetch_test_file("Mpro-P2660_0A_bound.pdb")
-
-
-@pytest.fixture
-def mers_pdb():
-    return fetch_test_file("rcsb_8czv-assembly1.cif")
-
-
-@pytest.fixture
-def sars_oe(sars_pdb):
+def sars_oe(sars):
     # Load structure
-    prot = load_openeye_pdb(str(sars_pdb))
+    prot = load_openeye_pdb(str(sars))
     assert type(prot) == oechem.OEGraphMol
     return prot
 
 
 @pytest.fixture
-def mers_oe(mers_pdb):
+def mers_oe(mers):
     # Load structure
-    prot = load_openeye_cif1(str(mers_pdb))
+    prot = load_openeye_cif1(str(mers))
     assert type(prot) == oechem.OEGraphMol
     return prot
 
