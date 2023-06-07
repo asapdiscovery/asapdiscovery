@@ -78,10 +78,10 @@ jobs:
         # run each package test suite; append to coverage file
         # Exit immediately if a command exits with a non-zero status.
         set -e
-        coverage run --append --source=./asapdiscovery-data/asapdiscovery/data/ -m pytest -n auto -v  --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
-        coverage run --append --source=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -m pytest -n auto -v  --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
-        coverage run --append --source=./asapdiscovery-docking/asapdiscovery/docking/ -m pytest -n auto -v  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
-        coverage run --append --source=./asapdiscovery-ml/asapdiscovery/ml/ -m pytest -v  -n auto --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
+        coverage run --append --source=./asapdiscovery-data/asapdiscovery/data/ -m pytest -n auto -v --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
+        coverage run --append --source=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -m pytest -n auto -v --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
+        coverage run --append --source=./asapdiscovery-docking/asapdiscovery/docking/ -m pytest -n auto -v --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
+        coverage run --append --source=./asapdiscovery-ml/asapdiscovery/ml/ -m pytest -v --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
         # generate xml report from .coverage file
         coverage xml
 
