@@ -67,6 +67,28 @@ def filter_df_files():
     return in_fn, out_fn_dict
 
 
+@pytest.fixture
+def parse_df_files():
+    """
+    Fetch all possible combination of output parsed CSV files. Filenames are built by
+    bool representations of keep_best_per_mol and cp_values.
+    """
+    from itertools import product
+
+    fn_labels = ["best", "cheng"]
+    out_fn_dict = {}
+    for flags in product([True, False], repeat=len(fn_labels)):
+        out_fn = "_".join([label for label, flag in zip(fn_labels, flags) if flag])
+        out_fn = fetch_test_file(
+            "test_parse" + (f"_{out_fn}" if out_fn else "") + "_out.csv"
+        )
+        out_fn_dict[flags] = out_fn
+
+    in_fn = fetch_test_file("test_parse_in.csv")
+
+    return in_fn, out_fn_dict
+
+
 @pytest.mark.parametrize(
     "search", [ALL_SMI_SEARCH, NONCOVALENT_SMI_SEARCH, NONCOVALENT_W_DATES_SEARCH]
 )
@@ -154,4 +176,75 @@ def test_filter_df(
     )
 
     assert in_df_filtered.shape[0] == out_df.shape[0]
-    assert (in_df_filtered["name"].values == out_df["Canonical PostEra ID"].values).all()
+    assert (
+        in_df_filtered["name"].values == out_df["Canonical PostEra ID"].values
+    ).all()
+
+
+@pytest.mark.parametrize("keep_best", [True, False])
+@pytest.mark.parametrize("cp_values", [None, [0.375, 9.5]])
+def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
+    print(keep_best, cp_values, flush=True)
+    import pandas
+    from asapdiscovery.data.utils import parse_fluorescence_data_cdd
+
+    in_fn, all_out_fns = parse_df_files
+    flags = (keep_best, bool(cp_values))
+    out_fn = all_out_fns[flags]
+
+    in_df = pandas.read_csv(in_fn)
+    out_df = pandas.read_csv(out_fn)
+
+    in_df_parsed = parse_fluorescence_data_cdd(
+        in_df, keep_best_per_mol=keep_best, cp_values=cp_values
+    )
+
+    # Check that range values were assigned correctly
+    assert (in_df_parsed["pIC50_range"] == out_df["pIC50_range"]).all()
+
+    # Columns with float vals to compare
+    float_check_cols = [
+        "IC50 (M)",
+        "IC50_stderr (M)",
+        "IC50_95ci_lower (M)",
+        "IC50_95ci_upper (M)",
+        "pIC50",
+        "pIC50_stderr",
+        "pIC50_95ci_lower",
+        "pIC50_95ci_upper",
+        "exp_binding_affinity_kcal_mol",
+        "exp_binding_affinity_kcal_mol_95ci_lower",
+        "exp_binding_affinity_kcal_mol_95ci_upper",
+        "exp_binding_affinity_kcal_mol_stderr",
+    ]
+    for c in float_check_cols:
+        assert _check_parsed_vals(in_df_parsed[c], out_df[c])
+
+
+def _check_parsed_vals(col1, col2):
+    """
+    Helper function for test_parse_fluorescence to compare two numerical columns,
+    appropriately handling checking for null/non-numeric values.
+
+    Parameters
+    ----------
+    col1, col2 : pandas.Series
+        The two DF columns to compare
+
+    Returns
+    -------
+    bool
+        If the two cols are equivalent
+    """
+    import numpy as np
+
+    # Indices with NaN values so they can be compared appropriately
+    nan_idx1 = col1.isna()
+    nan_idx2 = col2.isna()
+
+    # Chceck that nans are the same
+    if not (nan_idx1 == nan_idx2).all():
+        return False
+
+    # Check that all non-nan values are close
+    return np.isclose(col1[~nan_idx1], col2[~nan_idx2]).all()
