@@ -231,7 +231,7 @@ def main():
         os.mkdir(args.output_dir)
     assert os.path.exists(args.output_dir)
 
-    docking_results = DockingResults(args.input_csv)
+    docking_results = DockingResults(csv_path=args.input_csv)
 
     best_structure_dict_all = {
         values["Complex_ID"]: values
