@@ -2,16 +2,8 @@ import os
 import shutil
 
 import pytest
+from pytest import tmp_path
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-
-
-@pytest.fixture()
-def make_output_dir_and_cleanup():
-    # create output dir
-    os.makedirs("./outputs", exist_ok=True)
-    yield
-    # clean up
-    shutil.rmtree("./outputs", ignore_errors=True)
 
 
 @pytest.fixture()
@@ -28,11 +20,12 @@ def docking_files_single():
 @pytest.mark.parametrize("use_glob", [True, False])
 @pytest.mark.script_launch_mode("subprocess")
 def test_docking_base(
-    script_runner, make_output_dir_and_cleanup, docking_files_single, n, use_glob
+    script_runner, tmp_path, docking_files_single, n, use_glob
 ):
     sdf, oedu, oedu_glob, _ = docking_files_single
     if use_glob:
         oedu = oedu_glob
+    tmp_path.mkdir("outputs")
     ret = script_runner.run(
         "run-docking-oe",
         "-l",
@@ -55,7 +48,7 @@ def test_docking_base(
 @pytest.mark.script_launch_mode("subprocess")
 def test_docking_kwargs(
     script_runner,
-    make_output_dir_and_cleanup,
+    tmp_path,
     docking_files_single,
     omega,
     by_compound,
@@ -83,6 +76,7 @@ def test_docking_kwargs(
     if ml:
         args += ml
 
+    tmp_path.mkdir("outputs")
     if by_compound:
         # should fail when specifying a single receptor and by_compound
         args.append(by_compound)
