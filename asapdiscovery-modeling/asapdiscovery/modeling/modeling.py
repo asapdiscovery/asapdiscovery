@@ -124,8 +124,6 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
         initial_prot=prot,
         protein_sequence=protein_sequence,
         loop_db=prep_opts.loop_db,
-        return_du=True,
-        site_residue=target.oe_active_site_residue,
     )
     if not success:
         logger.error(
