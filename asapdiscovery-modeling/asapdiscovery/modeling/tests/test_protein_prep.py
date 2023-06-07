@@ -4,17 +4,18 @@
 # This behaviour is controlled by the output_dir fixture.
 from pathlib import Path
 
-import pytest, yaml
-from asapdiscovery.data.openeye import oechem, save_openeye_pdb, load_openeye_pdb
+import pytest
+import yaml
+from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pdb
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import (
-    protein_prep_workflow,
-    spruce_protein,
-    seqres_to_res_list,
-    mutate_residues,
-    split_openeye_mol,
-    make_design_unit,
     add_seqres_to_openeye_protein,
+    make_design_unit,
+    mutate_residues,
+    protein_prep_workflow,
+    seqres_to_res_list,
+    split_openeye_mol,
+    spruce_protein,
 )
 from asapdiscovery.modeling.schema import PrepOpts
 
@@ -103,7 +104,7 @@ class TestProteinPrep:
     def test_make_design_unit(self, target_name, prep_dict, output_dir):
         target, seqres_yaml = prep_dict[target_name]
 
-        mol = load_openeye_pdb((str(output_dir / f"{target_name}_spruced.pdb")))
+        mol = load_openeye_pdb(str(output_dir / f"{target_name}_spruced.pdb"))
 
         # convert seqres to string
         with open(seqres_yaml) as f:
