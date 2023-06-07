@@ -145,14 +145,92 @@ class DockingResults:
     Mainly for mainipulating the data in various useful ways.
     """
 
-    def __init__(self, csv_path):
-        # load in data and replace the annoying `-1.0` and `-1` values with nans
-        self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
+    column_names_dict = {
+        "legacy": [
+            "ligand_id",
+            "du_structure",
+            "docked_file",
+            "docked_RMSD",
+            "POSIT_prob",
+            "chemgauss4_score",
+            "clash",
+        ],
+        "legacy_smiles": [
+            "ligand_id",
+            "du_structure",
+            "docked_file",
+            "docked_RMSD",
+            "POSIT_prob",
+            "chemgauss4_score",
+            "clash",
+            "SMILES",
+        ],
+        "legacy_cleaned": [
+            "Compound_ID",
+            "Structure_Source",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+        ],
+        "legacy_cleaned_dimer": [
+            "Compound_ID",
+            "Structure_Source",
+            "Dimer",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+        ],
+        "default_dimer": [
+            "Compound_ID",
+            "Structure_Source",
+            "Dimer",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+            "SMILES",
+        ],
+        "default": [
+            "Compound_ID",
+            "Structure_Source",
+            "Docked_File",
+            "RMSD",
+            "POSIT",
+            "Chemgauss4",
+            "Clash",
+            "SMILES",
+        ],
+    }
+
+    def __init__(self, csv_path=None, df=None, column_names="default"):
+        """
+
+        Parameters
+        ----------
+        csv_path: path to csv file
+            Optional
+        df: pd.DataFrame
+        """
+        if type(csv_path) == str:
+            # load in data and replace the annoying `-1.0` and `-1` values with nans
+            self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
+        elif type(df) == pd.DataFrame:
+            if self.column_names_dict.get(column_names):
+                df.columns = self.column_names_dict.get(column_names)
+            self.df = df
+
+        else:
+            raise Exception("Must pass either a dataframe or a csv path")
 
     def get_grouped_df(
         self,
         groupby_ID_column="Compound_ID",
-        score_columns=["RMSD", "POSIT_R", "Chemgauss4", "MCSS_Rank"],
+        score_columns=("RMSD", "POSIT_R", "Chemgauss4", "MCSS_Rank"),
     ):
         """
         The purpose of this function is to get a dataframe with meaningful information
@@ -202,7 +280,7 @@ class DockingResults:
         grouped_df[groupby_ID_column] = grouped_df.index
         return grouped_df
 
-    def get_compound_df(self, csv_path=False, **kwargs):
+    def get_compound_df(self, csv_path=None, **kwargs):
         if csv_path:
             self.compound_df = pd.read_csv(csv_path)
         else:
@@ -210,7 +288,7 @@ class DockingResults:
                 groupby_ID_column="Compound_ID", **kwargs
             )
 
-    def get_structure_df(self, csv_path=False, resolution_csv=None, **kwargs):
+    def get_structure_df(self, csv_path=None, resolution_csv=None, **kwargs):
         """
         Either pull the structure_df from the csv file or generate it using the
         get_grouped_df function in addition to what the function normally does it also
@@ -256,8 +334,8 @@ class DockingResults:
         self,
         filter_score="RMSD",
         filter_value=2.5,
-        score_order=["POSIT_R", "Chemgauss4", "RMSD"],
-        score_ascending=[True, True, True],
+        score_order=("POSIT_R", "Chemgauss4", "RMSD"),
+        score_ascending=(True, True, True),
     ):
         """
         Gets the best structure by first filtering based on the filter_score and
@@ -277,8 +355,6 @@ class DockingResults:
 
         """
         # TODO: also this is really fragile
-        # TODO: default argument `score_order` is a mutable. This can lead to unexpected
-        # behavior in python.
         # first do filtering
         print(filter_score, filter_value)
         if filter_score and type(filter_value) == float:
@@ -288,7 +364,7 @@ class DockingResults:
 
         # sort dataframe, ascending (smaller / better scores will move to the top)
         sorted_df = filtered_df.sort_values(
-            sort_list, ascending=[True, True, True, True]
+            sort_list, ascending=[True] + score_ascending
         )
 
         # group by compound id and return the top row for each group
