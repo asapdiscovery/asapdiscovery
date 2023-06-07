@@ -1,5 +1,4 @@
 import shutil
-from pathlib import Path
 
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
