@@ -1,12 +1,9 @@
-import pytest
 from pathlib import Path
-from asapdiscovery.data.testing.test_resources import fetch_test_file
+
+import pytest
 from asapdiscovery.data.schema import CrystalCompoundData
-from asapdiscovery.modeling.schema import (
-    MoleculeFilter,
-    PreppedTarget,
-    PreppedTargets,
-)
+from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget, PreppedTargets
 
 
 def pytest_addoption(parser):

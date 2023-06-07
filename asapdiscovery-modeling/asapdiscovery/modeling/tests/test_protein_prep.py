@@ -8,9 +8,7 @@ import pytest
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import protein_prep_workflow
-from asapdiscovery.modeling.schema import (
-    PrepOpts,
-)
+from asapdiscovery.modeling.schema import PrepOpts
 
 
 @pytest.fixture
