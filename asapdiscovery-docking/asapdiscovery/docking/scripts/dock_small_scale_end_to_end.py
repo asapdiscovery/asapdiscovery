@@ -174,12 +174,7 @@ parser.add_argument(
     "--seqres_yaml",
     help="Path to yaml file of SEQRES.",
 )
-parser.add_argument(
-    "--protein_only",
-    action="store_true",
-    default=False,
-    help="If true, generate design units with only the protein in them",
-)
+
 parser.add_argument(
     "--ref_prot",
     default=None,
@@ -224,6 +219,19 @@ parser.add_argument(
     help="Number of poses to return from docking.",
 )
 
+
+# ML arguments
+parser.add_argument(
+    "--no-gat",
+    action="store_true",
+    help="Do not use GAT model to score docked poses.",
+)
+
+parser.add_argument(
+    "--no-schnet",
+    action="store_true",
+    help="Do not use Schnet model to score docked poses.",
+)
 
 parser.add_argument(
     "--target",
@@ -290,6 +298,11 @@ def main():
     if args.dask:
         logger.info("Using dask to parallelise docking")
         from dask.distributed import Client
+
+        # set timeout to None so workers don't get killed on long timeouts
+        from dask import config as cfg
+
+        cfg.set({"distributed.scheduler.worker-ttl": None})
 
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
@@ -452,9 +465,7 @@ def main():
     )
 
     logger.info(f"Loaded receptor {receptor_name} from {receptor}")
-    oe_prep_function(
-        xtal, args.ref_prot, seqres, prep_dir, args.loop_db, args.protein_only
-    )
+    oe_prep_function(xtal, args.ref_prot, seqres, prep_dir, args.loop_db, False)
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
     # grab the files that were created
@@ -513,17 +524,25 @@ def main():
     # ML stuff for docking, fill out others as we make them
     logger.info("Setup ML for docking")
     gat_model_string = "asapdiscovery-GAT-2023.05.09"
-
-    from asapdiscovery.ml.inference import GATInference  # noqa: E402
-
-    gat_model = GATInference(gat_model_string)
-    logger.info(f"Using GAT model: {gat_model_string}")
-
     schnet_model_string = "asapdiscovery-schnet-2023.04.29"
-    from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
 
-    schnet_model = SchnetInference(schnet_model_string)
-    logger.info(f"Using Schnet model: {schnet_model_string}")
+    if args.no_gat:
+        gat_model = None
+        logger.info("Not using GAT model")
+    else:
+        from asapdiscovery.ml.inference import GATInference  # noqa: E402
+
+        gat_model = GATInference(gat_model_string)
+        logger.info(f"Using GAT model: {gat_model_string}")
+
+    if args.no_schnet:
+        schnet_model = None
+        logger.info("Not using Schnet model")
+    else:
+        from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
+
+        schnet_model = SchnetInference(schnet_model_string)
+        logger.info(f"Using Schnet model: {schnet_model_string}")
 
     # use partial to bind the ML models to the docking function
     dock_and_score_pose_oe_ml = partial(
@@ -630,7 +649,7 @@ def main():
     )
 
     if args.dask:
-        logger.info("Running GIF visualization with Dask")
+        logger.info("Running HTML visualization with Dask")
         outpaths = []
 
         @dask.delayed
@@ -646,7 +665,7 @@ def main():
 
             if len(output_paths) != 1:
                 raise ValueError(
-                    "Somehow got more than one output path from GIFVisualizer"
+                    "Somehow got more than one output path from HTMLVisualizer"
                 )
             return output_paths[0]
 
@@ -660,7 +679,7 @@ def main():
         outpaths = client.gather(outpaths)
 
     else:
-        logger.info("Running GIF visualization in serial")
+        logger.info("Running HTML visualization in serial")
         html_visualiser = HTMLVisualizer(
             top_posit["docked_file"],
             top_posit["outpath_pose"],
