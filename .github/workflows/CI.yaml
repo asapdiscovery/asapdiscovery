@@ -47,12 +47,14 @@ jobs:
 
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
         environment-file: devtools/conda-envs/asapdiscovery.yaml
         environment-name: asapdiscovery
         channels: jaimergp/label/unsupported-cudatoolkit-shim,conda-forge,openeye,dglteam
-        extra-specs: |
+        cache-env: true
+        cache-downloads: true
+        create-args: >-
           python==${{ matrix.python-version }}
 
     - name: Test OE License & Write License to File
@@ -70,14 +72,15 @@ jobs:
         python -m pip install ./asapdiscovery-ml --no-deps
         micromamba list
 
-
     - name: Run tests
       run: |
         # run each package test suite; append to coverage file
-        pytest --cov=./asapdiscovery-data/asapdiscovery/data/ -n auto -v --cov-append --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
-        pytest --cov=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -n auto  -v --cov-append --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
-        pytest --cov=./asapdiscovery-docking/asapdiscovery/docking/ -n auto -v --cov-append  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
-        pytest --cov=./asapdiscovery-ml/asapdiscovery/ml/ -v --cov-append  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
+        # Exit immediately if a command exits with a non-zero status. 
+        set -e
+        pytest --cov=./asapdiscovery-data/asapdiscovery/data/ -n auto -v --cov-report=xml --cov-append --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
+        pytest --cov=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -n auto -v --cov-report=xml --cov-append --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
+        pytest --cov=./asapdiscovery-docking/asapdiscovery/docking/ -n auto -v --cov-report=xml --cov-append  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
+        pytest --cov=./asapdiscovery-ml/asapdiscovery/ml/ -v --cov-report=xml --cov-append  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3
