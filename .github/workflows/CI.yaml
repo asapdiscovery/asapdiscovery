@@ -75,7 +75,7 @@ jobs:
     - name: Run tests
       run: |
         # run each package test suite; append to coverage file
-        # Exit immediately if a command exits with a non-zero status. 
+        # Exit immediately if a command exits with a non-zero status.
         set -e
         pytest --cov=./asapdiscovery-data/asapdiscovery/data/ -n auto -v --cov-report=xml --cov-append --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
         pytest --cov=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -n auto -v --cov-report=xml --cov-append --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
