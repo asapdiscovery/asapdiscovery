@@ -105,16 +105,9 @@ class Dataset(BaseModel):
             pkl.dump(self, file)
 
     def to_json(self, fn: Union[str, Path]):
-        import pdb as pdb_debug
-
-        pdb_debug.set_trace()
-        to_write = self.dict()
-        if not isinstance(to_write, dict):
-            raise TypeError(
-                f"Failed to construct dictionary from {self}, got {type(to_write)} instead."
-            )
+        to_write = self.json()
         with open(fn, "w") as file:
-            json.dump(to_write, file)
+            file.write(to_write)
 
     @classmethod
     def from_pkl(cls, fn):

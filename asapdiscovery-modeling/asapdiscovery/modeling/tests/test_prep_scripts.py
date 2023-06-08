@@ -50,7 +50,7 @@ def test_mers_download_and_create_prep_inputs(
         "--components_to_keep",
         "protein",
         "--oe_active_site_residue",
-        "HIS:41: :A: ",
+        "HIS:41: :A:1",
     )
     assert ret.success
 
