@@ -316,7 +316,7 @@ class GIFVisualizer:
         return path
 
 
-def add_gif_progress_bar(png_files: List[Union[Path, str]], frames_per_ns: int) -> None:
+def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) -> None:
     """
     adds a progress bar and nanosecond counter onto PNG images. This assumes PNG
     files are named with index in the form path/frame<INDEX>.png. Overlaying of these objects
