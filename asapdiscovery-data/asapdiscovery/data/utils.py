@@ -2,7 +2,8 @@ import glob
 import logging
 import os.path
 import re
-from typing import List, Optional, Union  # noqa: F401
+from pathlib import Path
+from typing import Optional, Union
 
 import numpy as np
 import pandas
@@ -1434,3 +1435,8 @@ def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem
         mol.SetTitle(ed.compound_id)
         mols.append(mol)
     return mols
+def combine_files(paths: list[Union[Path, str]], output_file):
+    with open(output_file, "w") as ofs:
+        for file_to_copy in paths:
+            with open(file_to_copy) as file_to_copy_fd:
+                ofs.write(file_to_copy_fd.read())
