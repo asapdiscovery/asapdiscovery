@@ -95,7 +95,7 @@ def test_docking_kwargs(
 @pytest.mark.script_launch_mode("subprocess")
 def test_single_target_docking(
     script_runner,
-    make_output_dir_and_cleanup,
+    outputs,
     docking_files_single,
 ):
     sdf, oedu, _, pdb = docking_files_single
@@ -108,7 +108,7 @@ def test_single_target_docking(
         "-o",
         "./outputs",
         "--target",
-        "272",
+        "sars2",
         "--no-omega",
     ]
     ret = script_runner.run(*args)
