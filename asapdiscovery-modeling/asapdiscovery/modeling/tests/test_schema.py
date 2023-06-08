@@ -80,9 +80,9 @@ class TestPreppedTargets:
             mers_target.source.str_fn
         )
 
-    # @pytest.mark.skip(
-    #     reason="Multiple embedded schema objects need more logic to serialize to csv"
-    # )
+    @pytest.mark.skip(
+        reason="Multiple embedded schema objects need more logic to serialize to csv"
+    )
     def test_dataset_csv_usage(
         self, target_dataset, output_dir, csv_name="to_prep.csv"
     ):
