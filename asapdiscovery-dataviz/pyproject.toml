@@ -41,9 +41,6 @@ split-sdf = "asapdiscovery.dataviz.scripts.split_sdf:main"
 [tool.setuptools.packages.find]
 where = ["."]
 
-[tool.coverage.run]
-concurrency = ["multiprocessing"]
-
 [tool.versioningit]
 
 
