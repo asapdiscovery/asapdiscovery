@@ -74,12 +74,10 @@ jobs:
     - name: Run tests
       run: |
         # run each package test suite; append to coverage file
-        coverage run --append --source=./asapdiscovery-data/asapdiscovery/data/ -m pytest -v  --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
-        coverage run --append --source=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -m pytest -v  --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
-        coverage run --append --source=./asapdiscovery-docking/asapdiscovery/docking/ -m pytest -v  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
-        coverage run --append --source=./asapdiscovery-ml/asapdiscovery/ml/ -m pytest -v  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
-        # generate xml report from .coverage file
-        coverage xml
+        pytest --cov=./asapdiscovery-data/asapdiscovery/data/ -v --cov-append --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
+        pytest --cov=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -v --cov-append --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
+        pytest --cov=./asapdiscovery-docking/asapdiscovery/docking/ -v --cov-append  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
+        pytest --cov=./asapdiscovery-ml/asapdiscovery/ml/ -v --cov-append  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3
