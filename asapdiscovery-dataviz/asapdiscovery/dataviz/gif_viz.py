@@ -338,7 +338,7 @@ def add_gif_progress_bar(png_files: List[Union[Path, str]], frames_per_ns: int) 
         filename = str(filename)
         # get this file's frame number from the filename and calculate total amount of ns simulated for this frame
         frame_num = int(filename.split("frame")[1].split(".png")[0])
-        total_ns_this_frame = "{:.1f}".format(frame_num / frames_per_ns)
+        total_ns_this_frame = f"{frame_num / frames_per_ns:.1f}"
 
         # load the image.
         img = Image.open(filename)

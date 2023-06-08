@@ -297,10 +297,9 @@ def main():
 
     if args.dask:
         logger.info("Using dask to parallelise docking")
-        from dask.distributed import Client
-
         # set timeout to None so workers don't get killed on long timeouts
         from dask import config as cfg
+        from dask.distributed import Client
 
         cfg.set({"distributed.scheduler.worker-ttl": None})
 
