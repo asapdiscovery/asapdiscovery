@@ -1,12 +1,12 @@
 import json
 import pickle as pkl
 from datetime import date
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
-from typing import Union
-from pathlib import Path
 
 
 # From FAH ###################################
