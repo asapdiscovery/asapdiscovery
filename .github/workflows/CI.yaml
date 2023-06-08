@@ -77,10 +77,7 @@ jobs:
         # run each package test suite; append to coverage file
         # Exit immediately if a command exits with a non-zero status.
         set -e
-        pytest --cov=./asapdiscovery-data/asapdiscovery/data/ -n auto -v --cov-report=xml --cov-report=term --cov-append --color=yes ./asapdiscovery-data/asapdiscovery/data/tests/
-        pytest --cov=./asapdiscovery-dataviz/asapdiscovery/dataviz/ -n auto -v --cov-report=xml --cov-report=term --cov-append --color=yes ./asapdiscovery-dataviz/asapdiscovery/dataviz/tests/
-        pytest --cov=./asapdiscovery-docking/asapdiscovery/docking/ -n auto -v --cov-report=xml --cov-report=term --cov-append  --color=yes ./asapdiscovery-docking/asapdiscovery/docking/tests/
-        pytest --cov=./asapdiscovery-ml/asapdiscovery/ml/ -v --cov-report=xml --cov-report=term --cov-append  --color=yes ./asapdiscovery-ml/asapdiscovery/ml/tests/
+        pytest --cov=asapdiscovery-data --cov=asapdiscovery-dataviz --cov=asapdiscovery-docking --cov=asapdiscovery-ml -v --cov-report=xml --cov-report=term --color=yes asapdiscovery-data/asapdiscovery/data/tests asapdiscovery-dataviz/asapdiscovery/dataviz/tests asapdiscovery-docking/asapdiscovery/docking/tests asapdiscovery-ml/asapdiscovery/ml/tests
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3
