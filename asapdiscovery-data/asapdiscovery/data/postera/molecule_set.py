@@ -1,5 +1,5 @@
 from typing import Union
-
+from enum import Enum
 import pandas as pd
 from typing_extensions import TypedDict
 
@@ -74,12 +74,79 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
         )
 
 
+class PosteraAllowedColumns(Enum):
+    """
+    Enum of allowed columns for the P5 comp-chem team to update in postera.
+    """
+
+    smiles = "smiles"
+    id = "id"
+    ligand_id = "ligand_id"
+    asap_vc_id = "asap_vc_id"
+    MERS_pose = "MERS_pose"
+    SARS2_pose = "SARS2_pose"
+    POSIT_prob_MERS = "POSIT_prob_MERS"
+    POSIT_prob_SARS2 = "POSIT_prob_SARS2"
+    chemgauss4_score_MERS = "chemgauss4_score_MERS"
+    chemgauss4_score_SARS2 = "chemgauss4_score_SARS2"
+    docked_file_MERS = "docked_file_MERS"
+    docked_file_SARS2 = "docked_file_SARS2"
+
+    def to_list(cls):
+        return [column.value for column in cls]
+
+    def to_dict(cls):
+        return {column.name: column.value for column in cls}
+
+
+class PosteraFilter:
+    """
+    Class to filter dataframe columns to only those that the P5 comp-chem team
+    should be able to update in postera.
+    """
+
+    @classmethod
+    def filter_dataframe_cols(
+        df: pd.DataFrame, smiles_field=None, id_field=None, additional_cols=None
+    ) -> pd.DataFrame:
+        allowed_columns = PosteraAllowedColumns.to_list()
+        if smiles_field is not None:
+            allowed_columns.append(smiles_field)
+        if id_field is not None:
+            allowed_columns.append(id_field)
+        if additional_cols is not None:
+            allowed_columns.extend(additional_cols)
+        extra_cols = [col for col in df.columns if col not in allowed_columns]
+        return df.drop(columns=extra_cols)
+
+
 class MoleculeSetAPI(PostEraAPI):
     """Connection and commands for PostEra Molecule Set API"""
 
     @property
     def molecule_set_url(self):
         return f"{self.api_url}/moleculesets"
+
+    @classmethod
+    def molecule_set_id_or_name(
+        cls, molecule_set_id_or_name: str, available_molsets: Dict[str, str]
+    ) -> str:
+        """
+        Helper function to determine if the input is a molecule set id or name
+        and return the molecule set id
+        """
+        if (len(args.mols) == 36) and (
+            len(args.mols.split("-")) == 5
+        ):  # looks like a molecule set id
+            molset_id = molecule_set_id_or_name
+        else:
+            available_molsets_rev = {v: k for k, v in available_molsets.items()}
+            molset_id = available_molsets_rev[molecule_set_id_or_name]
+            if molset_id not in avail_molsets:
+                raise ValueError(
+                    f"Molecule Set with identifier: {molecule_set_id_or_name} not found in PostEra"
+                )
+        return molset_id
 
     def create(
         self, molecule_set_name: str, data: MoleculeList, return_full: bool = False
@@ -201,6 +268,12 @@ class MoleculeSetAPI(PostEraAPI):
             ]
             return pd.DataFrame(response_data)
 
+    def get_molecules_from_id_or_name(
+        self, molecule_set_id: str, return_as="dataframe"
+    ) -> Union[pd.DataFrame, list]:
+        molset_id = self.molecule_set_id_or_name(molecule_set_id, self.list_available())
+        return self.get_molecules(molset_id, return_as), molset_id
+
     def add_molecules(
         self,
         molecule_set_id: id,
@@ -261,3 +334,21 @@ class MoleculeSetAPI(PostEraAPI):
         ).json()
 
         return response["moleculesUpdated"]
+
+    def update_molecules_from_dataframe_with_filters(
+        self,
+        molecule_set_id: str,
+        df: pd.DataFrame,
+        smiles_field: str = "smiles",
+        id_field: str = "id",
+        overwrite=False,
+    ) -> list[str]:
+        df = PosteraFilter.filter_dataframe_cols(
+            df, smiles_field=smiles_field, id_field=id_field
+        )
+        mol_update_list = MoleculeUpdateList.from_pandas_df(
+            df, smiles_field=smiles_field, id_field=id_field
+        )
+        return self.update_molecules(
+            molecule_set_id, mol_update_list, overwrite=overwrite
+        )
