@@ -1435,6 +1435,8 @@ def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem
         mol.SetTitle(ed.compound_id)
         mols.append(mol)
     return mols
+
+
 def combine_files(paths: list[Union[Path, str]], output_file):
     with open(output_file, "w") as ofs:
         for file_to_copy in paths:
