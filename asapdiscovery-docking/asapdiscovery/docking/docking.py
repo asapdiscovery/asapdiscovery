@@ -263,28 +263,82 @@ def run_docking_oe(
     return True, combined_mol, docking_id
 
 
-def docking_result_cols() -> list[str]:
-    return [
-        "ligand_id",
-        "du_structure",
-        "docked_file",
-        "pose_id",
-        "docked_RMSD",
-        "POSIT_prob",
-        "POSIT_method",
-        "chemgauss4_score",
-        "clash",
-        "SMILES",
-        "GAT_score",
-        "SCHNET_score",
-    ]
+class DockingResultCols(Enum):
+    """
+    Columns for docking results
+    """
+
+    LIGAND_ID = "ligand_id"
+    DU_STRUCTURE = "du_structure"
+    DOCKED_FILE = "docked_file"
+    POSE_ID = "pose_id"
+    DOCKED_RMSD = "docked_RMSD"
+    POSIT_PROB = "POSIT_prob"
+    POSIT_METHOD = "POSIT_method"
+    CHEMGAUSS4_SCORE = "chemgauss4_score"
+    CLASH = "clash"
+    SMILES = "SMILES"
+    GAT_SCORE = "GAT_score"
+    SCHNET_SCORE = "SCHNET_score"
+
+    @staticmethod
+    def get_columns():
+        return [col.value for col in DockingResultCols]
+
+
+class TargetDependentCols(Enum):
+    """
+    Columns that are target dependent
+    """
+
+    LIGAND_ID = "ligand_id"
+    DU_STRUCTURE = "du_structure"
+    DOCKED_FILE = "docked_file"
+    POSE_ID = "pose_id"
+    DOCKED_RMSD = "docked_RMSD"
+    POSIT_PROB = "POSIT_prob"
+    POSIT_METHOD = "POSIT_method"
+    CHEMGAUSS4_SCORE = "chemgauss4_score"
+    GAT_SCORE = "GAT_score"
+    SCHNET_SCORE = "SCHNET_score"
+
+    @staticmethod
+    def get_columns() -> List[str]:
+        return [col.value for col in DockingResultCols]
+
+    @staticmethod
+    def get_columns_for_target(target) -> List[str]:
+        return [col.value + f"_{target}" for col in DockingResultCols]
+
+
+def rename_score_columns_for_target(df: pd.DataFrame, target: str) -> pd.DataFrame:
+    """
+    Rename columns of a docking result dataframe for a specific target
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Docking result dataframe
+    target : str
+        Target name
+
+    Returns
+    -------
+    pd.DataFrame
+        Docking result dataframe with renamed columns
+    """
+    cols = TargetDependentCols.get_columns()
+    target_cols = TargetDependentCols.get_columns_for_target(target)
+    rename_dict = dict(zip(cols, target_cols))
+    df = df.rename(columns=rename_dict)
+    return df
 
 
 def make_docking_result_dataframe(
     results: list,
     output_dir: Path,
     save_csv: bool = True,
-    results_cols: Optional[list[str]] = docking_result_cols(),
+    results_cols: Optional[list[str]] = DockingResultCols.get_columns(),
     csv_name: Optional[str] = "results.csv",
 ) -> tuple[pd.DataFrame, Path]:
     """

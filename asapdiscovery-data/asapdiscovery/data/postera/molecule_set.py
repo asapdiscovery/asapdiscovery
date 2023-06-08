@@ -92,11 +92,8 @@ class PosteraAllowedColumns(Enum):
     docked_file_MERS = "docked_file_MERS"
     docked_file_SARS2 = "docked_file_SARS2"
 
-    def to_list(cls):
-        return [column.value for column in cls]
-
-    def to_dict(cls):
-        return {column.name: column.value for column in cls}
+    def get_columns():
+        return [column.value for column in PosteraAllowedColumns]
 
 
 class PosteraFilter:
@@ -109,13 +106,17 @@ class PosteraFilter:
     def filter_dataframe_cols(
         df: pd.DataFrame, smiles_field=None, id_field=None, additional_cols=None
     ) -> pd.DataFrame:
-        allowed_columns = PosteraAllowedColumns.to_list()
+
+        # construct list of allowed columns
+        allowed_columns = PosteraAllowedColumns.get_columns()
         if smiles_field is not None:
             allowed_columns.append(smiles_field)
         if id_field is not None:
             allowed_columns.append(id_field)
         if additional_cols is not None:
             allowed_columns.extend(additional_cols)
+
+        # drop columns that are not allowed
         extra_cols = [col for col in df.columns if col not in allowed_columns]
         return df.drop(columns=extra_cols)
 

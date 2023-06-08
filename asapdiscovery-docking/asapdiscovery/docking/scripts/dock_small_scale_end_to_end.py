@@ -21,10 +21,15 @@ from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
     is_valid_smiles,
     oe_load_exp_from_file,
+    target_names_from_common_names_and_crystals,
 )
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.docking import dock_and_score_pose_oe, make_docking_result_dataframe
+from asapdiscovery.docking import (
+    dock_and_score_pose_oe,
+    make_docking_result_dataframe,
+    rename_score_columns_for_target,
+)
 from asapdiscovery.docking import prep_mp as oe_prep_function
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
@@ -112,8 +117,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-s3",
-    "--s3",
+    "--postera-upload",
+    action="store_true",
+    help=(
+        "Indicates that the results of this docking run should be uploaded to PostEra, requires POSTERA_API_KEY environment variable to be set."
+    ),
+)
+
+parser.add_argument(
+    "--s3-upload",
     action="store_true",
     help=(
         "Use in conjunction with -p flag to upload results to S3 bucket, requires AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN environment variables to be set."
@@ -302,6 +314,8 @@ def main():
         logger.warning(f"Overwriting output directory: {output_dir}")
 
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
+    target_type = target_names_from_common_names_and_crystals(args.target)
+    logger.info(f"Target type: {target_name}")
     logger.info(f"Output directory: {output_dir}")
 
     # openeye logging handling
@@ -394,21 +408,7 @@ def main():
 
         ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
         avail_molsets = ms.list_available()
-
-        if (len(args.mols) == 36) and (len(args.mols.split("-")) == 5):
-            logger.info("Molecule Set provided looks like a UUID")
-            molset_id = args.mols
-        else:
-            logger.info(
-                "Molecule Set looks like a name, will try to find it in PostEra"
-            )
-            avail_molsets_rev = {v: k for k, v in avail_molsets.items()}
-            molset_id = avail_molsets_rev[args.mols]
-
-        if molset_id not in avail_molsets:
-            raise ValueError(f"Molecule Set with ID: {args.mols} not found in PostEra")
-
-        mols = ms.get_molecules(molset_id)
+        mols, molset_id = ms.get_molecules_from_id_or_name(args.mols)
         logger.info(
             f"Found {len(mols)} molecules in Molecule Set ID: {molset_id} with name: {avail_molsets[molset_id]}"
         )
@@ -936,6 +936,17 @@ def main():
                 logger=logger,
             )
             gif_visualiser.write_traj_visualizations()
+
+    if args.postera_upload:
+        if not args.postera:
+            raise ValueError("Must use --postera to upload to PostEra")
+        logger.info("Uploading results to PostEra")
+
+        renamed_top_posit = rename_columns_for_target(top_posit, target_type)
+        ms.update_molecules_from_dataframe_with_filters(renamed_top_posit)
+
+    if args.s3:
+        pass  # TODO
 
     if args.cleanup:
         if len(intermediate_files) > 0:
