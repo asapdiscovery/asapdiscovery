@@ -36,6 +36,7 @@ class GIFVisualizer:
         systems: list[Path],
         output_paths: list[Path],
         target: str,
+        frames_per_ns: int = 200,
         pse: bool = False,
         pse_share: bool = True,
         smooth: int = 0,
@@ -124,6 +125,7 @@ class GIFVisualizer:
                 )
 
         # kwargs
+        self.frames_per_ns = frames_per_ns
         self.pse = pse
         self.pse_share = pse_share
         self.smooth = smooth
@@ -295,6 +297,10 @@ class GIFVisualizer:
             raise OSError(f"No {prefix}*.png files found - did PyMol not generate any?")
         png_files.sort()  # for some reason *sometimes* this list is scrambled messing up the GIF. Sorting fixes the issue.
 
+        # add progress bar to each frame
+
+        add_gif_progress_bar(png_files, frames_per_ns=self.frames_per_ns)
+
         with iio.get_writer(str(path), mode="I") as writer:
             for filename in png_files:
                 image = iio.imread(filename)
@@ -308,3 +314,51 @@ class GIFVisualizer:
         shutil.rmtree(tmpdir)
 
         return path
+
+
+def add_gif_progress_bar(png_paths: List[Union[Path, str]], frames_per_ns: int) -> None:
+    """
+    adds a progress bar and nanosecond counter onto PNG images. This assumes PNG
+    files are named with index in the form path/frame<INDEX>.png. Overlaying of these objects
+    happens in-place.
+
+    Parameters
+    ----------
+    png_paths : List[Union[Path, str]]
+        List of PNG paths to add progress bars to.
+    frames_per_ns : int
+        Number of frames per nanosecond
+    """
+
+    # global settings:
+    total_frames = len(png_files)
+
+    for filename in png_files:
+        filename = str(filename)
+        # get this file's frame number from the filename and calculate total amount of ns simulated for this frame
+        frame_num = int(filename.split("frame")[1].split(".png")[0])
+        total_ns_this_frame = "{:.1f}".format(frame_num / frames_per_ns)
+
+        # load the image.
+        img = Image.open(filename)
+        draw = ImageDraw.Draw(img, "RGBA")
+
+        # get its dimensions (need these for coords); calculate progress bar width at this frame.
+        width, height = img.size
+        bar_width = frame_num / total_frames * width
+
+        # draw the progress bar for this frame (black, fully opaque).
+        draw.rectangle(((0, height - 20), (bar_width, height)), fill=(0, 0, 0, 500))
+
+        # draw the text that shows
+        draw.text(
+            (width - 110, height - 10),
+            f"{total_ns_this_frame} ns",
+            # need to load a local font. For some odd reason this is the only way to write text with PIL.
+            font=ImageFont.truetype("OpenSans-Regular.ttf", 65),
+            fill=(0, 0, 0),  # make all black.
+            anchor="md",
+        )  # align to RHS; this way if value increases it will grow into frame.
+
+        # save the image.
+        img.save(filename)
