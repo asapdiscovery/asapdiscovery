@@ -12,7 +12,12 @@ class MoleculeComponent(str, Enum):
     OTHER = "other"
 
 
-class MoleculeFilter(BaseModel):
+class _Model(BaseModel):
+    class Config:
+        extra = "forbid"
+
+
+class MoleculeFilter(_Model):
     """Filter for selecting components of a molecule."""
 
     protein_chains: list = Field(
@@ -37,7 +42,8 @@ class MoleculeFilter(BaseModel):
     )
 
 
-class PrepOpts(BaseModel):
+class PrepOpts(_Model):
+
     ref_fn: Path = Field(None, description="Reference structure to align to.")
     ref_chain: str = Field(None, description="Chain ID to align to.")
     seqres_yaml: Path = Field(None, description="Path to seqres yaml")
@@ -49,7 +55,7 @@ class PrepOpts(BaseModel):
     output_dir: Path = Field(None, description="Directory to save output to.")
 
 
-class PreppedTarget(BaseModel):
+class PreppedTarget(_Model):
     source: CrystalCompoundData = Field(description="Source of model")
 
     # Filtering and Prepping options

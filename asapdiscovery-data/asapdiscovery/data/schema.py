@@ -67,6 +67,9 @@ class Data(BaseModel):
 
 
 class CrystalCompoundData(Data):
+    class Config:
+        extra = "forbid"
+
     compound_id: str = Field(
         None, description="The unique compound identifier of the ligand."
     )
@@ -84,6 +87,9 @@ class CrystalCompoundData(Data):
 
 
 class Dataset(BaseModel):
+    class Config:
+        extra = "forbid"
+
     data_type = Data
     iterable: list[data_type]
 

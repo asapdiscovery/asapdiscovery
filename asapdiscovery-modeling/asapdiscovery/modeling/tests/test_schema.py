@@ -6,7 +6,12 @@ from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import CrystalCompoundData
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import save_design_unit
-from asapdiscovery.modeling.schema import MoleculeFilter, PreppedTarget, PreppedTargets
+from asapdiscovery.modeling.schema import (
+    MoleculeFilter,
+    PreppedTarget,
+    PreppedTargets,
+    PrepOpts,
+)
 
 
 class TestMoleculeFilter:
@@ -56,6 +61,15 @@ def test_prepped_target(output_dir):
         assert Path(fn).is_file()
 
 
+class TestPrepOpts:
+    def test_prep_opts(self):
+        PrepOpts()
+
+    def test_prep_opts_fail(self):
+        with pytest.raises(pydantic.ValidationError):
+            PrepOpts(keep_water=True, keep_het=True)
+
+
 class TestPreppedTargets:
     def test_dataset_creation(self, target_dataset, sars_target, mers_target):
         assert len(target_dataset.iterable) == 2
@@ -66,9 +80,9 @@ class TestPreppedTargets:
             mers_target.source.str_fn
         )
 
-    @pytest.mark.skip(
-        reason="Multiple embedded schema objects need more logic to serialize to csv"
-    )
+    # @pytest.mark.skip(
+    #     reason="Multiple embedded schema objects need more logic to serialize to csv"
+    # )
     def test_dataset_csv_usage(
         self, target_dataset, output_dir, csv_name="to_prep.csv"
     ):
