@@ -44,8 +44,7 @@ slice-fragalysis-structures-with-mdtraj = "asapdiscovery.modeling.scripts.slice_
 where = ["."]
 
 [tool.coverage.run]
-concurrency = "multiprocessing"
-parallel = true
+concurrency = ["multiprocessing"]
 
 [tool.versioningit]
 

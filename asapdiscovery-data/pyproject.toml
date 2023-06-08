@@ -56,7 +56,6 @@ where = ["."]
 
 [tool.coverage.run]
 concurrency = ["multiprocessing"]
-parallel = true
 
 [tool.versioningit]
 

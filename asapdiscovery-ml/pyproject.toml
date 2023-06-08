@@ -35,8 +35,7 @@ upset-plot-ranked = "asapdiscovery.ml.scripts.upset_plot_ranked:main"
 where = ["."]
 
 [tool.coverage.run]
-concurrency = "multiprocessing"
-parallel = true
+concurrency = ["multiprocessing"]
 
 [tool.versioningit]
 

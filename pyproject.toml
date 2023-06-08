@@ -4,5 +4,4 @@ extend-ignore = ['E203','E501']
 [tool.isort]
 profile = "black"
 [tool.coverage.run]
-concurrency = "multiprocessing"
-parallel = true
+concurrency = ["multiprocessing"]

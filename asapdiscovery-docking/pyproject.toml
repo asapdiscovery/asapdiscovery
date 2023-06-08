@@ -51,8 +51,7 @@ write-receptor-grids = "asapdiscovery.docking.scripts.write_receptor_grids:main"
 where = ["."]
 
 [tool.coverage.run]
-concurrency = "multiprocessing"
-parallel = true
+concurrency = ["multiprocessing"]
 
 [tool.versioningit]
 

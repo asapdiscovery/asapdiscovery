@@ -33,8 +33,7 @@ dependencies = [
 where = ["."]
 
 [tool.coverage.run]
-concurrency = "multiprocessing"
-parallel = true
+concurrency = ["multiprocessing"]
 
 [tool.versioningit]
 
