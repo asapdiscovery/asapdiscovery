@@ -35,53 +35,13 @@ from functools import partial
 from glob import glob
 from pathlib import Path
 
-import numpy as np
 import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import (  # noqa: E402
-    combine_protein_ligand,
-    load_openeye_sdf,
-    oechem,
-    save_openeye_pdb,
-    save_openeye_sdf,
-    split_openeye_design_unit,
-)
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
-from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
-
-
-def check_results(d):
-    """
-    Check if results exist already so we can skip.
-
-    Parameters
-    ----------
-    d : str
-        Directory
-
-    Returns
-    -------
-    bool
-        Results already exist
-    """
-    if (not os.path.isfile(os.path.join(d, "docked.sdf"))) or (
-        not os.path.isfile(os.path.join(d, "results.pkl"))
-    ):
-        return False
-
-    try:
-        _ = load_openeye_sdf(os.path.join(d, "docked.sdf"))
-    except Exception:
-        return False
-
-    try:
-        _ = pkl.load(open(os.path.join(d, "results.pkl"), "rb"))
-    except Exception:
-        return False
-
-    return True
+from asapdiscovery.docking.docking import dock_and_score_pose_oe
 
 
 def load_dus(fn_dict, log_name):
@@ -111,146 +71,6 @@ def load_dus(fn_dict, log_name):
 
     logger.info(f"{len(du_dict.keys())} design units loaded")
     return du_dict
-
-
-def mp_func(
-    out_dir,
-    lig_name,
-    du_name,
-    log_name,
-    compound_name,
-    du,
-    *args,
-    GAT_model=None,
-    schnet_model=None,
-    **kwargs,
-):
-    """
-    Wrapper function for multiprocessing. Everything other than the named args
-    will be passed directly to run_docking_oe.
-
-    Parameters
-    ----------
-    out_dir : str
-        Output file
-    lig_name : str
-        Ligand name
-    du_name : str
-        DesignUnit name
-    log_name : str
-        High-level logger name
-    compound_name : str
-        Compound name, used for error messages if given
-    GAT_model : GATInference, optional
-        GAT model to use for inference. If None, will not perform inference.
-    schnet_model : SchNetInference, optional
-        SchNet model to use for inference. If None, will not perform inference.
-
-    Returns
-    -------
-    """
-    logname = f"{log_name}.{compound_name}"
-
-    before = datetime.now().isoformat()
-    if check_results(out_dir):
-        logger = FileLogger(logname, path=str(out_dir)).getLogger()
-        logger.info(f"Found results for {compound_name}")
-        after = datetime.now().isoformat()
-        results = pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
-        logger.info(f"Start: {before}, End: {after}")
-        return results
-    else:
-        os.makedirs(out_dir, exist_ok=True)
-        logger = FileLogger(logname, path=str(out_dir)).getLogger()
-        logger.info(f"No results for {compound_name} found, running docking")
-        # this interferes with OEOmega see https://github.com/openforcefield/openff-toolkit/issues/1615
-        # errfs = oechem.oeofstream(os.path.join(out_dir, f"openeye_{logname}-log.txt"))
-        # oechem.OEThrow.SetOutputStream(errfs)
-        # oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-        # # oechem.OEThrow.Info(f"Starting docking for {logname}")
-
-    success, posed_mol, docking_id = run_docking_oe(
-        du, *args, log_name=log_name, **kwargs
-    )
-    if success:
-        out_fn = os.path.join(out_dir, "docked.sdf")
-        save_openeye_sdf(posed_mol, out_fn)
-
-        rmsds = []
-        posit_probs = []
-        posit_methods = []
-        chemgauss_scores = []
-        schnet_scores = []
-
-        # grab the du passed in and split it
-        lig, prot, complex = split_openeye_design_unit(du.CreateCopy())
-
-        for conf in posed_mol.GetConfs():
-            rmsds.append(float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD")))
-            posit_probs.append(
-                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
-            )
-            posit_methods.append(
-                oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT_method")
-            )
-            chemgauss_scores.append(
-                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4"))
-            )
-            if schnet_model is not None:
-                # TODO: this is a hack, we should be able to do this without saving
-                # the file to disk see # 253
-                outpath = Path(out_dir) / Path(".posed_mol_schnet_temp.pdb")
-                # join with the protein only structure
-                combined = combine_protein_ligand(prot, conf)
-                pdb_temp = save_openeye_pdb(combined, outpath)
-                schnet_score = schnet_model.predict_from_structure_file(pdb_temp)
-                schnet_scores.append(schnet_score)
-                outpath.unlink()
-            else:
-                schnet_scores.append(np.nan)
-
-        smiles = oechem.OEGetSDData(conf, "SMILES")
-        clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
-        if GAT_model is not None:
-            GAT_score = GAT_model.predict_from_smiles(smiles)
-        else:
-            GAT_score = np.nan
-
-    else:
-        out_fn = ""
-        rmsds = [-1.0]
-        posit_probs = [-1.0]
-        posit_methods = [""]
-        chemgauss_scores = [-1.0]
-        clash = -1
-        smiles = "None"
-        GAT_score = np.nan
-        schnet_scores = [np.nan]
-
-    results = [
-        (
-            lig_name,
-            du_name,
-            out_fn,
-            i,
-            rmsd,
-            prob,
-            method,
-            chemgauss,
-            clash,
-            smiles,
-            GAT_score,
-            schnet,
-        )
-        for i, (rmsd, prob, method, chemgauss, schnet) in enumerate(
-            zip(rmsds, posit_probs, posit_methods, chemgauss_scores, schnet_scores)
-        )
-    ]
-
-    pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
-    after = datetime.now().isoformat()
-    logger.info(f"Start: {before}, End: {after}")
-    return results
 
 
 def parse_du_filenames(receptors, regex, log_name, basefile="predocked.oedu"):
@@ -742,7 +562,7 @@ def main():
 
     # Apply ML arguments as kwargs to mp_func
     mp_func_ml_applied = partial(
-        mp_func, GAT_model=GAT_model, schnet_model=schnet_model
+        dock_and_score_pose_oe, GAT_model=GAT_model, schnet_model=schnet_model
     )
 
     if args.num_cores > 1:

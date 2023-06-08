@@ -22,13 +22,10 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
-from asapdiscovery.dataviz.gif_vis import GIFVisualiser
-from asapdiscovery.dataviz.html_vis import HTMLVisualiser
-from asapdiscovery.docking import make_docking_result_dataframe
+from asapdiscovery.dataviz.gif_viz import GIFVisualizer
+from asapdiscovery.dataviz.html_viz import HTMLVisualizer
+from asapdiscovery.docking import dock_and_score_pose_oe, make_docking_result_dataframe
 from asapdiscovery.docking import prep_mp as oe_prep_function
-from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: F401
-from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: F401
-from asapdiscovery.docking.scripts.run_docking_oe import mp_func as oe_docking_function
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
 """
@@ -44,7 +41,8 @@ Input:
     - output_dir: path to output_dir, will NOT overwrite if exists.
     - debug: enable debug mode, with more files saved and more verbose logging
     - verbose: whether to print out verbose logging.
-    - cleanup: clean up intermediate files
+    - cleanup: clean up intermediate files except for final csv and visualizations
+    - logname: name of logger
 
     # Prep arguments
     - loop_db: path to loop database.
@@ -61,23 +59,29 @@ Input:
     - gat: whether to use GAT model to score docked poses.
 
 
+    # MD arguments
+    - md: whether to run MD after docking.
+    - md-steps: number of MD steps to run, default 2500000 for a 10 ns simulation at 4 fs timestep.
+
 Example usage:
 
     # with an SDF or SMILES file
 
-    python single_target_docking.py \
+    dock-small-scale-e2e \
         -r /path/to/receptor.pdb \
         -m /path/to/mols.[sdf/smi] \
         -o /path/to/output_dir \
 
-    # with a SMILES string
+    # with a SMILES string using dask and requesting MD
 
-    python single_target_docking.py \
+    dock-small-scale-e2e \
         -r /path/to/receptor.pdb \
         -m 'COC(=O)COc1cc(cc2c1OCC[C@H]2C(=O)Nc3cncc4c3cccc4)Cl'
         -o /path/to/output_dir \
         --title 'my_fancy_molecule' \\ # without a title you will be given a hash of the SMILES string
         --debug \
+        --dask \
+        --md
 
 """
 
@@ -143,7 +147,7 @@ parser.add_argument(
 parser.add_argument(
     "--dask",
     action="store_true",
-    help=("use dask to parallelise docking"),
+    help=("use dask to parallelize docking"),
 )
 
 parser.add_argument(
@@ -195,12 +199,7 @@ parser.add_argument(
     "--seqres_yaml",
     help="Path to yaml file of SEQRES.",
 )
-parser.add_argument(
-    "--protein_only",
-    action="store_true",
-    default=False,
-    help="If true, generate design units with only the protein in them",
-)
+
 parser.add_argument(
     "--ref_prot",
     default=None,
@@ -222,14 +221,14 @@ parser.add_argument(
 )
 parser.add_argument(
     "--relax",
-    default="none",
-    help="When to run relaxation [none, clash, all]. Defaults to none.",
+    default="clash",
+    help="When to run relaxation [none, clash, all]. Defaults to clash.",
 )
 
 parser.add_argument(
-    "--omega",
+    "--no-omega",
     action="store_true",
-    help="Use Omega conformer enumeration.",
+    help="Do not use Omega conformer enumeration.",
 )
 
 parser.add_argument(
@@ -245,12 +244,26 @@ parser.add_argument(
     help="Number of poses to return from docking.",
 )
 
+
+# ML arguments
 parser.add_argument(
-    "--gat",
+    "--no-gat",
     action="store_true",
-    help="Whether to use GAT model to score docked poses.",
+    help="Do not use GAT model to score docked poses.",
 )
 
+parser.add_argument(
+    "--no-schnet",
+    action="store_true",
+    help="Do not use Schnet model to score docked poses.",
+)
+
+parser.add_argument(
+    "--target",
+    type=str,
+    required=True,
+    help="Target to write visualizations for, one of (sars2, mers, 7ene, 272)",
+)
 
 parser.add_argument(
     "--md", action="store_true", help="Whether to run MD after docking."
@@ -266,6 +279,10 @@ parser.add_argument(
 
 
 def main():
+    #########################
+    # parse input arguments #
+    #########################
+
     args = parser.parse_args()
 
     # setup output directory
@@ -305,7 +322,11 @@ def main():
 
     if args.dask:
         logger.info("Using dask to parallelise docking")
+        # set timeout to None so workers don't get killed on long timeouts
+        from dask import config as cfg
         from dask.distributed import Client
+
+        cfg.set({"distributed.scheduler.worker-ttl": None})
 
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
@@ -466,6 +487,10 @@ def main():
         for exp in exp_data:
             logger.debug(f"Loaded molecule {exp.compound_id}: {exp.smiles}")
 
+    #########################
+    #     protein prep      #
+    #########################
+
     # parse prep arguments
     prep_dir = output_dir / "prep"
     prep_dir.mkdir(parents=True, exist_ok=True)
@@ -514,9 +539,7 @@ def main():
     )
 
     logger.info(f"Loaded receptor {receptor_name} from {receptor}")
-    oe_prep_function(
-        xtal, args.ref_prot, seqres, prep_dir, args.loop_db, args.protein_only
-    )
+    oe_prep_function(xtal, args.ref_prot, seqres, prep_dir, args.loop_db, False)
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
     # grab the files that were created
@@ -564,28 +587,44 @@ def main():
     # setup docking
     logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
 
+    #########################
+    #        docking        #
+    #########################
+
     dock_dir = output_dir / "docking"
     dock_dir.mkdir(parents=True, exist_ok=True)
     intermediate_files.append(dock_dir)
 
     # ML stuff for docking, fill out others as we make them
     logger.info("Setup ML for docking")
-    gat_model_string = "asapdiscovery-GAT-2023.04.12"
+    gat_model_string = "asapdiscovery-GAT-2023.05.09"
+    schnet_model_string = "asapdiscovery-schnet-2023.04.29"
 
-    if args.gat:
+    if args.no_gat:
+        gat_model = None
+        logger.info("Not using GAT model")
+    else:
         from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
         gat_model = GATInference(gat_model_string)
         logger.info(f"Using GAT model: {gat_model_string}")
+
+    if args.no_schnet:
+        schnet_model = None
+        logger.info("Not using Schnet model")
     else:
-        logger.info("Skipping GAT model scoring")
-        gat_model = None
+        from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
+
+        schnet_model = SchnetInference(schnet_model_string)
+        logger.info(f"Using Schnet model: {schnet_model_string}")
 
     # use partial to bind the ML models to the docking function
-    full_oe_docking_function = partial(oe_docking_function, GAT_model=gat_model)
+    dock_and_score_pose_oe_ml = partial(
+        dock_and_score_pose_oe, GAT_model=gat_model, schnet_model=schnet_model
+    )
 
     if args.dask:
-        full_oe_docking_function = dask.delayed(full_oe_docking_function)
+        dock_and_score_pose_oe_ml = dask.delayed(dock_and_score_pose_oe_ml)
 
     # run docking
     logger.info(f"Running docking at {datetime.now().isoformat()}")
@@ -599,6 +638,11 @@ def main():
     else:
         logger.info("Using 3D molecules from input")
 
+    if args.no_omega:
+        omega = False
+    else:
+        omega = True
+
     for mol, compound in zip(oe_mols, exp_data):
         logger.debug(f"Running docking for {compound.compound_id}")
         if args.debug:
@@ -607,7 +651,7 @@ def main():
                 raise ValueError(
                     f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()}"
                 )
-        res = full_oe_docking_function(
+        res = dock_and_score_pose_oe_ml(
             dock_dir / f"{compound.compound_id}_{receptor_name}",
             compound.compound_id,
             prepped_oedu,
@@ -619,13 +663,17 @@ def main():
             args.relax.lower(),
             args.hybrid,
             f"{compound.compound_id}_{receptor_name}",
-            args.omega,
+            omega,
             args.num_poses,
         )
         results.append(res)
 
     if args.dask:  # make concrete
         results = dask.compute(*results)
+
+    ###########################
+    # wrangle docking results #
+    ###########################
 
     logger.info(f"Finished docking at {datetime.now().isoformat()}")
     logger.info(f"Docking finished for {len(results)} runs.")
@@ -638,46 +686,92 @@ def main():
 
     poses_dir = output_dir / "poses"
     poses_dir.mkdir(parents=True, exist_ok=True)
-    intermediate_files.append(poses_dir)
     logger.info(f"Starting docking result processing at {datetime.now().isoformat()}")
     logger.info(f"Processing {len(results_df)} docking results")
 
-    # only write out visualisation for the best posit score for each ligand
-    # sort by posit  score
+    ###########################
+    # pose HTML visualization #
+    ###########################
+
+    # only write out visualizations and do MD for the best posit score for each ligand
+    # sort by posit score
+
     sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
     top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
     # save with the failed ones in so its clear which ones failed
     top_posit.to_csv(output_dir / "top_poses.csv", index=False)
-    # only keep the ones that worked for the rest of workflow
+    n_total = len(top_posit)
+
+    # IMPORTANT: only keep the ones that worked for the rest of workflow
     top_posit = top_posit[top_posit.docked_file != ""]
-    top_posit.to_csv(output_dir / "top_poses_clean.csv", index=False)
+    top_posit.to_csv(output_dir / "top_poses_succeded.csv", index=False)
+
+    n_succeded = len(top_posit)
+    n_failed = n_total - n_succeded
 
     logger.info(
-        f"Writing out visualisation for top pose for each ligand (n={len(top_posit)})"
+        f"IMPORTANT: docking failed for {n_failed} poses / {n_total} total poses "
+    )
+
+    logger.info(
+        f"Writing out visualization for top pose for each ligand (n={len(top_posit)})"
     )
 
     # add pose output column
     top_posit["outpath_pose"] = top_posit["ligand_id"].apply(
-        lambda x: poses_dir / Path(x) / "visualisation.html"
+        lambda x: poses_dir / Path(x) / "visualization.html"
     )
 
-    # TODO: put inside dask loop
-    html_visualiser = HTMLVisualiser(
-        top_posit["docked_file"],
-        top_posit["outpath_pose"],
-        args.target,
-        protein_path,
-        logger=logger,
-    )
-    html_visualiser.write_pose_visualisations()
+    if args.dask:
+        logger.info("Running HTML visualization with Dask")
+        outpaths = []
 
-    del html_visualiser
+        @dask.delayed
+        def dask_html_adaptor(pose, outpath):
+            html_visualiser = HTMLVisualizer(
+                [pose],
+                [outpath],
+                args.target,
+                protein_path,
+                logger=logger,
+            )
+            output_paths = html_visualiser.write_pose_visualizations()
+
+            if len(output_paths) != 1:
+                raise ValueError(
+                    "Somehow got more than one output path from HTMLVisualizer"
+                )
+            return output_paths[0]
+
+        for pose, output_path in zip(
+            top_posit["docked_file"], top_posit["outpath_pose"]
+        ):
+            outpath = dask_html_adaptor(pose, output_path)
+            outpaths.append(outpath)
+
+        outpaths = client.compute(outpaths)
+        outpaths = client.gather(outpaths)
+
+    else:
+        logger.info("Running HTML visualization in serial")
+        html_visualiser = HTMLVisualizer(
+            top_posit["docked_file"],
+            top_posit["outpath_pose"],
+            args.target,
+            protein_path,
+            logger=logger,
+        )
+        html_visualiser.write_pose_visualizations()
 
     if args.dask:
         if args.dask_lilac:
             logger.info("Checking if we need to spawn a new client")
         else:  # cleanup CPU dask client and spawn new GPU-CUDA client
             client.close()
+
+    ###########################
+    #   pose MD simulation    #
+    ###########################
 
     if args.md:
         logger.info(f"Running MD on top pose for each ligand (n={len(top_posit)})")
@@ -762,11 +856,14 @@ def main():
 
         logger.info(f"Finished MD at {datetime.now().isoformat()}")
 
-        logger.info("making GIF visualisations")
+        ###########################
+        #   MD GIF visualization  #
+        ###########################
+
+        logger.info("making GIF visualizsations")
 
         gif_dir = output_dir / "gif"
         gif_dir.mkdir(parents=True, exist_ok=True)
-        intermediate_files.append(gif_dir)
 
         top_posit["outpath_md_sys"] = top_posit["outpath_md"].apply(
             lambda x: Path(x) / "minimized.pdb"
@@ -791,25 +888,26 @@ def main():
 
         @dask.delayed
         def dask_gif_adaptor(traj, system, outpath):
-            gif_visualiser = GIFVisualiser(
+            gif_visualizer = GIFVisualizer(
                 [traj],
                 [system],
                 [outpath],
                 args.target,
+                frames_per_ns=200,
                 smooth=5,
                 start=start,
                 logger=logger,
             )
-            output_paths = gif_visualiser.write_traj_visualisations()
+            output_paths = gif_visualizer.write_traj_visualizations()
 
             if len(output_paths) != 1:
                 raise ValueError(
-                    "Somehow got more than one output path from GIFVisualiser"
+                    "Somehow got more than one output path from GIFVisualizer"
                 )
             return output_paths[0]
 
         if args.dask:
-            logger.info("Running GIF visualisation with Dask")
+            logger.info("Running GIF visualization with Dask")
             outpaths = []
             for traj, system, outpath in zip(
                 top_posit["outpath_md_traj"],
@@ -825,18 +923,19 @@ def main():
             outpaths = client.gather(outpaths)
 
         else:
-            logger.info("Running GIF visualisation in serial")
+            logger.info("Running GIF visualization in serial")
             logger.warning("This will take a long time")
-            gif_visualiser = GIFVisualiser(
+            gif_visualiser = GIFVisualizer(
                 top_posit["outpath_md_traj"],
                 top_posit["outpath_md_sys"],
                 top_posit["outpath_gif"],
                 args.target,
+                frames_per_ns=200,
                 smooth=5,
                 start=start,
                 logger=logger,
             )
-            gif_visualiser.write_traj_visualisations()
+            gif_visualiser.write_traj_visualizations()
 
     if args.cleanup:
         if len(intermediate_files) > 0:

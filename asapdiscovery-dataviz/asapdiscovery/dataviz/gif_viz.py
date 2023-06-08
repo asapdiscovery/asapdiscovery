@@ -17,9 +17,9 @@ from ._gif_blocks import (
 from .show_contacts import show_contacts
 
 
-class GIFVisualiser:
+class GIFVisualizer:
     """
-    Class for generating GIF visualisations of MD trajectories.
+    Class for generating GIF visualizations of MD trajectories.
     """
 
     allowed_targets = (
@@ -36,6 +36,7 @@ class GIFVisualiser:
         systems: list[Path],
         output_paths: list[Path],
         target: str,
+        frames_per_ns: int = 200,
         pse: bool = False,
         pse_share: bool = True,
         smooth: int = 0,
@@ -50,13 +51,13 @@ class GIFVisualiser:
         Parameters
         ----------
         trajectories : List[Path]
-            List of trajectories to visualise.
+            List of trajectories to visualize.
         systems : List[Path]
             List of matching PDB files to load the system from
         output_paths : List[Path]
-            List of paths to write the visualisations to.
+            List of paths to write the visualizations to.
         target : str
-            Target to visualise poses for. Must be one of: "sars2", "mers", "7ene", "272".
+            Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
         pse : bool
             Whether to write PyMol session files.
         smooth : int
@@ -81,7 +82,7 @@ class GIFVisualiser:
         # init logger
         if logger is None:
             self.logger = FileLogger(
-                "gif_visualiser_log.txt", "./", stdout=True, level=logging.INFO
+                "gif_visualizer_log.txt", "./", stdout=True, level=logging.INFO
             ).getLogger()
         else:
             self.logger = logger
@@ -89,7 +90,7 @@ class GIFVisualiser:
         if target not in self.allowed_targets:
             raise ValueError(f"Target must be one of: {self.allowed_targets}")
         self.target = target
-        self.logger.info(f"Visualising trajectories for {self.target}")
+        self.logger.info(f"Visualizing trajectories for {self.target}")
 
         # setup pocket dict and view_coords for target
         if self.target == "sars2":
@@ -124,6 +125,7 @@ class GIFVisualiser:
                 )
 
         # kwargs
+        self.frames_per_ns = frames_per_ns
         self.pse = pse
         self.pse_share = pse_share
         self.smooth = smooth
@@ -138,12 +140,12 @@ class GIFVisualiser:
             self.logger.debug("Running in debug mode, setting pse=True")
             self.pse = True
         self.logger.debug(
-            f"Writing GIF visualisations for {len(self.output_paths)} ligands"
+            f"Writing GIF visualizations for {len(self.output_paths)} ligands"
         )
 
-    def write_traj_visualisations(self):
+    def write_traj_visualizations(self):
         """
-        Write GIF visualisations for all trajectories.
+        Write GIF visualizations for all trajectories.
         """
         output_paths = []
         for traj, system, path in zip(
@@ -151,13 +153,13 @@ class GIFVisualiser:
         ):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
-            output_path = self.write_traj_visualisation(traj, system, path)
+            output_path = self.write_traj_visualization(traj, system, path)
             output_paths.append(output_path)
         return output_paths
 
-    def write_traj_visualisation(self, traj, system, path):
+    def write_traj_visualization(self, traj, system, path):
         """
-        Write GIF visualisation for a single trajectory.
+        Write GIF visualization for a single trajectory.
         """
         # NOTE very important, need to spawn a new pymol proc for each trajectory
         # when working in parallel, otherwise they will trip over each other and not work.
@@ -295,6 +297,10 @@ class GIFVisualiser:
             raise OSError(f"No {prefix}*.png files found - did PyMol not generate any?")
         png_files.sort()  # for some reason *sometimes* this list is scrambled messing up the GIF. Sorting fixes the issue.
 
+        # add progress bar to each frame
+
+        add_gif_progress_bar(png_files, frames_per_ns=self.frames_per_ns)
+
         with iio.get_writer(str(path), mode="I") as writer:
             for filename in png_files:
                 image = iio.imread(filename)
@@ -308,3 +314,52 @@ class GIFVisualiser:
         shutil.rmtree(tmpdir)
 
         return path
+
+
+def add_gif_progress_bar(png_files: List[Union[Path, str]], frames_per_ns: int) -> None:
+    """
+    adds a progress bar and nanosecond counter onto PNG images. This assumes PNG
+    files are named with index in the form path/frame<INDEX>.png. Overlaying of these objects
+    happens in-place.
+
+    Parameters
+    ----------
+    png_files : List[Union[Path, str]]
+        List of PNG paths to add progress bars to.
+    frames_per_ns : int
+        Number of frames per nanosecond
+    """
+    from PIL import Image, ImageDraw, ImageFont
+
+    # global settings:
+    total_frames = len(png_files)
+
+    for filename in png_files:
+        filename = str(filename)
+        # get this file's frame number from the filename and calculate total amount of ns simulated for this frame
+        frame_num = int(filename.split("frame")[1].split(".png")[0])
+        total_ns_this_frame = f"{frame_num / frames_per_ns:.1f}"
+
+        # load the image.
+        img = Image.open(filename)
+        draw = ImageDraw.Draw(img, "RGBA")
+
+        # get its dimensions (need these for coords); calculate progress bar width at this frame.
+        width, height = img.size
+        bar_width = frame_num / total_frames * width
+
+        # draw the progress bar for this frame (black, fully opaque).
+        draw.rectangle(((0, height - 20), (bar_width, height)), fill=(0, 0, 0, 500))
+
+        # draw the text that shows
+        draw.text(
+            (width - 110, height - 10),
+            f"{total_ns_this_frame} ns",
+            # need to load a local font. For some odd reason this is the only way to write text with PIL.
+            font=ImageFont.truetype("OpenSans-Regular.ttf", 65),
+            fill=(0, 0, 0),  # make all black.
+            anchor="md",
+        )  # align to RHS; this way if value increases it will grow into frame.
+
+        # save the image.
+        img.save(filename)

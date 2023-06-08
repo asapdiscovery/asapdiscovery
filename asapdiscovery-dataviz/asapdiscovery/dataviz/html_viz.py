@@ -22,9 +22,9 @@ def _load_first_molecule(file_path: Path):
     return mols[0]
 
 
-class HTMLVisualiser:
+class HTMLVisualizer:
     """
-    Class for generating HTML visualisations of poses.
+    Class for generating HTML visualizations of poses.
     """
 
     allowed_targets = ("sars2", "mers", "7ene", "272")
@@ -43,11 +43,11 @@ class HTMLVisualiser:
         Parameters
         ----------
         poses : List[Path]
-            List of poses to visualise, in SDF format.
+            List of poses to visualize, in SDF format.
         output_paths : List[Path]
-            List of paths to write the visualisations to.
+            List of paths to write the visualizations to.
         target : str
-            Target to visualise poses for. Must be one of: "sars2", "mers", "7ene", "272".
+            Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
         logger : FileLogger
             Logger to use
 
@@ -58,7 +58,7 @@ class HTMLVisualiser:
         # init loggers
         if logger is None:
             self.logger = FileLogger(
-                "html_visualiser_log.txt", "./", stdout=True, level=logging.INFO
+                "html_visualizer_log.txt", "./", stdout=True, level=logging.INFO
             ).getLogger()
         else:
             self.logger = logger
@@ -103,31 +103,35 @@ class HTMLVisualiser:
         with open(path, "w") as f:
             f.write(html)
 
-    def write_pose_visualisations(self):
+    def write_pose_visualizations(self):
         """
         Write HTML visualisations for all poses.
         """
+        output_paths = []
         for pose, path in zip(self.poses, self.output_paths):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
-            self.write_pose_visualisation(pose, path)
+            outpath = self.write_pose_visualization(pose, path)
+            output_paths.append(outpath)
+        return output_paths
 
-    def write_pose_visualisation(self, pose, path):
+    def write_pose_visualization(self, pose, path):
         """
         Write HTML visualisation for a single pose.
         """
         html = self.get_html(pose)
         self.write_html(html, path)
+        return path
 
     def get_html(self, pose):
         """
-        Get HTML for visualising a single pose.
+        Get HTML for visualizing a single pose.
         """
         return self.get_html_body(pose) + self.get_html_footer()
 
     def get_html_body(self, pose):
         """
-        Get HTML body for pose visualisation
+        Get HTML body for pose visualization
         """
         protein_pdb = Chem.MolToPDBBlock(self.protein)
         # if there is an END line, remove it
@@ -141,7 +145,7 @@ class HTMLVisualiser:
 
     def get_html_footer(self):
         """
-        Get HTML footer for pose visualisation
+        Get HTML footer for pose visualization
         """
         if self.target == "sars2":
             return colour_sars2 + orient_tail_sars2
