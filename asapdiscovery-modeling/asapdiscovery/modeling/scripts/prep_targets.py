@@ -84,7 +84,7 @@ def main():
 
     # Load the targets
     logger.info(f"Loading targets from {args.input_file}")
-    targets: list = PreppedTargets.from_pkl(args.input_file).iterable
+    targets: list = PreppedTargets.from_json(args.input_file).iterable
     logger.info(f"Loaded {len(targets)} targets")
     if args.debug_num is not None:
         targets = targets[: args.debug_num]
@@ -113,6 +113,8 @@ def main():
         targets_list = pool.map(protein_prep_workflow_with_opts, targets)
 
     # Write out the prepped targets
-    output_pkl = args.output_dir / "prepped_targets.pkl"
-    logger.info(f"Writing prepped targets to {output_pkl}")
-    PreppedTargets.from_list(targets_list).to_pkl(output_pkl)
+    output = args.output_dir / "prepped_targets.json"
+    logger.info(f"Writing prepped targets to {output}")
+    prepped_targets = PreppedTargets.from_list(targets_list)
+    assert type(prepped_targets) == PreppedTargets
+    prepped_targets.to_json(fn=output)

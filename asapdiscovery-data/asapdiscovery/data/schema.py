@@ -1,6 +1,8 @@
 import json
 import pickle as pkl
 from datetime import date
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -102,9 +104,10 @@ class Dataset(BaseModel):
         with open(fn, "wb") as file:
             pkl.dump(self, file)
 
-    def to_json(self, fn):
+    def to_json(self, fn: Union[str, Path]):
+        to_write = self.json()
         with open(fn, "w") as file:
-            json.dump(self.dict(), file)
+            file.write(to_write)
 
     @classmethod
     def from_pkl(cls, fn):

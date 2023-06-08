@@ -71,6 +71,8 @@ def main():
             xtals = CrystalCompoundDataset.from_csv(args.input_file).iterable
         elif args.input_file.suffix == ".pkl":
             xtals = CrystalCompoundDataset.from_pkl(args.input_file).iterable
+        elif args.input_file.suffix == ".json":
+            xtals = CrystalCompoundDataset.from_json(args.input_file).iterable
         else:
             raise NotImplementedError
 
@@ -111,4 +113,4 @@ def main():
                 ),
             )
         )
-    PreppedTargets.from_list(targets).to_pkl(args.output_dir / "to_prep.pkl")
+    PreppedTargets.from_list(targets).to_json(args.output_dir / "to_prep.json")
