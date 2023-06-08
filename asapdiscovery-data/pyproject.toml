@@ -55,10 +55,7 @@ split-sdf = "asapdiscovery.data.scripts.split_sdf:main"
 where = ["."]
 
 [tool.coverage.run]
-omit = [
-    "*/tests/*"
-]
-concurrency = multiprocessing
+concurrency = "multiprocessing"
 parallel = true
 
 [tool.versioningit]
