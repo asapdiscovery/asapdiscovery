@@ -36,6 +36,8 @@ where = ["."]
 omit = [
     "*/tests/*"
 ]
+concurrency = multiprocessing
+parallel = true
 
 [tool.versioningit]
 
