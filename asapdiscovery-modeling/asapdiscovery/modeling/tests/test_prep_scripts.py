@@ -43,14 +43,14 @@ def test_mers_download_and_create_prep_inputs(
 
     ret = script_runner.run(
         "create-prep-inputs",
-        "-d",
-        f"{output_dir / 'input_structures'}",
+        "-s",
+        f"{output_dir / 'input_structures/rcsb_8czt-assembly1.cif'}",
         "-o",
         f"{output_dir / 'metadata'}",
         "--components_to_keep",
         "protein",
         "--oe_active_site_residue",
-        "HIS:41: :A:0: ",
+        "HIS:41: :A: ",
     )
     assert ret.success
 
@@ -61,7 +61,7 @@ def test_mers_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
     ret = script_runner.run(
         "prep-targets",
         "-i",
-        f"{output_dir / 'metadata' / 'to_prep.pkl'}",
+        f"{output_dir / 'metadata' / 'to_prep.json'}",
         "-o",
         f"{output_dir / 'prepped_structures'}",
         "-r",
@@ -140,7 +140,7 @@ def test_sars_create_prep_inputs(
             ]
         )
         assert ret.success
-        assert (output_dir / "metadata" / "to_prep.pkl").exists()
+        assert (output_dir / "metadata" / "to_prep.json").exists()
     else:
         ret = script_runner.run(
             [
@@ -155,7 +155,7 @@ def test_sars_create_prep_inputs(
             ]
         )
         assert ret.success
-        assert (output_dir / "metadata" / "to_prep.pkl").exists()
+        assert (output_dir / "metadata" / "to_prep.json").exists()
 
 
 @pytest.mark.timeout(300)
@@ -164,7 +164,7 @@ def test_sars_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
     ret = script_runner.run(
         "prep-targets",
         "-i",
-        f"{output_dir / 'metadata' / 'to_prep.pkl'}",
+        f"{output_dir / 'metadata' / 'to_prep.json'}",
         "-o",
         f"{output_dir / 'prepped_structures'}",
         "-r",

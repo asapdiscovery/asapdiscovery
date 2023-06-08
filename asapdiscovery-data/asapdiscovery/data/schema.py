@@ -5,6 +5,8 @@ from datetime import date
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
+from typing import Union
+from pathlib import Path
 
 
 # From FAH ###################################
@@ -102,9 +104,17 @@ class Dataset(BaseModel):
         with open(fn, "wb") as file:
             pkl.dump(self, file)
 
-    def to_json(self, fn):
+    def to_json(self, fn: Union[str, Path]):
+        import pdb as pdb_debug
+
+        pdb_debug.set_trace()
+        to_write = self.dict()
+        if not isinstance(to_write, dict):
+            raise TypeError(
+                f"Failed to construct dictionary from {self}, got {type(to_write)} instead."
+            )
         with open(fn, "w") as file:
-            json.dump(self.dict(), file)
+            json.dump(to_write, file)
 
     @classmethod
     def from_pkl(cls, fn):
