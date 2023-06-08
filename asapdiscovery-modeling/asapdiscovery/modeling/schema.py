@@ -43,7 +43,6 @@ class MoleculeFilter(_Model):
 
 
 class PrepOpts(_Model):
-
     ref_fn: Path = Field(None, description="Reference structure to align to.")
     ref_chain: str = Field(None, description="Chain ID to align to.")
     seqres_yaml: Path = Field(None, description="Path to seqres yaml")

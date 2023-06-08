@@ -1,7 +1,7 @@
 from asapdiscovery.data.schema import (
-    ExperimentalCompoundData,
     CrystalCompoundData,
     CrystalCompoundDataset,
+    ExperimentalCompoundData,
 )
 
 
