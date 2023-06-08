@@ -4,7 +4,7 @@ import pickle as pkl
 from datetime import datetime
 from pathlib import Path  # noqa: F401
 from typing import List, Optional, Tuple  # noqa: F401
-
+from enum import Enum
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.logging import FileLogger

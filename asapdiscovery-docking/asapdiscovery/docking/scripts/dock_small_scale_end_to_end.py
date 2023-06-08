@@ -271,13 +271,6 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--target",
-    type=str,
-    required=True,
-    help="Target to write visualizations for, one of (sars2, mers, 7ene, 272)",
-)
-
-parser.add_argument(
     "--md", action="store_true", help="Whether to run MD after docking."
 )
 
@@ -315,7 +308,7 @@ def main():
 
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     target_type = target_names_from_common_names_and_crystals(args.target)
-    logger.info(f"Target type: {target_name}")
+    logger.info(f"Target type: {target_type}")
     logger.info(f"Output directory: {output_dir}")
 
     # openeye logging handling
@@ -420,7 +413,7 @@ def main():
         ]
 
         # also create S3 instance
-        if args.s3:
+        if args.s3_upload:
             from asapdiscovery.data.aws.s3_utils import (
                 create_S3_session_with_token_from_envvars,
                 upload_artifacts_from_content,
@@ -942,8 +935,10 @@ def main():
             raise ValueError("Must use --postera to upload to PostEra")
         logger.info("Uploading results to PostEra")
 
-        renamed_top_posit = rename_columns_for_target(top_posit, target_type)
-        ms.update_molecules_from_dataframe_with_filters(renamed_top_posit)
+        renamed_top_posit = rename_score_columns_for_target(top_posit, target_type)
+        renamed_top_posit.to_csv(output_dir / "postera_uploaded.csv", index=False)
+
+        ms.update_molecules_from_dataframe_with_filters(molset_id, renamed_top_posit)
 
     if args.s3:
         pass  # TODO

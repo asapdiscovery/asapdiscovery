@@ -1,6 +1,7 @@
 from typing import Union
 from enum import Enum
 import pandas as pd
+from typing import Dict
 from typing_extensions import TypedDict
 
 from .postera_api import PostEraAPI
@@ -83,14 +84,16 @@ class PosteraAllowedColumns(Enum):
     id = "id"
     ligand_id = "ligand_id"
     asap_vc_id = "asap_vc_id"
-    MERS_pose = "MERS_pose"
-    SARS2_pose = "SARS2_pose"
-    POSIT_prob_MERS = "POSIT_prob_MERS"
-    POSIT_prob_SARS2 = "POSIT_prob_SARS2"
-    chemgauss4_score_MERS = "chemgauss4_score_MERS"
-    chemgauss4_score_SARS2 = "chemgauss4_score_SARS2"
-    docked_file_MERS = "docked_file_MERS"
-    docked_file_SARS2 = "docked_file_SARS2"
+    mers_pose = "mers_pose"
+    sars2_pose = "sars2_pose"
+    POSIT_prob_mers = "POSIT_prob_mers"
+    POSIT_prob_sars2 = "POSIT_prob_sars2"
+    chemgauss4_score_mers = "chemgauss4_score_mers"
+    chemgauss4_score_sars2 = "chemgauss4_score_sars2"
+    docked_file_mers = "docked_file_mers"
+    docked_file_sars2 = "docked_file_sars2"
+    MLDocking_pIC50_GAT_mers = "MLDocking_pIC50_GAT_mers"
+    MLDocking_pIC50_GAT_sars2 = "MLDocking_pIC50_GAT_sars2"
 
     def get_columns():
         return [column.value for column in PosteraAllowedColumns]
@@ -102,7 +105,7 @@ class PosteraFilter:
     should be able to update in postera.
     """
 
-    @classmethod
+    @staticmethod
     def filter_dataframe_cols(
         df: pd.DataFrame, smiles_field=None, id_field=None, additional_cols=None
     ) -> pd.DataFrame:
@@ -136,14 +139,14 @@ class MoleculeSetAPI(PostEraAPI):
         Helper function to determine if the input is a molecule set id or name
         and return the molecule set id
         """
-        if (len(args.mols) == 36) and (
-            len(args.mols.split("-")) == 5
+        if (len(molecule_set_id_or_name) == 36) and (
+            len(molecule_set_id_or_name.split("-")) == 5
         ):  # looks like a molecule set id
             molset_id = molecule_set_id_or_name
         else:
             available_molsets_rev = {v: k for k, v in available_molsets.items()}
             molset_id = available_molsets_rev[molecule_set_id_or_name]
-            if molset_id not in avail_molsets:
+            if molset_id not in available_molsets:
                 raise ValueError(
                     f"Molecule Set with identifier: {molecule_set_id_or_name} not found in PostEra"
                 )
