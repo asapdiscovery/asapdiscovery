@@ -1,4 +1,18 @@
 import logging
+from collections import namedtuple
+from asapdiscovery.data.openeye import oechem, oedocking
+from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+
+POSIT_METHODS = ("all", "hybrid", "fred", "mcs", "shapefit")
+
+posit_methods = namedtuple("posit_methods", POSIT_METHODS)
+posit_method_ints = posit_methods(
+    oedocking.OEPositMethod_ALL,
+    oedocking.OEPositMethod_HYBRID,
+    oedocking.OEPositMethod_FRED,
+    oedocking.OEPositMethod_MCS,
+    oedocking.OEPositMethod_SHAPEFIT,
+)
 
 
 def run_docking_oe(
@@ -6,7 +20,7 @@ def run_docking_oe(
     orig_mol,
     dock_sys,
     relax="none",
-    hybrid=False,
+    posit_method: str = "all",
     compound_name=None,
     use_omega=False,
     num_poses=1,
@@ -31,8 +45,8 @@ def run_docking_oe(
         Which docking system to use ["posit", "hybrid"]
     relax : str, default="none"
         When to check for relaxation ["clash", "all", "none"]
-    hybrid : bool, default=False
-        Set POSIT methods to only use Hybrid
+    posit_method : bool, default=False
+        Set POSIT method to use one of the POSIT_METHODS
     log_name : str, optional
         Name of high-level logger to use
     compound_name : str, optional
@@ -71,8 +85,6 @@ def run_docking_oe(
         logger.addHandler(handler)
         logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
     logger.info(f"Running docking for {compound_name}")
-    from asapdiscovery.data.openeye import oechem, oedocking
-    from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
     oechem.OEThrow.Debug("Confirm that OE logging is working")
 
@@ -108,9 +120,14 @@ def run_docking_oe(
         opts.SetIgnoreNitrogenStereo(True)
         # Set the POSIT methods to only be hybrid (otherwise leave as default
         #  of all)
-        if hybrid:
-            opts.SetPositMethods(oedocking.OEPositMethod_HYBRID)
-            docking_id.append("hybrid")
+        if posit_method not in POSIT_METHODS:
+            raise ValueError(
+                f"Unknown POSIT method {posit_method}. Must be one of {POSIT_METHODS}"
+            )
+        else:
+            method = posit_method_ints._asdict()[posit_method]
+            opts.SetPositMethods(method)
+            docking_id.append(posit_method)
 
         # Set up pose relaxation
         if relax == "clash":
@@ -126,7 +143,7 @@ def run_docking_oe(
 
         if compound_name:
             logger.info(
-                f"Running POSIT {'hybrid' if hybrid else 'all'} docking with "
+                f"Running POSIT method '{posit_method}' docking with "
                 f"{relax} relaxation for {compound_name}"
             )
 
@@ -175,7 +192,7 @@ def run_docking_oe(
 
         if compound_name:
             logger.info(
-                f"Re-running POSIT {'hybrid' if hybrid else 'all'} docking with no relaxation for {compound_name}",
+                f"Re-running POSIT with method '{posit_method}' docking with no relaxation for {compound_name}",
             )
 
         # Set up poser object
