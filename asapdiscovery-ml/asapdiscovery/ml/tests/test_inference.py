@@ -18,7 +18,7 @@ def weights_yaml():
 
 
 @pytest.fixture()
-def docked_structure_file():
+def docked_structure_file(scope="session"):
     return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
 
 
