@@ -1,24 +1,28 @@
+import pandas as pd
+from enum import Enum
+
+
 class ManifoldAllowedColumns(Enum):
     """
     Enum of allowed columns for the P5 comp-chem team to update in postera.
     """
 
-    smiles = "smiles"
-    id = "id"
-    ligand_id = "ligand_id"
-    asap_vc_id = "asap_vc_id"
-    mers_pose = "mers_pose"
-    sars2_pose = "sars2_pose"
-    POSIT_prob_mers = "POSIT_prob_mers"
-    POSIT_prob_sars2 = "POSIT_prob_sars2"
-    chemgauss4_score_mers = "chemgauss4_score_mers"
-    chemgauss4_score_sars2 = "chemgauss4_score_sars2"
-    docked_file_mers = "docked_file_mers"
-    docked_file_sars2 = "docked_file_sars2"
-    MLDocking_pIC50_GAT_mers = "MLDocking_pIC50_GAT_mers"
-    MLDocking_pIC50_GAT_sars2 = "MLDocking_pIC50_GAT_sars2"
-    MLDocking_pIC50_Schnet_mers = "MLDocking_pIC50_GAT_mers"
-    MLDocking_pIC50_Schnet_sars2 = "MLDocking_pIC50_GAT_sars2"
+    SMILES = "smiles"
+    ID = "id"
+    LIGAND_ID = "ligand_id"
+    ASAP_VC_ID = "asap_vc_id"
+    MERS_POSE = "mers_pose"
+    SARS2_POSE = "sars2_pose"
+    POSIT_PROB_MERS = "POSIT_prob_mers"
+    POSIT_PROB_SARS2 = "POSIT_prob_sars2"
+    CHEMGAUSS4_SCORE_MERS = "chemgauss4_score_mers"
+    CHEMGAUSS4_SCORE_SARS2 = "chemgauss4_score_sars2"
+    DOCKED_FILE_MERS = "docked_file_mers"
+    DOCKED_FILE_SARS2 = "docked_file_sars2"
+    GAT_SCORE_MERS = "GAT_score_mers"
+    GAT_SCORE_SARS2 = "GAT_score_sars2"
+    SCHNET_SCORE_MERS = "SCHNET_score_mers"
+    SCHNET_SCORE_SARS2 = "SCHNET_score_sars2"
 
     def get_columns():
         return [column.value for column in ManifoldAllowedColumns]
@@ -49,7 +53,7 @@ class ManifoldFilter:
         df: pd.DataFrame, smiles_field=None, id_field=None, additional_cols=None
     ) -> pd.DataFrame:
         # construct list of allowed columns
-        allowed_columns = PosteraAllowedColumns.get_columns()
+        allowed_columns = ManifoldAllowedColumns.get_columns()
         if smiles_field is not None:
             allowed_columns.append(smiles_field)
         if id_field is not None:

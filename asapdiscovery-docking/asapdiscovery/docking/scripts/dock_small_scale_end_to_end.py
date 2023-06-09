@@ -935,10 +935,19 @@ def main():
             raise ValueError("Must use --postera to upload to PostEra")
         logger.info("Uploading results to PostEra")
 
-        renamed_top_posit = rename_score_columns_for_target(top_posit, target_type)
-        renamed_top_posit.to_csv(output_dir / "postera_uploaded.csv", index=False)
+        renamed_top_posit = rename_score_columns_for_target(
+            top_posit, target_type, manifold_validate=True
+        )
 
-        ms.update_molecules_from_dataframe_with_filters(molset_id, renamed_top_posit)
+        # import pdb
+        # pdb.set_trace()
+        ms.update_molecules_from_df_with_manifold_validation(
+            molset_id,
+            renamed_top_posit,
+            id_field="ligand_id",
+            smiles_field="SMILES",
+            debug_df_path=output_dir / "postera_uploaded.csv",
+        )
 
     if args.s3:
         pass  # TODO

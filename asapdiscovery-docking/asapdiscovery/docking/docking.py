@@ -4,7 +4,6 @@ import pickle as pkl
 from datetime import datetime
 from pathlib import Path  # noqa: F401
 from typing import List, Optional, Tuple  # noqa: F401
-from enum import Enum
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.logging import FileLogger
@@ -16,6 +15,8 @@ from asapdiscovery.data.openeye import (
     save_openeye_sdf,
     split_openeye_design_unit,
 )
+
+from .docking_data_validation import DockingResultCols, TargetDependentCols
 
 
 def run_docking_oe(
@@ -263,55 +264,9 @@ def run_docking_oe(
     return True, combined_mol, docking_id
 
 
-class DockingResultCols(Enum):
-    """
-    Columns for docking results
-    """
-
-    LIGAND_ID = "ligand_id"
-    DU_STRUCTURE = "du_structure"
-    DOCKED_FILE = "docked_file"
-    POSE_ID = "pose_id"
-    DOCKED_RMSD = "docked_RMSD"
-    POSIT_PROB = "POSIT_prob"
-    POSIT_METHOD = "POSIT_method"
-    CHEMGAUSS4_SCORE = "chemgauss4_score"
-    CLASH = "clash"
-    SMILES = "SMILES"
-    GAT_SCORE = "GAT_score"
-    SCHNET_SCORE = "SCHNET_score"
-
-    @staticmethod
-    def get_columns():
-        return [col.value for col in DockingResultCols]
-
-
-class TargetDependentCols(Enum):
-    """
-    Columns that are target dependent
-    """
-
-    LIGAND_ID = "ligand_id"
-    DU_STRUCTURE = "du_structure"
-    DOCKED_FILE = "docked_file"
-    POSE_ID = "pose_id"
-    DOCKED_RMSD = "docked_RMSD"
-    POSIT_PROB = "POSIT_prob"
-    POSIT_METHOD = "POSIT_method"
-    CHEMGAUSS4_SCORE = "chemgauss4_score"
-    GAT_SCORE = "GAT_score"
-    SCHNET_SCORE = "SCHNET_score"
-
-    @staticmethod
-    def get_columns() -> List[str]:
-        return [col.value for col in DockingResultCols]
-
-    @staticmethod
-    def get_columns_for_target(target) -> List[str]:
-        return [col.value + f"_{target}" for col in DockingResultCols]
-
-
-def rename_score_columns_for_target(df: pd.DataFrame, target: str) -> pd.DataFrame:
+def rename_score_columns_for_target(
+    df: pd.DataFrame, target: str, manifold_validate=True
+) -> pd.DataFrame:
     """
     Rename columns of a docking result dataframe for a specific target
 
@@ -321,6 +276,8 @@ def rename_score_columns_for_target(df: pd.DataFrame, target: str) -> pd.DataFra
         Docking result dataframe
     target : str
         Target name
+    manifold_validate : bool, default=True
+        Whether to check that the columns are valid for updating in postera
 
     Returns
     -------
@@ -328,7 +285,12 @@ def rename_score_columns_for_target(df: pd.DataFrame, target: str) -> pd.DataFra
         Docking result dataframe with renamed columns
     """
     cols = TargetDependentCols.get_columns()
-    target_cols = TargetDependentCols.get_columns_for_target(target)
+    if manifold_validate:
+        target_cols = TargetDependentCols.get_columns_for_target(target)
+    else:
+        target_cols = (
+            TargetDependentCols.get_columns_for_target_with_manifold_validation(target)
+        )
     rename_dict = dict(zip(cols, target_cols))
     df = df.rename(columns=rename_dict)
     return df

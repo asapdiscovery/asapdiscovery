@@ -1,5 +1,4 @@
 from typing import Union
-from enum import Enum
 import pandas as pd
 from typing import Dict
 from typing_extensions import TypedDict
@@ -291,24 +290,36 @@ class MoleculeSetAPI(PostEraAPI):
 
         return response["moleculesUpdated"]
 
-    def update_molecules_from_dataframe_with_filters(
+    def update_molecules_from_df_with_manifold_validation(
         self,
         molecule_set_id: str,
         df: pd.DataFrame,
         smiles_field: str = "smiles",
         id_field: str = "id",
         overwrite=False,
+        debug_df_path: str = None,
     ) -> list[str]:
         df = ManifoldFilter.filter_dataframe_cols(
             df, smiles_field=smiles_field, id_field=id_field
         )
         if not ManifoldFilter.all_valid_columns(df.columns):
             raise ValueError(
-                f"Columns in dataframe are not valid for updating in postera. Valid columns are: {ManifoldAllowedColumns.get_columns()}"
+                f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedColumns.get_columns()}"
             )
+
+        # fill nan values with empty string
+        df = df.fillna("")
+
+        # save debug df if requested
+        if debug_df_path is not None:
+            df.to_csv(debug_df_path, index=False)
+
+        # make payload for postera
         mol_update_list = MoleculeUpdateList.from_pandas_df(
             df, smiles_field=smiles_field, id_field=id_field
         )
+
+        # push updates to postera
         return self.update_molecules(
             molecule_set_id, mol_update_list, overwrite=overwrite
         )
