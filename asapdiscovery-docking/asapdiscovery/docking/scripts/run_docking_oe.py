@@ -49,7 +49,7 @@ from asapdiscovery.data.openeye import (  # noqa: E402
 )
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
-from asapdiscovery.docking.docking import run_docking_oe, POSIT_METHODS  # noqa: E402
+from asapdiscovery.docking.docking import POSIT_METHODS, run_docking_oe  # noqa: E402
 
 
 def check_results(d):

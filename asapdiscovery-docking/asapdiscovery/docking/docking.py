@@ -1,5 +1,6 @@
 import logging
 from collections import namedtuple
+
 from asapdiscovery.data.openeye import oechem, oedocking
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
