@@ -5,6 +5,7 @@ from typing import Dict
 from typing_extensions import TypedDict
 
 from .postera_api import PostEraAPI
+from .manifold_data_validation import ManifoldFilter, ManifoldAllowedColumns
 
 
 class Molecule(TypedDict):
@@ -73,55 +74,6 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
                 for _, row in df.iterrows()
             ]
         )
-
-
-class PosteraAllowedColumns(Enum):
-    """
-    Enum of allowed columns for the P5 comp-chem team to update in postera.
-    """
-
-    smiles = "smiles"
-    id = "id"
-    ligand_id = "ligand_id"
-    asap_vc_id = "asap_vc_id"
-    mers_pose = "mers_pose"
-    sars2_pose = "sars2_pose"
-    POSIT_prob_mers = "POSIT_prob_mers"
-    POSIT_prob_sars2 = "POSIT_prob_sars2"
-    chemgauss4_score_mers = "chemgauss4_score_mers"
-    chemgauss4_score_sars2 = "chemgauss4_score_sars2"
-    docked_file_mers = "docked_file_mers"
-    docked_file_sars2 = "docked_file_sars2"
-    MLDocking_pIC50_GAT_mers = "MLDocking_pIC50_GAT_mers"
-    MLDocking_pIC50_GAT_sars2 = "MLDocking_pIC50_GAT_sars2"
-
-    def get_columns():
-        return [column.value for column in PosteraAllowedColumns]
-
-
-class PosteraFilter:
-    """
-    Class to filter dataframe columns to only those that the P5 comp-chem team
-    should be able to update in postera.
-    """
-
-    @staticmethod
-    def filter_dataframe_cols(
-        df: pd.DataFrame, smiles_field=None, id_field=None, additional_cols=None
-    ) -> pd.DataFrame:
-
-        # construct list of allowed columns
-        allowed_columns = PosteraAllowedColumns.get_columns()
-        if smiles_field is not None:
-            allowed_columns.append(smiles_field)
-        if id_field is not None:
-            allowed_columns.append(id_field)
-        if additional_cols is not None:
-            allowed_columns.extend(additional_cols)
-
-        # drop columns that are not allowed
-        extra_cols = [col for col in df.columns if col not in allowed_columns]
-        return df.drop(columns=extra_cols)
 
 
 class MoleculeSetAPI(PostEraAPI):
@@ -347,9 +299,13 @@ class MoleculeSetAPI(PostEraAPI):
         id_field: str = "id",
         overwrite=False,
     ) -> list[str]:
-        df = PosteraFilter.filter_dataframe_cols(
+        df = ManifoldFilter.filter_dataframe_cols(
             df, smiles_field=smiles_field, id_field=id_field
         )
+        if not ManifoldFilter.all_valid_columns(df.columns):
+            raise ValueError(
+                f"Columns in dataframe are not valid for updating in postera. Valid columns are: {ManifoldAllowedColumns.get_columns()}"
+            )
         mol_update_list = MoleculeUpdateList.from_pandas_df(
             df, smiles_field=smiles_field, id_field=id_field
         )
