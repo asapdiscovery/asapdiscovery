@@ -13,8 +13,8 @@ def weights_yaml():
     # ugly hack to make the directory relative
     # use to clean up in weights in
     weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
-    yield weights
-    shutil.rmtree("./_weights", ignore_errors=True)
+    return weights
+
 
 
 @pytest.fixture()
