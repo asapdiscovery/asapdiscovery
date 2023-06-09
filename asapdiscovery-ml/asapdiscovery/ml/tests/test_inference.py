@@ -16,28 +16,38 @@ def weights_yaml():
     return weights
 
 
+@pytest.fixture()
+def outputs(tmp_path):
+    """Creates outputs directory in temp location and returns path"""
+    outputs = tmp_path / "outputs"
+    outputs.mkdir()
+    yield outputs
+    shutil.rmtree(outputs)
+
 
 @pytest.fixture()
 def docked_structure_file(scope="session"):
     return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
 
 
-def test_gatinference_construct(weights_yaml):
+def test_gatinference_construct(weights_yaml, outputs):
     inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml
+        "gatmodel_test", weights_yaml, weights_local_dir=outputs
     )
     assert inference_cls is not None
     assert inference_cls.model_type == "GAT"
 
 
-def test_inference_construct_no_spec(weights_yaml):
-    inference_cls = asapdiscovery.ml.inference.GATInference("gat_test_v0")
+def test_inference_construct_no_spec(weights_yaml, outputs):
+    inference_cls = asapdiscovery.ml.inference.GATInference(
+        "gat_test_v0", weights_local_dir=outputs
+    )
     assert inference_cls is not None
 
 
-def test_gatinference_predict(weights_yaml, test_data):
+def test_gatinference_predict(weights_yaml, test_data, outputs):
     inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml
+        "gatmodel_test", weights_yaml, weights_local_dir=outputs
     )
     g1, _, _, _ = test_data
     assert inference_cls is not None
@@ -45,9 +55,9 @@ def test_gatinference_predict(weights_yaml, test_data):
     assert output is not None
 
 
-def test_gatinference_predict_smiles_equivariant(weights_yaml, test_data):
+def test_gatinference_predict_smiles_equivariant(weights_yaml, test_data, outputs):
     inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml
+        "gatmodel_test", weights_yaml, weights_local_dir=outputs
     )
     g1, g2, _, _ = test_data
     # same data different smiles order
