@@ -32,11 +32,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 
-[tool.coverage.run]
-omit = [
-    "*/tests/*"
-]
-
 [tool.versioningit]
 
 
