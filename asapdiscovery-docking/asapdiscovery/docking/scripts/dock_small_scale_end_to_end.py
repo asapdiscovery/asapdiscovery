@@ -125,14 +125,6 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--s3-upload",
-    action="store_true",
-    help=(
-        "Use in conjunction with -p flag to upload results to S3 bucket, requires AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN environment variables to be set."
-    ),
-)
-
-parser.add_argument(
     "--target",
     type=str,
     required=True,
@@ -411,17 +403,6 @@ def main():
             ExperimentalCompoundData(compound_id=mol.id, smiles=mol.smiles)
             for _, mol in mols.iterrows()
         ]
-
-        # also create S3 instance
-        if args.s3_upload:
-            from asapdiscovery.data.aws.s3_utils import (
-                create_S3_session_with_token_from_envvars,
-                upload_artifacts_from_content,
-            )
-
-            logger.info("Creating S3 session to upload results")
-            s3 = create_S3_session_with_token_from_envvars("blah")
-            logger.info("Successfully created S3 session to upload results")
 
     else:
         # parse input molecules
@@ -946,11 +927,10 @@ def main():
             renamed_top_posit,
             id_field="ligand_id",
             smiles_field="SMILES",
+            overwrite=True,
             debug_df_path=output_dir / "postera_uploaded.csv",
         )
-
-    if args.s3:
-        pass  # TODO
+        logger.info("Finished uploading results to PostEra")
 
     if args.cleanup:
         if len(intermediate_files) > 0:

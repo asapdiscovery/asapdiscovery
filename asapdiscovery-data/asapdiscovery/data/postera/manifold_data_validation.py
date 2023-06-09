@@ -7,8 +7,7 @@ class ManifoldAllowedColumns(Enum):
     Enum of allowed columns for the P5 comp-chem team to update in postera.
     """
 
-    SMILES = "smiles"
-    ID = "id"
+    SMILES = "SMILES"
     LIGAND_ID = "ligand_id"
     ASAP_VC_ID = "asap_vc_id"
     MERS_POSE = "mers_pose"

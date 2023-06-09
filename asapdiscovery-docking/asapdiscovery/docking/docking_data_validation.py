@@ -3,6 +3,7 @@ from typing import List
 
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedColumns
 
+
 class DockingResultCols(Enum):
     """
     Columns for docking results
@@ -17,7 +18,7 @@ class DockingResultCols(Enum):
     POSIT_METHOD = "POSIT_method"
     CHEMGAUSS4_SCORE = "chemgauss4_score"
     CLASH = "clash"
-    SMILES = "smiles"
+    SMILES = "SMILES"
     GAT_SCORE = "GAT_score"
     SCHNET_SCORE = "SCHNET_score"
 
@@ -30,6 +31,7 @@ class TargetDependentCols(Enum):
     """
     Columns that are target dependent
     """
+
     DU_STRUCTURE = "du_structure"
     DOCKED_FILE = "docked_file"
     POSE_ID = "pose_id"
@@ -47,13 +49,12 @@ class TargetDependentCols(Enum):
     @staticmethod
     def get_columns_for_target(target: str) -> List[str]:
         return [col.value + f"_{target}" for col in TargetDependentCols]
-    
+
     @staticmethod
     def get_columns_for_target_with_manifold_validation(target: str) -> List[str]:
-        cols =  [col.value + f"_{target}" for col in TargetDependentCols]
+        cols = [col.value + f"_{target}" for col in TargetDependentCols]
         if not ManifoldFilter.all_valid_columns(cols):
             raise ValueError(
                 f"Columns in dataframe {cols} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedColumns.get_columns()}"
             )
         return cols
-
