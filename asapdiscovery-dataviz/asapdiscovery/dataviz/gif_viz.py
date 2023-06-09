@@ -14,8 +14,9 @@ from ._gif_blocks import (
     view_coords_272,
     view_coords_sars2,
 )
-from .show_contacts import show_contacts
 from .resources.fonts import opensans_regular
+from .show_contacts import show_contacts
+
 
 class GIFVisualizer:
     """
