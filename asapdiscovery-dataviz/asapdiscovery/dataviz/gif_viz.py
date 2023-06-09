@@ -15,7 +15,7 @@ from ._gif_blocks import (
     view_coords_sars2,
 )
 from .show_contacts import show_contacts
-
+from .resources.fonts import opensans_regular
 
 class GIFVisualizer:
     """
@@ -338,7 +338,7 @@ def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) 
         filename = str(filename)
         # get this file's frame number from the filename and calculate total amount of ns simulated for this frame
         frame_num = int(filename.split("frame")[1].split(".png")[0])
-        total_ns_this_frame = f"{frame_num / frames_per_ns:.1f}"
+        total_ns_this_frame = f"{frame_num / frames_per_ns:.3f}"
 
         # load the image.
         img = Image.open(filename)
@@ -356,7 +356,7 @@ def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) 
             (width - 110, height - 10),
             f"{total_ns_this_frame} ns",
             # need to load a local font. For some odd reason this is the only way to write text with PIL.
-            font=ImageFont.truetype("OpenSans-Regular.ttf", 65),
+            font=ImageFont.truetype(opensans_regular, 65),
             fill=(0, 0, 0),  # make all black.
             anchor="md",
         )  # align to RHS; this way if value increases it will grow into frame.
