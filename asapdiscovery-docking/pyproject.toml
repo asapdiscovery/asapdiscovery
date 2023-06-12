@@ -31,7 +31,6 @@ dependencies = [
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-#build-design-units = "asapdiscovery.docking.scripts.build_design_units:main"
 clean-results-csv = "asapdiscovery.docking.scripts.clean_results_csv:main"
 collate-results = "asapdiscovery.docking.scripts.collate_results:main"
 create-fauxalysis-subset-from-yaml = "asapdiscovery.docking.scripts.create_fauxalysis_subset_from_yaml:main"
