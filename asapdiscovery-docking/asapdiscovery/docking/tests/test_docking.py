@@ -4,7 +4,7 @@ import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def docking_files_single():
     sdf = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf")
     oedu = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu")

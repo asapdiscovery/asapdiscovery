@@ -47,11 +47,6 @@ prep-targets = "asapdiscovery.modeling.scripts.prep_targets:main"
 [tool.setuptools.packages.find]
 where = ["."]
 
-[tool.coverage.run]
-omit = [
-    "*/tests/*"
-]
-
 [tool.versioningit]
 
 
