@@ -1,5 +1,11 @@
+import json
+import pickle as pkl
 from datetime import date
+from pathlib import Path
+from typing import Union
 
+import numpy as np
+import pandas as pd
 from pydantic import BaseModel, Field
 
 
@@ -58,11 +64,13 @@ class ExperimentalCompoundDataUpdate(Model):
 ########################################
 
 
-class CrystalCompoundData(BaseModel):
-    smiles: str = Field(
-        None,
-        description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",
-    )
+class Data(BaseModel):
+    pass
+
+
+class CrystalCompoundData(Data):
+    class Config:
+        extra = "forbid"
 
     compound_id: str = Field(
         None, description="The unique compound identifier of the ligand."
@@ -71,27 +79,61 @@ class CrystalCompoundData(BaseModel):
     dataset: str = Field(
         None, description="Dataset name from Fragalysis (name of structure)."
     )
-
+    smiles: str = Field(
+        None,
+        description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",
+    )
     str_fn: str = Field(None, description="Filename of the PDB structure.")
 
     sdf_fn: str = Field(None, description="Filename of the SDF file")
-    active_site_chain: str = Field(
-        None, description="Chain identifying the active site of interest."
-    )
-    output_name: str = Field(None, description="Name of output structure.")
-    active_site: str = Field(None, description="OpenEye formatted active site residue.")
-    oligomeric_state: str = Field(
-        None, description="Oligomeric state of the asymmetric unit."
-    )
-    chains: list = Field(None, description="List of chainids in the asymmetric unit.")
-    protein_chains: list = Field(
-        None, description="List of chains corresponding to protein residues."
-    )
 
-    series: str = Field(
-        None,
-        description="Name of COVID Moonshot series associated with this molecule",
-    )
+
+class Dataset(BaseModel):
+    class Config:
+        extra = "forbid"
+
+    data_type = Data
+    iterable: list[data_type]
+
+    def to_csv(self, fn):
+        df = pd.DataFrame([vars(data) for data in self.iterable])
+
+        df.to_csv(fn, index=False)
+
+    def to_pkl(self, fn):
+        with open(fn, "wb") as file:
+            pkl.dump(self, file)
+
+    def to_json(self, fn: Union[str, Path]):
+        to_write = self.json()
+        with open(fn, "w") as file:
+            file.write(to_write)
+
+    @classmethod
+    def from_pkl(cls, fn):
+        with open(fn, "rb") as file:
+            return pkl.load(file)
+
+    @classmethod
+    def from_json(cls, fn):
+        with open(fn) as file:
+            return cls(**json.load(file))
+
+    @classmethod
+    def from_csv(cls, fn):
+        df = pd.read_csv(fn)
+        df = df.replace(np.nan, None)
+
+        return cls(iterable=[cls.data_type(**row) for row in df.to_dict("records")])
+
+    @classmethod
+    def from_list(cls, list_of_data_objects):
+        return cls(iterable=[data for data in list_of_data_objects])
+
+
+class CrystalCompoundDataset(Dataset):
+    data_type = CrystalCompoundData
+    iterable = list[data_type]
 
 
 class PDBStructure(Model):

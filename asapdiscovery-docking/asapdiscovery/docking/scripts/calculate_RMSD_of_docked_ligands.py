@@ -20,9 +20,9 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdf,
     load_openeye_sdfs,
     oechem,
-    split_openeye_mol,
 )
 from asapdiscovery.docking.analysis import write_all_rmsds_to_reference
+from asapdiscovery.modeling.modeling import split_openeye_mol
 
 
 def get_args():
@@ -98,7 +98,7 @@ def main():
 
         # This maps each compound id to the corresponding reference
         ref_dict = {
-            compound_id: split_openeye_mol(load_openeye_pdb(ref_fn))["lig"]
+            compound_id: split_openeye_mol(load_openeye_pdb(ref_fn), "ligand")
             for compound_id in unique_compound_ids
             for ref_fn in ref_fns
             if compound_id in ref_fn

@@ -188,6 +188,11 @@ def parse_fragalysis(
     if drop_duplicate_datasets:
         df = df.drop_duplicates("RealCrystalName")
 
+    # Remove whitespace from the the relevant columns
+    df["smiles"].str.strip()
+    df["crystal_name"].str.strip()
+    df["alternate_name"].str.strip()
+
     # Build argument dicts for the CrystalCompoundData objects
     try:
         xtal_dicts = [
