@@ -45,11 +45,11 @@ from asapdiscovery.data.openeye import (  # noqa: E402
     oechem,
     save_openeye_pdb,
     save_openeye_sdf,
-    split_openeye_design_unit,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import POSIT_METHODS, run_docking_oe  # noqa: E402
+from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
 
 def check_results(d):
@@ -315,6 +315,7 @@ def parse_du_filenames(receptors, regex, log_name, basefile="predocked.oedu"):
     else:
         logger.info(f"Using {receptors} as glob")
         all_fns = glob(receptors)
+        logger.info(all_fns)
 
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")
