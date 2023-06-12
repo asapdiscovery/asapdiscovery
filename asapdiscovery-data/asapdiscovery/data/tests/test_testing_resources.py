@@ -28,7 +28,7 @@ def test_get_fake_file(file):
 # to avoid thrashing
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def file1():
     return fetch_test_file("internal_testing/file1.txt")
 

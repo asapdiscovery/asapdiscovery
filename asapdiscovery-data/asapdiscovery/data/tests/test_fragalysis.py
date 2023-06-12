@@ -11,7 +11,7 @@ from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.fixture
-def mpro_fragalysis_api_call():
+def mpro_fragalysis_api_call(scope="session"):
     """Fragalysis API call for downloading target data"""
     from asapdiscovery.data.fragalysis import API_CALL_BASE
 
@@ -21,7 +21,7 @@ def mpro_fragalysis_api_call():
 
 
 @pytest.fixture
-def mac1_fragalysis_api_call():
+def mac1_fragalysis_api_call(scope="session"):
     """Fragalysis API call for downloading target data"""
     from asapdiscovery.data.fragalysis import API_CALL_BASE
 
