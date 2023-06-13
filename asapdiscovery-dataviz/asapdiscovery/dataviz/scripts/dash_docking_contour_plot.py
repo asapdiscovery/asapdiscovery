@@ -15,6 +15,7 @@ Adding new functions would require 3 steps (as far as I understand it):
 plotly creator
 """
 import argparse
+import socket
 
 from asapdiscovery.dataviz import graphs, plotly_dash_functions  # noqa: E402
 from asapdiscovery.docking.analysis import load_dataframes  # noqa: E402
@@ -35,7 +36,9 @@ def get_args():
 
 def main():
     args = get_args()
-    tidy, df, by_compound_tidy, by_structure_tidy = load_dataframes(args.input_dir)
+    df_dict = load_dataframes(args.input_dir)
+    tidy = df_dict["tidy"]
+    df = df_dict["df"]
 
     # Get Dash App
     app, styles = plotly_dash_functions.get_dash_app()
@@ -64,7 +67,7 @@ def main():
         return fig
 
     # Run the server!
-    app.run_server(port=9001, debug=True)
+    app.run_server(host=socket.gethostbyname("localhost"), port=9002, debug=True)
 
 
 if __name__ == "__main__":

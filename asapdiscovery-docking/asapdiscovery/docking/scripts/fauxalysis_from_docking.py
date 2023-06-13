@@ -21,8 +21,9 @@ import yaml
 from asapdiscovery.data.openeye import load_openeye_sdf  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_pdb  # noqa: E402
 from asapdiscovery.data.openeye import save_openeye_sdf  # noqa: E402
-from asapdiscovery.data.openeye import oechem, split_openeye_design_unit
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.docking.analysis import DockingResults  # noqa: E402
+from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
 
 def get_args():
@@ -231,7 +232,7 @@ def main():
         os.mkdir(args.output_dir)
     assert os.path.exists(args.output_dir)
 
-    docking_results = DockingResults(args.input_csv)
+    docking_results = DockingResults(csv_path=args.input_csv)
 
     best_structure_dict_all = {
         values["Complex_ID"]: values
