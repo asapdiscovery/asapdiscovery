@@ -30,6 +30,7 @@ def mac1_fragalysis_api_call(scope="session"):
     return api_call
 
 
+@pytest.mark.skip(reason="Fragalysis call is not working.")
 class TestFragalysisDownload:
     """Class to test the download of data from Fragalysis."""
 
