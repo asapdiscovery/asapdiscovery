@@ -28,14 +28,10 @@ def dl_dir(tmp_path_factory):
 @pytest.fixture
 def cdd_header():
     try:
-        token_fn = os.environ["CDDTOKEN"]
+        token = os.environ["CDDTOKEN"]
     except KeyError:
         # All tests need to be able to download files, so stop early if there's no API key
         pytest.exit("CDDTOKEN environment variable not set.", 1)
-    try:
-        token = "".join(open(token_fn).readlines()).strip()
-    except OSError:
-        pytest.exit("Failed to read CDDTOKEN file.", 1)
 
     return {"X-CDD-token": token}
 
