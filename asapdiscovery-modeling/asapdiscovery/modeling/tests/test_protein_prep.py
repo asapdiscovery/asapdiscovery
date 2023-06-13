@@ -60,6 +60,7 @@ def prep_dict(mers_target, sars_target):
         "sars": (sars_target, fetch_test_file("mpro_sars2_seqres.yaml")),
     }
 
+
 @pytest.fixture
 def spruced_protein_dict():
     return {
@@ -106,7 +107,9 @@ class TestProteinPrep:
         save_openeye_pdb(spruced, output_dir / f"{target_name}_spruced.pdb")
 
     @pytest.mark.parametrize("target_name", ["mers", "sars"])
-    def test_make_design_unit(self, target_name, prep_dict, output_dir, spruced_protein_dict):
+    def test_make_design_unit(
+        self, target_name, prep_dict, output_dir, spruced_protein_dict
+    ):
         target, seqres_yaml = prep_dict[target_name]
         mol = load_openeye_pdb(str(spruced_protein_dict[target_name]))
 
