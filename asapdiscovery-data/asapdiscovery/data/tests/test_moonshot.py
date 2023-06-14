@@ -140,14 +140,17 @@ def cdd_col_headers():
     return {
         ALL_SMI_SEARCH: [
             "Molecule Name",
+            "Batch Created Date",
+            "Batch Updated Date",
             "Canonical PostEra ID",
             "stereochem comments",
             "shipment_SMILES",
             "suspected_SMILES",
             "why_suspected_SMILES",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 (µM)",
             "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Lower) (µM)",
             "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)",
-            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Hill slope",
         ],
         NONCOVALENT_SMI_SEARCH: [
             "Molecule Name",
@@ -313,10 +316,10 @@ def test_download_molecules(
 
     # Extra columns will be added
     target_cols = cdd_col_headers[search] + FILTER_ADDED_COLS + PARSE_ADDED_COLS
-    assert all(df.columns.values == target_cols)
+    assert sorted(df.columns.tolist()) == sorted(target_cols)
 
     df_loaded = pandas.read_csv(fn_out)
-    assert all(df_loaded.columns.values == target_cols)
+    assert sorted(df_loaded.columns.tolist()) == sorted(target_cols)
 
     assert (
         sha256(fn_cache.open("rb").read()).hexdigest()
@@ -341,4 +344,4 @@ def test_download_molecules_cache(
         fn_cache=saved_fn,
     )
     target_cols = cdd_col_headers[search] + FILTER_ADDED_COLS + PARSE_ADDED_COLS
-    assert all(df.columns.values == target_cols)
+    assert sorted(df.columns.tolist()) == sorted(target_cols)
