@@ -22,6 +22,9 @@ def outputs(tmp_path):
     return outputs
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 @pytest.mark.timeout(400)
 @pytest.mark.parametrize("n", [1, 2])
 @pytest.mark.parametrize("use_glob", [True, False])
@@ -45,6 +48,9 @@ def test_docking_base(script_runner, outputs, docking_files_single, n, use_glob)
     assert ret.success
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 @pytest.mark.timeout(400)
 @pytest.mark.parametrize("omega", [False, "--omega"])
 @pytest.mark.parametrize("posit_method", POSIT_METHODS)
