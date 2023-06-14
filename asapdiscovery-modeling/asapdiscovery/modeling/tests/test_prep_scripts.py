@@ -51,7 +51,6 @@ def local_fragalysis(tmp_path, structure_file):
 
 
 class TestCreatePrepInputs:
-
     CREATE_PREP_INPUT_ARGS = [
         "create-prep-inputs",
         "--structure_file",
