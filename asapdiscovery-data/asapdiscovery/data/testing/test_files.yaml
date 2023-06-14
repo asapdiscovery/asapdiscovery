@@ -86,3 +86,11 @@ files:
   # fragalysis metadata.csv
   - resource: metadata.csv
     sha256hash: 0b8c3f6e3cec7d1a8a6aca34cd870455793812f2c1673cda73b5bf830a581f7f
+
+  # spruced rcsb_8czv-assembly1
+  - resource: mers_spruced.pdb
+    sha256hash: 4a042f4446a054d5103fb35e694364ebb78906e00ebf4eaeea7259685fc2801a
+
+  # spruced sars_spruced.pdb
+  - resource: sars_spruced.pdb
+    sha256hash: 3c4c2b33c7ac6e5cea0084dd56bfa70dd37cd44dd529c83bdf2624435708f6d0
