@@ -5,8 +5,6 @@ import pandas
 
 # Base CDD vault API URL
 CDD_URL = "https://app.collaborativedrug.com/api/v1/vaults"
-# Vault number for the Moonshot vault
-MOONSHOT_VAULT = "5549"
 # All molecules with SMILES (public)
 ALL_SMI_SEARCH = "9469227-zd2doWwzJ63bZYaI_vkjXg"
 # Noncovalent molecules with experimental measurements (from John)
@@ -97,7 +95,7 @@ def download_url(search_url, header, vault=None, timeout=5000, retry_delay=5):
 # TODO: Generalize inclusion criteria to something more compact
 def download_molecules(
     header,
-    vault=MOONSHOT_VAULT,
+    vault=None,
     search="sars_fluorescence_noncovalent_w_dates",
     fn_out=None,
     fn_cache=None,
@@ -113,7 +111,7 @@ def download_molecules(
     header : dict
         Header information passed to GET request. Must contain an entry for
         'X-CDD-token' that gives the user's CDD API token
-    vault : str, default=MOONSHOT_VAULT
+    vault : str, default=None
         Which CDD vault to search through. By default use the Moonshot vault
     search : str, default="sars_fluorescence_noncovalent_w_dates"
         Which entry in MOONSHOT_SEARCH_DICT to use as the search id. If the given value
@@ -136,6 +134,11 @@ def download_molecules(
         with open(fn_cache) as infile:
             content = infile.read()
     else:
+        if not vault:
+            try:
+                vault = os.environ["MOONSHOT_CDD_VAULT_NUMBER"]
+            except KeyError:
+                raise ValueError("No value specified for vault.")
         # First try and get the search id from our known searches, otherwise assume the
         #  given value is the search id itself
         try:

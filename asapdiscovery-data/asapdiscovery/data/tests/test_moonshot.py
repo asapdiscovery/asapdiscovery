@@ -7,7 +7,6 @@ import pytest
 from asapdiscovery.data.moonshot import (
     ALL_SMI_SEARCH,
     CDD_URL,
-    MOONSHOT_VAULT,
     NONCOVALENT_SMI_SEARCH,
     NONCOVALENT_W_DATES_SEARCH,
     download_molecules,
@@ -34,6 +33,17 @@ def cdd_header():
         pytest.exit("CDDTOKEN environment variable not set.", 1)
 
     return {"X-CDD-token": token}
+
+
+@pytest.fixture
+def moonshot_vault():
+    try:
+        vault = os.environ["MOONSHOT_CDD_VAULT_NUMBER"]
+    except KeyError:
+        # All tests need to be able to download files, so stop early if there's no API key
+        pytest.exit("MOONSHOT_CDD_VAULT_NUMBER environment variable not set.", 1)
+
+    return vault
 
 
 @pytest.fixture
@@ -88,12 +98,12 @@ def parse_df_files():
 @pytest.mark.parametrize(
     "search", [ALL_SMI_SEARCH, NONCOVALENT_SMI_SEARCH, NONCOVALENT_W_DATES_SEARCH]
 )
-def test_fetch(cdd_header, search):
+def test_fetch(cdd_header, moonshot_vault, search):
     """
     Test fetching all saved search.
     """
-    url = f"{CDD_URL}/{MOONSHOT_VAULT}/searches/{search}"
-    response = download_url(url, cdd_header, vault=MOONSHOT_VAULT)
+    url = f"{CDD_URL}/{moonshot_vault}/searches/{search}"
+    response = download_url(url, cdd_header, vault=moonshot_vault)
     assert response.ok
 
 
@@ -105,12 +115,12 @@ def test_fetch(cdd_header, search):
         (NONCOVALENT_W_DATES_SEARCH, "noncov_smi_dates.csv"),
     ],
 )
-def test_save(cdd_header, search, dl_dir, fn):
+def test_save(cdd_header, moonshot_vault, search, dl_dir, fn):
     """
     Test saving after fetching.
     """
-    url = f"{CDD_URL}/{MOONSHOT_VAULT}/searches/{search}"
-    response = download_url(url, cdd_header, vault=MOONSHOT_VAULT)
+    url = f"{CDD_URL}/{moonshot_vault}/searches/{search}"
+    response = download_url(url, cdd_header, vault=moonshot_vault)
     content = response.content.decode()
 
     cache_fn = dl_dir / fn

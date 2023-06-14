@@ -5,7 +5,7 @@ import argparse
 import logging
 import os
 
-from asapdiscovery.data.moonshot import MOONSHOT_VAULT, download_molecules  # noqa: E402
+from asapdiscovery.data.moonshot import download_molecules  # noqa: E402
 
 
 ################################################################################
@@ -27,7 +27,6 @@ def get_args():
     parser.add_argument(
         "-v",
         "--vault",
-        default=MOONSHOT_VAULT,
         help="Which CDD vault to download from (defaults to Moonshot vault).",
     )
     parser.add_argument(
@@ -127,6 +126,13 @@ def main():
             "Must pass a file for -tok if the CDDTOKEN environment "
             "variable is not set."
         )
+
+    # Get vault number from environment if not given
+    if not args.vault:
+        try:
+            args.vault = os.environ["MOONSHOT_CDD_VAULT_NUMBER"]
+        except KeyError:
+            raise ValueError("No value specified for vault.")
 
     _ = download_molecules(
         header,
