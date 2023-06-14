@@ -6,7 +6,7 @@ import pandas
 # Base CDD vault API URL
 CDD_URL = "https://app.collaborativedrug.com/api/v1/vaults"
 # All molecules with SMILES (public)
-ALL_SMI_SEARCH = "9469227-zd2doWwzJ63bZYaI_vkjXg"
+ALL_SMI_SEARCH = "12656909-i_iTrIMFIXYGdoHmM8p7kQ"
 # Noncovalent molecules with experimental measurements (from John)
 NONCOVALENT_SMI_SEARCH = "9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 # Noncovalent with experimental measurements, including batch created date
