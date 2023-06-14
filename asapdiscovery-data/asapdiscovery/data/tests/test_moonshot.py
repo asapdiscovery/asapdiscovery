@@ -214,33 +214,6 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
         "exp_binding_affinity_kcal_mol_stderr",
     ]
     for c in float_check_cols:
-        assert _check_parsed_vals(in_df_parsed[c], out_df[c])
-
-
-def _check_parsed_vals(col1, col2):
-    """
-    Helper function for test_parse_fluorescence to compare two numerical columns,
-    appropriately handling checking for null/non-numeric values.
-
-    Parameters
-    ----------
-    col1, col2 : pandas.Series
-        The two DF columns to compare
-
-    Returns
-    -------
-    bool
-        If the two cols are equivalent
-    """
-    import numpy as np
-
-    # Indices with NaN values so they can be compared appropriately
-    nan_idx1 = col1.isna()
-    nan_idx2 = col2.isna()
-
-    # Chceck that nans are the same
-    if not (nan_idx1 == nan_idx2).all():
-        return False
-
-    # Check that all non-nan values are close
-    return np.isclose(col1[~nan_idx1], col2[~nan_idx2]).all()
+        assert np.allclose(
+            in_df_parsed[c], out_df[c], equal_nan=True
+        ), f"{c} cols not equal"
