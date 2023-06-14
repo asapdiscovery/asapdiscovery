@@ -301,6 +301,7 @@ def test_download_molecules(
     tmp_path,
 ):
     from hashlib import sha256
+
     import pandas
 
     # Download and check
