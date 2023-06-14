@@ -435,7 +435,7 @@ def get_args():
         type=str,
         default="all",
         choices=POSIT_METHODS,
-        help="Whether to only use hybrid docking protocol in POSIT.",
+        help="Which POSIT method to use for POSIT docking protocol.",
     )
     parser.add_argument(
         "-c",
