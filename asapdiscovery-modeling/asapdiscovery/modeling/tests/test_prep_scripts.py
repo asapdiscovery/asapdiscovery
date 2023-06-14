@@ -27,57 +27,6 @@ def ref():
     return fetch_test_file("reference.pdb")
 
 
-def test_mers_download_and_create_prep_inputs(
-    script_runner, output_dir, mers_structures
-):
-    ret = script_runner.run(
-        "download-pdbs",
-        "-d",
-        f"{output_dir / 'input_structures'}",
-        "-p",
-        f"{mers_structures}",
-        "-t",
-        "cif1",
-    )
-    assert ret.success
-
-    ret = script_runner.run(
-        "create-prep-inputs",
-        "-s",
-        f"{output_dir / 'input_structures/rcsb_8czt-assembly1.cif'}",
-        "-o",
-        f"{output_dir / 'metadata'}",
-        "--components_to_keep",
-        "protein",
-        "--oe_active_site_residue",
-        "HIS:41: :A:1",
-    )
-    assert ret.success
-
-
-@pytest.mark.timeout(300)
-@pytest.mark.script_launch_mode("subprocess")
-def test_mers_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
-    ret = script_runner.run(
-        "prep-targets",
-        "-i",
-        f"{output_dir / 'metadata' / 'to_prep.json'}",
-        "-o",
-        f"{output_dir / 'prepped_structures'}",
-        "-r",
-        f"{ref}",
-        "-l",
-        f"{loop_db}",
-        "-s",
-        f"{seqres_dict['mers']}",
-        "-n",
-        "1",
-        "--debug_num",
-        "1",
-    )
-    assert ret.success
-
-
 # TODO: This code block is mostly copied from test_fragalysis
 #  I think we should be able to use the same fixtures for both tests but idk how
 @pytest.fixture
@@ -101,17 +50,123 @@ def local_fragalysis(tmp_path, structure_file):
 # TODO: End copied code block
 
 
-@pytest.mark.parametrize("serialized_input", [True, False])
-def test_sars_create_prep_inputs(
-    script_runner,
-    output_dir,
-    metadata_csv,
-    local_fragalysis,
-    structure_file,
-    serialized_input,
-):
-    output_dir = output_dir if serialized_input else output_dir / "non_serialized_input"
-    if serialized_input:
+class TestCreatePrepInputs:
+    CREATE_PREP_INPUT_ARGS = [
+        "create-prep-inputs",
+        "--structure_file",
+        f"{structure_file}",
+        "--components_to_keep",
+        "protein",
+        "ligand",
+    ]
+
+    @pytest.mark.parametrize(
+        "input_type", ["--structure_file", "--structure_dir", "--input_file"]
+    )
+    def test_create_prep_inputs(
+        self,
+        script_runner,
+        input_type,
+        local_fragalysis,
+        structure_file,
+        output_dir,
+        metadata_csv,
+    ):
+        input_args = self.CREATE_PREP_INPUT_ARGS + ["--output_dir", f"{output_dir}"]
+        if input_type == "--structure_file":
+            input_args += [input_type, f"{structure_file}"]
+        elif input_type == "--structure_dir":
+            input_args += [input_type, f"{local_fragalysis}"]
+        elif input_type == "--input_file":
+            # We need to make the schema first
+            script_runner.run(
+                [
+                    "fragalysis-to-schema",
+                    "--metadata_csv",
+                    f"{metadata_csv}",
+                    "--aligned_dir",
+                    f"{local_fragalysis}",
+                    "-o",
+                    f"{output_dir / 'metadata'}",
+                ]
+            )
+            serialized_fragalysis = output_dir / "metadata/fragalysis.csv"
+
+            input_args += [input_type, f"{serialized_fragalysis}"]
+
+        ret = script_runner.run(*input_args)
+        assert ret.success
+        assert (output_dir / "to_prep.json").exists()
+
+
+class TestPrepFromRCSB:
+    @pytest.mark.timeout(500)
+    @pytest.mark.script_launch_mode("subprocess")
+    def test_mers_prep(
+        self, script_runner, output_dir, mers_structures, ref, loop_db, seqres_dict
+    ):
+        # First, download the structures
+        ret = script_runner.run(
+            "download-pdbs",
+            "-d",
+            f"{output_dir / 'input_structures'}",
+            "-p",
+            f"{mers_structures}",
+            "-t",
+            "cif1",
+        )
+        assert ret.success
+
+        # Then, create the inputs for prep
+        ret = script_runner.run(
+            "create-prep-inputs",
+            "-s",
+            f"{output_dir / 'input_structures/rcsb_8czt-assembly1.cif'}",
+            "-o",
+            f"{output_dir / 'metadata'}",
+            "--components_to_keep",
+            "protein",
+            "--oe_active_site_residue",
+            "HIS:41: :A:1",
+        )
+        assert ret.success
+
+        # Then, run prep
+        ret = script_runner.run(
+            "prep-targets",
+            "-i",
+            f"{output_dir / 'metadata' / 'to_prep.json'}",
+            "-o",
+            f"{output_dir / 'prepped_structures'}",
+            "-r",
+            f"{ref}",
+            "-l",
+            f"{loop_db}",
+            "-s",
+            f"{seqres_dict['mers']}",
+            "-n",
+            "1",
+            "--debug_num",
+            "1",
+        )
+        assert ret.success
+
+
+class TestPrepFromFragalysis:
+    @pytest.mark.timeout(500)
+    @pytest.mark.script_launch_mode("subprocess")
+    def test_sars_prep(
+        self,
+        script_runner,
+        output_dir,
+        metadata_csv,
+        local_fragalysis,
+        ref,
+        loop_db,
+        seqres_dict,
+        structure_file,
+    ):
+        # First, convert fragalysis to schema
         ret = script_runner.run(
             [
                 "fragalysis-to-schema",
@@ -123,15 +178,16 @@ def test_sars_create_prep_inputs(
                 f"{output_dir / 'metadata'}",
             ]
         )
-        out_path = output_dir / "metadata/fragalysis.csv"
+        serialized_fragalysis = output_dir / "metadata/fragalysis.csv"
         assert ret.success
-        assert out_path.exists()
+        assert serialized_fragalysis.exists()
 
+        # Then, create the inputs for prep
         ret = script_runner.run(
             [
                 "create-prep-inputs",
                 "-i",
-                f"{out_path}",
+                f"{serialized_fragalysis}",
                 "-o",
                 f"{output_dir / 'metadata'}",
                 "--components_to_keep",
@@ -139,43 +195,25 @@ def test_sars_create_prep_inputs(
                 "ligand",
             ]
         )
+        serialized_prep_targets = output_dir / "metadata" / "to_prep.json"
         assert ret.success
-        assert (output_dir / "metadata" / "to_prep.json").exists()
-    else:
+        assert serialized_prep_targets.exists()
+
         ret = script_runner.run(
-            [
-                "create-prep-inputs",
-                "--structure_file",
-                f"{structure_file}",
-                "-o",
-                f"{output_dir / 'metadata'}",
-                "--components_to_keep",
-                "protein",
-                "ligand",
-            ]
+            "prep-targets",
+            "-i",
+            f"{output_dir / 'metadata' / 'to_prep.json'}",
+            "-o",
+            f"{output_dir / 'prepped_structures'}",
+            "-r",
+            f"{ref}",
+            "-l",
+            f"{loop_db}",
+            "-s",
+            f"{seqres_dict['sars']}",
+            "-n",
+            "1",
+            "--debug_num",
+            "1",
         )
         assert ret.success
-        assert (output_dir / "metadata" / "to_prep.json").exists()
-
-
-@pytest.mark.timeout(300)
-@pytest.mark.script_launch_mode("subprocess")
-def test_sars_prep(script_runner, output_dir, ref, loop_db, seqres_dict):
-    ret = script_runner.run(
-        "prep-targets",
-        "-i",
-        f"{output_dir / 'metadata' / 'to_prep.json'}",
-        "-o",
-        f"{output_dir / 'prepped_structures'}",
-        "-r",
-        f"{ref}",
-        "-l",
-        f"{loop_db}",
-        "-s",
-        f"{seqres_dict['sars']}",
-        "-n",
-        "1",
-        "--debug_num",
-        "1",
-    )
-    assert ret.success
