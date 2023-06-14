@@ -217,3 +217,16 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
         assert np.allclose(
             in_df_parsed[c], out_df[c], equal_nan=True
         ), f"{c} cols not equal"
+
+
+def test_download_molecules(cdd_header):
+    _ = download_molecules(cdd_header)
+
+
+def test_download_molecules_cache(cdd_header, dl_dir):
+    # Search will only be run if loading from cache fails
+    _ = download_molecules(
+        cdd_header,
+        search="non_existent_search.csv",
+        fn_cache=(dl_dir / "noncov_smi_dates.csv"),
+    )
