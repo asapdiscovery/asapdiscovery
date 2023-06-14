@@ -111,6 +111,7 @@ def load_all_losses(in_df, rel_dir=None, conv_function=None, agg=np.mean):
 
         df["label"] = r["label"]
         df["train_frac"] = r["train_frac"]
+        df["loss_dir"] = r["loss_dir"]
 
         all_dfs.append(df)
 
