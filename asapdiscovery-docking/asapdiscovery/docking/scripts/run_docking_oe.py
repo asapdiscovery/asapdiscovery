@@ -48,7 +48,7 @@ from asapdiscovery.data.openeye import (  # noqa: E402
 )
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
-from asapdiscovery.docking.docking import run_docking_oe  # noqa: E402
+from asapdiscovery.docking.docking import POSIT_METHODS, run_docking_oe  # noqa: E402
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
 
@@ -224,7 +224,7 @@ def mp_func(
         clash = -1
         smiles = "None"
         GAT_score = np.nan
-        schnet_score = np.nan
+        schnet_scores = [np.nan]
 
     results = [
         (
@@ -431,9 +431,11 @@ def get_args():
     )
     parser.add_argument(
         "-y",
-        "--hybrid",
-        action="store_true",
-        help="Whether to only use hybrid docking protocol in POSIT.",
+        "--posit_method",
+        type=str,
+        default="all",
+        choices=POSIT_METHODS,
+        help="Which POSIT method to use for POSIT docking protocol.",
     )
     parser.add_argument(
         "-c",
@@ -708,7 +710,7 @@ def main():
                 m,
                 args.docking_sys.lower(),
                 args.relax.lower(),
-                args.hybrid,
+                args.posit_method.lower(),
                 f"{compound_ids[i]}_{x}",
                 args.omega,
                 args.num_poses,
