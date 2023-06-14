@@ -14,17 +14,28 @@ from asapdiscovery.data.moonshot import (
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
+# Columns added by filter_molecules_dataframe
+FILTER_ADDED_COLS = ["name", "smiles", "achiral", "racemic", "enantiopure", "semiquant"]
+
+# Columns added by parse_fluorescence_data_cdd
+PARSE_ADDED_COLS = [
+    "IC50 (M)",
+    "IC50_stderr (M)",
+    "IC50_95ci_lower (M)",
+    "IC50_95ci_upper (M)",
+    "pIC50",
+    "pIC50_stderr",
+    "pIC50_range",
+    "pIC50_95ci_lower",
+    "pIC50_95ci_upper",
+    "exp_binding_affinity_kcal_mol",
+    "exp_binding_affinity_kcal_mol_stderr",
+    "exp_binding_affinity_kcal_mol_95ci_lower",
+    "exp_binding_affinity_kcal_mol_95ci_upper",
+]
+
 
 @pytest.fixture(scope="session")
-def dl_dir(tmp_path_factory):
-    """
-    Temporary download directory that will persist for the duration of the testing
-    session. This will let us keep downloaded files to test file caching.
-    """
-    return tmp_path_factory.mktemp("cache", numbered=False)
-
-
-@pytest.fixture
 def cdd_header():
     try:
         token = os.environ["CDDTOKEN"]
@@ -35,7 +46,7 @@ def cdd_header():
     return {"X-CDD-token": token}
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def moonshot_vault():
     try:
         vault = os.environ["MOONSHOT_CDD_VAULT_NUMBER"]
@@ -44,6 +55,35 @@ def moonshot_vault():
         pytest.exit("MOONSHOT_CDD_VAULT_NUMBER environment variable not set.", 1)
 
     return vault
+
+
+@pytest.fixture(scope="session")
+def moonshot_saved_searches(tmp_path_factory, cdd_header, moonshot_vault):
+    # Hashes of the saved search downloads for quick comparison
+    # Unless we get really unlucky, files downloaded within a few minutes of each other
+    #  should contain the same entries
+    from hashlib import sha256
+
+    def dl_and_hash(search, fn_out):
+        url = f"{CDD_URL}/{moonshot_vault}/searches/{search}"
+        response = download_url(url, cdd_header, vault=moonshot_vault)
+
+        with fn_out.open("w") as fp:
+            fp.write(response.content.decode())
+
+        return sha256(response.content).hexdigest()
+
+    dl_dir = tmp_path_factory.mktemp("cache", numbered=False)
+    hash_dict = {
+        search: dl_and_hash(search, dl_dir / search)
+        for search in [
+            ALL_SMI_SEARCH,
+            NONCOVALENT_SMI_SEARCH,
+            NONCOVALENT_W_DATES_SEARCH,
+        ]
+    }
+
+    return dl_dir, hash_dict
 
 
 @pytest.fixture
@@ -95,10 +135,59 @@ def parse_df_files():
     return in_fn, out_fn_dict
 
 
+@pytest.fixture
+def cdd_col_headers():
+    return {
+        ALL_SMI_SEARCH: [
+            "Molecule Name",
+            "Canonical PostEra ID",
+            "stereochem comments",
+            "shipment_SMILES",
+            "suspected_SMILES",
+            "why_suspected_SMILES",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Lower) (µM)",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50",
+        ],
+        NONCOVALENT_SMI_SEARCH: [
+            "Molecule Name",
+            "CDD Number",
+            "Canonical PostEra ID",
+            "Scaffold",
+            "stereochem comments",
+            "shipment_SMILES",
+            "suspected_SMILES",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 (µM)",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Lower) (µM)",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Hill slope",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Curve class",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50",
+        ],
+        NONCOVALENT_W_DATES_SEARCH: [
+            "Molecule Name",
+            "CDD Number",
+            "Batch Created Date",
+            "Batch Updated Date",
+            "Canonical PostEra ID",
+            "Scaffold",
+            "stereochem comments",
+            "shipment_SMILES",
+            "suspected_SMILES",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 (µM)",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Lower) (µM)",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Hill slope",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Curve class",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Avg pIC50",
+        ],
+    }
+
+
 @pytest.mark.parametrize(
     "search", [ALL_SMI_SEARCH, NONCOVALENT_SMI_SEARCH, NONCOVALENT_W_DATES_SEARCH]
 )
-def test_fetch(cdd_header, moonshot_vault, search):
+def test_fetch(cdd_header, moonshot_vault, search, cdd_col_headers):
     """
     Test fetching all saved search.
     """
@@ -106,45 +195,12 @@ def test_fetch(cdd_header, moonshot_vault, search):
     response = download_url(url, cdd_header, vault=moonshot_vault)
     assert response.ok
 
-
-@pytest.mark.parametrize(
-    "search,fn",
-    [
-        (ALL_SMI_SEARCH, "all_smi.csv"),
-        (NONCOVALENT_SMI_SEARCH, "noncov_smi.csv"),
-        (NONCOVALENT_W_DATES_SEARCH, "noncov_smi_dates.csv"),
-    ],
-)
-def test_save(cdd_header, moonshot_vault, search, dl_dir, fn):
-    """
-    Test saving after fetching.
-    """
-    url = f"{CDD_URL}/{moonshot_vault}/searches/{search}"
-    response = download_url(url, cdd_header, vault=moonshot_vault)
+    # Check that the correct data was downloaded
+    #  different number of molecules depdending on when the download occurred, so just
+    #  check the column header
     content = response.content.decode()
-
-    cache_fn = dl_dir / fn
-    with cache_fn.open("w") as outfile:
-        outfile.write(content)
-
-
-@pytest.mark.parametrize(
-    "fn",
-    ["all_smi.csv", "noncov_smi.csv", "noncov_smi_dates.csv"],
-)
-def test_saved_files_exist(dl_dir, fn):
-    assert (dl_dir / fn).exists()
-
-
-@pytest.mark.parametrize(
-    "fn",
-    ["all_smi.csv", "noncov_smi.csv", "noncov_smi_dates.csv"],
-)
-def test_saved_files_can_be_loaded(dl_dir, fn):
-    import pandas
-
-    df = pandas.read_csv(dl_dir / fn)
-    print(df.shape, df.columns, flush=True)
+    lines = content.split("\n")
+    assert lines[0] == ",".join(cdd_col_headers[search])
 
 
 @pytest.mark.parametrize("retain_achiral", [True, False])
@@ -191,6 +247,7 @@ def test_filter_df(
 @pytest.mark.parametrize("cp_values", [None, [0.375, 9.5]])
 def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
     print(keep_best, cp_values, flush=True)
+    import numpy as np
     import pandas
     from asapdiscovery.data.utils import parse_fluorescence_data_cdd
 
@@ -229,14 +286,59 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
         ), f"{c} cols not equal"
 
 
-def test_download_molecules(cdd_header):
-    _ = download_molecules(cdd_header)
+@pytest.mark.parametrize(
+    "search", [ALL_SMI_SEARCH, NONCOVALENT_SMI_SEARCH, NONCOVALENT_W_DATES_SEARCH]
+)
+def test_download_molecules(
+    cdd_header,
+    moonshot_vault,
+    search,
+    cdd_col_headers,
+    moonshot_saved_searches,
+    tmp_path,
+):
+    from hashlib import sha256
+    import pandas
 
-
-def test_download_molecules_cache(cdd_header, dl_dir):
-    # Search will only be run if loading from cache fails
-    _ = download_molecules(
+    # Download and check
+    fn_out = tmp_path / "out.csv"
+    fn_cache = tmp_path / "cache.csv"
+    df = download_molecules(
         cdd_header,
-        search="non_existent_search.csv",
-        fn_cache=(dl_dir / "noncov_smi_dates.csv"),
+        vault=moonshot_vault,
+        search=search,
+        fn_out=fn_out,
+        fn_cache=fn_cache,
     )
+
+    # Extra columns will be added
+    target_cols = cdd_col_headers[search] + FILTER_ADDED_COLS + PARSE_ADDED_COLS
+    assert all(df.columns.values == target_cols)
+
+    df_loaded = pandas.read_csv(fn_out)
+    assert all(df_loaded.columns.values == target_cols)
+
+    assert (
+        sha256(fn_cache.open("rb").read()).hexdigest()
+        == moonshot_saved_searches[1][search]
+    )
+
+
+@pytest.mark.parametrize(
+    "search", [ALL_SMI_SEARCH, NONCOVALENT_SMI_SEARCH, NONCOVALENT_W_DATES_SEARCH]
+)
+def test_download_molecules_cache(
+    cdd_header, moonshot_vault, search, cdd_col_headers, moonshot_saved_searches
+):
+    # First download file
+    saved_fn = moonshot_saved_searches[0] / search
+
+    # Search will only be run if loading from cache fails
+    df = download_molecules(
+        cdd_header,
+        vault=moonshot_vault,
+        search="non_existent_search",
+        fn_cache=saved_fn,
+    )
+    target_cols = cdd_col_headers[search] + FILTER_ADDED_COLS + PARSE_ADDED_COLS
+    assert all(df.columns.values == target_cols)
