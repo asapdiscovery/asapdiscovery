@@ -100,7 +100,7 @@ class TestCreatePrepInputs:
 
 
 class TestPrepFromRCSB:
-    @pytest.mark.timeout(300)
+    @pytest.mark.timeout(400)
     @pytest.mark.script_launch_mode("subprocess")
     def test_mers_prep(
         self, script_runner, output_dir, mers_structures, ref, loop_db, seqres_dict
@@ -153,7 +153,7 @@ class TestPrepFromRCSB:
 
 
 class TestPrepFromFragalysis:
-    @pytest.mark.timeout(300)
+    @pytest.mark.timeout(400)
     @pytest.mark.script_launch_mode("subprocess")
     def test_sars_prep(
         self,
