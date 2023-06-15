@@ -285,7 +285,7 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
     ]
     for c in float_check_cols:
         assert np.allclose(
-            in_df_parsed[c], out_df[c], equal_nan=True
+            in_df_parsed[c].values, out_df[c].values, equal_nan=True
         ), f"{c} cols not equal"
 
 
