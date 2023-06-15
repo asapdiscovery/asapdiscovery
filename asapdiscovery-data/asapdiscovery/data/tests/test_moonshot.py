@@ -251,7 +251,6 @@ def test_filter_df(
 @pytest.mark.parametrize("cp_values", [None, [0.375, 9.5]])
 def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
     print(keep_best, cp_values, flush=True)
-    import numpy as np
     import pandas
     from asapdiscovery.data.utils import parse_fluorescence_data_cdd
 
