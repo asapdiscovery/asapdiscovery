@@ -13,6 +13,7 @@ from asapdiscovery.data.moonshot import (
     download_url,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from numpy.testing import assert_allclose
 
 # Columns added by filter_molecules_dataframe
 FILTER_ADDED_COLS = ["name", "smiles", "achiral", "racemic", "enantiopure", "semiquant"]
@@ -284,9 +285,7 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
         "exp_binding_affinity_kcal_mol_stderr",
     ]
     for c in float_check_cols:
-        assert np.allclose(
-            in_df_parsed[c].values, out_df[c].values, equal_nan=True
-        ), f"{c} cols not equal"
+       assert_allclose(in_df_parsed[c].values, out_df[c].values, equal_nan=True)
 
 
 @pytest.mark.parametrize(
