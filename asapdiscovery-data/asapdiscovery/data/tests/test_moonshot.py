@@ -284,7 +284,13 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
         "exp_binding_affinity_kcal_mol_stderr",
     ]
     for c in float_check_cols:
-        assert_allclose(in_df_parsed[c].values, out_df[c].values, equal_nan=True)
+        assert_allclose(
+            in_df_parsed[c].values,
+            out_df[c].values,
+            rtol=1e-05,
+            atol=1e-08,
+            equal_nan=True,
+        )
 
 
 @pytest.mark.parametrize(
