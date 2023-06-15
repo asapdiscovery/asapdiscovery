@@ -19,7 +19,7 @@ MOONSHOT_SEARCH_DICT = {
 }
 
 
-def download_url(search_url, header, vault=None, timeout=5000, retry_delay=5):
+def download_url(search_url, header, vault=None, timeout=5000, retry_delay=10):
     """
     Make requests to the API using the passed information.
 
@@ -32,7 +32,7 @@ def download_url(search_url, header, vault=None, timeout=5000, retry_delay=5):
         'X-CDD-token' that gives the user's CDD API token
     timeout : int, default=5000
         Timeout (in seconds)
-    retry_delay : int, default=5
+    retry_delay : int, default=10
         Delay between retry status (in seconds)
 
     Returns
