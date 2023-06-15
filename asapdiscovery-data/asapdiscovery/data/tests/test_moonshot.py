@@ -290,6 +290,7 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
             rtol=1e-05,
             atol=1e-08,
             equal_nan=True,
+            err_msg=f"{c} cols not equal",
         )
 
 
