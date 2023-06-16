@@ -9,7 +9,6 @@ from typing import List, Optional, Tuple  # noqa: F401
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_sdf,
@@ -19,6 +18,7 @@ from asapdiscovery.data.openeye import (
     save_openeye_sdf,
 )
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
 POSIT_METHODS = ("all", "hybrid", "fred", "mcs", "shapefit")
 
