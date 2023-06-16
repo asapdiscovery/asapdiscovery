@@ -38,10 +38,19 @@ from pathlib import Path
 import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import oechem
+from asapdiscovery.docking.docking import dock_and_score_pose_oe
+from asapdiscovery.data.openeye import (  # noqa: E402
+    combine_protein_ligand,
+    load_openeye_sdf,
+    oechem,
+    save_openeye_pdb,
+    save_openeye_sdf,
+)
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
-from asapdiscovery.docking.docking import dock_and_score_pose_oe
+from asapdiscovery.docking.docking import POSIT_METHODS, run_docking_oe  # noqa: E402
+from asapdiscovery.modeling.modeling import split_openeye_design_unit
+
 
 
 def load_dus(fn_dict, log_name):
@@ -136,6 +145,7 @@ def parse_du_filenames(receptors, regex, log_name, basefile="predocked.oedu"):
     else:
         logger.info(f"Using {receptors} as glob")
         all_fns = glob(receptors)
+        logger.info(all_fns)
 
     # check that we actually have loaded in prepped receptors.
     check_filelist_has_elements(all_fns, tag="prepped receptors")
@@ -251,9 +261,11 @@ def get_args():
     )
     parser.add_argument(
         "-y",
-        "--hybrid",
-        action="store_true",
-        help="Whether to only use hybrid docking protocol in POSIT.",
+        "--posit_method",
+        type=str,
+        default="all",
+        choices=POSIT_METHODS,
+        help="Which POSIT method to use for POSIT docking protocol.",
     )
     parser.add_argument(
         "-c",
@@ -528,7 +540,7 @@ def main():
                 m,
                 args.docking_sys.lower(),
                 args.relax.lower(),
-                args.hybrid,
+                args.posit_method.lower(),
                 f"{compound_ids[i]}_{x}",
                 args.omega,
                 args.num_poses,
