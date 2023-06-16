@@ -1,6 +1,7 @@
 import logging
 import os
 import pickle as pkl
+from collections import namedtuple
 from datetime import datetime
 from pathlib import Path  # noqa: F401
 from typing import List, Optional, Tuple  # noqa: F401
@@ -12,13 +13,11 @@ from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_sdf,
     oechem,
+    oedocking,
     save_openeye_pdb,
     save_openeye_sdf,
-    split_openeye_design_unit
-    oedocking 
-    )
-from collections import namedtuple
-
+    split_openeye_design_unit,
+)
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
 POSIT_METHODS = ("all", "hybrid", "fred", "mcs", "shapefit")

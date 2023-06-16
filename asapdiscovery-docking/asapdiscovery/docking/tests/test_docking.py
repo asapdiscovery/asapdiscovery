@@ -111,7 +111,6 @@ def test_docking_kwargs(
     assert ret.success
 
 
-
 @pytest.mark.timeout(400)
 @pytest.mark.script_launch_mode("subprocess")
 def test_single_target_docking(
@@ -134,6 +133,7 @@ def test_single_target_docking(
     ]
     ret = script_runner.run(*args)
     assert ret.success
+
 
 @pytest.mark.timeout(400)
 @pytest.mark.parametrize("by_compound", ["--by_compound"])
