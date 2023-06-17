@@ -112,6 +112,30 @@ def test_docking_kwargs(
 
 
 @pytest.mark.timeout(400)
+@pytest.mark.script_launch_mode("subprocess")
+def test_single_target_docking(
+    script_runner,
+    output_dir,
+    docking_files_single,
+):
+    sdf, oedu, _, pdb = docking_files_single
+    args = [
+        "dock-small-scale-e2e",
+        "-m",
+        f"{sdf}",
+        "-r",
+        f"{pdb}",
+        "-o",
+        f"{output_dir}",
+        "--target",
+        "sars2",
+        "--no-omega",
+    ]
+    ret = script_runner.run(*args)
+    assert ret.success
+
+
+@pytest.mark.timeout(400)
 @pytest.mark.parametrize("by_compound", ["--by_compound"])
 @pytest.mark.script_launch_mode("subprocess")
 def test_failing_kwargs(

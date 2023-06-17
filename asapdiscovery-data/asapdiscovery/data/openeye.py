@@ -293,6 +293,14 @@ def load_openeye_sdfs(sdf_fn):
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
+def load_openeye_design_unit(du_filename: str) -> oechem.OEDesignUnit:
+    du = oechem.OEDesignUnit()
+    retcode = oechem.OEReadDesignUnit(du_filename, du)
+    if not retcode:
+        raise RuntimeError(f"Unable to read design unit from {du_filename}")
+    return du
+
+
 def save_openeye_pdb(mol, pdb_fn):
     """
     Write an OpenEye OEGraphMol object to a PDB file.
