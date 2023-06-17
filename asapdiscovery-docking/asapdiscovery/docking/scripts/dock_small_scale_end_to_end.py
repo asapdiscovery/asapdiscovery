@@ -7,7 +7,6 @@ from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
 import dask
-import yaml
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
