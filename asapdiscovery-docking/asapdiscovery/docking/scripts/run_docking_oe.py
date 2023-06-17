@@ -38,9 +38,7 @@ from pathlib import Path
 import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import (  # noqa: E402
-    oechem,
-)
+from asapdiscovery.data.openeye import oechem  # noqa: E402
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import (  # noqa: E402
