@@ -518,7 +518,11 @@ def main():
     prepped_targets = PreppedTargets.from_list([prepped_targets])
     prepped_targets.to_json(prep_dir / "output_targets.json")
     output_target = prepped_targets.iterable[0]
+
+    if output_target.failed:
+        raise ValueError(f"Protein prep failed.")
     output_target_du = output_target.design_unit
+    protein_path = output_target.protein
 
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
