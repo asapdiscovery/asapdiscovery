@@ -11,12 +11,11 @@ import yaml
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
+    load_openeye_design_unit,
     oechem,
     save_openeye_pdb,
     save_openeye_sdf,
-    load_openeye_design_unit,
 )
-
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -26,19 +25,19 @@ from asapdiscovery.data.utils import (
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import (
+    POSIT_METHODS,
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
-    POSIT_METHODS,
-)
-from asapdiscovery.modeling.schema import (
-    MoleculeFilter,
-    PreppedTarget,
-    PreppedTargets,
-    PrepOpts,
 )
 from asapdiscovery.modeling.modeling import (
     protein_prep_workflow,
     split_openeye_design_unit,
+)
+from asapdiscovery.modeling.schema import (
+    MoleculeFilter,
+    PrepOpts,
+    PreppedTarget,
+    PreppedTargets,
 )
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
