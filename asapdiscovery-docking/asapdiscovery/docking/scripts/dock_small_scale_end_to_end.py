@@ -13,8 +13,6 @@ from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     load_openeye_design_unit,
     oechem,
-    save_openeye_pdb,
-    save_openeye_sdf,
 )
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
@@ -31,7 +29,6 @@ from asapdiscovery.docking import (
 )
 from asapdiscovery.modeling.modeling import (
     protein_prep_workflow,
-    split_openeye_design_unit,
 )
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
@@ -464,14 +461,6 @@ def main():
         if not seqres_yaml.exists():
             raise ValueError(f"SEQRES yaml file does not exist: {args.seqres_yaml}")
 
-        # load it
-        logger.info(f"Using SEQRES from {args.seqres_yaml}")
-        with open(args.seqres_yaml) as f:
-            seqres_dict = yaml.safe_load(f)
-        seqres = seqres_dict["SEQRES"]
-    else:
-        seqres = None
-
     # load the receptor
 
     receptor_name = receptor.stem
@@ -520,7 +509,7 @@ def main():
     output_target = prepped_targets.iterable[0]
 
     if output_target.failed:
-        raise ValueError(f"Protein prep failed.")
+        raise ValueError("Protein prep failed.")
     output_target_du = output_target.design_unit
     protein_path = output_target.protein
 
