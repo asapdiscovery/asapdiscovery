@@ -38,19 +38,13 @@ from pathlib import Path
 import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.docking.docking import dock_and_score_pose_oe
-from asapdiscovery.data.openeye import (  # noqa: E402
-    combine_protein_ligand,
-    load_openeye_sdf,
-    oechem,
-    save_openeye_pdb,
-    save_openeye_sdf,
-)
+from asapdiscovery.data.openeye import oechem  # noqa: E402
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
-from asapdiscovery.docking.docking import POSIT_METHODS, run_docking_oe  # noqa: E402
-from asapdiscovery.modeling.modeling import split_openeye_design_unit
-
+from asapdiscovery.docking.docking import (  # noqa: E402
+    POSIT_METHODS,
+    dock_and_score_pose_oe,
+)
 
 
 def load_dus(fn_dict, log_name):
