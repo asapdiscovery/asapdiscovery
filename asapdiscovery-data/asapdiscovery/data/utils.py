@@ -678,17 +678,24 @@ def strip_smiles_salts(smiles):
 def filter_molecules_dataframe(
     mol_df,
     smiles_fieldname="suspected_SMILES",
+    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
     retain_achiral=False,
     retain_racemic=False,
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
-    keep_best_per_mol=True,
-    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
-    dG_T=298.0,
-    cp_values=None,
 ):
     """
-    Filter a dataframe of molecules to retain those specified.
+    Filter a dataframe of molecules to retain those specified. Required columns are:
+        * "Canonical PostEra ID"
+        * `smiles_fieldname`
+        * "`assay_name`: IC50 (µM)"
+    Columns that are added to the dataframe by this function:
+        * "name"
+        * "smiles"
+        * "achiral"
+        * "racemic"
+        * "enantiopure"
+        * "semiquant"
 
     For example, to filter a DF of molecules so that it only contains achiral
     molecules while allowing for measurements that are semiquantitative:
@@ -704,6 +711,8 @@ def filter_molecules_dataframe(
         DataFrame containing compound information
     smiles_fieldname : str, default="suspected_SMILES"
         Field name to use for reference SMILES
+    assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
+        Name of the assay of interest
     retain_achiral : bool, default=False
         If True, retain achiral measurements
     retain_racemic : bool, default=False
@@ -712,18 +721,6 @@ def filter_molecules_dataframe(
         If True, retain chirally resolved measurements
     retain_semiquantitative_data : bool, default=False
         If True, retain semiquantitative data (data outside assay dynamic range)
-    keep_best_per_mol : bool, default=True
-        Keep only the best measurement for each molecule (first sorting by
-        curve class and then 95% CI pIC50 width)
-    assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
-        Name of the assay of interest
-    dG_T : float, default=298.0
-        Temperature in Kelvin for converting pIC50 values to delta G values
-    cp_values : Tuple[int], optional
-        Substrate concentration and Km values for calculating Ki using the
-        Cheng-Prussoff equation. These values are assumed to be in the same
-        concentration units. If no values are passed for this, pIC50 values
-        will be used as an approximation of the Ki
 
     Returns
     -------
@@ -732,7 +729,6 @@ def filter_molecules_dataframe(
     """
     import logging
 
-    import numpy as np
     from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 
     # Define functions to evaluate whether molecule is achiral, racemic, or resolved
@@ -823,6 +819,64 @@ def filter_molecules_dataframe(
 
     mol_df = mol_df.loc[keep_idx, :]
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries after filtering")
+
+    return mol_df
+
+
+def parse_fluorescence_data_cdd(
+    mol_df,
+    keep_best_per_mol=True,
+    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
+    dG_T=298.0,
+    cp_values=None,
+):
+    """
+    Filter a dataframe of molecules to retain those specified. Required columns are:
+        * "name"
+        * "`assay_name`: IC50 (µM)"
+        * "`assay_name`: IC50 CI (Lower) (µM)"
+        * "`assay_name`: IC50 CI (Upper) (µM)"
+        * "`assay_name`: Curve class"
+    Columns that are added to the dataframe by this function:
+        * "IC50 (M)"
+        * "IC50_stderr (M)"
+        * "IC50_95ci_lower (M)"
+        * "IC50_95ci_upper (M)"
+        * "pIC50"
+        * "pIC50_stderr"
+        * "pIC50_range"
+        * "pIC50_95ci_lower"
+        * "pIC50_95ci_upper"
+        * "exp_binding_affinity_kcal_mol"
+        * "exp_binding_affinity_kcal_mol_stderr"
+        * "exp_binding_affinity_kcal_mol_95ci_lower"
+        * "exp_binding_affinity_kcal_mol_95ci_upper"
+
+    Parameters
+    ----------
+    mol_df : pandas.DataFrame
+        DataFrame containing compound information
+    keep_best_per_mol : bool, default=True
+        Keep only the best measurement for each molecule (first sorting by
+        curve class and then 95% CI pIC50 width)
+    assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
+        Name of the assay of interest
+    dG_T : float, default=298.0
+        Temperature in Kelvin for converting pIC50 values to delta G values
+    cp_values : Tuple[int], optional
+        Substrate concentration and Km values for calculating Ki using the
+        Cheng-Prussoff equation. These values are assumed to be in the same
+        concentration units. If no values are passed for this, pIC50 values
+        will be used as an approximation of the Ki
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing parsed fluorescence and binding affinity values
+    """
+    import logging
+
+    import numpy as np
 
     # Compute pIC50s and uncertainties from 95% CIs
     IC50_series = []
@@ -980,13 +1034,14 @@ def filter_molecules_dataframe(
 
     # Keep only the best measurement for each molecule
     if keep_best_per_mol:
-        for mol_name, g in mol_df.groupby("name"):
-            g.sort_values(
-                by=[f"{assay_name}: Curve class", "pIC50_stderr"],
-                inplace=True,
-                ascending=True,
+
+        def get_best_mol(g):
+            g = g.sort_values(
+                by=[f"{assay_name}: Curve class", "pIC50_stderr"], ascending=True
             )
-        mol_df = mol_df.groupby("name", as_index=False).first()
+            return g.iloc[0, :]
+
+        mol_df = mol_df.groupby("name", as_index=False).apply(get_best_mol)
 
     return mol_df
 
