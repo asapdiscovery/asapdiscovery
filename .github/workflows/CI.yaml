@@ -74,6 +74,9 @@ jobs:
         micromamba list
 
     - name: Run tests
+      env:
+        CDDTOKEN: ${{ secrets.ASAP_CDD_VAULT_TOKEN_READ_ONLY }}
+        MOONSHOT_CDD_VAULT_NUMBER: ${{ secrets.MOONSHOT_CDD_VAULT_NUMBER }}
       run: |
         # run each package test suite; append to coverage file
         # Exit immediately if a command exits with a non-zero status.
