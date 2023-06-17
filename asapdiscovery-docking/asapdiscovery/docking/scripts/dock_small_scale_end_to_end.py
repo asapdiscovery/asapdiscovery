@@ -10,10 +10,7 @@ import dask
 import yaml
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import (
-    load_openeye_design_unit,
-    oechem,
-)
+from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -27,9 +24,7 @@ from asapdiscovery.docking import (
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
 )
-from asapdiscovery.modeling.modeling import (
-    protein_prep_workflow,
-)
+from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
     PrepOpts,
