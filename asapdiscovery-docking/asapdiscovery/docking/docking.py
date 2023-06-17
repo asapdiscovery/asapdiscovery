@@ -14,9 +14,10 @@ from asapdiscovery.data.openeye import (
     oechem,
     save_openeye_pdb,
     save_openeye_sdf,
-    split_openeye_design_unit
-    oedocking 
-    )
+    oedocking,
+)
+from asapdiscovery.modeling.modeling import split_openeye_design_unit
+
 from collections import namedtuple
 
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
@@ -104,7 +105,8 @@ def run_docking_oe(
         logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
     logger.info(f"Running docking for {compound_name}")
 
-    # oechem.OEThrow.Debug("Confirm that OE logging is working")
+    oechem.OEThrow.Debug("Confirm that OE logging is working")
+
     # Make copy so we can keep the original for RMSD purposes
     orig_mol = orig_mol.CreateCopy()
 
@@ -115,7 +117,9 @@ def run_docking_oe(
     if use_omega:
         from asapdiscovery.data.openeye import oeomega
 
-        omega = oeomega.OEOmega()
+        omegaOpts = oeomega.OEOmegaOptions()
+        omegaOpts.GetTorDriveOptions().SetUseGPU(False)
+        omega = oeomega.OEOmega(omegaOpts)
         ret_code = omega.Build(dock_lig)
         if ret_code:
             logger.error(f"Omega failed with error {oeomega.OEGetOmegaError(ret_code)}")
@@ -421,10 +425,10 @@ def dock_and_score_pose_oe(
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
         logger.info(f"No results for {compound_name} found, running docking")
         # this interferes with OEOmega see https://github.com/openforcefield/openff-toolkit/issues/1615
-        # errfs = oechem.oeofstream(os.path.join(out_dir, f"openeye_{logname}-log.txt"))
-        # oechem.OEThrow.SetOutputStream(errfs)
-        # oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-        # # oechem.OEThrow.Info(f"Starting docking for {logname}")
+        errfs = oechem.oeofstream(os.path.join(out_dir, f"openeye_{logname}-log.txt"))
+        oechem.OEThrow.SetOutputStream(errfs)
+        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+        oechem.OEThrow.Info(f"Starting docking for {logname}")
 
     success, posed_mol, docking_id = run_docking_oe(
         du, *args, log_name=log_name, **kwargs
@@ -506,5 +510,6 @@ def dock_and_score_pose_oe(
 
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     after = datetime.now().isoformat()
+    errfs.close()
     logger.info(f"Start: {before}, End: {after}")
     return results

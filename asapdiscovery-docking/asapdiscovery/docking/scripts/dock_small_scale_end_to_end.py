@@ -14,8 +14,9 @@ from asapdiscovery.data.openeye import (
     oechem,
     save_openeye_pdb,
     save_openeye_sdf,
-    split_openeye_design_unit,
+    load_openeye_design_unit,
 )
+
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -24,8 +25,21 @@ from asapdiscovery.data.utils import (
 )
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.docking import dock_and_score_pose_oe, make_docking_result_dataframe
-from asapdiscovery.docking import prep_mp as oe_prep_function
+from asapdiscovery.docking import (
+    dock_and_score_pose_oe,
+    make_docking_result_dataframe,
+    POSIT_METHODS,
+)
+from asapdiscovery.modeling.schema import (
+    MoleculeFilter,
+    PreppedTarget,
+    PreppedTargets,
+    PrepOpts,
+)
+from asapdiscovery.modeling.modeling import (
+    protein_prep_workflow,
+    split_openeye_design_unit,
+)
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
 """
@@ -38,7 +52,7 @@ Input:
     - smiles_as_title: use smiles strings as titles for molecules in .smi or .sdf file if none provided
     - dask: use dask to parallelise docking
     - dask-lilac: run dask in lilac config mode
-    - output_dir: path to output_dir, will NOT overwrite if exists.
+    - output_dir: path to output_dir, will overwrite if exists.
     - debug: enable debug mode, with more files saved and more verbose logging
     - verbose: whether to print out verbose logging.
     - cleanup: clean up intermediate files except for final csv and visualizations
@@ -205,11 +219,13 @@ parser.add_argument(
     action="store_true",
     help="Do not use Omega conformer enumeration.",
 )
-
 parser.add_argument(
-    "--hybrid",
-    action="store_true",
-    help="Whether to only use hybrid docking protocol in POSIT.",
+    "-y",
+    "--posit_method",
+    type=str,
+    default="all",
+    choices=POSIT_METHODS,
+    help="Which POSIT method to use for POSIT docking protocol.",
 )
 
 parser.add_argument(
@@ -458,56 +474,54 @@ def main():
         seqres = None
 
     # load the receptor
+
     receptor_name = receptor.stem
-    xtal = CrystalCompoundData(
-        str_fn=args.receptor, smiles=None, output_name=str(receptor_name)
-    )
-
     logger.info(f"Loaded receptor {receptor_name} from {receptor}")
-    oe_prep_function(xtal, args.ref_prot, seqres, prep_dir, args.loop_db, False)
+
+    xtal = CrystalCompoundData(
+        dataset=Path(args.receptor).stem, str_fn=str(args.receptor)
+    )
+
+    prep_input_schema = PreppedTarget(
+        source=xtal,
+        output_name=str(receptor_name),
+        active_site_chain="A",
+        oe_active_site_residue=None,
+        molecule_filter=MoleculeFilter(
+            components_to_keep=["protein", "ligand"],
+            ligand_chain="A",
+            protein_chains=[],
+        ),
+    )
+
+    targets = PreppedTargets.from_list([prep_input_schema])
+    targets.to_json(prep_dir / "input_targets.json")
+
+    prep_opts = PrepOpts(
+        ref_fn=receptor,  # IS THIS THE ISSUE
+        ref_chain="A",
+        loop_db=args.loop_db,
+        seqres_yaml=args.seqres_yaml,
+        output_dir=prep_dir,
+        make_design_unit=True,
+    )
+    logger.info(f"Prep options: {prep_opts}")
+
+    # add prep opts to the prepping function
+    protein_prep_workflow_with_opts = partial(
+        protein_prep_workflow, prep_opts=prep_opts
+    )
+    # there is only one target
+    input_target = targets.iterable[0]
+
+    # run prep
+    prepped_targets = protein_prep_workflow_with_opts(input_target)
+    prepped_targets = PreppedTargets.from_list([prepped_targets])
+    prepped_targets.to_json(prep_dir / "output_targets.json")
+    output_target = prepped_targets.iterable[0]
+    output_target_du = output_target.design_unit
+
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
-
-    # grab the files that were created
-    prepped_oedu = (
-        prep_dir / f"{receptor_name}" / f"{receptor_name}_prepped_receptor_0.oedu"
-    )
-    prepped_pdb = (
-        prep_dir / f"{receptor_name}" / f"{receptor_name}_prepped_receptor_0.pdb"
-    )
-
-    # check the prepped receptors exist
-    if not prepped_oedu.exists() or not prepped_pdb.exists():
-        raise ValueError(
-            f"Prepped receptor files do not exist: {prepped_oedu}, {prepped_pdb}"
-        )
-
-    logger.info(f"Prepped receptor: {prepped_pdb}, {prepped_oedu}")
-
-    # read design unit and split it
-    du = oechem.OEDesignUnit()
-    oechem.OEReadDesignUnit(str(prepped_oedu), du)
-
-    # extract the ligand, protein and complex
-    lig, protein, lig_prot_complex = split_openeye_design_unit(du)
-
-    # write out the protein
-    protein_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_protein.pdb"
-    logger.info(f"Writing out protein to {protein_path}")
-    save_openeye_pdb(protein, str(protein_path))
-
-    # write out the complex
-    complex_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_complex.pdb"
-    logger.info(f"Writing out complex to {complex_path}")
-    save_openeye_pdb(lig_prot_complex, str(complex_path))
-
-    # write out the ligand
-    ligand_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_ligand.sdf"
-    logger.info(f"Writing out ligand to {ligand_path}")
-    save_openeye_sdf(lig, str(ligand_path))
-
-    ligand_smiles = oechem.OEMolToSmiles(lig)
-
-    logger.info(f"Xtal ligand: {ligand_smiles}")
 
     # setup docking
     logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
@@ -579,14 +593,14 @@ def main():
         res = dock_and_score_pose_oe_ml(
             dock_dir / f"{compound.compound_id}_{receptor_name}",
             compound.compound_id,
-            prepped_oedu,
+            str(output_target_du),
             logname,
             f"{compound.compound_id}_{receptor_name}",
-            du,
+            load_openeye_design_unit(str(output_target_du)),
             mol,
             args.docking_sys.lower(),
             args.relax.lower(),
-            args.hybrid,
+            args.posit_method.lower(),
             f"{compound.compound_id}_{receptor_name}",
             omega,
             args.num_poses,

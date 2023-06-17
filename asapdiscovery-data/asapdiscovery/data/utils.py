@@ -1345,7 +1345,7 @@ def oe_load_exp_from_file(
     exp_data_compounds = []
 
     mols = []
-    for i, mol in enumerate(ifs.GetOEGraphMols()):
+    for i, mol in enumerate(ifs.GetOEMols()):
         mols.append(mol)
         smiles = oechem.OEMolToSmiles(mol)
 
@@ -1386,7 +1386,7 @@ def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem
     """
     mols = []
     for ed in exp_data:
-        mol = oechem.OEGraphMol()
+        mol = oechem.OEMol()
         oechem.OESmilesToMol(mol, ed.smiles)
         mol.SetTitle(ed.compound_id)
         mols.append(mol)
