@@ -1,12 +1,15 @@
 # Composition over Inheritance
-# Should we have a single Ligand class with optional attributes?
-# which are validated manually in every individual function?
-# or should we have a base Ligand class and then subclasses for each set of ligand data?
+# Should we have
+# 1) a single Ligand class with optional attributes which are validated manually in every individual function
+# 2) a base Ligand class and then subclasses for each set of ligand data?
+# 3) a base ligand class, separate classes for each kind of data we want to capture,
+#    and then compose (either a tuple or new class) from the base ligand class and the data classes?
 from pydantic import Field, BaseModel
 from datetime import date
 from typing import Optional
 
-############### OPTION 1: Composition ############################
+# starting with option 3 bc i think i like it the most
+############### OPTION 3: Composition ############################
 # Ligand class stores all the core info
 # Data classes (LigandExperimentalData, LigandCrystalData) store the other stuff
 # Then you can compose a LigandData object from ligand and data classes
