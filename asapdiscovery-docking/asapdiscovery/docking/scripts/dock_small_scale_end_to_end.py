@@ -186,6 +186,26 @@ parser.add_argument(
     help="Path to reference pdb to align to. If None, no alignment will be performed",
 )
 
+parser.add_argument(
+    "--components_to_keep", type=str, nargs="+", default=["protein", "ligand"]
+)
+parser.add_argument("--active_site_chain", type=str, default="A")
+
+parser.add_argument("--ligand_chain", type=str, default="A")
+
+parser.add_argument("--protein_chains", type=str, default=[], help="")
+
+parser.add_argument(
+    "--oe_active_site_residue",
+    type=str,
+    default=None,
+    help="OpenEye formatted site residue for active site identification otherwise will use OpenEye automatic detection, i.e. 'HIS:41: :A:0: '",
+)
+
+parser.add_argument(
+    "--ref_chain", type=str, default="A", help="Chain of reference to align to."
+)
+
 # Docking arguments
 parser.add_argument(
     "--use_3d",
@@ -466,21 +486,32 @@ def main():
     prep_input_schema = PreppedTarget(
         source=xtal,
         output_name=str(receptor_name),
-        active_site_chain="A",
-        oe_active_site_residue=None,
+        active_site_chain=args.active_site_chain,
+        oe_active_site_residue=args.oe_active_site_residue,
         molecule_filter=MoleculeFilter(
-            components_to_keep=["protein", "ligand"],
-            ligand_chain="A",
-            protein_chains=[],
+            components_to_keep=args.components_to_keep,
+            ligand_chain=args.ligand_chain,
+            protein_chains=args.protein_chains,
         ),
     )
 
     targets = PreppedTargets.from_list([prep_input_schema])
     targets.to_json(prep_dir / "input_targets.json")
 
+    # setup prep options
+
+    # check the reference structure exists
+    if args.ref_prot is not None:
+        if not Path(args.ref_prot).exists():
+            raise ValueError(f"Reference protein file does not exist: {args.ref_prot}")
+        else:
+            logger.info(f"Using reference protein: {args.ref_prot}")
+
+    reference_structure = args.ref_prot if args.ref_prot else receptor
+
     prep_opts = PrepOpts(
-        ref_fn=receptor,  # IS THIS THE ISSUE
-        ref_chain="A",
+        ref_fn=reference_structure,
+        ref_chain=args.ref_chain,
         loop_db=args.loop_db,
         seqres_yaml=args.seqres_yaml,
         output_dir=prep_dir,
