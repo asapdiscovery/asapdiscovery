@@ -82,3 +82,4 @@ dependencies:
     - pytest-timeout
     # viz
     - pygifsicle
+    - sigfig

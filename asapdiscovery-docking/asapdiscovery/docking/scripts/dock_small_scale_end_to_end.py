@@ -7,16 +7,9 @@ from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
 import dask
-import yaml
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import (
-    oechem,
-    save_openeye_pdb,
-    save_openeye_sdf,
-    load_openeye_design_unit,
-)
-
+from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -26,19 +19,16 @@ from asapdiscovery.data.utils import (
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import (
+    POSIT_METHODS,
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
-    POSIT_METHODS,
 )
+from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
+    PrepOpts,
     PreppedTarget,
     PreppedTargets,
-    PrepOpts,
-)
-from asapdiscovery.modeling.modeling import (
-    protein_prep_workflow,
-    split_openeye_design_unit,
 )
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
@@ -464,14 +454,6 @@ def main():
         if not seqres_yaml.exists():
             raise ValueError(f"SEQRES yaml file does not exist: {args.seqres_yaml}")
 
-        # load it
-        logger.info(f"Using SEQRES from {args.seqres_yaml}")
-        with open(args.seqres_yaml) as f:
-            seqres_dict = yaml.safe_load(f)
-        seqres = seqres_dict["SEQRES"]
-    else:
-        seqres = None
-
     # load the receptor
 
     receptor_name = receptor.stem
@@ -518,7 +500,11 @@ def main():
     prepped_targets = PreppedTargets.from_list([prepped_targets])
     prepped_targets.to_json(prep_dir / "output_targets.json")
     output_target = prepped_targets.iterable[0]
+
+    if output_target.failed:
+        raise ValueError("Protein prep failed.")
     output_target_du = output_target.design_unit
+    protein_path = output_target.protein
 
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 

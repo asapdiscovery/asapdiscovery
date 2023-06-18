@@ -16,12 +16,7 @@ from asapdiscovery.data.openeye import (
     oedocking,
     save_openeye_pdb,
     save_openeye_sdf,
-    oedocking,
 )
-from asapdiscovery.modeling.modeling import split_openeye_design_unit
-
-from collections import namedtuple
-
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
