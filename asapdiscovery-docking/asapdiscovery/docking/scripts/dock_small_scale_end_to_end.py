@@ -92,7 +92,7 @@ Example usage:
         -r /path/to/receptor.pdb \
         -m 'COC(=O)COc1cc(cc2c1OCC[C@H]2C(=O)Nc3cncc4c3cccc4)Cl'
         -o /path/to/output_dir \
-        --title 'my_fancy_molecule' \\ # without a title you will be given a hash of the SMILES string
+        --title 'my_fancy_molecule' \ 
         --debug \
         --dask \
         --md
@@ -220,7 +220,6 @@ parser.add_argument(
     help="Do not use Omega conformer enumeration.",
 )
 parser.add_argument(
-    "-y",
     "--posit_method",
     type=str,
     default="all",
