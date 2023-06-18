@@ -20,7 +20,7 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
-  - openeye-toolkits
+  - openeye-toolkits<=2022.2.2
   - pandas
   - pebble
   - pydantic
