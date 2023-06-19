@@ -304,11 +304,6 @@ def main():
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
 
-    # openeye logging handling
-    errfs = oechem.oeofstream(str(output_dir / f"openeye-{logname}-log.txt"))
-    oechem.OEThrow.SetOutputStream(errfs)
-    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-
     if args.debug:
         logger.info("Running in debug mode. enabling --verbose and disabling --cleanup")
         args.verbose = True
@@ -575,7 +570,11 @@ def main():
 
     # use partial to bind the ML models to the docking function
     dock_and_score_pose_oe_ml = partial(
-        dock_and_score_pose_oe, GAT_model=gat_model, schnet_model=schnet_model
+        dock_and_score_pose_oe,
+        GAT_model=gat_model,
+        schnet_model=schnet_model,
+        allow_low_posit_prob=True,
+        allow_final_clash=True,
     )
 
     if args.dask:
