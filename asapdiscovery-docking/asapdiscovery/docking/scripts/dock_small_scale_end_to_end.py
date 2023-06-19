@@ -12,10 +12,10 @@ from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
+    check_name_length_and_truncate,
     exp_data_to_oe_mols,
     is_valid_smiles,
     oe_load_exp_from_file,
-    check_name_length_and_truncate,
 )
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
