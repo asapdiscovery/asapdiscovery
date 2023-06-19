@@ -530,7 +530,11 @@ def main():
     if output_target.failed:
         raise ValueError("Protein prep failed.")
     output_target_du = output_target.design_unit
+    if not output_target_du.exists():
+        raise ValueError(f"Design unit does not exist: {output_target_du}")
     protein_path = output_target.protein
+    if not protein_path.exists():
+        raise ValueError(f"Protein file does not exist: {protein_path}")
 
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
