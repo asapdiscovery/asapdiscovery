@@ -9,8 +9,8 @@ from asapdiscovery.docking.docking import POSIT_METHODS
 def docking_files_single():
     sdf = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf")
     oedu = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu")
-    pdb = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
     oedu_glob = os.path.join(os.path.dirname(oedu), "*.oedu")
+    pdb = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
     return sdf, oedu, oedu_glob, pdb
 
 
@@ -110,6 +110,7 @@ def test_docking_kwargs(
     ret = script_runner.run(*args)
     assert ret.success
 
+
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
@@ -133,7 +134,7 @@ def test_single_target_docking(
         "sars2",
         "--no-omega",
     ]
-    ret = script_runner.run(*args)
+    ret = script_runner.run(args)
     assert ret.success
 
 
