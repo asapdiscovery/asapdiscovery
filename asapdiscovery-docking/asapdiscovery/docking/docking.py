@@ -42,6 +42,10 @@ def run_docking_oe(
     use_omega=False,
     num_poses=1,
     log_name="run_docking_oe",
+    openeye_logname="openeye-log.txt",
+    allow_low_posit_prob=False,
+    low_posit_prob_thresh=0.1,
+    allow_final_clash=False,
 ):
     """
     Run docking using OpenEye. The returned OEGraphMol object will have the
@@ -72,7 +76,14 @@ def run_docking_oe(
         Use OEOmega to manually generate conformations
     num_poses : int, default=1
         Number of poses to return from docking (only relevant for POSIT)
-
+    openeye_logname : str, optional
+        Name of OpenEye log file to use
+    allow_low_posit_prob : bool, optional
+        Allow poses with low POSIT probability if no other poses found, by default False
+    low_posit_prob_thresh : float, optional
+        Threshold for POSIT probability if allow_low_posit_prob=True, by default 0.1
+    allow_final_clash : bool, optional
+        Allow clashes in last ditch attempt to get poses, by default False
     Returns
     -------
     bool
@@ -103,6 +114,12 @@ def run_docking_oe(
         logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
     logger.info(f"Running docking for {compound_name}")
 
+    # Set up OEThrow logging
+    # this can sometimes interfere with OEOmega see https://github.com/openforcefield/openff-toolkit/issues/1615
+    errfs = oechem.oeofstream(openeye_logname)
+    oechem.OEThrow.SetOutputStream(errfs)
+    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+    oechem.OEThrow.Info(f"Starting docking for {logname}")
     oechem.OEThrow.Debug("Confirm that OE logging is working")
 
     # Make copy so we can keep the original for RMSD purposes
@@ -221,17 +238,36 @@ def run_docking_oe(
         pose_res = oedocking.OEPositResults()
         ret_code = poser.Dock(pose_res, dock_lig, num_poses)
 
-    if ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
-        # try one last time reducing acceptable posit probability
-        # these poses will be garbage but better to have a pose than no pose
+    if allow_low_posit_prob and (
+        ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+    ):
+        # try again reducing acceptable posit probability
+        # these poses will be pretty bad
         opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-        opts.SetMinProbability(0.1)
+        opts.SetMinProbability(low_posit_prob_thresh)
 
         if compound_name:
             logger.info(
-                f"Re-running POSIT with method '{posit_method}' docking with all relaxation for {compound_name} and min probability 0.1",
+                f"Re-running POSIT with method '{posit_method}' docking with all relaxation for {compound_name} and min probability {low_posit_prob_thresh}",
             )
 
+        # Set up poser object
+        poser = oedocking.OEPosit(opts)
+        poser.AddReceptor(du)
+
+        # Run posing
+        pose_res = oedocking.OEPositResults()
+        ret_code = poser.Dock(pose_res, dock_lig, num_poses)
+
+    if allow_final_clash and (
+        ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+    ):
+        # try one final time allowing clashes
+        opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
+        if compound_name:
+            logger.info(
+                f"Re-running POSIT with method '{posit_method}' docking with all relaxation for {compound_name} allowing clashes",
+            )
         # Set up poser object
         poser = oedocking.OEPosit(opts)
         poser.AddReceptor(du)
@@ -257,6 +293,8 @@ def run_docking_oe(
             logger.error(
                 f"Pose generation failed for {compound_name} ({err_type})",
             )
+        errfs.flush()
+        errfs.close()
         return False, None, None
 
     # Set docking_id key for SD tags
@@ -297,7 +335,8 @@ def run_docking_oe(
     for mol in posed_mols[1:]:
         combined_mol.NewConf(mol)
     assert combined_mol.NumConfs() == len(posed_mols)
-
+    errfs.flush()
+    errfs.close()
     return True, combined_mol, docking_id
 
 
@@ -400,6 +439,9 @@ def dock_and_score_pose_oe(
     *args,
     GAT_model=None,
     schnet_model=None,
+    allow_low_posit_prob=False,
+    low_posit_prob_thresh=0.1,
+    allow_final_clash=False,
     **kwargs,
 ):
     """
@@ -422,6 +464,12 @@ def dock_and_score_pose_oe(
         GAT model to use for inference. If None, will not perform inference.
     schnet_model : SchNetInference, optional
         SchNet model to use for inference. If None, will not perform inference.
+    allow_low_posit_prob : bool, optional
+        Allow poses with low POSIT probability if no other poses found, by default False
+    low_posit_prob_thresh : float, optional
+        Threshold for POSIT probability if allow_low_posit_prob=True, by default 0.1
+    allow_final_clash : bool, optional
+        Allow clashes in last ditch attempt to get poses, by default False
 
     Returns
     -------
@@ -440,14 +488,18 @@ def dock_and_score_pose_oe(
         os.makedirs(out_dir, exist_ok=True)
         logger = FileLogger(logname, path=str(out_dir)).getLogger()
         logger.info(f"No results for {compound_name} found, running docking")
-        # this interferes with OEOmega see https://github.com/openforcefield/openff-toolkit/issues/1615
-        errfs = oechem.oeofstream(os.path.join(out_dir, f"openeye_{logname}-log.txt"))
-        oechem.OEThrow.SetOutputStream(errfs)
-        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-        oechem.OEThrow.Info(f"Starting docking for {logname}")
-
+        openeye_logname = os.path.join(out_dir, f"openeye_{logname}-log.txt")
+    if not allow_low_posit_prob:
+        logger.info("Ignoring low_posit_prob_thresh")
     success, posed_mol, docking_id = run_docking_oe(
-        du, *args, log_name=log_name, **kwargs
+        du,
+        *args,
+        log_name=log_name,
+        openeye_logname=openeye_logname,
+        allow_low_posit_prob=allow_low_posit_prob,
+        low_posit_prob_thresh=low_posit_prob_thresh,
+        allow_final_clash=allow_final_clash,
+        **kwargs,
     )
     if success:
         out_fn = os.path.join(out_dir, "docked.sdf")
@@ -526,7 +578,5 @@ def dock_and_score_pose_oe(
 
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     after = datetime.now().isoformat()
-    errfs.flush()
-    errfs.close()
     logger.info(f"Start: {before}, End: {after}")
     return results
