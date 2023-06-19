@@ -682,7 +682,7 @@ def main():
         outpaths = []
 
         @dask.delayed
-        def dask_gif_adaptor(pose, outpath):
+        def dask_html_adaptor(pose, outpath):
             html_visualiser = HTMLVisualizer(
                 [pose],
                 [outpath],
@@ -701,7 +701,7 @@ def main():
         for pose, output_path in zip(
             top_posit["docked_file"], top_posit["outpath_pose"]
         ):
-            outpath = dask_gif_adaptor(pose, output_path)
+            outpath = dask_html_adaptor(pose, output_path)
             outpaths.append(outpath)
 
         outpaths = client.compute(outpaths)
