@@ -110,6 +110,7 @@ def test_docking_kwargs(
     ret = script_runner.run(*args)
     assert ret.success
 
+
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
