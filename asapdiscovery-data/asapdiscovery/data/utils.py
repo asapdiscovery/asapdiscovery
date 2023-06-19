@@ -1453,3 +1453,16 @@ def combine_files(paths: list[Union[Path, str]], output_file):
         for file_to_copy in paths:
             with open(file_to_copy) as file_to_copy_fd:
                 ofs.write(file_to_copy_fd.read())
+
+
+def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None) -> str:
+    # check for name length and truncate if necessary
+    if len(name) > max_length:
+        truncated_name = name[:max_length]
+        if logger:
+            logger.warning(
+                f"Name {name} is longer than {max_length} characters and has been truncated to {truncated_name}, consider using shorter filenames"
+            )
+        return truncated_name
+    else:
+        return name

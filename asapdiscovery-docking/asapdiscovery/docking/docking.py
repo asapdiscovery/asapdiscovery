@@ -19,6 +19,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
+from asapdiscovery.data.utils import check_name_length_and_truncate
 
 POSIT_METHODS = ("all", "hybrid", "fred", "mcs", "shapefit")
 
@@ -328,7 +329,8 @@ def run_docking_oe(
 
         # Set molecule name if given
         if compound_name:
-            mol.SetTitle(f"{compound_name}_{i}")
+            name = check_name_length_and_truncate(compound_name, logger=logger)
+            mol.SetTitle(name)
 
     # Combine all the conformations into one
     combined_mol = oechem.OEMol(posed_mols[0])
