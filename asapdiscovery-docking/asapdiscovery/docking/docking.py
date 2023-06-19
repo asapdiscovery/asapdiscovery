@@ -116,7 +116,6 @@ def run_docking_oe(
         from asapdiscovery.data.openeye import oeomega
 
         omegaOpts = oeomega.OEOmegaOptions()
-        omegaOpts.GetTorDriveOptions().SetUseGPU(False)
         omega = oeomega.OEOmega(omegaOpts)
         ret_code = omega.Build(dock_lig)
         if ret_code:
@@ -212,6 +211,25 @@ def run_docking_oe(
         if compound_name:
             logger.info(
                 f"Re-running POSIT with method '{posit_method}' docking with no relaxation for {compound_name}",
+            )
+
+        # Set up poser object
+        poser = oedocking.OEPosit(opts)
+        poser.AddReceptor(du)
+
+        # Run posing
+        pose_res = oedocking.OEPositResults()
+        ret_code = poser.Dock(pose_res, dock_lig, num_poses)
+
+    if ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
+        # try one last time reducing acceptable posit probability
+        # these poses will be garbage but better to have a pose than no pose
+        opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
+        opts.SetMinProbability(0.1)
+
+        if compound_name:
+            logger.info(
+                f"Re-running POSIT with method '{posit_method}' docking with all relaxation for {compound_name} and min probability 0.1",
             )
 
         # Set up poser object
@@ -508,6 +526,7 @@ def dock_and_score_pose_oe(
 
     pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
     after = datetime.now().isoformat()
+    errfs.flush()
     errfs.close()
     logger.info(f"Start: {before}, End: {after}")
     return results
