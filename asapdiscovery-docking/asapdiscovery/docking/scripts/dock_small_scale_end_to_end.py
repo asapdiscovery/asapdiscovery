@@ -315,60 +315,6 @@ def main():
         logger.debug("Debug logging enabled")
         logger.debug(f"Input arguments: {args}")
 
-    if args.dask:
-        logger.info("Using dask to parallelise docking")
-        # set timeout to None so workers don't get killed on long timeouts
-        from dask import config as cfg
-        from dask.distributed import Client
-
-        cfg.set({"distributed.scheduler.worker-ttl": None})
-
-        if args.dask_lilac:
-            from dask_jobqueue import LSFCluster
-
-            logger.info("Using dask-jobqueue to run on lilac")
-            logger.warning(
-                "make sure you have a config file for lilac's dask-jobqueue cluster installed in your environment, contact @hmacdope"
-            )
-
-            logger.info("Finding dual IP interfaces")
-            # find dual IP interfaces excluding lo loopback interface
-            # technically dask only needs IPV4 but helps us find the right ones
-            # easier. If you have a better way of doing this please let me know!
-            exclude = ["lo"]
-            interfaces = get_interfaces_with_dual_ip(exclude=exclude)
-            logger.info(f"Found IP interfaces: {interfaces}")
-            if len(interfaces) == 0:
-                raise ValueError("Must have at least one network interface to run dask")
-            if len(interfaces) > 1:
-                logger.warning(
-                    f"Found more than one IP interface: {interfaces}, using the first one"
-                )
-            interface = interfaces[0]
-            logger.info(f"Using interface: {interface}")
-
-            # NOTE you will need a config file that defines the dask-jobqueue for the cluster
-            cluster = LSFCluster(
-                interface=interface, scheduler_options={"interface": interface}
-            )
-
-            logger.info(f"dask config : {dask.config.config}")
-
-            # assume we will have about 10 jobs, they will be killed if not used
-            cluster.scale(10)
-            # cluster is adaptive, and will scale between 5 and 40 workers depending on load
-            # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
-            # which can cause thrashing in the LSF queue
-            cluster.adapt(minimum=5, maximum=40, interval="10s", target_duration="60s")
-            client = Client(cluster)
-        else:
-            client = Client()
-        logger.info("Dask client created ...")
-        logger.info(client.dashboard_link)
-        logger.info(
-            "strongly recommend you open the dashboard link in a browser tab to monitor progress"
-        )
-
     # paths to remove if not keeping intermediate files
     intermediate_files = []
 
@@ -537,6 +483,61 @@ def main():
         raise ValueError(f"Protein file does not exist: {protein_path}")
 
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
+
+    # do dask here as it is the first bit of the workflow that is parallel
+    if args.dask:
+        logger.info("Using dask to parallelise docking")
+        # set timeout to None so workers don't get killed on long timeouts
+        from dask import config as cfg
+        from dask.distributed import Client
+
+        cfg.set({"distributed.scheduler.worker-ttl": None})
+
+        if args.dask_lilac:
+            from dask_jobqueue import LSFCluster
+
+            logger.info("Using dask-jobqueue to run on lilac")
+            logger.warning(
+                "make sure you have a config file for lilac's dask-jobqueue cluster installed in your environment, contact @hmacdope"
+            )
+
+            logger.info("Finding dual IP interfaces")
+            # find dual IP interfaces excluding lo loopback interface
+            # technically dask only needs IPV4 but helps us find the right ones
+            # easier. If you have a better way of doing this please let me know!
+            exclude = ["lo"]
+            interfaces = get_interfaces_with_dual_ip(exclude=exclude)
+            logger.info(f"Found IP interfaces: {interfaces}")
+            if len(interfaces) == 0:
+                raise ValueError("Must have at least one network interface to run dask")
+            if len(interfaces) > 1:
+                logger.warning(
+                    f"Found more than one IP interface: {interfaces}, using the first one"
+                )
+            interface = interfaces[0]
+            logger.info(f"Using interface: {interface}")
+
+            # NOTE you will need a config file that defines the dask-jobqueue for the cluster
+            cluster = LSFCluster(
+                interface=interface, scheduler_options={"interface": interface}
+            )
+
+            logger.info(f"dask config : {dask.config.config}")
+
+            # assume we will have about 10 jobs, they will be killed if not used
+            cluster.scale(10)
+            # cluster is adaptive, and will scale between 5 and 40 workers depending on load
+            # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
+            # which can cause thrashing in the LSF queue
+            cluster.adapt(minimum=5, maximum=40, interval="60s", target_duration="40s")
+            client = Client(cluster)
+        else:
+            client = Client()
+        logger.info("Dask client created ...")
+        logger.info(client.dashboard_link)
+        logger.info(
+            "strongly recommend you open the dashboard link in a browser tab to monitor progress"
+        )
 
     # setup docking
     logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
