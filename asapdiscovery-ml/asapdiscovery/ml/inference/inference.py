@@ -324,16 +324,16 @@ class SchnetInference(StructuralInference):
     ):
         if pIC50_units:
             if build_model_kwargs:
-                build_model_kwargs = {"pred_r":"pIC50"}  |  build_model_kwargs
+                build_model_kwargs = {"pred_r": "pIC50"} | build_model_kwargs
             else:
-                build_model_kwargs = {"pred_r":"pIC50"}
- 
+                build_model_kwargs = {"pred_r": "pIC50"}
+
         super().__init__(
             model_name,
             model_spec,
             weights_local_dir=weights_local_dir,
             build_model_kwargs=build_model_kwargs,
-            device=device
+            device=device,
         )
 
 
