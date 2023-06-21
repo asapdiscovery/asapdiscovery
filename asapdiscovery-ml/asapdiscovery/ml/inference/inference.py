@@ -313,6 +313,29 @@ class SchnetInference(StructuralInference):
 
     model_type = "schnet"
 
+    def __init__(
+        self,
+        model_name: str,
+        model_spec: Optional[Path] = None,
+        weights_local_dir: Union[Path, str] = Path("./_weights/"),
+        build_model_kwargs: Optional[dict] = None,
+        pIC50_units=True,
+        device: str = "cpu",
+    ):
+        if pIC50_units:
+            if build_model_kwargs:
+                build_model_kwargs = {"pred_r": "pIC50"} | build_model_kwargs
+            else:
+                build_model_kwargs = {"pred_r": "pIC50"}
+
+        super().__init__(
+            model_name,
+            model_spec,
+            weights_local_dir=weights_local_dir,
+            build_model_kwargs=build_model_kwargs,
+            device=device,
+        )
+
 
 class E3nnInference(StructuralInference):
     """
