@@ -1334,6 +1334,35 @@ def check_filelist_has_elements(
         )
 
 
+
+def combine_sdf_files(glob_string, output_sdf):
+    import shutil
+
+    # Concatenate all individual SDF files
+    sdfs = [f for f in glob.glob(glob_string) if f.endswith(".sdf")]
+    check_filelist_has_elements(sdfs, "sdfs")
+    with open(output_sdf, "wb") as wfd:
+        for f in sdfs:
+            if f == "":
+                continue
+            with open(f, "rb") as fd:
+                shutil.copyfileobj(fd, wfd)
+
+
+def is_valid_smiles(smiles):
+    # Create an OEMol object
+    mol = oechem.OEMol()
+
+    # Attempt to parse the SMILES string
+    if not oechem.OEParseSmiles(mol, smiles):
+        return False
+
+    # Check if the parsed molecule is valid
+    if not mol.IsValid():
+        return False
+
+    return True
+
 def oe_load_exp_from_file(
     fn,
     ftype,
@@ -1419,3 +1448,16 @@ def combine_files(paths: list[Union[Path, str]], output_file):
         for file_to_copy in paths:
             with open(file_to_copy) as file_to_copy_fd:
                 ofs.write(file_to_copy_fd.read())
+
+
+def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None) -> str:
+    # check for name length and truncate if necessary
+    if len(name) > max_length:
+        truncated_name = name[:max_length]
+        if logger:
+            logger.warning(
+                f"Name {name} is longer than {max_length} characters and has been truncated to {truncated_name}, consider using shorter filenames"
+            )
+        return truncated_name
+    else:
+        return name
