@@ -1334,7 +1334,6 @@ def check_filelist_has_elements(
         )
 
 
-
 def combine_sdf_files(glob_string, output_sdf):
     import shutil
 
@@ -1362,6 +1361,7 @@ def is_valid_smiles(smiles):
         return False
 
     return True
+
 
 def oe_load_exp_from_file(
     fn,

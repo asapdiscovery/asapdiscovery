@@ -1,10 +1,10 @@
+import pytest
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.utils import (
+    exp_data_to_oe_mols,
     load_exp_from_sdf,
     oe_load_exp_from_file,
-    exp_data_to_oe_mols,
 )
-from asapdiscovery.data.testing.test_resources import fetch_test_file
-import pytest
 
 
 @pytest.fixture
