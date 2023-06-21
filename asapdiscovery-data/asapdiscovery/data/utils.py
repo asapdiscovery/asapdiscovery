@@ -1373,6 +1373,7 @@ def oe_load_exp_from_file(
     Use OpenEye to build a list of ExperimentalCompoundData objects from an SDF or SMILES file.
     Everything other than `compound_id` and `smiles` will be left as default.
     If the input molecule doesn't have a title, the SMILES will be used as the compound_id.
+
     Parameters
     ----------
     fn : str
@@ -1381,6 +1382,7 @@ def oe_load_exp_from_file(
         File type, either "sdf" or "smi"
     return_mols : bool
         Whether to return the list of molecules as well as the list of ExperimentalCompoundData objects
+
     Returns
     -------
     List[ExperimentalCompoundData]
@@ -1401,6 +1403,7 @@ def oe_load_exp_from_file(
     for i, mol in enumerate(ifs.GetOEMols()):
         mols.append(mol.CreateCopy())
         smiles = oechem.OEMolToSmiles(mol)
+
         if not mol.GetTitle():
             if not smiles_as_title:
                 exp = ExperimentalCompoundData(
@@ -1425,10 +1428,12 @@ def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem
     """
     Convert a list of  ExperimentalCompoundData objects to OEMol objects
     via SMILES strings.
+
     Parameters
     ----------
     exp_data : List[ExperimentalCompoundData]
         List of ExperimentalCompoundData objects
+
     Returns
     -------
     List[oechem.OEMol]
