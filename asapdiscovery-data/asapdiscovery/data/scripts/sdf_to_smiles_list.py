@@ -21,6 +21,11 @@ def get_args():
     parser.add_argument(
         "-o", "--output_fn", required=True, type=Path, help="Output file."
     )
+    parser.add_argument(
+        "--keep_duplicates",
+        action="store_true",
+        help="If true, do not remove duplicate SMILES strings.",
+    )
     return parser.parse_args()
 
 
@@ -57,9 +62,12 @@ def main():
 
         output_lines.append(f"{smiles} {compound_id}\n")
 
-    logger.info(f"Writing SMILES strings to: {args.output_fn}")
+    if not args.keep_duplicates:
+        output_lines = list(set(output_lines))
+
+    logger.info(f"Writing {len(output_lines)} SMILES strings to: {args.output_fn}")
     with open(args.output_fn, "w") as f:
-        for line in list(set(output_lines)):
+        for line in output_lines:
             f.write(line)
 
 
