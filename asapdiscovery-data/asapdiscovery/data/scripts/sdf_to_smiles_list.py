@@ -27,11 +27,15 @@ def get_args():
 def main():
     args = get_args()
 
+    logger = FileLogger(
+        logname="sdf_to_smiles_list", path=args.output_fn.parent
+    ).getLogger()
+
+    logger.info(f"Loading SDF file: {args.sdf_fn}")
+
     mols = load_openeye_sdfs(args.sdf_fn)
 
-    logger = FileLogger(
-        logname="sdf_to_smiles_list", path=args.output_fn.stem
-    ).getLogger()
+    logger.info(f"Loaded {len(mols)} molecules.")
 
     output_lines = []
     for i, mol in enumerate(mols):
@@ -53,6 +57,7 @@ def main():
 
         output_lines.append(f"{smiles} {compound_id}\n")
 
+    logger.info(f"Writing SMILES strings to: {args.output_fn}")
     with open(args.output_fn, "w") as f:
         for line in list(set(output_lines)):
             f.write(line)
