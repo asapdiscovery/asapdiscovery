@@ -1401,7 +1401,7 @@ def oe_load_exp_from_file(
 
     mols = []
     for i, mol in enumerate(ifs.GetOEMols()):
-        mols.append(mol)
+        mols.append(mol.CreateCopy())
         smiles = oechem.OEMolToSmiles(mol)
 
         if not mol.GetTitle():
