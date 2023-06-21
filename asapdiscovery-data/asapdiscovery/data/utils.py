@@ -1334,6 +1334,87 @@ def check_filelist_has_elements(
         )
 
 
+def oe_load_exp_from_file(
+    fn,
+    ftype,
+    return_mols=False,
+    smiles_as_title=False,
+) -> list[ExperimentalCompoundData]:
+    """
+    Use OpenEye to build a list of ExperimentalCompoundData objects from an SDF or SMILES file.
+    Everything other than `compound_id` and `smiles` will be left as default.
+    If the input molecule doesn't have a title, the SMILES will be used as the compound_id.
+    Parameters
+    ----------
+    fn : str
+        SDF or SMI file name.
+    ftype : str
+        File type, either "sdf" or "smi"
+    return_mols : bool
+        Whether to return the list of molecules as well as the list of ExperimentalCompoundData objects
+    Returns
+    -------
+    List[ExperimentalCompoundData]
+        List of ExperimentalCompoundData objects parsed from file.
+    """
+    # Open SDF file and load all SMILES
+    ifs = oechem.oemolistream(fn)
+    if ftype == "sdf":
+        ifs.SetFormat(oechem.OEFormat_SDF)
+    elif ftype == "smi":
+        ifs.SetFormat(oechem.OEFormat_SMI)
+    else:
+        raise ValueError(f"File type: {ftype} not supported")
+
+    exp_data_compounds = []
+
+    mols = []
+    for i, mol in enumerate(ifs.GetOEMols()):
+        mols.append(mol)
+        smiles = oechem.OEMolToSmiles(mol)
+
+        if not mol.GetTitle():
+            if not smiles_as_title:
+                exp = ExperimentalCompoundData(
+                    compound_id=f"unk_lig_idx_{i}", smiles=smiles
+                )
+            else:
+                exp = ExperimentalCompoundData(compound_id=smiles, smiles=smiles)
+        else:
+            exp = ExperimentalCompoundData(compound_id=mol.GetTitle(), smiles=smiles)
+
+        exp_data_compounds.append(exp)
+
+    ifs.close()
+
+    if return_mols:
+        return exp_data_compounds, mols
+    else:
+        return exp_data_compounds
+
+
+def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem.OEMol]:
+    """
+    Convert a list of  ExperimentalCompoundData objects to OEMol objects
+    via SMILES strings.
+    Parameters
+    ----------
+    exp_data : List[ExperimentalCompoundData]
+        List of ExperimentalCompoundData objects
+    Returns
+    -------
+    List[oechem.OEMol]
+        List of OEMol objects
+    """
+    mols = []
+    for ed in exp_data:
+        mol = oechem.OEMol()
+        oechem.OESmilesToMol(mol, ed.smiles)
+        mol.SetTitle(ed.compound_id)
+        mols.append(mol)
+    return mols
+
+
 def combine_files(paths: list[Union[Path, str]], output_file):
     with open(output_file, "w") as ofs:
         for file_to_copy in paths:
