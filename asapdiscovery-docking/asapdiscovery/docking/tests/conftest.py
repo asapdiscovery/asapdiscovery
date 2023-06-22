@@ -5,7 +5,10 @@ import pytest
 
 @pytest.fixture(scope="session")
 def local_path(request):
-    return request.config.getoption("--local_path")
+    try:
+        return request.config.getoption("--local_path")
+    except ValueError:
+        return None
 
 
 # This needs to have a scope of session so that a new tmp file is not created for each test
