@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List # noqa: F401
 
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedColumns
 

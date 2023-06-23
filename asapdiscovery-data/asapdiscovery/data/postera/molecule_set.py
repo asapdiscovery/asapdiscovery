@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Union # noqa: F401
 
 import pandas as pd
 from typing_extensions import TypedDict
