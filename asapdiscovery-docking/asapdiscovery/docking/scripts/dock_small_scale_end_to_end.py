@@ -926,8 +926,6 @@ def main():
             top_posit, target_type, manifold_validate=True
         )
 
-        # import pdb
-        # pdb.set_trace()
         ms.update_molecules_from_df_with_manifold_validation(
             molset_id,
             renamed_top_posit,
