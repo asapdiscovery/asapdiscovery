@@ -336,7 +336,7 @@ def save_openeye_pdb(mol, pdb_fn: Union[str, Path]) -> Path:
     if ofs.open(str(pdb_fn)):
         oechem.OEWriteMolecule(ofs, mol)
     else:
-        oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
+        oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
     ofs.close()
 
     return Path(pdb_fn)
