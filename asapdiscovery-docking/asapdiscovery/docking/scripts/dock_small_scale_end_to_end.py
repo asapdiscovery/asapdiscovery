@@ -23,7 +23,7 @@ from asapdiscovery.docking import (
     POSIT_METHODS,
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
-    rename_score_columns_for_target
+    rename_score_columns_for_target,
 )
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
