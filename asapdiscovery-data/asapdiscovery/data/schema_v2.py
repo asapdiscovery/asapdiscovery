@@ -66,7 +66,7 @@ class DataModelAbstractBase(BaseModel):
         """Size of the resulting JSON object for this class"""
         return ByteSize(utf8len(self.json())).human_readable()
 
-    def data_equal(self, other: DataModelAbstractBase) -> Bool:
+    def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
 
     class Config:

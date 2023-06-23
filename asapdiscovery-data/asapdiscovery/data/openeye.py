@@ -519,7 +519,7 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     for mol in ims.GetOEMols():
         molecules.append(oechem.OEMol(mol))
     if len(molecules) != 1:
-        oechem.OEThrow.Fatal(f"More than one molecule in input stream")
+        oechem.OEThrow.Fatal("More than one molecule in input stream")
     return molecules[0]
 
 
