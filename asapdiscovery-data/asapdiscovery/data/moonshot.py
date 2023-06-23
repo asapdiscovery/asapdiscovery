@@ -3,16 +3,23 @@ from io import StringIO
 
 import pandas
 
-VAULT_URL = "https://app.collaborativedrug.com/api/v1/vaults/5549/"
+# Base CDD vault API URL
+CDD_URL = "https://app.collaborativedrug.com/api/v1/vaults"
 # All molecules with SMILES (public)
-ALL_SMI_SEARCH = "searches/9469227-zd2doWwzJ63bZYaI_vkjXg"
+ALL_SMI_SEARCH = "12656909-i_iTrIMFIXYGdoHmM8p7kQ"
 # Noncovalent molecules with experimental measurements (from John)
-NONCOVALENT_SMI_SEARCH = "searches/9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
+NONCOVALENT_SMI_SEARCH = "9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 # Noncovalent with experimental measurements, including batch created date
-NONCOVALENT_W_DATES_SEARCH = "searches/11947939-KXLWU3JLbLzI354es-VKVg"
+NONCOVALENT_W_DATES_SEARCH = "11947939-KXLWU3JLbLzI354es-VKVg"
+
+MOONSHOT_SEARCH_DICT = {
+    "sars_fluorescence_all_smi": ALL_SMI_SEARCH,
+    "sars_fluorescence_noncovalent_no_dates": NONCOVALENT_SMI_SEARCH,
+    "sars_fluorescence_noncovalent_w_dates": NONCOVALENT_W_DATES_SEARCH,
+}
 
 
-def download_url(search_url, header, timeout=5000, retry_delay=5):
+def download_url(search_url, header, vault=None, timeout=5000, retry_delay=10):
     """
     Make requests to the API using the passed information.
 
@@ -25,7 +32,7 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
         'X-CDD-token' that gives the user's CDD API token
     timeout : int, default=5000
         Timeout (in seconds)
-    retry_delay : int, default=5
+    retry_delay : int, default=10
         Delay between retry status (in seconds)
 
     Returns
@@ -38,6 +45,11 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
 
     import requests
 
+    # If vault is not specified, attempt to parse from URL
+    if not vault:
+        vault = search_url.split("/")[-3]
+        logging.debug(f"Using {vault} as vault.")
+
     # Make the initial download request
     logging.debug(f"download_url : initiating search {search_url}")
     response = requests.get(search_url, headers=header)
@@ -46,7 +58,7 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
     logging.debug(f"  Export id for requested search is {export_id}")
 
     # Check every `retry_delay` seconds to see if the export is ready
-    status_url = f"{VAULT_URL}export_progress/{export_id}"
+    status_url = f"{CDD_URL}/{vault}/export_progress/{export_id}"
     status = None
     total_seconds = 0
     while True:
@@ -74,68 +86,23 @@ def download_url(search_url, header, timeout=5000, retry_delay=5):
         sys.exit("Export failed")
 
     # Send GET request for final export
-    result_url = f"{VAULT_URL}exports/{export_id}"
+    result_url = f"{CDD_URL}/{vault}/exports/{export_id}"
     response = requests.get(result_url, headers=header)
 
     return response
 
 
-def download_achiral(header, fn_out=None):
-    """
-    Download all molecules and remove any chiral molecules.
-
-    Parameters
-    ----------
-    header : dict
-        Header information passed to GET request. Must contain an entry for
-        'X-CDD-token' that gives the user's CDD API token
-    fn_out : str, optional
-        CSV to save compound information to
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame containing compound information for all achiral molecules
-    """
-    from .utils import get_achiral_molecules
-
-    # Download all molecules to start
-    response = download_url(f"{VAULT_URL}{NONCOVALENT_SMI_SEARCH}", header)
-    # Parse into DF
-    mol_df = pandas.read_csv(StringIO(response.content.decode()))
-    # Get rid of any molecules that snuck through without SMILES
-    idx = mol_df.loc[:, ["shipment_SMILES", "suspected_SMILES"]].isna().all(axis=1)
-    mol_df = mol_df.loc[~idx, :].copy()
-    # Some of the SMILES from CDD have extra info at the end
-    mol_df.loc[:, "shipment_SMILES"] = [
-        s.strip("|").split()[0] if not pandas.isna(s) else s
-        for s in mol_df.loc[:, "shipment_SMILES"]
-    ]
-    mol_df.loc[:, "suspected_SMILES"] = [
-        s.strip("|").split()[0] if not pandas.isna(s) else s
-        for s in mol_df.loc[:, "suspected_SMILES"]
-    ]
-
-    # Remove chiral molecules
-    achiral_df = get_achiral_molecules(mol_df)
-
-    # Save to CSV as requested
-    if fn_out:
-        achiral_df.to_csv(fn_out, index=False)
-
-    return achiral_df
-
-
 # TODO: Generalize inclusion criteria to something more compact
 def download_molecules(
     header,
-    smiles_fieldname="suspected_SMILES",
+    vault=None,
+    search="sars_fluorescence_noncovalent_w_dates",
     fn_out=None,
     fn_cache=None,
-    **filter_kwargs,
+    **kwargs,
 ):
     """
-    Download all molecules and filter based on args in `filter_kwargs`. Saves
+    Download all molecules and filter based on args in `kwargs`. Saves
     and loads unfiltered CSV file to `fn_cache` if provided, and saves filtered
     CSV file to `fn_out` if provided.
 
@@ -144,8 +111,11 @@ def download_molecules(
     header : dict
         Header information passed to GET request. Must contain an entry for
         'X-CDD-token' that gives the user's CDD API token
-    smiles_fieldname : str, default='suspected_SMILES'
-        Field to use to extract SMILES
+    vault : str, default=None
+        Which CDD vault to search through. By default use the Moonshot vault
+    search : str, default="sars_fluorescence_noncovalent_w_dates"
+        Which entry in MOONSHOT_SEARCH_DICT to use as the search id. If the given value
+        can't be found, assume it's the actual search id and try to download
     fn_out : str, optional
         If specified, filename to write CSV to
     fn_cache : str, optional
@@ -164,10 +134,21 @@ def download_molecules(
         with open(fn_cache) as infile:
             content = infile.read()
     else:
-        # Download all molecules to start
-        url = f"{VAULT_URL}{NONCOVALENT_W_DATES_SEARCH}"
+        if not vault:
+            try:
+                vault = os.environ["MOONSHOT_CDD_VAULT_NUMBER"]
+            except KeyError:
+                raise ValueError("No value specified for vault.")
+        # First try and get the search id from our known searches, otherwise assume the
+        #  given value is the search id itself
+        try:
+            search_id = MOONSHOT_SEARCH_DICT[search]
+        except KeyError:
+            logging.debug(f"Using {search} as the search id directly.")
+            search_id = search
+        url = f"{CDD_URL}/{vault}/searches/{search_id}"
         logging.debug(f"Downloading data from CDD vault from {url}")
-        response = download_url(url, header)
+        response = download_url(url, header, vault=vault)
         content = response.content.decode()
 
         if fn_cache:
@@ -180,13 +161,25 @@ def download_molecules(
 
     # Remove chiral molecules
     logging.debug("Filtering dataframe...")
-    from .utils import filter_molecules_dataframe
+    from .utils import filter_molecules_dataframe, parse_fluorescence_data_cdd
 
+    filter_kwargs = [
+        "smiles_fieldname",
+        "assay_name",
+        "retain_achiral",
+        "retain_racemic",
+        "retain_enantiopure",
+        "retain_semiquantitative_data",
+    ]
+    filter_kwargs = {k: kwargs[k] for k in filter_kwargs if k in kwargs}
     filtered_df = filter_molecules_dataframe(mol_df, **filter_kwargs)
+    parse_kwargs = ["keep_best_per_mol", "assay_name", "dG_T", "cp_values"]
+    parse_kwargs = {k: kwargs[k] for k in parse_kwargs if k in kwargs}
+    parsed_df = parse_fluorescence_data_cdd(filtered_df, **parse_kwargs)
 
     # Save to CSV as requested
     if fn_out:
         logging.debug(f"Generating CSV file {fn_out}")
-        filtered_df.to_csv(fn_out, index=False)
+        parsed_df.to_csv(fn_out, index=False)
 
-    return filtered_df
+    return parsed_df

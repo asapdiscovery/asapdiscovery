@@ -34,11 +34,6 @@ upset-plot-ranked = "asapdiscovery.ml.scripts.upset_plot_ranked:main"
 [tool.setuptools.packages.find]
 where = ["."]
 
-[tool.coverage.run]
-omit = [
-    "*/tests/*"
-]
-
 [tool.versioningit]
 
 

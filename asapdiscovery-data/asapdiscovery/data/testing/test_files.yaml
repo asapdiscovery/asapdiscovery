@@ -15,6 +15,10 @@ files:
   - resource: Mpro_combined_labeled.sdf
     sha256hash: 1e7d68356d3a82ce4104bcfe328dcf67d32dccd64c75820403373cad140e5565
 
+  # Mpro SMILES file
+  - resource: Mpro_combined_labeled.smi
+    sha256hash: 4a796c2b22095e3a9440250772cd0e6fed41e88759732272cbf4e6c2f4ac619c
+
   # single ligand SDF
   - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf
     sha256hash: 84398b3bcf741f9a26edf73bb93b3a8b0b555861bab0486f385ff7efacbcf197
@@ -30,3 +34,137 @@ files:
   # prepped PDB
   - resource: Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb
     sha256hash: d4bf45cd72583ee63cd61c0367db1ac0e648d3f4d8f82cb483e0ab222041a90d
+
+  # input file for testing filtering
+  - resource: test_filter_in.csv
+    sha256hash: 48f75eaf8c36feede6e7a7867b41af80ebd8be5108704bb51d0c1eca81060127
+
+  # output files for testing filtering
+  - resource: test_filter_achiral_enantiopure_out.csv
+    sha256hash: d6fbe1e77f306091142ba1c853c0bf2c4586786042498dbc770a30f795daabe0
+
+  - resource: test_filter_achiral_enantiopure_semiquant_out.csv
+    sha256hash: 8965a8b36c753f59d043313cb6bcc53bea18d6ac8de1f8188646fd4e8f084fa4
+
+  - resource: test_filter_achiral_out.csv
+    sha256hash: f7b8425e20b64a8d42701a2fd666c5f4ffa8ba4e8bc5ba16401990c54c115f7d
+
+  - resource: test_filter_achiral_racemic_enantiopure_out.csv
+    sha256hash: 48f75eaf8c36feede6e7a7867b41af80ebd8be5108704bb51d0c1eca81060127
+
+  - resource: test_filter_achiral_racemic_enantiopure_semiquant_out.csv
+    sha256hash: 48f75eaf8c36feede6e7a7867b41af80ebd8be5108704bb51d0c1eca81060127
+
+  - resource: test_filter_achiral_racemic_out.csv
+    sha256hash: 125842ec72a3a861c874879bd3e12cac972744acdb488f7eff259bd711423dbf
+
+  - resource: test_filter_achiral_racemic_semiquant_out.csv
+    sha256hash: d1da81ee982ac6f3b40f520460711a94e1240fd6fd4bf29d8a48b4631ba84df0
+
+  - resource: test_filter_achiral_semiquant_out.csv
+    sha256hash: 223d018df5fe9e3dbe013b8cd02d4e2206f61ca9429303c1dc01a58bef6d1afc
+
+  - resource: test_filter_enantiopure_out.csv
+    sha256hash: b4e1e4a71831537db0dda7a82a5874aa4a8427050cdaaa581fce4ed88bc72fcb
+
+  - resource: test_filter_enantiopure_semiquant_out.csv
+    sha256hash: 2023963421d626c704fbca663f0c9014992290c0c8f146e5b5126085e4afe02e
+
+  - resource: test_filter_out.csv
+    sha256hash: 6f0fc5096041e06f3daf5754f72760ef05ded36247a6e822af1bbfa34294612b
+
+  - resource: test_filter_racemic_enantiopure_out.csv
+    sha256hash: 19507c742903b0ec11ea0ecd934cf0a61981d256b3f6b02aa22af2259d2e88fd
+
+  - resource: test_filter_racemic_enantiopure_semiquant_out.csv
+    sha256hash: 20db83db30393d332e53c6ad2009afbda79e398213f7727db000e9feec70d402
+
+  - resource: test_filter_racemic_out.csv
+    sha256hash: 8900f160e270ad37302ddecbc154fe51468c13ee0bda8961223fe62c73711528
+
+  - resource: test_filter_racemic_semiquant_out.csv
+    sha256hash: 87b22105b81217dde0b9aab17e98e16e6eafb297b0ef04813f7a7f6e1a95360c
+
+  - resource: test_filter_semiquant_out.csv
+    sha256hash: c6892cda97ae7d9af3ec68bcd7f0dd4b8c7a77b58e6b8ad30e7f7d92186b726c
+
+  # input file for testing CDD parsing
+  - resource: test_parse_in.csv
+    sha256hash: e28a9202676840ec157d0d1b10b00d0b487cd1f11967a29aa87ddd66b2e49e86
+
+  # output files for testing CDD parsing
+  - resource: test_parse_best_cheng_out.csv
+    sha256hash: bfacfd0ee5d854816f24d3a871424a0a9f418e533a696b99334f7f3800ac1e0b
+
+  - resource: test_parse_best_out.csv
+    sha256hash: 58d8681bf3f72429f5e384ade12d1c4cf460ba4066ae369f738731653ae764a1
+
+  - resource: test_parse_cheng_out.csv
+    sha256hash: 075e76ff923c39cfad1555f172b9c998aacefb05817e6e8cc0a9321d970ad2fe
+
+  - resource: test_parse_out.csv
+    sha256hash: d23d7c0abf66e6eff7895e0d78016e3065d915710c427e461e30be3548ef1ff3
+
+  # fragalysis SARS-2 reference
+  - resource: reference.pdb
+    sha256hash: 8d8fdf6deaba866727a7c676f95f4e93c3180dfab902f7a3bf248d1f629efe56
+
+  # fragalysis SARS-2 PDB
+  - resource: Mpro-P2660_0A_bound.pdb
+    sha256hash: c7bdf1ba1d63bf65d813b1f1dc8b36b007f44627c6cba1f3f9bcc29c255f336d
+
+  # mers CIF1 biological assembly structure
+  - resource: rcsb_8czv-assembly1.cif
+    sha256hash: ec937cda078a4656a1a11815a555136a6670354d54c37fc966cc9ffca72740e5
+
+  # mers seqres yaml
+  - resource: mpro_mers_seqres.yaml
+    sha256hash: 6c2937fb2a98bc57dd7b239f3b5e6f9dbc3cd2720c259fb23af17f9446a8f356
+
+  # sars seqres yaml
+  - resource: mpro_sars2_seqres.yaml
+    sha256hash: 743d9c975cb70024c50952268a2a6cafdf54b20ef165023a5762a8b91ba4a938
+
+  # fragalysis-mpro_spruce.loop_db
+  - resource: fragalysis-mpro_spruce.loop_db
+    sha256hash: ac0c05f07c7e5d0cafad37074db6b9ba6924c8e276d2d8e0bf8b4ad98a981cec
+
+  # prepped sars protein
+  - resource: Mpro-P2660_0A_bound-prepped_protein.pdb
+    sha256hash: 60f1d22ee730adee22c908b07ba96104507e3e8eafc1423c32f60a7cecb881ea
+
+  # prepped sars complex
+  - resource: Mpro-P2660_0A_bound-prepped_complex.pdb
+    sha256hash: a612bf2bd9f0531160a04b8dd4ecf52bba0ce7ceac722e808719fb74eb9c9d19
+
+  # prepped sars ligand
+  - resource: Mpro-P2660_0A_bound-prepped_ligand.sdf
+    sha256hash: 6224f6cba2140648498731acadbacc9772a224119c465694e132a905ff0189d8
+
+  # prepped sars design unit
+  - resource: Mpro-P2660_0A_bound-prepped_receptor.oedu
+    sha256hash: 802593b2d741be258b1a1b4ee75d5c582cf56303f9a97ca9c6825d2893f14eb7
+
+  # prepped mers protein
+  - resource: rcsb_8czv-assembly1-prepped_protein.pdb
+    sha256hash: c231b87f149007e8fb84c32dcf31f0f8b562f3583d84deb15e4467785b92ff25
+
+  # prepped mers receptor
+  - resource: rcsb_8czv-assembly1-prepped_receptor.oedu
+    sha256hash: e5aecd38d72566d61a01fdf537ce6fc5e1d5d35ec7bce0a864cc6ca73627d929
+
+  # mers pdb IDs to download
+  - resource: mers-structures.yaml
+    sha256hash: 3972d0e4848a15397065cd376be684e895c2ff65f824c9cfac38972fba4d0ab3
+
+  # fragalysis metadata.csv
+  - resource: metadata.csv
+    sha256hash: 0b8c3f6e3cec7d1a8a6aca34cd870455793812f2c1673cda73b5bf830a581f7f
+
+  # spruced rcsb_8czv-assembly1
+  - resource: mers_spruced.pdb
+    sha256hash: 4a042f4446a054d5103fb35e694364ebb78906e00ebf4eaeea7259685fc2801a
+
+  # spruced sars_spruced.pdb
+  - resource: sars_spruced.pdb
+    sha256hash: 3c4c2b33c7ac6e5cea0084dd56bfa70dd37cd44dd529c83bdf2624435708f6d0

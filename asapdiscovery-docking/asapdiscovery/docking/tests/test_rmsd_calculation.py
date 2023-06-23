@@ -8,14 +8,14 @@ from asapdiscovery.docking.analysis import (
 )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def query_mol():
     return load_openeye_sdf(
         str(fetch_test_file("ERI-UCB-ce40166b-17_Mpro-P2201_0A.sdf"))
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def ref_mol():
     return load_openeye_sdf(
         str(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))

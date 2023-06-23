@@ -678,17 +678,24 @@ def strip_smiles_salts(smiles):
 def filter_molecules_dataframe(
     mol_df,
     smiles_fieldname="suspected_SMILES",
+    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
     retain_achiral=False,
     retain_racemic=False,
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
-    keep_best_per_mol=True,
-    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
-    dG_T=298.0,
-    cp_values=None,
 ):
     """
-    Filter a dataframe of molecules to retain those specified.
+    Filter a dataframe of molecules to retain those specified. Required columns are:
+        * "Canonical PostEra ID"
+        * `smiles_fieldname`
+        * "`assay_name`: IC50 (µM)"
+    Columns that are added to the dataframe by this function:
+        * "name"
+        * "smiles"
+        * "achiral"
+        * "racemic"
+        * "enantiopure"
+        * "semiquant"
 
     For example, to filter a DF of molecules so that it only contains achiral
     molecules while allowing for measurements that are semiquantitative:
@@ -704,6 +711,8 @@ def filter_molecules_dataframe(
         DataFrame containing compound information
     smiles_fieldname : str, default="suspected_SMILES"
         Field name to use for reference SMILES
+    assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
+        Name of the assay of interest
     retain_achiral : bool, default=False
         If True, retain achiral measurements
     retain_racemic : bool, default=False
@@ -712,18 +721,6 @@ def filter_molecules_dataframe(
         If True, retain chirally resolved measurements
     retain_semiquantitative_data : bool, default=False
         If True, retain semiquantitative data (data outside assay dynamic range)
-    keep_best_per_mol : bool, default=True
-        Keep only the best measurement for each molecule (first sorting by
-        curve class and then 95% CI pIC50 width)
-    assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
-        Name of the assay of interest
-    dG_T : float, default=298.0
-        Temperature in Kelvin for converting pIC50 values to delta G values
-    cp_values : Tuple[int], optional
-        Substrate concentration and Km values for calculating Ki using the
-        Cheng-Prussoff equation. These values are assumed to be in the same
-        concentration units. If no values are passed for this, pIC50 values
-        will be used as an approximation of the Ki
 
     Returns
     -------
@@ -732,7 +729,6 @@ def filter_molecules_dataframe(
     """
     import logging
 
-    import numpy as np
     from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 
     # Define functions to evaluate whether molecule is achiral, racemic, or resolved
@@ -823,6 +819,64 @@ def filter_molecules_dataframe(
 
     mol_df = mol_df.loc[keep_idx, :]
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries after filtering")
+
+    return mol_df
+
+
+def parse_fluorescence_data_cdd(
+    mol_df,
+    keep_best_per_mol=True,
+    assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
+    dG_T=298.0,
+    cp_values=None,
+):
+    """
+    Filter a dataframe of molecules to retain those specified. Required columns are:
+        * "name"
+        * "`assay_name`: IC50 (µM)"
+        * "`assay_name`: IC50 CI (Lower) (µM)"
+        * "`assay_name`: IC50 CI (Upper) (µM)"
+        * "`assay_name`: Curve class"
+    Columns that are added to the dataframe by this function:
+        * "IC50 (M)"
+        * "IC50_stderr (M)"
+        * "IC50_95ci_lower (M)"
+        * "IC50_95ci_upper (M)"
+        * "pIC50"
+        * "pIC50_stderr"
+        * "pIC50_range"
+        * "pIC50_95ci_lower"
+        * "pIC50_95ci_upper"
+        * "exp_binding_affinity_kcal_mol"
+        * "exp_binding_affinity_kcal_mol_stderr"
+        * "exp_binding_affinity_kcal_mol_95ci_lower"
+        * "exp_binding_affinity_kcal_mol_95ci_upper"
+
+    Parameters
+    ----------
+    mol_df : pandas.DataFrame
+        DataFrame containing compound information
+    keep_best_per_mol : bool, default=True
+        Keep only the best measurement for each molecule (first sorting by
+        curve class and then 95% CI pIC50 width)
+    assay_name : str, default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann"
+        Name of the assay of interest
+    dG_T : float, default=298.0
+        Temperature in Kelvin for converting pIC50 values to delta G values
+    cp_values : Tuple[int], optional
+        Substrate concentration and Km values for calculating Ki using the
+        Cheng-Prussoff equation. These values are assumed to be in the same
+        concentration units. If no values are passed for this, pIC50 values
+        will be used as an approximation of the Ki
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing parsed fluorescence and binding affinity values
+    """
+    import logging
+
+    import numpy as np
 
     # Compute pIC50s and uncertainties from 95% CIs
     IC50_series = []
@@ -980,13 +1034,14 @@ def filter_molecules_dataframe(
 
     # Keep only the best measurement for each molecule
     if keep_best_per_mol:
-        for mol_name, g in mol_df.groupby("name"):
-            g.sort_values(
-                by=[f"{assay_name}: Curve class", "pIC50_stderr"],
-                inplace=True,
-                ascending=True,
+
+        def get_best_mol(g):
+            g = g.sort_values(
+                by=[f"{assay_name}: Curve class", "pIC50_stderr"], ascending=True
             )
-        mol_df = mol_df.groupby("name", as_index=False).first()
+            return g.iloc[0, :]
+
+        mol_df = mol_df.groupby("name", as_index=False).apply(get_best_mol)
 
     return mol_df
 
@@ -1074,7 +1129,7 @@ def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
             index=False,
         )
 
-    # Construct sars_xtal list
+    # Construct sars_target list
     sars_xtals = {}
     for data in sars2_filtered.to_dict("index").values():
         cmpd_id = data["Compound ID"]
@@ -1125,50 +1180,6 @@ def get_compound_id_xtal_dicts(sars_xtals):
         xtal_to_compound[dataset] = compound_id
 
     return (compound_to_xtals, xtal_to_compound)
-
-
-def trim_small_chains(input_mol, cutoff_len=10):
-    """
-    Remove short chains from a protein molecule object. The goal is to get rid
-    of any peptide ligands that were mistakenly collected by OESplitMolComplex.
-
-    Parameters
-    ----------
-    input_mol : oechem.OEGraphMol
-        OEGraphMol object containing the protein to trim
-    cutoff_len : int, default=10
-        The cutoff length for peptide chains (chains must have more than this
-        many residues to be included)
-
-    Returns
-    -------
-    oechem.OEGraphMol
-        Trimmed molecule
-    """
-    # Copy the molecule
-    mol_copy = input_mol.CreateCopy()
-
-    # Remove chains from mol_copy that are too short (possibly a better way of
-    #  doing this with OpenEye functions)
-    # Get number of residues per chain
-    chain_len_dict = {}
-    hv = oechem.OEHierView(mol_copy)
-    for chain in hv.GetChains():
-        chain_id = chain.GetChainID()
-        for frag in chain.GetFragments():
-            frag_len = len(list(frag.GetResidues()))
-            try:
-                chain_len_dict[chain_id] += frag_len
-            except KeyError:
-                chain_len_dict[chain_id] = frag_len
-
-    # Remove short chains atom by atom
-    for a in mol_copy.GetAtoms():
-        chain_id = oechem.OEAtomGetResidue(a).GetExtChainID()
-        if (chain_id not in chain_len_dict) or (chain_len_dict[chain_id] <= cutoff_len):
-            mol_copy.DeleteAtom(a)
-
-    return mol_copy
 
 
 def get_ligand_rmsd_openeye(ref: oechem.OEMolBase, mobile: oechem.OEMolBase):
@@ -1389,8 +1400,8 @@ def oe_load_exp_from_file(
     exp_data_compounds = []
 
     mols = []
-    for i, mol in enumerate(ifs.GetOEGraphMols()):
-        mols.append(mol)
+    for i, mol in enumerate(ifs.GetOEMols()):
+        mols.append(mol.CreateCopy())
         smiles = oechem.OEMolToSmiles(mol)
 
         if not mol.GetTitle():
@@ -1430,7 +1441,11 @@ def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem
     """
     mols = []
     for ed in exp_data:
+<<<<<<< HEAD
         mol = oechem.OEGraphMol()
+=======
+        mol = oechem.OEMol()
+>>>>>>> upstream/main
         oechem.OESmilesToMol(mol, ed.smiles)
         mol.SetTitle(ed.compound_id)
         mols.append(mol)
@@ -1444,6 +1459,7 @@ def combine_files(paths: list[Union[Path, str]], output_file):
                 ofs.write(file_to_copy_fd.read())
 
 
+<<<<<<< HEAD
 def target_names_from_common_names_and_crystals(name: str) -> str:
     name_ = name.lower()
     sars_names = ["sars", "sars-cov", "sars-cov2", "sars2"]
@@ -1456,3 +1472,16 @@ def target_names_from_common_names_and_crystals(name: str) -> str:
         raise ValueError(
             f"Name for target {name} not recognised as one of {sars_names} or {mers_names}"
         )
+=======
+def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None) -> str:
+    # check for name length and truncate if necessary
+    if len(name) > max_length:
+        truncated_name = name[:max_length]
+        if logger:
+            logger.warning(
+                f"Name {name} is longer than {max_length} characters and has been truncated to {truncated_name}, consider using shorter filenames"
+            )
+        return truncated_name
+    else:
+        return name
+>>>>>>> upstream/main

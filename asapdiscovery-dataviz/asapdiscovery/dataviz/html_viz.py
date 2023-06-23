@@ -48,6 +48,8 @@ class HTMLVisualizer:
             List of paths to write the visualizations to.
         target : str
             Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
+        protein : Path
+            Path to protein PDB file.
         logger : FileLogger
             Logger to use
 
@@ -77,6 +79,9 @@ class HTMLVisualizer:
                 self.output_paths.append(path)
             else:
                 self.logger.warning(f"Pose {pose} does not exist, skipping.")
+
+        if not protein.exists():
+            raise ValueError(f"Protein {protein} does not exist.")
 
         self.protein = Chem.MolFromPDBFile(str(protein))
 

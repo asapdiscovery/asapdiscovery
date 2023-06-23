@@ -7,15 +7,9 @@ from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
 import dask
-import yaml
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import (
-    oechem,
-    save_openeye_pdb,
-    save_openeye_sdf,
-    split_openeye_design_unit,
-)
+from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -26,11 +20,18 @@ from asapdiscovery.data.utils import (
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import (
+    POSIT_METHODS,
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
-    rename_score_columns_for_target,
+    rename_score_columns_for_target
 )
-from asapdiscovery.docking import prep_mp as oe_prep_function
+from asapdiscovery.modeling.modeling import protein_prep_workflow
+from asapdiscovery.modeling.schema import (
+    MoleculeFilter,
+    PrepOpts,
+    PreppedTarget,
+    PreppedTargets,
+)
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
 """
@@ -43,7 +44,7 @@ Input:
     - smiles_as_title: use smiles strings as titles for molecules in .smi or .sdf file if none provided
     - dask: use dask to parallelise docking
     - dask-lilac: run dask in lilac config mode
-    - output_dir: path to output_dir, will NOT overwrite if exists.
+    - output_dir: path to output_dir, will overwrite if exists.
     - debug: enable debug mode, with more files saved and more verbose logging
     - verbose: whether to print out verbose logging.
     - cleanup: clean up intermediate files except for final csv and visualizations
@@ -83,7 +84,7 @@ Example usage:
         -r /path/to/receptor.pdb \
         -m 'COC(=O)COc1cc(cc2c1OCC[C@H]2C(=O)Nc3cncc4c3cccc4)Cl'
         -o /path/to/output_dir \
-        --title 'my_fancy_molecule' \\ # without a title you will be given a hash of the SMILES string
+        --title 'my_fancy_molecule' \
         --debug \
         --dask \
         --md
@@ -211,6 +212,26 @@ parser.add_argument(
     help="Path to reference pdb to align to. If None, no alignment will be performed",
 )
 
+parser.add_argument(
+    "--components_to_keep", type=str, nargs="+", default=["protein", "ligand"]
+)
+parser.add_argument("--active_site_chain", type=str, default="A")
+
+parser.add_argument("--ligand_chain", type=str, default="A")
+
+parser.add_argument("--protein_chains", type=str, default=[], help="")
+
+parser.add_argument(
+    "--oe_active_site_residue",
+    type=str,
+    default=None,
+    help="OpenEye formatted site residue for active site identification otherwise will use OpenEye automatic detection, i.e. 'HIS:41: :A:0: '",
+)
+
+parser.add_argument(
+    "--ref_chain", type=str, default="A", help="Chain of reference to align to."
+)
+
 # Docking arguments
 parser.add_argument(
     "--use_3d",
@@ -234,11 +255,12 @@ parser.add_argument(
     action="store_true",
     help="Do not use Omega conformer enumeration.",
 )
-
 parser.add_argument(
-    "--hybrid",
-    action="store_true",
-    help="Whether to only use hybrid docking protocol in POSIT.",
+    "--posit_method",
+    type=str,
+    default="all",
+    choices=POSIT_METHODS,
+    help="Which POSIT method to use for POSIT docking protocol.",
 )
 
 parser.add_argument(
@@ -303,11 +325,6 @@ def main():
     logger.info(f"Target type: {target_type}")
     logger.info(f"Output directory: {output_dir}")
 
-    # openeye logging handling
-    errfs = oechem.oeofstream(str(output_dir / f"openeye-{logname}-log.txt"))
-    oechem.OEThrow.SetOutputStream(errfs)
-    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-
     if args.debug:
         logger.info("Running in debug mode. enabling --verbose and disabling --cleanup")
         args.verbose = True
@@ -319,137 +336,58 @@ def main():
         logger.debug("Debug logging enabled")
         logger.debug(f"Input arguments: {args}")
 
-    if args.dask:
-        logger.info("Using dask to parallelise docking")
-        # set timeout to None so workers don't get killed on long timeouts
-        from dask import config as cfg
-        from dask.distributed import Client
-
-        cfg.set({"distributed.scheduler.worker-ttl": None})
-
-        if args.dask_lilac:
-            from dask_jobqueue import LSFCluster
-
-            logger.info("Using dask-jobqueue to run on lilac")
-            logger.warning(
-                "make sure you have a config file for lilac's dask-jobqueue cluster installed in your environment, contact @hmacdope"
-            )
-
-            logger.info("Finding dual IP interfaces")
-            # find dual IP interfaces excluding lo loopback interface
-            # technically dask only needs IPV4 but helps us find the right ones
-            # easier. If you have a better way of doing this please let me know!
-            exclude = ["lo"]
-            interfaces = get_interfaces_with_dual_ip(exclude=exclude)
-            logger.info(f"Found IP interfaces: {interfaces}")
-            if len(interfaces) == 0:
-                raise ValueError("Must have at least one network interface to run dask")
-            if len(interfaces) > 1:
-                logger.warning(
-                    f"Found more than one IP interface: {interfaces}, using the first one"
-                )
-            interface = interfaces[0]
-            logger.info(f"Using interface: {interface}")
-
-            # NOTE you will need a config file that defines the dask-jobqueue for the cluster
-            cluster = LSFCluster(
-                interface=interface, scheduler_options={"interface": interface}
-            )
-
-            logger.info(f"dask config : {dask.config.config}")
-
-            # assume we will have about 10 jobs, they will be killed if not used
-            cluster.scale(10)
-            # cluster is adaptive, and will scale between 5 and 40 workers depending on load
-            # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
-            # which can cause thrashing in the LSF queue
-            cluster.adapt(minimum=5, maximum=40, interval="10s", target_duration="60s")
-            client = Client(cluster)
-        else:
-            client = Client()
-        logger.info("Dask client created ...")
-        logger.info(client.dashboard_link)
-        logger.info(
-            "strongly recommend you open the dashboard link in a browser tab to monitor progress"
-        )
-
     # paths to remove if not keeping intermediate files
     intermediate_files = []
+
+    #########################
+    #    load input data    #
+    #########################
+
     # set internal flag to seed whether we used 3D or 2D chemistry input
     used_3d = False
-
-    if args.postera:
-        import os
-
-        postera_api_key = os.getenv("POSTERA_API_KEY")
-
-        if postera_api_key is None:
-            raise ValueError("Environment variable POSTERA_API_KEY not found")
-
-        logger.info("Postera API key found")
-        logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
-
-        from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
-
-        ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
-        avail_molsets = ms.list_available()
-        mols, molset_id = ms.get_molecules_from_id_or_name(args.mols)
+    # parse input molecules
+    if is_valid_smiles(args.mols):
         logger.info(
-            f"Found {len(mols)} molecules in Molecule Set ID: {molset_id} with name: {avail_molsets[molset_id]}"
+            f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}"
         )
-
-        # make each molecule into a ExperimentalCompoundData object
-        exp_data = [
-            ExperimentalCompoundData(compound_id=mol.id, smiles=mol.smiles)
-            for _, mol in mols.iterrows()
-        ]
-
-    else:
-        # parse input molecules
-        if is_valid_smiles(args.mols):
+        # hash the smiles to generate a unique title and avoid accidentally caching different outputs as the same
+        if not args.title:
             logger.info(
-                f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}"
+                "No title provided, using SMILES string to generate title, consider providing a title with --title"
             )
-            # hash the smiles to generate a unique title and avoid accidentally caching different outputs as the same
-            if not args.title:
-                logger.info(
-                    "No title provided, using SMILES string to generate title, consider providing a title with --title"
-                )
-                args.title = "TARGET_MOL-" + args.mols
+            args.title = "TARGET_MOL-" + args.mols
 
-            exp_data = [
-                ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)
-            ]
-        else:
-            mol_file_path = Path(args.mols)
-            if mol_file_path.suffix == ".smi":
-                logger.info(f"Input molecules is a SMILES file: {args.mols}")
-                exp_data = oe_load_exp_from_file(
-                    args.mols, "smi", smiles_as_title=args.smiles_as_title
+        exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
+    else:
+        mol_file_path = Path(args.mols)
+        if mol_file_path.suffix == ".smi":
+            logger.info(f"Input molecules is a SMILES file: {args.mols}")
+            exp_data = oe_load_exp_from_file(
+                args.mols, "smi", smiles_as_title=args.smiles_as_title
+            )
+        elif mol_file_path.suffix == ".sdf":
+            logger.info(f"Input molecules is a SDF file: {args.mols}")
+            if args.use_3d:
+                logger.info("Using 3D coordinates from SDF file")
+                # we need to keep the molecules around to retain their coordinates
+                exp_data, oe_mols = oe_load_exp_from_file(
+                    args.mols,
+                    "sdf",
+                    return_mols=True,
+                    smiles_as_title=args.smiles_as_title,
                 )
-            elif mol_file_path.suffix == ".sdf":
-                logger.info(f"Input molecules is a SDF file: {args.mols}")
-                if args.use_3d:
-                    logger.info("Using 3D coordinates from SDF file")
-                    # we need to keep the molecules around to retain their coordinates
-                    exp_data, oe_mols = oe_load_exp_from_file(
-                        args.mols,
-                        "sdf",
-                        return_mols=True,
-                        smiles_as_title=args.smiles_as_title,
-                    )
-                    used_3d = True
-                    logger.info("setting used_3d to True")
-                else:
-                    logger.info("Using 2D representation from SDF file")
-                    exp_data = oe_load_exp_from_file(
-                        args.mols, "sdf", smiles_as_title=args.smiles_as_title
-                    )
-
+                used_3d = True
+                logger.info("setting used_3d to True")
             else:
-                raise ValueError(
-                    f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
+                logger.info("Using 2D representation from SDF file")
+                exp_data = oe_load_exp_from_file(
+                    args.mols, "sdf", smiles_as_title=args.smiles_as_title
                 )
+
+        else:
+            raise ValueError(
+                f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
+            )
 
     logger.info(f"Loaded {len(exp_data)} molecules.")
     if len(exp_data) == 0:
@@ -498,65 +436,129 @@ def main():
         if not seqres_yaml.exists():
             raise ValueError(f"SEQRES yaml file does not exist: {args.seqres_yaml}")
 
-        # load it
-        logger.info(f"Using SEQRES from {args.seqres_yaml}")
-        with open(args.seqres_yaml) as f:
-            seqres_dict = yaml.safe_load(f)
-        seqres = seqres_dict["SEQRES"]
-    else:
-        seqres = None
-
     # load the receptor
+
     receptor_name = receptor.stem
+    logger.info(f"Loaded receptor {receptor_name} from {receptor}")
+
     xtal = CrystalCompoundData(
-        str_fn=args.receptor, smiles=None, output_name=str(receptor_name)
+        dataset=Path(args.receptor).stem, str_fn=str(args.receptor)
     )
 
-    logger.info(f"Loaded receptor {receptor_name} from {receptor}")
-    oe_prep_function(xtal, args.ref_prot, seqres, prep_dir, args.loop_db, False)
+    prep_input_schema = PreppedTarget(
+        source=xtal,
+        output_name=str(receptor_name),
+        active_site_chain=args.active_site_chain,
+        oe_active_site_residue=args.oe_active_site_residue,
+        molecule_filter=MoleculeFilter(
+            components_to_keep=args.components_to_keep,
+            ligand_chain=args.ligand_chain,
+            protein_chains=args.protein_chains,
+        ),
+    )
+
+    targets = PreppedTargets.from_list([prep_input_schema])
+    targets.to_json(prep_dir / "input_targets.json")
+
+    # setup prep options
+
+    # check the reference structure exists
+    if args.ref_prot is not None:
+        if not Path(args.ref_prot).exists():
+            raise ValueError(f"Reference protein file does not exist: {args.ref_prot}")
+        else:
+            logger.info(f"Using reference protein: {args.ref_prot}")
+
+    reference_structure = args.ref_prot if args.ref_prot else receptor
+
+    prep_opts = PrepOpts(
+        ref_fn=reference_structure,
+        ref_chain=args.ref_chain,
+        loop_db=args.loop_db,
+        seqres_yaml=args.seqres_yaml,
+        output_dir=prep_dir,
+        make_design_unit=True,
+    )
+    logger.info(f"Prep options: {prep_opts}")
+
+    # add prep opts to the prepping function
+    protein_prep_workflow_with_opts = partial(
+        protein_prep_workflow, prep_opts=prep_opts
+    )
+    # there is only one target
+    input_target = targets.iterable[0]
+
+    # run prep
+    prepped_targets = protein_prep_workflow_with_opts(input_target)
+    prepped_targets = PreppedTargets.from_list([prepped_targets])
+    prepped_targets.to_json(prep_dir / "output_targets.json")
+    output_target = prepped_targets.iterable[0]
+
+    if output_target.failed:
+        raise ValueError("Protein prep failed.")
+    output_target_du = output_target.design_unit
+    if not output_target_du.exists():
+        raise ValueError(f"Design unit does not exist: {output_target_du}")
+    protein_path = output_target.protein
+    if not protein_path.exists():
+        raise ValueError(f"Protein file does not exist: {protein_path}")
+
     logger.info(f"Finished prepping receptor at {datetime.now().isoformat()}")
 
-    # grab the files that were created
-    prepped_oedu = (
-        prep_dir / f"{receptor_name}" / f"{receptor_name}_prepped_receptor_0.oedu"
-    )
-    prepped_pdb = (
-        prep_dir / f"{receptor_name}" / f"{receptor_name}_prepped_receptor_0.pdb"
-    )
+    # do dask here as it is the first bit of the workflow that is parallel
+    if args.dask:
+        logger.info("Using dask to parallelise docking")
+        # set timeout to None so workers don't get killed on long timeouts
+        from dask import config as cfg
+        from dask.distributed import Client
 
-    # check the prepped receptors exist
-    if not prepped_oedu.exists() or not prepped_pdb.exists():
-        raise ValueError(
-            f"Prepped receptor files do not exist: {prepped_oedu}, {prepped_pdb}"
+        cfg.set({"distributed.scheduler.worker-ttl": None})
+
+        if args.dask_lilac:
+            from dask_jobqueue import LSFCluster
+
+            logger.info("Using dask-jobqueue to run on lilac")
+            logger.warning(
+                "make sure you have a config file for lilac's dask-jobqueue cluster installed in your environment, contact @hmacdope"
+            )
+
+            logger.info("Finding dual IP interfaces")
+            # find dual IP interfaces excluding lo loopback interface
+            # technically dask only needs IPV4 but helps us find the right ones
+            # easier. If you have a better way of doing this please let me know!
+            exclude = ["lo"]
+            interfaces = get_interfaces_with_dual_ip(exclude=exclude)
+            logger.info(f"Found IP interfaces: {interfaces}")
+            if len(interfaces) == 0:
+                raise ValueError("Must have at least one network interface to run dask")
+            if len(interfaces) > 1:
+                logger.warning(
+                    f"Found more than one IP interface: {interfaces}, using the first one"
+                )
+            interface = interfaces[0]
+            logger.info(f"Using interface: {interface}")
+
+            # NOTE you will need a config file that defines the dask-jobqueue for the cluster
+            cluster = LSFCluster(
+                interface=interface, scheduler_options={"interface": interface}
+            )
+
+            logger.info(f"dask config : {dask.config.config}")
+
+            # assume we will have about 10 jobs, they will be killed if not used
+            cluster.scale(10)
+            # cluster is adaptive, and will scale between 5 and 40 workers depending on load
+            # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
+            # which can cause thrashing in the LSF queue
+            cluster.adapt(minimum=5, maximum=40, interval="60s", target_duration="40s")
+            client = Client(cluster)
+        else:
+            client = Client()
+        logger.info("Dask client created ...")
+        logger.info(client.dashboard_link)
+        logger.info(
+            "strongly recommend you open the dashboard link in a browser tab to monitor progress"
         )
-
-    logger.info(f"Prepped receptor: {prepped_pdb}, {prepped_oedu}")
-
-    # read design unit and split it
-    du = oechem.OEDesignUnit()
-    oechem.OEReadDesignUnit(str(prepped_oedu), du)
-
-    # extract the ligand, protein and complex
-    lig, protein, lig_prot_complex = split_openeye_design_unit(du)
-
-    # write out the protein
-    protein_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_protein.pdb"
-    logger.info(f"Writing out protein to {protein_path}")
-    save_openeye_pdb(protein, str(protein_path))
-
-    # write out the complex
-    complex_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_complex.pdb"
-    logger.info(f"Writing out complex to {complex_path}")
-    save_openeye_pdb(lig_prot_complex, str(complex_path))
-
-    # write out the ligand
-    ligand_path = prep_dir / f"{receptor_name}" / f"{receptor_name}_ligand.sdf"
-    logger.info(f"Writing out ligand to {ligand_path}")
-    save_openeye_sdf(lig, str(ligand_path))
-
-    ligand_smiles = oechem.OEMolToSmiles(lig)
-
-    logger.info(f"Xtal ligand: {ligand_smiles}")
 
     # setup docking
     logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
@@ -594,7 +596,11 @@ def main():
 
     # use partial to bind the ML models to the docking function
     dock_and_score_pose_oe_ml = partial(
-        dock_and_score_pose_oe, GAT_model=gat_model, schnet_model=schnet_model
+        dock_and_score_pose_oe,
+        GAT_model=gat_model,
+        schnet_model=schnet_model,
+        allow_low_posit_prob=True,
+        allow_final_clash=True,
     )
 
     if args.dask:
@@ -628,14 +634,14 @@ def main():
         res = dock_and_score_pose_oe_ml(
             dock_dir / f"{compound.compound_id}_{receptor_name}",
             compound.compound_id,
-            prepped_oedu,
+            str(output_target_du),
             logname,
             f"{compound.compound_id}_{receptor_name}",
-            du,
+            load_openeye_design_unit(str(output_target_du)),
             mol,
             args.docking_sys.lower(),
             args.relax.lower(),
-            args.hybrid,
+            args.posit_method.lower(),
             f"{compound.compound_id}_{receptor_name}",
             omega,
             args.num_poses,

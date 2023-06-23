@@ -27,6 +27,10 @@ class InferenceBase:
     model_spec : Path, default=None
         The path to the model spec yaml file. If not specified, the default
         asapdiscovery.ml models.yaml file will be used.
+    weights_local_dir: Path, default="./_weights/"
+        The path to the local directory to store the weights. If not specified,
+        will use the default `_weights` directory in the current working
+        directory.
     build_model_kwargs : Optional[Dict], default=None
         Keyword arguments to pass to build_model function.
     device : str, default='cpu'
@@ -47,6 +51,7 @@ class InferenceBase:
         model_name: str,
         model_type: str,
         model_spec: Path = None,
+        weights_local_dir: Union[Path, str] = Path("./_weights/"),
         build_model_kwargs: Optional[dict] = None,
         device: str = "cpu",
     ):
@@ -58,6 +63,7 @@ class InferenceBase:
         self.model_name = model_name
         self.model_type = model_type
         self.model_spec = model_spec
+        self.weights_local_dir = str(weights_local_dir)
 
         self.model_components = None
 
@@ -78,9 +84,9 @@ class InferenceBase:
                     f"Model spec file {self.model_spec} is not a yaml file"
                 )
 
-        self.model_components = fetch_model_from_spec(self.model_spec, model_name)[
-            model_name
-        ]
+        self.model_components = fetch_model_from_spec(
+            self.model_spec, model_name, local_dir=self.weights_local_dir
+        )[model_name]
         if self.model_components.type != self.model_type:
             raise ValueError(
                 f"Model type {self.model_components.type} does not match {self.model_type}"
@@ -165,6 +171,7 @@ class GATInference(InferenceBase):
         self,
         model_name: str,
         model_spec: Optional[Path] = None,
+        weights_local_dir: Union[Path, str] = Path("./_weights/"),
         build_model_kwargs: Optional[dict] = None,
         device: str = "cpu",
     ):
@@ -172,6 +179,7 @@ class GATInference(InferenceBase):
             model_name,
             self.model_type,
             model_spec,
+            weights_local_dir=weights_local_dir,
             build_model_kwargs=build_model_kwargs,
             device=device,
         )
@@ -237,6 +245,7 @@ class StructuralInference(InferenceBase):
         self,
         model_name: str,
         model_spec: Optional[Path] = None,
+        weights_local_dir: Union[Path, str] = Path("./_weights/"),
         build_model_kwargs: Optional[dict] = None,
         device: str = "cpu",
     ):
@@ -244,6 +253,7 @@ class StructuralInference(InferenceBase):
             model_name,
             self.model_type,
             model_spec,
+            weights_local_dir=weights_local_dir,
             build_model_kwargs=build_model_kwargs,
             device=device,
         )
@@ -302,6 +312,29 @@ class SchnetInference(StructuralInference):
     """
 
     model_type = "schnet"
+
+    def __init__(
+        self,
+        model_name: str,
+        model_spec: Optional[Path] = None,
+        weights_local_dir: Union[Path, str] = Path("./_weights/"),
+        build_model_kwargs: Optional[dict] = None,
+        pIC50_units=True,
+        device: str = "cpu",
+    ):
+        if pIC50_units:
+            if build_model_kwargs:
+                build_model_kwargs = {"pred_r": "pIC50"} | build_model_kwargs
+            else:
+                build_model_kwargs = {"pred_r": "pIC50"}
+
+        super().__init__(
+            model_name,
+            model_spec,
+            weights_local_dir=weights_local_dir,
+            build_model_kwargs=build_model_kwargs,
+            device=device,
+        )
 
 
 class E3nnInference(StructuralInference):
