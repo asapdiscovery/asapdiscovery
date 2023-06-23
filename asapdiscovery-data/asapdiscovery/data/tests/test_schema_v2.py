@@ -103,7 +103,7 @@ def test_ligand_sdf_rountrip_data_only(
 
 
 def test_ligand_oemol_rountrip(moonshot_sdf):
-    mol = load_openeye_sdf(moonshot_sdf)
+    mol = load_openeye_sdf(str(moonshot_sdf))
     l1 = Ligand.from_oemol(mol)
     mol_res = l1.to_oemol()
     l2 = Ligand.from_oemol(mol_res)
@@ -111,7 +111,7 @@ def test_ligand_oemol_rountrip(moonshot_sdf):
 
 
 def test_ligand_oemol_rountrip_data_only(moonshot_sdf):
-    mol = load_openeye_sdf(moonshot_sdf)
+    mol = load_openeye_sdf(str(moonshot_sdf))
     l1 = Ligand.from_oemol(mol, compound_name="blahblah")
     mol_res = l1.to_oemol()
     l2 = Ligand.from_oemol(mol_res)
