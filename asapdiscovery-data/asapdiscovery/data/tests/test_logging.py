@@ -11,7 +11,7 @@ def run_func(name):
 
 @pytest.fixture()
 def file_logger():
-    file_logger = FileLogger("top_logger", ".")
+    file_logger = FileLogger("top_logger", ".", level=logging.INFO)
     logger = file_logger.getLogger()
     logger.info("Top level test")
     return file_logger
