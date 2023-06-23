@@ -1467,6 +1467,8 @@ def target_names_from_common_names_and_crystals(name: str) -> str:
         raise ValueError(
             f"Name for target {name} not recognised as one of {sars_names} or {mers_names}"
         )
+
+
 def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None) -> str:
     # check for name length and truncate if necessary
     if len(name) > max_length:
