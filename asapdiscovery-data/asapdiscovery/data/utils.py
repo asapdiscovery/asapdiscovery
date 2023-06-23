@@ -1441,11 +1441,7 @@ def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem
     """
     mols = []
     for ed in exp_data:
-<<<<<<< HEAD
-        mol = oechem.OEGraphMol()
-=======
         mol = oechem.OEMol()
->>>>>>> upstream/main
         oechem.OESmilesToMol(mol, ed.smiles)
         mol.SetTitle(ed.compound_id)
         mols.append(mol)
@@ -1459,7 +1455,6 @@ def combine_files(paths: list[Union[Path, str]], output_file):
                 ofs.write(file_to_copy_fd.read())
 
 
-<<<<<<< HEAD
 def target_names_from_common_names_and_crystals(name: str) -> str:
     name_ = name.lower()
     sars_names = ["sars", "sars-cov", "sars-cov2", "sars2"]
@@ -1472,7 +1467,6 @@ def target_names_from_common_names_and_crystals(name: str) -> str:
         raise ValueError(
             f"Name for target {name} not recognised as one of {sars_names} or {mers_names}"
         )
-=======
 def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None) -> str:
     # check for name length and truncate if necessary
     if len(name) > max_length:
@@ -1484,4 +1478,3 @@ def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None)
         return truncated_name
     else:
         return name
->>>>>>> upstream/main
