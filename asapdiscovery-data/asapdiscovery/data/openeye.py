@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, List, Optional # noqa: F401
+from typing import List, Optional, Union  # noqa: F401
 
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
@@ -90,7 +90,9 @@ def combine_protein_ligand(
     return prot
 
 
-def load_openeye_pdb(pdb_fn: Union[str, Path], alt_loc: bool=False) -> oechem.OEGraphMol:
+def load_openeye_pdb(
+    pdb_fn: Union[str, Path], alt_loc: bool = False
+) -> oechem.OEGraphMol:
     """
     Load an OpenEye OEGraphMol from a PDB file.
 
@@ -150,6 +152,7 @@ def load_openeye_cif1(cif1_fn: Union[str, Path]) -> oechem.OEGraphMol:
         oechem.OEGraphMol: the biological assembly as an OEGraphMol object.
     """
     from tempfile import NamedTemporaryFile
+
     from openmm.app import PDBFile, PDBxFile
 
     if not Path(cif1_fn).exists():
@@ -265,7 +268,7 @@ def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
-def load_openeye_sdfs(sdf_fn: Union[str, Path]) -> List[oechem.OEGraphMol]:
+def load_openeye_sdfs(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     """
     Load a list of OpenEye OEGraphMol objects from an SDF file.
 
