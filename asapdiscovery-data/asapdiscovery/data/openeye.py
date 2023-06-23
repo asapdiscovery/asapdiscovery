@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union, List, Optional # noqa: F401
 
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
@@ -8,7 +9,13 @@ if not oechem.OEChemIsLicensed("python"):
     raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
 
 
-def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=None):
+def combine_protein_ligand(
+    prot: oechem.OEMol,
+    lig: oechem.OEMol,
+    lig_name: str = "LIG",
+    resid: Optional[int] = None,
+    start_atom_id: Optional[int] = None,
+) -> oechem.OEMol:
     """
     Combine a protein OEMol and ligand OEMol into one, handling residue/atom
     numbering, and HetAtom status.
@@ -83,13 +90,13 @@ def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=
     return prot
 
 
-def load_openeye_pdb(pdb_fn, alt_loc=False):
+def load_openeye_pdb(pdb_fn: Union[str, Path], alt_loc=False) -> oechem.OEGraphMol:
     """
     Load an OpenEye OEGraphMol from a PDB file.
 
     Parameters
     ----------
-    pdb_fn : str
+    pdb_fn : Union[str, Path]
         The path to the input PDB file.
     alt_loc : bool, optional
         Whether to keep track of alternate locations, by default False.
@@ -117,7 +124,7 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
         oechem.OEFormat_PDB,
         ifs_flavor,
     )
-    if ifs.open(pdb_fn):
+    if ifs.open(str(pdb_fn)):
         in_mol = oechem.OEGraphMol()
         oechem.OEReadMolecule(ifs, in_mol)
         ifs.close()
@@ -127,22 +134,28 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
         oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
 
 
-def load_openeye_cif1(fn: str) -> oechem.OEGraphMol:
+def load_openeye_cif1(cif1_fn: Union[str, Path]) -> oechem.OEGraphMol:
     """
     Loads a biological assembly file into an OEGraphMol object.
     Current version requires going through an OpenMM intermediate.
 
-    Args:
-    - fn (str): the filename of the biological assembly file.
+    Parameters
+    ----------
+    cif1_fn : Union[str, Path]
+        The path to the input CIF1 file.
 
-    Returns:
-    - oechem.OEGraphMol: the biological assembly as an OEGraphMol object.
+    Returns
+    -------
+    oechem.OEGraphMol
+        oechem.OEGraphMol: the biological assembly as an OEGraphMol object.
     """
     from tempfile import NamedTemporaryFile
-
     from openmm.app import PDBFile, PDBxFile
 
-    cif = PDBxFile(fn)
+    if not Path(cif1_fn).exists():
+        raise FileNotFoundError(f"{cif1_fn} does not exist!")
+
+    cif = PDBxFile(str(cif1_fn))
 
     # the keep ids flag is critical to make sure the residue numbers are correct
     with NamedTemporaryFile("w", suffix=".pdb") as f:
@@ -151,13 +164,15 @@ def load_openeye_cif1(fn: str) -> oechem.OEGraphMol:
     return prot
 
 
-def load_openeye_cif(cif_fn, alt_loc=False):
+def load_openeye_cif(
+    cif_fn: Union[str, Path], alt_loc: bool = False
+) -> oechem.OEGraphMol:
     """
     Load an OpenEye OEGraphMol object from a CIF file.
 
     Parameters
     ----------
-    cif_fn : str
+    cif_fn : Union[str, Path]
         The path of the CIF file to read.
     alt_loc : bool, optional
         If True, include alternative locations for atoms in the resulting OEGraphMol
@@ -195,7 +210,7 @@ def load_openeye_cif(cif_fn, alt_loc=False):
         oechem.OEFormat_MMCIF,
         ifs_flavor,
     )
-    if ifs.open(cif_fn):
+    if ifs.open(str(cif_fn)):
         in_mol = oechem.OEGraphMol()
         oechem.OEReadMolecule(ifs, in_mol)
         ifs.close()
@@ -205,14 +220,14 @@ def load_openeye_cif(cif_fn, alt_loc=False):
         oechem.OEThrow.Fatal(f"Unable to open {cif_fn}")
 
 
-def load_openeye_sdf(sdf_fn) -> oechem.OEGraphMol:
+def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
     """
     Load an OpenEye SDF file containing a single molecule and return it as an
     OpenEye OEGraphMol object.
 
     Parameters
     ----------
-    sdf_fn : str
+    sdf_fn : Union[str, Path]
         Path to the SDF file to load.
 
     Returns
@@ -241,7 +256,7 @@ def load_openeye_sdf(sdf_fn) -> oechem.OEGraphMol:
         oechem.OEFormat_SDF,
         oechem.OEIFlavor_SDF_Default,
     )
-    if ifs.open(sdf_fn):
+    if ifs.open(str(sdf_fn)):
         coords_mol = oechem.OEGraphMol()
         oechem.OEReadMolecule(ifs, coords_mol)
         ifs.close()
@@ -250,13 +265,13 @@ def load_openeye_sdf(sdf_fn) -> oechem.OEGraphMol:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
-def load_openeye_sdfs(sdf_fn):
+def load_openeye_sdfs(sdf_fn: Union[str, Path]) -> List[oechem.OEGraphMol]:
     """
     Load a list of OpenEye OEGraphMol objects from an SDF file.
 
     Parameters
     ----------
-    sdf_fn : str
+    sdf_fn : Union[str, Path]
         The path of the SDF file to read.
 
     Returns
@@ -284,7 +299,7 @@ def load_openeye_sdfs(sdf_fn):
         oechem.OEIFlavor_SDF_Default,
     )
     cmpd_list = []
-    if ifs.open(sdf_fn):
+    if ifs.open(str(sdf_fn)):
         for mol in ifs.GetOEGraphMols():
             cmpd_list.append(mol.CreateCopy())
         ifs.close()
@@ -293,15 +308,7 @@ def load_openeye_sdfs(sdf_fn):
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
-def load_openeye_design_unit(du_filename: str) -> oechem.OEDesignUnit:
-    du = oechem.OEDesignUnit()
-    retcode = oechem.OEReadDesignUnit(du_filename, du)
-    if not retcode:
-        raise RuntimeError(f"Unable to read design unit from {du_filename}")
-    return du
-
-
-def save_openeye_pdb(mol, pdb_fn):
+def save_openeye_pdb(mol, pdb_fn: Union[str, Path]) -> Path:
     """
     Write an OpenEye OEGraphMol object to a PDB file.
 
@@ -323,14 +330,16 @@ def save_openeye_pdb(mol, pdb_fn):
     """
     ofs = oechem.oemolostream()
     ofs.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
-    ofs.open(str(pdb_fn))
-    oechem.OEWriteMolecule(ofs, mol)
+    if ofs.open(str(pdb_fn)):
+        oechem.OEWriteMolecule(ofs, mol)
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
     ofs.close()
 
     return Path(pdb_fn)
 
 
-def save_openeye_sdf(mol, sdf_fn):
+def save_openeye_sdf(mol, sdf_fn: Union[str, Path]) -> Path:
     """
     Write an OpenEye OEGraphMol object to an SDF file.
 
@@ -338,7 +347,7 @@ def save_openeye_sdf(mol, sdf_fn):
     ----------
     mol : oechem.OEGraphMol
         The OEGraphMol object to write to the SDF file.
-    sdf_fn : str
+    sdf_fn :  Union[str, Path]
         The path of the SDF file to create or overwrite.
 
     Returns
@@ -352,14 +361,16 @@ def save_openeye_sdf(mol, sdf_fn):
     """
     ofs = oechem.oemolostream()
     ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
-    ofs.open(sdf_fn)
-    oechem.OEWriteMolecule(ofs, mol)
+    if ofs.open(str(sdf_fn)):
+        oechem.OEWriteMolecule(ofs, mol)
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
     ofs.close()
 
     return Path(sdf_fn)
 
 
-def save_openeye_sdfs(mols, sdf_fn):
+def save_openeye_sdfs(mols, sdf_fn: Union[str, Path]) -> Path:
     """
     Write a list of OpenEye OEGraphMol objects to a single SDF file.
 
@@ -367,7 +378,7 @@ def save_openeye_sdfs(mols, sdf_fn):
     ----------
     mols : list of oechem.OEGraphMol
         The list of OEGraphMol objects to write to the SDF file.
-    sdf_fn : str
+    sdf_fn :  Union[str, Path]
         The path of the SDF file to create or overwrite.
 
     Returns
@@ -389,7 +400,7 @@ def save_openeye_sdfs(mols, sdf_fn):
         oechem.OEFormat_SDF,
         oechem.OEOFlavor_SDF_Default,
     )
-    if ofs.open(sdf_fn):
+    if ofs.open(str(sdf_fn)):
         for mol in mols:
             oechem.OEWriteMolecule(ofs, mol)
         ofs.close()
@@ -425,14 +436,14 @@ def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
     return prot
 
 
-def save_receptor_grid(du_fn, out_fn):
+def save_receptor_grid(du_fn: Union[str, Path], out_fn: Union[str, Path]) -> Path:
     """
     Load in a design unit from a file and write out the receptor grid as a .ccp4 grid file.
     Parameters
     ----------
-    du_fn: str
+    du_fn: Union[str, Path]
         File name/path with the design units.
-    out_fn: str
+    out_fn: Union[str, Path]
         Works with a .ccp4 extension
 
     Returns
@@ -440,17 +451,19 @@ def save_receptor_grid(du_fn, out_fn):
 
     """
     du = oechem.OEDesignUnit()
-    oechem.OEReadDesignUnit(du_fn, du)
+    oechem.OEReadDesignUnit(str(du_fn), du)
     # oedocking.OEMakeReceptor(du)
     oegrid.OEWriteGrid(
-        out_fn,
+        str(out_fn),
         oegrid.OEScalarGrid(du.GetReceptor().GetNegativeImageGrid()),
     )
+
+    return Path(out_fn)
 
 
 def openeye_copy_pdb_data(
     source: oechem.OEGraphMol, destination: oechem.OEGraphMol, tag: str
-):
+) -> None:
     """
     Copy over the PDB data from one object to another. Tag examples include "SEQRES"
 
