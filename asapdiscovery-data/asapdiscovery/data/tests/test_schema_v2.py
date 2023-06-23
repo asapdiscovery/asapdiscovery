@@ -1,9 +1,9 @@
 import os
-import pytest
 
-from asapdiscovery.data.schema_v2 import Ligand, LigandIdentifiers
-from asapdiscovery.data.schema import ExperimentalCompoundData
+import pytest
 from asapdiscovery.data.openeye import load_openeye_sdf
+from asapdiscovery.data.schema import ExperimentalCompoundData
+from asapdiscovery.data.schema_v2 import Ligand, LigandIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 

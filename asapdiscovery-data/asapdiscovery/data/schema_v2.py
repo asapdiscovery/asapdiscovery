@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import json
-
 from enum import Enum
 from pathlib import Path
-from pydantic import BaseModel, Field, validator, ByteSize
-from typing import Dict, Union, Optional, Any, Tuple  # noqa: F401
+from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
 from asapdiscovery.data.openeye import (
     oechem,
     oemol_to_sdf_string,
+    oemol_to_smiles,
     sdf_string_to_oemol,
     smiles_to_oemol,
-    oemol_to_smiles,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
+from pydantic import BaseModel, ByteSize, Field, validator
 
 
 class InvalidLigandError(ValueError):
@@ -26,13 +25,13 @@ class DataStorageType(str, Enum):
     pdb = "pdb"
 
 
-def read_file_directly(file: Union[str, Path]) -> str:
-    with open(str(file), "r") as f:
+def read_file_directly(file: str | Path) -> str:
+    with open(str(file)) as f:
         contents = f.read()
     return contents
 
 
-def write_file_directly(file: Union[str, Path], data: str) -> None:
+def write_file_directly(file: str | Path, data: str) -> None:
     with open(str(file), "w") as f:
         f.write(data)
 
@@ -80,7 +79,7 @@ class LigandIdentifiers(DataModelAbstractBase):
     """
 
     moonshot_compound_id: str = Field(None, description="Moonshot compound ID")
-    postera_vc_id: Optional[str] = Field(None, description="Unique VC ID from Postera")
+    postera_vc_id: str | None = Field(None, description="Unique VC ID from Postera")
 
 
 class Ligand(DataModelAbstractBase):
@@ -89,11 +88,11 @@ class Ligand(DataModelAbstractBase):
     """
 
     compound_name: str = Field(None, description="Name of compound")
-    ids: Optional[LigandIdentifiers] = Field(
+    ids: LigandIdentifiers | None = Field(
         None,
         description="LigandIdentifiers Schema for identifiers associated with this ligand",
     )
-    experimental_data: Optional[ExperimentalCompoundData] = Field(
+    experimental_data: ExperimentalCompoundData | None = Field(
         None,
         description="ExperimentalCompoundData Schema for experimental data associated with the compound",
     )
@@ -132,16 +131,16 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_sdf(
-        cls, sdf_file: Union[str, Path], compound_name: str = None, **kwargs
+        cls, sdf_file: str | Path, compound_name: str = None, **kwargs
     ) -> Ligand:
         # directly read in data
         sdf_str = read_file_directly(sdf_file)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
 
-    def to_sdf(self, filename: Union[str, Path]) -> None:
+    def to_sdf(self, filename: str | Path) -> None:
         # directly write out data
         write_file_directly(filename, self.data)
 
 
 class ReferenceLigand(Ligand):
-    target_name: Optional[str] = None
+    target_name: str | None = None
