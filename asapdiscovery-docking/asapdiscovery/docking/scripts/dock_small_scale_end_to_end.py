@@ -384,7 +384,9 @@ def main():
                 )
                 args.title = "TARGET_MOL-" + args.mols
 
-            exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
+            exp_data = [
+                ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)
+            ]
         else:
             mol_file_path = Path(args.mols)
             if mol_file_path.suffix == ".smi":
