@@ -474,3 +474,86 @@ def openeye_copy_pdb_data(
     for data_pair in oechem.OEGetPDBDataPairs(source):
         if data_pair.GetTag() == tag:
             oechem.OEAddPDBData(destination, data_pair)
+
+
+def oemol_to_sdf_string(mol: oechem.OEMol) -> str:
+    """
+    Dumps an OpenEye OEMol to an SDF string
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+       OpenEye OEMol
+
+    Returns
+    -------
+    str
+       SDF string representation of the input OEMol
+    """
+    oms = oechem.oemolostream()
+    oms.SetFormat(oechem.OEFormat_SDF)
+    oms.openstring()
+    oechem.OEWriteMolecule(oms, mol)
+    molstring = oms.GetString().decode("UTF-8")
+    return molstring
+
+
+def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
+    """
+    Loads an SDF string into an openeye molecule
+
+    Parameters
+    ----------
+    sdf_str: str
+       The string representation of an SDF file
+
+    Returns
+    -------
+    oechem.OEMol:
+       resulting OpenEye OEMol
+    """
+    ims = oechem.oemolistream()
+    ims.SetFormat(oechem.OEFormat_SDF)
+    ims.openstring(sdf_str)
+    molecules = []
+    for mol in ims.GetOEMols():
+        molecules.append(oechem.OEMol(mol))
+    if len(molecules) != 1:
+        oechem.OEThrow.Fatal(f"More than one molecule in input stream")
+    return molecules[0]
+
+
+def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
+    """
+    Loads a smiles string into an openeye molecule
+
+    Parameters
+    ----------
+    smiles: str
+       SMILES string
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        resulting OpenEye OEGraphMol
+    """
+    mol = oechem.OEGraphMol()
+    oechem.OESmilesToMol(mol, smiles)
+    return mol
+
+
+def oemol_to_smiles(mol: oechem.OEMol) -> str:
+    """
+    SMILES string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       SMILES string of molecule
+    """
+    return oechem.OEMolToSmiles(mol)
