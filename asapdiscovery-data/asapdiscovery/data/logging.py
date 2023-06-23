@@ -9,7 +9,7 @@ class FileLogger:
         logname: str,
         path: str,
         logfile: Optional[str] = None,
-        level: Optional[int] = logging.DEBUG,
+        level: Optional[int] = logging.WARNING,
         format: Optional[
             str
         ] = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
