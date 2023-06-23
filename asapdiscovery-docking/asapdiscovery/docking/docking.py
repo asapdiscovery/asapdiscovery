@@ -23,9 +23,7 @@ from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
 from .docking_data_validation import DockingResultCols, TargetDependentCols
 
-
 POSIT_METHODS = ("all", "hybrid", "fred", "mcs", "shapefit")
-
 
 
 posit_methods = namedtuple("posit_methods", POSIT_METHODS)
@@ -377,6 +375,7 @@ def rename_score_columns_for_target(
     rename_dict = dict(zip(cols, target_cols))
     df = df.rename(columns=rename_dict)
     return df
+
 
 def docking_result_cols() -> list[str]:
     return [

@@ -23,7 +23,7 @@ class DockingResultCols(Enum):
     SCHNET_SCORE = "SCHNET_score"
 
     @staticmethod
-    def get_columns() -> List[str]:
+    def get_columns() -> list[str]:
         return [col.value for col in DockingResultCols]
 
 
@@ -43,15 +43,15 @@ class TargetDependentCols(Enum):
     SCHNET_SCORE = "SCHNET_score"
 
     @staticmethod
-    def get_columns() -> List[str]:
+    def get_columns() -> list[str]:
         return [col.value for col in TargetDependentCols]
 
     @staticmethod
-    def get_columns_for_target(target: str) -> List[str]:
+    def get_columns_for_target(target: str) -> list[str]:
         return [col.value + f"_{target}" for col in TargetDependentCols]
 
     @staticmethod
-    def get_columns_for_target_with_manifold_validation(target: str) -> List[str]:
+    def get_columns_for_target_with_manifold_validation(target: str) -> list[str]:
         cols = [col.value + f"_{target}" for col in TargetDependentCols]
         if not ManifoldFilter.all_valid_columns(cols):
             raise ValueError(

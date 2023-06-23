@@ -1,10 +1,10 @@
-from typing import Union
+from typing import Dict, Union
+
 import pandas as pd
-from typing import Dict
 from typing_extensions import TypedDict
 
+from .manifold_data_validation import ManifoldAllowedColumns, ManifoldFilter
 from .postera_api import PostEraAPI
-from .manifold_data_validation import ManifoldFilter, ManifoldAllowedColumns
 
 
 class Molecule(TypedDict):
@@ -84,7 +84,7 @@ class MoleculeSetAPI(PostEraAPI):
 
     @classmethod
     def molecule_set_id_or_name(
-        cls, molecule_set_id_or_name: str, available_molsets: Dict[str, str]
+        cls, molecule_set_id_or_name: str, available_molsets: dict[str, str]
     ) -> str:
         """
         Helper function to determine if the input is a molecule set id or name
