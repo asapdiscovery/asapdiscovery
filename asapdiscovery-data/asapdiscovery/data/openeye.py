@@ -311,6 +311,38 @@ def load_openeye_sdfs(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
+def load_openeye_design_unit(du_fn: Union[str, Path]) -> oechem.OEDesignUnit:
+    """
+    Load an OpenEye design unit from a file
+
+    Parameters
+    ----------
+    du_fn : Union[str, Path]
+        The path of the DesignUnit file to read.
+
+    Returns
+    -------
+    oechem.OEDesignUnit
+        OpenEye DesignUnit
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    oechem.OEError
+        If the CIF file cannot be opened.
+
+
+    """
+    if not Path(du_fn).exists():
+        raise FileNotFoundError(f"{du_fn} does not exist!")
+    du = oechem.OEDesignUnit()
+    retcode = oechem.OEReadDesignUnit(str(du_fn), du)
+    if not retcode:
+        oechem.OEThrow.Fatal(f"Unable to open {du_fn}")
+    return du
+
+
 def save_openeye_pdb(mol, pdb_fn: Union[str, Path]) -> Path:
     """
     Write an OpenEye OEGraphMol object to a PDB file.
