@@ -90,7 +90,7 @@ def combine_protein_ligand(
     return prot
 
 
-def load_openeye_pdb(pdb_fn: Union[str, Path], alt_loc=False) -> oechem.OEGraphMol:
+def load_openeye_pdb(pdb_fn: Union[str, Path], alt_loc: bool=False) -> oechem.OEGraphMol:
     """
     Load an OpenEye OEGraphMol from a PDB file.
 
