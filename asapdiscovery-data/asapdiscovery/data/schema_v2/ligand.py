@@ -16,7 +16,7 @@ from asapdiscovery.data.schema import ExperimentalCompoundData
 from pydantic import  Field
 
 
-from .schema_base import DataModelAbstractBase
+from .schema_base import DataModelAbstractBase, DataStorageType, read_file_directly, write_file_directly
 
 class InvalidLigandError(ValueError):
     ...
