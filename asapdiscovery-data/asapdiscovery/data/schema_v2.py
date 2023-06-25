@@ -80,8 +80,6 @@ class LigandIdentifiers(DataModelAbstractBase):
 
     moonshot_compound_id: str = Field(None, description="Moonshot compound ID")
     postera_vc_id: str | None = Field(None, description="Unique VC ID from Postera")
-    canonical_smiles: str | None = Field(None, description="Canonical SMILES")
-    standard_inchi: str | None = Field(None, description="Standard InChI")
 
 
 class Ligand(DataModelAbstractBase):
