@@ -30,6 +30,16 @@ def test_ligand_from_sdf(moonshot_sdf):
     )
 
 
+def test_inchi(smiles):
+    lig = Ligand.from_smiles(smiles)
+    assert lig.inchi == "InChI=1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3"
+
+
+def test_inchi_key(smiles):
+    lig = Ligand.from_smiles(smiles)
+    assert lig.inchikey == "IMNFDUFMRHMDMM-UHFFFAOYSA-N"
+
+
 @pytest.mark.parametrize(
     "exp_data", [ExperimentalCompoundData(compound_id="blah", smiles="CCCC"), None]
 )  # FIXME this should be forced to match

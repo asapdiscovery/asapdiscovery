@@ -80,6 +80,8 @@ class LigandIdentifiers(DataModelAbstractBase):
 
     moonshot_compound_id: str = Field(None, description="Moonshot compound ID")
     postera_vc_id: str | None = Field(None, description="Unique VC ID from Postera")
+    canonical_smiles: str | None = Field(None, description="Canonical SMILES")
+    standard_inchi: str | None = Field(None, description="Standard InChI")
 
 
 class Ligand(DataModelAbstractBase):
@@ -109,7 +111,7 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_oemol(
-        cls, mol: oechem.OEMol, compound_name: str = None, **kwargs
+        cls, mol: oechem.OEMol, compound_name: str | None = None, **kwargs
     ) -> Ligand:
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
@@ -119,7 +121,9 @@ class Ligand(DataModelAbstractBase):
         return mol
 
     @classmethod
-    def from_smiles(cls, smiles: str, compound_name: str = None, **kwargs) -> Ligand:
+    def from_smiles(
+        cls, smiles: str, compound_name: str | None = None, **kwargs
+    ) -> Ligand:
         mol = smiles_to_oemol(smiles)
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
@@ -129,9 +133,19 @@ class Ligand(DataModelAbstractBase):
         mol = sdf_string_to_oemol(self.data)
         return oemol_to_smiles(mol)
 
+    @property
+    def inchi(self) -> str:
+        mol = sdf_string_to_oemol(self.data)
+        return oechem.OECreateInChI(mol)
+
+    @property
+    def inchikey(self) -> str:
+        mol = sdf_string_to_oemol(self.data)
+        return oechem.OECreateInChIKey(mol)
+
     @classmethod
     def from_sdf(
-        cls, sdf_file: str | Path, compound_name: str = None, **kwargs
+        cls, sdf_file: str | Path, compound_name: str | None = None, **kwargs
     ) -> Ligand:
         # directly read in data
         sdf_str = read_file_directly(sdf_file)
