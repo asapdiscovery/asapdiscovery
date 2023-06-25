@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from pydantic import BaseModel, ByteSize, Field, validator
+from pydantic import BaseModel, ByteSize, validator
 
 
 class DataStorageType(str, Enum):
