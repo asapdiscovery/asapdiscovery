@@ -73,6 +73,8 @@ class DataModelAbstractBase(BaseModel):
         validate_assignment = True
 
 
+# Ligand Schema
+
 class LigandIdentifiers(DataModelAbstractBase):
     """
     Identifiers for a Ligand
