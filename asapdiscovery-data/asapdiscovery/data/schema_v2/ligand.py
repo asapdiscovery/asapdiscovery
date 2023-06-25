@@ -13,15 +13,22 @@ from asapdiscovery.data.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from pydantic import  Field
+from pydantic import Field
 
+from .schema_base import (
+    DataModelAbstractBase,
+    DataStorageType,
+    read_file_directly,
+    write_file_directly,
+)
 
-from .schema_base import DataModelAbstractBase, DataStorageType, read_file_directly, write_file_directly
 
 class InvalidLigandError(ValueError):
     ...
 
+
 # Ligand Schema
+
 
 class LigandIdentifiers(DataModelAbstractBase):
     """

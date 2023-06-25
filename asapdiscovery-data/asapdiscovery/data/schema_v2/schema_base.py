@@ -4,6 +4,7 @@ import json
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
+
 from pydantic import BaseModel, ByteSize, Field, validator
 
 
@@ -58,4 +59,3 @@ class DataModelAbstractBase(BaseModel):
 
     class Config:
         validate_assignment = True
-

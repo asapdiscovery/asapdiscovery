@@ -1,7 +1,7 @@
-import yaml
-
 from enum import Enum
 from pathlib import Path
+
+import yaml
 
 
 def make_dynamic_enum(yaml_path: str | Path, enum_name: str) -> Enum:
@@ -13,7 +13,7 @@ def make_dynamic_enum(yaml_path: str | Path, enum_name: str) -> Enum:
     Returns:
         Enum: Enum object
     """
-    with open(yaml_path, "r") as f:
+    with open(yaml_path) as f:
         data = yaml.safe_load(f)
     print(data)
     return Enum(enum_name, data)
