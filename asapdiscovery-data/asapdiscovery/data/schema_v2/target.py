@@ -20,8 +20,6 @@ from .schema_base import (
     write_file_directly,
 )
 
-from ..dynamic_enum import DynamicEnum
-
 
 class InvalidTargetError(ValueError):
     ...
