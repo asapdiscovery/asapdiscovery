@@ -669,7 +669,7 @@ def set_SD_data(mol: oechem.OEMol, key: str, value: str) -> oechem.OEMol:
     return mol
 
 
-def set_SD_data_dict(mol: oechem.OEMol, data: Dict[str, str]) -> oechem.OEMol:
+def set_SD_data_dict(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
 
@@ -712,7 +712,7 @@ def get_SD_data(mol: oechem.OEMol, key: str) -> str:
     return oechem.OEGetSDData(mol, key)
 
 
-def get_SD_data_dict(mol: oechem.OEMol) -> Dict[str, str]:
+def get_SD_data_dict(mol: oechem.OEMol) -> dict[str, str]:
     """
     Get all SD data on an OpenEye OEMol
 
