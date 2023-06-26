@@ -83,7 +83,7 @@ class Target(DataModelAbstractBase):
     def from_oemol(
         cls, mol: oechem.OEMol, target_name: str | None = None, **kwargs
     ) -> Target:
-        pdb_str = oemol_to_pdb_string(pdb_file)
+        pdb_str = oemol_to_pdb_string(mol)
         return cls(data=pdb_str, target_name=target_name, **kwargs)
 
     def to_oemol(self) -> oechem.OEMol:
