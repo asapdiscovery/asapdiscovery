@@ -13,7 +13,7 @@ from asapdiscovery.data.openeye import (
     oemol_to_inchikey,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from pydantic import Field
+from pydantic import Field, root_validator
 
 from .schema_base import (
     DataModelAbstractBase,
