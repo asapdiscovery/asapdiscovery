@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Union, Dict  # noqa: F401
+from typing import Dict, List, Optional, Union  # noqa: F401
 
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
@@ -644,7 +644,7 @@ def oemol_to_inchikey(mol: oechem.OEMol) -> str:
     return oechem.OECreateInChIKey(mol)
 
 
-def set_SD_data(mol: oechem.OEMol, data: Dict[str, str]) -> oechem.OEMol:
+def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol
 
