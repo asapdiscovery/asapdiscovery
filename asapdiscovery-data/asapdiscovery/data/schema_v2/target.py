@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
-
+from enum import Enum
 from asapdiscovery.data.openeye import oechem
 from .dynamic_properties import TargetType
 from pydantic import Field
@@ -14,6 +14,8 @@ from .schema_base import (
     write_file_directly,
 )
 
+from ..dynamic_enum import DynamicEnum
+
 
 class InvalidTargetError(ValueError):
     ...
@@ -24,13 +26,10 @@ class TargetIdentifiers(DataModelAbstractBase):
     Identifiers for a Ligand
     """
 
-    target_type: Optional[TargetType] = Field(
-        None, description="Enum describing the target type e.g sars2 or mers"
+    target_type: Optional[DynamicEnum] = Field(
+        None, description="Dynamic Enum describing the target type e.g sars2 or mers"
     )
 
-    target_source: Optional[TargetSource] = Field(
-        None, description="Enum describing the source of the target"
-    )
     fragalysis_id: Optional[str] = Field(
         None, description="The PDB code of the target if applicable"
     )
@@ -77,16 +76,16 @@ class Target(DataModelAbstractBase):
 
     @classmethod
     def from_oemol(cls, mol: oechem.OEMol, target_name: str = None, **kwargs) -> Target:
-        pdb_str = _oemol_to_pdb_string(pdb_file)
+        pdb_str = oemol_to_pdb_string(pdb_file)
         return cls(data=pdb_str, target_name=target_name, **kwargs)
 
     def to_oemol(self) -> oechem.OEMol:
-        return _pdb_string_to_oemol(self.data)
+        return pdb_string_to_oemol(self.data)
 
     @classmethod
     def from_oedu(cls, du_file: Union[str, Path], compound_name: str = None) -> Target:
-        pdb_str = _oedu_to_pdb_string(du_file)
+        pdb_str = oedu_to_pdb_string(du_file)
         return cls(data=pdb_str, target_name=target_name, **kwargs)
 
     def to_oedu(self) -> oechem.OEDesignUnit:
-        return _pdb_string_to_oedu(self.data)
+        return pdb_string_to_oedu(self.data)

@@ -4,7 +4,11 @@ from pathlib import Path
 import yaml
 
 
-def make_dynamic_enum(yaml_path: str | Path, enum_name: str) -> Enum:
+class DynamicEnum(Enum):
+    ...
+
+
+def make_dynamic_enum(yaml_path: str | Path, enum_name: str) -> DynamicEnum:
     """Make a dynamic enum from a yaml file.
 
     Args:
@@ -15,5 +19,4 @@ def make_dynamic_enum(yaml_path: str | Path, enum_name: str) -> Enum:
     """
     with open(yaml_path) as f:
         data = yaml.safe_load(f)
-    print(data)
-    return Enum(enum_name, data)
+    return DynamicEnum(enum_name, data)
