@@ -4,10 +4,17 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
 from asapdiscovery.data.openeye import (
+    get_SD_data,
+    get_SD_data_dict,
     oechem,
+    oemol_to_inchi,
+    oemol_to_inchikey,
     oemol_to_sdf_string,
     oemol_to_smiles,
+    print_SD_Data,
     sdf_string_to_oemol,
+    set_SD_data,
+    set_SD_data_dict,
     smiles_to_oemol,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
@@ -89,12 +96,12 @@ class Ligand(DataModelAbstractBase):
     @property
     def inchi(self) -> str:
         mol = sdf_string_to_oemol(self.data)
-        return oechem.OECreateInChI(mol)
+        return oemol_to_inchi(mol)
 
     @property
     def inchikey(self) -> str:
         mol = sdf_string_to_oemol(self.data)
-        return oechem.OECreateInChIKey(mol)
+        return oemol_to_inchikey(mol)
 
     @classmethod
     def from_sdf(
@@ -107,6 +114,28 @@ class Ligand(DataModelAbstractBase):
     def to_sdf(self, filename: str | Path) -> None:
         # directly write out data
         write_file_directly(filename, self.data)
+
+    def set_SD_data(self, key: str, value: str) -> None:
+        mol = sdf_string_to_oemol(self.data)
+        mol = set_SD_data(mol, key, value)
+        self.data = oemol_to_sdf_string(mol)
+
+    def set_SD_data_dict(self, data: dict[str, str]) -> None:
+        mol = sdf_string_to_oemol(self.data)
+        mol = set_SD_data_dict(mol, data)
+        self.data = oemol_to_sdf_string(mol)
+
+    def get_SD_data(self, key: str) -> str:
+        mol = sdf_string_to_oemol(self.data)
+        return get_SD_data(mol, key)
+
+    def get_SD_data_dict(self) -> dict[str, str]:
+        mol = sdf_string_to_oemol(self.data)
+        return get_SD_data_dict(mol)
+
+    def print_SD_Data(self) -> None:
+        mol = sdf_string_to_oemol(self.data)
+        print_SD_Data(mol)
 
 
 class ReferenceLigand(Ligand):

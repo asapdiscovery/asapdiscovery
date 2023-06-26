@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Union  # noqa: F401
+from typing import Dict, List, Optional, Union  # noqa: F401
 
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
@@ -546,7 +546,7 @@ def oemol_to_sdf_string(mol: oechem.OEMol) -> str:
     return molstring
 
 
-def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
+def sdf_string_to_oemol(sdf_str: str) -> oechem.OEGraphMol:
     """
     Loads an SDF string into an openeye molecule
 
@@ -560,15 +560,18 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     oechem.OEMol:
        resulting OpenEye OEMol
     """
+
     ims = oechem.oemolistream()
     ims.SetFormat(oechem.OEFormat_SDF)
+    ims.SetFlavor(
+        oechem.OEFormat_SDF,
+        oechem.OEIFlavor_SDF_Default,
+    )
     ims.openstring(sdf_str)
-    molecules = []
-    for mol in ims.GetOEMols():
-        molecules.append(oechem.OEMol(mol))
-    if len(molecules) != 1:
-        oechem.OEThrow.Fatal("More than one molecule in input stream")
-    return molecules[0]
+    # NOTE: must use GraphMol here, not OEMol, otherwise SD data will not be read
+    mol = oechem.OEGraphMol()
+    oechem.OEReadMolecule(ims, mol)
+    return mol
 
 
 def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
@@ -605,3 +608,132 @@ def oemol_to_smiles(mol: oechem.OEMol) -> str:
        SMILES string of molecule
     """
     return oechem.OEMolToSmiles(mol)
+
+
+def oemol_to_inchi(mol: oechem.OEMol) -> str:
+    """
+    InChI string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       InChI string of molecule
+    """
+    return oechem.OECreateInChI(mol)
+
+
+def oemol_to_inchikey(mol: oechem.OEMol) -> str:
+    """
+    InChI key string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       InChI key string of molecule
+    """
+    return oechem.OECreateInChIKey(mol)
+
+
+def set_SD_data(mol: oechem.OEMol, key: str, value: str) -> oechem.OEMol:
+    """
+    Set the SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data set
+    """
+    try:
+        key = str(key)
+        value = str(value)
+    except ValueError as v:
+        raise ValueError(
+            f"SD data key {key} or value {value} is not castable  a string"
+        ) from v
+    oechem.OESetSDData(mol, key, value)
+    return mol
+
+
+def set_SD_data_dict(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
+    """
+    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data set
+    """
+    for key, value in data.items():
+        try:
+            key = str(key)
+            value = str(value)
+        except ValueError as v:
+            raise Exception(
+                f"SD data key {key} or value {value} is not castable  a string"
+            ) from v
+        oechem.OESetSDData(mol, key, value)
+    return mol
+
+
+def get_SD_data(mol: oechem.OEMol, key: str) -> str:
+    """
+    Get the SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+        SD data value
+    """
+    return oechem.OEGetSDData(mol, key)
+
+
+def get_SD_data_dict(mol: oechem.OEMol) -> dict[str, str]:
+    """
+    Get all SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary of SD data
+    """
+    sd_data = {}
+    for dp in oechem.OEGetSDDataPairs(mol):
+        sd_data[dp.GetTag()] = dp.GetValue()
+    return sd_data
+
+
+def print_SD_Data(mol: oechem.OEMol) -> None:
+    print("SD data of", mol.GetTitle())
+    # loop over SD data
+    for dp in oechem.OEGetSDDataPairs(mol):
+        print(dp.GetTag(), ":", dp.GetValue())
