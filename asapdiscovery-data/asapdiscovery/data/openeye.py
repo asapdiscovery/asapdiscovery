@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Union, Dict  # noqa: F401
+from typing import Dict, List, Optional, Union  # noqa: F401
 
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
