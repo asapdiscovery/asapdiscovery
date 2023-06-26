@@ -605,3 +605,37 @@ def oemol_to_smiles(mol: oechem.OEMol) -> str:
        SMILES string of molecule
     """
     return oechem.OEMolToSmiles(mol)
+
+
+def oemol_to_inchi(mol: oechem.OEMol) -> str:
+    """
+    InChI string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       InChI string of molecule
+    """
+    return oechem.OECreateInChI(mol)
+
+
+def oemol_to_inchikey(mol: oechem.OEMol) -> str:
+    """
+    InChI key string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       InChI key string of molecule
+    """
+    return oechem.OECreateInChIKey(mol)

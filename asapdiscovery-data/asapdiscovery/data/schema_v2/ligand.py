@@ -9,6 +9,8 @@ from asapdiscovery.data.openeye import (
     oemol_to_smiles,
     sdf_string_to_oemol,
     smiles_to_oemol,
+    oemol_to_inchi,
+    oemol_to_inchikey,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from pydantic import Field
@@ -89,12 +91,12 @@ class Ligand(DataModelAbstractBase):
     @property
     def inchi(self) -> str:
         mol = sdf_string_to_oemol(self.data)
-        return oechem.OECreateInChI(mol)
+        return oemol_to_inchi(mol)
 
     @property
     def inchikey(self) -> str:
         mol = sdf_string_to_oemol(self.data)
-        return oechem.OECreateInChIKey(mol)
+        return oemol_to_inchikey(mol)
 
     @classmethod
     def from_sdf(
