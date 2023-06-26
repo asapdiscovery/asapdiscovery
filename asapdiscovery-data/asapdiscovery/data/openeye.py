@@ -546,7 +546,7 @@ def oemol_to_sdf_string(mol: oechem.OEMol) -> str:
     return molstring
 
 
-def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
+def sdf_string_to_oemol(sdf_str: str) -> oechem.OEGraphMol:
     """
     Loads an SDF string into an openeye molecule
 
@@ -560,6 +560,7 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     oechem.OEMol:
        resulting OpenEye OEMol
     """
+
     ims = oechem.oemolistream()
     ims.SetFormat(oechem.OEFormat_SDF)
     ims.SetFlavor(
@@ -567,12 +568,10 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
         oechem.OEIFlavor_SDF_Default,
     )
     ims.openstring(sdf_str)
-    molecules = []
-    for mol in ims.GetOEMols():
-        molecules.append(oechem.OEMol(mol))
-    if len(molecules) != 1:
-        oechem.OEThrow.Fatal("More than one molecule in input stream")
-    return molecules[0]
+    # NOTE: must use GraphMol here, not OEMol, otherwise SD data will not be read
+    mol = oechem.OEGraphMol()
+    oechem.OEReadMolecule(ims, mol)
+    return mol
 
 
 def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:

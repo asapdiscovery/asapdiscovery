@@ -132,4 +132,3 @@ def test_sd_data(moonshot_sdf):
     assert "> <test_key>" in l1.data
     assert "test_key" in l1.data
     assert l1.get_SD_data("test_key") == "test_value"
-    raise Exception()
