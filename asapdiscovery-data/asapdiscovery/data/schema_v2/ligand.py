@@ -12,7 +12,9 @@ from asapdiscovery.data.openeye import (
     oemol_to_inchi,
     oemol_to_inchikey,
     set_SD_data,
+    set_SD_data_dict,
     get_SD_data,
+    get_SD_data_dict,
     print_SD_Data,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
@@ -118,9 +120,18 @@ class Ligand(DataModelAbstractBase):
         mol = set_SD_data(mol, {key: value})
         self.data = oemol_to_sdf_string(mol)
 
+    def set_SD_data_dict(self, data: Dict[str, str]) -> None:
+        mol = sdf_string_to_oemol(self.data)
+        mol = set_SD_data_dict(mol, data)
+        self.data = oemol_to_sdf_string(mol)
+
     def get_SD_data(self, key: str) -> str:
         mol = sdf_string_to_oemol(self.data)
         return get_SD_data(mol, key)
+
+    def get_SD_data_dict(self) -> Dict[str, str]:
+        mol = sdf_string_to_oemol(self.data)
+        return get_SD_data_dict(mol)
 
     def print_SD_Data(self) -> None:
         mol = sdf_string_to_oemol(self.data)

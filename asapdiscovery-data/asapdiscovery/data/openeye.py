@@ -663,6 +663,32 @@ def set_SD_data(mol: oechem.OEMol, data: Dict[str, str]) -> oechem.OEMol:
     return mol
 
 
+def set_SD_data_dict(mol: oechem.OEMol, data: Dict[str, str]) -> oechem.OEMol:
+    """
+    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data set
+    """
+    for key, value in data.items():
+        try:
+            key = str(key)
+            value = str(value)
+        except:
+            raise Exception(
+                f"SD data key {key} or value {value} is not castable  a string"
+            )
+        oechem.OESetSDData(mol, key, value)
+    return mol
+
+
 def get_SD_data(mol: oechem.OEMol, key: str) -> str:
     """
     Get the SD data on an OpenEye OEMol
@@ -680,10 +706,28 @@ def get_SD_data(mol: oechem.OEMol, key: str) -> str:
     return oechem.OEGetSDData(mol, key)
 
 
+def get_SD_data_dict(mol: oechem.OEMol) -> Dict[str, str]:
+    """
+    Get all SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary of SD data
+    """
+    sd_data = {}
+    for dp in oechem.OEGetSDDataPairs(mol):
+        sd_data[dp.GetTag()] = dp.GetValue()
+    return sd_data
+
+
 def print_SD_Data(mol: oechem.OEMol) -> None:
     print("SD data of", mol.GetTitle())
     # loop over SD data
-    print("START")
     for dp in oechem.OEGetSDDataPairs(mol):
         print(dp.GetTag(), ":", dp.GetValue())
-    print("END")
