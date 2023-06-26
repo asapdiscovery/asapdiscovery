@@ -70,3 +70,10 @@ def test_target_json_roundtrip(
     )
     t2 = Target.from_json(t1.json())
     assert t1 == t2
+
+
+def test_target_json_roundtrip(moonshot_pdb):
+    t1 = Target.from_pdb(moonshot_pdb, "TargetTestName")
+    t2 = Target.from_pdb(moonshot_pdb)
+    assert t1.data_equal(t2)
+    assert not t1 == t2
