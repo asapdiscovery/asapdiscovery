@@ -142,6 +142,7 @@ def test_print_sd_data(moonshot_sdf):
 
 def test_get_set_sd_data_dict(moonshot_sdf):
     l1 = Ligand.from_sdf(moonshot_sdf)
-    data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": 3}
+    data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
     l1.set_SD_data_dict(data)
     data_pulled = l1.get_SD_data_dict()
+    assert data_pulled == data

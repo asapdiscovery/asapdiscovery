@@ -117,7 +117,7 @@ class Ligand(DataModelAbstractBase):
 
     def set_SD_data(self, key: str, value: str) -> None:
         mol = sdf_string_to_oemol(self.data)
-        mol = set_SD_data(mol, {key: value})
+        mol = set_SD_data(mol, key, value)
         self.data = oemol_to_sdf_string(mol)
 
     def set_SD_data_dict(self, data: Dict[str, str]) -> None:

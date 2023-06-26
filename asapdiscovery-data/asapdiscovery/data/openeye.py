@@ -644,7 +644,7 @@ def oemol_to_inchikey(mol: oechem.OEMol) -> str:
     return oechem.OECreateInChIKey(mol)
 
 
-def set_SD_data(mol: oechem.OEMol, data: Dict[str, str]) -> oechem.OEMol:
+def set_SD_data(mol: oechem.OEMol, key: str, value: str) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol
 
@@ -658,8 +658,12 @@ def set_SD_data(mol: oechem.OEMol, data: Dict[str, str]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    for key, value in data.items():
-        oechem.OESetSDData(mol, key, value)
+    try:
+        key = str(key)
+        value = str(value)
+    except:
+        raise Exception(f"SD data key {key} or value {value} is not castable  a string")
+    oechem.OESetSDData(mol, key, value)
     return mol
 
 
