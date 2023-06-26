@@ -105,8 +105,10 @@ class Target(DataModelAbstractBase):
     def from_oedu(
         cls, du_file: Union[str, Path], target_name: str | None = None, **kwargs
     ) -> Target:
+        #TODO: test
         pdb_str = oedu_to_pdb_string(du_file)
         return cls(data=pdb_str, target_name=target_name, **kwargs)
 
     def to_oedu(self) -> oechem.OEDesignUnit:
+        #TODO: test
         return pdb_string_to_oedu(self.data)
