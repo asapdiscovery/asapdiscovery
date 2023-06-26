@@ -661,8 +661,10 @@ def set_SD_data(mol: oechem.OEMol, key: str, value: str) -> oechem.OEMol:
     try:
         key = str(key)
         value = str(value)
-    except:
-        raise Exception(f"SD data key {key} or value {value} is not castable  a string")
+    except ValueError as v:
+        raise ValueError(
+            f"SD data key {key} or value {value} is not castable  a string"
+        ) from v
     oechem.OESetSDData(mol, key, value)
     return mol
 
@@ -685,10 +687,10 @@ def set_SD_data_dict(mol: oechem.OEMol, data: Dict[str, str]) -> oechem.OEMol:
         try:
             key = str(key)
             value = str(value)
-        except:
+        except ValueError as v:
             raise Exception(
                 f"SD data key {key} or value {value} is not castable  a string"
-            )
+            ) from v
         oechem.OESetSDData(mol, key, value)
     return mol
 
