@@ -562,6 +562,10 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     """
     ims = oechem.oemolistream()
     ims.SetFormat(oechem.OEFormat_SDF)
+    ims.SetFlavor(
+        oechem.OEFormat_SDF,
+        oechem.OEIFlavor_SDF_Default,
+    )
     ims.openstring(sdf_str)
     molecules = []
     for mol in ims.GetOEMols():
@@ -675,3 +679,12 @@ def get_SD_data(mol: oechem.OEMol, key: str) -> str:
         SD data value
     """
     return oechem.OEGetSDData(mol, key)
+
+
+def print_SD_Data(mol: oechem.OEMol) -> None:
+    print("SD data of", mol.GetTitle())
+    # loop over SD data
+    print("START")
+    for dp in oechem.OEGetSDDataPairs(mol):
+        print(dp.GetTag(), ":", dp.GetValue())
+    print("END")

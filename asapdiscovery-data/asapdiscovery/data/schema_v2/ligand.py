@@ -13,6 +13,7 @@ from asapdiscovery.data.openeye import (
     oemol_to_inchikey,
     set_SD_data,
     get_SD_data,
+    print_SD_Data,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from pydantic import Field
@@ -118,8 +119,14 @@ class Ligand(DataModelAbstractBase):
         self.data = oemol_to_sdf_string(mol)
 
     def get_SD_data(self, key: str) -> str:
+        print(self.data)
         mol = sdf_string_to_oemol(self.data)
+        print_SD_Data(mol)
         return get_SD_data(mol, key)
+
+    def print_SD_Data(self) -> None:
+        mol = sdf_string_to_oemol(self.data)
+        print_SD_Data(mol)
 
 
 class ReferenceLigand(Ligand):
