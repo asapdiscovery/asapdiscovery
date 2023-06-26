@@ -75,6 +75,18 @@ class Target(DataModelAbstractBase):
         pdb_str = read_file_directly(pdb_file)
         return cls(data=pdb_str, target_name=target_name, **kwargs)
 
+    @classmethod
+    def from_pdb_via_openeye(
+        cls, pdb_file: Union[str, Path], target_name: str | None = None, **kwargs
+    ) -> Target:
+        # directly read in data
+        pdb_str = read_file_directly(pdb_file)
+        # NOTE: tradeof between speed and consistency with `from_pdb` method lines below will make sure that the pdb string is
+        # consistent between a load and dump by roundtripping through and openeye mol but will slow down the process significantly.
+        mol = pdb_string_to_oemol(pdb_str)
+        pdb_str = oemol_to_pdb_string(mol)
+        return cls(data=pdb_str, target_name=target_name, **kwargs)
+
     def to_pdb(self, filename: Union[str, Path]) -> None:
         # directly write out data
         write_file_directly(filename, self.data)

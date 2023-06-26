@@ -6,7 +6,15 @@ from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 @pytest.fixture(scope="session")
 def moonshot_pdb():
-    pdb = fetch_test_file("Mpro-P2660_0A_bound_oe_processed.pdb")
+    pdb = fetch_test_file("Mpro-P2660_0A_bound.pdb")  # has a whole bunch of cruft in it
+    return pdb
+
+
+@pytest.fixture(scope="session")
+def moonshot_pdb_processed():
+    pdb = fetch_test_file(
+        "Mpro-P2660_0A_bound_oe_processed.pdb"
+    )  # already been processed with openeye
     return pdb
 
 
@@ -78,8 +86,19 @@ def test_target_data_equal(moonshot_pdb):
     assert not t1 == t2
 
 
-def test_oemol_roundtrip(moonshot_pdb):
-    t1 = Target.from_pdb(moonshot_pdb)
+def test_oemol_roundtrip(
+    moonshot_pdb_processed,
+):  # test that pre-processed pdb files can be read in and out consistently
+    t1 = Target.from_pdb(moonshot_pdb_processed)
+    mol = t1.to_oemol()
+    t2 = Target.from_oemol(mol)
+    assert t1 == t2
+
+
+def test_oemol_roundtrip_via_openeye(
+    moonshot_pdb,
+):  # test that a pdb file can be read in and out consistently via roundtrip through openeye
+    t1 = Target.from_pdb_via_openeye(moonshot_pdb)
     mol = t1.to_oemol()
     t2 = Target.from_oemol(mol)
     assert t1 == t2
