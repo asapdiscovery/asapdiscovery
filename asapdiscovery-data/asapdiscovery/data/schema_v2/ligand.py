@@ -11,9 +11,11 @@ from asapdiscovery.data.openeye import (
     smiles_to_oemol,
     oemol_to_inchi,
     oemol_to_inchikey,
+    set_SD_data,
+    get_SD_data,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from pydantic import Field, root_validator
+from pydantic import Field
 
 from .schema_base import (
     DataModelAbstractBase,
@@ -109,6 +111,15 @@ class Ligand(DataModelAbstractBase):
     def to_sdf(self, filename: str | Path) -> None:
         # directly write out data
         write_file_directly(filename, self.data)
+
+    def set_SD_data(self, key: str, value: str) -> None:
+        mol = sdf_string_to_oemol(self.data)
+        mol = set_SD_data(mol, {key: value})
+        self.data = oemol_to_sdf_string(mol)
+
+    def get_SD_data(self, key: str) -> str:
+        mol = sdf_string_to_oemol(self.data)
+        return get_SD_data(mol, key)
 
 
 class ReferenceLigand(Ligand):

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Union  # noqa: F401
+from typing import List, Optional, Union, Dict  # noqa: F401
 
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
@@ -639,3 +639,39 @@ def oemol_to_inchikey(mol: oechem.OEMol) -> str:
        InChI key string of molecule
     """
     return oechem.OECreateInChIKey(mol)
+
+
+def set_SD_data(mol: oechem.OEMol, data: Dict[str, str]) -> oechem.OEMol:
+    """
+    Set the SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data set
+    """
+    for key, value in data.items():
+        oechem.OESetSDData(mol, key, value)
+    return mol
+
+
+def get_SD_data(mol: oechem.OEMol, key: str) -> str:
+    """
+    Get the SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+        SD data value
+    """
+    return oechem.OEGetSDData(mol, key)

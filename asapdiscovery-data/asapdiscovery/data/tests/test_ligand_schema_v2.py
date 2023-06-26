@@ -81,12 +81,11 @@ def test_ligand_json_roundtrip(
     assert l1 == l2
 
 
-def test_ligand_sdf_rountrip(moonshot_sdf):
+def test_ligand_sdf_rountrip(moonshot_sdf, tmp_path):
     l1 = Ligand.from_sdf(moonshot_sdf)
-    l1.to_sdf("test.sdf")
-    l2 = Ligand.from_sdf("test.sdf")
+    l1.to_sdf(tmp_path / "test.sdf")
+    l2 = Ligand.from_sdf(tmp_path / "test.sdf")
     assert l1 == l2
-    os.unlink("test.sdf")
 
 
 @pytest.mark.parametrize(
@@ -96,7 +95,7 @@ def test_ligand_sdf_rountrip(moonshot_sdf):
 @pytest.mark.parametrize("postera_vc_id", ["test_postera_vc_id", None])
 @pytest.mark.parametrize("compound_name", ["test_name", None])
 def test_ligand_sdf_rountrip_data_only(
-    moonshot_sdf, compound_name, postera_vc_id, moonshot_compound_id, exp_data
+    moonshot_sdf, compound_name, postera_vc_id, moonshot_compound_id, exp_data, tmp_path
 ):
     l1 = Ligand.from_sdf(
         moonshot_sdf,
@@ -106,10 +105,9 @@ def test_ligand_sdf_rountrip_data_only(
         ),
         experimental_data=exp_data,
     )
-    l1.to_sdf("test.sdf")
-    l2 = Ligand.from_sdf("test.sdf")
+    l1.to_sdf(tmp_path / "test.sdf")
+    l2 = Ligand.from_sdf(tmp_path / "test.sdf")
     assert l1.data_equal(l2)
-    os.unlink("test.sdf")
 
 
 def test_ligand_oemol_rountrip(moonshot_sdf):
@@ -126,3 +124,12 @@ def test_ligand_oemol_rountrip_data_only(moonshot_sdf):
     mol_res = l1.to_oemol()
     l2 = Ligand.from_oemol(mol_res)
     assert l1.data_equal(l2)
+
+
+def test_sd_data(moonshot_sdf):
+    l1 = Ligand.from_sdf(moonshot_sdf)
+    l1.set_SD_data("test_key", "test_value")
+    assert "> <test_key>" in l1.data
+    assert "test_key" in l1.data
+    assert l1.get_SD_data("test_key") == "test_value"
+    raise Exception()
