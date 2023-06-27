@@ -7,8 +7,6 @@ from asapdiscovery.data.openeye import (
     oechem,
     oemol_to_pdb_string,
     pdb_string_to_oemol,
-    oedu_to_pdb_string,
-    oemol_to_oedu,
 )
 from .dynamic_properties import TargetType
 from pydantic import Field
@@ -100,3 +98,19 @@ class Target(DataModelAbstractBase):
 
     def to_oemol(self) -> oechem.OEMol:
         return pdb_string_to_oemol(self.data)
+
+    """
+    we are deferring responsibility of writing to and from OEDesignUnit to the caller
+    as it doesn't really make sense to force a specific OESpruce workflow on the user.
+    as there are so many different ways to generate a OEDesignUnit from a PDB file
+    depending on the options used.
+    
+    Therefore the user is responsible for reading and outputting an OEMol or OEGraphMol of the OEDesignUnit
+    component in question. 
+
+    eg.
+
+    L = Ligand.from_pdb('complex.pdb')
+    prepped_oemol = prep_oemol(L.to_oemol())
+    L2 = Ligand.from_oemol(prepped_oemol)
+    """
