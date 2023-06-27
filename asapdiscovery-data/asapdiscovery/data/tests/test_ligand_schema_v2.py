@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.data.schema import ExperimentalCompoundData
@@ -42,15 +44,24 @@ def test_inchi_key(smiles):
     "exp_data", [ExperimentalCompoundData(compound_id="blah", smiles="CCCC"), None]
 )  # FIXME this should be forced to match
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
-@pytest.mark.parametrize("postera_vc_id", ["test_postera_vc_id", None])
+@pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
+@pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
 @pytest.mark.parametrize("compound_name", ["test_name", None])
 def test_ligand_dict_roundtrip(
-    smiles, compound_name, postera_vc_id, moonshot_compound_id, exp_data
+    smiles,
+    compound_name,
+    manifold_api_id,
+    manifold_vc_id,
+    moonshot_compound_id,
+    exp_data,
 ):
     l1 = Ligand.from_smiles(
         smiles,
+        compound_name=compound_name,
         ids=LigandIdentifiers(
-            postera_vc_id=postera_vc_id, moonshot_compound_id=moonshot_compound_id
+            manifold_api_id=manifold_api_id,
+            manifold_vc_id=manifold_vc_id,
+            moonshot_compound_id=moonshot_compound_id,
         ),
         experimental_data=exp_data,
     )
@@ -62,16 +73,24 @@ def test_ligand_dict_roundtrip(
     "exp_data", [ExperimentalCompoundData(compound_id="blah", smiles="CCCC"), None]
 )  # FIXME this should be forced to match
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
-@pytest.mark.parametrize("postera_vc_id", ["test_postera_vc_id", None])
+@pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
+@pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
 @pytest.mark.parametrize("compound_name", ["test_name", None])
 def test_ligand_json_roundtrip(
-    smiles, compound_name, postera_vc_id, moonshot_compound_id, exp_data
+    smiles,
+    compound_name,
+    manifold_api_id,
+    manifold_vc_id,
+    moonshot_compound_id,
+    exp_data,
 ):
     l1 = Ligand.from_smiles(
         smiles,
         compound_name=compound_name,
         ids=LigandIdentifiers(
-            postera_vc_id=postera_vc_id, moonshot_compound_id=moonshot_compound_id
+            manifold_api_id=manifold_api_id,
+            manifold_vc_id=manifold_vc_id,
+            moonshot_compound_id=moonshot_compound_id,
         ),
         experimental_data=exp_data,
     )
@@ -90,16 +109,25 @@ def test_ligand_sdf_rountrip(moonshot_sdf, tmp_path):
     "exp_data", [ExperimentalCompoundData(compound_id="blah", smiles="CCCC"), None]
 )  # FIXME this should be forced to match
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
-@pytest.mark.parametrize("postera_vc_id", ["test_postera_vc_id", None])
+@pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
+@pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
 @pytest.mark.parametrize("compound_name", ["test_name", None])
 def test_ligand_sdf_rountrip_data_only(
-    moonshot_sdf, compound_name, postera_vc_id, moonshot_compound_id, exp_data, tmp_path
+    moonshot_sdf,
+    compound_name,
+    manifold_api_id,
+    manifold_vc_id,
+    moonshot_compound_id,
+    exp_data,
+    tmp_path,
 ):
     l1 = Ligand.from_sdf(
         moonshot_sdf,
         compound_name=compound_name,
         ids=LigandIdentifiers(
-            postera_vc_id=postera_vc_id, moonshot_compound_id=moonshot_compound_id
+            manifold_api_id=manifold_api_id,
+            manifold_vc_id=manifold_vc_id,
+            moonshot_compound_id=moonshot_compound_id,
         ),
         experimental_data=exp_data,
     )

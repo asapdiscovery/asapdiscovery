@@ -1,7 +1,6 @@
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
+from uuid import UUID
 
 from asapdiscovery.data.openeye import (
     get_SD_data,
@@ -18,7 +17,7 @@ from asapdiscovery.data.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from pydantic import Field
+from pydantic import UUID4, Field
 
 from .schema_base import (
     DataModelAbstractBase,
@@ -40,8 +39,18 @@ class LigandIdentifiers(DataModelAbstractBase):
     Identifiers for a Ligand
     """
 
-    moonshot_compound_id: str = Field(None, description="Moonshot compound ID")
-    postera_vc_id: str | None = Field(None, description="Unique VC ID from Postera")
+    moonshot_compound_id: Optional[str] = Field(
+        None, description="Moonshot compound ID"
+    )
+    manifold_api_id: Optional[UUID] = Field(
+        None, description="Unique ID from Postera Manifold API"
+    )
+    manifold_vc_id: Optional[str] = Field(
+        None, description="Unique VC ID (virtual compound ID) from Postera Manifold"
+    )
+    compchem_id: Optional[UUID4] = Field(
+        None, description="Unique ID for P5 compchem reference"
+    )
 
 
 class Ligand(DataModelAbstractBase):
@@ -50,11 +59,11 @@ class Ligand(DataModelAbstractBase):
     """
 
     compound_name: str = Field(None, description="Name of compound")
-    ids: LigandIdentifiers | None = Field(
+    ids: Optional[LigandIdentifiers] = Field(
         None,
         description="LigandIdentifiers Schema for identifiers associated with this ligand",
     )
-    experimental_data: ExperimentalCompoundData | None = Field(
+    experimental_data: Optional[ExperimentalCompoundData] = Field(
         None,
         description="ExperimentalCompoundData Schema for experimental data associated with the compound",
     )
@@ -71,8 +80,8 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_oemol(
-        cls, mol: oechem.OEMol, compound_name: str | None = None, **kwargs
-    ) -> Ligand:
+        cls, mol: oechem.OEMol, compound_name: Optional[str] = None, **kwargs
+    ) -> "Ligand":
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
 
@@ -82,8 +91,8 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_smiles(
-        cls, smiles: str, compound_name: str | None = None, **kwargs
-    ) -> Ligand:
+        cls, smiles: str, compound_name: Optional[str] = None, **kwargs
+    ) -> "Ligand":
         mol = smiles_to_oemol(smiles)
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
@@ -105,13 +114,13 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_sdf(
-        cls, sdf_file: str | Path, compound_name: str | None = None, **kwargs
-    ) -> Ligand:
+        cls, sdf_file: Union[str, Path], compound_name: Optional[str] = None, **kwargs
+    ) -> "Ligand":
         # directly read in data
         sdf_str = read_file_directly(sdf_file)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
 
-    def to_sdf(self, filename: str | Path) -> None:
+    def to_sdf(self, filename: Union[str, Path]) -> None:
         # directly write out data
         write_file_directly(filename, self.data)
 
@@ -139,4 +148,4 @@ class Ligand(DataModelAbstractBase):
 
 
 class ReferenceLigand(Ligand):
-    target_name: str | None = None
+    target_name: Optional[str] = None
