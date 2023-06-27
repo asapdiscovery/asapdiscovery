@@ -111,10 +111,12 @@ def test_ligand_sdf_rountrip(moonshot_sdf, tmp_path):
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
 @pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
 @pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
+@pytest.mark.parametrize("compchem_id", [uuid4(), None])
 @pytest.mark.parametrize("compound_name", ["test_name", None])
 def test_ligand_sdf_rountrip_data_only(
     moonshot_sdf,
     compound_name,
+    compchem_id,
     manifold_api_id,
     manifold_vc_id,
     moonshot_compound_id,
@@ -128,6 +130,7 @@ def test_ligand_sdf_rountrip_data_only(
             manifold_api_id=manifold_api_id,
             manifold_vc_id=manifold_vc_id,
             moonshot_compound_id=moonshot_compound_id,
+            compchem_id=compchem_id,
         ),
         experimental_data=exp_data,
     )
@@ -155,18 +158,85 @@ def test_ligand_oemol_rountrip_data_only(moonshot_sdf):
 def test_get_set_sd_data(moonshot_sdf):
     l1 = Ligand.from_sdf(moonshot_sdf)
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
-    l1.set_SD_data_dict(data)
-    data_pulled = l1.get_SD_data_dict()
+    l1.set_SD_data(data)
+    data_pulled = l1.get_SD_data()
     assert data_pulled == data
 
 
 def test_print_sd_data(moonshot_sdf):
     l1 = Ligand.from_sdf(moonshot_sdf)
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
-    l1.set_SD_data_dict(data)
+    l1.set_SD_data(data)
     l1.print_SD_data()
 
 
-def test_flush_attrs_to_SD_data(moonshot_sdf):
-    l1 = Ligand.from_sdf(moonshot_sdf)
-    l1.flush_attrs_to_SD_data()
+@pytest.mark.parametrize("exp_data_vals", [{"pIC50": 5.0}, {}])
+@pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
+@pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
+@pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
+@pytest.mark.parametrize("compchem_id", [uuid4(), None])
+@pytest.mark.parametrize("compound_name", ["test_name", None])
+def test_ligand_sdf_rountrip_SD(
+    moonshot_sdf,
+    compound_name,
+    compchem_id,
+    manifold_api_id,
+    manifold_vc_id,
+    moonshot_compound_id,
+    exp_data_vals,
+    tmp_path,
+):
+    exp_data = ExperimentalCompoundData(
+        compound_id="blah", smiles="CCCC", experimental_data=exp_data_vals
+    )
+    l1 = Ligand.from_sdf(
+        moonshot_sdf,
+        compound_name=compound_name,
+        ids=LigandIdentifiers(
+            manifold_api_id=manifold_api_id,
+            manifold_vc_id=manifold_vc_id,
+            moonshot_compound_id=moonshot_compound_id,
+            compchem_id=compchem_id,
+        ),
+        experimental_data=exp_data,
+    )
+    # serialize with SD data
+    l1.to_sdf(tmp_path / "test_with_attrs.sdf")
+    # read with SD data
+    l2 = Ligand.from_sdf(tmp_path / "test_with_attrs.sdf")
+    assert l1 == l2
+
+    # read in without poping SD tags to attributes
+    # data dict should still be equal
+    l3 = Ligand.from_sdf(tmp_path / "test_with_attrs.sdf", read_SD_attrs=False)
+    assert l3 != l1
+    assert l3.data_equal(l1)
+
+    l1 = Ligand.from_sdf(
+        moonshot_sdf,
+        compound_name=compound_name,
+        ids=LigandIdentifiers(
+            manifold_api_id=manifold_api_id,
+            manifold_vc_id=manifold_vc_id,
+            moonshot_compound_id=moonshot_compound_id,
+            compchem_id=compchem_id,
+        ),
+        experimental_data=exp_data,
+    )
+
+    # serialize without SD data
+    l4 = Ligand.from_sdf(
+        moonshot_sdf,
+        compound_name=compound_name,
+        ids=LigandIdentifiers(
+            manifold_api_id=manifold_api_id,
+            manifold_vc_id=manifold_vc_id,
+            moonshot_compound_id=moonshot_compound_id,
+            compchem_id=compchem_id,
+        ),
+        experimental_data=exp_data,
+        read_SD_attrs=False,
+    )
+    l4.to_sdf(tmp_path / "test_without_attrs.sdf", write_SD_attrs=False)
+    l5 = Ligand.from_sdf(tmp_path / "test_without_attrs.sdf", read_SD_attrs=False)
+    assert l4 == l1

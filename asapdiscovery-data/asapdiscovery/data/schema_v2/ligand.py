@@ -12,8 +12,9 @@ from asapdiscovery.data.openeye import (
     print_SD_Data,
     sdf_string_to_oemol,
     set_SD_data,
+    _set_SD_data_repr,
     get_SD_data,
-    get_SD_data_to_object,
+    _get_SD_data_to_object,
     smiles_to_oemol,
 )
 from .experimental import ExperimentalCompoundData
@@ -49,7 +50,7 @@ class LigandIdentifiers(DataModelAbstractBase):
         None, description="Unique VC ID (virtual compound ID) from Postera Manifold"
     )
     compchem_id: Optional[UUID4] = Field(
-        None, description="Unique ID for P5 compchem reference"
+        None, description="Unique ID for P5 compchem reference, unused for now"
     )
 
     def to_SD_tags(self) -> Dict[str, str]:
@@ -121,19 +122,60 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_sdf(
-        cls, sdf_file: Union[str, Path], compound_name: Optional[str] = None, **kwargs
+        cls,
+        sdf_file: Union[str, Path],
+        compound_name: Optional[str] = None,
+        read_SD_attrs: bool = True,
+        **kwargs,
     ) -> "Ligand":
+        """
+        Read in a ligand from an SDF file.
+        If read_SD_attrs is True, then SD tags will be read in as attributes, overriding kwargs where double defined.
+        If read_SD_attrs is False, then SD tags will not be read in as attributes, and kwargs will be used instead
+
+        Parameters
+        ----------
+        sdf_file : Union[str, Path]
+            Path to the SDF file
+        compound_name : Optional[str], optional
+            Name of the compound, by default None
+        read_SD_attrs : bool, optional
+            Whether to read in SD tags as attributes, by default True, overrides kwargs
+        """
         # directly read in data
         sdf_str = read_file_directly(sdf_file)
-        return cls(data=sdf_str, compound_name=compound_name, **kwargs)
+        lig = cls(data=sdf_str, compound_name=compound_name, **kwargs)
+        if read_SD_attrs:
+            lig.pop_attrs_from_SD_data()
+        return lig
 
-    def to_sdf(self, filename: Union[str, Path]) -> None:
+    def to_sdf(self, filename: Union[str, Path], write_SD_attrs: bool = True) -> None:
+        """
+        Write out the ligand to an SDF file
+        If write_SD_attrs is True, then SD tags will be written out as attributes
+        If write_SD_attrs is False, then SD tags will not be written out as attributes
+
+        Parameters
+        ----------
+        filename : Union[str, Path]
+            Path to the SDF file
+        write_SD_attrs : bool, optional
+            Whether to write out SD tags as attributes, by default True
+
+        """
+        if write_SD_attrs:
+            self.flush_attrs_to_SD_data()
         # directly write out data
         write_file_directly(filename, self.data)
 
     def set_SD_data(self, data: dict[str, str]) -> None:
         mol = sdf_string_to_oemol(self.data)
         mol = set_SD_data(mol, data)
+        self.data = oemol_to_sdf_string(mol)
+
+    def _set_SD_data_repr(self, data: dict[str, str]) -> None:
+        mol = sdf_string_to_oemol(self.data)
+        mol = _set_SD_data_repr(mol, data)
         self.data = oemol_to_sdf_string(mol)
 
     def get_SD_data(self) -> dict[str, str]:
@@ -154,22 +196,22 @@ class Ligand(DataModelAbstractBase):
             data["ids"] = self.ids.to_SD_tags()
         if self.experimental_data is not None:
             # Cannot use nested dicts in SD data so we pop the values in experimental_data to a separate key
+            # `experimental_data_values`
             (
                 data["experimental_data"],
                 data["experimental_data_values"],
             ) = self.experimental_data.to_SD_tags()
         # update SD data
-        self.set_SD_data(data)
+        self._set_SD_data_repr(data)
 
     def pop_attrs_from_SD_data(self) -> None:
         """Pop all attributes from SD data"""
-        sd_data = get_SD_data_to_object(self.to_oemol())
-        sd_data
+        sd_data = _get_SD_data_to_object(self.to_oemol())
         data = self.dict()
         # update keys from SD data
         data.update(sd_data)
 
-        # put experimental data values back into experimental_data
+        # put experimental data values back into experimental_data if they exist
         if "experimental_data_values" in data:
             data["experimental_data"]["experimental_data"] = data.pop(
                 "experimental_data_values"
