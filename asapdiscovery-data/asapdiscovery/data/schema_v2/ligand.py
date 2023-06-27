@@ -4,7 +4,6 @@ from uuid import UUID
 
 from asapdiscovery.data.openeye import (
     get_SD_data,
-    get_SD_data_dict,
     oechem,
     oemol_to_inchi,
     oemol_to_inchikey,
@@ -13,7 +12,6 @@ from asapdiscovery.data.openeye import (
     print_SD_Data,
     sdf_string_to_oemol,
     set_SD_data,
-    set_SD_data_dict,
     smiles_to_oemol,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
@@ -124,23 +122,14 @@ class Ligand(DataModelAbstractBase):
         # directly write out data
         write_file_directly(filename, self.data)
 
-    def set_SD_data(self, key: str, value: str) -> None:
+    def set_SD_data(self, data: dict[str, str]) -> None:
         mol = sdf_string_to_oemol(self.data)
-        mol = set_SD_data(mol, key, value)
+        mol = set_SD_data(mol, data)
         self.data = oemol_to_sdf_string(mol)
 
-    def set_SD_data_dict(self, data: dict[str, str]) -> None:
+    def get_SD_data(self) -> dict[str, str]:
         mol = sdf_string_to_oemol(self.data)
-        mol = set_SD_data_dict(mol, data)
-        self.data = oemol_to_sdf_string(mol)
-
-    def get_SD_data(self, key: str) -> str:
-        mol = sdf_string_to_oemol(self.data)
-        return get_SD_data(mol, key)
-
-    def get_SD_data_dict(self) -> dict[str, str]:
-        mol = sdf_string_to_oemol(self.data)
-        return get_SD_data_dict(mol)
+        return get_SD_data(mol)
 
     def print_SD_Data(self) -> None:
         mol = sdf_string_to_oemol(self.data)

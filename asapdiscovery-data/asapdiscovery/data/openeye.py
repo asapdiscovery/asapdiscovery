@@ -644,32 +644,7 @@ def oemol_to_inchikey(mol: oechem.OEMol) -> str:
     return oechem.OECreateInChIKey(mol)
 
 
-def set_SD_data(mol: oechem.OEMol, key: str, value: str) -> oechem.OEMol:
-    """
-    Set the SD data on an OpenEye OEMol
-
-    Parameters
-    ----------
-    mol: oechem.OEMol
-        OpenEye OEMol
-
-    Returns
-    -------
-    oechem.OEMol
-        OpenEye OEMol with SD data set
-    """
-    try:
-        key = str(key)
-        value = str(value)
-    except ValueError as v:
-        raise ValueError(
-            f"SD data key {key} or value {value} is not castable  a string"
-        ) from v
-    oechem.OESetSDData(mol, key, value)
-    return mol
-
-
-def set_SD_data_dict(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
+def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
 
@@ -695,24 +670,7 @@ def set_SD_data_dict(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     return mol
 
 
-def get_SD_data(mol: oechem.OEMol, key: str) -> str:
-    """
-    Get the SD data on an OpenEye OEMol
-
-    Parameters
-    ----------
-    mol: oechem.OEMol
-        OpenEye OEMol
-
-    Returns
-    -------
-    str
-        SD data value
-    """
-    return oechem.OEGetSDData(mol, key)
-
-
-def get_SD_data_dict(mol: oechem.OEMol) -> dict[str, str]:
+def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
     """
     Get all SD data on an OpenEye OEMol
 
