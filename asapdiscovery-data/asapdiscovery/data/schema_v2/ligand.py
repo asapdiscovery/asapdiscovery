@@ -17,7 +17,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from pydantic import Field, UUID4
-from uuid import uuid4, UUID
+from uuid import UUID
 
 from .schema_base import (
     DataModelAbstractBase,
