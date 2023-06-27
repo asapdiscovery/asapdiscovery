@@ -3,6 +3,8 @@ from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 from uuid import UUID
 
 from asapdiscovery.data.openeye import (
+    _get_SD_data_to_object,
+    _set_SD_data_repr,
     get_SD_data,
     oechem,
     oemol_to_inchi,
@@ -12,14 +14,11 @@ from asapdiscovery.data.openeye import (
     print_SD_Data,
     sdf_string_to_oemol,
     set_SD_data,
-    _set_SD_data_repr,
-    get_SD_data,
-    _get_SD_data_to_object,
     smiles_to_oemol,
 )
-from .experimental import ExperimentalCompoundData
 from pydantic import UUID4, Field
 
+from .experimental import ExperimentalCompoundData
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
@@ -53,7 +52,7 @@ class LigandIdentifiers(DataModelAbstractBase):
         None, description="Unique ID for P5 compchem reference, unused for now"
     )
 
-    def to_SD_tags(self) -> Dict[str, str]:
+    def to_SD_tags(self) -> dict[str, str]:
         """
         Convert to a dictionary of SD tags
         """

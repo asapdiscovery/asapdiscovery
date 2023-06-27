@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
 from datetime import date
 from typing import Tuple
+
+from pydantic import BaseModel, Field
 
 
 # From FAH ###################################
@@ -48,7 +49,7 @@ class ExperimentalCompoundData(Model):
         description='Experimental data fields, including "pIC50" and uncertainty (either "pIC50_stderr" or  "pIC50_{lower|upper}"',
     )
 
-    def to_SD_tags(self) -> Tuple[dict[str, str], dict[str, float]]:
+    def to_SD_tags(self) -> tuple[dict[str, str], dict[str, float]]:
         """
         Convert to a dictionary of SD tags
         """
