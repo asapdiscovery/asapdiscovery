@@ -1,4 +1,4 @@
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from asapdiscovery.data.openeye import load_openeye_sdf
