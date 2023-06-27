@@ -32,7 +32,7 @@ def test_targettype_init(ttype):
 
 def test_targettype_init_bad_name():
     with pytest.raises(ValueError):
-        tt = TargetType("bad_name")
+        _ = TargetType("bad_name")
 
 
 @pytest.mark.parametrize("ttype", ["sars2", "mers", "mac1"])
