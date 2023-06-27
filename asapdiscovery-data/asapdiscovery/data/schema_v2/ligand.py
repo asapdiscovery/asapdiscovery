@@ -16,7 +16,8 @@ from asapdiscovery.data.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from pydantic import Field
+from pydantic import Field, UUID4
+from uuid import uuid4, UUID
 
 from .schema_base import (
     DataModelAbstractBase,
@@ -41,11 +42,14 @@ class LigandIdentifiers(DataModelAbstractBase):
     moonshot_compound_id: Optional[str] = Field(
         None, description="Moonshot compound ID"
     )
-    manifold_id: Optional[str] = Field(
-        None, description="Unique ID from Postera Manifold"
+    manifold_api_id: Optional[UUID] = Field(
+        None, description="Unique ID from Postera Manifold API"
     )
     manifold_vc_id: Optional[str] = Field(
         None, description="Unique VC ID (virtual compound ID) from Postera Manifold"
+    )
+    compchem_id: Optional[UUID4] = Field(
+        None, description="Unique ID for P5 compchem reference"
     )
 
 
