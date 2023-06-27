@@ -1,6 +1,6 @@
 import pytest
-from asapdiscovery.data.schema_v2.target import Target, TargetIdentifiers
 from asapdiscovery.data.schema_v2.dynamic_properties import TargetType
+from asapdiscovery.data.schema_v2.target import Target, TargetIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
@@ -20,7 +20,7 @@ def moonshot_pdb_processed():
 
 @pytest.fixture(scope="session")
 def moonshot_pdb_contents(moonshot_pdb):
-    with open(moonshot_pdb, "r") as f:
+    with open(moonshot_pdb) as f:
         return f.read()
 
 

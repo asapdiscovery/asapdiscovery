@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
-from enum import Enum
+
 from asapdiscovery.data.openeye import (
     oechem,
     oemol_to_pdb_string,
     pdb_string_to_oemol,
 )
-from .dynamic_properties import TargetType
 from pydantic import Field
 
+from .dynamic_properties import TargetType
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
@@ -28,16 +29,16 @@ class TargetIdentifiers(DataModelAbstractBase):
     Identifiers for a Ligand
     """
 
-    target_type: Optional[TargetType] = Field(
+    target_type: TargetType | None = Field(
         None,
         description="Dynamic Enum describing the target type e.g sars2, mers or mac1",
     )
 
-    fragalysis_id: Optional[str] = Field(
+    fragalysis_id: str | None = Field(
         None, description="The PDB code of the target if applicable"
     )
 
-    pdb_code: Optional[str] = Field(
+    pdb_code: str | None = Field(
         None, description="The PDB code of the target if applicable"
     )
 
@@ -49,7 +50,7 @@ class Target(DataModelAbstractBase):
 
     target_name: str = Field(None, description="The name of the target")
 
-    ids: Optional[TargetIdentifiers] = Field(
+    ids: TargetIdentifiers | None = Field(
         None,
         description="TargetIdentifiers Schema for identifiers associated with this ligand",
     )
@@ -67,7 +68,7 @@ class Target(DataModelAbstractBase):
 
     @classmethod
     def from_pdb(
-        cls, pdb_file: Union[str, Path], target_name: str | None = None, **kwargs
+        cls, pdb_file: str | Path, target_name: str | None = None, **kwargs
     ) -> Target:
         # directly read in data
         pdb_str = read_file_directly(pdb_file)
@@ -75,7 +76,7 @@ class Target(DataModelAbstractBase):
 
     @classmethod
     def from_pdb_via_openeye(
-        cls, pdb_file: Union[str, Path], target_name: str | None = None, **kwargs
+        cls, pdb_file: str | Path, target_name: str | None = None, **kwargs
     ) -> Target:
         # directly read in data
         pdb_str = read_file_directly(pdb_file)
@@ -85,7 +86,7 @@ class Target(DataModelAbstractBase):
         pdb_str = oemol_to_pdb_string(mol)
         return cls(data=pdb_str, target_name=target_name, **kwargs)
 
-    def to_pdb(self, filename: Union[str, Path]) -> None:
+    def to_pdb(self, filename: str | Path) -> None:
         # directly write out data
         write_file_directly(filename, self.data)
 
