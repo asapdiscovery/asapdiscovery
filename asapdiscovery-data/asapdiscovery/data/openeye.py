@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import Dict, List, Optional, Union, Any  # noqa: F401
 
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
@@ -659,13 +659,9 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
         OpenEye OEMol with SD data set
     """
     for key, value in data.items():
-        try:
-            key = str(key)
-            value = str(value)
-        except ValueError as v:
-            raise Exception(
-                f"SD data key {key} or value {value} is not castable  a string"
-            ) from v
+        # NOTE: use repr to ensure re-reading the SD data will give the same value
+        key = key
+        value = repr(value)
         oechem.OESetSDData(mol, key, value)
     return mol
 
@@ -687,6 +683,28 @@ def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
     sd_data = {}
     for dp in oechem.OEGetSDDataPairs(mol):
         sd_data[dp.GetTag()] = dp.GetValue()
+    return sd_data
+
+
+def get_SD_data_to_object(mol: oechem.OEMol) -> dict[str, Any]:
+    """
+    Get all SD data on an OpenEye OEMol, converting to Python objects
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary of SD data
+    """
+    import ast
+
+    sd_data = get_SD_data(mol)
+    for key, value in sd_data.items():
+        sd_data[key] = ast.literal_eval(value)
     return sd_data
 
 

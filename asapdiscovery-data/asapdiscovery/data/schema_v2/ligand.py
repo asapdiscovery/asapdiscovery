@@ -12,9 +12,11 @@ from asapdiscovery.data.openeye import (
     print_SD_Data,
     sdf_string_to_oemol,
     set_SD_data,
+    get_SD_data,
+    get_SD_data_to_object,
     smiles_to_oemol,
 )
-from asapdiscovery.data.schema import ExperimentalCompoundData
+from .experimental import ExperimentalCompoundData
 from pydantic import UUID4, Field
 
 from .schema_base import (
@@ -49,6 +51,13 @@ class LigandIdentifiers(DataModelAbstractBase):
     compchem_id: Optional[UUID4] = Field(
         None, description="Unique ID for P5 compchem reference"
     )
+
+    def to_SD_tags(self) -> Dict[str, str]:
+        """
+        Convert to a dictionary of SD tags
+        """
+        data = self.dict()
+        return {str(k): str(v) for k, v in data.items() if v is not None}
 
 
 class Ligand(DataModelAbstractBase):
@@ -131,9 +140,42 @@ class Ligand(DataModelAbstractBase):
         mol = sdf_string_to_oemol(self.data)
         return get_SD_data(mol)
 
-    def print_SD_Data(self) -> None:
+    def print_SD_data(self) -> None:
         mol = sdf_string_to_oemol(self.data)
         print_SD_Data(mol)
+
+    def flush_attrs_to_SD_data(self) -> None:
+        """Flush all attributes to SD data"""
+        data = self.dict()
+        # remove keys that are not SD data
+        data.pop("data")
+        data.pop("data_format")
+        if self.ids is not None:
+            data["ids"] = self.ids.to_SD_tags()
+        if self.experimental_data is not None:
+            # Cannot use nested dicts in SD data so we pop the values in experimental_data to a separate key
+            (
+                data["experimental_data"],
+                data["experimental_data_values"],
+            ) = self.experimental_data.to_SD_tags()
+        # update SD data
+        self.set_SD_data(data)
+
+    def pop_attrs_from_SD_data(self) -> None:
+        """Pop all attributes from SD data"""
+        sd_data = get_SD_data_to_object(self.to_oemol())
+        sd_data
+        data = self.dict()
+        # update keys from SD data
+        data.update(sd_data)
+
+        # put experimental data values back into experimental_data
+        if "experimental_data_values" in data:
+            data["experimental_data"]["experimental_data"] = data.pop(
+                "experimental_data_values"
+            )
+        # reconstruct object
+        self.__init__(**data)
 
 
 class ReferenceLigand(Ligand):
