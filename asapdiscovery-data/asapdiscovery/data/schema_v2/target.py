@@ -62,7 +62,7 @@ class Target(DataModelAbstractBase):
     @classmethod
     def from_pdb(
         cls, pdb_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
-    ) -> Target:
+    ) -> "Target":
         # directly read in data
         pdb_str = read_file_directly(pdb_file)
         return cls(data=pdb_str, target_name=target_name, **kwargs)
@@ -70,7 +70,7 @@ class Target(DataModelAbstractBase):
     @classmethod
     def from_pdb_via_openeye(
         cls, pdb_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
-    ) -> Target:
+    ) -> "Target":
         # directly read in data
         pdb_str = read_file_directly(pdb_file)
         # NOTE: tradeof between speed and consistency with `from_pdb` method lines below will make sure that the pdb string is
@@ -86,7 +86,7 @@ class Target(DataModelAbstractBase):
     @classmethod
     def from_oemol(
         cls, mol: oechem.OEMol, target_name: Optional[str] = None, **kwargs
-    ) -> Target:
+    ) -> "Target":
         pdb_str = oemol_to_pdb_string(mol)
         return cls(data=pdb_str, target_name=target_name, **kwargs)
 
