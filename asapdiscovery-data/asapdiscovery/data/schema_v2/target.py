@@ -4,11 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from asapdiscovery.data.openeye import (
-    oechem,
-    oemol_to_pdb_string,
-    pdb_string_to_oemol,
-)
+from asapdiscovery.data.openeye import oechem, oemol_to_pdb_string, pdb_string_to_oemol
 from pydantic import Field
 
 from .dynamic_properties import TargetType
@@ -105,9 +101,9 @@ class Target(DataModelAbstractBase):
     as it doesn't really make sense to force a specific OESpruce workflow on the user.
     as there are so many different ways to generate a OEDesignUnit from a PDB file
     depending on the options used.
-    
+
     Therefore the user is responsible for reading and outputting an OEMol or OEGraphMol of the OEDesignUnit
-    component in question. 
+    component in question.
 
     eg.
 
