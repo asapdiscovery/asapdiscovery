@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
+from uuid import UUID, uuid4
 
 from asapdiscovery.data.openeye import (
     get_SD_data,

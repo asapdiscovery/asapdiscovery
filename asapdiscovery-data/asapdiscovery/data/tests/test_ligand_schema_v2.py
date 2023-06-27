@@ -1,3 +1,5 @@
+from uuid import UUID, uuid4
+
 import pytest
 from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.data.schema import ExperimentalCompoundData
