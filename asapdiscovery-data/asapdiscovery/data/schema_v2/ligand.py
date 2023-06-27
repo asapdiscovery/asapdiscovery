@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
+from uuid import UUID, uuid4
 
 from asapdiscovery.data.openeye import (
     get_SD_data,
@@ -16,8 +17,7 @@ from asapdiscovery.data.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from pydantic import Field, UUID4
-from uuid import uuid4, UUID
+from pydantic import UUID4, Field
 
 from .schema_base import (
     DataModelAbstractBase,

@@ -1,9 +1,10 @@
+from uuid import UUID, uuid4
+
 import pytest
 from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from uuid import UUID, uuid4
 
 
 @pytest.fixture(scope="session")
