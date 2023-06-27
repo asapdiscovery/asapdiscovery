@@ -8,7 +8,7 @@ from asapdiscovery.data.openeye import (
     oemol_to_pdb_string,
     pdb_string_to_oemol,
     oedu_to_pdb_string,
-    pdb_string_to_oedu,
+    oemol_to_oedu,
 )
 from .dynamic_properties import TargetType
 from pydantic import Field
@@ -100,15 +100,3 @@ class Target(DataModelAbstractBase):
 
     def to_oemol(self) -> oechem.OEMol:
         return pdb_string_to_oemol(self.data)
-
-    @classmethod
-    def from_oedu(
-        cls, du_file: Union[str, Path], target_name: str | None = None, **kwargs
-    ) -> Target:
-        #TODO: test
-        pdb_str = oedu_to_pdb_string(du_file)
-        return cls(data=pdb_str, target_name=target_name, **kwargs)
-
-    def to_oedu(self) -> oechem.OEDesignUnit:
-        #TODO: test
-        return pdb_string_to_oedu(self.data)

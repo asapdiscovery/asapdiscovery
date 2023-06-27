@@ -762,9 +762,9 @@ def oemol_to_pdb_string(mol: oechem.OEMol) -> str:
     return molstring
 
 
-def pdb_string_to_oemol(pdb_str: str) -> oechem.OEMol:
+def pdb_string_to_oemol(pdb_str: str) -> oechem.OEGraphMol:
     """
-    Loads a PDB string into an OpenEye OEMol
+    Loads a PDB string into an OpenEye OEGraphMol
 
     Parameters
     ----------
@@ -808,24 +808,3 @@ def oedu_to_pdb_string(du: oechem.OEDesignUnit) -> str:
     oechem.OEWriteDesignUnit(oms, du)
     molstring = oms.GetString().decode("UTF-8")
     return molstring
-
-
-def pdb_string_to_oedu(pdb_str: str) -> oechem.OEDesignUnit:
-    """
-    Loads a PDB string into an OpenEye OEDesignUnit
-
-    Parameters
-    ----------
-    pdb_str: str
-        The string representation of a PDB file
-
-    Returns
-    -------
-    oechem.OEDesignUnit
-        resulting OpenEye OEDesignUnit
-    """
-    oemol = pdb_string_to_oemol(pdb_str)
-    dus = list(oespruce.OEMakeDesignUnits(oemol))
-    if len(dus) > 1:
-        oechem.OEThrow.Fatal("More than one molecule in input stream")
-    return dus[0]
