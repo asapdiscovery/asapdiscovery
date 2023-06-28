@@ -42,13 +42,6 @@ class DataModelAbstractBase(BaseModel):
     def from_json(cls, json_str):
         return cls.parse_obj(json.loads(json_str))
 
-    # check_fields required to be false as `data` not defined for baseclass
-    @validator("data", check_fields=False)
-    def data_must_not_be_empty(cls, v):
-        if not v:
-            raise ValueError("Data field can not be empty")
-        return v
-
     @property
     def size(self) -> ByteSize:
         """Size of the resulting JSON object for this class"""
