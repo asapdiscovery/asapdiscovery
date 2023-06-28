@@ -5,7 +5,6 @@ from uuid import UUID
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
     _set_SD_data_repr,
-    get_SD_data,
     oechem,
     oemol_to_inchi,
     oemol_to_inchikey,
@@ -13,7 +12,6 @@ from asapdiscovery.data.openeye import (
     oemol_to_smiles,
     print_SD_Data,
     sdf_string_to_oemol,
-    set_SD_data,
     smiles_to_oemol,
 )
 from pydantic import UUID4, Field, validator
