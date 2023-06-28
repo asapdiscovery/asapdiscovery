@@ -16,7 +16,7 @@ from asapdiscovery.data.openeye import (
     set_SD_data,
     smiles_to_oemol,
 )
-from pydantic import UUID4, Field
+from pydantic import UUID4, Field, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -76,7 +76,7 @@ class Ligand(DataModelAbstractBase):
     )
 
     tags: Dict[str, str] = Field({}, description="Dictionary of SD tags")
-        
+
     data: str = Field(
         "",
         description="SDF file stored as a string to hold internal data state",
@@ -87,6 +87,16 @@ class Ligand(DataModelAbstractBase):
         description="Enum describing the data storage method",
         allow_mutation=False,
     )
+
+    @validator("tags")
+    @classmethod
+    def _validate_tags(cls, v):
+        # check that tags are not reserved attribute names
+        reser_attr_names = cls.__fields__.keys()
+        for k in v.keys():
+            if k in reser_attr_names:
+                raise ValueError(f"Tag name {k} is a reserved attribute name")
+        return v
 
     @classmethod
     def from_oemol(
@@ -200,14 +210,12 @@ class Ligand(DataModelAbstractBase):
                 data["experimental_data"],
                 data["experimental_data_values"],
             ) = self.experimental_data.to_SD_tags()
-        
+
         # get reserved attribute names
-        reser_attr_names = [attr.name for attr in self.__fields__.values()]
         if self.tags is not None:
-            for k, v in self.tags.items():
-                if k in reser_attr_names:
-                    raise ValueError("SD tag name cannot be reserved attribute name")
-                data[k] = v
+            data.update(
+                {k: v for k, v in self.tags.items() if k not in reser_attr_names}
+            )
         data.pop("tags")
         # update SD data
         self._set_SD_data_repr(data)
@@ -228,13 +236,8 @@ class Ligand(DataModelAbstractBase):
         reser_attr_names = [attr.name for attr in self.__fields__.values()]
 
         # push all non reserved attribute names to tags
-        tags = {}
-        for k, v in data.items():
-            if k not in reser_attr_names:
-                tags[k] = v
-        
-        data["tags"] = tags
-        
+        data["tags"] = {k: v for k, v in data.items() if k not in reser_attr_names}
+
         self.__init__(**data)
 
 
