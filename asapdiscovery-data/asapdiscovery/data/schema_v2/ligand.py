@@ -74,6 +74,9 @@ class Ligand(DataModelAbstractBase):
         None,
         description="ExperimentalCompoundData Schema for experimental data associated with the compound",
     )
+
+    tags: Dict[str, str] = Field({}, description="Dictionary of SD tags")
+        
     data: str = Field(
         "",
         description="SDF file stored as a string to hold internal data state",
@@ -168,9 +171,7 @@ class Ligand(DataModelAbstractBase):
         write_file_directly(filename, self.data)
 
     def set_SD_data(self, data: dict[str, str]) -> None:
-        mol = sdf_string_to_oemol(self.data)
-        mol = set_SD_data(mol, data)
-        self.data = oemol_to_sdf_string(mol)
+        self.tags.update(data)
 
     def _set_SD_data_repr(self, data: dict[str, str]) -> None:
         mol = sdf_string_to_oemol(self.data)
@@ -178,8 +179,7 @@ class Ligand(DataModelAbstractBase):
         self.data = oemol_to_sdf_string(mol)
 
     def get_SD_data(self) -> dict[str, str]:
-        mol = sdf_string_to_oemol(self.data)
-        return get_SD_data(mol)
+        return self.tags
 
     def print_SD_data(self) -> None:
         mol = sdf_string_to_oemol(self.data)
@@ -200,6 +200,15 @@ class Ligand(DataModelAbstractBase):
                 data["experimental_data"],
                 data["experimental_data_values"],
             ) = self.experimental_data.to_SD_tags()
+        
+        # get reserved attribute names
+        reser_attr_names = [attr.name for attr in self.__fields__.values()]
+        if self.tags is not None:
+            for k, v in self.tags.items():
+                if k in reser_attr_names:
+                    raise ValueError("SD tag name cannot be reserved attribute name")
+                data[k] = v
+        data.pop("tags")
         # update SD data
         self._set_SD_data_repr(data)
 
@@ -216,6 +225,16 @@ class Ligand(DataModelAbstractBase):
                 "experimental_data_values"
             )
         # reconstruct object
+        reser_attr_names = [attr.name for attr in self.__fields__.values()]
+
+        # push all non reserved attribute names to tags
+        tags = {}
+        for k, v in data.items():
+            if k not in reser_attr_names:
+                tags[k] = v
+        
+        data["tags"] = tags
+        
         self.__init__(**data)
 
 
