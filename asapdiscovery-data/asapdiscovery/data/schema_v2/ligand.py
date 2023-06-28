@@ -214,7 +214,7 @@ class Ligand(DataModelAbstractBase):
         # get reserved attribute names
         if self.tags is not None:
             data.update(
-                {k: v for k, v in self.tags.items() if k not in reser_attr_names}
+                {k: v for k, v in self.tags.items()}
             )
         data.pop("tags")
         # update SD data
@@ -233,10 +233,9 @@ class Ligand(DataModelAbstractBase):
                 "experimental_data_values"
             )
         # reconstruct object
-        reser_attr_names = [attr.name for attr in self.__fields__.values()]
 
         # push all non reserved attribute names to tags
-        data["tags"] = {k: v for k, v in data.items() if k not in reser_attr_names}
+        data["tags"] = {k: v for k, v in data.items()}
 
         self.__init__(**data)
 
