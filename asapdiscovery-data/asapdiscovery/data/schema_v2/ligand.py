@@ -172,7 +172,7 @@ class Ligand(DataModelAbstractBase):
         filename : Union[str, Path]
             Path to the SDF file
         write_SD_attrs : bool, optional
-            Whether to write out SD tags as attributes, by default True
+            Whether to write out attributes as SD tags, by default True
 
         """
         if write_SD_attrs:
