@@ -75,7 +75,7 @@ class Ligand(DataModelAbstractBase):
         description="ExperimentalCompoundData Schema for experimental data associated with the compound",
     )
 
-    tags: Dict[str, str] = Field({}, description="Dictionary of SD tags")
+    tags: dict[str, str] = Field({}, description="Dictionary of SD tags")
 
     data: str = Field(
         "",
@@ -213,9 +213,7 @@ class Ligand(DataModelAbstractBase):
 
         # get reserved attribute names
         if self.tags is not None:
-            data.update(
-                {k: v for k, v in self.tags.items()}
-            )
+            data.update({k: v for k, v in self.tags.items()})
         data.pop("tags")
         # update SD data
         self._set_SD_data_repr(data)
