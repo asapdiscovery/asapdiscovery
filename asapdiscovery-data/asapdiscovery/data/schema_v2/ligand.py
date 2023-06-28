@@ -233,9 +233,9 @@ class Ligand(DataModelAbstractBase):
                 "experimental_data_values"
             )
         # reconstruct object
-
+        reser_attr_names = [attr.name for attr in self.__fields__.values()]
         # push all non reserved attribute names to tags
-        data["tags"] = {k: v for k, v in data.items()}
+        data["tags"] = {k: v for k, v in data.items() if k not in reser_attr_names}
 
         self.__init__(**data)
 
