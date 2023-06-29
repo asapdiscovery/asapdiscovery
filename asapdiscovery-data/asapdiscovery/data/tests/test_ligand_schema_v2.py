@@ -30,16 +30,17 @@ def test_ligand_from_smiles_id(smiles):
     assert lig.smiles == smiles
 
 
-
 def test_ligand_from_smile_at_least_one_id(smiles):
     with pytest.raises(ValueError):
         # neither id is set
         Ligand.from_smiles(smiles)
 
+
 def test_ligand_from_smile_at_least_one_ligand_id(smiles):
     with pytest.raises(ValueError):
         # LigandIdentifiers is set but empty
-        Ligand.from_smiles(smiles,  ids=LigandIdentifiers())
+        Ligand.from_smiles(smiles, ids=LigandIdentifiers())
+
 
 def test_ligand_from_sdf(moonshot_sdf):
     lig = Ligand.from_sdf(moonshot_sdf, compound_name="test_name")
