@@ -10,7 +10,7 @@ from ._gif_blocks import (
     pocket_dict_mers,
     pocket_dict_sars2,
     pocket_dict_mac1,
-    view_coord_mers,
+    view_coords_mers,
     view_coords_7ene,
     view_coords_272,
     view_coords_sars2,
@@ -102,7 +102,7 @@ class GIFVisualizer:
             self.view_coords = view_coords_sars2
         elif self.target == "mers":
             self.pocket_dict = pocket_dict_mers
-            self.view_coords = view_coord_mers
+            self.view_coords = view_coords_mers
         elif self.target == "7ene":
             self.pocket_dict = pocket_dict_sars2
             self.view_coords = view_coords_7ene
