@@ -36,7 +36,18 @@ class InvalidLigandError(ValueError):
 
 class LigandIdentifiers(DataModelAbstractBase):
     """
-    Identifiers for a Ligand
+    This is a schema for the identifiers associated with a ligand
+
+    Parameters
+    ----------
+    moonshot_compound_id : Optional[str], optional
+        Moonshot compound ID, by default None
+    manifold_api_id : Optional[UUID], optional
+        Unique ID from Postera Manifold API, by default None
+    manifold_vc_id : Optional[str], optional
+        Unique VC ID (virtual compound ID) from Postera Manifold, by default None
+    compchem_id : Optional[UUID4], optional
+        Unique ID for P5 compchem reference, unused for now, by default None
     """
 
     moonshot_compound_id: Optional[str] = Field(
@@ -62,7 +73,31 @@ class LigandIdentifiers(DataModelAbstractBase):
 
 class Ligand(DataModelAbstractBase):
     """
-    Schema for a Ligand
+    Schema for a Ligand.
+
+    Has first class serialization support for SDF files as well as the typical JSON and dictionary
+    serialization.
+
+    Note that equality comparisons are done on the SDF data in the underlying .data field, not the other fields.
+    This means you can change the other fields and still have equality, but changing the SDF data will change
+    equality.
+
+    You must provide either a compound_name or ids field otherwise the ligand will be invalid.
+
+    Parameters
+    ----------
+    compound_name : str, optional
+        Name of compound, by default None
+    ids : Optional[LigandIdentifiers], optional
+        LigandIdentifiers Schema for identifiers associated with this ligand, by default None
+    experimental_data : Optional[ExperimentalCompoundData], optional
+        ExperimentalCompoundData Schema for experimental data associated with the compound, by default None
+    tags : dict[str, str], optional
+        Dictionary of SD tags, by default {}
+    data : str, optional, private
+        SDF file stored as a string to hold internal data state, by default ""
+    data_format : DataStorageType, optional, private, const
+        Enum describing the data storage method, by default DataStorageType.sdf
     """
 
     compound_name: str = Field(None, description="Name of compound")
@@ -123,10 +158,16 @@ class Ligand(DataModelAbstractBase):
     def from_oemol(
         cls, mol: oechem.OEMol, compound_name: Optional[str] = None, **kwargs
     ) -> "Ligand":
+        """
+        Create a Ligand from an OEMol
+        """
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
 
-    def to_oemol(self) -> oechem.OEMol:
+    def to_oemol(self) -> oechem.OEGraphMol:
+        """
+        Convert to an OEMol
+        """
         mol = sdf_string_to_oemol(self.data)
         return mol
 
@@ -134,22 +175,34 @@ class Ligand(DataModelAbstractBase):
     def from_smiles(
         cls, smiles: str, compound_name: Optional[str] = None, **kwargs
     ) -> "Ligand":
+        """
+        Create a Ligand from a SMILES string
+        """
         mol = smiles_to_oemol(smiles)
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
 
     @property
     def smiles(self) -> str:
+        """
+        Get the SMILES string for the ligand
+        """
         mol = sdf_string_to_oemol(self.data)
         return oemol_to_smiles(mol)
 
     @property
     def inchi(self) -> str:
+        """
+        Get the InChI string for the ligand
+        """
         mol = sdf_string_to_oemol(self.data)
         return oemol_to_inchi(mol)
 
     @property
     def inchikey(self) -> str:
+        """
+        Get the InChIKey string for the ligand
+        """
         mol = sdf_string_to_oemol(self.data)
         return oemol_to_inchikey(mol)
 
@@ -211,30 +264,52 @@ class Ligand(DataModelAbstractBase):
         write_file_directly(filename, data_to_write)
 
     def set_SD_data(self, data: dict[str, str]) -> None:
+        """
+        Set the SD data for the ligand, uses an update to overwrite existing data in line with
+        OpenEye behaviour
+        """
         self.tags.update(data)
 
     def _set_SD_data_repr_to_str(self, data: dict[str, str]) -> str:
+        """
+        Set the SD data for a ligand to a string representation of the data
+        that can be written out to an SDF file
+        """
         mol = sdf_string_to_oemol(self.data)
         mol = _set_SD_data_repr(mol, data)
         sdf_str = oemol_to_sdf_string(mol)
         return sdf_str
 
     def get_SD_data(self) -> dict[str, str]:
+        """
+        Get the SD data for the ligand
+        """
         return self.tags
 
     def print_SD_data(self) -> None:
+        """
+        Print the SD data for the ligand
+        """
         print(self.tags)
 
     def clear_SD_data(self) -> None:
+        """
+        Clear the SD data for the ligand
+        """
         self.tags = {}
 
     def _clear_internal_SD_data(self) -> None:
+        """
+        Remove SD data from the internal SDF string
+        """
         mol = sdf_string_to_oemol(self.data)
         mol = clear_SD_data(mol)
         self.data = oemol_to_sdf_string(mol)
 
     def flush_attrs_to_SD_data(self) -> str:
-        """Flush all attributes to SD data returning the whole new SDF string"""
+        """
+        Flush all attributes to SD data returning the whole new SDF string
+        """
         data = self.dict()
         # remove keys that should not be in SD data
         data.pop("data")
@@ -258,7 +333,7 @@ class Ligand(DataModelAbstractBase):
         return sdf_str
 
     def pop_attrs_from_SD_data(self) -> None:
-        """Pop all attributes from SD data"""
+        """Pop all attributes from SD data, reserializing the object"""
         sd_data = _get_SD_data_to_object(self.to_oemol())
         data = self.dict()
         # update keys from SD data
@@ -269,13 +344,13 @@ class Ligand(DataModelAbstractBase):
             data["experimental_data"]["experimental_data"] = data.pop(
                 "experimental_data_values"
             )
-        # reconstruct object
+        # get reserved attribute names
         reser_attr_names = [attr.name for attr in self.__fields__.values()]
         # push all non reserved attribute names to tags
         data["tags"].update(
             {k: v for k, v in data.items() if k not in reser_attr_names}
         )
-
+        # reinitialise object
         self.__init__(**data)
 
 
