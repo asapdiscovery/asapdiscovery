@@ -6,16 +6,16 @@ from typing import List, Optional, Union  # noqa: F401
 from asapdiscovery.data.logging import FileLogger
 
 from ._gif_blocks import (
-    color_dict_mpro,
     color_dict_mac1,
+    color_dict_mpro,
     pocket_dict_mers_mpro,
-    pocket_dict_sars2_mpro,
     pocket_dict_sars2_mac1,
-    view_coords_mers_mpro,
+    pocket_dict_sars2_mpro,
     view_coords_7ene_mpro,
     view_coords_272_mpro,
-    view_coords_sars2_mpro,
+    view_coords_mers_mpro,
     view_coords_sars2_mac1,
+    view_coords_sars2_mpro,
 )
 from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
@@ -26,13 +26,7 @@ class GIFVisualizer:
     Class for generating GIF visualizations of MD trajectories.
     """
 
-    allowed_targets = (
-        "sars2_mpro",
-        "mers_mpro",
-        "7ene_mpro",
-        "272_mpro",
-        "sars2_mac1"
-    )
+    allowed_targets = ("sars2_mpro", "mers_mpro", "7ene_mpro", "272_mpro", "sars2_mac1")
 
     # TODO: replace input with a schema rather than paths.
     def __init__(
