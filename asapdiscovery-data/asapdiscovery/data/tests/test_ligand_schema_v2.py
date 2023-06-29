@@ -30,13 +30,13 @@ def test_ligand_from_smiles_id(smiles):
     assert lig.smiles == smiles
 
 
-def test_ligand_from_smile_at_least_one_id(smiles):
+def test_ligand_from_smiles_at_least_one_id(smiles):
     with pytest.raises(ValueError):
         # neither id is set
         Ligand.from_smiles(smiles)
 
 
-def test_ligand_from_smile_at_least_one_ligand_id(smiles):
+def test_ligand_from_smiles_at_least_one_ligand_id(smiles):
     with pytest.raises(ValueError):
         # LigandIdentifiers is set but empty
         Ligand.from_smiles(smiles, ids=LigandIdentifiers())
@@ -47,6 +47,28 @@ def test_ligand_from_sdf(moonshot_sdf):
     assert (
         lig.smiles == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
     )
+
+
+def test_ligand_from_sdf_at_least_one_id(moonshot_sdf):
+    # neither id is set
+    # important test this due to complicated skip and validation logic
+    with pytest.raises(ValueError):
+        lig = Ligand.from_sdf(moonshot_sdf)
+        assert (
+            lig.smiles
+            == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
+        )
+
+
+def test_ligand_from_sdf_at_least_one_ligand_id(moonshot_sdf):
+    # LigandIdentifiers is set but empty
+    # important test this due to complicated skip and validation logic
+    with pytest.raises(ValueError):
+        lig = Ligand.from_sdf(moonshot_sdf, ids=LigandIdentifiers())
+        assert (
+            lig.smiles
+            == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
+        )
 
 
 def test_inchi(smiles):
@@ -189,6 +211,15 @@ def test_print_sd_data(moonshot_sdf):
     l1.print_SD_data()
 
 
+def test_clear_sd_data(moonshot_sdf):
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
+    data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
+    l1.set_SD_data(data)
+    l1.clear_SD_data()
+    assert l1.get_SD_data() == {}
+
+
+@pytest.mark.parametrize("tags", [{"test_key": "test_value"}, {}])
 @pytest.mark.parametrize("exp_data_vals", [{"pIC50": 5.0}, {}])
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
 @pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
@@ -203,6 +234,7 @@ def test_ligand_sdf_rountrip_SD(
     manifold_vc_id,
     moonshot_compound_id,
     exp_data_vals,
+    tags,
     tmp_path,
 ):
     exp_data = ExperimentalCompoundData(
@@ -218,6 +250,7 @@ def test_ligand_sdf_rountrip_SD(
             compchem_id=compchem_id,
         ),
         experimental_data=exp_data,
+        tags=tags,
     )
     # serialize with SD data
     l1.to_sdf(tmp_path / "test_with_attrs.sdf")
@@ -226,6 +259,7 @@ def test_ligand_sdf_rountrip_SD(
     assert l1 == l2
 
     # read in without poping SD tags to attributes
+    # as  __eq__ and __ne__ only compare underlying SDF data, this should still be equal
     l3 = Ligand.from_sdf(
         tmp_path / "test_with_attrs.sdf", read_SD_attrs=False, compound_name="blah"
     )

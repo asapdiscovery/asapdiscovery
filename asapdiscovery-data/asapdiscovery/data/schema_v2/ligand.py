@@ -23,6 +23,7 @@ from .schema_base import (
     DataStorageType,
     read_file_directly,
     write_file_directly,
+    schema_dict_get_val_overload,
 )
 
 
@@ -97,9 +98,12 @@ class Ligand(DataModelAbstractBase):
         else:
             ids = v.get("ids")
             compound_name = v.get("compound_name")
-            # check if all the identifiers are None
+            # check if all the identifiers are None, sometimes when this is called from
+            # already instantiated ligand we need to be able to handle a dict and instantiated class
             if compound_name is None:
-                if ids is None or all([v is None for v in ids.dict().values()]):
+                if ids is None or all(
+                    [v is None for v in schema_dict_get_val_overload(ids)]
+                ):
                     raise ValueError(
                         "At least one identifier must be provide, or compound_name must be provided"
                     )
@@ -181,6 +185,8 @@ class Ligand(DataModelAbstractBase):
         if read_SD_attrs:
             lig.pop_attrs_from_SD_data()
         lig._clear_internal_SD_data()
+        # okay now we can validate !
+        lig.validate(lig.dict())
         return lig
 
     def to_sdf(self, filename: Union[str, Path], write_SD_attrs: bool = True) -> None:
@@ -217,8 +223,10 @@ class Ligand(DataModelAbstractBase):
         return self.tags
 
     def print_SD_data(self) -> None:
-        mol = sdf_string_to_oemol(self.data)
-        print_SD_data(mol)
+        print(self.tags)
+
+    def clear_SD_data(self) -> None:
+        self.tags = {}
 
     def _clear_internal_SD_data(self) -> None:
         mol = sdf_string_to_oemol(self.data)

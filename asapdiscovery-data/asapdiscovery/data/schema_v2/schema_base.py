@@ -62,3 +62,24 @@ class DataModelAbstractBase(BaseModel):
         validate_assignment = True
         # can't use extra="forbid" because of the way we use
         # kwargs to skip root_validator on some fields
+
+
+def schema_dict_get_val_overload(obj: Union[Dict, BaseModel]):
+    """
+    Overload for Schema and Dict to get values easily
+
+    Parameters
+    ----------
+    obj : Union[Dict, Schema]
+        Object to get values from
+
+    Returns
+    -------
+    Iterable[Any]
+    """
+    if isinstance(obj, dict):
+        return obj.values()
+    elif isinstance(obj, BaseModel):
+        return obj.dict().values()
+    else:
+        raise TypeError(f"Unsupported type {type(obj)}")
