@@ -30,10 +30,16 @@ def test_ligand_from_smiles_id(smiles):
     assert lig.smiles == smiles
 
 
+
 def test_ligand_from_smile_at_least_one_id(smiles):
     with pytest.raises(ValueError):
+        # neither id is set
         Ligand.from_smiles(smiles)
 
+def test_ligand_from_smile_at_least_one_ligand_id(smiles):
+    with pytest.raises(ValueError):
+        # LigandIdentifiers is set but empty
+        Ligand.from_smiles(smiles,  ids=LigandIdentifiers())
 
 def test_ligand_from_sdf(moonshot_sdf):
     lig = Ligand.from_sdf(moonshot_sdf, compound_name="test_name")
@@ -219,9 +225,8 @@ def test_ligand_sdf_rountrip_SD(
     assert l1 == l2
 
     # read in without poping SD tags to attributes
-    # data dict should still be equal
+    # data dict (comparator in __eq__ and __neq__) should still be equal
     l3 = Ligand.from_sdf(tmp_path / "test_with_attrs.sdf", read_SD_attrs=False)
-    # these two call same under the hood.
     assert l3 == l1
 
     l1 = Ligand.from_sdf(
