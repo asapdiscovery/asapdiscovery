@@ -6,15 +6,16 @@ from typing import List, Optional, Union  # noqa: F401
 from asapdiscovery.data.logging import FileLogger
 
 from ._gif_blocks import (
-    color_dict,
-    pocket_dict_mers,
-    pocket_dict_sars2,
-    pocket_dict_mac1,
-    view_coords_mers,
-    view_coords_7ene,
-    view_coords_272,
-    view_coords_sars2,
-    view_coords_mac1,
+    color_dict_mpro,
+    color_dict_mac1,
+    pocket_dict_mers_mpro,
+    pocket_dict_sars2_mpro,
+    pocket_dict_sars2_mac1,
+    view_coords_mers_mpro,
+    view_coords_7ene_mpro,
+    view_coords_272_mpro,
+    view_coords_sars2_mpro,
+    view_coords_sars2_mac1,
 )
 from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
@@ -26,11 +27,11 @@ class GIFVisualizer:
     """
 
     allowed_targets = (
-        "sars2",
-        "mers",
-        "7ene",
-        "272",
-        "mac1"
+        "sars2_mpro",
+        "mers_mpro",
+        "7ene_mpro",
+        "272_mpro",
+        "sars2_mac1"
     )
 
     # TODO: replace input with a schema rather than paths.
@@ -61,7 +62,7 @@ class GIFVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
+            Target to visualize poses for. Must be one of: "sars2_mpro", "mers_mpro", "7ene_mpro", "272_mpro", "sars2_mac1".
         pse : bool
             Whether to write PyMol session files.
         smooth : int
@@ -97,21 +98,26 @@ class GIFVisualizer:
         self.logger.info(f"Visualizing trajectories for {self.target}")
 
         # setup pocket dict and view_coords for target
-        if self.target == "sars2":
-            self.pocket_dict = pocket_dict_sars2
-            self.view_coords = view_coords_sars2
-        elif self.target == "mers":
-            self.pocket_dict = pocket_dict_mers
-            self.view_coords = view_coords_mers
-        elif self.target == "7ene":
-            self.pocket_dict = pocket_dict_sars2
-            self.view_coords = view_coords_7ene
-        elif self.target == "272":
-            self.pocket_dict = pocket_dict_mers
-            self.view_coords = view_coords_272
-        if self.target == "mac1":
-            self.pocket_dict = pocket_dict_mac1
-            self.view_coords = view_coords_mac1
+        if self.target == "sars2_mpro":
+            self.pocket_dict = pocket_dict_sars2_mpro
+            self.view_coords = view_coords_sars2_mpro
+            self.color_dict = color_dict_mpro
+        elif self.target == "mers_mpro":
+            self.pocket_dict = pocket_dict_mers_mpro
+            self.view_coords = view_coords_mers_mpro
+            self.color_dict = color_dict_mpro
+        elif self.target == "7ene_mpro":
+            self.pocket_dict = pocket_dict_sars2_mpro
+            self.view_coords = view_coords_7ene_mpro
+            self.color_dict = color_dict_mpro
+        elif self.target == "272_mpro":
+            self.pocket_dict = pocket_dict_mers_mpro
+            self.view_coords = view_coords_272_mpro
+            self.color_dict = color_dict_mpro
+        if self.target == "sars2_mac1":
+            self.pocket_dict = pocket_dict_sars2_mac1
+            self.view_coords = view_coords_sars2_mac1
+            self.color_dict = color_dict_mac1
         self.trajectories = []
         self.output_paths = []
         self.systems = []
@@ -197,7 +203,7 @@ class GIFVisualizer:
                 f"{complex_name} and resi {residues} and polymer.protein",
             )
 
-        for subpocket_name, color in color_dict.items():
+        for subpocket_name, color in self.color_dict.items():
             p.cmd.set("surface_color", color, f"({subpocket_name})")
 
         if self.pse:
@@ -236,7 +242,7 @@ class GIFVisualizer:
         p.cmd.hide("sticks", "(elem C extend 1) and (elem H)")
         p.cmd.color("pink", "elem C and sele")
 
-        for subpocket_name, color in color_dict.items():
+        for subpocket_name, color in self.color_dict.items():
             # set non-polar sticks for this subpocket, color the backbone by subpocket color.
             cmd.select(subpocket_name)
             cmd.show("sticks", "sele")
