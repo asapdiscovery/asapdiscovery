@@ -129,7 +129,7 @@ pocket_dict_mers_mpro = {
 }
 
 # MAC1
-pocket_dict_mers_mpro = {
+pocket_dict_sars2_mac1 = {
     "nucleotide": "154+156+22+23+24+52+49+125",
     "bridge": "126+155",
     "phosphate": "46+47+48+38+39+40+130+131+132+127+128+97",
