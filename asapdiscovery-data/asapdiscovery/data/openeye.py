@@ -595,7 +595,7 @@ def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
 
 def oemol_to_smiles(mol: oechem.OEMol) -> str:
     """
-    SMILES string of an OpenEye OEMol
+    Canonical SMILES string of an OpenEye OEMol
 
     Paramers
     --------
@@ -679,11 +679,8 @@ def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, Any]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    for key, value in data.items():
-        # NOTE: use repr to ensure re-reading the SD data will give the same value
-        key = key
-        value = repr(value)
-        oechem.OESetSDData(mol, key, value)
+    # NOTE: use repr to ensure re-reading the SD data will give the same value
+    mol = set_SD_data(mol, {k: repr(v) for k, v in data.items()})
     return mol
 
 
@@ -701,9 +698,7 @@ def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
     Dict[str, str]
         Dictionary of SD data
     """
-    sd_data = {}
-    for dp in oechem.OEGetSDDataPairs(mol):
-        sd_data[dp.GetTag()] = dp.GetValue()
+    sd_data = {dp.GetTag(): dp.GetValue() for dp in oechem.OEGetSDDataPairs(mol)}
     return sd_data
 
 
