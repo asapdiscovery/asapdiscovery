@@ -226,9 +226,10 @@ def test_ligand_sdf_rountrip_SD(
     assert l1 == l2
 
     # read in without poping SD tags to attributes
-    # data dict (comparator in __eq__ and __neq__) should still be equal
-    l3 = Ligand.from_sdf(tmp_path / "test_with_attrs.sdf", read_SD_attrs=False)
-    assert l3 == l1
+    l3 = Ligand.from_sdf(
+        tmp_path / "test_with_attrs.sdf", read_SD_attrs=False, compound_name="blah"
+    )
+    assert l3.data_equal(l1)
 
     l1 = Ligand.from_sdf(
         moonshot_sdf,
@@ -243,6 +244,7 @@ def test_ligand_sdf_rountrip_SD(
     )
 
     # serialize without SD data
+    # as  __eq__ and __ne__ only compare underlying SDF data, this should still be equal
     l4 = Ligand.from_sdf(
         moonshot_sdf,
         compound_name=compound_name,
@@ -256,6 +258,7 @@ def test_ligand_sdf_rountrip_SD(
         read_SD_attrs=False,
     )
     l4.to_sdf(tmp_path / "test_without_attrs.sdf", write_SD_attrs=False)
-    l5 = Ligand.from_sdf(tmp_path / "test_without_attrs.sdf", read_SD_attrs=False)
-    assert l4 == l1
-    assert l5 == l1
+    l5 = Ligand.from_sdf(
+        tmp_path / "test_without_attrs.sdf", read_SD_attrs=False, compound_name="blah"
+    )
+    assert l4 == l5

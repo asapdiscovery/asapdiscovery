@@ -50,6 +50,14 @@ class DataModelAbstractBase(BaseModel):
     def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
 
+    # use data_equal instead
+    def __eq__(self, other: DataModelAbstractBase) -> bool:
+        return self.data_equal(other)
+
+    # use data_equal instead
+    def __ne__(self, other: DataModelAbstractBase) -> bool:
+        return not self.data_equal(other)
+
     class Config:
         validate_assignment = True
         # can't use extra="forbid" because of the way we use

@@ -198,17 +198,20 @@ class Ligand(DataModelAbstractBase):
 
         """
         if write_SD_attrs:
-            self.flush_attrs_to_SD_data()
+            data_to_write = self.flush_attrs_to_SD_data()
+        else:
+            data_to_write = self.data
         # directly write out data
-        write_file_directly(filename, self.data)
+        write_file_directly(filename, data_to_write)
 
     def set_SD_data(self, data: dict[str, str]) -> None:
         self.tags.update(data)
 
-    def _set_SD_data_repr(self, data: dict[str, str]) -> None:
+    def _set_SD_data_repr_to_str(self, data: dict[str, str]) -> str:
         mol = sdf_string_to_oemol(self.data)
         mol = _set_SD_data_repr(mol, data)
-        self.data = oemol_to_sdf_string(mol)
+        sdf_str = oemol_to_sdf_string(mol)
+        return sdf_str
 
     def get_SD_data(self) -> dict[str, str]:
         return self.tags
@@ -222,10 +225,10 @@ class Ligand(DataModelAbstractBase):
         mol = clear_SD_data(mol)
         self.data = oemol_to_sdf_string(mol)
 
-    def flush_attrs_to_SD_data(self) -> None:
-        """Flush all attributes to SD data"""
+    def flush_attrs_to_SD_data(self) -> str:
+        """Flush all attributes to SD data returning the whole new SDF string"""
         data = self.dict()
-        # remove keys that are not SD data
+        # remove keys that should not be in SD data
         data.pop("data")
         data.pop("data_format")
         if self.ids is not None:
@@ -243,7 +246,8 @@ class Ligand(DataModelAbstractBase):
             data.update({k: v for k, v in self.tags.items()})
         data.pop("tags")
         # update SD data
-        self._set_SD_data_repr(data)
+        sdf_str = self._set_SD_data_repr_to_str(data)
+        return sdf_str
 
     def pop_attrs_from_SD_data(self) -> None:
         """Pop all attributes from SD data"""
