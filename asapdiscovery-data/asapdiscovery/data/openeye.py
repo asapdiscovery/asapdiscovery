@@ -595,7 +595,7 @@ def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
 
 def oemol_to_smiles(mol: oechem.OEMol) -> str:
     """
-    SMILES string of an OpenEye OEMol
+    Canonical SMILES string of an OpenEye OEMol
 
     Paramers
     --------
