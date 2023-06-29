@@ -11,7 +11,6 @@ from asapdiscovery.data.openeye import (
     oemol_to_inchikey,
     oemol_to_sdf_string,
     oemol_to_smiles,
-    print_SD_data,
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
