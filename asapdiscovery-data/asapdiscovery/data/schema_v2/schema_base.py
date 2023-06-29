@@ -64,7 +64,7 @@ class DataModelAbstractBase(BaseModel):
         # kwargs to skip root_validator on some fields
 
 
-def schema_dict_get_val_overload(obj: Union[Dict, BaseModel]):
+def schema_dict_get_val_overload(obj: dict | BaseModel):
     """
     Overload for Schema and Dict to get values easily
 

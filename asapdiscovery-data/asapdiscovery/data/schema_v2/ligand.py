@@ -5,13 +5,13 @@ from uuid import UUID
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
     _set_SD_data_repr,
+    clear_SD_data,
     oechem,
     oemol_to_inchi,
     oemol_to_inchikey,
     oemol_to_sdf_string,
     oemol_to_smiles,
     print_SD_data,
-    clear_SD_data,
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
@@ -22,8 +22,8 @@ from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
     read_file_directly,
-    write_file_directly,
     schema_dict_get_val_overload,
+    write_file_directly,
 )
 
 
