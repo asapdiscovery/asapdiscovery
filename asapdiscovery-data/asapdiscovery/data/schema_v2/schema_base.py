@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from pydantic import BaseModel, ByteSize, validator
+from pydantic import BaseModel, ByteSize
 
 
 class DataStorageType(str, Enum):
@@ -50,10 +50,10 @@ class DataModelAbstractBase(BaseModel):
     def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
 
-    def __eq__ (self, other: DataModelAbstractBase) -> bool:
+    def __eq__(self, other: DataModelAbstractBase) -> bool:
         return self.data_equal(other)
-    
-    def __ne__ (self, other: DataModelAbstractBase) -> bool:
+
+    def __ne__(self, other: DataModelAbstractBase) -> bool:
         return not self.data_equal(other)
 
     class Config:
