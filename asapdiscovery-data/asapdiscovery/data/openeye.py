@@ -701,9 +701,7 @@ def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
     Dict[str, str]
         Dictionary of SD data
     """
-    sd_data = {}
-    for dp in oechem.OEGetSDDataPairs(mol):
-        sd_data[dp.GetTag()] = dp.GetValue()
+    sd_data = {dp.GetTag(): dp.GetValue() for dp in oechem.OEGetSDDataPairs(mol)}
     return sd_data
 
 
