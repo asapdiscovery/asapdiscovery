@@ -83,6 +83,7 @@ class Ligand(DataModelAbstractBase):
     data_format: DataStorageType = Field(
         DataStorageType.sdf,
         description="Enum describing the data storage method",
+        const=True,
         allow_mutation=False,
     )
 
