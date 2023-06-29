@@ -262,7 +262,7 @@ parser.add_argument(
     "--target",
     type=str,
     required=True,
-    help="Target to write visualizations for, one of (sars2, mers, 7ene, 272)",
+    help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
 )
 
 parser.add_argument(
