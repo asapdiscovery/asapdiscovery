@@ -221,8 +221,8 @@ def test_ligand_sdf_rountrip_SD(
     # read in without poping SD tags to attributes
     # data dict should still be equal
     l3 = Ligand.from_sdf(tmp_path / "test_with_attrs.sdf", read_SD_attrs=False)
-    assert l3 != l1
-    assert l3.data_equal(l1)
+    # these two call same under the hood.
+    assert l3 == l1
 
     l1 = Ligand.from_sdf(
         moonshot_sdf,
