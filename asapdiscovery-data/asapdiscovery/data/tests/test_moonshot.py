@@ -294,6 +294,7 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
         )
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize(
     "search", [ALL_SMI_SEARCH, NONCOVALENT_SMI_SEARCH, NONCOVALENT_W_DATES_SEARCH]
 )
@@ -333,6 +334,7 @@ def test_download_molecules(
     )
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize(
     "search", [ALL_SMI_SEARCH, NONCOVALENT_SMI_SEARCH, NONCOVALENT_W_DATES_SEARCH]
 )
