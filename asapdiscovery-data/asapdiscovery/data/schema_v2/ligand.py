@@ -10,7 +10,7 @@ from asapdiscovery.data.openeye import (
     oemol_to_inchikey,
     oemol_to_sdf_string,
     oemol_to_smiles,
-    print_SD_Data,
+    print_SD_data,
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
@@ -213,7 +213,7 @@ class Ligand(DataModelAbstractBase):
 
     def print_SD_data(self) -> None:
         mol = sdf_string_to_oemol(self.data)
-        print_SD_Data(mol)
+        print_SD_data(mol)
 
     def flush_attrs_to_SD_data(self) -> None:
         """Flush all attributes to SD data"""

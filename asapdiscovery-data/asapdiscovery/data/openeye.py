@@ -729,7 +729,7 @@ def _get_SD_data_to_object(mol: oechem.OEMol) -> dict[str, Any]:
     return sd_data
 
 
-def print_SD_Data(mol: oechem.OEMol) -> None:
+def print_SD_data(mol: oechem.OEMol) -> None:
     print("SD data of", mol.GetTitle())
     # loop over SD data
     for dp in oechem.OEGetSDDataPairs(mol):
