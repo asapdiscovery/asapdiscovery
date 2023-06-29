@@ -679,11 +679,8 @@ def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, Any]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    for key, value in data.items():
-        # NOTE: use repr to ensure re-reading the SD data will give the same value
-        key = key
-        value = repr(value)
-        oechem.OESetSDData(mol, key, value)
+    # NOTE: use repr to ensure re-reading the SD data will give the same value
+    mol = set_SD_data(mol, {k: repr(v) for k, v in data.items()})
     return mol
 
 
