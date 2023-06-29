@@ -9,10 +9,12 @@ from ._gif_blocks import (
     color_dict,
     pocket_dict_mers,
     pocket_dict_sars2,
+    pocket_dict_mac1,
     view_coord_mers,
     view_coords_7ene,
     view_coords_272,
     view_coords_sars2,
+    view_coords_mac1,
 )
 from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
@@ -28,6 +30,7 @@ class GIFVisualizer:
         "mers",
         "7ene",
         "272",
+        "mac1"
     )
 
     # TODO: replace input with a schema rather than paths.
@@ -106,7 +109,9 @@ class GIFVisualizer:
         elif self.target == "272":
             self.pocket_dict = pocket_dict_mers
             self.view_coords = view_coords_272
-
+        if self.target == "mac1":
+            self.pocket_dict = pocket_dict_mac1
+            self.view_coords = view_coords_mac1
         self.trajectories = []
         self.output_paths = []
         self.systems = []
