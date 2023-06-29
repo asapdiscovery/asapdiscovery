@@ -236,6 +236,13 @@ class GIFVisualizer:
         p.cmd.hide("sticks", "(elem C extend 1) and (elem H)")
         p.cmd.color("pink", "elem C and sele")
 
+        for subpocket_name, color in color_dict.items():
+            # set non-polar sticks for this subpocket, color the backbone by subpocket color.
+            cmd.select(subpocket_name)
+            cmd.show("sticks", "sele")
+            cmd.set("stick_color", color, f"({subpocket_name})")
+            cmd.hide("sticks", "(elem C extend 1) and (elem H)")
+
         p.cmd.set_view(self.view_coords)
         if self.pse or self.pse_share:
             p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
