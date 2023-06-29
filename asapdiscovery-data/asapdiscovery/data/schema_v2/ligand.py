@@ -11,6 +11,7 @@ from asapdiscovery.data.openeye import (
     oemol_to_sdf_string,
     oemol_to_smiles,
     print_SD_data,
+    clear_SD_data,
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
@@ -179,6 +180,7 @@ class Ligand(DataModelAbstractBase):
         )
         if read_SD_attrs:
             lig.pop_attrs_from_SD_data()
+        lig._clear_internal_SD_data()
         return lig
 
     def to_sdf(self, filename: Union[str, Path], write_SD_attrs: bool = True) -> None:
@@ -214,6 +216,11 @@ class Ligand(DataModelAbstractBase):
     def print_SD_data(self) -> None:
         mol = sdf_string_to_oemol(self.data)
         print_SD_data(mol)
+
+    def _clear_internal_SD_data(self) -> None:
+        mol = sdf_string_to_oemol(self.data)
+        mol = clear_SD_data(mol)
+        self.data = oemol_to_sdf_string(mol)
 
     def flush_attrs_to_SD_data(self) -> None:
         """Flush all attributes to SD data"""
@@ -253,7 +260,9 @@ class Ligand(DataModelAbstractBase):
         # reconstruct object
         reser_attr_names = [attr.name for attr in self.__fields__.values()]
         # push all non reserved attribute names to tags
-        data["tags"] = {k: v for k, v in data.items() if k not in reser_attr_names}
+        data["tags"].update(
+            {k: v for k, v in data.items() if k not in reser_attr_names}
+        )
 
         self.__init__(**data)
 

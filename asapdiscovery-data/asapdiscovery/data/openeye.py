@@ -729,3 +729,21 @@ def print_SD_data(mol: oechem.OEMol) -> None:
     # loop over SD data
     for dp in oechem.OEGetSDDataPairs(mol):
         print(dp.GetTag(), ":", dp.GetValue())
+
+
+def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
+    """
+    Clear all SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data cleared
+    """
+    oechem.OEClearSDData(mol)
+    return mol
