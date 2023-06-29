@@ -14,7 +14,7 @@ from asapdiscovery.data.openeye import (
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
-from pydantic import UUID4, Field, validator
+from pydantic import UUID4, Field, validator, root_validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -86,6 +86,23 @@ class Ligand(DataModelAbstractBase):
         allow_mutation=False,
     )
 
+    @root_validator(pre=True)
+    @classmethod
+    def _validate_at_least_one_id(cls, v):
+        # check if skip validation
+        if v.get("_skip_validate_ids"):
+            return v
+        else:
+            ids = v.get("ids")
+            compound_name = v.get("compound_name")
+            # check if all the identifiers are None
+            if compound_name is None:
+                if ids is None or all([v is None for v in ids.dict().values()]):
+                    raise ValueError(
+                        "At least one identifier must be provide, or compound_name must be provided"
+                    )
+        return v
+
     @validator("tags")
     @classmethod
     def _validate_tags(cls, v):
@@ -154,7 +171,11 @@ class Ligand(DataModelAbstractBase):
         """
         # directly read in data
         sdf_str = read_file_directly(sdf_file)
-        lig = cls(data=sdf_str, compound_name=compound_name, **kwargs)
+        # we have to skip validation here, because we don't have a bunch of fields as they
+        # still need to be read in from the SD tags
+        lig = cls(
+            data=sdf_str, compound_name=compound_name, _skip_validate_ids=True, **kwargs
+        )
         if read_SD_attrs:
             lig.pop_attrs_from_SD_data()
         return lig

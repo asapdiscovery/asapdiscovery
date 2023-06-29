@@ -52,3 +52,5 @@ class DataModelAbstractBase(BaseModel):
 
     class Config:
         validate_assignment = True
+        # can't use extra="forbid" because of the way we use
+        # kwargs to skip root_validator on some fields

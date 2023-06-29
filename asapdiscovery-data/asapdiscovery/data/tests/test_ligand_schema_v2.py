@@ -19,24 +19,36 @@ def moonshot_sdf():
 
 
 def test_ligand_from_smiles(smiles):
-    lig = Ligand.from_smiles(smiles)
+    lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.smiles == smiles
 
 
+def test_ligand_from_smiles_id(smiles):
+    lig = Ligand.from_smiles(
+        smiles, ids=LigandIdentifiers(moonshot_compound_id="test_id")
+    )
+    assert lig.smiles == smiles
+
+
+def test_ligand_from_smile_at_least_one_id(smiles):
+    with pytest.raises(ValueError):
+        Ligand.from_smiles(smiles)
+
+
 def test_ligand_from_sdf(moonshot_sdf):
-    lig = Ligand.from_sdf(moonshot_sdf)
+    lig = Ligand.from_sdf(moonshot_sdf, compound_name="test_name")
     assert (
         lig.smiles == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
     )
 
 
 def test_inchi(smiles):
-    lig = Ligand.from_smiles(smiles)
+    lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.inchi == "InChI=1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3"
 
 
 def test_inchi_key(smiles):
-    lig = Ligand.from_smiles(smiles)
+    lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.inchikey == "IMNFDUFMRHMDMM-UHFFFAOYSA-N"
 
 
@@ -46,7 +58,7 @@ def test_inchi_key(smiles):
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
 @pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
 @pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
-@pytest.mark.parametrize("compound_name", ["test_name", None])
+@pytest.mark.parametrize("compound_name", ["test_name"])
 def test_ligand_dict_roundtrip(
     smiles,
     compound_name,
@@ -75,7 +87,7 @@ def test_ligand_dict_roundtrip(
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
 @pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
 @pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
-@pytest.mark.parametrize("compound_name", ["test_name", None])
+@pytest.mark.parametrize("compound_name", ["test_name"])
 def test_ligand_json_roundtrip(
     smiles,
     compound_name,
@@ -99,7 +111,7 @@ def test_ligand_json_roundtrip(
 
 
 def test_ligand_sdf_rountrip(moonshot_sdf, tmp_path):
-    l1 = Ligand.from_sdf(moonshot_sdf)
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="test_name")
     l1.to_sdf(tmp_path / "test.sdf")
     l2 = Ligand.from_sdf(tmp_path / "test.sdf")
     assert l1 == l2
@@ -112,7 +124,7 @@ def test_ligand_sdf_rountrip(moonshot_sdf, tmp_path):
 @pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
 @pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
 @pytest.mark.parametrize("compchem_id", [uuid4(), None])
-@pytest.mark.parametrize("compound_name", ["test_name", None])
+@pytest.mark.parametrize("compound_name", ["test_name"])
 def test_ligand_sdf_rountrip_data_only(
     moonshot_sdf,
     compound_name,
@@ -141,9 +153,9 @@ def test_ligand_sdf_rountrip_data_only(
 
 def test_ligand_oemol_rountrip(moonshot_sdf):
     mol = load_openeye_sdf(str(moonshot_sdf))
-    l1 = Ligand.from_oemol(mol)
+    l1 = Ligand.from_oemol(mol, compound_name="blahblah")
     mol_res = l1.to_oemol()
-    l2 = Ligand.from_oemol(mol_res)
+    l2 = Ligand.from_oemol(mol_res, compound_name="blahblah")
     assert l2 == l1
 
 
@@ -151,12 +163,12 @@ def test_ligand_oemol_rountrip_data_only(moonshot_sdf):
     mol = load_openeye_sdf(str(moonshot_sdf))
     l1 = Ligand.from_oemol(mol, compound_name="blahblah")
     mol_res = l1.to_oemol()
-    l2 = Ligand.from_oemol(mol_res)
+    l2 = Ligand.from_oemol(mol_res, compound_name="blahblah")
     assert l1.data_equal(l2)
 
 
 def test_get_set_sd_data(moonshot_sdf):
-    l1 = Ligand.from_sdf(moonshot_sdf)
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
     l1.set_SD_data(data)
     data_pulled = l1.get_SD_data()
@@ -164,7 +176,7 @@ def test_get_set_sd_data(moonshot_sdf):
 
 
 def test_print_sd_data(moonshot_sdf):
-    l1 = Ligand.from_sdf(moonshot_sdf)
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
     l1.set_SD_data(data)
     l1.print_SD_data()
@@ -175,7 +187,7 @@ def test_print_sd_data(moonshot_sdf):
 @pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
 @pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
 @pytest.mark.parametrize("compchem_id", [uuid4(), None])
-@pytest.mark.parametrize("compound_name", ["test_name", None])
+@pytest.mark.parametrize("compound_name", ["test_name"])
 def test_ligand_sdf_rountrip_SD(
     moonshot_sdf,
     compound_name,
