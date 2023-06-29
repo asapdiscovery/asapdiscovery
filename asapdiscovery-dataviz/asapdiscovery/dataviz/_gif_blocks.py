@@ -21,7 +21,7 @@ view_coords_sars2_mpro = (
 )
 
 # MERS
-view_coord_mers_mpro = (
+view_coords_mers_mpro = (
     -0.635950804,
     -0.283323288,
     -0.717838645,
