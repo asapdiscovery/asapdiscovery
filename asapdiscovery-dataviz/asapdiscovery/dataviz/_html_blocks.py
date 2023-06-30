@@ -117,6 +117,15 @@ orient_tail_272_mpro = """\
 
 </script> """
 
+orient_tail_sars2_mac1 = """\
+    //orient
+    stage.viewerControls.orient((new NGL.Matrix4).fromArray([-26.865335727331967, -33.96353780439949, 76.20488333720914, 0.0, 68.40799043278685, 36.8623095955993, 40.54563400173538, 0.0, -47.76036465635116, 71.90319471856219, 15.208982898829163, 0.0, -10.974757194519043, -20.811683654785156, 0.7359411716461182, 1.0]));
+    stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 308.4343490600586, clipNear: -308.38341522216797
+}
+
+
+
+</script> """
 
 colour_mers_mpro = """\
         // Define the binding pocket.
@@ -198,3 +207,41 @@ colour_sars2_mpro = """\
 """
 
 colour_7ene_mpro = colour_sars2_mpro
+
+colour_sars2_mac1 = """\
+        // Define the binding pocket.
+        const data = {
+        'color_dict': {
+            'nucleotide': 'paleyellow',
+            'bridge': 'darksalmon',
+            'phosphate': 'brightorange',
+            'anion_hole': 'slate'
+        },
+        'pocket_dict': {
+            'nucleotide' : '154+156+22+23+24+52+49+125',
+            'bridge' : '126+155',
+            'phosphate' : '46+47+48+38+39+40+130+131+132+127+128+97',
+            'anion_hole' : '129+157+160+136+164',
+        }
+        }
+        // Color the BP by subpocket definitions.
+        const othercolor = 'white'; // resi not selected
+        const uncolored = 'gainsboro'; // sars_unique is not assigned a color.
+        let selecol = Object.entries(data.pocket_dict).map(([name, pymol_sele]) => [data.color_dict[name] || uncolored, pymol_sele.replace(/\\+/g, ' or ')]);
+        selecol.push([othercolor, '*']);  // default
+        const pocket_scheme = NGL.ColormakerRegistry.addSelectionScheme(selecol);
+        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front',} );
+        // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
+        let cartoon = new NGL.Selection( '*' );
+        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+
+        // Add interactions (contacts). Some inter-residue contacts are okay.
+        function getNeighbors(protein, sele, radius) {
+            const neigh_atoms = protein.structure.getAtomSetWithinSelection( sele, radius );
+            const resi_atoms = protein.structure.getAtomSetWithinGroup( neigh_atoms );
+            return resi_atoms.toSeleString()
+        };
+        const neigh_sele = getNeighbors(protein, 'ligand', 2);
+        protein.addRepresentation( 'contact', {sele: neigh_sele});
+
+"""
