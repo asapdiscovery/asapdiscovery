@@ -271,7 +271,7 @@ class GIFVisualizer:
             show_contacts(p, "ligand", "receptor")
 
         p.cmd.set_view(self.view_coords)
-        
+
         if self.pse:
             self.logger.info("Writing PyMol ensemble to session_5_intrafitted.pse...")
             p.cmd.save(str(parent_path / "session_5_intrafitted.pse"))
