@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 # enum for allowed targets
 # TODO make configurable from YAML file
 class VizTargets(Enum):

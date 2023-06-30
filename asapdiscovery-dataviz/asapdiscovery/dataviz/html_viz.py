@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from typing import List, Optional, Union  # noqa: F401
 
-
 from asapdiscovery.data.logging import FileLogger
 from rdkit import Chem
 
