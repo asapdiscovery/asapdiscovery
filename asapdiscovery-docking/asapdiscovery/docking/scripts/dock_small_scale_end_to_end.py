@@ -16,6 +16,7 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
+from asapdiscovery.dataviz.viz_targets import VizTargets
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import (
@@ -259,9 +260,10 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--target",
+    "--viz-target",
     type=str,
     required=True,
+    choices=VizTargets.get_allowed_targets(),
     help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
 )
 
@@ -690,7 +692,7 @@ def main():
             html_visualiser = HTMLVisualizer(
                 [pose],
                 [outpath],
-                args.target,
+                args.viz_target,
                 protein_path,
                 logger=logger,
             )
@@ -716,7 +718,7 @@ def main():
         html_visualiser = HTMLVisualizer(
             top_posit["docked_file"],
             top_posit["outpath_pose"],
-            args.target,
+            args.viz_target,
             protein_path,
             logger=logger,
         )

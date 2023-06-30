@@ -19,6 +19,7 @@ from ._gif_blocks import (
 )
 from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
+from .viz_targets import VizTargets
 
 
 class GIFVisualizer:
@@ -26,7 +27,7 @@ class GIFVisualizer:
     Class for generating GIF visualizations of MD trajectories.
     """
 
-    allowed_targets = ("sars2_mpro", "mers_mpro", "7ene_mpro", "272_mpro", "sars2_mac1")
+    allowed_targets = VizTargets.get_allowed_targets()
 
     # TODO: replace input with a schema rather than paths.
     def __init__(
