@@ -96,8 +96,9 @@ class MoleculeSetAPI(PostEraAPI):
             molset_id = molecule_set_id_or_name
         else:
             available_molsets_rev = {v: k for k, v in available_molsets.items()}
-            molset_id = available_molsets_rev[molecule_set_id_or_name]
-            if molset_id not in available_molsets:
+            try:
+                molset_id = available_molsets_rev[molecule_set_id_or_name]
+            except KeyError:
                 raise ValueError(
                     f"Molecule Set with identifier: {molecule_set_id_or_name} not found in PostEra"
                 )

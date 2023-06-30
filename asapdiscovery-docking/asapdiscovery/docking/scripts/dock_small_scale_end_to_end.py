@@ -314,7 +314,7 @@ def main():
 
     logname = args.logname if args.logname else "single_target_docking"
     # setup logging
-    logger_cls = FileLogger(logname, path=output_dir, stdout=True)
+    logger_cls = FileLogger(logname, path=output_dir, stdout=True, level=logging.INFO)
     logger = logger_cls.getLogger()
 
     if overwrote_dir:
@@ -368,6 +368,7 @@ def main():
             ExperimentalCompoundData(compound_id=mol.id, smiles=mol.smiles)
             for _, mol in mols.iterrows()
         ]
+        used_3d = False
 
     else:
         # set internal flag to seed whether we used 3D or 2D chemistry input
