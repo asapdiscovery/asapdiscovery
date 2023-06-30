@@ -11,7 +11,7 @@ def run_func(name):
 
 @pytest.fixture()
 def file_logger():
-    file_logger = FileLogger("top_logger", ".")
+    file_logger = FileLogger("top_logger", ".", level=logging.INFO)
     logger = file_logger.getLogger()
     logger.info("Top level test")
     return file_logger
@@ -32,7 +32,7 @@ def test_set_as_default(file_logger, name: str):
 
 @pytest.mark.parametrize("name", ["test1", "test2"])
 def test_internal_func(file_logger, name: str):
-    file_logger = FileLogger(f"internal_logger.{name}", ".")
+    file_logger = FileLogger(f"internal_logger.{name}", ".", level=logging.INFO)
     logger = file_logger.getLogger()
     logger.info("Running run_func")
     run_func(name)
