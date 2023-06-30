@@ -244,7 +244,6 @@ class GIFVisualizer:
             p.cmd.set("stick_color", color, f"({subpocket_name})")
             p.cmd.hide("sticks", "(elem C extend 1) and (elem H)")
 
-        p.cmd.set_view(self.view_coords)
         if self.pse or self.pse_share:
             p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
@@ -265,12 +264,14 @@ class GIFVisualizer:
             p.cmd.smooth(
                 "all", window=int(self.smooth)
             )  # perform some smoothing of frames
-        p.cmd.zoom("resn UNK", buffer=1)  # zoom to ligand
+        # p.cmd.zoom("resn UNK", buffer=1)  # zoom to ligand
 
         if self.contacts:
             self.logger.info("Showing contacts...")
             show_contacts(p, "ligand", "receptor")
 
+        p.cmd.set_view(self.view_coords)
+        
         if self.pse:
             self.logger.info("Writing PyMol ensemble to session_5_intrafitted.pse...")
             p.cmd.save(str(parent_path / "session_5_intrafitted.pse"))
