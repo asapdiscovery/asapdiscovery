@@ -106,7 +106,7 @@ view_coords_sars2_mac1 = (
     -1.064284086,
     -1329.627441406,
     1504.635498047,
-    -20.000000000 
+    -20.000000000,
 )
 
 # set colorings of subpockets by resn. This may change over time.,
