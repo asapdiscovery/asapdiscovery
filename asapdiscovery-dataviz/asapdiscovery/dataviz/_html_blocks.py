@@ -124,7 +124,6 @@ orient_tail_sars2_mac1 = """\
 }
 
 
-
 </script> """
 
 colour_mers_mpro = """\
