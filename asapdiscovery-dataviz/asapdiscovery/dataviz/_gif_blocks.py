@@ -109,7 +109,8 @@ view_coords_sars2_mac1 = (
     -20.000000000,
 )
 
-# set colorings of subpockets by resn. This may change over time.
+# set colorings of subpockets by resn. This may change over time.,
+### first define the residues that span the subpockets
 # SARS2
 pocket_dict_sars2_mpro = {
     "subP1": "140-145+163+172",
@@ -136,7 +137,7 @@ pocket_dict_sars2_mac1 = {
     "anion_hole": "129+157+160+136+164",
 }
 
-
+### now define the colors per subpocket
 color_dict_mpro = {
     "subP1": "yellow",
     "subP1_prime": "orange",
@@ -145,8 +146,8 @@ color_dict_mpro = {
 }
 
 color_dict_mac1 = {
-    "nucleotide": "154+156+22+23+24+52+49+125",
-    "bridge": "126+155",
-    "phosphate": "46+47+48+38+39+40+130+131+132+127+128+97",
-    "anion_hole": "129+157+160+136+164",
+    "nucleotide": "paleyellow",
+    "bridge": "darksalmon",
+    "phosphate": "brightorange",
+    "anion_hole": "slate",
 }
