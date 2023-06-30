@@ -211,10 +211,10 @@ colour_sars2_mac1 = """\
         // Define the binding pocket.
         const data = {
         'color_dict': {
-            'nucleotide': 'paleyellow',
+            'nucleotide': 'yellow',
             'bridge': 'darksalmon',
-            'phosphate': 'brightorange',
-            'anion_hole': 'slate'
+            'phosphate': 'orange',
+            'anion_hole': 'skyblue'
         },
         'pocket_dict': {
             'nucleotide' : '154+156+22+23+24+52+49+125',
