@@ -8,14 +8,14 @@ from rdkit import Chem
 from ._html_blocks import (
     colour_7ene_mpro,
     colour_mers_mpro,
-    colour_sars2_mpro,
     colour_sars2_mac1,
+    colour_sars2_mpro,
     make_core_html,
     orient_tail_7ene_mpro,
     orient_tail_272_mpro,
     orient_tail_mers_mpro,
-    orient_tail_sars2_mpro,
     orient_tail_sars2_mac1,
+    orient_tail_sars2_mpro,
 )
 from .viz_targets import VizTargets
 
