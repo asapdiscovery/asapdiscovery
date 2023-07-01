@@ -94,7 +94,7 @@ class Ligand(DataModelAbstractBase):
     tags : dict[str, str], optional
         Dictionary of SD tags, by default {}
     data : str, optional, private
-        SDF file stored as a string to hold internal data state, by default ""
+        Chemical structure data from the SDF file stored as a string ""
     data_format : DataStorageType, optional, private, const
         Enum describing the data storage method, by default DataStorageType.sdf
     """
