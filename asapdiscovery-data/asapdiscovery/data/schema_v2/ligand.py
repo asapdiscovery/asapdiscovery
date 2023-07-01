@@ -78,7 +78,7 @@ class Ligand(DataModelAbstractBase):
     serialization.
 
     Note that equality comparisons are done on the SDF data in the underlying .data field, not the other fields.
-    This means you can change the other fields and still have equality, but changing the SDF data will change
+    This means you can change the other fields and still have equality, but changing the chemical structure data will change
     equality.
 
     You must provide either a compound_name or ids field otherwise the ligand will be invalid.
