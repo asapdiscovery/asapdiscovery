@@ -180,12 +180,16 @@ def test_ligand_sdf_rountrip_data_only(
     # checks the same thing l1.data == l2.data
     assert l1.data_equal(l2)
     assert l1 == l2
+    # checks every field
+    assert l1.full_equal(l2)
     # should already be flushed, but check it doesnt break anything
     l1.flush_attrs_to_SD_data()
     l2.flush_attrs_to_SD_data()
     # checks the same thing l1.data == l2.data
     assert l1.data_equal(l2)
     assert l1 == l2
+    # checks every field
+    assert l1.full_equal(l2)
 
 
 def test_ligand_oemol_rountrip(moonshot_sdf):

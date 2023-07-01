@@ -47,6 +47,9 @@ class DataModelAbstractBase(BaseModel):
         """Size of the resulting JSON object for this class"""
         return ByteSize(utf8len(self.json())).human_readable()
 
+    def full_equal(self, other: DataModelAbstractBase) -> bool:
+        return self.dict() == other.dict()
+
     def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
 
