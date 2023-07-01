@@ -219,6 +219,13 @@ def test_clear_sd_data(moonshot_sdf):
     assert l1.get_SD_data() == {}
 
 
+def test_clear_sd_data(moonshot_sdf):
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
+    data = {"experimental_data": "blahblah"}
+    with pytest.raises(ValueError):
+        l1.set_SD_data(data)
+
+
 @pytest.mark.parametrize("tags", [{"test_key": "test_value"}, {}])
 @pytest.mark.parametrize("exp_data_vals", [{"pIC50": 5.0}, {}])
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])

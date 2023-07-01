@@ -267,6 +267,10 @@ class Ligand(DataModelAbstractBase):
         Set the SD data for the ligand, uses an update to overwrite existing data in line with
         OpenEye behaviour
         """
+        # make sure we don't overwrite any attributes
+        for k in data.keys():
+            if k in self.__fields__.keys():
+                raise ValueError(f"Tag name {k} is a reserved attribute name")
         self.tags.update(data)
 
     def _set_SD_data_repr_to_str(self, data: dict[str, str]) -> str:
