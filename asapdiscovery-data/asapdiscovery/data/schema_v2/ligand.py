@@ -77,7 +77,7 @@ class Ligand(DataModelAbstractBase):
     Has first class serialization support for SDF files as well as the typical JSON and dictionary
     serialization.
 
-    Note that equality comparisons are done on the SDF data in the underlying .data field, not the other fields.
+    Note that equality comparisons are done on the chemical structure data found in the `data` field, not the other fields or the SD Tags in the original SDF
     This means you can change the other fields and still have equality, but changing the chemical structure data will change
     equality.
 
