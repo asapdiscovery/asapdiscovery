@@ -177,7 +177,15 @@ def test_ligand_sdf_rountrip_data_only(
     )
     l1.to_sdf(tmp_path / "test.sdf")
     l2 = Ligand.from_sdf(tmp_path / "test.sdf")
+    # checks the same thing l1.data == l2.data
     assert l1.data_equal(l2)
+    assert l1 == l2
+    # should already be flushed, but check it doesnt break anything
+    l1.flush_attrs_to_SD_data()
+    l2.flush_attrs_to_SD_data()
+    # checks the same thing l1.data == l2.data
+    assert l1.data_equal(l2)
+    assert l1 == l2
 
 
 def test_ligand_oemol_rountrip(moonshot_sdf):
