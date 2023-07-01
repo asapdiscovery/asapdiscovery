@@ -231,7 +231,7 @@ def test_clear_sd_data(moonshot_sdf):
     assert l1.get_SD_data() == {}
 
 
-def test_clear_sd_data(moonshot_sdf):
+def test_clear_sd_data_reserved_fails(moonshot_sdf):
     l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
     data = {"experimental_data": "blahblah"}
     with pytest.raises(ValueError):
