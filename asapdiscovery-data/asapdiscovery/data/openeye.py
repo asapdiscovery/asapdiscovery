@@ -765,15 +765,16 @@ def oemol_to_pdb_string(mol: oechem.OEMol) -> str:
     """
     oms = oechem.oemolostream()
     oms.SetFormat(oechem.OEFormat_PDB)
+    oms.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
     oms.openstring()
     oechem.OEWriteMolecule(oms, mol)
     molstring = oms.GetString().decode("UTF-8")
     return molstring
 
 
-def pdb_string_to_oemol(pdb_str: str) -> oechem.OEMol:
+def pdb_string_to_oemol(pdb_str: str) -> oechem.OEGraphMol:
     """
-    Loads a PDB string into an OpenEye OEMol
+    Loads a PDB string into an OpenEye OEGraphMol
 
     Parameters
     ----------
@@ -787,9 +788,10 @@ def pdb_string_to_oemol(pdb_str: str) -> oechem.OEMol:
     """
     ims = oechem.oemolistream()
     ims.SetFormat(oechem.OEFormat_PDB)
+    ims.SetFlavor(oechem.OEFormat_PDB, oechem.OEIFlavor_PDB_DATA)
     ims.openstring(pdb_str)
     mols = []
-    mol = oechem.OEMol()
+    mol = oechem.OEGraphMol()
     for mol in ims.GetOEMols():
         mols.append(oechem.OEMol(mol))
     if len(mols) != 1:

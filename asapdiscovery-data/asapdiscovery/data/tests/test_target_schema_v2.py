@@ -82,8 +82,9 @@ def test_target_json_roundtrip(
 def test_target_data_equal(moonshot_pdb):
     t1 = Target.from_pdb(moonshot_pdb, "TargetTestName")
     t2 = Target.from_pdb(moonshot_pdb, "TargetTestName")
+    # does the same thing as the __eq__ method
     assert t1.data_equal(t2)
-    assert not t1 == t2
+    assert t1 == t2
 
 
 def test_oemol_roundtrip(
