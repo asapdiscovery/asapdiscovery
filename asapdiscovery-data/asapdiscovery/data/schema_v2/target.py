@@ -2,13 +2,14 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
 from asapdiscovery.data.openeye import oechem, oemol_to_pdb_string, pdb_string_to_oemol
-from pydantic import Field
+from pydantic import Field, root_validator
 
 from .dynamic_properties import TargetType
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
     read_file_directly,
+    schema_dict_get_val_overload,
     write_file_directly,
 )
 
@@ -59,6 +60,26 @@ class Target(DataModelAbstractBase):
         allow_mutation=False,
     )
 
+    @root_validator(pre=True)
+    @classmethod
+    def _validate_at_least_one_id(cls, v):
+        # check if skip validation
+        if v.get("_skip_validate_ids"):
+            return v
+        else:
+            ids = v.get("ids")
+            compound_name = v.get("target_name")
+            # check if all the identifiers are None, sometimes when this is called from
+            # already instantiated ligand we need to be able to handle a dict and instantiated class
+            if compound_name is None:
+                if ids is None or all(
+                    [v is None for v in schema_dict_get_val_overload(ids)]
+                ):
+                    raise ValueError(
+                        "At least one identifier must be provide, or target_name must be provided"
+                    )
+        return v
+
     @classmethod
     def from_pdb(
         cls, pdb_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
@@ -92,19 +113,3 @@ class Target(DataModelAbstractBase):
 
     def to_oemol(self) -> oechem.OEMol:
         return pdb_string_to_oemol(self.data)
-
-    """
-    we are deferring responsibility of writing to and from OEDesignUnit to the caller
-    as it doesn't really make sense to force a specific OESpruce workflow on the user.
-    as there are so many different ways to generate a OEDesignUnit from a PDB file
-    depending on the options used.
-
-    Therefore the user is responsible for reading and outputting an OEMol or OEGraphMol of the OEDesignUnit
-    component in question.
-
-    eg.
-
-    L = Ligand.from_pdb('complex.pdb')
-    prepped_oemol = prep_oemol(L.to_oemol())
-    L2 = Ligand.from_oemol(prepped_oemol)
-    """

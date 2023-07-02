@@ -747,3 +747,51 @@ def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
     """
     oechem.OEClearSDData(mol)
     return mol
+
+
+def oemol_to_pdb_string(mol: oechem.OEMol) -> str:
+    """
+    Dumps an OpenEye OEMol to a PDB string
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+         OpenEye OEMol
+
+    Returns
+    -------
+    str
+        PDB string representation of the input OEMol
+    """
+    oms = oechem.oemolostream()
+    oms.SetFormat(oechem.OEFormat_PDB)
+    oms.openstring()
+    oechem.OEWriteMolecule(oms, mol)
+    molstring = oms.GetString().decode("UTF-8")
+    return molstring
+
+
+def pdb_string_to_oemol(pdb_str: str) -> oechem.OEMol:
+    """
+    Loads a PDB string into an OpenEye OEMol
+
+    Parameters
+    ----------
+    pdb_str: str
+        The string representation of a PDB file
+
+    Returns
+    -------
+    oechem.OEMol
+        resulting OpenEye OEMol
+    """
+    ims = oechem.oemolistream()
+    ims.SetFormat(oechem.OEFormat_PDB)
+    ims.openstring(pdb_str)
+    mols = []
+    mol = oechem.OEMol()
+    for mol in ims.GetOEMols():
+        mols.append(oechem.OEMol(mol))
+    if len(mols) != 1:
+        oechem.OEThrow.Fatal("More than one molecule in input stream")
+    return mols[0]

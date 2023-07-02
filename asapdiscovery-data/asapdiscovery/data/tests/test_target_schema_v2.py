@@ -24,7 +24,7 @@ def moonshot_pdb_contents(moonshot_pdb):
         return f.read()
 
 
-@pytest.mark.parametrize("ttype", ["sars2", "mers", "mac1"])
+@pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
 def test_targettype_init(ttype):
     tt = TargetType(ttype)
     assert tt.value == ttype
@@ -35,7 +35,7 @@ def test_targettype_init_bad_name():
         _ = TargetType("bad_name")
 
 
-@pytest.mark.parametrize("ttype", ["sars2", "mers", "mac1"])
+@pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
 def test_target_identifiers(ttype):
     ids = TargetIdentifiers(target_type=ttype, fragalysis_id="blah", pdb_code="blah")
     assert ids.target_type == TargetType(ttype)
@@ -45,8 +45,8 @@ def test_target_identifiers(ttype):
 
 @pytest.mark.parametrize("pdb_code", ["ABCD", None])
 @pytest.mark.parametrize("fragalysis_id", ["Mpro-P2660", None])
-@pytest.mark.parametrize("ttype", ["sars2", "mers", "mac1"])
-@pytest.mark.parametrize("target_name", ["test_name", None])
+@pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
+@pytest.mark.parametrize("target_name", ["test_name"])
 def test_target_dict_roundtrip(
     moonshot_pdb, target_name, ttype, fragalysis_id, pdb_code
 ):
@@ -63,8 +63,8 @@ def test_target_dict_roundtrip(
 
 @pytest.mark.parametrize("pdb_code", ["ABCD", None])
 @pytest.mark.parametrize("fragalysis_id", ["Mpro-P2660", None])
-@pytest.mark.parametrize("ttype", ["sars2", "mers", "mac1"])
-@pytest.mark.parametrize("target_name", ["test_name", None])
+@pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
+@pytest.mark.parametrize("target_name", ["test_name"])
 def test_target_json_roundtrip(
     moonshot_pdb, target_name, ttype, fragalysis_id, pdb_code
 ):
@@ -81,7 +81,7 @@ def test_target_json_roundtrip(
 
 def test_target_data_equal(moonshot_pdb):
     t1 = Target.from_pdb(moonshot_pdb, "TargetTestName")
-    t2 = Target.from_pdb(moonshot_pdb)
+    t2 = Target.from_pdb(moonshot_pdb, "TargetTestName")
     assert t1.data_equal(t2)
     assert not t1 == t2
 
@@ -89,16 +89,16 @@ def test_target_data_equal(moonshot_pdb):
 def test_oemol_roundtrip(
     moonshot_pdb_processed,
 ):  # test that pre-processed pdb files can be read in and out consistently
-    t1 = Target.from_pdb(moonshot_pdb_processed)
+    t1 = Target.from_pdb(moonshot_pdb_processed, "TargetTestName")
     mol = t1.to_oemol()
-    t2 = Target.from_oemol(mol)
+    t2 = Target.from_oemol(mol, "TargetTestName")
     assert t1 == t2
 
 
 def test_oemol_roundtrip_via_openeye(
     moonshot_pdb,
 ):  # test that a pdb file can be read in and out consistently via roundtrip through openeye
-    t1 = Target.from_pdb_via_openeye(moonshot_pdb)
+    t1 = Target.from_pdb_via_openeye(moonshot_pdb, "TargetTestName")
     mol = t1.to_oemol()
-    t2 = Target.from_oemol(mol)
+    t2 = Target.from_oemol(mol, "TargetTestName")
     assert t1 == t2
