@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from pydantic import BaseModel, ByteSize, validator
+from pydantic import BaseModel, ByteSize
 
 
 class DataStorageType(str, Enum):
@@ -42,20 +42,47 @@ class DataModelAbstractBase(BaseModel):
     def from_json(cls, json_str):
         return cls.parse_obj(json.loads(json_str))
 
-    # check_fields required to be false as `data` not defined for baseclass
-    @validator("data", check_fields=False)
-    def data_must_not_be_empty(cls, v):
-        if not v:
-            raise ValueError("Data field can not be empty")
-        return v
-
     @property
     def size(self) -> ByteSize:
         """Size of the resulting JSON object for this class"""
         return ByteSize(utf8len(self.json())).human_readable()
 
+    def full_equal(self, other: DataModelAbstractBase) -> bool:
+        return self.dict() == other.dict()
+
     def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
 
+    # use data_equal instead
+    def __eq__(self, other: DataModelAbstractBase) -> bool:
+        return self.data_equal(other)
+
+    # use data_equal instead
+    def __ne__(self, other: DataModelAbstractBase) -> bool:
+        return not self.data_equal(other)
+
     class Config:
         validate_assignment = True
+        # can't use extra="forbid" because of the way we use
+        # kwargs to skip root_validator on some fields
+
+
+def schema_dict_get_val_overload(obj: dict | BaseModel):
+    """
+    Overload for Schema and Dict to get values easily
+
+    Parameters
+    ----------
+    obj : Union[Dict, Schema]
+        Object to get values from
+
+    Returns
+    -------
+    Iterable[Any]
+    """
+    if isinstance(obj, dict):
+        return obj.values()
+    elif isinstance(obj, BaseModel):
+        return obj.dict().values()
+    else:
+        raise TypeError(f"Unsupported type {type(obj)}")

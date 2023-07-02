@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import Any, Dict, List, Optional, Union  # noqa: F401
 
 from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
 
@@ -595,7 +595,7 @@ def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
 
 def oemol_to_smiles(mol: oechem.OEMol) -> str:
     """
-    SMILES string of an OpenEye OEMol
+    Canonical SMILES string of an OpenEye OEMol
 
     Paramers
     --------
@@ -644,32 +644,7 @@ def oemol_to_inchikey(mol: oechem.OEMol) -> str:
     return oechem.OECreateInChIKey(mol)
 
 
-def set_SD_data(mol: oechem.OEMol, key: str, value: str) -> oechem.OEMol:
-    """
-    Set the SD data on an OpenEye OEMol
-
-    Parameters
-    ----------
-    mol: oechem.OEMol
-        OpenEye OEMol
-
-    Returns
-    -------
-    oechem.OEMol
-        OpenEye OEMol with SD data set
-    """
-    try:
-        key = str(key)
-        value = str(value)
-    except ValueError as v:
-        raise ValueError(
-            f"SD data key {key} or value {value} is not castable  a string"
-        ) from v
-    oechem.OESetSDData(mol, key, value)
-    return mol
-
-
-def set_SD_data_dict(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
+def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
 
@@ -684,20 +659,15 @@ def set_SD_data_dict(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
         OpenEye OEMol with SD data set
     """
     for key, value in data.items():
-        try:
-            key = str(key)
-            value = str(value)
-        except ValueError as v:
-            raise Exception(
-                f"SD data key {key} or value {value} is not castable  a string"
-            ) from v
         oechem.OESetSDData(mol, key, value)
     return mol
 
 
-def get_SD_data(mol: oechem.OEMol, key: str) -> str:
+def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, Any]) -> oechem.OEMol:
     """
-    Get the SD data on an OpenEye OEMol
+    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+    sets the SD tag to the repr of the value, so that re-reading the SD data with
+    ast.literal_eval in get_SD_data_to_object  give the same value
 
     Parameters
     ----------
@@ -706,13 +676,15 @@ def get_SD_data(mol: oechem.OEMol, key: str) -> str:
 
     Returns
     -------
-    str
-        SD data value
+    oechem.OEMol
+        OpenEye OEMol with SD data set
     """
-    return oechem.OEGetSDData(mol, key)
+    # NOTE: use repr to ensure re-reading the SD data will give the same value
+    mol = set_SD_data(mol, {k: repr(v) for k, v in data.items()})
+    return mol
 
 
-def get_SD_data_dict(mol: oechem.OEMol) -> dict[str, str]:
+def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
     """
     Get all SD data on an OpenEye OEMol
 
@@ -726,85 +698,52 @@ def get_SD_data_dict(mol: oechem.OEMol) -> dict[str, str]:
     Dict[str, str]
         Dictionary of SD data
     """
-    sd_data = {}
-    for dp in oechem.OEGetSDDataPairs(mol):
-        sd_data[dp.GetTag()] = dp.GetValue()
+    sd_data = {dp.GetTag(): dp.GetValue() for dp in oechem.OEGetSDDataPairs(mol)}
     return sd_data
 
 
-def print_SD_Data(mol: oechem.OEMol) -> None:
+def _get_SD_data_to_object(mol: oechem.OEMol) -> dict[str, Any]:
+    """
+    Get all SD data on an OpenEye OEMol, converting to Python objects
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary of SD data
+    """
+    import ast
+
+    sd_data = get_SD_data(mol)
+    for key, value in sd_data.items():
+        sd_data[key] = ast.literal_eval(value)
+    return sd_data
+
+
+def print_SD_data(mol: oechem.OEMol) -> None:
     print("SD data of", mol.GetTitle())
     # loop over SD data
     for dp in oechem.OEGetSDDataPairs(mol):
         print(dp.GetTag(), ":", dp.GetValue())
 
 
-def oemol_to_pdb_string(mol: oechem.OEMol) -> str:
+def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
     """
-    Dumps an OpenEye OEMol to a PDB string
+    Clear all SD data on an OpenEye OEMol
 
     Parameters
     ----------
     mol: oechem.OEMol
-         OpenEye OEMol
-
-    Returns
-    -------
-    str
-        PDB string representation of the input OEMol
-    """
-    oms = oechem.oemolostream()
-    oms.SetFormat(oechem.OEFormat_PDB)
-    oms.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
-    oms.openstring()
-    oechem.OEWriteMolecule(oms, mol)
-    molstring = oms.GetString().decode("UTF-8")
-    return molstring
-
-
-def pdb_string_to_oemol(pdb_str: str) -> oechem.OEGraphMol:
-    """
-    Loads a PDB string into an OpenEye OEGraphMol
-
-    Parameters
-    ----------
-    pdb_str: str
-        The string representation of a PDB file
+        OpenEye OEMol
 
     Returns
     -------
     oechem.OEMol
-        resulting OpenEye OEMol
+        OpenEye OEMol with SD data cleared
     """
-    ims = oechem.oemolistream()
-    ims.SetFormat(oechem.OEFormat_PDB)
-    ims.openstring(pdb_str)
-    mols = []
-    mol = oechem.OEGraphMol()
-    for mol in ims.GetOEMols():
-        mols.append(oechem.OEMol(mol))
-    if len(mols) != 1:
-        oechem.OEThrow.Fatal("More than one molecule in input stream")
-    return mols[0]
-
-
-def oedu_to_pdb_string(du: oechem.OEDesignUnit) -> str:
-    """
-    Dumps an OpenEye OEDesignUnit to a PDB string
-
-    Parameters
-    ----------
-    du: oechem.OEDesignUnit
-        OpenEye OEDesignUnit
-
-    Returns
-    -------
-    str
-        PDB string representation of the input OEDesignUnit
-    """
-    oms = oechem.oemolostream()
-    oms.SetFormat(oechem.OEFormat_PDB)
-    oms.openstring()
-    oechem.OEWriteDesignUnit(oms, du)
-    molstring = oms.GetString().decode("UTF-8")
-    return molstring
+    oechem.OEClearSDData(mol)
+    return mol
