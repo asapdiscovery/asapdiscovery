@@ -4,30 +4,29 @@
 
 organism:
   sars2:
-   - Mpro
-   - Mac1
+    - Mpro
+    - Mac1
   mers:
-   - Mpro
-
+    - Mpro
 
 manifold_outputs:
   - Docking_Score:
       units:
       tools:
-       - POSIT
+        - POSIT
   - Docking_Confidence:
       units:
       tools:
-       - POSIT
-  - Docking_Pose
+        - POSIT
+  - Docking_Pose:
       units:
       tools:
-       - POSIT
+        - POSIT
   - ML_Score:
       units: pIC50
       tools:
-      - GAT
-      - Schnet
+        - GAT
+        - Schnet
   - MD_Pose:
       units:
       tools:
@@ -41,9 +40,6 @@ manifold_outputs:
       units: pIC50
       tools:
 
-
 static_identifiers:
   - UUID_POSTERA_API
   - UUID_CCC_DB
-
-  

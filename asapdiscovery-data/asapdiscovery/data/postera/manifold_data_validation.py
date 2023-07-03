@@ -1,13 +1,20 @@
 from enum import Enum
 from pathlib import Path
-from typing import Union
+from typing import Union, Tuple
 import pandas as pd
 import yaml
 import itertools
 import pkg_resources
 
 
-# we need to define a new Enum class with some handy methods
+# util function to open a yaml file and return the data
+def load_yaml(yaml_path: Union[str, Path]) -> dict:
+    with open(yaml_path) as f:
+        data = yaml.safe_load(f)
+    return data
+
+
+# we define a new Enum class with some handy methods
 
 
 class TagEnumBase(Enum):
@@ -20,7 +27,7 @@ class TagEnumBase(Enum):
         return [e.name for e in cls]
 
 
-def make_bio_tags(yaml_path: Union[str, Path]) -> Enum:
+def make_bio_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
     """
     Create a dynamic enum from a yaml file
     This enum contains all the biology tags that are used in the manifold data
@@ -35,10 +42,10 @@ def make_bio_tags(yaml_path: Union[str, Path]) -> Enum:
     -------
     Enum
         Enum containing all the tags
+    set of str
+        Set of all the tags
     """
-    with open(yaml_path) as f:
-        data = yaml.safe_load(f)
-
+    data = load_yaml(yaml_path)
     organisms = data["organism"]
     bio_tags = set()
     for org in organisms:
@@ -46,23 +53,50 @@ def make_bio_tags(yaml_path: Union[str, Path]) -> Enum:
             bio_tags.add(org + "_" + target)
     # make the same tags also the values
     enum_data = {tag: tag for tag in bio_tags}
-    return TagEnumBase("BioTags", enum_data)
+    return TagEnumBase("BioTags", enum_data), bio_tags
 
 
-def make_tool_tags(yaml_path: Union[str, Path]) -> Enum:
-    with open(yaml_path) as f:
-        data = yaml.safe_load(f)
+def make_output_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
+    data = load_yaml(yaml_path)
+    manifold_outputs = data["manifold_outputs"]
+    outputs = set()
+    for output in manifold_outputs:
+        key = list(output.keys())
+        if len(key) > 1:
+            raise ValueError("output should only have one key")
+        output_name = key[0]
 
-    organisms = data["organism"]
+        try:
+            has_units = output[output_name]["units"]
+        except KeyError:
+            raise ValueError("output should have a units key, even if it is empty")
+        try:
+            has_tools = output[output_name]["tools"]
+        except KeyError:
+            raise ValueError("output should have a tools key, even if it is empty")
+
+        if has_tools:
+            for tool in output[output_name]["tools"]:
+                name = output_name + "_" + tool
+                if has_units:
+                    name += "_" + output[output_name]["units"]
+                outputs.add(name)
+        else:
+            name = output_name
+            if has_units:
+                name += "_" + output[output_name]["units"]
+            outputs.add(name)
+    enum_data = {tag: tag for tag in outputs}
+    return TagEnumBase("OutputTags", enum_data), outputs
 
 
 manifold_data_spec = pkg_resources.resource_filename(
     __name__, "manifold_data_tags.yaml"
 )
 
-BioTags = make_bio_tags(manifold_data_spec)
+BioTags, biotag_set = make_bio_tags(manifold_data_spec)
 
-ToolTags = make_tool_tags(manifold_data_spec)
+OutputTags, outputtag_set = make_output_tags(manifold_data_spec)
 
 
 class ManifoldAllowedColumns(Enum):
