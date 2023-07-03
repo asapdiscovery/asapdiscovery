@@ -9,6 +9,7 @@ organism:
   mers:
     - Mpro
 
+# requires both units and tools specified even if empty for clarity.
 manifold_outputs:
   - Docking_Score:
       units:
