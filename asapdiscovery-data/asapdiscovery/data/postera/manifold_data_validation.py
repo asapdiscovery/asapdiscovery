@@ -1,6 +1,68 @@
 from enum import Enum
-
+from pathlib import Path
+from typing import Union
 import pandas as pd
+import yaml
+import itertools
+import pkg_resources
+
+
+# we need to define a new Enum class with some handy methods
+
+
+class TagEnumBase(Enum):
+    @classmethod
+    def get_values(cls):
+        return [e.value for e in cls]
+
+    @classmethod
+    def get_names(cls):
+        return [e.name for e in cls]
+
+
+def make_bio_tags(yaml_path: Union[str, Path]) -> Enum:
+    """
+    Create a dynamic enum from a yaml file
+    This enum contains all the biology tags that are used in the manifold data
+    for example sars2_Mpro = sars2_Mpro
+
+    Parameters
+    ----------
+    yaml_path : Union[str, Path]
+        Path to the yaml file containing the tags
+
+    Returns
+    -------
+    Enum
+        Enum containing all the tags
+    """
+    with open(yaml_path) as f:
+        data = yaml.safe_load(f)
+
+    organisms = data["organism"]
+    bio_tags = set()
+    for org in organisms:
+        for target in organisms[org]:
+            bio_tags.add(org + "_" + target)
+    # make the same tags also the values
+    enum_data = {tag: tag for tag in bio_tags}
+    return TagEnumBase("BioTags", enum_data)
+
+
+def make_tool_tags(yaml_path: Union[str, Path]) -> Enum:
+    with open(yaml_path) as f:
+        data = yaml.safe_load(f)
+
+    organisms = data["organism"]
+
+
+manifold_data_spec = pkg_resources.resource_filename(
+    __name__, "manifold_data_tags.yaml"
+)
+
+BioTags = make_bio_tags(manifold_data_spec)
+
+ToolTags = make_tool_tags(manifold_data_spec)
 
 
 class ManifoldAllowedColumns(Enum):
