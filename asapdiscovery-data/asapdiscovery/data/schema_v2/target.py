@@ -8,10 +8,10 @@ from .dynamic_properties import TargetType
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
+    check_strings_for_equality_with_exclusion,
     read_file_directly,
     schema_dict_get_val_overload,
     write_file_directly,
-    check_strings_for_equality_with_exclusion,
 )
 
 
