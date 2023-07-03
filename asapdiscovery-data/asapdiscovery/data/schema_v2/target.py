@@ -11,6 +11,7 @@ from .schema_base import (
     read_file_directly,
     schema_dict_get_val_overload,
     write_file_directly,
+    check_strings_for_equality_with_exclusion,
 )
 
 
@@ -113,3 +114,16 @@ class Target(DataModelAbstractBase):
 
     def to_oemol(self) -> oechem.OEMol:
         return pdb_string_to_oemol(self.data)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Target):
+            return NotImplemented
+        # check if the data is the same
+        # but exclude the MASTER record as this is not always in the SAME PLACE
+        # for some strange reason
+        return check_strings_for_equality_with_exclusion(
+            self.data, other.data, "MASTER"
+        )
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)

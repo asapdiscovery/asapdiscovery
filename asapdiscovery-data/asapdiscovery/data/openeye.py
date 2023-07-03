@@ -786,14 +786,16 @@ def pdb_string_to_oemol(pdb_str: str) -> oechem.OEGraphMol:
     oechem.OEMol
         resulting OpenEye OEMol
     """
-    ims = oechem.oemolistream()
-    ims.SetFormat(oechem.OEFormat_PDB)
-    ims.SetFlavor(oechem.OEFormat_PDB, oechem.OEIFlavor_PDB_DATA)
-    ims.openstring(pdb_str)
-    mols = []
+    ifs = oechem.oemolistream()
+    ifs.SetFormat(oechem.OEFormat_PDB)
+    ifs.SetFlavor(
+        oechem.OEFormat_PDB,
+        oechem.OEIFlavor_PDB_Default
+        | oechem.OEIFlavor_PDB_DATA
+        | oechem.OEIFlavor_PDB_ALTLOC,
+    )  # noqa
+    ifs.openstring(pdb_str)
     mol = oechem.OEGraphMol()
-    for mol in ims.GetOEMols():
-        mols.append(oechem.OEMol(mol))
-    if len(mols) != 1:
-        oechem.OEThrow.Fatal("More than one molecule in input stream")
-    return mols[0]
+    if not oechem.OEReadMolecule(ifs, mol):
+        oechem.OEThrow.Fatal("Cannot read molecule")
+    return mol

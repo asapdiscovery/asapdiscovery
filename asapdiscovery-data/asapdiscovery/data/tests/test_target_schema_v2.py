@@ -19,9 +19,9 @@ def moonshot_pdb_processed():
 
 
 @pytest.fixture(scope="session")
-def moonshot_pdb_contents(moonshot_pdb):
-    with open(moonshot_pdb) as f:
-        return f.read()
+def sars2_spruced_pdb():
+    pdb = fetch_test_file("sars_spruced.pdb")
+    return pdb
 
 
 @pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
@@ -100,6 +100,15 @@ def test_oemol_roundtrip_via_openeye(
     moonshot_pdb,
 ):  # test that a pdb file can be read in and out consistently via roundtrip through openeye
     t1 = Target.from_pdb_via_openeye(moonshot_pdb, "TargetTestName")
+    mol = t1.to_oemol()
+    t2 = Target.from_oemol(mol, "TargetTestName")
+    assert t1 == t2
+
+
+def test_oemol_roundtrip_sars2(
+    sars2_spruced_pdb,
+):  # test that a pdb file can be read in and out consistently via roundtrip through openeye
+    t1 = Target.from_pdb(sars2_spruced_pdb, "TargetTestName")
     mol = t1.to_oemol()
     t2 = Target.from_oemol(mol, "TargetTestName")
     assert t1 == t2
