@@ -34,6 +34,16 @@ def test_targettype_init_bad_name():
     with pytest.raises(ValueError):
         _ = TargetType("bad_name")
 
+def test_target_from_pdb_at_least_one_id(moonshot_pdb):
+    with pytest.raises(ValueError):
+        # neither id is set
+        Target.from_pdb(moonshot_pdb)
+
+def test_target_from_pdb_at_least_one_target_id(moonshot_pdb):
+    with pytest.raises(ValueError):
+        # neither id is set
+        Target.from_pdb(moonshot_pdb, ids=TargetIdentifiers())
+
 
 @pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
 def test_target_identifiers(ttype):
