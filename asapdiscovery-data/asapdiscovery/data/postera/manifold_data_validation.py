@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Union, Tuple, Iterable
 import pandas as pd
 import yaml
 import itertools
@@ -25,6 +25,14 @@ class TagEnumBase(Enum):
     @classmethod
     def get_names(cls):
         return [e.name for e in cls]
+
+    @classmethod
+    def from_iterable(cls, name: str, iter: Iterable) -> Enum:
+        """
+        Create a new Enum class from a set of tags
+        """
+        enum_data = {tag: tag for tag in iter}
+        return cls(name, enum_data)
 
 
 def make_bio_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
@@ -51,12 +59,28 @@ def make_bio_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
     for org in organisms:
         for target in organisms[org]:
             bio_tags.add(org + "_" + target)
-    # make the same tags also the values
-    enum_data = {tag: tag for tag in bio_tags}
-    return TagEnumBase("BioTags", enum_data), bio_tags
+
+    return TagEnumBase.from_iterable("BioTags", bio_tags), bio_tags
 
 
 def make_output_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
+    """
+    Create a dynamic enum from a yaml file
+    This enum contains all the output tags that are used in the manifold data
+    for example Docking_Score_POSIT
+
+    Parameters
+    ----------
+    yaml_path : Union[str, Path]
+        Path to the yaml file containing the tags
+
+    Returns
+    -------
+    Enum
+        Enum containing all the tags
+    set of str
+        Set of all the tags
+    """
     data = load_yaml(yaml_path)
     manifold_outputs = data["manifold_outputs"]
     outputs = set()
@@ -86,17 +110,71 @@ def make_output_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
             if has_units:
                 name += "_" + output[output_name]["units"]
             outputs.add(name)
-    enum_data = {tag: tag for tag in outputs}
-    return TagEnumBase("OutputTags", enum_data), outputs
+
+    return TagEnumBase.from_iterable("OutputTags", outputs), outputs
 
 
+def make_static_tags(yaml_path) -> Tuple[Enum, set]:
+    """
+    Create a dynamic enum from a yaml file
+    This enum contains all the static tags that are used in the manifold data
+    for example SMILES = SMILES
+
+    Parameters
+    ----------
+    yaml_path : Union[str, Path]
+        Path to the yaml file containing the tags
+
+    Returns
+    -------
+    Enum
+        Enum containing all the tags
+    set of str
+        Set of all the tags
+    """
+    data = load_yaml(yaml_path)
+    static_identifiers = data["static_identifiers"]
+    static_tags = set()
+    for identifier in static_identifiers:
+        static_tags.add(identifier)
+    return TagEnumBase.from_iterable("StaticAndLegacyTags", static_tags), static_tags
+
+
+# OK finally we can actually make the enums
+
+# static path to the spec
 manifold_data_spec = pkg_resources.resource_filename(
     __name__, "manifold_data_tags.yaml"
 )
 
-BioTags, biotag_set = make_bio_tags(manifold_data_spec)
+# make Bio enum and set
+BioTags, bio_tag_set = make_bio_tags(manifold_data_spec)
 
-OutputTags, outputtag_set = make_output_tags(manifold_data_spec)
+# make Output enum and set
+OutputTags, output_tag_set = make_output_tags(manifold_data_spec)
+
+# make static and legacy enum and set
+StaticTags, static_tag_set = make_static_tags(manifold_data_spec)
+
+
+def make_tag_combinations_and_combine_with_static(
+    bio_tags: set, output_tags: set, static_tags: set
+) -> Tuple[Enum, set]:
+    """
+    Make all possible combinations of bio_tags and output_tags
+    then add in the static and legacy tags
+    """
+    combos = set(itertools.product(output_tags, bio_tags))
+    combos = {combo[0] + "_" + combo[1] for combo in combos}
+    final_tags = combos.union(static_tags)
+    # sort the tags so that they are in alphabetical order
+    final_tags = sorted(final_tags)
+    return TagEnumBase.from_iterable("ManifoldAllowedTags", final_tags), final_tags
+
+
+ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
+    bio_tag_set, output_tag_set, static_tag_set
+)
 
 
 class ManifoldAllowedColumns(Enum):

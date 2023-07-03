@@ -1,7 +1,7 @@
-# yaml file describing the relationship between available methods and outputs
-# as well as the relationship between available biochemical targets and their families
+# yaml file describing the relationship between outputs and available methods
+# as well as the relationship between available biochemical targets and organisms
 
-
+# organisms and targets
 organism:
   sars2:
     - Mpro
@@ -43,3 +43,4 @@ manifold_outputs:
 static_identifiers:
   - UUID_POSTERA_API
   - UUID_CCC_DB
+  - SMILES
