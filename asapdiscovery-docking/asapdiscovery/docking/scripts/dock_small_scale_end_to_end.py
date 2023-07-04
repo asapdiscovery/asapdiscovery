@@ -17,6 +17,9 @@ from asapdiscovery.data.utils import (
     oe_load_exp_from_file,
     target_names_from_common_names_and_crystals,
 )
+
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import (
@@ -129,7 +132,8 @@ parser.add_argument(
     "--target",
     type=str,
     required=True,
-    help="Target protein name, one of (sars2, mers, 7ene, 272)",
+    help="Target protein name",
+    choices=TargetTags.get_values(),
 )
 
 parser.add_argument(
@@ -321,8 +325,8 @@ def main():
         logger.warning(f"Overwriting output directory: {output_dir}")
 
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
-    target_type = target_names_from_common_names_and_crystals(args.target)
-    logger.info(f"Target type: {target_type}")
+
+    logger.info(f"IMPORTANT: Target: {args.target}")
     logger.info(f"Output directory: {output_dir}")
 
     if args.debug:
@@ -706,14 +710,14 @@ def main():
     # only write out visualizations and do MD for the best posit score for each ligand
     # sort by posit score
 
-    sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
-    top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
+    sorted_df = results_df.sort_values(by=["Docking_Confidence_POSIT"], ascending=False)
+    top_posit = sorted_df.drop_duplicates(subset=["_ligand_id"], keep="first")
     # save with the failed ones in so its clear which ones failed
     top_posit.to_csv(output_dir / "top_poses.csv", index=False)
     n_total = len(top_posit)
 
     # IMPORTANT: only keep the ones that worked for the rest of workflow
-    top_posit = top_posit[top_posit.docked_file != ""]
+    top_posit = top_posit[top_posit._docked_file != ""]
     top_posit.to_csv(output_dir / "top_poses_succeded.csv", index=False)
 
     n_succeded = len(top_posit)
@@ -728,7 +732,7 @@ def main():
     )
 
     # add pose output column
-    top_posit["outpath_pose"] = top_posit["ligand_id"].apply(
+    top_posit["_outpath_pose"] = top_posit["_ligand_id"].apply(
         lambda x: poses_dir / Path(x) / "visualization.html"
     )
 
@@ -754,7 +758,7 @@ def main():
             return output_paths[0]
 
         for pose, output_path in zip(
-            top_posit["docked_file"], top_posit["outpath_pose"]
+            top_posit["_docked_file"], top_posit["_outpath_pose"]
         ):
             outpath = dask_html_adaptor(pose, output_path)
             outpaths.append(outpath)
@@ -765,8 +769,8 @@ def main():
     else:
         logger.info("Running HTML visualization in serial")
         html_visualiser = HTMLVisualizer(
-            top_posit["docked_file"],
-            top_posit["outpath_pose"],
+            top_posit["_docked_file"],
+            top_posit["_outpath_pose"],
             args.target,
             protein_path,
             logger=logger,
@@ -808,7 +812,7 @@ def main():
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
 
-        top_posit["outpath_md"] = top_posit["ligand_id"].apply(
+        top_posit["_outpath_md"] = top_posit["_ligand_id"].apply(
             lambda x: md_dir / Path(x)
         )
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
@@ -840,7 +844,7 @@ def main():
             # make a list of simulator results that we then compute in parallel
             retcodes = []
             for pose, output_path in zip(
-                top_posit["docked_file"], top_posit["outpath_md"]
+                top_posit["_docked_file"], top_posit["_outpath_md"]
             ):
                 retcode = dask_md_adaptor(pose, protein_path, output_path)
                 retcodes.append(retcode)
@@ -855,10 +859,10 @@ def main():
             logger.info("Running MD with in serial")
             logger.warning("This will take a long time")
             simulator = VanillaMDSimulator(
-                top_posit["docked_file"],
+                top_posit["_docked_file"],
                 protein_path,
                 logger=logger,
-                output_paths=top_posit["outpath_md"],
+                output_paths=top_posit["_outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
             )
@@ -875,15 +879,15 @@ def main():
         gif_dir = output_dir / "gif"
         gif_dir.mkdir(parents=True, exist_ok=True)
 
-        top_posit["outpath_md_sys"] = top_posit["outpath_md"].apply(
+        top_posit["_outpath_md_sys"] = top_posit["_outpath_md"].apply(
             lambda x: Path(x) / "minimized.pdb"
         )
 
-        top_posit["outpath_md_traj"] = top_posit["outpath_md"].apply(
+        top_posit["_outpath_md_traj"] = top_posit["_outpath_md"].apply(
             lambda x: Path(x) / "traj.xtc"
         )
 
-        top_posit["outpath_gif"] = top_posit["ligand_id"].apply(
+        top_posit["_outpath_gif"] = top_posit["_ligand_id"].apply(
             lambda x: gif_dir / Path(x) / "trajectory.gif"
         )
         # take only last .5ns of trajectory to get nicely equilibrated pose.
@@ -920,9 +924,9 @@ def main():
             logger.info("Running GIF visualization with Dask")
             outpaths = []
             for traj, system, outpath in zip(
-                top_posit["outpath_md_traj"],
-                top_posit["outpath_md_sys"],
-                top_posit["outpath_gif"],
+                top_posit["_outpath_md_traj"],
+                top_posit["_outpath_md_sys"],
+                top_posit["_outpath_gif"],
             ):
                 outpath = dask_gif_adaptor(traj, system, outpath)
                 outpaths.append(outpath)
@@ -936,9 +940,9 @@ def main():
             logger.info("Running GIF visualization in serial")
             logger.warning("This will take a long time")
             gif_visualiser = GIFVisualizer(
-                top_posit["outpath_md_traj"],
-                top_posit["outpath_md_sys"],
-                top_posit["outpath_gif"],
+                top_posit["_outpath_md_traj"],
+                top_posit["_outpath_md_sys"],
+                top_posit["_outpath_gif"],
                 args.target,
                 frames_per_ns=200,
                 smooth=5,
@@ -953,7 +957,7 @@ def main():
         logger.info("Uploading results to PostEra")
 
         renamed_top_posit = rename_score_columns_for_target(
-            top_posit, target_type, manifold_validate=True
+            top_posit, args.target, manifold_validate=True
         )
 
         ms.update_molecules_from_df_with_manifold_validation(

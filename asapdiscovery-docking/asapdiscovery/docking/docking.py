@@ -367,11 +367,11 @@ def rename_score_columns_for_target(
     """
     cols = TargetDependentCols.get_columns()
     if manifold_validate:
-        target_cols = TargetDependentCols.get_columns_for_target(target)
-    else:
         target_cols = (
             TargetDependentCols.get_columns_for_target_with_manifold_validation(target)
         )
+    else:
+        target_cols = TargetDependentCols.get_columns_for_target(target)
     rename_dict = dict(zip(cols, target_cols))
     df = df.rename(columns=rename_dict)
     return df
