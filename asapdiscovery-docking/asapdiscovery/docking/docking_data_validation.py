@@ -25,9 +25,9 @@ class DockingResultCols(Enum):
     GAT_SCORE = "GAT_score"
     SCHNET_SCORE = "SCHNET_score"
 
-    @staticmethod
-    def get_columns() -> list[str]:
-        return [col.value for col in DockingResultCols]
+    @classmethod
+    def get_columns(cls) -> list[str]:
+        return [col.value for col in cls]
 
 
 class TargetDependentCols(Enum):
