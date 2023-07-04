@@ -64,7 +64,7 @@ def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     target_tags = set()
     for v in viruses:
         for target in viruses[v]:
-            target_tags.add(org + "_" + target)
+            target_tags.add(v + "_" + target)
 
     return TagEnumBase.from_iterable("TargetTags", target_tags), target_tags
 
