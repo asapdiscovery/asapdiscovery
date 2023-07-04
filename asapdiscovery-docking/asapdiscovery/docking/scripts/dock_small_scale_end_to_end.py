@@ -16,7 +16,6 @@ from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
     is_valid_smiles,
     oe_load_exp_from_file,
-    target_names_from_common_names_and_crystals,
 )
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer

@@ -80,6 +80,6 @@ class TargetDependentCols(Enum):
         ]
         if not ManifoldFilter.all_valid_columns(cols):
             raise ValueError(
-                f"Columns in dataframe {cols} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedColumns.get_columns()}"
+                f"Columns in dataframe {cols} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_columns()}"
             )
         return cols
