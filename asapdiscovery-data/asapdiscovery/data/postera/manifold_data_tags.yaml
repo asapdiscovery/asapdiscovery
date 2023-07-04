@@ -1,5 +1,26 @@
-# yaml file describing the relationship between outputs and available methods
+# ABOUT: yaml file describing the relationship between outputs and available methods
 # as well as the relationship between available biochemical targets and organisms
+#
+# organisms, targets, and outputs are combined to form the full set of tags.
+# with the form:
+#
+# <output>_<tool>_<unit?>_<organism>_<target>
+#
+# where <unit?> is only included if the output has a unit.
+#
+# for example:
+#  - Docking_Score_POSIT_sars2_Mpro
+#  - ML_Score_GAT_pIC50_sars2_Mac1
+#  - MD_Pose_mers_Mpro
+#  - MD_Interactions_mers_Mpro
+#  - FECs_Affinity_pIC50_sars2_Mac1
+#  ...
+#
+# are all valid tags.
+# 
+# These are combined with the static identifiers to form the full set of tags.
+
+# The complete set is generated programatically at import time in `manifold_data_validation.py`
 
 # organisms and targets
 organism:
@@ -41,6 +62,8 @@ manifold_outputs:
       units: pIC50
       tools:
 
+
+# identifiers for static data
 static_identifiers:
   - UUID_POSTERA_API
   - UUID_CCC_DB
