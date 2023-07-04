@@ -1,10 +1,12 @@
+import itertools
 from enum import Enum
 from pathlib import Path
 from typing import Union, Tuple, Iterable # noqa: F401
+from collections.abc import Iterable
+
 import pandas as pd
-import yaml
-import itertools
 import pkg_resources
+import yaml
 
 
 # util function to open a yaml file and return the data
@@ -39,7 +41,7 @@ class TagEnumBase(Enum):
         return cls(name, enum_data)
 
 
-def make_bio_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
+def make_bio_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     """
     Create a dynamic enum from a yaml file
     This enum contains all the biology tags that are used in the manifold data
@@ -67,7 +69,7 @@ def make_bio_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
     return TagEnumBase.from_iterable("BioTags", bio_tags), bio_tags
 
 
-def make_output_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
+def make_output_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     """
     Create a dynamic enum from a yaml file
     This enum contains all the output tags that are used in the manifold data
@@ -118,7 +120,7 @@ def make_output_tags(yaml_path: Union[str, Path]) -> Tuple[Enum, set]:
     return TagEnumBase.from_iterable("OutputTags", outputs), outputs
 
 
-def make_static_tags(yaml_path) -> Tuple[Enum, set]:
+def make_static_tags(yaml_path) -> tuple[Enum, set]:
     """
     Create a dynamic enum from a yaml file
     This enum contains all the static tags that are used in the manifold data
@@ -163,7 +165,7 @@ StaticTags, static_tag_set = make_static_tags(manifold_data_spec)
 
 def make_tag_combinations_and_combine_with_static(
     bio_tags: set, output_tags: set, static_tags: set
-) -> Tuple[Enum, set]:
+) -> tuple[Enum, set]:
     """
     Make all possible combinations of bio_tags and output_tags
     then add in the static and legacy tags
