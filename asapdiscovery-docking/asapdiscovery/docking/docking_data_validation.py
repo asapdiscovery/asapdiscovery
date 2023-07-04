@@ -9,21 +9,25 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 
 class DockingResultCols(Enum):
     """
-    Columns for docking results
+    Columns for docking results, i.e. the output of the docking pipeline
+    These cannot be reordered as the order is important for the output list.
+    (See #)
+
+    Columns that are not in the allowed Postera Manifold columns are prefixed with an underscore
     """
 
-    LIGAND_ID = "ligand_id"
-    DU_STRUCTURE = "du_structure"
-    DOCKED_FILE = "docked_file"
-    POSE_ID = "pose_id"
-    DOCKED_RMSD = "docked_RMSD"
-    POSIT_PROB = "POSIT_prob"
-    POSIT_METHOD = "POSIT_method"
-    CHEMGAUSS4_SCORE = "chemgauss4_score"
-    CLASH = "clash"
+    _LIGAND_ID = "_ligand_id"
+    _DU_STRUCTURE = "_du_structure"
+    _DOCKED_FILE = "_docked_file"
+    _POSE_ID = "_pose_id"
+    _DOCKED_RMSD = "_docked_RMSD"
+    Docking_Confidence_POSIT = "Docking_Confidence_POSIT"
+    _POSIT_METHOD = "_POSIT_method"
+    Docking_Score_POSIT = "Docking_Score_POSIT"
+    _CLASH = "_clash"
     SMILES = "SMILES"
-    GAT_SCORE = "GAT_score"
-    SCHNET_SCORE = "SCHNET_score"
+    ML_Score_GAT_pIC50 = "ML_Score_GAT_pIC50"
+    ML_Score_Schnet_pIC50 = "ML_Score_Schnet_pIC50"
 
     @classmethod
     def get_columns(cls) -> list[str]:

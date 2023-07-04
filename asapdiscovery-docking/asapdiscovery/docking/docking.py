@@ -377,23 +377,6 @@ def rename_score_columns_for_target(
     return df
 
 
-def docking_result_cols() -> list[str]:
-    return [
-        "ligand_id",
-        "du_structure",
-        "docked_file",
-        "pose_id",
-        "docked_RMSD",
-        "POSIT_prob",
-        "POSIT_method",
-        "chemgauss4_score",
-        "clash",
-        "SMILES",
-        "GAT_score",
-        "SCHNET_score",
-    ]
-
-
 def make_docking_result_dataframe(
     results: list,
     output_dir: Path,
