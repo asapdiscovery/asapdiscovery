@@ -270,8 +270,9 @@ class GIFVisualizer:
             self.logger.info("Showing contacts...")
             show_contacts(p, "ligand", "receptor")
 
-        p.cmd.set_view(self.view_coords)
-
+        p.cmd.set_view(self.view_coords) # sets general orientation
+        p.cmd.zoom("ligand", 7) # sets orient on ligand and correct distance
+        
         if self.pse:
             self.logger.info("Writing PyMol ensemble to session_5_intrafitted.pse...")
             p.cmd.save(str(parent_path / "session_5_intrafitted.pse"))
