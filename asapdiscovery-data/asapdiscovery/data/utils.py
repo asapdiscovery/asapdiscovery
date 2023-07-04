@@ -1455,20 +1455,6 @@ def combine_files(paths: list[Union[Path, str]], output_file):
                 ofs.write(file_to_copy_fd.read())
 
 
-def target_names_from_common_names_and_crystals(name: str) -> str:
-    name_ = name.lower()
-    sars_names = ["sars", "sars-cov", "sars-cov2", "sars2"]
-    mers_names = ["mers", "mers-cov", "7ene", "272"]
-    if name_ in sars_names:
-        return "sars2"
-    elif name_ in mers_names:
-        return "mers"
-    else:
-        raise ValueError(
-            f"Name for target {name} not recognised as one of {sars_names} or {mers_names}"
-        )
-
-
 def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None) -> str:
     # check for name length and truncate if necessary
     if len(name) > max_length:
