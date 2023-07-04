@@ -3,8 +3,8 @@ from typing import List  # noqa: F401
 
 from asapdiscovery.data.postera.manifold_data_validation import (
     ManifoldAllowedTags,
-    TargetTags,
     ManifoldFilter,
+    TargetTags,
 )
 
 
@@ -38,7 +38,7 @@ class DockingResultCols(Enum):
 class TargetDependentCols(Enum):
     """
     Columns for docking results that are target dependent. That is they can have
-    the target name appended to them. e.g 
+    the target name appended to them. e.g
 
     Docking_Confidence_POSIT + sars2_Mpro = Docking_Confidence_POSIT_sars2_Mpro
 

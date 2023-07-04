@@ -3,7 +3,6 @@ from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
 from typing import Tuple, Union  # noqa: F401
-from collections.abc import Iterable
 
 import pandas as pd
 import pkg_resources

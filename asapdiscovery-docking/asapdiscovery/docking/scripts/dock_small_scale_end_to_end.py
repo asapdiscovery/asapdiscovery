@@ -10,6 +10,7 @@ import dask
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -17,9 +18,6 @@ from asapdiscovery.data.utils import (
     oe_load_exp_from_file,
     target_names_from_common_names_and_crystals,
 )
-
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.docking import (
