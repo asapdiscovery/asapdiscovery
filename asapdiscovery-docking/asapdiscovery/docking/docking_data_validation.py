@@ -1,13 +1,13 @@
 from enum import Enum
 from typing import List, Optional  # noqa: F401
-import pandas as pd
 
+import pandas as pd
 from asapdiscovery.data.postera.manifold_data_validation import (
     ManifoldAllowedTags,
     ManifoldFilter,
-    TargetTags,
     OutputTags,
     StaticTags,
+    TargetTags,
 )
 
 
@@ -66,7 +66,7 @@ class DockingResultCols(Enum):
 
 
 def drop_non_output_columns(
-    df: pd.DataFrame, allow: Optional[List[str]] = []
+    df: pd.DataFrame, allow: Optional[list[str]] = []
 ) -> pd.DataFrame:
     """
     Drop columns of a docking result dataframe that are not in the output
@@ -118,7 +118,7 @@ def drop_and_rename_output_cols_for_target(
     df: pd.DataFrame,
     target: str,
     manifold_validate: Optional[bool] = True,
-    allow: Optional[List[str]] = [],
+    allow: Optional[list[str]] = [],
 ) -> pd.DataFrame:
     """
     Drop columns of a docking result dataframe that are not in the output

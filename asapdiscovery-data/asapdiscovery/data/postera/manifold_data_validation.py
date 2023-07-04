@@ -2,7 +2,7 @@ import itertools
 from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
-from typing import Tuple, Union, Optional, List  # noqa: F401
+from typing import List, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
 import pkg_resources
@@ -197,7 +197,7 @@ class ManifoldFilter:
         return column in ManifoldAllowedTags.get_values()
 
     @staticmethod
-    def all_valid_columns(columns: list[str], allow: Optional[List[str]] = []) -> bool:
+    def all_valid_columns(columns: list[str], allow: Optional[list[str]] = []) -> bool:
         """
         Check if all columns are valid columns for the P5 comp-chem team to update
         """
