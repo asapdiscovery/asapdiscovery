@@ -1,7 +1,8 @@
 import itertools
+from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
-from typing import Union, Tuple, Iterable # noqa: F401
+from typing import Tuple, Union  # noqa: F401
 from collections.abc import Iterable
 
 import pandas as pd
