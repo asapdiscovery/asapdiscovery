@@ -27,6 +27,10 @@ class TagEnumBase(Enum):
         return [e.name for e in cls]
 
     @classmethod
+    def is_in_values(cls, tag: str) -> bool:
+        return tag in cls.get_values()
+
+    @classmethod
     def from_iterable(cls, name: str, iter: Iterable) -> Enum:
         """
         Create a new Enum class from a set of tags
@@ -177,31 +181,6 @@ ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
 )
 
 
-class ManifoldAllowedColumns(Enum):
-    """
-    Enum of allowed columns for the P5 comp-chem team to update in postera.
-    """
-
-    SMILES = "SMILES"
-    LIGAND_ID = "ligand_id"
-    ASAP_VC_ID = "asap_vc_id"
-    MERS_POSE = "mers_pose"
-    SARS2_POSE = "sars2_pose"
-    POSIT_PROB_MERS = "POSIT_prob_mers"
-    POSIT_PROB_SARS2 = "POSIT_prob_sars2"
-    CHEMGAUSS4_SCORE_MERS = "chemgauss4_score_mers"
-    CHEMGAUSS4_SCORE_SARS2 = "chemgauss4_score_sars2"
-    DOCKED_FILE_MERS = "docked_file_mers"
-    DOCKED_FILE_SARS2 = "docked_file_sars2"
-    GAT_SCORE_MERS = "GAT_score_mers"
-    GAT_SCORE_SARS2 = "GAT_score_sars2"
-    SCHNET_SCORE_MERS = "SCHNET_score_mers"
-    SCHNET_SCORE_SARS2 = "SCHNET_score_sars2"
-
-    def get_columns():
-        return [column.value for column in ManifoldAllowedColumns]
-
-
 class ManifoldFilter:
     """
     Class to filter columns and data to only those that the P5 comp-chem team
@@ -213,7 +192,7 @@ class ManifoldFilter:
         """
         Check if a column is a valid column for the P5 comp-chem team to update
         """
-        return column in ManifoldAllowedColumns.get_columns()
+        return column in ManifoldAllowedTags.get_values()
 
     @staticmethod
     def all_valid_columns(columns: list[str]) -> bool:
@@ -227,7 +206,7 @@ class ManifoldFilter:
         df: pd.DataFrame, smiles_field=None, id_field=None, additional_cols=None
     ) -> pd.DataFrame:
         # construct list of allowed columns
-        allowed_columns = ManifoldAllowedColumns.get_columns()
+        allowed_columns = ManifoldAllowedTags.get_values()
         if smiles_field is not None:
             allowed_columns.append(smiles_field)
         if id_field is not None:

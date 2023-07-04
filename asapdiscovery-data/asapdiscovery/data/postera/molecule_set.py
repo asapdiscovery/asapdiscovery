@@ -3,7 +3,7 @@ from typing import Dict, Union  # noqa: F401
 import pandas as pd
 from typing_extensions import TypedDict
 
-from .manifold_data_validation import ManifoldAllowedColumns, ManifoldFilter
+from .manifold_data_validation import ManifoldAllowedTags, ManifoldFilter
 from .postera_api import PostEraAPI
 
 
@@ -305,7 +305,7 @@ class MoleculeSetAPI(PostEraAPI):
         )
         if not ManifoldFilter.all_valid_columns(df.columns):
             raise ValueError(
-                f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedColumns.get_columns()}"
+                f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
             )
 
         # fill nan values with empty string
