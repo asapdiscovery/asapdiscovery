@@ -303,7 +303,9 @@ class MoleculeSetAPI(PostEraAPI):
         df = ManifoldFilter.filter_dataframe_cols(
             df, smiles_field=smiles_field, id_field=id_field
         )
-        if not ManifoldFilter.all_valid_columns(df.columns):
+        if not ManifoldFilter.all_valid_columns(
+            df.columns, allow=(id_field, smiles_field)
+        ):
             raise ValueError(
                 f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
             )
