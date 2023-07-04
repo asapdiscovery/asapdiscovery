@@ -24,8 +24,11 @@ from asapdiscovery.docking import (
     POSIT_METHODS,
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
-    rename_score_columns_for_target,
 )
+from asapdiscovery.docking.docking_data_validation import (
+    drop_and_rename_output_cols_for_target,
+)
+
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
@@ -967,8 +970,8 @@ def main():
             )
             gif_visualiser.write_traj_visualizations()
 
-    renamed_top_posit = rename_score_columns_for_target(
-        top_posit, args.target, manifold_validate=True
+    renamed_top_posit = drop_and_rename_output_cols_for_target(
+        top_posit, args.target, manifold_validate=True, allow=["_ligand_id"]
     )
     # save to final CSV renamed for target
     renamed_top_posit.to_csv(output_dir / f"poses_{args.target}_final.csv", index=False)

@@ -21,7 +21,7 @@ from asapdiscovery.data.utils import check_name_length_and_truncate
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
-from .docking_data_validation import DockingResultCols, TargetDependentCols
+from .docking_data_validation import DockingResultCols
 
 POSIT_METHODS = ("all", "hybrid", "fred", "mcs", "shapefit")
 
@@ -343,38 +343,6 @@ def run_docking_oe(
     errfs.flush()
     errfs.close()
     return True, combined_mol, docking_id
-
-
-def rename_score_columns_for_target(
-    df: pd.DataFrame, target: str, manifold_validate=True
-) -> pd.DataFrame:
-    """
-    Rename columns of a docking result dataframe for a specific target
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Docking result dataframe
-    target : str
-        Target name
-    manifold_validate : bool, default=True
-        Whether to check that the columns are valid for updating in postera
-
-    Returns
-    -------
-    pd.DataFrame
-        Docking result dataframe with renamed columns
-    """
-    cols = TargetDependentCols.get_columns()
-    if manifold_validate:
-        target_cols = (
-            TargetDependentCols.get_columns_for_target_with_manifold_validation(target)
-        )
-    else:
-        target_cols = TargetDependentCols.get_columns_for_target(target)
-    rename_dict = dict(zip(cols, target_cols))
-    df = df.rename(columns=rename_dict)
-    return df
 
 
 def make_docking_result_dataframe(

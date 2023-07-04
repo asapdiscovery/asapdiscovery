@@ -224,5 +224,4 @@ class ManifoldFilter:
 
         # drop columns that are not allowed
         extra_cols = [col for col in df.columns if col not in allowed_columns]
-        print(f"DROP COLS {extra_cols}")
         return df.drop(columns=extra_cols)
