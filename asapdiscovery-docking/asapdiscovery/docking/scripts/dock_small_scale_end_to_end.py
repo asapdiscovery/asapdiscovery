@@ -19,6 +19,7 @@ from asapdiscovery.data.utils import (
 )
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
+from asapdiscovery.dataviz.viz_targets import VizTargets
 from asapdiscovery.docking import (
     POSIT_METHODS,
     dock_and_score_pose_oe,
@@ -283,6 +284,14 @@ parser.add_argument(
     "--no-schnet",
     action="store_true",
     help="Do not use Schnet model to score docked poses.",
+)
+
+parser.add_argument(
+    "--viz-target",
+    type=str,
+    required=True,
+    choices=VizTargets.get_allowed_targets(),
+    help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
 )
 
 parser.add_argument(
@@ -742,7 +751,7 @@ def main():
             html_visualiser = HTMLVisualizer(
                 [pose],
                 [outpath],
-                args.target,
+                args.viz_target,
                 protein_path,
                 logger=logger,
             )
@@ -903,7 +912,7 @@ def main():
                 [traj],
                 [system],
                 [outpath],
-                args.target,
+                args.viz_target,
                 frames_per_ns=200,
                 smooth=5,
                 start=start,
