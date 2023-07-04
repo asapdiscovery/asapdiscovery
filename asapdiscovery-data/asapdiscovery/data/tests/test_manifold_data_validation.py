@@ -83,20 +83,3 @@ def test_manifold_filter_dataframe_cols_drops():
         df[["Docking_Score_POSIT_sars2_mpro", "Docking_Score_POSIT_mers_mpro"]]
         == ret_df
     )
-
-
-def test_manifold_filter_dataframe_cols_drops():
-    # make a dataframe with some columns
-    df = pd.DataFrame(
-        {
-            "Docking_Score_POSIT_sars2_mpro": [1, 2, 3],
-            "Docking_Score_POSIT_mers_mpro": [4, 5, 6],
-            "42": [7, 8, 9],
-        }
-    )
-    # filter the dataframe
-    ret_df = ManifoldFilter.filter_dataframe_cols(df)
-    assert all(
-        df[["Docking_Score_POSIT_sars2_mpro", "Docking_Score_POSIT_mers_mpro"]]
-        == ret_df
-    )
