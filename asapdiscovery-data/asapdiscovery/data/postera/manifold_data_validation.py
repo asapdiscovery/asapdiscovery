@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Union, Tuple, Iterable
+from typing import Union, Tuple, Iterable # noqa: F401
 import pandas as pd
 import yaml
 import itertools
