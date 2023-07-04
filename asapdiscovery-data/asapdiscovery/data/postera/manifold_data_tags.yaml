@@ -17,7 +17,7 @@
 #  ...
 #
 # are all valid tags.
-# 
+#
 # These are combined with the static identifiers to form the full set of tags.
 
 # The complete set is generated programatically at import time in `manifold_data_validation.py`
