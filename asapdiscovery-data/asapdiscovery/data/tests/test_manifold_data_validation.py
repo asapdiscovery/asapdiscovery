@@ -1,11 +1,10 @@
 import pandas as pd
-
 from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
-    OutputTags,
-    StaticTags,
     ManifoldAllowedTags,
     ManifoldFilter,
+    OutputTags,
+    StaticTags,
+    TargetTags,
 )
 
 
