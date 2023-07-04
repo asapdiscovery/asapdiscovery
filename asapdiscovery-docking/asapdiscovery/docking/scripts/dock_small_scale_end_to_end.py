@@ -289,7 +289,6 @@ parser.add_argument(
 parser.add_argument(
     "--viz-target",
     type=str,
-    required=True,
     choices=VizTargets.get_allowed_targets(),
     help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
 )
@@ -313,6 +312,10 @@ def main():
     #########################
 
     args = parser.parse_args()
+
+    # if viz_target not specified, set to the target
+    if not args.viz_target:
+        args.viz_target = args.target
 
     # setup output directory
     output_dir = Path(args.output_dir)
