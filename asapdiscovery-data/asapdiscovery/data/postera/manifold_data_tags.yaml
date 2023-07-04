@@ -25,10 +25,10 @@
 # organisms and targets
 organism:
   sars2:
-    - Mpro
-    - Mac1
+    - mpro
+    - mac1
   mers:
-    - Mpro
+    - mpro
 
 # requires both units and tools specified even if empty for clarity.
 manifold_outputs:

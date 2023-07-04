@@ -132,6 +132,8 @@ def test_single_target_docking(
         f"{output_dir}",
         "--viz-target",
         "sars2_mpro",
+        "--target",
+        "sars2_mpro",
         "--no-omega",
     ]
     ret = script_runner.run(args)
