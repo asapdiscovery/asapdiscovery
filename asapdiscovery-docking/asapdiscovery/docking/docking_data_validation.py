@@ -11,7 +11,7 @@ class DockingResultCols(Enum):
     """
     Columns for docking results, i.e. the output of the docking pipeline
     These cannot be reordered as the order is important for the output list.
-    (See #)
+    (See #358)
 
     Columns that are not in the allowed Postera Manifold columns are prefixed with an underscore
     """

@@ -42,10 +42,10 @@ class TagEnumBase(Enum):
         return cls(name, enum_data)
 
 
-def make_bio_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
+def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     """
     Create a dynamic enum from a yaml file
-    This enum contains all the biology tags that are used in the manifold data
+    This enum contains all the target tags that are used in the manifold data
     for example sars2_Mpro = sars2_Mpro
 
     Parameters
@@ -62,12 +62,12 @@ def make_bio_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     """
     data = load_yaml(yaml_path)
     organisms = data["organism"]
-    bio_tags = set()
+    target_tags = set()
     for org in organisms:
         for target in organisms[org]:
-            bio_tags.add(org + "_" + target)
+            target_tags.add(org + "_" + target)
 
-    return TagEnumBase.from_iterable("BioTags", bio_tags), bio_tags
+    return TagEnumBase.from_iterable("TargetTags", target_tags), target_tags
 
 
 def make_output_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
@@ -154,8 +154,8 @@ manifold_data_spec = pkg_resources.resource_filename(
     __name__, "manifold_data_tags.yaml"
 )
 
-# make Bio enum and set
-BioTags, bio_tag_set = make_bio_tags(manifold_data_spec)
+# make target enum and set
+TargetTags, target_tag_set = make_target_tags(manifold_data_spec)
 
 # make Output enum and set
 OutputTags, output_tag_set = make_output_tags(manifold_data_spec)
@@ -165,13 +165,13 @@ StaticTags, static_tag_set = make_static_tags(manifold_data_spec)
 
 
 def make_tag_combinations_and_combine_with_static(
-    bio_tags: set, output_tags: set, static_tags: set
+    target_tags: set, output_tags: set, static_tags: set
 ) -> tuple[Enum, set]:
     """
-    Make all possible combinations of bio_tags and output_tags
+    Make all possible combinations of target_tags and output_tags
     then add in the static and legacy tags
     """
-    combos = set(itertools.product(output_tags, bio_tags))
+    combos = set(itertools.product(output_tags, target_tags))
     combos = {combo[0] + "_" + combo[1] for combo in combos}
     final_tags = combos.union(static_tags)
     # sort the tags so that they are in alphabetical order
@@ -180,7 +180,7 @@ def make_tag_combinations_and_combine_with_static(
 
 
 ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
-    bio_tag_set, output_tag_set, static_tag_set
+    target_tag_set, output_tag_set, static_tag_set
 )
 
 
