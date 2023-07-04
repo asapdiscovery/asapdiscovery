@@ -721,13 +721,20 @@ def main():
 
     sorted_df = results_df.sort_values(by=["Docking_Confidence_POSIT"], ascending=False)
     top_posit = sorted_df.drop_duplicates(subset=["_ligand_id"], keep="first")
-    # save with the failed ones in so its clear which ones failed
-    top_posit.to_csv(output_dir / "top_poses.csv", index=False)
+    # save with the failed ones in so its clear which ones failed if any did
+    top_posit.to_csv(
+        output_dir / f"poses_{args.target}_sorted_posit_prob.csv", index=False
+    )
     n_total = len(top_posit)
 
     # IMPORTANT: only keep the ones that worked for the rest of workflow
     top_posit = top_posit[top_posit._docked_file != ""]
-    top_posit.to_csv(output_dir / "top_poses_succeded.csv", index=False)
+    if args.debug:
+        # save debug csv if needed
+        top_posit.to_csv(
+            output_dir / f"poses_{args.target}_sorted_posit_prob_succeded.csv",
+            index=False,
+        )
 
     n_succeded = len(top_posit)
     n_failed = n_total - n_succeded
@@ -960,19 +967,21 @@ def main():
             )
             gif_visualiser.write_traj_visualizations()
 
+    renamed_top_posit = rename_score_columns_for_target(
+        top_posit, args.target, manifold_validate=True
+    )
+    # save to final CSV renamed for target
+    renamed_top_posit.to_csv(output_dir / f"poses_{args.target}_final.csv", index=False)
+
     if args.postera_upload:
         if not args.postera:
             raise ValueError("Must use --postera to upload to PostEra")
         logger.info("Uploading results to PostEra")
 
-        renamed_top_posit = rename_score_columns_for_target(
-            top_posit, args.target, manifold_validate=True
-        )
-
         ms.update_molecules_from_df_with_manifold_validation(
             molset_id,
             renamed_top_posit,
-            id_field="ligand_id",
+            id_field="_ligand_id",
             smiles_field="SMILES",
             overwrite=True,
             debug_df_path=output_dir / "postera_uploaded.csv",
