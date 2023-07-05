@@ -94,7 +94,7 @@ def main():
         if n_snapshots < 100:
             start = 1
         else:
-            start = n_snapshots - 100
+            start = n_snapshots - 99
     else:
         start = args.start
 

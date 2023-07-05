@@ -845,7 +845,7 @@ def main():
         if n_snapshots < 100:
             start = 1
         else:
-            start = n_snapshots - 100
+            start = n_snapshots - 99
 
         @dask.delayed
         def dask_gif_adaptor(traj, system, outpath):

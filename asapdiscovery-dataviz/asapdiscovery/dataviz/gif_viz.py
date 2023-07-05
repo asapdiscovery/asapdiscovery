@@ -315,7 +315,9 @@ class GIFVisualizer:
 
         # add progress bar to each frame
 
-        add_gif_progress_bar(png_files, frames_per_ns=self.frames_per_ns)
+        add_gif_progress_bar(
+            png_files, frames_per_ns=self.frames_per_ns, start_frame=self.start
+        )
 
         with iio.get_writer(str(path), mode="I") as writer:
             for filename in png_files:
@@ -332,7 +334,9 @@ class GIFVisualizer:
         return path
 
 
-def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) -> None:
+def add_gif_progress_bar(
+    png_files: list[Union[Path, str]], frames_per_ns: int, start_frame: int = 1
+) -> None:
     """
     adds a progress bar and nanosecond counter onto PNG images. This assumes PNG
     files are named with index in the form path/frame<INDEX>.png. Overlaying of these objects
@@ -344,6 +348,8 @@ def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) 
         List of PNG paths to add progress bars to.
     frames_per_ns : int
         Number of frames per nanosecond
+    start_frame : int
+        Frame to start from. Default is 1, which is the first frame, note indexed at 1.
     """
     from PIL import Image, ImageDraw, ImageFont
 
@@ -354,7 +360,10 @@ def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) 
         filename = str(filename)
         # get this file's frame number from the filename and calculate total amount of ns simulated for this frame
         frame_num = int(filename.split("frame")[1].split(".png")[0])
-        total_ns_this_frame = f"{frame_num / frames_per_ns:.3f}"
+        # adjust for the fact that we may not have started at the first frame, which will still be written out  as frame0001.png
+        # note 1 indexing here.
+        frame_num_actual = frame_num + start_frame - 1
+        total_ns_this_frame = f"{frame_num_actual / frames_per_ns:.3f}"
 
         # load the image.
         img = Image.open(filename)
