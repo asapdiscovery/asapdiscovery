@@ -1,13 +1,11 @@
 import argparse
 import logging
-import mdtraj as md
-
 from pathlib import Path
 
+import mdtraj as md
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.viz_targets import VizTargets
-from asapdiscovery.data.logging import FileLogger
-
 
 parser = argparse.ArgumentParser(description="Turn a trajectory into a GIF")
 
@@ -63,7 +61,6 @@ parser.add_argument(
 
 
 def main():
-
     args = parser.parse_args()
 
     # setup logging
