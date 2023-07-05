@@ -38,7 +38,7 @@ class GIFVisualizer:
         target: str,
         frames_per_ns: int = 200,
         pse: bool = False,
-        pse_share: bool = False, # set to True for GIF viz debugging
+        pse_share: bool = False,  # set to True for GIF viz debugging
         smooth: int = 0,
         contacts: bool = True,
         start: int = 1,
