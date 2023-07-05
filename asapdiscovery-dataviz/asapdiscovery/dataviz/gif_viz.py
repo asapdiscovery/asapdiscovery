@@ -383,7 +383,8 @@ def add_gif_progress_bar(
             font=ImageFont.truetype(opensans_regular, 65),
             fill=(0, 0, 0),  # make all black.
             anchor="md",
-            stroke_width=2, stroke_fill='white'
+            stroke_width=2,
+            stroke_fill="white",
         )  # align to RHS; this way if value increases it will grow into frame.
 
         # save the image.
