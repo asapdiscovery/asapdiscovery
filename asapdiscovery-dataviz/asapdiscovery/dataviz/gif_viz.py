@@ -369,7 +369,7 @@ def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) 
 
         # draw the text that shows time progression.
         draw.text(
-            (width - 115, height - 10),
+            (width - 125, height - 10),
             f"{total_ns_this_frame} ns",
             # need to load a local font. For some odd reason this is the only way to write text with PIL.
             font=ImageFont.truetype(opensans_regular, 65),
