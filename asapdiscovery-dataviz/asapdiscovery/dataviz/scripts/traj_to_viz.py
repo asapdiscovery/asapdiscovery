@@ -2,7 +2,7 @@ import argparse
 import logging
 import mdtraj as md
 
-from Pathlib import Path
+from pathlib import Path
 
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.viz_targets import VizTargets
@@ -85,8 +85,8 @@ def main():
     logger.info(f"Output file: {out}")
 
     logger.info("Loading trajectory")
-    traj = md.load(str(traj), top=str(top))
-    n_snapshots = traj.n_frames
+    _traj = md.load(str(traj), top=str(top))
+    n_snapshots = _traj.n_frames
     logger.info(f"Loaded {n_snapshots} snapshots")
 
     if not args.start:
