@@ -28,7 +28,6 @@ from asapdiscovery.docking import (
 from asapdiscovery.docking.docking_data_validation import (
     drop_and_rename_output_cols_for_target,
 )
-
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,

@@ -2,7 +2,7 @@ import itertools
 from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
-from typing import Tuple, Union, Optional, List  # noqa: F401
+from typing import List, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
 import pkg_resources
@@ -60,11 +60,11 @@ def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
         Set of all the tags
     """
     data = load_yaml(yaml_path)
-    organisms = data["organism"]
+    viruses = data["virus"]
     target_tags = set()
-    for org in organisms:
-        for target in organisms[org]:
-            target_tags.add(org + "_" + target)
+    for v in viruses:
+        for target in viruses[v]:
+            target_tags.add(v + "_" + target)
 
     return TagEnumBase.from_iterable("TargetTags", target_tags), target_tags
 
@@ -197,7 +197,7 @@ class ManifoldFilter:
         return column in ManifoldAllowedTags.get_values()
 
     @staticmethod
-    def all_valid_columns(columns: list[str], allow: Optional[List[str]] = []) -> bool:
+    def all_valid_columns(columns: list[str], allow: Optional[list[str]] = []) -> bool:
         """
         Check if all columns are valid columns for the P5 comp-chem team to update
         """

@@ -23,7 +23,7 @@
 # The complete set is generated programatically at import time in `manifold_data_validation.py`
 
 # organisms and targets
-organism:
+virus:
   sars2:
     - mpro
     - mac1
