@@ -6,15 +6,18 @@ from asapdiscovery.data.logging import FileLogger
 from rdkit import Chem
 
 from ._html_blocks import (
-    colour_7ene,
-    colour_mers,
-    colour_sars2,
+    colour_7ene_mpro,
+    colour_mers_mpro,
+    colour_sars2_mac1,
+    colour_sars2_mpro,
     make_core_html,
-    orient_tail_7ene,
-    orient_tail_272,
-    orient_tail_mers,
-    orient_tail_sars2,
+    orient_tail_7ene_mpro,
+    orient_tail_272_mpro,
+    orient_tail_mers_mpro,
+    orient_tail_sars2_mac1,
+    orient_tail_sars2_mpro,
 )
+from .viz_targets import VizTargets
 
 
 def _load_first_molecule(file_path: Path):
@@ -27,7 +30,7 @@ class HTMLVisualizer:
     Class for generating HTML visualizations of poses.
     """
 
-    allowed_targets = ("sars2", "mers", "7ene", "272")
+    allowed_targets = VizTargets.get_allowed_targets()
 
     # TODO: replace input with a schema rather than paths.
     def __init__(
@@ -47,7 +50,7 @@ class HTMLVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
+            Target to visualize poses for. Must be one of: "sars2_mpro", "mers_mpro", "7ene_mpro", "272_mpro", "sars2_mac1".
         protein : Path
             Path to protein PDB file.
         logger : FileLogger
@@ -152,11 +155,17 @@ class HTMLVisualizer:
         """
         Get HTML footer for pose visualization
         """
-        if self.target == "sars2":
-            return colour_sars2 + orient_tail_sars2
-        elif self.target == "mers":
-            return colour_mers + orient_tail_mers
-        elif self.target == "7ene":
-            return colour_7ene + orient_tail_7ene
-        elif self.target == "272":
-            return colour_mers + orient_tail_272
+        if self.target == "sars2_mpro":
+            return colour_sars2_mpro + orient_tail_sars2_mpro
+        elif self.target == "mers_mpro":
+            return colour_mers_mpro + orient_tail_mers_mpro
+        elif self.target == "7ene_mpro":
+            return colour_7ene_mpro + orient_tail_7ene_mpro
+        elif self.target == "272_mpro":
+            return colour_mers_mpro + orient_tail_272_mpro
+        elif self.target == "sars2_mac1":
+            return colour_sars2_mac1 + orient_tail_sars2_mac1
+        else:
+            raise ValueError(
+                f"Target {self.target} does not have an HTML visualiser element implemented."
+            )

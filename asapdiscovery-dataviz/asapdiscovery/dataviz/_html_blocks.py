@@ -73,7 +73,7 @@ def make_core_html(pdb_body: str) -> str:
     return visualisation_header + _vis_core(pdb_body) + visualisation_tail
 
 
-orient_tail_7ene = """\
+orient_tail_7ene_mpro = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([-47.411552767443936, 18.160442129079684, 45.864598141236, 0.0, 33.734451290915786, -34.476765704662284, 48.52362967346835, 0.0, 35.99080588204288, 56.238428207759625, 14.936708193081358, 0.0, 1.14170241355896, 9.264076232910156, -58.5212287902832, 1.0]));
     stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 44.402000427246094, clipNear: -44.39164352416992
@@ -84,7 +84,7 @@ orient_tail_7ene = """\
 </script> """
 
 
-orient_tail_mers = """\
+orient_tail_mers_mpro = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([27.892651485688475, -17.496836682191315, 27.842153246574526, 0.0, 4.645958152833828, -34.046145151871315, -26.049992638068943, 0.0, 32.55357881447708, 19.850633421900966, -20.137968094041753, 0.0, -9.070898056030273, 0.7458584308624268, -23.088354110717773, 1.0]));
     stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 67.24873352050781, clipNear: -67.247802734375
@@ -95,7 +95,7 @@ orient_tail_mers = """\
 </script> """
 
 
-orient_tail_sars2 = """\
+orient_tail_sars2_mpro = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([32.700534186404866, -23.332587195321253, 28.280957904108163, 0.0, 2.9287225438600046, -36.11192126726678, -33.179842577844965, 0.0, 36.54640101226278, 23.77111378788311, -22.645942287727394, 0.0, -9.279577255249023, 1.1916427612304688, -23.425792694091797, 1.0]));
     stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 28.732975006103516, clipNear: -28.735034942626953
@@ -107,7 +107,7 @@ orient_tail_sars2 = """\
 
 
 # TODO: change to proper name once it has one
-orient_tail_272 = """\
+orient_tail_272_mpro = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([-55.43715359724729, 19.154542778222776, 24.429636441852836, 0.0, -26.507044110580864, -55.2321834848874, -16.845374934225674, 0.0, 16.158030311277685, -24.889572286518273, 56.18196582121527, 0.0, 0.7490043640136719, 0.8194751739501953, -22.965221405029297, 1.0]));
     stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 51.28336715698242, clipNear: -51.29174613952637
@@ -117,8 +117,16 @@ orient_tail_272 = """\
 
 </script> """
 
+orient_tail_sars2_mac1 = """\
+    //orient
+    stage.viewerControls.orient((new NGL.Matrix4).fromArray([-26.865335727331967, -33.96353780439949, 76.20488333720914, 0.0, 68.40799043278685, 36.8623095955993, 40.54563400173538, 0.0, -47.76036465635116, 71.90319471856219, 15.208982898829163, 0.0, -10.974757194519043, -20.811683654785156, 0.7359411716461182, 1.0]));
+    stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 308.4343490600586, clipNear: -308.38341522216797
+}
 
-colour_mers = """\
+
+</script> """
+
+colour_mers_mpro = """\
         // Define the binding pocket.
         const data = {
         'color_dict': {
@@ -158,7 +166,7 @@ colour_mers = """\
 """
 
 
-colour_sars2 = """\
+colour_sars2_mpro = """\
         // Define the binding pocket.
         const data = {
         'color_dict': {
@@ -197,4 +205,42 @@ colour_sars2 = """\
 
 """
 
-colour_7ene = colour_sars2
+colour_7ene_mpro = colour_sars2_mpro
+
+colour_sars2_mac1 = """\
+        // Define the binding pocket.
+        const data = {
+        'color_dict': {
+            'nucleotide': 'yellow',
+            'bridge': 'darksalmon',
+            'phosphate': 'orange',
+            'anion_hole': 'skyblue'
+        },
+        'pocket_dict': {
+            'nucleotide' : '154+156+22+23+24+52+49+125',
+            'bridge' : '126+155',
+            'phosphate' : '46+47+48+38+39+40+130+131+132+127+128+97',
+            'anion_hole' : '129+157+160+136+164',
+        }
+        }
+        // Color the BP by subpocket definitions.
+        const othercolor = 'white'; // resi not selected
+        const uncolored = 'gainsboro'; // sars_unique is not assigned a color.
+        let selecol = Object.entries(data.pocket_dict).map(([name, pymol_sele]) => [data.color_dict[name] || uncolored, pymol_sele.replace(/\\+/g, ' or ')]);
+        selecol.push([othercolor, '*']);  // default
+        const pocket_scheme = NGL.ColormakerRegistry.addSelectionScheme(selecol);
+        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front',} );
+        // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
+        let cartoon = new NGL.Selection( '*' );
+        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+
+        // Add interactions (contacts). Some inter-residue contacts are okay.
+        function getNeighbors(protein, sele, radius) {
+            const neigh_atoms = protein.structure.getAtomSetWithinSelection( sele, radius );
+            const resi_atoms = protein.structure.getAtomSetWithinGroup( neigh_atoms );
+            return resi_atoms.toSeleString()
+        };
+        const neigh_sele = getNeighbors(protein, 'ligand', 2);
+        protein.addRepresentation( 'contact', {sele: neigh_sele});
+
+"""

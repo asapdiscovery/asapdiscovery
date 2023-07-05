@@ -1,5 +1,5 @@
 # SARS2
-view_coords_sars2 = (
+view_coords_sars2_mpro = (
     -0.729172230,
     -0.243629232,
     -0.639491022,
@@ -21,7 +21,7 @@ view_coords_sars2 = (
 )
 
 # MERS
-view_coord_mers = (
+view_coords_mers_mpro = (
     -0.635950804,
     -0.283323288,
     -0.717838645,
@@ -43,7 +43,7 @@ view_coord_mers = (
 )
 
 # 7ENE
-view_coords_7ene = (
+view_coords_7ene_mpro = (
     0.710110664,
     0.317291290,
     -0.628544748,
@@ -66,7 +66,7 @@ view_coords_7ene = (
 
 
 # 272
-view_coords_272 = (
+view_coords_272_mpro = (
     0.909307361,
     0.223530963,
     -0.350987315,
@@ -87,10 +87,32 @@ view_coords_272 = (
     -20.000000000,
 )
 
+# mac1
+view_coords_sars2_mac1 = (
+    0.330020756,
+    -0.409676254,
+    -0.850439489,
+    -0.744017482,
+    0.441578984,
+    -0.501442075,
+    0.580969453,
+    0.798228621,
+    -0.159074768,
+    -0.000013072,
+    -0.000043459,
+    -87.492462158,
+    15.709880829,
+    21.205106735,
+    -1.064284086,
+    -1329.627441406,
+    1504.635498047,
+    -20.000000000,
+)
 
-# set colorings of subpockets by resn. This may change over time.
+# set colorings of subpockets by resn. This may change over time.,
+# first define the residues that span the subpockets
 # SARS2
-pocket_dict_sars2 = {
+pocket_dict_sars2_mpro = {
     "subP1": "140-145+163+172",
     "subP1_prime": "25-27",
     "subP2": "41+49+54",
@@ -99,7 +121,7 @@ pocket_dict_sars2 = {
 }
 
 # MERS
-pocket_dict_mers = {
+pocket_dict_mers_mpro = {
     "subP1": "143+144+145+146+147+148+166+175",
     "subP1_prime": "25+26+27",
     "subP2": "41+49+54",
@@ -107,11 +129,25 @@ pocket_dict_mers = {
     "sars_unique": "25+49+145+167+171+172+184+189+191+193+194",
 }
 
-color_dict = {
+# MAC1
+pocket_dict_sars2_mac1 = {
+    "nucleotide": "154+156+22+23+24+52+49+125",
+    "bridge": "126+155",
+    "phosphate": "46+47+48+38+39+40+130+131+132+127+128+97",
+    "anion_hole": "129+157+160+136+164",
+}
+
+# now define the colors per subpocket
+color_dict_mpro = {
     "subP1": "yellow",
     "subP1_prime": "orange",
     "subP2": "skyblue",
     "subP3_4_5": "aquamarine",
 }
-# TODO: pick color-blind-friendly scheme, e.g. using https://colorbrewer2.org/#type=qualitative&scheme=Pastel1&n=4
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+color_dict_mac1 = {
+    "nucleotide": "paleyellow",
+    "bridge": "darksalmon",
+    "phosphate": "brightorange",
+    "anion_hole": "slate",
+}

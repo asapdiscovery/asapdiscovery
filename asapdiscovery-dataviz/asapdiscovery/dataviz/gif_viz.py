@@ -6,16 +6,20 @@ from typing import List, Optional, Union  # noqa: F401
 from asapdiscovery.data.logging import FileLogger
 
 from ._gif_blocks import (
-    color_dict,
-    pocket_dict_mers,
-    pocket_dict_sars2,
-    view_coord_mers,
-    view_coords_7ene,
-    view_coords_272,
-    view_coords_sars2,
+    color_dict_mac1,
+    color_dict_mpro,
+    pocket_dict_mers_mpro,
+    pocket_dict_sars2_mac1,
+    pocket_dict_sars2_mpro,
+    view_coords_7ene_mpro,
+    view_coords_272_mpro,
+    view_coords_mers_mpro,
+    view_coords_sars2_mac1,
+    view_coords_sars2_mpro,
 )
 from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
+from .viz_targets import VizTargets
 
 
 class GIFVisualizer:
@@ -23,12 +27,7 @@ class GIFVisualizer:
     Class for generating GIF visualizations of MD trajectories.
     """
 
-    allowed_targets = (
-        "sars2",
-        "mers",
-        "7ene",
-        "272",
-    )
+    allowed_targets = VizTargets.get_allowed_targets()
 
     # TODO: replace input with a schema rather than paths.
     def __init__(
@@ -39,7 +38,7 @@ class GIFVisualizer:
         target: str,
         frames_per_ns: int = 200,
         pse: bool = False,
-        pse_share: bool = True,
+        pse_share: bool = False,  # set to True for GIF viz debugging
         smooth: int = 0,
         contacts: bool = True,
         start: int = 1,
@@ -58,7 +57,7 @@ class GIFVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of: "sars2", "mers", "7ene", "272".
+            Target to visualize poses for. Must be one of: "sars2_mpro", "mers_mpro", "7ene_mpro", "272_mpro", "sars2_mac1".
         pse : bool
             Whether to write PyMol session files.
         smooth : int
@@ -94,19 +93,26 @@ class GIFVisualizer:
         self.logger.info(f"Visualizing trajectories for {self.target}")
 
         # setup pocket dict and view_coords for target
-        if self.target == "sars2":
-            self.pocket_dict = pocket_dict_sars2
-            self.view_coords = view_coords_sars2
-        elif self.target == "mers":
-            self.pocket_dict = pocket_dict_mers
-            self.view_coords = view_coord_mers
-        elif self.target == "7ene":
-            self.pocket_dict = pocket_dict_sars2
-            self.view_coords = view_coords_7ene
-        elif self.target == "272":
-            self.pocket_dict = pocket_dict_mers
-            self.view_coords = view_coords_272
-
+        if self.target == "sars2_mpro":
+            self.pocket_dict = pocket_dict_sars2_mpro
+            self.view_coords = view_coords_sars2_mpro
+            self.color_dict = color_dict_mpro
+        elif self.target == "mers_mpro":
+            self.pocket_dict = pocket_dict_mers_mpro
+            self.view_coords = view_coords_mers_mpro
+            self.color_dict = color_dict_mpro
+        elif self.target == "7ene_mpro":
+            self.pocket_dict = pocket_dict_sars2_mpro
+            self.view_coords = view_coords_7ene_mpro
+            self.color_dict = color_dict_mpro
+        elif self.target == "272_mpro":
+            self.pocket_dict = pocket_dict_mers_mpro
+            self.view_coords = view_coords_272_mpro
+            self.color_dict = color_dict_mpro
+        if self.target == "sars2_mac1":
+            self.pocket_dict = pocket_dict_sars2_mac1
+            self.view_coords = view_coords_sars2_mac1
+            self.color_dict = color_dict_mac1
         self.trajectories = []
         self.output_paths = []
         self.systems = []
@@ -192,7 +198,7 @@ class GIFVisualizer:
                 f"{complex_name} and resi {residues} and polymer.protein",
             )
 
-        for subpocket_name, color in color_dict.items():
+        for subpocket_name, color in self.color_dict.items():
             p.cmd.set("surface_color", color, f"({subpocket_name})")
 
         if self.pse:
@@ -231,8 +237,14 @@ class GIFVisualizer:
         p.cmd.hide("sticks", "(elem C extend 1) and (elem H)")
         p.cmd.color("pink", "elem C and sele")
 
-        p.cmd.set_view(self.view_coords)
-        if self.pse or self.pse_share:
+        for subpocket_name, color in self.color_dict.items():
+            # set non-polar sticks for this subpocket, color the backbone by subpocket color.
+            p.cmd.select(subpocket_name)
+            p.cmd.show("sticks", "sele")
+            p.cmd.set("stick_color", color, f"({subpocket_name})")
+            p.cmd.hide("sticks", "(elem C extend 1) and (elem H)")
+
+        if self.pse:
             p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
         # load trajectory; center the system in the simulation and smoothen between frames.
@@ -252,13 +264,15 @@ class GIFVisualizer:
             p.cmd.smooth(
                 "all", window=int(self.smooth)
             )  # perform some smoothing of frames
-        p.cmd.zoom("resn UNK", buffer=1)  # zoom to ligand
 
         if self.contacts:
             self.logger.info("Showing contacts...")
             show_contacts(p, "ligand", "receptor")
 
-        if self.pse:
+        p.cmd.set_view(self.view_coords)  # sets general orientation
+        p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand
+
+        if self.pse or self.pse_share:
             self.logger.info("Writing PyMol ensemble to session_5_intrafitted.pse...")
             p.cmd.save(str(parent_path / "session_5_intrafitted.pse"))
 
@@ -300,7 +314,9 @@ class GIFVisualizer:
 
         # add progress bar to each frame
 
-        add_gif_progress_bar(png_files, frames_per_ns=self.frames_per_ns)
+        add_gif_progress_bar(
+            png_files, frames_per_ns=self.frames_per_ns, start_frame=self.start
+        )
 
         with iio.get_writer(str(path), mode="I") as writer:
             for filename in png_files:
@@ -317,7 +333,9 @@ class GIFVisualizer:
         return path
 
 
-def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) -> None:
+def add_gif_progress_bar(
+    png_files: list[Union[Path, str]], frames_per_ns: int, start_frame: int = 1
+) -> None:
     """
     adds a progress bar and nanosecond counter onto PNG images. This assumes PNG
     files are named with index in the form path/frame<INDEX>.png. Overlaying of these objects
@@ -329,6 +347,8 @@ def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) 
         List of PNG paths to add progress bars to.
     frames_per_ns : int
         Number of frames per nanosecond
+    start_frame : int
+        Frame to start from. Default is 1, which is the first frame, note indexed at 1.
     """
     from PIL import Image, ImageDraw, ImageFont
 
@@ -339,7 +359,10 @@ def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) 
         filename = str(filename)
         # get this file's frame number from the filename and calculate total amount of ns simulated for this frame
         frame_num = int(filename.split("frame")[1].split(".png")[0])
-        total_ns_this_frame = f"{frame_num / frames_per_ns:.3f}"
+        # adjust for the fact that we may not have started at the first frame, which will still be written out  as frame0001.png
+        # note 1 indexing here.
+        frame_num_actual = frame_num + start_frame - 1
+        total_ns_this_frame = f"{frame_num_actual / frames_per_ns:.3f}"
 
         # load the image.
         img = Image.open(filename)
@@ -352,14 +375,16 @@ def add_gif_progress_bar(png_files: list[Union[Path, str]], frames_per_ns: int) 
         # draw the progress bar for this frame (black, fully opaque).
         draw.rectangle(((0, height - 20), (bar_width, height)), fill=(0, 0, 0, 500))
 
-        # draw the text that shows
+        # draw the text that shows time progression.
         draw.text(
-            (width - 110, height - 10),
+            (width - 125, height - 10),
             f"{total_ns_this_frame} ns",
             # need to load a local font. For some odd reason this is the only way to write text with PIL.
             font=ImageFont.truetype(opensans_regular, 65),
             fill=(0, 0, 0),  # make all black.
             anchor="md",
+            stroke_width=2,
+            stroke_fill="white",
         )  # align to RHS; this way if value increases it will grow into frame.
 
         # save the image.
