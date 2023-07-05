@@ -790,7 +790,7 @@ def main():
         html_visualiser = HTMLVisualizer(
             top_posit["_docked_file"],
             top_posit["_outpath_pose"],
-            args.target,
+            args.viz_target,
             protein_path,
             logger=logger,
         )
@@ -917,7 +917,7 @@ def main():
         if n_snapshots < 100:
             start = 1
         else:
-            start = n_snapshots - 100
+            start = n_snapshots - 99
 
         @dask.delayed
         def dask_gif_adaptor(traj, system, outpath):
@@ -962,7 +962,7 @@ def main():
                 top_posit["_outpath_md_traj"],
                 top_posit["_outpath_md_sys"],
                 top_posit["_outpath_gif"],
-                args.target,
+                args.viz_target,
                 frames_per_ns=200,
                 smooth=5,
                 start=start,
