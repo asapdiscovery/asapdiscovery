@@ -244,11 +244,7 @@ class GIFVisualizer:
             p.cmd.set("stick_color", color, f"({subpocket_name})")
             p.cmd.hide("sticks", "(elem C extend 1) and (elem H)")
 
-<<<<<<< HEAD
-        if self.pse or self.pse_share:
-=======
         if self.pse:
->>>>>>> upstream/main
             p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
         # load trajectory; center the system in the simulation and smoothen between frames.
@@ -268,25 +264,15 @@ class GIFVisualizer:
             p.cmd.smooth(
                 "all", window=int(self.smooth)
             )  # perform some smoothing of frames
-<<<<<<< HEAD
-        # p.cmd.zoom("resn UNK", buffer=1)  # zoom to ligand
-=======
->>>>>>> upstream/main
 
         if self.contacts:
             self.logger.info("Showing contacts...")
             show_contacts(p, "ligand", "receptor")
 
-<<<<<<< HEAD
-        p.cmd.set_view(self.view_coords)
-
-        if self.pse:
-=======
         p.cmd.set_view(self.view_coords)  # sets general orientation
         p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand
 
         if self.pse or self.pse_share:
->>>>>>> upstream/main
             self.logger.info("Writing PyMol ensemble to session_5_intrafitted.pse...")
             p.cmd.save(str(parent_path / "session_5_intrafitted.pse"))
 
@@ -391,11 +377,7 @@ def add_gif_progress_bar(
 
         # draw the text that shows time progression.
         draw.text(
-<<<<<<< HEAD
-            (width - 115, height - 10),
-=======
             (width - 125, height - 10),
->>>>>>> upstream/main
             f"{total_ns_this_frame} ns",
             # need to load a local font. For some odd reason this is the only way to write text with PIL.
             font=ImageFont.truetype(opensans_regular, 65),
