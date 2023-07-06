@@ -12,7 +12,7 @@ def test_target_tags():
     assert "sars2_mpro" in TargetTags.get_values()
     assert "mers_mpro" in TargetTags.get_values()
     assert "sars2_mac1" in TargetTags.get_values()
-    assert not "42" in TargetTags.get_values()
+    assert "42" not in TargetTags.get_values()
 
 
 def test_output_tags():
@@ -22,14 +22,14 @@ def test_output_tags():
     assert "ML_Score_Schnet_pIC50" in OutputTags.get_values()
     assert "FECs_Affinity_pIC50" in OutputTags.get_values()
     assert "FECs_Uncertainty_pIC50" in OutputTags.get_values()
-    assert not "42" in OutputTags.get_values()
+    assert "42" not in OutputTags.get_values()
 
 
 def test_static_tags():
     assert "SMILES" in StaticTags.get_values()
     assert "UUID_POSTERA_API" in StaticTags.get_values()
     assert "UUID_CCC_DB" in StaticTags.get_values()
-    assert not "42" in StaticTags.get_values()
+    assert "42" not in StaticTags.get_values()
 
 
 def test_allowed_tags():
@@ -37,7 +37,7 @@ def test_allowed_tags():
     assert "Docking_Score_POSIT_sars2_mpro" in ManifoldAllowedTags.get_values()
     assert "Docking_Score_POSIT_mers_mpro" in ManifoldAllowedTags.get_values()
     assert "Docking_Score_POSIT_sars2_mac1" in ManifoldAllowedTags.get_values()
-    assert not "42" in ManifoldAllowedTags.get_values()
+    assert "42" not in ManifoldAllowedTags.get_values()
 
 
 def test_manifold_filter():
