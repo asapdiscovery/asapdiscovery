@@ -26,7 +26,7 @@ from asapdiscovery.docking import (
     make_docking_result_dataframe,
 )
 from asapdiscovery.docking.docking_data_validation import (
-    drop_and_rename_output_cols_for_target,
+    drop_and_rename_docking_output_cols_for_target,
 )
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
@@ -969,7 +969,7 @@ def main():
             )
             gif_visualiser.write_traj_visualizations()
 
-    renamed_top_posit = drop_and_rename_output_cols_for_target(
+    renamed_top_posit = drop_and_rename_docking_output_cols_for_target(
         top_posit, args.target, manifold_validate=True, allow=["_ligand_id"]
     )
     # save to final CSV renamed for target
