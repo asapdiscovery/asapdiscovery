@@ -1,5 +1,5 @@
-from typing import Dict, Tuple, Union  # noqa: F401
 import uuid
+from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
 from typing_extensions import TypedDict
@@ -226,7 +226,7 @@ class MoleculeSetAPI(PostEraAPI):
 
     def get_molecules_from_id_or_name(
         self, molecule_set_id: str, return_as="dataframe"
-    ) -> Tuple[Union[pd.DataFrame, list], str]:
+    ) -> tuple[Union[pd.DataFrame, list], str]:
         molset_id = self.molecule_set_id_or_name(molecule_set_id, self.list_available())
         return self.get_molecules(molset_id, return_as), molset_id
 
