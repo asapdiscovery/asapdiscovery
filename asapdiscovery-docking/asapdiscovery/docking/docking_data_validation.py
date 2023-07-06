@@ -37,7 +37,7 @@ class DockingResultCols(Enum):
         return [col.value for col in cls]
 
 
-def drop_non_output_columns(
+def drop_docking_non_output_columns(
     df: pd.DataFrame, allow: Optional[list[str]] = []
 ) -> pd.DataFrame:
     """
@@ -68,7 +68,7 @@ def drop_non_output_columns(
     return df
 
 
-def rename_output_columns_for_target(
+def rename_docking_output_columns_for_target(
     df: pd.DataFrame, target: str, manifold_validate: Optional[bool] = True
 ) -> pd.DataFrame:
     """
@@ -116,7 +116,7 @@ def rename_output_columns_for_target(
     return df
 
 
-def drop_and_rename_output_cols_for_target(
+def drop_and_rename_docking_output_cols_for_target(
     df: pd.DataFrame,
     target: str,
     manifold_validate: Optional[bool] = True,
@@ -150,8 +150,8 @@ def drop_and_rename_output_cols_for_target(
     Pandas dataframe with invalid columns dropped and valid columns renamed
 
     """
-    df_dropped = drop_non_output_columns(df, allow=allow)
-    df_dropped = rename_output_columns_for_target(
+    df_dropped = drop_docking_non_output_columns(df, allow=allow)
+    df_dropped = rename_docking_output_columns_for_target(
         df_dropped, target, manifold_validate=manifold_validate
     )
     return df_dropped
