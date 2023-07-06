@@ -71,6 +71,17 @@ def drop_non_output_columns(
     Drop columns of a docking result dataframe that are not allowed output tags
     ie the members of OutputTags.get_values() and StaticTags.get_values()
 
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Pandas dataframe of docking results
+    allow : list[str], optional
+        List of additional columns to allow
+    
+    Returns
+    -------
+    df : pd.DataFrame
+        Pandas dataframe with invalid columns dropped
     """
     output_cols = OutputTags.get_values()
     static_cols = StaticTags.get_values()
@@ -94,6 +105,20 @@ def rename_output_columns_for_target(
     for example:
 
     Docking_Score_POSIT -> Docking_Score_POSIT_sars2_mpro
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Pandas dataframe of docking results
+    target : str
+        Target name
+    manifold_validate : bool, optional
+        If True, validate that the columns are valid for Postera Manifold
+    
+    Returns
+    -------
+    df : pd.DataFrame
+        Pandas dataframe with valid columns renamed
     """
     if not TargetTags.is_in_values(target):
         raise ValueError(
@@ -134,6 +159,23 @@ def drop_and_rename_output_cols_for_target(
 
     Docking_Score_POSIT -> Docking_Score_POSIT_sars2_mpro
     _blahblah -> None (dropped)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Pandas dataframe of docking results
+    target : str
+        Target name
+    manifold_validate : bool, optional
+        If True, validate that the columns are valid for Postera Manifold
+    allow : list[str], optional
+        List of additional columns to allow
+    
+    Returns
+    -------
+    df : pd.DataFrame
+    Pandas dataframe with invalid columns dropped and valid columns renamed
+
     """
     df_dropped = drop_non_output_columns(df, allow=allow)
     df_dropped = rename_output_columns_for_target(
