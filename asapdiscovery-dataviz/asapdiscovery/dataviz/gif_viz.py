@@ -275,9 +275,9 @@ class GIFVisualizer:
         # turn on depth cueing
         p.cmd.set("depth_cue", 1)
 
-        # now, select stuff to hide; we select everything that is 
+        # now, select stuff to hide; we select everything that is
         # farther than 15 Ang from our ligand.
-        p.cmd.select("th", "(all) and not ( (all) within 15 of ligand)" )
+        p.cmd.select("th", "(all) and not ( (all) within 15 of ligand)")
         # hide it to save rendering time.
         p.cmd.hide("everything", "th")
 
