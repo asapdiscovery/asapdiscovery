@@ -77,7 +77,7 @@ def drop_non_output_columns(
         Pandas dataframe of docking results
     allow : list[str], optional
         List of additional columns to allow
-    
+
     Returns
     -------
     df : pd.DataFrame
@@ -99,13 +99,13 @@ def rename_output_columns_for_target(
     df: pd.DataFrame, target: str, manifold_validate: Optional[bool] = True
 ) -> pd.DataFrame:
     """
-    Rename columns of a docking result dataframe that are available to be 
-    updated in the Postera Manifold for a specific target. i.e inject the 
-    target name into the column name to satisfy validation for Postera Manifold. 
+    Rename columns of a docking result dataframe that are available to be
+    updated in the Postera Manifold for a specific target. i.e inject the
+    target name into the column name to satisfy validation for Postera Manifold.
     for example:
 
     Docking_Score_POSIT -> Docking_Score_POSIT_sars2_mpro
-    
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -114,7 +114,7 @@ def rename_output_columns_for_target(
         Target name
     manifold_validate : bool, optional
         If True, validate that the columns are valid for Postera Manifold
-    
+
     Returns
     -------
     df : pd.DataFrame
@@ -152,9 +152,9 @@ def drop_and_rename_output_cols_for_target(
     """
     Drop columns of a docking result dataframe that are not allowed output tags
     ie the members of OutputTags.get_values() and StaticTags.get_values()
-    and then rename columns of a docking result dataframe that are available to be 
-    updated in the Postera Manifold for a specific target. i.e inject the 
-    target name into the column name to satisfy validation for Postera Manifold. 
+    and then rename columns of a docking result dataframe that are available to be
+    updated in the Postera Manifold for a specific target. i.e inject the
+    target name into the column name to satisfy validation for Postera Manifold.
     for example:
 
     Docking_Score_POSIT -> Docking_Score_POSIT_sars2_mpro
@@ -170,7 +170,7 @@ def drop_and_rename_output_cols_for_target(
         If True, validate that the columns are valid for Postera Manifold
     allow : list[str], optional
         List of additional columns to allow
-    
+
     Returns
     -------
     df : pd.DataFrame
