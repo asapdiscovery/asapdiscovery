@@ -68,7 +68,8 @@ def drop_non_output_columns(
     df: pd.DataFrame, allow: Optional[list[str]] = []
 ) -> pd.DataFrame:
     """
-    Drop columns of a docking result dataframe that are not in the output
+    Drop columns of a docking result dataframe that are not allowed output tags
+    ie the members of OutputTags.get_values()
 
     """
     output_cols = OutputTags.get_values()
