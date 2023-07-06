@@ -4,7 +4,7 @@ from typing import Dict, Tuple, Union  # noqa: F401
 import pandas as pd
 from typing_extensions import TypedDict
 
-from .manifold_data_validation import ManifoldAllowedTags, ManifoldFilter
+from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
 
 
@@ -300,11 +300,12 @@ class MoleculeSetAPI(PostEraAPI):
         overwrite=False,
         debug_df_path: str = None,
     ) -> list[str]:
-        df = ManifoldFilter.filter_dataframe_cols(
-            df, smiles_field=smiles_field, id_field=id_field
+        df = ManifoldAllowedTags.filter_dataframe_cols(
+            df, allow=[smiles_field, id_field]
         )
-        if not ManifoldFilter.all_valid_columns(
-            df.columns, allow=(id_field, smiles_field)
+
+        if not ManifoldAllowedTags.all_in_values(
+            df.columns, allow=[id_field, smiles_field]
         ):
             raise ValueError(
                 f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"

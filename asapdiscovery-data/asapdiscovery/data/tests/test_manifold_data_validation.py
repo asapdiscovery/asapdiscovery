@@ -1,7 +1,6 @@
 import pandas as pd
 from asapdiscovery.data.postera.manifold_data_validation import (
     ManifoldAllowedTags,
-    ManifoldFilter,
     OutputTags,
     StaticTags,
     TargetTags,
@@ -40,21 +39,16 @@ def test_allowed_tags():
     assert "42" not in ManifoldAllowedTags.get_values()
 
 
-def test_manifold_filter():
-    assert ManifoldFilter.is_allowed_column("Docking_Score_POSIT_sars2_mpro")
-    assert not ManifoldFilter.is_allowed_column("42")
+def test_manifold_tags_is_in():
+    assert ManifoldAllowedTags.is_in_values("Docking_Score_POSIT_sars2_mpro")
+    assert not ManifoldAllowedTags.is_in_values("42")
 
 
-def test_manifold_filter_allowed_column():
-    assert ManifoldFilter.is_allowed_column("Docking_Score_POSIT_sars2_mpro")
-    assert not ManifoldFilter.is_allowed_column("42")
-
-
-def test_manifold_filter_all_allowed():
-    assert ManifoldFilter.all_valid_columns(
+def test_manifold_filter_all_in():
+    assert ManifoldAllowedTags.all_in_values(
         ["Docking_Score_POSIT_sars2_mpro", "Docking_Score_POSIT_mers_mpro"]
     )
-    assert not ManifoldFilter.all_valid_columns(
+    assert not ManifoldAllowedTags.all_in_values(
         ["Docking_Score_POSIT_sars2_mpro", "Docking_Score_POSIT_mers_mpro", "42"]
     )
 
@@ -68,7 +62,7 @@ def test_manifold_filter_dataframe_cols():
         }
     )
     # filter the dataframe
-    ret_df = ManifoldFilter.filter_dataframe_cols(df)
+    ret_df = ManifoldAllowedTags.filter_dataframe_cols(df)
     assert all(df == ret_df)
 
 
@@ -82,8 +76,22 @@ def test_manifold_filter_dataframe_cols_drops():
         }
     )
     # filter the dataframe
-    ret_df = ManifoldFilter.filter_dataframe_cols(df)
+    ret_df = ManifoldAllowedTags.filter_dataframe_cols(df)
     assert all(
         df[["Docking_Score_POSIT_sars2_mpro", "Docking_Score_POSIT_mers_mpro"]]
         == ret_df
     )
+
+
+def test_manifold_filter_dataframe_cols_doesnt_drop_allow():
+    # make a dataframe with some columns
+    df = pd.DataFrame(
+        {
+            "Docking_Score_POSIT_sars2_mpro": [1, 2, 3],
+            "Docking_Score_POSIT_mers_mpro": [4, 5, 6],
+            "42": [7, 8, 9],
+        }
+    )
+    # filter the dataframe
+    ret_df = ManifoldAllowedTags.filter_dataframe_cols(df, allow=["42"])
+    assert all(df == ret_df)

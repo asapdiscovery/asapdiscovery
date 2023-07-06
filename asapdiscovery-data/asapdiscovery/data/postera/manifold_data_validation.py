@@ -33,12 +33,29 @@ class TagEnumBase(Enum):
         return tag in cls.get_values()
 
     @classmethod
+    def all_in_values(cls, query: list[str], allow: list[str] = []) -> bool:
+        return all([cls.is_in_values(q) for q in query if q not in allow])
+
+    @classmethod
     def from_iterable(cls, name: str, iter: Iterable) -> Enum:
         """
         Create a new Enum class from a set of tags
         """
         enum_data = {tag: tag for tag in iter}
         return cls(name, enum_data)
+
+    @classmethod
+    def filter_dataframe_cols(
+        cls, df: pd.DataFrame, allow: Optional[list[str]] = None
+    ) -> pd.DataFrame:
+        # construct list of allowed columns
+        allowed_columns = cls.get_values()
+        if allow is not None:
+            allowed_columns.extend(allow)
+
+        # drop columns that are not allowed
+        extra_cols = [col for col in df.columns if col not in allowed_columns]
+        return df.drop(columns=extra_cols)
 
 
 def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
@@ -181,47 +198,3 @@ def make_tag_combinations_and_combine_with_static(
 ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
     target_tag_set, output_tag_set, static_tag_set
 )
-
-
-class ManifoldFilter:
-    """
-    Class to filter columns and data to only those that the P5 comp-chem team
-    should be able to update in postera.
-    """
-
-    @staticmethod
-    def is_allowed_column(column: str) -> bool:
-        """
-        Check if a column is a valid column for the P5 comp-chem team to update
-        """
-        return column in ManifoldAllowedTags.get_values()
-
-    @staticmethod
-    def all_valid_columns(columns: list[str], allow: Optional[list[str]] = []) -> bool:
-        """
-        Check if all columns are valid columns for the P5 comp-chem team to update
-        """
-        return all(
-            [
-                ManifoldFilter.is_allowed_column(column)
-                for column in columns
-                if column not in allow
-            ]
-        )
-
-    @staticmethod
-    def filter_dataframe_cols(
-        df: pd.DataFrame, smiles_field=None, id_field=None, additional_cols=None
-    ) -> pd.DataFrame:
-        # construct list of allowed columns
-        allowed_columns = ManifoldAllowedTags.get_values()
-        if smiles_field is not None:
-            allowed_columns.append(smiles_field)
-        if id_field is not None:
-            allowed_columns.append(id_field)
-        if additional_cols is not None:
-            allowed_columns.extend(additional_cols)
-
-        # drop columns that are not allowed
-        extra_cols = [col for col in df.columns if col not in allowed_columns]
-        return df.drop(columns=extra_cols)
