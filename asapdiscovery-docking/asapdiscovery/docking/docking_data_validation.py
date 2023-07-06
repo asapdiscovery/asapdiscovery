@@ -36,32 +36,6 @@ class DockingResultCols(Enum):
     def get_columns(cls) -> list[str]:
         return [col.value for col in cls]
 
-    @classmethod
-    def get_columns_for_target(cls, target: str) -> list[str]:
-        if not TargetTags.is_in_values(target):
-            raise ValueError(
-                f"Target {target} is not valid. Valid targets are: {TargetTags.get_values()}"
-            )
-        return [col.value + f"_{target}" for col in cls]
-
-    @classmethod
-    def get_columns_for_target_with_manifold_validation(cls, target: str) -> list[str]:
-        if not TargetTags.is_in_values(target):
-            raise ValueError(
-                f"Target {target} is not valid. Valid targets are: {TargetTags.get_values()}"
-            )
-
-        cols = [
-            col.value + f"_{target}"
-            for col in cls
-            if ManifoldAllowedTags.is_in_values(col.value + f"_{target}")
-        ]
-        if not ManifoldAllowedTags.all_in_values(cols):
-            raise ValueError(
-                f"Columns in dataframe {cols} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
-            )
-        return cols
-
 
 def drop_non_output_columns(
     df: pd.DataFrame, allow: Optional[list[str]] = []
