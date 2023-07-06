@@ -39,7 +39,7 @@ class GIFVisualizer:
         frames_per_ns: int = 200,
         pse: bool = False,
         pse_share: bool = False,  # set to True for GIF viz debugging
-        smooth: int = 0,
+        smooth: int = 3,
         contacts: bool = True,
         start: int = 1,
         stop: int = -1,
@@ -270,7 +270,16 @@ class GIFVisualizer:
             show_contacts(p, "ligand", "receptor")
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
-        p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand
+        # p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand
+
+        # turn on depth cueing
+        p.cmd.set("depth_cue", 1)
+
+        # now, select stuff to hide; we select everything that is 
+        # farther than 15 Ang from our ligand.
+        p.cmd.select("th", "(all) and not ( (all) within 15 of ligand)" )
+        # hide it to save rendering time.
+        p.cmd.hide("everything", "th")
 
         if self.pse or self.pse_share:
             self.logger.info("Writing PyMol ensemble to session_5_intrafitted.pse...")
