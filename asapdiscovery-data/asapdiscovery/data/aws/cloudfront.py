@@ -5,15 +5,13 @@
 import datetime
 from os import PathLike
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding
 from botocore.signers import CloudFrontSigner
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 
 
 class CloudFront:
-
     def __init__(self, domain_name: str, key_id: str, private_key_pem_path: PathLike):
         """Create an interface to AWS CloudFront.
 
@@ -32,11 +30,9 @@ class CloudFront:
         self.domain_name = domain_name
         self.key_id = key_id
 
-        with open(private_key_pem_path, 'rb') as key_file:
+        with open(private_key_pem_path, "rb") as key_file:
             self._private_key = serialization.load_pem_private_key(
-                key_file.read(),
-                password=None,
-                backend=default_backend()
+                key_file.read(), password=None, backend=default_backend()
             )
 
     def generate_signed_url(self, object_path: str, expire: datetime.datetime):
@@ -62,6 +58,7 @@ class CloudFront:
         cloudfront_signer = CloudFrontSigner(self.key_id, rsa_signer)
 
         signed_url = cloudfront_signer.generate_presigned_url(
-            url, date_less_than=expire)
+            url, date_less_than=expire
+        )
 
         return signed_url
