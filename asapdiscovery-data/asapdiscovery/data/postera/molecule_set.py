@@ -82,9 +82,9 @@ class MoleculeSetAPI(PostEraAPI):
     def molecule_set_url(self):
         return f"{self.api_url}/moleculesets"
 
-    @classmethod
+    @staticmethod
     def molecule_set_id_or_name(
-        cls, molecule_set_id_or_name: str, available_molsets: dict[str, str]
+        molecule_set_id_or_name: str, available_molsets: dict[str, str]
     ) -> str:
         """
         Helper function to determine if the input is a molecule set id or name
