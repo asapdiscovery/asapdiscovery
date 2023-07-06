@@ -107,7 +107,7 @@ parser.add_argument(
     "--mols",
     required=True,
     help=(
-        "Path to the molecules to dock to the receptor as an SDF or SMILES file, or SMILES string."
+        "Path to the molecules to dock to the receptor as an SDF or SMILES file, or SMILES string, or Postera MoleculeSet ID or Postera MoleculeSet name if --postera flag is set"
     ),
 )
 
