@@ -1,4 +1,5 @@
-from typing import Dict, Union  # noqa: F401
+import uuid
+from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
 from typing_extensions import TypedDict
@@ -84,23 +85,22 @@ class MoleculeSetAPI(PostEraAPI):
 
     @staticmethod
     def molecule_set_id_or_name(
-        molecule_set_id_or_name: str, available_molsets: dict[str, str]
+        id_or_name: str, available_molsets: dict[str, str]
     ) -> str:
         """
         Helper function to determine if the input is a molecule set id or name
         and return the molecule set id
         """
-        if (len(molecule_set_id_or_name) == 36) and (
-            len(molecule_set_id_or_name.split("-")) == 5
-        ):  # looks like a molecule set id
-            molset_id = molecule_set_id_or_name
-        else:
+        try:
+            uuid.UUID(id_or_name)
+            molset_id = id_or_name
+        except ValueError:
             available_molsets_rev = {v: k for k, v in available_molsets.items()}
             try:
-                molset_id = available_molsets_rev[molecule_set_id_or_name]
+                molset_id = available_molsets_rev[id_or_name]
             except KeyError:
                 raise ValueError(
-                    f"Molecule Set with identifier: {molecule_set_id_or_name} not found in PostEra"
+                    f"Molecule Set with identifier: {id_or_name} not found in PostEra"
                 )
         return molset_id
 
@@ -226,7 +226,7 @@ class MoleculeSetAPI(PostEraAPI):
 
     def get_molecules_from_id_or_name(
         self, molecule_set_id: str, return_as="dataframe"
-    ) -> Union[pd.DataFrame, list]:
+    ) -> tuple[Union[pd.DataFrame, list], str]:
         molset_id = self.molecule_set_id_or_name(molecule_set_id, self.list_available())
         return self.get_molecules(molset_id, return_as), molset_id
 

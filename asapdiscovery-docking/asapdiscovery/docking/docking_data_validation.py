@@ -57,7 +57,6 @@ class DockingResultCols(Enum):
             for col in cls
             if ManifoldFilter.is_allowed_column(col.value + f"_{target}")
         ]
-        print("COLS: ", cols)
         if not ManifoldFilter.all_valid_columns(cols):
             raise ValueError(
                 f"Columns in dataframe {cols} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
