@@ -981,8 +981,8 @@ def main():
         logger.info("Uploading results to PostEra")
 
         ms.update_molecules_from_df_with_manifold_validation(
-            molset_id,
-            renamed_top_posit,
+            molecule_set_id=molset_id,
+            df=renamed_top_posit,
             id_field="_ligand_id",
             smiles_field="SMILES",
             overwrite=True,
