@@ -37,7 +37,8 @@ class CloudFront:
         Use the instance to generate a signed URL for an object hosted on the
         S3 bucket the Distribution serves, with an expiration of midnight on July 5, 2028:
 
-        >>> url = cf.generate_signed_url('path/within/bucket/to/object', expire=datetime(2028,7,5))
+        >>> url = cf.generate_signed_url('path/within/bucket/to/object',
+                                         expire=datetime(2028,7,5))
 
         This url can then be used to access the object in the S3 bucket from
         anywhere, even though the bucket itself is private. Treat the URL with
