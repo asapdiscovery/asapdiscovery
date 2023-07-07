@@ -25,6 +25,25 @@ class CloudFront:
             Path to the private key, in PEM format, to use for signing.
             Must correspond to the public key registered on CloudFront under `key_id`.
 
+        Examples
+        --------
+        Instantiate an instance of this class, corresponding to an existing
+        CloudFront Distribution you have access to:
+
+        >>> cf = CloudFront('example123.cloudfront.net',
+                            key_id='K2NIOFADFASNFK',
+                            private_key_pem_path='./cloudfront_rsa')
+
+        Use the instance to generate a signed URL for an object hosted on the
+        S3 bucket the Distribution serves, with an expiration of midnight on July 5, 2028:
+
+        >>> url = cf.generate_signed_url('path/within/bucket/to/object', expire=datetime(2028,7,5))
+
+        This url can then be used to access the object in the S3 bucket from
+        anywhere, even though the bucket itself is private. Treat the URL with
+        care, and distribute only where it is needed for users that should have
+        access to the object.
+
         """
 
         self.domain_name = domain_name
