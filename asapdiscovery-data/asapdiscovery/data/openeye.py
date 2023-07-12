@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union  # noqa: F401
 
-from openeye import (
+from openeye import (  # noqa: F401
     oechem,
     oedepict,
     oedocking,
@@ -9,7 +9,7 @@ from openeye import (
     oeomega,
     oespruce,
     oeszybki,
-)  # noqa: F401
+)
 
 # exec on module import
 
