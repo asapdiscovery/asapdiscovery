@@ -59,7 +59,7 @@ manifold_outputs:
         - FEC
         - FEC-uncertainty # a bit of an abuse but it works
       postfix: msk
-        
+
   - md-pose:
       prefix: in-silico
       units:
