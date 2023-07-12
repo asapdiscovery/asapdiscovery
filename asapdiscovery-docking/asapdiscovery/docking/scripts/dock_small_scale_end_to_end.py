@@ -315,6 +315,11 @@ def main():
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
 
+    data_intermediate_dir = output_dir / "data_intermediates"
+    data_intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"Data intermediate directory: {data_intermediate_dir}")
+
     if args.debug:
         logger.info("Running in debug mode. enabling --verbose and disabling --cleanup")
         args.verbose = True
@@ -669,12 +674,12 @@ def main():
     sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
     top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
     # save with the failed ones in so its clear which ones failed
-    top_posit.to_csv(output_dir / "top_poses.csv", index=False)
+    top_posit.to_csv(data_intermediate_dir / "top_poses.csv", index=False)
     n_total = len(top_posit)
 
     # IMPORTANT: only keep the ones that worked for the rest of workflow
     top_posit = top_posit[top_posit.docked_file != ""]
-    top_posit.to_csv(output_dir / "top_poses_succeded.csv", index=False)
+    top_posit.to_csv(data_intermediate_dir / "top_poses_succeded.csv", index=False)
 
     n_succeded = len(top_posit)
     n_failed = n_total - n_succeded
@@ -777,7 +782,18 @@ def main():
             conformer_analysis = SzybkiFreeformConformerAnalyzer(
                 top_posit["docked_file"], top_posit["outpath_szybki"], logger=logger
             )
-            results = conformer_analysis.run_all_szybki()
+            results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
+
+        # save results
+        results.to_csv(data_intermediate_dir / "szybki_results.csv", index=False)
+
+        # join results back to top_posit
+        top_posit = top_posit.merge(results, on="ligand_id", how="left")
+
+        # save top_posit with szybki results
+        top_posit.to_csv(
+            data_intermediate_dir / "top_poses_succeded_szybki.csv", index=False
+        )
 
     if args.dask:
         if args.dask_lilac:
@@ -952,6 +968,9 @@ def main():
                 logger=logger,
             )
             gif_visualiser.write_traj_visualizations()
+
+    # save top_posit with szybki results
+    top_posit.to_csv(output_dir / "final_results.csv", index=False)
 
     if args.cleanup:
         if len(intermediate_files) > 0:

@@ -15,10 +15,10 @@ class SzybkiFreeformResult(BaseModel):
     Class for storing the results of a Szybki Freeform conformer analysis run.
     """
 
-    ligand_name: str
-    GlobalStrain: float
-    LocalStrain: float
-    ConformerStrain: float
+    ligand_id: str
+    szybki_GlobalStrain: float
+    szybki_LocalStrain: float
+    szybki_ConformerStrain: float
     units = unit.kilocalories_per_mole
 
     class Config:
@@ -105,7 +105,7 @@ class SzybkiFreeformConformerAnalyzer:
             results.append(self.run_szybki_on_ligand(ligand_path, output_path))
             self.logger.info(f"Finished Szybki on {ligand_path}")
         if return_as_dataframe:
-            return pd.DataFrame(results)
+            return pd.DataFrame([s.dict() for s in results]).drop(columns=["units"])
         else:
             return results
 
@@ -135,16 +135,16 @@ class SzybkiFreeformConformerAnalyzer:
         if not output_path.exists():
             output_path.mkdir(exist_ok=True)
 
-        # grab ligand name
-        ligand_name = ligand_path.stem
+        # grab ligand name from output path TODO: use schema to do this properly
+        ligand_id = output_path.stem
 
         ensemble_output_sdf = output_path / "szybki_ensemble.sdf"
 
         # set up logging
-        errfs = oechem.oeofstream(str(output_path / "openeye_szybki_ensemble.txt"))
+        errfs = oechem.oeofstream(str(output_path / "openeye_szybki_ensemble-log.txt"))
         oechem.OEThrow.SetOutputStream(errfs)
         oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-        oechem.OEThrow.Info(f"Starting szybki freeform for {ligand_path}")
+        oechem.OEThrow.Info(f"Starting Szybki FreeForm for {ligand_path}")
 
         # use a FileLogger with no formatting to write the info we want to capture from calculation to a file
         szybki_logger = FileLogger(
@@ -154,6 +154,10 @@ class SzybkiFreeformConformerAnalyzer:
             format="%(message)s",
             level=logging.INFO,
         ).getLogger()
+
+        szybki_logger.info(f"Running Szybki FreeForm on {ligand_id}")
+        start_time = pd.Timestamp.now()
+        szybki_logger.info(f"start time: {start_time}\n")
 
         ifs = oechem.oemolistream()
         if not ifs.open(str(ligand_path)):
@@ -251,6 +255,9 @@ class SzybkiFreeformConformerAnalyzer:
         rstrRes = oeszybki.OERestrictionEnergyResult(fmol)
         szybki_logger.info(f"Unoptimised Global strain: {rstrRes.GetGlobalStrain()}")
         szybki_logger.info(f"Unoptimised Local strain:{rstrRes.GetLocalStrain()}")
+        szybki_logger.info(
+            f"Unoptimised Conformer strain: {rstrRes.GetGlobalStrain() - rstrRes.GetLocalStrain()}"
+        )
 
         # It is much better to perform a restrained optimization of the
         # restricted conformer(s) to brush out any energy differences due to
@@ -274,6 +281,9 @@ class SzybkiFreeformConformerAnalyzer:
         rstrRes = oeszybki.OERestrictionEnergyResult(fmol)
         szybki_logger.info(f"Optimised Global strain: {rstrRes.GetGlobalStrain()}")
         szybki_logger.info(f"Optimised Local strain:{rstrRes.GetLocalStrain()}")
+        szybki_logger.info(
+            f"Optimised Conformer strain: {rstrRes.GetGlobalStrain() - rstrRes.GetLocalStrain()}"
+        )
 
         oechem.OEWriteMolecule(ofs, omol)
 
@@ -283,10 +293,13 @@ class SzybkiFreeformConformerAnalyzer:
 
         # build the SzybkiFreeformResult object
         res = SzybkiFreeformResult(
-            ligand_name=ligand_name,
-            GlobalStrain=rstrRes.GetGlobalStrain(),
-            LocalStrain=rstrRes.GetLocalStrain(),
-            ConformerStrain=rstrRes.GetGlobalStrain() - rstrRes.GetLocalStrain(),
+            ligand_id=ligand_id,
+            szybki_GlobalStrain=rstrRes.GetGlobalStrain(),
+            szybki_LocalStrain=rstrRes.GetLocalStrain(),
+            szybki_ConformerStrain=rstrRes.GetGlobalStrain() - rstrRes.GetLocalStrain(),
         )
-
+        end_time = pd.Timestamp.now()
+        szybki_logger.info(f"\nFinished Szybki FreeForm on {ligand_id}")
+        szybki_logger.info(f"end time: {end_time}")
+        szybki_logger.info(f"elapsed time: {end_time - start_time}")
         return res
