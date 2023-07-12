@@ -1,27 +1,29 @@
+# find these by going through GIF generation with `pse_share=True`, then inspecting
+# session_5.pse with pymol, orienting and running `get_view` in pymol terminal.
 # SARS2
-view_coords_sars2 = (
-    -0.729172230,
-    -0.243629232,
-    -0.639491022,
-    -0.022380522,
-    -0.925491273,
-    0.378106207,
-    -0.683962226,
-    0.290017933,
-    0.669392288,
-    0.000049770,
-    0.000011081,
-    -71.979034424,
-    15.792427063,
-    -2.869046450,
-    16.934762955,
-    25.658096313,
-    118.312721252,
+view_coords_sars2_mpro = (
+    -0.339127213,
+    -0.370405823,
+    -0.864748597,
+    0.307130545,
+    -0.912446380,
+    0.270390421,
+    -0.889192164,
+    -0.173893914,
+    0.423199117,
+    0.000072375,
+    0.000199302,
+    -80.242187500,
+    6.715160370,
+    92.460678101,
+    114.338867188,
+    -458.494476318,
+    618.980895996,
     -20.000000000,
 )
 
 # MERS
-view_coord_mers = (
+view_coords_mers_mpro = (
     -0.635950804,
     -0.283323288,
     -0.717838645,
@@ -43,7 +45,7 @@ view_coord_mers = (
 )
 
 # 7ENE
-view_coords_7ene = (
+view_coords_7ene_mpro = (
     0.710110664,
     0.317291290,
     -0.628544748,
@@ -66,31 +68,53 @@ view_coords_7ene = (
 
 
 # 272
-view_coords_272 = (
-    0.909307361,
-    0.223530963,
-    -0.350987315,
-    0.331670791,
-    -0.898707509,
-    0.286908478,
-    -0.251302391,
-    -0.377300352,
-    -0.891342342,
-    0.000005919,
-    0.000006526,
-    -76.573043823,
-    4.865715981,
-    -5.167206764,
-    33.649829865,
-    35.030181885,
-    118.116012573,
+view_coords_272_mpro = (
+    0.877147615,
+    0.019472033,
+    -0.479821414,
+    -0.101128228,
+    -0.969278216,
+    -0.224204898,
+    -0.469446748,
+    0.245185584,
+    -0.848235607,
+    0.000049642,
+    0.000095099,
+    -100.664413452,
+    6.686100960,
+    18.334394455,
+    41.254760742,
+    -59353.101562500,
+    59554.460937500,
     -20.000000000,
 )
 
+# mac1
+view_coords_sars2_mac1 = (
+    0.058132507,
+    -0.604144037,
+    -0.794748724,
+    -0.915980995,
+    0.284294397,
+    -0.283112556,
+    0.396988422,
+    0.744434655,
+    -0.536857843,
+    0.000011945,
+    -0.000066146,
+    -87.475425720,
+    13.680676460,
+    25.153524399,
+    -0.173997879,
+    -1329.627441406,
+    1504.635498047,
+    -20.000000000,
+)
 
-# set colorings of subpockets by resn. This may change over time.
+# set colorings of subpockets by resn. This may change over time.,
+# first define the residues that span the subpockets
 # SARS2
-pocket_dict_sars2 = {
+pocket_dict_sars2_mpro = {
     "subP1": "140-145+163+172",
     "subP1_prime": "25-27",
     "subP2": "41+49+54",
@@ -99,7 +123,7 @@ pocket_dict_sars2 = {
 }
 
 # MERS
-pocket_dict_mers = {
+pocket_dict_mers_mpro = {
     "subP1": "143+144+145+146+147+148+166+175",
     "subP1_prime": "25+26+27",
     "subP2": "41+49+54",
@@ -107,11 +131,25 @@ pocket_dict_mers = {
     "sars_unique": "25+49+145+167+171+172+184+189+191+193+194",
 }
 
-color_dict = {
+# MAC1
+pocket_dict_sars2_mac1 = {
+    "nucleotide": "154+156+22+23+24+52+49+125",
+    "bridge": "126+155",
+    "phosphate": "46+47+48+38+39+40+130+131+132+127+128+97",
+    "anion_hole": "129+157+160+136+164",
+}
+
+# now define the colors per subpocket
+color_dict_mpro = {
     "subP1": "yellow",
     "subP1_prime": "orange",
     "subP2": "skyblue",
     "subP3_4_5": "aquamarine",
 }
-# TODO: pick color-blind-friendly scheme, e.g. using https://colorbrewer2.org/#type=qualitative&scheme=Pastel1&n=4
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+color_dict_mac1 = {
+    "nucleotide": "paleyellow",
+    "bridge": "darksalmon",
+    "phosphate": "brightorange",
+    "anion_hole": "slate",
+}

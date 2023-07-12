@@ -18,6 +18,7 @@ from asapdiscovery.data.utils import (
 )
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
+from asapdiscovery.dataviz.viz_targets import VizTargets
 from asapdiscovery.docking import (
     POSIT_METHODS,
     dock_and_score_pose_oe,
@@ -259,10 +260,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--target",
+    "--viz-target",
     type=str,
     required=True,
-    help="Target to write visualizations for, one of (sars2, mers, 7ene, 272)",
+    choices=VizTargets.get_allowed_targets(),
+    help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
 )
 
 parser.add_argument(
@@ -690,7 +692,7 @@ def main():
             html_visualiser = HTMLVisualizer(
                 [pose],
                 [outpath],
-                args.target,
+                args.viz_target,
                 protein_path,
                 logger=logger,
             )
@@ -716,7 +718,7 @@ def main():
         html_visualiser = HTMLVisualizer(
             top_posit["docked_file"],
             top_posit["outpath_pose"],
-            args.target,
+            args.viz_target,
             protein_path,
             logger=logger,
         )
@@ -843,7 +845,7 @@ def main():
         if n_snapshots < 100:
             start = 1
         else:
-            start = n_snapshots - 100
+            start = n_snapshots - 99
 
         @dask.delayed
         def dask_gif_adaptor(traj, system, outpath):
@@ -851,7 +853,7 @@ def main():
                 [traj],
                 [system],
                 [outpath],
-                args.target,
+                args.viz_target,
                 frames_per_ns=200,
                 smooth=5,
                 start=start,
@@ -888,7 +890,7 @@ def main():
                 top_posit["outpath_md_traj"],
                 top_posit["outpath_md_sys"],
                 top_posit["outpath_gif"],
-                args.target,
+                args.viz_target,
                 frames_per_ns=200,
                 smooth=5,
                 start=start,
