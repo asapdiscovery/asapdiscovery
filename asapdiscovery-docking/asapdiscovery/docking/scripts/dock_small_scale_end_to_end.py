@@ -32,6 +32,8 @@ from asapdiscovery.modeling.schema import (
     PreppedTargets,
 )
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
+from asapdiscovery.simulation.szybki import SzybkiConformerAnalysis
+
 
 """
 Script to run single target prep + docking.
@@ -277,6 +279,13 @@ parser.add_argument(
     type=int,
     default=2500000,
     help="Number of MD steps to run.",
+)
+
+
+parser.add_argument(
+    "--szybki",
+    action="store_true",
+    help="Whether to run Szybki conformer analysis after docking.",
 )
 
 
@@ -723,6 +732,53 @@ def main():
             logger=logger,
         )
         html_visualiser.write_pose_visualizations()
+
+    #################################
+    #   Szybki conformer analysis   #
+    #################################
+
+    if args.szybki:
+        szybki_dir = output_dir / "szybki"
+        szybki_dir.mkdir(parents=True, exist_ok=True)
+        logger.info("Running Szybki conformer analysis")
+
+        # add szybki output column
+        top_posit["outpath_szybki"] = top_posit["ligand_id"].apply(
+            lambda x: szybki_dir / Path(x)
+        )
+
+        if args.dask:
+            logger.info("Running Szybki conformer analysis with Dask")
+
+            @dask.delayed
+            def dask_szybki_adaptor(pose, outpath):
+                conformer_analysis = SzybkiConformerAnalysis(
+                    [pose], [outpath], logger=logger
+                )
+                output_paths = conformer_analysis.run_all_szybki()
+
+                if len(output_paths) != 1:
+                    raise ValueError(
+                        "Somehow got more than one output path from SzybkiConformerAnalysis"
+                    )
+                return output_paths[0]
+
+            results = []
+            for pose, output_path in zip(
+                top_posit["docked_file"], top_posit["outpath_szybki"]
+            ):
+                outpath = dask_szybki_adaptor(pose, output_path)
+                outpaths.append(outpath)
+
+            results = client.compute(outpaths)
+            results = client.gather(outpaths)
+
+        else:
+            logger.info("Running Szybki conformer analysis in serial")
+            conformer_analysis = SzybkiConformerAnalysis(
+                top_posit["docked_file"], top_posit["outpath_pose"], logger=logger
+            )
+            results = conformer_analysis.run_all_szybki()
 
     if args.dask:
         if args.dask_lilac:
