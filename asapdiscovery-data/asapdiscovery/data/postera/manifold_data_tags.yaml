@@ -55,7 +55,7 @@ manifold_outputs:
       units: pIC50
       tools:
         - GAT
-        - Schnet
+        - SchNet
         - FEC
         - FEC-uncertainty # a bit of an abuse but it works
       postfix: msk
@@ -74,6 +74,6 @@ manifold_outputs:
 
 # identifiers for static data
 static_identifiers:
-  - UUID_POSTERA_API
-  - UUID_CCC_DB
+  - in-silico-UUID_POSTERA_API
+  - in-silico-UUID_CCC_DB
   - SMILES

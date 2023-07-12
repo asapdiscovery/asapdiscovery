@@ -210,7 +210,6 @@ def make_tag_combinations_and_combine_with_static(
     Make all possible combinations of target_tags and output_tags
     then add in the static and legacy tags
     """
-    print(prefix_postfix_dict)
     combos = set(itertools.product(output_tags, target_tags))
 
     combined = set()
