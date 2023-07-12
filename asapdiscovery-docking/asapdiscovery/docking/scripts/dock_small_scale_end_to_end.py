@@ -1,5 +1,6 @@
 import argparse
 import logging
+import pandas as pd
 import shutil
 from datetime import datetime
 from functools import partial
@@ -759,13 +760,8 @@ def main():
                 conformer_analysis = SzybkiFreeformConformerAnalyzer(
                     [pose], [outpath], logger=logger
                 )
-                output_paths = conformer_analysis.run_all_szybki()
-
-                if len(output_paths) != 1:
-                    raise ValueError(
-                        "Somehow got more than one output path from SzybkiFreeformConformerAnalyzer"
-                    )
-                return output_paths[0]
+                results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
+                return results
 
             szybki_results = []
             for pose, output_path in zip(
@@ -774,21 +770,23 @@ def main():
                 res = dask_szybki_adaptor(pose, output_path)
                 szybki_results.append(res)
 
-            results = client.compute(szybki_results)
-            results = client.gather(szybki_results)
+            szybki_results = client.compute(szybki_results)
+            szybki_results = client.gather(szybki_results)
+            # concat results
+            szybki_results = pd.concat(szybki_results)
 
         else:
             logger.info("Running Szybki conformer analysis in serial")
             conformer_analysis = SzybkiFreeformConformerAnalyzer(
                 top_posit["docked_file"], top_posit["outpath_szybki"], logger=logger
             )
-            results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
+            szybki_results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
 
         # save results
-        results.to_csv(data_intermediate_dir / "szybki_results.csv", index=False)
+        szybki_results.to_csv(data_intermediate_dir / "szybki_results.csv", index=False)
 
         # join results back to top_posit
-        top_posit = top_posit.merge(results, on="ligand_id", how="left")
+        top_posit = top_posit.merge(szybki_results, on="ligand_id", how="left")
 
         # save top_posit with szybki results
         top_posit.to_csv(
