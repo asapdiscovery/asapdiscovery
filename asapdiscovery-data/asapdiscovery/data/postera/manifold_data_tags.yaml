@@ -24,43 +24,52 @@
 
 # organisms and targets
 virus:
-  sars2:
-    - mpro
-    - mac1
-  mers:
-    - mpro
+  SARS-CoV-2:
+    - Mpro
+    - Mac1
+  MERS-CoV:
+    - Mpro
 
 # requires both units and tools specified even if empty for clarity.
 manifold_outputs:
-  - Docking_Score:
-      units:
+  - docking-score:
+      prefix: in-silico
       tools:
         - POSIT
-  - Docking_Confidence:
       units:
+      postfix: msk
+  - docking-confidence:
+      prefix: in-silico
       tools:
         - POSIT
-  - Docking_Pose:
       units:
+      postfix: msk
+  - docking-pose:
+      prefix: in-silico
       tools:
         - POSIT
-  - ML_Score:
+      units:
+      postfix: msk
+  - computed:
+      prefix: biochemical-activity
       units: pIC50
       tools:
         - GAT
         - Schnet
-  - MD_Pose:
+        - FEC
+        - FEC-uncertainty # a bit of an abuse but it works
+      postfix: msk
+        
+  - md-pose:
+      prefix: in-silico
       units:
       tools:
-  - MD_Interactions:
+      postfix: msk
+  - md-interactions:
+      prefix: in-silico
       units:
       tools:
-  - FECs_Affinity:
-      units: pIC50
-      tools:
-  - FECs_Uncertainty:
-      units: pIC50
-      tools:
+      postfix: msk
 
 
 # identifiers for static data

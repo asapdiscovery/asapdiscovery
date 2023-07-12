@@ -81,12 +81,12 @@ def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     target_tags = set()
     for v in viruses:
         for target in viruses[v]:
-            target_tags.add(v + "_" + target)
+            target_tags.add(v + "-" + target)
 
     return TagEnumBase.from_iterable("TargetTags", target_tags), target_tags
 
 
-def make_output_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
+def make_output_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set, dict]:
     """
     Create a dynamic enum from a yaml file
     This enum contains all the output tags that are used in the manifold data
@@ -101,12 +101,16 @@ def make_output_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     -------
     Enum
         Enum containing all the tags
-    set of str
+    Set[str]
         Set of all the tags
+    Dict[str, Tuple[str, str]]
+        Dict linking the output name and the prefix and postfix
     """
     data = load_yaml(yaml_path)
     manifold_outputs = data["manifold_outputs"]
     outputs = set()
+
+    prefix_postfix_dict = {}
     for output in manifold_outputs:
         key = list(output.keys())
         if len(key) > 1:
@@ -114,27 +118,46 @@ def make_output_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
         output_name = key[0]
 
         try:
-            has_units = output[output_name]["units"]
+            units = output[output_name]["units"]
         except KeyError:
             raise ValueError("output should have a units key, even if it is empty")
         try:
-            has_tools = output[output_name]["tools"]
+            tools = output[output_name]["tools"]
         except KeyError:
             raise ValueError("output should have a tools key, even if it is empty")
 
-        if has_tools:
+        try:
+            prefix = output[output_name]["prefix"]
+        except KeyError:
+            raise ValueError("output must have a prefix")
+
+        try:
+            postfix = output[output_name]["postfix"]
+        except KeyError:
+            raise ValueError("output must have a postfix")
+
+        if tools:
             for tool in output[output_name]["tools"]:
-                name = output_name + "_" + tool
-                if has_units:
-                    name += "_" + output[output_name]["units"]
+                name = output_name + "-" + tool
+
+                if units:
+                    name += "-" + units
                 outputs.add(name)
+                prefix_postfix_dict[name] = (prefix, postfix)
+
         else:
             name = output_name
-            if has_units:
-                name += "_" + output[output_name]["units"]
-            outputs.add(name)
+            if units:
+                name += "-" + units
 
-    return TagEnumBase.from_iterable("OutputTags", outputs), outputs
+            outputs.add(name)
+            prefix_postfix_dict[name] = (prefix, postfix)
+
+    return (
+        TagEnumBase.from_iterable("OutputTags", outputs),
+        outputs,
+        prefix_postfix_dict,
+    )
 
 
 def make_static_tags(yaml_path) -> tuple[Enum, set]:
@@ -174,27 +197,35 @@ manifold_data_spec = pkg_resources.resource_filename(
 TargetTags, target_tag_set = make_target_tags(manifold_data_spec)
 
 # make Output enum and set
-OutputTags, output_tag_set = make_output_tags(manifold_data_spec)
+OutputTags, output_tag_set, prefix_postfix_dict = make_output_tags(manifold_data_spec)
 
 # make static and legacy enum and set
 StaticTags, static_tag_set = make_static_tags(manifold_data_spec)
 
 
 def make_tag_combinations_and_combine_with_static(
-    target_tags: set, output_tags: set, static_tags: set
+    target_tags: set, output_tags: set, static_tags: set, prefix_postfix_dict: dict
 ) -> tuple[Enum, set]:
     """
     Make all possible combinations of target_tags and output_tags
     then add in the static and legacy tags
     """
+    print(prefix_postfix_dict)
     combos = set(itertools.product(output_tags, target_tags))
-    combos = {combo[0] + "_" + combo[1] for combo in combos}
-    final_tags = combos.union(static_tags)
+
+    combined = set()
+    for combo in combos:
+        product, target = combo
+        pref, postf = prefix_postfix_dict[product]
+        name = pref + "_" + target + "_" + product + "_" + postf
+        combined.add(name)
+
+    final_tags = combined.union(static_tags)
     # sort the tags so that they are in alphabetical order
     final_tags = sorted(final_tags)
     return TagEnumBase.from_iterable("ManifoldAllowedTags", final_tags), final_tags
 
 
 ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
-    target_tag_set, output_tag_set, static_tag_set
+    target_tag_set, output_tag_set, static_tag_set, prefix_postfix_dict
 )
