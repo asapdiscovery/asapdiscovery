@@ -1,7 +1,15 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union  # noqa: F401
 
-from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
+from openeye import (
+    oechem,
+    oedepict,
+    oedocking,
+    oegrid,
+    oeomega,
+    oespruce,
+    oeszybki,
+)  # noqa: F401
 
 # exec on module import
 

@@ -1,9 +1,8 @@
 import logging
-import namedtuple
 import pandas as pd
 
 from asapdiscovery.data.openeye import oechem, oeszybki
-from asapdiscovery.utils.logging import FileLogger
+from asapdiscovery.data.logging import FileLogger
 
 from openmm import unit
 from pydantic import BaseModel
@@ -24,11 +23,16 @@ class SzybkiFreeformResult(BaseModel):
 
     class Config:
         allow_mutation = False
+        arbitrary_types_allowed = True
 
 
 class SzybkiFreeformConformerAnalyzer:
     """
     Class for running ligand Szybki Freeform conformer analysis.
+
+    Adapted from the OpenEye example code for calculating advanced restriction energies (listing 20)
+    https://docs.eyesopen.com/toolkits/python/szybkitk/examples.html
+
     """
 
     def __init__(
@@ -50,18 +54,22 @@ class SzybkiFreeformConformerAnalyzer:
         debug : bool
             Whether to run in debug mode.
         """
-        self.ligand_paths = ligand_paths
+        self.ligand_paths = [Path(path) for path in ligand_paths]
+
+        for ligand_path in self.ligand_paths:
+            if not ligand_path.exists():
+                raise FileNotFoundError(f"{ligand_path} does not exist")
 
         if output_paths is None:
             outdir = Path("szybki").mkdir(exist_ok=True)
             self.output_paths = [outdir / ligand.parent for ligand in ligand_paths]
         else:
-            self.output_paths = output_paths
+            self.output_paths = [Path(path) for path in output_paths]
 
         # init logger
         if logger is None:
             self.logger = FileLogger(
-                "szybki_freeform_log.txt", "./", stdout=True, level=logging.INFO
+                "szybki-freeform", "./", stdout=True, level=logging.INFO
             ).getLogger()
         else:
             self.logger = logger
@@ -78,7 +86,17 @@ class SzybkiFreeformConformerAnalyzer:
 
     def run_all_szybki(self, return_as_dataframe: bool = False):
         """
-        Run Szybki on the ligands.
+        Run Szybki on the ligands loaded in the class.
+
+        Parameters
+        ----------
+        return_as_dataframe : bool
+            Whether to return the results as a pandas DataFrame.
+
+        Returns
+        -------
+        Union[list[SzybkiFreeformResult], pd.DataFrame]
+            The results of the Szybki FreeForm runs
         """
         results = []
         for ligand_path, output_path in zip(self.ligand_paths, self.output_paths):
@@ -104,6 +122,11 @@ class SzybkiFreeformConformerAnalyzer:
             Path to the ligand.
         output_path : Path
             Path to write the output to.
+
+        Returns
+        -------
+        SzybkiFreeformResult
+            The results of the Szybki FreeForm run.
         """
 
         if not ligand_path.exists():
@@ -118,15 +141,15 @@ class SzybkiFreeformConformerAnalyzer:
         ensemble_output_sdf = output_path / "szybki_ensemble.sdf"
 
         # set up logging
-        errfs = oechem.oeofstream("openeye_szybki_ensemble.txt")
+        errfs = oechem.oeofstream(str(output_path / "openeye_szybki_ensemble.txt"))
         oechem.OEThrow.SetOutputStream(errfs)
         oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
         oechem.OEThrow.Info(f"Starting szybki freeform for {ligand_path}")
 
         # use a FileLogger with no formatting to write the info we want to capture from calculation to a file
         szybki_logger = FileLogger(
-            str(output_path / "szybki_ensemble_log.txt"),
-            "./",
+            "szybki_ensemble",
+            str(output_path),
             stdout=False,
             format="%(message)s",
             level=logging.INFO,
@@ -260,7 +283,7 @@ class SzybkiFreeformConformerAnalyzer:
 
         # build the SzybkiFreeformResult object
         res = SzybkiFreeformResult(
-            name=ligand_name,
+            ligand_name=ligand_name,
             GlobalStrain=rstrRes.GetGlobalStrain(),
             LocalStrain=rstrRes.GetLocalStrain(),
             ConformerStrain=rstrRes.GetGlobalStrain() - rstrRes.GetLocalStrain(),

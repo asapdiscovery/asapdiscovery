@@ -66,8 +66,16 @@ class VanillaMDSimulator:
         debug : bool
             Whether to run in debug mode.
         """
-        self.ligand_paths = ligand_paths
-        self.protein_path = protein_path
+        self.ligand_paths = [Path(path) for path in ligand_paths]
+
+        for ligand_path in self.ligand_paths:
+            if not ligand_path.exists():
+                raise FileNotFoundError(f"{ligand_path} does not exist")
+
+        self.protein_path = Path(protein_path)
+        if not self.protein_path.exists():
+            raise FileNotFoundError(f"{self.protein_path} does not exist")
+
         # thermo
         self.temperature = temperature * unit.kelvin
         self.pressure = pressure * unit.atmospheres

@@ -32,7 +32,7 @@ from asapdiscovery.modeling.schema import (
     PreppedTargets,
 )
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
-from asapdiscovery.simulation.szybki import SzybkiConformerAnalysis
+from asapdiscovery.simulation.szybki import SzybkiFreeformConformerAnalyzer
 
 
 """
@@ -746,37 +746,36 @@ def main():
         top_posit["outpath_szybki"] = top_posit["ligand_id"].apply(
             lambda x: szybki_dir / Path(x)
         )
-
         if args.dask:
             logger.info("Running Szybki conformer analysis with Dask")
 
             @dask.delayed
-            def dask_szybki_adaptor(pose, outpath):
-                conformer_analysis = SzybkiConformerAnalysis(
+            def dask_szybki_adaptor(pose, outpath, logger=logger):
+                conformer_analysis = SzybkiFreeformConformerAnalyzer(
                     [pose], [outpath], logger=logger
                 )
                 output_paths = conformer_analysis.run_all_szybki()
 
                 if len(output_paths) != 1:
                     raise ValueError(
-                        "Somehow got more than one output path from SzybkiConformerAnalysis"
+                        "Somehow got more than one output path from SzybkiFreeformConformerAnalyzer"
                     )
                 return output_paths[0]
 
-            results = []
+            szybki_results = []
             for pose, output_path in zip(
                 top_posit["docked_file"], top_posit["outpath_szybki"]
             ):
-                outpath = dask_szybki_adaptor(pose, output_path)
-                outpaths.append(outpath)
+                res = dask_szybki_adaptor(pose, output_path)
+                szybki_results.append(res)
 
-            results = client.compute(outpaths)
-            results = client.gather(outpaths)
+            results = client.compute(szybki_results)
+            results = client.gather(szybki_results)
 
         else:
             logger.info("Running Szybki conformer analysis in serial")
-            conformer_analysis = SzybkiConformerAnalysis(
-                top_posit["docked_file"], top_posit["outpath_pose"], logger=logger
+            conformer_analysis = SzybkiFreeformConformerAnalyzer(
+                top_posit["docked_file"], top_posit["outpath_szybki"], logger=logger
             )
             results = conformer_analysis.run_all_szybki()
 
