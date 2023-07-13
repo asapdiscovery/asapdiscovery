@@ -10,6 +10,7 @@ import dask
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -23,6 +24,10 @@ from asapdiscovery.docking import (
     POSIT_METHODS,
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
+)
+from asapdiscovery.docking.docking_data_validation import (
+    DockingResultCols,
+    drop_and_rename_docking_output_cols_for_manifold,
 )
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
@@ -103,8 +108,33 @@ parser.add_argument(
     "--mols",
     required=True,
     help=(
-        "Path to the molecules to dock to the receptor as an SDF or SMILES file, or SMILES string."
+        "Path to the molecules to dock to the receptor as an SDF or SMILES file, or SMILES string, or Postera MoleculeSet ID or Postera MoleculeSet name if --postera flag is set"
     ),
+)
+
+parser.add_argument(
+    "-p",
+    "--postera",
+    action="store_true",
+    help=(
+        "Indicate that the input to the -m flag is a PostEra MoleculeSet ID or name, requires POSTERA_API_KEY environment variable to be set."
+    ),
+)
+
+parser.add_argument(
+    "--postera-upload",
+    action="store_true",
+    help=(
+        "Indicates that the results of this docking run should be uploaded to PostEra, requires POSTERA_API_KEY environment variable to be set."
+    ),
+)
+
+parser.add_argument(
+    "--target",
+    type=str,
+    required=True,
+    help="Target protein name",
+    choices=TargetTags.get_values(),
 )
 
 parser.add_argument(
@@ -112,7 +142,7 @@ parser.add_argument(
     default=None,
     type=str,
     help=(
-        "Title of molecule to use if a SMILES string is passed in as input, default is to use the SMILES string."
+        "Title of molecule to use if a SMILES string is passed in as input, default is to use an index of the form unknown_lig_idx_<i>"
     ),
 )
 
@@ -262,7 +292,6 @@ parser.add_argument(
 parser.add_argument(
     "--viz-target",
     type=str,
-    required=True,
     choices=VizTargets.get_allowed_targets(),
     help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
 )
@@ -287,6 +316,10 @@ def main():
 
     args = parser.parse_args()
 
+    # if viz_target not specified, set to the target
+    if not args.viz_target:
+        args.viz_target = args.target
+
     # setup output directory
     output_dir = Path(args.output_dir)
     overwrote_dir = False
@@ -297,13 +330,15 @@ def main():
 
     logname = args.logname if args.logname else "single_target_docking"
     # setup logging
-    logger_cls = FileLogger(logname, path=output_dir, stdout=True)
+    logger_cls = FileLogger(logname, path=output_dir, stdout=True, level=logging.INFO)
     logger = logger_cls.getLogger()
 
     if overwrote_dir:
         logger.warning(f"Overwriting output directory: {output_dir}")
 
     logger.info(f"Start single target prep+docking at {datetime.now().isoformat()}")
+
+    logger.info(f"IMPORTANT: Target: {args.target}")
     logger.info(f"Output directory: {output_dir}")
 
     if args.debug:
@@ -324,51 +359,81 @@ def main():
     #    load input data    #
     #########################
 
-    # set internal flag to seed whether we used 3D or 2D chemistry input
-    used_3d = False
-    # parse input molecules
-    if is_valid_smiles(args.mols):
+    if args.postera:
+        import os
+
+        postera_api_key = os.getenv("POSTERA_API_KEY")
+
+        if postera_api_key is None:
+            raise ValueError("Environment variable POSTERA_API_KEY not found")
+
+        logger.info("Postera API key found")
+        logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
+
+        from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+
+        ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
+        avail_molsets = ms.list_available()
+        mols, molset_id = ms.get_molecules_from_id_or_name(args.mols)
         logger.info(
-            f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}"
+            f"Found {len(mols)} molecules in Molecule Set ID: {molset_id} with name: {avail_molsets[molset_id]}"
         )
-        # hash the smiles to generate a unique title and avoid accidentally caching different outputs as the same
-        if not args.title:
-            logger.info(
-                "No title provided, using SMILES string to generate title, consider providing a title with --title"
-            )
-            args.title = "TARGET_MOL-" + args.mols
 
-        exp_data = [ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)]
+        # make each molecule into a ExperimentalCompoundData object
+        exp_data = [
+            ExperimentalCompoundData(compound_id=mol.id, smiles=mol.smiles)
+            for _, mol in mols.iterrows()
+        ]
+        used_3d = False
+
     else:
-        mol_file_path = Path(args.mols)
-        if mol_file_path.suffix == ".smi":
-            logger.info(f"Input molecules is a SMILES file: {args.mols}")
-            exp_data = oe_load_exp_from_file(
-                args.mols, "smi", smiles_as_title=args.smiles_as_title
+        # set internal flag to seed whether we used 3D or 2D chemistry input
+        used_3d = False
+        # parse input molecules
+        if is_valid_smiles(args.mols):
+            logger.info(
+                f"Input molecules is a single SMILES string: {args.mols}, using title {args.title}"
             )
-        elif mol_file_path.suffix == ".sdf":
-            logger.info(f"Input molecules is a SDF file: {args.mols}")
-            if args.use_3d:
-                logger.info("Using 3D coordinates from SDF file")
-                # we need to keep the molecules around to retain their coordinates
-                exp_data, oe_mols = oe_load_exp_from_file(
-                    args.mols,
-                    "sdf",
-                    return_mols=True,
-                    smiles_as_title=args.smiles_as_title,
+            # hash the smiles to generate a unique title and avoid accidentally caching different outputs as the same
+            if not args.title:
+                logger.info(
+                    "No title provided, using SMILES string to generate title, consider providing a title with --title"
                 )
-                used_3d = True
-                logger.info("setting used_3d to True")
-            else:
-                logger.info("Using 2D representation from SDF file")
-                exp_data = oe_load_exp_from_file(
-                    args.mols, "sdf", smiles_as_title=args.smiles_as_title
-                )
+                args.title = "TARGET_MOL-" + args.mols
 
+            exp_data = [
+                ExperimentalCompoundData(compound_id=args.title, smiles=args.mols)
+            ]
         else:
-            raise ValueError(
-                f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
-            )
+            mol_file_path = Path(args.mols)
+            if mol_file_path.suffix == ".smi":
+                logger.info(f"Input molecules is a SMILES file: {args.mols}")
+                exp_data = oe_load_exp_from_file(
+                    args.mols, "smi", smiles_as_title=args.smiles_as_title
+                )
+            elif mol_file_path.suffix == ".sdf":
+                logger.info(f"Input molecules is a SDF file: {args.mols}")
+                if args.use_3d:
+                    logger.info("Using 3D coordinates from SDF file")
+                    # we need to keep the molecules around to retain their coordinates
+                    exp_data, oe_mols = oe_load_exp_from_file(
+                        args.mols,
+                        "sdf",
+                        return_mols=True,
+                        smiles_as_title=args.smiles_as_title,
+                    )
+                    used_3d = True
+                    logger.info("setting used_3d to True")
+                else:
+                    logger.info("Using 2D representation from SDF file")
+                    exp_data = oe_load_exp_from_file(
+                        args.mols, "sdf", smiles_as_title=args.smiles_as_title
+                    )
+
+            else:
+                raise ValueError(
+                    f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
+                )
 
     logger.info(f"Loaded {len(exp_data)} molecules.")
     if len(exp_data) == 0:
@@ -657,15 +722,26 @@ def main():
     # only write out visualizations and do MD for the best posit score for each ligand
     # sort by posit score
 
-    sorted_df = results_df.sort_values(by=["POSIT_prob"], ascending=False)
-    top_posit = sorted_df.drop_duplicates(subset=["ligand_id"], keep="first")
-    # save with the failed ones in so its clear which ones failed
-    top_posit.to_csv(output_dir / "top_poses.csv", index=False)
+    sorted_df = results_df.sort_values(
+        by=[DockingResultCols.DOCKING_SCORE_POSIT.value], ascending=False
+    )
+    top_posit = sorted_df.drop_duplicates(
+        subset=[DockingResultCols.LIGAND_ID.value], keep="first"
+    )
+    # save with the failed ones in so its clear which ones failed if any did
+    top_posit.to_csv(
+        output_dir / f"poses_{args.target}_sorted_posit_prob.csv", index=False
+    )
     n_total = len(top_posit)
 
     # IMPORTANT: only keep the ones that worked for the rest of workflow
-    top_posit = top_posit[top_posit.docked_file != ""]
-    top_posit.to_csv(output_dir / "top_poses_succeded.csv", index=False)
+    top_posit = top_posit[top_posit._docked_file != ""]
+    if args.debug:
+        # save debug csv if needed
+        top_posit.to_csv(
+            output_dir / f"poses_{args.target}_sorted_posit_prob_succeded.csv",
+            index=False,
+        )
 
     n_succeded = len(top_posit)
     n_failed = n_total - n_succeded
@@ -679,7 +755,7 @@ def main():
     )
 
     # add pose output column
-    top_posit["outpath_pose"] = top_posit["ligand_id"].apply(
+    top_posit["_outpath_pose"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
         lambda x: poses_dir / Path(x) / "visualization.html"
     )
 
@@ -705,7 +781,7 @@ def main():
             return output_paths[0]
 
         for pose, output_path in zip(
-            top_posit["docked_file"], top_posit["outpath_pose"]
+            top_posit["_docked_file"], top_posit["_outpath_pose"]
         ):
             outpath = dask_html_adaptor(pose, output_path)
             outpaths.append(outpath)
@@ -716,8 +792,8 @@ def main():
     else:
         logger.info("Running HTML visualization in serial")
         html_visualiser = HTMLVisualizer(
-            top_posit["docked_file"],
-            top_posit["outpath_pose"],
+            top_posit["_docked_file"],
+            top_posit["_outpath_pose"],
             args.viz_target,
             protein_path,
             logger=logger,
@@ -759,7 +835,7 @@ def main():
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
 
-        top_posit["outpath_md"] = top_posit["ligand_id"].apply(
+        top_posit["_outpath_md"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: md_dir / Path(x)
         )
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
@@ -791,7 +867,7 @@ def main():
             # make a list of simulator results that we then compute in parallel
             retcodes = []
             for pose, output_path in zip(
-                top_posit["docked_file"], top_posit["outpath_md"]
+                top_posit["_docked_file"], top_posit["_outpath_md"]
             ):
                 retcode = dask_md_adaptor(pose, protein_path, output_path)
                 retcodes.append(retcode)
@@ -806,10 +882,10 @@ def main():
             logger.info("Running MD with in serial")
             logger.warning("This will take a long time")
             simulator = VanillaMDSimulator(
-                top_posit["docked_file"],
+                top_posit["_docked_file"],
                 protein_path,
                 logger=logger,
-                output_paths=top_posit["outpath_md"],
+                output_paths=top_posit["_outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
             )
@@ -826,15 +902,15 @@ def main():
         gif_dir = output_dir / "gif"
         gif_dir.mkdir(parents=True, exist_ok=True)
 
-        top_posit["outpath_md_sys"] = top_posit["outpath_md"].apply(
+        top_posit["_outpath_md_sys"] = top_posit["_outpath_md"].apply(
             lambda x: Path(x) / "minimized.pdb"
         )
 
-        top_posit["outpath_md_traj"] = top_posit["outpath_md"].apply(
+        top_posit["_outpath_md_traj"] = top_posit["_outpath_md"].apply(
             lambda x: Path(x) / "traj.xtc"
         )
 
-        top_posit["outpath_gif"] = top_posit["ligand_id"].apply(
+        top_posit["_outpath_gif"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: gif_dir / Path(x) / "trajectory.gif"
         )
         # take only last .5ns of trajectory to get nicely equilibrated pose.
@@ -871,9 +947,9 @@ def main():
             logger.info("Running GIF visualization with Dask")
             outpaths = []
             for traj, system, outpath in zip(
-                top_posit["outpath_md_traj"],
-                top_posit["outpath_md_sys"],
-                top_posit["outpath_gif"],
+                top_posit["_outpath_md_traj"],
+                top_posit["_outpath_md_sys"],
+                top_posit["_outpath_gif"],
             ):
                 outpath = dask_gif_adaptor(traj, system, outpath)
                 outpaths.append(outpath)
@@ -887,9 +963,9 @@ def main():
             logger.info("Running GIF visualization in serial")
             logger.warning("This will take a long time")
             gif_visualiser = GIFVisualizer(
-                top_posit["outpath_md_traj"],
-                top_posit["outpath_md_sys"],
-                top_posit["outpath_gif"],
+                top_posit["_outpath_md_traj"],
+                top_posit["_outpath_md_sys"],
+                top_posit["_outpath_gif"],
                 args.viz_target,
                 frames_per_ns=200,
                 smooth=5,
@@ -897,6 +973,30 @@ def main():
                 logger=logger,
             )
             gif_visualiser.write_traj_visualizations()
+
+    renamed_top_posit = drop_and_rename_docking_output_cols_for_manifold(
+        top_posit,
+        args.target,
+        manifold_validate=True,
+        allow=[DockingResultCols.LIGAND_ID.value],
+    )
+    # save to final CSV renamed for target
+    renamed_top_posit.to_csv(output_dir / f"poses_{args.target}_final.csv", index=False)
+
+    if args.postera_upload:
+        if not args.postera:
+            raise ValueError("Must use --postera to upload to PostEra")
+        logger.info("Uploading results to PostEra")
+
+        ms.update_molecules_from_df_with_manifold_validation(
+            molecule_set_id=molset_id,
+            df=renamed_top_posit,
+            id_field=DockingResultCols.LIGAND_ID.value,
+            smiles_field="SMILES",
+            overwrite=True,
+            debug_df_path=output_dir / "postera_uploaded.csv",
+        )
+        logger.info("Finished uploading results to PostEra")
 
     if args.cleanup:
         if len(intermediate_files) > 0:
