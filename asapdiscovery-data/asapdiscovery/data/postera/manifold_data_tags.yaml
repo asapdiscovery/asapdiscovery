@@ -38,24 +38,33 @@ manifold_outputs:
         - POSIT
       units:
       postfix: msk
+
   - docking-confidence:
       prefix: in-silico
       tools:
         - POSIT
       units:
       postfix: msk
+
   - docking-pose:
       prefix: in-silico
       tools:
         - POSIT
       units:
       postfix: msk
-  - computed:
+
+  - computed: # ML biochemical activity
       prefix: biochemical-activity
       units: pIC50
       tools:
         - GAT
         - SchNet
+      postfix: msk
+
+  - computed: # FEC biochemical activity
+      prefix: biochemical-activity
+      units: pIC50
+      tools:
         - FEC
         - FEC-uncertainty # a bit of an abuse but it works
       postfix: msk
@@ -65,6 +74,7 @@ manifold_outputs:
       units:
       tools:
       postfix: msk
+
   - md-interactions:
       prefix: in-silico
       units:
