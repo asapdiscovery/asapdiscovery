@@ -26,6 +26,7 @@ from asapdiscovery.docking import (
     make_docking_result_dataframe,
 )
 from asapdiscovery.docking.docking_data_validation import (
+    DockingResultCols,
     drop_and_rename_docking_output_cols_for_manifold,
 )
 from asapdiscovery.modeling.modeling import protein_prep_workflow
@@ -721,8 +722,8 @@ def main():
     # only write out visualizations and do MD for the best posit score for each ligand
     # sort by posit score
 
-    sorted_df = results_df.sort_values(by=["Docking_Confidence_POSIT"], ascending=False)
-    top_posit = sorted_df.drop_duplicates(subset=["_ligand_id"], keep="first")
+    sorted_df = results_df.sort_values(by=[DockingResultCols.DOCKING_SCORE_POSIT.value], ascending=False)
+    top_posit = sorted_df.drop_duplicates(subset=[DockingResultCols.LIGAND_ID.value], keep="first")
     # save with the failed ones in so its clear which ones failed if any did
     top_posit.to_csv(
         output_dir / f"poses_{args.target}_sorted_posit_prob.csv", index=False
@@ -750,7 +751,7 @@ def main():
     )
 
     # add pose output column
-    top_posit["_outpath_pose"] = top_posit["_ligand_id"].apply(
+    top_posit["_outpath_pose"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
         lambda x: poses_dir / Path(x) / "visualization.html"
     )
 
@@ -830,7 +831,7 @@ def main():
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
 
-        top_posit["_outpath_md"] = top_posit["_ligand_id"].apply(
+        top_posit["_outpath_md"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: md_dir / Path(x)
         )
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
@@ -905,7 +906,7 @@ def main():
             lambda x: Path(x) / "traj.xtc"
         )
 
-        top_posit["_outpath_gif"] = top_posit["_ligand_id"].apply(
+        top_posit["_outpath_gif"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: gif_dir / Path(x) / "trajectory.gif"
         )
         # take only last .5ns of trajectory to get nicely equilibrated pose.
@@ -970,7 +971,7 @@ def main():
             gif_visualiser.write_traj_visualizations()
 
     renamed_top_posit = drop_and_rename_docking_output_cols_for_manifold(
-        top_posit, args.target, manifold_validate=True, allow=["ligand_id"]
+        top_posit, args.target, manifold_validate=True, allow=[DockingResultCols.LIGAND_ID.value]
     )
     # save to final CSV renamed for target
     renamed_top_posit.to_csv(output_dir / f"poses_{args.target}_final.csv", index=False)
@@ -983,7 +984,7 @@ def main():
         ms.update_molecules_from_df_with_manifold_validation(
             molecule_set_id=molset_id,
             df=renamed_top_posit,
-            id_field="_ligand_id",
+            id_field=DockingResultCols.LIGAND_ID.value,
             smiles_field="SMILES",
             overwrite=True,
             debug_df_path=output_dir / "postera_uploaded.csv",
