@@ -197,10 +197,32 @@ manifold_data_spec = pkg_resources.resource_filename(
 TargetTags, target_tag_set = make_target_tags(manifold_data_spec)
 
 # make Output enum and set
-OutputTags, output_tag_set, prefix_postfix_dict = make_output_tags(manifold_data_spec)
+OutputTags, output_tag_set, MANIFOLD_PREFIX_POSTFIX_DICT = make_output_tags(
+    manifold_data_spec
+)
 
 # make static and legacy enum and set
 StaticTags, static_tag_set = make_static_tags(manifold_data_spec)
+
+
+def make_manifold_tag_name_from_components(
+    pref: str, target: str, product: str, postf: str
+) -> str:
+    """
+    Make a tag name from the components
+
+    Parameters
+    ----------
+    pref : str
+        Prefix
+    target : str
+        Target
+    product : str
+        Product
+    postf : str
+        Postfix
+    """
+    return pref + "_" + target + "_" + product + "_" + postf
 
 
 def make_tag_combinations_and_combine_with_static(
@@ -216,7 +238,7 @@ def make_tag_combinations_and_combine_with_static(
     for combo in combos:
         product, target = combo
         pref, postf = prefix_postfix_dict[product]
-        name = pref + "_" + target + "_" + product + "_" + postf
+        name = make_manifold_tag_name_from_components(pref, target, product, postf)
         combined.add(name)
 
     final_tags = combined.union(static_tags)
@@ -226,5 +248,5 @@ def make_tag_combinations_and_combine_with_static(
 
 
 ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
-    target_tag_set, output_tag_set, static_tag_set, prefix_postfix_dict
+    target_tag_set, output_tag_set, static_tag_set, MANIFOLD_PREFIX_POSTFIX_DICT
 )
