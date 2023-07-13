@@ -7,6 +7,8 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     OutputTags,
     StaticTags,
     TargetTags,
+    MANIFOLD_PREFIX_POSTFIX_DICT,
+    make_manifold_tag_name_from_components,
 )
 
 
@@ -19,18 +21,18 @@ class DockingResultCols(Enum):
     Columns that are not in the allowed Postera Manifold columns are prefixed with an underscore
     """
 
-    _LIGAND_ID = "_ligand_id"
-    _DU_STRUCTURE = "_du_structure"
-    _DOCKED_FILE = "_docked_file"
-    _POSE_ID = "_pose_id"
-    _DOCKED_RMSD = "_docked_RMSD"
-    Docking_Confidence_POSIT = "Docking_Confidence_POSIT"
-    _POSIT_METHOD = "_POSIT_method"
-    Docking_Score_POSIT = "Docking_Score_POSIT"
-    _CLASH = "_clash"
-    SMILES = "SMILES"
-    ML_Score_GAT_pIC50 = "ML_Score_GAT_pIC50"
-    ML_Score_Schnet_pIC50 = "ML_Score_Schnet_pIC50"
+    LIGAND_ID = "ligand_id"
+    DU_STRUCTURE = "_du_structure"
+    DOCKED_FILE = "_docked_file"
+    POSE_ID = "_pose_id"
+    DOCKED_RMSD = "_docked_RMSD"
+    DOCKING_CONFIDENCE_POSIT = "docking-confidence-POSIT"  # postera
+    POSIT_METHOD = "_POSIT_method"
+    DOCKING_SCORE_POSIT = "docking-score-POSIT"  # postera
+    CLASH = "_clash"
+    SMILES = "SMILES"  # postera
+    COMPUTED_GAT_PIC50 = "computed-GAT-pIC50"  # postera
+    COMPUTED_SCHNET_PIC50 = "computed-SchNet-pIC50"  # postera
 
     @classmethod
     def get_columns(cls) -> list[str]:
@@ -68,7 +70,7 @@ def drop_docking_non_output_columns(
     return df
 
 
-def rename_docking_output_columns_for_target(
+def rename_docking_output_columns_for_manifold(
     df: pd.DataFrame, target: str, manifold_validate: Optional[bool] = True
 ) -> pd.DataFrame:
     """
@@ -99,11 +101,15 @@ def rename_docking_output_columns_for_target(
         )
 
     # make mapping between keys in DockingResultCols and the target specific columns
-    mapping = {
-        col.value: col.value + f"_{target}"
-        for col in DockingResultCols
-        if col.value in OutputTags.get_values()
-    }
+    mapping = {}
+
+    # recapitulate allowed tags, TODO make this better.
+    for col in DockingResultCols:
+        if col.value in OutputTags.get_values():
+            pref, post = MANIFOLD_PREFIX_POSTFIX_DICT[col.value]
+            mapping[col.value] = make_manifold_tag_name_from_components(
+                pref, target, col.value, post
+            )
 
     if manifold_validate:
         if not ManifoldAllowedTags.all_in_values(mapping.values()):
@@ -116,7 +122,7 @@ def rename_docking_output_columns_for_target(
     return df
 
 
-def drop_and_rename_docking_output_cols_for_target(
+def drop_and_rename_docking_output_cols_for_manifold(
     df: pd.DataFrame,
     target: str,
     manifold_validate: Optional[bool] = True,
@@ -151,7 +157,7 @@ def drop_and_rename_docking_output_cols_for_target(
 
     """
     df_dropped = drop_docking_non_output_columns(df, allow=allow)
-    df_dropped = rename_docking_output_columns_for_target(
+    df_dropped = rename_docking_output_columns_for_manifold(
         df_dropped, target, manifold_validate=manifold_validate
     )
     return df_dropped
