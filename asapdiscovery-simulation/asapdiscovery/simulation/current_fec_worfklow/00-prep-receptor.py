@@ -5,24 +5,34 @@ Prepare all SARS-CoV-2 Mpro structures for docking and simulation in monomer and
 
 # Configure logging
 import logging
+
 from rich.logging import RichHandler
+
 FORMAT = "%(message)s"
 from rich.console import Console
+
 logging.basicConfig(
-    level=logging.INFO, format=FORMAT, datefmt="[%X]", handlers=[RichHandler(markup=True)]
+    level=logging.INFO,
+    format=FORMAT,
+    datefmt="[%X]",
+    handlers=[RichHandler(markup=True)],
 )
 log = logging.getLogger("rich")
 
-import rich
 import openeye
+import rich
+
 
 def read_pdb_file(pdb_file):
-    #print(f'Reading receptor from {pdb_file}...')
+    # print(f'Reading receptor from {pdb_file}...')
 
     from openeye import oechem
+
     ifs = oechem.oemolistream()
-    #ifs.SetFlavor(oechem.OEFormat_PDB, oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA | oechem.OEIFlavor_PDB_ALTLOC)  # Causes extra protons on VAL73 for x1425
-    ifs.SetFlavor(oechem.OEFormat_PDB, oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA )
+    # ifs.SetFlavor(oechem.OEFormat_PDB, oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA | oechem.OEIFlavor_PDB_ALTLOC)  # Causes extra protons on VAL73 for x1425
+    ifs.SetFlavor(
+        oechem.OEFormat_PDB, oechem.OEIFlavor_PDB_Default | oechem.OEIFlavor_PDB_DATA
+    )
 
     if not ifs.open(pdb_file):
         oechem.OEThrow.Fatal("Unable to open %s for reading." % pdb_file)
@@ -32,9 +42,17 @@ def read_pdb_file(pdb_file):
         oechem.OEThrow.Fatal("Unable to read molecule from %s." % pdb_file)
     ifs.close()
 
-    return (mol)
+    return mol
 
-def prepare_receptor(complex_pdb_filename, output_basepath, assembly_state='dimer', retain_water=True, receptor_protonation_states=None, loop_db=None):
+
+def prepare_receptor(
+    complex_pdb_filename,
+    output_basepath,
+    assembly_state="dimer",
+    retain_water=True,
+    receptor_protonation_states=None,
+    loop_db=None,
+):
     """
     Parameters
     ----------
@@ -55,6 +73,7 @@ def prepare_receptor(complex_pdb_filename, output_basepath, assembly_state='dime
         If specified, use SpruceTK loop database
     """
     import os
+
     basepath, filename = os.path.split(complex_pdb_filename)
     prefix, extension = os.path.splitext(filename)
     filepath_prefix = os.path.join(output_basepath, prefix)
@@ -62,17 +81,19 @@ def prepare_receptor(complex_pdb_filename, output_basepath, assembly_state='dime
     log.info(f"construction:  Preparing {complex_pdb_filename}...")
 
     # Read in PDB file, skipping UNK atoms (left over from processing covalent ligands)
-    pdbfile_lines = [ line for line in open(complex_pdb_filename, 'r') if 'UNK' not in line ]
+    pdbfile_lines = [
+        line for line in open(complex_pdb_filename) if "UNK" not in line
+    ]
 
     # If monomer is specified, drop crystal symmetry lines
-    if assembly_state == 'monomer':
-        pdbfile_lines = [ line for line in pdbfile_lines if 'REMARK 350' not in line ]
+    if assembly_state == "monomer":
+        pdbfile_lines = [line for line in pdbfile_lines if "REMARK 350" not in line]
 
     # Filter out LINK records to covalent inhibitors so we can model non-covalent complex
-    pdbfile_lines = [ line for line in pdbfile_lines if 'LINK' not in line ]
+    pdbfile_lines = [line for line in pdbfile_lines if "LINK" not in line]
 
     # Reconstruct PDBFile contents
-    pdbfile_contents = ''.join(pdbfile_lines)
+    pdbfile_contents = "".join(pdbfile_lines)
 
     # Append SARS-CoV-2 Mpro SEQRES to all structures if they do not have it
     seqres = """\
@@ -125,15 +146,17 @@ SEQRES  22 B  306  ASN GLY MET ASN GLY ARG THR ILE LEU GLY SER ALA LEU
 SEQRES  23 B  306  LEU GLU ASP GLU PHE THR PRO PHE ASP VAL VAL ARG GLN
 SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
 """
-    has_seqres = 'SEQRES' in pdbfile_contents
+    has_seqres = "SEQRES" in pdbfile_contents
     if not has_seqres:
-        print('Adding SEQRES')
+        print("Adding SEQRES")
         pdbfile_contents = seqres + pdbfile_contents
 
     # Read the receptor and identify design units
-    from openeye import oespruce, oechem
     from tempfile import NamedTemporaryFile
-    with NamedTemporaryFile(delete=False, mode='wt', suffix='.pdb') as pdbfile:
+
+    from openeye import oechem, oespruce
+
+    with NamedTemporaryFile(delete=False, mode="wt", suffix=".pdb") as pdbfile:
         pdbfile.write(pdbfile_contents)
         pdbfile.close()
         complex = read_pdb_file(pdbfile.name)
@@ -141,17 +164,17 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
 
     # Strip protons from structure to allow SpruceTK to add these back
     # See: 6wnp, 6wtj, 6wtk, 6xb2, 6xqs, 6xqt, 6xqu, 6m2n
-    #print('Suppressing hydrogens')
-    #print(f' Initial: {sum([1 for atom in complex.GetAtoms()])} atoms')
+    # print('Suppressing hydrogens')
+    # print(f' Initial: {sum([1 for atom in complex.GetAtoms()])} atoms')
     for atom in complex.GetAtoms():
         if atom.GetAtomicNum() > 1:
             oechem.OESuppressHydrogens(atom)
-    #print(f' Final: {sum([1 for atom in complex.GetAtoms()])} atoms')
+    # print(f' Final: {sum([1 for atom in complex.GetAtoms()])} atoms')
 
     # Delete and rebuild C-terminal residue because Spruce causes issues with this
     log.info(f":gear:  Rebuilding C-terminus")
     # See: 6m2n 6lze
-    #print('Deleting C-terminal residue O')
+    # print('Deleting C-terminal residue O')
     pred = oechem.OEIsCTerminalAtom()
     for atom in complex.GetAtoms():
         if pred(atom):
@@ -159,8 +182,8 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
                 if oechem.OEGetPDBAtomIndex(nbor) == oechem.OEPDBAtomName_O:
                     complex.DeleteAtom(nbor)
 
-    #pred = oechem.OEAtomMatchResidue(["GLN:306:.*:.*:.*"])
-    #for atom in complex.GetAtoms(pred):
+    # pred = oechem.OEAtomMatchResidue(["GLN:306:.*:.*:.*"])
+    # for atom in complex.GetAtoms(pred):
     #    if oechem.OEGetPDBAtomIndex(atom) == oechem.OEPDBAtomName_O:
     #        print('Deleting O')
     #        complex.DeleteAtom(atom)
@@ -169,17 +192,17 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
     # Produce zero design units if we fail to protonate
 
     # Log warnings
-    errfs = oechem.oeosstream() # create a stream that writes internally to a stream
+    errfs = oechem.oeosstream()  # create a stream that writes internally to a stream
     oechem.OEThrow.SetOutputStream(errfs)
     oechem.OEThrow.Clear()
-    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Verbose) # capture verbose error output
+    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Verbose)  # capture verbose error output
 
     opts = oespruce.OEMakeDesignUnitOptions()
-    #print(f'ligand atoms: min {opts.GetSplitOptions().GetMinLigAtoms()}, max {opts.GetSplitOptions().GetMaxLigAtoms()}')
-    #opts.GetSplitOptions().SetMinLigAtoms(7) # minimum fragment size (in heavy atoms)
-    
-    mdata = oespruce.OEStructureMetadata();
-    opts.GetPrepOptions().SetStrictProtonationMode(True);
+    # print(f'ligand atoms: min {opts.GetSplitOptions().GetMinLigAtoms()}, max {opts.GetSplitOptions().GetMaxLigAtoms()}')
+    # opts.GetSplitOptions().SetMinLigAtoms(7) # minimum fragment size (in heavy atoms)
+
+    mdata = oespruce.OEStructureMetadata()
+    opts.GetPrepOptions().SetStrictProtonationMode(True)
 
     # turn off superposition
     opts.SetSuperpose(False)
@@ -192,48 +215,63 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
     opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignMethod(
         oechem.OESeqAlignmentMethod_Identity
     )
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(-1)
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(0)
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignGapPenalty(
+        -1
+    )
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetSeqAlignExtendPenalty(
+        0
+    )
 
     # We are in reducing conditions, so do not allow disulfide bonds to be built
-    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetAllowBuildDisulfideBridges(False)
-    
+    opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetAllowBuildDisulfideBridges(
+        False
+    )
+
     if loop_db is not None:
         from pathlib import Path
+
         loop_db = str(Path(loop_db).expanduser().resolve())
-        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(loop_db)
+        opts.GetPrepOptions().GetBuildOptions().GetLoopBuilderOptions().SetLoopDBFilename(
+            loop_db
+        )
 
     # Set ligand name and SMILES
-    #log.info(f":pill:  Setting ligand")
-    #smiles = 'CNC(=O)CN1Cc2ccc(Cl)cc2[C@@]2(CCN(c3cncc4ccccc34)C2=O)C1'
-    #het = oespruce.OEHeterogenMetadata()
-    #het.SetTitle("LIG")  # real ligand 3 letter code
-    #het.SetID("LIG")  # in case you have corporate IDs
-    #het.SetSmiles(smiles)
-    #het.SetType(oespruce.OEHeterogenType_Ligand)
-    #mdata.AddHeterogenMetadata(het)
+    # log.info(f":pill:  Setting ligand")
+    # smiles = 'CNC(=O)CN1Cc2ccc(Cl)cc2[C@@]2(CCN(c3cncc4ccccc34)C2=O)C1'
+    # het = oespruce.OEHeterogenMetadata()
+    # het.SetTitle("LIG")  # real ligand 3 letter code
+    # het.SetID("LIG")  # in case you have corporate IDs
+    # het.SetSmiles(smiles)
+    # het.SetType(oespruce.OEHeterogenType_Ligand)
+    # mdata.AddHeterogenMetadata(het)
 
     # Both N- and C-termini should be zwitterionic
     # Mpro cleaves its own N- and C-termini
     # See https://www.pnas.org/content/113/46/12997
-    opts.GetPrepOptions().GetBuildOptions().SetCapNTermini(False);
-    opts.GetPrepOptions().GetBuildOptions().SetCapCTermini(False);
+    opts.GetPrepOptions().GetBuildOptions().SetCapNTermini(False)
+    opts.GetPrepOptions().GetBuildOptions().SetCapCTermini(False)
     # Don't allow truncation of termini, since force fields don't have parameters for this
-    opts.GetPrepOptions().GetBuildOptions().GetCapBuilderOptions().SetAllowTruncate(False);
+    opts.GetPrepOptions().GetBuildOptions().GetCapBuilderOptions().SetAllowTruncate(
+        False
+    )
     # Delete clashing solvent if needed
-    opts.GetPrepOptions().GetBuildOptions().GetCapBuilderOptions().SetDeleteClashingSolvent(True)
-    opts.GetPrepOptions().GetBuildOptions().GetSidechainBuilderOptions().SetDeleteClashingSolvent(True)
+    opts.GetPrepOptions().GetBuildOptions().GetCapBuilderOptions().SetDeleteClashingSolvent(
+        True
+    )
+    opts.GetPrepOptions().GetBuildOptions().GetSidechainBuilderOptions().SetDeleteClashingSolvent(
+        True
+    )
     # Build loops and sidechains
-    opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True);
-    opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True);
+    opts.GetPrepOptions().GetBuildOptions().SetBuildLoops(True)
+    opts.GetPrepOptions().GetBuildOptions().SetBuildSidechains(True)
 
     # Generate ligand tautomers
-    protonate_opts = opts.GetPrepOptions().GetProtonateOptions();
+    protonate_opts = opts.GetPrepOptions().GetProtonateOptions()
     protonate_opts.SetGenerateTautomers(True)
 
     # Don't flip Gln189
     pred = oechem.OEAtomMatchResidue(["GLN:189:.*:.*:.*"])
-    protonate_opts = opts.GetPrepOptions().GetProtonateOptions();
+    protonate_opts = opts.GetPrepOptions().GetProtonateOptions()
     place_hydrogens_opts = protonate_opts.GetPlaceHydrogensOptions()
     place_hydrogens_opts.SetNoFlipPredicate(pred)
 
@@ -251,138 +289,205 @@ SEQRES  24 B  306  CYS SER GLY VAL THR PHE GLN
     log.info(f":receipt:  There are {len(design_units)} design units.")
 
     if len(design_units) >= 1:
-        design_unit = design_units[0] # TODO: Select appropriate design unit based on desired chain (A or B)
-        print('')
-        print('')
-        print(f'{complex_pdb_filename} : SUCCESS')
+        design_unit = design_units[
+            0
+        ]  # TODO: Select appropriate design unit based on desired chain (A or B)
+        print("")
+        print("")
+        print(f"{complex_pdb_filename} : SUCCESS")
         print(warnings)
     elif len(design_units) == 0:
-        print('')
-        print('')
-        print(f'{complex_pdb_filename} : FAILURE')
+        print("")
+        print("")
+        print(f"{complex_pdb_filename} : FAILURE")
         print(warnings)
-        msg = f'No design units found for {complex_pdb_filename}\n'
+        msg = f"No design units found for {complex_pdb_filename}\n"
         msg += warnings
-        msg += '\n'
+        msg += "\n"
         raise Exception(msg)
 
     # Variants to generate
     # (OEAtomMatchResidue, atom_name, formal_charge, implicit_hydrogen_count)
     # OEAtomMatchResidue format is regex for (residue name, residue number, insertion code, chain ID, and fragment number)
     variants = {
-        'His41(0)-Cys145(0)-His163(0)' : [ ('HIS:41:.*:.*:.*', 'ND1', 0, 0), ('HIS:41:.*:.*:.*', 'NE2', 1, 1), ('CYS:145:.*:.*:.*', 'SG', 0, 1), ('HIS:163:.*:.*:.*', 'NE2', 0, 0), ('HIS:163:.*:.*:.*', 'ND1', 1, 1) ],
-        'His41(0)-Cys145(0)-His163(+)' : [ ('HIS:41:.*:.*:.*', 'ND1', 0, 0), ('HIS:41:.*:.*:.*', 'NE2', 1, 1), ('CYS:145:.*:.*:.*', 'SG', 0, 1), ('HIS:163:.*:.*:.*', 'NE2', 1, 1), ('HIS:163:.*:.*:.*', 'ND1', 1, 1) ],
-        'His41(+)-Cys145(-)-His163(0)' : [ ('HIS:41:.*:.*:.*', 'ND1', 1, 1), ('HIS:41:.*:.*:.*', 'NE2', 1, 1), ('CYS:145:.*:.*:.*', 'SG', -1, 0), ('HIS:163:.*:.*:.*', 'NE2', 0, 0), ('HIS:163:.*:.*:.*', 'ND1', 1, 1) ],
-        'His41(+)-Cys145(-)-His163(+)' : [ ('HIS:41:.*:.*:.*', 'ND1', 1, 1), ('HIS:41:.*:.*:.*', 'NE2', 1, 1), ('CYS:145:.*:.*:.*', 'SG', -1, 0), ('HIS:163:.*:.*:.*', 'NE2', 1, 1), ('HIS:163:.*:.*:.*', 'ND1', 1, 1) ],
+        "His41(0)-Cys145(0)-His163(0)": [
+            ("HIS:41:.*:.*:.*", "ND1", 0, 0),
+            ("HIS:41:.*:.*:.*", "NE2", 1, 1),
+            ("CYS:145:.*:.*:.*", "SG", 0, 1),
+            ("HIS:163:.*:.*:.*", "NE2", 0, 0),
+            ("HIS:163:.*:.*:.*", "ND1", 1, 1),
+        ],
+        "His41(0)-Cys145(0)-His163(+)": [
+            ("HIS:41:.*:.*:.*", "ND1", 0, 0),
+            ("HIS:41:.*:.*:.*", "NE2", 1, 1),
+            ("CYS:145:.*:.*:.*", "SG", 0, 1),
+            ("HIS:163:.*:.*:.*", "NE2", 1, 1),
+            ("HIS:163:.*:.*:.*", "ND1", 1, 1),
+        ],
+        "His41(+)-Cys145(-)-His163(0)": [
+            ("HIS:41:.*:.*:.*", "ND1", 1, 1),
+            ("HIS:41:.*:.*:.*", "NE2", 1, 1),
+            ("CYS:145:.*:.*:.*", "SG", -1, 0),
+            ("HIS:163:.*:.*:.*", "NE2", 0, 0),
+            ("HIS:163:.*:.*:.*", "ND1", 1, 1),
+        ],
+        "His41(+)-Cys145(-)-His163(+)": [
+            ("HIS:41:.*:.*:.*", "ND1", 1, 1),
+            ("HIS:41:.*:.*:.*", "NE2", 1, 1),
+            ("CYS:145:.*:.*:.*", "SG", -1, 0),
+            ("HIS:163:.*:.*:.*", "NE2", 1, 1),
+            ("HIS:163:.*:.*:.*", "ND1", 1, 1),
+        ],
     }
     # Filter variants if desired
     if receptor_protonation_states is not None:
-        variants = { name : data for (name, data) in variants.items() if name in receptor_protonation_states }
+        variants = {
+            name: data
+            for (name, data) in variants.items()
+            if name in receptor_protonation_states
+        }
 
     def generate_variant(design_unit, modifications):
         from openeye import oedocking
+
         protein = oechem.OEGraphMol()
         design_unit.GetProtein(protein)
 
-        protonate_opts = opts.GetPrepOptions().GetProtonateOptions();
+        protonate_opts = opts.GetPrepOptions().GetProtonateOptions()
         place_hydrogens_opts = protonate_opts.GetPlaceHydrogensOptions()
 
-        for (residue_match, atom_name, formal_charge, implicit_hydrogen_count) in modifications:
+        for (
+            residue_match,
+            atom_name,
+            formal_charge,
+            implicit_hydrogen_count,
+        ) in modifications:
             pred = oechem.OEAtomMatchResidue(residue_match)
             place_hydrogens_opts.SetBypassPredicate(pred)
             for atom in protein.GetAtoms(pred):
-                if oechem.OEGetPDBAtomIndex(atom) == getattr(oechem, f'OEPDBAtomName_{atom_name}'):
-                    #print('Modifying CYS 145 SG')
+                if oechem.OEGetPDBAtomIndex(atom) == getattr(
+                    oechem, f"OEPDBAtomName_{atom_name}"
+                ):
+                    # print('Modifying CYS 145 SG')
                     oechem.OESuppressHydrogens(atom)
                     atom.SetFormalCharge(formal_charge)
                     atom.SetImplicitHCount(implicit_hydrogen_count)
         # Update the design unit with the modified formal charge for CYS 145 SG
-        oechem.OEUpdateDesignUnit(design_unit, protein, oechem.OEDesignUnitComponents_Protein)
+        oechem.OEUpdateDesignUnit(
+            design_unit, protein, oechem.OEDesignUnitComponents_Protein
+        )
 
         # Don't flip Gln189
         pred = oechem.OEAtomMatchResidue(["GLN:189: :A"])
-        protonate_opts = opts.GetPrepOptions().GetProtonateOptions();
+        protonate_opts = opts.GetPrepOptions().GetProtonateOptions()
         place_hydrogens_opts = protonate_opts.GetPlaceHydrogensOptions()
         place_hydrogens_opts.SetNoFlipPredicate(pred)
 
         # Adjust protonation states
-        #print('Re-optimizing hydrogen positions...') # DEBUG
-        #place_hydrogens_opts = oechem.OEPlaceHydrogensOptions()
-        #place_hydrogens_opts.SetBypassPredicate(pred)
-        #protonate_opts = oespruce.OEProtonateDesignUnitOptions(place_hydrogens_opts)
+        # print('Re-optimizing hydrogen positions...') # DEBUG
+        # place_hydrogens_opts = oechem.OEPlaceHydrogensOptions()
+        # place_hydrogens_opts.SetBypassPredicate(pred)
+        # protonate_opts = oespruce.OEProtonateDesignUnitOptions(place_hydrogens_opts)
         success = oespruce.OEProtonateDesignUnit(design_unit, protonate_opts)
 
     master_design_unit = design_unit
     import copy
+
     for variant_name, modifications in variants.items():
-        print(f'Generating variant {variant_name}')
+        print(f"Generating variant {variant_name}")
         design_unit = copy.deepcopy(master_design_unit)
         generate_variant(design_unit, modifications)
 
-        prefix = f'{filepath_prefix}-{variant_name}'
+        prefix = f"{filepath_prefix}-{variant_name}"
 
         # Write ligand
         ligand = oechem.OEGraphMol()
         design_unit.GetLigand(ligand)
-        oechem.OEPerceiveResidues(ligand, oechem.OEPreserveResInfo_ChainID | oechem.OEPreserveResInfo_ResidueNumber | oechem.OEPreserveResInfo_ResidueName)
-        with oechem.oemolostream(f'{prefix}-ligand.mol2') as ofs:
+        oechem.OEPerceiveResidues(
+            ligand,
+            oechem.OEPreserveResInfo_ChainID
+            | oechem.OEPreserveResInfo_ResidueNumber
+            | oechem.OEPreserveResInfo_ResidueName,
+        )
+        with oechem.oemolostream(f"{prefix}-ligand.mol2") as ofs:
             oechem.OEWriteMolecule(ofs, ligand)
-        with oechem.oemolostream(f'{prefix}-ligand.pdb') as ofs:
+        with oechem.oemolostream(f"{prefix}-ligand.pdb") as ofs:
             oechem.OEWriteMolecule(ofs, ligand)
-        with oechem.oemolostream(f'{prefix}-ligand.sdf') as ofs:
+        with oechem.oemolostream(f"{prefix}-ligand.sdf") as ofs:
             oechem.OEWriteMolecule(ofs, ligand)
 
         # Write protein
-        protein = oechem.OEGraphMol()            
+        protein = oechem.OEGraphMol()
         if retain_water:
-            component_mask = oechem.OEDesignUnitComponents_Protein | oechem.OEDesignUnitComponents_Solvent
+            component_mask = (
+                oechem.OEDesignUnitComponents_Protein
+                | oechem.OEDesignUnitComponents_Solvent
+            )
         else:
             component_mask = oechem.OEDesignUnitComponents_Protein
         design_unit.GetComponents(protein, component_mask)
-        oechem.OEPerceiveResidues(protein, oechem.OEPreserveResInfo_ChainID | oechem.OEPreserveResInfo_ResidueNumber | oechem.OEPreserveResInfo_ResidueName)
-        with oechem.oemolostream(f'{prefix}-protein.pdb') as ofs:
+        oechem.OEPerceiveResidues(
+            protein,
+            oechem.OEPreserveResInfo_ChainID
+            | oechem.OEPreserveResInfo_ResidueNumber
+            | oechem.OEPreserveResInfo_ResidueName,
+        )
+        with oechem.oemolostream(f"{prefix}-protein.pdb") as ofs:
             oechem.OEWriteMolecule(ofs, protein)
 
         # Write receptor
         from openeye import oedocking
+
         receptor = oechem.OEGraphMol()
         oedocking.OEMakeReceptor(receptor, protein, ligand)
-        receptor_filename = f'{prefix}-receptor.oeb.gz'
+        receptor_filename = f"{prefix}-receptor.oeb.gz"
         oedocking.OEWriteReceptorFile(receptor, receptor_filename)
 
         # Write DesignUnit
         from openeye import oedocking
+
         oedocking.OEMakeReceptor(design_unit)
-        du_filename = f'{prefix}.oedu'
+        du_filename = f"{prefix}.oedu"
         oechem.OEWriteDesignUnit(du_filename, design_unit)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Load setup.yaml
     import yaml
-    with open('setup.yaml', 'r') as infile:
+
+    with open("setup.yaml") as infile:
         setup_options = yaml.safe_load(infile)
 
     # Extract setup options
     # NOTE: Almost no sanity checking is done here.
-    fragments = [ entry['fragalysis_id'] for entry in setup_options['source_structures'] ]
-    structures_path = setup_options['structures_path'] 
-    output_basepath = setup_options['receptors_path']
-    spruce_loop_database = setup_options.get('spruce_loop_database', None)
-    retain_water = setup_options.get('retain_water', True)
-    receptor_protonation_states = setup_options.get('receptor_protonation_states', [])
-    assembly_states = setup_options.get('assembly_state', ['dimer'])
-    assert set(assembly_states).issubset(['monomer', 'dimer'])
+    fragments = [entry["fragalysis_id"] for entry in setup_options["source_structures"]]
+    structures_path = setup_options["structures_path"]
+    output_basepath = setup_options["receptors_path"]
+    spruce_loop_database = setup_options.get("spruce_loop_database", None)
+    retain_water = setup_options.get("retain_water", True)
+    receptor_protonation_states = setup_options.get("receptor_protonation_states", [])
+    assembly_states = setup_options.get("assembly_state", ["dimer"])
+    assert set(assembly_states).issubset(["monomer", "dimer"])
 
     # Prep all receptors
-    import glob, os
+    import glob
+    import os
 
     # Be quiet
     from openeye import oechem
-    #oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Quiet)
-    #oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Error)
 
-    source_pdb_files = [os.path.join(structures_path, f'aligned/Mpro-{fragment}/Mpro-{fragment}_bound.pdb') for fragment in fragments]
-    source_pdb_files = ['/lila/data/chodera/asap-datasets/prospective/2023/05_p1p_amines/input/SARS2_Mpro_ASAP-0000272/SARS2_Mpro_ASAP-0000272-prepped_complex.pdb']
+    # oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Quiet)
+    # oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Error)
+
+    source_pdb_files = [
+        os.path.join(
+            structures_path, f"aligned/Mpro-{fragment}/Mpro-{fragment}_bound.pdb"
+        )
+        for fragment in fragments
+    ]
+    source_pdb_files = [
+        "/lila/data/chodera/asap-datasets/prospective/2023/05_p1p_amines/input/SARS2_Mpro_ASAP-0000272/SARS2_Mpro_ASAP-0000272-prepped_complex.pdb"
+    ]
     # Create output directory
     os.makedirs(output_basepath, exist_ok=True)
 
@@ -393,30 +498,44 @@ if __name__ == '__main__':
 
         def prepare_receptor_wrapper(complex_pdb_file):
             try:
-                prepare_receptor(complex_pdb_file, output_path, assembly_state=assembly_state, retain_water=retain_water, receptor_protonation_states=receptor_protonation_states, loop_db=spruce_loop_database)
+                prepare_receptor(
+                    complex_pdb_file,
+                    output_path,
+                    assembly_state=assembly_state,
+                    retain_water=retain_water,
+                    receptor_protonation_states=receptor_protonation_states,
+                    loop_db=spruce_loop_database,
+                )
                 return True
             except Exception as e:
                 print(e)
-                import traceback
                 import sys
+                import traceback
+
                 traceback.print_exception(*sys.exc_info())
                 return False
 
         # Serial (DEBUG ONLY)
-        #for source_pdb_file in source_pdb_files:
+        # for source_pdb_file in source_pdb_files:
         #    prepare_receptor_wrapper(source_pdb_file)
-        #stop
+        # stop
 
         # Multiprocessing
-        from rich.progress import track
-        from multiprocessing import Pool
-        from tqdm import tqdm
         import os
+        from multiprocessing import Pool
+
+        from rich.progress import track
+        from tqdm import tqdm
+
         processes = None
-        if 'LSB_DJOB_NUMPROC' in os.environ:
-            processes = int(os.environ['LSB_DJOB_NUMPROC'])
+        if "LSB_DJOB_NUMPROC" in os.environ:
+            processes = int(os.environ["LSB_DJOB_NUMPROC"])
         pool = Pool(processes=processes)
-        for status in track(pool.imap_unordered(prepare_receptor_wrapper, source_pdb_files), total=len(source_pdb_files), description='Sprucing structures...'):
+        for status in track(
+            pool.imap_unordered(prepare_receptor_wrapper, source_pdb_files),
+            total=len(source_pdb_files),
+            description="Sprucing structures...",
+        ):
             pass
         pool.close()
         pool.join()

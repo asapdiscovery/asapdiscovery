@@ -39,4 +39,3 @@ nvidia-smi --query-gpu=name --format=csv
 export LOGLEVEL=INFO
 
 python run-perses.py run --index $(( $LSB_JOBINDEX - 1 ))
-
