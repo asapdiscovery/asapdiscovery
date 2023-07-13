@@ -133,7 +133,7 @@ def test_single_target_docking(
         "--viz-target",
         "sars2_mpro",
         "--target",
-        "sars2_mpro",
+        "SARS-CoV-2-Mpro",
         "--no-omega",
     ]
     ret = script_runner.run(args)
