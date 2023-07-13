@@ -3,11 +3,11 @@ from typing import List, Optional  # noqa: F401
 
 import pandas as pd
 from asapdiscovery.data.postera.manifold_data_validation import (
+    MANIFOLD_PREFIX_POSTFIX_DICT,
     ManifoldAllowedTags,
     OutputTags,
     StaticTags,
     TargetTags,
-    MANIFOLD_PREFIX_POSTFIX_DICT,
     make_manifold_tag_name_from_components,
 )
 

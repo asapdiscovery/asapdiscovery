@@ -722,8 +722,12 @@ def main():
     # only write out visualizations and do MD for the best posit score for each ligand
     # sort by posit score
 
-    sorted_df = results_df.sort_values(by=[DockingResultCols.DOCKING_SCORE_POSIT.value], ascending=False)
-    top_posit = sorted_df.drop_duplicates(subset=[DockingResultCols.LIGAND_ID.value], keep="first")
+    sorted_df = results_df.sort_values(
+        by=[DockingResultCols.DOCKING_SCORE_POSIT.value], ascending=False
+    )
+    top_posit = sorted_df.drop_duplicates(
+        subset=[DockingResultCols.LIGAND_ID.value], keep="first"
+    )
     # save with the failed ones in so its clear which ones failed if any did
     top_posit.to_csv(
         output_dir / f"poses_{args.target}_sorted_posit_prob.csv", index=False
@@ -971,7 +975,10 @@ def main():
             gif_visualiser.write_traj_visualizations()
 
     renamed_top_posit = drop_and_rename_docking_output_cols_for_manifold(
-        top_posit, args.target, manifold_validate=True, allow=[DockingResultCols.LIGAND_ID.value]
+        top_posit,
+        args.target,
+        manifold_validate=True,
+        allow=[DockingResultCols.LIGAND_ID.value],
     )
     # save to final CSV renamed for target
     renamed_top_posit.to_csv(output_dir / f"poses_{args.target}_final.csv", index=False)
