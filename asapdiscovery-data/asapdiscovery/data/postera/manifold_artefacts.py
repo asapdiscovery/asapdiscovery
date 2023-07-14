@@ -15,7 +15,7 @@ from ..aws.s3 import S3
 
 
 class ArtifactType(Enum):
-    DOCKING_POSE = "docking-pose"
+    DOCKING_POSE = "docking-pose-POSIT"
     MD_POSE = "md-pose"
 
 
@@ -74,19 +74,28 @@ class ManifoldArtifactUploader:
         ].apply(lambda x: self.generate_cloudfront_url(x))
 
         # generate correct column names
+        # allow all names except for the ones we are renaming
+        # TODO: clumsy, but works for now
+        allowed = [
+            col
+            for col in self.molecule_dataframe.columns
+            if col != self.artifact_type.value
+        ]
+
         self.molecule_dataframe = rename_output_columns_for_manifold(
             self.molecule_dataframe,
             self.target,
             [ArtifactType],
             manifold_validate=True,
-            allow=[self.artifact_column, self.manifold_id_column],
+            allow=allowed,
         )
 
-        # push to postera
-        update = MoleculeUpdateList.from_pandas_df(
-            self.molecule_dataframe, id_field=self.manifold_id_column
+        # this will trim the dataframe to only the columns we want to update
+        self.moleculeset_api.update_molecules_from_df_with_manifold_validation(
+            self.molecule_set_id,
+            self.molecule_dataframe,
+            id_field=self.manifold_id_column,
         )
-        self.moleculeset_api.update_molecules(self.molecule_set_id, update)
 
         # push to s3
         self.molecule_dataframe.apply(
@@ -97,5 +106,3 @@ class ManifoldArtifactUploader:
             ),
             axis=1,
         )
-
-        # self.moleculeset_api.update_molecules_from_df_with_manifold_validation(self.molecule_set_id, self.molecule_dataframe, id_field=self.manifold_id_column)
