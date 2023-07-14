@@ -40,7 +40,7 @@ class ManifoldArtifactUploader:
         s3: S3,
         target: str,
         artifact_column: str,
-        bucket_name: str = "asapdiscovery-ccc-artifacts",
+        bucket_name: str,
         manifold_id_column: Optional[str] = DockingResultCols.LIGAND_ID.value,
     ):
         self.molecule_dataframe = molecule_dataframe

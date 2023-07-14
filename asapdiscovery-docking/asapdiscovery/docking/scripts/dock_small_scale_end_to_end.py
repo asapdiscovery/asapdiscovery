@@ -731,7 +731,7 @@ def main():
             # check smiles match
             if compound.smiles != oechem.OEMolToSmiles(mol):
                 raise ValueError(
-                    f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()}"
+                    f"SMILES mismatch between {compound.compound_id} {compound.smiles} and {mol.GetTitle()} {oechem.OEMolToSmiles(mol)}"
                 )
         res = dock_and_score_pose_oe_ml(
             dock_dir / f"{compound.compound_id}_{receptor_name}",
