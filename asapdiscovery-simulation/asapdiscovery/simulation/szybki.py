@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Optional
+from enum import Enum
 
 import pandas as pd
 from asapdiscovery.data.logging import FileLogger
@@ -23,6 +24,15 @@ class SzybkiFreeformResult(BaseModel):
     class Config:
         allow_mutation = False
         arbitrary_types_allowed = True
+
+    def as_result_cols(self):
+        dict = {
+            SzybkiResultCols.LIGAND_ID.value: self.ligand_id,
+            SzybkiResultCols.SZYBKI_GLOBAL_STRAIN.value: self.szybki_global_strain,
+            SzybkiResultCols.SZYBKI_LOCAL_STRAIN.value: self.szybki_local_strain,
+            SzybkiResultCols.SZYBKI_CONFORMER_STRAIN.value: self.szybki_conformer_strain,
+        }
+        return dict
 
 
 class SzybkiResultCols(Enum):
@@ -144,7 +154,7 @@ class SzybkiFreeformConformerAnalyzer:
             results.append(self.run_szybki_on_ligand(ligand_path, output_path))
             self.logger.info(f"Finished Szybki on {ligand_path}")
         if return_as_dataframe:
-            return pd.DataFrame([s.dict() for s in results]).drop(columns=["units"])
+            return pd.DataFrame([s.as_result_cols() for s in results])
         else:
             return results
 

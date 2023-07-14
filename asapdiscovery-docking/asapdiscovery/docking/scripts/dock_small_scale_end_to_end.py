@@ -744,7 +744,8 @@ def main():
     )
     # save with the failed ones in so its clear which ones failed if any did
     top_posit.to_csv(
-        data_intermediate_dir / f"poses_{args.target}_sorted_posit_prob.csv", index=False
+        data_intermediate_dir / f"poses_{args.target}_sorted_posit_prob.csv",
+        index=False,
     )
     n_total = len(top_posit)
 
@@ -753,7 +754,8 @@ def main():
     if args.debug:
         # save debug csv if needed
         top_posit.to_csv(
-            data_intermediate_dir / f"poses_{args.target}_sorted_posit_prob_succeded.csv",
+            data_intermediate_dir
+            / f"poses_{args.target}_sorted_posit_prob_succeded.csv",
             index=False,
         )
 
@@ -840,7 +842,7 @@ def main():
 
             szybki_results = []
             for pose, output_path in zip(
-                top_posit["docked_file"], top_posit["outpath_szybki"]
+                top_posit["_docked_file"], top_posit["outpath_szybki"]
             ):
                 res = dask_szybki_adaptor(pose, output_path)
                 szybki_results.append(res)
@@ -853,19 +855,22 @@ def main():
         else:
             logger.info("Running Szybki conformer analysis in serial")
             conformer_analysis = SzybkiFreeformConformerAnalyzer(
-                top_posit["docked_file"], top_posit["outpath_szybki"], logger=logger
+                top_posit["_docked_file"], top_posit["outpath_szybki"], logger=logger
             )
             szybki_results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
 
         # save results
-        szybki_results.to_csv(data_intermediate_dir / f"{args.target}_szybki_results.csv", index=False)
+        szybki_results.to_csv(
+            data_intermediate_dir / f"{args.target}_szybki_results.csv", index=False
+        )
 
         # join results back to top_posit
         top_posit = top_posit.merge(szybki_results, on="ligand_id", how="left")
 
         # save top_posit with szybki results
         top_posit.to_csv(
-            data_intermediate_dir / f"poses_{args.target}_succeded_with_szybki.csv", index=False
+            data_intermediate_dir / f"poses_{args.target}_succeded_with_szybki.csv",
+            index=False,
         )
 
     if args.dask:
@@ -1044,7 +1049,9 @@ def main():
 
     if args.debug:
         # save debug csv if needed
-        top_posit.to_csv(data_intermediate_dir / f"poses_{args.target}_final_debug.csv", index=False)
+        top_posit.to_csv(
+            data_intermediate_dir / f"poses_{args.target}_final_debug.csv", index=False
+        )
 
     renamed_top_posit = drop_and_rename_docking_output_cols_for_manifold(
         top_posit,
