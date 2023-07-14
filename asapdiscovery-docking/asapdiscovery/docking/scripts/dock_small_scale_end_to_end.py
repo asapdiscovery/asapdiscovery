@@ -28,7 +28,7 @@ from asapdiscovery.docking import (
 )
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultCols,
-    drop_and_rename_docking_output_cols_for_manifold,
+    rename_output_cols_for_manifold,
 )
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
@@ -744,7 +744,7 @@ def main():
     )
     # save with the failed ones in so its clear which ones failed if any did
     top_posit.to_csv(
-        data_intermediate_dir / f"poses_{args.target}_sorted_posit_prob.csv",
+        data_intermediate_dir / f"results_{args.target}_sorted_posit_prob.csv",
         index=False,
     )
     n_total = len(top_posit)
@@ -755,7 +755,7 @@ def main():
         # save debug csv if needed
         top_posit.to_csv(
             data_intermediate_dir
-            / f"poses_{args.target}_sorted_posit_prob_succeded.csv",
+            / f"results_{args.target}_sorted_posit_prob_succeded.csv",
             index=False,
         )
 
@@ -867,11 +867,13 @@ def main():
         # join results back to top_posit
         top_posit = top_posit.merge(szybki_results, on="ligand_id", how="left")
 
-        # save top_posit with szybki results
-        top_posit.to_csv(
-            data_intermediate_dir / f"poses_{args.target}_succeded_with_szybki.csv",
-            index=False,
-        )
+        if args.debug:
+            # save top_posit with szybki results
+            top_posit.to_csv(
+                data_intermediate_dir
+                / f"results_{args.target}_succeded_with_szybki.csv",
+                index=False,
+            )
 
     if args.dask:
         if args.dask_lilac:
@@ -1050,17 +1052,22 @@ def main():
     if args.debug:
         # save debug csv if needed
         top_posit.to_csv(
-            data_intermediate_dir / f"poses_{args.target}_final_debug.csv", index=False
+            data_intermediate_dir / f"results_{args.target}_final_debug.csv",
+            index=False,
         )
 
-    renamed_top_posit = drop_and_rename_docking_output_cols_for_manifold(
+    renamed_top_posit = rename_output_cols_for_manifold(
         top_posit,
         args.target,
         manifold_validate=True,
         allow=[DockingResultCols.LIGAND_ID.value],
+        szybki=args.szybki,
+        drop_non_output=True,
     )
     # save to final CSV renamed for target
-    renamed_top_posit.to_csv(output_dir / f"poses_{args.target}_final.csv", index=False)
+    renamed_top_posit.to_csv(
+        output_dir / f"results_{args.target}_final.csv", index=False
+    )
 
     if args.postera_upload:
         if not args.postera:
