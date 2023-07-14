@@ -305,8 +305,8 @@ def drop_non_output_columns(
 
 def rename_columns(
     df: pd.DataFrame,
-    column_enums: list[Enum],
     target: str,
+    column_enums: list[Enum],
     manifold_validate: Optional[bool] = True,
 ) -> pd.DataFrame:
     """
@@ -398,7 +398,5 @@ def rename_output_columns_for_manifold(
     """
     if drop_non_output:
         df = drop_non_output_columns(df, allow=allow)
-    df = rename_columns(
-        df, target, output_enums, manifold_validate=manifold_validate, szybki=szybki
-    )
+    df = rename_columns(df, target, output_enums, manifold_validate=manifold_validate)
     return df

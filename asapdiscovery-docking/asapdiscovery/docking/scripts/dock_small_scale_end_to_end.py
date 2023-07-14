@@ -1070,7 +1070,6 @@ def main():
         column_enums,
         manifold_validate=True,
         allow=[DockingResultCols.LIGAND_ID.value],
-        szybki=args.szybki,
         drop_non_output=True,
     )
     # save to final CSV renamed for target
