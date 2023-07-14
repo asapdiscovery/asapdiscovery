@@ -15,14 +15,29 @@ class SzybkiFreeformResult(BaseModel):
     """
 
     ligand_id: str
-    szybki_GlobalStrain: float
-    szybki_LocalStrain: float
-    szybki_ConformerStrain: float
+    szybki_global_strain: float
+    szybki_local_strain: float
+    szybki_conformer_strain: float
     units = unit.kilocalories_per_mole
 
     class Config:
         allow_mutation = False
         arbitrary_types_allowed = True
+
+
+class SzybkiResultCols(Enum):
+    """
+    Columns
+    """
+
+    LIGAND_ID = "ligand_id"
+    SZYBKI_GLOBAL_STRAIN = "ligand-global-strain-szybki-kcal-mol"  # postera
+    SZYBKI_LOCAL_STRAIN = "ligand-local-strain-szybki-kcal-mol"  # postera
+    SZYBKI_CONFORMER_STRAIN = "ligand-conformer-strain-szybki-kcal-mol"  # postera
+
+    @classmethod
+    def get_columns(cls) -> list[str]:
+        return [col.value for col in cls]
 
 
 class SzybkiFreeformConformerAnalyzer:
@@ -318,9 +333,10 @@ class SzybkiFreeformConformerAnalyzer:
         # build the SzybkiFreeformResult object
         res = SzybkiFreeformResult(
             ligand_id=ligand_id,
-            szybki_GlobalStrain=rstrRes.GetGlobalStrain(),
-            szybki_LocalStrain=rstrRes.GetLocalStrain(),
-            szybki_ConformerStrain=rstrRes.GetGlobalStrain() - rstrRes.GetLocalStrain(),
+            szybki_global_strain=rstrRes.GetGlobalStrain(),
+            szybki_local_strain=rstrRes.GetLocalStrain(),
+            szybki_conformer_strain=rstrRes.GetGlobalStrain()
+            - rstrRes.GetLocalStrain(),
         )
         end_time = pd.Timestamp.now()
         szybki_logger.info(f"\nFinished Szybki FreeForm on {ligand_id}")

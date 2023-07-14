@@ -81,6 +81,26 @@ manifold_outputs:
       tools:
       postfix: msk
 
+  - ligand-global-strain:
+      prefix: in-silico
+      units: kcal-mol
+      tools:
+        - szybki
+      postfix: msk
+
+  - ligand-local-strain:
+      prefix: in-silico
+      units: kcal-mol
+      tools:
+        - szybki
+      postfix: msk
+
+  - ligand-conformer-strain:
+      prefix: in-silico
+      units: kcal-mol
+      tools:
+        - szybki
+      postfix: msk
 
 # identifiers for static data
 static_identifiers:
