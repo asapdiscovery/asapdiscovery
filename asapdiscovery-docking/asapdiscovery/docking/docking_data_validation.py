@@ -10,7 +10,6 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     make_manifold_tag_name_from_components,
 )
-
 from asapdiscovery.simulation.szybki import SzybkiResultCols
 
 
