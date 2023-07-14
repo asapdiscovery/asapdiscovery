@@ -75,7 +75,11 @@ class ManifoldArtifactUploader:
 
         # generate correct column names
         self.molecule_dataframe = rename_output_columns_for_manifold(
-            self.molecule_dataframe, self.target, ArtifactType, manifold_validate=True
+            self.molecule_dataframe,
+            self.target,
+            [ArtifactType],
+            manifold_validate=True,
+            allow=[self.artifact_column, self.manifold_id_column],
         )
 
         # push to postera

@@ -2,14 +2,6 @@ from enum import Enum
 from typing import List, Optional  # noqa: F401
 
 import pandas as pd
-from asapdiscovery.data.postera.manifold_data_validation import (
-    ManifoldAllowedTags,
-    OutputTags,
-    StaticTags,
-    TargetTags,
-    map_output_col_to_manifold_tag,
-)
-from asapdiscovery.simulation.szybki import SzybkiResultCols
 
 
 class DockingResultCols(Enum):
