@@ -30,8 +30,27 @@ class SzybkiFreeformConformerAnalyzer:
     Class for running ligand Szybki Freeform conformer analysis.
 
     Adapted from the OpenEye example code for calculating advanced restriction energies (listing 20)
-    https://docs.eyesopen.com/toolkits/python/szybkitk/examples.html
+    https://docs.eyesopen.com/toolkits/python/szybkitk/examples.html Uses openFF
 
+
+    The output SDF file will contain the SD tags on the input molecule along with the following tags:
+
+    > <SMIRNOFF_version>
+    > <Srot>
+    > <Svib>
+    > <LnQrot>
+    > <LnQvib>
+    > <conf_dE>
+    > <Evib>
+    > <solvE>
+    > <totalE>
+    > <conf_dG>
+    > <Erel>
+    > <ErelWithVib>
+    > <rellnq>
+    > <Prob>
+
+    See the https://docs.eyesopen.com/toolkits/python/szybkitk/szybkitheory.html#force-field for more details
     """
 
     def __init__(
@@ -47,7 +66,8 @@ class SzybkiFreeformConformerAnalyzer:
         ----------
         ligand_paths : list[Path]
         output_paths : list[Path]
-            List of paths to write the output to.
+            List of paths to write the output to. This will write an SDF file containing the
+            confomer ensemble and a log file containing the results of the Szybki FreeForm run.
         logger : FileLogger
             Logger to use.
         debug : bool
@@ -91,6 +111,11 @@ class SzybkiFreeformConformerAnalyzer:
         ----------
         return_as_dataframe : bool
             Whether to return the results as a pandas DataFrame.
+            The dataframe will have the following columns:
+            - ligand_id
+            - szybki_GlobalStrain
+            - szybki_LocalStrain
+            - szybki_ConformerStrain
 
         Returns
         -------
