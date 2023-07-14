@@ -324,6 +324,9 @@ class MoleculeSetAPI(PostEraAPI):
         )
 
         # push updates to postera
-        return self.update_molecules(
+        retcode = self.update_molecules(
             molecule_set_id, mol_update_list, overwrite=overwrite
         )
+
+        if not retcode:
+            raise ValueError(f"Update failed for molecule set {molecule_set_id}")
