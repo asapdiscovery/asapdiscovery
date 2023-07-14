@@ -11,7 +11,10 @@ import pandas as pd
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    rename_output_columns_for_manifold,
+)
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -26,10 +29,8 @@ from asapdiscovery.docking import (
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
 )
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultCols,
-    rename_output_cols_for_manifold,
-)
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
+
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
@@ -38,7 +39,10 @@ from asapdiscovery.modeling.schema import (
     PreppedTargets,
 )
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
-from asapdiscovery.simulation.szybki import SzybkiFreeformConformerAnalyzer
+from asapdiscovery.simulation.szybki import (
+    SzybkiFreeformConformerAnalyzer,
+    SzybkiResultCols,
+)
 
 """
 Script to run single target prep + docking.
@@ -1056,9 +1060,14 @@ def main():
             index=False,
         )
 
-    renamed_top_posit = rename_output_cols_for_manifold(
+    column_enums = [DockingResultCols]
+    if args.szybki:
+        column_enums.append(SzybkiResultCols)
+
+    renamed_top_posit = rename_output_columns_for_manifold(
         top_posit,
         args.target,
+        column_enums,
         manifold_validate=True,
         allow=[DockingResultCols.LIGAND_ID.value],
         szybki=args.szybki,

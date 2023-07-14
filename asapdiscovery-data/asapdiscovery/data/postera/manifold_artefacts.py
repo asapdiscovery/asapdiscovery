@@ -8,6 +8,7 @@ from uuid import UUID
 
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 
+from .manifold_data_validation import TargetTags
 from .molecule_set import MoleculeUpdateList, MoleculeSetAPI
 from ..aws.cloudfront import CloudFront
 from ..aws.s3 import S3
@@ -28,24 +29,31 @@ class ManifoldArtifactUploader:
     def __init__(
         self,
         molecule_dataframe: pd.DataFrame,
-        bucket_name: str,
         molecule_set_id: UUID,
         artifact_type: ArtifactType,
         moleculeset_api: MoleculeSetAPI,
         cloud_front: CloudFront,
         s3: S3,
+        target: str,
         artifact_column: str,
+        bucket_name: str = "asapdiscovery-ccc-artifacts",
         manifold_id_column: Optional[str] = DockingResultCols.LIGAND_ID.value,
     ):
         self.molecule_dataframe = molecule_dataframe
-        self.bucket_name = bucket_name
         self.molecule_set_id = molecule_set_id
-        self.artifact_column = artifact_column
         self.artifact_type = artifact_type
         self.moleculeset_api = moleculeset_api
         self.cloud_front = cloud_front
         self.s3 = s3
+        self.target = target
+        self.artifact_column = artifact_column
+        self.bucket_name = bucket_name
         self.manifold_id_column = manifold_id_column
+
+        if not TargetTags.is_in_values(target):
+            raise ValueError(
+                f"Target {target} not in allowed values {TargetTags.get_values()}"
+            )
 
     def generate_cloudfront_url(
         self, bucket_path, expires_delta: timedelta = timedelta(days=365 * 5)
@@ -78,3 +86,5 @@ class ManifoldArtifactUploader:
             ),
             axis=1,
         )
+
+        # self.moleculeset_api.update_molecules_from_df_with_manifold_validation(self.molecule_set_id, self.molecule_dataframe, id_field=self.manifold_id_column)
