@@ -29,7 +29,7 @@ class ManifoldArtifactUploader:
         self,
         molecule_dataframe: pd.DataFrame,
         bucket_name: str,
-        molecule_set_id: uuid.UUID,
+        molecule_set_id: UUID,
         artifact_type: ArtifactType,
         moleculeset_api: MoleculeSetAPI,
         cloud_front: CloudFront,
@@ -56,22 +56,25 @@ class ManifoldArtifactUploader:
 
     def upload_artifacts(self) -> None:
         # use a lambda to generate cloudfront urls
-        self.molecule_dataframe[self.artifact_type.value] = self.molecule_dataframe[
+        self.molecule_dataframe["_bucket_path"] = self.molecule_dataframe[
             self.manifold_id_column
-        ].apply(
-            lambda x: self.generate_cloudfront_url(
-                f"{self.artifact_type.value}/{self.molecule_set_id}/{x}.html"
-            )
-        )
+        ].apply(lambda x: f"{self.artifact_type.value}/{self.molecule_set_id}/{x}.html")
+        self.molecule_dataframe[self.artifact_type.value] = self.molecule_dataframe[
+            "_bucket_path"
+        ].apply(lambda x: self.generate_cloudfront_url(x))
+
         # push to postera
-        update = MoleculeUpdateList.from_pandas_df(self.molecule_dataframe)
+        update = MoleculeUpdateList.from_pandas_df(
+            self.molecule_dataframe, id_field=self.manifold_id_column
+        )
         self.moleculeset_api.update_molecules(self.molecule_set_id, update)
 
-        # upload to s3
-        self.molecule_dataframe[[self.artifact_column, self.artifact_type.value]].apply(
-            lambda x, y: self.S3.push_file(
-                x,
-                location=y,
+        # push to s3
+        self.molecule_dataframe.apply(
+            lambda x: self.s3.push_file(
+                x[self.artifact_column],
+                location=x["_bucket_path"],
                 content_type=ARTIFACT_TYPE_TO_S3_CONTENT_TYPE[self.artifact_type],
-            )
+            ),
+            axis=1,
         )
