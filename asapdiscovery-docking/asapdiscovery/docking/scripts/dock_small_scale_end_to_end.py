@@ -11,10 +11,20 @@ import pandas as pd
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.data.postera.manifold_artefacts import (
+    ManifoldArtifactUploader,
+    ArtifactType,
+)
+
+from boto3.session import Session
+from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.aws.cloudfront import CloudFront
+
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -385,10 +395,38 @@ def main():
         if postera_api_key is None:
             raise ValueError("Environment variable POSTERA_API_KEY not found")
 
-        logger.info("Postera API key found")
-        logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
+        aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+        if aws_access_key_id is None:
+            raise ValueError("Environment variable AWS_ACCESS_KEY_ID not found")
 
-        from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+        aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+        if aws_secret_access_key is None:
+            raise ValueError("Environment variable AWS_SECRET_ACCESS_KEY not found")
+
+        artefact_bucket_name = os.getenv("ARTEFACT_BUCKET_NAME")
+        if artefact_bucket_name is None:
+            raise ValueError("Environment variable ARTEFACT_BUCKET_NAME not found")
+
+        cloudfront_domain = os.getenv("CLOUDFRONT_DOMAIN")
+        if cloudfront_domain is None:
+            raise ValueError("Environment variable CLOUDFRONT_DOMAIN not found")
+
+        cloudfront_key_id = os.getenv("CLOUDFRONT_KEY_ID")
+        if cloudfront_key_id is None:
+            raise ValueError("Environment variable CLOUDFRONT_KEY_ID not found")
+
+        cloudfront_private_key_pem = os.getenv("CLOUDFRONT_PRIVATE_KEY_PEM")
+        if cloudfront_private_key_pem is None:
+            raise ValueError(
+                "Environment variable CLOUDFRONT_PRIVATE_KEY_PEM not found"
+            )
+        if not Path(cloudfront_private_key_pem).exists():
+            raise ValueError(
+                f"Cloudfront private key file does not exist: {cloudfront_private_key_pem}"
+            )
+
+        logger.info("Postera API key and AWS keys found")
+        logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
 
         ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
         avail_molsets = ms.list_available()
@@ -1069,7 +1107,7 @@ def main():
         args.target,
         column_enums,
         manifold_validate=True,
-        allow=[DockingResultCols.LIGAND_ID.value],
+        allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose"],
         drop_non_output=True,
     )
     # save to final CSV renamed for target
@@ -1082,6 +1120,7 @@ def main():
             raise ValueError("Must use --postera to upload to PostEra")
         logger.info("Uploading results to PostEra")
 
+        # upload numerical results to PostEra
         ms.update_molecules_from_df_with_manifold_validation(
             molecule_set_id=molset_id,
             df=renamed_top_posit,
@@ -1091,6 +1130,35 @@ def main():
             debug_df_path=output_dir / "postera_uploaded.csv",
         )
         logger.info("Finished uploading results to PostEra")
+
+        # start S3 session
+        session = Session(
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+        )
+
+        s3 = S3(session, artefact_bucket_name)
+
+        # create a cloudfront signer
+        cf = CloudFront(
+            cloudfront_domain,
+            key_id=cloudfront_key_id,
+            private_key_pem_path=cloudfront_private_key_pem,
+        )
+
+        # make an uploader for the poses and upload them
+        pose_uploader = ManifoldArtifactUploader(
+            renamed_top_posit,
+            molset_id,
+            ArtifactType.DOCKING_POSE,
+            ms,
+            cf,
+            s3,
+            args.target,
+            artifact_column="_outpath_pose",
+            bucket_name=artefact_bucket_name,
+        )
+        pose_uploader.upload_artifacts()
 
     if args.cleanup:
         if len(intermediate_files) > 0:
