@@ -8,19 +8,23 @@ from uuid import UUID
 
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 
-from .manifold_data_validation import TargetTags, rename_output_columns_for_manifold
+from .manifold_data_validation import (
+    TargetTags,
+    rename_output_columns_for_manifold,
+    map_output_col_to_manifold_tag,
+)
 from .molecule_set import MoleculeUpdateList, MoleculeSetAPI
 from ..aws.cloudfront import CloudFront
 from ..aws.s3 import S3
 
 
 class ArtifactType(Enum):
-    DOCKING_POSE = "docking-pose-POSIT"
+    DOCKING_POSE_POSIT = "docking-pose-POSIT"
     MD_POSE = "md-pose"
 
 
 ARTIFACT_TYPE_TO_S3_CONTENT_TYPE = {
-    ArtifactType.DOCKING_POSE: "text/html",
+    ArtifactType.DOCKING_POSE_POSIT: "text/html",
     ArtifactType.MD_POSE: "image/gif",
 }
 
@@ -63,32 +67,19 @@ class ManifoldArtifactUploader:
         return self.cloud_front.generate_signed_url(bucket_path, expiry)
 
     def upload_artifacts(self) -> None:
-        # use a lambda to generate bucket_paths
-        self.molecule_dataframe["_bucket_path"] = self.molecule_dataframe[
-            self.manifold_id_column
-        ].apply(lambda x: f"{self.artifact_type.value}/{self.molecule_set_id}/{x}.html")
-
-        # now make urls
-        self.molecule_dataframe[self.artifact_type.value] = self.molecule_dataframe[
-            "_bucket_path"
-        ].apply(lambda x: self.generate_cloudfront_url(x))
-
-        # generate correct column names
-        # allow all names except for the ones we are renaming
-        # TODO: clumsy, but works for now
-        allowed = [
-            col
-            for col in self.molecule_dataframe.columns
-            if col != self.artifact_type.value
+        # rename columns to match manifold
+        output_tag_name = map_output_col_to_manifold_tag(ArtifactType, {}, self.target)[
+            self.artifact_type.value
         ]
 
-        self.molecule_dataframe = rename_output_columns_for_manifold(
-            self.molecule_dataframe,
-            self.target,
-            [ArtifactType],
-            manifold_validate=True,
-            allow=allowed,
-        )
+        self.molecule_dataframe["_bucket_path"] = self.molecule_dataframe[
+            self.manifold_id_column
+        ].apply(lambda x: f"{output_tag_name}/{self.molecule_set_id}/{x}.html")
+
+        # now make urls
+        self.molecule_dataframe[output_tag_name] = self.molecule_dataframe[
+            "_bucket_path"
+        ].apply(lambda x: self.generate_cloudfront_url(x))
 
         # this will trim the dataframe to only the columns we want to update
         self.moleculeset_api.update_molecules_from_df_with_manifold_validation(

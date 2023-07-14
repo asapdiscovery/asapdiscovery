@@ -1150,7 +1150,7 @@ def main():
         pose_uploader = ManifoldArtifactUploader(
             renamed_top_posit,
             molset_id,
-            ArtifactType.DOCKING_POSE,
+            ArtifactType.DOCKING_POSE_POSIT,
             ms,
             cf,
             s3,
