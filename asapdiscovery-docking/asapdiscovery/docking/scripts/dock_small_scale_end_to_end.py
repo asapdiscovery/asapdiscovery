@@ -1073,7 +1073,7 @@ def main():
             id_field=DockingResultCols.LIGAND_ID.value,
             smiles_field="SMILES",
             overwrite=True,
-            debug_df_path=data_intermediate_dir / "postera_uploaded.csv",
+            debug_df_path=output_dir / "postera_uploaded.csv",
         )
         logger.info("Finished uploading results to PostEra")
 
