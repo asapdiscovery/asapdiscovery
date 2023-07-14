@@ -7,6 +7,7 @@ from pathlib import Path  # noqa: F401
 from typing import List  # noqa: F401
 
 import dask
+import pandas as pd
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
@@ -27,7 +28,7 @@ from asapdiscovery.docking import (
 )
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultCols,
-    drop_and_rename_docking_output_cols_for_manifold,
+    rename_output_cols_for_manifold,
 )
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
@@ -37,6 +38,7 @@ from asapdiscovery.modeling.schema import (
     PreppedTargets,
 )
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
+from asapdiscovery.simulation.szybki import SzybkiFreeformConformerAnalyzer
 
 """
 Script to run single target prep + docking.
@@ -309,6 +311,13 @@ parser.add_argument(
 )
 
 
+parser.add_argument(
+    "--szybki",
+    action="store_true",
+    help="Whether to run Szybki conformer analysis after docking.",
+)
+
+
 def main():
     #########################
     # parse input arguments #
@@ -340,6 +349,11 @@ def main():
 
     logger.info(f"IMPORTANT: Target: {args.target}")
     logger.info(f"Output directory: {output_dir}")
+
+    data_intermediate_dir = output_dir / "data_intermediates"
+    data_intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"Data intermediate directory: {data_intermediate_dir}")
 
     if args.debug:
         logger.info("Running in debug mode. enabling --verbose and disabling --cleanup")
@@ -730,7 +744,8 @@ def main():
     )
     # save with the failed ones in so its clear which ones failed if any did
     top_posit.to_csv(
-        output_dir / f"poses_{args.target}_sorted_posit_prob.csv", index=False
+        data_intermediate_dir / f"results_{args.target}_sorted_posit_prob.csv",
+        index=False,
     )
     n_total = len(top_posit)
 
@@ -739,7 +754,8 @@ def main():
     if args.debug:
         # save debug csv if needed
         top_posit.to_csv(
-            output_dir / f"poses_{args.target}_sorted_posit_prob_succeded.csv",
+            data_intermediate_dir
+            / f"results_{args.target}_sorted_posit_prob_succeded.csv",
             index=False,
         )
 
@@ -799,6 +815,65 @@ def main():
             logger=logger,
         )
         html_visualiser.write_pose_visualizations()
+
+    #################################
+    #   Szybki conformer analysis   #
+    #################################
+
+    if args.szybki:
+        szybki_dir = output_dir / "szybki"
+        szybki_dir.mkdir(parents=True, exist_ok=True)
+        logger.info("Running Szybki conformer analysis")
+
+        # add szybki output column
+        top_posit["outpath_szybki"] = top_posit["ligand_id"].apply(
+            lambda x: szybki_dir / Path(x)
+        )
+        if args.dask:
+            logger.info("Running Szybki conformer analysis with Dask")
+
+            @dask.delayed
+            def dask_szybki_adaptor(pose, outpath, logger=logger):
+                conformer_analysis = SzybkiFreeformConformerAnalyzer(
+                    [pose], [outpath], logger=logger
+                )
+                results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
+                return results
+
+            szybki_results = []
+            for pose, output_path in zip(
+                top_posit["_docked_file"], top_posit["outpath_szybki"]
+            ):
+                res = dask_szybki_adaptor(pose, output_path)
+                szybki_results.append(res)
+
+            szybki_results = client.compute(szybki_results)
+            szybki_results = client.gather(szybki_results)
+            # concat results
+            szybki_results = pd.concat(szybki_results)
+
+        else:
+            logger.info("Running Szybki conformer analysis in serial")
+            conformer_analysis = SzybkiFreeformConformerAnalyzer(
+                top_posit["_docked_file"], top_posit["outpath_szybki"], logger=logger
+            )
+            szybki_results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
+
+        # save results
+        szybki_results.to_csv(
+            data_intermediate_dir / f"{args.target}_szybki_results.csv", index=False
+        )
+
+        # join results back to top_posit
+        top_posit = top_posit.merge(szybki_results, on="ligand_id", how="left")
+
+        if args.debug:
+            # save top_posit with szybki results
+            top_posit.to_csv(
+                data_intermediate_dir
+                / f"results_{args.target}_succeded_with_szybki.csv",
+                index=False,
+            )
 
     if args.dask:
         if args.dask_lilac:
@@ -974,14 +1049,25 @@ def main():
             )
             gif_visualiser.write_traj_visualizations()
 
-    renamed_top_posit = drop_and_rename_docking_output_cols_for_manifold(
+    if args.debug:
+        # save debug csv if needed
+        top_posit.to_csv(
+            data_intermediate_dir / f"results_{args.target}_final_debug.csv",
+            index=False,
+        )
+
+    renamed_top_posit = rename_output_cols_for_manifold(
         top_posit,
         args.target,
         manifold_validate=True,
         allow=[DockingResultCols.LIGAND_ID.value],
+        szybki=args.szybki,
+        drop_non_output=True,
     )
     # save to final CSV renamed for target
-    renamed_top_posit.to_csv(output_dir / f"poses_{args.target}_final.csv", index=False)
+    renamed_top_posit.to_csv(
+        output_dir / f"results_{args.target}_final.csv", index=False
+    )
 
     if args.postera_upload:
         if not args.postera:
