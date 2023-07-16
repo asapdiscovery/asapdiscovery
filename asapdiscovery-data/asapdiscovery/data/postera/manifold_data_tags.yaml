@@ -1,0 +1,109 @@
+# ABOUT: yaml file describing the relationship between outputs and available methods
+# as well as the relationship between available biochemical targets and organisms
+#
+# organisms, targets, and outputs are combined to form the full set of tags.
+# with the form:
+#
+# <output>_<tool>_<unit?>_<organism>_<target>
+#
+# where <unit?> is only included if the output has a unit.
+#
+# for example:
+#  - Docking_Score_POSIT_sars2_Mpro
+#  - ML_Score_GAT_pIC50_sars2_Mac1
+#  - MD_Pose_mers_Mpro
+#  - MD_Interactions_mers_Mpro
+#  - FECs_Affinity_pIC50_sars2_Mac1
+#  ...
+#
+# are all valid tags.
+#
+# These are combined with the static identifiers to form the full set of tags.
+
+# The complete set is generated programatically at import time in `manifold_data_validation.py`
+
+# organisms and targets
+virus:
+  SARS-CoV-2:
+    - Mpro
+    - Mac1
+  MERS-CoV:
+    - Mpro
+
+# requires both units and tools specified even if empty for clarity.
+manifold_outputs:
+  - docking-score:
+      prefix: in-silico
+      tools:
+        - POSIT
+      units:
+      postfix: msk
+
+  - docking-confidence:
+      prefix: in-silico
+      tools:
+        - POSIT
+      units:
+      postfix: msk
+
+  - docking-pose:
+      prefix: in-silico
+      tools:
+        - POSIT
+      units:
+      postfix: msk
+
+  - computed: # ML biochemical activity
+      prefix: biochemical-activity
+      units: pIC50
+      tools:
+        - GAT
+        - SchNet
+      postfix: msk
+
+  - computed: # FEC biochemical activity
+      prefix: biochemical-activity
+      units: pIC50
+      tools:
+        - FEC
+        - FEC-uncertainty # a bit of an abuse but it works
+      postfix: msk
+
+  - md-pose:
+      prefix: in-silico
+      units:
+      tools:
+      postfix: msk
+
+  - md-interactions:
+      prefix: in-silico
+      units:
+      tools:
+      postfix: msk
+
+  - ligand-global-strain:
+      prefix: in-silico
+      units: kcal-mol
+      tools:
+        - szybki
+      postfix: msk
+
+  - ligand-local-strain:
+      prefix: in-silico
+      units: kcal-mol
+      tools:
+        - szybki
+      postfix: msk
+
+  - ligand-conformer-strain:
+      prefix: in-silico
+      units: kcal-mol
+      tools:
+        - szybki
+      postfix: msk
+
+# identifiers for static data
+static_identifiers:
+  - in-silico-UUID_POSTERA_API
+  - in-silico-UUID_CCC_DB
+  - SMILES

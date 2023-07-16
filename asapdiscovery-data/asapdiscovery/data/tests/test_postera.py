@@ -188,6 +188,22 @@ class TestMoleculeSet:
 
         pd.testing.assert_frame_equal(expected_output_df, output_df)
 
+    @pytest.fixture()
+    def available_molecule_set_ids(self):
+        import uuid
+
+        id = str(uuid.uuid4())
+        name = "mock_molset_name"
+        molsets = {id: name}
+        return molsets, id, name
+
+    def test_molecule_set_id_or_name(self, moleculesetapi, available_molecule_set_ids):
+        molsets, id, name = available_molecule_set_ids
+        molset_id = moleculesetapi.molecule_set_id_or_name(name, molsets)
+        assert molset_id == id
+        molset_id = moleculesetapi.molecule_set_id_or_name(id, molsets)
+        assert molset_id == id
+
     def test_add_molecules(self):
         ...
 
