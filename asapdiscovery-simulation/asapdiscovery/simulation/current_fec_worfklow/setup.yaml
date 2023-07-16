@@ -9,7 +9,7 @@ structures_path: /lila/data/chodera/asap-datasets/current/sars_00_fragalysis/
 receptors_path: ./receptors
 # Spruce loop database
 # Created with loopdb_builder: https://docs.eyesopen.com/applications/spruce/loopdb_builder/loopdb_builder_example.html
-# Must download OpenEye applications package 
+# Must download OpenEye applications package
 spruce_loop_database: /data/chodera/chodera/asap-perses-local/covid-moonshot-sulfonamides/fragalysis_spruce.loop_db
 
 # Source structures to model, with corresponding PostEra compound IDs of bound ligands
@@ -19,11 +19,11 @@ source_structures:
 
 # Core SMARTS matches for docking
 # This accepts a hierarchy, starting with most specific
-core_smarts:   
+core_smarts:
   - "CC1CN(c2c3ccccc3cnc2)C(C14CN(CC)C(c5ccccc54)=O)=O"
   - "CC1CN(c2c3ccccc3cnc2)C(C14CNC(c5ccccc54)=O)=O"
   - "O=C1N(c2c3ccccc3cnc2)CCC14CNC(c5ccccc54)=O"
- 
+
 # Which assembly states to use ['monomer', 'dimer']
 assembly_states:
   - dimer
