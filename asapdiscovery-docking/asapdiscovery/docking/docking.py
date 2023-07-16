@@ -21,7 +21,10 @@ from asapdiscovery.data.utils import check_name_length_and_truncate
 from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
+from .docking_data_validation import DockingResultCols
+
 POSIT_METHODS = ("all", "hybrid", "fred", "mcs", "shapefit")
+
 
 posit_methods = namedtuple("posit_methods", POSIT_METHODS)
 posit_method_ints = posit_methods(
@@ -342,28 +345,11 @@ def run_docking_oe(
     return True, combined_mol, docking_id
 
 
-def docking_result_cols() -> list[str]:
-    return [
-        "ligand_id",
-        "du_structure",
-        "docked_file",
-        "pose_id",
-        "docked_RMSD",
-        "POSIT_prob",
-        "POSIT_method",
-        "chemgauss4_score",
-        "clash",
-        "SMILES",
-        "GAT_score",
-        "SCHNET_score",
-    ]
-
-
 def make_docking_result_dataframe(
     results: list,
     output_dir: Path,
     save_csv: bool = True,
-    results_cols: Optional[list[str]] = docking_result_cols(),
+    results_cols: Optional[list[str]] = DockingResultCols.get_columns(),
     csv_name: Optional[str] = "results.csv",
 ) -> tuple[pd.DataFrame, Path]:
     """

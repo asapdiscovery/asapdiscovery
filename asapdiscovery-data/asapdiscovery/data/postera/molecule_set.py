@@ -1,8 +1,10 @@
-from typing import Union
+import uuid
+from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
 from typing_extensions import TypedDict
 
+from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
 
 
@@ -80,6 +82,27 @@ class MoleculeSetAPI(PostEraAPI):
     @property
     def molecule_set_url(self):
         return f"{self.api_url}/moleculesets"
+
+    @staticmethod
+    def molecule_set_id_or_name(
+        id_or_name: str, available_molsets: dict[str, str]
+    ) -> str:
+        """
+        Helper function to determine if the input is a molecule set id or name
+        and return the molecule set id
+        """
+        try:
+            uuid.UUID(id_or_name)
+            molset_id = id_or_name
+        except ValueError:
+            available_molsets_rev = {v: k for k, v in available_molsets.items()}
+            try:
+                molset_id = available_molsets_rev[id_or_name]
+            except KeyError:
+                raise ValueError(
+                    f"Molecule Set with identifier: {id_or_name} not found in PostEra"
+                )
+        return molset_id
 
     def create(
         self, molecule_set_name: str, data: MoleculeList, return_full: bool = False
@@ -201,6 +224,12 @@ class MoleculeSetAPI(PostEraAPI):
             ]
             return pd.DataFrame(response_data)
 
+    def get_molecules_from_id_or_name(
+        self, molecule_set_id: str, return_as="dataframe"
+    ) -> tuple[Union[pd.DataFrame, list], str]:
+        molset_id = self.molecule_set_id_or_name(molecule_set_id, self.list_available())
+        return self.get_molecules(molset_id, return_as), molset_id
+
     def add_molecules(
         self,
         molecule_set_id: id,
@@ -261,3 +290,43 @@ class MoleculeSetAPI(PostEraAPI):
         ).json()
 
         return response["moleculesUpdated"]
+
+    def update_molecules_from_df_with_manifold_validation(
+        self,
+        molecule_set_id: str,
+        df: pd.DataFrame,
+        smiles_field: str = "smiles",
+        id_field: str = "id",
+        overwrite=False,
+        debug_df_path: str = None,
+    ) -> list[str]:
+        df = ManifoldAllowedTags.filter_dataframe_cols(
+            df, allow=[smiles_field, id_field]
+        )
+
+        if not ManifoldAllowedTags.all_in_values(
+            df.columns, allow=[id_field, smiles_field]
+        ):
+            raise ValueError(
+                f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
+            )
+
+        # fill nan values with empty string
+        df = df.fillna("")
+
+        # save debug df if requested
+        if debug_df_path is not None:
+            df.to_csv(debug_df_path, index=False)
+
+        # make payload for postera
+        mol_update_list = MoleculeUpdateList.from_pandas_df(
+            df, smiles_field=smiles_field, id_field=id_field
+        )
+
+        # push updates to postera
+        retcode = self.update_molecules(
+            molecule_set_id, mol_update_list, overwrite=overwrite
+        )
+
+        if not retcode:
+            raise ValueError(f"Update failed for molecule set {molecule_set_id}")
