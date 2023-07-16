@@ -34,5 +34,5 @@ repos:
     args:
     - --py39-plus
 # exclude current FEC wf
-exclude: 'asapdiscovery-simulation/asapdiscovery/simulation/current_fec_worfklow/.*
+exclude: 'asapdiscovery-simulation/asapdiscovery/simulation/current_fec_worfklow/.*'
 
