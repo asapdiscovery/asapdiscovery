@@ -1118,7 +1118,7 @@ def main():
     if args.postera_upload:
         if not args.postera:
             raise ValueError("Must use --postera to upload to PostEra")
-        logger.info("Uploading results to PostEra")
+        logger.info("Uploading numerical results to PostEra")
 
         # upload numerical results to PostEra
         ms.update_molecules_from_df_with_manifold_validation(
@@ -1129,7 +1129,7 @@ def main():
             overwrite=True,
             debug_df_path=output_dir / "postera_uploaded.csv",
         )
-        logger.info("Finished uploading results to PostEra")
+        logger.info("Finished uploading numerical results to PostEra")
 
         # start S3 session
         session = Session(
@@ -1146,9 +1146,17 @@ def main():
             private_key_pem_path=cloudfront_private_key_pem,
         )
 
+        logger.info("Uploading artifacts to PostEra")
+        # drop the columns we don't want to upload for the poses
+        cols_to_drop = [
+            k
+            for k in renamed_top_posit.columns
+            if k not in ["_outpath_pose", DockingResultCols.LIGAND_ID.value]
+        ]
+        pose_df = renamed_top_posit.drop(columns=cols_to_drop)
         # make an uploader for the poses and upload them
         pose_uploader = ManifoldArtifactUploader(
-            renamed_top_posit,
+            pose_df,
             molset_id,
             ArtifactType.DOCKING_POSE_POSIT,
             ms,
@@ -1159,6 +1167,29 @@ def main():
             bucket_name=artefact_bucket_name,
         )
         pose_uploader.upload_artifacts()
+
+        # drop the columns we don't want to upload for the MD gifs
+        cols_to_drop = [
+            k
+            for k in renamed_top_posit.columns
+            if k not in ["_outpath_gif", DockingResultCols.LIGAND_ID.value]
+        ]
+        md_df = renamed_top_posit.drop(columns=cols_to_drop)
+
+        md_uploader = ManifoldArtifactUploader(
+            md_df,
+            molset_id,
+            ArtifactType.MD_POSE,
+            ms,
+            cf,
+            s3,
+            args.target,
+            artifact_column="_outpath_gif",
+            bucket_name=artefact_bucket_name,
+        )
+        md_uploader.upload_artifacts()
+
+        logger.info("Finished uploading artifacts to PostEra")
 
     if args.cleanup:
         if len(intermediate_files) > 0:
