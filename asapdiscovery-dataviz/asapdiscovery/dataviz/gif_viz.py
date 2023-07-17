@@ -270,7 +270,8 @@ class GIFVisualizer:
             show_contacts(p, "ligand", "receptor")
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
-        # p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand
+        #NOTE: @JScheen, I added this back in because the view was somehow broken. 
+        p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand
 
         # turn on depth cueing
         p.cmd.set("depth_cue", 1)
