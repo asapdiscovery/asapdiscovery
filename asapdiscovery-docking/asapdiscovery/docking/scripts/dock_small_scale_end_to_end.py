@@ -1102,12 +1102,13 @@ def main():
     if args.szybki:
         column_enums.append(SzybkiResultCols)
 
+    # keep in the artefact column for the poses and MD gifs
     renamed_top_posit = rename_output_columns_for_manifold(
         top_posit,
         args.target,
         column_enums,
         manifold_validate=True,
-        allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose"],
+        allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose", "_outpath_gif"],
         drop_non_output=True,
     )
     # save to final CSV renamed for target
