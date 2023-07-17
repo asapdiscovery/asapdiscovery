@@ -30,7 +30,7 @@ class TargetIdentifiers(DataModelAbstractBase):
     )
 
     fragalysis_id: Optional[str] = Field(
-        None, description="The PDB code of the target if applicable"
+        None, description="The Fragalysis ID of the target if applicable"
     )
 
     pdb_code: Optional[str] = Field(
