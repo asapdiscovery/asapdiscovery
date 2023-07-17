@@ -755,3 +755,55 @@ def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
     """
     oechem.OEClearSDData(mol)
     return mol
+
+
+def oemol_to_pdb_string(mol: oechem.OEMol) -> str:
+    """
+    Dumps an OpenEye OEMol to a PDB string
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+         OpenEye OEMol
+
+    Returns
+    -------
+    str
+        PDB string representation of the input OEMol
+    """
+    oms = oechem.oemolostream()
+    oms.SetFormat(oechem.OEFormat_PDB)
+    oms.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
+    oms.openstring()
+    oechem.OEWriteMolecule(oms, mol)
+    molstring = oms.GetString().decode("UTF-8")
+    return molstring
+
+
+def pdb_string_to_oemol(pdb_str: str) -> oechem.OEGraphMol:
+    """
+    Loads a PDB string into an OpenEye OEGraphMol
+
+    Parameters
+    ----------
+    pdb_str: str
+        The string representation of a PDB file
+
+    Returns
+    -------
+    oechem.OEMol
+        resulting OpenEye OEMol
+    """
+    ifs = oechem.oemolistream()
+    ifs.SetFormat(oechem.OEFormat_PDB)
+    ifs.SetFlavor(
+        oechem.OEFormat_PDB,
+        oechem.OEIFlavor_PDB_Default
+        | oechem.OEIFlavor_PDB_DATA
+        | oechem.OEIFlavor_PDB_ALTLOC,
+    )  # noqa
+    ifs.openstring(pdb_str)
+    mol = oechem.OEGraphMol()
+    if not oechem.OEReadMolecule(ifs, mol):
+        oechem.OEThrow.Fatal("Cannot read molecule")
+    return mol
