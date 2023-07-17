@@ -3,14 +3,12 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 from enum import Enum
-from typing import Optional
 from uuid import UUID
 
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 
 from .manifold_data_validation import (
     TargetTags,
-    rename_output_columns_for_manifold,
     map_output_col_to_manifold_tag,
 )
 from .molecule_set import MoleculeSetAPI

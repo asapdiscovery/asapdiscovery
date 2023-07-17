@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import List, Optional  # noqa: F401
 
-import pandas as pd
-
 
 class DockingResultCols(Enum):
     """
