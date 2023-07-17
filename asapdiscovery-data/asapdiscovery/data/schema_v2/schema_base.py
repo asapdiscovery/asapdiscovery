@@ -28,6 +28,12 @@ def utf8len(s: str) -> int:
     return len(s.encode("utf-8"))
 
 
+def check_strings_for_equality_with_exclusion(string1, string2, exclusion_string):
+    lines1 = [line for line in string1.split("\n") if exclusion_string not in line]
+    lines2 = [line for line in string2.split("\n") if exclusion_string not in line]
+    return lines1 == lines2
+
+
 class DataModelAbstractBase(BaseModel):
     """
     Base class for asapdiscovery pydantic models that simplify dictionary, JSON
