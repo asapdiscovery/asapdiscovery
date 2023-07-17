@@ -1,19 +1,14 @@
-import pandas as pd
-
 from datetime import datetime, timedelta
-
 from enum import Enum
 from uuid import UUID
 
+import pandas as pd
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 
-from .manifold_data_validation import (
-    TargetTags,
-    map_output_col_to_manifold_tag,
-)
-from .molecule_set import MoleculeSetAPI
 from ..aws.cloudfront import CloudFront
 from ..aws.s3 import S3
+from .manifold_data_validation import TargetTags, map_output_col_to_manifold_tag
+from .molecule_set import MoleculeSetAPI
 
 
 class ArtifactType(Enum):

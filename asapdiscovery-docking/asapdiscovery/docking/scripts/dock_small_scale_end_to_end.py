@@ -8,23 +8,20 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas as pd
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+from asapdiscovery.data.postera.manifold_artefacts import (
+    ArtifactType,
+    ManifoldArtifactUploader,
+)
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.postera.manifold_artefacts import (
-    ManifoldArtifactUploader,
-    ArtifactType,
-)
-
-from boto3.session import Session
-from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.aws.cloudfront import CloudFront
-
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -40,7 +37,6 @@ from asapdiscovery.docking import (
     make_docking_result_dataframe,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
@@ -53,6 +49,7 @@ from asapdiscovery.simulation.szybki import (
     SzybkiFreeformConformerAnalyzer,
     SzybkiResultCols,
 )
+from boto3.session import Session
 
 """
 Script to run single target prep + docking.
