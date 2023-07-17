@@ -10,6 +10,7 @@ dependencies:
   # Testing
   - pytest
   - pytest-cov
+  - pytest-xdist
   - codecov
 
   # cli
@@ -19,7 +20,7 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
-  - openeye-toolkits
+  - openeye-toolkits<=2022.2.2
   - pandas
   - pebble
   - pydantic
@@ -43,9 +44,29 @@ dependencies:
   - numpy
   - h5py
   - e3nn
-  - dgl <=1.0.2
+  - dgl
   - dgllife
   - pooch
+
+
+  # md
+  - openmm
+  - openmmforcefields
+  - mdtraj
+  - openff-toolkit
+#  - cudatoolkit=11.7 # may need to specify explicitly for lilac
+
+  # execution
+  - distributed
+  - dask
+# - dask-cuda # will only work on linux machines and not macs
+  - dask-jobqueue
+  - netifaces
+
+  # viz
+  - imageio
+  - pymol-open-source
+  - gifsicle
 
 
   # Pip-only installs
@@ -59,3 +80,6 @@ dependencies:
     # testing
     - pytest-console-scripts
     - pytest-timeout
+    # viz
+    - pygifsicle
+    - sigfig

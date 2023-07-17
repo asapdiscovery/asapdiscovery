@@ -21,17 +21,26 @@ def get_args():
     parser.add_argument(
         "-o", "--output_fn", required=True, type=Path, help="Output file."
     )
+    parser.add_argument(
+        "--keep_duplicates",
+        action="store_true",
+        help="If true, do not remove duplicate SMILES strings.",
+    )
     return parser.parse_args()
 
 
 def main():
     args = get_args()
 
+    logger = FileLogger(
+        logname="sdf_to_smiles_list", path=args.output_fn.parent
+    ).getLogger()
+
+    logger.info(f"Loading SDF file: {args.sdf_fn}")
+
     mols = load_openeye_sdfs(args.sdf_fn)
 
-    logger = FileLogger(
-        logname="sdf_to_smiles_list", path=args.output_fn.stem
-    ).getLogger()
+    logger.info(f"Loaded {len(mols)} molecules.")
 
     output_lines = []
     for i, mol in enumerate(mols):
@@ -53,8 +62,12 @@ def main():
 
         output_lines.append(f"{smiles} {compound_id}\n")
 
+    if not args.keep_duplicates:
+        output_lines = list(set(output_lines))
+
+    logger.info(f"Writing {len(output_lines)} SMILES strings to: {args.output_fn}")
     with open(args.output_fn, "w") as f:
-        for line in list(set(output_lines)):
+        for line in output_lines:
             f.write(line)
 
 

@@ -23,6 +23,23 @@ def get_args():
     parser.add_argument("-o", required=True, help="Output CSV file.")
     parser.add_argument("-cache", help="Cache CSV file.")
 
+    # Search arguments
+    parser.add_argument(
+        "-v",
+        "--vault",
+        help="Which CDD vault to download from (defaults to Moonshot vault).",
+    )
+    parser.add_argument(
+        "-s",
+        "--search",
+        default="sars_fluorescence_noncovalent_w_dates",
+        help=(
+            "Either a search id or entry in MOONSHOT_SEARCH_DICT "
+            "(see asapdiscovery.data.moonshot for more details). Defaults to search "
+            "with all noncovalent molecules in the SARS-CoV-2 dose response assay."
+        ),
+    )
+
     # Filtering arguments
     parser.add_argument(
         "-smi",
@@ -45,6 +62,14 @@ def get_args():
         "--retain_semiquant",
         action="store_true",
         help="Keep molecules whose IC50 values are out of range.",
+    )
+    parser.add_argument(
+        "--retain_all",
+        action="store_true",
+        help=(
+            "Automatically sets retain_achiral, retain_racemic, retain_enantiopure, "
+            "and retain_semiquant."
+        ),
     )
     parser.add_argument(
         "-an",
@@ -79,6 +104,12 @@ def get_args():
 def main():
     args = get_args()
 
+    if args.retain_all:
+        args.retain_achiral = True
+        args.retain_racemic = True
+        args.retain_enantiopure = True
+        args.retain_semiquant = True
+
     # Set to None to force pIC50 usage
     if args.cheng_prusoff == [0, 0]:
         args.cheng_prusoff = None
@@ -96,11 +127,20 @@ def main():
             "variable is not set."
         )
 
+    # Get vault number from environment if not given
+    if not args.vault:
+        try:
+            args.vault = os.environ["MOONSHOT_CDD_VAULT_NUMBER"]
+        except KeyError:
+            raise ValueError("No value specified for vault.")
+
     _ = download_molecules(
         header,
-        smiles_fieldname=args.smiles_fieldname,
+        vault=args.vault,
+        search=args.search,
         fn_out=args.o,
         fn_cache=args.cache,
+        smiles_fieldname=args.smiles_fieldname,
         retain_achiral=args.retain_achiral,
         retain_racemic=args.retain_racemic,
         retain_enantiopure=args.retain_enantiopure,

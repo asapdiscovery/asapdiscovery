@@ -6,44 +6,51 @@ import requests
 
 BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
 # Info for the POST call
-MPRO_API_CALL = {
-    "target_name": "Mpro",
+API_CALL_BASE = {
+    "target_name": "",
     "proteins": "",
-    "event_info": "false",
-    "sigmaa_info": "false",
-    "diff_info": "false",
-    "trans_matrix_info": "false",
-    "NAN": "false",
-    "mtz_info": "false",
-    "cif_info": "false",
-    "NAN2": "false",
-    "map_info": "false",
-    "single_sdf_file": "false",
-    "sdf_info": "true",
-    "pdb_info": "true",
-    "bound_info": "true",
-    "metadata_info": "true",
-    "smiles_info": "true",
-    "static_link": "false",
+    "event_info": False,
+    "sigmaa_info": False,
+    "diff_info": False,
+    "trans_matrix_info": False,
+    "NAN": False,
+    "mtz_info": False,
+    "cif_info": False,
+    "NAN2": False,
+    "map_info": False,
+    "single_sdf_file": True,
+    "sdf_info": True,
+    "pdb_info": False,
+    "bound_info": True,
+    "metadata_info": True,
+    "smiles_info": True,
+    "static_link": False,
     "file_url": "",
 }
 
 
-def download(out_fn, extract=True):
+def download(out_fn, api_call, extract=True):
     """
-    Download Mpro structures from fragalysis.
+    Download target structures from fragalysis.
 
     Parameters
     ----------
-    out_fn : str
+    out_fn : Union[str, Path]
         Where to save the downloaded zip file
+    api_call : dict
+        Dictionary containing args for the POST request. Target is specified here.
     extract : bool, default=True
         Whether to extract the zip file after downloading. Extracts to the
         directory given by `dirname(out_fn)`
     """
     # First send POST request to prepare the download file and get its URL
-    r = requests.post(BASE_URL, data=MPRO_API_CALL)
-    url_dl = r.text.split(':"')[1].strip('"}')
+    r = requests.post(BASE_URL, json=api_call)
+    if not r.ok:
+        raise requests.HTTPError(
+            f"Post request to {BASE_URL} failed with {r.status_code} error code, "
+            f"using the following API call {api_call}."
+        )
+    url_dl = r.json()["file_url"]
     print("Downloading archive", flush=True)
     # Send GET request for the zip archive
     r_dl = requests.get(BASE_URL, params={"file_url": url_dl})
@@ -53,9 +60,21 @@ def download(out_fn, extract=True):
 
     # Extract files if requested
     if extract:
-        print("Extracting files", flush=True)
-        zf = ZipFile(out_fn)
-        zf.extractall(path=os.path.dirname(out_fn))
+        extract_zip(out_fn)
+
+
+# TODO: move this function to utils or similar, if we end up needing it somewhere else
+def extract_zip(out_fn):
+    """Extracts contents of zip file
+
+    Parameters
+    ----------
+    out_fn: str or Path
+        Zip file path to extract
+    """
+    print("Extracting files", flush=True)
+    zf = ZipFile(out_fn)
+    zf.extractall(path=os.path.dirname(out_fn))
 
 
 def parse_xtal(x_fn, x_dir, p_only=True):
@@ -168,6 +187,11 @@ def parse_fragalysis(
     # Drop duplicates, keeping only the first one.
     if drop_duplicate_datasets:
         df = df.drop_duplicates("RealCrystalName")
+
+    # Remove whitespace from the the relevant columns
+    df["smiles"].str.strip()
+    df["crystal_name"].str.strip()
+    df["alternate_name"].str.strip()
 
     # Build argument dicts for the CrystalCompoundData objects
     try:

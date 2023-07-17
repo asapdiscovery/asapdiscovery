@@ -31,7 +31,6 @@ dependencies = [
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-#build-design-units = "asapdiscovery.docking.scripts.build_design_units:main"
 clean-results-csv = "asapdiscovery.docking.scripts.clean_results_csv:main"
 collate-results = "asapdiscovery.docking.scripts.collate_results:main"
 create-fauxalysis-subset-from-yaml = "asapdiscovery.docking.scripts.create_fauxalysis_subset_from_yaml:main"
@@ -46,14 +45,10 @@ plot-docking-results = "asapdiscovery.docking.scripts.plot_docking_results:main"
 run-docking-oe = "asapdiscovery.docking.scripts.run_docking_oe:main"
 score-structures = "asapdiscovery.docking.scripts.score_structures:main"
 write-receptor-grids = "asapdiscovery.docking.scripts.write_receptor_grids:main"
+dock-small-scale-e2e = "asapdiscovery.docking.scripts.dock_small_scale_end_to_end:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-
-[tool.coverage.run]
-omit = [
-    "*/tests/*"
-]
 
 [tool.versioningit]
 

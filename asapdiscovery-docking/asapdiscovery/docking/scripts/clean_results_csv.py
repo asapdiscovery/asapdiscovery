@@ -79,7 +79,7 @@ def main():
         os.mkdir(args.output_dir)
     assert os.path.exists(args.output_dir)
 
-    dr = DockingResults(args.input_csv)
+    dr = DockingResults(csv_path=args.input_csv)
 
     # this is a bunch of csv ingesting that is very dependent on the way the csv looks
     dr.df = dr.df.drop("Unnamed: 0", axis=1)

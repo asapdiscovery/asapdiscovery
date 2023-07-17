@@ -1,13 +1,29 @@
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union  # noqa: F401
 
-from openeye import oechem, oedepict, oedocking, oegrid, oeomega, oespruce  # noqa: F401
+from openeye import (  # noqa: F401
+    oechem,
+    oedepict,
+    oedocking,
+    oegrid,
+    oeomega,
+    oespruce,
+    oeszybki,
+)
 
 # exec on module import
+
 if not oechem.OEChemIsLicensed("python"):
     raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
 
 
-def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=None):
+def combine_protein_ligand(
+    prot: oechem.OEMol,
+    lig: oechem.OEMol,
+    lig_name: str = "LIG",
+    resid: Optional[int] = None,
+    start_atom_id: Optional[int] = None,
+) -> oechem.OEMol:
     """
     Combine a protein OEMol and ligand OEMol into one, handling residue/atom
     numbering, and HetAtom status.
@@ -82,13 +98,15 @@ def combine_protein_ligand(prot, lig, lig_name="LIG", resid=None, start_atom_id=
     return prot
 
 
-def load_openeye_pdb(pdb_fn, alt_loc=False):
+def load_openeye_pdb(
+    pdb_fn: Union[str, Path], alt_loc: bool = False
+) -> oechem.OEGraphMol:
     """
     Load an OpenEye OEGraphMol from a PDB file.
 
     Parameters
     ----------
-    pdb_fn : str
+    pdb_fn : Union[str, Path]
         The path to the input PDB file.
     alt_loc : bool, optional
         Whether to keep track of alternate locations, by default False.
@@ -116,7 +134,7 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
         oechem.OEFormat_PDB,
         ifs_flavor,
     )
-    if ifs.open(pdb_fn):
+    if ifs.open(str(pdb_fn)):
         in_mol = oechem.OEGraphMol()
         oechem.OEReadMolecule(ifs, in_mol)
         ifs.close()
@@ -126,13 +144,46 @@ def load_openeye_pdb(pdb_fn, alt_loc=False):
         oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
 
 
-def load_openeye_cif(cif_fn, alt_loc=False):
+def load_openeye_cif1(cif1_fn: Union[str, Path]) -> oechem.OEGraphMol:
+    """
+    Loads a biological assembly file into an OEGraphMol object.
+    Current version requires going through an OpenMM intermediate.
+
+    Parameters
+    ----------
+    cif1_fn : Union[str, Path]
+        The path to the input CIF1 file.
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        oechem.OEGraphMol: the biological assembly as an OEGraphMol object.
+    """
+    from tempfile import NamedTemporaryFile
+
+    from openmm.app import PDBFile, PDBxFile
+
+    if not Path(cif1_fn).exists():
+        raise FileNotFoundError(f"{cif1_fn} does not exist!")
+
+    cif = PDBxFile(str(cif1_fn))
+
+    # the keep ids flag is critical to make sure the residue numbers are correct
+    with NamedTemporaryFile("w", suffix=".pdb") as f:
+        PDBFile.writeFile(cif.topology, cif.positions, f, keepIds=True)
+        prot = load_openeye_pdb(f.name)
+    return prot
+
+
+def load_openeye_cif(
+    cif_fn: Union[str, Path], alt_loc: bool = False
+) -> oechem.OEGraphMol:
     """
     Load an OpenEye OEGraphMol object from a CIF file.
 
     Parameters
     ----------
-    cif_fn : str
+    cif_fn : Union[str, Path]
         The path of the CIF file to read.
     alt_loc : bool, optional
         If True, include alternative locations for atoms in the resulting OEGraphMol
@@ -170,7 +221,7 @@ def load_openeye_cif(cif_fn, alt_loc=False):
         oechem.OEFormat_MMCIF,
         ifs_flavor,
     )
-    if ifs.open(cif_fn):
+    if ifs.open(str(cif_fn)):
         in_mol = oechem.OEGraphMol()
         oechem.OEReadMolecule(ifs, in_mol)
         ifs.close()
@@ -180,14 +231,14 @@ def load_openeye_cif(cif_fn, alt_loc=False):
         oechem.OEThrow.Fatal(f"Unable to open {cif_fn}")
 
 
-def load_openeye_sdf(sdf_fn) -> oechem.OEGraphMol:
+def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
     """
     Load an OpenEye SDF file containing a single molecule and return it as an
     OpenEye OEGraphMol object.
 
     Parameters
     ----------
-    sdf_fn : str
+    sdf_fn : Union[str, Path]
         Path to the SDF file to load.
 
     Returns
@@ -216,7 +267,7 @@ def load_openeye_sdf(sdf_fn) -> oechem.OEGraphMol:
         oechem.OEFormat_SDF,
         oechem.OEIFlavor_SDF_Default,
     )
-    if ifs.open(sdf_fn):
+    if ifs.open(str(sdf_fn)):
         coords_mol = oechem.OEGraphMol()
         oechem.OEReadMolecule(ifs, coords_mol)
         ifs.close()
@@ -225,13 +276,13 @@ def load_openeye_sdf(sdf_fn) -> oechem.OEGraphMol:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
-def load_openeye_sdfs(sdf_fn):
+def load_openeye_sdfs(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     """
     Load a list of OpenEye OEGraphMol objects from an SDF file.
 
     Parameters
     ----------
-    sdf_fn : str
+    sdf_fn : Union[str, Path]
         The path of the SDF file to read.
 
     Returns
@@ -259,7 +310,7 @@ def load_openeye_sdfs(sdf_fn):
         oechem.OEIFlavor_SDF_Default,
     )
     cmpd_list = []
-    if ifs.open(sdf_fn):
+    if ifs.open(str(sdf_fn)):
         for mol in ifs.GetOEGraphMols():
             cmpd_list.append(mol.CreateCopy())
         ifs.close()
@@ -268,7 +319,39 @@ def load_openeye_sdfs(sdf_fn):
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
-def save_openeye_pdb(mol, pdb_fn):
+def load_openeye_design_unit(du_fn: Union[str, Path]) -> oechem.OEDesignUnit:
+    """
+    Load an OpenEye design unit from a file
+
+    Parameters
+    ----------
+    du_fn : Union[str, Path]
+        The path of the DesignUnit file to read.
+
+    Returns
+    -------
+    oechem.OEDesignUnit
+        OpenEye DesignUnit
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    oechem.OEError
+        If the CIF file cannot be opened.
+
+
+    """
+    if not Path(du_fn).exists():
+        raise FileNotFoundError(f"{du_fn} does not exist!")
+    du = oechem.OEDesignUnit()
+    retcode = oechem.OEReadDesignUnit(str(du_fn), du)
+    if not retcode:
+        oechem.OEThrow.Fatal(f"Unable to open {du_fn}")
+    return du
+
+
+def save_openeye_pdb(mol, pdb_fn: Union[str, Path]) -> Path:
     """
     Write an OpenEye OEGraphMol object to a PDB file.
 
@@ -290,14 +373,16 @@ def save_openeye_pdb(mol, pdb_fn):
     """
     ofs = oechem.oemolostream()
     ofs.SetFlavor(oechem.OEFormat_PDB, oechem.OEOFlavor_PDB_Default)
-    ofs.open(str(pdb_fn))
-    oechem.OEWriteMolecule(ofs, mol)
+    if ofs.open(str(pdb_fn)):
+        oechem.OEWriteMolecule(ofs, mol)
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
     ofs.close()
 
     return Path(pdb_fn)
 
 
-def save_openeye_sdf(mol, sdf_fn):
+def save_openeye_sdf(mol, sdf_fn: Union[str, Path]) -> Path:
     """
     Write an OpenEye OEGraphMol object to an SDF file.
 
@@ -305,7 +390,7 @@ def save_openeye_sdf(mol, sdf_fn):
     ----------
     mol : oechem.OEGraphMol
         The OEGraphMol object to write to the SDF file.
-    sdf_fn : str
+    sdf_fn :  Union[str, Path]
         The path of the SDF file to create or overwrite.
 
     Returns
@@ -319,14 +404,16 @@ def save_openeye_sdf(mol, sdf_fn):
     """
     ofs = oechem.oemolostream()
     ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
-    ofs.open(sdf_fn)
-    oechem.OEWriteMolecule(ofs, mol)
+    if ofs.open(str(sdf_fn)):
+        oechem.OEWriteMolecule(ofs, mol)
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
     ofs.close()
 
     return Path(sdf_fn)
 
 
-def save_openeye_sdfs(mols, sdf_fn):
+def save_openeye_sdfs(mols, sdf_fn: Union[str, Path]) -> Path:
     """
     Write a list of OpenEye OEGraphMol objects to a single SDF file.
 
@@ -334,7 +421,7 @@ def save_openeye_sdfs(mols, sdf_fn):
     ----------
     mols : list of oechem.OEGraphMol
         The list of OEGraphMol objects to write to the SDF file.
-    sdf_fn : str
+    sdf_fn :  Union[str, Path]
         The path of the SDF file to create or overwrite.
 
     Returns
@@ -356,7 +443,7 @@ def save_openeye_sdfs(mols, sdf_fn):
         oechem.OEFormat_SDF,
         oechem.OEOFlavor_SDF_Default,
     )
-    if ofs.open(sdf_fn):
+    if ofs.open(str(sdf_fn)):
         for mol in mols:
             oechem.OEWriteMolecule(ofs, mol)
         ofs.close()
@@ -392,186 +479,14 @@ def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
     return prot
 
 
-def split_openeye_mol(complex_mol, lig_chain="A", prot_cutoff_len=10):
-    """
-    Split an OpenEye-loaded molecule into protein, ligand, etc.
-
-    Parameters
-    ----------
-    complex_mol : oechem.OEMolBase
-        Complex molecule to split.
-    lig_chain : str, default="A"
-        Which copy of the ligand to keep. Pass None to keep all ligand atoms.
-    prot_cutoff_len : int, default=10
-        Minimum number of residues in a protein chain required in order to keep
-
-    Returns
-    -------
-    """
-    from .utils import trim_small_chains
-
-    # Test splitting
-    lig_mol = oechem.OEGraphMol()
-    prot_mol = oechem.OEGraphMol()
-    water_mol = oechem.OEGraphMol()
-    oth_mol = oechem.OEGraphMol()
-
-    # Make splitting split out covalent ligands
-    # TODO: look into different covalent-related options here
-    opts = oechem.OESplitMolComplexOptions()
-    opts.SetSplitCovalent(True)
-    opts.SetSplitCovalentCofactors(True)
-
-    # Select protein as all protein atoms in chain A or chain B
-    prot_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Protein
-    )
-    a_chain = oechem.OERoleMolComplexFilterFactory(
-        oechem.OEMolComplexChainRoleFactory("A")
-    )
-    b_chain = oechem.OERoleMolComplexFilterFactory(
-        oechem.OEMolComplexChainRoleFactory("B")
-    )
-    a_or_b_chain = oechem.OEOrRoleSet(a_chain, b_chain)
-    opts.SetProteinFilter(oechem.OEAndRoleSet(prot_only, a_or_b_chain))
-
-    # Select ligand as all residues with resn LIG
-    lig_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Ligand
-    )
-    if lig_chain is None:
-        opts.SetLigandFilter(lig_only)
-    else:
-        lig_chain = oechem.OERoleMolComplexFilterFactory(
-            oechem.OEMolComplexChainRoleFactory(lig_chain)
-        )
-        opts.SetLigandFilter(oechem.OEAndRoleSet(lig_only, lig_chain))
-
-    # Set water filter (keep all waters in A, B, or W chains)
-    #  (is this sufficient? are there other common water chain ids?)
-    wat_only = oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Water)
-    w_chain = oechem.OERoleMolComplexFilterFactory(
-        oechem.OEMolComplexChainRoleFactory("W")
-    )
-    all_wat_chains = oechem.OEOrRoleSet(a_or_b_chain, w_chain)
-    opts.SetWaterFilter(oechem.OEAndRoleSet(wat_only, all_wat_chains))
-
-    oechem.OESplitMolComplex(
-        lig_mol,
-        prot_mol,
-        water_mol,
-        oth_mol,
-        complex_mol,
-        opts,
-    )
-
-    prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
-
-    return {
-        "complex": complex_mol,
-        "lig": lig_mol,
-        "pro": prot_mol,
-        "water": water_mol,
-        "other": oth_mol,
-    }
-
-
-def get_ligand_rmsd_from_pdb_and_sdf(ref_path, mobile_path, fetch_docking_results=True):
-    """
-    TODO: This should be deprecated in favor of the functions in docking.analysis
-    Calculates the RMSD between a reference ligand from a PDB file and a mobile ligand from an SDF file.
-    If `fetch_docking_results` is True, additional docking results from the mobile ligand are returned as a dictionary.
-
-    Parameters
-    ----------
-    ref_path: str
-        Path to the reference PDB file containing the ligand.
-    mobile_path: str
-        Path to the SDF file containing the mobile ligand.
-    fetch_docking_results: bool, optional
-        If True, additional docking results from the mobile ligand are returned. Default is True.
-
-    Returns
-    -------
-    return_dict: dict
-        A dictionary with the following keys:
-            - 'rmsd': the RMSD between the reference and mobile ligands.
-            - 'posit': (if `fetch_docking_results` is True) the docking score from the mobile ligand's 'POSIT::Probability' SD tag.
-            - 'chemgauss': (if `fetch_docking_results` is True) the docking score from the mobile ligand's 'Chemgauss4' SD tag.
-    """
-    ref_pdb = load_openeye_pdb(ref_path)
-    ref = split_openeye_mol(ref_pdb)["lig"]
-    mobile = load_openeye_sdf(mobile_path)
-
-    for a in mobile.GetAtoms():
-        if a.GetAtomicNum() == 1:
-            mobile.DeleteAtom(a)
-
-    rmsd = oechem.OERMSD(ref, mobile)
-
-    return_dict = {"rmsd": rmsd}
-
-    if fetch_docking_results:
-        return_dict["posit"] = oechem.OEGetSDData(mobile, "POSIT::Probability")
-        return_dict["chemgauss"] = oechem.OEGetSDData(mobile, "Chemgauss4")
-
-    return return_dict
-
-
-def split_openeye_design_unit(du, lig=None, lig_title=None):
-    """
-    Parameters
-    ----------
-    du : oechem.OEDesignUnit
-        Design Unit to be saved
-
-    Returns
-    -------
-    lig : oechem.OEGraphMol
-        OE object containing ligand
-    protein : oechem.OEGraphMol
-        OE object containing only protein
-    complex : oechem.OEGraphMol
-        OE object containing ligand + protein
-    """
-    prot = oechem.OEGraphMol()
-    complex = oechem.OEGraphMol()
-    du.GetProtein(prot)
-    if not lig:
-        lig = oechem.OEGraphMol()
-        du.GetLigand(lig)
-
-    # Set ligand title, useful for the combined sdf file
-    if lig_title:
-        lig.SetTitle(f"{lig_title}")
-
-    # Give ligand atoms their own chain "L" and set the resname to "LIG"
-    residue = oechem.OEAtomGetResidue(next(iter(lig.GetAtoms())))
-    residue.SetChainID("L")
-    residue.SetName("LIG")
-    residue.SetHetAtom(True)
-    for atom in list(lig.GetAtoms()):
-        oechem.OEAtomSetResidue(atom, residue)
-
-    # Combine protein and ligand and save
-    # TODO: consider saving water as well
-    oechem.OEAddMols(complex, prot)
-    oechem.OEAddMols(complex, lig)
-
-    # Clean up PDB info by re-perceiving, perserving chain ID,
-    # residue number, and residue name
-    openeye_perceive_residues(prot)
-    return lig, prot, complex
-
-
-def save_receptor_grid(du_fn, out_fn):
+def save_receptor_grid(du_fn: Union[str, Path], out_fn: Union[str, Path]) -> Path:
     """
     Load in a design unit from a file and write out the receptor grid as a .ccp4 grid file.
     Parameters
     ----------
-    du_fn: str
+    du_fn: Union[str, Path]
         File name/path with the design units.
-    out_fn: str
+    out_fn: Union[str, Path]
         Works with a .ccp4 extension
 
     Returns
@@ -579,17 +494,19 @@ def save_receptor_grid(du_fn, out_fn):
 
     """
     du = oechem.OEDesignUnit()
-    oechem.OEReadDesignUnit(du_fn, du)
+    oechem.OEReadDesignUnit(str(du_fn), du)
     # oedocking.OEMakeReceptor(du)
     oegrid.OEWriteGrid(
-        out_fn,
+        str(out_fn),
         oegrid.OEScalarGrid(du.GetReceptor().GetNegativeImageGrid()),
     )
+
+    return Path(out_fn)
 
 
 def openeye_copy_pdb_data(
     source: oechem.OEGraphMol, destination: oechem.OEGraphMol, tag: str
-):
+) -> None:
     """
     Copy over the PDB data from one object to another. Tag examples include "SEQRES"
 
@@ -613,3 +530,228 @@ def openeye_copy_pdb_data(
     for data_pair in oechem.OEGetPDBDataPairs(source):
         if data_pair.GetTag() == tag:
             oechem.OEAddPDBData(destination, data_pair)
+
+
+def oemol_to_sdf_string(mol: oechem.OEMol) -> str:
+    """
+    Dumps an OpenEye OEMol to an SDF string
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+       OpenEye OEMol
+
+    Returns
+    -------
+    str
+       SDF string representation of the input OEMol
+    """
+    oms = oechem.oemolostream()
+    oms.SetFormat(oechem.OEFormat_SDF)
+    oms.openstring()
+    oechem.OEWriteMolecule(oms, mol)
+    molstring = oms.GetString().decode("UTF-8")
+    return molstring
+
+
+def sdf_string_to_oemol(sdf_str: str) -> oechem.OEGraphMol:
+    """
+    Loads an SDF string into an openeye molecule
+
+    Parameters
+    ----------
+    sdf_str: str
+       The string representation of an SDF file
+
+    Returns
+    -------
+    oechem.OEMol:
+       resulting OpenEye OEMol
+    """
+
+    ims = oechem.oemolistream()
+    ims.SetFormat(oechem.OEFormat_SDF)
+    ims.SetFlavor(
+        oechem.OEFormat_SDF,
+        oechem.OEIFlavor_SDF_Default,
+    )
+    ims.openstring(sdf_str)
+    # NOTE: must use GraphMol here, not OEMol, otherwise SD data will not be read
+    mol = oechem.OEGraphMol()
+    oechem.OEReadMolecule(ims, mol)
+    return mol
+
+
+def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
+    """
+    Loads a smiles string into an openeye molecule
+
+    Parameters
+    ----------
+    smiles: str
+       SMILES string
+
+    Returns
+    -------
+    oechem.OEGraphMol
+        resulting OpenEye OEGraphMol
+    """
+    mol = oechem.OEGraphMol()
+    oechem.OESmilesToMol(mol, smiles)
+    return mol
+
+
+def oemol_to_smiles(mol: oechem.OEMol) -> str:
+    """
+    Canonical SMILES string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       SMILES string of molecule
+    """
+    return oechem.OEMolToSmiles(mol)
+
+
+def oemol_to_inchi(mol: oechem.OEMol) -> str:
+    """
+    InChI string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       InChI string of molecule
+    """
+    return oechem.OECreateInChI(mol)
+
+
+def oemol_to_inchikey(mol: oechem.OEMol) -> str:
+    """
+    InChI key string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       InChI key string of molecule
+    """
+    return oechem.OECreateInChIKey(mol)
+
+
+def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
+    """
+    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data set
+    """
+    for key, value in data.items():
+        oechem.OESetSDData(mol, key, value)
+    return mol
+
+
+def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, Any]) -> oechem.OEMol:
+    """
+    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+    sets the SD tag to the repr of the value, so that re-reading the SD data with
+    ast.literal_eval in get_SD_data_to_object  give the same value
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data set
+    """
+    # NOTE: use repr to ensure re-reading the SD data will give the same value
+    mol = set_SD_data(mol, {k: repr(v) for k, v in data.items()})
+    return mol
+
+
+def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
+    """
+    Get all SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary of SD data
+    """
+    sd_data = {dp.GetTag(): dp.GetValue() for dp in oechem.OEGetSDDataPairs(mol)}
+    return sd_data
+
+
+def _get_SD_data_to_object(mol: oechem.OEMol) -> dict[str, Any]:
+    """
+    Get all SD data on an OpenEye OEMol, converting to Python objects
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary of SD data
+    """
+    import ast
+
+    sd_data = get_SD_data(mol)
+    for key, value in sd_data.items():
+        sd_data[key] = ast.literal_eval(value)
+    return sd_data
+
+
+def print_SD_data(mol: oechem.OEMol) -> None:
+    print("SD data of", mol.GetTitle())
+    # loop over SD data
+    for dp in oechem.OEGetSDDataPairs(mol):
+        print(dp.GetTag(), ":", dp.GetValue())
+
+
+def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
+    """
+    Clear all SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data cleared
+    """
+    oechem.OEClearSDData(mol)
+    return mol

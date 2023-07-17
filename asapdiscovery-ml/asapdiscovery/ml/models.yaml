@@ -14,9 +14,9 @@ gat_test_v0:
   # The weights key has the name of the weights file and the sha256 hash of the file.
   weights:
     # resource is the name of the file
-    resource: gat_example.pth
+    resource: gat_example_dgl1.1.pth
     # sha256hash is the sha256 hash of the file
-    sha256hash: 38e5476ede0ed67ad0951d5d1c7c913ecf0aeaa6a1913d16ee9dca28b5d9795b
+    sha256hash: 4294902bcfbf95224edf1003207de839cdd2893772973aacc2a7ecbeb277da76
   # The config key has the name of the config file and the sha256 hash of the file.
   # This key is optional
   config:
@@ -62,3 +62,17 @@ asapdiscovery-schnet-2023.04.29:
     resource: asapdiscovery-schnet-2023.04.29.th
     sha256hash: be13aeaea6c9d21dad7a82ee4a614999622e901b097a895144ee34a1ff8b5fba
   last_updated: 2023-04-29
+
+
+# Earlier models will not work with DGL >1.1 due to changes in their code
+# asapdiscovery-GAT-2023.05.09 model
+asapdiscovery-GAT-2023.05.09:
+  type: GAT
+  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/GAT/
+  weights:
+    resource: asapdiscovery-GAT-2023.05.09.th
+    sha256hash: 4294902bcfbf95224edf1003207de839cdd2893772973aacc2a7ecbeb277da76
+  config:
+    resource: asapdiscovery-GAT-config-2023.05.09.json
+    sha256hash: d0b4d6c1f74b3e9caacea50af6ff6927803143842a72e74ebc7dbefdb2bcf444
+  last_updated: 2023-05-09
