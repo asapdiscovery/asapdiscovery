@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union, Callable, Generator  # noqa: F401
+from typing import Any, Callable, Dict, Optional, Tuple, Union  # noqa: F401
+from collections.abc import Generator
 
 from pydantic import BaseModel, ByteSize
 

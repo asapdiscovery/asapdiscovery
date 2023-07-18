@@ -2,19 +2,17 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
 from asapdiscovery.data.openeye import (
-    oechem,
-    oemol_to_pdb_string,
-    pdb_string_to_oemol,
-    oedu_to_bytes64,
     bytes64_to_oedu,
     load_openeye_design_unit,
+    oechem,
+    oedu_to_bytes64,
+    oemol_to_pdb_string,
+    pdb_string_to_oemol,
     save_openeye_design_unit,
 )
 from pydantic import Field, root_validator
 
-
 from ..postera.manifold_data_validation import TargetTags
-
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
