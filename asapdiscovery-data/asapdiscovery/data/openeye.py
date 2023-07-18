@@ -867,4 +867,8 @@ def bytes_to_oedu(bytes: bytes) -> oechem.OEDesignUnit:
     oechem.OEDesignUnit
         resulting OpenEye DesignUnit
     """
-    return oechem.OEReadDesignUnitFromBytes(bytes)
+    du = oechem.OEDesignUnit()
+    retcode = oechem.OEReadDesignUnitFromBytes(du, bytes)
+    if not retcode:
+        oechem.OEThrow.Fatal("Cannot read DesignUnit from bytes")
+    return du

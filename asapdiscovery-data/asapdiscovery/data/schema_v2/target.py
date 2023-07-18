@@ -176,7 +176,6 @@ class PreppedTarget(DataModelAbstractBase):
     def from_oedu(
         cls, oedu: oechem.OEDesignUnit, target_name: Optional[str] = None, **kwargs
     ) -> "PreppedTarget":
-        # directly read in data
         oedu_bytes = oedu_to_bytes(oedu)
         return cls(data=oedu_bytes, target_name=target_name, **kwargs)
 
