@@ -126,6 +126,7 @@ def test_target_oemol_roundtrip_sars2(
 def test_preppedtarget_from_oedu_file(oedu):
     pt = PreppedTarget.from_oedu_file(oedu, "PreppedTargetTestName")
     oedu = pt.to_oedu()
+    assert oedu.GetTitle() == "(AB) > LIG(A-403)"  # from one of the old files
 
 
 def test_preppedtarget_from_oedu_file_at_least_one_id(oedu):
@@ -146,8 +147,10 @@ def test_prepped_target_from_oedu_file_bad_file():
 
 def test_prepped_target_from_oedu(oedu):
     loaded_oedu = load_openeye_design_unit(oedu)
+    loaded_oedu.SetTitle("PreppedTargetTestName")
     pt = PreppedTarget.from_oedu(loaded_oedu, "PreppedTargetTestName")
     oedu = pt.to_oedu()
+    assert oedu.GetTitle() == "PreppedTargetTestName"
 
 
 def test_prepped_target_from_oedu_file_roundtrip(oedu, tmp_path):

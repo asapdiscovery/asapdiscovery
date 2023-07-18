@@ -13,7 +13,7 @@ _SCHEMA_VERSION = "0.1.0"
 class DataStorageType(str, Enum):
     sdf = "sdf"
     pdb = "pdb"
-    oedu = "oedu"
+    b64oedu = "b64oedu"
 
 
 def read_file_directly(file: str | Path) -> str:
