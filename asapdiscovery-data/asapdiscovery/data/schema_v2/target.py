@@ -189,8 +189,7 @@ class PreppedTarget(DataModelAbstractBase):
         cls, oedu_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
     ) -> "PreppedTarget":
         oedu = load_openeye_design_unit(oedu_file)
-        oedu_bytes = oedu_to_bytes64(oedu)
-        return cls(data=oedu_bytes, target_name=target_name, **kwargs)
+        return cls.from_oedu(oedu=oedu, target_name=target_name, **kwargs)
 
     def to_oedu_file(self, filename: Union[str, Path]) -> None:
         oedu = self.to_oedu()
