@@ -1,4 +1,3 @@
-import json
 import os
 import pickle as pkl
 from functools import partial
@@ -711,10 +710,6 @@ def build_optimizer(model, config=None):
             weight_decay=weight_decay,
             dampening=dampening,
         )
-    elif optim_type == "adadelta":
-        optimizer = torch.optim.Adadelta(model.parameters(), lr=config["lr"])
-    elif optim_type == "adamw":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=config["lr"])
     else:
         raise ValueError(f"Unknown optimizer type: {optim_type}")
 
@@ -1399,7 +1394,9 @@ def train(
     save_file=None,
     lr=1e-4,
     start_epoch=0,
-    loss_dict=None,
+    train_loss=None,
+    val_loss=None,
+    test_loss=None,
     use_wandb=False,
     batch_size=1,
     optimizer=None,
@@ -1439,9 +1436,12 @@ def train(
     start_epoch : int, default=0
         Which epoch the training is starting on. This is used when restarting
         training to ensure the appropriate number of epochs is reached
-    loss_dict : dict, optional
-        Dict keeping track of preds/losses for each compound. Used if continuing a
-        previous training run
+    train_loss : list[float], default=None
+        List of train losses from previous epochs. Used when restarting training
+    val_loss : list[float], default=None
+        List of val losses from previous epochs. Used when restarting training
+    test_loss : list[float], default=None
+        List of test losses from previous epochs. Used when restarting training
     use_wandb : bool, default=False
         Log results with WandB
     batch_size : int, default=1
@@ -1475,18 +1475,12 @@ def train(
     if use_wandb:
         import wandb
 
-    # Dicts of compounds (one for each split) storing true label and
-    #  preds/losses per epoch
-    # eg:
-    # loss_dict["train"][compound_id: str] = {
-    #     "target": float,  # exp label
-    #     "in_range": float,  # exp is in assay range
-    #     "uncertainty": float,  # measurement uncertainty
-    #     "preds": list[float],  # list of model predictions (per epoch)
-    #     "losses": list[float],  # list of losses (per epoch)
-    # }
-    if not loss_dict:
-        loss_dict = {"train": {}, "val": {}, "test": {}}
+    if train_loss is None:
+        train_loss = []
+    if val_loss is None:
+        val_loss = []
+    if test_loss is None:
+        test_loss = []
 
     # Send model to desired device if it's not there already
     model = model.to(device)
@@ -1508,12 +1502,9 @@ def train(
     for epoch_idx in range(start_epoch, n_epochs):
         print(f"Epoch {epoch_idx}/{n_epochs}", flush=True)
         if epoch_idx % 10 == 0 and epoch_idx > 0:
-            train_loss = np.mean([v["losses"][-1] for v in loss_dict["train"].values()])
-            val_loss = np.mean([v["losses"][-1] for v in loss_dict["val"].values()])
-            test_loss = np.mean([v["losses"][-1] for v in loss_dict["test"].values()])
-            print(f"Training loss: {train_loss:0.5f}")
-            print(f"Validation loss: {val_loss:0.5f}")
-            print(f"Testing loss: {test_loss:0.5f}", flush=True)
+            print(f"Training error: {np.mean(train_loss[-1]):0.5f}")
+            print(f"Validation error: {np.mean(val_loss[-1]):0.5f}")
+            print(f"Testing error: {np.mean(test_loss[-1]):0.5f}", flush=True)
         tmp_loss = []
 
         # Initialize batch
@@ -1542,19 +1533,6 @@ def train(
             pred = model(pose).reshape(target.shape)
             loss = loss_fn(pred, target, in_range, uncertainty)
 
-            # Update loss_dict
-            try:
-                loss_dict["train"][compound_id]["preds"].append(pred.item())
-                loss_dict["train"][compound_id]["losses"].append(loss.item())
-            except KeyError:
-                loss_dict["train"][compound_id] = {
-                    "target": target.item(),
-                    "in_range": in_range.item(),
-                    "uncertainty": uncertainty.item(),
-                    "preds": [pred.item()],
-                    "losses": [loss.item()],
-                }
-
             # Keep track of loss for each sample
             tmp_loss.append(loss.item())
 
@@ -1582,6 +1560,7 @@ def train(
             optimizer.step()
         end_time = time()
 
+        train_loss.append(np.asarray(tmp_loss))
         epoch_train_loss = np.mean(tmp_loss)
 
         with torch.no_grad():
@@ -1606,21 +1585,8 @@ def train(
                 # Make prediction and calculate loss
                 pred = model(pose).reshape(target.shape)
                 loss = loss_fn(pred, target, in_range, uncertainty)
-
-                # Update loss_dict
-                try:
-                    loss_dict["val"][compound_id]["preds"].append(pred.item())
-                    loss_dict["val"][compound_id]["losses"].append(loss.item())
-                except KeyError:
-                    loss_dict["val"][compound_id] = {
-                        "target": target.item(),
-                        "in_range": in_range.item(),
-                        "uncertainty": uncertainty.item(),
-                        "preds": [pred.item()],
-                        "losses": [loss.item()],
-                    }
-
                 tmp_loss.append(loss.item())
+            val_loss.append(np.asarray(tmp_loss))
             epoch_val_loss = np.mean(tmp_loss)
 
             tmp_loss = []
@@ -1644,21 +1610,8 @@ def train(
                 # Make prediction and calculate loss
                 pred = model(pose).reshape(target.shape)
                 loss = loss_fn(pred, target, in_range, uncertainty)
-
-                # Update loss_dict
-                try:
-                    loss_dict["test"][compound_id]["preds"].append(pred.item())
-                    loss_dict["test"][compound_id]["losses"].append(loss.item())
-                except KeyError:
-                    loss_dict["test"][compound_id] = {
-                        "target": target.item(),
-                        "in_range": in_range.item(),
-                        "uncertainty": uncertainty.item(),
-                        "preds": [pred.item()],
-                        "losses": [loss.item()],
-                    }
-
                 tmp_loss.append(loss.item())
+            test_loss.append(np.asarray(tmp_loss))
             epoch_test_loss = np.mean(tmp_loss)
 
         if use_wandb:
@@ -1675,7 +1628,9 @@ def train(
             continue
         elif os.path.isdir(save_file):
             torch.save(model.state_dict(), f"{save_file}/{epoch_idx}.th")
-            json.dump(loss_dict, open(f"{save_file}/loss_dict.json", "w"))
+            pkl.dump(np.vstack(train_loss), open(f"{save_file}/train_err.pkl", "wb"))
+            pkl.dump(np.vstack(val_loss), open(f"{save_file}/val_err.pkl", "wb"))
+            pkl.dump(np.vstack(test_loss), open(f"{save_file}/test_err.pkl", "wb"))
         elif "{}" in save_file:
             torch.save(model.state_dict(), save_file.format(epoch_idx))
         else:
@@ -1724,4 +1679,9 @@ def train(
                 print(f"Stopping training after epoch {epoch_idx}", flush=True)
                 break
 
-    return (model, loss_dict)
+    return (
+        model,
+        np.vstack(train_loss),
+        np.vstack(val_loss),
+        np.vstack(test_loss),
+    )

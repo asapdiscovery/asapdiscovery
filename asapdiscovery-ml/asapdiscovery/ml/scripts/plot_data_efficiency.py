@@ -5,7 +5,6 @@ Input CSV must have the columns:
  * train_frac
 """
 import argparse
-import json
 import os
 import pickle as pkl
 from functools import partial
@@ -146,102 +145,6 @@ def losses_to_df(losses):
         all_labs.extend([lab] * len(loss_arr))
 
     return pandas.DataFrame({"split": all_labs, "loss": all_losses})
-
-
-def load_losses_dict(loss_dir, conv_function=None):
-    """
-    Load train, val, and test losses from `loss_dir`/loss_dict.json, converting as
-    necessary. Take loss from epoch with best original val loss.
-
-    Parameters
-    ----------
-    loss_dir : str
-        Directory containing pickle files
-    conv_function : callable, optional
-        If present, will use to convert mean absolute loss values
-
-    Returns
-    -------
-    pandas.DataFrame
-        DF with losses for the best idx across all splits
-    """
-    try:
-        loss_dict = json.load(open(f"{loss_dir}/loss_dict.json"))
-    except FileNotFoundError:
-        raise FileNotFoundError(f"No loss_dict.json file found in {loss_dir}")
-
-    # Load per-epoch losses for each molecule, and transpose so each row is an epoch and
-    #  each col is a molecule
-    all_losses = np.asarray(
-        [v["losses"] for d in loss_dict.values() for v in d.values()]
-    ).T
-    all_compound_ids = np.asarray(
-        [compound_id for d in loss_dict.values() for compound_id in d]
-    )
-    split_label_dict = {
-        compound_id: sp for sp, d in loss_dict.items() for compound_id in d
-    }
-
-    # Get best epoch idx from val set
-    val_arr = np.asarray([v["losses"] for v in loss_dict["val"].values()]).T
-    best_idx = np.argmin(val_arr.mean(axis=1))
-
-    # Build and rearrange DF
-    df = pandas.DataFrame(all_losses, columns=all_compound_ids)
-    df = df.reset_index().melt(
-        id_vars=["index"], var_name="compound_id", value_name="loss"
-    )
-    df["split"] = [split_label_dict[c] for c in df["compound_id"]]
-    df = df.rename(columns={"index": "epoch"})
-
-    # Take only best idx
-    df = df.loc[df["epoch"] == best_idx, :]
-
-    # Convert losses if desired
-    if conv_function:
-        df.loc[:, "loss"] = df["loss"].pow(0.5).apply(conv_function)
-
-    return df
-
-
-def load_all_losses_dict(in_df, rel_dir=None, conv_function=None):
-    """
-    Load all train, val, and test losses, and build DataFrame.
-
-    Parameters
-    ----------
-    in_df : pandas.DataFrame
-        DataFrame containing loss_dir, label, train_frac
-    rel_dir : str, optional
-        Directory to which all paths in in_df are relative to. If present, will be
-        prepended to each path
-    conv_function : callable, optional
-        If present, will use to convert mean absolute loss values
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame ready with losses, labels, and train fracs
-    """
-    # Parametrize load_losses function
-    load_losses_param = partial(load_losses_dict, conv_function=conv_function)
-
-    all_dfs = []
-    for _, r in in_df.iterrows():
-        # Set up directory
-        d = r["loss_dir"]
-        if rel_dir:
-            d = os.path.join(rel_dir, d)
-
-        # Build melted loss DF
-        df = load_losses_param(d)
-
-        for c in r.index:
-            df[c] = r[c]
-
-        all_dfs.append(df)
-
-    return pandas.concat(all_dfs, axis=0, ignore_index=True)
 
 
 def plot_data_efficiency(plot_df, out_fn, max_loss=None, conv=False):
