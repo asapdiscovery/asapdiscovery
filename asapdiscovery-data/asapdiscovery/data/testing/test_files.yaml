@@ -113,6 +113,10 @@ files:
   - resource: Mpro-P2660_0A_bound.pdb
     sha256hash: c7bdf1ba1d63bf65d813b1f1dc8b36b007f44627c6cba1f3f9bcc29c255f336d
 
+  # fragalysis SARS-2 PDB processed with openeye
+  - resource: Mpro-P2660_0A_bound_oe_processed.pdb
+    sha256hash: 29139a7f145af62cc6bc4636fb8e500aba672503eea4c68b27540d832ad34178
+
   # mers CIF1 biological assembly structure
   - resource: rcsb_8czv-assembly1.cif
     sha256hash: ec937cda078a4656a1a11815a555136a6670354d54c37fc966cc9ffca72740e5

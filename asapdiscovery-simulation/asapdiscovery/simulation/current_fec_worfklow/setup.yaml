@@ -1,0 +1,52 @@
+---
+# Parameters for manual COVID Moonshot setup scripts
+
+name: sulfonamides-retrospective
+
+# Path to fragalysis structures
+structures_path: /lila/data/chodera/asap-datasets/current/sars_00_fragalysis/
+# Path for Spruce-prepared receptors to create
+receptors_path: ./receptors
+# Spruce loop database
+# Created with loopdb_builder: https://docs.eyesopen.com/applications/spruce/loopdb_builder/loopdb_builder_example.html
+# Must download OpenEye applications package
+spruce_loop_database: /data/chodera/chodera/asap-perses-local/covid-moonshot-sulfonamides/fragalysis_spruce.loop_db
+
+# Source structures to model, with corresponding PostEra compound IDs of bound ligands
+source_structures:
+  - fragalysis_id: P272
+    postera_id: EDJ-MED-8BB691AF-8
+
+# Core SMARTS matches for docking
+# This accepts a hierarchy, starting with most specific
+core_smarts:
+  - "CC1CN(c2c3ccccc3cnc2)C(C14CN(CC)C(c5ccccc54)=O)=O"
+  - "CC1CN(c2c3ccccc3cnc2)C(C14CNC(c5ccccc54)=O)=O"
+  - "O=C1N(c2c3ccccc3cnc2)CCC14CNC(c5ccccc54)=O"
+
+# Which assembly states to use ['monomer', 'dimer']
+assembly_states:
+  - dimer
+
+# Retain X-ray waters in receptor
+retain_water: true
+
+# Mpro receptor protonation states to generate
+receptor_protonation_states:
+  - His41(0)-Cys145(0)-His163(0)
+#  - His41(+)-Cys145(-)-His163(0)
+#  - His41(0)-Cys145(0)-His163(+)
+#  - His41(+)-Cys145(-)-His163(+)
+
+# Molecules to dock
+expand_protonation_states: true # expand protonation and tautomeric states prior to docking
+molecules_path: ./molecules
+molecule_sets_to_dock:
+  - nc_ethers
+
+# Free energy calculations to run
+perses_yaml_template: template.yaml
+transformation_groups:
+  P272:
+    fragalysis_id: P272
+    molecule_set: nc_ethers
