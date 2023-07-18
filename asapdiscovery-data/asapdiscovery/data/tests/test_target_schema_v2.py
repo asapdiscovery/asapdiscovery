@@ -162,7 +162,7 @@ def test_prepped_target_from_oedu_file_roundtrip(oedu_file, tmp_path):
     assert pt.data_equal(pt2)
 
 
-def test_prepped_target_from_oedu_roundtrip(oedu_file, tmp_path):
+def test_prepped_target_from_oedu_roundtrip(oedu_file):
     pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     du = pt.to_oedu()
     pt2 = PreppedTarget.from_oedu(du, "PreppedTargetTestName")
@@ -171,7 +171,7 @@ def test_prepped_target_from_oedu_roundtrip(oedu_file, tmp_path):
     assert pt.data_equal(pt2)
 
 
-def test_prepped_target_json_roundtrip(oedu_file, tmp_path):
+def test_prepped_target_json_roundtrip(oedu_file):
     pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     js = pt.json()
     pt2 = PreppedTarget.from_json(js)
