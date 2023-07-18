@@ -2,7 +2,6 @@ from base64 import b64decode, b64encode
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union  # noqa: F401
 
-
 from openeye import (  # noqa: F401
     oechem,
     oedepict,
