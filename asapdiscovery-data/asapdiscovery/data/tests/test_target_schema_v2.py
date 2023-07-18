@@ -26,7 +26,7 @@ def sars2_spruced_pdb():
 
 
 @pytest.fixture(scope="session")
-def oedu():
+def oedu_file():
     oedu = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu")
     return oedu
 
@@ -122,20 +122,21 @@ def test_target_oemol_roundtrip_sars2(
 # PreppedTarget tests
 
 
-def test_preppedtarget_from_oedu_file(oedu):
-    pt = PreppedTarget.from_oedu_file(oedu, "PreppedTargetTestName")
+def test_preppedtarget_from_oedu_file(oedu_file):
+    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     oedu = pt.to_oedu()
     assert oedu.GetTitle() == "(AB) > LIG(A-403)"  # from one of the old files
 
 
-def test_preppedtarget_from_oedu_file_at_least_one_id(oedu):
+def test_preppedtarget_from_oedu_file_at_least_one_id(oedu_file):
     with pytest.raises(ValidationError):
         # neither id is set
-        PreppedTarget.from_oedu_file(oedu)
+        PreppedTarget.from_oedu_file(oedu_file)
 
 
-def test_preppedtarget_from_oedu_file_at_least_one_target_id(oedu):
-    _ = PreppedTarget.from_oedu_file(oedu, ids=TargetIdentifiers())
+def test_preppedtarget_from_oedu_file_at_least_one_target_id(oedu_file):
+    with pytest.raises(ValidationError):
+        _ = PreppedTarget.from_oedu_file(oedu_file, ids=TargetIdentifiers())
 
 
 def test_prepped_target_from_oedu_file_bad_file():
@@ -144,16 +145,16 @@ def test_prepped_target_from_oedu_file_bad_file():
         _ = PreppedTarget.from_oedu_file("bad_file", "PreppedTargetTestName")
 
 
-def test_prepped_target_from_oedu(oedu):
-    loaded_oedu = load_openeye_design_unit(oedu)
+def test_prepped_target_from_oedu(oedu_file):
+    loaded_oedu = load_openeye_design_unit(oedu_file)
     loaded_oedu.SetTitle("PreppedTargetTestName")
     pt = PreppedTarget.from_oedu(loaded_oedu, "PreppedTargetTestName")
     oedu = pt.to_oedu()
     assert oedu.GetTitle() == "PreppedTargetTestName"
 
 
-def test_prepped_target_from_oedu_file_roundtrip(oedu, tmp_path):
-    pt = PreppedTarget.from_oedu_file(oedu, "PreppedTargetTestName")
+def test_prepped_target_from_oedu_file_roundtrip(oedu_file, tmp_path):
+    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     pt.to_oedu_file(tmp_path / "test.oedu")
     pt2 = PreppedTarget.from_oedu_file(tmp_path / "test.oedu", "PreppedTargetTestName")
     # these two compatisons should be the same
@@ -161,10 +162,22 @@ def test_prepped_target_from_oedu_file_roundtrip(oedu, tmp_path):
     assert pt.data_equal(pt2)
 
 
-def test_prepped_target_from_oedu_roundtrip(oedu, tmp_path):
-    pt = PreppedTarget.from_oedu_file(oedu, "PreppedTargetTestName")
+def test_prepped_target_from_oedu_roundtrip(oedu_file, tmp_path):
+    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     du = pt.to_oedu()
     pt2 = PreppedTarget.from_oedu(du, "PreppedTargetTestName")
     # these two compatisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)
+
+
+
+def test_prepped_target_json_roundtrip(oedu_file, tmp_path):
+    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
+    js = pt.json()
+    pt2 = PreppedTarget.from_json(js)
+    # these two compatisons should be the same
+    assert pt == pt2
+    assert pt.data_equal(pt2)
+    du = pt.to_oedu()
+    assert du.GetTitle() == "(AB) > LIG(A-403)"
