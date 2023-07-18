@@ -1,5 +1,7 @@
+from base64 import b64decode, b64encode
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union  # noqa: F401
+
 
 from openeye import (  # noqa: F401
     oechem,
@@ -836,7 +838,7 @@ def pdb_string_to_oemol(pdb_str: str) -> oechem.OEGraphMol:
     return mol
 
 
-def oedu_to_bytes(oedu: oechem.OEDesignUnit) -> bytes:
+def oedu_to_bytes64(oedu: oechem.OEDesignUnit) -> bytes:
     """
     Convert an OpenEye DesignUnit to bytes
 
@@ -848,25 +850,29 @@ def oedu_to_bytes(oedu: oechem.OEDesignUnit) -> bytes:
     Returns
     -------
     bytes
-        bytes representation of the input DesignUnit
+        bytes representation of the input DesignUnit encoded in base64
     """
-    return oechem.OEWriteDesignUnitToBytes(oedu)
+    oedu_bytes = oechem.OEWriteDesignUnitToBytes(oedu)
+    # convert to base64
+    return b64encode(oedu_bytes)
 
 
-def bytes_to_oedu(bytes: bytes) -> oechem.OEDesignUnit:
+def bytes64_to_oedu(bytes: bytes) -> oechem.OEDesignUnit:
     """
     Convert bytes to an OpenEye DesignUnit
 
     Parameters
     ----------
     bytes: bytes
-        bytes representation of a DesignUnit
+        bytes representation of a DesignUnit encoded in base64
 
     Returns
     -------
     oechem.OEDesignUnit
         resulting OpenEye DesignUnit
     """
+    # convert from base64
+    bytes = b64decode(bytes)
     du = oechem.OEDesignUnit()
     retcode = oechem.OEReadDesignUnitFromBytes(du, bytes)
     if not retcode:

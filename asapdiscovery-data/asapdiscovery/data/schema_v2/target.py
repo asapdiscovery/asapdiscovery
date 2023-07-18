@@ -5,8 +5,8 @@ from asapdiscovery.data.openeye import (
     oechem,
     oemol_to_pdb_string,
     pdb_string_to_oemol,
-    oedu_to_bytes,
-    bytes_to_oedu,
+    oedu_to_bytes64,
+    bytes64_to_oedu,
     load_openeye_design_unit,
     save_openeye_design_unit,
 )
@@ -176,18 +176,18 @@ class PreppedTarget(DataModelAbstractBase):
     def from_oedu(
         cls, oedu: oechem.OEDesignUnit, target_name: Optional[str] = None, **kwargs
     ) -> "PreppedTarget":
-        oedu_bytes = oedu_to_bytes(oedu)
+        oedu_bytes = oedu_to_bytes64(oedu)
         return cls(data=oedu_bytes, target_name=target_name, **kwargs)
 
     def to_oedu(self) -> oechem.OEDesignUnit:
-        return bytes_to_oedu(self.data)
+        return bytes64_to_oedu(self.data)
 
     @classmethod
     def from_oedu_file(
         cls, oedu_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
     ) -> "PreppedTarget":
         oedu = load_openeye_design_unit(oedu_file)
-        oedu_bytes = oedu_to_bytes(oedu)
+        oedu_bytes = oedu_to_bytes64(oedu)
         return cls(data=oedu_bytes, target_name=target_name, **kwargs)
 
     def to_oedu_file(self, filename: Union[str, Path]) -> None:
