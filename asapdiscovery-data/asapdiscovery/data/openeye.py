@@ -453,6 +453,33 @@ def save_openeye_sdfs(mols, sdf_fn: Union[str, Path]) -> Path:
     return Path(sdf_fn)
 
 
+def save_openeye_design_unit(du: oechem.OEDesignUnit, du_fn: Union[str, Path]) -> Path:
+    """
+    Write an OpenEye design unit to a file
+    Parameters
+    ----------
+    du : oechem.OEDesignUnit
+        The OpenEye DesignUnit to write to the file.
+    du_fn : Union[str, Path]
+        The path of the DesignUnit file to create or overwrite.
+    Returns
+    -------
+    Path
+        The path of the DesignUnit file that was written.
+    Raises
+    ------
+    oechem.OEError
+        If the DesignUnit file cannot be opened.
+    Notes
+    -----
+    This function will overwrite any existing file with the same name as `du_fn`.
+    """
+    retcode = oechem.OEWriteDesignUnit(str(du_fn), du)
+    if not retcode:
+        oechem.OEThrow.Fatal(f"Unable to open {du_fn}")
+    return Path(du_fn)
+
+
 def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
     """
     Re-perceive the residues of a protein molecule using OpenEye's OEPerceiveResidues function,
@@ -807,3 +834,37 @@ def pdb_string_to_oemol(pdb_str: str) -> oechem.OEGraphMol:
     if not oechem.OEReadMolecule(ifs, mol):
         oechem.OEThrow.Fatal("Cannot read molecule")
     return mol
+
+
+def oedu_to_bytes(oedu: oechem.OEDesignUnit) -> bytes:
+    """
+    Convert an OpenEye DesignUnit to bytes
+
+    Parameters
+    ----------
+    oedu: oechem.OEDesignUnit
+        OpenEye DesignUnit
+
+    Returns
+    -------
+    bytes
+        bytes representation of the input DesignUnit
+    """
+    return oechem.OEWriteDesignUnitToBytes(oedu)
+
+
+def bytes_to_oedu(bytes: bytes) -> oechem.OEDesignUnit:
+    """
+    Convert bytes to an OpenEye DesignUnit
+
+    Parameters
+    ----------
+    bytes: bytes
+        bytes representation of a DesignUnit
+
+    Returns
+    -------
+    oechem.OEDesignUnit
+        resulting OpenEye DesignUnit
+    """
+    return oechem.OEReadDesignUnitFromBytes(bytes)
