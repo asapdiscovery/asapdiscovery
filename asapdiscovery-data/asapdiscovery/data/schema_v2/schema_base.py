@@ -7,10 +7,13 @@ from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
 from pydantic import BaseModel, ByteSize
 
+_SCHEMA_VERSION = "0.1.0"
+
 
 class DataStorageType(str, Enum):
     sdf = "sdf"
     pdb = "pdb"
+    oedu = "oedu"
 
 
 def read_file_directly(file: str | Path) -> str:
@@ -58,6 +61,9 @@ class DataModelAbstractBase(BaseModel):
 
     def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
+
+    def get_schema_version(self) -> str:
+        return _SCHEMA_VERSION
 
     # use data_equal instead
     def __eq__(self, other: DataModelAbstractBase) -> bool:
