@@ -1,7 +1,9 @@
 import pytest
-from asapdiscovery.data.schema_v2.dynamic_properties import TargetType
-from asapdiscovery.data.schema_v2.target import Target, TargetIdentifiers
+from asapdiscovery.data.schema_v2.target import Target, TargetIdentifiers, PreppedTarget
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+
+from asapdiscovery.data.openeye import load_openeye_design_unit
+from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")
@@ -24,15 +26,10 @@ def sars2_spruced_pdb():
     return pdb
 
 
-@pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
-def test_targettype_init(ttype):
-    tt = TargetType(ttype)
-    assert tt.value == ttype
-
-
-def test_targettype_init_bad_name():
-    with pytest.raises(ValueError):
-        _ = TargetType("bad_name")
+@pytest.fixture(scope="session")
+def oedu():
+    oedu = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu")
+    return oedu
 
 
 def test_target_from_pdb_at_least_one_id(moonshot_pdb):
@@ -47,17 +44,21 @@ def test_target_from_pdb_at_least_one_target_id(moonshot_pdb):
         Target.from_pdb(moonshot_pdb, ids=TargetIdentifiers())
 
 
-@pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
+@pytest.mark.parametrize(
+    "ttype", ["SARS-CoV-2-Mpro", "MERS-CoV-Mpro", "SARS-CoV-2-Mac1"]
+)
 def test_target_identifiers(ttype):
     ids = TargetIdentifiers(target_type=ttype, fragalysis_id="blah", pdb_code="blah")
-    assert ids.target_type == TargetType(ttype)
+    assert ids.target_type.value == ttype
     assert ids.fragalysis_id == "blah"
     assert ids.pdb_code == "blah"
 
 
 @pytest.mark.parametrize("pdb_code", ["ABCD", None])
 @pytest.mark.parametrize("fragalysis_id", ["Mpro-P2660", None])
-@pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
+@pytest.mark.parametrize(
+    "ttype", ["SARS-CoV-2-Mpro", "MERS-CoV-Mpro", "SARS-CoV-2-Mac1"]
+)
 @pytest.mark.parametrize("target_name", ["test_name"])
 def test_target_dict_roundtrip(
     moonshot_pdb, target_name, ttype, fragalysis_id, pdb_code
@@ -75,7 +76,9 @@ def test_target_dict_roundtrip(
 
 @pytest.mark.parametrize("pdb_code", ["ABCD", None])
 @pytest.mark.parametrize("fragalysis_id", ["Mpro-P2660", None])
-@pytest.mark.parametrize("ttype", ["sars2_mpro", "mers_mpro", "sars2_mac1"])
+@pytest.mark.parametrize(
+    "ttype", ["SARS-CoV-2-Mpro", "MERS-CoV-Mpro", "SARS-CoV-2-Mac1"]
+)
 @pytest.mark.parametrize("target_name", ["test_name"])
 def test_target_json_roundtrip(
     moonshot_pdb, target_name, ttype, fragalysis_id, pdb_code
@@ -99,7 +102,7 @@ def test_target_data_equal(moonshot_pdb):
     assert t1 == t2
 
 
-def test_oemol_roundtrip(
+def test_target_oemol_roundtrip(
     moonshot_pdb_processed,
 ):  # test that pre-processed pdb files can be read in and out consistently
     t1 = Target.from_pdb(moonshot_pdb_processed, "TargetTestName")
@@ -108,10 +111,58 @@ def test_oemol_roundtrip(
     assert t1 == t2
 
 
-def test_oemol_roundtrip_sars2(
+def test_target_oemol_roundtrip_sars2(
     sars2_spruced_pdb,
 ):  # test that a pdb file can be read in and out consistently via roundtrip through openeye
     t1 = Target.from_pdb(sars2_spruced_pdb, "TargetTestName")
     mol = t1.to_oemol()
     t2 = Target.from_oemol(mol, "TargetTestName")
     assert t1 == t2
+
+
+# PreppedTarget tests
+
+
+def test_preppedtarget_from_oedu_file(oedu):
+    pt = PreppedTarget.from_oedu_file(oedu, "PreppedTargetTestName")
+    oedu = pt.to_oedu()
+
+
+def test_preppedtarget_from_oedu_file_at_least_one_id(oedu):
+    with pytest.raises(ValidationError):
+        # neither id is set
+        PreppedTarget.from_oedu_file(oedu)
+
+
+def test_preppedtarget_from_oedu_file_at_least_one_target_id(oedu):
+    _ = PreppedTarget.from_oedu_file(oedu, ids=TargetIdentifiers())
+
+
+def test_prepped_target_from_oedu_file_bad_file():
+    with pytest.raises(FileNotFoundError):
+        # neither id is set
+        _ = PreppedTarget.from_oedu_file("bad_file", "PreppedTargetTestName")
+
+
+def test_prepped_target_from_oedu(oedu):
+    loaded_oedu = load_openeye_design_unit(oedu)
+    pt = PreppedTarget.from_oedu(loaded_oedu, "PreppedTargetTestName")
+    oedu = pt.to_oedu()
+
+
+def test_prepped_target_from_oedu_file_roundtrip(oedu, tmp_path):
+    pt = PreppedTarget.from_oedu_file(oedu, "PreppedTargetTestName")
+    pt.to_oedu_file(tmp_path / "test.oedu")
+    pt2 = PreppedTarget.from_oedu_file(tmp_path / "test.oedu", "PreppedTargetTestName")
+    # these two compatisons should be the same
+    assert pt == pt2
+    assert pt.data_equal(pt2)
+
+
+def test_prepped_target_from_oedu_roundtrip(oedu, tmp_path):
+    pt = PreppedTarget.from_oedu_file(oedu, "PreppedTargetTestName")
+    du = pt.to_oedu()
+    pt2 = PreppedTarget.from_oedu(du, "PreppedTargetTestName")
+    # these two compatisons should be the same
+    assert pt == pt2
+    assert pt.data_equal(pt2)

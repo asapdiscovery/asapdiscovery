@@ -50,7 +50,7 @@ class TargetIdentifiers(DataModelAbstractBase):
 
 class Target(DataModelAbstractBase):
     """
-    Schema for a Target
+    Schema for a Target, wrapper around a PDB file
     """
 
     target_name: str = Field(None, description="The name of the target")
@@ -140,6 +140,10 @@ class Target(DataModelAbstractBase):
 
 
 class PreppedTarget(DataModelAbstractBase):
+    """
+    Schema for a PreppedTarget, wrapper around an OpenEye Design Unit
+    """
+
     target_name: str = Field(None, description="The name of the target")
 
     ids: Optional[TargetIdentifiers] = Field(
@@ -149,11 +153,11 @@ class PreppedTarget(DataModelAbstractBase):
 
     data: bytes = Field(
         "",
-        description="OpenEye oedu file stored as a bytes object to hold internal data state",
+        description="OpenEye oedu file stored as a bytes object **encoded in base64** to hold internal data state",
         repr=False,
     )
     data_format: DataStorageType = Field(
-        DataStorageType.oedu,
+        DataStorageType.b64oedu,
         description="Enum describing the data storage method",
         allow_mutation=False,
     )
