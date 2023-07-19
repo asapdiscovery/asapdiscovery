@@ -52,6 +52,17 @@ def test_target_identifiers(ttype):
     assert ids.fragalysis_id == "blah"
     assert ids.pdb_code == "blah"
 
+@pytest.mark.parametrize(
+    "ttype", ["SARS-CoV-2-Mpro", "MERS-CoV-Mpro", "SARS-CoV-2-Mac1"]
+)
+def test_target_identifiers_json_file_roundtrip(ttype, tmp_path):
+    ids = TargetIdentifiers(target_type=ttype, fragalysis_id="blah", pdb_code="blah")
+    ids.to_json_file(tmp_path/"test.json")
+    ids2 = TargetIdentifiers.from_json_file(tmp_path/"test.json")
+    assert ids2.target_type.value == ttype
+    assert ids2.fragalysis_id == "blah"
+    assert ids2.pdb_code == "blah"
+
 
 @pytest.mark.parametrize("pdb_code", ["ABCD", None])
 @pytest.mark.parametrize("fragalysis_id", ["Mpro-P2660", None])
@@ -90,6 +101,28 @@ def test_target_json_roundtrip(
         ),
     )
     t2 = Target.from_json(t1.json())
+    assert t1 == t2
+
+
+@pytest.mark.parametrize("pdb_code", ["ABCD", None])
+@pytest.mark.parametrize("fragalysis_id", ["Mpro-P2660", None])
+@pytest.mark.parametrize(
+    "ttype", ["SARS-CoV-2-Mpro", "MERS-CoV-Mpro", "SARS-CoV-2-Mac1"]
+)
+@pytest.mark.parametrize("target_name", ["test_name"])
+def test_target_json_file_roundtrip(
+    moonshot_pdb, target_name, ttype, fragalysis_id, pdb_code, tmp_path
+):
+    t1 = Target.from_pdb(
+        moonshot_pdb,
+        target_name,
+        ids=TargetIdentifiers(
+            target_type=ttype, fragalysis_id=fragalysis_id, pdb_code=pdb_code
+        ),
+    )
+    path = tmp_path / "test.json"
+    t1.to_json_file(path)
+    t2 = Target.from_json_file(path)
     assert t1 == t2
 
 
@@ -179,4 +212,16 @@ def test_prepped_target_json_roundtrip(oedu_file):
     assert pt == pt2
     assert pt.data_equal(pt2)
     du = pt.to_oedu()
+    assert du.GetTitle() == "(AB) > LIG(A-403)"
+
+
+def test_prepped_target_json_fil_roundtrip(oedu_file, tmp_path):
+    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
+    path = tmp_path / "test.json"
+    pt.to_json_file(path)
+    pt2 = PreppedTarget.from_json_file(path)
+    # these two compatisons should be the same
+    assert pt == pt2
+    assert pt.data_equal(pt2)
+    du = pt2.to_oedu()
     assert du.GetTitle() == "(AB) > LIG(A-403)"
