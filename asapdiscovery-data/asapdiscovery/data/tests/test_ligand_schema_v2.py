@@ -223,39 +223,7 @@ def test_ligand_sdf_rountrip_data_only(
 @pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
 @pytest.mark.parametrize("compchem_id", [uuid4(), None])
 @pytest.mark.parametrize("compound_name", ["test_name"])
-def test_ligand_json_roundtrip(
-    moonshot_sdf,
-    compound_name,
-    compchem_id,
-    manifold_api_id,
-    manifold_vc_id,
-    moonshot_compound_id,
-    exp_data,
-):
-    l1 = Ligand.from_sdf(
-        moonshot_sdf,
-        compound_name=compound_name,
-        ids=LigandIdentifiers(
-            manifold_api_id=manifold_api_id,
-            manifold_vc_id=manifold_vc_id,
-            moonshot_compound_id=moonshot_compound_id,
-            compchem_id=compchem_id,
-        ),
-        experimental_data=exp_data,
-    )
-    l2 = Ligand.from_json(l1.json())
-    assert l1 == l2
-
-
-@pytest.mark.parametrize(
-    "exp_data", [ExperimentalCompoundData(compound_id="blah", smiles="CCCC"), None]
-)  # FIXME this should be forced to match
-@pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
-@pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
-@pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
-@pytest.mark.parametrize("compchem_id", [uuid4(), None])
-@pytest.mark.parametrize("compound_name", ["test_name"])
-def test_ligand_json_roundtrip(
+def test_ligand_json_file_roundtrip(
     moonshot_sdf,
     compound_name,
     compchem_id,
