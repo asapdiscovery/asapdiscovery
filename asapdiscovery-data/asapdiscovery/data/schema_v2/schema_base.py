@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from typing import Union
 from pathlib import Path
+from typing import Union
 
 from pydantic import BaseModel, ByteSize
 
@@ -52,10 +52,10 @@ class DataModelAbstractBase(BaseModel):
         return cls.parse_obj(json.loads(json_str))
 
     @classmethod
-    def from_json_file(cls, file: Union[str, Path]):
+    def from_json_file(cls, file: str | Path):
         return cls.parse_file(str(file))
 
-    def to_json_file(self, file: Union[str, Path]):
+    def to_json_file(self, file: str | Path):
         write_file_directly(file, self.json())
 
     @property

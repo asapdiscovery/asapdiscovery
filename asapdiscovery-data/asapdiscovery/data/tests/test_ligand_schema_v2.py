@@ -52,6 +52,7 @@ def test_ligand_ids_json_roundtrip():
     ids2 = LigandIdentifiers.from_json(ids.json())
     assert ids == ids2
 
+
 def test_ligand_ids_json_file_roundtrip(tmp_path):
     ids = LigandIdentifiers(
         manifold_api_id=uuid4(),
@@ -59,9 +60,10 @@ def test_ligand_ids_json_file_roundtrip(tmp_path):
         moonshot_compound_id="test_moonshot_compound_id",
         compchem_id=uuid4(),
     )
-    ids.to_json_file(tmp_path/"test.json")
-    ids2 = LigandIdentifiers.from_json_file(tmp_path/"test.json")
+    ids.to_json_file(tmp_path / "test.json")
+    ids2 = LigandIdentifiers.from_json_file(tmp_path / "test.json")
     assert ids == ids2
+
 
 def test_ligand_from_sdf(moonshot_sdf):
     lig = Ligand.from_sdf(moonshot_sdf, compound_name="test_name")
@@ -244,6 +246,7 @@ def test_ligand_json_roundtrip(
     l2 = Ligand.from_json(l1.json())
     assert l1 == l2
 
+
 @pytest.mark.parametrize(
     "exp_data", [ExperimentalCompoundData(compound_id="blah", smiles="CCCC"), None]
 )  # FIXME this should be forced to match
@@ -276,7 +279,6 @@ def test_ligand_json_roundtrip(
     l1.to_json_file(tmp_path / "test.json")
     l2 = Ligand.from_json_file(tmp_path / "test.json")
     assert l1 == l2
-
 
 
 def test_ligand_oemol_rountrip(moonshot_sdf):

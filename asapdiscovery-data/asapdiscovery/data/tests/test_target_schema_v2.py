@@ -52,13 +52,14 @@ def test_target_identifiers(ttype):
     assert ids.fragalysis_id == "blah"
     assert ids.pdb_code == "blah"
 
+
 @pytest.mark.parametrize(
     "ttype", ["SARS-CoV-2-Mpro", "MERS-CoV-Mpro", "SARS-CoV-2-Mac1"]
 )
 def test_target_identifiers_json_file_roundtrip(ttype, tmp_path):
     ids = TargetIdentifiers(target_type=ttype, fragalysis_id="blah", pdb_code="blah")
-    ids.to_json_file(tmp_path/"test.json")
-    ids2 = TargetIdentifiers.from_json_file(tmp_path/"test.json")
+    ids.to_json_file(tmp_path / "test.json")
+    ids2 = TargetIdentifiers.from_json_file(tmp_path / "test.json")
     assert ids2.target_type.value == ttype
     assert ids2.fragalysis_id == "blah"
     assert ids2.pdb_code == "blah"
