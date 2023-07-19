@@ -148,7 +148,7 @@ def losses_to_df(losses):
     return pandas.DataFrame({"split": all_labs, "loss": all_losses})
 
 
-def load_losses_dict(loss_dir, conv_function=None):
+def load_losses_dict(loss_dir, conv_function=None, take_best=True):
     """
     Load train, val, and test losses from `loss_dir`/loss_dict.json, converting as
     necessary. Take loss from epoch with best original val loss.
@@ -182,10 +182,6 @@ def load_losses_dict(loss_dir, conv_function=None):
         compound_id: sp for sp, d in loss_dict.items() for compound_id in d
     }
 
-    # Get best epoch idx from val set
-    val_arr = np.asarray([v["losses"] for v in loss_dict["val"].values()]).T
-    best_idx = np.argmin(val_arr.mean(axis=1))
-
     # Build and rearrange DF
     df = pandas.DataFrame(all_losses, columns=all_compound_ids)
     df = df.reset_index().melt(
@@ -195,7 +191,11 @@ def load_losses_dict(loss_dir, conv_function=None):
     df = df.rename(columns={"index": "epoch"})
 
     # Take only best idx
-    df = df.loc[df["epoch"] == best_idx, :]
+    if take_best:
+        # Get best epoch idx from val set
+        val_arr = np.asarray([v["losses"] for v in loss_dict["val"].values()]).T
+        best_idx = np.argmin(val_arr.mean(axis=1))
+        df = df.loc[df["epoch"] == best_idx, :]
 
     # Convert losses if desired
     if conv_function:
@@ -204,7 +204,7 @@ def load_losses_dict(loss_dir, conv_function=None):
     return df
 
 
-def load_all_losses_dict(in_df, rel_dir=None, conv_function=None):
+def load_all_losses_dict(in_df, rel_dir=None, conv_function=None, take_best=True):
     """
     Load all train, val, and test losses, and build DataFrame.
 
@@ -224,7 +224,9 @@ def load_all_losses_dict(in_df, rel_dir=None, conv_function=None):
         DataFrame ready with losses, labels, and train fracs
     """
     # Parametrize load_losses function
-    load_losses_param = partial(load_losses_dict, conv_function=conv_function)
+    load_losses_param = partial(
+        load_losses_dict, conv_function=conv_function, take_best=take_best
+    )
 
     all_dfs = []
     for _, r in in_df.iterrows():
