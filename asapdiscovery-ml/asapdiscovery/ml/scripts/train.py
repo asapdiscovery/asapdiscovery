@@ -692,6 +692,7 @@ def init(args, rank=False):
         optimizer,
         es,
         exp_configure,
+        model_dir,
     )
 
 
@@ -707,6 +708,7 @@ def main():
         optimizer,
         es,
         exp_configure,
+        model_dir,
     ) = init(args)
 
     # Load model weights as necessary
