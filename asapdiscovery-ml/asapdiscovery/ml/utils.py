@@ -714,7 +714,17 @@ def build_optimizer(model, config=None):
     elif optim_type == "adadelta":
         optimizer = torch.optim.Adadelta(model.parameters(), lr=config["lr"])
     elif optim_type == "adamw":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=config["lr"])
+        # Defaults from torch if not present in config
+        b1 = config["b1"] if "b1" in config else 0.9
+        b2 = config["b2"] if "b2" in config else 0.999
+        weight_decay = config["weight_decay"] if "weight_decay" in config else 0.01
+
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=config["lr"],
+            betas=(b1, b2),
+            weight_decay=weight_decay,
+        )
     else:
         raise ValueError(f"Unknown optimizer type: {optim_type}")
 
