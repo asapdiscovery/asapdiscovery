@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.dataviz.gif_viz import HTMLVisualizer
+from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.dataviz.viz_targets import VizTargets
 
 parser = argparse.ArgumentParser(description="Turn a trajectory into a GIF")
@@ -60,6 +60,11 @@ def main():
     logger.info(f"Output file: {out}")
 
     html_visualizer = HTMLVisualizer(
+        poses=[str(pose)],
+        output_paths=[out],
+        target=args.viz_target,
+        protein= protein,
+        logger=logger,
         
     )
     html_visualizer.write_pose_visualizations()

@@ -91,7 +91,7 @@ class GIFVisualizer:
         self.pocket_dict = getattr(GIFBlockData, f"pocket_dict_{target_name}")
 
         # color dict uses protein name eg Mpro
-        protein_name = VizTargets.get_protein_name(self.targe, underscore=True)
+        protein_name = VizTargets.get_protein_name(self.target, underscore=True)
         self.color_dict = getattr(GIFBlockData, f"color_dict_{protein_name}")
 
         self.trajectories = []
