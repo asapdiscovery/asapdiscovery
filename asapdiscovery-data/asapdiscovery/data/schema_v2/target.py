@@ -168,7 +168,7 @@ class PreppedTarget(DataModelAbstractBase):
         compound_name = v.get("target_name")
         # check if all the identifiers are None
         if compound_name is None:
-            if ids is None or all([not v for v in ids.dict().values()]):
+            if ids is None or all([not v for v in schema_dict_get_val_overload(ids)]):
                 raise ValueError(
                     "At least one identifier must be provide, or target_name must be provided"
                 )
