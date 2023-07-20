@@ -424,6 +424,8 @@ def init(args, rank=False):
 
     # Parse model config
     if args.sweep and args.config:
+        import wandb
+
         # Get both configs
         sweep_config = dict(wandb.config)
         model_config = parse_config(args.config)
@@ -433,6 +435,8 @@ def init(args, rank=False):
     elif args.config:
         model_config = parse_config(args.config)
     elif args.sweep:
+        import wandb
+
         model_config = dict(wandb.config)
     else:
         model_config = {}
@@ -531,6 +535,8 @@ def init(args, rank=False):
     )
 
     if args.sweep or args.wandb:
+        import wandb
+
         # Log dataset splits
         for name, split in zip(["train", "val", "test"], [ds_train, ds_val, ds_test]):
             table = make_wandb_table(split)
@@ -763,6 +769,8 @@ def main():
 
     # Update wandb config before starting training
     if args.sweep or args.wandb:
+        import wandb
+
         wandb.config.update(exp_configure, allow_val_change=True)
 
     # Train the model
@@ -786,6 +794,8 @@ def main():
     )
 
     if args.wandb or args.sweep:
+        import wandb
+
         wandb.finish()
 
     # Save model weights
