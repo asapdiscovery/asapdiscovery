@@ -191,7 +191,7 @@ def test_prepped_target_from_oedu_file_roundtrip(oedu_file, tmp_path):
     pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     pt.to_oedu_file(tmp_path / "test.oedu")
     pt2 = PreppedTarget.from_oedu_file(tmp_path / "test.oedu", "PreppedTargetTestName")
-    # these two compatisons should be the same
+    # these two comparisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)
 
@@ -200,7 +200,7 @@ def test_prepped_target_from_oedu_roundtrip(oedu_file):
     pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     du = pt.to_oedu()
     pt2 = PreppedTarget.from_oedu(du, "PreppedTargetTestName")
-    # these two compatisons should be the same
+    # these two comparisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)
 
@@ -209,19 +209,19 @@ def test_prepped_target_json_roundtrip(oedu_file):
     pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     js = pt.json()
     pt2 = PreppedTarget.from_json(js)
-    # these two compatisons should be the same
+    # these two comparisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)
-    du = pt.to_oedu()
+    du = pt2.to_oedu()
     assert du.GetTitle() == "(AB) > LIG(A-403)"
 
 
-def test_prepped_target_json_fil_roundtrip(oedu_file, tmp_path):
+def test_prepped_target_json_file_roundtrip(oedu_file, tmp_path):
     pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
     path = tmp_path / "test.json"
     pt.to_json_file(path)
     pt2 = PreppedTarget.from_json_file(path)
-    # these two compatisons should be the same
+    # these two comparisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)
     du = pt2.to_oedu()
