@@ -146,20 +146,46 @@ def make_wandb_table(ds_split):
 def wandb_init(
     project_name,
     run_name,
-    exp_configure,
-    ds_splits,
-    ds_split_labels=["train", "val", "test"],
+    sweep,
+    cont,
+    exp_configure=None,
 ):
     import wandb
 
-    run = wandb.init(project=project_name, config=exp_configure, name=run_name)
+    if sweep:
+        run_id = wandb.init().id
+    else:
+        run_id_fn = os.path.join(args.model_o, "run_id")
 
-    # Log dataset splits
-    for name, split in zip(ds_split_labels, ds_splits):
-        table = make_wandb_table(split)
-        wandb.log({f"dataset_splits/{name}": table})
+        if cont:
+            # Load run_id to continue from file
+            # First make sure the file exists
+            try:
+                run_id = open(run_id_fn).read().strip()
+            except FileNotFoundError:
+                raise FileNotFoundError("Couldn't find run_id file to continue run.")
+            # Make sure the run_id is legit
+            try:
+                run = wandb.init(project=project_name, id=run_id, resume="must")
+            except wandb.errors.UsageError:
+                raise wandb.errors.UsageError(
+                    f"Run in run_id file ({run_id}) doesn't exist"
+                )
+            # Update run config to reflect it's been resumed
+            wandb.config.update(
+                {"continue": True},
+                allow_val_change=True,
+            )
+        else:
+            # Start new run
+            run_id = wandb.init(
+                project=project_name, config=exp_configure, name=run_name
+            ).id
+            # Save run_id in case we want to continue later
+            with open(run_id_fn, "w") as fp:
+                fp.write(run_id)
 
-    return run.id
+    return run_id
 
 
 ########################################
@@ -386,11 +412,18 @@ def init(args, rank=False):
     Initialization steps that are common to all analyses.
     """
 
+    # Start wandb
+    if args.sweep or args.wandb:
+        run_id = wandb_init(args.proj, args.name, args.sweep, args.cont)
+        model_dir = os.path.join(args.model_o, run_id)
+    else:
+        model_dir = args.model_o
+
+    # Make output dir if necessary
+    os.makedirs(model_dir, exist_ok=True)
+
     # Parse model config file
     if args.sweep:
-        import wandb
-
-        wandb.init()
         model_config = dict(wandb.config)
         print("Using wandb config.", flush=True)
     elif args.config:
@@ -484,6 +517,12 @@ def init(args, rank=False):
         test_frac=args.te_frac,
         rand_seed=(None if args.rand_seed else args.ds_seed),
     )
+
+    if args.sweep or args.wandb:
+        # Log dataset splits
+        for name, split in zip(["train", "val", "test"], [ds_train, ds_val, ds_test]):
+            table = make_wandb_table(split)
+            wandb.log({f"dataset_splits/{name}": table})
 
     # Need to augment the datasets if using e3nn
     if args.model.lower() == "e3nn":
@@ -710,57 +749,9 @@ def main():
             {a.split(",")[0]: a.split(",")[1] for a in args.extra_config}
         )
 
-    # Start wandb
-    if args.sweep:
-        import wandb
-
-        r = wandb.init()
-        model_dir = os.path.join(args.model_o, r.id)
-
-        # Log dataset splits
-        for name, split in zip(["train", "val", "test"], [ds_train, ds_val, ds_test]):
-            table = make_wandb_table(split)
-            wandb.log({f"dataset_splits/{name}": table})
-    elif args.wandb:
-        import wandb
-
-        run_id_fn = os.path.join(args.model_o, "run_id")
-        if args.proj:
-            project_name = args.proj
-        else:
-            project_name = f"train-{args.model}"
-
-        # Get project name
-        if args.proj:
-            project_name = args.proj
-        else:
-            project_name = f"train-{args.model}"
-
-        # Load run_id to resume run
-        if args.cont:
-            run_id = open(run_id_fn).read().strip()
-            wandb.init(project=project_name, id=run_id, resume="must")
-            wandb.config.update(
-                {"continue": True},
-                allow_val_change=True,
-            )
-        else:
-            # Get project name
-            run_id = wandb_init(
-                project_name,
-                args.name,
-                exp_configure,
-                [ds_train, ds_val, ds_test],
-            )
-            if args.model_o:
-                with open(os.path.join(args.model_o, "run_id"), "w") as fp:
-                    fp.write(run_id)
-        model_dir = os.path.join(args.model_o, run_id)
-    else:
-        model_dir = args.model_o
-
-    # Make output dir if necessary
-    os.makedirs(model_dir, exist_ok=True)
+    # Update wandb config before starting training
+    if args.sweep or args.wandb:
+        wandb.config.update(exp_configure, allow_val_change=True)
 
     # Train the model
     model, loss_dict = train(
