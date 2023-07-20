@@ -258,13 +258,18 @@ class GIFVisualizer:
         if self.pse:
             p.cmd.save(str(parent_path / "session_4_loaded_trajectory.pse"))
 
-        self.logger.info("Intrafitting simulation...")
-        p.cmd.intra_fit("binding_site")
+        # center the system to the minimized structure
+        # reload
+        complex_name_min = "complex_min"
+        p.cmd.load(str(system), object=complex_name_min)
+
+        self.logger.info("Aligning simulation...")
+        p.cmd.align(complex_name, complex_name_min)
         if self.smooth:
             p.cmd.smooth(
                 "all", window=int(self.smooth)
             )  # perform some smoothing of frames
-
+        p.cmd.delete(complex_name_min)
         if self.contacts:
             self.logger.info("Showing contacts...")
             show_contacts(p, "ligand", "receptor")
@@ -376,14 +381,18 @@ def add_gif_progress_bar(
         # load the image.
         img = Image.open(filename)
         draw = ImageDraw.Draw(img, "RGBA")
+        # make the background opaque white
+        img2 = Image.new("RGBA", img.size, "WHITE")
+        img2.paste(img, mask=img)
+        draw = ImageDraw.Draw(img2, "RGBA")
 
         # get its dimensions (need these for coords); calculate progress bar width at this frame.
         width, height = img.size
+        width, height = img2.size
         bar_width = frame_num / total_frames * width
 
         # draw the progress bar for this frame (black, fully opaque).
         draw.rectangle(((0, height - 20), (bar_width, height)), fill=(0, 0, 0, 500))
-
         # draw the text that shows time progression.
         draw.text(
             (width - 125, height - 10),
@@ -397,4 +406,4 @@ def add_gif_progress_bar(
         )  # align to RHS; this way if value increases it will grow into frame.
 
         # save the image.
-        img.save(filename)
+        img2.save(filename)
