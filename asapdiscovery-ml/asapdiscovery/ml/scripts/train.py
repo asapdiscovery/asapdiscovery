@@ -422,12 +422,18 @@ def init(args, rank=False):
     # Make output dir if necessary
     os.makedirs(model_dir, exist_ok=True)
 
-    # Parse model config file
-    if args.sweep:
-        model_config = dict(wandb.config)
-        print("Using wandb config.", flush=True)
+    # Parse model config
+    if args.sweep and args.config:
+        # Get both configs
+        sweep_config = dict(wandb.config)
+        model_config = parse_config(args.config)
+
+        # Sweep config overrules CLI config
+        model_config.update(sweep_config)
     elif args.config:
         model_config = parse_config(args.config)
+    elif args.sweep:
+        model_config = dict(wandb.config)
     else:
         model_config = {}
     print("Using model config:", model_config, flush=True)
