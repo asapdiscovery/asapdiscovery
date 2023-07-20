@@ -10,6 +10,6 @@ class VizTargets(Enum):
     viz_272_mpro = "272_mpro"
     viz_sars2_mac1 = "sars2_mac1"
 
-    @staticmethod
-    def get_allowed_targets() -> list[str]:
-        return [t.value for t in VizTargets]
+    @classmethod
+    def get_allowed_targets(cls) -> list[str]:
+        return [t.value for t in cls]
