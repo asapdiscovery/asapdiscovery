@@ -493,6 +493,12 @@ def init(args, rank=False):
         all_fns = []
         compounds = []
 
+    # Set cache_fn for GAT model if not already given
+    if (args.model.lower() == "gat") and (not args.cache):
+        cache_fn = os.path.join(model_dir, "graph.bin")
+    else:
+        cache_fn = args.cache
+
     # Load full dataset
     ds, exp_data = build_dataset(
         model_type=args.model,
@@ -500,7 +506,7 @@ def init(args, rank=False):
         all_fns=all_fns,
         compounds=compounds,
         achiral=args.achiral,
-        cache_fn=args.cache,
+        cache_fn=cache_fn,
         grouped=args.grouped,
         lig_name=args.n,
         num_workers=args.w,
