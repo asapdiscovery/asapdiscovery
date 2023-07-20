@@ -111,6 +111,27 @@ view_coords_sars2_mac1 = (
     -20.000000000,
 )
 
+view_coords_sars2_mac1_monomer = (
+    0.088525243,
+    0.968614519,
+    0.232240111,
+    -0.460261583,
+    0.246554896,
+    -0.852860034,
+    -0.883353055,
+    -0.031390585,
+    0.467653960,
+    0.000071935,
+    -0.000032585,
+    -91.646080017,
+    2.006669521,
+    -8.887639046,
+    14.542367935,
+    64.035736084,
+    119.277297974,
+    -20.000000000,
+)
+
 # set colorings of subpockets by resn. This may change over time.,
 # first define the residues that span the subpockets
 # SARS2
