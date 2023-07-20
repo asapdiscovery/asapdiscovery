@@ -5,18 +5,7 @@ from typing import List, Optional, Union  # noqa: F401
 from asapdiscovery.data.logging import FileLogger
 from rdkit import Chem
 
-from ._html_blocks import (
-    colour_7ene_mpro,
-    colour_mers_mpro,
-    colour_sars2_mac1,
-    colour_sars2_mpro,
-    make_core_html,
-    orient_tail_7ene_mpro,
-    orient_tail_272_mpro,
-    orient_tail_mers_mpro,
-    orient_tail_sars2_mac1,
-    orient_tail_sars2_mpro,
-)
+from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
 
 
@@ -155,17 +144,11 @@ class HTMLVisualizer:
         """
         Get HTML footer for pose visualization
         """
-        if self.target == "sars2_mpro":
-            return colour_sars2_mpro + orient_tail_sars2_mpro
-        elif self.target == "mers_mpro":
-            return colour_mers_mpro + orient_tail_mers_mpro
-        elif self.target == "7ene_mpro":
-            return colour_7ene_mpro + orient_tail_7ene_mpro
-        elif self.target == "272_mpro":
-            return colour_mers_mpro + orient_tail_272_mpro
-        elif self.target == "sars2_mac1":
-            return colour_sars2_mac1 + orient_tail_sars2_mac1
-        else:
-            raise ValueError(
-                f"Target {self.target} does not have an HTML visualiser element implemented."
-            )
+        # colour uses target name
+        protein_name = VizTargets.get_target_name(self.target, underscore=True)
+        colour =  getattr(HTMLBlockData, f"colour_{protein_name}")
+        
+        # orient uses full name 
+        orient_tail = getattr(HTMLBlockData, f"orient_tail_{self.target}")
+
+        return colour + orient_tail
