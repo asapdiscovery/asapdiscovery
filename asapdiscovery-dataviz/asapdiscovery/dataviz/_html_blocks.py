@@ -1,4 +1,19 @@
-# Description: HTML blocks for the visualisations in asapdiscovery/dataviz/html_vis.py
+"""
+HTML blocks for visualising poses.
+
+The most important part of this is getting the correct orientation of the pose with the "orient_tail" block.
+To get the values for this run the following in a jupyter notbook with nglview installed:
+
+import nglview as nv
+view = nglview.show_structure_file("<>.pdb")
+
+# orient the view as you want it
+
+view._camera_orientation
+
+# copy the output and paste it into the relevant orient_tail block below as the value for the Matrix4.fromArray() call.
+
+"""
 
 
 def _indent(indent_me: str) -> str:
