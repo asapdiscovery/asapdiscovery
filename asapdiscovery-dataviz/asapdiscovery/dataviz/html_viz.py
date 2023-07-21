@@ -9,8 +9,8 @@ from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
 
 
-def _load_first_molecule(file_path: Path):
-    mols = Chem.SDMolSupplier(file_path)
+def _load_first_molecule(file_path: Union[Path, str]):
+    mols = Chem.SDMolSupplier(str(file_path))
     return mols[0]
 
 
