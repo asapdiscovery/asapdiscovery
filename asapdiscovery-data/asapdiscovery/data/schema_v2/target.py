@@ -12,7 +12,7 @@ from asapdiscovery.data.openeye import (
 )
 from pydantic import Field, root_validator
 
-from ..postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
