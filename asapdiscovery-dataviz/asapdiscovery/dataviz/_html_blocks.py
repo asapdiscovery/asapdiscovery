@@ -13,6 +13,8 @@ view._camera_orientation
 
 # copy the output and paste it into the relevant orient_tail block below as the value for the Matrix4.fromArray() call.
 
+
+TODO: Make these load from a YAML file.
 """
 
 
