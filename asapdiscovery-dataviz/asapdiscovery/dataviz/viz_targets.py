@@ -37,7 +37,7 @@ class VizTargets(Enum):
     @classmethod
     def get_name_underscore(cls, target: str) -> str:
         t = target.replace("-", "_")
-        if not t in [v.replace("-", "_") for v in cls.get_allowed_targets()]:
+        if t not in [v.replace("-", "_") for v in cls.get_allowed_targets()]:
             raise ValueError(
                 f"Target {target} not in allowed targets: {cls.get_allowed_targets()}"
             )
