@@ -125,6 +125,15 @@ function loadmike_combined (protein) {
 
 </script> """
 
+    orient_tail_SARS_CoV_2_Mac1_monomer = """\
+    //orient
+    stage.viewerControls.orient((new NGL.Matrix4).fromArray([-23.219745442858454, 55.838006663099, -28.902925722905522, 0, 40.964266876161005, 36.80909548255832, 38.20259167828506, 0, 47.69896165275294, -4.430144865672009, -46.878583122804734, 0, 1.8491380487657036, 13.741344709971262, -10.428263568518318, 1]));
+    stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 308.4343490600586, clipNear: -308.38341522216797
+}
+
+
+</script> """
+
     colour_MERS_CoV_Mpro = """\
         // Define the binding pocket.
         const data = {

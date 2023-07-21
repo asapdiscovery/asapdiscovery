@@ -15,6 +15,7 @@ class GIFVisualizer:
     """
     Class for generating GIF visualizations of MD trajectories.
     """
+
     allowed_targets = VizTargets.get_allowed_targets()
 
     # TODO: replace input with a schema rather than paths.
@@ -256,7 +257,7 @@ class GIFVisualizer:
             show_contacts(p, "ligand", "receptor")
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
-        # p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand
+        # p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand, this can move the view around a
 
         # turn on depth cueing
         p.cmd.set("depth_cue", 1)
