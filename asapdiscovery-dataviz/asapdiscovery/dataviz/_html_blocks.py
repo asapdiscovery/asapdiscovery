@@ -2,18 +2,19 @@
 
 
 def _indent(indent_me: str) -> str:
-        return indent_me.replace("\n", "\n" + "    ")
+    return indent_me.replace("\n", "\n" + "    ")
+
 
 def _vis_core(pdb_body: str) -> str:
-        core = f"""<script type="text/javascript">
+    core = f"""<script type="text/javascript">
     var mike_combined =     `{_indent(pdb_body)}
         `.replace(/^ +/gm, '');
 
 </script>
 
 
-    """
-        return core
+"""
+    return core
 
 def make_core_html(pdb_body: str) -> str:
     return HTMLBlockData.visualisation_header + _vis_core(pdb_body) + HTMLBlockData.visualisation_tail
@@ -27,21 +28,24 @@ class HTMLBlockData:
 <div id="viewport"
 role="NGL"
 data-proteins='[{
-"type": "data", "value": "mike_combined", "isVariable": true, "loadFx": "loadmike_combined"
+   "type": "data", "value": "mike_combined", "isVariable": true, "loadFx": "loadmike_combined"
 }]'
 data-backgroundcolor="white"></div>
 <script type="text/javascript">document.getElementById("blue").style.color = "blue";</script>
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"
-            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-            crossorigin="anonymous" type="text/javascript"></script>
+              integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+              crossorigin="anonymous" type="text/javascript"></script>
 <script src="https://unpkg.com/ngl@2.0.0-dev.34/dist/ngl.js" type="text/javascript"></script>
 <script src="https://michelanglo.sgc.ox.ac.uk/michelanglo.js" type="text/javascript"></script>
 """
 
     visualisation_tail = """\
 <script type="text/javascript">
+
+
 function loadmike_combined (protein) {
     var stage=NGL.getStage('viewport'); //alter if not using multiLoader.
+
     //define colors
     var nonCmap = {'N': '0x3333ff', 'O': '0xff4c4c', 'H': '0xe5e5e5', 'S': '0xe5c53f', 'Cl': '0x1ff01f', 'Na': '0xab5cf2'};
     var sermap={};
@@ -59,11 +63,15 @@ function loadmike_combined (protein) {
             else {return 0x7b7d7d} //black as the darkest error!
         };
     });
+
     //representations
+
     protein.removeAllRepresentations();
+
         // Show the ligand.
         let sticks = new NGL.Selection( 'ligand' );
         protein.addRepresentation( 'licorice', {color: schemeId, sele: sticks.string, opacity: 1.0} );
+
 """
 
 
@@ -103,7 +111,6 @@ function loadmike_combined (protein) {
 </script> """
 
 
-    # TODO: change to proper name once it has one
     orient_tail_MERS_CoV_Mpro_272 = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([-55.43715359724729, 19.154542778222776, 24.429636441852836, 0.0, -26.507044110580864, -55.2321834848874, -16.845374934225674, 0.0, 16.158030311277685, -24.889572286518273, 56.18196582121527, 0.0, 0.7490043640136719, 0.8194751739501953, -22.965221405029297, 1.0]));
@@ -160,7 +167,7 @@ function loadmike_combined (protein) {
         const neigh_sele = getNeighbors(protein, 'ligand', 2);
         protein.addRepresentation( 'contact', {sele: neigh_sele});
 
-    """
+"""
 
 
     colour_SARS_CoV_2_Mpro = """\
@@ -200,7 +207,8 @@ function loadmike_combined (protein) {
         const neigh_sele = getNeighbors(protein, 'ligand', 2);
         protein.addRepresentation( 'contact', {sele: neigh_sele});
 
-    """
+"""
+
 
     colour_SARS_CoV_2_Mac1 = """\
         // Define the binding pocket.
@@ -238,4 +246,4 @@ function loadmike_combined (protein) {
         const neigh_sele = getNeighbors(protein, 'ligand', 2);
         protein.addRepresentation( 'contact', {sele: neigh_sele});
 
-    """
+"""
