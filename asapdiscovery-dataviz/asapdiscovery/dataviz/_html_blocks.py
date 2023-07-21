@@ -16,14 +16,16 @@ def _vis_core(pdb_body: str) -> str:
 """
     return core
 
-def make_core_html(pdb_body: str) -> str:
-    return HTMLBlockData.visualisation_header + _vis_core(pdb_body) + HTMLBlockData.visualisation_tail
 
+def make_core_html(pdb_body: str) -> str:
+    return (
+        HTMLBlockData.visualisation_header
+        + _vis_core(pdb_body)
+        + HTMLBlockData.visualisation_tail
+    )
 
 
 class HTMLBlockData:
-
-
     visualisation_header = """\
 <div id="viewport"
 role="NGL"
@@ -35,7 +37,7 @@ data-backgroundcolor="white"></div>
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"
               integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
               crossorigin="anonymous" type="text/javascript"></script>
-<script src="https://unpkg.com/ngl@2.0.0-dev.34/dist/ngl.js" type="text/javascript"></script>
+<script src="https://unpkg.com/ngl@2.1.1/dist/ngl.js" type="text/javascript"></script>
 <script src="https://michelanglo.sgc.ox.ac.uk/michelanglo.js" type="text/javascript"></script>
 """
 
@@ -74,10 +76,6 @@ function loadmike_combined (protein) {
 
 """
 
-
-
-
-
     orient_tail_MERS_CoV_Mpro_7ene = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([-47.411552767443936, 18.160442129079684, 45.864598141236, 0.0, 33.734451290915786, -34.476765704662284, 48.52362967346835, 0.0, 35.99080588204288, 56.238428207759625, 14.936708193081358, 0.0, 1.14170241355896, 9.264076232910156, -58.5212287902832, 1.0]));
@@ -87,7 +85,6 @@ function loadmike_combined (protein) {
 
 
 </script> """
-
 
     orient_tail_MERS_CoV_Mpro = """\
     //orient
@@ -99,7 +96,6 @@ function loadmike_combined (protein) {
 
 </script> """
 
-
     orient_tail_SARS_CoV_2_Mpro = """\
     //orient
     stage.viewerControls.orient((new NGL.Matrix4).fromArray([32.700534186404866, -23.332587195321253, 28.280957904108163, 0.0, 2.9287225438600046, -36.11192126726678, -33.179842577844965, 0.0, 36.54640101226278, 23.77111378788311, -22.645942287727394, 0.0, -9.279577255249023, 1.1916427612304688, -23.425792694091797, 1.0]));
@@ -109,7 +105,6 @@ function loadmike_combined (protein) {
 
 
 </script> """
-
 
     orient_tail_MERS_CoV_Mpro_272 = """\
     //orient
@@ -169,7 +164,6 @@ function loadmike_combined (protein) {
 
 """
 
-
     colour_SARS_CoV_2_Mpro = """\
         // Define the binding pocket.
         const data = {
@@ -208,7 +202,6 @@ function loadmike_combined (protein) {
         protein.addRepresentation( 'contact', {sele: neigh_sele});
 
 """
-
 
     colour_SARS_CoV_2_Mac1 = """\
         // Define the binding pocket.
