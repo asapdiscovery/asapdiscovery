@@ -10,9 +10,9 @@ from asapdiscovery.data.openeye import (
     pdb_string_to_oemol,
     save_openeye_design_unit,
 )
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from pydantic import Field, root_validator
 
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
