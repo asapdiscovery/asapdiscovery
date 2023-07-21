@@ -1,8 +1,8 @@
 import logging
-import pytest
 
-from asapdiscovery.data.testing.test_resources import fetch_test_file
+import pytest
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.viz_targets import VizTargets
 
@@ -45,4 +45,3 @@ def test_html_viz(traj, top, logger, target, tmp_path):
         pse_share=False,
     )
     gif_visualiser.write_traj_visualizations()
-

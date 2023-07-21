@@ -176,6 +176,6 @@ files:
   # trajectory and topology to test GIF generation
   - resource: example_traj.xtc
     sha256hash: 72b2cd95d257f358bd5267b0d01097db4778d83efc332c1e9c39f790b8ec94a8
-  
+
   - resource: example_traj_top.pdb
     sha256hash: 295b59f81dee63c8567adcbe6ebd700f346823309a3bfefa1ca235e709fdaa46
