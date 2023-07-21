@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 PROTEIN_MAPPING = {
     "SARS-CoV-2-Mpro": "Mpro",
     "MERS-CoV-Mpro": "Mpro",
@@ -21,7 +20,6 @@ TARGET_MAPPING = {
 }
 
 
-
 # enum for allowed targets
 # TODO make configurable from YAML file
 class VizTargets(Enum):
@@ -35,23 +33,25 @@ class VizTargets(Enum):
     @classmethod
     def get_allowed_targets(cls) -> list[str]:
         return [t.value for t in cls]
-    
+
     @classmethod
     def get_name_underscore(cls, target: str) -> str:
         t = target.replace("-", "_")
         if not t in [v.replace("-", "_") for v in cls.get_allowed_targets()]:
-            raise ValueError(f"Target {target} not in allowed targets: {cls.get_allowed_targets()}")
+            raise ValueError(
+                f"Target {target} not in allowed targets: {cls.get_allowed_targets()}"
+            )
         return t
 
     @classmethod
-    def get_protein_name(cls, target: str, underscore: bool=True) -> str:
+    def get_protein_name(cls, target: str, underscore: bool = True) -> str:
         p = PROTEIN_MAPPING[target]
         if underscore:
             p = p.replace("-", "_")
         return p
-    
+
     @classmethod
-    def get_target_name(cls, target: str, underscore: bool=True) -> str:
+    def get_target_name(cls, target: str, underscore: bool = True) -> str:
         t = TARGET_MAPPING[target]
         if underscore:
             t = t.replace("-", "_")

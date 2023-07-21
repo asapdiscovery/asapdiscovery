@@ -146,8 +146,8 @@ class HTMLVisualizer:
         """
         # colour uses target name
         protein_name = VizTargets.get_target_name(self.target, underscore=True)
-        colour =  getattr(HTMLBlockData, f"colour_{protein_name}")
-        
+        colour = getattr(HTMLBlockData, f"colour_{protein_name}")
+
         # orient uses full name with underscore
         target_ = VizTargets.get_name_underscore(self.target)
         orient_tail = getattr(HTMLBlockData, f"orient_tail_{target_}")

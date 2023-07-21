@@ -37,6 +37,7 @@ parser.add_argument(
     help="Path to the output HTML file",
 )
 
+
 def main():
     args = parser.parse_args()
 
@@ -52,7 +53,7 @@ def main():
     protein = Path(args.protein)
     if not protein.exists():
         raise FileNotFoundError(f"Topology file {protein} does not exist")
-    
+
     out = Path(args.out)
 
     logger.info(f"Pose file: {pose}")
@@ -63,9 +64,8 @@ def main():
         poses=[str(pose)],
         output_paths=[out],
         target=args.viz_target,
-        protein= protein,
+        protein=protein,
         logger=logger,
-        
     )
     html_visualizer.write_pose_visualizations()
 
