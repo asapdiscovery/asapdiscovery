@@ -39,7 +39,7 @@ class HTMLVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of: "sars2_mpro", "mers_mpro", "7ene_mpro", "272_mpro", "sars2_mac1".
+            Target to visualize poses for. Must be one of the allowed targets in VizTargets.
         protein : Path
             Path to protein PDB file.
         logger : FileLogger
