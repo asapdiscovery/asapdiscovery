@@ -1,10 +1,18 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from asapdiscovery.data.openeye import oechem, oemol_to_pdb_string, pdb_string_to_oemol
+from asapdiscovery.data.openeye import (
+    bytes64_to_oedu,
+    load_openeye_design_unit,
+    oechem,
+    oedu_to_bytes64,
+    oemol_to_pdb_string,
+    pdb_string_to_oemol,
+    save_openeye_design_unit,
+)
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from pydantic import Field, root_validator
 
-from .dynamic_properties import TargetType
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
@@ -21,12 +29,12 @@ class InvalidTargetError(ValueError):
 
 class TargetIdentifiers(DataModelAbstractBase):
     """
-    Identifiers for a Ligand
+    Identifiers for a Target
     """
 
-    target_type: Optional[TargetType] = Field(
+    target_type: Optional[TargetTags] = Field(
         None,
-        description="Dynamic Enum describing the target type e.g sars2, mers or mac1",
+        description="Tag describing the target type e.g SARS-CoV-2-Mpro, etc.",
     )
 
     fragalysis_id: Optional[str] = Field(
@@ -40,14 +48,14 @@ class TargetIdentifiers(DataModelAbstractBase):
 
 class Target(DataModelAbstractBase):
     """
-    Schema for a Target
+    Schema for a Target, wrapper around a PDB file
     """
 
     target_name: str = Field(None, description="The name of the target")
 
     ids: Optional[TargetIdentifiers] = Field(
         None,
-        description="TargetIdentifiers Schema for identifiers associated with this ligand",
+        description="TargetIdentifiers Schema for identifiers associated with this target",
     )
 
     data: str = Field(
@@ -74,7 +82,7 @@ class Target(DataModelAbstractBase):
             # already instantiated ligand we need to be able to handle a dict and instantiated class
             if compound_name is None:
                 if ids is None or all(
-                    [v is None for v in schema_dict_get_val_overload(ids)]
+                    [not v for v in schema_dict_get_val_overload(ids)]
                 ):
                     raise ValueError(
                         "At least one identifier must be provide, or target_name must be provided"
@@ -127,3 +135,62 @@ class Target(DataModelAbstractBase):
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+
+class PreppedTarget(DataModelAbstractBase):
+    """
+    Schema for a PreppedTarget, wrapper around an OpenEye Design Unit
+    """
+
+    target_name: str = Field(None, description="The name of the target")
+
+    ids: Optional[TargetIdentifiers] = Field(
+        None,
+        description="TargetIdentifiers Schema for identifiers associated with this target",
+    )
+
+    data: bytes = Field(
+        "",
+        description="OpenEye oedu file stored as a bytes object **encoded in base64** to hold internal data state",
+        repr=False,
+    )
+    data_format: DataStorageType = Field(
+        DataStorageType.b64oedu,
+        description="Enum describing the data storage method",
+        allow_mutation=False,
+    )
+
+    @root_validator(pre=True)
+    @classmethod
+    def _validate_at_least_one_id(cls, v):
+        # simpler as we never need to pop attrs off the serialised representation.
+        ids = v.get("ids")
+        compound_name = v.get("target_name")
+        # check if all the identifiers are None
+        if compound_name is None:
+            if ids is None or all([not v for v in schema_dict_get_val_overload(ids)]):
+                raise ValueError(
+                    "At least one identifier must be provide, or target_name must be provided"
+                )
+        return v
+
+    @classmethod
+    def from_oedu(
+        cls, oedu: oechem.OEDesignUnit, target_name: Optional[str] = None, **kwargs
+    ) -> "PreppedTarget":
+        oedu_bytes = oedu_to_bytes64(oedu)
+        return cls(data=oedu_bytes, target_name=target_name, **kwargs)
+
+    def to_oedu(self) -> oechem.OEDesignUnit:
+        return bytes64_to_oedu(self.data)
+
+    @classmethod
+    def from_oedu_file(
+        cls, oedu_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
+    ) -> "PreppedTarget":
+        oedu = load_openeye_design_unit(oedu_file)
+        return cls.from_oedu(oedu=oedu, target_name=target_name, **kwargs)
+
+    def to_oedu_file(self, filename: Union[str, Path]) -> None:
+        oedu = self.to_oedu()
+        save_openeye_design_unit(oedu, filename)
