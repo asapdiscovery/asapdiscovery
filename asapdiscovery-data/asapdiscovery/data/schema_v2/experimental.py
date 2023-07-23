@@ -3,7 +3,6 @@ from datetime import date
 from pydantic import BaseModel, Field
 
 
-# From FAH ###################################
 class Model(BaseModel):
     class Config:
         allow_mutation = False
