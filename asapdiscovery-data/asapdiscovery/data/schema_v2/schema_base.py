@@ -3,14 +3,16 @@ from __future__ import annotations
 import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
 from pydantic import BaseModel, ByteSize
+
+_SCHEMA_VERSION = "0.1.0"
 
 
 class DataStorageType(str, Enum):
     sdf = "sdf"
     pdb = "pdb"
+    b64oedu = "b64oedu"
 
 
 def read_file_directly(file: str | Path) -> str:
@@ -48,6 +50,13 @@ class DataModelAbstractBase(BaseModel):
     def from_json(cls, json_str):
         return cls.parse_obj(json.loads(json_str))
 
+    @classmethod
+    def from_json_file(cls, file: str | Path):
+        return cls.parse_file(str(file))
+
+    def to_json_file(self, file: str | Path):
+        write_file_directly(file, self.json())
+
     @property
     def size(self) -> ByteSize:
         """Size of the resulting JSON object for this class"""
@@ -59,9 +68,16 @@ class DataModelAbstractBase(BaseModel):
     def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
 
+    def get_schema_version(self) -> str:
+        return _SCHEMA_VERSION
+
     # use data_equal instead
     def __eq__(self, other: DataModelAbstractBase) -> bool:
-        return self.data_equal(other)
+        # check if has a data attribute
+        if hasattr(self, "data"):
+            return self.data_equal(other)
+        else:
+            return self.full_equal(other)
 
     # use data_equal instead
     def __ne__(self, other: DataModelAbstractBase) -> bool:
