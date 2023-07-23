@@ -42,6 +42,29 @@ def test_ligand_from_smiles_at_least_one_ligand_id(smiles):
         Ligand.from_smiles(smiles, ids=LigandIdentifiers())
 
 
+def test_ligand_ids_json_roundtrip():
+    ids = LigandIdentifiers(
+        manifold_api_id=uuid4(),
+        manifold_vc_id="ASAP-VC-1234",
+        moonshot_compound_id="test_moonshot_compound_id",
+        compchem_id=uuid4(),
+    )
+    ids2 = LigandIdentifiers.from_json(ids.json())
+    assert ids == ids2
+
+
+def test_ligand_ids_json_file_roundtrip(tmp_path):
+    ids = LigandIdentifiers(
+        manifold_api_id=uuid4(),
+        manifold_vc_id="ASAP-VC-1234",
+        moonshot_compound_id="test_moonshot_compound_id",
+        compchem_id=uuid4(),
+    )
+    ids.to_json_file(tmp_path / "test.json")
+    ids2 = LigandIdentifiers.from_json_file(tmp_path / "test.json")
+    assert ids == ids2
+
+
 def test_ligand_from_sdf(moonshot_sdf):
     lig = Ligand.from_sdf(moonshot_sdf, compound_name="test_name")
     assert (
@@ -190,6 +213,40 @@ def test_ligand_sdf_rountrip_data_only(
     assert l1 == l2
     # checks every field
     assert l1.full_equal(l2)
+
+
+@pytest.mark.parametrize(
+    "exp_data", [ExperimentalCompoundData(compound_id="blah", smiles="CCCC"), None]
+)  # FIXME this should be forced to match
+@pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
+@pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
+@pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
+@pytest.mark.parametrize("compchem_id", [uuid4(), None])
+@pytest.mark.parametrize("compound_name", ["test_name"])
+def test_ligand_json_file_roundtrip(
+    moonshot_sdf,
+    compound_name,
+    compchem_id,
+    manifold_api_id,
+    manifold_vc_id,
+    moonshot_compound_id,
+    exp_data,
+    tmp_path,
+):
+    l1 = Ligand.from_sdf(
+        moonshot_sdf,
+        compound_name=compound_name,
+        ids=LigandIdentifiers(
+            manifold_api_id=manifold_api_id,
+            manifold_vc_id=manifold_vc_id,
+            moonshot_compound_id=moonshot_compound_id,
+            compchem_id=compchem_id,
+        ),
+        experimental_data=exp_data,
+    )
+    l1.to_json_file(tmp_path / "test.json")
+    l2 = Ligand.from_json_file(tmp_path / "test.json")
+    assert l1 == l2
 
 
 def test_ligand_oemol_rountrip(moonshot_sdf):
