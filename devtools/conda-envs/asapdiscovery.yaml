@@ -54,7 +54,7 @@ dependencies:
   - openmmforcefields
   - mdtraj
   - openff-toolkit
-#  - cudatoolkit=11.7 # may need to specify explicitly for lilac
+  - cudatoolkit=11.7 # may need to specify explicitly for lilac
 
   # execution
   - distributed
