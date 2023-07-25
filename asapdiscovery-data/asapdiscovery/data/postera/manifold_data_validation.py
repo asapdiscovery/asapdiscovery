@@ -252,7 +252,7 @@ ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
 )
 
 
-def map_output_col_to_manifold_tag(output_tags: Enum, target: str) -> dict[str,str]:
+def map_output_col_to_manifold_tag(output_tags: Enum, target: str) -> dict[str, str]:
     """
     Build Postera tags given output tags and target.
 
