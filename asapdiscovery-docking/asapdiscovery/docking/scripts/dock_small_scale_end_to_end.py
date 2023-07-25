@@ -573,6 +573,7 @@ def main():
         from dask.distributed import Client
 
         cfg.set({"distributed.scheduler.worker-ttl": None})
+        cfg.set({"distributed.admin.tick.limit": "2h"})
 
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
@@ -605,7 +606,6 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            3* 
             # assume we want about 3 work units per worker
             n_workers = estimate_n_workers(n_mols, ratio=3, maxiumum=20, minimum=1)
             cluster.scale(n_workers)
