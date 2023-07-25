@@ -8,7 +8,7 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas as pd
-from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
+from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip, estimate_n_workers
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -448,8 +448,8 @@ def main():
                 raise ValueError(
                     f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
                 )
-
-    logger.info(f"Loaded {len(exp_data)} molecules.")
+    n_mols = len(exp_data)
+    logger.info(f"Loaded {len(n_mols)} molecules.")
     if len(exp_data) == 0:
         logger.error("No molecules loaded.")
         raise ValueError("No molecules loaded.")
@@ -605,12 +605,10 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            # assume we will have about 10 jobs, they will be killed if not used
-            cluster.scale(10)
-            # cluster is adaptive, and will scale between 5 and 40 workers depending on load
-            # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
-            # which can cause thrashing in the LSF queue
-            cluster.adapt(minimum=5, maximum=40, interval="60s", target_duration="40s")
+            3* 
+            # assume we want about 3 work units per worker
+            n_workers = estimate_n_workers(n_mols, ratio=3, maxiumum=20, minimum=1)
+            cluster.scale(n_workers)
             client = Client(cluster)
         else:
             client = Client()
