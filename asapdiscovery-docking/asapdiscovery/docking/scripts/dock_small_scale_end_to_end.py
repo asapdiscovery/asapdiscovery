@@ -400,9 +400,9 @@ def main():
         if aws_secret_access_key is None:
             raise ValueError("Environment variable AWS_SECRET_ACCESS_KEY not found")
 
-        artefact_bucket_name = os.getenv("ARTEFACT_BUCKET_NAME")
-        if artefact_bucket_name is None:
-            raise ValueError("Environment variable ARTEFACT_BUCKET_NAME not found")
+        artifact_bucket_name = os.getenv("ARTIFACT_BUCKET_NAME")
+        if artifact_bucket_name is None:
+            raise ValueError("Environment variable ARTIFACT_BUCKET_NAME not found")
 
         cloudfront_domain = os.getenv("CLOUDFRONT_DOMAIN")
         if cloudfront_domain is None:
@@ -1099,7 +1099,7 @@ def main():
     if args.szybki:
         column_enums.append(SzybkiResultCols)
 
-    # keep in the artefact column for the poses and MD gifs
+    # keep in the artifact column for the poses and MD gifs
     renamed_top_posit = rename_output_columns_for_manifold(
         top_posit,
         args.target,
@@ -1135,7 +1135,7 @@ def main():
             aws_secret_access_key=aws_secret_access_key,
         )
 
-        s3 = S3(session, artefact_bucket_name)
+        s3 = S3(session, artifact_bucket_name)
 
         # create a cloudfront signer
         cf = CloudFront(
@@ -1162,7 +1162,7 @@ def main():
             s3,
             args.target,
             artifact_column="_outpath_pose",
-            bucket_name=artefact_bucket_name,
+            bucket_name=artifact_bucket_name,
         )
         pose_uploader.upload_artifacts()
 
@@ -1183,7 +1183,7 @@ def main():
             s3,
             args.target,
             artifact_column="_outpath_gif",
-            bucket_name=artefact_bucket_name,
+            bucket_name=artifact_bucket_name,
         )
         md_uploader.upload_artifacts()
 

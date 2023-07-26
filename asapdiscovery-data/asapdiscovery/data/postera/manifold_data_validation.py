@@ -356,9 +356,8 @@ def rename_output_columns_for_manifold(
 
     if drop_non_output:
         df = drop_non_output_columns(df, allow=allow)
-        mapping = {}
-
     
+    mapping = {}
     for col_enum in output_enums:
         mapping.update(map_output_col_to_manifold_tag(col_enum, target))
 
