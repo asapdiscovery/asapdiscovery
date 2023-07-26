@@ -8,7 +8,10 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas as pd
-from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip, estimate_n_workers
+from asapdiscovery.data.execution_utils import (
+    get_interfaces_with_dual_ip,
+    estimate_n_workers,
+)
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -606,8 +609,14 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            # assume we want about 3 work units per worker
-            n_workers = estimate_n_workers(n_mols, ratio=3, maxiumum=20, minimum=1)
+            if args.md:
+                # assume we want about 1 work units per worker, because MD + GIFs very GPU intensive
+                # and can take quite a while
+                ratio = 1
+            else:
+                # otherwise 3 should be a decent guess
+                ratio = 3
+            n_workers = estimate_n_workers(n_mols, ratio=ratio, maximum=20, minimum=1)
             cluster.scale(n_workers)
             client = Client(cluster)
         else:
@@ -686,8 +695,8 @@ def main():
         if args.debug:
             # check smiles match
             if compound.smiles != oechem.OEMolToSmiles(mol):
-                raise ValueError(
-                    f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()}"
+                logger.warning(
+                    f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()} this can be the result of using RDKit SMILES or Postera Manifold inputs."
                 )
         res = dock_and_score_pose_oe_ml(
             dock_dir / f"{compound.compound_id}_{receptor_name}",
