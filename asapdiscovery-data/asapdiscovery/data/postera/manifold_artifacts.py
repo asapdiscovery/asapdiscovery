@@ -46,7 +46,8 @@ class ManifoldArtifactUploader:
         Parameters
         ----------
         molecule_dataframe : pd.DataFrame
-            The dataframe containing the molecules to upload. Must contain a column with the name of the artifact
+            The dataframe containing the molecules to upload.
+            Must contain a column with the name of the artifact
         molecule_set_id : UUID
             The UUID of the molecule set to upload to
         artifact_type : ArtifactType
@@ -110,7 +111,7 @@ class ManifoldArtifactUploader:
         """
 
         # rename columns to match manifold
-        output_tag_name = map_output_col_to_manifold_tag(ArtifactType, {}, self.target)[
+        output_tag_name = map_output_col_to_manifold_tag(ArtifactType, self.target)[
             self.artifact_type.value
         ]
 

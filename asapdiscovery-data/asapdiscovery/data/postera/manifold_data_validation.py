@@ -252,24 +252,29 @@ ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
 )
 
 
-def map_output_col_to_manifold_tag(col_enum: Enum, map: dict, target: str) -> None:
+def map_output_col_to_manifold_tag(output_tags: Enum, target: str) -> dict[str, str]:
     """
-    Recapitulate the tags from a ResultColumn Enum to a dictionary
+    Build Postera tags given output tags and target.
 
     Parameters
     ----------
-    col : Enum
-        Enum of columns to recapitulate
-    map : dict
-        Dictionary to add tags to
+    output_tags : Enum
+        Enum of output tags to produce Postera tags for.
+
+    Returns
+    -------
+    mapping
+        Output tags as keys, Postera tags as values.
+
     """
-    for col in col_enum:
+    mapping = dict()
+    for col in output_tags:
         if col.value in OutputTags.get_values():
             pref, post = MANIFOLD_PREFIX_POSTFIX_DICT[col.value]
-            map[col.value] = make_manifold_tag_name_from_components(
+            mapping[col.value] = make_manifold_tag_name_from_components(
                 pref, target, col.value, post
             )
-    return map
+    return mapping
 
 
 def drop_non_output_columns(
@@ -343,7 +348,7 @@ def rename_columns(
     mapping = {}
     for col_enum in column_enums:
         # adds new elements in place
-        mapping = map_output_col_to_manifold_tag(col_enum, mapping, target)
+        mapping.update(map_output_col_to_manifold_tag(col_enum, target))
 
     if manifold_validate:
         if not ManifoldAllowedTags.all_in_values(mapping.values()):
