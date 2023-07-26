@@ -268,7 +268,7 @@ def map_output_col_to_manifold_tag(output_tags: Enum, target: str) -> dict[str, 
         Output tags as keys, Postera tags as values.
 
     """
-    mapping = dict()
+    mapping = {}
     for col in output_tags:
         if col.value in OutputTags.get_values():
             pref, post = MANIFOLD_PREFIX_POSTFIX_DICT[col.value]
