@@ -254,7 +254,8 @@ ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
 
 def map_output_col_to_manifold_tag(output_tags: Enum, target: str) -> dict[str, str]:
     """
-    Build Postera tags given output tags and target.
+    Build Postera tags given output tags and target. Only valid output tags in the enum 
+    are mapped to Postera tags.
 
     Parameters
     ----------
@@ -281,7 +282,7 @@ def drop_non_output_columns(
     df: pd.DataFrame, allow: Optional[list[str]] = []
 ) -> pd.DataFrame:
     """
-    Drop columns of a docking result dataframe that are not allowed output tags
+    Drop columns of a docking result dataframe that are not allowed OutputTags
     ie the members of OutputTags.get_values() and StaticTags.get_values()
 
     Parameters
@@ -305,59 +306,6 @@ def drop_non_output_columns(
 
     # drop all columns that are not in the output
     df = df.drop(columns=[col for col in df.columns if col not in output_cols])
-    return df
-
-
-def rename_columns(
-    df: pd.DataFrame,
-    target: str,
-    column_enums: list[Enum],
-    manifold_validate: Optional[bool] = True,
-) -> pd.DataFrame:
-    """
-    Rename columns of a result dataframe that are available to be
-    updated in the Postera Manifold for a specific target. i.e inject the
-    target name prefixes and postfixes into the column name to satisfy validation
-    for Postera Manifold.
-    for example:
-
-    docking-pose-POSIT -> in-silico_SARS-CoV-2-Mpro_docking-pose-POSIT_msk
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Pandas dataframe of docking results
-    target : str
-        Target name
-    output_enums : list[Enum]
-        List of enums to rename the columns of
-    manifold_validate : bool, optional
-        If True, validate that the columns are valid for Postera Manifold
-
-    Returns
-    -------
-    df : pd.DataFrame
-        Pandas dataframe with valid columns renamed
-    """
-    if not TargetTags.is_in_values(target):
-        raise ValueError(
-            f"Target {target} is not valid. Valid targets are: {TargetTags.get_values()}"
-        )
-
-    # make mapping between keys in a given Output enum and the target specific columns
-    mapping = {}
-    for col_enum in column_enums:
-        # adds new elements in place
-        mapping.update(map_output_col_to_manifold_tag(col_enum, target))
-
-    if manifold_validate:
-        if not ManifoldAllowedTags.all_in_values(mapping.values()):
-            raise ValueError(
-                f"Columns in dataframe {mapping.values()} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
-            )
-
-    # rename columns
-    df = df.rename(columns=mapping)
     return df
 
 
@@ -401,7 +349,24 @@ def rename_output_columns_for_manifold(
     Pandas dataframe with invalid columns dropped and valid columns renamed
 
     """
+    if not TargetTags.is_in_values(target):
+        raise ValueError(
+            f"Target {target} is not valid. Valid targets are: {TargetTags.get_values()}"
+        )
+
     if drop_non_output:
         df = drop_non_output_columns(df, allow=allow)
-    df = rename_columns(df, target, output_enums, manifold_validate=manifold_validate)
+        mapping = {}
+
+    
+    for col_enum in output_enums:
+        mapping.update(map_output_col_to_manifold_tag(col_enum, target))
+
+    if manifold_validate:
+        if not ManifoldAllowedTags.all_in_values(mapping.values()):
+            raise ValueError(
+                f"Columns in dataframe {mapping.values()} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
+            )
+    # rename columns
+    df = df.rename(columns=mapping)
     return df
