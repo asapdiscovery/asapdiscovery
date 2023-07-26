@@ -452,7 +452,7 @@ def main():
                     f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
                 )
     n_mols = len(exp_data)
-    logger.info(f"Loaded {len(n_mols)} molecules.")
+    logger.info(f"Loaded {n_mols} molecules.")
     if len(exp_data) == 0:
         logger.error("No molecules loaded.")
         raise ValueError("No molecules loaded.")
