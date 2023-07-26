@@ -35,7 +35,7 @@ class ManifoldArtifactUploader:
         molecule_set_id: UUID,
         artifact_type: ArtifactType,
         moleculeset_api: MoleculeSetAPI,
-        cloud_front: CloudFront,
+        cloudfront: CloudFront,
         s3: S3,
         target: str,
         artifact_column: str,
@@ -53,7 +53,7 @@ class ManifoldArtifactUploader:
             The type of artifact to upload
         moleculeset_api : MoleculeSetAPI
             The MoleculeSetAPI object to use to upload to Manifold
-        cloud_front : CloudFront
+        cloudfront : CloudFront
             The CloudFront object to use to generate signed urls
         s3 : S3
             The S3 object to use to upload to S3
@@ -70,7 +70,7 @@ class ManifoldArtifactUploader:
         self.molecule_set_id = molecule_set_id
         self.artifact_type = artifact_type
         self.moleculeset_api = moleculeset_api
-        self.cloud_front = cloud_front
+        self.cloudfront = cloudfront
         self.s3 = s3
         self.target = target
         self.artifact_column = artifact_column
@@ -102,7 +102,7 @@ class ManifoldArtifactUploader:
         """
         # make a signed url with default timedelta of 5 years
         expiry = datetime.utcnow() + expires_delta
-        return self.cloud_front.generate_signed_url(bucket_path, expiry)
+        return self.cloudfront.generate_signed_url(bucket_path, expiry)
 
     def upload_artifacts(self) -> None:
         """
