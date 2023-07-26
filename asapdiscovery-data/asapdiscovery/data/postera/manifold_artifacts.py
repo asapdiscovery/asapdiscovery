@@ -58,9 +58,9 @@ class ManifoldArtifactUploader:
         s3 : S3
             The S3 object to use to upload to S3
         target : str
-            The target to upload to
+            The biological target string for the artifact, one of asapdiscovery.data.postera.manifold_data_validation.TargetTags
         artifact_column : str
-            The name of the column containing the artifact
+            The name of the column containing the filesystem path to the artifact that will be uploaded.
         bucket_name : str
             The name of the bucket to upload to
         manifold_id_column : str
