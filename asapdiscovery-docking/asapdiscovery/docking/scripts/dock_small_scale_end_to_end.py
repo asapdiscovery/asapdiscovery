@@ -1116,8 +1116,13 @@ def main():
         allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose", "_outpath_gif"],
         drop_non_output=True,
     )
+    cols_to_drop = [
+        col
+        for col in ["_outpath_pose", "_outpath_gif"]
+        if col in renamed_top_posit_with_artifacts.columns
+    ]
     renamed_top_posit_final = renamed_top_posit_with_artifacts.drop(
-        columns=["_outpath_pose", "_outpath_gif"]
+        columns=cols_to_drop
     )
     # save to final CSV renamed for target
     renamed_top_posit_final.to_csv(
