@@ -9,8 +9,8 @@ from typing import List  # noqa: F401
 import dask
 import pandas as pd
 from asapdiscovery.data.execution_utils import (
-    get_interfaces_with_dual_ip,
     estimate_n_workers,
+    get_interfaces_with_dual_ip,
 )
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem

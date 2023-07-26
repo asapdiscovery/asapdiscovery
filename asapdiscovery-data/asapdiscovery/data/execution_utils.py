@@ -1,8 +1,9 @@
-import netifaces
 from typing import List
 
+import netifaces
 
-def get_interfaces_with_dual_ip(exclude: List[str] = []) -> List[str]:
+
+def get_interfaces_with_dual_ip(exclude: list[str] = []) -> list[str]:
     """
     Get a list of interfaces that have both IPv4 and IPv6 addresses.
 
