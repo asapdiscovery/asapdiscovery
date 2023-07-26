@@ -1099,8 +1099,9 @@ def main():
     if args.szybki:
         column_enums.append(SzybkiResultCols)
 
-    # keep in the artifact column for the poses and MD gifs
-    renamed_top_posit = rename_output_columns_for_manifold(
+    # keep in the artifact column for the poses and MD gifs so that we can upload them
+    # to PostEra Manifold later
+    renamed_top_posit_with_artifacts = rename_output_columns_for_manifold(
         top_posit,
         args.target,
         column_enums,
@@ -1108,8 +1109,11 @@ def main():
         allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose", "_outpath_gif"],
         drop_non_output=True,
     )
+    renamed_top_posit_final = renamed_top_posit_with_artifacts.drop(
+        columns=["_outpath_pose", "_outpath_gif"]
+    )
     # save to final CSV renamed for target
-    renamed_top_posit.to_csv(
+    renamed_top_posit_final.to_csv(
         output_dir / f"results_{args.target}_final.csv", index=False
     )
 
@@ -1121,7 +1125,7 @@ def main():
         # upload numerical results to PostEra
         ms.update_molecules_from_df_with_manifold_validation(
             molecule_set_id=molset_id,
-            df=renamed_top_posit,
+            df=renamed_top_posit_final,
             id_field=DockingResultCols.LIGAND_ID.value,
             smiles_field="SMILES",
             overwrite=True,
@@ -1145,13 +1149,11 @@ def main():
         )
 
         logger.info("Uploading artifacts to PostEra")
-        # drop the columns we don't want to upload for the poses
-        cols_to_drop = [
-            k
-            for k in renamed_top_posit.columns
-            if k not in ["_outpath_pose", DockingResultCols.LIGAND_ID.value]
+
+        # make a dataframe with the ligand ID and the pose artifact path
+        pose_df = renamed_top_posit_with_artifacts[
+            [DockingResultCols.LIGAND_ID.value, "_outpath_pose"]
         ]
-        pose_df = renamed_top_posit.drop(columns=cols_to_drop)
         # make an uploader for the poses and upload them
         pose_uploader = ManifoldArtifactUploader(
             pose_df,
@@ -1166,14 +1168,10 @@ def main():
         )
         pose_uploader.upload_artifacts()
 
-        # drop the columns we don't want to upload for the MD gifs
-        cols_to_drop = [
-            k
-            for k in renamed_top_posit.columns
-            if k not in ["_outpath_gif", DockingResultCols.LIGAND_ID.value]
+        # make a dataframe with the ligand ID and the MD gif artifact path
+        md_df = renamed_top_posit_with_artifacts[
+            [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
         ]
-        md_df = renamed_top_posit.drop(columns=cols_to_drop)
-
         md_uploader = ManifoldArtifactUploader(
             md_df,
             molset_id,
