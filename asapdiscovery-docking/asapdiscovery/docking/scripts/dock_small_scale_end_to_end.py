@@ -10,7 +10,10 @@ import dask
 import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
+from asapdiscovery.data.execution_utils import (
+    estimate_n_workers,
+    get_interfaces_with_dual_ip,
+)
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -487,8 +490,8 @@ def main():
                 raise ValueError(
                     f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
                 )
-
-    logger.info(f"Loaded {len(exp_data)} molecules.")
+    n_mols = len(exp_data)
+    logger.info(f"Loaded {n_mols} molecules.")
     if len(exp_data) == 0:
         logger.error("No molecules loaded.")
         raise ValueError("No molecules loaded.")
@@ -645,18 +648,15 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            # assume we will have about 5 jobs, they will be killed if not used
-            cluster.scale(5)
-            # cluster is adaptive, and will scale between 5 and 40 workers depending on load
-            # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
-            # which can cause thrashing in the LSF queue
-            cluster.adapt(
-                minimum=5,
-                maximum=40,
-                interval="1m",
-                target_duration="20m",
-                wait_count=200,
-            )
+            if args.md:
+                # assume we want about 1 work units per worker, because MD + GIFs very GPU intensive
+                # and can take quite a while
+                ratio = 1
+            else:
+                # otherwise 3 should be a decent guess
+                ratio = 3
+            n_workers = estimate_n_workers(n_mols, ratio=ratio, maximum=20, minimum=1)
+            cluster.scale(n_workers)
             client = Client(cluster)
         else:
             client = Client()
@@ -734,8 +734,8 @@ def main():
         if args.debug:
             # check smiles match
             if compound.smiles != oechem.OEMolToSmiles(mol):
-                raise ValueError(
-                    f"SMILES mismatch between {compound.compound_id} {compound.smiles} and {mol.GetTitle()} {oechem.OEMolToSmiles(mol)}"
+                logger.warning(
+                    f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()} this can be the result of using RDKit SMILES or Postera Manifold inputs."
                 )
         res = dock_and_score_pose_oe_ml(
             dock_dir / f"{compound.compound_id}_{receptor_name}",
