@@ -254,7 +254,7 @@ ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
 
 def map_output_col_to_manifold_tag(output_tags: Enum, target: str) -> dict[str, str]:
     """
-    Build Postera tags given output tags and target. Only valid output tags in the enum 
+    Build Postera tags given output tags and target. Only valid output tags in the enum
     are mapped to Postera tags.
 
     Parameters
@@ -356,7 +356,7 @@ def rename_output_columns_for_manifold(
 
     if drop_non_output:
         df = drop_non_output_columns(df, allow=allow)
-    
+
     mapping = {}
     for col_enum in output_enums:
         mapping.update(map_output_col_to_manifold_tag(col_enum, target))
