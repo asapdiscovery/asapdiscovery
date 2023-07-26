@@ -612,6 +612,7 @@ def main():
         from dask.distributed import Client
 
         cfg.set({"distributed.scheduler.worker-ttl": None})
+        cfg.set({"distributed.admin.tick.limit": "2h"})
 
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
@@ -644,12 +645,18 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            # assume we will have about 10 jobs, they will be killed if not used
-            cluster.scale(10)
+            # assume we will have about 5 jobs, they will be killed if not used
+            cluster.scale(5)
             # cluster is adaptive, and will scale between 5 and 40 workers depending on load
             # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
             # which can cause thrashing in the LSF queue
-            cluster.adapt(minimum=5, maximum=40, interval="60s", target_duration="40s")
+            cluster.adapt(
+                minimum=5,
+                maximum=40,
+                interval="1m",
+                target_duration="20m",
+                wait_count=200,
+            )
             client = Client(cluster)
         else:
             client = Client()
