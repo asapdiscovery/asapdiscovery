@@ -1116,6 +1116,8 @@ def main():
         allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose", "_outpath_gif"],
         drop_non_output=True,
     )
+
+    # drop the artifact columns for final results
     cols_to_drop = [
         col
         for col in ["_outpath_pose", "_outpath_gif"]
