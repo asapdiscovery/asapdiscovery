@@ -66,7 +66,7 @@ class ManifoldArtifactUploader:
         manifold_id_column : str
             The name of the column containing the manifold id
         """
-        self.molecule_dataframe = molecule_dataframe
+        self.molecule_dataframe = molecule_dataframe.copy()
         self.molecule_set_id = molecule_set_id
         self.artifact_type = artifact_type
         self.moleculeset_api = moleculeset_api
