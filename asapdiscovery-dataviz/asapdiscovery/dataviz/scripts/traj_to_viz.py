@@ -106,6 +106,8 @@ def main():
         smooth=args.smooth,
         start=start,
         logger=logger,
+        pse=True,
+        pse_share=True,
     )
     gif_visualiser.write_traj_visualizations()
 
