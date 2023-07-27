@@ -81,19 +81,13 @@ class GIFVisualizer:
         self.target = target
         self.logger.info(f"Visualizing trajectories for {self.target}")
 
-        # setup pocket dict and view_coords for target
+        # setup view_coords, pocket_dict and color_dict for target
 
-        # coords always has full target name with underscore eg  SARS_CoV_2_Mac1_monomer
-        target_ = VizTargets.get_name_underscore(self.target)
-        self.view_coords = getattr(GIFBlockData, f"view_coords_{target_}")
+        self.view_coords = GIFBlockData.get_view_coords(self.target)
 
-        # pocket dict uses target_name e.g SARS_CoV_2_Mpro
-        target_name = VizTargets.get_target_name(self.target, underscore=True)
-        self.pocket_dict = getattr(GIFBlockData, f"pocket_dict_{target_name}")
+        self.pocket_dict = GIFBlockData.get_pocket_dict(self.target)
 
-        # color dict uses protein name eg Mpro
-        protein_name = VizTargets.get_protein_name(self.target, underscore=True)
-        self.color_dict = getattr(GIFBlockData, f"color_dict_{protein_name}")
+        self.color_dict = GIFBlockData.get_color_dict(self.target)
 
         self.trajectories = []
         self.output_paths = []

@@ -1,7 +1,27 @@
-# find these by going through GIF generation with `pse_share=True`, then inspecting
-# session_5.pse with pymol, orienting and running `get_view` in pymol terminal.
-# SARS2
+from .viz_targets import VizTargets
+
+"""
+Find these by going through GIF generation with `pse_share=True`, then inspecting
+session_5.pse with pymol, orienting and running `get_view` in pymol terminal.
+"""
+
+
 class GIFBlockData:
+    @classmethod
+    def get_view_coords(cls, target):
+        target_ = VizTargets.get_name_underscore(target)
+        return getattr(cls, f"view_coords_{target_}")
+
+    @classmethod
+    def get_pocket_dict(cls, target):
+        target_name = VizTargets.get_target_name(target, underscore=True)
+        return getattr(cls, f"pocket_dict_{target_name}")
+
+    @classmethod
+    def get_color_dict(cls, target):
+        protein_name = VizTargets.get_protein_name(target, underscore=True)
+        return getattr(cls, f"color_dict_{protein_name}")
+
     view_coords_SARS_CoV_2_Mpro = (
         -0.339127213,
         -0.370405823,
