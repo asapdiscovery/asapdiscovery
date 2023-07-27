@@ -144,12 +144,8 @@ class HTMLVisualizer:
         """
         Get HTML footer for pose visualization
         """
-        # colour uses target name
-        protein_name = VizTargets.get_target_name(self.target, underscore=True)
-        colour = getattr(HTMLBlockData, f"colour_{protein_name}")
 
-        # orient uses full name with underscore
-        target_ = VizTargets.get_name_underscore(self.target)
-        orient_tail = getattr(HTMLBlockData, f"orient_tail_{target_}")
+        colour = HTMLBlockData.get_pocket_color(self.target)
+        orient_tail = HTMLBlockData.get_orient_tail(self.target)
 
         return colour + orient_tail

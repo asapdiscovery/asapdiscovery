@@ -1,3 +1,5 @@
+from .viz_targets import VizTargets
+
 """
 HTML blocks for visualising poses.
 
@@ -43,6 +45,24 @@ def make_core_html(pdb_body: str) -> str:
 
 
 class HTMLBlockData:
+    @classmethod
+    def get_pocket_color(cls, target: str) -> str:
+        """
+        Get the color for the pocket of a target.
+        """
+        # need protein name
+        protein_name = VizTargets.get_target_name(target, underscore=True)
+        return getattr(cls, f"colour_{protein_name}")
+
+    @classmethod
+    def get_orient_tail(cls, target: str) -> str:
+        """
+        Get the orient tail for a target.
+        """
+        # need underscore full name
+        target_ = VizTargets.get_name_underscore(target)
+        return getattr(cls, f"orient_tail_{target_}")
+
     visualisation_header = """\
 <div id="viewport"
 role="NGL"
