@@ -250,3 +250,122 @@ def make_tag_combinations_and_combine_with_static(
 ManifoldAllowedTags, _ = make_tag_combinations_and_combine_with_static(
     target_tag_set, output_tag_set, static_tag_set, MANIFOLD_PREFIX_POSTFIX_DICT
 )
+
+
+def map_output_col_to_manifold_tag(output_tags: Enum, target: str) -> dict[str, str]:
+    """
+    Build Postera tags given output tags and target. Only valid output tags in the enum
+    are mapped to Postera tags.
+
+    Parameters
+    ----------
+    output_tags : Enum
+        Enum of output tags to produce Postera tags for.
+
+    Returns
+    -------
+    mapping
+        Output tags as keys, Postera tags as values.
+
+    """
+    mapping = {}
+    for col in output_tags:
+        if col.value in OutputTags.get_values():
+            pref, post = MANIFOLD_PREFIX_POSTFIX_DICT[col.value]
+            mapping[col.value] = make_manifold_tag_name_from_components(
+                pref, target, col.value, post
+            )
+    return mapping
+
+
+def drop_non_output_columns(
+    df: pd.DataFrame, allow: Optional[list[str]] = []
+) -> pd.DataFrame:
+    """
+    Drop columns of a docking result dataframe that are not allowed OutputTags
+    ie the members of OutputTags.get_values() and StaticTags.get_values()
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Pandas dataframe of docking results
+    allow : list[str], optional
+        List of additional columns to allow
+
+    Returns
+    -------
+    df : pd.DataFrame
+        Pandas dataframe with invalid columns dropped
+    """
+    output_cols = OutputTags.get_values()
+    static_cols = StaticTags.get_values()
+    # combine output and static columns
+    output_cols.extend(static_cols)
+    # add allowed columns
+    output_cols.extend(allow)
+
+    # drop all columns that are not in the output
+    df = df.drop(columns=[col for col in df.columns if col not in output_cols])
+    return df
+
+
+def rename_output_columns_for_manifold(
+    df: pd.DataFrame,
+    target: str,
+    output_enums: list[Enum],
+    manifold_validate: Optional[bool] = True,
+    drop_non_output: Optional[bool] = True,
+    allow: Optional[list[str]] = [],
+) -> pd.DataFrame:
+    """
+    Rename columns of a result dataframe that are available to be
+    updated in the Postera Manifold for a specific target. i.e inject the
+    target name into the column name to satisfy validation for Postera Manifold.
+    for example:
+
+    Also optionally drop columns of a result dataframe that are not allowed output tags
+    ie the members of OutputTags.get_values() and StaticTags.get_values()
+
+    docking-pose-POSIT -> in-silico_SARS-CoV-2-Mpro_docking-pose-POSIT_msk
+
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Pandas dataframe of docking results
+    target : str
+        Target name
+    output_enums : list[Enum]
+        List of enums to rename the columns of
+    manifold_validate : bool, optional
+        If True, validate that the columns are valid for Postera Manifold
+    drop_non_output : bool, optional
+        If True, drop columns that are not allowed output tags
+    allow : list[str], optional
+        List of additional columns to allow when dropping
+    Returns
+    -------
+    df : pd.DataFrame
+    Pandas dataframe with invalid columns dropped and valid columns renamed
+
+    """
+    if not TargetTags.is_in_values(target):
+        raise ValueError(
+            f"Target {target} is not valid. Valid targets are: {TargetTags.get_values()}"
+        )
+
+    if drop_non_output:
+        df = drop_non_output_columns(df, allow=allow)
+
+    mapping = {}
+    for col_enum in output_enums:
+        mapping.update(map_output_col_to_manifold_tag(col_enum, target))
+
+    if manifold_validate:
+        if not ManifoldAllowedTags.all_in_values(mapping.values()):
+            raise ValueError(
+                f"Columns in dataframe {mapping.values()} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
+            )
+    # rename columns
+    df = df.rename(columns=mapping)
+    return df

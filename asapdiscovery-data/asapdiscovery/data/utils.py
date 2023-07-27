@@ -1441,7 +1441,7 @@ def exp_data_to_oe_mols(exp_data: list[ExperimentalCompoundData]) -> list[oechem
     """
     mols = []
     for ed in exp_data:
-        mol = oechem.OEMol()
+        mol = oechem.OEGraphMol()
         oechem.OESmilesToMol(mol, ed.smiles)
         mol.SetTitle(ed.compound_id)
         mols.append(mol)

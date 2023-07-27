@@ -356,14 +356,11 @@ def add_gif_progress_bar(
 
         # load the image.
         img = Image.open(filename)
-        draw = ImageDraw.Draw(img, "RGBA")
-        # make the background opaque white
         img2 = Image.new("RGBA", img.size, "WHITE")
         img2.paste(img, mask=img)
         draw = ImageDraw.Draw(img2, "RGBA")
 
         # get its dimensions (need these for coords); calculate progress bar width at this frame.
-        width, height = img.size
         width, height = img2.size
         bar_width = frame_num / total_frames * width
 

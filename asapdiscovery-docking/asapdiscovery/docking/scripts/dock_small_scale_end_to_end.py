@@ -8,13 +8,23 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas as pd
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.execution_utils import (
     estimate_n_workers,
     get_interfaces_with_dual_ip,
 )
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.postera.manifold_artifacts import (
+    ArtifactType,
+    ManifoldArtifactUploader,
+)
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    rename_output_columns_for_manifold,
+)
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
@@ -29,10 +39,7 @@ from asapdiscovery.docking import (
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
 )
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultCols,
-    rename_output_cols_for_manifold,
-)
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
@@ -41,7 +48,11 @@ from asapdiscovery.modeling.schema import (
     PreppedTargets,
 )
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
-from asapdiscovery.simulation.szybki import SzybkiFreeformConformerAnalyzer
+from asapdiscovery.simulation.szybki import (
+    SzybkiFreeformConformerAnalyzer,
+    SzybkiResultCols,
+)
+from boto3.session import Session
 
 """
 Script to run single target prep + docking.
@@ -384,10 +395,38 @@ def main():
         if postera_api_key is None:
             raise ValueError("Environment variable POSTERA_API_KEY not found")
 
-        logger.info("Postera API key found")
-        logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
+        aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+        if aws_access_key_id is None:
+            raise ValueError("Environment variable AWS_ACCESS_KEY_ID not found")
 
-        from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+        aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+        if aws_secret_access_key is None:
+            raise ValueError("Environment variable AWS_SECRET_ACCESS_KEY not found")
+
+        artifact_bucket_name = os.getenv("ARTIFACT_BUCKET_NAME")
+        if artifact_bucket_name is None:
+            raise ValueError("Environment variable ARTIFACT_BUCKET_NAME not found")
+
+        cloudfront_domain = os.getenv("CLOUDFRONT_DOMAIN")
+        if cloudfront_domain is None:
+            raise ValueError("Environment variable CLOUDFRONT_DOMAIN not found")
+
+        cloudfront_key_id = os.getenv("CLOUDFRONT_KEY_ID")
+        if cloudfront_key_id is None:
+            raise ValueError("Environment variable CLOUDFRONT_KEY_ID not found")
+
+        cloudfront_private_key_pem = os.getenv("CLOUDFRONT_PRIVATE_KEY_PEM")
+        if cloudfront_private_key_pem is None:
+            raise ValueError(
+                "Environment variable CLOUDFRONT_PRIVATE_KEY_PEM not found"
+            )
+        if not Path(cloudfront_private_key_pem).exists():
+            raise ValueError(
+                f"Cloudfront private key file does not exist: {cloudfront_private_key_pem}"
+            )
+
+        logger.info("Postera API key and AWS keys found")
+        logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
 
         ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
         avail_molsets = ms.list_available()
@@ -1063,33 +1102,104 @@ def main():
             index=False,
         )
 
-    renamed_top_posit = rename_output_cols_for_manifold(
+    column_enums = [DockingResultCols]
+    if args.szybki:
+        column_enums.append(SzybkiResultCols)
+
+    # keep in the artifact column for the poses and MD gifs so that we can upload them
+    # to PostEra Manifold later
+    renamed_top_posit_with_artifacts = rename_output_columns_for_manifold(
         top_posit,
         args.target,
+        column_enums,
         manifold_validate=True,
-        allow=[DockingResultCols.LIGAND_ID.value],
-        szybki=args.szybki,
+        allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose", "_outpath_gif"],
         drop_non_output=True,
     )
+
+    # drop the artifact columns for final results
+    cols_to_drop = [
+        col
+        for col in ["_outpath_pose", "_outpath_gif"]
+        if col in renamed_top_posit_with_artifacts.columns
+    ]
+    renamed_top_posit_final = renamed_top_posit_with_artifacts.drop(
+        columns=cols_to_drop
+    )
     # save to final CSV renamed for target
-    renamed_top_posit.to_csv(
+    renamed_top_posit_final.to_csv(
         output_dir / f"results_{args.target}_final.csv", index=False
     )
 
     if args.postera_upload:
         if not args.postera:
             raise ValueError("Must use --postera to upload to PostEra")
-        logger.info("Uploading results to PostEra")
+        logger.info("Uploading numerical results to PostEra")
 
+        # upload numerical results to PostEra
         ms.update_molecules_from_df_with_manifold_validation(
             molecule_set_id=molset_id,
-            df=renamed_top_posit,
+            df=renamed_top_posit_final,
             id_field=DockingResultCols.LIGAND_ID.value,
             smiles_field="SMILES",
             overwrite=True,
             debug_df_path=output_dir / "postera_uploaded.csv",
         )
-        logger.info("Finished uploading results to PostEra")
+        logger.info("Finished uploading numerical results to PostEra")
+
+        # start S3 session
+        session = Session(
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+        )
+
+        s3 = S3(session, artifact_bucket_name)
+
+        # create a cloudfront signer
+        cf = CloudFront(
+            cloudfront_domain,
+            key_id=cloudfront_key_id,
+            private_key_pem_path=cloudfront_private_key_pem,
+        )
+
+        logger.info("Uploading artifacts to PostEra")
+
+        # make a dataframe with the ligand ID and the pose artifact path
+        pose_df = renamed_top_posit_with_artifacts[
+            [DockingResultCols.LIGAND_ID.value, "_outpath_pose"]
+        ]
+        # make an uploader for the poses and upload them
+        pose_uploader = ManifoldArtifactUploader(
+            pose_df,
+            molset_id,
+            ArtifactType.DOCKING_POSE_POSIT,
+            ms,
+            cf,
+            s3,
+            args.target,
+            artifact_column="_outpath_pose",
+            bucket_name=artifact_bucket_name,
+        )
+        pose_uploader.upload_artifacts()
+
+        # make a dataframe with the ligand ID and the MD gif artifact path
+        md_df = renamed_top_posit_with_artifacts[
+            [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
+        ]
+        md_uploader = ManifoldArtifactUploader(
+            md_df,
+            molset_id,
+            ArtifactType.MD_POSE,
+            ms,
+            cf,
+            s3,
+            args.target,
+            artifact_column="_outpath_gif",
+            bucket_name=artifact_bucket_name,
+        )
+        md_uploader.upload_artifacts()
+
+        logger.info("Finished uploading artifacts to PostEra")
 
     if args.cleanup:
         if len(intermediate_files) > 0:
