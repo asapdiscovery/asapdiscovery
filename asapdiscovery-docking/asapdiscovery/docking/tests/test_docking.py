@@ -131,7 +131,7 @@ def test_single_target_docking(
         "-o",
         f"{output_dir}",
         "--viz-target",
-        "sars2_mpro",
+        "SARS-CoV-2-Mpro",
         "--target",
         "SARS-CoV-2-Mpro",
         "--no-omega",

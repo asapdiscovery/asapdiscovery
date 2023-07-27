@@ -5,23 +5,12 @@ from typing import List, Optional, Union  # noqa: F401
 from asapdiscovery.data.logging import FileLogger
 from rdkit import Chem
 
-from ._html_blocks import (
-    colour_7ene_mpro,
-    colour_mers_mpro,
-    colour_sars2_mac1,
-    colour_sars2_mpro,
-    make_core_html,
-    orient_tail_7ene_mpro,
-    orient_tail_272_mpro,
-    orient_tail_mers_mpro,
-    orient_tail_sars2_mac1,
-    orient_tail_sars2_mpro,
-)
+from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
 
 
-def _load_first_molecule(file_path: Path):
-    mols = Chem.SDMolSupplier(file_path)
+def _load_first_molecule(file_path: Union[Path, str]):
+    mols = Chem.SDMolSupplier(str(file_path))
     return mols[0]
 
 
@@ -50,7 +39,7 @@ class HTMLVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of: "sars2_mpro", "mers_mpro", "7ene_mpro", "272_mpro", "sars2_mac1".
+            Target to visualize poses for. Must be one of the allowed targets in VizTargets.
         protein : Path
             Path to protein PDB file.
         logger : FileLogger
@@ -155,17 +144,8 @@ class HTMLVisualizer:
         """
         Get HTML footer for pose visualization
         """
-        if self.target == "sars2_mpro":
-            return colour_sars2_mpro + orient_tail_sars2_mpro
-        elif self.target == "mers_mpro":
-            return colour_mers_mpro + orient_tail_mers_mpro
-        elif self.target == "7ene_mpro":
-            return colour_7ene_mpro + orient_tail_7ene_mpro
-        elif self.target == "272_mpro":
-            return colour_mers_mpro + orient_tail_272_mpro
-        elif self.target == "sars2_mac1":
-            return colour_sars2_mac1 + orient_tail_sars2_mac1
-        else:
-            raise ValueError(
-                f"Target {self.target} does not have an HTML visualiser element implemented."
-            )
+
+        colour = HTMLBlockData.get_pocket_color(self.target)
+        orient_tail = HTMLBlockData.get_orient_tail(self.target)
+
+        return colour + orient_tail
