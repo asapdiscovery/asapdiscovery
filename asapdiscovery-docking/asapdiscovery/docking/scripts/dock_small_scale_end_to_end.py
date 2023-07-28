@@ -643,20 +643,21 @@ def main():
 
             # NOTE you will need a config file that defines the dask-jobqueue for the cluster
             cluster = LSFCluster(
-                interface=interface, scheduler_options={"interface": interface}
+                interface=interface, scheduler_options={"interface": interface}, worker_extra_args=["--lifetime", "8h", "--lifetime-stagger", "10m"]
             )
 
             logger.info(f"dask config : {dask.config.config}")
 
-            if args.md:
-                # assume we want about 1 work units per worker, because MD + GIFs very GPU intensive
-                # and can take quite a while
-                ratio = 1
-            else:
-                # otherwise 3 should be a decent guess
-                ratio = 3
-            n_workers = estimate_n_workers(n_mols, ratio=ratio, maximum=20, minimum=1)
-            cluster.scale(n_workers)
+            # if args.md:
+            #     # assume we want about 1 work units per worker, because MD + GIFs very GPU intensive
+            #     # and can take quite a while
+            #     ratio = 1
+            # else:
+            #     # otherwise 3 should be a decent guess
+            #     ratio = 3
+            # n_workers = estimate_n_workers(n_mols, ratio=ratio, maximum=20, minimum=1)
+            # cluster.scale(n_workers)
+            cluster.adapt(minimum=0, maximum=50, wait_count=20, interval="10m")
             client = Client(cluster)
         else:
             client = Client()
