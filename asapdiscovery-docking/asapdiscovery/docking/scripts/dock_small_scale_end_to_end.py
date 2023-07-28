@@ -643,7 +643,9 @@ def main():
 
             # NOTE you will need a config file that defines the dask-jobqueue for the cluster
             cluster = LSFCluster(
-                interface=interface, scheduler_options={"interface": interface}, worker_extra_args=["--lifetime", "110m", "--lifetime-stagger", "2m"]
+                interface=interface,
+                scheduler_options={"interface": interface},
+                worker_extra_args=["--lifetime", "110m", "--lifetime-stagger", "2m"],
             )
 
             logger.info(f"dask config : {dask.config.config}")
