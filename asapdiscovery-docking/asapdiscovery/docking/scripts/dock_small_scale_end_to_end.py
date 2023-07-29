@@ -650,15 +650,6 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            # if args.md:
-            #     # assume we want about 1 work units per worker, because MD + GIFs very GPU intensive
-            #     # and can take quite a while
-            #     ratio = 1
-            # else:
-            #     # otherwise 3 should be a decent guess
-            #     ratio = 3
-            # n_workers = estimate_n_workers(n_mols, ratio=ratio, maximum=20, minimum=1)
-            # cluster.scale(n_workers)
             cluster.adapt(minimum=0, maximum=40, wait_count=10, interval="10m")
             client = Client(cluster)
         else:
@@ -864,6 +855,22 @@ def main():
             logger=logger,
         )
         html_visualiser.write_pose_visualizations()
+
+    # remove any with positive docking scores that would indicate a clash
+    clashing = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] > 0]
+    if len(clashing) > 0:
+        logger.warning(
+            f"IMPORTANT: docking has {len(clashing)} poses with score > 0 likely due to clashing"
+        )
+        # save debug csv if needed
+        clashing.to_csv(data_intermediate_dir / f"clashes.csv")
+        for _, row in clashing.iterrows():
+            logger.warning(
+                f"IMPORTANT: docking score invalid for {row[DockingResultCols.LIGAND_ID.value]} due to clashing, dropping from further analysis"
+            )
+
+    top_posit = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] <= 0]
+
 
     #################################
     #   Szybki conformer analysis   #
