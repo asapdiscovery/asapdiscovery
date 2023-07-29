@@ -265,7 +265,7 @@ class GIFVisualizer:
             p.cmd.save(str(parent_path / "session_5_selections.pse"))
 
         p.cmd.align(complex_name, complex_name_min)
-
+        p.cmd.delete(complex_name_min)
         # Process the trajectory in a temporary directory
         from pygifsicle import optimize
 
