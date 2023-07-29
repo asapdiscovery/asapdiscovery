@@ -615,7 +615,7 @@ def main():
         from dask.distributed import Client
 
         cfg.set({"distributed.scheduler.worker-ttl": None})
-        cfg.set({"distributed.admin.tick.limit": "2h"})
+        cfg.set({"distributed.admin.tick.limit": "10h"})
 
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
@@ -645,12 +645,12 @@ def main():
             cluster = LSFCluster(
                 interface=interface,
                 scheduler_options={"interface": interface},
-                worker_extra_args=["--lifetime", "110m", "--lifetime-stagger", "2m"],
+                worker_extra_args=["--lifetime", "10h", "--lifetime-stagger", "2m"],
             )
 
             logger.info(f"dask config : {dask.config.config}")
 
-            cluster.adapt(minimum=0, maximum=40, wait_count=10, interval="10m")
+            cluster.adapt(minimum=0, maximum=40, wait_count=10, interval="2m")
             client = Client(cluster)
         else:
             client = Client()
