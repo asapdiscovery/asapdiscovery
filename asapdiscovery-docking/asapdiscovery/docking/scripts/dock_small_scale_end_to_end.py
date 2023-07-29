@@ -871,7 +871,6 @@ def main():
 
     top_posit = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] <= 0]
 
-
     #################################
     #   Szybki conformer analysis   #
     #################################
