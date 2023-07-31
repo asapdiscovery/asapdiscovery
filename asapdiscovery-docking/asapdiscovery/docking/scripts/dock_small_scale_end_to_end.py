@@ -11,7 +11,6 @@ import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.execution_utils import (
-    estimate_n_workers,
     get_interfaces_with_dual_ip,
 )
 from asapdiscovery.data.logging import FileLogger
@@ -863,7 +862,7 @@ def main():
             f"IMPORTANT: docking has {len(clashing)} poses with score > 0 likely due to clashing"
         )
         # save debug csv if needed
-        clashing.to_csv(data_intermediate_dir / f"clashes.csv")
+        clashing.to_csv(data_intermediate_dir / "clashes.csv")
         for _, row in clashing.iterrows():
             logger.warning(
                 f"IMPORTANT: docking score invalid for {row[DockingResultCols.LIGAND_ID.value]} due to clashing, dropping from further analysis"
