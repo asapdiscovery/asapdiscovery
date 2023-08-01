@@ -1,7 +1,8 @@
 import os
 import uuid
-from asapdiscovery.data.services_config import S3Settings
+
 from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.services_config import S3Settings
 
 
 class TestS3:
