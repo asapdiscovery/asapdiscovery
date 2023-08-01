@@ -868,7 +868,7 @@ def main():
                 f"IMPORTANT: docking score invalid for {row[DockingResultCols.LIGAND_ID.value]} due to clashing, dropping from further analysis"
             )
 
-    top_posit = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] <= 0]
+    no_clash = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] <= 0]
 
     #################################
     #   Szybki conformer analysis   #
@@ -880,7 +880,7 @@ def main():
         logger.info("Running Szybki conformer analysis")
 
         # add szybki output column
-        top_posit["outpath_szybki"] = top_posit["ligand_id"].apply(
+        no_clash["outpath_szybki"] = no_clash["ligand_id"].apply(
             lambda x: szybki_dir / Path(x)
         )
         if args.dask:
@@ -896,7 +896,7 @@ def main():
 
             szybki_results = []
             for pose, output_path in zip(
-                top_posit["_docked_file"], top_posit["outpath_szybki"]
+                no_clash["_docked_file"], no_clash["outpath_szybki"]
             ):
                 res = dask_szybki_adaptor(pose, output_path)
                 szybki_results.append(res)
@@ -909,7 +909,7 @@ def main():
         else:
             logger.info("Running Szybki conformer analysis in serial")
             conformer_analysis = SzybkiFreeformConformerAnalyzer(
-                top_posit["_docked_file"], top_posit["outpath_szybki"], logger=logger
+                no_clash["_docked_file"], no_clash["outpath_szybki"], logger=logger
             )
             szybki_results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
 
@@ -964,7 +964,7 @@ def main():
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
 
-        top_posit["_outpath_md"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
+        no_clash["_outpath_md"] = no_clash[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: md_dir / Path(x)
         )
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
@@ -996,25 +996,25 @@ def main():
             # make a list of simulator results that we then compute in parallel
             retcodes = []
             for pose, output_path in zip(
-                top_posit["_docked_file"], top_posit["_outpath_md"]
+                no_clash["_docked_file"], no_clash["_outpath_md"]
             ):
                 retcode = dask_md_adaptor(pose, protein_path, output_path)
                 retcodes.append(retcode)
 
             # run in parallel sending out a bunch of Futures
-            retcodes = client.compute(retcodes)
+            futures = client.compute(retcodes)
             # gather results back to the client, blocking until all are done
-            retcodes = client.gather(retcodes)
+            retcodes = client.gather(futures)
 
         else:
             # don't do this if you can avoid it
             logger.info("Running MD with in serial")
             logger.warning("This will take a long time")
             simulator = VanillaMDSimulator(
-                top_posit["_docked_file"],
+                no_clash["_docked_file"],
                 protein_path,
                 logger=logger,
-                output_paths=top_posit["_outpath_md"],
+                output_paths=no_clash["_outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
             )
@@ -1031,15 +1031,15 @@ def main():
         gif_dir = output_dir / "gif"
         gif_dir.mkdir(parents=True, exist_ok=True)
 
-        top_posit["_outpath_md_sys"] = top_posit["_outpath_md"].apply(
+        no_clash["_outpath_md_sys"] = no_clash["_outpath_md"].apply(
             lambda x: Path(x) / "minimized.pdb"
         )
 
-        top_posit["_outpath_md_traj"] = top_posit["_outpath_md"].apply(
+        no_clash["_outpath_md_traj"] = no_clash["_outpath_md"].apply(
             lambda x: Path(x) / "traj.xtc"
         )
 
-        top_posit["_outpath_gif"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
+        no_clash["_outpath_gif"] = no_clash[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: gif_dir / Path(x) / "trajectory.gif"
         )
         # take only last .5ns of trajectory to get nicely equilibrated pose.
@@ -1076,9 +1076,9 @@ def main():
             logger.info("Running GIF visualization with Dask")
             outpaths = []
             for traj, system, outpath in zip(
-                top_posit["_outpath_md_traj"],
-                top_posit["_outpath_md_sys"],
-                top_posit["_outpath_gif"],
+                no_clash["_outpath_md_traj"],
+                no_clash["_outpath_md_sys"],
+                no_clash["_outpath_gif"],
             ):
                 outpath = dask_gif_adaptor(traj, system, outpath)
                 outpaths.append(outpath)
@@ -1092,9 +1092,9 @@ def main():
             logger.info("Running GIF visualization in serial")
             logger.warning("This will take a long time")
             gif_visualiser = GIFVisualizer(
-                top_posit["_outpath_md_traj"],
-                top_posit["_outpath_md_sys"],
-                top_posit["_outpath_gif"],
+                no_clash["_outpath_md_traj"],
+                no_clash["_outpath_md_sys"],
+                no_clash["_outpath_gif"],
                 args.viz_target,
                 frames_per_ns=200,
                 smooth=5,
@@ -1102,6 +1102,20 @@ def main():
                 logger=logger,
             )
             gif_visualiser.write_traj_visualizations()
+
+        # rejoin with main dataframe
+        # keep what we need from noclash, outpath_pose should already be in there
+        gif_data = no_clash[[DockingResultCols.LIGAND_ID.value, "_outpath_gif"]]
+        # join back to top_posit
+        top_posit = top_posit.merge(
+            gif_data, on=DockingResultCols.LIGAND_ID.value, how="left"
+        )
+        if args.debug:
+            # save top_posit with MD results
+            top_posit.to_csv(
+                data_intermediate_dir / f"results_{args.target}_succeded_with_md.csv",
+                index=False,
+            )
 
     if args.debug:
         # save debug csv if needed
