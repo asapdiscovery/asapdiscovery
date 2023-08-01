@@ -79,6 +79,27 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
 class MoleculeSetAPI(PostEraAPI):
     """Connection and commands for PostEra Molecule Set API"""
 
+    @classmethod
+    def from_settings(cls, settings):
+        """
+        Create an interface to PostEra Molecule Set API from a `Settings` object.
+
+        Parameters
+        ----------
+        settings
+            A `PosteraSettings` object
+
+        Returns
+        -------
+        MoleculeSetAPI
+            MoleculeSetAPI interface object.
+        """
+        return cls(
+            api_key=settings.postera_api_key,
+            url=settings.postera_api_url,
+            api_version=settings.postera_api_version,
+        )
+
     @property
     def molecule_set_url(self):
         return f"{self.api_url}/moleculesets"

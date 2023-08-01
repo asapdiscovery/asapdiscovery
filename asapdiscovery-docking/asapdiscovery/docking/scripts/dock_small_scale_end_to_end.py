@@ -403,9 +403,7 @@ def main():
 
         logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
 
-        ms = MoleculeSetAPI(
-            "https://api.asap.postera.ai", "v1", postera_settings.postera_api_key
-        )
+        ms = MoleculeSetAPI.from_settings(postera_settings)
         avail_molsets = ms.list_available()
         mols, molset_id = ms.get_molecules_from_id_or_name(args.mols)
         logger.info(
@@ -1124,20 +1122,10 @@ def main():
         )
         logger.info("Finished uploading numerical results to PostEra")
 
-        # start S3 session
-        session = Session(
-            aws_access_key_id=aws_s3_settings.aws_access_key_id,
-            aws_secret_access_key=aws_s3_settings.aws_secret_access_key,
-        )
-
-        s3 = S3(session, aws_s3_settings.artifact_bucket_name)
+        s3 = S3.from_settings(aws_s3_settings)
 
         # create a cloudfront signer
-        cf = CloudFront(
-            aws_cloudfront_settings.cloudfront_domain,
-            key_id=aws_cloudfront_settings.cloudfront_key_id,
-            private_key_pem_path=aws_cloudfront_settings.cloudfront_private_key_pem,
-        )
+        cf = CloudFront.from_settings(aws_cloudfront_settings)
 
         logger.info("Uploading artifacts to PostEra")
 
@@ -1155,26 +1143,26 @@ def main():
             s3,
             args.target,
             artifact_column="_outpath_pose",
-            bucket_name=artifact_bucket_name,
+            bucket_name=aws_s3_settings.bucket_name,
         )
         pose_uploader.upload_artifacts()
 
-        # make a dataframe with the ligand ID and the MD gif artifact path
-        md_df = renamed_top_posit_with_artifacts[
-            [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
-        ]
-        md_uploader = ManifoldArtifactUploader(
-            md_df,
-            molset_id,
-            ArtifactType.MD_POSE,
-            ms,
-            cf,
-            s3,
-            args.target,
-            artifact_column="_outpath_gif",
-            bucket_name=artifact_bucket_name,
-        )
-        md_uploader.upload_artifacts()
+        if args.md:  # make a dataframe with the ligand ID and the MD gif artifact path
+            md_df = renamed_top_posit_with_artifacts[
+                [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
+            ]
+            md_uploader = ManifoldArtifactUploader(
+                md_df,
+                molset_id,
+                ArtifactType.MD_POSE,
+                ms,
+                cf,
+                s3,
+                args.target,
+                artifact_column="_outpath_gif",
+                bucket_name=aws_s3_settings.bucket_name,
+            )
+            md_uploader.upload_artifacts()
 
         logger.info("Finished uploading artifacts to PostEra")
 

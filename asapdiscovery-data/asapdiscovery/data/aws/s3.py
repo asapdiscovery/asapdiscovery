@@ -45,6 +45,29 @@ class S3:
         self.bucket = bucket
         self.prefix = prefix.strip("/") if prefix is not None else ""
 
+    @classmethod
+    def from_settings(cls, settings):
+        """Create an interface to AWS S3 from a `Settings` object.
+
+        Parameters
+        ----------
+        settings
+            A `S3Settings` object.
+        prefix
+            The prefix to use for referencing objects in the bucket;
+            functions as a working sub-folder/directory.
+
+        Returns
+        -------
+        S3
+            S3 interface object.
+        """
+        session = boto3.Session(
+            aws_access_key_id=settings.aws_access_key_id,
+            aws_secret_access_key=settings.aws_secret_access_key,
+        )
+        return cls(session, settings.bucket_name, prefix=settings.prefix)
+
     def initialize(self):
         """Initialize bucket.
 

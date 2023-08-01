@@ -1,16 +1,20 @@
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pathlib import Path
+from typing import Optional
 
 
 class PosteraSettings(BaseSettings):
     postera_api_key: str
+    postera_api_url: str = "https://api.asap.postera.ai"
+    postera_api_version: str = "v1"
 
 
 class S3Settings(BaseSettings):
     aws_access_key_id: str
     aws_secret_access_key: str
-    artifact_bucket_name: str
+    bucket_name: str
+    prefix: Optional[str] = None
 
 
 class CloudfrontSettings(BaseSettings):
