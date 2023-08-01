@@ -57,7 +57,6 @@ from asapdiscovery.simulation.szybki import (
     SzybkiFreeformConformerAnalyzer,
     SzybkiResultCols,
 )
-from boto3.session import Session
 
 """
 Script to run single target prep + docking.

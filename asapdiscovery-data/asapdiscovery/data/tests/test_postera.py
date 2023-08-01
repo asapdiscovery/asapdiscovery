@@ -9,6 +9,7 @@ from asapdiscovery.data.postera import (
     MoleculeSetAPI,
     MoleculeUpdateList,
 )
+from asapdiscovery.data.services_config import PosteraSettings
 from requests import Session
 
 
@@ -87,6 +88,14 @@ class TestMoleculeSet:
     @pytest.fixture
     def moleculesetapi(self):
         return MoleculeSetAPI("mock_api_url", "mock_api_version", "mock_api_key")
+
+    def test_from_settings(self):
+        postera_settings = PosteraSettings(
+            postera_api_key="mock_api_key",
+            postera_api_url="mock_api_url",
+            postera_api_version="mock_api_version",
+        )
+        _ = MoleculeSetAPI.from_settings(postera_settings)
 
     @patch.object(Session, "post")
     def test_create(self, mock_post, moleculesetapi):
