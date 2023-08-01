@@ -8,7 +8,11 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas as pd
-from asapdiscovery.data.services_config import PosteraSettings, S3Settings, CloudfrontSettings
+from asapdiscovery.data.services_config import (
+    PosteraSettings,
+    S3Settings,
+    CloudfrontSettings,
+)
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.execution_utils import (
@@ -389,18 +393,19 @@ def main():
     #########################
 
     if args.postera:
-
         postera_settings = PosteraSettings()
         logger.info("Postera API key found")
 
         if args.postera_upload:
             aws_s3_settings = S3Settings()
             aws_cloudfront_settings = CloudfrontSettings()
-            logger.info("AWS credentials found")
+            logger.info("AWS S3 and CloudFront credentials found")
 
         logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
 
-        ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_settings.postera_api_key)
+        ms = MoleculeSetAPI(
+            "https://api.asap.postera.ai", "v1", postera_settings.postera_api_key
+        )
         avail_molsets = ms.list_available()
         mols, molset_id = ms.get_molecules_from_id_or_name(args.mols)
         logger.info(
@@ -532,7 +537,7 @@ def main():
     )
 
     targets = PreppedTargets.from_list([prep_input_schema])
-    targets.to_json(prep_dir / "input_targets.json")
+    # targets.to_json(prep_dir / "input_targets.json")
 
     # setup prep options
 
@@ -565,7 +570,7 @@ def main():
     # run prep
     prepped_targets = protein_prep_workflow_with_opts(input_target)
     prepped_targets = PreppedTargets.from_list([prepped_targets])
-    prepped_targets.to_json(prep_dir / "output_targets.json")
+    # prepped_targets.to_json(prep_dir / "output_targets.json")
     output_target = prepped_targets.iterable[0]
 
     if output_target.failed:

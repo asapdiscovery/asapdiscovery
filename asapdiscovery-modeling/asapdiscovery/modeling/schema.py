@@ -1,5 +1,6 @@
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 from asapdiscovery.data.schema import CrystalCompoundData, Dataset
 from pydantic import BaseModel, Field
@@ -45,8 +46,10 @@ class MoleculeFilter(_Model):
 class PrepOpts(_Model):
     ref_fn: Path = Field(None, description="Reference structure to align to.")
     ref_chain: str = Field(None, description="Chain ID to align to.")
-    seqres_yaml: Path = Field(None, description="Path to seqres yaml")
-    loop_db: Path = Field(None, description="Path to loop database to use for prepping")
+    seqres_yaml: Optional[Path] = Field(None, description="Path to seqres yaml")
+    loop_db: Optional[Path] = Field(
+        None, description="Path to loop database to use for prepping"
+    )
     make_design_unit: bool = Field(
         True,
         description="Whether to make a design unit or just to save the spruced protein.",
@@ -59,13 +62,13 @@ class PreppedTarget(_Model):
 
     # Filtering and Prepping options
     molecule_filter: MoleculeFilter
-    active_site_chain: str = Field(
+    active_site_chain: Optional[str] = Field(
         None, description="Chain identifying the active site of interest."
     )
-    oe_active_site_residue: str = Field(
+    oe_active_site_residue: Optional[str] = Field(
         None, description="OpenEye formatted active site residue."
     )
-    lig_chain: str = Field(None, description="Chain identifying the ligand.")
+    lig_chain: Optional[str] = Field(None, description="Chain identifying the ligand.")
 
     # Success Tracking
     prepped: bool = Field(False, description="Has the target been prepped yet?")
@@ -123,5 +126,5 @@ class PreppedTarget(_Model):
 
 
 class PreppedTargets(Dataset):
-    data_type = PreppedTarget
-    iterable: list[data_type]
+    data_type: PreppedTarget = PreppedTarget
+    iterable: list[PreppedTarget]
