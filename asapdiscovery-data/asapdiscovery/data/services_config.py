@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 from pathlib import Path
 
 
@@ -23,7 +23,5 @@ class CloudfrontSettings(BaseSettings):
     @classmethod
     def validate_cloudfront_private_key_pem_path(cls, v):
         if not Path(v).exists():
-            raise ValueError(
-                f"Cloudfront private key file does not exist: {v}"
-            )
+            raise ValueError(f"Cloudfront private key file does not exist: {v}")
         return v
