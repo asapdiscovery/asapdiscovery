@@ -8,6 +8,7 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas as pd
+from asapdiscovery.data.services_config import PosteraSettings, S3Settings, CloudfrontSettings
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.execution_utils import (
@@ -388,47 +389,18 @@ def main():
     #########################
 
     if args.postera:
-        import os
 
-        postera_api_key = os.getenv("POSTERA_API_KEY")
+        postera_settings = PosteraSettings()
+        logger.info("Postera API key found")
 
-        if postera_api_key is None:
-            raise ValueError("Environment variable POSTERA_API_KEY not found")
+        if args.postera_upload:
+            aws_s3_settings = S3Settings()
+            aws_cloudfront_settings = CloudfrontSettings()
+            logger.info("AWS credentials found")
 
-        aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-        if aws_access_key_id is None:
-            raise ValueError("Environment variable AWS_ACCESS_KEY_ID not found")
-
-        aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-        if aws_secret_access_key is None:
-            raise ValueError("Environment variable AWS_SECRET_ACCESS_KEY not found")
-
-        artifact_bucket_name = os.getenv("ARTIFACT_BUCKET_NAME")
-        if artifact_bucket_name is None:
-            raise ValueError("Environment variable ARTIFACT_BUCKET_NAME not found")
-
-        cloudfront_domain = os.getenv("CLOUDFRONT_DOMAIN")
-        if cloudfront_domain is None:
-            raise ValueError("Environment variable CLOUDFRONT_DOMAIN not found")
-
-        cloudfront_key_id = os.getenv("CLOUDFRONT_KEY_ID")
-        if cloudfront_key_id is None:
-            raise ValueError("Environment variable CLOUDFRONT_KEY_ID not found")
-
-        cloudfront_private_key_pem = os.getenv("CLOUDFRONT_PRIVATE_KEY_PEM")
-        if cloudfront_private_key_pem is None:
-            raise ValueError(
-                "Environment variable CLOUDFRONT_PRIVATE_KEY_PEM not found"
-            )
-        if not Path(cloudfront_private_key_pem).exists():
-            raise ValueError(
-                f"Cloudfront private key file does not exist: {cloudfront_private_key_pem}"
-            )
-
-        logger.info("Postera API key and AWS keys found")
         logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
 
-        ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
+        ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_settings.postera_api_key)
         avail_molsets = ms.list_available()
         mols, molset_id = ms.get_molecules_from_id_or_name(args.mols)
         logger.info(
@@ -1149,17 +1121,17 @@ def main():
 
         # start S3 session
         session = Session(
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
+            aws_access_key_id=aws_s3_settings.aws_access_key_id,
+            aws_secret_access_key=aws_s3_settings.aws_secret_access_key,
         )
 
-        s3 = S3(session, artifact_bucket_name)
+        s3 = S3(session, aws_s3_settings.artifact_bucket_name)
 
         # create a cloudfront signer
         cf = CloudFront(
-            cloudfront_domain,
-            key_id=cloudfront_key_id,
-            private_key_pem_path=cloudfront_private_key_pem,
+            aws_cloudfront_settings.cloudfront_domain,
+            key_id=aws_cloudfront_settings.cloudfront_key_id,
+            private_key_pem_path=aws_cloudfront_settings.cloudfront_private_key_pem,
         )
 
         logger.info("Uploading artifacts to PostEra")
