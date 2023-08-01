@@ -6,6 +6,7 @@ from typing import Optional
 import pandas as pd
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import oechem, oeszybki
+from openmm import unit
 from pydantic import BaseModel
 
 
@@ -18,7 +19,7 @@ class SzybkiFreeformResult(BaseModel):
     szybki_global_strain: float
     szybki_local_strain: float
     szybki_conformer_strain: float
-    units: str = "kcal/mol"
+    units = unit.kilocalories_per_mole
 
     class Config:
         allow_mutation = False

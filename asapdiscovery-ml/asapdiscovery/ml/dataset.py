@@ -534,7 +534,7 @@ class GraphInferenceDataset(Dataset):
 
         if all([type(exp) == str for exp in exp_compounds]):
             exp_compounds = [
-                ExperimentalCompoundData(compound_id=str(i), smiles=c)
+                ExperimentalCompoundData(compound_id=i, smiles=c)
                 for i, c in enumerate(exp_compounds)
             ]
         elif all([type(exp) == ExperimentalCompoundData for exp in exp_compounds]):

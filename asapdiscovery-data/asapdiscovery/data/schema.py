@@ -92,8 +92,8 @@ class Dataset(BaseModel):
     class Config:
         extra = "forbid"
 
-    data_type: Data = Data
-    iterable: list[Data]
+    data_type = Data
+    iterable: list[data_type]
 
     def to_csv(self, fn):
         df = pd.DataFrame([vars(data) for data in self.iterable])
@@ -105,7 +105,7 @@ class Dataset(BaseModel):
             pkl.dump(self, file)
 
     def to_json(self, fn: Union[str, Path]):
-        to_write = self.model_dump_json()
+        to_write = self.json()
         with open(fn, "w") as file:
             file.write(to_write)
 
@@ -132,8 +132,8 @@ class Dataset(BaseModel):
 
 
 class CrystalCompoundDataset(Dataset):
-    data_type: CrystalCompoundData = CrystalCompoundData
-    iterable: list[CrystalCompoundData]
+    data_type = CrystalCompoundData
+    iterable = list[data_type]
 
 
 class PDBStructure(Model):
