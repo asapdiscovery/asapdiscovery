@@ -8,11 +8,6 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas as pd
-from asapdiscovery.data.services_config import (
-    PosteraSettings,
-    S3Settings,
-    CloudfrontSettings,
-)
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.execution_utils import (
@@ -31,6 +26,11 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
+from asapdiscovery.data.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
     is_valid_smiles,
