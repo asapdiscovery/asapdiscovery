@@ -1,7 +1,11 @@
+import abc
 from collections import namedtuple
+from typing import Literal, Optional, Union
 
+import openfe
 from openmm.app import PME, HBonds
 from openmm.unit import amu, nanometers
+from pydantic import BaseModel, Field, PositiveFloat
 
 ForceFieldParams = namedtuple(
     "ForceFieldParams",
@@ -33,3 +37,244 @@ DefaultForceFieldParams = ForceFieldParams(
     rigid_water=True,
     hydrogen_mass=4.0 * amu,
 )
+
+
+class _SchemaBase(abc.ABC, BaseModel):
+    """
+    A basic schema class used to define the components of the Free energy workflow
+    """
+
+    type: Literal["base"] = "base"
+
+    class Config:
+        allow_mutation = True
+        validate_assignment = True
+
+
+class _BaseAtomMapper(_SchemaBase):
+    """
+    A base atom mapper which should be used to configure the method used to generate atom mappings.
+    """
+
+    @abc.abstractmethod
+    def _get_mapper(self):
+        ...
+
+    def get_mapper(self):
+        return self._get_mapper()
+
+    @abc.abstractmethod
+    def provenance(self) -> dict[str, str]:
+        """
+        Gather the names and versions of the Software used to calculate the atom mapping.
+        """
+        ...
+
+
+class LomapAtomMapper(_BaseAtomMapper):
+    """
+    A settings class for the LomapAtomMapper in openFE
+    """
+
+    type: Literal["LomapAtomMapper"] = "LomapAtomMapper"
+
+    time: PositiveFloat = Field(
+        20, description="The timeout in seconds of the MCS algorithm pass to RDKit"
+    )
+    threed: bool = Field(
+        True,
+        description="If positional info should used to choose between symmetrically equivalent mappins and prune the mapping.",
+    )
+    max3d: PositiveFloat = Field(
+        1000.0,
+        description="Maximum discrepancy in Angstroms between atoms before the mapping is not allowed. Large numbers trim no atoms.",
+    )
+    element_change: bool = Field(
+        True, description="Whether to allow element changes in the mappings."
+    )
+    seed: str = Field(
+        "", description="The SMARTS string used as a seed for MCS searches."
+    )
+    shift: bool = Field(
+        True,
+        description="When determining 3D overlap, if to translate the two MCS to minimise the RMSD to boost potential alignment.",
+    )
+
+    def _get_mapper(self):
+        from openfe import LomapAtomMapper
+
+        return LomapAtomMapper(**self.dict(exclude={"type"}))
+
+    def provenance(self) -> dict[str, str]:
+        import lomap
+        import openfe
+        import rdkit
+
+        return {
+            "openfe": openfe.__version__,
+            "lomap": lomap.__version__,
+            "rdkit": rdkit.__version__,
+        }
+
+
+class PersesAtomMapper(_BaseAtomMapper):
+    """
+    A settings class for the PersesAtomMapper in openFE
+    """
+
+    type: Literal["PersesAtomMapper"] = "PersesAtomMapper"
+
+    allow_ring_breaking: bool = Field(
+        True, description="If only full cycles of the molecules should be mapped."
+    )
+    preserve_chirality: bool = Field(
+        True,
+        description="If mappings must strictly preserve the chirality of the molecules.",
+    )
+    use_positions: bool = Field(
+        True,
+        description="If 3D positions should be used during the generation of the mappings.",
+    )
+    coordinate_tolerance: PositiveFloat = Field(
+        0.25,
+        description="A tolerance on how close coordinates need to be in Angstroms before they can be mapped. Does nothing if use_positions is `False`.",
+    )
+
+    def _get_mapper(self):
+        from openfe import PersesAtomMapper
+
+        return PersesAtomMapper(**self.dict(exclude={"type"}))
+
+    def provenance(self) -> dict[str, str]:
+        import openeye.oechem
+        import openfe
+        import perses
+
+        return {
+            "openfe": openfe.__version__,
+            "perses": perses.__version__,
+            "openeye.oechem": openeye.oechem.OEChemGetVersion(),
+        }
+
+
+class _NetworkPlannerSettings(_SchemaBase):
+    """
+    The Network planner settings which configure how the FEP networks should be constructed.
+    """
+
+    type: Literal["NetworkPlanner"] = "NetworkPlanner"
+
+    atom_mapping_engine: Union[LomapAtomMapper, PersesAtomMapper] = Field(
+        LomapAtomMapper(),
+        description="The method which should be used to create the mappings between molecules in the FEP network.",
+    )
+    scorer: Literal["default_lomap", "default_perses"] = Field(
+        "default_lomap",
+        description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
+    )
+    network_planning_method: Literal["radial", "maximal", "minimal_spanning"] = Field(
+        "radial_network",
+        description="The way in which the ligand network should be connected. Note radial requires a central ligand node.",
+    )
+
+
+class PlannedNetwork(_NetworkPlannerSettings):
+    """
+    A planned openFE network with complete atom mappings
+    """
+
+    type: Literal["PlannedNetwork"] = "PlannedNetwork"
+
+    provenance: dict[str, str] = Field(
+        ...,
+        description="The provenance of the software used to generate ligand network.",
+    )
+    central_ligand: Optional[openfe.SmallMoleculeComponent] = Field(
+        ..., description="The central ligand needed for radial networks."
+    )
+    ligands: list[openfe.SmallMoleculeComponent] = Field(
+        ...,
+        description="The list of docked ligands which should be included in the radial network.",
+    )
+    graphml: str = Field(
+        ...,
+        description="The GraphML string representation of the OpenFE LigandNetwork object. See to `to_ligand_network()`",
+    )
+
+    class Config:
+        """Overwrite the class config to freeze the results model"""
+
+        allow_mutation = False
+        arbitrary_types_allowed = True
+
+    def to_ligand_network(self) -> openfe.LigandNetwork:
+        """
+        Build a LigandNetwork from the planned network.
+        """
+        return openfe.LigandNetwork.from_graphml(self.graphml)
+
+
+class NetworkPlanner(_NetworkPlannerSettings):
+    """
+    An FEP network factory which builds networks based on the configured settings.
+    """
+
+    type: Literal["NetworkPlanner"] = "NetworkPlanner"
+
+    def _get_scorer(self):
+        # We don't need to explicitly handle raising an error as pydantic validation will do it for us
+        if self.scorer == "default_lomap":
+            return openfe.lomap_scorers.default_lomap_score
+        else:
+            return openfe.perses_scorers.default_perses_scorer
+
+    def _get_network_plan(self):
+        if self.network_planning_method == "radial":
+            return openfe.ligand_network_planning.generate_radial_network
+        elif self.network_planning_method == "maximal":
+            return openfe.ligand_network_planning.generate_maximal_network
+        else:
+            return openfe.ligand_network_planning.generate_minimal_spanning_network
+
+    def generate_network(
+        self,
+        ligands: list[openfe.SmallMoleculeComponent],
+        central_ligand: Optional[openfe.SmallMoleculeComponent] = None,
+    ) -> PlannedNetwork:
+        """
+        Generate a network with the configured settings.
+
+        Note:
+            central_ligand is required for the radial type networks
+        Args:
+            ligands: The set of ligands which should be included in the network.
+            central_ligand: The ligand which should be considered as the central node in a radial network
+        """
+
+        # validate the inputs
+        if self.network_planning_method == "radial" and central_ligand is None:
+            raise RuntimeError(
+                "The radial type network requires a ligand to act as the central node."
+            )
+
+        # build the network planner
+        planner_data = {
+            "ligands": ligands,  # need to convert to rdkit objects?
+            "mappers": [self.atom_mapping_engine.get_mapper()],
+            "scorer": self._get_scorer(),
+        }
+
+        # add the central ligand if required
+        if self.network_planning_method == "radial":
+            planner_data["central_ligand"] = central_ligand
+
+        network_method = self._get_network_plan()
+        ligand_network = network_method(**planner_data)
+
+        return PlannedNetwork(
+            **self.dict(exclude={"type"}),
+            ligands=ligands,
+            central_ligand=central_ligand,
+            graphml=ligand_network.to_graphml(),
+            provenance=self.atom_mapping_engine.provenance(),
+        )
