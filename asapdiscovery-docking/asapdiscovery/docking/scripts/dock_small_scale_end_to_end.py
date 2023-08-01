@@ -1204,24 +1204,25 @@ def main():
         )
         pose_uploader.upload_artifacts()
 
-        # make a dataframe with the ligand ID and the MD gif artifact path
-        md_df = renamed_top_posit_with_artifacts[
-            [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
-        ]
-        md_uploader = ManifoldArtifactUploader(
-            md_df,
-            molset_id,
-            ArtifactType.MD_POSE,
-            ms,
-            cf,
-            s3,
-            args.target,
-            artifact_column="_outpath_gif",
-            bucket_name=artifact_bucket_name,
-        )
-        md_uploader.upload_artifacts()
+        if args.md:
+            # make a dataframe with the ligand ID and the MD gif artifact path
+            md_df = renamed_top_posit_with_artifacts[
+                [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
+            ]
+            md_uploader = ManifoldArtifactUploader(
+                md_df,
+                molset_id,
+                ArtifactType.MD_POSE,
+                ms,
+                cf,
+                s3,
+                args.target,
+                artifact_column="_outpath_gif",
+                bucket_name=artifact_bucket_name,
+            )
+            md_uploader.upload_artifacts()
 
-        logger.info("Finished uploading artifacts to PostEra")
+            logger.info("Finished uploading artifacts to PostEra")
 
     if args.cleanup:
         if len(intermediate_files) > 0:
