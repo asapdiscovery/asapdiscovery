@@ -1220,7 +1220,7 @@ def main():
             )
             md_uploader.upload_artifacts()
 
-            logger.info("Finished uploading artifacts to PostEra")
+        logger.info("Finished uploading artifacts to PostEra")
 
     if args.cleanup:
         if len(intermediate_files) > 0:
