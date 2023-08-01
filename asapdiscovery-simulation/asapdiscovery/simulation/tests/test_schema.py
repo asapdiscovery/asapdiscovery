@@ -1,12 +1,11 @@
 import openfe
 import pytest
-from rdkit import Chem
-
 from asapdiscovery.simulation.schema import (
     LomapAtomMapper,
     NetworkPlanner,
     PersesAtomMapper,
 )
+from rdkit import Chem
 
 
 @pytest.mark.parametrize(
