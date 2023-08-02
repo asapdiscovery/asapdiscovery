@@ -240,12 +240,10 @@ class GIFVisualizer:
         p.cmd.load(str(system), object=complex_name_min)
 
         self.logger.info("Aligning simulation...")
-        p.cmd.align(complex_name, complex_name_min)
         if self.smooth:
             p.cmd.smooth(
                 "all", window=int(self.smooth)
             )  # perform some smoothing of frames
-        p.cmd.delete(complex_name_min)
         if self.contacts:
             self.logger.info("Showing contacts...")
             show_contacts(p, "ligand", "receptor")
@@ -263,9 +261,11 @@ class GIFVisualizer:
         p.cmd.hide("everything", "th")
 
         if self.pse or self.pse_share:
-            self.logger.info("Writing PyMol ensemble to session_5_intrafitted.pse...")
-            p.cmd.save(str(parent_path / "session_5_intrafitted.pse"))
+            self.logger.info("Writing PyMol ensemble to session_5_selections.pse...")
+            p.cmd.save(str(parent_path / "session_5_selections.pse"))
 
+        p.cmd.align(complex_name, complex_name_min)
+        p.cmd.delete(complex_name_min)
         # Process the trajectory in a temporary directory
         from pygifsicle import optimize
 
@@ -286,6 +286,9 @@ class GIFVisualizer:
         )  # saves png of each frame as "frame001.png, frame002.png, .."
 
         # stop pymol instance
+        if self.pse or self.pse_share:
+            self.logger.info("Writing PyMol ensemble to session_6_final.pse...")
+            p.cmd.save(str(parent_path / "session_6_final.pse"))
         p.stop()
 
         # TODO: higher resolution on the pngs.
