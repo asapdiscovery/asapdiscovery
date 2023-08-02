@@ -3,6 +3,7 @@ import pytest
 from rdkit import Chem
 
 from asapdiscovery.simulation.schema import (
+    KartographAtomMapper,
     LomapAtomMapper,
     NetworkPlanner,
     PersesAtomMapper,
@@ -14,6 +15,9 @@ from asapdiscovery.simulation.schema import (
     [
         pytest.param(LomapAtomMapper, "time", 30, id="Lomap"),
         pytest.param(PersesAtomMapper, "coordinate_tolerance", 0.15, id="Perses"),
+        pytest.param(
+            KartographAtomMapper, "atom_ring_matches_ring", True, id="Kartograph"
+        ),
     ],
 )
 def test_atom_mapper_settings(mapper, argument, value):
@@ -25,24 +29,25 @@ def test_atom_mapper_settings(mapper, argument, value):
     assert getattr(mapper_class, argument) == getattr(mapping_settings, argument)
 
 
-def test_lomap_provenance():
+@pytest.mark.parametrize(
+    "mapper, programs",
+    [
+        pytest.param(LomapAtomMapper, ["openfe", "lomap", "rdkit"], id="Lomap"),
+        pytest.param(
+            PersesAtomMapper, ["openfe", "perses", "openeye.oechem"], id="Perses"
+        ),
+        pytest.param(
+            KartographAtomMapper, ["openfe", "rdkit", "kartograf"], id="Kartograph"
+        ),
+    ],
+)
+def test_mapper_provenance(mapper, programs):
     """Make sure all used software are present in the provenance of the lomap atom mapper"""
 
-    mapper_settings = LomapAtomMapper()
+    mapper_settings = mapper()
     provenance = mapper_settings.provenance()
-    assert "openfe" in provenance
-    assert "lomap" in provenance
-    assert "rdkit" in provenance
-
-
-def test_perses_provenance():
-    """Make sure all used software are present in the provenance of the perses atom mapper."""
-
-    mapper_settings = PersesAtomMapper()
-    provenance = mapper_settings.provenance()
-    assert "openfe" in provenance
-    assert "perses" in provenance
-    assert "openeye.oechem" in provenance
+    for program in programs:
+        assert program in provenance
 
 
 @pytest.mark.parametrize(

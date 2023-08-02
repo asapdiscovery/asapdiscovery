@@ -157,6 +157,57 @@ class PersesAtomMapper(_BaseAtomMapper):
         }
 
 
+class KartographAtomMapper(_BaseAtomMapper):
+    """
+    A settings class for the kertograph atom mapping method.
+    """
+
+    type: Literal["KartographAtomMapper"] = "KartographAtomMapper"
+
+    atom_ring_matches_ring: bool = Field(
+        False, description="It only rings should be matched to other rings."
+    )
+    atom_max_distance: float = Field(
+        0.95,
+        description="The distance in Angstroms between two atoms before they can not be matched.",
+    )
+    atom_map_hydrogens: bool = Field(
+        True, description="If hydrogens should also be mapped in the transform."
+    )
+    map_hydrogens_on_hydrogens_only: bool = Field(
+        False, description="If hydrogens should only be matched to other hydrogens."
+    )
+    mapping_algorithm: Literal[
+        "linear_sum_assignment", "minimal_spanning_tree"
+    ] = Field(
+        "linear_sum_assignment",
+        description="The mapping algorithm that should be used.",
+    )
+
+    def _get_mapper(self):
+        from kartograf.atom_mapper import KartografAtomMapper, mapping_algorithm
+
+        # workaround the awkward argument name
+        settings = self.dict(exclude={"type", "mapping_algorithm"})
+        settings["_mapping_algorithm"] = (
+            mapping_algorithm.linear_sum_assignment
+            if self.mapping_algorithm == "linear_sum_assignment"
+            else mapping_algorithm.minimal_spanning_tree
+        )
+        return KartografAtomMapper(**settings)
+
+    def provenance(self) -> dict[str, str]:
+        import kartograf._version
+        import openfe
+        import rdkit
+
+        return {
+            "openfe": openfe.__version__,
+            "rdkit": rdkit.__version__,
+            "kartograf": kartograf._version.__version__,
+        }
+
+
 class _NetworkPlannerSettings(_SchemaBase):
     """
     The Network planner settings which configure how the FEP networks should be constructed.
@@ -164,7 +215,9 @@ class _NetworkPlannerSettings(_SchemaBase):
 
     type: Literal["NetworkPlanner"] = "NetworkPlanner"
 
-    atom_mapping_engine: Union[LomapAtomMapper, PersesAtomMapper] = Field(
+    atom_mapping_engine: Union[
+        LomapAtomMapper, PersesAtomMapper, KartographAtomMapper
+    ] = Field(
         LomapAtomMapper(),
         description="The method which should be used to create the mappings between molecules in the FEP network.",
     )
