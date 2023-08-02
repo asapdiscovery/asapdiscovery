@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import field_validator
-from pydantic import BaseSettings
+from pydantic import BaseSettings, validator
 
 
 class PosteraSettings(BaseSettings):
@@ -24,8 +23,7 @@ class CloudfrontSettings(BaseSettings):
     CLOUDFRONT_PRIVATE_KEY_PEM: str
 
     # validate cloudfront_private_key_pem exists
-    @field_validator("cloudfront_private_key_pem")
-    @classmethod
+    @validator("CLOUDFRONT_PRIVATE_KEY_PEM")
     def validate_cloudfront_private_key_pem_path(cls, v):
         if not Path(v).exists():
             raise ValueError(f"Cloudfront private key file does not exist: {v}")
