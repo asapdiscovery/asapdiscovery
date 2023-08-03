@@ -55,6 +55,27 @@ class CloudFront:
                 key_file.read(), password=None, backend=default_backend()
             )
 
+    @classmethod
+    def from_settings(cls, settings):
+        """Create an interface to AWS CloudFront from a ``CloudfrontSettings`` object.
+
+        Parameters
+        ----------
+        settings
+            A `CloudfrontSettings` object.
+
+        Returns
+        -------
+        CloudFront
+            CloudFront interface object.
+        """
+
+        return cls(
+            domain_name=settings.CLOUDFRONT_DOMAIN,
+            key_id=settings.CLOUDFRONT_KEY_ID,
+            private_key_pem_path=settings.CLOUDFRONT_PRIVATE_KEY_PEM,
+        )
+
     def generate_signed_url(self, object_path: str, expire: datetime.datetime):
         """Generate a signed URL for a given object hosted on S3, served through CloudFront.
 
