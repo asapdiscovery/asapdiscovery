@@ -73,3 +73,8 @@ def test_cloudfront_settings(mock_cloudfront_env_vars, mock_cloudfront_pem_file_
     assert cf.CLOUDFRONT_DOMAIN == "mock_domain"
     assert cf.CLOUDFRONT_KEY_ID == "mock_id"
     assert cf.CLOUDFRONT_PRIVATE_KEY_PEM == "mock_pem"
+
+
+def test_cloudfront_settings_pem_file_validator(mock_cloudfront_env_vars):
+    with pytest.raises(ValueError, match="Cloudfront private key file"):
+        cf = CloudfrontSettings()
