@@ -1,7 +1,5 @@
 import openfe
 import pytest
-from rdkit import Chem
-
 from asapdiscovery.simulation.schema import (
     KartographAtomMapper,
     LomapAtomMapper,
@@ -9,6 +7,7 @@ from asapdiscovery.simulation.schema import (
     PersesAtomMapper,
     SolventSettings,
 )
+from rdkit import Chem
 
 
 @pytest.mark.parametrize(
