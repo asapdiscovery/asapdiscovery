@@ -43,7 +43,6 @@ from asapdiscovery.ml.utils import (
     find_most_recent,
     load_weights,
     parse_config,
-    plot_loss,
     split_dataset,
     train,
 )
@@ -148,6 +147,7 @@ def wandb_init(
     run_name,
     sweep,
     cont,
+    model_o=None,
     exp_configure=None,
 ):
     import wandb
@@ -155,9 +155,15 @@ def wandb_init(
     if sweep:
         run_id = wandb.init().id
     else:
-        run_id_fn = os.path.join(args.model_o, "run_id")
+        try:
+            run_id_fn = os.path.join(model_o, "run_id")
+        except TypeError:
+            run_id_fn = None
 
         if cont:
+            if run_id_fn is None:
+                raise ValueError("No model_o directory specified, can't continue run.")
+
             # Load run_id to continue from file
             # First make sure the file exists
             try:
@@ -166,7 +172,7 @@ def wandb_init(
                 raise FileNotFoundError("Couldn't find run_id file to continue run.")
             # Make sure the run_id is legit
             try:
-                run = wandb.init(project=project_name, id=run_id, resume="must")
+                wandb.init(project=project_name, id=run_id, resume="must")
             except wandb.errors.UsageError:
                 raise wandb.errors.UsageError(
                     f"Run in run_id file ({run_id}) doesn't exist"
@@ -181,9 +187,16 @@ def wandb_init(
             run_id = wandb.init(
                 project=project_name, config=exp_configure, name=run_name
             ).id
+
             # Save run_id in case we want to continue later
-            with open(run_id_fn, "w") as fp:
-                fp.write(run_id)
+            if run_id_fn is None:
+                print(
+                    "No model_o directory specified, not saving run_id anywhere.",
+                    flush=True,
+                )
+            else:
+                with open(run_id_fn, "w") as fp:
+                    fp.write(run_id)
 
     return run_id
 
@@ -414,7 +427,7 @@ def init(args, rank=False):
 
     # Start wandb
     if args.sweep or args.wandb:
-        run_id = wandb_init(args.proj, args.name, args.sweep, args.cont)
+        run_id = wandb_init(args.proj, args.name, args.sweep, args.cont, args.model_o)
         model_dir = os.path.join(args.model_o, run_id)
     else:
         model_dir = args.model_o
