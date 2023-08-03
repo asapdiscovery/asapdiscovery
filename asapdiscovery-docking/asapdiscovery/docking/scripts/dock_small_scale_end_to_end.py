@@ -347,17 +347,13 @@ def main():
     if not args.viz_target:
         args.viz_target = args.target
 
-
     # check for postera and S3 credentials
     if args.postera:
         postera_settings = PosteraSettings()
-        logger.info("Postera API key found")
 
         if args.postera_upload:
             aws_s3_settings = S3Settings()
             aws_cloudfront_settings = CloudfrontSettings()
-            logger.info("AWS S3 and CloudFront credentials found")
-
 
     # setup output directory
     output_dir = Path(args.output_dir)
@@ -404,6 +400,9 @@ def main():
     #########################
 
     if args.postera:
+        logger.info("Postera API key found")
+        if args.postera_upload:
+            logger.info("AWS S3 and CloudFront credentials found")
 
         logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
         ms = MoleculeSetAPI.from_settings(postera_settings)

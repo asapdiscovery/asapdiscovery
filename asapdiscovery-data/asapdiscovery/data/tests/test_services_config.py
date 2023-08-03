@@ -2,7 +2,11 @@ import os
 from unittest import mock
 
 import pytest
-from asapdiscovery.data.services_config import *
+from asapdiscovery.data.services_config import (
+    PosteraSettings,
+    S3Settings,
+    CloudfrontSettings,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -77,4 +81,4 @@ def test_cloudfront_settings(mock_cloudfront_env_vars, mock_cloudfront_pem_file_
 
 def test_cloudfront_settings_pem_file_validator(mock_cloudfront_env_vars):
     with pytest.raises(ValueError, match="Cloudfront private key file"):
-        cf = CloudfrontSettings()
+        _ = CloudfrontSettings()
