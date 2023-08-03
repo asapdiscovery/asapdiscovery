@@ -1,9 +1,8 @@
 import argparse
 import logging
 
-from asapdiscovery.data.openeye import oechem, oeomega, print_SD_data
 from asapdiscovery.data.logging import FileLogger
-
+from asapdiscovery.data.openeye import oechem, oeomega, print_SD_data
 
 parser = argparse.ArgumentParser(
     description="Enumerate steroisomers of molecules in a file"
