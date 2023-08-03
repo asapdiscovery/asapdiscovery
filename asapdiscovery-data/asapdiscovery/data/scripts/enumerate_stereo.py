@@ -1,5 +1,7 @@
 import argparse
-from asapdiscovery.data.openeye import oechem
+import logging
+
+from asapdiscovery.data.openeye import oechem, oeomega, print_SD_data
 from asapdiscovery.data.logging import FileLogger
 
 
@@ -27,6 +29,18 @@ parser.add_argument(
     help="Add warts to the output file",
 )
 
+parser.add_argument(
+    "--force-flip",
+    action="store_true",
+    help="Force enumeration of stereo centers even if defined",
+)
+
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="Print debug messages",
+)
+
 
 def main():
     args = parser.parse_args()
@@ -38,23 +52,34 @@ def main():
     logger.info(f"Enumerating stereoisomers for {args.infile} to {args.outfile}")
     logger.info(f"Adding warts: {args.warts}")
 
-    flipperOpts = oeomega.OEFlipperOptions().SetWarts(args.warts)
+    flipperOpts = oeomega.OEFlipperOptions()
+    flipperOpts.SetWarts(args.warts)
+    flipperOpts.SetEnumSpecifiedStereo(args.force_flip)
 
     ifs = oechem.oemolistream()
-    if not ifs.open(infile):
-        oechem.OEThrow.Fatal(f"Unable to open {infile} for reading")
+    if not ifs.open(args.infile):
+        oechem.OEThrow.Fatal(f"Unable to open {args.infile} for reading")
 
     ofs = oechem.oemolostream()
-    if not ofs.open(outfile):
-        oechem.OEThrow.Fatal(f"Unable to open {outfile} for writing")
+    if not ofs.open(args.outfile):
+        oechem.OEThrow.Fatal(f"Unable to open {args.outfile} for writing")
 
     for mol in ifs.GetOEMols():
-        logger.info(f"Molecule: {mol.GetTitle()}")
+        logger.info(f"Molecule Title: {mol.GetTitle()}")
+        # for some reason SD data only being read from graphmol
+        mol_name_sd = oechem.OEGetSDData(mol.GetActive(), "Molecule Name")
+        if mol_name_sd:
+            logger.info(f"Molecule Name: {mol_name_sd}")
+            mol.SetTitle(mol_name_sd)
         n_expanded = 0
         for enantiomer in oeomega.OEFlipper(mol.GetActive(), flipperOpts):
             n_expanded += 1
             fmol = oechem.OEMol(enantiomer)
             oechem.OEWriteMolecule(ofs, fmol)
+            if args.debug:
+                # print smiles
+                smiles = oechem.OEMolToSmiles(fmol)
+                logger.debug(f"SMILES: {smiles}")
         logger.info(f"Expanded {n_expanded} stereoisomers")
 
 
