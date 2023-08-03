@@ -2,10 +2,23 @@ import abc
 from collections import namedtuple
 from typing import Literal, Optional, Union
 
+import gufe
 import openfe
+from openfe.protocols.openmm_rfe.equil_rfe_settings import (
+    AlchemicalSamplerSettings,
+    AlchemicalSettings,
+    IntegratorSettings,
+    OpenMMEngineSettings,
+    RelativeHybridTopologyProtocolSettings,
+    SimulationSettings,
+    SolvationSettings,
+    SystemSettings,
+)
+from openff.models.models import DefaultModel
+from openff.units import unit as OFFUnit
 from openmm.app import PME, HBonds
 from openmm.unit import amu, nanometers
-from pydantic import BaseModel, Field, PositiveFloat
+from pydantic import Field, PositiveFloat
 
 ForceFieldParams = namedtuple(
     "ForceFieldParams",
@@ -39,16 +52,26 @@ DefaultForceFieldParams = ForceFieldParams(
 )
 
 
-class _SchemaBase(abc.ABC, BaseModel):
+class _SchemaBase(abc.ABC, DefaultModel):
     """
     A basic schema class used to define the components of the Free energy workflow
     """
 
     type: Literal["base"] = "base"
 
-    class Config:
-        allow_mutation = True
-        validate_assignment = True
+    def to_file(self, filename: str):
+        """
+        Write the model to JSON file.
+        """
+        with open(filename, "w") as output:
+            output.write(self.json(indent=2))
+
+    @classmethod
+    def from_file(cls, filename: str):
+        """
+        Load the model from a JSON file
+        """
+        return cls.parse_file(filename)
 
 
 class _BaseAtomMapper(_SchemaBase):
@@ -331,3 +354,171 @@ class NetworkPlanner(_NetworkPlannerSettings):
             graphml=ligand_network.to_graphml(),
             provenance=self.atom_mapping_engine.provenance(),
         )
+
+
+class SolventSettings(_SchemaBase):
+    """
+    A settings class to encode the solvent used in the OpenFE FEP calculations.
+    """
+
+    type: Literal["SolventSettings"] = "SolventSettings"
+
+    smiles: str = Field("O", description="The smiles pattern of the solvent.")
+    positive_ion: str = Field(
+        "Na+",
+        description="The positive monoatomic ion which should be used to neutralize the system and to adjust the ionic concentration.",
+    )
+    negative_ion: str = Field(
+        "Cl-",
+        description="The negative monoatomic ion which should be used to neutralize the system and to adjust the ionic concentration.",
+    )
+    neutralize: bool = Field(
+        True,
+        description="If the net charge of the chemical system should be neutralized by the ions defined by `positive_ion` abd `negative_ion`.",
+    )
+    ion_concentration: PositiveFloat = Field(
+        0.15, description="The ionic concentration required in molar units."
+    )
+
+    def to_solvent_component(self) -> gufe.SolventComponent:
+        # work around units until we use openff-models
+        solvent_data = self.dict(exclude={"type", "ion_concentration"})
+        solvent_data["ion_concentration"] = self.ion_concentration * OFFUnit.molar
+        return gufe.SolventComponent(**solvent_data)
+
+
+class FreeEnergyPerturbationNetwork(_SchemaBase):
+    """
+    A schema of a FEP network created by the FreeEnergyPerturbationFactory which contains all runtime settings and can
+    be converted to local openFE inputs or submitted to alchemiscale.
+    """
+
+    type: Literal["FreeEnergyPerturbationNetwork"] = "FreeEnergyPerturbationNetwork"
+    dataset_name: str = Field(
+        ...,
+        description="The name of the dataset, this will be used for local files and the alchemiscale network.",
+    )
+    network: PlannedNetwork = Field(
+        ...,
+        description="The planned free energy network with atom mappings between ligands.",
+    )
+    receptor: openfe.ProteinComponent = Field(
+        ..., description="The receptor which should be used in the FEP calculation."
+    )
+    solvent_settings: SolventSettings = Field(
+        ...,
+        description="The solvent settings which should be used during the free energy calculations.",
+    )
+    protocol: RelativeHybridTopologyProtocolSettings = Field(
+        ..., description="The protocol with all runtime settings configured"
+    )
+    # TODO add more alchemiscale specific options to make it easy to find on the network.
+
+    class Config:
+        """Overwrite the class config to freeze the results model"""
+
+        allow_mutation = False
+
+
+class FreeEnergyPerturbationFactory(_SchemaBase):
+    """A factory class to configure FEP calculations using the openFE pipeline. This generates a prepared FEP network
+    which can be executed locally or submitted to Alchemiscale."""
+
+    type: Literal["FreeEnergyPerturbationFactory"] = "FreeEnergyPerturbationFactory"
+
+    network_planner: NetworkPlanner = Field(
+        NetworkPlanner(),
+        description="The network planner settings which should be used to construct the network.",
+    )
+    solvent_settings: SolventSettings = Field(
+        SolventSettings(),
+        description="The solvent settings which should be used during the free energy calculations.",
+    )
+    force_field_settings: gufe.settings.OpenMMSystemGeneratorFFSettings = Field(
+        gufe.settings.OpenMMSystemGeneratorFFSettings(),
+        description="The force field settings used to parameterize the systems.",
+    )
+    thermo_settings: gufe.settings.ThermoSettings = Field(
+        gufe.settings.ThermoSettings(
+            temperature=298.15 * OFFUnit.kelvin, pressure=1 * OFFUnit.bar
+        ),
+        description="The settings for thermodynamic parameters.",
+    )
+    system_settings: SystemSettings = Field(
+        SystemSettings(), description="The nonbonded system settings."
+    )
+    solvation_settings: SolvationSettings = Field(
+        SolvationSettings(),
+        description="Settings controlling how the systems should be solvated.",
+    )
+    alchemical_settings: AlchemicalSettings = Field(
+        AlchemicalSettings(), description="The alchemical protocol settings."
+    )
+    alchemical_sampler_settings: AlchemicalSamplerSettings = Field(
+        AlchemicalSamplerSettings(),
+        description="Settings for the Equilibrium Alchemical sampler, currently supporting either MultistateSampler, SAMSSampler or ReplicaExchangeSampler.",
+    )
+    engine_settings: OpenMMEngineSettings = Field(
+        OpenMMEngineSettings(), description="Openmm platform settings."
+    )
+    integrator_settings: IntegratorSettings = Field(
+        IntegratorSettings(),
+        description="Settings for the LangevinSplittingDynamicsMove integrator.",
+    )
+    simulation_settings: SimulationSettings = Field(
+        SimulationSettings(
+            equilibration_length=1.0 * OFFUnit.nanoseconds,
+            production_length=5.0 * OFFUnit.nanoseconds,
+        ),
+        description="Settings for simulation control, including lengths and writing to disk.",
+    )
+    protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
+        "RelativeHybridTopologyProtocol",
+        description="The name of the OpenFE alchemical protocol to use.",
+    )
+
+    def _get_protocol(self):
+        if self.protocol == "RelativeHybridTopologyProtocol":
+            return RelativeHybridTopologyProtocolSettings
+
+    def create_fep_dataset(
+        self,
+        dataset_name: str,
+        receptor: openfe.ProteinComponent,
+        ligands: list[openfe.SmallMoleculeComponent],
+        central_ligand: Optional[openfe.SmallMoleculeComponent],
+    ) -> FreeEnergyPerturbationNetwork:
+        """
+         Use the factory settings to create a FEP dataset using OpenFE models.
+
+        Args:
+            dataset_name: The name which should be given to this dataset, this will be used for local file creation or
+            to identify on alchemiscale
+            receptor: The prepared receptor to use in the FEP dataset.
+            ligands: The list of prepared and state enumerated ligands to use in the FEP calculation.
+            central_ligand: An optional ligand which should be considered as the center only needed for radial networks.
+            Note this ligand will be deduplicated from the list if it appears in both.
+
+         Returns:
+             The planned FEP network which can be executed locally or submitted to alchemiscale.
+        """
+
+        # start by trying to plan the network
+        planned_network = self.network_planner.generate_network(
+            ligands=ligands, central_ligand=central_ligand
+        )
+        # transport all other settings to the network
+        protocol = self._get_protocol()
+        protocol_settings = protocol(
+            **self.dict(
+                exclude={"type", "network_planner", "solvent_settings", "protocol"}
+            )
+        )
+        planned_fep_network = FreeEnergyPerturbationNetwork(
+            dataset_name=dataset_name,
+            network=planned_network,
+            receptor=receptor,
+            solvent_settings=self.solvent_settings,
+            protocol=protocol_settings,
+        )
+        return planned_fep_network

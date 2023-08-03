@@ -7,6 +7,7 @@ from asapdiscovery.simulation.schema import (
     LomapAtomMapper,
     NetworkPlanner,
     PersesAtomMapper,
+    SolventSettings,
 )
 
 
@@ -116,3 +117,13 @@ def test_generate_network_lomap(network_type):
     if network_type == "radial":
         # radial should have all ligands connected to the central node
         assert len(fe_network.edges) == 9
+
+
+def test_solvent_settings():
+    """Make sure solvent settings are correctly passed to the gufe solvent component."""
+
+    settings = SolventSettings()
+    settings.ion_concentration = 0.25
+
+    component = settings.to_solvent_component()
+    assert component._ion_concentration.m == settings.ion_concentration
