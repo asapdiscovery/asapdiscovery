@@ -4,6 +4,7 @@ from typing import Literal, Optional, Union
 
 import gufe
 import openfe
+from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
     AlchemicalSettings,
@@ -249,7 +250,7 @@ class _NetworkPlannerSettings(_SchemaBase):
         description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
     )
     network_planning_method: Literal["radial", "maximal", "minimal_spanning"] = Field(
-        "radial_network",
+        "radial",
         description="The way in which the ligand network should be connected. Note radial requires a central ligand node.",
     )
 
@@ -434,12 +435,12 @@ class FreeEnergyPerturbationFactory(_SchemaBase):
         SolventSettings(),
         description="The solvent settings which should be used during the free energy calculations.",
     )
-    force_field_settings: gufe.settings.OpenMMSystemGeneratorFFSettings = Field(
-        gufe.settings.OpenMMSystemGeneratorFFSettings(),
+    forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
+        settings.OpenMMSystemGeneratorFFSettings(),
         description="The force field settings used to parameterize the systems.",
     )
-    thermo_settings: gufe.settings.ThermoSettings = Field(
-        gufe.settings.ThermoSettings(
+    thermo_settings: settings.ThermoSettings = Field(
+        settings.ThermoSettings(
             temperature=298.15 * OFFUnit.kelvin, pressure=1 * OFFUnit.bar
         ),
         description="The settings for thermodynamic parameters.",
@@ -510,9 +511,15 @@ class FreeEnergyPerturbationFactory(_SchemaBase):
         # transport all other settings to the network
         protocol = self._get_protocol()
         protocol_settings = protocol(
-            **self.dict(
-                exclude={"type", "network_planner", "solvent_settings", "protocol"}
-            )
+            forcefield_settings=self.forcefield_settings,
+            thermo_settings=self.thermo_settings,
+            system_settings=self.system_settings,
+            solvation_settings=self.solvation_settings,
+            alchemical_settings=self.alchemical_settings,
+            alchemical_sampler_settings=self.alchemical_sampler_settings,
+            engine_settings=self.engine_settings,
+            integrator_settings=self.integrator_settings,
+            simulation_settings=self.simulation_settings,
         )
         planned_fep_network = FreeEnergyPerturbationNetwork(
             dataset_name=dataset_name,
