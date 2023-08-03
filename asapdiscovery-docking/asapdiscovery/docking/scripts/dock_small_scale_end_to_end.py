@@ -10,7 +10,10 @@ import dask
 import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
+from asapdiscovery.data.execution_utils import (
+    estimate_n_workers,
+    get_interfaces_with_dual_ip,
+)
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -23,6 +26,11 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
+from asapdiscovery.data.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
     is_valid_smiles,
@@ -49,7 +57,6 @@ from asapdiscovery.simulation.szybki import (
     SzybkiFreeformConformerAnalyzer,
     SzybkiResultCols,
 )
-from boto3.session import Session
 
 """
 Script to run single target prep + docking.
@@ -340,6 +347,14 @@ def main():
     if not args.viz_target:
         args.viz_target = args.target
 
+    # check for postera and S3 credentials
+    if args.postera:
+        postera_settings = PosteraSettings()
+
+        if args.postera_upload:
+            aws_s3_settings = S3Settings()
+            aws_cloudfront_settings = CloudfrontSettings()
+
     # setup output directory
     output_dir = Path(args.output_dir)
     overwrote_dir = False
@@ -385,47 +400,12 @@ def main():
     #########################
 
     if args.postera:
-        import os
+        logger.info("Postera API key found")
+        if args.postera_upload:
+            logger.info("AWS S3 and CloudFront credentials found")
 
-        postera_api_key = os.getenv("POSTERA_API_KEY")
-
-        if postera_api_key is None:
-            raise ValueError("Environment variable POSTERA_API_KEY not found")
-
-        aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-        if aws_access_key_id is None:
-            raise ValueError("Environment variable AWS_ACCESS_KEY_ID not found")
-
-        aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-        if aws_secret_access_key is None:
-            raise ValueError("Environment variable AWS_SECRET_ACCESS_KEY not found")
-
-        artifact_bucket_name = os.getenv("ARTIFACT_BUCKET_NAME")
-        if artifact_bucket_name is None:
-            raise ValueError("Environment variable ARTIFACT_BUCKET_NAME not found")
-
-        cloudfront_domain = os.getenv("CLOUDFRONT_DOMAIN")
-        if cloudfront_domain is None:
-            raise ValueError("Environment variable CLOUDFRONT_DOMAIN not found")
-
-        cloudfront_key_id = os.getenv("CLOUDFRONT_KEY_ID")
-        if cloudfront_key_id is None:
-            raise ValueError("Environment variable CLOUDFRONT_KEY_ID not found")
-
-        cloudfront_private_key_pem = os.getenv("CLOUDFRONT_PRIVATE_KEY_PEM")
-        if cloudfront_private_key_pem is None:
-            raise ValueError(
-                "Environment variable CLOUDFRONT_PRIVATE_KEY_PEM not found"
-            )
-        if not Path(cloudfront_private_key_pem).exists():
-            raise ValueError(
-                f"Cloudfront private key file does not exist: {cloudfront_private_key_pem}"
-            )
-
-        logger.info("Postera API key and AWS keys found")
         logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
-
-        ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
+        ms = MoleculeSetAPI.from_settings(postera_settings)
         avail_molsets = ms.list_available()
         mols, molset_id = ms.get_molecules_from_id_or_name(args.mols)
         logger.info(
@@ -612,7 +592,7 @@ def main():
         from dask.distributed import Client
 
         cfg.set({"distributed.scheduler.worker-ttl": None})
-        cfg.set({"distributed.admin.tick.limit": "10h"})
+        cfg.set({"distributed.admin.tick.limit": "2h"})
 
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
@@ -640,14 +620,20 @@ def main():
 
             # NOTE you will need a config file that defines the dask-jobqueue for the cluster
             cluster = LSFCluster(
-                interface=interface,
-                scheduler_options={"interface": interface},
-                worker_extra_args=["--lifetime", "10h", "--lifetime-stagger", "2m"],
+                interface=interface, scheduler_options={"interface": interface}
             )
 
             logger.info(f"dask config : {dask.config.config}")
 
-            cluster.adapt(minimum=0, maximum=40, wait_count=10, interval="2m")
+            if args.md:
+                # assume we want about 1 work units per worker, because MD + GIFs very GPU intensive
+                # and can take quite a while
+                ratio = 1
+            else:
+                # otherwise 3 should be a decent guess
+                ratio = 3
+            n_workers = estimate_n_workers(n_mols, ratio=ratio, maximum=20, minimum=1)
+            cluster.scale(n_workers)
             client = Client(cluster)
         else:
             client = Client()
@@ -853,21 +839,6 @@ def main():
         )
         html_visualiser.write_pose_visualizations()
 
-    # remove any with positive docking scores that would indicate a clash
-    clashing = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] > 0]
-    if len(clashing) > 0:
-        logger.warning(
-            f"IMPORTANT: docking has {len(clashing)} poses with score > 0 likely due to clashing"
-        )
-        # save debug csv if needed
-        clashing.to_csv(data_intermediate_dir / "clashes.csv")
-        for _, row in clashing.iterrows():
-            logger.warning(
-                f"IMPORTANT: docking score invalid for {row[DockingResultCols.LIGAND_ID.value]} due to clashing, dropping from further analysis"
-            )
-
-    no_clash = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] <= 0]
-
     #################################
     #   Szybki conformer analysis   #
     #################################
@@ -878,7 +849,7 @@ def main():
         logger.info("Running Szybki conformer analysis")
 
         # add szybki output column
-        no_clash["outpath_szybki"] = no_clash["ligand_id"].apply(
+        top_posit["outpath_szybki"] = top_posit["ligand_id"].apply(
             lambda x: szybki_dir / Path(x)
         )
         if args.dask:
@@ -894,7 +865,7 @@ def main():
 
             szybki_results = []
             for pose, output_path in zip(
-                no_clash["_docked_file"], no_clash["outpath_szybki"]
+                top_posit["_docked_file"], top_posit["outpath_szybki"]
             ):
                 res = dask_szybki_adaptor(pose, output_path)
                 szybki_results.append(res)
@@ -907,7 +878,7 @@ def main():
         else:
             logger.info("Running Szybki conformer analysis in serial")
             conformer_analysis = SzybkiFreeformConformerAnalyzer(
-                no_clash["_docked_file"], no_clash["outpath_szybki"], logger=logger
+                top_posit["_docked_file"], top_posit["outpath_szybki"], logger=logger
             )
             szybki_results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
 
@@ -962,7 +933,7 @@ def main():
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
 
-        no_clash["_outpath_md"] = no_clash[DockingResultCols.LIGAND_ID.value].apply(
+        top_posit["_outpath_md"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: md_dir / Path(x)
         )
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
@@ -994,25 +965,25 @@ def main():
             # make a list of simulator results that we then compute in parallel
             retcodes = []
             for pose, output_path in zip(
-                no_clash["_docked_file"], no_clash["_outpath_md"]
+                top_posit["_docked_file"], top_posit["_outpath_md"]
             ):
                 retcode = dask_md_adaptor(pose, protein_path, output_path)
                 retcodes.append(retcode)
 
             # run in parallel sending out a bunch of Futures
-            futures = client.compute(retcodes)
+            retcodes = client.compute(retcodes)
             # gather results back to the client, blocking until all are done
-            retcodes = client.gather(futures)
+            retcodes = client.gather(retcodes)
 
         else:
             # don't do this if you can avoid it
             logger.info("Running MD with in serial")
             logger.warning("This will take a long time")
             simulator = VanillaMDSimulator(
-                no_clash["_docked_file"],
+                top_posit["_docked_file"],
                 protein_path,
                 logger=logger,
-                output_paths=no_clash["_outpath_md"],
+                output_paths=top_posit["_outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
             )
@@ -1029,15 +1000,15 @@ def main():
         gif_dir = output_dir / "gif"
         gif_dir.mkdir(parents=True, exist_ok=True)
 
-        no_clash["_outpath_md_sys"] = no_clash["_outpath_md"].apply(
+        top_posit["_outpath_md_sys"] = top_posit["_outpath_md"].apply(
             lambda x: Path(x) / "minimized.pdb"
         )
 
-        no_clash["_outpath_md_traj"] = no_clash["_outpath_md"].apply(
+        top_posit["_outpath_md_traj"] = top_posit["_outpath_md"].apply(
             lambda x: Path(x) / "traj.xtc"
         )
 
-        no_clash["_outpath_gif"] = no_clash[DockingResultCols.LIGAND_ID.value].apply(
+        top_posit["_outpath_gif"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: gif_dir / Path(x) / "trajectory.gif"
         )
         # take only last .5ns of trajectory to get nicely equilibrated pose.
@@ -1074,9 +1045,9 @@ def main():
             logger.info("Running GIF visualization with Dask")
             outpaths = []
             for traj, system, outpath in zip(
-                no_clash["_outpath_md_traj"],
-                no_clash["_outpath_md_sys"],
-                no_clash["_outpath_gif"],
+                top_posit["_outpath_md_traj"],
+                top_posit["_outpath_md_sys"],
+                top_posit["_outpath_gif"],
             ):
                 outpath = dask_gif_adaptor(traj, system, outpath)
                 outpaths.append(outpath)
@@ -1090,9 +1061,9 @@ def main():
             logger.info("Running GIF visualization in serial")
             logger.warning("This will take a long time")
             gif_visualiser = GIFVisualizer(
-                no_clash["_outpath_md_traj"],
-                no_clash["_outpath_md_sys"],
-                no_clash["_outpath_gif"],
+                top_posit["_outpath_md_traj"],
+                top_posit["_outpath_md_sys"],
+                top_posit["_outpath_gif"],
                 args.viz_target,
                 frames_per_ns=200,
                 smooth=5,
@@ -1100,20 +1071,6 @@ def main():
                 logger=logger,
             )
             gif_visualiser.write_traj_visualizations()
-
-        # rejoin with main dataframe
-        # keep what we need from noclash, outpath_pose should already be in there
-        gif_data = no_clash[[DockingResultCols.LIGAND_ID.value, "_outpath_gif"]]
-        # join back to top_posit
-        top_posit = top_posit.merge(
-            gif_data, on=DockingResultCols.LIGAND_ID.value, how="left"
-        )
-        if args.debug:
-            # save top_posit with MD results
-            top_posit.to_csv(
-                data_intermediate_dir / f"results_{args.target}_succeded_with_md.csv",
-                index=False,
-            )
 
     if args.debug:
         # save debug csv if needed
@@ -1167,20 +1124,10 @@ def main():
         )
         logger.info("Finished uploading numerical results to PostEra")
 
-        # start S3 session
-        session = Session(
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-        )
-
-        s3 = S3(session, artifact_bucket_name)
+        s3 = S3.from_settings(aws_s3_settings)
 
         # create a cloudfront signer
-        cf = CloudFront(
-            cloudfront_domain,
-            key_id=cloudfront_key_id,
-            private_key_pem_path=cloudfront_private_key_pem,
-        )
+        cf = CloudFront.from_settings(aws_cloudfront_settings)
 
         logger.info("Uploading artifacts to PostEra")
 
@@ -1198,12 +1145,11 @@ def main():
             s3,
             args.target,
             artifact_column="_outpath_pose",
-            bucket_name=artifact_bucket_name,
+            bucket_name=aws_s3_settings.BUCKET_NAME,
         )
         pose_uploader.upload_artifacts()
 
-        if args.md:
-            # make a dataframe with the ligand ID and the MD gif artifact path
+        if args.md:  # make a dataframe with the ligand ID and the MD gif artifact path
             md_df = renamed_top_posit_with_artifacts[
                 [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
             ]
@@ -1216,7 +1162,7 @@ def main():
                 s3,
                 args.target,
                 artifact_column="_outpath_gif",
-                bucket_name=artifact_bucket_name,
+                bucket_name=aws_s3_settings.BUCKET_NAME,
             )
             md_uploader.upload_artifacts()
 
