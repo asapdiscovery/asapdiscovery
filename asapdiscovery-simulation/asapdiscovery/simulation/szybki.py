@@ -37,7 +37,7 @@ class SzybkiFreeformResult(BaseModel):
 
 class SzybkiResultCols(Enum):
     """
-    Columns
+    Columns for Szybki Results.
     """
 
     LIGAND_ID = "ligand_id"

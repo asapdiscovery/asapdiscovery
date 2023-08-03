@@ -8,11 +8,29 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas as pd
-from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.execution_utils import (
+    estimate_n_workers,
+    get_interfaces_with_dual_ip,
+)
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.postera.manifold_artifacts import (
+    ArtifactType,
+    ManifoldArtifactUploader,
+)
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    rename_output_columns_for_manifold,
+)
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.schema import CrystalCompoundData, ExperimentalCompoundData
+from asapdiscovery.data.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
 from asapdiscovery.data.utils import (
     exp_data_to_oe_mols,
     is_valid_smiles,
@@ -26,10 +44,7 @@ from asapdiscovery.docking import (
     dock_and_score_pose_oe,
     make_docking_result_dataframe,
 )
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultCols,
-    rename_output_cols_for_manifold,
-)
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
@@ -38,7 +53,10 @@ from asapdiscovery.modeling.schema import (
     PreppedTargets,
 )
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
-from asapdiscovery.simulation.szybki import SzybkiFreeformConformerAnalyzer
+from asapdiscovery.simulation.szybki import (
+    SzybkiFreeformConformerAnalyzer,
+    SzybkiResultCols,
+)
 
 """
 Script to run single target prep + docking.
@@ -329,6 +347,14 @@ def main():
     if not args.viz_target:
         args.viz_target = args.target
 
+    # check for postera and S3 credentials
+    if args.postera:
+        postera_settings = PosteraSettings()
+
+        if args.postera_upload:
+            aws_s3_settings = S3Settings()
+            aws_cloudfront_settings = CloudfrontSettings()
+
     # setup output directory
     output_dir = Path(args.output_dir)
     overwrote_dir = False
@@ -374,19 +400,12 @@ def main():
     #########################
 
     if args.postera:
-        import os
-
-        postera_api_key = os.getenv("POSTERA_API_KEY")
-
-        if postera_api_key is None:
-            raise ValueError("Environment variable POSTERA_API_KEY not found")
-
         logger.info("Postera API key found")
+        if args.postera_upload:
+            logger.info("AWS S3 and CloudFront credentials found")
+
         logger.info(f"attempting to pull Molecule Set: {args.mols} from PostEra")
-
-        from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
-
-        ms = MoleculeSetAPI("https://api.asap.postera.ai", "v1", postera_api_key)
+        ms = MoleculeSetAPI.from_settings(postera_settings)
         avail_molsets = ms.list_available()
         mols, molset_id = ms.get_molecules_from_id_or_name(args.mols)
         logger.info(
@@ -448,8 +467,8 @@ def main():
                 raise ValueError(
                     f"Input molecules must be a SMILES file, SDF file, or SMILES string. Got {args.mols}"
                 )
-
-    logger.info(f"Loaded {len(exp_data)} molecules.")
+    n_mols = len(exp_data)
+    logger.info(f"Loaded {n_mols} molecules.")
     if len(exp_data) == 0:
         logger.error("No molecules loaded.")
         raise ValueError("No molecules loaded.")
@@ -573,6 +592,7 @@ def main():
         from dask.distributed import Client
 
         cfg.set({"distributed.scheduler.worker-ttl": None})
+        cfg.set({"distributed.admin.tick.limit": "2h"})
 
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
@@ -605,12 +625,15 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            # assume we will have about 10 jobs, they will be killed if not used
-            cluster.scale(10)
-            # cluster is adaptive, and will scale between 5 and 40 workers depending on load
-            # don't set it too low as then the cluster can scale down before needing to scale up again very rapidly
-            # which can cause thrashing in the LSF queue
-            cluster.adapt(minimum=5, maximum=40, interval="60s", target_duration="40s")
+            if args.md:
+                # assume we want about 1 work units per worker, because MD + GIFs very GPU intensive
+                # and can take quite a while
+                ratio = 1
+            else:
+                # otherwise 3 should be a decent guess
+                ratio = 3
+            n_workers = estimate_n_workers(n_mols, ratio=ratio, maximum=20, minimum=1)
+            cluster.scale(n_workers)
             client = Client(cluster)
         else:
             client = Client()
@@ -688,8 +711,8 @@ def main():
         if args.debug:
             # check smiles match
             if compound.smiles != oechem.OEMolToSmiles(mol):
-                raise ValueError(
-                    f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()}"
+                logger.warning(
+                    f"SMILES mismatch between {compound.compound_id} and {mol.GetTitle()} this can be the result of using RDKit SMILES or Postera Manifold inputs."
                 )
         res = dock_and_score_pose_oe_ml(
             dock_dir / f"{compound.compound_id}_{receptor_name}",
@@ -1056,33 +1079,94 @@ def main():
             index=False,
         )
 
-    renamed_top_posit = rename_output_cols_for_manifold(
+    column_enums = [DockingResultCols]
+    if args.szybki:
+        column_enums.append(SzybkiResultCols)
+
+    # keep in the artifact column for the poses and MD gifs so that we can upload them
+    # to PostEra Manifold later
+    renamed_top_posit_with_artifacts = rename_output_columns_for_manifold(
         top_posit,
         args.target,
+        column_enums,
         manifold_validate=True,
-        allow=[DockingResultCols.LIGAND_ID.value],
-        szybki=args.szybki,
+        allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose", "_outpath_gif"],
         drop_non_output=True,
     )
+
+    # drop the artifact columns for final results
+    cols_to_drop = [
+        col
+        for col in ["_outpath_pose", "_outpath_gif"]
+        if col in renamed_top_posit_with_artifacts.columns
+    ]
+    renamed_top_posit_final = renamed_top_posit_with_artifacts.drop(
+        columns=cols_to_drop
+    )
     # save to final CSV renamed for target
-    renamed_top_posit.to_csv(
+    renamed_top_posit_final.to_csv(
         output_dir / f"results_{args.target}_final.csv", index=False
     )
 
     if args.postera_upload:
         if not args.postera:
             raise ValueError("Must use --postera to upload to PostEra")
-        logger.info("Uploading results to PostEra")
+        logger.info("Uploading numerical results to PostEra")
 
+        # upload numerical results to PostEra
         ms.update_molecules_from_df_with_manifold_validation(
             molecule_set_id=molset_id,
-            df=renamed_top_posit,
+            df=renamed_top_posit_final,
             id_field=DockingResultCols.LIGAND_ID.value,
             smiles_field="SMILES",
             overwrite=True,
             debug_df_path=output_dir / "postera_uploaded.csv",
         )
-        logger.info("Finished uploading results to PostEra")
+        logger.info("Finished uploading numerical results to PostEra")
+
+        s3 = S3.from_settings(aws_s3_settings)
+
+        # create a cloudfront signer
+        cf = CloudFront.from_settings(aws_cloudfront_settings)
+
+        logger.info("Uploading artifacts to PostEra")
+
+        # make a dataframe with the ligand ID and the pose artifact path
+        pose_df = renamed_top_posit_with_artifacts[
+            [DockingResultCols.LIGAND_ID.value, "_outpath_pose"]
+        ]
+        # make an uploader for the poses and upload them
+        pose_uploader = ManifoldArtifactUploader(
+            pose_df,
+            molset_id,
+            ArtifactType.DOCKING_POSE_POSIT,
+            ms,
+            cf,
+            s3,
+            args.target,
+            artifact_column="_outpath_pose",
+            bucket_name=aws_s3_settings.BUCKET_NAME,
+        )
+        pose_uploader.upload_artifacts()
+
+        if args.md:  # make a dataframe with the ligand ID and the MD gif artifact path
+            md_df = renamed_top_posit_with_artifacts[
+                [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
+            ]
+            md_uploader = ManifoldArtifactUploader(
+                md_df,
+                molset_id,
+                ArtifactType.MD_POSE,
+                ms,
+                cf,
+                s3,
+                args.target,
+                artifact_column="_outpath_gif",
+                bucket_name=aws_s3_settings.BUCKET_NAME,
+            )
+            md_uploader.upload_artifacts()
+
+        logger.info("Finished uploading artifacts to PostEra")
 
     if args.cleanup:
         if len(intermediate_files) > 0:

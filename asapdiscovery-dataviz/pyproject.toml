@@ -38,6 +38,7 @@ dash-docking-interactive-table = "asapdiscovery.dataviz.scripts.dash_docking_int
 display-aligned-2d-molecules = "asapdiscovery.dataviz.scripts.display_aligned_2d_molecules:main"
 split-sdf = "asapdiscovery.dataviz.scripts.split_sdf:main"
 traj-to-viz = "asapdiscovery.dataviz.scripts.traj_to_viz:main"
+pose-to-viz = "asapdiscovery.dataviz.scripts.pose_to_viz:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

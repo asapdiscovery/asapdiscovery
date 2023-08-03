@@ -5,18 +5,7 @@ from typing import List, Optional, Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
 
-from ._gif_blocks import (
-    color_dict_mac1,
-    color_dict_mpro,
-    pocket_dict_mers_mpro,
-    pocket_dict_sars2_mac1,
-    pocket_dict_sars2_mpro,
-    view_coords_7ene_mpro,
-    view_coords_272_mpro,
-    view_coords_mers_mpro,
-    view_coords_sars2_mac1,
-    view_coords_sars2_mpro,
-)
+from ._gif_blocks import GIFBlockData
 from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
 from .viz_targets import VizTargets
@@ -57,7 +46,7 @@ class GIFVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of: "sars2_mpro", "mers_mpro", "7ene_mpro", "272_mpro", "sars2_mac1".
+            Target to visualize poses for. Must be one of the allowed targets in VizTargets
         pse : bool
             Whether to write PyMol session files.
         smooth : int
@@ -92,27 +81,14 @@ class GIFVisualizer:
         self.target = target
         self.logger.info(f"Visualizing trajectories for {self.target}")
 
-        # setup pocket dict and view_coords for target
-        if self.target == "sars2_mpro":
-            self.pocket_dict = pocket_dict_sars2_mpro
-            self.view_coords = view_coords_sars2_mpro
-            self.color_dict = color_dict_mpro
-        elif self.target == "mers_mpro":
-            self.pocket_dict = pocket_dict_mers_mpro
-            self.view_coords = view_coords_mers_mpro
-            self.color_dict = color_dict_mpro
-        elif self.target == "7ene_mpro":
-            self.pocket_dict = pocket_dict_sars2_mpro
-            self.view_coords = view_coords_7ene_mpro
-            self.color_dict = color_dict_mpro
-        elif self.target == "272_mpro":
-            self.pocket_dict = pocket_dict_mers_mpro
-            self.view_coords = view_coords_272_mpro
-            self.color_dict = color_dict_mpro
-        if self.target == "sars2_mac1":
-            self.pocket_dict = pocket_dict_sars2_mac1
-            self.view_coords = view_coords_sars2_mac1
-            self.color_dict = color_dict_mac1
+        # setup view_coords, pocket_dict and color_dict for target
+
+        self.view_coords = GIFBlockData.get_view_coords(self.target)
+
+        self.pocket_dict = GIFBlockData.get_pocket_dict(self.target)
+
+        self.color_dict = GIFBlockData.get_color_dict(self.target)
+
         self.trajectories = []
         self.output_paths = []
         self.systems = []
@@ -258,19 +234,22 @@ class GIFVisualizer:
         if self.pse:
             p.cmd.save(str(parent_path / "session_4_loaded_trajectory.pse"))
 
-        self.logger.info("Intrafitting simulation...")
-        p.cmd.intra_fit("binding_site")
+        # center the system to the minimized structure
+        # reload
+        complex_name_min = "complex_min"
+        p.cmd.load(str(system), object=complex_name_min)
+
+        self.logger.info("Aligning simulation...")
         if self.smooth:
             p.cmd.smooth(
                 "all", window=int(self.smooth)
             )  # perform some smoothing of frames
-
         if self.contacts:
             self.logger.info("Showing contacts...")
             show_contacts(p, "ligand", "receptor")
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
-        # p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand
+        # p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand, this can move the view around a
 
         # turn on depth cueing
         p.cmd.set("depth_cue", 1)
@@ -282,9 +261,11 @@ class GIFVisualizer:
         p.cmd.hide("everything", "th")
 
         if self.pse or self.pse_share:
-            self.logger.info("Writing PyMol ensemble to session_5_intrafitted.pse...")
-            p.cmd.save(str(parent_path / "session_5_intrafitted.pse"))
+            self.logger.info("Writing PyMol ensemble to session_5_selections.pse...")
+            p.cmd.save(str(parent_path / "session_5_selections.pse"))
 
+        p.cmd.align(complex_name, complex_name_min)
+        p.cmd.delete(complex_name_min)
         # Process the trajectory in a temporary directory
         from pygifsicle import optimize
 
@@ -305,6 +286,9 @@ class GIFVisualizer:
         )  # saves png of each frame as "frame001.png, frame002.png, .."
 
         # stop pymol instance
+        if self.pse or self.pse_share:
+            self.logger.info("Writing PyMol ensemble to session_6_final.pse...")
+            p.cmd.save(str(parent_path / "session_6_final.pse"))
         p.stop()
 
         # TODO: higher resolution on the pngs.
@@ -375,15 +359,16 @@ def add_gif_progress_bar(
 
         # load the image.
         img = Image.open(filename)
-        draw = ImageDraw.Draw(img, "RGBA")
+        img2 = Image.new("RGBA", img.size, "WHITE")
+        img2.paste(img, mask=img)
+        draw = ImageDraw.Draw(img2, "RGBA")
 
         # get its dimensions (need these for coords); calculate progress bar width at this frame.
-        width, height = img.size
+        width, height = img2.size
         bar_width = frame_num / total_frames * width
 
         # draw the progress bar for this frame (black, fully opaque).
         draw.rectangle(((0, height - 20), (bar_width, height)), fill=(0, 0, 0, 500))
-
         # draw the text that shows time progression.
         draw.text(
             (width - 125, height - 10),
@@ -397,4 +382,4 @@ def add_gif_progress_bar(
         )  # align to RHS; this way if value increases it will grow into frame.
 
         # save the image.
-        img.save(filename)
+        img2.save(filename)
