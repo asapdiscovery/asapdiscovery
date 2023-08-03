@@ -1,6 +1,7 @@
 import os
-import pytest
 from unittest import mock
+
+import pytest
 from asapdiscovery.data.services_config import *
 
 
