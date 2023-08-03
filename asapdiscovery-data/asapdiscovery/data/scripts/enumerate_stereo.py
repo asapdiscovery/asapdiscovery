@@ -66,7 +66,7 @@ def main():
 
     for mol in ifs.GetOEMols():
         logger.info(f"Molecule Title: {mol.GetTitle()}")
-        # for some reason SD data only being read from graphmol
+        # set title to molecule name from postera if available
         mol_name_sd = oechem.OEGetSDData(mol.GetActive(), "Molecule Name")
         if mol_name_sd:
             logger.info(f"Molecule Name: {mol_name_sd}")
