@@ -179,7 +179,7 @@ files:
 
   - resource: example_traj_top.pdb
     sha256hash: 295b59f81dee63c8567adcbe6ebd700f346823309a3bfefa1ca235e709fdaa46
-  
+
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
     sha256hash: 247e8d51cd6f404180bfe773a4eb2d6fae37b28919d1527d8b39e5286ea9755c

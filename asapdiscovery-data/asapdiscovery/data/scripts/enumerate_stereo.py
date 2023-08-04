@@ -1,9 +1,9 @@
 import argparse
 import logging
 
+from asapdiscovery.data.expand_stereo import StereoExpander, StereoExpanderOptions
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import oechem, oeomega
-from asapdiscovery.data.expand_stereo import StereoExpanderOptions, StereoExpander
 
 parser = argparse.ArgumentParser(
     description="Enumerate steroisomers of molecules in a file"
