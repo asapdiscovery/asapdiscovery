@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import oechem, oeomega

@@ -14,10 +14,10 @@ def chalcogran_defined():
 def test_expand_default_construct():
     options = StereoExpanderOptions()
     expander = StereoExpander(options)
-    assert expander.options.warts == False
-    assert expander.options.force_flip == False
-    assert expander.options.postera_names == True
-    assert expander.options.debug == False
+    assert expander.options.warts is False
+    assert expander.options.force_flip is False
+    assert expander.options.postera_names is True
+    assert expander.options.debug is False
 
 
 def test_expand_from_mol(chalcogran_defined):
