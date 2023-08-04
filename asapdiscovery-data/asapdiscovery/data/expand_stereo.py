@@ -58,19 +58,22 @@ class StereoExpander:
         self.logger.debug(f"Molecule Title: {mol.GetTitle()}")
         # set title to molecule name from postera if available
         if self.options.postera_names:
-            mol_name_sd = oechem.OEGetSDData(mol.GetActive(), "Molecule Name")
+            mol_name_sd = oechem.OEGetSDData(mol, "Molecule Name")
             if mol_name_sd:
                 self.logger.debug(f"Molecule Name: {mol_name_sd}")
                 mol.SetTitle(mol_name_sd)
 
         expanded_mols = []
-        for enantiomer in oeomega.OEFlipper(mol.GetActive(), self.flipperOpts):
+        for enantiomer in oeomega.OEFlipper(mol, self.flipperOpts):
             fmol = oechem.OEMol(enantiomer)
             if self.options.debug:
                 smiles = oechem.OEMolToSmiles(fmol)
                 self.logger.debug(f"SMILES: {smiles}")
             expanded_mols.append(fmol)
         return expanded_mols
+
+    def expand_mol(self, mol: oechem.OEMol) -> List[oechem.OEMol]:
+        return self._expand_mol(mol)
 
     def expand_structure_file(
         self, infile: Union[str, Path], outfile: Optional[Union[str, Path]] = None
