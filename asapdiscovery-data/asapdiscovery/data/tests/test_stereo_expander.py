@@ -1,7 +1,7 @@
 import pytest
-from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.data.expand_stereo import StereoExpanderOptions, StereoExpander
+from asapdiscovery.data.expand_stereo import StereoExpander, StereoExpanderOptions
 from asapdiscovery.data.openeye import load_openeye_smi
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.fixture(scope="session")

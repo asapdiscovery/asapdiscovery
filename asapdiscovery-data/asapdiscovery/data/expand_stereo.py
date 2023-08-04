@@ -1,9 +1,10 @@
 import logging
-from typing import Optional, Union, List
 from pathlib import Path
-from pydantic import BaseModel, Field
-from asapdiscovery.data.openeye import oechem, oeomega
+from typing import List, Optional, Union
+
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.openeye import oechem, oeomega
+from pydantic import BaseModel, Field
 
 
 class StereoExpanderOptions(BaseModel):
@@ -41,7 +42,7 @@ class StereoExpander:
         self.flipperOpts.SetWarts(self.options.warts)
         self.flipperOpts.SetEnumSpecifiedStereo(self.options.force_flip)
 
-    def _expand_mol(self, mol: oechem.OEMol) -> List[oechem.OEMol]:
+    def _expand_mol(self, mol: oechem.OEMol) -> list[oechem.OEMol]:
         """
         Expand a single molecule to stereoisomers
 
@@ -72,12 +73,12 @@ class StereoExpander:
             expanded_mols.append(fmol)
         return expanded_mols
 
-    def expand_mol(self, mol: oechem.OEMol) -> List[oechem.OEMol]:
+    def expand_mol(self, mol: oechem.OEMol) -> list[oechem.OEMol]:
         return self._expand_mol(mol)
 
     def expand_structure_file(
         self, infile: Union[str, Path], outfile: Optional[Union[str, Path]] = None
-    ) -> List[oechem.OEMol]:
+    ) -> list[oechem.OEMol]:
         """
         Expand a structure file to stereoisomers
 
