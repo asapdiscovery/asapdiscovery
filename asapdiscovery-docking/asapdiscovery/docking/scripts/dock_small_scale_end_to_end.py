@@ -732,7 +732,8 @@ def main():
         results.append(res)
 
     if args.dask:  # make concrete
-        results = dask.compute(*results)
+        futures = client.compute(results)
+        results = client.gather(futures, errors="skip")
 
     ###########################
     # wrangle docking results #
@@ -825,8 +826,8 @@ def main():
             outpath = dask_html_adaptor(pose, output_path)
             outpaths.append(outpath)
 
-        outpaths = client.compute(outpaths)
-        outpaths = client.gather(outpaths)
+        futures = client.compute(outpaths)
+        outpaths = client.gather(futures, errors="skip")
 
     else:
         logger.info("Running HTML visualization in serial")
@@ -870,8 +871,8 @@ def main():
                 res = dask_szybki_adaptor(pose, output_path)
                 szybki_results.append(res)
 
-            szybki_results = client.compute(szybki_results)
-            szybki_results = client.gather(szybki_results)
+            futures = client.compute(szybki_results)
+            szybki_results = client.gather(futures, errors="skip")
             # concat results
             szybki_results = pd.concat(szybki_results)
 
@@ -971,9 +972,9 @@ def main():
                 retcodes.append(retcode)
 
             # run in parallel sending out a bunch of Futures
-            retcodes = client.compute(retcodes)
+            futures = client.compute(retcodes)
             # gather results back to the client, blocking until all are done
-            retcodes = client.gather(retcodes)
+            retcodes = client.gather(futures, errors="skip")
 
         else:
             # don't do this if you can avoid it
@@ -1053,9 +1054,9 @@ def main():
                 outpaths.append(outpath)
 
             # run in parallel sending out a bunch of Futures
-            outpaths = client.compute(outpaths)
+            futures = client.compute(outpaths)
             # gather results back to the client, blocking until all are done
-            outpaths = client.gather(outpaths)
+            outpaths = client.gather(futures, errors="skip")
 
         else:
             logger.info("Running GIF visualization in serial")
