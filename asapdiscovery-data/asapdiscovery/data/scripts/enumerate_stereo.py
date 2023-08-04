@@ -3,6 +3,7 @@ import logging
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import oechem, oeomega
+from asapdiscovery.data.expand_stereo import StereoExpanderOptions, StereoExpander
 
 parser = argparse.ArgumentParser(
     description="Enumerate steroisomers of molecules in a file"
@@ -50,36 +51,20 @@ def main():
     logger = logger_cls.getLogger()
     logger.info(f"Enumerating stereoisomers for {args.infile} to {args.outfile}")
     logger.info(f"Adding warts: {args.warts}")
+    logger.info(f"Forcing flip: {args.force_flip}")
+    logger.info(f"Debug: {args.debug}")
 
-    flipperOpts = oeomega.OEFlipperOptions()
-    flipperOpts.SetWarts(args.warts)
-    flipperOpts.SetEnumSpecifiedStereo(args.force_flip)
+    # setup options
+    options = StereoExpanderOptions(
+        warts=args.warts,
+        force_flip=args.force_flip,
+        debug=args.debug,
+        postera_names=True,
+    )
 
-    ifs = oechem.oemolistream()
-    if not ifs.open(args.infile):
-        oechem.OEThrow.Fatal(f"Unable to open {args.infile} for reading")
-
-    ofs = oechem.oemolostream()
-    if not ofs.open(args.outfile):
-        oechem.OEThrow.Fatal(f"Unable to open {args.outfile} for writing")
-
-    for mol in ifs.GetOEMols():
-        logger.info(f"Molecule Title: {mol.GetTitle()}")
-        # set title to molecule name from postera if available
-        mol_name_sd = oechem.OEGetSDData(mol.GetActive(), "Molecule Name")
-        if mol_name_sd:
-            logger.info(f"Molecule Name: {mol_name_sd}")
-            mol.SetTitle(mol_name_sd)
-        n_expanded = 0
-        for enantiomer in oeomega.OEFlipper(mol.GetActive(), flipperOpts):
-            n_expanded += 1
-            fmol = oechem.OEMol(enantiomer)
-            oechem.OEWriteMolecule(ofs, fmol)
-            if args.debug:
-                # print smiles
-                smiles = oechem.OEMolToSmiles(fmol)
-                logger.debug(f"SMILES: {smiles}")
-        logger.info(f"Expanded {n_expanded} stereoisomers")
+    # setup expander
+    expander = StereoExpander(options, logger=logger)
+    expander.expand_structure_file(args.infile, args.outfile)
 
 
 if __name__ == "__main__":
