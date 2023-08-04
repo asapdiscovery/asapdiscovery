@@ -45,10 +45,10 @@ def main():
     args = parser.parse_args()
     # setup logging
     logger_cls = FileLogger(
-        "stereo_enumeration", path="./", stdout=True, level=logging.DEBUG
+        "stereo_expansion", path="./", stdout=True, level=logging.DEBUG
     )
     logger = logger_cls.getLogger()
-    logger.info(f"Enumerating stereoisomers for {args.infile} to {args.outfile}")
+    logger.info(f"Expanding stereoisomers for {args.infile} to {args.outfile}")
     logger.info(f"Adding warts: {args.warts}")
     logger.info(f"Forcing flip: {args.force_flip}")
     logger.info(f"Debug: {args.debug}")
