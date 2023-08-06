@@ -122,4 +122,3 @@ cluster_scripts/log_files
 *.out
 *-log.txt
 
-asapdiscovery-simulation/asapdiscovery/simulation/current_fec_worfklow/setup.yaml
