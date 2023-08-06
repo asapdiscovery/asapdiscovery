@@ -8,7 +8,10 @@ from typing import Optional, Union
 import numpy as np
 import pandas
 import pkg_resources
-import pydantic.v1 as pydantic
+try:
+    import pydantic.v1 as pydantic
+except ImportError:
+    import pydantic
 import rdkit.Chem as Chem
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema import (

@@ -6,7 +6,10 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from pydantic.v1 import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
 
 
 # From FAH ###################################
