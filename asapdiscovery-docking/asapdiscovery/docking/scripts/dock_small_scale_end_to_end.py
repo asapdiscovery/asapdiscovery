@@ -10,7 +10,10 @@ import dask
 import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.execution_utils import get_interfaces_with_dual_ip
+from asapdiscovery.data.execution_utils import (
+    get_interfaces_with_dual_ip,
+    estimate_n_workers,
+)
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -624,7 +627,13 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            cluster.adapt(minimum=0, maximum=40, wait_count=10, interval="2m")
+            cluster.adapt(minimum=1, maximum=40, wait_count=10, interval="2m")
+            # esitmate the number of workers and target that
+            n_workers = estimate_n_workers(
+                n_mols, ratio=1 if args.md else 1, minimum=1, maximum=40
+            )
+            logger.info(f"Estimating {n_workers} workers")
+            cluster.scale(n_workers)
             client = Client(cluster)
         else:
             client = Client()
@@ -860,6 +869,9 @@ def main():
             lambda x: szybki_dir / Path(x)
         )
         if args.dask:
+            if args.dask_lilac:
+                cluster.scale(n_workers)  # remind the cluster how many workers we need
+
             logger.info("Running Szybki conformer analysis with Dask")
 
             @dask.delayed
@@ -923,6 +935,7 @@ def main():
                 logger.info(
                     "dask lilac setup means we don't need to spawn a new client"
                 )
+                cluster.scale(n_workers)  # remind the cluster how many workers we need
             else:
                 logger.info("Starting seperate Dask GPU client")
                 # spawn new GPU client
