@@ -121,4 +121,3 @@ cluster_scripts/log_files
 *.stderr
 *.out
 *-log.txt
-
