@@ -11,8 +11,8 @@ import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.execution_utils import (
-    get_interfaces_with_dual_ip,
     estimate_n_workers,
+    get_interfaces_with_dual_ip,
 )
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
