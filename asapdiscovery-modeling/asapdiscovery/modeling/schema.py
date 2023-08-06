@@ -2,6 +2,7 @@ from enum import Enum
 from pathlib import Path
 
 from asapdiscovery.data.schema import CrystalCompoundData, Dataset
+
 try:
     from pydantic.v1 import BaseModel, Field
 except ImportError:

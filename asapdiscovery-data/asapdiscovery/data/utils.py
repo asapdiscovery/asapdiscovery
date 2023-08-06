@@ -8,6 +8,7 @@ from typing import Optional, Union
 import numpy as np
 import pandas
 import pkg_resources
+
 try:
     import pydantic.v1 as pydantic
 except ImportError:

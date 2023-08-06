@@ -6,6 +6,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+
 try:
     from pydantic.v1 import BaseModel, Field
 except ImportError:
