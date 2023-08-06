@@ -6,7 +6,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 
 # From FAH ###################################

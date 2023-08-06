@@ -19,7 +19,7 @@ class SzybkiFreeformResult(BaseModel):
     szybki_global_strain: float
     szybki_local_strain: float
     szybki_conformer_strain: float
-    units = unit.kilocalories_per_mole
+    units = "kcal/mol"
 
     class Config:
         allow_mutation = False

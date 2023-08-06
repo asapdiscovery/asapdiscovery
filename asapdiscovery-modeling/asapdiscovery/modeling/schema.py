@@ -2,7 +2,7 @@ from enum import Enum
 from pathlib import Path
 
 from asapdiscovery.data.schema import CrystalCompoundData, Dataset
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 
 class MoleculeComponent(str, Enum):
