@@ -14,6 +14,7 @@ from asapdiscovery.data.execution_utils import (
     estimate_n_workers,
     get_interfaces_with_dual_ip,
 )
+from asapdiscovery.data.dask_utils import GPU, LilacGPUDaskCluster
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -187,6 +188,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--dask-lilac-gpu",
+    action="store_true",
+    choices=GPU.get_values(),
+    help=("Run dask for lilac config"),
+)
+
+parser.add_argument(
     "-o",
     "--output_dir",
     required=True,
@@ -313,7 +321,7 @@ parser.add_argument(
     "--viz-target",
     type=str,
     choices=VizTargets.get_allowed_targets(),
-    help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
+    help="Target to write visualizations for.",
 )
 
 parser.add_argument(
