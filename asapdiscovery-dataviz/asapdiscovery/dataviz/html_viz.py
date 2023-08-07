@@ -4,10 +4,12 @@ from typing import List, Optional, Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
 from rdkit import Chem
+from Bio.PDB import PDBParser
+from Bio.PDB.PDBIO import PDBIO
 
 from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
-
+import os
 
 def _load_first_molecule(file_path: Union[Path, str]):
     mols = Chem.SDMolSupplier(str(file_path))
@@ -29,6 +31,7 @@ class HTMLVisualizer:
         target: str,
         protein: Path,
         color_method: str,
+        fitness_data: bool = False,
         logger: FileLogger = None,
         debug: bool = False,
     ):
@@ -45,16 +48,14 @@ class HTMLVisualizer:
             Path to protein PDB file.
         color_method : str
             Protein surface coloring method. Can be either by `subpockets` or `bfactor`
+        fitness_data: dict
+            dict of k,v where k is residue number and v is a fitness value between 0-100.
         logger : FileLogger
             Logger to use
 
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")
-
-        if not color_method in ("subpockets", "bfactor"):
-            raise ValueError("variable `color_method` must be either of ['subpockets', 'bfactor']")
-        self.color_method = color_method
 
         # init loggers
         if logger is None:
@@ -63,6 +64,15 @@ class HTMLVisualizer:
             ).getLogger()
         else:
             self.logger = logger
+
+        self.color_method = color_method
+        if self.color_method == "subpockets":
+            self.logger.info(f"Mapping interactive view by subpocket dict")
+        elif self.color_method == "bfactor":
+            self.logger.info(f"Mapping interactive view by fitness (b-factor bypass)")
+            self.fitness_data = fitness_data
+        else:
+            raise ValueError("variable `color_method` must be either of ['subpockets', 'bfactor']")
 
         if target not in self.allowed_targets:
             raise ValueError(f"Target must be one of: {self.allowed_targets}")
@@ -81,8 +91,28 @@ class HTMLVisualizer:
 
         if not protein.exists():
             raise ValueError(f"Protein {protein} does not exist.")
-
-        self.protein = Chem.MolFromPDBFile(str(protein))
+        if self.color_method == "subpockets":
+            self.protein = Chem.MolFromPDBFile(str(protein))
+        elif self.color_method == "bfactor":
+            # first need to swap the protein's b-factor with fitness scores. Could do this with str.split() but gets a bit complicated.
+            parser = PDBParser()
+            protein_biopython = parser.get_structure("protein", str(protein))
+            self.logger.warning(f"Swapping b-factor with fitness score.")
+            for res in protein_biopython.get_residues():
+                res_number = res.get_full_id()[3][1] # what a world we live in..
+                try:
+                    for at in res.get_atoms():
+                        at.set_bfactor(fitness_data[res_number])
+                except KeyError:
+                    # this is normal in most cases, a handful of residues will be missing from mutation data.
+                    self.logger.warning(f"No fitness score found for residue {res_number} of protein.")
+                      
+            # there's no biopython -> rdkit, so save to a PDB file and load it with RDKit.
+            io = PDBIO()
+            io.set_structure(protein_biopython)
+            io.save(f"{str(protein)}_tmp")
+            self.protein = Chem.MolFromPDBFile(f"{str(protein)}_tmp")
+            os.remove(f"{str(protein)}_tmp") # cleanup
 
         self.debug = debug
         if self.debug:
@@ -140,7 +170,6 @@ class HTMLVisualizer:
         protein_pdb = Chem.MolToPDBBlock(self.protein)
         # if there is an END line, remove it
         for line in protein_pdb.split("\n"):
-            print(line)
             if line.startswith("END"):
                 protein_pdb = protein_pdb.replace(line, "")
         mol_pdb = Chem.MolToPDBBlock(pose)

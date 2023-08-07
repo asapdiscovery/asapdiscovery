@@ -142,4 +142,7 @@ def parse_fitness_json(target) -> pd.DataFrame:
     fitness_df_abstract.index.name = "residue"
 
     # normalize fitness and confidence values to 0-1 for easier parsing by visualizers downstream and return df.
-    return normalize_fitness(fitness_df_abstract)
+    # can instead return DF if ever we need to provide more info (top/worst mutation, confidence etc).
+    fitness_df_abstract = normalize_fitness(fitness_df_abstract)
+    return dict(zip(fitness_df_abstract.index, fitness_df_abstract['fitness']))
+     
