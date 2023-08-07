@@ -1500,6 +1500,39 @@ def train(
     if not loss_dict:
         loss_dict = {"train": {}, "val": {}, "test": {}}
 
+    def update_loss_dict(split, compound_id, target, in_range, uncertainty, pred, loss):
+        """
+        Update (in-place) loss_dict info from training/evaluation on a molecule.
+
+        Parameters
+        ----------
+        split : str
+            Which split ["train", "val", "test"]
+        compound_id : str
+            Compound ID
+        target : float
+            Target value for this compound
+        in_range : int
+            Whether target is below (-1), within (0), or above (1) the assay range
+        uncertainty : float
+            Experimental measurement uncertainty
+        pred : float
+            Model prediction
+        loss : float
+            Prediction loss
+        """
+        if compound_id in loss_dict[split]:
+            loss_dict[split][compound_id]["preds"].append(pred)
+            loss_dict[split][compound_id]["losses"].append(loss)
+        else:
+            loss_dict[split][compound_id] = {
+                "target": target,
+                "in_range": in_range,
+                "uncertainty": uncertainty,
+                "preds": [pred],
+                "losses": [loss],
+            }
+
     # Send model to desired device if it's not there already
     model = model.to(device)
 
@@ -1555,17 +1588,15 @@ def train(
             loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
-            try:
-                loss_dict["train"][compound_id]["preds"].append(pred.item())
-                loss_dict["train"][compound_id]["losses"].append(loss.item())
-            except KeyError:
-                loss_dict["train"][compound_id] = {
-                    "target": target.item(),
-                    "in_range": in_range.item(),
-                    "uncertainty": uncertainty.item(),
-                    "preds": [pred.item()],
-                    "losses": [loss.item()],
-                }
+            update_loss_dict(
+                "test",
+                compound_id,
+                target.item(),
+                in_range.item(),
+                uncertainty.item(),
+                pred.item(),
+                loss.item(),
+            )
 
             # Keep track of loss for each sample
             tmp_loss.append(loss.item())
@@ -1620,17 +1651,15 @@ def train(
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
                 # Update loss_dict
-                try:
-                    loss_dict["val"][compound_id]["preds"].append(pred.item())
-                    loss_dict["val"][compound_id]["losses"].append(loss.item())
-                except KeyError:
-                    loss_dict["val"][compound_id] = {
-                        "target": target.item(),
-                        "in_range": in_range.item(),
-                        "uncertainty": uncertainty.item(),
-                        "preds": [pred.item()],
-                        "losses": [loss.item()],
-                    }
+                update_loss_dict(
+                    "val",
+                    compound_id,
+                    target.item(),
+                    in_range.item(),
+                    uncertainty.item(),
+                    pred.item(),
+                    loss.item(),
+                )
 
                 tmp_loss.append(loss.item())
             epoch_val_loss = np.mean(tmp_loss)
@@ -1658,17 +1687,15 @@ def train(
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
                 # Update loss_dict
-                try:
-                    loss_dict["test"][compound_id]["preds"].append(pred.item())
-                    loss_dict["test"][compound_id]["losses"].append(loss.item())
-                except KeyError:
-                    loss_dict["test"][compound_id] = {
-                        "target": target.item(),
-                        "in_range": in_range.item(),
-                        "uncertainty": uncertainty.item(),
-                        "preds": [pred.item()],
-                        "losses": [loss.item()],
-                    }
+                update_loss_dict(
+                    "test",
+                    compound_id,
+                    target.item(),
+                    in_range.item(),
+                    uncertainty.item(),
+                    pred.item(),
+                    loss.item(),
+                )
 
                 tmp_loss.append(loss.item())
             epoch_test_loss = np.mean(tmp_loss)
