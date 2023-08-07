@@ -2,15 +2,12 @@ from enum import Enum
 from typing import Optional
 
 from dask import config as cfg
-from dask.distributed import Client, LocalCluster
 from dask_jobqueue import LSFCluster
 
 try:
     from pydantic.v1 import BaseModel, Field
 except ImportError:
     from pydantic import BaseModel, Field
-
-from typing import Optional
 
 from .execution_utils import guess_network_interface
 

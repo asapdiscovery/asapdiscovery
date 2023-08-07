@@ -189,16 +189,16 @@ parser.add_argument(
 
 parser.add_argument(
     "--dask-lilac-gpu",
-    action="store_true",
     choices=GPU.get_values(),
-    help=("Run dask for lilac config"),
+    default=GPU.GTX1080TI,
+    help="GPU to use for dask-jobqueue setup on lilac",
 )
 
 parser.add_argument(
     "-o",
     "--output_dir",
     required=True,
-    help="Path to output_dir, will NOT overwrite if exists.",
+    help="Path to output_dir, will overwrite if exists.",
 )
 
 # general arguments
@@ -595,41 +595,14 @@ def main():
     # do dask here as it is the first bit of the workflow that is parallel
     if args.dask:
         logger.info("Using dask to parallelise docking")
-        # set timeout to None so workers don't get killed on long timeouts
-        from dask import config as cfg
         from dask.distributed import Client
-
-        cfg.set({"distributed.scheduler.worker-ttl": None})
-        cfg.set({"distributed.admin.tick.limit": "2h"})
 
         if args.dask_lilac:
             from dask_jobqueue import LSFCluster
 
             logger.info("Using dask-jobqueue to run on lilac")
-            logger.warning(
-                "make sure you have a config file for lilac's dask-jobqueue cluster installed in your environment, contact @hmacdope"
-            )
 
-            logger.info("Finding dual IP interfaces")
-            # find dual IP interfaces excluding lo loopback interface
-            # technically dask only needs IPV4 but helps us find the right ones
-            # easier. If you have a better way of doing this please let me know!
-            exclude = ["lo"]
-            interfaces = get_interfaces_with_dual_ip(exclude=exclude)
-            logger.info(f"Found IP interfaces: {interfaces}")
-            if len(interfaces) == 0:
-                raise ValueError("Must have at least one network interface to run dask")
-            if len(interfaces) > 1:
-                logger.warning(
-                    f"Found more than one IP interface: {interfaces}, using the first one"
-                )
-            interface = interfaces[0]
-            logger.info(f"Using interface: {interface}")
-
-            # NOTE you will need a config file that defines the dask-jobqueue for the cluster
-            cluster = LSFCluster(
-                interface=interface, scheduler_options={"interface": interface}
-            )
+            cluster = LilacGPUDaskCluster.from_gpu(args.dask_lilac_gpu)
 
             logger.info(f"dask config : {dask.config.config}")
 
@@ -647,9 +620,6 @@ def main():
             client = Client()
         logger.info("Dask client created ...")
         logger.info(client.dashboard_link)
-        logger.info(
-            "strongly recommend you open the dashboard link in a browser tab to monitor progress"
-        )
 
     # setup docking
     logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
