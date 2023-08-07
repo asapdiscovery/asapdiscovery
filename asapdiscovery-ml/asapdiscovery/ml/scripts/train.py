@@ -8,7 +8,6 @@ python train.py \
     -i complex_structure_dir/ \
     -exp experimental_measurements.json \
     -model_o trained_schnet/ \
-    -plot_o trained_schnet/all_loss.png \
     -model schnet \
     -lig \
     -dg \
@@ -44,7 +43,6 @@ from asapdiscovery.ml.utils import (
     find_most_recent,
     load_weights,
     parse_config,
-    plot_loss,
     split_dataset,
     train,
 )
@@ -235,7 +233,6 @@ def get_args():
 
     # Output arguments
     parser.add_argument("-model_o", help="Where to save model weights.")
-    parser.add_argument("-plot_o", help="Where to save training loss plot.")
     parser.add_argument("-cache", help="Cache directory for dataset.")
 
     # Dataset arguments
@@ -439,13 +436,11 @@ def init(args, rank=False):
     os.makedirs(model_dir, exist_ok=True)
 
     # Parse model config
-
     if args.sweep and args.config:
         import wandb
 
         # Get both configs
         sweep_config = dict(wandb.config)
-
         model_config = parse_config(args.config)
 
         # Sweep config overrules CLI config
@@ -820,15 +815,6 @@ def main():
 
     # Save model weights
     torch.save(model.state_dict(), f"{model_dir}/final.th")
-
-    # Plot loss
-    if args.plot_o is not None:
-        plot_loss(
-            train_loss.mean(axis=1),
-            val_loss.mean(axis=1),
-            test_loss.mean(axis=1),
-            args.plot_o,
-        )
 
 
 if __name__ == "__main__":
