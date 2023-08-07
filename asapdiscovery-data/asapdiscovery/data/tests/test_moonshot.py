@@ -5,8 +5,8 @@ import os
 
 import pytest
 from asapdiscovery.data.moonshot import (
-    MOONSHOT_ALL_SMI_SEARCH,
     CDD_URL,
+    MOONSHOT_ALL_SMI_SEARCH,
     MOONSHOT_NONCOVALENT_SMI_SEARCH,
     MOONSHOT_NONCOVALENT_W_DATES_SEARCH,
     download_molecules,
