@@ -6,7 +6,7 @@ import pandas
 # Base CDD vault API URL
 CDD_URL = "https://app.collaborativedrug.com/api/v1/vaults"
 # All molecules with SMILES (public)
-MOONSHOT_ALL_SMI_SEARCH = "12656909-i_iTrIMFIXYGdoHmM8p7kQ"
+MOONSHOT_ALL_SMI_SEARCH = "13157856-vbatz0uAL8fhJR87pFN0tA"
 # Noncovalent molecules with experimental measurements (from John)
 MOONSHOT_NONCOVALENT_SMI_SEARCH = "9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 # Noncovalent with experimental measurements, including batch created date
