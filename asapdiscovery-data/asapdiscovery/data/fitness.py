@@ -1,19 +1,16 @@
 import json
 
+import numpy as np
 import pandas as pd
 import pkg_resources
-import json 
-import numpy as np
-
-from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags
-    )
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 _TARGET_TO_GENE = {
     "SARS-CoV-2-Mpro": "nsp5 (Mpro)",
     "MERS-CoV-Mpro": "TBD",
     "SARS-CoV-2-Mac1": "TBD",
 }
+
 
 def apply_bloom_abstraction(fitness_dataframe) -> dict:
     """
@@ -31,10 +28,10 @@ def apply_bloom_abstraction(fitness_dataframe) -> dict:
     -------
     fitness_dict : dict
         Dictionary where keys are residue indices, keys are: [
-            mean_fitness, 
-            wildtype_residue, 
+            mean_fitness,
+            wildtype_residue,
             most fit mutation,
-            least fit mutation, 
+            least fit mutation,
             total count (~confidence)
         ]
     """
@@ -46,11 +43,15 @@ def apply_bloom_abstraction(fitness_dataframe) -> dict:
 
         # add all values to a dict
         fitness_dict[idx] = [
-            np.mean(fitness_scores_this_site["fitness"].values), # compute mean fitness
-            fitness_scores_this_site["wildtype"].values[0], # wildtype residue
-            fitness_scores_this_site.sort_values(by="fitness")["mutant"].values[-1], # most fit mutation
-            fitness_scores_this_site.sort_values(by="fitness")["mutant"].values[0], # least fit mutation
-            np.sum(fitness_scores_this_site["expected_count"].values) # total count
+            np.mean(fitness_scores_this_site["fitness"].values),  # compute mean fitness
+            fitness_scores_this_site["wildtype"].values[0],  # wildtype residue
+            fitness_scores_this_site.sort_values(by="fitness")["mutant"].values[
+                -1
+            ],  # most fit mutation
+            fitness_scores_this_site.sort_values(by="fitness")["mutant"].values[
+                0
+            ],  # least fit mutation
+            np.sum(fitness_scores_this_site["expected_count"].values),  # total count
         ]
     return fitness_dict
 
@@ -85,9 +86,10 @@ def parse_fitness_json(target) -> pd.DataFrame:
     fitness_scores_bloom = pd.DataFrame(data)
 
     # now get the target-specific entries.
-    fitness_scores_bloom = fitness_scores_bloom[fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]]
+    fitness_scores_bloom = fitness_scores_bloom[
+        fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
+    ]
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
 
     print(fitness_dict)
-    
