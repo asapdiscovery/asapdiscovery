@@ -123,8 +123,9 @@ def download_molecules(
         If specified, filename to write CSV to
     fn_cache : str, optional
         If specified, file to write unfiltered CSV download to
-    filter_kwargs :
-        Other arguments passed to filter_molecules
+    kwargs : dict
+        Other arguments passed to filter_molecules_dataframe and
+        parse_fluorescence_data_cdd
 
     Returns
     -------
@@ -167,6 +168,7 @@ def download_molecules(
     from .utils import filter_molecules_dataframe, parse_fluorescence_data_cdd
 
     filter_kwargs = [
+        "id_fieldname",
         "smiles_fieldname",
         "assay_name",
         "retain_achiral",

@@ -677,6 +677,7 @@ def strip_smiles_salts(smiles):
 
 def filter_molecules_dataframe(
     mol_df,
+    id_fieldname="Canonical PostEra ID",
     smiles_fieldname="suspected_SMILES",
     assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
     retain_achiral=False,
@@ -686,7 +687,7 @@ def filter_molecules_dataframe(
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
-        * "Canonical PostEra ID"
+        * `id_fieldname`
         * `smiles_fieldname`
         * "`assay_name`: IC50 (µM)"
     Columns that are added to the dataframe by this function:
@@ -790,7 +791,7 @@ def filter_molecules_dataframe(
     mol_df.loc[:, "smiles"] = (
         mol_df.loc[:, smiles_fieldname].astype(str).apply(strip_smiles_salts)
     )
-    mol_df.loc[:, "name"] = mol_df.loc[:, "Canonical PostEra ID"]
+    mol_df.loc[:, "name"] = mol_df.loc[:, id_fieldname]
 
     # Convert CXSMILES to SMILES by removing extra info
     mol_df.loc[:, "smiles"] = [s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]]
