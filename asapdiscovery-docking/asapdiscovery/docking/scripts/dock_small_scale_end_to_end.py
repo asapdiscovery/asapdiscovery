@@ -595,7 +595,6 @@ def main():
         from dask.distributed import Client
 
         if args.dask_lilac:
-
             logger.info("Using dask-jobqueue to run on lilac")
 
             cluster = LilacGPUDaskCluster.from_gpu(args.dask_lilac_gpu)

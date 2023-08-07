@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field, validator, BaseSettings
+from pydantic import BaseSettings, Field, validator
 
 
 class PosteraSettings(BaseSettings):
