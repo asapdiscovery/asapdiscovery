@@ -10,11 +10,11 @@ import dask
 import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.dask_utils import GPU, LilacGPUDaskCluster
 from asapdiscovery.data.execution_utils import (
     estimate_n_workers,
     get_interfaces_with_dual_ip,
 )
-from asapdiscovery.data.dask_utils import GPU, LilacGPUDaskCluster
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_artifacts import (

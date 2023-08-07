@@ -1,3 +1,7 @@
+from enum import Enum
+from typing import Optional
+
+from dask import config as cfg
 from dask.distributed import Client, LocalCluster
 from dask_jobqueue import LSFCluster
 
@@ -8,8 +12,6 @@ except ImportError:
 
 from typing import Optional
 from .execution_utils import guess_network_interface
-from enum import Enum
-from dask import config as cfg
 
 cfg.set({"distributed.scheduler.worker-ttl": None})
 cfg.set({"distributed.admin.tick.limit": "2h"})
