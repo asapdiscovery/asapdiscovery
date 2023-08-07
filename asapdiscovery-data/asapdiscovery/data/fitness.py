@@ -59,7 +59,7 @@ def apply_bloom_abstraction(fitness_dataframe) -> dict:
 def normalize_fitness(fitness_df_abstract) -> pd.DataFrame:
     """
     Read a pandas DF containing fitness data and normalizes values to 0-1. Normalization is as MinMax:
-    - fitness: 0-1 ranges from non-fit to most fit (i.e., >>1 would mean residue is highly mutable).
+    - fitness: 0-100 ranges from non-fit to most fit (i.e., >>100 would mean residue is highly mutable).
     - confidence: 0-1 ranges from least confident to most confident.
 
     Parameters
@@ -70,11 +70,11 @@ def normalize_fitness(fitness_df_abstract) -> pd.DataFrame:
     Returns
     -------
     fitness_df_abstract: pd.DataFrame
-        Dataframe containing per-residue fitness data normalized to 0-1.
+        Dataframe containing per-residue fitness data normalized.
     """
     fitness_df_abstract["fitness"] = (
         fitness_df_abstract["fitness"] - fitness_df_abstract["fitness"].min()
-    ) / (fitness_df_abstract["fitness"].max() - fitness_df_abstract["fitness"].min())
+    ) / (fitness_df_abstract["fitness"].max() - fitness_df_abstract["fitness"].min())*100
 
     fitness_df_abstract["confidence"] = (
         fitness_df_abstract["confidence"] - fitness_df_abstract["confidence"].min()

@@ -140,6 +140,7 @@ class HTMLVisualizer:
         protein_pdb = Chem.MolToPDBBlock(self.protein)
         # if there is an END line, remove it
         for line in protein_pdb.split("\n"):
+            print(line)
             if line.startswith("END"):
                 protein_pdb = protein_pdb.replace(line, "")
         mol_pdb = Chem.MolToPDBBlock(pose)
