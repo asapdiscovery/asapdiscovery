@@ -8,6 +8,7 @@ Molecule Name,Canonical PostEra ID,suspected_SMILES,ProteaseAssay_Fluorescence_D
 From: https://github.com/choderalab/perses/blob/main/examples/moonshot-mainseries/molecules/filter-cdd-export.py
 """
 import sys
+
 import numpy as np
 
 cdd_csv_filename = "CDD CSV Export - 2023-02-20 00h18m18s.csv"
