@@ -1,4 +1,8 @@
 #!/bin/env python
+
+import numpy as np
+import pandas as pd
+
 """
 Filter CDD export for main medicinal chemistry series
 https://app.collaborativedrug.com/vaults/5549/searches/11042338-xOBBXlC_s3dSQsHW3UaO2Q#search_results
@@ -7,16 +11,12 @@ Molecule Name,Canonical PostEra ID,suspected_SMILES,ProteaseAssay_Fluorescence_D
 
 From: https://github.com/choderalab/perses/blob/main/examples/moonshot-mainseries/molecules/filter-cdd-export.py
 """
-import sys
 
-import numpy as np
 
 cdd_csv_filename = "CDD CSV Export - 2023-02-20 00h18m18s.csv"
 clean_output_csv_filename = "fullseries_clean.csv"
 bulky_output_csv_filename = "fullseries_bulky.csv"
 
-# Load in data to pandas dataframe
-import pandas as pd
 
 bulky_df = pd.read_csv(cdd_csv_filename, dtype=str)
 print(f"{len(bulky_df)} records read")
@@ -39,7 +39,7 @@ bulky_df = bulky_df[
 # Drop NaNs
 print(f"Dropping NaNs...")
 cleaned_df = bulky_df.dropna(axis=0, how="any", thresh=None, subset=None, inplace=False)
-print(f"{len(cleaned_df)} records remain")
+print("{len(cleaned_df)} records remain")
 
 
 # Drop any with ambiguity in suspected SMILES (which will have spaces)
@@ -94,8 +94,6 @@ bulky_df.dropna(
 ##
 
 # Compute 95%CI width
-import numpy as np
-
 
 def pIC50(IC50_series):
     return -np.log10(IC50_series.astype(float) * 1e-6)
