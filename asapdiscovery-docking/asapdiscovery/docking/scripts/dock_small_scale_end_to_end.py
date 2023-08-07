@@ -11,10 +11,7 @@ import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import GPU, LilacGPUDaskCluster
-from asapdiscovery.data.execution_utils import (
-    estimate_n_workers,
-    get_interfaces_with_dual_ip,
-)
+from asapdiscovery.data.execution_utils import estimate_n_workers
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -598,7 +595,6 @@ def main():
         from dask.distributed import Client
 
         if args.dask_lilac:
-            from dask_jobqueue import LSFCluster
 
             logger.info("Using dask-jobqueue to run on lilac")
 
@@ -606,14 +602,12 @@ def main():
 
             logger.info(f"dask config : {dask.config.config}")
 
-            if args.md:
-                # assume we want about 1 work units per worker, because MD + GIFs very GPU intensive
-                # and can take quite a while
-                ratio = 1
-            else:
-                # otherwise 3 should be a decent guess
-                ratio = 3
-            n_workers = estimate_n_workers(n_mols, ratio=ratio, maximum=20, minimum=1)
+            cluster.adapt(minimum=1, maximum=40, wait_count=10, interval="2m")
+            # esitmate the number of workers and target that
+            n_workers = estimate_n_workers(
+                n_mols, ratio=1 if args.md else 1, minimum=1, maximum=40
+            )
+            logger.info(f"Estimating {n_workers} workers")
             cluster.scale(n_workers)
             client = Client(cluster)
         else:
@@ -710,7 +704,8 @@ def main():
         results.append(res)
 
     if args.dask:  # make concrete
-        results = dask.compute(*results)
+        futures = client.compute(results)
+        results = client.gather(futures, errors="skip")
 
     ###########################
     # wrangle docking results #
@@ -803,8 +798,8 @@ def main():
             outpath = dask_html_adaptor(pose, output_path)
             outpaths.append(outpath)
 
-        outpaths = client.compute(outpaths)
-        outpaths = client.gather(outpaths)
+        futures = client.compute(outpaths)
+        outpaths = client.gather(futures, errors="skip")
 
     else:
         logger.info("Running HTML visualization in serial")
@@ -817,6 +812,21 @@ def main():
         )
         html_visualiser.write_pose_visualizations()
 
+    # remove any with positive docking scores that would indicate a clash
+    clashing = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] > 0]
+    if len(clashing) > 0:
+        logger.warning(
+            f"IMPORTANT: docking has {len(clashing)} poses with score > 0 likely due to clashing"
+        )
+        # save debug csv if needed
+        clashing.to_csv(data_intermediate_dir / "clashes.csv")
+        for _, row in clashing.iterrows():
+            logger.warning(
+                f"IMPORTANT: docking score invalid for {row[DockingResultCols.LIGAND_ID.value]} due to clashing, dropping from further analysis"
+            )
+
+    no_clash = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] <= 0]
+
     #################################
     #   Szybki conformer analysis   #
     #################################
@@ -827,10 +837,13 @@ def main():
         logger.info("Running Szybki conformer analysis")
 
         # add szybki output column
-        top_posit["outpath_szybki"] = top_posit["ligand_id"].apply(
+        no_clash["outpath_szybki"] = no_clash["ligand_id"].apply(
             lambda x: szybki_dir / Path(x)
         )
         if args.dask:
+            if args.dask_lilac:
+                cluster.scale(n_workers)  # remind the cluster how many workers we need
+
             logger.info("Running Szybki conformer analysis with Dask")
 
             @dask.delayed
@@ -843,20 +856,20 @@ def main():
 
             szybki_results = []
             for pose, output_path in zip(
-                top_posit["_docked_file"], top_posit["outpath_szybki"]
+                no_clash["_docked_file"], no_clash["outpath_szybki"]
             ):
                 res = dask_szybki_adaptor(pose, output_path)
                 szybki_results.append(res)
 
-            szybki_results = client.compute(szybki_results)
-            szybki_results = client.gather(szybki_results)
+            futures = client.compute(szybki_results)
+            szybki_results = client.gather(futures, errors="skip")
             # concat results
             szybki_results = pd.concat(szybki_results)
 
         else:
             logger.info("Running Szybki conformer analysis in serial")
             conformer_analysis = SzybkiFreeformConformerAnalyzer(
-                top_posit["_docked_file"], top_posit["outpath_szybki"], logger=logger
+                no_clash["_docked_file"], no_clash["outpath_szybki"], logger=logger
             )
             szybki_results = conformer_analysis.run_all_szybki(return_as_dataframe=True)
 
@@ -894,6 +907,7 @@ def main():
                 logger.info(
                     "dask lilac setup means we don't need to spawn a new client"
                 )
+                cluster.scale(n_workers)  # remind the cluster how many workers we need
             else:
                 logger.info("Starting seperate Dask GPU client")
                 # spawn new GPU client
@@ -911,7 +925,7 @@ def main():
         md_dir.mkdir(parents=True, exist_ok=True)
         intermediate_files.append(md_dir)
 
-        top_posit["_outpath_md"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
+        no_clash["_outpath_md"] = no_clash[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: md_dir / Path(x)
         )
         logger.info(f"Starting MD at {datetime.now().isoformat()}")
@@ -943,25 +957,25 @@ def main():
             # make a list of simulator results that we then compute in parallel
             retcodes = []
             for pose, output_path in zip(
-                top_posit["_docked_file"], top_posit["_outpath_md"]
+                no_clash["_docked_file"], no_clash["_outpath_md"]
             ):
                 retcode = dask_md_adaptor(pose, protein_path, output_path)
                 retcodes.append(retcode)
 
             # run in parallel sending out a bunch of Futures
-            retcodes = client.compute(retcodes)
+            futures = client.compute(retcodes)
             # gather results back to the client, blocking until all are done
-            retcodes = client.gather(retcodes)
+            retcodes = client.gather(futures, errors="skip")
 
         else:
             # don't do this if you can avoid it
             logger.info("Running MD with in serial")
             logger.warning("This will take a long time")
             simulator = VanillaMDSimulator(
-                top_posit["_docked_file"],
+                no_clash["_docked_file"],
                 protein_path,
                 logger=logger,
-                output_paths=top_posit["_outpath_md"],
+                output_paths=no_clash["_outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
             )
@@ -978,15 +992,15 @@ def main():
         gif_dir = output_dir / "gif"
         gif_dir.mkdir(parents=True, exist_ok=True)
 
-        top_posit["_outpath_md_sys"] = top_posit["_outpath_md"].apply(
+        no_clash["_outpath_md_sys"] = no_clash["_outpath_md"].apply(
             lambda x: Path(x) / "minimized.pdb"
         )
 
-        top_posit["_outpath_md_traj"] = top_posit["_outpath_md"].apply(
+        no_clash["_outpath_md_traj"] = no_clash["_outpath_md"].apply(
             lambda x: Path(x) / "traj.xtc"
         )
 
-        top_posit["_outpath_gif"] = top_posit[DockingResultCols.LIGAND_ID.value].apply(
+        no_clash["_outpath_gif"] = no_clash[DockingResultCols.LIGAND_ID.value].apply(
             lambda x: gif_dir / Path(x) / "trajectory.gif"
         )
         # take only last .5ns of trajectory to get nicely equilibrated pose.
@@ -1023,25 +1037,25 @@ def main():
             logger.info("Running GIF visualization with Dask")
             outpaths = []
             for traj, system, outpath in zip(
-                top_posit["_outpath_md_traj"],
-                top_posit["_outpath_md_sys"],
-                top_posit["_outpath_gif"],
+                no_clash["_outpath_md_traj"],
+                no_clash["_outpath_md_sys"],
+                no_clash["_outpath_gif"],
             ):
                 outpath = dask_gif_adaptor(traj, system, outpath)
                 outpaths.append(outpath)
 
             # run in parallel sending out a bunch of Futures
-            outpaths = client.compute(outpaths)
+            futures = client.compute(outpaths)
             # gather results back to the client, blocking until all are done
-            outpaths = client.gather(outpaths)
+            outpaths = client.gather(futures, errors="skip")
 
         else:
             logger.info("Running GIF visualization in serial")
             logger.warning("This will take a long time")
             gif_visualiser = GIFVisualizer(
-                top_posit["_outpath_md_traj"],
-                top_posit["_outpath_md_sys"],
-                top_posit["_outpath_gif"],
+                no_clash["_outpath_md_traj"],
+                no_clash["_outpath_md_sys"],
+                no_clash["_outpath_gif"],
                 args.viz_target,
                 frames_per_ns=200,
                 smooth=5,
@@ -1049,6 +1063,20 @@ def main():
                 logger=logger,
             )
             gif_visualiser.write_traj_visualizations()
+
+        # rejoin with main dataframe
+        # keep what we need from noclash, outpath_pose should already be in there
+        gif_data = no_clash[[DockingResultCols.LIGAND_ID.value, "_outpath_gif"]]
+        # join back to top_posit
+        top_posit = top_posit.merge(
+            gif_data, on=DockingResultCols.LIGAND_ID.value, how="left"
+        )
+        if args.debug:
+            # save top_posit with MD results
+            top_posit.to_csv(
+                data_intermediate_dir / f"results_{args.target}_succeded_with_md.csv",
+                index=False,
+            )
 
     if args.debug:
         # save debug csv if needed
@@ -1127,7 +1155,7 @@ def main():
         )
         pose_uploader.upload_artifacts()
 
-        if args.md:  # make a dataframe with the ligand ID and the MD gif artifact path
+        if args.md:
             md_df = renamed_top_posit_with_artifacts[
                 [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
             ]
