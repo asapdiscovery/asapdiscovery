@@ -91,8 +91,13 @@ def parse_fitness_json(target) -> pd.DataFrame:
 
     Returns
     -------
-    fitness_scores : pandas DataFrame
-        Dataframe where indices are residue numbers,  `fitness` column contains fitness score
+    fitness_df_abstract : pandas DataFrame
+        Dataframe where indices are residue numbers, columns are:
+            "fitness" -> normalized fitness (0 is not mutable, 1 is highly mutable)
+            "wildtype_residue" 
+            "most_fit_mutation" 
+            "least_fit_mutation" 
+            "confidence" -> normalized confidence (0 is not confident, 1 is highly confident)
     """
     if target not in TargetTags.get_values():
         raise ValueError(
@@ -125,5 +130,5 @@ def parse_fitness_json(target) -> pd.DataFrame:
             ])
     fitness_df_abstract.index.name = "residue"
 
-    # normalize fitness and confidence values to 0-1 for easier parsing by visualizers downstream.
-    normalize_fitness(fitness_df_abstract)
+    # normalize fitness and confidence values to 0-1 for easier parsing by visualizers downstream and return df.
+    return normalize_fitness(fitness_df_abstract)
