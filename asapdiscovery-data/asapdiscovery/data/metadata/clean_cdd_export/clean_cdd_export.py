@@ -37,7 +37,7 @@ bulky_df = bulky_df[
 ]
 
 # Drop NaNs
-print(f"Dropping NaNs...")
+print("Dropping NaNs...")
 cleaned_df = bulky_df.dropna(axis=0, how="any", thresh=None, subset=None, inplace=False)
 print("{len(cleaned_df)} records remain")
 
