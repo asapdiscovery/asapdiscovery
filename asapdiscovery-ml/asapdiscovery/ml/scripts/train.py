@@ -17,6 +17,7 @@ python train.py \
     -proj test-model-compare
 """
 import argparse
+import json
 import os
 import pickle as pkl
 from glob import glob
@@ -658,21 +659,11 @@ def main():
         start_epoch, wts_fn = find_most_recent(args.model_o)
 
         # Load error dicts
-        if os.path.isfile(f"{args.model_o}/train_err.pkl"):
-            train_loss = pkl.load(open(f"{args.model_o}/train_err.pkl", "rb")).tolist()
+        if os.path.isfile(f"{args.model_o}/loss_dict.json"):
+            loss_dict = json.load(open(f"{args.model_o}/loss_dict.json"))
         else:
-            print("Couldn't find train loss file.", flush=True)
-            train_loss = None
-        if os.path.isfile(f"{args.model_o}/val_err.pkl"):
-            val_loss = pkl.load(open(f"{args.model_o}/val_err.pkl", "rb")).tolist()
-        else:
-            print("Couldn't find val loss file.", flush=True)
-            val_loss = None
-        if os.path.isfile(f"{args.model_o}/test_err.pkl"):
-            test_loss = pkl.load(open(f"{args.model_o}/test_err.pkl", "rb")).tolist()
-        else:
-            print("Couldn't find test loss file.", flush=True)
-            test_loss = None
+            print("Couldn't find loss dict file.", flush=True)
+            loss_dict = None
 
         # Need to add 1 to start_epoch bc the found idx is the last epoch
         #  successfully trained, not the one we want to start at
@@ -683,9 +674,7 @@ def main():
         else:
             wts_fn = None
         start_epoch = 0
-        train_loss = None
-        val_loss = None
-        test_loss = None
+        loss_dict = None
 
     # Load weights
     if wts_fn:
@@ -776,7 +765,7 @@ def main():
     os.makedirs(model_dir, exist_ok=True)
 
     # Train the model
-    model, train_loss, val_loss, test_loss = train(
+    model, loss_dict = train(
         model=model,
         ds_train=ds_train,
         ds_val=ds_val,
@@ -788,9 +777,7 @@ def main():
         save_file=model_dir,
         lr=args.lr,
         start_epoch=start_epoch,
-        train_loss=train_loss,
-        val_loss=val_loss,
-        test_loss=test_loss,
+        loss_dict=loss_dict,
         use_wandb=(args.wandb or args.sweep),
         batch_size=args.batch_size,
         es=es,
