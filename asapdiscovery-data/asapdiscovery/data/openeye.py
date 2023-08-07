@@ -144,6 +144,7 @@ def load_openeye_pdb(
     else:
         oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
 
+
 def load_openeye_smi(smi_fn: Union[str, Path]) -> oechem.OEGraphMol:
     """
     Load an OpenEye SMILES file containing a single molecule and return it as an
