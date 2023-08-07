@@ -150,6 +150,29 @@ def wandb_init(
     model_o=None,
     exp_configure=None,
 ):
+    """
+    Initialize WandB, handling saving the run ID (for continuing the run later).
+
+    Parameters
+    ----------
+    project_name : str
+        WandB project name
+    run_name : str
+        WandB run name
+    sweep : bool
+        Whether this is a sweep run (True) or regular training run (False)
+    cont : bool
+        Whether this run is a continuation of a previous run
+    model_o : str, optional
+        Output directory, necessary if continuing a run
+    exp_configure : dict
+        Dict passed for WandB config
+
+    Returns
+    -------
+    str
+        The WandB run ID for the initialized run
+    """
     import wandb
 
     if sweep:
