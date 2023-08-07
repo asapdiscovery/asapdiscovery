@@ -73,8 +73,10 @@ def normalize_fitness(fitness_df_abstract) -> pd.DataFrame:
         Dataframe containing per-residue fitness data normalized.
     """
     fitness_df_abstract["fitness"] = (
-        fitness_df_abstract["fitness"] - fitness_df_abstract["fitness"].min()
-    ) / (fitness_df_abstract["fitness"].max() - fitness_df_abstract["fitness"].min())*100
+        (fitness_df_abstract["fitness"] - fitness_df_abstract["fitness"].min())
+        / (fitness_df_abstract["fitness"].max() - fitness_df_abstract["fitness"].min())
+        * 100
+    )
 
     fitness_df_abstract["confidence"] = (
         fitness_df_abstract["confidence"] - fitness_df_abstract["confidence"].min()
@@ -144,5 +146,4 @@ def parse_fitness_json(target) -> pd.DataFrame:
     # normalize fitness and confidence values to 0-1 for easier parsing by visualizers downstream and return df.
     # can instead return DF if ever we need to provide more info (top/worst mutation, confidence etc).
     fitness_df_abstract = normalize_fitness(fitness_df_abstract)
-    return dict(zip(fitness_df_abstract.index, fitness_df_abstract['fitness']))
-     
+    return dict(zip(fitness_df_abstract.index, fitness_df_abstract["fitness"]))

@@ -36,7 +36,6 @@ def _vis_core(pdb_body: str) -> str:
     return core
 
 
-
 def make_core_html(pdb_body: str) -> str:
     return (
         HTMLBlockData.visualisation_header
@@ -61,7 +60,7 @@ class HTMLBlockData:
         get the coloring method block for the protein viz (subpocket or b-factor)
         """
         return getattr(cls, f"color_method_{method}")
-    
+
     @classmethod
     def get_orient_tail(cls, target: str) -> str:
         """
@@ -70,6 +69,7 @@ class HTMLBlockData:
         # need underscore full name
         target_ = VizTargets.get_name_underscore(target)
         return getattr(cls, f"orient_tail_{target_}")
+
     color_method_subpockets = """\
         protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front',} );
 """
@@ -171,7 +171,7 @@ function loadmike_combined (protein) {
 </script> """
 
     orient_tail_SARS_CoV_2_Mpro = """\
-        
+
         // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
         myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );

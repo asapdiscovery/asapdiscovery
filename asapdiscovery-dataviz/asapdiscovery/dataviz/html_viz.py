@@ -1,15 +1,16 @@
 import logging
+import os
 from pathlib import Path
 from typing import List, Optional, Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
-from rdkit import Chem
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
+from rdkit import Chem
 
 from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
-import os
+
 
 def _load_first_molecule(file_path: Union[Path, str]):
     mols = Chem.SDMolSupplier(str(file_path))
@@ -72,7 +73,9 @@ class HTMLVisualizer:
             self.logger.info(f"Mapping interactive view by fitness (b-factor bypass)")
             self.fitness_data = fitness_data
         else:
-            raise ValueError("variable `color_method` must be either of ['subpockets', 'bfactor']")
+            raise ValueError(
+                "variable `color_method` must be either of ['subpockets', 'bfactor']"
+            )
 
         if target not in self.allowed_targets:
             raise ValueError(f"Target must be one of: {self.allowed_targets}")
@@ -99,20 +102,22 @@ class HTMLVisualizer:
             protein_biopython = parser.get_structure("protein", str(protein))
             self.logger.warning(f"Swapping b-factor with fitness score.")
             for res in protein_biopython.get_residues():
-                res_number = res.get_full_id()[3][1] # what a world we live in..
+                res_number = res.get_full_id()[3][1]  # what a world we live in..
                 try:
                     for at in res.get_atoms():
                         at.set_bfactor(fitness_data[res_number])
                 except KeyError:
                     # this is normal in most cases, a handful of residues will be missing from mutation data.
-                    self.logger.warning(f"No fitness score found for residue {res_number} of protein.")
-                      
+                    self.logger.warning(
+                        f"No fitness score found for residue {res_number} of protein."
+                    )
+
             # there's no biopython -> rdkit, so save to a PDB file and load it with RDKit.
             io = PDBIO()
             io.set_structure(protein_biopython)
             io.save(f"{str(protein)}_tmp")
             self.protein = Chem.MolFromPDBFile(f"{str(protein)}_tmp")
-            os.remove(f"{str(protein)}_tmp") # cleanup
+            os.remove(f"{str(protein)}_tmp")  # cleanup
 
         self.debug = debug
         if self.debug:
