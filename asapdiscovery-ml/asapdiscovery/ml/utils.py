@@ -1485,16 +1485,18 @@ def train(
     if use_wandb:
         import wandb
 
-    # Dicts of compounds (one for each split) storing true label and
-    #  preds/losses per epoch
-    # eg:
-    # loss_dict["train"][compound_id: str] = {
-    #     "target": float,  # exp label
-    #     "in_range": float,  # exp is in assay range
-    #     "uncertainty": float,  # measurement uncertainty
-    #     "preds": list[float],  # list of model predictions (per epoch)
-    #     "losses": list[float],  # list of losses (per epoch)
-    # }
+    """
+    Dicts of compounds (one for each split) storing true label and
+     preds/losses per epoch
+    eg:
+    loss_dict["train"][compound_id: str] = {
+        "target": float,  # exp label
+        "in_range": float,  # exp is in assay range
+        "uncertainty": float,  # measurement uncertainty
+        "preds": list[float],  # list of model predictions (per epoch)
+        "losses": list[float],  # list of losses (per epoch)
+    }
+    """
     if not loss_dict:
         loss_dict = {"train": {}, "val": {}, "test": {}}
 
