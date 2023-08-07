@@ -95,7 +95,7 @@ class Ligand(DataModelAbstractBase):
         Dictionary of SD tags, by default {}
     data : str, optional, private
         Chemical structure data from the SDF file stored as a string ""
-    data_format : DataStorageType, optional, private, const
+    data_format : DataStorageType
         Enum describing the data storage method, by default DataStorageType.sdf
     """
 
@@ -119,7 +119,6 @@ class Ligand(DataModelAbstractBase):
     data_format: DataStorageType = Field(
         DataStorageType.sdf,
         description="Enum describing the data storage method",
-        const=True,
         allow_mutation=False,
     )
 
