@@ -100,9 +100,9 @@ def parse_fitness_json(target) -> pd.DataFrame:
     fitness_df_abstract : pandas DataFrame
         Dataframe where indices are residue numbers, columns are:
             "fitness" -> normalized fitness (0 is not mutable, 1 is highly mutable)
-            "wildtype_residue" 
-            "most_fit_mutation" 
-            "least_fit_mutation" 
+            "wildtype_residue"
+            "most_fit_mutation"
+            "least_fit_mutation"
             "confidence" -> normalized confidence (0 is not confident, 1 is highly confident)
     """
     if target not in TargetTags.get_values():
