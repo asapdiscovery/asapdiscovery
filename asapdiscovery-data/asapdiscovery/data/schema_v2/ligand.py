@@ -14,7 +14,11 @@ from asapdiscovery.data.openeye import (
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
-from pydantic import UUID4, Field, root_validator, validator
+
+try:
+    from pydantic.v1 import UUID4, Field, root_validator, validator
+except ImportError:
+    from pydantic import UUID4, Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
