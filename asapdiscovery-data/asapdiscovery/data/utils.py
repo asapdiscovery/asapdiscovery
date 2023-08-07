@@ -31,6 +31,7 @@ MOONSHOT_CDD_ID_REGEX = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
 # This will match any string that follows the Fragalysis naming convention for the Mpro
 #  structures, eg:  Mpro-P2005_0A
 MPRO_ID_REGEX = r"Mpro-.*?_[0-9][A-Z]"
+ASAP_ID_REGEX = "ASAP-[0-9]{7}"
 
 # Regex patterns that match chains as well, but only capture the main part. These
 #  regexes are used when we want to group files based on their unique identifier (ie the
