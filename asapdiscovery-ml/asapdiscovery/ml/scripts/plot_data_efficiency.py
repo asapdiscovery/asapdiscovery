@@ -199,6 +199,7 @@ def load_losses_dict(loss_dir, conv_function=None, take_best=True):
 
     # Convert losses if desired
     if conv_function:
+        # Stored loss values are in squared pIC50 units, so take sqrt to get plain pIC50
         df.loc[:, "loss"] = df["loss"].pow(0.5).apply(conv_function)
 
     return df
