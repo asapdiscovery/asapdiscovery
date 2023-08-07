@@ -1,10 +1,12 @@
+from enum import Enum
+from typing import Optional
+
+from dask import config as cfg
 from dask.distributed import Client, LocalCluster
 from dask_jobqueue import LSFCluster
 from pydantic import BaseModel, Field
-from typing import Optional
+
 from .execution_utils import guess_network_interface
-from enum import Enum
-from dask import config as cfg
 
 cfg.set({"distributed.scheduler.worker-ttl": None})
 cfg.set({"distributed.admin.tick.limit": "2h"})
@@ -35,6 +37,7 @@ def _walltime_to_h(walltime: str) -> int:
     """
     return int(walltime.split(":")[0])
 
+
 class DaskCluster(BaseModel):
     class Config:
         allow_mutation = False
@@ -63,7 +66,12 @@ class LilacDaskCluster(DaskCluster):
         return LSFCluster(
             interface=interface,
             scheduler_options={"interface": interface},
-            worker_extra_args=["--lifetime", f"{_walltime_to_h(self.walltime) - 1}", "--lifetime-stagger", "2m"], # leave a slight buffer
+            worker_extra_args=[
+                "--lifetime",
+                f"{_walltime_to_h(self.walltime) - 1}",
+                "--lifetime-stagger",
+                "2m",
+            ],  # leave a slight buffer
             **self.dict(),
         )
 

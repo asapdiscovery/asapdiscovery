@@ -1,6 +1,7 @@
-import netifaces
-from typing import Optional
 import warnings
+from typing import Optional
+
+import netifaces
 
 
 def get_network_interfaces_with_dual_ip(exclude: list[str] = []) -> list[str]:
@@ -48,10 +49,10 @@ def guess_network_interface(exclude: list[str] = []) -> Optional[str]:
     if not interfaces:
         raise RuntimeError("No interfaces with both IPv4 and IPv6 addresses found.")
     elif len(interfaces) > 1:
-        warnings.warn(f"Found more than one interface: {interfaces}, using the first one")
+        warnings.warn(
+            f"Found more than one interface: {interfaces}, using the first one"
+        )
     return interfaces[0]
-
-
 
 
 def estimate_n_workers(
