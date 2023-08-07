@@ -55,6 +55,7 @@ def apply_bloom_abstraction(fitness_dataframe) -> dict:
         ]
     return fitness_dict
 
+
 def normalize_fitness(fitness_df_abstract) -> pd.DataFrame:
     """
     Read a pandas DF containing fitness data and normalizes values to 0-1. Normalization is as MinMax:
@@ -71,11 +72,16 @@ def normalize_fitness(fitness_df_abstract) -> pd.DataFrame:
     fitness_df_abstract: pd.DataFrame
         Dataframe containing per-residue fitness data normalized to 0-1.
     """
-    fitness_df_abstract["fitness"] = (fitness_df_abstract["fitness"]-fitness_df_abstract["fitness"].min()) / \
-        (fitness_df_abstract["fitness"].max()-fitness_df_abstract["fitness"].min())
+    fitness_df_abstract["fitness"] = (
+        fitness_df_abstract["fitness"] - fitness_df_abstract["fitness"].min()
+    ) / (fitness_df_abstract["fitness"].max() - fitness_df_abstract["fitness"].min())
 
-    fitness_df_abstract["confidence"] = (fitness_df_abstract["confidence"]-fitness_df_abstract["confidence"].min()) / \
-        (fitness_df_abstract["confidence"].max()-fitness_df_abstract["confidence"].min())
+    fitness_df_abstract["confidence"] = (
+        fitness_df_abstract["confidence"] - fitness_df_abstract["confidence"].min()
+    ) / (
+        fitness_df_abstract["confidence"].max()
+        - fitness_df_abstract["confidence"].min()
+    )
 
     return fitness_df_abstract
 
@@ -101,7 +107,8 @@ def parse_fitness_json(target) -> pd.DataFrame:
 
     # load JSON by Bloom et al. JSONs for other virus genomes will be loaded here in the future.
     fitness_json = pkg_resources.resource_filename(
-        __name__, "../../../metadata/aa_fitness_sars_cov_2.json" # TODO change when `metadata` is vendored properly
+        __name__,
+        "../../../metadata/aa_fitness_sars_cov_2.json",  # TODO change when `metadata` is vendored properly
     )
 
     with open(fitness_json) as f:
@@ -116,13 +123,17 @@ def parse_fitness_json(target) -> pd.DataFrame:
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom)
-    fitness_df_abstract = pd.DataFrame.from_dict(fitness_dict_abstract, orient="index", columns=[
+    fitness_df_abstract = pd.DataFrame.from_dict(
+        fitness_dict_abstract,
+        orient="index",
+        columns=[
             "fitness",
             "wildtype_residue",
             "most_fit_mutation",
             "least_fit_mutation",
-            "confidence"
-            ])
+            "confidence",
+        ],
+    )
     fitness_df_abstract.index.name = "residue"
 
     # normalize fitness and confidence values to 0-1 for easier parsing by visualizers downstream.
