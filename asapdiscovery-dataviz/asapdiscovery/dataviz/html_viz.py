@@ -28,6 +28,7 @@ class HTMLVisualizer:
         output_paths: list[Path],
         target: str,
         protein: Path,
+        color_method: str,
         logger: FileLogger = None,
         debug: bool = False,
     ):
@@ -42,12 +43,18 @@ class HTMLVisualizer:
             Target to visualize poses for. Must be one of the allowed targets in VizTargets.
         protein : Path
             Path to protein PDB file.
+        color_method : str
+            Protein surface coloring method. Can be either by `subpockets` or `bfactor`
         logger : FileLogger
             Logger to use
 
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")
+
+        if not color_method in ("subpockets", "bfactor"):
+            raise ValueError("variable `color_method` must be either of ['subpockets', 'bfactor']")
+        self.color_method = color_method
 
         # init loggers
         if logger is None:
@@ -146,8 +153,7 @@ class HTMLVisualizer:
         """
 
         colour = HTMLBlockData.get_pocket_color(self.target)
-        method = "bfactor"
-        method = HTMLBlockData.get_color_method(method)
+        method = HTMLBlockData.get_color_method(self.color_method)
         orient_tail = HTMLBlockData.get_orient_tail(self.target)
 
         return colour + method + orient_tail
