@@ -23,8 +23,8 @@ dependencies:
   - openeye-toolkits<=2022.2.2
   - pandas
   - pebble
-  - pydantic
-  - pydantic-settings
+  - pydantic >=1.10.8,<2.0.0a0
+  #- pydantic-settings
   - rdkit
   - seaborn
   - pebble
