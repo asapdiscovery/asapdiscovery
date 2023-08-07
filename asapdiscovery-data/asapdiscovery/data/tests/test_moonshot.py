@@ -189,7 +189,12 @@ def cdd_col_headers():
 
 
 @pytest.mark.parametrize(
-    "search", [MOONSHOT_ALL_SMI_SEARCH, MOONSHOT_NONCOVALENT_SMI_SEARCH, MOONSHOT_NONCOVALENT_W_DATES_SEARCH]
+    "search",
+    [
+        MOONSHOT_ALL_SMI_SEARCH,
+        MOONSHOT_NONCOVALENT_SMI_SEARCH,
+        MOONSHOT_NONCOVALENT_W_DATES_SEARCH,
+    ],
 )
 def test_fetch(cdd_header, moonshot_vault, search, cdd_col_headers):
     """
@@ -296,7 +301,12 @@ def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
 
 @pytest.mark.xfail
 @pytest.mark.parametrize(
-    "search", [MOONSHOT_ALL_SMI_SEARCH, MOONSHOT_NONCOVALENT_SMI_SEARCH, MOONSHOT_NONCOVALENT_W_DATES_SEARCH]
+    "search",
+    [
+        MOONSHOT_ALL_SMI_SEARCH,
+        MOONSHOT_NONCOVALENT_SMI_SEARCH,
+        MOONSHOT_NONCOVALENT_W_DATES_SEARCH,
+    ],
 )
 def test_download_molecules(
     cdd_header,
@@ -336,7 +346,12 @@ def test_download_molecules(
 
 @pytest.mark.xfail
 @pytest.mark.parametrize(
-    "search", [MOONSHOT_ALL_SMI_SEARCH, MOONSHOT_NONCOVALENT_SMI_SEARCH, MOONSHOT_NONCOVALENT_W_DATES_SEARCH]
+    "search",
+    [
+        MOONSHOT_ALL_SMI_SEARCH,
+        MOONSHOT_NONCOVALENT_SMI_SEARCH,
+        MOONSHOT_NONCOVALENT_W_DATES_SEARCH,
+    ],
 )
 def test_download_molecules_cache(
     cdd_header, moonshot_vault, search, cdd_col_headers, moonshot_saved_searches
