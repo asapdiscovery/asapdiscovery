@@ -460,7 +460,7 @@ def init(args, rank=False):
         model_config = {}
     print("Using model config:", model_config, flush=True)
 
-    # Override args parameters with model_config parameters\
+    # Override args parameters with model_config parameters
     # This shouldn't strictly be necessary, as model_config should override
     #  everything, but just to be safe
     if "grouped" in model_config:
