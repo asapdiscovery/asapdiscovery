@@ -146,6 +146,8 @@ class HTMLVisualizer:
         """
 
         colour = HTMLBlockData.get_pocket_color(self.target)
+        method = "bfactor"
+        method = HTMLBlockData.get_color_method(method)
         orient_tail = HTMLBlockData.get_orient_tail(self.target)
 
-        return colour + orient_tail
+        return colour + method + orient_tail
