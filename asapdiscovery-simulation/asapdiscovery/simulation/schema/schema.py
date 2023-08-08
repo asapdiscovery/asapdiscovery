@@ -1,4 +1,5 @@
 from collections import namedtuple
+
 from openmm.app import PME, HBonds
 from openmm.unit import amu, nanometers
 
@@ -32,5 +33,3 @@ DefaultForceFieldParams = ForceFieldParams(
     rigid_water=True,
     hydrogen_mass=4.0 * amu,
 )
-
-

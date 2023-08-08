@@ -1,7 +1,11 @@
 import click
 
+
 @click.command()
-@click.argument("filename", type=click.Path(exists=False, file_okay=True, dir_okay=False, writable=True))
+@click.argument(
+    "filename",
+    type=click.Path(exists=False, file_okay=True, dir_okay=False, writable=True),
+)
 def create(filename: str):
     """
     Create a new free energy perturbation factory with default settings and save it to JSON file.

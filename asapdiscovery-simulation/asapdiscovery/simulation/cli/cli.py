@@ -1,9 +1,8 @@
 import click
-
 from asapdiscovery.simulation.cli.create import create
 from asapdiscovery.simulation.cli.plan import plan
-from asapdiscovery.simulation.cli.submit import submit
 from asapdiscovery.simulation.cli.status import status
+from asapdiscovery.simulation.cli.submit import submit
 
 
 @click.group()

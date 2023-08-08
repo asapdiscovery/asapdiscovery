@@ -1,10 +1,10 @@
 from typing import Literal, Optional
-from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.simulation.schema.network import PlannedNetwork, NetworkPlanner
-from alchemiscale import ScopedKey
 
 import gufe
 import openfe
+from alchemiscale import ScopedKey
+from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
@@ -68,20 +68,35 @@ class TransformationResult(_SchemaBaseFrozen):
     """
     Store the results of a transformation, note when retries are used this will be the average result.
     """
+
     type: Literal["TransformationResult"] = "TransformationResult"
-    ligand_a: str = Field(..., description="The name of the ligand in state A of the transformation.")
-    ligand_b: str = Field(..., description="The name of the ligand in state B of the transformation.")
-    phase: Literal["complex", "solvent"] = Field(..., description="The phase of the transformation.")
-    estimate: float = Field(..., description="The average estimate of this transformation in kcal/mol")
-    uncertainty: float = Field(..., description="The standard deviation of the estimates of this transform in kcal/mol")
+    ligand_a: str = Field(
+        ..., description="The name of the ligand in state A of the transformation."
+    )
+    ligand_b: str = Field(
+        ..., description="The name of the ligand in state B of the transformation."
+    )
+    phase: Literal["complex", "solvent"] = Field(
+        ..., description="The phase of the transformation."
+    )
+    estimate: float = Field(
+        ..., description="The average estimate of this transformation in kcal/mol"
+    )
+    uncertainty: float = Field(
+        ...,
+        description="The standard deviation of the estimates of this transform in kcal/mol",
+    )
 
 
 class _BaseResults(_SchemaBaseFrozen):
     """
     A base results class which handles the collecting and processing of the results.
     """
+
     type: Literal["_BaseResults"] = "_BaseResults"
-    results: list[TransformationResult] = Field([], description="The list of results collected for this dataset.")
+    results: list[TransformationResult] = Field(
+        [], description="The list of results collected for this dataset."
+    )
 
     def to_cinnabar_csv(self, file_name: str):
         """Create a csv file which can be read by cinnabar for analysis."""
@@ -91,7 +106,10 @@ class _BaseResults(_SchemaBaseFrozen):
 class AlchemiscaleResults(_BaseResults):
     type: Literal["AlchemiscaleResults"] = "AlchemiscaleResults"
 
-    network_key: ScopedKey = Field(..., description="The alchemiscale key associated with this submited network, which is used to gather results from the client.")
+    network_key: ScopedKey = Field(
+        ...,
+        description="The alchemiscale key associated with this submited network, which is used to gather results from the client.",
+    )
 
 
 class _FreeEnergyBase(_SchemaBase):
@@ -99,6 +117,7 @@ class _FreeEnergyBase(_SchemaBase):
     A base class for the FreeEnergyCalculationFactory and Network to work around the serialisation issues with
     openFE settings models see <https://github.com/OpenFreeEnergy/openfe/issues/518>.
     """
+
     type: Literal["_FreeEnergyBase"] = "_FreeEnergyBase"
 
     solvent_settings: SolventSettings = Field(
@@ -147,14 +166,19 @@ class _FreeEnergyBase(_SchemaBase):
         "RelativeHybridTopologyProtocol",
         description="The name of the OpenFE alchemical protocol to use.",
     )
-    n_repeats: int = Field(2, description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.")
+    n_repeats: int = Field(
+        2,
+        description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
+    )
 
     def to_openfe_protocol(self):
         """Build the corresponding OpenFE protocol from the settings defined in this schema."""
         # TODO we need some way to link the settings to the protocol for when we have other options
         if self.protocol == "RelativeHybridTopologyProtocol":
             protocol_class = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol
-            settings_class = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings
+            settings_class = (
+                openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings
+            )
 
         protocol_settings = settings_class(
             # workaround type hint being base FF engine class
@@ -166,7 +190,7 @@ class _FreeEnergyBase(_SchemaBase):
             alchemical_sampler_settings=self.alchemical_sampler_settings,
             engine_settings=self.engine_settings,
             integrator_settings=self.integrator_settings,
-            simulation_settings=self.simulation_settings
+            simulation_settings=self.simulation_settings,
         )
         return protocol_class(settings=protocol_settings)
 
@@ -187,7 +211,8 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         description="The planned free energy network with atom mappings between ligands.",
     )
     receptor: str = Field(
-        ..., description="The JSON str of the receptor which should be used in the FEC calculation."
+        ...,
+        description="The JSON str of the receptor which should be used in the FEC calculation.",
     )
     results: Optional[AlchemiscaleResults] = Field(
         None,
@@ -287,6 +312,6 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             dataset_name=dataset_name,
             network=planned_network,
             receptor=receptor.to_json(),
-            **self.dict(exclude={"type", "network_planner"})
+            **self.dict(exclude={"type", "network_planner"}),
         )
         return planned_fec_network

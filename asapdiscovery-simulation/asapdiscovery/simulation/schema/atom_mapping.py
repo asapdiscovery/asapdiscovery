@@ -1,7 +1,8 @@
-from asapdiscovery.simulation.schema.base import _SchemaBase
 import abc
 from typing import Literal
-from pydantic import Field, PositiveInt, PositiveFloat
+
+from asapdiscovery.simulation.schema.base import _SchemaBase
+from pydantic import Field, PositiveFloat, PositiveInt
 
 
 class _BaseAtomMapper(_SchemaBase):

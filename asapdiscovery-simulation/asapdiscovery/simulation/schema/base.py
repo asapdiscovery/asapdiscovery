@@ -1,7 +1,8 @@
-from typing import Literal
-from openff.models.models import DefaultModel
-import json
 import abc
+import json
+from typing import Literal
+
+from openff.models.models import DefaultModel
 
 
 class _SchemaBase(abc.ABC, DefaultModel):
@@ -16,6 +17,7 @@ class _SchemaBase(abc.ABC, DefaultModel):
         Write the model to JSON file.
         """
         from gufe.tokenization import JSON_HANDLER
+
         with open(filename, "w") as output:
             json.dump(self.dict(), output, cls=JSON_HANDLER.encoder, indent=2)
 
@@ -25,7 +27,8 @@ class _SchemaBase(abc.ABC, DefaultModel):
         Load the model from a JSON file
         """
         from gufe.tokenization import JSON_HANDLER
-        with open(filename, "r") as f:
+
+        with open(filename) as f:
             return cls.parse_obj(json.load(f, cls=JSON_HANDLER.decoder))
 
 

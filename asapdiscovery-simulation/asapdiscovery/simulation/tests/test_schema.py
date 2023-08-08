@@ -5,8 +5,12 @@ from asapdiscovery.simulation.schema.atom_mapping import (
     LomapAtomMapper,
     PersesAtomMapper,
 )
+from asapdiscovery.simulation.schema.fec import (
+    FreeEnergyCalculationFactory,
+    FreeEnergyCalculationNetwork,
+    SolventSettings,
+)
 from asapdiscovery.simulation.schema.network import NetworkPlanner
-from asapdiscovery.simulation.schema.fec import SolventSettings, FreeEnergyCalculationFactory, FreeEnergyCalculationNetwork
 from rdkit import Chem
 
 

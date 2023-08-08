@@ -1,8 +1,13 @@
-from asapdiscovery.simulation.schema.base import _SchemaBase
-from asapdiscovery.simulation.schema.atom_mapping import LomapAtomMapper, PersesAtomMapper, KartografAtomMapper
-from pydantic import Field
-from typing import Literal, Union, Optional
+from typing import Literal, Optional, Union
+
 import openfe
+from asapdiscovery.simulation.schema.atom_mapping import (
+    KartografAtomMapper,
+    LomapAtomMapper,
+    PersesAtomMapper,
+)
+from asapdiscovery.simulation.schema.base import _SchemaBase
+from pydantic import Field
 
 
 class _NetworkPlannerSettings(_SchemaBase):
@@ -22,9 +27,7 @@ class _NetworkPlannerSettings(_SchemaBase):
         "default_lomap",
         description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
     )
-    network_planning_method: Literal[
-        "radial", "maximal", "minimal_spanning"
-    ] = Field(
+    network_planning_method: Literal["radial", "maximal", "minimal_spanning"] = Field(
         "minimal_spanning",
         description="The way in which the ligand network should be connected. Note radial requires a central ligand node.",
     )
