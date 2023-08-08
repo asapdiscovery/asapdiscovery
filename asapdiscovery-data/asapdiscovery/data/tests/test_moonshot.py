@@ -152,6 +152,7 @@ def cdd_col_headers():
             "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Lower) (µM)",
             "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: IC50 CI (Upper) (µM)",
             "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Hill slope",
+            "ProteaseAssay_Fluorescence_Dose-Response_Weizmann: Curve class",
         ],
         MOONSHOT_NONCOVALENT_SMI_SEARCH: [
             "Molecule Name",
