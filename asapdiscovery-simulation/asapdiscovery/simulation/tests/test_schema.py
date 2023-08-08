@@ -1,12 +1,12 @@
 import openfe
 import pytest
-from asapdiscovery.simulation.schema import (
+from asapdiscovery.simulation.schema.atom_mapping import (
     KartographAtomMapper,
     LomapAtomMapper,
-    NetworkPlanner,
     PersesAtomMapper,
-    SolventSettings,
 )
+from asapdiscovery.simulation.schema.network import NetworkPlanner
+from asapdiscovery.simulation.schema.fec import SolventSettings, FreeEnergyCalculationFactory, FreeEnergyCalculationNetwork
 from rdkit import Chem
 
 
