@@ -11,14 +11,18 @@ _TARGET_TO_GENE = {
     "SARS-CoV-2-Mac1": "nsp3",
 }
 
+
 def bloom_abstration(fitness_scores_this_site) -> int:
     """
     Applies prescribed abstraction of how mutable a residue is given fitness data. Although the mean fitness
     was used at first, the current (2023.08.08) prescribed method is as follows (by Bloom et al):
     > something like “what is the number of mutations at a site that are reasonably well tolerated.” You could do this as something like number (or fraction) of mutations at a site that have a score >= -1 (that is probably a reasonable cutoff), using -1 as a cutoff where mutations start to cross from “highly deleterious” to “conceivably tolerated.”
     """
-    tolerated_mutations = [ val for val in fitness_scores_this_site["fitness"] if val >= -1.0 ]
+    tolerated_mutations = [
+        val for val in fitness_scores_this_site["fitness"] if val >= -1.0
+    ]
     return len(tolerated_mutations)
+
 
 def apply_bloom_abstraction(fitness_dataframe) -> dict:
     """
@@ -134,10 +138,12 @@ def parse_fitness_json(target) -> pd.DataFrame:
     fitness_scores_bloom = fitness_scores_bloom[
         fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
     ]
-    
+
     if target == "SARS-CoV-2-Mac1":
         # need to subselect from nsp3 multidomain to get just Mac1. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7113668/
-        fitness_scores_bloom = fitness_scores_bloom[fitness_scores_bloom['site'].between(209, 372)]
+        fitness_scores_bloom = fitness_scores_bloom[
+            fitness_scores_bloom["site"].between(209, 372)
+        ]
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom)
