@@ -71,7 +71,7 @@ class HTMLBlockData:
         return getattr(cls, f"orient_tail_{target_}")
 
     color_method_subpockets = """\
-        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front',} );
+        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av'} );
 """
     color_method_bfactor = """\
         protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
