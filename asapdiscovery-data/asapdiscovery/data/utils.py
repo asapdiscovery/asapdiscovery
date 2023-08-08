@@ -1043,7 +1043,9 @@ def parse_fluorescence_data_cdd(
             )
             return g.iloc[0, :]
 
-        mol_df = mol_df.groupby("name", as_index=False).apply(get_best_mol)
+        mol_df = mol_df.groupby("name", as_index=False, group_keys=False).apply(
+            get_best_mol
+        )
 
     return mol_df
 
