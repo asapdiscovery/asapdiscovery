@@ -74,7 +74,7 @@ class HTMLBlockData:
         protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front',} );
 """
     color_method_bfactor = """\
-        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front',} );
+        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
 """
     visualisation_header = """\
 <div id="viewport"

@@ -4,7 +4,6 @@ data-proteins='[{
    "type": "data", "value": "mike_combined", "isVariable": true, "loadFx": "loadmike_combined"
 }]'
 data-backgroundcolor="white"></div>
-$('#i2').css({ position:'absolute', top:position.top-10, left: position.left+5});
 <script type="text/javascript">document.getElementById("blue").style.color = "blue";</script>
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"
               integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
@@ -7994,7 +7993,7 @@ function loadmike_combined (protein) {
         let selecol = Object.entries(data.pocket_dict).map(([name, pymol_sele]) => [data.color_dict[name] || uncolored, pymol_sele.replace(/\+/g, ' or ')]);
         selecol.push([othercolor, '*']);  // default
         const pocket_scheme = NGL.ColormakerRegistry.addSelectionScheme(selecol);
-        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front',} );
+        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
 
         // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
@@ -8013,10 +8012,6 @@ function loadmike_combined (protein) {
     stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 28.732975006103516, clipNear: -28.735034942626953
 }
 
-$(function () {
-    var position = $("#i1").offset();
-    $('#i2').css({ position:'absolute', top:position.top, left: position.left});
-});
 
-</script>
-<img src="../metadata/fitness_color_bar.svg" id="i1">
+
+</script> 
