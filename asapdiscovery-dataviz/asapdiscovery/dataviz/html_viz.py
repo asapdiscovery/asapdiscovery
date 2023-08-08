@@ -57,6 +57,10 @@ class HTMLVisualizer:
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")
+        
+        if target not in self.allowed_targets:
+            raise ValueError(f"Target must be one of: {self.allowed_targets}")
+        self.target = target
 
         # init loggers
         if logger is None:
@@ -70,6 +74,8 @@ class HTMLVisualizer:
         if self.color_method == "subpockets":
             self.logger.info(f"Mapping interactive view by subpocket dict")
         elif self.color_method == "bfactor":
+            if self.target == "MERS-CoV-Mpro":
+                raise NotImplementedError("No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`.")
             self.logger.info(f"Mapping interactive view by fitness (b-factor bypass)")
             self.fitness_data = fitness_data
         else:
@@ -77,9 +83,7 @@ class HTMLVisualizer:
                 "variable `color_method` must be either of ['subpockets', 'bfactor']"
             )
 
-        if target not in self.allowed_targets:
-            raise ValueError(f"Target must be one of: {self.allowed_targets}")
-        self.target = target
+
         self.logger.info(f"Visualising poses for {self.target}")
 
         self.poses = []

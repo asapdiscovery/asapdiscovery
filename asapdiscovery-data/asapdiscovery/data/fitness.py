@@ -7,7 +7,7 @@ from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 _TARGET_TO_GENE = {
     "SARS-CoV-2-Mpro": "nsp5 (Mpro)",
-    "MERS-CoV-Mpro": "TBD",
+    "MERS-CoV-Mpro": "not_available",
     "SARS-CoV-2-Mac1": "nsp3",
 }
 
