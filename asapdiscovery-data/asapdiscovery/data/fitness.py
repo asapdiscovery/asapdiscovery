@@ -8,7 +8,7 @@ from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 _TARGET_TO_GENE = {
     "SARS-CoV-2-Mpro": "nsp5 (Mpro)",
     "MERS-CoV-Mpro": "TBD",
-    "SARS-CoV-2-Mac1": "TBD",
+    "SARS-CoV-2-Mac1": "nsp3",
 }
 
 def bloom_abstration(fitness_scores_this_site) -> int:
@@ -134,6 +134,10 @@ def parse_fitness_json(target) -> pd.DataFrame:
     fitness_scores_bloom = fitness_scores_bloom[
         fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
     ]
+    
+    if target == "SARS-CoV-2-Mac1":
+        # need to subselect from nsp3 multidomain to get just Mac1. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7113668/
+        fitness_scores_bloom = fitness_scores_bloom[fitness_scores_bloom['site'].between(209, 372)]
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom)

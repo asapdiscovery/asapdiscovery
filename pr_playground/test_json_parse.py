@@ -3,9 +3,9 @@ from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from pathlib import Path
 import pandas as pd
 
-HTMLVisualizer(["tmp_inputs/Mpro_combined.sdf"],
+HTMLVisualizer(["tmp_inputs/mac1_lig.sdf"],
                [Path("out_test.html")],
-               "SARS-CoV-2-Mpro",
-               Path("tmp_inputs/p0045_prot.pdb",),
-               "subpockets",
-               parse_fitness_json("SARS-CoV-2-Mpro")).write_pose_visualizations()
+               "SARS-CoV-2-Mac1",
+               Path("tmp_inputs/mac1_prot.pdb",),
+               "bfactor",
+               parse_fitness_json("SARS-CoV-2-Mac1")).write_pose_visualizations()
