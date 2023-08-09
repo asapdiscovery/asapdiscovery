@@ -153,7 +153,7 @@ class HTMLVisualizer:
         os.remove(f"{str(protein)}_tmp")  # cleanup
 
         return protein
-    
+
     def write_pose_visualizations(self):
         """
         Write HTML visualisations for all poses.
@@ -190,7 +190,7 @@ class HTMLVisualizer:
             if line.startswith("END"):
                 protein_pdb = protein_pdb.replace(line, "")
         mol_pdb = Chem.MolToPDBBlock(pose)
-        joint_pdb = protein_pdb + mol_pdb # TODO: here replace with OE lig+prot merge
+        joint_pdb = protein_pdb + mol_pdb  # TODO: here replace with OE lig+prot merge
         html_body = make_core_html(joint_pdb)
         return html_body
 
