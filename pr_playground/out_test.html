@@ -2178,22 +2178,21 @@ function loadmike_combined (protein) {
 
         // Show the ligand.
         let sticks = new NGL.Selection( 'ligand' );
-        protein.addRepresentation( 'licorice', {color: schemeId, sele: sticks.string, opacity: 1.0} );
+        protein.addRepresentation( 'licorice', {color: schemeId, sele: sticks.string, opacity: 1.0, multipleBond: 'symmetric'} );
 
         // Define the binding pocket.
         const data = {
         'color_dict': {
-            'subP1': 'yellow',
-            'subP1_prime': 'orange',
-            'subP2': 'skyblue',
-            'subP3_4_5': 'aquamarine'
+            'nucleotide': 'yellow',
+            'bridge': 'darksalmon',
+            'phosphate': 'orange',
+            'anion_hole': 'skyblue'
         },
         'pocket_dict': {
-            'subP1' : '143+144+145+146+147+148+166+175',
-            'subP1_prime' : '25+26+27',
-            'subP2' : '41+49+54',
-            'subP3_4_5' : '168+169+170+171+192+193+194+195',
-            'sars_unique' : '25+49+145+167+171+172+184+189+191+193+194',
+            'nucleotide' : '154+156+22+23+24+52+49+125',
+            'bridge' : '126+155',
+            'phosphate' : '46+47+48+38+39+40+130+131+132+127+128+97',
+            'anion_hole' : '129+157+160+136+164',
         }
         }
         // Color the BP by subpocket definitions.
@@ -2203,7 +2202,8 @@ function loadmike_combined (protein) {
         selecol.push([othercolor, '*']);  // default
         const pocket_scheme = NGL.ColormakerRegistry.addSelectionScheme(selecol);
 
-        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av'} );
+
+        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av', multipleBond: 'symmetric'} );
             // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
         myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
@@ -2217,10 +2217,9 @@ function loadmike_combined (protein) {
         const neigh_sele = getNeighbors(protein, 'ligand', 2);
         protein.addRepresentation( 'contact', {sele: neigh_sele});
     //orient
-    stage.viewerControls.orient((new NGL.Matrix4).fromArray([27.892651485688475, -17.496836682191315, 27.842153246574526, 0.0, 4.645958152833828, -34.046145151871315, -26.049992638068943, 0.0, 32.55357881447708, 19.850633421900966, -20.137968094041753, 0.0, -9.070898056030273, 0.7458584308624268, -23.088354110717773, 1.0]));
-    stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 67.24873352050781, clipNear: -67.247802734375
+    stage.viewerControls.orient((new NGL.Matrix4).fromArray([-26.865335727331967, -33.96353780439949, 76.20488333720914, 0.0, 68.40799043278685, 36.8623095955993, 40.54563400173538, 0.0, -47.76036465635116, 71.90319471856219, 15.208982898829163, 0.0, -10.974757194519043, -20.811683654785156, 0.7359411716461182, 1.0]));
+    stage.setParameters({ cameraFov: 20.0, fogNear: 45.0}); //clipFar: 308.4343490600586, clipNear: -308.38341522216797
 }
-
 
 
 </script> 

@@ -71,10 +71,10 @@ class HTMLBlockData:
         return getattr(cls, f"orient_tail_{target_}")
 
     color_method_subpockets = """\
-        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av'} );
+        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av', multipleBond: 'symmetric'} );
 """
     color_method_bfactor = """\
-        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
+        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av', multipleBond: 'symmetric'} );
 """
     visualisation_header = """\
 <div id="viewport"
@@ -122,7 +122,7 @@ function loadmike_combined (protein) {
 
         // Show the ligand.
         let sticks = new NGL.Selection( 'ligand' );
-        protein.addRepresentation( 'licorice', {color: schemeId, sele: sticks.string, opacity: 1.0} );
+        protein.addRepresentation( 'licorice', {color: schemeId, sele: sticks.string, opacity: 1.0, multipleBond: 'symmetric'} );
 
 """
 

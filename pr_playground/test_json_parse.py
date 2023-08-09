@@ -5,7 +5,7 @@ import pandas as pd
 
 HTMLVisualizer(["tmp_inputs/mac1_lig.sdf"],
                [Path("out_test.html")],
-               "MERS-CoV-Mpro",
+               "SARS-CoV-2-Mac1",
                Path("tmp_inputs/mac1_prot.pdb",),
                "subpockets",
                parse_fitness_json("SARS-CoV-2-Mac1")).write_pose_visualizations()

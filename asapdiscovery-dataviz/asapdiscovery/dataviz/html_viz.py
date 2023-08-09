@@ -101,27 +101,7 @@ class HTMLVisualizer:
         if self.color_method == "subpockets":
             self.protein = Chem.MolFromPDBFile(str(protein))
         elif self.color_method == "bfactor":
-            # first need to swap the protein's b-factor with fitness scores. Could do this with str.split() but gets a bit complicated.
-            parser = PDBParser()
-            protein_biopython = parser.get_structure("protein", str(protein))
-            self.logger.warning(f"Swapping b-factor with fitness score.")
-            for res in protein_biopython.get_residues():
-                res_number = res.get_full_id()[3][1]  # what a world we live in..
-                try:
-                    for at in res.get_atoms():
-                        at.set_bfactor(fitness_data[res_number])
-                except KeyError:
-                    # this is normal in most cases, a handful of residues will be missing from mutation data.
-                    self.logger.warning(
-                        f"No fitness score found for residue {res_number} of protein."
-                    )
-
-            # there's no biopython -> rdkit, so save to a PDB file and load it with RDKit.
-            io = PDBIO()
-            io.set_structure(protein_biopython)
-            io.save(f"{str(protein)}_tmp")
-            self.protein = Chem.MolFromPDBFile(f"{str(protein)}_tmp")
-            os.remove(f"{str(protein)}_tmp")  # cleanup
+            self.protein = swap_b_factor(protein, fitness_data)
 
         self.debug = debug
         if self.debug:
@@ -146,6 +126,33 @@ class HTMLVisualizer:
         with open(path, "w") as f:
             f.write(html)
 
+    def swap_b_factor(protein, fitness_data):
+        """
+        Given a dict of fitness values, swap out the b-factors in the protein.
+        """
+        # first need to swap the protein's b-factor with fitness scores. Could do this with str.split() but gets a bit complicated.
+        parser = PDBParser()
+        protein_biopython = parser.get_structure("protein", str(protein))
+        self.logger.warning(f"Swapping b-factor with fitness score.")
+        for res in protein_biopython.get_residues():
+            res_number = res.get_full_id()[3][1]  # what a world we live in..
+            try:
+                for at in res.get_atoms():
+                    at.set_bfactor(fitness_data[res_number])
+            except KeyError:
+                # this is normal in most cases, a handful of residues will be missing from mutation data.
+                self.logger.warning(
+                    f"No fitness score found for residue {res_number} of protein."
+                )
+        # there's no biopython -> rdkit, so save to a PDB file and load it with RDKit.
+        io = PDBIO()
+        io.set_structure(protein_biopython)
+        io.save(f"{str(protein)}_tmp")
+        protein = Chem.MolFromPDBFile(f"{str(protein)}_tmp")
+        os.remove(f"{str(protein)}_tmp")  # cleanup
+
+        return protein
+    
     def write_pose_visualizations(self):
         """
         Write HTML visualisations for all poses.
@@ -182,7 +189,7 @@ class HTMLVisualizer:
             if line.startswith("END"):
                 protein_pdb = protein_pdb.replace(line, "")
         mol_pdb = Chem.MolToPDBBlock(pose)
-        joint_pdb = protein_pdb + mol_pdb
+        joint_pdb = protein_pdb + mol_pdb # TODO: here replace with OE lig+prot merge
         html_body = make_core_html(joint_pdb)
         return html_body
 
