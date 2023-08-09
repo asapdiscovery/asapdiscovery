@@ -96,16 +96,11 @@ def add_lig_labels(ds):
 
 def make_wandb_table(ds_split):
     import wandb
-    from rdkit.Chem import MolFromSmiles
-    from rdkit.Chem.AllChem import Compute2DCoords, GenerateDepictionMatching2DStructure
-    from rdkit.Chem.Draw import MolToImage
 
     table = wandb.Table(
         columns=[
             "crystal",
             "compound_id",
-            "molecule",
-            "smiles",
             "pIC50",
             "date_created",
         ]
@@ -120,15 +115,6 @@ def make_wandb_table(ds_split):
             compound_id = compound
             tmp_d = d[0]
         try:
-            smiles = tmp_d["smiles"]
-            mol = MolFromSmiles(smiles)
-            Compute2DCoords(mol)
-            GenerateDepictionMatching2DStructure(mol, mol)
-            mol = wandb.Image(MolToImage(mol, size=(300, 300)))
-        except (KeyError, ValueError):
-            smiles = ""
-            mol = None
-        try:
             pic50 = tmp_d["pic50"].item()
         except KeyError:
             pic50 = np.nan
@@ -138,7 +124,7 @@ def make_wandb_table(ds_split):
             date_created = tmp_d["date_created"]
         except KeyError:
             date_created = None
-        table.add_data(xtal_id, compound_id, mol, smiles, pic50, date_created)
+        table.add_data(xtal_id, compound_id, pic50, date_created)
 
     return table
 
