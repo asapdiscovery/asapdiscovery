@@ -179,3 +179,10 @@ files:
 
   - resource: example_traj_top.pdb
     sha256hash: 295b59f81dee63c8567adcbe6ebd700f346823309a3bfefa1ca235e709fdaa46
+
+  # used to create FEC networks
+  - resource: tyk2_ligands.sdf
+    sha256hash: 00479cdf26039d7ce14f8f6477a6eb8d6b6645b863cbf3d830ce907b3853c361
+
+  - resource: tyk2_protein.pdb
+    sha256hash: c8473899ea40b3f4d9382fca3a2b5f76b1e878313a7287a9240bc4322a5db79d

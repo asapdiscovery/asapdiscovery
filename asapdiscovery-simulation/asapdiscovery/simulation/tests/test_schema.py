@@ -1,17 +1,17 @@
 import openfe
 import pytest
+from openff.units import unit as OFFUnit
+
 from asapdiscovery.simulation.schema.atom_mapping import (
-    KartographAtomMapper,
+    KartografAtomMapper,
     LomapAtomMapper,
     PersesAtomMapper,
 )
 from asapdiscovery.simulation.schema.fec import (
     FreeEnergyCalculationFactory,
-    FreeEnergyCalculationNetwork,
     SolventSettings,
 )
 from asapdiscovery.simulation.schema.network import NetworkPlanner
-from rdkit import Chem
 
 
 @pytest.mark.parametrize(
@@ -20,7 +20,7 @@ from rdkit import Chem
         pytest.param(LomapAtomMapper, "time", 30, id="Lomap"),
         pytest.param(PersesAtomMapper, "coordinate_tolerance", 0.15, id="Perses"),
         pytest.param(
-            KartographAtomMapper, "atom_ring_matches_ring", True, id="Kartograph"
+            KartografAtomMapper, "atom_ring_matches_ring", True, id="Kartograph"
         ),
     ],
 )
@@ -41,7 +41,7 @@ def test_atom_mapper_settings(mapper, argument, value):
             PersesAtomMapper, ["openfe", "perses", "openeye.oechem"], id="Perses"
         ),
         pytest.param(
-            KartographAtomMapper, ["openfe", "rdkit", "kartograf"], id="Kartograph"
+            KartografAtomMapper, ["openfe", "rdkit", "kartograf"], id="Kartograph"
         ),
     ],
 )
@@ -95,16 +95,15 @@ def test_network_planner_get_scorer(scorer):
         pytest.param("minimal_spanning", id="Minimal Spanning"),
     ],
 )
-def test_generate_network_lomap(network_type):
-    """Test generating ligand FEP networks with the configured settings using lomap."""
+def test_generate_network_lomap(network_type, tyk2_ligands):
+    """Test generating ligand FEC networks with the configured settings using lomap."""
 
-    supp = Chem.SDMolSupplier("data/tyk2_ligands.sdf", removeHs=False)
-    # convert to openfe objects
-    ligands = [openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supp]
     if network_type == "radial":
-        central = ligands.pop(0)
+        central = tyk2_ligands[0]
+        ligands = tyk2_ligands[1:]
     else:
         central = None
+        ligands = tyk2_ligands
     # configure the mapper
     planner = NetworkPlanner(
         atom_mapping_engine=LomapAtomMapper(),
@@ -121,12 +120,81 @@ def test_generate_network_lomap(network_type):
         # radial should have all ligands connected to the central node
         assert len(fe_network.edges) == 9
 
+    # make sure we can convert back to openfe ligands
+    openfe_ligands = planned_network.to_openfe_ligands()
+    assert len(openfe_ligands) == 10
+    assert isinstance(openfe_ligands[0], openfe.SmallMoleculeComponent)
+
+
+def test_plan_radial_error(tyk2_ligands):
+    """Make sure an error is raised if we try and plan a radial network with no central ligand"""
+    planner = NetworkPlanner(network_planning_method="radial")
+    with pytest.raises(RuntimeError):
+        _ = planner.generate_network(ligands=tyk2_ligands)
+
 
 def test_solvent_settings():
     """Make sure solvent settings are correctly passed to the gufe solvent component."""
 
     settings = SolventSettings()
-    settings.ion_concentration = 0.25
+    settings.ion_concentration = 0.25 * OFFUnit.molar
 
     component = settings.to_solvent_component()
-    assert component._ion_concentration.m == settings.ion_concentration
+    # make sure they match with units
+    assert component._ion_concentration == settings.ion_concentration
+    # check the magnitude
+    assert component._ion_concentration.m == 0.25
+
+
+def test_planner_file_round_trip(tmpdir):
+    """Make sure we can serialise a network planner to and from file."""
+
+    with tmpdir.as_cwd():
+        # configure with non default settings
+        filename = "network_planner.json"
+        planner = NetworkPlanner(scorer="default_perses")
+        planner.to_file(filename=filename)
+        planner_2 = NetworkPlanner.from_file(filename=filename)
+        assert planner.scorer == planner_2.scorer
+
+
+def test_fec_to_openfe_protocol():
+    """Make sure we can correctly reconstruct the openfe protocol needed to run the calculation from the factory settings"""
+
+    # change some default settings to make sure they are passed on
+    factory = FreeEnergyCalculationFactory()
+    factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
+    protocol = factory.to_openfe_protocol()
+    assert isinstance(
+        protocol, openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol
+    )
+    assert (
+        protocol.settings.simulation_settings.equilibration_length
+        == factory.simulation_settings.equilibration_length
+    )
+
+
+def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
+    """Make sure we can run the full FEC workflow"""
+    factory = FreeEnergyCalculationFactory()
+    # change the default settings to make sure they propagated
+    # change the lomap timeout
+    factory.network_planner.atom_mapping_engine.time = 30
+    factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
+    # plan a network
+    planned_network = factory.create_fec_dataset(
+        dataset_name="TYK2-test-dataset", receptor=tyk2_protein, ligands=tyk2_ligands
+    )
+    # make sure the settings were used correctly
+    assert planned_network.network.atom_mapping_engine.time == 30
+    assert "openfe" in planned_network.network.provenance
+    # make sure we can rebuild the receptor
+    _ = planned_network.to_openfe_receptor()
+    # make sure we can build an openfe alchemical network
+    alchemical_network = planned_network.to_alchemical_network()
+    # make sure the equilibration time was updated
+    for edge in alchemical_network.edges:
+        assert (
+            edge.protocol.settings.simulation_settings.equilibration_length
+            == 0.5 * OFFUnit.nanoseconds
+        )

@@ -3,8 +3,6 @@ from typing import Literal, Optional
 import gufe
 import openfe
 from alchemiscale import ScopedKey
-from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
@@ -15,8 +13,12 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     SolvationSettings,
     SystemSettings,
 )
+from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
-from pydantic import BaseSettings, Field, PositiveFloat
+from pydantic import BaseSettings, Field
+
+from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 
 
 class AlchemiscaleSettings(BaseSettings):
@@ -52,15 +54,13 @@ class SolventSettings(_SchemaBase):
         True,
         description="If the net charge of the chemical system should be neutralized by the ions defined by `positive_ion` abd `negative_ion`.",
     )
-    ion_concentration: PositiveFloat = Field(
-        0.15, description="The ionic concentration required in molar units."
+    ion_concentration: FloatQuantity["molar"] = Field(  # noqa: F821
+        0.15 * OFFUnit.molar,
+        description="The ionic concentration required in molar units.",
     )
 
     def to_solvent_component(self) -> gufe.SolventComponent:
-        # work around units until we use openff-models
-        solvent_data = self.dict(exclude={"type", "ion_concentration"})
-        solvent_data["ion_concentration"] = self.ion_concentration * OFFUnit.molar
-        return gufe.SolventComponent(**solvent_data)
+        return gufe.SolventComponent(**self.dict(exclude={"type"}))
 
 
 # TODO make base class with abstract methods to collect results.
@@ -79,10 +79,10 @@ class TransformationResult(_SchemaBaseFrozen):
     phase: Literal["complex", "solvent"] = Field(
         ..., description="The phase of the transformation."
     )
-    estimate: float = Field(
+    estimate: FloatQuantity["kcal/mol"] = Field(  # noqa: F821
         ..., description="The average estimate of this transformation in kcal/mol"
     )
-    uncertainty: float = Field(
+    uncertainty: FloatQuantity["kcal/mol"] = Field(  # noqa: F821
         ...,
         description="The standard deviation of the estimates of this transform in kcal/mol",
     )
@@ -286,7 +286,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         dataset_name: str,
         receptor: openfe.ProteinComponent,
         ligands: list[openfe.SmallMoleculeComponent],
-        central_ligand: Optional[openfe.SmallMoleculeComponent],
+        central_ligand: Optional[openfe.SmallMoleculeComponent] = None,
     ) -> FreeEnergyCalculationNetwork:
         """
          Use the factory settings to create a FEC dataset using OpenFE models.
