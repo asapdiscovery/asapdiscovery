@@ -1341,15 +1341,7 @@ function loadmike_combined (protein) {
             else {return 0x7b7d7d} //black as the darkest error!
         };
     });
-
-    //representations
-
-    protein.removeAllRepresentations();
-
-        // Show the ligand.
-        let sticks = new NGL.Selection( 'ligand' );
-        // protein.addRepresentation( 'licorice', {color: 'schemeId', sele: sticks.string, opacity: 1.0, multipleBond: 'symmetric'} );
-
+  
         // Define the binding pocket.
         const data = {
         'color_dict': {
@@ -1373,10 +1365,11 @@ function loadmike_combined (protein) {
         const pocket_scheme = NGL.ColormakerRegistry.addSelectionScheme(selecol);
 
 
-        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av', multipleBond: 'symmetric'} );
-            // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
-        let cartoon = new NGL.Selection( '*' );
-        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+        protein.removeAllRepresentations();
+        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av'} );
+        protein.addRepresentation( 'ball+stick', {sele: 'ligand', opacity: 1, multipleBond: 'symmetric'} );
+        // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
+        protein.addRepresentation( 'licorice', {color: schemeId, sele: 'not ligand', smoothSheet: true, opacity: 1.0, multipleBond: 'symmetric'} );
 
         // Add interactions (contacts). Some inter-residue contacts are okay.
         function getNeighbors(protein, sele, radius) {

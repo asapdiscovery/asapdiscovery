@@ -71,10 +71,13 @@ class HTMLBlockData:
         return getattr(cls, f"orient_tail_{target_}")
 
     color_method_subpockets = """\
-        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av', multipleBond: 'symmetric'} );
+        protein.removeAllRepresentations();
+        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av'} );
+        protein.addRepresentation( 'ball+stick', {sele: 'ligand', opacity: 1, multipleBond: 'symmetric'} );
 """
     color_method_bfactor = """\
-        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av', multipleBond: 'symmetric'} );
+        protein.removeAllRepresentations();
+        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
 """
     visualisation_header = """\
 <div id="viewport"
@@ -115,21 +118,13 @@ function loadmike_combined (protein) {
             else {return 0x7b7d7d} //black as the darkest error!
         };
     });
-
-    //representations
-
-    protein.removeAllRepresentations();
-
-        // Show the ligand.
-        let sticks = new NGL.Selection( 'ligand' );
-        // protein.addRepresentation( 'licorice', {color: 'schemeId', sele: sticks.string, opacity: 1.0, multipleBond: 'symmetric'} );
-
+  
 """
 
     orient_tail_MERS_CoV_Mpro_7ene = """\
             // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
-        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0, multipleBond: 'symmetric'} );
 
         // Add interactions (contacts). Some inter-residue contacts are okay.
         function getNeighbors(protein, sele, radius) {
@@ -151,7 +146,7 @@ function loadmike_combined (protein) {
     orient_tail_MERS_CoV_Mpro = """\
             // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
-        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0, multipleBond: 'symmetric'} );
 
         // Add interactions (contacts). Some inter-residue contacts are okay.
         function getNeighbors(protein, sele, radius) {
@@ -174,7 +169,7 @@ function loadmike_combined (protein) {
 
         // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
-        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0, multipleBond: 'symmetric'} );
 
         // Add interactions (contacts). Some inter-residue contacts are okay.
         function getNeighbors(protein, sele, radius) {
@@ -196,7 +191,7 @@ function loadmike_combined (protein) {
     orient_tail_MERS_CoV_Mpro_272 = """\
             // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
-        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0, multipleBond: 'symmetric'} );
 
         // Add interactions (contacts). Some inter-residue contacts are okay.
         function getNeighbors(protein, sele, radius) {
@@ -218,7 +213,7 @@ function loadmike_combined (protein) {
     orient_tail_SARS_CoV_2_Mac1 = """\
             // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
-        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0, multipleBond: 'symmetric'} );
 
         // Add interactions (contacts). Some inter-residue contacts are okay.
         function getNeighbors(protein, sele, radius) {
@@ -239,7 +234,7 @@ function loadmike_combined (protein) {
     orient_tail_SARS_CoV_2_Mac1_monomer = """\
             // Show sticks for residues. Just binding pocket AAs would be ideal here at some point.
         let cartoon = new NGL.Selection( '*' );
-        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0} );
+        myData.current_cartoonScheme = protein.addRepresentation( 'licorice', {color: schemeId, sele: cartoon.string, smoothSheet: true, opacity: 1.0, multipleBond: 'symmetric'} );
 
         // Add interactions (contacts). Some inter-residue contacts are okay.
         function getNeighbors(protein, sele, radius) {
