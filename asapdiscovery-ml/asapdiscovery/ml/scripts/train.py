@@ -115,11 +115,11 @@ def make_wandb_table(ds_split):
             compound_id = compound
             tmp_d = d[0]
         try:
-            pic50 = tmp_d["pic50"].item()
+            pic50 = tmp_d["pIC50"].item()
         except KeyError:
             pic50 = np.nan
         except AttributeError:
-            pic50 = tmp_d["pic50"]
+            pic50 = tmp_d["pIC50"]
         try:
             date_created = tmp_d["date_created"]
         except KeyError:
