@@ -1,13 +1,14 @@
-from typing import Dict, Optional
+from typing import Optional
 
 from alchemiscale import Scope, ScopedKey
+from openmm.app import ForceField, Modeller, PDBFile
+
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     AlchemiscaleSettings,
     FreeEnergyCalculationNetwork,
 )
 from asapdiscovery.simulation.schema.schema import ForceFieldParams
-from openmm.app import ForceField, Modeller, PDBFile
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -143,7 +144,7 @@ class AlchemiscaleHelper:
             )
 
         # collect results following the notebook from openFE
-        results = dict()
+        results = {}
         for tf_sk in self._client.get_network_transformations(
             planned_network.results.network_key
         ):

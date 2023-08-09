@@ -48,10 +48,11 @@ def plan(
     import os
 
     import openfe
-    from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationFactory
     from rdkit import Chem
 
-    click.echo(f"Loading FreeEnergyCalculationFactory ...")
+    from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationFactory
+
+    click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
     if factory_file is not None:
         factory = FreeEnergyCalculationFactory.from_file(factory_file)
