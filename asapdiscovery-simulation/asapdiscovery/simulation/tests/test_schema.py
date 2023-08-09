@@ -1,7 +1,5 @@
 import openfe
 import pytest
-from openff.units import unit as OFFUnit
-
 from asapdiscovery.simulation.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
@@ -12,6 +10,7 @@ from asapdiscovery.simulation.schema.fec import (
     SolventSettings,
 )
 from asapdiscovery.simulation.schema.network import NetworkPlanner
+from openff.units import unit as OFFUnit
 
 
 @pytest.mark.parametrize(
