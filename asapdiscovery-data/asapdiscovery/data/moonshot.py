@@ -6,17 +6,20 @@ import pandas
 # Base CDD vault API URL
 CDD_URL = "https://app.collaborativedrug.com/api/v1/vaults"
 # All molecules with SMILES (public)
-ALL_SMI_SEARCH = "12656909-i_iTrIMFIXYGdoHmM8p7kQ"
+MOONSHOT_ALL_SMI_SEARCH = "13157856-vbatz0uAL8fhJR87pFN0tA"
 # Noncovalent molecules with experimental measurements (from John)
-NONCOVALENT_SMI_SEARCH = "9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
+MOONSHOT_NONCOVALENT_SMI_SEARCH = "9737468-RPSZ3XnVP-ufU6nNTJjZ_Q"
 # Noncovalent with experimental measurements, including batch created date
-NONCOVALENT_W_DATES_SEARCH = "11947939-KXLWU3JLbLzI354es-VKVg"
+MOONSHOT_NONCOVALENT_W_DATES_SEARCH = "11947939-KXLWU3JLbLzI354es-VKVg"
 
 MOONSHOT_SEARCH_DICT = {
-    "sars_fluorescence_all_smi": ALL_SMI_SEARCH,
-    "sars_fluorescence_noncovalent_no_dates": NONCOVALENT_SMI_SEARCH,
-    "sars_fluorescence_noncovalent_w_dates": NONCOVALENT_W_DATES_SEARCH,
+    "sars_fluorescence_all_smi": MOONSHOT_ALL_SMI_SEARCH,
+    "sars_fluorescence_noncovalent_no_dates": MOONSHOT_NONCOVALENT_SMI_SEARCH,
+    "sars_fluorescence_noncovalent_w_dates": MOONSHOT_NONCOVALENT_W_DATES_SEARCH,
 }
+
+# All molecules with Mac1 FRET data
+ASAP_MAC1_ALL_FRET = "13002158-OsTakM3U--QoAEusMICUDA"
 
 
 def download_url(search_url, header, vault=None, timeout=5000, retry_delay=10):
@@ -120,8 +123,9 @@ def download_molecules(
         If specified, filename to write CSV to
     fn_cache : str, optional
         If specified, file to write unfiltered CSV download to
-    filter_kwargs :
-        Other arguments passed to filter_molecules
+    kwargs : dict
+        Other arguments passed to filter_molecules_dataframe and
+        parse_fluorescence_data_cdd
 
     Returns
     -------
@@ -164,6 +168,7 @@ def download_molecules(
     from .utils import filter_molecules_dataframe, parse_fluorescence_data_cdd
 
     filter_kwargs = [
+        "id_fieldname",
         "smiles_fieldname",
         "assay_name",
         "retain_achiral",
