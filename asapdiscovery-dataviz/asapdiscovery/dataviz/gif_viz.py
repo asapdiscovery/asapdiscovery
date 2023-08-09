@@ -186,7 +186,7 @@ class GIFVisualizer:
         # Select ligand and receptor
         p.cmd.select("ligand", "resn UNK")
         p.cmd.select(
-            "receptor", "chain A or chain B"
+            "receptor", "chain A or chain B or chain 1 or chain 2"
         )  # TODO: Modify this to generalize to dimer
         p.cmd.select(
             "binding_site", "name CA within 7 of resn UNK"
