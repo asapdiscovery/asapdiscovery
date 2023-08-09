@@ -48,9 +48,8 @@ def plan(
     import os
 
     import openfe
-    from rdkit import Chem
-
     from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationFactory
+    from rdkit import Chem
 
     click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
