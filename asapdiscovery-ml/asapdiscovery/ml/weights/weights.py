@@ -1,144 +1,136 @@
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, List, Tuple, Union  # noqa: F401
+from typing import Dict, List, Tuple, Union, Optional  # noqa: F401
+from pydantic import BaseModel, Field
+
+from asapdiscovery.ml.pretrained_models import all_models
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 import pooch
 import yaml
+import datetime
 
-ModelSpec = namedtuple("ModelSpec", ["name", "type", "weights", "config"])
+
+class MLModelType(str, Enum):
+    GAT = "GAT"
+    schnet = "schnet"
+    e3nn = "e3nn"
+    INVALID = "INVALID"
 
 
-def check_spec_validity(model: str, spec: dict) -> None:
-    """Check if model spec is valid.
+class MLModelBase(BaseModel):
+    name: str = Field(..., description="Model name")
+    type: MLModelType = Field(..., description="Model type")
+    last_updated: datetime = Field(..., description="Last updated datetime")
+    target: TargetTags = Field(..., description="Biological target of the model")
 
-    Parameters
-    ----------
-    model : str
-        Model name.
-    spec : dict
-        Model spec.
 
-    Raises
-    ------
-    ValueError
-        If model spec is invalid.
+class MLModelSpec(MLModelBase):
     """
-    if model not in spec:
-        raise ValueError(f"Model {model} not found in spec file.")
-    model_spec = spec[model]
-    if "type" not in model_spec:
-        raise ValueError(f"Model {model} type not found in spec file.")
-    if "base_url" not in model_spec:
-        raise ValueError(f"Model {model} base_url not found in spec file.")
-    if "weights" not in model_spec:
-        raise ValueError(f"Model {model} weights not found in spec file.")
-    if "resource" not in model_spec["weights"]:
-        raise ValueError(f"Model {model} weights resource not found in spec file.")
-    if "sha256hash" not in model_spec["weights"]:
-        raise ValueError(f"Model {model} weights sha256hash not found in spec file.")
-    if "config" in model_spec:
-        if "resource" not in model_spec["config"]:
-            raise ValueError(f"Model {model} config resource not found in spec file.")
-        if "sha256hash" not in model_spec["config"]:
-            raise ValueError(f"Model {model} config sha256hash not found in spec file.")
-
-
-def fetch_model_from_spec(
-    yamlfile: str,
-    models: Union[list[str], str],
-    local_dir: str = "./_weights/",
-    force_fetch: bool = False,
-) -> dict[str, tuple[Path, Path, str]]:
-    """Fetch weights from yaml spec file.
-
-    Parameters
-    ----------
-    yamlfile : str
-        Path to yaml spec file.
-    models : List[str]
-        Model names to fetch weights for.
-    local_dir : str, default="./_weights/"
-        Local path to save weights if a remote url is provided. or to check if weights exist locally, by default "./_weights/"
-    force_fetch : bool, default=False
-        Force fetch weights from remote, by default False
-
-    Raises
-    ------
-    FileNotFoundError
-        If YAML spec file does not exist.
-
-    Returns
-    -------
-    Dict of model names and weights paths.
+    Model spec for a model stored on S3
     """
-    if not Path(yamlfile).exists():
-        raise FileNotFoundError(f"Yaml spec file {yamlfile} does not exist")
 
-    with open(yamlfile) as f:
-        spec = yaml.safe_load(f)
+    weights_resource: str = Field(..., description="Weights file resource name")
+    weights_sha256hash: str = Field(..., description="Weights file sha256 hash")
+    config_resource: Optional[str] = Field(..., description="Config resource name")
+    config_sha256hash: Optional[str] = Field(..., description="Config sha256 hash")
 
-    if isinstance(models, str):
-        models = [models]
-
-    if not local_dir:
-        raise ValueError("local_dir must be provided and must not be falsy.")
-
-    if not Path(local_dir).exists():
-        Path(local_dir).mkdir(parents=True, exist_ok=True)
-
-    specs = {}
-    for model in models:
-        check_spec_validity(model, spec)
-        model_spec = spec[model]
-        model_type = model_spec["type"]
-        base_url = model_spec["base_url"]
-
-        weights = model_spec["weights"]
-        weights_resource = weights["resource"]
-        weights_hash = weights["sha256hash"]
-
-        registry = {}
-        registry[weights_resource] = f"sha256:{weights_hash}"
-
-        # fetch config if provided
-        if "config" in model_spec:
-            config = model_spec["config"]
-            config_resource = config["resource"]
-            config_hash = config["sha256hash"]
-            registry[config_resource] = f"sha256:{config_hash}"
-        else:
-            config_resource = None
-
-        # make pooch registry
-        subdir = model
-        registry = pooch.create(
-            path=Path(local_dir).joinpath(Path(subdir)),
-            base_url=base_url,
-            registry=registry,
-        )
-
+    def pull(self) -> "LocalMLModelSpec":
+        """
+        Pull model from S3
+        """
         # fetch weights
         try:
-            weights_file = Path(registry.fetch(weights_resource))
+            weights_file = Path(
+                pooch.retrieve(
+                    url=self.weights_resource, known_hash=self.weights_sha256hash
+                )
+            )
         except Exception as e:
             raise ValueError(
-                f"Model {model} weights file {weights_resource} download failed, please check your yaml spec file for errors."
+                f"Model {self.name} weights file {self.weights} download failed, please check your yaml spec file for errors."
             ) from e
+
         # fetch config
-        if config_resource:
+        if self.config:
             try:
-                config_file = Path(registry.fetch(config_resource))
+                config_file = Path(
+                    pooch.retrieve(
+                        url=self.config_resource, known_hash=self.config_sha256hash
+                    )
+                )
             except Exception as e:
                 raise ValueError(
-                    f"Model {model} config file {config_resource} download failed, please check your yaml spec file for errors."
+                    f"Model {self.name} config file {self.config} download failed, please check your yaml spec file for errors."
                 ) from e
-        else:
-            config_file = None
-        if model in specs:
-            raise ValueError(
-                f"Model {model} already exists in specs, please check your yaml spec file for duplicates."
-            )
-        # make model spec
-        specs[model] = ModelSpec(model, model_type, weights_file, config_file)
 
-    return specs
+        return LocalMLModelSpec(
+            name=self.name,
+            type=self.type,
+            weights_file=Path(weights_file),
+            config_file=Path(config_file) if self.config else None,
+            last_updated=self.last_updated,
+            target=self.target,
+        )
+
+
+class LocalMLModelSpec(MLModelBase):
+    """
+    Model spec for a model instantiated locally
+    """
+
+    weights_file: Path = Field(..., description="Weights file path")
+    config_file: Optional[Path] = Field(..., description="Config path")
+
+
+class MLModelRegistry(BaseModel):
+    """Model registry."""
+
+    models: Dict[str, MLModelSpec] = Field(..., description="Model registry")
+
+    def get_models_for_target_and_type(
+        self, target: TargetTags, type: MLModelType
+    ) -> List[MLModelSpec]:
+        """Get available model specs for a target and type."""
+        return [
+            model
+            for model in self.models
+            if model.target == target and model.type == type
+        ]
+
+    def get_latest_model_for_target_and_type(
+        self, target: TargetTags, type: MLModelType
+    ) -> MLModelSpec:
+        """Get latest model spec for a target."""
+        models = self.get_models_for_target_and_type(target, type)
+        latest_name = max(models, key=lambda model: model.last_updated)
+        return self.models[latest_name]
+
+    def get_model(name: str) -> MLModelSpec:
+        """Get model for a given name."""
+        return self.models[name]
+
+
+def make_model_registry(yaml: Union[str, Path]) -> MLModelRegistry:
+    """Make model registry from yaml spec file"""
+    if not Path(yaml).exists():
+        raise FileNotFoundError(f"Yaml spec file {yaml} does not exist")
+
+    with open(yaml) as f:
+        spec = yaml.safe_load(f)
+
+    models = {}
+    for model in spec:
+        models[model] = MLModelSpec(
+            name=model,
+            type=spec[model]["type"],
+            weights=spec[model]["weights"]["resource"],
+            config=spec[model]["config"]["resource"],
+            last_updated=spec[model]["last_updated"],
+            target=spec[model]["target"],
+        )
+
+    return ModelRegistry(models=models)
+
+
+DefaultModelRegistry = make_model_registry(all_models)
