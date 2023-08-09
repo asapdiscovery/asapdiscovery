@@ -102,6 +102,8 @@ def make_wandb_table(ds_split):
             "crystal",
             "compound_id",
             "pIC50",
+            "pIC50_range",
+            "pIC50_stderr",
             "date_created",
         ]
     )
@@ -118,13 +120,23 @@ def make_wandb_table(ds_split):
             pic50 = tmp_d["pIC50"].item()
         except KeyError:
             pic50 = np.nan
+        try:
+            pic50_range = tmp_d["pIC50_range"].item()
+        except KeyError:
+            pic50_range = np.nan
+        try:
+            pic50_stderr = tmp_d["pIC50_stderr"].item()
+        except KeyError:
+            pic50_stderr = np.nan
         except AttributeError:
             pic50 = tmp_d["pIC50"]
         try:
             date_created = tmp_d["date_created"]
         except KeyError:
             date_created = None
-        table.add_data(xtal_id, compound_id, pic50, date_created)
+        table.add_data(
+            xtal_id, compound_id, pic50, pic50_range, pic50_stderr, date_created
+        )
 
     return table
 
