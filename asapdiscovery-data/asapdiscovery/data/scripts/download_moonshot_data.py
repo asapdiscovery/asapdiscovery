@@ -48,6 +48,12 @@ def get_args():
         help="Which column in the downloaded CSV file to use as SMILES.",
     )
     parser.add_argument(
+        "-id",
+        "--id_fieldname",
+        default="Canonical PostEra ID",
+        help="Which column in the downloaded CSV file to use as the molecule id.",
+    )
+    parser.add_argument(
         "--retain_achiral", action="store_true", help="Keep achiral molecules."
     )
     parser.add_argument(
@@ -140,6 +146,7 @@ def main():
         search=args.search,
         fn_out=args.o,
         fn_cache=args.cache,
+        id_fieldname=args.id_fieldname,
         smiles_fieldname=args.smiles_fieldname,
         retain_achiral=args.retain_achiral,
         retain_racemic=args.retain_racemic,
