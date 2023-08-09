@@ -1,9 +1,11 @@
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import List, Optional, Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_sdf, combine_protein_ligand, save_openeye_pdb, oemol_to_pdb_string
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
 from rdkit import Chem
@@ -154,6 +156,21 @@ class HTMLVisualizer:
 
         return protein
     
+    def combine_lig_prot_oe(self, pose, protein):
+        """
+        Use OE to write a protein and ligand into a single PDB file with proper CONECTS.
+        """
+        # no RDKit -> OE conversion, so bypass with tmp file.
+        Chem.MolToPDBFile(protein, f"_tmp.pdb")
+        with Chem.SDWriter("_tmp.sdf") as w: w.write(pose)
+
+        lig = load_openeye_sdf("_tmp.sdf")
+        prot = load_openeye_pdb("_tmp.pdb")
+        os.remove(f"_tmp.sdf") #cleanup
+        os.remove(f"_tmp.pdb") #cleanup
+
+        return combine_protein_ligand(prot, lig)
+
     def write_pose_visualizations(self):
         """
         Write HTML visualisations for all poses.
@@ -184,13 +201,8 @@ class HTMLVisualizer:
         """
         Get HTML body for pose visualization
         """
-        protein_pdb = Chem.MolToPDBBlock(self.protein)
-        # if there is an END line, remove it
-        for line in protein_pdb.split("\n"):
-            if line.startswith("END"):
-                protein_pdb = protein_pdb.replace(line, "")
-        mol_pdb = Chem.MolToPDBBlock(pose)
-        joint_pdb = protein_pdb + mol_pdb # TODO: here replace with OE lig+prot merge
+        joint_pdb = oemol_to_pdb_string(self.combine_lig_prot_oe(pose, self.protein))
+
         html_body = make_core_html(joint_pdb)
         return html_body
 

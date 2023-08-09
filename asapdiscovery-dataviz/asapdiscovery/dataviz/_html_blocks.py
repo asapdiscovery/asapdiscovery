@@ -122,7 +122,7 @@ function loadmike_combined (protein) {
 
         // Show the ligand.
         let sticks = new NGL.Selection( 'ligand' );
-        protein.addRepresentation( 'licorice', {color: schemeId, sele: sticks.string, opacity: 1.0, multipleBond: 'symmetric'} );
+        // protein.addRepresentation( 'licorice', {color: 'schemeId', sele: sticks.string, opacity: 1.0, multipleBond: 'symmetric'} );
 
 """
 
