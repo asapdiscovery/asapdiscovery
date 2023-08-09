@@ -31,6 +31,7 @@ MOONSHOT_CDD_ID_REGEX = r"[A-Z]{3}-[A-Z]{3}-[0-9a-z]+-[0-9]+"
 # This will match any string that follows the Fragalysis naming convention for the Mpro
 #  structures, eg:  Mpro-P2005_0A
 MPRO_ID_REGEX = r"Mpro-.*?_[0-9][A-Z]"
+ASAP_ID_REGEX = "ASAP-[0-9]{7}"
 
 # Regex patterns that match chains as well, but only capture the main part. These
 #  regexes are used when we want to group files based on their unique identifier (ie the
@@ -677,6 +678,7 @@ def strip_smiles_salts(smiles):
 
 def filter_molecules_dataframe(
     mol_df,
+    id_fieldname="Canonical PostEra ID",
     smiles_fieldname="suspected_SMILES",
     assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
     retain_achiral=False,
@@ -686,7 +688,7 @@ def filter_molecules_dataframe(
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
-        * "Canonical PostEra ID"
+        * `id_fieldname`
         * `smiles_fieldname`
         * "`assay_name`: IC50 (µM)"
     Columns that are added to the dataframe by this function:
@@ -790,7 +792,7 @@ def filter_molecules_dataframe(
     mol_df.loc[:, "smiles"] = (
         mol_df.loc[:, smiles_fieldname].astype(str).apply(strip_smiles_salts)
     )
-    mol_df.loc[:, "name"] = mol_df.loc[:, "Canonical PostEra ID"]
+    mol_df.loc[:, "name"] = mol_df.loc[:, id_fieldname]
 
     # Convert CXSMILES to SMILES by removing extra info
     mol_df.loc[:, "smiles"] = [s.strip("|").split()[0] for s in mol_df.loc[:, "smiles"]]
@@ -1041,7 +1043,9 @@ def parse_fluorescence_data_cdd(
             )
             return g.iloc[0, :]
 
-        mol_df = mol_df.groupby("name", as_index=False).apply(get_best_mol)
+        mol_df = mol_df.groupby("name", as_index=False, group_keys=False).apply(
+            get_best_mol
+        )
 
     return mol_df
 
