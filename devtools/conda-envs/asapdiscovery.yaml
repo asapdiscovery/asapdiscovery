@@ -68,6 +68,9 @@ dependencies:
   - pymol-open-source
   - gifsicle
 
+  # simulation
+  - openfe
+
 
   # Pip-only installs
   - pip:
