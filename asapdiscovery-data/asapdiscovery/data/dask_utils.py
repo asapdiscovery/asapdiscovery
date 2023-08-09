@@ -5,9 +5,9 @@ from dask import config as cfg
 from dask_jobqueue import LSFCluster
 
 try:
-    from pydantic.v1 import BaseModel, Field
+    from pydantic.v1 import BaseModel, Field, validator
 except ImportError:
-    from pydantic import BaseModel, Field
+    from pydantic import BaseModel, Field, validator
 
 from .execution_utils import guess_network_interface
 
@@ -34,13 +34,6 @@ _LILAC_GPU_EXTRAS = {
 }
 
 
-def _walltime_to_h(walltime: str) -> int:
-    """
-    Convert a walltime string to hours, dropping minutes and seconds.
-    """
-    return int(walltime.split(":")[0])
-
-
 class DaskCluster(BaseModel):
     class Config:
         allow_mutation = False
@@ -50,7 +43,7 @@ class DaskCluster(BaseModel):
     cores: int = Field(1, description="Number of cores per job")
     memory: str = Field("20 GB", description="Amount of memory per job")
     death_timeout: int = Field(
-        120, description="Timeout for a worker to be considered dead"
+        120, description="Timeout in seconds for a worker to be considered dead"
     )
 
 
@@ -58,20 +51,20 @@ class LilacDaskCluster(DaskCluster):
     shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
     queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
     project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("1:00", description="Walltime for the job")
+    walltime: str = Field("1h", description="Walltime for the job")
     use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
     )
 
-    def to_cluster(self, exclude_interface: Optional[str] = "lo"):
+    def to_cluster(self, exclude_interface: Optional[str] = "lo") -> LSFCluster:
         interface = guess_network_interface(exclude=[exclude_interface])
         return LSFCluster(
             interface=interface,
             scheduler_options={"interface": interface},
             worker_extra_args=[
                 "--lifetime",
-                f"{_walltime_to_h(self.walltime) - 1}",
+                f"{self.walltime}",
                 "--lifetime-stagger",
                 "2m",
             ],  # leave a slight buffer
@@ -102,7 +95,7 @@ class LilacGPUConfig(BaseModel):
 
 class LilacGPUDaskCluster(LilacDaskCluster):
     queue: str = "gpuqueue"
-    walltime = "24:00"
+    walltime = "24h"
     memory = "48 GB"
 
     @classmethod
