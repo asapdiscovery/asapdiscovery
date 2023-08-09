@@ -83,3 +83,4 @@ dependencies:
     # viz
     - pygifsicle
     - sigfig
+    - git+https://github.com/openforcefield/alchemiscale.git@main
