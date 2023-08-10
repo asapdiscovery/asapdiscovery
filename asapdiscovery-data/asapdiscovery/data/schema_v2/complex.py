@@ -1,13 +1,13 @@
 from pathlib import Path
-from pydantic import Field
 from typing import Union
 
 from asapdiscovery.data.modeling.modeling import split_openeye_mol
 from asapdiscovery.data.modeling.schema import MoleculeFilter
 from asapdiscovery.data.openeye import load_openeye_pdb
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.target import Target
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from pydantic import Field
 
 
 class Complex(DataModelAbstractBase):
