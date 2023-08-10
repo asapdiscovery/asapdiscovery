@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Literal, ClassVar  # noqa: F401
+from typing import Dict, List, Optional, Union, ClassVar  # noqa: F401
 
 import dgl
 import json
@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
@@ -44,7 +44,7 @@ class InferenceBase(BaseModel):
         ..., description="Keyword arguments to pass to build_model function"
     )
     device: str = Field("cpu", description="Device to use for inference")
-    model: torch.nn.Module = Field(..., description="PyTorch model")
+    model: Optional[torch.nn.Module] = Field(..., description="PyTorch model")
 
     @classmethod
     def from_latest_by_target(
@@ -89,7 +89,7 @@ class InferenceBase(BaseModel):
         cls,
         model_spec: MLModelSpec,
         device: str = "cpu",
-        local_dir: Optional[Union[str, Path]] = "./_weights",
+        local_dir: Optional[Union[str, Path]] = None,
         **kwargs,
     ) -> "_InferenceBase":
         """
