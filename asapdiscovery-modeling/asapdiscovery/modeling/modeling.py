@@ -631,13 +631,13 @@ def split_openeye_mol(
         oechem.OEMolComplexFilterCategory_Ligand
     )
     # If ligand_chain is specified, only take protein atoms from that chains
-    if molecule_filter.ligand_chain is None:
-        lig_filter = lig_only
-    else:
+    if molecule_filter.ligand_chain:
         lig_chain = oechem.OERoleMolComplexFilterFactory(
             oechem.OEMolComplexChainRoleFactory(molecule_filter.ligand_chain)
         )
         lig_filter = oechem.OEAndRoleSet(lig_only, lig_chain)
+    else:
+        lig_filter = lig_only
     opts.SetLigandFilter(lig_filter)
 
     # If water_chains are specified, set up filter for them
