@@ -3,8 +3,8 @@ import json
 import numpy as np
 import pandas as pd
 import pkg_resources
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.metadata.resources import SARS_CoV_2_fitness_data
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 _TARGET_TO_GENE = {
     "SARS-CoV-2-Mpro": "nsp5 (Mpro)",
@@ -123,7 +123,6 @@ def parse_fitness_json(target) -> pd.DataFrame:
         raise ValueError(
             f"Specified target is not valid, must be one of: {TargetTags.get_values()}"
         )
-
 
     with open(SARS_CoV_2_fitness_data) as f:
         data = json.load(f)

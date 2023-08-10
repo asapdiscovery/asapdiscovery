@@ -12,4 +12,5 @@ SARS_CoV_2_Mac1_SEQRES = pkg_resources.resource_filename(
 )
 
 SARS_CoV_2_fitness_data = pkg_resources.resource_filename(
-    __name__, "aa_fitness_sars_cov_2.json")
+    __name__, "aa_fitness_sars_cov_2.json"
+)
