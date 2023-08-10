@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional, Union  # noqa: F401
+from typing import Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
@@ -10,7 +10,6 @@ from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     oemol_to_pdb_string,
-    save_openeye_pdb,
 )
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
