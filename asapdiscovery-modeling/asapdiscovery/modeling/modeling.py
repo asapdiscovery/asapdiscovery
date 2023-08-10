@@ -563,6 +563,7 @@ def split_openeye_mol(
     complex_mol,
     molecule_filter: Optional[Union[str, list[str], MoleculeFilter]] = None,
     prot_cutoff_len=10,
+    keep_one_lig=True,
 ) -> dict:
     """
     Split an OpenEye-loaded molecule into protein, ligand, etc.
@@ -577,6 +578,8 @@ def split_openeye_mol(
         Molecule filter object that contains the filter criteria.
     prot_cutoff_len : int, default=10
         Minimum number of residues in a protein chain required in order to keep
+    keep_one_lig : bool, default=True
+        Only keep one copy of the ligand in lig_mol
 
     Returns
     -------
@@ -668,6 +671,16 @@ def split_openeye_mol(
     # TODO: make this nicer?
     # Get rid of any straggling extra copies of the ligand
     prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
+
+    # Get rid of extra copies of the ligand
+    if keep_one_lig:
+        all_lig_chains = [res.GetChainID() for res in oechem.OEGetResidues(lig_mol)]
+        # Keep first alphabetically, for reproducibility
+        keep_lig_chain = sorted(all_lig_chains)[0]
+        for a in lig_mol.GetAtoms():
+            # Delete all atoms that don't match
+            if oechem.OEAtomGetResidue(a).GetChainID() != keep_lig_chain:
+                lig_mol.DeleteAtom(a)
 
     return {"prot": prot_mol, "lig": lig_mol, "wat": water_mol, "oth": oth_mol}
 
