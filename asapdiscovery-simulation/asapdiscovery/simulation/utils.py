@@ -1,13 +1,15 @@
 from typing import Optional
 
 from alchemiscale import Scope, ScopedKey
+from openmm.app import ForceField, Modeller, PDBFile
+
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     AlchemiscaleSettings,
     FreeEnergyCalculationNetwork,
+    TransformationResult,
 )
 from asapdiscovery.simulation.schema.schema import ForceFieldParams
-from openmm.app import ForceField, Modeller, PDBFile
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -120,33 +122,56 @@ class AlchemiscaleHelper:
         return self._client.get_network_status(network_key)
 
     def collect_results(
-        self, planned_network: FreeEnergyCalculationNetwork, allow_missing: bool = False
+        self, planned_network: FreeEnergyCalculationNetwork
     ) -> FreeEnergyCalculationNetwork:
         """
         Collect the results for the given network.
 
         Args:
             planned_network: The network who's results we should collect.
-            allow_missing: If we should allow some results to be missing when we collect the results.
 
         Returns:
             A FreeEnergyCalculationNetwork with all current results. If any are missing and allow missing is false an error is raised.
-
-        Raises:
-            RuntimeError: If not all results have finished and allow_missing is False
         """
-        # show the network status
-        status = self._client.get_network_status(planned_network.results.network_key)
-        if not allow_missing and len(status) > 1:
-            raise RuntimeError(
-                "Not all calculations have finished, to collect the current results use `allow_missing=True`."
-            )
-
         # collect results following the notebook from openFE
-        results = {}
+        results = []
         for tf_sk in self._client.get_network_transformations(
             planned_network.results.network_key
         ):
-            results[str(tf_sk)] = self._client.get_transformation_results(tf_sk)
+            raw_result = self._client.get_transformation_results(tf_sk)
+            if raw_result is None:
+                continue
+            # format into our custom result schema and save
+            estimate = raw_result.get_estimate()
+            uncertainty = raw_result.get_uncertainty()
+            # work out the name of the molecules and the phase of the calculation
+            individual_runs = list(raw_result.data.values())
 
-        # format into our custom result schema and save
+            if "protein" in individual_runs[0][0].inputs["stateA"].components:
+                phase = "complex"
+            else:
+                phase = "solvent"
+
+            # extract the names of the end state ligands
+            name_a = individual_runs[0][0].inputs["stateA"].components["ligand"].name
+            name_b = individual_runs[0][0].inputs["stateB"].components["ligand"].name
+
+            results.append(
+                TransformationResult(
+                    ligand_a=name_a,
+                    ligand_b=name_b,
+                    phase=phase,
+                    estimate=estimate,
+                    uncertainty=uncertainty,
+                )
+            )
+
+        # save to a new results object as they are frozen
+        alchem_results = AlchemiscaleResults(
+            network_key=planned_network.results.network_key, results=results
+        )
+        network_with_results = FreeEnergyCalculationNetwork(
+            **planned_network.dict(exclude={"results"}), results=alchem_results
+        )
+
+        return network_with_results

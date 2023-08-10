@@ -3,8 +3,6 @@ from typing import Literal, Optional
 import gufe
 import openfe
 from alchemiscale import ScopedKey
-from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
@@ -18,6 +16,9 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
+
+from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 
 
 class AlchemiscaleSettings(BaseSettings):
@@ -86,6 +87,10 @@ class TransformationResult(_SchemaBaseFrozen):
         description="The standard deviation of the estimates of this transform in kcal/mol",
     )
 
+    def name(self):
+        """Make a name for this transformation based on the names of the ligands."""
+        return "-".join([self.ligand_a, self.ligand_b])
+
 
 class _BaseResults(_SchemaBaseFrozen):
     """
@@ -97,9 +102,59 @@ class _BaseResults(_SchemaBaseFrozen):
         [], description="The list of results collected for this dataset."
     )
 
-    def to_cinnabar_csv(self, file_name: str):
-        """Create a csv file which can be read by cinnabar for analysis."""
-        pass
+    def to_cinnabar_measurements(self):
+        """
+        For the given set of results combine the solvent and complex phases to make a list of cinnabar RelativeMeasurements
+
+        Returns:
+            A list of RelativeMeasurements made from the combined solvent and complex phases.
+        """
+        from collections import defaultdict
+
+        import numpy as np
+        from cinnabar import RelativeMeasurement
+
+        raw_results = defaultdict(list)
+        # gather by transform
+        for result in self.results:
+            raw_results[result.name()].append(result)
+
+        # now make the cinnabar data
+        all_results = []
+        for leg1, leg2 in raw_results.values():
+            complex_leg: TransformationResult = (
+                leg1 if leg1.phase == "complex" else leg2
+            )
+            solvent_leg: TransformationResult = (
+                leg1 if leg1.phase == "solvent" else leg2
+            )
+            result = RelativeMeasurement(
+                labelA=leg1.ligand_a,
+                labelB=leg1.ligand_b,
+                DDG=(complex_leg.estimate - solvent_leg.estimate),
+                uncertainty=np.sqrt(
+                    complex_leg.uncertainty**2 + solvent_leg.uncertainty**2
+                ),
+                computational=True,
+                source="calculated",
+            )
+            all_results.append(result)
+        return all_results
+
+    def to_fe_map(self):
+        """
+        Convert the set of relative free energy estimates to a cinnabar FEMap object to calculate the absolute values
+        or plot vs experiment.
+
+        Returns:
+            A cinnabar.FEMap made from the relative results objects.
+        """
+        from cinnabar import FEMap
+
+        fe_graph = FEMap()
+        for result in self.to_cinnabar_measurements():
+            fe_graph.add_measurement(measurement=result)
+        return fe_graph
 
 
 class AlchemiscaleResults(_BaseResults):
