@@ -1,19 +1,17 @@
 from .weights import (
-    DefaultModelRegistry,
+    ASAPMLModelRegistry,
     MLModelType,
     MLModelBase,
     MLModelSpec,
     LocalMLModelSpec,
     MLModelRegistry,
-    make_model_registry,
 )
 
 __all__ = [
-    "DefaultModelRegistry",
+    "ASAPMLModelRegistry",
     "MLModelType",
     "MLModelBase",
     "MLModelSpec",
     "LocalMLModelSpec",
     "MLModelRegistry",
-    "make_model_registry",
 ]

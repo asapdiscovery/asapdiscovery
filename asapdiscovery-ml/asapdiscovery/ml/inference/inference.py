@@ -9,7 +9,7 @@ from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
-from asapdiscovery.ml.weights import MLModelRegistry, DefaultModelRegistry, MLModelType
+from asapdiscovery.ml.weights import MLModelRegistry, ASAPMLModelRegistry, MLModelType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 from dgllife.utils import CanonicalAtomFeaturizer
@@ -53,7 +53,7 @@ class InferenceBase:
         self,
         target: TargetTags,
         model_name: Optional[str] = None,
-        model_registry: MLModelRegistry = DefaultModelRegistry,
+        model_registry: MLModelRegistry = ASAPMLModelRegistry,
         weights_local_dir: Union[Path, str] = Path("./_weights/"),
         build_model_kwargs: Optional[dict] = None,
         device: str = "cpu",
@@ -66,6 +66,10 @@ class InferenceBase:
         if self.model_type == MLModelType.INVALID:
             raise ValueError(
                 "Model type is invalid, do not instantiate one of the base classes directly, inherit from it."
+            )
+        if target not in TargetTags.get_values():
+            raise ValueError(
+                f"Invalid target, must be one of {TargetTags.get_values()}"
             )
 
         self.target = target

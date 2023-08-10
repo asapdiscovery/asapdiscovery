@@ -1,15 +1,43 @@
 import os
 import shutil
-
-import asapdiscovery.ml
 import pytest
 
+from asapdiscovery.ml.weights import (
+    ASAPMLModelRegistry,
+    MLModelRegistry,
+    MLModelSpec,
+    LocalMLModelSpec,
+)
 
-# @pytest.fixture()
-# def weights_yaml():
-#     # ugly hack to make the directory relative
-#     weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
-#     return weights
+
+@pytest.fixture()
+def weights_yaml():
+    # ugly hack to make the directory relative
+    weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
+    return weights
+
+
+def test_default_registry():
+    registry = ASAPMLModelRegistry
+    assert registry.models != {}
+    assert registry.models["gat_test_v0"].type == "GAT"
+
+
+def test_custom_registry(weights_yaml):
+    registry = MLModelRegistry.from_yaml(weights_yaml)
+    assert registry.models != {}
+    assert registry.models["gatmodel_test"].type == "GAT"
+
+
+def test_pull_model():
+    registry = ASAPMLModelRegistry
+    model = registry.models["gat_test_v0"]
+    assert type(model) == MLModelSpec
+
+    pulled_model = model.pull()
+
+    assert type(pulled_model) == LocalMLModelSpec
+    assert pulled_model.type == "GAT"
 
 
 # @pytest.fixture()
