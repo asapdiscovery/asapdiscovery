@@ -2,13 +2,16 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List, Tuple, Union, Optional  # noqa: F401
 from pydantic import BaseModel, Field
+from enum import Enum
+from datetime import datetime, date
 
 from asapdiscovery.ml.pretrained_models import all_models
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 import pooch
 import yaml
-import datetime
+
+_model_date_format = "%Y-%m-%d"
 
 
 class MLModelType(str, Enum):
@@ -21,7 +24,7 @@ class MLModelType(str, Enum):
 class MLModelBase(BaseModel):
     name: str = Field(..., description="Model name")
     type: MLModelType = Field(..., description="Model type")
-    last_updated: datetime = Field(..., description="Last updated datetime")
+    last_updated: date = Field(..., description="Last updated datetime")
     target: TargetTags = Field(..., description="Biological target of the model")
 
 
@@ -32,8 +35,8 @@ class MLModelSpec(MLModelBase):
 
     weights_resource: str = Field(..., description="Weights file resource name")
     weights_sha256hash: str = Field(..., description="Weights file sha256 hash")
-    config_resource: Optional[str] = Field(..., description="Config resource name")
-    config_sha256hash: Optional[str] = Field(..., description="Config sha256 hash")
+    config_resource: Optional[str] = Field(None, description="Config resource name")
+    config_sha256hash: Optional[str] = Field(None, description="Config sha256 hash")
 
     def pull(self) -> "LocalMLModelSpec":
         """
@@ -94,7 +97,7 @@ class MLModelRegistry(BaseModel):
         """Get available model specs for a target and type."""
         return [
             model
-            for model in self.models
+            for model in self.models.values()
             if model.target == target and model.type == type
         ]
 
@@ -111,26 +114,31 @@ class MLModelRegistry(BaseModel):
         return self.models[name]
 
 
-def make_model_registry(yaml: Union[str, Path]) -> MLModelRegistry:
+def make_model_registry(yaml_file: Union[str, Path]) -> MLModelRegistry:
     """Make model registry from yaml spec file"""
-    if not Path(yaml).exists():
-        raise FileNotFoundError(f"Yaml spec file {yaml} does not exist")
+    if not Path(yaml_file).exists():
+        raise FileNotFoundError(f"Yaml spec file {yaml_file} does not exist")
 
-    with open(yaml) as f:
+    with open(yaml_file) as f:
         spec = yaml.safe_load(f)
 
     models = {}
     for model in spec:
+        has_config = "config" in spec[model]
         models[model] = MLModelSpec(
             name=model,
             type=spec[model]["type"],
-            weights=spec[model]["weights"]["resource"],
-            config=spec[model]["config"]["resource"],
+            weights_resource=spec[model]["weights"]["resource"],
+            weights_sha256hash=spec[model]["weights"]["sha256hash"],
+            config_resource=spec[model]["config"]["resource"] if has_config else None,
+            config_sha256hash=spec[model]["config"]["sha256hash"]
+            if has_config
+            else None,
             last_updated=spec[model]["last_updated"],
             target=spec[model]["target"],
         )
 
-    return ModelRegistry(models=models)
+    return MLModelRegistry(models=models)
 
 
 DefaultModelRegistry = make_model_registry(all_models)

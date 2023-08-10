@@ -52,7 +52,7 @@ class InferenceBase:
     def __init__(
         self,
         target: TargetTags,
-        model_name: Optional[str],
+        model_name: Optional[str] = None,
         model_registry: MLModelRegistry = DefaultModelRegistry,
         weights_local_dir: Union[Path, str] = Path("./_weights/"),
         build_model_kwargs: Optional[dict] = None,
@@ -72,7 +72,7 @@ class InferenceBase:
         self.model_registry = model_registry
         self.weights_local_dir = weights_local_dir
 
-        if self.model_name:
+        if model_name:
             if model_name not in self.model_registry.get_models_for_target_and_type(
                 self.target, self.model_type
             ):
@@ -81,7 +81,7 @@ class InferenceBase:
                 )
             self.model_spec = self.model_registry.get_model(model_name)
         else:
-            self.model_spec = self.model_registry.get_latest_model_for_target(
+            self.model_spec = self.model_registry.get_latest_model_for_target_and_type(
                 self.model_type, self.target
             )
 
@@ -94,9 +94,21 @@ class InferenceBase:
         # build model kwargs
         if not build_model_kwargs:
             build_model_kwargs = {}
-            build_model_kwargs["config"] = self.model_components.config_file
 
-        # otherwise just roll with what we have
+        # add extra kwargs if they exist in class def
+        extra_build_model_kwargs = (
+            self._extra_build_model_kwargs
+            if hasattr(self._extra_build_model_kwargs)
+            else {}
+        )
+        build_model_kwargs = {**build_model_kwargs, **extra_build_model_kwargs}
+
+        # add config file if it exists
+        if (
+            build_model_kwargs.get("config") is None
+            and self.model_components.config_file
+        ):
+            build_model_kwargs["config"] = self.model_components.config_file
 
         # build model, this needs a bit of cleaning up in the function itself.
         self.model = self.build_model(self.model_components.type, **build_model_kwargs)
@@ -276,27 +288,7 @@ class SchnetInference(StructuralInference):
     """
 
     model_type = "schnet"
-
-    def __init__(
-        self,
-        model_name: str,
-        weights_local_dir: Union[Path, str] = Path("./_weights/"),
-        build_model_kwargs: Optional[dict] = None,
-        pIC50_units=True,
-        device: str = "cpu",
-    ):
-        if pIC50_units:
-            if build_model_kwargs:
-                build_model_kwargs = {"pred_r": "pIC50"} | build_model_kwargs
-            else:
-                build_model_kwargs = {"pred_r": "pIC50"}
-
-        super().__init__(
-            model_name,
-            weights_local_dir=weights_local_dir,
-            build_model_kwargs=build_model_kwargs,
-            device=device,
-        )
+    _extra_build_model_kwargs = {"pred_r": "pIC50"}
 
 
 class E3nnInference(StructuralInference):

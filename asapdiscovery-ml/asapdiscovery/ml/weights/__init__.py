@@ -1,3 +1,19 @@
-from .weights import ModelSpec, fetch_model_from_spec  # noqa: F401
+from .weights import (
+    DefaultModelRegistry,
+    MLModelType,
+    MLModelBase,
+    MLModelSpec,
+    LocalMLModelSpec,
+    MLModelRegistry,
+    make_model_registry,
+)
 
-__all__ = ["ModelSpec", "fetch_model_from_spec"]
+__all__ = [
+    "DefaultModelRegistry",
+    "MLModelType",
+    "MLModelBase",
+    "MLModelSpec",
+    "LocalMLModelSpec",
+    "MLModelRegistry",
+    "make_model_registry",
+]

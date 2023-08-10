@@ -5,6 +5,8 @@ import asapdiscovery.ml
 import numpy as np
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+
 from numpy.testing import assert_allclose
 
 
@@ -32,22 +34,20 @@ def docked_structure_file(scope="session"):
 
 def test_gatinference_construct(weights_yaml, outputs):
     inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml, weights_local_dir=outputs
+        "SARS-CoV-2-Mpro", model_name="gat_test_v0", weights_local_dir=outputs
     )
     assert inference_cls is not None
     assert inference_cls.model_type == "GAT"
 
 
-def test_inference_construct_no_spec(weights_yaml, outputs):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gat_test_v0", weights_local_dir=outputs
-    )
+def test_inference_construct_no_spec(outputs):
+    inference_cls = asapdiscovery.ml.inference.GATInference(weights_local_dir=outputs)
     assert inference_cls is not None
 
 
-def test_gatinference_predict(weights_yaml, test_data, outputs):
+def test_gatinference_predict(test_data, outputs):
     inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml, weights_local_dir=outputs
+        "SARS-CoV-2-Mpro", model_name="gat_test_v0", weights_local_dir=outputs
     )
     g1, _, _, _ = test_data
     assert inference_cls is not None
@@ -55,9 +55,9 @@ def test_gatinference_predict(weights_yaml, test_data, outputs):
     assert output is not None
 
 
-def test_gatinference_predict_smiles_equivariant(weights_yaml, test_data, outputs):
+def test_gatinference_predict_smiles_equivariant(test_data, outputs):
     inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml, weights_local_dir=outputs
+        "SARS-CoV-2-Mpro", "gat_test_v0", weights_local_dir=outputs
     )
     g1, g2, _, _ = test_data
     # same data different smiles order
@@ -68,9 +68,9 @@ def test_gatinference_predict_smiles_equivariant(weights_yaml, test_data, output
 
 
 # test inference dataset cls against training dataset cls
-def test_gatinference_predict_dataset(weights_yaml, test_data, test_inference_data):
+def test_gatinference_predict_dataset(test_data, test_inference_data):
     inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml
+        "SARS-CoV-2-Mpro", model_name="gat_test_v0"
     )
     g1, g2, g3, _ = test_data
     g1_infds, g2_infds, g3_infds, _ = test_inference_data
