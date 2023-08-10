@@ -38,7 +38,7 @@ class HTMLVisualizer:
         output_paths: list[Path],
         target: str,
         protein: Path,
-        color_method: str,
+        color_method: str = "subpockets",
         fitness_data: Optional[Dict[int, float]] = None,
         logger: FileLogger = None,
         debug: bool = False,
