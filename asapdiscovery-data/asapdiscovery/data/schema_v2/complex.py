@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
-from asapdiscovery.data.modeling.modeling import split_openeye_mol
-from asapdiscovery.data.modeling.schema import MoleculeFilter
 from asapdiscovery.data.openeye import load_openeye_pdb
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.target import Target
+from asapdiscovery.modeling.modeling import split_openeye_mol
+from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field
 
 
@@ -41,3 +41,13 @@ class Complex(DataModelAbstractBase):
         ligand = Ligand.from_oemol(split_dict["lig"], **ligand_kwargs)
 
         return cls(target=target, ligand=ligand)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Complex):
+            return NotImplemented
+
+        # Just check that both Targets and Ligands are the same
+        return (self.target == other.target) and (self.ligand == other.ligand)
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
