@@ -78,6 +78,7 @@ class HTMLBlockData:
     color_method_bfactor = """\
         protein.removeAllRepresentations();
         protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
+        protein.addRepresentation( 'ball+stick', {sele: 'ligand', opacity: 1, multipleBond: 'symmetric'} );
 """
     visualisation_header = """\
 <div id="viewport"

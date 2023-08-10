@@ -104,7 +104,7 @@ class HTMLVisualizer:
         if self.color_method == "subpockets":
             self.protein = Chem.MolFromPDBFile(str(protein))
         elif self.color_method == "bfactor":
-            self.protein = swap_b_factor(protein, fitness_data)
+            self.protein = self.swap_b_factor(protein, fitness_data)
 
         self.debug = debug
         if self.debug:
@@ -129,7 +129,7 @@ class HTMLVisualizer:
         with open(path, "w") as f:
             f.write(html)
 
-    def swap_b_factor(protein, fitness_data):
+    def swap_b_factor(self, protein, fitness_data):
         """
         Given a dict of fitness values, swap out the b-factors in the protein.
         """
@@ -151,10 +151,10 @@ class HTMLVisualizer:
         io = PDBIO()
         io.set_structure(protein_biopython)
         io.save(f"{str(protein)}_tmp")
-        protein = Chem.MolFromPDBFile(f"{str(protein)}_tmp")
+        protein_obj = Chem.MolFromPDBFile(f"{str(protein)}_tmp")
         os.remove(f"{str(protein)}_tmp")  # cleanup
 
-        return protein
+        return protein_obj
     
     def combine_lig_prot_oe(self, pose, protein):
         """
