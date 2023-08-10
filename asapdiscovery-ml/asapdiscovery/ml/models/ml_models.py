@@ -29,6 +29,18 @@ class MLModelType(str, Enum):
     e3nn = "e3nn"
     INVALID = "INVALID"
 
+    @classmethod
+    def get_values(cls) -> List[str]:
+        """
+        Get list of valid model types
+
+        Returns
+        -------
+        List[str]
+            List of valid model types
+        """
+        return [model_type.value for model_type in cls]
+
 
 class MLModelBase(BaseModel):
     """
@@ -151,6 +163,10 @@ class MLModelRegistry(BaseModel):
             raise ValueError(
                 f"Target {target} not valid, must be one of {TargetTags.get_values()}"
             )
+        if type not in MLModelType.get_values():
+            raise ValueError(
+                f"Model type {type} not valid, must be one of {MLModelType.get_values()}"
+            )
 
         return [
             model
@@ -197,6 +213,8 @@ class MLModelRegistry(BaseModel):
             Latest model spec
         """
         models = self.get_models_for_target_and_type(target, type)
+        if len(models) == 0:
+            raise ValueError(f"No models available for target {target} and type {type}")
         return max(models, key=lambda model: model.last_updated)
 
     def get_model(self, name: str) -> MLModelSpec:

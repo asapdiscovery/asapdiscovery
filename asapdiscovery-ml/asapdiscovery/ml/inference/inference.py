@@ -31,7 +31,7 @@ class InferenceBase(BaseModel):
         allow_extra = False
 
     target: TargetTags = Field(..., description="Target to predict for")
-    model_type: ClassVar[MLModelType.INVALID] = Field(MLModelType.INVALID)
+    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
     model_spec: Optional[MLModelSpec] = Field(
         ..., description="Model spec used to create Model to use"
@@ -88,7 +88,7 @@ class InferenceBase(BaseModel):
         cls,
         model_spec: MLModelSpec,
         device: str = "cpu",
-        local_dir: Optional[Union[str, Path]] = "_weights",
+        local_dir: Optional[Union[str, Path]] = "./_weights",
     ) -> "_InferenceBase":
         """
         Create an InferenceBase object from an MLModelSpec.
@@ -166,7 +166,7 @@ class InferenceBase(BaseModel):
 
 
 class GATInference(InferenceBase):
-    model_type: ClassVar[MLModelType.GAT] = Field(MLModelType.GAT)
+    model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
 
     def predict(self, g: dgl.DGLGraph):
         """Predict on a graph, requires a DGLGraph object with the `ndata`
@@ -225,7 +225,7 @@ class StructuralInference(InferenceBase):
     Inference class for models that take a structure as input.
     """
 
-    model_type: ClassVar[MLModelType.INVALID] = Field(MLModelType.INVALID)
+    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
 
     def predict(self, pose_dict: dict):
         """Predict on a pose, requires a dictionary with the pose data with
@@ -280,7 +280,7 @@ class SchnetInference(StructuralInference):
     Inference class for SchNet model.
     """
 
-    model_type: ClassVar[MLModelType.schnet] = Field(MLModelType.schnet)
+    model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
     build_model_kwargs: Dict[str, str] = Field({"pred_r": "pIC50"})
 
 
@@ -289,7 +289,7 @@ class E3nnInference(StructuralInference):
     Inference class for E3NN model.
     """
 
-    model_type: ClassVar[MLModelType.e3nn] = Field(MLModelType.e3nn)
+    model_type: ClassVar[MLModelType.e3nn] = MLModelType.e3nn
 
 
 # class InferenceBase:
