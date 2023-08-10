@@ -1,9 +1,8 @@
-import os
-import shutil
-
 import asapdiscovery.ml
 import numpy as np
 import pytest
+
+import mtenn
 
 from asapdiscovery.ml.inference import GATInference, SchnetInference
 from asapdiscovery.data.testing.test_resources import fetch_test_file
@@ -25,7 +24,7 @@ def test_gatinference_construct_by_latest(target):
     assert inference_cls.target == target
 
 
-def test_inference_construct_no_spec(
+def test_gatinference_construct_from_name(
     tmp_path,
 ):
     inference_cls = GATInference.from_model_name("gat_test_v0", local_dir=tmp_path)
@@ -137,6 +136,8 @@ def test_schnet_inference_construct():
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     assert inference_cls.model_type == "schnet"
+    assert inference_cls.build_model_kwargs == {"pred_r": "pIC50"}
+    assert type(inference_cls.model.readout) == mtenn.model.PIC50Readout
 
 
 def test_schnet_inference_predict_from_structure_file(docked_structure_file):

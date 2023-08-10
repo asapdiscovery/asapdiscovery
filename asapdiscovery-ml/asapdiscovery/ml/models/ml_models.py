@@ -42,6 +42,9 @@ class MLModelType(str, Enum):
         return [model_type.value for model_type in cls]
 
 
+_SPECIAL_BUILD_MODEL_KWARGS = {MLModelType.schnet: {"pred_r": "pIC50"}}
+
+
 class MLModelBase(BaseModel):
     """
     Base model class for ML models
@@ -51,6 +54,9 @@ class MLModelBase(BaseModel):
     type: MLModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
     target: TargetTags = Field(..., description="Biological target of the model")
+    build_model_kwargs: Optional[Dict[str, str]] = Field(
+        ..., description="special kwargs for Torch model building"
+    )
 
 
 class MLModelSpec(MLModelBase):
@@ -115,6 +121,7 @@ class MLModelSpec(MLModelBase):
             last_updated=self.last_updated,
             target=self.target,
             local_dir=Path(local_dir) if local_dir else None,
+            build_model_kwargs=self.build_model_kwargs,
         )
 
 
@@ -270,6 +277,9 @@ class MLModelRegistry(BaseModel):
                 else None,
                 last_updated=model_data["last_updated"],
                 target=model_data["target"],
+                build_model_kwargs=_SPECIAL_BUILD_MODEL_KWARGS.get(
+                    model_data["type"], {}
+                ),
             )
 
         return cls(models=models)
