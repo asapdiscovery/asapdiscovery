@@ -93,7 +93,7 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
 
     # Get desired components
     logger.info(f"Splitting molecule using {target.molecule_filter}")
-    prot = split_openeye_mol(prot, target.molecule_filter)
+    prot = split_openeye_mol(prot, target.molecule_filter)["prot"]
 
     # Align
     if prep_opts.ref_fn:
@@ -686,10 +686,10 @@ def save_design_unit(
         save_openeye_pdb(complex_mol, target.complex)
 
     if target.ligand:
-        save_openeye_sdf(split_openeye_mol(complex_mol, "ligand"), str(target.ligand))
+        save_openeye_sdf(split_openeye_mol(complex_mol)["lig"], str(target.ligand))
 
     if target.protein:
-        save_openeye_pdb(split_openeye_mol(complex_mol, "protein"), str(target.protein))
+        save_openeye_pdb(split_openeye_mol(complex_mol)["prot"], str(target.protein))
 
     if target.design_unit:
         oechem.OEWriteDesignUnit(str(target.design_unit), du)

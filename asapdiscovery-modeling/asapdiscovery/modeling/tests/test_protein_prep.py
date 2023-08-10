@@ -85,7 +85,7 @@ class TestProteinPrep:
 
         # This is necessary in this test, otherwise the inclusion of the overlapping ligands
         # in the mers structure will cause a spruce failure
-        prot = split_openeye_mol(prot, target.molecule_filter)
+        prot = split_openeye_mol(prot, target.molecule_filter)["prot"]
 
         # convert seqres to string
         with open(seqres_yaml) as f:
