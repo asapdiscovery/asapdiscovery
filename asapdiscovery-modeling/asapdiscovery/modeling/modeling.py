@@ -1,5 +1,4 @@
 import os
-from collections import namedtuple
 from functools import reduce
 from pathlib import Path
 from typing import Optional, Union

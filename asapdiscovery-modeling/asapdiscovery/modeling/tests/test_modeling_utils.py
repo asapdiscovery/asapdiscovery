@@ -2,11 +2,9 @@
 # pytest test_modeling_utils.py --local_path=/path/to/save/files
 # without a local path, output files will not be written
 
-from pathlib import Path
-
 import pytest
-from asapdiscovery.data.openeye import oechem, save_openeye_pdb
-from asapdiscovery.modeling.modeling import find_component_chains, split_openeye_mol
+from asapdiscovery.data.openeye import oechem
+from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
 
 
