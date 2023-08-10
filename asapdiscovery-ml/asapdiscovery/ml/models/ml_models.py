@@ -102,6 +102,7 @@ class MLModelSpec(MLModelBase):
             config_file=Path(config_file) if self.config_resource else None,
             last_updated=self.last_updated,
             target=self.target,
+            local_dir=Path(local_dir) if local_dir else None,
         )
 
 
