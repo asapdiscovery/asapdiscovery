@@ -277,7 +277,7 @@ class VanillaMDSimulator:
                 output_topology,
                 output_positions[output_indices, :],
                 file=outfile,
-                keepIds=False,
+                keepIds=True,
             )
         return simulation, context
 
@@ -335,7 +335,7 @@ class VanillaMDSimulator:
                 output_topology,
                 output_positions[output_indices, :],
                 file=outfile,
-                keepIds=False,
+                keepIds=True,
             )
 
         # Flush trajectories to force files to be closed

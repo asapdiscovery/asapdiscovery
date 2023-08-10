@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pkg_resources
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.metadata.resources import SARS_CoV_2_fitness_data
 
 _TARGET_TO_GENE = {
     "SARS-CoV-2-Mpro": "nsp5 (Mpro)",
@@ -123,13 +124,8 @@ def parse_fitness_json(target) -> pd.DataFrame:
             f"Specified target is not valid, must be one of: {TargetTags.get_values()}"
         )
 
-    # load JSON by Bloom et al. JSONs for other virus genomes will be loaded here in the future.
-    fitness_json = pkg_resources.resource_filename(
-        __name__,
-        "../../../metadata/aa_fitness_sars_cov_2.json",  # TODO change when `metadata` is vendored properly
-    )
 
-    with open(fitness_json) as f:
+    with open(SARS_CoV_2_fitness_data) as f:
         data = json.load(f)
     data = data["data"]
     fitness_scores_bloom = pd.DataFrame(data)
