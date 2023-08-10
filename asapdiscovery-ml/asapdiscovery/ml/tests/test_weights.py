@@ -18,9 +18,58 @@ def weights_yaml():
 
 
 def test_default_registry():
-    registry = ASAPMLModelRegistry
-    assert registry.models != {}
-    assert registry.models["gat_test_v0"].type == "GAT"
+    assert ASAPMLModelRegistry.models != {}
+    assert ASAPMLModelRegistry.models["gat_test_v0"].type == "GAT"
+
+
+def test_pull_model():
+    model = ASAPMLModelRegistry.models["gat_test_v0"]
+    assert type(model) == MLModelSpec
+    pulled_model = model.pull()
+    assert type(pulled_model) == LocalMLModelSpec
+    assert pulled_model.type == "GAT"
+
+
+def test_pull_to_local_dir(tmp_path):
+    model = ASAPMLModelRegistry.models["gat_test_v0"]
+    assert type(model) == MLModelSpec
+    local_model = model.pull(local_dir=tmp_path)
+    assert os.path.exists(os.path.join(tmp_path, local_model.weights_file))
+    assert os.path.exists(os.path.join(tmp_path, local_model.config_file))
+
+
+@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+def test_default_registry_targets(target):
+    models_for_target = ASAPMLModelRegistry.get_models_for_target(target)
+    assert len(models_for_target) > 0
+    for model in models_for_target:
+        assert model.target == target
+
+
+@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize("type", ["GAT", "schnet"])
+def test_default_registry_target_and_type(target, type):
+    models_for_target_and_type = ASAPMLModelRegistry.get_models_for_target_and_type(
+        target, type
+    )
+    for model in models_for_target_and_type:
+        assert model.target == target
+        assert model.type == type
+
+
+def test_get_model():
+    model = ASAPMLModelRegistry.get_model("gat_test_v0")
+    assert model.type == "GAT"
+
+
+def test_get_latest_model_for_target_and_type():
+    model = ASAPMLModelRegistry.get_latest_model_for_target_and_type(
+        "SARS-CoV-2-Mpro", "GAT"
+    )
+    other_models = ASAPMLModelRegistry.get_models_for_target("SARS-CoV-2-Mpro")
+    # sort by date updated
+    other_models.sort(key=lambda x: x.last_updated, reverse=True)
+    assert model == other_models[0]
 
 
 def test_custom_registry(weights_yaml):
@@ -29,50 +78,10 @@ def test_custom_registry(weights_yaml):
     assert registry.models["gatmodel_test"].type == "GAT"
 
 
-def test_pull_model():
-    registry = ASAPMLModelRegistry
-    model = registry.models["gat_test_v0"]
+def test_custom_registry_pull(weights_yaml):
+    registry = MLModelRegistry.from_yaml(weights_yaml)
+    model = registry.models["gatmodel_test"]
     assert type(model) == MLModelSpec
-
     pulled_model = model.pull()
-
     assert type(pulled_model) == LocalMLModelSpec
     assert pulled_model.type == "GAT"
-
-
-# @pytest.fixture()
-# def outputs(tmp_path):
-#     """Creates outputs directory in temp location and returns path"""
-#     outputs = tmp_path / "outputs"
-#     outputs.mkdir()
-#     yield outputs
-#     shutil.rmtree(outputs)
-
-
-# @pytest.mark.parametrize("force_fetch", [True, False])
-# def test_fetch_weights(weights_yaml, force_fetch, outputs):
-#     print(outputs)
-#     specs = asapdiscovery.ml.weights.fetch_model_from_spec(
-#         weights_yaml,
-#         ["model1", "model2"],
-#         local_dir=outputs,
-#         force_fetch=force_fetch,
-#     )
-#     # type
-#     assert specs["model1"].type == "GAT"
-#     assert specs["model2"].type == "blah"
-#     # config
-#     assert specs["model1"].config is None
-#     assert specs["model2"].config.exists()
-#     # weights
-#     assert specs["model1"].weights.exists()
-#     assert specs["model2"].weights.exists()
-
-
-# @pytest.mark.parametrize("force_fetch", [True, False])
-# @pytest.mark.parametrize("path", [None, False])
-# def test_fetch_weights_invalid_path(weights_yaml, force_fetch, path):
-#     with pytest.raises(ValueError):
-#         _ = asapdiscovery.ml.weights.fetch_model_from_spec(
-#             weights_yaml, "model1", local_dir=path, force_fetch=force_fetch
-#         )
