@@ -12,7 +12,7 @@ _TARGET_TO_GENE = {
 }
 
 
-def bloom_abstration(fitness_scores_this_site) -> int:
+def bloom_abstraction(fitness_scores_this_site) -> int:
     """
     Applies prescribed abstraction of how mutable a residue is given fitness data. Although the mean fitness
     was used at first, the current (2023.08.08) prescribed method is as follows (by Bloom et al):
@@ -54,7 +54,7 @@ def apply_bloom_abstraction(fitness_dataframe) -> dict:
 
         # add all values to a dict
         fitness_dict[idx] = [
-            bloom_abstration(fitness_scores_this_site),
+            bloom_abstraction(fitness_scores_this_site),
             fitness_scores_this_site["wildtype"].values[0],  # wildtype residue
             fitness_scores_this_site.sort_values(by="fitness")["mutant"].values[
                 -1
