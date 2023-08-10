@@ -2,7 +2,7 @@ import os
 import shutil
 import pytest
 
-from asapdiscovery.ml.weights import (
+from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
     MLModelRegistry,
     MLModelSpec,

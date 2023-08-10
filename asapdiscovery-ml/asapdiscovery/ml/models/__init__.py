@@ -1,4 +1,4 @@
-from .weights import (
+from .ml_models import (
     ASAPMLModelRegistry,
     MLModelType,
     MLModelBase,

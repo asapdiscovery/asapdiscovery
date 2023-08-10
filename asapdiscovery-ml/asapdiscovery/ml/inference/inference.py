@@ -9,7 +9,11 @@ from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
-from asapdiscovery.ml.weights import MLModelRegistry, ASAPMLModelRegistry, MLModelType
+from asapdiscovery.ml.models.ml_models import (
+    MLModelRegistry,
+    ASAPMLModelRegistry,
+    MLModelType,
+)
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 from dgllife.utils import CanonicalAtomFeaturizer
