@@ -1,5 +1,4 @@
 import click
-
 from asapdiscovery.simulation.cli.create import create
 from asapdiscovery.simulation.cli.plan import plan
 from asapdiscovery.simulation.cli.results import gather
