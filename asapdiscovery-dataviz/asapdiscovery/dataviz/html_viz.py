@@ -5,7 +5,13 @@ from pathlib import Path
 from typing import List, Optional, Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_sdf, combine_protein_ligand, save_openeye_pdb, oemol_to_pdb_string
+from asapdiscovery.data.openeye import (
+    combine_protein_ligand,
+    load_openeye_pdb,
+    load_openeye_sdf,
+    oemol_to_pdb_string,
+    save_openeye_pdb,
+)
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
 from rdkit import Chem
@@ -155,19 +161,20 @@ class HTMLVisualizer:
         os.remove(f"{str(protein)}_tmp")  # cleanup
 
         return protein_obj
-    
+
     def combine_lig_prot_oe(self, pose, protein):
         """
         Use OE to write a protein and ligand into a single PDB file with proper CONECTS.
         """
         # no RDKit -> OE conversion, so bypass with tmp file.
         Chem.MolToPDBFile(protein, f"_tmp.pdb")
-        with Chem.SDWriter("_tmp.sdf") as w: w.write(pose)
+        with Chem.SDWriter("_tmp.sdf") as w:
+            w.write(pose)
 
         lig = load_openeye_sdf("_tmp.sdf")
         prot = load_openeye_pdb("_tmp.pdb")
-        os.remove(f"_tmp.sdf") #cleanup
-        os.remove(f"_tmp.pdb") #cleanup
+        os.remove(f"_tmp.sdf")  # cleanup
+        os.remove(f"_tmp.pdb")  # cleanup
 
         return combine_protein_ligand(prot, lig)
 

@@ -119,7 +119,7 @@ function loadmike_combined (protein) {
             else {return 0x7b7d7d} //black as the darkest error!
         };
     });
-  
+
 """
 
     orient_tail_MERS_CoV_Mpro_7ene = """\
