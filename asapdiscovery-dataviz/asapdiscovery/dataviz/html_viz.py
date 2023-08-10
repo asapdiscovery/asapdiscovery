@@ -39,7 +39,7 @@ class HTMLVisualizer:
         target: str,
         protein: Path,
         color_method: str,
-        fitness_data: bool = False,
+        fitness_data: Optional[Dict[int, float]] = None,
         logger: FileLogger = None,
         debug: bool = False,
     ):
