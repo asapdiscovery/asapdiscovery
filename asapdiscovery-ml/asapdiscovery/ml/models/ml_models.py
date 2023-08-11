@@ -1,17 +1,15 @@
 from collections import namedtuple
-from pathlib import Path
-from typing import Dict, List, Union, Optional  # noqa: F401
-from pydantic import BaseModel, Field, validator, HttpUrl
-from enum import Enum
 from datetime import date
-
+from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional, Union  # noqa: F401
 from urllib.parse import urljoin
-
-from asapdiscovery.ml.pretrained_models import asap_models_yaml
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 import pooch
 import yaml
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.ml.pretrained_models import asap_models_yaml
+from pydantic import BaseModel, Field, HttpUrl, validator
 
 
 class MLModelType(str, Enum):
@@ -30,7 +28,7 @@ class MLModelType(str, Enum):
     INVALID = "INVALID"
 
     @classmethod
-    def get_values(cls) -> List[str]:
+    def get_values(cls) -> list[str]:
         """
         Get list of valid model types
 
@@ -54,7 +52,7 @@ class MLModelBase(BaseModel):
     type: MLModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
     targets: set[TargetTags] = Field(..., description="Biological targets of the model")
-    build_model_kwargs: Optional[Dict[str, str]] = Field(
+    build_model_kwargs: Optional[dict[str, str]] = Field(
         ..., description="special kwargs for Torch model building"
     )
 
@@ -144,13 +142,13 @@ class MLModelRegistry(BaseModel):
 
     """
 
-    models: Dict[str, MLModelSpec] = Field(
+    models: dict[str, MLModelSpec] = Field(
         ..., description="Models in the model registry, keyed by name"
     )
 
     def get_models_for_target_and_type(
         self, target: TargetTags, type: MLModelType
-    ) -> List[MLModelSpec]:
+    ) -> list[MLModelSpec]:
         """
         Get available model specs for a target and type.
 
@@ -181,7 +179,7 @@ class MLModelRegistry(BaseModel):
             if target in model.targets and model.type == type
         ]
 
-    def get_models_for_target(self, target: TargetTags) -> List[MLModelSpec]:
+    def get_models_for_target(self, target: TargetTags) -> list[MLModelSpec]:
         """
         Get available model specs for a target
 

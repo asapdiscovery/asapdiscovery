@@ -1,27 +1,25 @@
+import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union, ClassVar  # noqa: F401
+from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
 import dgl
-import json
 import numpy as np
 import torch
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
-
-from pydantic import BaseModel, Field
+from asapdiscovery.ml.models.ml_models import (
+    ASAPMLModelRegistry,
+    LocalMLModelSpec,
+    MLModelRegistry,
+    MLModelSpec,
+    MLModelType,
+)
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
-from asapdiscovery.ml.models.ml_models import (
-    MLModelRegistry,
-    ASAPMLModelRegistry,
-    MLModelType,
-    MLModelSpec,
-    LocalMLModelSpec,
-)
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-
 from dgllife.utils import CanonicalAtomFeaturizer
+from pydantic import BaseModel, Field
 
 
 class InferenceBase(BaseModel):
@@ -42,7 +40,7 @@ class InferenceBase(BaseModel):
     local_model_spec: LocalMLModelSpec = Field(
         ..., description="Local model spec used to create Model to use"
     )
-    build_model_kwargs: Optional[Dict] = Field(
+    build_model_kwargs: Optional[dict] = Field(
         ..., description="Keyword arguments to pass to build_model function"
     )
     device: str = Field("cpu", description="Device to use for inference")

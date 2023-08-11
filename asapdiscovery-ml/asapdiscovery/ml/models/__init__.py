@@ -1,10 +1,10 @@
 from .ml_models import (
     ASAPMLModelRegistry,
-    MLModelType,
-    MLModelBase,
-    MLModelSpec,
     LocalMLModelSpec,
+    MLModelBase,
     MLModelRegistry,
+    MLModelSpec,
+    MLModelType,
 )
 
 __all__ = [

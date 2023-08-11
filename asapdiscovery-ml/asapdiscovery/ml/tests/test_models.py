@@ -1,12 +1,12 @@
 import os
 import shutil
-import pytest
 
+import pytest
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
+    LocalMLModelSpec,
     MLModelRegistry,
     MLModelSpec,
-    LocalMLModelSpec,
 )
 
 

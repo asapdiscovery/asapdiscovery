@@ -1,13 +1,10 @@
 import asapdiscovery.ml
+import mtenn
 import numpy as np
 import pytest
-
-import mtenn
-
-from asapdiscovery.ml.inference import GATInference, SchnetInference
-from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-
+from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.ml.inference import GATInference, SchnetInference
 from numpy.testing import assert_allclose
 
 
