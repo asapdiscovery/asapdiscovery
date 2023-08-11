@@ -1,4 +1,3 @@
-from collections import namedtuple
 from datetime import date
 from enum import Enum
 from pathlib import Path
@@ -9,7 +8,7 @@ import pooch
 import yaml
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class MLModelType(str, Enum):

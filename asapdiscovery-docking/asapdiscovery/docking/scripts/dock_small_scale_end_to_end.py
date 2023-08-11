@@ -36,6 +36,9 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
+
+from asapdiscovery.ml.inference import GATInference, SchnetInference
+
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.dataviz.viz_targets import VizTargets

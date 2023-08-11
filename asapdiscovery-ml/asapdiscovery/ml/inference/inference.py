@@ -1,5 +1,3 @@
-import json
-import logging
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
@@ -91,7 +89,7 @@ class InferenceBase(BaseModel):
         device: str = "cpu",
         local_dir: Optional[Union[str, Path]] = None,
         **kwargs,
-    ) -> "_InferenceBase":
+    ) -> "InferenceBase":
         """
         Create an InferenceBase object from an MLModelSpec.
 
@@ -117,7 +115,7 @@ class InferenceBase(BaseModel):
         device: str = "cpu",
         model_spec: Optional[MLModelSpec] = None,
         **kwargs,
-    ) -> "_InferenceBase":
+    ) -> "InferenceBase":
         """
         Create an InferenceBase object from a LocalMLModelSpec.
 
