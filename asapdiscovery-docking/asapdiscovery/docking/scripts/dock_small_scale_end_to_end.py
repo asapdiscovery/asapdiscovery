@@ -36,9 +36,6 @@ from asapdiscovery.data.utils import (
     is_valid_smiles,
     oe_load_exp_from_file,
 )
-
-from asapdiscovery.ml.inference import GATInference, SchnetInference
-
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.dataviz.viz_targets import VizTargets
@@ -48,6 +45,7 @@ from asapdiscovery.docking import (
     make_docking_result_dataframe,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.ml.inference import GATInference, SchnetInference
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
