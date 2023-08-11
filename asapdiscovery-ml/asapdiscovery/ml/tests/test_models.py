@@ -38,22 +38,26 @@ def test_pull_to_local_dir(tmp_path):
     assert os.path.exists(os.path.join(tmp_path, local_model.config_file))
 
 
-@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
 def test_default_registry_targets(target):
     models_for_target = ASAPMLModelRegistry.get_models_for_target(target)
     assert len(models_for_target) > 0
     for model in models_for_target:
-        assert model.target == target
+        assert target in model.targets
 
 
-@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
 @pytest.mark.parametrize("type", ["GAT", "schnet"])
 def test_default_registry_target_and_type(target, type):
     models_for_target_and_type = ASAPMLModelRegistry.get_models_for_target_and_type(
         target, type
     )
     for model in models_for_target_and_type:
-        assert model.target == target
+        assert target in model.targets
         assert model.type == type
 
 

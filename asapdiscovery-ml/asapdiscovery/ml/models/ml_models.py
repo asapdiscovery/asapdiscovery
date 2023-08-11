@@ -1,6 +1,6 @@
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, List, Tuple, Union, Optional  # noqa: F401
+from typing import Dict, List, Union, Optional  # noqa: F401
 from pydantic import BaseModel, Field, validator, HttpUrl
 from enum import Enum
 from datetime import date
@@ -53,7 +53,7 @@ class MLModelBase(BaseModel):
     name: str = Field(..., description="Model name")
     type: MLModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
-    target: TargetTags = Field(..., description="Biological target of the model")
+    targets: set[TargetTags] = Field(..., description="Biological targets of the model")
     build_model_kwargs: Optional[Dict[str, str]] = Field(
         ..., description="special kwargs for Torch model building"
     )
@@ -119,7 +119,7 @@ class MLModelSpec(MLModelBase):
             weights_file=Path(weights_file),
             config_file=Path(config_file) if self.config_resource else None,
             last_updated=self.last_updated,
-            target=self.target,
+            targets=self.targets,
             local_dir=Path(local_dir) if local_dir else None,
             build_model_kwargs=self.build_model_kwargs,
         )
@@ -178,7 +178,7 @@ class MLModelRegistry(BaseModel):
         return [
             model
             for model in self.models.values()
-            if model.target == target and model.type == type
+            if target in model.targets and model.type == type
         ]
 
     def get_models_for_target(self, target: TargetTags) -> List[MLModelSpec]:
@@ -199,7 +199,7 @@ class MLModelRegistry(BaseModel):
             raise ValueError(
                 f"Target {target} not valid, must be one of {TargetTags.get_values()}"
             )
-        return [model for model in self.models.values() if model.target == target]
+        return [model for model in self.models.values() if target in model.targets]
 
     def get_latest_model_for_target_and_type(
         self, target: TargetTags, type: MLModelType
@@ -276,7 +276,7 @@ class MLModelRegistry(BaseModel):
                 if has_config
                 else None,
                 last_updated=model_data["last_updated"],
-                target=model_data["target"],
+                targets=set(model_data["targets"]),
                 build_model_kwargs=_SPECIAL_BUILD_MODEL_KWARGS.get(
                     model_data["type"], {}
                 ),

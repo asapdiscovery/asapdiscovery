@@ -16,12 +16,14 @@ def docked_structure_file(scope="session"):
     return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
 
 
-@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
 def test_gatinference_construct_by_latest(target):
     inference_cls = GATInference.from_latest_by_target(target)
     assert inference_cls is not None
     assert inference_cls.model_type == "GAT"
-    assert inference_cls.target == target
+    assert target in inference_cls.targets
 
 
 def test_gatinference_construct_from_name(
@@ -40,7 +42,9 @@ def test_gatinference_predict(test_data):
     assert output is not None
 
 
-@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
 def test_gatinference_predict_smiles_equivariant(test_data, target):
     inference_cls = GATInference.from_latest_by_target(target)
     g1, g2, _, _ = test_data
@@ -52,7 +56,9 @@ def test_gatinference_predict_smiles_equivariant(test_data, target):
 
 
 # test inference dataset cls against training dataset cls
-@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
 def test_gatinference_predict_dataset(test_data, test_inference_data, target):
     inference_cls = GATInference.from_latest_by_target(target)
     g1, g2, g3, _ = test_data
@@ -80,7 +86,9 @@ def test_gatinference_predict_dataset(test_data, test_inference_data, target):
     assert not np.allclose(output3, output2, rtol=1e-5)
 
 
-@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
 def test_gatinference_predict_from_smiles_dataset(
     test_data, test_inference_data, target
 ):

@@ -31,7 +31,9 @@ class InferenceBase(BaseModel):
         arbitrary_types_allowed = True
         allow_extra = False
 
-    target: TargetTags = Field(..., description="Target to predict for")
+    targets: set[TargetTags] = Field(
+        ..., description="Targets that them model can predict for"
+    )
     model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
     model_spec: Optional[MLModelSpec] = Field(
@@ -142,7 +144,7 @@ class InferenceBase(BaseModel):
         model.eval()
 
         return cls(
-            target=local_model_spec.target,
+            targets=local_model_spec.targets,
             model_type=local_model_spec.type,
             model_name=local_model_spec.name,
             model_spec=model_spec,
