@@ -154,9 +154,7 @@ class Ligand(DataModelAbstractBase):
         return v
 
     @classmethod
-    def from_oemol(
-        cls, mol: oechem.OEMol, **kwargs
-    ) -> "Ligand":
+    def from_oemol(cls, mol: oechem.OEMol, **kwargs) -> "Ligand":
         """
         Create a Ligand from an OEMol
         """
@@ -172,9 +170,7 @@ class Ligand(DataModelAbstractBase):
         return mol
 
     @classmethod
-    def from_smiles(
-        cls, smiles: str, **kwargs
-    ) -> "Ligand":
+    def from_smiles(cls, smiles: str, **kwargs) -> "Ligand":
         """
         Create a Ligand from a SMILES string
         """
@@ -233,9 +229,7 @@ class Ligand(DataModelAbstractBase):
         sdf_str = read_file_directly(sdf_file)
         # we have to skip validation here, because we don't have a bunch of fields as they
         # still need to be read in from the SD tags
-        lig = cls(
-            data=sdf_str, _skip_validate_ids=True, **kwargs
-        )
+        lig = cls(data=sdf_str, _skip_validate_ids=True, **kwargs)
         if read_SD_attrs:
             lig.pop_attrs_from_SD_data()
         lig._clear_internal_SD_data()
