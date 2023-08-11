@@ -1,7 +1,11 @@
 import argparse
 import logging
 
-from asapdiscovery.data.expand_stereo import StereoExpander, StereoExpanderOptions
+from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
+from asapdiscovery.data.state_expanders.state_expander import StateExpansion
+
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.logging import FileLogger
 
 parser = argparse.ArgumentParser(
@@ -23,13 +27,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--warts",
-    action="store_true",
-    help="Add warts to the output file",
-)
-
-parser.add_argument(
-    "--force-flip",
+    "--expand_defined",
     action="store_true",
     help="Force enumeration of stereo centers even if defined",
 )
@@ -49,21 +47,36 @@ def main():
     )
     logger = logger_cls.getLogger()
     logger.info(f"Expanding stereoisomers for {args.infile} to {args.outfile}")
-    logger.info(f"Adding warts: {args.warts}")
-    logger.info(f"Forcing flip: {args.force_flip}")
+    logger.info(f"Forcing flip: {args.expand_defined}")
     logger.info(f"Debug: {args.debug}")
 
-    # setup options
-    options = StereoExpanderOptions(
-        warts=args.warts,
-        force_flip=args.force_flip,
-        debug=args.debug,
-        postera_names=True,
+    infile = str(args.infile)
+    ifs = oechem.oemolistream()
+    if not ifs.open(infile):
+        oechem.OEThrow.Fatal(f"Unable to open {infile} for reading")
+
+    outfile = str(args.outfile)
+    ofs = oechem.oemolostream()
+    if not ofs.open(outfile):
+        oechem.OEThrow.Fatal(f"Unable to open {outfile} for writing")
+
+    ligs = []
+    for mol in ifs.GetOEMols():
+        ligs.append(Ligand.from_oemol(mol, compound_name="ExpansionMol"))
+
+    ifs.close()
+
+    expander = StereoExpander(
+        input_ligands=ligs, stereo_expand_defined=args.expand_defined
     )
 
-    # setup expander
-    expander = StereoExpander(options, logger=logger)
-    expander.expand_structure_file(args.infile, args.outfile)
+    expansions = expander.expand()
+    expanded_ligs = StateExpansion.flatten_children(expansions)
+
+    for lig in expanded_ligs:
+        oechem.OEWriteMolecule(ofs, lig.to_oemol())
+
+    ofs.close()
 
 
 if __name__ == "__main__":
