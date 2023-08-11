@@ -1,28 +1,26 @@
 import abc
-from enum import Enum
+from typing import Any, Literal
 
-from asapdiscovery.data.schema_v2.ligand import Ligand
 from pydantic import BaseModel, Field
 
-
-class StateExpanderType(str, Enum):
-    STEREO = "STEREO"
-    TAUTOMER = "TAUTOMER"
-    PROTOMER = "PROTOMER"
+from asapdiscovery.data.schema_v2.ligand import Ligand
 
 
-class StateExpanderBase(BaseModel):
-    input_ligands: list[Ligand] = Field(..., description="The ligand to be expanded")
-    expander_type: StateExpanderType = Field(
-        ..., description="The type of expander to use"
+class StateExpanderBase(abc.ABC, BaseModel):
+    expander_type: Literal["StateExpanderBase"] = Field(
+        "StateExpanderBase", description="The type of expander to use"
     )
 
     @abc.abstractmethod
-    def _expand(self) -> list["StateExpansion"]:
+    def _expand(self, ligands: list[Ligand]) -> list["StateExpansion"]:
         ...
 
-    def expand(self) -> list["StateExpansion"]:
-        return self._expand()
+    def expand(self, ligands: list[Ligand]) -> list["StateExpansion"]:
+        return self._expand(ligands=ligands)
+
+    @abc.abstractmethod
+    def provenance(self) -> dict[str, str]:
+        ...
 
 
 class StateExpansion(BaseModel):
@@ -30,9 +28,16 @@ class StateExpansion(BaseModel):
     children: list[Ligand] = Field(
         ..., description="The children ligands resulting from expansion"
     )
-    expander: StateExpanderBase = Field(
-        ..., description="The expander used to generate the children"
+    expander: dict[str, Any] = Field(
+        ..., description="The expander and settings used to enumerate the states."
     )
+    provenance: dict[str, str] = Field(
+        ...,
+        description="The provenance of the state expander which worked on this molecule.",
+    )
+
+    class Config:
+        allow_mutation = False
 
     @property
     def n_expanded_states(self) -> int:

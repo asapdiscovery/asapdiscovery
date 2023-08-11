@@ -65,11 +65,9 @@ def main():
 
     ifs.close()
 
-    expander = StereoExpander(
-        input_ligands=ligs, stereo_expand_defined=args.expand_defined
-    )
+    expander = StereoExpander(stereo_expand_defined=args.expand_defined)
 
-    expansions = expander.expand()
+    expansions = expander.expand(ligands=ligs)
     expanded_ligs = StateExpansion.flatten_children(expansions)
 
     for lig in expanded_ligs:
