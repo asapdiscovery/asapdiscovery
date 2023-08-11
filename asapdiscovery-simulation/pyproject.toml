@@ -30,7 +30,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-asap-fec = "asapdiscovery.simulation.cli.cli:cli"
+asap-alchemy = "asapdiscovery.simulation.cli.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

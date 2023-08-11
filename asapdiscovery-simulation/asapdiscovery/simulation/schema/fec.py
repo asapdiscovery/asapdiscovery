@@ -3,8 +3,6 @@ from typing import Literal, Optional
 import gufe
 import openfe
 from alchemiscale import ScopedKey
-from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
@@ -18,6 +16,9 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
+
+from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 
 
 class AlchemiscaleSettings(BaseSettings):
@@ -118,7 +119,15 @@ class _BaseResults(_SchemaBaseFrozen):
         for result in self.results:
             raw_results[result.name()].append(result)
 
-        # now make the cinnabar data
+        # make sure we have a solvent and complex phase for each result
+        for name, transforms in raw_results.items():
+            missing_phase = {"complex", "solvent"} - {t.phase for t in transforms}
+            if missing_phase:
+                raise RuntimeError(
+                    f"The transformation {name} is missing simulated legs in the following phases {missing_phase}"
+                )
+
+        # make the cinnabar data
         all_results = []
         for leg1, leg2 in raw_results.values():
             complex_leg: TransformationResult = (
