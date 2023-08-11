@@ -1,9 +1,8 @@
 import abc
 from enum import Enum
-from typing import List
 
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 
 class StateExpanderType(str, Enum):
