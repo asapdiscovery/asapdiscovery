@@ -1,5 +1,4 @@
 import pytest
-
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpansion
