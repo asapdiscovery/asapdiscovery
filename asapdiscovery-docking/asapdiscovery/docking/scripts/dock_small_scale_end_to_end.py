@@ -657,15 +657,11 @@ def main():
     # ML stuff for docking, fill out others as we make them
     logger.info("Setup ML for docking")
 
-    # handle cross target models, # TODO: FIX
-    target_tmp = args.target if  args.target != "MERS-CoV-Mpro" else "SARS-CoV-2-Mpro"
-
-
-    gat_model = None if args.no_gat else GATInference.from_latest_by_target(target_tmp)
+    gat_model = None if args.no_gat else GATInference.from_latest_by_target(args.target)
     logger.info(f"Using GAT model: {gat_model}")
 
     schnet_model = (
-        None if args.no_schnet else SchnetInference.from_latest_by_target(target_tmp)
+        None if args.no_schnet else SchnetInference.from_latest_by_target(args.target)
     )
     logger.info(f"Using SchNet model: {schnet_model}")
 
