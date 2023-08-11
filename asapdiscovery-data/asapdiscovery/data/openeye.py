@@ -684,6 +684,23 @@ def oemol_to_smiles(mol: oechem.OEMol) -> str:
     return oechem.OEMolToSmiles(mol)
 
 
+def oe_smiles_roundtrip(smiles: str) -> str:
+    """
+    Canonical SMILES string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    str
+       SMILES string of molecule
+    """
+    mol = smiles_to_oemol(smiles)
+    return oemol_to_smiles(mol)
+
 def oemol_to_inchi(mol: oechem.OEMol) -> str:
     """
     InChI string of an OpenEye OEMol

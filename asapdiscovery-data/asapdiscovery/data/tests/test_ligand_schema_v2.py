@@ -22,6 +22,14 @@ def test_ligand_from_smiles(smiles):
     lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.smiles == smiles
 
+def test_ligand_from_smiles_hashable(smiles):
+    lig1 = Ligand.from_smiles(smiles, compound_name="test_name")
+    lig2 = Ligand.from_smiles(smiles, compound_name="test_name")
+    lig3 = Ligand.from_smiles(smiles, compound_name="test_name")
+
+    assert len(set((lig1, lig2, lig3))) == 1
+
+
 
 def test_ligand_from_smiles_id(smiles):
     lig = Ligand.from_smiles(

@@ -155,13 +155,14 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_oemol(
-        cls, mol: oechem.OEMol, compound_name: Optional[str] = None, **kwargs
+        cls, mol: oechem.OEMol, **kwargs
     ) -> "Ligand":
         """
         Create a Ligand from an OEMol
         """
+        kwargs.pop("data", None)
         sdf_str = oemol_to_sdf_string(mol)
-        return cls(data=sdf_str, compound_name=compound_name, **kwargs)
+        return cls(data=sdf_str, **kwargs)
 
     def to_oemol(self) -> oechem.OEGraphMol:
         """
@@ -172,14 +173,15 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_smiles(
-        cls, smiles: str, compound_name: Optional[str] = None, **kwargs
+        cls, smiles: str, **kwargs
     ) -> "Ligand":
         """
         Create a Ligand from a SMILES string
         """
+        kwargs.pop("data", None)
         mol = smiles_to_oemol(smiles)
         sdf_str = oemol_to_sdf_string(mol)
-        return cls(data=sdf_str, compound_name=compound_name, **kwargs)
+        return cls(data=sdf_str, **kwargs)
 
     @property
     def smiles(self) -> str:
@@ -209,7 +211,6 @@ class Ligand(DataModelAbstractBase):
     def from_sdf(
         cls,
         sdf_file: Union[str, Path],
-        compound_name: Optional[str] = None,
         read_SD_attrs: bool = True,
         **kwargs,
     ) -> "Ligand":
@@ -222,17 +223,18 @@ class Ligand(DataModelAbstractBase):
         ----------
         sdf_file : Union[str, Path]
             Path to the SDF file
-        compound_name : Optional[str], optional
             Name of the compound, by default None
         read_SD_attrs : bool, optional
             Whether to read in SD tags as attributes, by default True, overrides kwargs
         """
         # directly read in data
+        kwargs.pop("data", None)
+
         sdf_str = read_file_directly(sdf_file)
         # we have to skip validation here, because we don't have a bunch of fields as they
         # still need to be read in from the SD tags
         lig = cls(
-            data=sdf_str, compound_name=compound_name, _skip_validate_ids=True, **kwargs
+            data=sdf_str, _skip_validate_ids=True, **kwargs
         )
         if read_SD_attrs:
             lig.pop_attrs_from_SD_data()
