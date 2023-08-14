@@ -2,19 +2,18 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Union, Optional, Dict  # noqa: F401
+from typing import Dict, Optional, Union  # noqa: F401
 
+from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
-    oechem,
     combine_protein_ligand,
     load_openeye_pdb,
     load_openeye_sdf,
+    oechem,
     oemol_to_pdb_string,
     openeye_perceive_residues,
 )
-
-from asapdiscovery.data.fitness import parse_fitness_json
 
 from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
