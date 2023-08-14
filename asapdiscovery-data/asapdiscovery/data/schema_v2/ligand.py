@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 from uuid import UUID
 
-
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
     _set_SD_data_repr,
@@ -15,7 +14,6 @@ from asapdiscovery.data.openeye import (
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
-
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
 from pydantic import UUID4, Field, root_validator, validator
 

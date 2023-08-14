@@ -4,7 +4,6 @@ from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpansion
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-
 from networkx.utils import graphs_equal
 
 

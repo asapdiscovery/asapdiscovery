@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, UUID4
 import uuid
+
+from pydantic import UUID4, BaseModel, Field
 
 
 class StateExpansionTag(BaseModel):
