@@ -12,7 +12,7 @@ from asapdiscovery.data.openeye import (
     oemol_to_pdb_string,
 )
 
-from asapdiscovery.data.fitness import parse_fitness_data
+from asapdiscovery.data.fitness import parse_fitness_json
 
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
@@ -57,7 +57,7 @@ class HTMLVisualizer:
         protein : Path
             Path to protein PDB file.
         color_method : str
-            Protein surface coloring method. Can be either by `subpockets` or `mutability`
+            Protein surface coloring method. Can be either by `subpockets` or `fitness`
         logger : FileLogger
             Logger to use
 
@@ -80,16 +80,16 @@ class HTMLVisualizer:
         self.color_method = color_method
         if self.color_method == "subpockets":
             self.logger.info(f"Mapping interactive view by subpocket dict")
-        elif self.color_method == "mutability":
+        elif self.color_method == "fitness":
             if self.target == "MERS-CoV-Mpro":
                 raise NotImplementedError(
                     "No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`."
                 )
             self.logger.info(f"Mapping interactive view by fitness (b-factor bypass)")
-            self.fitness_data = parse_fitness_data(self.target)
+            self.fitness_data = parse_fitness_json(self.target)
         else:
             raise ValueError(
-                "variable `color_method` must be either of ['subpockets', 'mutability']"
+                "variable `color_method` must be either of ['subpockets', 'fitness']"
             )
 
         self.logger.info(f"Visualising poses for {self.target}")
@@ -108,8 +108,8 @@ class HTMLVisualizer:
             raise ValueError(f"Protein {protein} does not exist.")
         if self.color_method == "subpockets":
             self.protein = Chem.MolFromPDBFile(str(protein))
-        elif self.color_method == "mutability":
-            self.protein = self.swap_b_factor(protein, self.fitness_data)
+        elif self.color_method == "fitness":
+            self.protein = self.swap_b_factor(str(protein), self.fitness_data)
 
         self.debug = debug
         if self.debug:
