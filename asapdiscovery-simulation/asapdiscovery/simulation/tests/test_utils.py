@@ -1,13 +1,12 @@
 from alchemiscale import Scope, ScopedKey
-from gufe.protocols import ProtocolUnitResult
-from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
-from openff.units import unit as OFFUnit
-
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
 from asapdiscovery.simulation.utils import AlchemiscaleHelper
+from gufe.protocols import ProtocolUnitResult
+from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
+from openff.units import unit as OFFUnit
 
 
 def test_create_network(monkeypatch, tyk2_fec_network):
