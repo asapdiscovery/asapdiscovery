@@ -186,3 +186,7 @@ files:
 
   - resource: tyk2_protein.pdb
     sha256hash: c8473899ea40b3f4d9382fca3a2b5f76b1e878313a7287a9240bc4322a5db79d
+
+  # TYK2 FEC network for testing
+  - resource: tyk2_small_network.json
+    sha256hash: 50178165ee30cab70ba386e42f62be933ae4769ca65c26c8ccce605230baa266

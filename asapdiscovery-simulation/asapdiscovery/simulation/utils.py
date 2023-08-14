@@ -1,6 +1,8 @@
 from typing import Optional
 
 from alchemiscale import Scope, ScopedKey
+from openmm.app import ForceField, Modeller, PDBFile
+
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     AlchemiscaleSettings,
@@ -8,7 +10,6 @@ from asapdiscovery.simulation.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.simulation.schema.schema import ForceFieldParams
-from openmm.app import ForceField, Modeller, PDBFile
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -36,7 +37,7 @@ class AlchemiscaleHelper:
     A convince class to handle alchemiscale submissions restarts and results gathering.
     """
 
-    def __init__(self):
+    def __init__(self, api_url: str = "https://api.alchemiscale.org"):
         """
         Create the client which will be used for the rest of the queries
         """
@@ -46,7 +47,7 @@ class AlchemiscaleHelper:
         settings = AlchemiscaleSettings()
         # connect to the client
         self._client = AlchemiscaleClient(
-            api_url="https://api.alchemiscale.org",
+            api_url=api_url,
             identifier=settings.ALCHEMISCALE_ID,
             key=settings.ALCHEMISCALE_KEY,
         )
