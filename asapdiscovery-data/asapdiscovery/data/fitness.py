@@ -13,11 +13,21 @@ _TARGET_TO_GENE = {
 }
 
 
-def bloom_abstraction(fitness_scores_this_site) -> int:
+def bloom_abstraction(fitness_scores_this_site: dict) -> int:
     """
     Applies prescribed abstraction of how mutable a residue is given fitness data. Although the mean fitness
     was used at first, the current (2023.08.08) prescribed method is as follows (by Bloom et al):
     > something like “what is the number of mutations at a site that are reasonably well tolerated.” You could do this as something like number (or fraction) of mutations at a site that have a score >= -1 (that is probably a reasonable cutoff), using -1 as a cutoff where mutations start to cross from “highly deleterious” to “conceivably tolerated.”
+
+    Parameters
+    ----------
+    fitness_scores_this_site: dict
+        Dictionary containing fitness scores for a single site
+
+    Returns
+    -------
+    num_tolerated_mutations: int
+
     """
     tolerated_mutations = [
         val for val in fitness_scores_this_site["fitness"] if val >= -1.0
@@ -25,7 +35,7 @@ def bloom_abstraction(fitness_scores_this_site) -> int:
     return len(tolerated_mutations)
 
 
-def apply_bloom_abstraction(fitness_dataframe) -> dict:
+def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame) -> dict:
     """
     Read a pandas DF containing fitness data parsed from a JSON in .parse_fitness_json() and return
     a processed dictionary with averaged fitness scores per residue. This is the current recommended
@@ -68,7 +78,7 @@ def apply_bloom_abstraction(fitness_dataframe) -> dict:
     return fitness_dict
 
 
-def normalize_fitness(fitness_df_abstract) -> pd.DataFrame:
+def normalize_fitness(fitness_df_abstract: pd.DataFrame) -> pd.DataFrame:
     """
     Read a pandas DF containing fitness data and normalizes values to 0-1. Normalization is as MinMax:
     - fitness: 0-100 ranges from non-fit to most fit (i.e., >>100 would mean residue is highly mutable).
@@ -100,14 +110,14 @@ def normalize_fitness(fitness_df_abstract) -> pd.DataFrame:
     return fitness_df_abstract
 
 
-def parse_fitness_json(target) -> pd.DataFrame:
+def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
     """
     Read a per-aa fitness JSON's specified target into a pandas DF.
 
     Parameters
     ----------
     target: str
-        Specifies the target and virus, conforming to dataviz.viz_targets
+        Specifies the target and virus, conforming to asapdiscovery.data.postera.manifold_data_validation.TargetTags
 
     Returns
     -------
@@ -123,6 +133,9 @@ def parse_fitness_json(target) -> pd.DataFrame:
         raise ValueError(
             f"Specified target is not valid, must be one of: {TargetTags.get_values()}"
         )
+
+    if target == "MERS-CoV-Mpro":
+        raise NotImplementedError("MERS-CoV-Mpro fitness data not yet available.")
 
     with open(SARS_CoV_2_fitness_data) as f:
         data = json.load(f)
