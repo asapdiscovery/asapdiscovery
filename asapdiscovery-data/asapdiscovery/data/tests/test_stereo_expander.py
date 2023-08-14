@@ -5,6 +5,8 @@ from asapdiscovery.data.state_expanders.state_expander import StateExpansion
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
+from networkx.utils import graphs_equal
+
 
 @pytest.fixture(scope="session")
 def chalcogran_defined():
@@ -26,6 +28,34 @@ def test_expand_from_mol(chalcogran_defined_smi):
     assert expansions[0].parent == l1
     assert expansions[0].n_expanded_states == 1
     assert expansions[0].children[0].smiles == chalcogran_defined_smi
+
+
+def test_expand_from_mol_tags(chalcogran_defined_smi):
+    l1 = Ligand.from_smiles(chalcogran_defined_smi, compound_name="test")
+    expander = StereoExpander()
+    expansions = expander.expand(ligands=[l1])
+    assert l1.expansion_tag.is_parent
+    children = StateExpansion.flatten_children(expansions)
+    child = children[0]
+    assert child.expansion_tag.is_child_of(l1.expansion_tag)
+    assert l1.expansion_tag.is_parent_of(child.expansion_tag)
+
+
+def test_expand_from_mol_tags_networkx(chalcogran_defined_smi):
+    l1 = Ligand.from_smiles(chalcogran_defined_smi, compound_name="test")
+    expander = StereoExpander()
+    expansions = expander.expand(ligands=[l1])
+    children = StateExpansion.flatten_children(expansions)
+    child = children[0]
+    graph = StateExpansion.to_networkx(expansions)
+    assert graph.has_edge(l1, child)
+
+    graph2 = StateExpansion.ligands_to_networkx([l1, child])
+    assert graph2.has_edge(l1, child)
+    assert graph2.nodes == graph.nodes
+    assert graph2.edges == graph.edges
+
+    assert graphs_equal(graph, graph2)
 
 
 def test_expand_from_mol_expand_defined(chalcogran_defined_smi):
@@ -54,11 +84,13 @@ def test_expand_from_mol_expand_defined_multi_flatten(chalcogran_defined_smi):
     expander = StereoExpander(stereo_expand_defined=True)
     expansions = expander.expand(ligands=[l1, l2])
     all_children = StateExpansion.flatten_children(expansions)
+    # they recieve different expansion tags
     assert len(all_children) == 8
-    assert len(set(all_children)) == 4
+    assert len(set(all_children)) == 8
     all_parents = StateExpansion.flatten_parents(expansions)
+    # they recieve different expansion tags
     assert len(all_parents) == 2
-    assert len(set(all_parents)) == 1
+    assert len(set(all_parents)) == 2
 
 
 def test_stereo_provenance(chalcogran_defined_smi):

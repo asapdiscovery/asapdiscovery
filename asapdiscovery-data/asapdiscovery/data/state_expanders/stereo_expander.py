@@ -6,6 +6,8 @@ from asapdiscovery.data.state_expanders.state_expander import (
     StateExpanderBase,
     StateExpansion,
 )
+from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
+
 from pydantic import Field
 
 
@@ -32,18 +34,21 @@ class StereoExpander(StateExpanderBase):
 
         expansions = []
 
-        for ligand in ligands:
+        for parent_ligand in ligands:
             expanded_states = []
 
-            oemol = ligand.to_oemol()
+            oemol = parent_ligand.to_oemol()
+            parent_ligand.make_parent_tag()
             for enantiomer in oeomega.OEFlipper(oemol, flipperOpts):
                 fmol = oechem.OEMol(enantiomer)
                 # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
                 # down the track.
-                expanded_states.append(Ligand.from_oemol(fmol, **ligand.dict()))
+                enantiomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
+                enantiomer_ligand.set_parent(parent_ligand)
+                expanded_states.append(enantiomer_ligand)
 
             expansion = StateExpansion(
-                parent=ligand,
+                parent=parent_ligand,
                 children=expanded_states,
                 expander=self.dict(),
                 provenance=self.provenance(),

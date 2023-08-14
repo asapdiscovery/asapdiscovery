@@ -31,6 +31,12 @@ def test_ligand_from_smiles_hashable(smiles):
     assert len({lig1, lig2, lig3}) == 1
 
 
+def test_ligand_state_tag(smiles):
+    lig = Ligand.from_smiles(smiles, compound_name="test_name")
+    tag = lig.make_parent_tag()
+    assert lig.expansion_tag == tag
+
+
 def test_ligand_from_smiles_id(smiles):
     lig = Ligand.from_smiles(
         smiles, ids=LigandIdentifiers(moonshot_compound_id="test_id")

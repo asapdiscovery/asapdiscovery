@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 from uuid import UUID
 
+
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
     _set_SD_data_repr,
@@ -14,6 +15,8 @@ from asapdiscovery.data.openeye import (
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
+
+from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
 from pydantic import UUID4, Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
@@ -107,6 +110,11 @@ class Ligand(DataModelAbstractBase):
     experimental_data: Optional[ExperimentalCompoundData] = Field(
         None,
         description="ExperimentalCompoundData Schema for experimental data associated with the compound",
+    )
+
+    expansion_tag: Optional[StateExpansionTag] = Field(
+        None,
+        description="Expansion tag linking this ligand to its parent in a state expansion if needed",
     )
 
     tags: dict[str, str] = Field({}, description="Dictionary of SD tags")
@@ -351,6 +359,30 @@ class Ligand(DataModelAbstractBase):
         )
         # reinitialise object
         self.__init__(**data)
+
+    def make_parent_tag(self) -> StateExpansionTag:
+        """
+        Create a new expansion tag for the ligand, set it and return it
+
+        Returns
+        -------
+        StateExpansionTag
+            The new expansion tag
+        """
+        tag = StateExpansionTag.parent()
+        self.expansion_tag = tag
+        return tag
+
+    def set_parent(self, parent: "Ligand") -> None:
+        """
+        Set the parent of the ligand
+
+        Parameters
+        ----------
+        parent : Ligand
+            The parent ligand
+        """
+        self.expansion_tag = StateExpansionTag.from_parent(parent.expansion_tag)
 
 
 class ReferenceLigand(Ligand):

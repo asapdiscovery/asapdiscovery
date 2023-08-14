@@ -1,8 +1,8 @@
 import abc
 from typing import Any, Literal
-
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from pydantic import BaseModel, Field
+import networkx as nx
 
 
 class StateExpanderBase(abc.ABC, BaseModel):
@@ -53,3 +53,33 @@ class StateExpansion(BaseModel):
     @staticmethod
     def flatten_parents(expansions: list["StateExpansion"]) -> list[Ligand]:
         return [expansion.parent for expansion in expansions]
+
+    # could split into a class with List[StateExpansion] but seems like overkill
+
+    @staticmethod
+    def to_networkx(expansions: list["StateExpansion"]) -> nx.DiGraph:
+        graph = nx.DiGraph()
+        for expansion in expansions:
+            graph.add_node(expansion.parent)
+            for child in expansion.children:
+                graph.add_node(child)
+                graph.add_edge(expansion.parent, child)
+        return graph
+
+    @staticmethod
+    def ligands_to_networkx(ligands: list[Ligand]) -> nx.DiGraph:
+        parents = [ligand for ligand in ligands if ligand.expansion_tag.is_parent]
+        expansions = []
+        for parent in parents:
+            children = [
+                ligand
+                for ligand in ligands
+                if ligand.expansion_tag.is_child_of(parent.expansion_tag)
+                and not ligand.expansion_tag.is_parent
+            ]
+            expansion = StateExpansion(
+                parent=parent, children=children, expander={}, provenance={}
+            )
+            expansions.append(expansion)
+
+        return StateExpansion.to_networkx(expansions=expansions)
