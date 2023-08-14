@@ -6,25 +6,18 @@ from typing import Union, Optional, Dict  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
+    oechem,
     combine_protein_ligand,
     load_openeye_pdb,
     load_openeye_sdf,
     oemol_to_pdb_string,
+    openeye_perceive_residues,
 )
 
 from asapdiscovery.data.fitness import parse_fitness_json
 
-from Bio.PDB import PDBParser
-from Bio.PDB.PDBIO import PDBIO
-from rdkit import Chem
-
 from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
-
-
-def _load_first_molecule(file_path: Union[Path, str]):
-    mols = Chem.SDMolSupplier(str(file_path))
-    return mols[0]
 
 
 class HTMLVisualizer:
@@ -99,17 +92,20 @@ class HTMLVisualizer:
         # make sure all paths exist, otherwise skip
         for pose, path in zip(poses, output_paths):
             if pose and Path(pose).exists():
-                self.poses.append(_load_first_molecule(pose))
+                self.poses.append(load_openeye_sdf(str(pose)))
                 self.output_paths.append(path)
             else:
                 self.logger.warning(f"Pose {pose} does not exist, skipping.")
 
         if not protein.exists():
             raise ValueError(f"Protein {protein} does not exist.")
-        if self.color_method == "subpockets":
-            self.protein = Chem.MolFromPDBFile(str(protein))
-        elif self.color_method == "fitness":
-            self.protein = self.swap_b_factor(str(protein), self.fitness_data)
+
+        self.protein = openeye_perceive_residues(
+            load_openeye_pdb(str(protein)), preserve_all=True
+        )
+
+        if self.color_method == "fitness":
+            self.make_fitness_bfactors()
 
         self.debug = debug
         if self.debug:
@@ -134,48 +130,23 @@ class HTMLVisualizer:
         with open(path, "w") as f:
             f.write(html)
 
-    def swap_b_factor(self, protein, fitness_data):
+    def make_fitness_bfactors(self):
         """
         Given a dict of fitness values, swap out the b-factors in the protein.
         """
-        # first need to swap the protein's b-factor with fitness scores. Could do this with str.split() but gets a bit complicated.
-        parser = PDBParser()
-        protein_biopython = parser.get_structure("protein", str(protein))
         self.logger.warning(f"Swapping b-factor with fitness score.")
-        for res in protein_biopython.get_residues():
-            res_number = res.get_full_id()[3][1]  # what a world we live in..
+        hv = oechem.OEHierView(self.protein)
+        # iterate over residues and set b-factor with openeye
+        for res in hv.GetResidues():
+            residue = res.GetOEResidue()
+            res_number = residue.GetResidueNumber()
             try:
-                for at in res.get_atoms():
-                    at.set_bfactor(fitness_data[res_number])
+                residue.SetBFactor(self.fitness_data[res_number])
             except KeyError:
                 # this is normal in most cases, a handful of residues will be missing from mutation data.
                 self.logger.warning(
                     f"No fitness score found for residue {res_number} of protein."
                 )
-        # there's no biopython -> rdkit, so save to a PDB file and load it with RDKit.
-        io = PDBIO()
-        io.set_structure(protein_biopython)
-        io.save(f"{str(protein)}_tmp")
-        protein_obj = Chem.MolFromPDBFile(f"{str(protein)}_tmp")
-        os.remove(f"{str(protein)}_tmp")  # cleanup
-
-        return protein_obj
-
-    def combine_lig_prot_oe(self, pose, protein):
-        """
-        Use OE to write a protein and ligand into a single PDB file with proper CONECTS.
-        """
-        # no RDKit -> OE conversion, so bypass with tmp file.
-        Chem.MolToPDBFile(protein, f"_tmp.pdb")
-        with Chem.SDWriter("_tmp.sdf") as w:
-            w.write(pose)
-
-        lig = load_openeye_sdf("_tmp.sdf")
-        prot = load_openeye_pdb("_tmp.pdb")
-        os.remove(f"_tmp.sdf")  # cleanup
-        os.remove(f"_tmp.pdb")  # cleanup
-
-        return combine_protein_ligand(prot, lig)
 
     def write_pose_visualizations(self):
         """
@@ -207,7 +178,7 @@ class HTMLVisualizer:
         """
         Get HTML body for pose visualization
         """
-        joint_pdb = oemol_to_pdb_string(self.combine_lig_prot_oe(pose, self.protein))
+        joint_pdb = oemol_to_pdb_string(combine_protein_ligand(self.protein, pose))
 
         html_body = make_core_html(joint_pdb)
         return html_body
