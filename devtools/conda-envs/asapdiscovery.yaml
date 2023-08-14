@@ -69,7 +69,8 @@ dependencies:
   - gifsicle
 
   # simulation
-  - openfe
+  - openfe >=0.11.0
+  - gufe >=0.9.1
   - httpx
 
 
