@@ -75,7 +75,9 @@ class HTMLVisualizer:
                 raise NotImplementedError(
                     "No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`."
                 )
-            self.logger.info("Mapping interactive view by fitness (visualised with b-factor)")
+            self.logger.info(
+                "Mapping interactive view by fitness (visualised with b-factor)"
+            )
             self.fitness_data = parse_fitness_json(self.target)
         else:
             raise ValueError(
