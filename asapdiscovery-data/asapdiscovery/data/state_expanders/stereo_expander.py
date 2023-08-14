@@ -2,7 +2,6 @@ from typing import Literal
 
 from asapdiscovery.data.openeye import oechem, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
 from asapdiscovery.data.state_expanders.state_expander import (
     StateExpanderBase,
     StateExpansion,
