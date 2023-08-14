@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Union  # noqa: F401
+from typing import Union, Optional, Dict  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
@@ -11,6 +11,9 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdf,
     oemol_to_pdb_string,
 )
+
+from asapdiscovery.data.fitness import parse_fitness_data
+
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
 from rdkit import Chem
@@ -39,7 +42,6 @@ class HTMLVisualizer:
         target: str,
         protein: Path,
         color_method: str = "subpockets",
-        fitness_data: Optional[Dict[int, float]] = None,
         logger: FileLogger = None,
         debug: bool = False,
     ):
@@ -55,9 +57,7 @@ class HTMLVisualizer:
         protein : Path
             Path to protein PDB file.
         color_method : str
-            Protein surface coloring method. Can be either by `subpockets` or `bfactor`
-        fitness_data: dict
-            dict of k,v where k is residue number and v is a fitness value between 0-100.
+            Protein surface coloring method. Can be either by `subpockets` or `mutability`
         logger : FileLogger
             Logger to use
 
@@ -80,16 +80,16 @@ class HTMLVisualizer:
         self.color_method = color_method
         if self.color_method == "subpockets":
             self.logger.info(f"Mapping interactive view by subpocket dict")
-        elif self.color_method == "bfactor":
+        elif self.color_method == "mutability":
             if self.target == "MERS-CoV-Mpro":
                 raise NotImplementedError(
                     "No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`."
                 )
             self.logger.info(f"Mapping interactive view by fitness (b-factor bypass)")
-            self.fitness_data = fitness_data
+            self.fitness_data = parse_fitness_data(self.target)
         else:
             raise ValueError(
-                "variable `color_method` must be either of ['subpockets', 'bfactor']"
+                "variable `color_method` must be either of ['subpockets', 'mutability']"
             )
 
         self.logger.info(f"Visualising poses for {self.target}")
@@ -108,8 +108,8 @@ class HTMLVisualizer:
             raise ValueError(f"Protein {protein} does not exist.")
         if self.color_method == "subpockets":
             self.protein = Chem.MolFromPDBFile(str(protein))
-        elif self.color_method == "bfactor":
-            self.protein = self.swap_b_factor(protein, fitness_data)
+        elif self.color_method == "mutability":
+            self.protein = self.swap_b_factor(protein, self.fitness_data)
 
         self.debug = debug
         if self.debug:
