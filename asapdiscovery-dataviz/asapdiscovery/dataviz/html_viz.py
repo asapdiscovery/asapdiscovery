@@ -1,6 +1,4 @@
 import logging
-import os
-import sys
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
 
@@ -71,13 +69,13 @@ class HTMLVisualizer:
 
         self.color_method = color_method
         if self.color_method == "subpockets":
-            self.logger.info(f"Mapping interactive view by subpocket dict")
+            self.logger.info("Mapping interactive view by subpocket dict")
         elif self.color_method == "fitness":
             if self.target == "MERS-CoV-Mpro":
                 raise NotImplementedError(
                     "No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`."
                 )
-            self.logger.info(f"Mapping interactive view by fitness (b-factor bypass)")
+            self.logger.info("Mapping interactive view by fitness (visualised with b-factor)")
             self.fitness_data = parse_fitness_json(self.target)
         else:
             raise ValueError(
@@ -133,7 +131,7 @@ class HTMLVisualizer:
         """
         Given a dict of fitness values, swap out the b-factors in the protein.
         """
-        self.logger.warning(f"Swapping b-factor with fitness score.")
+        self.logger.warning("Swapping b-factor with fitness score.")
         hv = oechem.OEHierView(self.protein)
         # iterate over residues and set b-factor with openeye
         for res in hv.GetResidues():

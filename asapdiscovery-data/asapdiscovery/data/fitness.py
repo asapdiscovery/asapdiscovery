@@ -2,7 +2,6 @@ import json
 
 import numpy as np
 import pandas as pd
-import pkg_resources
 from asapdiscovery.data.metadata.resources import SARS_CoV_2_fitness_data
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
