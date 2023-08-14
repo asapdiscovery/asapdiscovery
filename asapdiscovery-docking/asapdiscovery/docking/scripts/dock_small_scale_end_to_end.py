@@ -578,7 +578,7 @@ def main():
     output_target_du = output_target.design_unit
     if not output_target_du.exists():
         raise ValueError(f"Design unit does not exist: {output_target_du}")
-    protein_path = output_target.protein
+    protein_path = Path(args.receptor)
     if not protein_path.exists():
         raise ValueError(f"Protein file does not exist: {protein_path}")
 
@@ -856,7 +856,7 @@ def main():
                     args.viz_target,
                     protein_path,
                     logger=logger,
-                    colour_method="fitness",
+                    color_method="fitness",
                 )
                 output_paths = html_visualiser.write_pose_visualizations()
 
@@ -883,7 +883,7 @@ def main():
                 args.viz_target,
                 protein_path,
                 logger=logger,
-                colour_method="fitness",
+                color_method="fitness",
             )
             html_visualiser.write_pose_visualizations()
 
@@ -1171,14 +1171,19 @@ def main():
         args.target,
         column_enums,
         manifold_validate=True,
-        allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose", "_outpath_gif"],
+        allow=[
+            DockingResultCols.LIGAND_ID.value,
+            "_outpath_pose",
+            "_outpath_pose_fitness",
+            "_outpath_gif",
+        ],
         drop_non_output=True,
     )
 
     # drop the artifact columns for final results
     cols_to_drop = [
         col
-        for col in ["_outpath_pose", "_outpath_gif"]
+        for col in ["_outpath_pose", "_outpath_gif", "_outpath_pose_fitness"]
         if col in renamed_top_posit_with_artifacts.columns
     ]
     renamed_top_posit_final = renamed_top_posit_with_artifacts.drop(

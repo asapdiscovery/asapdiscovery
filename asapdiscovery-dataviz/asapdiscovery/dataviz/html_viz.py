@@ -75,7 +75,9 @@ class HTMLVisualizer:
                 raise NotImplementedError(
                     "No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`."
                 )
-            self.logger.info("Mapping interactive view by fitness (visualised with b-factor)")
+            self.logger.info(
+                "Mapping interactive view by fitness (visualised with b-factor)"
+            )
             self.fitness_data = parse_fitness_json(self.target)
         else:
             raise ValueError(
@@ -131,19 +133,21 @@ class HTMLVisualizer:
         """
         Given a dict of fitness values, swap out the b-factors in the protein.
         """
+
         self.logger.warning("Swapping b-factor with fitness score.")
-        hv = oechem.OEHierView(self.protein)
-        # iterate over residues and set b-factor with openeye
-        for res in hv.GetResidues():
-            residue = res.GetOEResidue()
-            res_number = residue.GetResidueNumber()
+
+        for atom in self.protein.GetAtoms():
+            thisRes = oechem.OEAtomGetResidue(atom)
+            res_num = thisRes.GetResidueNumber()
+            self.logger.info(res_num)
+            thisRes.SetBFactor(
+                0.0
+            )  # reset b-factor to 0 for all residues, very crude but works to show where data is present
             try:
-                residue.SetBFactor(self.fitness_data[res_number])
+                thisRes.SetBFactor(self.fitness_data[res_num])
             except KeyError:
-                # this is normal in most cases, a handful of residues will be missing from mutation data.
-                self.logger.warning(
-                    f"No fitness score found for residue {res_number} of protein."
-                )
+                pass
+            oechem.OEAtomSetResidue(atom, thisRes)  # store updated residue
 
     def write_pose_visualizations(self):
         """
