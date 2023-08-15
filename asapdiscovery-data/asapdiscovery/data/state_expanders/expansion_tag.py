@@ -4,31 +4,30 @@ from pydantic import UUID4, BaseModel, Field
 
 
 class StateExpansionTag(BaseModel):
-    id: UUID4 = Field(uuid.uuid4(), description="UUID for this molecule")
-    parent_id: UUID4 = Field(uuid.uuid4(), description="UUID for parent molecule")
+    inchikey: str = Field(None, description="UUID for this molecule")
+    parent_inchikey: str = Field(None, description="UUID for parent molecule")
 
     def __hash__(self) -> int:
         return hash(self.json())
 
     @property
     def is_parent(self):
-        return self.id == self.parent_id
+        return self.inchikey == self.parent_inchikey
 
     @property
     def is_child(self):
-        return self.id != self.parent_id
+        return self.inchikey != self.parent_inchikey
 
     def is_parent_of(self, other: "StateExpansionTag"):
-        return self.id == other.parent_id
+        return self.inchikey == other.parent_inchikey
 
     def is_child_of(self, other: "StateExpansionTag"):
-        return self.parent_id == other.id
+        return self.parent_inchikey == other.inchikey
 
     @classmethod
-    def parent(cls):
-        id = uuid.uuid4()
-        return cls(id=id, parent_id=id)
+    def parent(cls, inchikey: str):
+        return cls(inchikey=inchikey, parent_inchikey=inchikey)
 
     @classmethod
-    def from_parent(cls, parent_tag: "StateExpansionTag"):
-        return cls(parent_id=parent_tag.id)
+    def from_parent(cls, parent_tag: "StateExpansionTag", inchikey: str):
+        return cls(parent_inchikey=parent_tag.inchikey, inchikey=inchikey)

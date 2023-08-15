@@ -367,7 +367,7 @@ class Ligand(DataModelAbstractBase):
         StateExpansionTag
             The new expansion tag
         """
-        tag = StateExpansionTag.parent()
+        tag = StateExpansionTag.parent(self.inchikey)
         self.expansion_tag = tag
         return tag
 
@@ -380,7 +380,9 @@ class Ligand(DataModelAbstractBase):
         parent : Ligand
             The parent ligand
         """
-        self.expansion_tag = StateExpansionTag.from_parent(parent.expansion_tag)
+        self.expansion_tag = StateExpansionTag.from_parent(
+            parent.expansion_tag, self.inchikey
+        )
 
 
 class ReferenceLigand(Ligand):

@@ -85,11 +85,11 @@ def test_expand_from_mol_expand_defined_multi_flatten(chalcogran_defined_smi):
     all_children = StateExpansion.flatten_children(expansions)
     # they recieve different expansion tags
     assert len(all_children) == 8
-    assert len(set(all_children)) == 8
+    assert len(set(all_children)) == 4
     all_parents = StateExpansion.flatten_parents(expansions)
     # they recieve different expansion tags
     assert len(all_parents) == 2
-    assert len(set(all_parents)) == 2
+    assert len(set(all_parents)) == 1
 
 
 def test_stereo_provenance(chalcogran_defined_smi):
