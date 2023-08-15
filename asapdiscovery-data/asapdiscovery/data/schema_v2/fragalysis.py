@@ -20,7 +20,7 @@ class FragalysisFactory(ContainerAbstractBase):
     parent_dir: Path = Field(
         description="Top level directory of the Fragalysis database."
     )
-    complexes: List[Complex] = Field(
+    complexes: list[Complex] = Field(
         [], description="Complex objects in the Fragalysis database.", repr=False
     )
 
