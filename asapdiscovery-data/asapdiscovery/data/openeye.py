@@ -519,7 +519,9 @@ def save_openeye_design_unit(du: oechem.OEDesignUnit, du_fn: Union[str, Path]) -
     return Path(du_fn)
 
 
-def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
+def openeye_perceive_residues(
+    prot: oechem.OEGraphMol, preserve_all: bool = False
+) -> oechem.OEGraphMol:
     """
     Re-perceive the residues of a protein molecule using OpenEye's OEPerceiveResidues function,
     which is necessary when changes are made to the protein to ensure correct atom ordering and CONECT record creation.
@@ -529,17 +531,24 @@ def openeye_perceive_residues(prot: oechem.OEGraphMol) -> oechem.OEGraphMol:
     prot : oechem.OEGraphMol
         The input protein molecule to be processed.
 
+    preserve_all : bool, optional, default=False
+        If True, preserve all residue information, including chain ID, residue number, and residue name.
+
     Returns
     -------
     oechem.OEGraphMol
         The processed protein molecule with re-perceived residue information.
     """
     # Clean up PDB info by re-perceiving, perserving chain ID, residue number, and residue name
-    preserve = (
-        oechem.OEPreserveResInfo_ChainID
-        | oechem.OEPreserveResInfo_ResidueNumber
-        | oechem.OEPreserveResInfo_ResidueName
-    )
+
+    if preserve_all:
+        preserve = oechem.OEPreserveResInfo_All
+    else:
+        preserve = (
+            oechem.OEPreserveResInfo_ChainID
+            | oechem.OEPreserveResInfo_ResidueNumber
+            | oechem.OEPreserveResInfo_ResidueName
+        )
     oechem.OEPerceiveResidues(prot, preserve)
 
     return prot
