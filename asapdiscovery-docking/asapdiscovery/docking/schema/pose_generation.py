@@ -1,10 +1,9 @@
 import abc
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
-
 from asapdiscovery.data.schema_v2.ligand import Ligand, ReferenceLigand
 from asapdiscovery.data.schema_v2.target import PreppedTarget
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 
 class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
