@@ -829,6 +829,53 @@ def main():
         )
         html_visualiser.write_pose_visualizations()
 
+    if args.target != "MERS-CoV-Mpro":
+        logger.info("Making fitness visualizations")
+        # add pose output column
+        top_posit["_outpath_pose_fitness"] = top_posit[
+            DockingResultCols.LIGAND_ID.value
+        ].apply(lambda x: poses_dir / Path(x) / "visualization_fitness.html")
+        if args.dask:
+
+            @dask.delayed
+            def dask_html_adaptor_fitness(pose, outpath):
+                html_visualiser = HTMLVisualizer(
+                    [pose],
+                    [outpath],
+                    args.viz_target,
+                    protein_path,
+                    logger=logger,
+                    color_method="fitness",
+                )
+                output_paths = html_visualiser.write_pose_visualizations()
+
+                if len(output_paths) != 1:
+                    raise ValueError(
+                        "Somehow got more than one output path from HTMLVisualizer"
+                    )
+                return output_paths[0]
+
+            for pose, output_path in zip(
+                top_posit["_docked_file"], top_posit["_outpath_pose_fitness"]
+            ):
+                outpath = dask_html_adaptor_fitness(pose, output_path)
+                outpaths.append(outpath)
+
+            futures = client.compute(outpaths)
+            outpaths = client.gather(futures, errors="skip")
+
+        else:
+            logger.info("Running HTML visualization in serial")
+            html_visualiser = HTMLVisualizer(
+                top_posit["_docked_file"],
+                top_posit["_outpath_pose_fitness"],
+                args.viz_target,
+                protein_path,
+                logger=logger,
+                color_method="fitness",
+            )
+            html_visualiser.write_pose_visualizations()
+
     # remove any with positive docking scores that would indicate a clash
     clashing = top_posit[top_posit[DockingResultCols.DOCKING_SCORE_POSIT.value] > 0]
     if len(clashing) > 0:
@@ -1113,14 +1160,19 @@ def main():
         args.target,
         column_enums,
         manifold_validate=True,
-        allow=[DockingResultCols.LIGAND_ID.value, "_outpath_pose", "_outpath_gif"],
+        allow=[
+            DockingResultCols.LIGAND_ID.value,
+            "_outpath_pose",
+            "_outpath_pose_fitness",
+            "_outpath_gif",
+        ],
         drop_non_output=True,
     )
 
     # drop the artifact columns for final results
     cols_to_drop = [
         col
-        for col in ["_outpath_pose", "_outpath_gif"]
+        for col in ["_outpath_pose", "_outpath_gif", "_outpath_pose_fitness"]
         if col in renamed_top_posit_with_artifacts.columns
     ]
     renamed_top_posit_final = renamed_top_posit_with_artifacts.drop(
@@ -1171,6 +1223,23 @@ def main():
             bucket_name=aws_s3_settings.BUCKET_NAME,
         )
         pose_uploader.upload_artifacts()
+
+        if args.target != "MERS-CoV-Mpro":
+            fitness_df = renamed_top_posit_with_artifacts[
+                [DockingResultCols.LIGAND_ID.value, "_outpath_pose_fitness"]
+            ]
+            fitness_uploader = ManifoldArtifactUploader(
+                fitness_df,
+                molset_id,
+                ArtifactType.DOCKING_POSE_FITNESS_POSIT,
+                ms,
+                cf,
+                s3,
+                args.target,
+                artifact_column="_outpath_pose_fitness",
+                bucket_name=aws_s3_settings.BUCKET_NAME,
+            )
+            fitness_uploader.upload_artifacts()
 
         if args.md:
             md_df = renamed_top_posit_with_artifacts[
