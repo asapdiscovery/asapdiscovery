@@ -140,17 +140,16 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         data = json.load(f)
     data = data["data"]
     fitness_scores_bloom = pd.DataFrame(data)
-
     # now get the target-specific entries.
     fitness_scores_bloom = fitness_scores_bloom[
         fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
     ]
-
     if target == "SARS-CoV-2-Mac1":
         # need to subselect from nsp3 multidomain to get just Mac1. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7113668/
         fitness_scores_bloom = fitness_scores_bloom[
             fitness_scores_bloom["site"].between(209, 372)
         ]
+        fitness_scores_bloom["site"] -= 208 # reindex to set residue numbers to correct values
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom)
@@ -166,7 +165,6 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         ],
     )
     fitness_df_abstract.index.name = "residue"
-
     # normalize fitness and confidence values to 0-1 for easier parsing by visualizers downstream and return df.
     # can instead return DF if ever we need to provide more info (top/worst mutation, confidence etc).
     fitness_df_abstract = normalize_fitness(fitness_df_abstract)
