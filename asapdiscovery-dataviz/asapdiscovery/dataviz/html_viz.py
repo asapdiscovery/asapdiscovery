@@ -189,7 +189,9 @@ class HTMLVisualizer:
         """
         Get HTML body for pose visualization
         """
-        joint_pdb = oemol_to_pdb_string(combine_protein_ligand(self.protein, pose))
+        mol = combine_protein_ligand(self.protein, pose)
+        oechem.OESuppressHydrogens(mol, True)  # remove hydrogens retaining polar ones
+        joint_pdb = oemol_to_pdb_string(mol)
 
         html_body = make_core_html(joint_pdb)
         return html_body
