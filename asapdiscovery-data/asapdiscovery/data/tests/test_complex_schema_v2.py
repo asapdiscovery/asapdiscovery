@@ -1,8 +1,7 @@
-from pydantic import ValidationError
 import pytest
-
-from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.testing.test_resources import fetch_test_file
+from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")
