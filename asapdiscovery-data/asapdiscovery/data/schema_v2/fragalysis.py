@@ -1,14 +1,13 @@
-import pandas
-
 from pathlib import Path
-from pydantic import Field
 from typing import Any, Union
 
+import pandas
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.schema_base import (
-    DataModelAbstractBase,
     ContainerAbstractBase,
+    DataModelAbstractBase,
 )
+from pydantic import Field
 
 
 class FragalysisFactory(ContainerAbstractBase):
