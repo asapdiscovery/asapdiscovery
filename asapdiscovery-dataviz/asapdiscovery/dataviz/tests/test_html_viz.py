@@ -31,12 +31,35 @@ def protein():
         ).getLogger(),
     ],
 )
-def test_html_viz(pose, protein, logger, target, tmp_path):
+def test_html_viz_subpockets(pose, protein, logger, target, tmp_path):
     html_visualizer = HTMLVisualizer(
         poses=[pose],
         output_paths=[tmp_path / "html_viz.html"],
         target=target,
         protein=protein,
+        logger=logger,
+    )
+    html_visualizer.write_pose_visualizations()
+
+
+# No fitness data for MERS-CoV-Mpro
+@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize(
+    "logger",
+    [
+        None,
+        FileLogger(
+            "pose_to_viz", path="./", stdout=True, level=logging.DEBUG
+        ).getLogger(),
+    ],
+)
+def test_html_viz_fitness(pose, protein, target, logger, tmp_path):
+    html_visualizer = HTMLVisualizer(
+        poses=[pose],
+        output_paths=[tmp_path / "html_viz_fitness.html"],
+        target=target,
+        protein=protein,
+        color_method="fitness",
         logger=logger,
     )
     html_visualizer.write_pose_visualizations()
