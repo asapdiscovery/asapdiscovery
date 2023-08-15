@@ -1,4 +1,3 @@
-import networkx as nx
 import pytest
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.schema_v2.ligand import Ligand
