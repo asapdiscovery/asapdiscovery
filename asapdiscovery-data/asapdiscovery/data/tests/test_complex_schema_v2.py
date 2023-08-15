@@ -39,14 +39,14 @@ def test_equals(complex_pdb):
 
 
 def test_complex_from_pdb_needs_ids(complex_pdb):
-    with pytest.raises(ValueError):
-        c = Complex.from_pdb(complex_pdb, target_kwargs={"target_name": "test"})
+    with pytest.raises(ValidationError):
+        Complex.from_pdb(complex_pdb, target_kwargs={"target_name": "test"})
 
-    with pytest.raises(ValueError):
-        c = Complex.from_pdb(complex_pdb, ligand_kwargs={"compound_name": "test"})
+    with pytest.raises(ValidationError):
+        Complex.from_pdb(complex_pdb, ligand_kwargs={"compound_name": "test"})
 
-    with pytest.raises(ValueError):
-        c = Complex.from_pdb(complex_pdb)
+    with pytest.raises(ValidationError):
+        Complex.from_pdb(complex_pdb)
 
 
 def test_complex_dict_roundtrip(complex_pdb):
