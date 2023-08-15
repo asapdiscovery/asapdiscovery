@@ -53,6 +53,7 @@ def test_expand_from_mol_tags_networkx(chalcogran_defined_smi):
     recombine = children + [l1]
     graph2 = StateExpansion.ligands_to_networkx(recombine)
     assert graph2.has_edge(l1, child)
+    assert graph2.has_edge(l1, l1)  # self edge
     assert graph2.nodes == graph.nodes
     assert graph2.edges == graph.edges
     assert graphs_equal(graph, graph2)

@@ -1,4 +1,5 @@
-from pydantic import UUID4, BaseModel, Field
+from pydantic import BaseModel, Field
+
 
 class StateExpansionTag(BaseModel):
     inchikey: str = Field(None, description="UUID for this molecule")
