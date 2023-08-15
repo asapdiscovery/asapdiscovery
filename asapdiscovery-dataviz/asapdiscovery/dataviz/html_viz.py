@@ -7,6 +7,7 @@ from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
+    save_openeye_pdb,
     load_openeye_sdf,
     oechem,
     oemol_to_pdb_string,
@@ -66,6 +67,7 @@ class HTMLVisualizer:
             ).getLogger()
         else:
             self.logger = logger
+        self.debug = debug
 
         self.color_method = color_method
         if self.color_method == "subpockets":
@@ -103,13 +105,10 @@ class HTMLVisualizer:
             load_openeye_pdb(str(protein)), preserve_all=True
         )
 
+        self._missed_residues = None
         if self.color_method == "fitness":
-            self.make_fitness_bfactors()
+            self._missed_residues = self.make_fitness_bfactors()
 
-        self.debug = debug
-        if self.debug:
-            self.logger.SetLevel(logging.DEBUG)
-            self.logger.debug("Running in debug mode")
         self.logger.debug(
             f"Writing HTML visualisations for {len(self.output_paths)} ligands"
         )
@@ -129,25 +128,36 @@ class HTMLVisualizer:
         with open(path, "w") as f:
             f.write(html)
 
-    def make_fitness_bfactors(self):
+    def make_fitness_bfactors(self) -> set[int]:
         """
         Given a dict of fitness values, swap out the b-factors in the protein.
         """
 
-        self.logger.warning("Swapping b-factor with fitness score.")
+        self.logger.info("Swapping b-factor with fitness score.")
 
+        # this loop looks a bit strange but OEResidue state is not saved without a loop over atoms
+        missed_res = set()
         for atom in self.protein.GetAtoms():
             thisRes = oechem.OEAtomGetResidue(atom)
             res_num = thisRes.GetResidueNumber()
-            self.logger.info(res_num)
             thisRes.SetBFactor(
                 0.0
-            )  # reset b-factor to 0 for all residues, very crude but works to show where data is present
+            )  # reset b-factor to 0 for all residues first, so that missing ones can have blue overlaid nicely.
             try:
                 thisRes.SetBFactor(self.fitness_data[res_num])
             except KeyError:
-                pass
+                missed_res.add(res_num)
             oechem.OEAtomSetResidue(atom, thisRes)  # store updated residue
+
+        if self.debug:
+            self.logger.info(
+                f"Missed {len(missed_res)} residues when mapping fitness data."
+            )
+            self.logger.info(f"Missed residues: {missed_res}")
+            self.logger.info("Writing protein with fitness b-factors to file.")
+            save_openeye_pdb(self.protein, "protein_fitness.pdb")
+
+        return missed_res
 
     def write_pose_visualizations(self):
         """
@@ -191,6 +201,7 @@ class HTMLVisualizer:
 
         colour = HTMLBlockData.get_pocket_color(self.target)
         method = HTMLBlockData.get_color_method(self.color_method)
+        missing_res = HTMLBlockData.get_missing_residues(self._missed_residues)
         orient_tail = HTMLBlockData.get_orient_tail(self.target)
 
-        return colour + method + orient_tail
+        return colour + method + missing_res + orient_tail

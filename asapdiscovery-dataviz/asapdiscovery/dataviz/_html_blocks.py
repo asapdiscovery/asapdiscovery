@@ -70,6 +70,19 @@ class HTMLBlockData:
         target_ = VizTargets.get_name_underscore(target)
         return getattr(cls, f"orient_tail_{target_}")
 
+    @classmethod
+    def get_missing_residues(cls, missing_residues: set[int] = None) -> str:
+        """
+        Get the missing residues block for a target.
+        """
+        if missing_residues is None:
+            return ""
+        else:
+            missing_res_formatted = " or ".join([str(i) for i in missing_residues])
+            return f"""
+        protein.addRepresentation( 'surface', {{color: 'blue', sele: '{missing_res_formatted}', opacity: 1, side: 'front', surfaceType: 'av', probeRadius: 4.0, scaleFactor: 2.0}} );
+        """
+
     color_method_subpockets = """\
         protein.removeAllRepresentations();
         protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av'} );
