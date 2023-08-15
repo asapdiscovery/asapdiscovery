@@ -1,5 +1,10 @@
+import logging
+import os
+import pandas
+
 from pathlib import Path
-from typing import Any, Union
+from pydantic import Field, root_validator
+from typing import Any, List, Union
 
 import pandas
 from asapdiscovery.data.schema_v2.complex import Complex
@@ -23,22 +28,99 @@ class FragalysisFactory(ContainerAbstractBase):
         description="Top level directory of the Fragalysis database."
     )
     complexes: List[Complex] = Field(
-        [], description="Complex objects in the Fragalysis database."
+        [], description="Complex objects in the Fragalysis database.", repr=False
     )
 
+    def __len__(self):
+        return len(self.complexes)
+
     @classmethod
-    def from_dir(cls, parent_dir: str | Path):
+    def from_dir(
+        cls,
+        parent_dir: str | Path,
+        xtal_col="crystal_name",
+        compound_col="alternate_name",
+    ) -> "FragalysisFactory":
+        """
+        Build a FragalysisFactory from a Fragalysis directory.
+
+        Parameters
+        ----------
+        parent_dir : str | Path
+            Top-level directory of the Fragalysis database
+        xtal_col : str, default="crystal_name"
+            Name of the column in metadata.csv giving the crystal names. Defaults to the
+            Fragalysis value. The values in this col MUST match the directories in
+            the aligned/ subdirectory
+        compound_col : str, default="alternate_name"
+            Name of the column in metadata.csv giving the compound names. Defaults to
+            the Fragalysis value
+
+        Returns
+        -------
+        FragalysisFactory
+        """
         parent_dir = Path(parent_dir)
         try:
             df = pandas.read_csv(parent_dir / "metadata.csv")
         except FileNotFoundError as e:
+            raise FileNotFoundError("No metadata.csv file found in parent_dir.") from e
 
+        if len(df) == 0:
+            raise ValueError("metadata.csv file is empty.")
+
+        if (xtal_col not in df.columns) or (compound_col not in df.columns):
+            raise ValueError(
+                (
+                    "metadata.csv file must contain a crystal name column and a "
+                    "compound name column."
+                )
+            )
+
+        # Dict mapping crystal name to compound name
+        xtal_compound_dict = dict(zip(df[xtal_col], df[compound_col]))
+
+        try:
+            all_xtal_dirs = os.listdir(parent_dir / "aligned")
+        except FileNotFoundError as e:
+            raise FileNotFoundError("No aligned/ directory found in parent_dir.") from e
+
+        all_xtal_dirs = [d for d in all_xtal_dirs if d in xtal_compound_dict]
+        if len(all_xtal_dirs) == 0:
+            raise ValueError(
+                "No aligned directories found with entries in metadata.csv"
+            )
+
+        # Loop through directories and load each bound file
+        complexes = []
+        for d in all_xtal_dirs:
+            compound_name = xtal_compound_dict[d]
+            pdb_fn = parent_dir / "aligned" / d / f"{d}_bound.pdb"
+            if not pdb_fn.exists():
+                print(f"No PDB file found for {d}.", flush=True)
+                continue
+
+            try:
+                c = Complex.from_pdb(
+                    pdb_fn,
+                    target_kwargs={"target_name": d},
+                    ligand_kwargs={"compound_name": compound_name},
+                )
+            except Exception as e:
+                print(f"Unable to parse PDB file for {d}.", flush=True)
+                continue
+
+            complexes.append(c)
+
+        return cls(parent_dir=parent_dir, complexes=complexes)
 
     @root_validator(pre=True)
     @classmethod
     def _validate_parent_dir(cls, v):
-        if not v.parent_dir.exists():
+        if not v["parent_dir"].exists():
             raise ValueError("Given parent_dir does not exist.")
 
-        if not v.parent_dir.is_dir():
+        if not v["parent_dir"].is_dir():
             raise ValueError("Given parent_dir is not a directory.")
+
+        return v
