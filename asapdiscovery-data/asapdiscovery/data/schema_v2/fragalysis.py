@@ -1,14 +1,10 @@
-import logging
 import os
 from pathlib import Path
-from typing import Any, List, Union
+from typing import List
 
 import pandas
 from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.schema_base import (
-    ContainerAbstractBase,
-    DataModelAbstractBase,
-)
+from asapdiscovery.data.schema_v2.schema_base import ContainerAbstractBase
 from pydantic import Field, root_validator
 
 
@@ -24,7 +20,7 @@ class FragalysisFactory(ContainerAbstractBase):
     parent_dir: Path = Field(
         description="Top level directory of the Fragalysis database."
     )
-    complexes: list[Complex] = Field(
+    complexes: List[Complex] = Field(
         [], description="Complex objects in the Fragalysis database.", repr=False
     )
 
@@ -68,8 +64,8 @@ class FragalysisFactory(ContainerAbstractBase):
 
         if (xtal_col not in df.columns) or (compound_col not in df.columns):
             raise ValueError(
-                    "metadata.csv file must contain a crystal name column and a "
-                    "compound name column."
+                "metadata.csv file must contain a crystal name column and a "
+                "compound name column."
             )
 
         # Dict mapping crystal name to compound name
@@ -101,7 +97,7 @@ class FragalysisFactory(ContainerAbstractBase):
                     target_kwargs={"target_name": d},
                     ligand_kwargs={"compound_name": compound_name},
                 )
-            except Exception as e:
+            except Exception:
                 print(f"Unable to parse PDB file for {d}.", flush=True)
                 continue
 
