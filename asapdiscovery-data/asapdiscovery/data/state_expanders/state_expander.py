@@ -49,6 +49,7 @@ class StateExpansion(BaseModel):
 
     @staticmethod
     def flatten_children(expansions: list["StateExpansion"]) -> list[Ligand]:
+        print([child for expansion in expansions for child in expansion.children])
         return [child for expansion in expansions for child in expansion.children]
 
     @staticmethod
@@ -76,7 +77,6 @@ class StateExpansion(BaseModel):
                 ligand
                 for ligand in ligands
                 if ligand.expansion_tag.is_child_of(parent.expansion_tag)
-                and not ligand.expansion_tag.is_parent
             ]
             expansion = StateExpansion(
                 parent=parent, children=children, expander={}, provenance={}

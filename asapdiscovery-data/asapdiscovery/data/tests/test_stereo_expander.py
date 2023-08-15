@@ -5,6 +5,7 @@ from asapdiscovery.data.state_expanders.state_expander import StateExpansion
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from networkx.utils import graphs_equal
+import networkx as nx
 
 
 @pytest.fixture(scope="session")
@@ -42,15 +43,19 @@ def test_expand_from_mol_tags(chalcogran_defined_smi):
 
 def test_expand_from_mol_tags_networkx(chalcogran_defined_smi):
     l1 = Ligand.from_smiles(chalcogran_defined_smi, compound_name="test")
-    expander = StereoExpander()
+    expander = StereoExpander(stereo_expand_defined=True)
     expansions = expander.expand(ligands=[l1])
     children = StateExpansion.flatten_children(expansions)
     child = children[0]
     graph = StateExpansion.to_networkx(expansions)
     assert graph.has_edge(l1, child)
 
-    graph2 = StateExpansion.ligands_to_networkx([l1, child])
+    # print(children)
+    recombine = children + [l1]
+    graph2 = StateExpansion.ligands_to_networkx(recombine)
+    nx.draw(graph2)
     assert graph2.has_edge(l1, child)
+
     assert graph2.nodes == graph.nodes
     assert graph2.edges == graph.edges
 
