@@ -223,7 +223,7 @@ class MLModelRegistry(BaseModel):
 
     def get_model(self, name: str) -> MLModelSpec:
         """
-        Get model for by name
+        Get model by name
 
         Parameters
         ----------
