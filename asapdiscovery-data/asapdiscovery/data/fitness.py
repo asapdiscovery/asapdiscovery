@@ -149,7 +149,9 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         fitness_scores_bloom = fitness_scores_bloom[
             fitness_scores_bloom["site"].between(209, 372)
         ]
-        fitness_scores_bloom["site"] -= 208 # reindex to set residue numbers to correct values
+        fitness_scores_bloom[
+            "site"
+        ] -= 208  # reindex to set residue numbers to correct values
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom)
