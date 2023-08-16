@@ -13,11 +13,13 @@ from .molecule_set import MoleculeSetAPI
 
 class ArtifactType(Enum):
     DOCKING_POSE_POSIT = "docking-pose-POSIT"
+    DOCKING_POSE_FITNESS_POSIT = "docking-pose-fitness-POSIT"
     MD_POSE = "md-pose"
 
 
 ARTIFACT_TYPE_TO_S3_CONTENT_TYPE = {
     ArtifactType.DOCKING_POSE_POSIT: "text/html",
+    ArtifactType.DOCKING_POSE_FITNESS_POSIT: "text/html",
     ArtifactType.MD_POSE: "image/gif",
 }
 

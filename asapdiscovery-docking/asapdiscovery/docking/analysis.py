@@ -216,10 +216,10 @@ class DockingResults:
             Optional
         df: pd.DataFrame
         """
-        if type(csv_path) == str:
+        if type(csv_path) is str:
             # load in data and replace the annoying `-1.0` and `-1` values with nans
             self.df = pd.read_csv(csv_path).replace(-1.0, np.nan).replace(-1, np.nan)
-        elif type(df) == pd.DataFrame:
+        elif isinstance(df, pd.DataFrame):
             if self.column_names_dict.get(column_names):
                 df.columns = self.column_names_dict.get(column_names)
             self.df = df
@@ -357,7 +357,7 @@ class DockingResults:
         # TODO: also this is really fragile
         # first do filtering
         print(filter_score, filter_value)
-        if filter_score and type(filter_value) == float:
+        if filter_score and type(filter_value) is float:
             print(f"Filtering by {filter_score} less than {filter_value}")
             filtered_df = self.df[self.df[filter_score] < filter_value]
             sort_list = ["Compound_ID"] + score_order

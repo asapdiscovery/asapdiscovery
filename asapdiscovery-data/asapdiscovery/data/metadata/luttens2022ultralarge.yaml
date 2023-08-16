@@ -1,0 +1,48 @@
+# paper link doi: `https://doi.org/10.1021/jacs.1c08402`
+7B2U:
+  LIG: compound 1
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7b2u_0A_4YLU
+    - Mpro-z7b2u_0B_4YLU
+7AU4:
+  LIG: compound 3
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7au4_0A_4WME
+7B2J:
+  LIG: compound 5
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7b2j_0A_7DR8
+7B5Z:
+  LIG: compound 6
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7b5z_0A_7DR8
+7BIJ:
+  LIG: compound 13
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7bij_0A_4YLU
+7NEO:
+  LIG: compound 15
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7neo_0A_4YLU
+    - Mpro-z7neo_0B_4YLU
+7O46:
+  LIG: compound 17
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7o46_0A_7DR8
+7QBB:
+  LIG: compound 18
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7qbb_0A_7DR8
+7NBT:
+  LIG: compound 21
+  PROT: SARS-CoV-2
+  dataset001:
+    - Mpro-z7nbt_0A_5C3N

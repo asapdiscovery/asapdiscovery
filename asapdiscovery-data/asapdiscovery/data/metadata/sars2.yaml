@@ -1,0 +1,13 @@
+# labels are from consortium2022open
+
+ligand: resn LIG
+
+P1: resi 140-145+163+172 and polymer.protein
+
+P1_prime: resi 25-27 and polymer.protein
+
+P2: resi 41+49+54 and polymer.protein
+
+P3_4_5: resi 165-168+189-192 and polymer.protein
+
+sars_unique: resi 25+49+142+164+168+169+181+186+188+190+191 and polymer.protein

@@ -1,17 +1,21 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Union  # noqa: F401
+from typing import Dict, Optional, Union  # noqa: F401
 
+from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
-from rdkit import Chem
+from asapdiscovery.data.openeye import (
+    combine_protein_ligand,
+    load_openeye_pdb,
+    load_openeye_sdf,
+    oechem,
+    oemol_to_pdb_string,
+    openeye_perceive_residues,
+    save_openeye_pdb,
+)
 
 from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
-
-
-def _load_first_molecule(file_path: Union[Path, str]):
-    mols = Chem.SDMolSupplier(str(file_path))
-    return mols[0]
 
 
 class HTMLVisualizer:
@@ -28,6 +32,7 @@ class HTMLVisualizer:
         output_paths: list[Path],
         target: str,
         protein: Path,
+        color_method: str = "subpockets",
         logger: FileLogger = None,
         debug: bool = False,
     ):
@@ -42,12 +47,18 @@ class HTMLVisualizer:
             Target to visualize poses for. Must be one of the allowed targets in VizTargets.
         protein : Path
             Path to protein PDB file.
+        color_method : str
+            Protein surface coloring method. Can be either by `subpockets` or `fitness`
         logger : FileLogger
             Logger to use
 
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")
+
+        if target not in self.allowed_targets:
+            raise ValueError(f"Target must be one of: {self.allowed_targets}")
+        self.target = target
 
         # init loggers
         if logger is None:
@@ -56,10 +67,25 @@ class HTMLVisualizer:
             ).getLogger()
         else:
             self.logger = logger
+        self.debug = debug
 
-        if target not in self.allowed_targets:
-            raise ValueError(f"Target must be one of: {self.allowed_targets}")
-        self.target = target
+        self.color_method = color_method
+        if self.color_method == "subpockets":
+            self.logger.info("Mapping interactive view by subpocket dict")
+        elif self.color_method == "fitness":
+            if self.target == "MERS-CoV-Mpro":
+                raise NotImplementedError(
+                    "No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`."
+                )
+            self.logger.info(
+                "Mapping interactive view by fitness (visualised with b-factor)"
+            )
+            self.fitness_data = parse_fitness_json(self.target)
+        else:
+            raise ValueError(
+                "variable `color_method` must be either of ['subpockets', 'fitness']"
+            )
+
         self.logger.info(f"Visualising poses for {self.target}")
 
         self.poses = []
@@ -67,7 +93,7 @@ class HTMLVisualizer:
         # make sure all paths exist, otherwise skip
         for pose, path in zip(poses, output_paths):
             if pose and Path(pose).exists():
-                self.poses.append(_load_first_molecule(pose))
+                self.poses.append(load_openeye_sdf(str(pose)))
                 self.output_paths.append(path)
             else:
                 self.logger.warning(f"Pose {pose} does not exist, skipping.")
@@ -75,12 +101,14 @@ class HTMLVisualizer:
         if not protein.exists():
             raise ValueError(f"Protein {protein} does not exist.")
 
-        self.protein = Chem.MolFromPDBFile(str(protein))
+        self.protein = openeye_perceive_residues(
+            load_openeye_pdb(str(protein)), preserve_all=True
+        )
 
-        self.debug = debug
-        if self.debug:
-            self.logger.SetLevel(logging.DEBUG)
-            self.logger.debug("Running in debug mode")
+        self._missed_residues = None
+        if self.color_method == "fitness":
+            self._missed_residues = self.make_fitness_bfactors()
+
         self.logger.debug(
             f"Writing HTML visualisations for {len(self.output_paths)} ligands"
         )
@@ -99,6 +127,37 @@ class HTMLVisualizer:
         """
         with open(path, "w") as f:
             f.write(html)
+
+    def make_fitness_bfactors(self) -> set[int]:
+        """
+        Given a dict of fitness values, swap out the b-factors in the protein.
+        """
+
+        self.logger.info("Swapping b-factor with fitness score.")
+
+        # this loop looks a bit strange but OEResidue state is not saved without a loop over atoms
+        missed_res = set()
+        for atom in self.protein.GetAtoms():
+            thisRes = oechem.OEAtomGetResidue(atom)
+            res_num = thisRes.GetResidueNumber()
+            thisRes.SetBFactor(
+                0.0
+            )  # reset b-factor to 0 for all residues first, so that missing ones can have blue overlaid nicely.
+            try:
+                thisRes.SetBFactor(self.fitness_data[res_num])
+            except KeyError:
+                missed_res.add(res_num)
+            oechem.OEAtomSetResidue(atom, thisRes)  # store updated residue
+
+        if self.debug:
+            self.logger.info(
+                f"Missed {len(missed_res)} residues when mapping fitness data."
+            )
+            self.logger.info(f"Missed residues: {missed_res}")
+            self.logger.info("Writing protein with fitness b-factors to file.")
+            save_openeye_pdb(self.protein, "protein_fitness.pdb")
+
+        return missed_res
 
     def write_pose_visualizations(self):
         """
@@ -130,13 +189,10 @@ class HTMLVisualizer:
         """
         Get HTML body for pose visualization
         """
-        protein_pdb = Chem.MolToPDBBlock(self.protein)
-        # if there is an END line, remove it
-        for line in protein_pdb.split("\n"):
-            if line.startswith("END"):
-                protein_pdb = protein_pdb.replace(line, "")
-        mol_pdb = Chem.MolToPDBBlock(pose)
-        joint_pdb = protein_pdb + mol_pdb
+        mol = combine_protein_ligand(self.protein, pose)
+        oechem.OESuppressHydrogens(mol, True)  # remove hydrogens retaining polar ones
+        joint_pdb = oemol_to_pdb_string(mol)
+
         html_body = make_core_html(joint_pdb)
         return html_body
 
@@ -146,6 +202,8 @@ class HTMLVisualizer:
         """
 
         colour = HTMLBlockData.get_pocket_color(self.target)
+        method = HTMLBlockData.get_color_method(self.color_method)
+        missing_res = HTMLBlockData.get_missing_residues(self._missed_residues)
         orient_tail = HTMLBlockData.get_orient_tail(self.target)
 
-        return colour + orient_tail
+        return colour + method + missing_res + orient_tail

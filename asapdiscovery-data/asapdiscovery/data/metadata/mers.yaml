@@ -1,0 +1,11 @@
+ligand: resn LIG
+
+P1: resi 143+144+145+146+147+148+166+175 and polymer.protein
+
+P1_prime: resi 25+26+27 and polymer.protein
+
+P2: resi 41+49+54 and polymer.protein
+
+P3_4_5: resi 168+169+170+171+192+193+194+195 and polymer.protein
+
+mers_unique: resi 25+49+145+167+171+172+184+189+191+193+194 and polymer.protein
