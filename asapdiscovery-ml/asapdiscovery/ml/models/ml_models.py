@@ -234,6 +234,8 @@ class MLModelRegistry(BaseModel):
         MLModelSpec
             Model spec
         """
+        if name not in self.models:
+            raise ValueError(f"Model {name} not found in model registry")
         return self.models[name]
 
     @classmethod
