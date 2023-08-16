@@ -4,11 +4,11 @@ from typing import List
 
 import pandas
 from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.schema_base import ContainerAbstractBase
+from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from pydantic import Field, root_validator
 
 
-class FragalysisFactory(ContainerAbstractBase):
+class FragalysisFactory(DataModelAbstractBase):
     """
     Schema for a loading a Fragalysis dump. The directoory given by parent_dir should
     contain (at a minimum):
@@ -26,6 +26,12 @@ class FragalysisFactory(ContainerAbstractBase):
 
     def __len__(self):
         return len(self.complexes)
+
+    # Overload from base class to check each complex
+    def data_equal(self, other: FragalysisFactory):
+        return all(
+            [c1.data_equal(c2) for c1, c2 in zip(self.complexes, other.complexes)]
+        )
 
     @classmethod
     def from_dir(
