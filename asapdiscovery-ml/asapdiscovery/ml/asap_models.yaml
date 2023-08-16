@@ -71,7 +71,7 @@ asapdiscovery-schnet-2023.04.29:
     resource: asapdiscovery-schnet-2023.04.29.th
     sha256hash: be13aeaea6c9d21dad7a82ee4a614999622e901b097a895144ee34a1ff8b5fba
   config:
-    resource: asapdiscovery-schnet-config-2023.04.29.json
+    resource: asapdiscovery-schnet-2023.04.29.json
     sha256hash: 30e80675d60c1d57eacfed7a61363acdc6397a103ea0d86b6a74502ce1f2a5e4
   last_updated: 2023-04-29
   targets:
