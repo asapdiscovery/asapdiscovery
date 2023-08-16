@@ -53,6 +53,13 @@ manifold_outputs:
       units:
       postfix: msk
 
+  - docking-pose-fitness:
+      prefix: in-silico
+      tools:
+        - POSIT
+      units:
+      postfix: msk
+
   - computed: # ML biochemical activity
       prefix: biochemical-activity
       units: pIC50
