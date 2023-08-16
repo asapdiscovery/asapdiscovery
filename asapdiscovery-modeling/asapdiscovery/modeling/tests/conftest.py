@@ -24,7 +24,7 @@ def local_path(request):
 # This needs to have a scope of session so that a new tmp file is not created for each test
 @pytest.fixture(scope="session")
 def output_dir(tmp_path_factory, local_path):
-    if not type(local_path) == str:
+    if not type(local_path) is str:
         return tmp_path_factory.mktemp("test_prep")
     else:
         local_path = Path(local_path)
@@ -90,7 +90,7 @@ def target_dataset(sars_target, mers_target):
 def sars_oe(sars):
     # Load structure
     prot = load_openeye_pdb(str(sars))
-    assert type(prot) == oechem.OEGraphMol
+    assert isinstance(prot, oechem.OEGraphMol)
     return prot
 
 
@@ -98,7 +98,7 @@ def sars_oe(sars):
 def mers_oe(mers):
     # Load structure
     prot = load_openeye_cif1(str(mers))
-    assert type(prot) == oechem.OEGraphMol
+    assert isinstance(prot, oechem.OEGraphMol)
     return prot
 
 

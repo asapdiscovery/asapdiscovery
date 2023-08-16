@@ -298,7 +298,7 @@ def spruce_protein(
         build_loops_success and build_sidechains_success and place_hydrogens_success
     )
     # Re-percieve residues so that atom number and connect records dont get screwed up
-    initial_prot = openeye_perceive_residues(initial_prot)
+    initial_prot = openeye_perceive_residues(initial_prot, preserve_all=True)
     return success, spruce_error_msg, initial_prot
 
 
@@ -464,7 +464,7 @@ def mutate_residues(input_mol, res_list, protein_chains=None, place_h=True):
         oechem.OEPlaceHydrogens(mut_prot)
 
     # Re-percieve residues so that atom number and connect records dont get screwed up
-    openeye_perceive_residues(mut_prot)
+    openeye_perceive_residues(mut_prot, preserve_all=True)
 
     return mut_prot
 
