@@ -89,50 +89,6 @@ class DataModelAbstractBase(BaseModel):
         # kwargs to skip root_validator on some fields
 
 
-class ContainerAbstractBase(BaseModel):
-    """
-    Base class for asapdiscovery pydantic models that simplify dictionary, JSON
-    and other behaviour
-    """
-
-    @classmethod
-    def from_dict(cls, dict):
-        return cls.parse_obj(dict)
-
-    @classmethod
-    def from_json(cls, json_str):
-        return cls.parse_obj(json.loads(json_str))
-
-    @classmethod
-    def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
-
-    def to_json_file(self, file: str | Path):
-        write_file_directly(file, self.json())
-
-    @property
-    def size(self) -> ByteSize:
-        """Size of the resulting JSON object for this class"""
-        return ByteSize(utf8len(self.json())).human_readable()
-
-    def full_equal(self, other: DataModelAbstractBase) -> bool:
-        return self.dict() == other.dict()
-
-    def get_schema_version(self) -> str:
-        return _SCHEMA_VERSION
-
-    def __eq__(self, other: DataModelAbstractBase) -> bool:
-        return self.full_equal(other)
-
-    def __ne__(self, other: DataModelAbstractBase) -> bool:
-        return not self.data_equal(other)
-
-    class Config:
-        validate_assignment = True
-        # can't use extra="forbid" because of the way we use
-        # kwargs to skip root_validator on some fields
-
-
 def schema_dict_get_val_overload(obj: dict | BaseModel):
     """
     Overload for Schema and Dict to get values easily
