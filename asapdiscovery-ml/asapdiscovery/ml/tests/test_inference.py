@@ -140,7 +140,7 @@ def test_schnet_inference_construct():
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     assert inference_cls.model_type == "schnet"
-    assert type(inference_cls.model.readout) == mtenn.model.PIC50Readout
+    assert type(inference_cls.model.readout) is mtenn.model.PIC50Readout
 
 
 def test_schnet_inference_predict_from_structure_file(docked_structure_file):

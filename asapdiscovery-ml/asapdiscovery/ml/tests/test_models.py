@@ -23,15 +23,15 @@ def test_default_registry():
 
 def test_pull_model():
     model = ASAPMLModelRegistry.models["gat_test_v0"]
-    assert type(model) == MLModelSpec
+    assert type(model) is MLModelSpec
     pulled_model = model.pull()
-    assert type(pulled_model) == LocalMLModelSpec
+    assert type(pulled_model) is LocalMLModelSpec
     assert pulled_model.type == "GAT"
 
 
 def test_pull_to_local_dir(tmp_path):
     model = ASAPMLModelRegistry.models["gat_test_v0"]
-    assert type(model) == MLModelSpec
+    assert type(model) is MLModelSpec
     local_model = model.pull(local_dir=tmp_path)
     assert os.path.exists(os.path.join(tmp_path, local_model.weights_file))
     assert os.path.exists(os.path.join(tmp_path, local_model.config_file))
@@ -84,7 +84,7 @@ def test_custom_registry(weights_yaml):
 def test_custom_registry_pull(weights_yaml):
     registry = MLModelRegistry.from_yaml(weights_yaml)
     model = registry.models["gatmodel_test"]
-    assert type(model) == MLModelSpec
+    assert type(model) is MLModelSpec
     pulled_model = model.pull()
-    assert type(pulled_model) == LocalMLModelSpec
+    assert type(pulled_model) is LocalMLModelSpec
     assert pulled_model.type == "GAT"
