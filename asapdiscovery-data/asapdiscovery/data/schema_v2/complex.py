@@ -18,6 +18,12 @@ class Complex(DataModelAbstractBase):
     target: Target = Field(description="Target schema object")
     ligand: Ligand = Field(description="Ligand schema object")
 
+    # Overload from base class to check target and ligand individually
+    def data_equal(self, other: Complex):
+        return self.target.data_equal(other.target) and self.ligand.data_equal(
+            other.ligand
+        )
+
     @classmethod
     def from_pdb(
         cls,
