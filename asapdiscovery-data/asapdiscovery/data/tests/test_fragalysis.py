@@ -91,7 +91,7 @@ def local_fragalysis(tmp_path):
 def test_parse_fragalysis(metadata_csv, local_fragalysis):
     xtals = fragalysis.parse_fragalysis(metadata_csv, local_fragalysis)
     assert len(xtals) == 1
-    assert type(xtals[0]) == CrystalCompoundData
+    assert type(xtals[0]) is CrystalCompoundData
 
 
 def test_parse_fragalysis_script(
