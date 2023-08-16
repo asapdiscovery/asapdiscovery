@@ -44,8 +44,6 @@ def test_ligand_splitting(target, local_path, ligand_chain, oemol_dict):
     molfilter = MoleculeFilter(ligand_chain=ligand_chain)
     split_dict = split_openeye_mol(oemol, molfilter)
 
-    print(type(split_dict["lig"]), flush=True)
-
     # Make sure ligand only has ligand in it and only the right chain
     lig_res = oechem.OEGetResidues(split_dict["lig"])
     lig_chains = {res.GetChainID() for res in lig_res}

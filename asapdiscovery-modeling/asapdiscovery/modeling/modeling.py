@@ -594,9 +594,9 @@ def split_openeye_mol(
 
     if molecule_filter is None:
         molecule_filter = MoleculeFilter()
-    elif type(molecule_filter) == str:
+    elif type(molecule_filter) is str:
         molecule_filter = MoleculeFilter(components_to_keep=[molecule_filter])
-    elif type(molecule_filter) == list:
+    elif type(molecule_filter) is list:
         molecule_filter = MoleculeFilter(components_to_keep=molecule_filter)
     else:
         molecule_filter = molecule_filter
