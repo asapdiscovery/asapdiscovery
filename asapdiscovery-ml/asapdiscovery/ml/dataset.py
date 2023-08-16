@@ -532,12 +532,12 @@ class GraphInferenceDataset(Dataset):
         self.smiles_dict = {}
         self.graphs = []
 
-        if all([type(exp) == str for exp in exp_compounds]):
+        if all([type(exp) is str for exp in exp_compounds]):
             exp_compounds = [
                 ExperimentalCompoundData(compound_id=i, smiles=c)
                 for i, c in enumerate(exp_compounds)
             ]
-        elif all([type(exp) == ExperimentalCompoundData for exp in exp_compounds]):
+        elif all([type(exp) is ExperimentalCompoundData for exp in exp_compounds]):
             pass
         else:
             raise TypeError(
