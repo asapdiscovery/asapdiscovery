@@ -1,8 +1,9 @@
 import abc
 from typing import Literal
 
-from asapdiscovery.simulation.schema.base import _SchemaBase
 from pydantic import Field, PositiveFloat, PositiveInt
+
+from asapdiscovery.simulation.schema.base import _SchemaBase
 
 
 class _BaseAtomMapper(_SchemaBase):
@@ -57,7 +58,10 @@ class LomapAtomMapper(_BaseAtomMapper):
     def _get_mapper(self):
         from openfe import LomapAtomMapper
 
-        return LomapAtomMapper(**self.dict(exclude={"type"}))
+        # TODO use an alias once we can use pydantic-2
+        data = self.dict(exclude={"type", "timeout"})
+        data["time"] = self.timeout
+        return LomapAtomMapper(**data)
 
     def provenance(self) -> dict[str, str]:
         import lomap
@@ -113,7 +117,7 @@ class PersesAtomMapper(_BaseAtomMapper):
 
 class KartografAtomMapper(_BaseAtomMapper):
     """
-    A settings class for the kertograf atom mapping method.
+    A settings class for the kartograf atom mapping method.
     """
 
     type: Literal["KartografAtomMapper"] = "KartografAtomMapper"

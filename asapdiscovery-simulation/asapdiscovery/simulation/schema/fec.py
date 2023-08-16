@@ -3,8 +3,6 @@ from typing import Literal, Optional
 import gufe
 import openfe
 from alchemiscale import ScopedKey
-from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
@@ -18,6 +16,9 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
+
+from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 
 
 class AlchemiscaleSettings(BaseSettings):
@@ -51,7 +52,7 @@ class SolventSettings(_SchemaBase):
     )
     neutralize: bool = Field(
         True,
-        description="If the net charge of the chemical system should be neutralized by the ions defined by `positive_ion` abd `negative_ion`.",
+        description="If the net charge of the chemical system should be neutralized by the ions defined by `positive_ion` and `negative_ion`.",
     )
     ion_concentration: FloatQuantity["molar"] = Field(  # noqa: F821
         0.15 * OFFUnit.molar,
@@ -125,6 +126,11 @@ class _BaseResults(_SchemaBaseFrozen):
                 raise RuntimeError(
                     f"The transformation {name} is missing simulated legs in the following phases {missing_phase}"
                 )
+            if len(transforms) != 2:
+                # We have too many simulations for this transform
+                raise RuntimeError(
+                    f"The transformation {name} has too many simulated legs, found the following phases {[t.phase for t in transforms]} expected complex and solvent."
+                )
 
         # make the cinnabar data
         all_results = []
@@ -139,6 +145,7 @@ class _BaseResults(_SchemaBaseFrozen):
                 labelA=leg1.ligand_a,
                 labelB=leg1.ligand_b,
                 DDG=(complex_leg.estimate - solvent_leg.estimate),
+                # propagate errors
                 uncertainty=np.sqrt(
                     complex_leg.uncertainty**2 + solvent_leg.uncertainty**2
                 ),

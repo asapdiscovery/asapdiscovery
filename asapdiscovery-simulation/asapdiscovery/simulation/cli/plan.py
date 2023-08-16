@@ -32,7 +32,7 @@ import click
     "-c",
     "--center-ligand",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-    help="The file which contains the center ligand if required by the network.",
+    help="The file which contains the center ligand, only required by radial type networks.",
 )
 def plan(
     name: str,
@@ -45,11 +45,12 @@ def plan(
     Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
     in a folder named after the dataset.
     """
-    import os
+    import pathlib
 
     import openfe
-    from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationFactory
     from rdkit import Chem
+
+    from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationFactory
 
     click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
@@ -67,7 +68,13 @@ def plan(
         supplier = Chem.SDMolSupplier(center_ligand, removeHs=False)
         center_ligand = [
             openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier
-        ][0]
+        ]
+        if len(center_ligand) > 1:
+            raise RuntimeError(
+                f"Only a single center ligand can be used for radial networks, found {len(center_ligand)} ligands in {center_ligand}."
+            )
+
+        center_ligand = center_ligand[0]
 
     click.echo(f"Loading protein from {receptor}")
     receptor = openfe.ProteinComponent.from_pdb_file(receptor)
@@ -81,7 +88,12 @@ def plan(
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
-    os.makedirs(name, exist_ok=True)
-    planned_network.to_file(os.path.join(name, "planned_network.json"))
-    with open(os.path.join(name, "ligand_network.graphml"), "w") as output:
+    output_folder = pathlib.Path(name)
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    network_file = output_folder.joinpath("planned_network.json")
+    planned_network.to_file(network_file)
+
+    graph_file = output_folder.joinpath("ligand_network.graphml")
+    with graph_file.open("w") as output:
         output.write(planned_network.network.graphml)

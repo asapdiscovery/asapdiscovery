@@ -44,6 +44,7 @@ def submit(network: str, organization: str, campaign: str, project: str):
         project: The name of the project this network should be submitted under.
     """
     from alchemiscale import Scope
+
     from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.simulation.utils import AlchemiscaleHelper
 
@@ -67,7 +68,7 @@ def submit(network: str, organization: str, campaign: str, project: str):
     # now action the tasks
     click.echo("Creating and actioning FEC tasks on Alchemiscale...")
     task_ids = client.action_network(planned_network=submitted_network)
-    # check that all tasks where created
+    # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
     click.echo(

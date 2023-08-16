@@ -1,6 +1,8 @@
 from typing import Optional
 
 from alchemiscale import Scope, ScopedKey
+from openmm.app import ForceField, Modeller, PDBFile
+
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     AlchemiscaleSettings,
@@ -8,7 +10,6 @@ from asapdiscovery.simulation.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.simulation.schema.schema import ForceFieldParams
-from openmm.app import ForceField, Modeller, PDBFile
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -33,7 +34,7 @@ def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams)
 
 class AlchemiscaleHelper:
     """
-    A convince class to handle alchemiscale submissions restarts and results gathering.
+    A convenience class to handle alchemiscale submissions restarts and results gathering.
     """
 
     def __init__(self, api_url: str = "https://api.alchemiscale.org"):
@@ -96,7 +97,7 @@ class AlchemiscaleHelper:
 
         tasks = []
         for tf_sk in self._client.get_network_transformations(network_key):
-            # for each task create x repeats which are configured by the factory
+            # the factory defines how many times the task should be repeated, so total runs is 1 + no of repeats
             tasks.extend(
                 self._client.create_tasks(tf_sk, count=planned_network.n_repeats + 1)
             )
@@ -145,13 +146,13 @@ class AlchemiscaleHelper:
             uncertainty = raw_result.get_uncertainty()
             # work out the name of the molecules and the phase of the calculation
             individual_runs = list(raw_result.data.values())
-
+            # track the phase to correctly work out the total relative energy as complex - solvent
             if "protein" in individual_runs[0][0].inputs["stateA"].components:
                 phase = "complex"
             else:
                 phase = "solvent"
 
-            # extract the names of the end state ligands
+            # extract the names of the end state ligands to build the affinity estimate graph
             name_a = individual_runs[0][0].inputs["stateA"].components["ligand"].name
             name_b = individual_runs[0][0].inputs["stateB"].components["ligand"].name
 

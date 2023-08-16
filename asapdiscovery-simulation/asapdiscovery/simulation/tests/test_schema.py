@@ -1,22 +1,26 @@
 import openfe
 import pytest
+from alchemiscale import Scope, ScopedKey
+from openff.units import unit as OFFUnit
+
 from asapdiscovery.simulation.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
     PersesAtomMapper,
 )
 from asapdiscovery.simulation.schema.fec import (
+    AlchemiscaleResults,
     FreeEnergyCalculationFactory,
     SolventSettings,
+    TransformationResult,
 )
 from asapdiscovery.simulation.schema.network import NetworkPlanner
-from openff.units import unit as OFFUnit
 
 
 @pytest.mark.parametrize(
     "mapper, argument, value",
     [
-        pytest.param(LomapAtomMapper, "time", 30, id="Lomap"),
+        pytest.param(LomapAtomMapper, "max3d", 30, id="Lomap"),
         pytest.param(PersesAtomMapper, "coordinate_tolerance", 0.15, id="Perses"),
         pytest.param(
             KartografAtomMapper, "atom_ring_matches_ring", True, id="Kartograph"
@@ -30,6 +34,14 @@ def test_atom_mapper_settings(mapper, argument, value):
 
     mapper_class = mapping_settings.get_mapper()
     assert getattr(mapper_class, argument) == getattr(mapping_settings, argument)
+
+
+def test_lomap_atom_mapper_timeout():
+    """Make sure the timeout setting is correctly passed to lomap as we have changed the naming."""
+
+    mapper = LomapAtomMapper(timeout=50)
+    engine = mapper.get_mapper()
+    assert engine.time == mapper.timeout
 
 
 @pytest.mark.parametrize(
@@ -197,3 +209,72 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
             edge.protocol.settings.simulation_settings.equilibration_length
             == 0.5 * OFFUnit.nanoseconds
         )
+
+
+def test_results_to_cinnabar_missing_phase(tyk2_fec_network):
+    """Make sure an error is raised if we try and convert to a cinnabar results with missing simulated phases."""
+
+    alchem_network = tyk2_fec_network.to_alchemical_network()
+    results = []
+    # mock some results for only the complex phase
+    for edge in alchem_network.edges:
+        if "complex" in edge.name:
+            results.append(
+                TransformationResult(
+                    ligand_a=edge.stateA.components["ligand"].name,
+                    ligand_b=edge.stateB.components["ligand"].name,
+                    phase="complex",
+                    estimate=1 * OFFUnit.kilocalorie / OFFUnit.mole,
+                    uncertainty=0 * OFFUnit.kilocalorie / OFFUnit.mole,
+                )
+            )
+    # mock a full result object
+    scope = Scope(org="asap", campaign="testing", project="tyk2")
+    result_network = AlchemiscaleResults(
+        network_key=ScopedKey(gufe_key=alchem_network.key, **scope.dict()),
+        results=results,
+    )
+    # make sure a specific error related to a missing solvent phase is raised.
+    with pytest.raises(
+        RuntimeError,
+        match="is missing simulated legs in the following phases {'solvent'}",
+    ):
+        result_network.to_fe_map()
+
+
+def test_results_to_cinnabar_too_many_legs(tyk2_fec_network):
+    """Make sure an error is raised if we have too many results for a transformation when trying to convet to cinnabar."""
+
+    alchem_network = tyk2_fec_network.to_alchemical_network()
+    results = []
+    # mock some results for only the complex phase
+    for edge in alchem_network.edges:
+        if "complex" in edge.name:
+            phase = "complex"
+        else:
+            phase = "solvent"
+
+        transform_result = TransformationResult(
+            ligand_a=edge.stateA.components["ligand"].name,
+            ligand_b=edge.stateB.components["ligand"].name,
+            phase=phase,
+            estimate=1 * OFFUnit.kilocalorie / OFFUnit.mole,
+            uncertainty=0 * OFFUnit.kilocalorie / OFFUnit.mole,
+        )
+        # if solvent phase add twice
+        if phase == "complex":
+            results.append(transform_result)
+        else:
+            results.extend([transform_result, transform_result])
+
+    # mock a full result object
+    scope = Scope(org="asap", campaign="testing", project="tyk2")
+    result_network = AlchemiscaleResults(
+        network_key=ScopedKey(gufe_key=alchem_network.key, **scope.dict()),
+        results=results,
+    )
+    # make sure a specific error related to a missing solvent phase is raised.
+    with pytest.raises(
+        RuntimeError, match="has too many simulated legs, found the following phases"
+    ):
+        result_network.to_fe_map()
