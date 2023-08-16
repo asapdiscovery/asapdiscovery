@@ -198,6 +198,7 @@ def build_model(
     comb=None,
     pred_r=None,
     comb_r=None,
+    cp_vals=None,
     config=None,
 ):
     """
@@ -225,6 +226,11 @@ def build_model(
     comb_r : str, optional
         Which readout method to use for the combined pose prediction. Current
         options are ["pic50"]
+    cp_vals : List[float], optional
+        Substrate concentration and Km values for calculating Ki using the
+        Cheng-Prusoff equation. These values are assumed to be in the same
+        concentration units. If no values are passed for this, IC50 values
+        will be used as an approximation of the Ki
     config : dict, optional
         Override wandb config
 
@@ -274,13 +280,21 @@ def build_model(
             raise ValueError("A value must be provided for -comb if --grouped is set.")
         combination = None
 
+    # Check and parse Cheng-Prusoff values
+    try:
+        cp_vals = config["cp_vals"] if "cp_vals" in config else cp_vals
+        if cp_vals == [0, 0]:
+            cp_vals = None
+    except AttributeError:
+        cp_vals = None
+
     # Check and parse pred readout
     try:
         pred_readout = (
             config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
         )
         if pred_readout == "pic50":
-            pred_readout = mtenn.model.PIC50Readout()
+            pred_readout = mtenn.model.PIC50Readout(cp_vals)
         elif pred_readout == "none":
             pred_readout = None
         else:
@@ -297,7 +311,7 @@ def build_model(
             config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
         )
         if comb_readout == "pic50":
-            comb_readout = mtenn.model.PIC50Readout()
+            comb_readout = mtenn.model.PIC50Readout(cp_vals)
         elif comb_readout == "none":
             comb_readout = None
         else:

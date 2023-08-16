@@ -116,15 +116,15 @@ def make_wandb_table(ds_split):
             compound_id = compound
             tmp_d = d[0]
         try:
-            pic50 = tmp_d["pIC50"].item()
+            pic50 = tmp_d["pIC50"]
         except KeyError:
             pic50 = np.nan
         try:
-            pic50_range = tmp_d["pIC50_range"].item()
+            pic50_range = tmp_d["pIC50_range"]
         except KeyError:
             pic50_range = np.nan
         try:
-            pic50_stderr = tmp_d["pIC50_stderr"].item()
+            pic50_stderr = tmp_d["pIC50_stderr"]
         except KeyError:
             pic50_stderr = np.nan
         except AttributeError:
@@ -437,6 +437,19 @@ def get_args():
             "--grouped is set."
         ),
     )
+    parser.add_argument(
+        "-cp",
+        "--cheng_prusoff",
+        nargs=2,
+        type=float,
+        default=[0.375, 9.5],
+        help=(
+            "[S] and Km values to use in the Cheng-Prusoff equation (assumed to be in "
+            "the same units). Default values are those used in the SARS-CoV-2 "
+            "fluorescence experiments from the COVID Moonshot project (in uM here). "
+            "Pass 0 for both values to disable and use the pIC50 approximation."
+        ),
+    )
 
     return parser.parse_args()
 
@@ -491,6 +504,8 @@ def init(args, rank=False):
         args.pred_r = model_config["pred_r"]
     if "comb_r" in model_config:
         args.comb_r = model_config["comb_r"]
+    if "cp_vals" in model_config:
+        args.cheng_prusoff = model_config["cp_vals"]
     if "lr" in model_config:
         args.lr = model_config["lr"]
     if "cutoff" in model_config:
@@ -608,6 +623,7 @@ def init(args, rank=False):
         comb=args.comb,
         pred_r=args.pred_r,
         comb_r=args.comb_r,
+        cp_vals=args.cheng_prusoff,
         config=model_config,
     )
     print("Model", model, flush=True)
