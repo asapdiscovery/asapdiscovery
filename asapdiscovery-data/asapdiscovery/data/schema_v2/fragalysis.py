@@ -39,6 +39,7 @@ class FragalysisFactory(DataModelAbstractBase):
         parent_dir: str | Path,
         xtal_col="crystal_name",
         compound_col="alternate_name",
+        fail_missing=False,
     ) -> "FragalysisFactory":
         """
         Build a FragalysisFactory from a Fragalysis directory.
@@ -54,6 +55,9 @@ class FragalysisFactory(DataModelAbstractBase):
         compound_col : str, default="alternate_name"
             Name of the column in metadata.csv giving the compound names. Defaults to
             the Fragalysis value
+        fail_missing : bool, default=False
+            If True, raises an error if a PDB file isn't found where expected, or a
+            found PDB file can't be parsed
 
         Returns
         -------
@@ -94,8 +98,11 @@ class FragalysisFactory(DataModelAbstractBase):
             compound_name = xtal_compound_dict[d]
             pdb_fn = parent_dir / "aligned" / d / f"{d}_bound.pdb"
             if not pdb_fn.exists():
-                print(f"No PDB file found for {d}.", flush=True)
-                continue
+                if fail_missing:
+                    raise FileNotFoundError(f"No PDB file found for {d}.")
+                else:
+                    print(f"No PDB file found for {d}.", flush=True)
+                    continue
 
             try:
                 c = Complex.from_pdb(
@@ -103,9 +110,12 @@ class FragalysisFactory(DataModelAbstractBase):
                     target_kwargs={"target_name": d},
                     ligand_kwargs={"compound_name": compound_name},
                 )
-            except Exception:
-                print(f"Unable to parse PDB file for {d}.", flush=True)
-                continue
+            except Exception as e:
+                if fail_missing:
+                    raise ValueError(f"Unable to parse PDB file for {d}.") from e
+                else:
+                    print(f"Unable to parse PDB file for {d}.", flush=True)
+                    continue
 
             complexes.append(c)
 
