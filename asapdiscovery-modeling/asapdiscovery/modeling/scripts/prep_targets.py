@@ -116,5 +116,5 @@ def main():
     output = args.output_dir / "prepped_targets.json"
     logger.info(f"Writing prepped targets to {output}")
     prepped_targets = PreppedTargets.from_list(targets_list)
-    assert type(prepped_targets) == PreppedTargets
+    assert type(prepped_targets) is PreppedTargets
     prepped_targets.to_json(fn=output)
