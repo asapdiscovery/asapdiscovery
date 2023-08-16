@@ -85,7 +85,7 @@ class InferenceBase(BaseModel):
         model_spec: MLModelSpec,
         device: str = "cpu",
         local_dir: Optional[Union[str, Path]] = None,
-        build_model_kwargs: Optional[Dict] = None,
+        build_model_kwargs: Optional[dict] = None,
     ) -> "InferenceBase":
         """
         Create an InferenceBase object from an MLModelSpec.
@@ -114,7 +114,7 @@ class InferenceBase(BaseModel):
         local_model_spec: LocalMLModelSpec,
         device: str = "cpu",
         model_spec: Optional[MLModelSpec] = None,
-        build_model_kwargs: Optional[Dict] = None,
+        build_model_kwargs: Optional[dict] = None,
     ) -> "InferenceBase":
         """
         Create an InferenceBase object from a LocalMLModelSpec.
