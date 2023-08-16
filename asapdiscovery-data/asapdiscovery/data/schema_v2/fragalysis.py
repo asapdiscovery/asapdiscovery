@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List # noqa: F401
+from typing import List  # noqa: F401
 
 import pandas
 from asapdiscovery.data.schema_v2.complex import Complex
