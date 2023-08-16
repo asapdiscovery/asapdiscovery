@@ -5,7 +5,7 @@ from typing import List
 import pandas
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from pydantic import Field, root_validator
+from pydantic import Field, validator
 
 
 class FragalysisFactory(DataModelAbstractBase):
@@ -121,13 +121,13 @@ class FragalysisFactory(DataModelAbstractBase):
 
         return cls(parent_dir=parent_dir, complexes=complexes)
 
-    @root_validator(pre=True)
+    @validator("parent_dir")
     @classmethod
     def _validate_parent_dir(cls, v):
-        if not v["parent_dir"].exists():
+        if not v.exists():
             raise ValueError("Given parent_dir does not exist.")
 
-        if not v["parent_dir"].is_dir():
+        if not v.is_dir():
             raise ValueError("Given parent_dir is not a directory.")
 
         return v
