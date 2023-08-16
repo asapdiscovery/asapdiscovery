@@ -42,7 +42,7 @@ class FragalysisFactory(DataModelAbstractBase):
         xtal_col="crystal_name",
         compound_col="alternate_name",
         fail_missing=False,
-    ) -> "FragalysisFactory":
+    ) -> FragalysisFactory:
         """
         Build a FragalysisFactory from a Fragalysis directory.
 

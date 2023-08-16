@@ -29,7 +29,7 @@ class Complex(DataModelAbstractBase):
     @classmethod
     def from_pdb(
         cls,
-        pdb_file: Union[str, Path],
+        pdb_file: str | Path,
         target_chains=[],
         ligand_chain="",
         target_kwargs={},
