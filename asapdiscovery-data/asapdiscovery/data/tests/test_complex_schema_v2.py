@@ -23,7 +23,7 @@ def test_complex_from_pdb(complex_pdb):
     assert c.ligand.to_oemol().NumAtoms() == 33
 
 
-def test_equals(complex_pdb):
+def test_equal(complex_pdb):
     c1 = Complex.from_pdb(
         complex_pdb,
         target_kwargs={"target_name": "test"},
@@ -36,6 +36,22 @@ def test_equals(complex_pdb):
     )
 
     assert c1 == c2
+
+
+def test_data_equal(complex_pdb):
+    c1 = Complex.from_pdb(
+        complex_pdb,
+        target_kwargs={"target_name": "test"},
+        ligand_kwargs={"compound_name": "test"},
+    )
+    c2 = Complex.from_pdb(
+        complex_pdb,
+        target_kwargs={"target_name": "test"},
+        ligand_kwargs={"compound_name": "test"},
+    )
+
+    assert c1.data_equal(c2)
+    assert c2.data_equal(c1)
 
 
 def test_complex_from_pdb_needs_ids(complex_pdb):
