@@ -38,9 +38,6 @@ class InferenceBase(BaseModel):
     local_model_spec: LocalMLModelSpec = Field(
         ..., description="Local model spec used to create Model to use"
     )
-    build_model_kwargs: Optional[dict] = Field(
-        ..., description="Keyword arguments to pass to build_model function"
-    )
     device: str = Field("cpu", description="Device to use for inference")
     model: Optional[torch.nn.Module] = Field(..., description="PyTorch model")
 
@@ -132,7 +129,6 @@ class InferenceBase(BaseModel):
         model = build_model(
             local_model_spec.type,
             config=local_model_spec.config_file,
-            **local_model_spec.build_model_kwargs,
         )
         model = load_weights(
             model, local_model_spec.weights_file, check_compatibility=True
@@ -145,7 +141,7 @@ class InferenceBase(BaseModel):
             model_name=local_model_spec.name,
             model_spec=model_spec,
             local_model_spec=local_model_spec,
-            build_model_kwargs=local_model_spec.build_model_kwargs,
+            build_model_kwargs=kwargs,
             device=device,
             model=model,
         )
