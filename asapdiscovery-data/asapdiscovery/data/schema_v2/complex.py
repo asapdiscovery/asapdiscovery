@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from asapdiscovery.data.openeye import load_openeye_pdb
 from asapdiscovery.data.schema_v2.ligand import Ligand
