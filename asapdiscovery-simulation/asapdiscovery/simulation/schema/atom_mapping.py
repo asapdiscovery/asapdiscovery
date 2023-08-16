@@ -33,7 +33,7 @@ class LomapAtomMapper(_BaseAtomMapper):
 
     type: Literal["LomapAtomMapper"] = "LomapAtomMapper"
 
-    time: PositiveInt = Field(
+    timeout: PositiveInt = Field(
         20, description="The timeout in seconds of the MCS algorithm pass to RDKit"
     )
     threed: bool = Field(
