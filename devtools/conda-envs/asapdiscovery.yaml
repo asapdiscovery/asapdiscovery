@@ -72,7 +72,7 @@ dependencies:
   - openfe >=0.11.0
   - gufe >=0.9.1
   - httpx
-
+  - cinnabar
 
   # Pip-only installs
   - pip:
