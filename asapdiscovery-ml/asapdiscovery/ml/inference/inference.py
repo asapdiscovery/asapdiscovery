@@ -85,7 +85,7 @@ class InferenceBase(BaseModel):
         model_spec: MLModelSpec,
         device: str = "cpu",
         local_dir: Optional[Union[str, Path]] = None,
-        **kwargs,
+        build_model_kwargs: Optional[Dict] = None,
     ) -> "InferenceBase":
         """
         Create an InferenceBase object from an MLModelSpec.
@@ -102,7 +102,10 @@ class InferenceBase(BaseModel):
         """
         model_components = model_spec.pull(local_dir=local_dir)
         return cls.from_local_model_spec(
-            model_components, device=device, model_spec=model_spec, **kwargs
+            model_components,
+            device=device,
+            model_spec=model_spec,
+            build_model_kwargs=build_model_kwargs,
         )
 
     @classmethod
@@ -111,7 +114,7 @@ class InferenceBase(BaseModel):
         local_model_spec: LocalMLModelSpec,
         device: str = "cpu",
         model_spec: Optional[MLModelSpec] = None,
-        **kwargs,
+        build_model_kwargs: Optional[Dict] = None,
     ) -> "InferenceBase":
         """
         Create an InferenceBase object from a LocalMLModelSpec.
@@ -129,6 +132,7 @@ class InferenceBase(BaseModel):
         model = build_model(
             local_model_spec.type,
             config=local_model_spec.config_file,
+            **build_model_kwargs,
         )
         model = load_weights(
             model, local_model_spec.weights_file, check_compatibility=True
@@ -141,7 +145,6 @@ class InferenceBase(BaseModel):
             model_name=local_model_spec.name,
             model_spec=model_spec,
             local_model_spec=local_model_spec,
-            build_model_kwargs=kwargs,
             device=device,
             model=model,
         )
