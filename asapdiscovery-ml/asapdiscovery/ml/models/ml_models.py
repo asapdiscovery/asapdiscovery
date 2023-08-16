@@ -46,6 +46,8 @@ class MLModelBase(BaseModel):
     """
     Base model class for ML models
     """
+    class Config:
+        validate_assignment = True
 
     name: str = Field(..., description="Model name")
     type: MLModelType = Field(..., description="Model type")
