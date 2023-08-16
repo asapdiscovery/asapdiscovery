@@ -72,7 +72,6 @@ dependencies:
   - openfe >=0.11.0
   - gufe >=0.9.1
   - httpx
-  - cinnabar
 
   # Pip-only installs
   - pip:
@@ -89,3 +88,4 @@ dependencies:
     - pygifsicle
     - sigfig
     - git+https://github.com/openforcefield/alchemiscale.git@main
+    - git+https://github.com/OpenFreeEnergy/cinnabar.git@main
