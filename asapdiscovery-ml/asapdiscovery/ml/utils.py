@@ -258,6 +258,8 @@ def build_model(
             config = {}
     elif (type(config) is str) or isinstance(config, Path):
         config = parse_config(config)
+    elif type(config) is not dict:
+        config = {}
 
     # Take MTENN args from config if present, else from args
     strategy = config["strat"].lower() if "strat" in config else strat.lower()
@@ -283,11 +285,8 @@ def build_model(
         combination = None
 
     # Check and parse Cheng-Prusoff values
-    try:
-        substrate = config["substrate"] if "substrate" in config else substrate
-        km = config["km"] if "km" in config else km
-    except AttributeError:
-        substrate = None
+    substrate = config["substrate"] if "substrate" in config else substrate
+    km = config["km"] if "km" in config else km
 
     # Check and parse pred readout
     try:
@@ -304,6 +303,8 @@ def build_model(
                 "must be one of [pic50, none]."
             )
     except AttributeError:
+        # This will be triggered if pred_r is left blank
+        #  (None.lower() => AttributeError)
         pred_readout = None
 
     # Check and parse comb readout
@@ -321,6 +322,8 @@ def build_model(
                 "must be one of [pic50, none]."
             )
     except AttributeError:
+        # This will be triggered if comb_r is left blank
+        #  (None.lower() => AttributeError)
         comb_readout = None
 
     # Build initial model object, which will be used later in the get_model call
