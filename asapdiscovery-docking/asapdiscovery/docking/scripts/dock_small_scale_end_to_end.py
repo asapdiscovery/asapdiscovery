@@ -842,7 +842,7 @@ def main():
                 html_visualiser = HTMLVisualizer(
                     [pose],
                     [outpath],
-                    args.viz_target,
+                    args.target,
                     protein_path,
                     logger=logger,
                     color_method="fitness",
@@ -869,7 +869,7 @@ def main():
             html_visualiser = HTMLVisualizer(
                 top_posit["_docked_file"],
                 top_posit["_outpath_pose_fitness"],
-                args.viz_target,
+                args.target,
                 protein_path,
                 logger=logger,
                 color_method="fitness",
