@@ -6,6 +6,7 @@ from typing import Optional, Union
 import yaml
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
+    combine_protein_ligand,
     load_openeye_cif1,
     load_openeye_pdb,
     oechem,
@@ -92,7 +93,11 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
 
     # Get desired components
     logger.info(f"Splitting molecule using {target.molecule_filter}")
-    prot = split_openeye_mol(prot, target.molecule_filter)["prot"]
+    split_dict = split_openeye_mol(prot, target.molecule_filter)
+    prot = split_dict["prot"]
+    if "ligand" in target.molecule_filter.components_to_keep:
+        lig_mol = split_dict["lig"]
+        prot = combine_protein_ligand(prot, lig_mol)
 
     # Align
     if prep_opts.ref_fn:
