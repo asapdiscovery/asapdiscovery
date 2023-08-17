@@ -1,6 +1,8 @@
 import openfe
 import pytest
 from alchemiscale import Scope, ScopedKey
+from openff.units import unit as OFFUnit
+
 from asapdiscovery.simulation.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
@@ -13,7 +15,6 @@ from asapdiscovery.simulation.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.simulation.schema.network import NetworkPlanner
-from openff.units import unit as OFFUnit
 
 
 @pytest.mark.parametrize(
@@ -189,7 +190,7 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
     factory = FreeEnergyCalculationFactory()
     # change the default settings to make sure they propagated
     # change the lomap timeout
-    factory.network_planner.atom_mapping_engine.time = 30
+    factory.network_planner.atom_mapping_engine.timeout = 30
     factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
     # plan a network
     planned_network = factory.create_fec_dataset(
