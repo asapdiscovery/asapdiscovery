@@ -3,8 +3,6 @@ from typing import Literal, Optional
 import gufe
 import openfe
 from alchemiscale import ScopedKey
-from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
@@ -18,6 +16,9 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
+
+from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 
 
 class AlchemiscaleSettings(BaseSettings):
@@ -192,7 +193,9 @@ class _FreeEnergyBase(_SchemaBase):
         description="The solvent settings which should be used during the free energy calculations.",
     )
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
-        settings.OpenMMSystemGeneratorFFSettings(),
+        settings.OpenMMSystemGeneratorFFSettings(
+            small_molecule_forcefield="openff-2.1.0"
+        ),
         description="The force field settings used to parameterize the systems.",
     )
     thermo_settings: settings.ThermoSettings = Field(
