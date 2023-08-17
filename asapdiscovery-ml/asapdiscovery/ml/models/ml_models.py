@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 import pooch
 import yaml
+import warnings
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from pydantic import BaseModel, Field, HttpUrl
@@ -214,8 +215,10 @@ class MLModelRegistry(BaseModel):
         """
         models = self.get_models_for_target_and_type(target, type)
         if len(models) == 0:
-            raise ValueError(f"No models available for target {target} and type {type}")
-        return max(models, key=lambda model: model.last_updated)
+            warnings.warn(f"No models available for target {target} and type {type}")
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
 
     def get_model(self, name: str) -> MLModelSpec:
         """
