@@ -19,7 +19,7 @@ def load_yaml(yaml_path: Union[str, Path]) -> dict:
 # we define a new Enum class with some handy methods
 
 
-class TagEnumBase(Enum):
+class TagEnumBase(str, Enum):
     @classmethod
     def get_values(cls):
         return [e.value for e in cls]
