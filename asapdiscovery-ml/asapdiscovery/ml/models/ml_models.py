@@ -1,3 +1,4 @@
+import warnings
 from datetime import date
 from enum import Enum
 from pathlib import Path
@@ -6,7 +7,6 @@ from urllib.parse import urljoin
 
 import pooch
 import yaml
-import warnings
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from pydantic import BaseModel, Field, HttpUrl
