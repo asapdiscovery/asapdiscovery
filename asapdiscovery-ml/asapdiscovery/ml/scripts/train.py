@@ -437,7 +437,7 @@ def get_args():
             "--grouped is set."
         ),
     )
-    parsaer.add_argument(
+    parser.add_argument(
         "-sub",
         "--substrate_conc",
         type=float,
@@ -632,7 +632,8 @@ def init(args, rank=False):
         comb=args.comb,
         pred_r=args.pred_r,
         comb_r=args.comb_r,
-        cp_vals=args.cheng_prusoff,
+        substrate=args.substrate_conc,
+        km=args.michaelis_const,
         config=model_config,
     )
     print("Model", model, flush=True)

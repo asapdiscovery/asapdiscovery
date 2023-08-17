@@ -199,7 +199,7 @@ def build_model(
     pred_r=None,
     comb_r=None,
     substrate=None,
-    Km=None,
+    km=None,
     config=None,
 ):
     """
@@ -229,8 +229,8 @@ def build_model(
         options are ["pic50"]
     substrate : float, optional
         Substrate concentration for use in the Cheng-Prusoff equation. Assumed to be
-        in the same units as Km
-    Km : float, optional
+        in the same units as km
+    km : float, optional
         Km value for use in the Cheng-Prusoff equation. Assumed to be in the same
         units as substrate
     config : dict, optional
@@ -294,7 +294,7 @@ def build_model(
             config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
         )
         if pred_readout == "pic50":
-            pred_readout = mtenn.model.PIC50Readout(cp_vals)
+            pred_readout = mtenn.model.PIC50Readout(substrate=substrate, Km=km)
         elif pred_readout == "none":
             pred_readout = None
         else:
@@ -313,7 +313,7 @@ def build_model(
             config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
         )
         if comb_readout == "pic50":
-            comb_readout = mtenn.model.PIC50Readout(cp_vals)
+            comb_readout = mtenn.model.PIC50Readout(substrate=substrate, Km=km)
         elif comb_readout == "none":
             comb_readout = None
         else:
