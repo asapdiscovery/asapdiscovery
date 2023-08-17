@@ -437,17 +437,24 @@ def get_args():
             "--grouped is set."
         ),
     )
-    parser.add_argument(
-        "-cp",
-        "--cheng_prusoff",
-        nargs=2,
+    parsaer.add_argument(
+        "-sub",
+        "--substrate_conc",
         type=float,
-        default=[0.375, 9.5],
         help=(
-            "[S] and Km values to use in the Cheng-Prusoff equation (assumed to be in "
-            "the same units). Default values are those used in the SARS-CoV-2 "
-            "fluorescence experiments from the COVID Moonshot project (in uM here). "
-            "Pass 0 for both values to disable and use the pIC50 approximation."
+            "Substrate concentration for use in the Cheng-Prusoff equation. "
+            "Assumed to be in the same units as Km."
+        ),
+    )
+    parser.add_argument(
+        "-km",
+        "--michaelis_const",
+        type=float,
+        help=(
+            (
+                "Km value for use in the Cheng-Prusoff equation. "
+                "Assumed to be in the same units as substrate concentration."
+            )
         ),
     )
 
@@ -504,8 +511,10 @@ def init(args, rank=False):
         args.pred_r = model_config["pred_r"]
     if "comb_r" in model_config:
         args.comb_r = model_config["comb_r"]
-    if "cp_vals" in model_config:
-        args.cheng_prusoff = model_config["cp_vals"]
+    if "substrate" in model_config:
+        args.substrate_conc = model_config["substrate"]
+    if "km" in model_config:
+        args.michaelis_const = model_config["km"]
     if "lr" in model_config:
         args.lr = model_config["lr"]
     if "cutoff" in model_config:

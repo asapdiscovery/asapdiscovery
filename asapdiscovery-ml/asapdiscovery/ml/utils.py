@@ -198,7 +198,8 @@ def build_model(
     comb=None,
     pred_r=None,
     comb_r=None,
-    cp_vals=None,
+    substrate=None,
+    Km=None,
     config=None,
 ):
     """
@@ -226,11 +227,12 @@ def build_model(
     comb_r : str, optional
         Which readout method to use for the combined pose prediction. Current
         options are ["pic50"]
-    cp_vals : List[float], optional
-        Substrate concentration and Km values for calculating Ki using the
-        Cheng-Prusoff equation. These values are assumed to be in the same
-        concentration units. If no values are passed for this, IC50 values
-        will be used as an approximation of the Ki
+    substrate : float, optional
+        Substrate concentration for use in the Cheng-Prusoff equation. Assumed to be
+        in the same units as Km
+    Km : float, optional
+        Km value for use in the Cheng-Prusoff equation. Assumed to be in the same
+        units as substrate
     config : dict, optional
         Override wandb config
 
@@ -282,11 +284,10 @@ def build_model(
 
     # Check and parse Cheng-Prusoff values
     try:
-        cp_vals = config["cp_vals"] if "cp_vals" in config else cp_vals
-        if cp_vals == [0, 0]:
-            cp_vals = None
+        substrate = config["substrate"] if "substrate" in config else substrate
+        km = config["km"] if "km" in config else km
     except AttributeError:
-        cp_vals = None
+        substrate = None
 
     # Check and parse pred readout
     try:
