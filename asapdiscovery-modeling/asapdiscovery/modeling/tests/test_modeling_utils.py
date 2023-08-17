@@ -16,7 +16,7 @@ from asapdiscovery.modeling.schema import MoleculeFilter
 @pytest.mark.parametrize("target", ["sars"])
 def test_simple_splitting(target, oemol_dict):
     oemol = oemol_dict[target]
-    split_mol = split_openeye_mol(oemol)
+    split_mol = split_openeye_mol(oemol, keep_one_lig=False)
     comp_dict = {
         "prot": (None, {"A", "B"}),
         "lig": (None, {"A", "B"}),
@@ -29,6 +29,13 @@ def test_simple_splitting(target, oemol_dict):
         if res_name:
             assert {res.GetName() for res in oechem.OEGetResidues(comp_mol)} == res_name
         assert {res.GetChainID() for res in oechem.OEGetResidues(comp_mol)} == chains
+
+
+@pytest.mark.parametrize("target", ["sars"])
+def test_simple_splitting_keep_one_lig(target, oemol_dict):
+    oemol = oemol_dict[target]
+    lig_mol = split_openeye_mol(oemol)["lig"]
+    assert {res.GetChainID() for res in oechem.OEGetResidues(lig_mol)} == {"A"}
 
 
 @pytest.mark.parametrize(
