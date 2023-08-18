@@ -83,21 +83,21 @@ def test_creation_from_dir(mpro_frag_dir):
 
 def test_validation_fails_nonexistent(tmp_path):
     with pytest.raises(ValidationError, match="Given parent_dir does not exist."):
-        ff = FragalysisFactory(parent_dir=(tmp_path / "nonexistent"))
+        _ = FragalysisFactory(parent_dir=(tmp_path / "nonexistent"))
 
 
 def test_validation_fails_not_dir(tmp_path):
     p = tmp_path / "not_a_directory"
     p.touch()
     with pytest.raises(ValidationError, match="Given parent_dir is not a directory."):
-        ff = FragalysisFactory(parent_dir=p)
+        _ = FragalysisFactory(parent_dir=p)
 
 
 def test_creation_fails_without_metadata(tmp_path):
     with pytest.raises(
         FileNotFoundError, match="No metadata.csv file found in parent_dir."
     ):
-        ff = FragalysisFactory.from_dir(tmp_path)
+        _ = FragalysisFactory.from_dir(tmp_path)
 
 
 def test_creation_fails_with_empty_metadata(tmp_path):
@@ -106,7 +106,7 @@ def test_creation_fails_with_empty_metadata(tmp_path):
     with p.open("w") as fp:
         fp.write("a,b,c")
     with pytest.raises(ValueError, match="metadata.csv file is empty."):
-        ff = FragalysisFactory.from_dir(tmp_path)
+        _ = FragalysisFactory.from_dir(tmp_path)
 
 
 def test_creation_fails_without_proper_cols(tmp_path):
@@ -122,7 +122,7 @@ def test_creation_fails_without_proper_cols(tmp_path):
             "compound name column."
         ),
     ):
-        ff = FragalysisFactory.from_dir(tmp_path)
+        _ = FragalysisFactory.from_dir(tmp_path)
 
     with pytest.raises(
         ValueError,
@@ -131,7 +131,7 @@ def test_creation_fails_without_proper_cols(tmp_path):
             "compound name column."
         ),
     ):
-        ff = FragalysisFactory.from_dir(tmp_path, xtal_col="a")
+        _ = FragalysisFactory.from_dir(tmp_path, xtal_col="a")
 
     with pytest.raises(
         ValueError,
@@ -140,14 +140,14 @@ def test_creation_fails_without_proper_cols(tmp_path):
             "compound name column."
         ),
     ):
-        ff = FragalysisFactory.from_dir(tmp_path, compound_col="a")
+        _ = FragalysisFactory.from_dir(tmp_path, compound_col="a")
 
 
 def test_creation_fails_without_aligned(mpro_frag_dir_only_metadata):
     with pytest.raises(
         FileNotFoundError, match="No aligned/ directory found in parent_dir."
     ):
-        ff = FragalysisFactory.from_dir(mpro_frag_dir_only_metadata)
+        _ = FragalysisFactory.from_dir(mpro_frag_dir_only_metadata)
 
 
 def test_creation_fails_with_empty_aligned(mpro_frag_dir_only_metadata):
@@ -156,7 +156,7 @@ def test_creation_fails_with_empty_aligned(mpro_frag_dir_only_metadata):
         ValueError,
         match="No aligned directories found with entries in metadata.csv.",
     ):
-        ff = FragalysisFactory.from_dir(mpro_frag_dir_only_metadata)
+        _ = FragalysisFactory.from_dir(mpro_frag_dir_only_metadata)
 
 
 def test_creation_fails_with_missing_file_fail_missing_true(
@@ -166,15 +166,13 @@ def test_creation_fails_with_missing_file_fail_missing_true(
         FileNotFoundError,
         match=f"No PDB file found for {Path(all_mpro_fns[-1]).parts[-2]}.",
     ):
-        ff = FragalysisFactory.from_dir(
-            mpro_frag_dir_missing_one_pdb, fail_missing=True
-        )
+        _ = FragalysisFactory.from_dir(mpro_frag_dir_missing_one_pdb, fail_missing=True)
 
 
 def test_creation_succeeds_with_missing_file_fail_missing_false(
     mpro_frag_dir_missing_one_pdb,
 ):
-    ff = FragalysisFactory.from_dir(mpro_frag_dir_missing_one_pdb)
+    _ = FragalysisFactory.from_dir(mpro_frag_dir_missing_one_pdb)
 
 
 def test_ff_equal(mpro_frag_dir):
