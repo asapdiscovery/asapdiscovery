@@ -59,7 +59,11 @@ class InferenceBase(BaseModel):
         model_spec = model_registry.get_latest_model_for_target_and_type(
             target, cls.model_type
         )
-        return cls.from_ml_model_spec(model_spec, **kwargs)
+
+        if model_spec is None:  # No model found, return None
+            return None
+        else:
+            return cls.from_ml_model_spec(model_spec, **kwargs)
 
     @classmethod
     def from_model_name(
