@@ -1,28 +1,10 @@
-import os
-import shutil
-
 import asapdiscovery.ml
+import mtenn
 import numpy as np
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.ml.inference import GATInference, SchnetInference
 from numpy.testing import assert_allclose
-
-
-@pytest.fixture()
-def weights_yaml():
-    # ugly hack to make the directory relative
-    # use to clean up in weights in
-    weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
-    return weights
-
-
-@pytest.fixture()
-def outputs(tmp_path):
-    """Creates outputs directory in temp location and returns path"""
-    outputs = tmp_path / "outputs"
-    outputs.mkdir()
-    yield outputs
-    shutil.rmtree(outputs)
 
 
 @pytest.fixture()
@@ -30,35 +12,37 @@ def docked_structure_file(scope="session"):
     return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
 
 
-def test_gatinference_construct(weights_yaml, outputs):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml, weights_local_dir=outputs
-    )
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
+def test_gatinference_construct_by_latest(target):
+    inference_cls = GATInference.from_latest_by_target(target)
     assert inference_cls is not None
     assert inference_cls.model_type == "GAT"
+    assert target in inference_cls.targets
 
 
-def test_inference_construct_no_spec(weights_yaml, outputs):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gat_test_v0", weights_local_dir=outputs
-    )
+def test_gatinference_construct_from_name(
+    tmp_path,
+):
+    inference_cls = GATInference.from_model_name("gat_test_v0", local_dir=tmp_path)
     assert inference_cls is not None
+    assert inference_cls.local_model_spec.local_dir == tmp_path
 
 
-def test_gatinference_predict(weights_yaml, test_data, outputs):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml, weights_local_dir=outputs
-    )
+def test_gatinference_predict(test_data):
+    inference_cls = GATInference.from_model_name("gat_test_v0")
     g1, _, _, _ = test_data
     assert inference_cls is not None
     output = inference_cls.predict(g1)
     assert output is not None
 
 
-def test_gatinference_predict_smiles_equivariant(weights_yaml, test_data, outputs):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml, weights_local_dir=outputs
-    )
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
+def test_gatinference_predict_smiles_equivariant(test_data, target):
+    inference_cls = GATInference.from_latest_by_target(target)
     g1, g2, _, _ = test_data
     # same data different smiles order
     assert inference_cls is not None
@@ -68,10 +52,11 @@ def test_gatinference_predict_smiles_equivariant(weights_yaml, test_data, output
 
 
 # test inference dataset cls against training dataset cls
-def test_gatinference_predict_dataset(weights_yaml, test_data, test_inference_data):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml
-    )
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
+def test_gatinference_predict_dataset(test_data, test_inference_data, target):
+    inference_cls = GATInference.from_latest_by_target(target)
     g1, g2, g3, _ = test_data
     g1_infds, g2_infds, g3_infds, _ = test_inference_data
     # same data different smiles order
@@ -97,12 +82,13 @@ def test_gatinference_predict_dataset(weights_yaml, test_data, test_inference_da
     assert not np.allclose(output3, output2, rtol=1e-5)
 
 
+@pytest.mark.parametrize(
+    "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
+)
 def test_gatinference_predict_from_smiles_dataset(
-    weights_yaml, test_data, test_inference_data
+    test_data, test_inference_data, target
 ):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml
-    )
+    inference_cls = GATInference.from_latest_by_target(target)
     g1, g2, _, _ = test_data
     g1_infds, g2_infds, _, gids = test_inference_data
     # same data different smiles order
@@ -140,10 +126,8 @@ def test_gatinference_predict_from_smiles_dataset(
     )
 
 
-def test_gatinference_predict_from_subset(weights_yaml, test_data, test_inference_data):
-    inference_cls = asapdiscovery.ml.inference.GATInference(
-        "gatmodel_test", weights_yaml
-    )
+def test_gatinference_predict_from_subset(test_inference_data):
+    inference_cls = GATInference.from_latest_by_target("SARS-CoV-2-Mpro")
 
     _, _, _, gids = test_inference_data
     gids_subset = gids[0:2:1]
@@ -153,26 +137,21 @@ def test_gatinference_predict_from_subset(weights_yaml, test_data, test_inferenc
 
 
 def test_schnet_inference_construct():
-    inference_cls = asapdiscovery.ml.inference.SchnetInference(
-        "asapdiscovery-schnet-2023.04.29"
-    )
+    inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     assert inference_cls.model_type == "schnet"
+    assert type(inference_cls.model.readout) is mtenn.model.PIC50Readout
 
 
 def test_schnet_inference_predict_from_structure_file(docked_structure_file):
-    inference_cls = asapdiscovery.ml.inference.SchnetInference(
-        "asapdiscovery-schnet-2023.04.29"
-    )
+    inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     output = inference_cls.predict_from_structure_file(docked_structure_file)
     assert output is not None
 
 
 def test_schnet_inference_predict_from_pose(docked_structure_file):
-    inference_cls = asapdiscovery.ml.inference.SchnetInference(
-        "asapdiscovery-schnet-2023.04.29"
-    )
+    inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
 
     dataset = asapdiscovery.ml.dataset.DockedDataset(
         [docked_structure_file], [("Mpro-P0008_0A", "ERI-UCB-ce40166b-17")]

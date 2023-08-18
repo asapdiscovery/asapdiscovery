@@ -1,138 +1,153 @@
-import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
 import dgl
 import numpy as np
 import torch
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
+from asapdiscovery.ml.models.ml_models import (
+    ASAPMLModelRegistry,
+    LocalMLModelSpec,
+    MLModelRegistry,
+    MLModelSpec,
+    MLModelType,
+)
 
 # static import of models from base yaml here
-from asapdiscovery.ml.pretrained_models import all_models
 from asapdiscovery.ml.utils import build_model, load_weights
-from asapdiscovery.ml.weights import fetch_model_from_spec
 from dgllife.utils import CanonicalAtomFeaturizer
+from pydantic import BaseModel, Field
 
 
-class InferenceBase:
-    """
-    Inference base class for PyTorch models in asapdiscovery.
+class InferenceBase(BaseModel):
+    class Config:
+        validate_assignment = True
+        allow_mutation = False
+        arbitrary_types_allowed = True
+        allow_extra = False
 
-    Parameters
-    ----------
-    model_name : str
-        Name of model to use.
-    model_type : str
-        Type of model to use.
-    model_spec : Path, default=None
-        The path to the model spec yaml file. If not specified, the default
-        asapdiscovery.ml models.yaml file will be used.
-    weights_local_dir: Path, default="./_weights/"
-        The path to the local directory to store the weights. If not specified,
-        will use the default `_weights` directory in the current working
-        directory.
-    build_model_kwargs : Optional[Dict], default=None
-        Keyword arguments to pass to build_model function.
-    device : str, default='cpu'
-        Device to use for inference.
+    targets: set[TargetTags] = Field(
+        ..., description="Targets that them model can predict for"
+    )
+    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
+    model_name: str = Field(..., description="Name of model to use")
+    model_spec: Optional[MLModelSpec] = Field(
+        ..., description="Model spec used to create Model to use"
+    )
+    local_model_spec: LocalMLModelSpec = Field(
+        ..., description="Local model spec used to create Model to use"
+    )
+    device: str = Field("cpu", description="Device to use for inference")
+    model: Optional[torch.nn.Module] = Field(..., description="PyTorch model")
 
-
-    Methods
-    -------
-    predict
-        Predict on a batch of data.
-    build_model
-        Build model from arguments
-
-    """
-
-    def __init__(
-        self,
-        model_name: str,
-        model_type: str,
-        model_spec: Path = None,
-        weights_local_dir: Union[Path, str] = Path("./_weights/"),
-        build_model_kwargs: Optional[dict] = None,
-        device: str = "cpu",
+    @classmethod
+    def from_latest_by_target(
+        cls,
+        target: TargetTags,
+        model_registry: MLModelRegistry = ASAPMLModelRegistry,
+        **kwargs,
     ):
-        logging.info(f"initializing {self.__class__.__name__} class")
-
-        self.device = device
-        logging.info(f"using device {self.device}")
-
-        self.model_name = model_name
-        self.model_type = model_type
-        self.model_spec = model_spec
-        self.weights_local_dir = str(weights_local_dir)
-
-        self.model_components = None
-
-        logging.info(
-            f"using model {self.model_name} of type {self.model_type} from spec {self.model_spec}"
-        )
-
-        # load model weights or fetch them
-        if not self.model_spec:
-            logging.info(
-                " no model spec specified, using spec from asapdiscovery.ml models.yaml spec file"
-            )
-            self.model_spec = all_models
-        else:
-            logging.info("local yaml file specified, fetching weights from spec")
-            if not self.model_spec.split(".")[-1] in ["yaml", "yml"]:
-                raise ValueError(
-                    f"Model spec file {self.model_spec} is not a yaml file"
-                )
-
-        self.model_components = fetch_model_from_spec(
-            self.model_spec, model_name, local_dir=self.weights_local_dir
-        )[model_name]
-        if self.model_components.type != self.model_type:
-            raise ValueError(
-                f"Model type {self.model_components.type} does not match {self.model_type}"
-            )
-
-        logging.info(f"found weights {self.model_components.weights}")
-
-        # build model kwargs
-        if not build_model_kwargs:
-            build_model_kwargs = {}
-            build_model_kwargs["config"] = self.model_components.config
-
-        # otherwise just roll with what we have
-
-        # build model, this needs a bit of cleaning up in the function itself.
-        self.model = self.build_model(self.model_components.type, **build_model_kwargs)
-        logging.info(f"built model {self.model}")
-
-        # load weights
-        self.model = load_weights(
-            self.model, self.model_components.weights, check_compatibility=True
-        )
-        logging.info(f"loaded weights {self.model_components.weights}")
-
-        self.model.eval()
-        logging.info("set model to eval mode")
-
-    def build_model(self, model_type: str, **kwargs):
-        """can be overloaded in child classes for more complex setups,
-        but most uses should be fine with this, needs to return a
-        torch.nn.Module is only real requirement.
-
-        Parameters
-        ----------
-        model_type : str
-            Type of model to use.
-        **kwargs
-            Keyword arguments to pass to build_model function.
+        """
+        Create an InferenceBase object from the latest model for the latest target.
 
         Returns
         -------
-        model: torch.nn.Module
-            PyTorch model.
+        InferenceBase
+            InferenceBase object created from latest model for latest target.
         """
-        model = build_model(model_type, **kwargs)
-        return model
+        model_spec = model_registry.get_latest_model_for_target_and_type(
+            target, cls.model_type
+        )
+        return cls.from_ml_model_spec(model_spec, **kwargs)
+
+    @classmethod
+    def from_model_name(
+        cls,
+        model_name: str,
+        model_registry: MLModelRegistry = ASAPMLModelRegistry,
+        **kwargs,
+    ):
+        """
+        Create an InferenceBase object from a model name.
+
+        Returns
+        -------
+        InferenceBase
+            InferenceBase object created from model name.
+        """
+        model_spec = model_registry.get_model(model_name)
+        return cls.from_ml_model_spec(model_spec, **kwargs)
+
+    @classmethod
+    def from_ml_model_spec(
+        cls,
+        model_spec: MLModelSpec,
+        device: str = "cpu",
+        local_dir: Optional[Union[str, Path]] = None,
+        build_model_kwargs: Optional[dict] = {},
+    ) -> "InferenceBase":
+        """
+        Create an InferenceBase object from an MLModelSpec.
+
+        Parameters
+        ----------
+        model_spec : MLModelSpec
+            MLModelSpec to use to create InferenceBase object.
+
+        Returns
+        -------
+        InferenceBase
+            InferenceBase object created from MLModelSpec.
+        """
+        model_components = model_spec.pull(local_dir=local_dir)
+        return cls.from_local_model_spec(
+            model_components,
+            device=device,
+            model_spec=model_spec,
+            build_model_kwargs=build_model_kwargs,
+        )
+
+    @classmethod
+    def from_local_model_spec(
+        cls,
+        local_model_spec: LocalMLModelSpec,
+        device: str = "cpu",
+        model_spec: Optional[MLModelSpec] = None,
+        build_model_kwargs: Optional[dict] = {},
+    ) -> "InferenceBase":
+        """
+        Create an InferenceBase object from a LocalMLModelSpec.
+
+        Parameters
+        ----------
+        local_model_spec : LocalMLModelSpec
+            LocalMLModelSpec to use to create InferenceBase object.
+
+        Returns
+        -------
+        InferenceBase
+            InferenceBase object created from LocalMLModelSpec.
+        """
+        model = build_model(
+            local_model_spec.type,
+            config=local_model_spec.config_file,
+            **build_model_kwargs,
+        )
+        model = load_weights(
+            model, local_model_spec.weights_file, check_compatibility=True
+        )
+        model.eval()
+
+        return cls(
+            targets=local_model_spec.targets,
+            model_type=local_model_spec.type,
+            model_name=local_model_spec.name,
+            model_spec=model_spec,
+            local_model_spec=local_model_spec,
+            device=device,
+            model=model,
+        )
 
     def predict(self, input_data):
         """Predict on data, needs to be overloaded in child classes most of
@@ -155,34 +170,8 @@ class InferenceBase:
             return output_tensor.cpu().numpy().ravel()
 
 
-# this is just an example of how to use the base class, we may want to specialise this for each model type
-# eg have GAT2DInference, GAT3DInference, etc.
-
-
 class GATInference(InferenceBase):
-    """
-    Inference class for GAT model.
-
-    """
-
-    model_type = "GAT"
-
-    def __init__(
-        self,
-        model_name: str,
-        model_spec: Optional[Path] = None,
-        weights_local_dir: Union[Path, str] = Path("./_weights/"),
-        build_model_kwargs: Optional[dict] = None,
-        device: str = "cpu",
-    ):
-        super().__init__(
-            model_name,
-            self.model_type,
-            model_spec,
-            weights_local_dir=weights_local_dir,
-            build_model_kwargs=build_model_kwargs,
-            device=device,
-        )
+    model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
 
     def predict(self, g: dgl.DGLGraph):
         """Predict on a graph, requires a DGLGraph object with the `ndata`
@@ -241,22 +230,7 @@ class StructuralInference(InferenceBase):
     Inference class for models that take a structure as input.
     """
 
-    def __init__(
-        self,
-        model_name: str,
-        model_spec: Optional[Path] = None,
-        weights_local_dir: Union[Path, str] = Path("./_weights/"),
-        build_model_kwargs: Optional[dict] = None,
-        device: str = "cpu",
-    ):
-        super().__init__(
-            model_name,
-            self.model_type,
-            model_spec,
-            weights_local_dir=weights_local_dir,
-            build_model_kwargs=build_model_kwargs,
-            device=device,
-        )
+    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
 
     def predict(self, pose_dict: dict):
         """Predict on a pose, requires a dictionary with the pose data with
@@ -311,30 +285,7 @@ class SchnetInference(StructuralInference):
     Inference class for SchNet model.
     """
 
-    model_type = "schnet"
-
-    def __init__(
-        self,
-        model_name: str,
-        model_spec: Optional[Path] = None,
-        weights_local_dir: Union[Path, str] = Path("./_weights/"),
-        build_model_kwargs: Optional[dict] = None,
-        pIC50_units=True,
-        device: str = "cpu",
-    ):
-        if pIC50_units:
-            if build_model_kwargs:
-                build_model_kwargs = {"pred_r": "pIC50"} | build_model_kwargs
-            else:
-                build_model_kwargs = {"pred_r": "pIC50"}
-
-        super().__init__(
-            model_name,
-            model_spec,
-            weights_local_dir=weights_local_dir,
-            build_model_kwargs=build_model_kwargs,
-            device=device,
-        )
+    model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
 
 
 class E3nnInference(StructuralInference):
@@ -342,4 +293,4 @@ class E3nnInference(StructuralInference):
     Inference class for E3NN model.
     """
 
-    model_type = "e3nn"
+    model_type: ClassVar[MLModelType.e3nn] = MLModelType.e3nn
