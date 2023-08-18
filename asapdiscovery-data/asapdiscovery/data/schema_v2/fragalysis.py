@@ -92,43 +92,42 @@ class FragalysisFactory(DataModelAbstractBase):
                 "compound name column."
             )
 
-        # Dict mapping crystal name to compound name
-        xtal_compound_dict = dict(zip(df[xtal_col], df[compound_col]))
-
         try:
             all_xtal_dirs = os.listdir(parent_dir / "aligned")
         except FileNotFoundError as e:
             raise FileNotFoundError("No aligned/ directory found in parent_dir.") from e
 
-        all_xtal_dirs = [d for d in all_xtal_dirs if d in xtal_compound_dict]
-        if len(all_xtal_dirs) == 0:
+        # Subset metadata to only contain rows with directories in aligned/
+        df = df.loc[df[xtal_col].isin(all_xtal_dirs), :]
+        if df.shape[0] == 0:
             raise ValueError(
                 "No aligned directories found with entries in metadata.csv."
             )
 
         # Loop through directories and load each bound file
         complexes = []
-        for d in all_xtal_dirs:
-            compound_name = xtal_compound_dict[d]
-            pdb_fn = parent_dir / "aligned" / d / f"{d}_bound.pdb"
+        for _, (xtal_name, compound_name) in df[[xtal_col, compound_col]].iterrows():
+            pdb_fn = parent_dir / "aligned" / xtal_name / f"{xtal_name}_bound.pdb"
             if not pdb_fn.exists():
                 if fail_missing:
-                    raise FileNotFoundError(f"No PDB file found for {d}.")
+                    raise FileNotFoundError(f"No PDB file found for {xtal_name}.")
                 else:
-                    print(f"No PDB file found for {d}.", flush=True)
+                    print(f"No PDB file found for {xtal_name}.", flush=True)
                     continue
 
             try:
                 c = Complex.from_pdb(
                     pdb_fn,
-                    target_kwargs={"target_name": d},
+                    target_kwargs={"target_name": xtal_name},
                     ligand_kwargs={"compound_name": compound_name},
                 )
             except Exception as e:
                 if fail_missing:
-                    raise ValueError(f"Unable to parse PDB file for {d}.") from e
+                    raise ValueError(
+                        f"Unable to parse PDB file for {xtal_name}."
+                    ) from e
                 else:
-                    print(f"Unable to parse PDB file for {d}.", flush=True)
+                    print(f"Unable to parse PDB file for {xtal_name}.", flush=True)
                     continue
 
             complexes.append(c)
