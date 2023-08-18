@@ -29,8 +29,20 @@ class FragalysisFactory(DataModelAbstractBase):
     def __len__(self):
         return len(self.complexes)
 
+    def __eq__(self, other: FragalysisFactory):
+        if self.parent_dir != other.parent_dir:
+            return False
+
+        if len(self) != len(other):
+            return False
+
+        return all([c1 == c2 for c1, c2 in zip(self.complexes, other.complexes)])
+
     # Overload from base class to check each complex
     def data_equal(self, other: FragalysisFactory):
+        if len(self) != len(other):
+            return False
+
         return all(
             [c1.data_equal(c2) for c1, c2 in zip(self.complexes, other.complexes)]
         )
@@ -91,7 +103,7 @@ class FragalysisFactory(DataModelAbstractBase):
         all_xtal_dirs = [d for d in all_xtal_dirs if d in xtal_compound_dict]
         if len(all_xtal_dirs) == 0:
             raise ValueError(
-                "No aligned directories found with entries in metadata.csv"
+                "No aligned directories found with entries in metadata.csv."
             )
 
         # Loop through directories and load each bound file
