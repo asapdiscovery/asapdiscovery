@@ -1,5 +1,6 @@
-import pandas
 from pathlib import Path
+
+import pandas
 import pytest
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
