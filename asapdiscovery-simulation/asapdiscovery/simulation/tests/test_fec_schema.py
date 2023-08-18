@@ -1,6 +1,8 @@
 import openfe
 import pytest
 from alchemiscale import Scope, ScopedKey
+from openff.units import unit as OFFUnit
+
 from asapdiscovery.simulation.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
@@ -13,7 +15,6 @@ from asapdiscovery.simulation.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.simulation.schema.network import NetworkPlanner
-from openff.units import unit as OFFUnit
 
 
 @pytest.mark.parametrize(
@@ -196,7 +197,7 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
         dataset_name="TYK2-test-dataset", receptor=tyk2_protein, ligands=tyk2_ligands
     )
     # make sure the settings were used correctly
-    assert planned_network.network.atom_mapping_engine.time == 30
+    assert planned_network.network.atom_mapping_engine.timeout == 30
     assert "openfe" in planned_network.network.provenance
     # make sure we can rebuild the receptor
     _ = planned_network.to_openfe_receptor()

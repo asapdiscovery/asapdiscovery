@@ -3,8 +3,6 @@ from typing import Literal, Optional
 import gufe
 import openfe
 from alchemiscale import ScopedKey
-from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
@@ -18,6 +16,9 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
+
+from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 
 
 class AlchemiscaleSettings(BaseSettings):
@@ -213,6 +214,7 @@ class _FreeEnergyBase(_SchemaBase):
     alchemical_settings: AlchemicalSettings = Field(
         AlchemicalSettings(), description="The alchemical protocol settings."
     )
+    # note alchemical_sampler_settings.n_repeats specifies the number of times each transformation will be run
     alchemical_sampler_settings: AlchemicalSamplerSettings = Field(
         AlchemicalSamplerSettings(),
         description="Settings for the Equilibrium Alchemical sampler, currently supporting either MultistateSampler, SAMSSampler or ReplicaExchangeSampler.",

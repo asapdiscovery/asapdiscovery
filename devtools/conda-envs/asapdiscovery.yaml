@@ -74,6 +74,7 @@ dependencies:
   - httpx
   - perses >=0.10.2
   - kartograf
+  - rich
 
   # Pip-only installs
   - pip:
