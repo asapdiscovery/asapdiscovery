@@ -659,12 +659,14 @@ def main():
     logger.info("Setup ML for docking")
 
     gat_model = None if args.no_gat else GATInference.from_latest_by_target(args.target)
-    logger.info(f"Using GAT model: {gat_model.model_name}")
+    logger.info(f"Using GAT model: {gat_model.model_name if gat_model else None}")
 
     schnet_model = (
         None if args.no_schnet else SchnetInference.from_latest_by_target(args.target)
     )
-    logger.info(f"Using SchNet model: {schnet_model.model_name}")
+    logger.info(
+        f"Using SchNet model: {schnet_model.model_name if schnet_model else None}"
+    )
 
     # use partial to bind the ML models to the docking function
     dock_and_score_pose_oe_ml = partial(
