@@ -45,6 +45,7 @@ from asapdiscovery.docking import (
     make_docking_result_dataframe,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.ml.inference import GATInference, SchnetInference
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
@@ -656,26 +657,16 @@ def main():
 
     # ML stuff for docking, fill out others as we make them
     logger.info("Setup ML for docking")
-    gat_model_string = "asapdiscovery-GAT-2023.05.09"
-    schnet_model_string = "asapdiscovery-schnet-2023.04.29"
 
-    if args.no_gat:
-        gat_model = None
-        logger.info("Not using GAT model")
-    else:
-        from asapdiscovery.ml.inference import GATInference  # noqa: E402
+    gat_model = None if args.no_gat else GATInference.from_latest_by_target(args.target)
+    logger.info(f"Using GAT model: {gat_model.model_name if gat_model else None}")
 
-        gat_model = GATInference(gat_model_string)
-        logger.info(f"Using GAT model: {gat_model_string}")
-
-    if args.no_schnet:
-        schnet_model = None
-        logger.info("Not using Schnet model")
-    else:
-        from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
-
-        schnet_model = SchnetInference(schnet_model_string)
-        logger.info(f"Using Schnet model: {schnet_model_string}")
+    schnet_model = (
+        None if args.no_schnet else SchnetInference.from_latest_by_target(args.target)
+    )
+    logger.info(
+        f"Using SchNet model: {schnet_model.model_name if schnet_model else None}"
+    )
 
     # use partial to bind the ML models to the docking function
     dock_and_score_pose_oe_ml = partial(
@@ -853,7 +844,7 @@ def main():
                 html_visualiser = HTMLVisualizer(
                     [pose],
                     [outpath],
-                    args.viz_target,
+                    args.target,
                     protein_path,
                     logger=logger,
                     color_method="fitness",
@@ -880,7 +871,7 @@ def main():
             html_visualiser = HTMLVisualizer(
                 top_posit["_docked_file"],
                 top_posit["_outpath_pose_fitness"],
-                args.viz_target,
+                args.target,
                 protein_path,
                 logger=logger,
                 color_method="fitness",

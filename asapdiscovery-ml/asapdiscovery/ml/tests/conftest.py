@@ -7,6 +7,14 @@ from dgllife.utils import CanonicalAtomFeaturizer
 from rdkit import Chem
 
 
+@pytest.fixture()
+def weights_yaml():
+    # ugly hack to make the directory relative
+    # use to clean up in weights in
+    weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
+    return weights
+
+
 # lets make a synthetic dataset using a smiles from Fragalysis
 @pytest.fixture()
 def fragalysis_smiles_1():

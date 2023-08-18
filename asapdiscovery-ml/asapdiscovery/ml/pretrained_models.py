@@ -1,3 +1,3 @@
 import pkg_resources
 
-all_models = pkg_resources.resource_filename(__name__, "models.yaml")
+asap_models_yaml = pkg_resources.resource_filename(__name__, "asap_models.yaml")
