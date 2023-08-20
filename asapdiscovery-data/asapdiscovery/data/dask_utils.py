@@ -4,7 +4,7 @@ from typing import Optional
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
 
