@@ -3,8 +3,6 @@ from typing import Optional
 
 from dask import config as cfg
 from dask_jobqueue import LSFCluster
-
-
 from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
