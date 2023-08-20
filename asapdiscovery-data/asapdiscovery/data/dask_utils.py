@@ -78,13 +78,9 @@ class LilacDaskCluster(DaskCluster):
         None, description="Extra directives to pass to LSF"
     )
 
-    @validator("walltime")
-    @classmethod
-    def _convert_dask_time(cls, v):
-        return dask_timedelta_to_hh_mm(v)
-
     def to_cluster(self, exclude_interface: Optional[str] = "lo") -> LSFCluster:
         interface = guess_network_interface(exclude=[exclude_interface])
+        _walltime = dask_timedelta_to_hh_mm(self.walltime)
         return LSFCluster(
             interface=interface,
             scheduler_options={"interface": interface},
@@ -94,7 +90,8 @@ class LilacDaskCluster(DaskCluster):
                 "--lifetime-stagger",
                 "2m",
             ],  # leave a slight buffer
-            **self.dict(),
+            walltime=_walltime,  # convert to LSF units manually
+            **self.dict(exclude={"walltime"}),
         )
 
 
