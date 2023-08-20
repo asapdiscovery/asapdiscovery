@@ -4,10 +4,8 @@ from typing import Optional
 from dask import config as cfg
 from dask_jobqueue import LSFCluster
 
-try:
-    from pydantic.v1 import BaseModel, Field
-except ImportError:
-    from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
 
