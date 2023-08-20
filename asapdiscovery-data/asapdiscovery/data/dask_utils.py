@@ -2,8 +2,9 @@ from enum import Enum
 from typing import Optional
 
 from dask import config as cfg
+from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from .execution_utils import guess_network_interface
 
@@ -12,6 +13,10 @@ cfg.set({"distributed.admin.tick.limit": "2h"})
 
 
 class GPU(str, Enum):
+    """
+    Enum for GPU types
+    """
+
     GTX1080TI = "GTX1080TI"
 
     @classmethod
@@ -26,8 +31,28 @@ _LILAC_GPU_GROUPS = {
 _LILAC_GPU_EXTRAS = {
     GPU.GTX1080TI: [
         '-R "select[hname!=lt16]"'
-    ],  # random node that has something wrong with its GPU
+    ],  # random node that has something wrong with its GPU driver versioning
 }
+
+
+def dask_timedelta_to_hh_mm(time_str: str) -> str:
+    """
+    Convert a dask timedelta string to a hh:mm string
+
+    Parameters
+    ----------
+    time_str : str
+        A dask timedelta string, e.g. "1h30m"
+
+    Returns
+    -------
+    str
+        A string in the format hh:mm, e.g. "01:30"
+    """
+    seconds = parse_timedelta(time_str)
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    return f"{hours:02d}:{minutes:02d}"
 
 
 class DaskCluster(BaseModel):
@@ -52,6 +77,11 @@ class LilacDaskCluster(DaskCluster):
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
     )
+
+    @validator("walltime")
+    @classmethod
+    def _convert_dask_time(cls, v):
+        return dask_timedelta_to_hh_mm(v)
 
     def to_cluster(self, exclude_interface: Optional[str] = "lo") -> LSFCluster:
         interface = guess_network_interface(exclude=[exclude_interface])
