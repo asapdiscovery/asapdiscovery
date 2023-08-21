@@ -358,7 +358,7 @@ class Ligand(DataModelAbstractBase):
         # reinitialise object
         self.__init__(**data)
 
-    def make_parent_tag(self) -> StateExpansionTag:
+    def make_parent_tag(self, provenance: Dict[str, str]) -> StateExpansionTag:
         """
         Create a new expansion tag for the ligand, set it and return it
 
@@ -367,11 +367,11 @@ class Ligand(DataModelAbstractBase):
         StateExpansionTag
             The new expansion tag
         """
-        tag = StateExpansionTag.parent(self.inchikey)
+        tag = StateExpansionTag.parent(self.inchikey, provenance=provenance)
         self.expansion_tag = tag
         return tag
 
-    def set_parent(self, parent: "Ligand") -> None:
+    def set_parent(self, parent: "Ligand", provenance: Dict[str, str]) -> None:
         """
         Set the parent of the ligand
 
@@ -381,7 +381,7 @@ class Ligand(DataModelAbstractBase):
             The parent ligand
         """
         self.expansion_tag = StateExpansionTag.from_parent(
-            parent.expansion_tag, self.inchikey
+            parent.expansion_tag, self.inchikey, provenance=provenance
         )
 
 

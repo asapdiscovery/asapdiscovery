@@ -12,11 +12,15 @@ class StateExpanderBase(abc.ABC, BaseModel):
     )
 
     @abc.abstractmethod
-    def _expand(self, ligands: list[Ligand]) -> list[Ligand]:
+    def _expand(self, ligands: list[Ligand], unique: bool = False) -> list[Ligand]:
         ...
 
-    def expand(self, ligands: list[Ligand]) -> list[Ligand]:
-        return self._expand(ligands=ligands)
+    def expand(self, ligands: list[Ligand], unique: bool = True) -> list[Ligand]:
+        expanded_ligands = self._expand(ligands=ligands)
+        if unique:
+            return list(set(expanded_ligands))
+        else:
+            return expanded_ligands
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
@@ -38,11 +42,10 @@ class StateExpansion(BaseModel):
 
     def to_networkx(self) -> nx.DiGraph:
         graph = nx.DiGraph()
-        for expansion in expansions:
-            graph.add_node(expansion.parent)
-            for child in expansion.children:
-                graph.add_node(child)
-                graph.add_edge(expansion.parent, child)
+        graph.add_node(self.parent)
+        for child in self.children:
+            graph.add_node(child)
+            graph.add_edge(self.parent, child)
         return graph
 
 
@@ -54,9 +57,9 @@ class StateExpansionSet(BaseModel):
 
     @classmethod
     def from_ligands(
-        ligands: List[Ligand], no_tag: str = "ignore"
+        cls, ligands: List[Ligand], no_tag: str = "ignore"
     ) -> "StateExpansionSet":
-        has_tag = [ligand.expansion_tag is not None for ligand in ligands]
+        has_tag = [ligand for ligand in ligands if ligand.expansion_tag is not None]
         if not all(has_tag):
             if no_tag == "ignore":
                 pass
@@ -70,11 +73,12 @@ class StateExpansionSet(BaseModel):
         parents = [ligand for ligand in has_tag if ligand.expansion_tag.is_parent]
         expansions = []
         for parent in parents:
-            children = [
+            children = {
                 ligand
                 for ligand in has_tag
                 if ligand.expansion_tag.is_child_of(parent.expansion_tag)
-            ]
+            }
+
             expansion = StateExpansion(
                 parent=parent, children=children, expander={}, provenance={}
             )

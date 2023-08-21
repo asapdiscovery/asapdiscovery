@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 class StateExpansionTag(BaseModel):
     inchikey: str = Field(None, description="UUID for this molecule")
     parent_inchikey: str = Field(None, description="UUID for parent molecule")
+    provenance: dict[str, str] = Field(..., description="Provenance of the expansion")
 
     def __hash__(self) -> int:
         return hash(self.json())
@@ -23,9 +24,15 @@ class StateExpansionTag(BaseModel):
         return self.parent_inchikey == other.inchikey
 
     @classmethod
-    def parent(cls, inchikey: str):
-        return cls(inchikey=inchikey, parent_inchikey=inchikey)
+    def parent(cls, inchikey: str, provenance: dict[str, str]):
+        return cls(inchikey=inchikey, parent_inchikey=inchikey, provenance=provenance)
 
     @classmethod
-    def from_parent(cls, parent_tag: "StateExpansionTag", inchikey: str):
-        return cls(parent_inchikey=parent_tag.inchikey, inchikey=inchikey)
+    def from_parent(
+        cls, parent_tag: "StateExpansionTag", inchikey: str, provenance: dict[str, str]
+    ):
+        return cls(
+            parent_inchikey=parent_tag.inchikey,
+            inchikey=inchikey,
+            provenance=provenance,
+        )

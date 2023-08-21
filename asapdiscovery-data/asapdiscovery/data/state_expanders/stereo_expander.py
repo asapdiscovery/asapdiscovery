@@ -19,6 +19,7 @@ class StereoExpander(StateExpanderBase):
 
     def provenance(self) -> dict[str, str]:
         return {
+            "expander": self.expander_type,
             "oechem": oechem.OEChemGetVersion(),
             "omega": oeomega.OEOmegaGetVersion(),
         }
@@ -31,13 +32,15 @@ class StereoExpander(StateExpanderBase):
 
         for parent_ligand in ligands:
             oemol = parent_ligand.to_oemol()
-            parent_ligand.make_parent_tag()
+            parent_ligand.make_parent_tag(provenance=self.provenance())
             for enantiomer in oeomega.OEFlipper(oemol, flipperOpts):
                 fmol = oechem.OEMol(enantiomer)
                 # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
                 # down the track.
                 enantiomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
-                enantiomer_ligand.set_parent(parent_ligand)
+                enantiomer_ligand.set_parent(
+                    parent_ligand, provenance=self.provenance()
+                )
                 expanded_states.append(enantiomer_ligand)
 
         return expanded_states
