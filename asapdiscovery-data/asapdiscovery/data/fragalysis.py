@@ -177,10 +177,10 @@ def parse_fragalysis(
 
     # Only keep rows of dataframe where the name_filter_column includes the name_filter string
     if name_filter:
-        if type(name_filter) == str:
+        if isinstance(name_filter, str):
             idx = df[name_filter_column].apply(lambda x: name_filter in x)
             df = df[idx]
-        elif type(name_filter) == list:
+        elif isinstance(name_filter, list):
             for filter in name_filter:
                 idx = df[name_filter_column].apply(lambda x: filter in x)
                 df = df[idx]

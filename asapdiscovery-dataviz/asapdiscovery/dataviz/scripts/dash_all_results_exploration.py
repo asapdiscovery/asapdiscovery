@@ -456,7 +456,7 @@ def update_by_structure(
 
     # Get Structure
     structure = filtered.loc[complex_ID, "Structure_Source"]
-    if not type(structure) == str:
+    if not type(structure) is str:
         structure = structure[0]
 
     # Filter by structure

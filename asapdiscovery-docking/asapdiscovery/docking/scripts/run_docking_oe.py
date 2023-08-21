@@ -382,7 +382,7 @@ def main():
     if args.gat:
         from asapdiscovery.ml.inference import GATInference  # noqa: E402
 
-        GAT_model = GATInference(gat_model_string)
+        GAT_model = GATInference.from_model_name(gat_model_string)
         logger.info(f"Using GAT model: {gat_model_string}")
     else:
         logger.info("Skipping GAT model scoring")
@@ -392,7 +392,7 @@ def main():
     if args.schnet:
         from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
 
-        schnet_model = SchnetInference(schnet_model_string)
+        schnet_model = SchnetInference.from_model_name(schnet_model_string)
         logger.info(f"Using Schnet model: {schnet_model_string}")
     else:
         logger.info("Skipping Schnet model scoring")

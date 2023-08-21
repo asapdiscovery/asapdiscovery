@@ -42,7 +42,7 @@ def main():
     args = get_args()
 
     # Load the protein (and just protein)
-    prot = split_openeye_mol(load_openeye_pdb(args.structure_fn), "protein")
+    prot = split_openeye_mol(load_openeye_pdb(args.structure_fn))["prot"]
 
     # Set up ligand mol stream
     ifs = oechem.oemolistream()

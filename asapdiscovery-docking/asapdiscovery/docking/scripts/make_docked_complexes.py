@@ -61,7 +61,7 @@ def main():
 
             # Get rid of non-protein atoms
             if args.prot_only:
-                xtal = split_openeye_mol(xtal, "protein")
+                xtal = split_openeye_mol(xtal)["prot"]
 
             # Find max resid for numbering the ligand residue
             new_resid = (
