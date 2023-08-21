@@ -12,11 +12,12 @@ class TautomerExpander(StateExpanderBase):
     """
 
     expander_type: Literal["TautomerExpander"] = "TautomerExpander"
-    tautomer_save_stereo: bool = Field(False, description="Preserve stereochemistry in tautomers")
-    tautomer_carbon_hybridization: bool = Field(True, description="Allow carbon hybridization changes in tautomers")
-
-
-
+    tautomer_save_stereo: bool = Field(
+        False, description="Preserve stereochemistry in tautomers"
+    )
+    tautomer_carbon_hybridization: bool = Field(
+        True, description="Allow carbon hybridization changes in tautomers"
+    )
 
     def provenance(self) -> dict[str, str]:
         return {

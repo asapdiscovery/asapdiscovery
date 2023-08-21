@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Literal, List
+from typing import Any, List, Literal
 
 import networkx as nx
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -50,14 +50,14 @@ class StateExpansion(BaseModel):
 
 
 class StateExpansionSet(BaseModel):
-    expansions: List[StateExpansion] = Field(..., description="The set of expansions")
+    expansions: list[StateExpansion] = Field(..., description="The set of expansions")
 
     class Config:
         allow_mutation = False
 
     @classmethod
     def from_ligands(
-        cls, ligands: List[Ligand], no_tag: str = "ignore"
+        cls, ligands: list[Ligand], no_tag: str = "ignore"
     ) -> "StateExpansionSet":
         has_tag = [ligand for ligand in ligands if ligand.expansion_tag is not None]
         if not all(has_tag):

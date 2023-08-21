@@ -1,11 +1,14 @@
-from pydantic import BaseModel, Field
 from typing import Any, Optional
+
+from pydantic import BaseModel, Field
 
 
 class StateExpansionTag(BaseModel):
     inchikey: str = Field(..., description="UUID for this molecule")
     parent_inchikey: str = Field(..., description="UUID for parent molecule")
-    provenance: Optional[dict[str, Any]] = Field(..., description="Provenance of the expansion")
+    provenance: Optional[dict[str, Any]] = Field(
+        ..., description="Provenance of the expansion"
+    )
 
     def __hash__(self) -> int:
         return hash(self.json())
@@ -30,7 +33,10 @@ class StateExpansionTag(BaseModel):
 
     @classmethod
     def from_parent(
-        cls, parent_tag: "StateExpansionTag", inchikey: str, provenance: dict[str, str] = None
+        cls,
+        parent_tag: "StateExpansionTag",
+        inchikey: str,
+        provenance: dict[str, str] = None,
     ):
         return cls(
             parent_inchikey=parent_tag.inchikey,

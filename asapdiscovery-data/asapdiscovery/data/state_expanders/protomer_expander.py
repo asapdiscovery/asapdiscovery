@@ -21,7 +21,6 @@ class ProtomerExpander(StateExpanderBase):
         }
 
     def _expand(self, ligands: list[Ligand]) -> list[Ligand]:
-       
         expanded_states = []
 
         for parent_ligand in ligands:
