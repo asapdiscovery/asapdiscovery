@@ -1,5 +1,5 @@
 import abc
-from typing import Any, List, Literal
+from typing import Literal
 
 import networkx as nx
 from asapdiscovery.data.schema_v2.ligand import Ligand
