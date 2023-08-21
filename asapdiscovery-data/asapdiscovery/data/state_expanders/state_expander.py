@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Literal
+from typing import Any, Literal, List
 
 import networkx as nx
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -12,10 +12,10 @@ class StateExpanderBase(abc.ABC, BaseModel):
     )
 
     @abc.abstractmethod
-    def _expand(self, ligands: list[Ligand]) -> list["StateExpansion"]:
+    def _expand(self, ligands: list[Ligand]) -> list[Ligand]:
         ...
 
-    def expand(self, ligands: list[Ligand]) -> list["StateExpansion"]:
+    def expand(self, ligands: list[Ligand]) -> list[Ligand]:
         return self._expand(ligands=ligands)
 
     @abc.abstractmethod
@@ -28,13 +28,6 @@ class StateExpansion(BaseModel):
     children: list[Ligand] = Field(
         ..., description="The children ligands resulting from expansion"
     )
-    expander: dict[str, Any] = Field(
-        ..., description="The expander and settings used to enumerate the states."
-    )
-    provenance: dict[str, str] = Field(
-        ...,
-        description="The provenance of the state expander which worked on this molecule.",
-    )
 
     class Config:
         allow_mutation = False
@@ -43,23 +36,7 @@ class StateExpansion(BaseModel):
     def n_expanded_states(self) -> int:
         return len(self.children)
 
-    @property
-    def parent_smiles(self) -> str:
-        return self.parent.smiles
-
-    @staticmethod
-    def flatten_children(expansions: list["StateExpansion"]) -> list[Ligand]:
-        print([child for expansion in expansions for child in expansion.children])
-        return [child for expansion in expansions for child in expansion.children]
-
-    @staticmethod
-    def flatten_parents(expansions: list["StateExpansion"]) -> list[Ligand]:
-        return [expansion.parent for expansion in expansions]
-
-    # could split into a class with List[StateExpansion] but seems like overkill
-
-    @staticmethod
-    def to_networkx(expansions: list["StateExpansion"]) -> nx.DiGraph:
+    def to_networkx(self) -> nx.DiGraph:
         graph = nx.DiGraph()
         for expansion in expansions:
             graph.add_node(expansion.parent)
@@ -68,14 +45,34 @@ class StateExpansion(BaseModel):
                 graph.add_edge(expansion.parent, child)
         return graph
 
-    @staticmethod
-    def ligands_to_networkx(ligands: list[Ligand]) -> nx.DiGraph:
-        parents = [ligand for ligand in ligands if ligand.expansion_tag.is_parent]
+
+class StateExpansionSet(BaseModel):
+    expansions: List[StateExpansion] = Field(..., description="The set of expansions")
+
+    class Config:
+        allow_mutation = False
+
+    @classmethod
+    def from_ligands(
+        ligands: List[Ligand], no_tag: str = "ignore"
+    ) -> "StateExpansionSet":
+        has_tag = [ligand.expansion_tag is not None for ligand in ligands]
+        if not all(has_tag):
+            if no_tag == "ignore":
+                pass
+            elif no_tag == "raise":
+                raise ValueError("Some ligands do not have an expansion tag")
+            else:
+                raise ValueError(
+                    f"Unknown value for no_tag: {no_tag}, must be 'ignore' or 'raise'"
+                )
+
+        parents = [ligand for ligand in has_tag if ligand.expansion_tag.is_parent]
         expansions = []
         for parent in parents:
             children = [
                 ligand
-                for ligand in ligands
+                for ligand in has_tag
                 if ligand.expansion_tag.is_child_of(parent.expansion_tag)
             ]
             expansion = StateExpansion(
@@ -83,4 +80,16 @@ class StateExpansion(BaseModel):
             )
             expansions.append(expansion)
 
-        return StateExpansion.to_networkx(expansions=expansions)
+        return StateExpansionSet(expansions=expansions)
+
+    @property
+    def n_expanded_states(self) -> int:
+        return sum([expansion.n_expanded_states for expansion in self.expansions])
+
+    def to_networkx(self) -> nx.DiGraph:
+        graphs = []
+        for expansion in self.expansions:
+            graph = expansion.to_networkx()
+            graphs.append(graph)
+
+        return nx.compose_all(graphs)

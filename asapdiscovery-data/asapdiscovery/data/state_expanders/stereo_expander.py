@@ -2,10 +2,7 @@ from typing import Literal
 
 from asapdiscovery.data.openeye import oechem, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.state_expanders.state_expander import (
-    StateExpanderBase,
-    StateExpansion,
-)
+from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
 from pydantic import Field
 
 
@@ -26,15 +23,13 @@ class StereoExpander(StateExpanderBase):
             "omega": oeomega.OEOmegaGetVersion(),
         }
 
-    def _expand(self, ligands: list[Ligand]) -> list[StateExpansion]:
+    def _expand(self, ligands: list[Ligand]) -> list[Ligand]:
         flipperOpts = oeomega.OEFlipperOptions()
         flipperOpts.SetEnumSpecifiedStereo(self.stereo_expand_defined)
 
-        expansions = []
+        expanded_states = []
 
         for parent_ligand in ligands:
-            expanded_states = []
-
             oemol = parent_ligand.to_oemol()
             parent_ligand.make_parent_tag()
             for enantiomer in oeomega.OEFlipper(oemol, flipperOpts):
@@ -45,12 +40,4 @@ class StereoExpander(StateExpanderBase):
                 enantiomer_ligand.set_parent(parent_ligand)
                 expanded_states.append(enantiomer_ligand)
 
-            expansion = StateExpansion(
-                parent=parent_ligand,
-                children=expanded_states,
-                expander=self.dict(),
-                provenance=self.provenance(),
-            )
-            expansions.append(expansion)
-
-        return expansions
+        return expanded_states
