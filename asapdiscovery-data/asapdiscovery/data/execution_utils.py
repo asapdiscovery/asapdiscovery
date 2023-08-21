@@ -1,9 +1,12 @@
+import warnings
+from typing import Optional
+
 import netifaces
 
 
-def get_interfaces_with_dual_ip(exclude: list[str] = []) -> list[str]:
+def get_network_interfaces_with_dual_ip(exclude: list[str] = []) -> list[str]:
     """
-    Get a list of interfaces that have both IPv4 and IPv6 addresses.
+    Get a list of network interfaces that have both IPv4 and IPv6 addresses.
 
     Parameters
     ----------
@@ -26,6 +29,30 @@ def get_interfaces_with_dual_ip(exclude: list[str] = []) -> list[str]:
             dual_ip_interfaces.append(interface)
 
     return dual_ip_interfaces
+
+
+def guess_network_interface(exclude: list[str] = []) -> Optional[str]:
+    """
+    Guess a network interface to use, possibly excluding some interfaces.
+
+    Parameters
+    ----------
+    exclude : list
+        List of interfaces to exclude from the list of interfaces with dual IP addresses.
+
+    Returns
+    -------
+    Optional[str]
+        Name of the best interface to use
+    """
+    interfaces = get_network_interfaces_with_dual_ip(exclude=exclude)
+    if not interfaces:
+        raise RuntimeError("No interfaces with both IPv4 and IPv6 addresses found.")
+    elif len(interfaces) > 1:
+        warnings.warn(
+            f"Found more than one interface: {interfaces}, using the first one"
+        )
+    return interfaces[0]
 
 
 def estimate_n_workers(
