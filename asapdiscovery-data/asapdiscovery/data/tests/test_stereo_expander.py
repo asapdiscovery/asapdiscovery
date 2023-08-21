@@ -18,7 +18,7 @@ def chalcogran_defined():
 
 
 @pytest.fixture(scope="session")
-def chalcogran_defined_smi(chalcogran_defined):
+def chalcogran_defined_smi():
     return oe_smiles_roundtrip("CC[C@H](O1)CC[C@@]12CCCO2")
 
 
