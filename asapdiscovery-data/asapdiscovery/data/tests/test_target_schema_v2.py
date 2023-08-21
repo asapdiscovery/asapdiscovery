@@ -1,5 +1,9 @@
 import pytest
-from asapdiscovery.data.openeye import oechem, load_openeye_design_unit, save_openeye_pdb
+from asapdiscovery.data.openeye import (
+    load_openeye_design_unit,
+    oechem,
+    save_openeye_pdb,
+)
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target, TargetIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from pydantic import ValidationError
@@ -164,9 +168,8 @@ def test_target_moonshot_pdb_processed_no_ligand(moonshot_pdb):
 
     oechem.OESplitMolComplex(lig, prot, wat, other, mol, opts)
     assert lig.NumAtoms() == 0
-    assert prot.NumAtoms() !=0
+    assert prot.NumAtoms() != 0
     assert wat.NumAtoms() == 0
-
 
 
 # PreppedTarget tests
@@ -192,7 +195,9 @@ def test_preppedtarget_from_oedu_file_at_least_one_target_id(oedu_file):
 def test_prepped_target_from_oedu_file_bad_file():
     with pytest.raises(FileNotFoundError):
         # neither id is set
-        _ = PreppedTarget.from_oedu_file("bad_file", target_name="PreppedTargetTestName")
+        _ = PreppedTarget.from_oedu_file(
+            "bad_file", target_name="PreppedTargetTestName"
+        )
 
 
 def test_prepped_target_from_oedu(oedu_file):
@@ -206,7 +211,9 @@ def test_prepped_target_from_oedu(oedu_file):
 def test_prepped_target_from_oedu_file_roundtrip(oedu_file, tmp_path):
     pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName")
     pt.to_oedu_file(tmp_path / "test.oedu")
-    pt2 = PreppedTarget.from_oedu_file(tmp_path / "test.oedu", target_name="PreppedTargetTestName")
+    pt2 = PreppedTarget.from_oedu_file(
+        tmp_path / "test.oedu", target_name="PreppedTargetTestName"
+    )
     # these two comparisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)

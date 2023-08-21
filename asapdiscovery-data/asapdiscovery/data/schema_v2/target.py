@@ -11,10 +11,9 @@ from asapdiscovery.data.openeye import (
     pdb_string_to_oemol,
     save_openeye_design_unit,
 )
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
-
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from pydantic import Field, root_validator
 
 from .schema_base import (
