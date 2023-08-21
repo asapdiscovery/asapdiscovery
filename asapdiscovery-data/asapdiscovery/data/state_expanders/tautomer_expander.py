@@ -6,12 +6,17 @@ from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
 from pydantic import Field
 
 
-class ProtomerExpander(StateExpanderBase):
+class TautomerExpander(StateExpanderBase):
     """
     Expand a molecule to protomers
     """
 
-    expander_type: Literal["ProtomerExpander"] = "ProtomerExpander"
+    expander_type: Literal["TautomerExpander"] = "TautomerExpander"
+    tautomer_save_stereo: bool = Field(False, description="Preserve stereochemistry in tautomers")
+    tautomer_carbon_hybridization: bool = Field(True, description="Allow carbon hybridization changes in tautomers")
+
+
+
 
     def provenance(self) -> dict[str, str]:
         return {
@@ -21,18 +26,21 @@ class ProtomerExpander(StateExpanderBase):
         }
 
     def _expand(self, ligands: list[Ligand]) -> list[Ligand]:
-       
+        tautomer_opts = oequacpac.OETautomerOptions()
+        tautomer_opts.SetSaveStereo(self.tautomer_save_stereo)
+        tautomer_opts.SetCarbonHybridization(self.tautomer_carbon_hybridization)
+
         expanded_states = []
 
         for parent_ligand in ligands:
             oemol = parent_ligand.to_oemol()
             parent_ligand.make_parent_tag(provenance=self.provenance())
-            for protomer in oequacpac.OEGetReasonableProtomers(oemol):
-                fmol = oechem.OEMol(protomer)
+            for tautomer in oequacpac.OEGetReasonableTautomers(oemol):
+                fmol = oechem.OEMol(tautomer)
                 # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
                 # down the track.
-                protomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
-                protomer_ligand.set_parent(parent_ligand, provenance=self.provenance())
-                expanded_states.append(protomer_ligand)
+                tautomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
+                tautomer_ligand.set_parent(parent_ligand, provenance=self.provenance())
+                expanded_states.append(tautomer_ligand)
 
         return expanded_states

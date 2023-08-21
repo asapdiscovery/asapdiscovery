@@ -19,7 +19,7 @@ class StereoExpander(StateExpanderBase):
 
     def provenance(self) -> dict[str, str]:
         return {
-            "expander": self.expander_type,
+            "expander": self.dict(),
             "oechem": oechem.OEChemGetVersion(),
             "omega": oeomega.OEOmegaGetVersion(),
         }
