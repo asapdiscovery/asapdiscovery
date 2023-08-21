@@ -76,7 +76,7 @@ def test_target_dict_roundtrip(
 ):
     t1 = Target.from_pdb(
         moonshot_pdb,
-        target_name,
+        target_name=target_name,
         ids=TargetIdentifiers(
             target_type=ttype, fragalysis_id=fragalysis_id, pdb_code=pdb_code
         ),
@@ -96,7 +96,7 @@ def test_target_json_roundtrip(
 ):
     t1 = Target.from_pdb(
         moonshot_pdb,
-        target_name,
+        target_name=target_name,
         ids=TargetIdentifiers(
             target_type=ttype, fragalysis_id=fragalysis_id, pdb_code=pdb_code
         ),
@@ -116,7 +116,7 @@ def test_target_json_file_roundtrip(
 ):
     t1 = Target.from_pdb(
         moonshot_pdb,
-        target_name,
+        target_name=target_name,
         ids=TargetIdentifiers(
             target_type=ttype, fragalysis_id=fragalysis_id, pdb_code=pdb_code
         ),
@@ -128,8 +128,8 @@ def test_target_json_file_roundtrip(
 
 
 def test_target_data_equal(moonshot_pdb):
-    t1 = Target.from_pdb(moonshot_pdb, "TargetTestName")
-    t2 = Target.from_pdb(moonshot_pdb, "TargetTestName")
+    t1 = Target.from_pdb(moonshot_pdb, target_name="TargetTestName")
+    t2 = Target.from_pdb(moonshot_pdb, target_name="TargetTestName")
     # does the same thing as the __eq__ method
     assert t1.data_equal(t2)
     assert t1 == t2
@@ -138,18 +138,18 @@ def test_target_data_equal(moonshot_pdb):
 def test_target_oemol_roundtrip(
     moonshot_pdb_processed,
 ):  # test that pre-processed pdb files can be read in and out consistently
-    t1 = Target.from_pdb(moonshot_pdb_processed, "TargetTestName")
+    t1 = Target.from_pdb(moonshot_pdb_processed, target_name="TargetTestName")
     mol = t1.to_oemol()
-    t2 = Target.from_oemol(mol, "TargetTestName")
+    t2 = Target.from_oemol(mol, target_name="TargetTestName")
     assert t1 == t2
 
 
 def test_target_oemol_roundtrip_sars2(
     sars2_spruced_pdb,
 ):  # test that a pdb file can be read in and out consistently via roundtrip through openeye
-    t1 = Target.from_pdb(sars2_spruced_pdb, "TargetTestName")
+    t1 = Target.from_pdb(sars2_spruced_pdb, target_name="TargetTestName")
     mol = t1.to_oemol()
-    t2 = Target.from_oemol(mol, "TargetTestName")
+    t2 = Target.from_oemol(mol, target_name="TargetTestName")
     assert t1 == t2
 
 
@@ -157,7 +157,7 @@ def test_target_oemol_roundtrip_sars2(
 
 
 def test_preppedtarget_from_oedu_file(oedu_file):
-    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
+    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName")
     oedu = pt.to_oedu()
     assert oedu.GetTitle() == "(AB) > LIG(A-403)"  # from one of the old files
 
@@ -176,37 +176,37 @@ def test_preppedtarget_from_oedu_file_at_least_one_target_id(oedu_file):
 def test_prepped_target_from_oedu_file_bad_file():
     with pytest.raises(FileNotFoundError):
         # neither id is set
-        _ = PreppedTarget.from_oedu_file("bad_file", "PreppedTargetTestName")
+        _ = PreppedTarget.from_oedu_file("bad_file", target_name="PreppedTargetTestName")
 
 
 def test_prepped_target_from_oedu(oedu_file):
     loaded_oedu = load_openeye_design_unit(oedu_file)
     loaded_oedu.SetTitle("PreppedTargetTestName")
-    pt = PreppedTarget.from_oedu(loaded_oedu, "PreppedTargetTestName")
+    pt = PreppedTarget.from_oedu(loaded_oedu, target_name="PreppedTargetTestName")
     oedu = pt.to_oedu()
     assert oedu.GetTitle() == "PreppedTargetTestName"
 
 
 def test_prepped_target_from_oedu_file_roundtrip(oedu_file, tmp_path):
-    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
+    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName")
     pt.to_oedu_file(tmp_path / "test.oedu")
-    pt2 = PreppedTarget.from_oedu_file(tmp_path / "test.oedu", "PreppedTargetTestName")
+    pt2 = PreppedTarget.from_oedu_file(tmp_path / "test.oedu", target_name="PreppedTargetTestName")
     # these two comparisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)
 
 
 def test_prepped_target_from_oedu_roundtrip(oedu_file):
-    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
+    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName")
     du = pt.to_oedu()
-    pt2 = PreppedTarget.from_oedu(du, "PreppedTargetTestName")
+    pt2 = PreppedTarget.from_oedu(du, target_name="PreppedTargetTestName")
     # these two comparisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)
 
 
 def test_prepped_target_json_roundtrip(oedu_file):
-    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
+    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName")
     js = pt.json()
     pt2 = PreppedTarget.from_json(js)
     # these two comparisons should be the same
@@ -217,7 +217,7 @@ def test_prepped_target_json_roundtrip(oedu_file):
 
 
 def test_prepped_target_json_file_roundtrip(oedu_file, tmp_path):
-    pt = PreppedTarget.from_oedu_file(oedu_file, "PreppedTargetTestName")
+    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName")
     path = tmp_path / "test.json"
     pt.to_json_file(path)
     pt2 = PreppedTarget.from_json_file(path)
