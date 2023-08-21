@@ -1,8 +1,8 @@
 import pytest
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.state_expanders.tautomer_expander import TautomerExpander
 from asapdiscovery.data.state_expanders.protomer_expander import ProtomerExpander
+from asapdiscovery.data.state_expanders.tautomer_expander import TautomerExpander
 
 
 @pytest.fixture(scope="session")
