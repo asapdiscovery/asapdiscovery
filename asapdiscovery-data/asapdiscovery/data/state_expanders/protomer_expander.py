@@ -17,7 +17,7 @@ class ProtomerExpander(StateExpanderBase):
         return {
             "expander": self.dict(),
             "oechem": oechem.OEChemGetVersion(),
-            "quacpac": oechem.OEQuacPacGetVersion(),
+            "quacpac": oequacpac.OEQuacPacGetVersion(),
         }
 
     def _expand(self, ligands: list[Ligand]) -> list[Ligand]:

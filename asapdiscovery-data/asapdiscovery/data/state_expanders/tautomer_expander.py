@@ -18,12 +18,16 @@ class TautomerExpander(StateExpanderBase):
     tautomer_carbon_hybridization: bool = Field(
         True, description="Allow carbon hybridization changes in tautomers"
     )
+    pka_norm: bool = Field(
+        True,
+        description="If true the ionization state of each tautomer will be assigned to a predominate state at pH~7.4.",
+    )
 
     def provenance(self) -> dict[str, str]:
         return {
             "expander": self.dict(),
             "oechem": oechem.OEChemGetVersion(),
-            "quacpac": oechem.OEQuacPacGetVersion(),
+            "quacpac": oequacpac.OEQuacPacGetVersion(),
         }
 
     def _expand(self, ligands: list[Ligand]) -> list[Ligand]:
@@ -36,7 +40,9 @@ class TautomerExpander(StateExpanderBase):
         for parent_ligand in ligands:
             oemol = parent_ligand.to_oemol()
             parent_ligand.make_parent_tag(provenance=self.provenance())
-            for tautomer in oequacpac.OEGetReasonableTautomers(oemol):
+            for tautomer in oequacpac.OEGetReasonableTautomers(
+                oemol, tautomer_opts, self.pka_norm
+            ):
                 fmol = oechem.OEMol(tautomer)
                 # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
                 # down the track.

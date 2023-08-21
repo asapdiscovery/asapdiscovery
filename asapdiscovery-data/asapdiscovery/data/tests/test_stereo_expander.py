@@ -7,7 +7,6 @@ from asapdiscovery.data.state_expanders.state_expander import (
 )
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from networkx.utils import graphs_equal
 
 
 @pytest.fixture(scope="session")
