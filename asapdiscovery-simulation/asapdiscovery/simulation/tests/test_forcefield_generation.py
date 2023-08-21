@@ -16,4 +16,4 @@ def test_forcefield_generation(pdb):
     pdb_path = fetch_test_file(pdb)
 
     system = create_protein_only_system(str(pdb_path), DefaultForceFieldParams)
-    assert type(system) == System
+    assert isinstance(system, System)

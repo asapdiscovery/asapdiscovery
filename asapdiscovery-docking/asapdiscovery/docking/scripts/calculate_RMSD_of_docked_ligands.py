@@ -98,7 +98,7 @@ def main():
 
         # This maps each compound id to the corresponding reference
         ref_dict = {
-            compound_id: split_openeye_mol(load_openeye_pdb(ref_fn), "ligand")
+            compound_id: split_openeye_mol(load_openeye_pdb(ref_fn))["lig"]
             for compound_id in unique_compound_ids
             for ref_fn in ref_fns
             if compound_id in ref_fn

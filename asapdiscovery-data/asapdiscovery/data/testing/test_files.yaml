@@ -183,3 +183,36 @@ files:
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
     sha256hash: 247e8d51cd6f404180bfe773a4eb2d6fae37b28919d1527d8b39e5286ea9755c
+  # FragalysisFactory testing
+  - resource: frag_factory_test/metadata.csv
+    sha256hash: a5ee3666fb60f11a87eec59757a9295895c58c2880fcf4c6395b052d4fddf5d3
+
+  - resource: frag_factory_test/aligned/Mpro-x11041_0A/Mpro-x11041_0A_bound.pdb
+    sha256hash: f9f7381df8e577631c455f287095bed39fe13794d7c3d6fa71908954d09da905
+
+  - resource: frag_factory_test/aligned/Mpro-x1425_0A/Mpro-x1425_0A_bound.pdb
+    sha256hash: 1f7a150223b7b8603f70133e7293033fd61ae81fc52236d146b42cb62024bbf9
+
+  - resource: frag_factory_test/aligned/Mpro-x11894_0A/Mpro-x11894_0A_bound.pdb
+    sha256hash: c5b5ecc3e11c0f57a4f96207456a6bc649dd01e983c2cc66f800ed9fb41ab2e9
+
+  - resource: frag_factory_test/aligned/Mpro-x1002_0A/Mpro-x1002_0A_bound.pdb
+    sha256hash: cedee5a737bf7a8d6819323b8eb84dc6ad6e63d52d5a64d36a43215419aea522
+
+  - resource: frag_factory_test/aligned/Mpro-x10155_0A/Mpro-x10155_0A_bound.pdb
+    sha256hash: 6076e89d695695e20643914cf7be74ed548e585189cdb823bbfe943caa1dd017
+
+  - resource: frag_factory_test/aligned/Mpro-x0354_0A/Mpro-x0354_0A_bound.pdb
+    sha256hash: 1cb016532f9e9ca121f3f8ce388f29654e5700aed880bb76c56c3b1707c0fe5e
+
+  - resource: frag_factory_test/aligned/Mpro-x11271_0A/Mpro-x11271_0A_bound.pdb
+    sha256hash: 2e310970111d87244704f64e7e5ba5db72946d2da1aab298dbfc2b3686ff2003
+
+  - resource: frag_factory_test/aligned/Mpro-x1101_1A/Mpro-x1101_1A_bound.pdb
+    sha256hash: 04e9a867ce433618b769d600ba1af7a77e55a9aec30cfc22a33c8d3344b72cd8
+
+  - resource: frag_factory_test/aligned/Mpro-x1187_0A/Mpro-x1187_0A_bound.pdb
+    sha256hash: dbf3c864ec9dd4afe7727d7af12c6250c8e5c4ecf43961453b536de47462e055
+
+  - resource: frag_factory_test/aligned/Mpro-x10338_0A/Mpro-x10338_0A_bound.pdb
+    sha256hash: 54d7a6fc4e4eb3cbe19006e23333e84069b2226db8486d194017ed5c19035016

@@ -381,7 +381,7 @@ def build_model_2d(config=None):
             config = dict(wandb.config)
         except Exception:
             pass
-    elif type(config) != dict:
+    elif type(config) is not dict:
         raise ValueError(f"Unknown type of config: {type(config)}")
 
     # config.update({"in_node_feats": CanonicalAtomFeaturizer().feat_size()})
@@ -443,7 +443,7 @@ def build_model_schnet(
             config = dict(wandb.config)
         except Exception:
             pass
-    elif type(config) != dict:
+    elif type(config) is not dict:
         raise ValueError(f"Unknown type of config: {type(config)}")
 
     # Load pretrained model if requested, otherwise create a new SchNet
@@ -553,7 +553,7 @@ def build_model_e3nn(
             config = dict(wandb.config)
         except Exception:
             pass
-    elif type(config) != dict:
+    elif type(config) is not dict:
         raise ValueError(f"Unknown type of config: {type(config)}")
 
     # Build hidden irreps
@@ -673,7 +673,7 @@ def build_optimizer(model, config=None):
             print("Using wandb config for optimizer building.", flush=True)
         except Exception:
             pass
-    elif type(config) != dict:
+    elif type(config) is not dict:
         raise ValueError(f"Unknown type of config: {type(config)}")
 
     # Return None (use script default) if not present

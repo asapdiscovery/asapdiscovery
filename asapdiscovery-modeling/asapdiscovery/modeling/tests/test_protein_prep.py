@@ -85,7 +85,7 @@ class TestProteinPrep:
 
         # This is necessary in this test, otherwise the inclusion of the overlapping ligands
         # in the mers structure will cause a spruce failure
-        prot = split_openeye_mol(prot, target.molecule_filter)
+        prot = split_openeye_mol(prot, target.molecule_filter)["prot"]
 
         # convert seqres to string
         with open(seqres_yaml) as f:
@@ -102,7 +102,7 @@ class TestProteinPrep:
         )
         assert spruce_error_msg == ""
         assert success is True
-        assert type(spruced) == oechem.OEGraphMol
+        assert isinstance(spruced, oechem.OEGraphMol)
         spruced = add_seqres_to_openeye_protein(spruced, seqres)
         save_openeye_pdb(spruced, output_dir / f"{target_name}_spruced.pdb")
 
@@ -166,7 +166,7 @@ class TestProteinPrep:
         du = oechem.OEDesignUnit()
         oechem.OEReadDesignUnit(str(prepped_target.design_unit), du)
 
-        assert type(du) == oechem.OEDesignUnit
+        assert isinstance(du, oechem.OEDesignUnit)
         assert du.HasReceptor()
         if "ligand" in prepped_target.molecule_filter.components_to_keep:
             assert du.HasLigand()

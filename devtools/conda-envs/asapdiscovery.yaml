@@ -6,6 +6,8 @@ channels:
 dependencies:
   # Base depends
   - pip
+  # need python > 3.9.2 for dask-distributed issues
+  - python >= 3.9.2
 
   # Testing
   - pytest
@@ -76,7 +78,7 @@ dependencies:
     - validators
     - pyyaml
     # ml
-    - git+https://github.com/choderalab/mtenn@0.2.0
+    - git+https://github.com/choderalab/mtenn@0.2.1
     # testing
     - pytest-console-scripts
     - pytest-timeout

@@ -10,10 +10,8 @@ import dask
 import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.execution_utils import (
-    estimate_n_workers,
-    get_interfaces_with_dual_ip,
-)
+from asapdiscovery.data.dask_utils import GPU, LilacGPUDaskCluster
+from asapdiscovery.data.execution_utils import estimate_n_workers
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -45,6 +43,7 @@ from asapdiscovery.docking import (
     make_docking_result_dataframe,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.ml.inference import GATInference, SchnetInference
 from asapdiscovery.modeling.modeling import protein_prep_workflow
 from asapdiscovery.modeling.schema import (
     MoleculeFilter,
@@ -187,10 +186,17 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--dask-lilac-gpu",
+    choices=GPU.get_values(),
+    default=GPU.GTX1080TI,
+    help="GPU to use for dask-jobqueue setup on lilac",
+)
+
+parser.add_argument(
     "-o",
     "--output_dir",
     required=True,
-    help="Path to output_dir, will NOT overwrite if exists.",
+    help="Path to output_dir, will overwrite if exists.",
 )
 
 # general arguments
@@ -313,7 +319,7 @@ parser.add_argument(
     "--viz-target",
     type=str,
     choices=VizTargets.get_allowed_targets(),
-    help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
+    help="Target to write visualizations for.",
 )
 
 parser.add_argument(
@@ -587,43 +593,12 @@ def main():
     # do dask here as it is the first bit of the workflow that is parallel
     if args.dask:
         logger.info("Using dask to parallelise docking")
-        # set timeout to None so workers don't get killed on long timeouts
-        from dask import config as cfg
         from dask.distributed import Client
 
-        cfg.set({"distributed.scheduler.worker-ttl": None})
-        cfg.set({"distributed.admin.tick.limit": "18h"})
-
         if args.dask_lilac:
-            from dask_jobqueue import LSFCluster
-
             logger.info("Using dask-jobqueue to run on lilac")
-            logger.warning(
-                "make sure you have a config file for lilac's dask-jobqueue cluster installed in your environment, contact @hmacdope"
-            )
 
-            logger.info("Finding dual IP interfaces")
-            # find dual IP interfaces excluding lo loopback interface
-            # technically dask only needs IPV4 but helps us find the right ones
-            # easier. If you have a better way of doing this please let me know!
-            exclude = ["lo"]
-            interfaces = get_interfaces_with_dual_ip(exclude=exclude)
-            logger.info(f"Found IP interfaces: {interfaces}")
-            if len(interfaces) == 0:
-                raise ValueError("Must have at least one network interface to run dask")
-            if len(interfaces) > 1:
-                logger.warning(
-                    f"Found more than one IP interface: {interfaces}, using the first one"
-                )
-            interface = interfaces[0]
-            logger.info(f"Using interface: {interface}")
-
-            # NOTE you will need a config file that defines the dask-jobqueue for the cluster
-            cluster = LSFCluster(
-                interface=interface,
-                scheduler_options={"interface": interface},
-                worker_extra_args=["--lifetime", "18h", "--lifetime-stagger", "2m"],
-            )
+            cluster = LilacGPUDaskCluster.from_gpu(args.dask_lilac_gpu).to_cluster()
 
             logger.info(f"dask config : {dask.config.config}")
 
@@ -639,9 +614,6 @@ def main():
             client = Client()
         logger.info("Dask client created ...")
         logger.info(client.dashboard_link)
-        logger.info(
-            "strongly recommend you open the dashboard link in a browser tab to monitor progress"
-        )
 
     # setup docking
     logger.info(f"Starting docking setup at {datetime.now().isoformat()}")
@@ -656,26 +628,16 @@ def main():
 
     # ML stuff for docking, fill out others as we make them
     logger.info("Setup ML for docking")
-    gat_model_string = "asapdiscovery-GAT-2023.05.09"
-    schnet_model_string = "asapdiscovery-schnet-2023.04.29"
 
-    if args.no_gat:
-        gat_model = None
-        logger.info("Not using GAT model")
-    else:
-        from asapdiscovery.ml.inference import GATInference  # noqa: E402
+    gat_model = None if args.no_gat else GATInference.from_latest_by_target(args.target)
+    logger.info(f"Using GAT model: {gat_model.model_name if gat_model else None}")
 
-        gat_model = GATInference(gat_model_string)
-        logger.info(f"Using GAT model: {gat_model_string}")
-
-    if args.no_schnet:
-        schnet_model = None
-        logger.info("Not using Schnet model")
-    else:
-        from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
-
-        schnet_model = SchnetInference(schnet_model_string)
-        logger.info(f"Using Schnet model: {schnet_model_string}")
+    schnet_model = (
+        None if args.no_schnet else SchnetInference.from_latest_by_target(args.target)
+    )
+    logger.info(
+        f"Using SchNet model: {schnet_model.model_name if schnet_model else None}"
+    )
 
     # use partial to bind the ML models to the docking function
     dock_and_score_pose_oe_ml = partial(
@@ -853,7 +815,7 @@ def main():
                 html_visualiser = HTMLVisualizer(
                     [pose],
                     [outpath],
-                    args.viz_target,
+                    args.target,
                     protein_path,
                     logger=logger,
                     color_method="fitness",
@@ -880,7 +842,7 @@ def main():
             html_visualiser = HTMLVisualizer(
                 top_posit["_docked_file"],
                 top_posit["_outpath_pose_fitness"],
-                args.viz_target,
+                args.target,
                 protein_path,
                 logger=logger,
                 color_method="fitness",
