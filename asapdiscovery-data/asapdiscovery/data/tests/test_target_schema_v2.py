@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.openeye import load_openeye_design_unit
+from asapdiscovery.data.openeye import oechem, load_openeye_design_unit, save_openeye_pdb
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target, TargetIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from pydantic import ValidationError
@@ -151,6 +151,22 @@ def test_target_oemol_roundtrip_sars2(
     mol = t1.to_oemol()
     t2 = Target.from_oemol(mol, target_name="TargetTestName")
     assert t1 == t2
+
+
+def test_target_moonshot_pdb_processed_no_ligand(moonshot_pdb):
+    t1 = Target.from_pdb(moonshot_pdb, target_name="TargetTestName")
+    mol = t1.to_oemol()
+    opts = oechem.OESplitMolComplexOptions()
+    lig = oechem.OEGraphMol()
+    prot = oechem.OEGraphMol()
+    wat = oechem.OEGraphMol()
+    other = oechem.OEGraphMol()
+
+    oechem.OESplitMolComplex(lig, prot, wat, other, mol, opts)
+    assert lig.NumAtoms() == 0
+    assert prot.NumAtoms() !=0
+    assert wat.NumAtoms() == 0
+
 
 
 # PreppedTarget tests
