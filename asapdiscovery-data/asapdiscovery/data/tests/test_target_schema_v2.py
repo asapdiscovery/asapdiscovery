@@ -1,8 +1,7 @@
 import pytest
 from asapdiscovery.data.openeye import (
     load_openeye_design_unit,
-    oechem,
-    save_openeye_pdb,
+    oechem
 )
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target, TargetIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
