@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 from asapdiscovery.data.openeye import (
     bytes64_to_oedu,
     load_openeye_design_unit,
+    load_openeye_pdb,
     oechem,
     oedu_to_bytes64,
     oemol_to_pdb_string,
@@ -11,13 +12,14 @@ from asapdiscovery.data.openeye import (
     save_openeye_design_unit,
 )
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.modeling.modeling import split_openeye_mol
+from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field, root_validator
 
 from .schema_base import (
     DataModelAbstractBase,
     DataStorageType,
     check_strings_for_equality_with_exclusion,
-    read_file_directly,
     schema_dict_get_val_overload,
     write_file_directly,
 )
@@ -91,34 +93,30 @@ class Target(DataModelAbstractBase):
 
     @classmethod
     def from_pdb(
-        cls, pdb_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
+        cls, pdb_file: Union[str, Path], target_chains=[], ligand_chain="", **kwargs
     ) -> "Target":
+        kwargs.pop("data", None)
         # directly read in data
-        pdb_str = read_file_directly(pdb_file)
-        return cls(data=pdb_str, target_name=target_name, **kwargs)
+        # First load full complex molecule
+        complex_mol = load_openeye_pdb(pdb_file)
 
-    @classmethod
-    def from_pdb_via_openeye(
-        cls, pdb_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
-    ) -> "Target":
-        # directly read in data
-        pdb_str = read_file_directly(pdb_file)
-        # NOTE: tradeof between speed and consistency with `from_pdb` method lines below will make sure that the pdb string is
-        # consistent between a load and dump by roundtripping through and openeye mol but will slow down the process significantly.
-        mol = pdb_string_to_oemol(pdb_str)
-        pdb_str = oemol_to_pdb_string(mol)
-        return cls(data=pdb_str, target_name=target_name, **kwargs)
+        # Split molecule into parts using given chains
+        mol_filter = MoleculeFilter(
+            protein_chains=target_chains, ligand_chain=ligand_chain
+        )
+        split_dict = split_openeye_mol(complex_mol, mol_filter)
+
+        return cls.from_oemol(split_dict["prot"], **kwargs)
 
     def to_pdb(self, filename: Union[str, Path]) -> None:
         # directly write out data
         write_file_directly(filename, self.data)
 
     @classmethod
-    def from_oemol(
-        cls, mol: oechem.OEMol, target_name: Optional[str] = None, **kwargs
-    ) -> "Target":
+    def from_oemol(cls, mol: oechem.OEMol, **kwargs) -> "Target":
+        kwargs.pop("data", None)
         pdb_str = oemol_to_pdb_string(mol)
-        return cls(data=pdb_str, target_name=target_name, **kwargs)
+        return cls(data=pdb_str, **kwargs)
 
     def to_oemol(self) -> oechem.OEMol:
         return pdb_string_to_oemol(self.data)
@@ -175,21 +173,19 @@ class PreppedTarget(DataModelAbstractBase):
         return v
 
     @classmethod
-    def from_oedu(
-        cls, oedu: oechem.OEDesignUnit, target_name: Optional[str] = None, **kwargs
-    ) -> "PreppedTarget":
+    def from_oedu(cls, oedu: oechem.OEDesignUnit, **kwargs) -> "PreppedTarget":
+        kwargs.pop("data", None)
         oedu_bytes = oedu_to_bytes64(oedu)
-        return cls(data=oedu_bytes, target_name=target_name, **kwargs)
+        return cls(data=oedu_bytes, **kwargs)
 
     def to_oedu(self) -> oechem.OEDesignUnit:
         return bytes64_to_oedu(self.data)
 
     @classmethod
-    def from_oedu_file(
-        cls, oedu_file: Union[str, Path], target_name: Optional[str] = None, **kwargs
-    ) -> "PreppedTarget":
+    def from_oedu_file(cls, oedu_file: Union[str, Path], **kwargs) -> "PreppedTarget":
+        kwargs.pop("data", None)
         oedu = load_openeye_design_unit(oedu_file)
-        return cls.from_oedu(oedu=oedu, target_name=target_name, **kwargs)
+        return cls.from_oedu(oedu=oedu, **kwargs)
 
     def to_oedu_file(self, filename: Union[str, Path]) -> None:
         oedu = self.to_oedu()
