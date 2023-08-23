@@ -15,6 +15,7 @@ from asapdiscovery.data.openeye import (
 )
 
 from ._html_blocks import HTMLBlockData, make_core_html
+from ._gif_blocks import GIFBlockData
 from .viz_targets import VizTargets
 
 
@@ -128,6 +129,29 @@ class HTMLVisualizer:
         with open(path, "w") as f:
             f.write(html)
 
+    def make_color_res_subpockets(self) -> Dict:
+        """
+        Creates a dict where keys are colors, values are residue numbers.
+        """
+
+        # get a list of all residue numbers of the protein.
+        protein_residues = [oechem.OEAtomGetResidue(atom).GetResidueNumber() \
+                            for atom in self.protein.GetAtoms()]
+
+        # build a dict with all specified residue colorings.
+        color_res_dict = {}
+        for subpocket, color in GIFBlockData.get_color_dict(self.target).items():
+            subpocket_residues = GIFBlockData.get_pocket_dict(self.target)[subpocket].split("+")
+            color_res_dict[color] = [ int(res) for res in subpocket_residues ]
+        
+        # set any non-specified residues to white.
+        treated_res_nums = [ res for sublist in color_res_dict.values() for res in sublist ]
+        non_treated_res_nums = [ res for res in set(protein_residues) if not res in treated_res_nums]
+        color_res_dict["white"] = non_treated_res_nums
+        
+        return color_res_dict
+            
+
     def make_fitness_bfactors(self) -> set[int]:
         """
         Given a dict of fitness values, swap out the b-factors in the protein.
@@ -176,6 +200,7 @@ class HTMLVisualizer:
         Write HTML visualisation for a single pose.
         """
         html = self.get_html(pose)
+        self.make_color_res_subpockets()
         self.write_html(html, path)
         return path
 
@@ -202,6 +227,8 @@ class HTMLVisualizer:
         """
 
         colour = HTMLBlockData.get_pocket_color(self.target)
+    
+
         method = HTMLBlockData.get_color_method(self.color_method)
         missing_res = HTMLBlockData.get_missing_residues(self._missed_residues)
         orient_tail = HTMLBlockData.get_orient_tail(self.target)
