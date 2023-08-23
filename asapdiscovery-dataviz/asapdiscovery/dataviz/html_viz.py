@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
+from airium import Airium
 
 from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
@@ -10,6 +11,7 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdf,
     oechem,
     oemol_to_pdb_string,
+    oemol_to_sdf_string,
     openeye_perceive_residues,
     save_openeye_pdb,
 )
@@ -106,9 +108,7 @@ class HTMLVisualizer:
             load_openeye_pdb(str(protein)), preserve_all=True
         )
 
-        self._missed_residues = None
-        if self.color_method == "fitness":
-            self._missed_residues = self.make_fitness_bfactors()
+
 
         self.logger.debug(
             f"Writing HTML visualisations for {len(self.output_paths)} ligands"
@@ -129,6 +129,16 @@ class HTMLVisualizer:
         with open(path, "w") as f:
             f.write(html)
 
+    def get_color_dict(self) -> Dict:
+        """
+        Depending on color type, return a dict that contains residues per color.
+        """
+        if self.color_method == "subpockets":
+            return self.make_color_res_subpockets()
+        elif self.color_method == "fitness":
+            return self.make_color_res_fitness()
+        
+        
     def make_color_res_subpockets(self) -> Dict:
         """
         Based on subpocket coloring, creates a dict where keys are colors, values are residue numbers.
@@ -190,46 +200,28 @@ class HTMLVisualizer:
                     color_res_dict[color].append(res_num)
 
         return color_res_dict
-            
+        
 
-
-    def make_fitness_bfactors(self) -> set[int]:
+    def get_html_airium(self, pose):
         """
-        Given a dict of fitness values, swap out the b-factors in the protein.
-        """
-
-        self.logger.info("Swapping b-factor with fitness score.")
-
-        # this loop looks a bit strange but OEResidue state is not saved without a loop over atoms
-        missed_res = set()
-        for atom in self.protein.GetAtoms():
-            thisRes = oechem.OEAtomGetResidue(atom)
-            res_num = thisRes.GetResidueNumber()
-            thisRes.SetBFactor(
-                0.0
-            )  # reset b-factor to 0 for all residues first, so that missing ones can have blue overlaid nicely.
-            try:
-                thisRes.SetBFactor(self.fitness_data[res_num])
-            except KeyError:
-                missed_res.add(res_num)
-            oechem.OEAtomSetResidue(atom, thisRes)  # store updated residue
-
-        if self.debug:
-            self.logger.info(
-                f"Missed {len(missed_res)} residues when mapping fitness data."
-            )
-            self.logger.info(f"Missed residues: {missed_res}")
-            self.logger.info("Writing protein with fitness b-factors to file.")
-            save_openeye_pdb(self.protein, "protein_fitness.pdb")
-
-        return missed_res
-
-    def get_html_airium(self):
-        """
-        Get HTML for visualizing a single pose.
+        Get HTML for visualizing a single pose. This uses Airium which is a handy tool to write 
+        HTML using python. We can't do f-string because of all the JS curly brackets, need to do '+' instead.
         """
         a = Airium()
 
+        # first prep the coloring function. 
+        surface_coloring = self.get_color_dict()
+        residue_coloring_function_js = ""
+        start = True
+        for color, residues in surface_coloring.items():
+            residues = [ str(res) for res in residues ]
+            if start:
+                residue_coloring_function_js += "if (["+",".join(residues)+"].includes(atom.resi)){ \n return '"+color+"' \n "
+                start = False
+            else:
+                residue_coloring_function_js += "} else if (["+",".join(residues)+"].includes(atom.resi)){ \n return '"+color+"' \n "
+
+        # start writing the HTML doc.
         a("<!DOCTYPE HTML>")
         with a.html(lang="en"):
             with a.head():
@@ -260,20 +252,23 @@ class HTMLVisualizer:
             with a.body():
                 a.div(id="gldiv", style="width: 100vw; height: 100vh; position: relative;")
                 with a.script():
+                    
                     a(
                         "var viewer=$3Dmol.createViewer($(\"#gldiv\"));\n \
-                        var prot_pdb = `    pdb_string\n \
+                        var prot_pdb = `    "+oemol_to_pdb_string(self.protein)+"\n \
                         \n \
                         `;\n \
-                        var lig_sdf =`  sdf_string\n \
+                        var lig_sdf =`  "+oemol_to_sdf_string(pose)+"\n \
                         `;       \n \
                             //////////////// set up system\n \
                             viewer.addModel(prot_pdb, \"pdb\") \n \
                             // set protein sticks and surface\n \
                             viewer.setStyle({model: 0}, {stick: {colorscheme: \"whiteCarbon\", radius:0.15}});\n \
-                            // viewer.addSurface({}, {color: \"green\", opacity: 0.5}, {resi:[\"1-50\"]});\n \
-                            // viewer.addSurface({}, {color: \"blue\", opacity: 0.5}, {resi:[\"51-100\"]});\n \
-                            viewer.addSurface({}, {color: \"white\", opacity: 0.8}, );\n \
+                            // define a coloring function based on our residue ranges. We can't call .addSurface separate times because the surfaces won't be merged nicely. \n \
+                            var colorAsSnake = function(atom) { \
+                            "+residue_coloring_function_js+" \
+                                         }}; \
+                            viewer.addSurface(\"VDW\", {colorfunc: colorAsSnake, opacity: 0.9}) \n \
                         \n \
                             viewer.setStyle({bonds: 0}, {sphere:{radius:0.5}}); //water molecules\n \
                         \n \
@@ -317,16 +312,9 @@ class HTMLVisualizer:
                         \n \
                             ////////////////// set the view correctly\n \
                             viewer.setBackgroundColor(0xffffffff);\n \
-                            viewer.setView([\n \
-                            -3.5200155623997147, \n \
-                            -5.050560643099713, \n \
-                            -12.108040862949323, \n \
-                            71.69598666461106, \n \
-                            0.3887976484684321, \n \
-                            0.42408332663180826, \n \
-                            -0.5833075994459622, \n \
-                            -0.5733602402041021\n \
-                            ])\n \
+                            viewer.setView(\n \
+                            "+HTMLBlockData.get_orient(self.target)+" \
+                            )\n \
                             viewer.setZoomLimits(1,250) // prevent infinite zooming\n \
                             viewer.render();"
                     )
@@ -339,6 +327,39 @@ class HTMLVisualizer:
 
 
 
+
+
+
+    def make_fitness_bfactors(self) -> set[int]:
+        """
+        Given a dict of fitness values, swap out the b-factors in the protein.
+        """
+
+        self.logger.info("Swapping b-factor with fitness score.")
+
+        # this loop looks a bit strange but OEResidue state is not saved without a loop over atoms
+        missed_res = set()
+        for atom in self.protein.GetAtoms():
+            thisRes = oechem.OEAtomGetResidue(atom)
+            res_num = thisRes.GetResidueNumber()
+            thisRes.SetBFactor(
+                0.0
+            )  # reset b-factor to 0 for all residues first, so that missing ones can have blue overlaid nicely.
+            try:
+                thisRes.SetBFactor(self.fitness_data[res_num])
+            except KeyError:
+                missed_res.add(res_num)
+            oechem.OEAtomSetResidue(atom, thisRes)  # store updated residue
+
+        if self.debug:
+            self.logger.info(
+                f"Missed {len(missed_res)} residues when mapping fitness data."
+            )
+            self.logger.info(f"Missed residues: {missed_res}")
+            self.logger.info("Writing protein with fitness b-factors to file.")
+            save_openeye_pdb(self.protein, "protein_fitness.pdb")
+
+        return missed_res
 
     def write_pose_visualizations(self):
         """
@@ -357,9 +378,7 @@ class HTMLVisualizer:
         Write HTML visualisation for a single pose.
         """
         html = self.get_html(pose)
-        self.get_html_airium()
-        self.make_color_res_subpockets()
-        self.make_color_res_fitness()
+        self.get_html_airium(pose)
         self.write_html(html, path)
         return path
 
@@ -389,7 +408,7 @@ class HTMLVisualizer:
     
 
         method = HTMLBlockData.get_color_method(self.color_method)
-        missing_res = HTMLBlockData.get_missing_residues(self._missed_residues)
         orient_tail = HTMLBlockData.get_orient_tail(self.target)
+        
 
-        return colour + method + missing_res + orient_tail
+        return colour + method + orient_tail
