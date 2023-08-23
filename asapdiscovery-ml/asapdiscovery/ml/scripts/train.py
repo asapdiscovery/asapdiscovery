@@ -640,6 +640,7 @@ def init(args, rank=False):
 
     # Set up optimizer
     optimizer = build_optimizer(model, model_config)
+    print("Optimizer", optimizer, flush=True)
 
     # Update exp_configure with model parameters
     if args.model == "e3nn":

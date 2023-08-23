@@ -697,13 +697,14 @@ def build_optimizer(model, config=None):
     # Return None (use script default) if not present
     if "optimizer" not in config:
         print("No optimizer specified, using standard Adam.", flush=True)
-        return None
-
-    # Correct model name if needed
-    optim_type = config["optimizer"].lower()
+        optim_type = "adam"
+    else:
+        # Correct model name if needed
+        optim_type = config["optimizer"].lower()
 
     if optim_type == "adam":
         # Defaults from torch if not present in config
+        lr = config["lr"] if "lr" in config else 0.001
         b1 = config["b1"] if "b1" in config else 0.9
         b2 = config["b2"] if "b2" in config else 0.999
         eps = config["eps"] if "eps" in config else 1e-8
@@ -711,12 +712,14 @@ def build_optimizer(model, config=None):
 
         optimizer = torch.optim.Adam(
             model.parameters(),
-            lr=config["lr"],
+            lr=lr,
             betas=(b1, b2),
             eps=eps,
             weight_decay=weight_decay,
         )
     elif optim_type == "sgd":
+        if "lr" not in config:
+            raise ValueError("Learning rate must be specified if using SGD optimizer.")
         # Defaults from torch if not present in config
         momentum = config["momentum"] if "momentum" in config else 0
         weight_decay = config["weight_decay"] if "weight_decay" in config else 0
@@ -730,9 +733,11 @@ def build_optimizer(model, config=None):
             dampening=dampening,
         )
     elif optim_type == "adadelta":
-        optimizer = torch.optim.Adadelta(model.parameters(), lr=config["lr"])
+        lr = config["lr"] if "lr" in config else 1.0
+        optimizer = torch.optim.Adadelta(model.parameters(), lr=lr)
     elif optim_type == "adamw":
         # Defaults from torch if not present in config
+        lr = config["lr"] if "lr" in config else 0.001
         b1 = config["b1"] if "b1" in config else 0.9
         b2 = config["b2"] if "b2" in config else 0.999
         weight_decay = config["weight_decay"] if "weight_decay" in config else 0.01
