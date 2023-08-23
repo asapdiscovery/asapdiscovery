@@ -131,7 +131,7 @@ class HTMLVisualizer:
 
     def make_color_res_subpockets(self) -> Dict:
         """
-        Creates a dict where keys are colors, values are residue numbers.
+        Based on subpocket coloring, creates a dict where keys are colors, values are residue numbers.
         """
 
         # get a list of all residue numbers of the protein.
@@ -150,7 +150,54 @@ class HTMLVisualizer:
         color_res_dict["white"] = non_treated_res_nums
         
         return color_res_dict
+    
+    def make_color_res_fitness(self) -> Dict:
+        """
+        Based on fitness coloring, creates a dict where keys are colors, values are residue numbers.
+        """
+        # get a list of all residue numbers of the protein.
+        protein_residues = [oechem.OEAtomGetResidue(atom).GetResidueNumber() \
+                            for atom in self.protein.GetAtoms()]
+        
+        hex_color_codes = [
+            "#ffffff",
+            "#ffece5",
+            "#ffd9cc",
+            "#ffc6b3",
+            "#ffb29b",
+            "#ff9e83",
+            "#ff8a6c",
+            "#ff7454",
+            "#ff5c3d",
+            "#ff3f25",
+            "#ff0707",
+        ]
+        color_res_dict = {}
+        for res_num in set(protein_residues):
+            try:
+                # color residue white->red depending on fitness value.
+                color = hex_color_codes[int(self.fitness_data[res_num]/10)]
+                if not color in color_res_dict:
+                    color_res_dict[color] = [res_num]
+                else:
+                    color_res_dict[color].append(res_num)
+            except KeyError:
+                # fitness data is missing for this residue, color blue instead.
+                color = "#642df0"
+                if not color in color_res_dict:
+                    color_res_dict[color] = [res_num]
+                else:
+                    color_res_dict[color].append(res_num)
+                    
+        return color_res_dict
             
+
+
+
+
+
+
+
 
     def make_fitness_bfactors(self) -> set[int]:
         """
@@ -201,6 +248,7 @@ class HTMLVisualizer:
         """
         html = self.get_html(pose)
         self.make_color_res_subpockets()
+        self.make_color_res_fitness()
         self.write_html(html, path)
         return path
 
