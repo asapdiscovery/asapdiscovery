@@ -188,15 +188,9 @@ class HTMLVisualizer:
                     color_res_dict[color] = [res_num]
                 else:
                     color_res_dict[color].append(res_num)
-                    
+
         return color_res_dict
             
-
-
-
-
-
-
 
 
     def make_fitness_bfactors(self) -> set[int]:
@@ -230,6 +224,122 @@ class HTMLVisualizer:
 
         return missed_res
 
+    def get_html_airium(self):
+        """
+        Get HTML for visualizing a single pose.
+        """
+        a = Airium()
+
+        a("<!DOCTYPE HTML>")
+        with a.html(lang="en"):
+            with a.head():
+                a.meta(charset="utf-8")
+                a.script(
+                    crossorigin="anonymous",
+                    integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN",
+                    src="https://code.jquery.com/jquery-3.2.1.slim.min.js",
+                )
+                a.script(
+                    crossorigin="anonymous",
+                    integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh",
+                    src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js",
+                )
+                a.script(
+                    crossorigin="anonymous",
+                    integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ",
+                    src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js",
+                )
+                a.link(
+                    crossorigin="anonymous",
+                    href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css",
+                    integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb",
+                    rel="stylesheet",
+                )
+                a.script(src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js")
+                a.script(src="https://d3js.org/d3.v5.min.js")
+            with a.body():
+                a.div(id="gldiv", style="width: 100vw; height: 100vh; position: relative;")
+                with a.script():
+                    a(
+                        "var viewer=$3Dmol.createViewer($(\"#gldiv\"));\n \
+                        var prot_pdb = `    pdb_string\n \
+                        \n \
+                        `;\n \
+                        var lig_sdf =`  sdf_string\n \
+                        `;       \n \
+                            //////////////// set up system\n \
+                            viewer.addModel(prot_pdb, \"pdb\") \n \
+                            // set protein sticks and surface\n \
+                            viewer.setStyle({model: 0}, {stick: {colorscheme: \"whiteCarbon\", radius:0.15}});\n \
+                            // viewer.addSurface({}, {color: \"green\", opacity: 0.5}, {resi:[\"1-50\"]});\n \
+                            // viewer.addSurface({}, {color: \"blue\", opacity: 0.5}, {resi:[\"51-100\"]});\n \
+                            viewer.addSurface({}, {color: \"white\", opacity: 0.8}, );\n \
+                        \n \
+                            viewer.setStyle({bonds: 0}, {sphere:{radius:0.5}}); //water molecules\n \
+                        \n \
+                            viewer.addModel(lig_sdf, \"sdf\")   \n \
+                            // set ligand sticks\n \
+                            viewer.setStyle({model: -1}, {stick: {colorscheme: \"pinkCarbon\"}});\n \
+                        \n \
+                            ////////////////// enable show residue number on hover\n \
+                            viewer.setHoverable({}, true,\n \
+                            function (atom, viewer, event, container) {\n \
+                                console.log('hover', atom);\n \
+                                console.log('view:', viewer.getView()); // to get view for system\n \
+                                if (!atom.label) {\n \
+                                    atom.label = viewer.addLabel(atom.resn + atom.resi, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' });\n \
+                                    // if fitness view, can we show all possible residues it can mutate into with decent fitness?\n \
+                                }\n \
+                            },\n \
+                            function (atom) {\n \
+                                console.log('unhover', atom);\n \
+                                if (atom.label) {\n \
+                                    viewer.removeLabel(atom.label);\n \
+                                    delete atom.label;\n \
+                                }\n \
+                            }\n \
+                            );\n \
+                            viewer.setHoverDuration(100); // makes resn popup instant on hover\n \
+                        \n \
+                            //////////////// add protein-ligand interactions\n \
+                            var intn_dict = {'3_ILE23.A': {'lig_at_x': 6.1168, 'lig_at_y': -15.1724, 'lig_at_z': 15.0378, 'prot_at_x': 7.836, 'prot_at_y': -14.648, 'prot_at_z': 12.562, 'type': 'HBAcceptor', 'color': 'yellow'}, '4_VAL49.A': {'lig_at_x': 4.6893, 'lig_at_y': -13.8543, 'lig_at_z': 22.5618, 'prot_at_x': 7.458, 'prot_at_y': -13.695, 'prot_at_z': 21.342, 'type': 'HBAcceptor', 'color': 'yellow'}, '5_ILE131.A': {'lig_at_x': 2.7582, 'lig_at_y': -15.0623, 'lig_at_z': 23.3433, 'prot_at_x': 0.121, 'prot_at_y': -15.462, 'prot_at_z': 24.94, 'type': 'HBAcceptor', 'color': 'yellow'}, '8_PHE156.A': {'lig_at_x': 6.86024, 'lig_at_y': -16.45794, 'lig_at_z': 17.0304, 'prot_at_x': 6.938333333333333, 'prot_at_y': -20.451999999999998, 'prot_at_z': 14.069999999999999, 'type': 'PiStacking', 'color': 'purple'}};\n \
+                        \n \
+                            for (const [_, intn] of Object.entries(intn_dict)) {\n \
+                                viewer.addCylinder({start:{x:intn[\"lig_at_x\"],y:intn[\"lig_at_y\"],z:intn[\"lig_at_z\"]},\n \
+                                                        end:{x:intn[\"prot_at_x\"],y:intn[\"prot_at_y\"],z:intn[\"prot_at_z\"]},\n \
+                                                        radius:0.1,\n \
+                                                        dashed:true,\n \
+                                                        fromCap:2,\n \
+                                                        toCap:2,\n \
+                                                        color:intn[\"color\"]},\n \
+                                                        );\n \
+                            }\n \
+                        \n \
+                            ////////////////// set the view correctly\n \
+                            viewer.setBackgroundColor(0xffffffff);\n \
+                            viewer.setView([\n \
+                            -3.5200155623997147, \n \
+                            -5.050560643099713, \n \
+                            -12.108040862949323, \n \
+                            71.69598666461106, \n \
+                            0.3887976484684321, \n \
+                            0.42408332663180826, \n \
+                            -0.5833075994459622, \n \
+                            -0.5733602402041021\n \
+                            ])\n \
+                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n \
+                            viewer.render();"
+                    )
+                    
+        print(a)
+
+
+
+
+
+
+
+
     def write_pose_visualizations(self):
         """
         Write HTML visualisations for all poses.
@@ -247,6 +357,7 @@ class HTMLVisualizer:
         Write HTML visualisation for a single pose.
         """
         html = self.get_html(pose)
+        self.get_html_airium()
         self.make_color_res_subpockets()
         self.make_color_res_fitness()
         self.write_html(html, path)
