@@ -680,6 +680,8 @@ def init(args, rank=False):
             "batch_size": args.batch_size,
             "device": args.device,
             "grouped": args.grouped,
+            "substrate_conc": args.substrate_conc,
+            "km": args.michaelis_const,
         }
     )
 
