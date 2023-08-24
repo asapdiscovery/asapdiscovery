@@ -1,11 +1,9 @@
 import pytest
-
-from asapdiscovery.data.testing.test_resources import fetch_test_file
-
+from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.selectors.mcs_selector import MCSLigandSelector
 from asapdiscovery.data.selectors.pairwise_selector import PairwiseLigandSelector
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.fixture(scope="session")

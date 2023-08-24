@@ -1,13 +1,11 @@
-import numpy as np
-
 from typing import Literal
 
-from pydantic import Field
-
+import numpy as np
 from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.selectors.ligand_selector import LigandSelectorBase
-from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.selectors.ligand_selector import LigandSelectorBase
+from pydantic import Field
 
 
 class MCSLigandSelector(LigandSelectorBase):
