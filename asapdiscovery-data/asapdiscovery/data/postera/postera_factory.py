@@ -1,9 +1,7 @@
-from typing import List, Optional
-
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.services_config import PosteraSettings
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 
 class PosteraFactory(BaseModel):
