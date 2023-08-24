@@ -1612,7 +1612,7 @@ def train(
 
             # Update loss_dict
             update_loss_dict(
-                "test",
+                "train",
                 compound_id,
                 target.item(),
                 in_range.item(),
