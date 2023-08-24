@@ -69,7 +69,7 @@ def test_mcs_selector(ligands, complexes):
     assert pairs[3] == (ligands[3], complexes[3])
 
 
-def test_mcs_selector(ligands, complexes):
+def test_mcs_selector_ndraw(ligands, complexes):
     selector = MCSLigandSelector()
     pairs = selector.select(ligands, complexes, n_draw=2)
     # should be 8 pairs

@@ -1,5 +1,5 @@
 import abc
-from typing import Literal, Tuple
+from typing import Literal
 
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
