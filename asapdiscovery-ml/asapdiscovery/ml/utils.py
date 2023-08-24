@@ -1745,9 +1745,15 @@ def train(
 
         # Stop if loss has gone to infinity or is NaN
         if (
-            np.isnan(epoch_val_loss)
+            np.isnan(epoch_train_loss)
+            or (epoch_train_loss == np.inf)
+            or (epoch_train_loss == -np.inf)
+            or np.isnan(epoch_val_loss)
             or (epoch_val_loss == np.inf)
             or (epoch_val_loss == -np.inf)
+            or np.isnan(epoch_test_loss)
+            or (epoch_test_loss == np.inf)
+            or (epoch_test_loss == -np.inf)
         ):
             if os.path.isdir(save_file):
                 pkl.dump(
