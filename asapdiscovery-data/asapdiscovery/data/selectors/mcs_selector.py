@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import Field
 
 from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.selectors import LigandSelectorBase
+from asapdiscovery.data.selectors.ligand_selector import LigandSelectorBase
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.complex import Complex
 
@@ -32,9 +32,17 @@ class MCSLigandSelector(LigandSelectorBase):
         complexes : list[Complex]
             List of complexes to search in
         n_draw : int, optional
-            Draw top n_draw matched molecules
+            Draw top n_draw matched molecules for each ligand (default: 1) this means that the
+            number of pairs returned is n_draw * len(ligands)
 
+        Returns
+        -------
+        list[tuple[Ligand, Complex]]
+            List of ligand and complex pairs
         """
+
+        # clip n_draw if it is larger than length of complexes to search from
+        n_draw = min(n_draw, len(complexes))
 
         if self.structure_based:
             """
@@ -100,7 +108,7 @@ class MCSLigandSelector(LigandSelectorBase):
             complexes_sorted = np.asarray(complexes)[sort_idx]
 
             for i in range(n_draw):
-                pairs.append(ligand, complexes_sorted[i])
+                pairs.append((ligand, complexes_sorted[i]))
 
         return pairs
 

@@ -1,7 +1,7 @@
 from itertools import product
 from typing import Literal
 
-from asapdiscovery.data.selectors import LigandSelectorBase
+from asapdiscovery.data.selectors.ligand_selector import LigandSelectorBase
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.complex import Complex
 
