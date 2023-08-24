@@ -1,8 +1,8 @@
 import logging
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
-from airium import Airium
 
+from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
@@ -16,8 +16,8 @@ from asapdiscovery.data.openeye import (
     save_openeye_pdb,
 )
 
-from ._html_blocks import HTMLBlockData, make_core_html
 from ._gif_blocks import GIFBlockData
+from ._html_blocks import HTMLBlockData, make_core_html
 from .viz_targets import VizTargets
 
 
@@ -108,8 +108,6 @@ class HTMLVisualizer:
             load_openeye_pdb(str(protein)), preserve_all=True
         )
 
-
-
         self.logger.debug(
             f"Writing HTML visualisations for {len(self.output_paths)} ligands"
         )
@@ -129,7 +127,7 @@ class HTMLVisualizer:
         with open(path, "w") as f:
             f.write(html)
 
-    def get_color_dict(self) -> Dict:
+    def get_color_dict(self) -> dict:
         """
         Depending on color type, return a dict that contains residues per color.
         """
@@ -137,38 +135,47 @@ class HTMLVisualizer:
             return self.make_color_res_subpockets()
         elif self.color_method == "fitness":
             return self.make_color_res_fitness()
-        
-        
-    def make_color_res_subpockets(self) -> Dict:
+
+    def make_color_res_subpockets(self) -> dict:
         """
         Based on subpocket coloring, creates a dict where keys are colors, values are residue numbers.
         """
 
         # get a list of all residue numbers of the protein.
-        protein_residues = [oechem.OEAtomGetResidue(atom).GetResidueNumber() \
-                            for atom in self.protein.GetAtoms()]
+        protein_residues = [
+            oechem.OEAtomGetResidue(atom).GetResidueNumber()
+            for atom in self.protein.GetAtoms()
+        ]
 
         # build a dict with all specified residue colorings.
         color_res_dict = {}
         for subpocket, color in GIFBlockData.get_color_dict(self.target).items():
-            subpocket_residues = GIFBlockData.get_pocket_dict(self.target)[subpocket].split("+")
-            color_res_dict[color] = [ int(res) for res in subpocket_residues ]
-        
+            subpocket_residues = GIFBlockData.get_pocket_dict(self.target)[
+                subpocket
+            ].split("+")
+            color_res_dict[color] = [int(res) for res in subpocket_residues]
+
         # set any non-specified residues to white.
-        treated_res_nums = [ res for sublist in color_res_dict.values() for res in sublist ]
-        non_treated_res_nums = [ res for res in set(protein_residues) if not res in treated_res_nums]
+        treated_res_nums = [
+            res for sublist in color_res_dict.values() for res in sublist
+        ]
+        non_treated_res_nums = [
+            res for res in set(protein_residues) if not res in treated_res_nums
+        ]
         color_res_dict["white"] = non_treated_res_nums
-        
+
         return color_res_dict
-    
-    def make_color_res_fitness(self) -> Dict:
+
+    def make_color_res_fitness(self) -> dict:
         """
         Based on fitness coloring, creates a dict where keys are colors, values are residue numbers.
         """
         # get a list of all residue numbers of the protein.
-        protein_residues = [oechem.OEAtomGetResidue(atom).GetResidueNumber() \
-                            for atom in self.protein.GetAtoms()]
-        
+        protein_residues = [
+            oechem.OEAtomGetResidue(atom).GetResidueNumber()
+            for atom in self.protein.GetAtoms()
+        ]
+
         hex_color_codes = [
             "#ffffff",
             "#ffece5",
@@ -186,7 +193,7 @@ class HTMLVisualizer:
         for res_num in set(protein_residues):
             try:
                 # color residue white->red depending on fitness value.
-                color = hex_color_codes[int(self.fitness_data[res_num]/10)]
+                color = hex_color_codes[int(self.fitness_data[res_num] / 10)]
                 if not color in color_res_dict:
                     color_res_dict[color] = [res_num]
                 else:
@@ -200,26 +207,37 @@ class HTMLVisualizer:
                     color_res_dict[color].append(res_num)
 
         return color_res_dict
-        
 
     def get_html_airium(self, pose):
         """
-        Get HTML for visualizing a single pose. This uses Airium which is a handy tool to write 
+        Get HTML for visualizing a single pose. This uses Airium which is a handy tool to write
         HTML using python. We can't do f-string because of all the JS curly brackets, need to do '+' instead.
         """
         a = Airium()
 
-        # first prep the coloring function. 
+        # first prep the coloring function.
         surface_coloring = self.get_color_dict()
         residue_coloring_function_js = ""
         start = True
         for color, residues in surface_coloring.items():
-            residues = [ str(res) for res in residues ]
+            residues = [str(res) for res in residues]
             if start:
-                residue_coloring_function_js += "if (["+",".join(residues)+"].includes(atom.resi)){ \n return '"+color+"' \n "
+                residue_coloring_function_js += (
+                    "if (["
+                    + ",".join(residues)
+                    + "].includes(atom.resi)){ \n return '"
+                    + color
+                    + "' \n "
+                )
                 start = False
             else:
-                residue_coloring_function_js += "} else if (["+",".join(residues)+"].includes(atom.resi)){ \n return '"+color+"' \n "
+                residue_coloring_function_js += (
+                    "} else if (["
+                    + ",".join(residues)
+                    + "].includes(atom.resi)){ \n return '"
+                    + color
+                    + "' \n "
+                )
 
         # start writing the HTML doc.
         a("<!DOCTYPE HTML>")
@@ -250,23 +268,30 @@ class HTMLVisualizer:
                 a.script(src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js")
                 a.script(src="https://d3js.org/d3.v5.min.js")
             with a.body():
-                a.div(id="gldiv", style="width: 100vw; height: 100vh; position: relative;")
+                a.div(
+                    id="gldiv", style="width: 100vw; height: 100vh; position: relative;"
+                )
                 with a.script():
-                    
                     a(
-                        "var viewer=$3Dmol.createViewer($(\"#gldiv\"));\n \
-                        var prot_pdb = `    "+oemol_to_pdb_string(self.protein)+"\n \
+                        'var viewer=$3Dmol.createViewer($("#gldiv"));\n \
+                        var prot_pdb = `    '
+                        + oemol_to_pdb_string(self.protein)
+                        + "\n \
                         \n \
                         `;\n \
-                        var lig_sdf =`  "+oemol_to_sdf_string(pose)+"\n \
+                        var lig_sdf =`  "
+                        + oemol_to_sdf_string(pose)
+                        + '\n \
                         `;       \n \
                             //////////////// set up system\n \
-                            viewer.addModel(prot_pdb, \"pdb\") \n \
+                            viewer.addModel(prot_pdb, "pdb") \n \
                             // set protein sticks and surface\n \
-                            viewer.setStyle({model: 0}, {stick: {colorscheme: \"whiteCarbon\", radius:0.15}});\n \
-                            // define a coloring function based on our residue ranges. We can't call .addSurface separate times because the surfaces won't be merged nicely. \n \
+                            viewer.setStyle({model: 0}, {stick: {colorscheme: "whiteCarbon", radius:0.15}});\n \
+                            // define a coloring function based on our residue ranges. We can\'t call .addSurface separate times because the surfaces won\'t be merged nicely. \n \
                             var colorAsSnake = function(atom) { \
-                            "+residue_coloring_function_js+" \
+                            '
+                        + residue_coloring_function_js
+                        + " \
                                          }}; \
                             viewer.addSurface(\"VDW\", {colorfunc: colorAsSnake, opacity: 0.9}) \n \
                         \n \
@@ -313,22 +338,15 @@ class HTMLVisualizer:
                             ////////////////// set the view correctly\n \
                             viewer.setBackgroundColor(0xffffffff);\n \
                             viewer.setView(\n \
-                            "+HTMLBlockData.get_orient(self.target)+" \
+                            "
+                        + HTMLBlockData.get_orient(self.target)
+                        + " \
                             )\n \
                             viewer.setZoomLimits(1,250) // prevent infinite zooming\n \
                             viewer.render();"
                     )
-                    
+
         print(a)
-
-
-
-
-
-
-
-
-
 
     def make_fitness_bfactors(self) -> set[int]:
         """
@@ -405,10 +423,8 @@ class HTMLVisualizer:
         """
 
         colour = HTMLBlockData.get_pocket_color(self.target)
-    
 
         method = HTMLBlockData.get_color_method(self.color_method)
         orient_tail = HTMLBlockData.get_orient_tail(self.target)
-        
 
         return colour + method + orient_tail
