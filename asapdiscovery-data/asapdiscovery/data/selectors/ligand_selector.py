@@ -1,8 +1,8 @@
 import abc
-from typing import Literal
+from typing import Literal, Union
 
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
+
 from pydantic import BaseModel, Field
 
 
@@ -13,10 +13,10 @@ class LigandSelectorBase(abc.ABC, BaseModel):
     )
 
     @abc.abstractmethod
-    def _select(self, *args, **kwargs) -> list[tuple[Ligand, Complex]]:
+    def _select(self, *args, **kwargs) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         ...
 
-    def select(self, *args, **kwargs) -> list[tuple[Ligand, Complex]]:
+    def select(self, *args, **kwargs) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         return self._select(*args, **kwargs)
 
     @abc.abstractmethod

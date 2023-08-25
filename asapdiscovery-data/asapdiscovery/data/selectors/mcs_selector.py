@@ -1,8 +1,9 @@
-from typing import Literal
+from typing import Literal, Union
 
 import numpy as np
 from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.selectors.ligand_selector import LigandSelectorBase
 from pydantic import Field
@@ -17,8 +18,8 @@ class MCSLigandSelector(LigandSelectorBase):
     )
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Complex], n_select: int = 1
-    ) -> list[tuple[Ligand, Complex]]:
+        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]], n_select: int = 1
+    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         """
         Selects ligand and complex pairs based on maximum common substructure
         (MCS) search.
@@ -27,7 +28,7 @@ class MCSLigandSelector(LigandSelectorBase):
         ----------
         ligands : list[Ligand]
             List of ligands to search for
-        complexes : list[Complex]
+        complexes : list[Union[Complex, PreppedComplex]]]
             List of complexes to search in
         n_select : int, optional
             Draw top n_select matched molecules for each ligand (default: 1) this means that the

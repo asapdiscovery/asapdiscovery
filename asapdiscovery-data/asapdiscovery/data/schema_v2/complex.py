@@ -6,8 +6,8 @@ from typing import Any
 from asapdiscovery.data.openeye import load_openeye_pdb
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from asapdiscovery.data.schema_v2.target import Target
-from asapdiscovery.modeling.modeling import split_openeye_mol
+from asapdiscovery.data.schema_v2.target import Target, PreppedTarget
+from asapdiscovery.modeling.modeling import split_openeye_mol, protein_prep_workflow_v2
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field
 
@@ -34,7 +34,7 @@ class Complex(DataModelAbstractBase):
         ligand_chain="",
         target_kwargs={},
         ligand_kwargs={},
-    ):
+    ) -> "Complex":
         # First load full complex molecule
         complex_mol = load_openeye_pdb(pdb_file)
 
@@ -59,3 +59,19 @@ class Complex(DataModelAbstractBase):
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+
+class PreppedComplex(DataModelAbstractBase):
+    """
+    Schema for a Complex, containing both a PreppedTarget and Ligand
+    """
+
+    target: PreppedTarget = Field(description="PreppedTarget schema object")
+    ligand: Ligand = Field(description="Ligand schema object")
+
+    @classmethod
+    def from_complex(cls, complex: Complex) -> "PreppedComplex":
+        # Create PreppedTarget object
+        oedu = protein_prep_workflow_v2(complex.target.to_oemol())
+        prepped_target = PreppedTarget.from_oedu(oedu)
+        return cls(target=prepped_target, ligand=complex.ligand)
