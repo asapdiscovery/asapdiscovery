@@ -6,6 +6,8 @@ channels:
 dependencies:
   # Base depends
   - pip
+  # need python > 3.9.2 for dask-distributed issues
+  - python >= 3.9.2
 
   # Testing
   - pytest
