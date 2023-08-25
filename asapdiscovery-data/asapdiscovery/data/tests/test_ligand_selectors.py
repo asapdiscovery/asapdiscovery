@@ -59,7 +59,7 @@ def test_pairwise_selector(ligands, complexes):
 
 def test_mcs_selector(ligands, complexes):
     selector = MCSLigandSelector()
-    pairs = selector.select(ligands, complexes, n_draw=1)
+    pairs = selector.select(ligands, complexes, n_select=1)
     # should be 4 pairs
     assert len(pairs) == 4
     # as we matched against the exact smiles of the first 4 complex ligands, they should be in order
@@ -71,7 +71,7 @@ def test_mcs_selector(ligands, complexes):
 
 def test_mcs_selector_ndraw(ligands, complexes):
     selector = MCSLigandSelector()
-    pairs = selector.select(ligands, complexes, n_draw=2)
+    pairs = selector.select(ligands, complexes, n_select=2)
     # should be 8 pairs
     assert len(pairs) == 8
     assert pairs[0][1].ligand.smiles == "Cc1ccncc1N(C)C(=O)Cc2cccc(c2)Cl"  # exact match

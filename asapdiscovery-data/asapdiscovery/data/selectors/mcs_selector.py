@@ -17,7 +17,7 @@ class MCSLigandSelector(LigandSelectorBase):
     )
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Complex], n_draw: int = 1
+        self, ligands: list[Ligand], complexes: list[Complex], n_select: int = 1
     ) -> list[tuple[Ligand, Complex]]:
         """
         Selects ligand and complex pairs based on maximum common substructure
@@ -29,9 +29,9 @@ class MCSLigandSelector(LigandSelectorBase):
             List of ligands to search for
         complexes : list[Complex]
             List of complexes to search in
-        n_draw : int, optional
-            Draw top n_draw matched molecules for each ligand (default: 1) this means that the
-            number of pairs returned is n_draw * len(ligands)
+        n_select : int, optional
+            Draw top n_select matched molecules for each ligand (default: 1) this means that the
+            number of pairs returned is n_select * len(ligands)
 
         Returns
         -------
@@ -39,8 +39,8 @@ class MCSLigandSelector(LigandSelectorBase):
             List of ligand and complex pairs
         """
 
-        # clip n_draw if it is larger than length of complexes to search from
-        n_draw = min(n_draw, len(complexes))
+        # clip n_select if it is larger than length of complexes to search from
+        n_select = min(n_select, len(complexes))
 
         if self.structure_based:
             """
@@ -105,7 +105,7 @@ class MCSLigandSelector(LigandSelectorBase):
 
             complexes_sorted = np.asarray(complexes)[sort_idx]
 
-            for i in range(n_draw):
+            for i in range(n_select):
                 pairs.append((ligand, complexes_sorted[i]))
 
         return pairs
