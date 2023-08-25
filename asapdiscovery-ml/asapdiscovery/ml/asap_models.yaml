@@ -143,3 +143,49 @@ asapdiscovery-SARS-CoV-2-Mac1-GAT-2023.08.09:
   last_updated: 2023-08-09
   targets:
     - SARS-CoV-2-Mac1
+
+
+# earlier SchNet models shouldn't be used with mtenn >0.3.0 (GAT models should be fine,
+#  but here are some trained with mtenn 0.3.0 anyway)
+asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.25:
+  type: GAT
+  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/GAT/
+  weights:
+    resource: asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.25.th
+    sha256hash: 15b887764a3b3f8fb4a6fe60c409b42ea4040df78f31bf62a8714ebf71f48bf0
+  config:
+    resource: asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.25.json
+    sha256hash: d0b4d6c1f74b3e9caacea50af6ff6927803143842a72e74ebc7dbefdb2bcf444
+  last_updated: 2023-08-25
+  targets:
+    - SARS-CoV-2-Mpro
+    - MERS-CoV-Mpro
+
+
+asapdiscovery-SARS-CoV-2-Mac1-GAT-2023.08.25:
+  type: GAT
+  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/GAT/
+  weights:
+    resource: asapdiscovery-SARS-CoV-2-Mac1-GAT-2023.08.25.th
+    sha256hash: fb188a11c78c13bd29151f0f9ae9ce08f96c04c7321fb468209a83899414784c
+  config:
+    resource: asapdiscovery-SARS-CoV-2-Mac1-GAT-2023.08.25.json
+    sha256hash: d0b4d6c1f74b3e9caacea50af6ff6927803143842a72e74ebc7dbefdb2bcf444
+  last_updated: 2023-08-25
+  targets:
+    - SARS-CoV-2-Mac1
+
+
+asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.08.25:
+  type: schnet
+  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/schnet/
+  weights:
+    resource: asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.08.25.th
+    sha256hash: 82ee6079cc92ee3eb632fc24224d23a9fc4fc1e4daa9337391873b3c42e13c1f
+  config:
+    resource: asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.08.25.json
+    sha256hash: 30e80675d60c1d57eacfed7a61363acdc6397a103ea0d86b6a74502ce1f2a5e4
+  last_updated: 2023-08-25
+  targets:
+    - SARS-CoV-2-Mpro
+    - MERS-CoV-Mpro
