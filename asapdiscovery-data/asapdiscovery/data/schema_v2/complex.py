@@ -3,11 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from asapdiscovery.data.openeye import load_openeye_pdb
+
+from asapdiscovery.data.openeye import (
+    load_openeye_pdb,
+    combine_protein_ligand,
+    save_openeye_pdb,
+)
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.target import Target, PreppedTarget
-from asapdiscovery.modeling.modeling import split_openeye_mol, protein_prep_workflow_v2
+from asapdiscovery.modeling.modeling import split_openeye_mol
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field
 
@@ -15,6 +21,8 @@ from pydantic import Field
 class Complex(DataModelAbstractBase):
     """
     Schema for a Complex, containing both a Target and Ligand
+    In this case the Target field is required to be protein only
+
     """
 
     target: Target = Field(description="Target schema object")
@@ -60,18 +68,34 @@ class Complex(DataModelAbstractBase):
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
+    def to_combined_oemol(self):
+        """
+        Combine the target and ligand into a single oemol
+        """
+        return combine_protein_ligand(self.target.to_oemol(), self.ligand.to_oemol())
+
 
 class PreppedComplex(DataModelAbstractBase):
     """
     Schema for a Complex, containing both a PreppedTarget and Ligand
+    In this case the PreppedTarget contains the protein and ligand.
     """
 
     target: PreppedTarget = Field(description="PreppedTarget schema object")
     ligand: Ligand = Field(description="Ligand schema object")
 
+    # Overload from base class to check target and ligand individually
+    def data_equal(self, other: Complex):
+        return self.target.data_equal(other.target) and self.ligand.data_equal(
+            other.ligand
+        )
+
     @classmethod
-    def from_complex(cls, complex: Complex) -> "PreppedComplex":
+    def from_complex(cls, complex: Complex, prep_kwargs={}) -> "PreppedComplex":
         # Create PreppedTarget object
-        oedu = protein_prep_workflow_v2(complex.target.to_oemol())
-        prepped_target = PreppedTarget.from_oedu(oedu)
+        oedu = ProteinPrepper(**prep_kwargs).prep(complex.to_combined_oemol())
+        # copy over ids from complex
+        prepped_target = PreppedTarget.from_oedu(
+            oedu, ids=complex.target.ids, target_name=complex.target.target_name
+        )
         return cls(target=prepped_target, ligand=complex.ligand)

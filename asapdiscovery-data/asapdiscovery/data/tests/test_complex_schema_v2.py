@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from pydantic import ValidationError
 
@@ -98,3 +98,12 @@ def test_complex_json_file_roundtrip(complex_pdb, tmp_path):
     c2 = Complex.from_json_file(path)
 
     assert c1 == c2
+
+
+def test_prepped_complex_from_complex(complex_pdb):
+    c1 = Complex.from_pdb(
+        complex_pdb,
+        target_kwargs={"target_name": "test"},
+        ligand_kwargs={"compound_name": "test"},
+    )
+    c2 = PreppedComplex.from_complex(c1)

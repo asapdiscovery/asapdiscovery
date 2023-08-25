@@ -1,16 +1,27 @@
 import abc
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, root_validator
 from typing import Optional, Literal
 from pathlib import Path
-from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.openeye import oechem, save_openeye_pdb
+from asapdiscovery.modeling.modeling import (
+    spruce_protein,
+    make_design_unit,
+    superpose_molecule,
+    mutate_residues,
+)
+from asapdiscovery.data.utils import seqres_to_res_list
 
+import yaml
 
 
 class ProteinPrepperBase(BaseModel):
     prepper_type: Literal["ProteinPrepperBase"] = Field(
         "ProteinPrepperBase", description="The type of prepper to use"
     )
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @abc.abstractmethod
     def _prep(self, *args, **kwargs):
@@ -26,27 +37,74 @@ class ProteinPrepperBase(BaseModel):
 
 class ProteinPrepper(ProteinPrepperBase):
     prepper_type: Literal["ProteinPrepper"] = Field(
-        "ProteinPrepper", description="The type of prepper to use")
-    
-    align: Optional[oechem.OEMol] = Field(None, description="Reference structure to align to.")
+        "ProteinPrepper", description="The type of prepper to use"
+    )
+
+    align: Optional[oechem.OEMol] = Field(
+        None, description="Reference structure to align to."
+    )
     ref_chain: Optional[str] = Field(None, description="Chain ID to align to.")
     active_site_chain: Optional[str] = Field(None, description="Chain ID to align to.")
-    seqres_yaml: Optional[Path] = Field(None, description="Path to seqres yaml to mutate to.")
-    loop_db: Optional[Path] = Field(None, description="Path to loop database to use for prepping")
-    oe_active_site_residue: Optional[str] = Field(None, description="OE formatted string of active site residue to use")
+    seqres_yaml: Optional[Path] = Field(
+        None, description="Path to seqres yaml to mutate to."
+    )
+    loop_db: Optional[Path] = Field(
+        None, description="Path to loop database to use for prepping"
+    )
+    oe_active_site_residue: Optional[str] = Field(
+        None, description="OE formatted string of active site residue to use"
+    )
 
+    @root_validator
+    @classmethod
+    def _check_align_and_chain_info(cls, values):
+        align = values.get("align")
+        ref_chain = values.get("ref_chain")
+        active_site_chain = values.get("active_site_chain")
+        if align and not ref_chain:
+            raise ValueError("Must provide ref_chain if align is provided")
+        if align and not active_site_chain:
+            raise ValueError("Must provide align if active_site_chain is provided")
+        return values
 
-    def _prep(complex_oemol: oechem.OEMol):
-        """
-        Prepares a protein using the given kwargs
+    def _prep(self, prot: oechem.OEMol):
+        # Align
+        if self.align:
+            prot, _ = superpose_molecule(
+                self.align, prot, self.ref_chain, self.active_site_chain
+            )
 
-        Parameters
-        ----------
-        target_oemol : oechem.OEMol
-            The protein to prepare
+        # Mutate Residues
+        if self.seqres_yaml:
+            with open(self.seqres_yaml) as f:
+                seqres_dict = yaml.safe_load(f)
+            seqres = seqres_dict["SEQRES"]
+            res_list = seqres_to_res_list(seqres)
+            prot = mutate_residues(prot, res_list, place_h=True)
+            protein_sequence = " ".join(res_list)
+        else:
+            seqres = None
+            protein_sequence = None
 
-        Returns
-        -------
-        oechem.OEMol
-            The prepared protein
-        """
+        # Spruce Protein
+        success, spruce_error_message, spruced = spruce_protein(
+            initial_prot=prot,
+            protein_sequence=protein_sequence,
+            loop_db=str(self.loop_db),
+        )
+        if not success:
+            raise ValueError(f"Prep failed, with error message: {spruce_error_message}")
+
+        save_openeye_pdb(spruced, "spruced.pdb")
+        success, du = make_design_unit(
+            spruced,
+            site_residue=self.oe_active_site_residue,
+            protein_sequence=protein_sequence,
+        )
+        if not success:
+            raise ValueError("Failed to make design unit.")
+
+        return du
+
+    def provenance(self) -> dict[str, str]:
+        return {"prepper_type": self.prepper_type}

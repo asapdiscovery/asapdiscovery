@@ -163,55 +163,6 @@ def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> Prepped
         return target
 
 
-def protein_prep_workflow_v2(
-    target_oemol: oechem.OEMol,
-    align: Optional[oechem.OEMol] = None,
-    ref_chain: Optional[str] = None,
-    active_site_chain: Optional[str] = None,
-    seqres_yaml: Optional[Path] = None,
-    loop_db: Optional[Path] = None,
-    oe_active_site_residue: Optional[str] = None,
-    
-) -> oechem.OEDesignUnit:
-    """
-
-    """
-    if align and not ref_chain or not active_site_chain:
-        raise ValueError("Must provide ref_chain and active_site_chain if align is provided")
-
-    # Align
-    if align:
-        prot, _ = superpose_molecule(align, target_oemol, ref_chain, active_site_chain)
-
-    # Mutate Residues
-    if seqres_yaml:
-        with open(seqres_yaml) as f:
-            seqres_dict = yaml.safe_load(f)
-        seqres = seqres_dict["SEQRES"]
-        res_list = seqres_to_res_list(seqres)
-        prot = mutate_residues(prot, res_list, place_h=True)
-        protein_sequence = " ".join(res_list)
-    else:
-        seqres = None
-        protein_sequence = None
-
-    # Spruce Protein
-    success, spruce_error_message, spruced = spruce_protein(
-        initial_prot=prot,
-        protein_sequence=protein_sequence,
-        loop_db=str(loop_db),
-    )
-    if not success:
-        raise ValueError(f"Prep failed, with error message: {spruce_error_message}")
-
-    _, du = make_design_unit(
-        spruced,
-        site_residue=oe_active_site_residue,
-        protein_sequence=protein_sequence,
-    )
-    return du
-
-
 def get_oe_prep_opts():
     """
     These are the default options we've been using for OESpruce. They are based on John's function.
