@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class LigandSelectorBase(abc.ABC, BaseModel):
+    # records what kind of selector class was used, overridden in subclasses
     selector_type: Literal["LigandSelectorBase"] = Field(
         "LigandSelectorBase", description="The type of selector to use"
     )
