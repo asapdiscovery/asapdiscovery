@@ -451,8 +451,8 @@ def get_args():
         "--michaelis_const",
         type=float,
         help=(
-                "Km value for use in the Cheng-Prusoff equation. "
-                "Assumed to be in the same units as substrate concentration."
+            "Km value for use in the Cheng-Prusoff equation. "
+            "Assumed to be in the same units as substrate concentration."
         ),
     )
 
