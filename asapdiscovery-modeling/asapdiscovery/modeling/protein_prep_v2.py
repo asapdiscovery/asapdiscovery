@@ -76,18 +76,10 @@ class ProteinPrepper(ProteinPrepperBase):
         if align and not ref_chain:
             raise ValueError("Must provide ref_chain if align is provided")
         if align and not active_site_chain:
-            raise ValueError("Must provide align if active_site_chain is provided")
+            raise ValueError("Must provide active_site_chain if align is provided")
         return values
 
     def _prep(self, prot: oechem.OEMol):
-        molecule_filter = MoleculeFilter()
-        split_dict = split_openeye_mol(prot, molecule_filter)
-        prot = split_dict["prot"]
-        if "ligand" in molecule_filter.components_to_keep:
-            lig_mol = split_dict["lig"]
-            prot = combine_protein_ligand(prot, lig_mol)
-
-        save_openeye_pdb(prot, "test.pdb")
         # Align
         if self.align:
             prot, _ = superpose_molecule(
@@ -112,7 +104,6 @@ class ProteinPrepper(ProteinPrepperBase):
             protein_sequence=protein_sequence,
             loop_db=str(self.loop_db),
         )
-        save_openeye_pdb(spruced, "test2.pdb")
 
         if not success:
             raise ValueError(f"Prep failed, with error message: {spruce_error_message}")

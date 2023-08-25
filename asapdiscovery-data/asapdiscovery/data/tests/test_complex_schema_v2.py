@@ -106,9 +106,7 @@ def test_prepped_complex_from_complex(complex_pdb):
         target_kwargs={"target_name": "test"},
         ligand_kwargs={"compound_name": "test"},
     )
-    c2 = PreppedComplex.from_complex(
-        c1, prep_kwargs={"ref_chain": "A", "active_site_chain": "A"}
-    )
+    c2 = PreppedComplex.from_complex(c1, prep_kwargs={})
     du = c2.target.to_oedu()
     assert du.HasReceptor()
     assert du.HasLigand()

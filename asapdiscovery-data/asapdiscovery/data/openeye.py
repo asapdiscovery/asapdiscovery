@@ -22,7 +22,7 @@ def combine_protein_ligand(
     prot: oechem.OEMol,
     lig: oechem.OEMol,
     lig_name: str = "LIG",
-    # lig_chain: Optional[str] = "B",
+    lig_chain: Optional[str] = "",
     resid: Optional[int] = None,
     start_atom_id: Optional[int] = None,
 ) -> oechem.OEMol:
@@ -90,7 +90,8 @@ def combine_protein_ligand(
         res.SetName(lig_name.upper())
         res.SetResidueNumber(resid)
         res.SetSerialNumber(start_atom_id)
-        # res.SetChainID(lig_chain)
+        if lig_chain:
+            res.SetChainID(lig_chain)
         start_atom_id += 1
         res.SetHetAtom(True)
         oechem.OEAtomSetResidue(a, res)

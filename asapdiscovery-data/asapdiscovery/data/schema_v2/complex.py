@@ -27,6 +27,7 @@ class Complex(DataModelAbstractBase):
 
     target: Target = Field(description="Target schema object")
     ligand: Ligand = Field(description="Ligand schema object")
+    ligand_chain: str = Field(..., description="Chain ID of ligand in complex")
 
     # Overload from base class to check target and ligand individually
     def data_equal(self, other: Complex):
@@ -50,13 +51,15 @@ class Complex(DataModelAbstractBase):
         mol_filter = MoleculeFilter(
             protein_chains=target_chains, ligand_chain=ligand_chain
         )
-        split_dict = split_openeye_mol(complex_mol, mol_filter)
+        split_dict = split_openeye_mol(complex_mol, mol_filter, keep_one_lig=True)
 
         # Create Target and Ligand objects
         target = Target.from_oemol(split_dict["prot"], **target_kwargs)
         ligand = Ligand.from_oemol(split_dict["lig"], **ligand_kwargs)
 
-        return cls(target=target, ligand=ligand)
+        return cls(
+            target=target, ligand=ligand, ligand_chain=split_dict["keep_lig_chain"]
+        )
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Complex):
@@ -72,7 +75,9 @@ class Complex(DataModelAbstractBase):
         """
         Combine the target and ligand into a single oemol
         """
-        return combine_protein_ligand(self.target.to_oemol(), self.ligand.to_oemol())
+        return combine_protein_ligand(
+            self.target.to_oemol(), self.ligand.to_oemol(), lig_chain=self.ligand_chain
+        )
 
 
 class PreppedComplex(DataModelAbstractBase):
@@ -93,6 +98,11 @@ class PreppedComplex(DataModelAbstractBase):
     @classmethod
     def from_complex(cls, complex: Complex, prep_kwargs={}) -> "PreppedComplex":
         # Create ProteinPrepper object
+        if "ligand_chain" in prep_kwargs:
+            raise ValueError(
+                "Cannot specify ligand_chain in prep_kwargs, it is set by the Complex object"
+            )
+        prep_kwargs["ligand_chain"] = complex.ligand_chain
         oedu = ProteinPrepper(**prep_kwargs).prep(complex.to_combined_oemol())
         # copy over ids from complex
         prepped_target = PreppedTarget.from_oedu(
