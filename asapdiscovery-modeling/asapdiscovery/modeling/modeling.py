@@ -303,7 +303,7 @@ def spruce_protein(
         build_loops_success and build_sidechains_success and place_hydrogens_success
     )
     # Re-percieve residues so that atom number and connect records dont get screwed up
-    initial_prot = openeye_perceive_residues(initial_prot, preserve_all=True)
+    initial_prot = openeye_perceive_residues(initial_prot, preserve_all=False)
     return success, spruce_error_msg, initial_prot
 
 

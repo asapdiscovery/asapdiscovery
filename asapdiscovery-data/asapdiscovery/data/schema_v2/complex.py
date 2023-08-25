@@ -92,7 +92,7 @@ class PreppedComplex(DataModelAbstractBase):
 
     @classmethod
     def from_complex(cls, complex: Complex, prep_kwargs={}) -> "PreppedComplex":
-        # Create PreppedTarget object
+        # Create ProteinPrepper object
         oedu = ProteinPrepper(**prep_kwargs).prep(complex.to_combined_oemol())
         # copy over ids from complex
         prepped_target = PreppedTarget.from_oedu(

@@ -3,12 +3,24 @@ import abc
 from pydantic import BaseModel, Field, root_validator
 from typing import Optional, Literal
 from pathlib import Path
-from asapdiscovery.data.openeye import oechem, save_openeye_pdb
+from asapdiscovery.data.openeye import (
+    oechem,
+    save_openeye_pdb,
+    oechem,
+    oespruce,
+    oegrid,
+    combine_protein_ligand,
+)
 from asapdiscovery.modeling.modeling import (
     spruce_protein,
+    split_openeye_mol,
     make_design_unit,
     superpose_molecule,
     mutate_residues,
+)
+
+from asapdiscovery.modeling.schema import (
+    MoleculeFilter,
 )
 from asapdiscovery.data.utils import seqres_to_res_list
 
@@ -68,6 +80,14 @@ class ProteinPrepper(ProteinPrepperBase):
         return values
 
     def _prep(self, prot: oechem.OEMol):
+        molecule_filter = MoleculeFilter()
+        split_dict = split_openeye_mol(prot, molecule_filter)
+        prot = split_dict["prot"]
+        if "ligand" in molecule_filter.components_to_keep:
+            lig_mol = split_dict["lig"]
+            prot = combine_protein_ligand(prot, lig_mol)
+
+        save_openeye_pdb(prot, "test.pdb")
         # Align
         if self.align:
             prot, _ = superpose_molecule(
@@ -92,10 +112,11 @@ class ProteinPrepper(ProteinPrepperBase):
             protein_sequence=protein_sequence,
             loop_db=str(self.loop_db),
         )
+        save_openeye_pdb(spruced, "test2.pdb")
+
         if not success:
             raise ValueError(f"Prep failed, with error message: {spruce_error_message}")
 
-        save_openeye_pdb(spruced, "spruced.pdb")
         success, du = make_design_unit(
             spruced,
             site_residue=self.oe_active_site_residue,
