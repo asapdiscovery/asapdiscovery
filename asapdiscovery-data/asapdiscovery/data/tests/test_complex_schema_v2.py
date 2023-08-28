@@ -3,6 +3,7 @@ from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from pydantic import ValidationError
 
+from asapdiscovery.data.openeye import save_openeye_pdb, oechem
 
 @pytest.fixture(scope="session")
 def complex_pdb():
@@ -110,3 +111,5 @@ def test_prepped_complex_from_complex(complex_pdb):
     du = c2.target.to_oedu()
     assert du.HasReceptor()
     assert du.HasLigand()
+    assert c2.target.target_name == "test"
+    assert c2.ligand.compound_name == "test"
