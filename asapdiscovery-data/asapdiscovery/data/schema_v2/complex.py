@@ -97,11 +97,8 @@ class PreppedComplex(DataModelAbstractBase):
 
     @classmethod
     def from_complex(cls, complex: Complex, prep_kwargs={}) -> "PreppedComplex":
-        # Create ProteinPrepper object
-        if "ligand_chain" in prep_kwargs:
-            raise ValueError(
-                "Cannot specify ligand_chain in prep_kwargs, it is set by the Complex object"
-            )
+        # overwrite ligand_chain with ligand_chain from complex if it exists
+        prep_kwargs.pop("ligand_chain", None)
         prep_kwargs["ligand_chain"] = complex.ligand_chain
         oedu = ProteinPrepper(**prep_kwargs).prep(complex.to_combined_oemol())
         # copy over ids from complex

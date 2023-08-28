@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.selectors.mcs_selector import MCSLigandSelector
 from asapdiscovery.data.selectors.pairwise_selector import PairwiseLigandSelector
@@ -35,6 +35,12 @@ def complexes(all_mpro_fns):
     ]
 
 
+@pytest.fixture(scope="session")
+def prepped_complexes(complexes):
+    # kinda expensive to make, so let's just do the first 2
+    return [PreppedComplex.from_complex(c) for c in complexes[:2]]
+
+
 @pytest.fixture(scope="module")
 def smiles():
     # smiles for the ligands in the first 4  test pdb files
@@ -57,6 +63,12 @@ def test_pairwise_selector(ligands, complexes):
     assert len(pairs) == 40
 
 
+def test_pairwise_selector_prepped(ligands, prepped_complexes):
+    selector = PairwiseLigandSelector()
+    pairs = selector.select(ligands, prepped_complexes)
+    assert len(pairs) == 8
+
+
 def test_mcs_selector(ligands, complexes):
     selector = MCSLigandSelector()
     pairs = selector.select(ligands, complexes, n_select=1)
@@ -67,6 +79,18 @@ def test_mcs_selector(ligands, complexes):
     assert pairs[1] == (ligands[1], complexes[1])
     assert pairs[2] == (ligands[2], complexes[2])
     assert pairs[3] == (ligands[3], complexes[3])
+
+
+def test_mcs_select_prepped(ligands, prepped_complexes):
+    selector = MCSLigandSelector()
+    pairs = selector.select(ligands, prepped_complexes, n_select=1)
+    # should be 4 pairs
+    assert len(pairs) == 4
+    # as we matched against the exact smiles of the first complex ligands
+    assert pairs[0] == (ligands[0], prepped_complexes[0])
+    assert pairs[1] == (ligands[1], prepped_complexes[1])
+    assert pairs[2] == (ligands[2], prepped_complexes[1])
+    assert pairs[3] == (ligands[3], prepped_complexes[0])
 
 
 def test_mcs_selector_ndraw(ligands, complexes):
