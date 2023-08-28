@@ -1,21 +1,17 @@
 import abc
-
-from pydantic import BaseModel, Field, root_validator
-from typing import Optional, Literal
 from pathlib import Path
-from asapdiscovery.data.openeye import (
-    oechem,
-)
-from asapdiscovery.modeling.modeling import (
-    spruce_protein,
-    make_design_unit,
-    superpose_molecule,
-    mutate_residues,
-)
-
-from asapdiscovery.data.utils import seqres_to_res_list
+from typing import Literal, Optional
 
 import yaml
+from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.utils import seqres_to_res_list
+from asapdiscovery.modeling.modeling import (
+    make_design_unit,
+    mutate_residues,
+    spruce_protein,
+    superpose_molecule,
+)
+from pydantic import BaseModel, Field, root_validator
 
 
 class ProteinPrepperBase(BaseModel):

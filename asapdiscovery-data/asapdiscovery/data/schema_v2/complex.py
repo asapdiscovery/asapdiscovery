@@ -3,14 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-    combine_protein_ligand,
-)
+from asapdiscovery.data.openeye import combine_protein_ligand, load_openeye_pdb
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from asapdiscovery.data.schema_v2.target import Target, PreppedTarget
+from asapdiscovery.data.schema_v2.target import PreppedTarget, Target
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.modeling.schema import MoleculeFilter
@@ -54,7 +50,7 @@ class Complex(ComplexBase):
         ligand_chain="",
         target_kwargs={},
         ligand_kwargs={},
-    ) -> "Complex":
+    ) -> Complex:
         # First load full complex molecule
         complex_mol = load_openeye_pdb(pdb_file)
 
@@ -97,7 +93,7 @@ class PreppedComplex(ComplexBase):
         )
 
     @classmethod
-    def from_complex(cls, complex: Complex, prep_kwargs={}) -> "PreppedComplex":
+    def from_complex(cls, complex: Complex, prep_kwargs={}) -> PreppedComplex:
         """
         Create a PreppedComplex from a Complex by running ProteinPrepper
         on the combined oemol of the complex

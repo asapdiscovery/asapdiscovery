@@ -2,9 +2,9 @@ from typing import Literal, Union
 
 import numpy as np
 from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex, ComplexBase
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
+from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.selectors.selector import SelectorBase
 from pydantic import Field
 

@@ -1,10 +1,8 @@
 import abc
 from typing import Literal, Union
 
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-
-
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from pydantic import BaseModel, Field
 
 

@@ -1,7 +1,7 @@
 import pytest
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.selectors.pairwise_selector import PairwiseSelector
 from asapdiscovery.data.testing.test_resources import fetch_test_file

@@ -1,9 +1,9 @@
 import pytest
+from asapdiscovery.data.openeye import oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from pydantic import ValidationError
 
-from asapdiscovery.data.openeye import save_openeye_pdb, oechem
 
 @pytest.fixture(scope="session")
 def complex_pdb():
