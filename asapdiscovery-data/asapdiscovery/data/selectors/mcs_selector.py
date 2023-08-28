@@ -15,7 +15,7 @@ class MCSSelector(SelectorBase):
     (MCS) search.
     """
 
-    expander_type: Literal["PairwiseSelector"] = "PairwiseSelector"
+    expander_type: Literal["MCSSelector"] = "MCSSelector"
 
     structure_based: bool = Field(
         False,
