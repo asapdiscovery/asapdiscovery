@@ -5,29 +5,24 @@ from typing import Optional, Literal
 from pathlib import Path
 from asapdiscovery.data.openeye import (
     oechem,
-    save_openeye_pdb,
-    oechem,
-    oespruce,
-    oegrid,
-    combine_protein_ligand,
 )
 from asapdiscovery.modeling.modeling import (
     spruce_protein,
-    split_openeye_mol,
     make_design_unit,
     superpose_molecule,
     mutate_residues,
 )
 
-from asapdiscovery.modeling.schema import (
-    MoleculeFilter,
-)
 from asapdiscovery.data.utils import seqres_to_res_list
 
 import yaml
 
 
 class ProteinPrepperBase(BaseModel):
+    """
+    Base class for protein preppers.
+    """
+
     prepper_type: Literal["ProteinPrepperBase"] = Field(
         "ProteinPrepperBase", description="The type of prepper to use"
     )
@@ -36,10 +31,10 @@ class ProteinPrepperBase(BaseModel):
         arbitrary_types_allowed = True
 
     @abc.abstractmethod
-    def _prep(self, *args, **kwargs):
+    def _prep(self, *args, **kwargs) -> oechem.OEDesignUnit:
         ...
 
-    def prep(self, *args, **kwargs):
+    def prep(self, *args, **kwargs) -> oechem.OEDesignUnit:
         return self._prep(*args, **kwargs)
 
     @abc.abstractmethod
@@ -48,6 +43,10 @@ class ProteinPrepperBase(BaseModel):
 
 
 class ProteinPrepper(ProteinPrepperBase):
+    """
+    Protein prepper class that uses OESpruce to prepare a protein for docking.
+    """
+
     prepper_type: Literal["ProteinPrepper"] = Field(
         "ProteinPrepper", description="The type of prepper to use"
     )
@@ -70,6 +69,9 @@ class ProteinPrepper(ProteinPrepperBase):
     @root_validator
     @classmethod
     def _check_align_and_chain_info(cls, values):
+        """
+        Check that align and chain info is provided correctly.
+        """
         align = values.get("align")
         ref_chain = values.get("ref_chain")
         active_site_chain = values.get("active_site_chain")
@@ -79,14 +81,17 @@ class ProteinPrepper(ProteinPrepperBase):
             raise ValueError("Must provide active_site_chain if align is provided")
         return values
 
-    def _prep(self, prot: oechem.OEMol):
-        # Align
+    def _prep(self, prot: oechem.OEMol) -> oechem.OEDesignUnit:
+        """
+        Prepares a protein for docking using OESpruce.
+        """
+        # align
         if self.align:
             prot, _ = superpose_molecule(
                 self.align, prot, self.ref_chain, self.active_site_chain
             )
 
-        # Mutate Residues
+        # mutate residues
         if self.seqres_yaml:
             with open(self.seqres_yaml) as f:
                 seqres_dict = yaml.safe_load(f)
@@ -98,7 +103,7 @@ class ProteinPrepper(ProteinPrepperBase):
             seqres = None
             protein_sequence = None
 
-        # Spruce Protein
+        # spruce protein
         success, spruce_error_message, spruced = spruce_protein(
             initial_prot=prot,
             protein_sequence=protein_sequence,

@@ -7,7 +7,6 @@ from typing import Any
 from asapdiscovery.data.openeye import (
     load_openeye_pdb,
     combine_protein_ligand,
-    save_openeye_pdb,
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
@@ -90,13 +89,29 @@ class PreppedComplex(DataModelAbstractBase):
     ligand: Ligand = Field(description="Ligand schema object")
 
     # Overload from base class to check target and ligand individually
-    def data_equal(self, other: Complex):
+    def data_equal(self, other: PreppedComplex):
         return self.target.data_equal(other.target) and self.ligand.data_equal(
             other.ligand
         )
 
     @classmethod
     def from_complex(cls, complex: Complex, prep_kwargs={}) -> "PreppedComplex":
+        """
+        Create a PreppedComplex from a Complex by running ProteinPrepper
+        on the combined oemol of the complex
+
+        Parameters
+        ----------
+        complex : Complex
+            Complex to create PreppedComplex from
+        prep_kwargs : dict
+            Keyword arguments to pass to ProteinPrepper
+
+        Returns
+        -------
+        PreppedComplex
+            PreppedComplex object
+        """
         # overwrite ligand_chain with ligand_chain from complex if it exists
         prep_kwargs.pop("ligand_chain", None)
         prep_kwargs["ligand_chain"] = complex.ligand_chain
