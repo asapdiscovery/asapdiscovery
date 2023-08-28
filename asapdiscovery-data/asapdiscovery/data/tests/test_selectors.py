@@ -93,7 +93,7 @@ def test_mcs_select_prepped(ligands, prepped_complexes):
     assert pairs[3] == DockingInputPair(ligand=ligands[3], complex=prepped_complexes[0])
 
 
-def test_mcs_selector_ndraw(ligands, complexes):
+def test_mcs_selector_nselect(ligands, complexes):
     selector = MCSSelector()
     pairs = selector.select(ligands, complexes, n_select=2)
     # should be 8 pairs
