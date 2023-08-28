@@ -1,8 +1,8 @@
 import pytest
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.selectors.mcs_selector import MCSLigandSelector
-from asapdiscovery.data.selectors.pairwise_selector import PairwiseLigandSelector
+from asapdiscovery.data.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.selectors.pairwise_selector import PairwiseSelector
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
@@ -58,19 +58,19 @@ def ligands(smiles):
 
 
 def test_pairwise_selector(ligands, complexes):
-    selector = PairwiseLigandSelector()
+    selector = PairwiseSelector()
     pairs = selector.select(ligands, complexes)
     assert len(pairs) == 40
 
 
 def test_pairwise_selector_prepped(ligands, prepped_complexes):
-    selector = PairwiseLigandSelector()
+    selector = PairwiseSelector()
     pairs = selector.select(ligands, prepped_complexes)
     assert len(pairs) == 8
 
 
 def test_mcs_selector(ligands, complexes):
-    selector = MCSLigandSelector()
+    selector = MCSSelector()
     pairs = selector.select(ligands, complexes, n_select=1)
     # should be 4 pairs
     assert len(pairs) == 4
@@ -82,7 +82,7 @@ def test_mcs_selector(ligands, complexes):
 
 
 def test_mcs_select_prepped(ligands, prepped_complexes):
-    selector = MCSLigandSelector()
+    selector = MCSSelector()
     pairs = selector.select(ligands, prepped_complexes, n_select=1)
     # should be 4 pairs
     assert len(pairs) == 4
@@ -94,7 +94,7 @@ def test_mcs_select_prepped(ligands, prepped_complexes):
 
 
 def test_mcs_selector_ndraw(ligands, complexes):
-    selector = MCSLigandSelector()
+    selector = MCSSelector()
     pairs = selector.select(ligands, complexes, n_select=2)
     # should be 8 pairs
     assert len(pairs) == 8

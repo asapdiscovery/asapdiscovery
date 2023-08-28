@@ -5,12 +5,17 @@ from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.selectors.ligand_selector import LigandSelectorBase
+from asapdiscovery.data.selectors.selector import SelectorBase
 from pydantic import Field
 
 
-class MCSLigandSelector(LigandSelectorBase):
-    expander_type: Literal["PairwiseLigandSelector"] = "PairwiseLigandSelector"
+class MCSSelector(SelectorBase):
+    """
+    Selects ligand and complex pairs based on a maximum common substructure
+    (MCS) search.
+    """
+
+    expander_type: Literal["PairwiseSelector"] = "PairwiseSelector"
 
     structure_based: bool = Field(
         False,
@@ -18,7 +23,10 @@ class MCSLigandSelector(LigandSelectorBase):
     )
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]], n_select: int = 1
+        self,
+        ligands: list[Ligand],
+        complexes: list[Union[Complex, PreppedComplex]],
+        n_select: int = 1,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         """
         Selects ligand and complex pairs based on maximum common substructure
