@@ -89,7 +89,6 @@ class PreppedComplex(ComplexBase):
 
     target: PreppedTarget = Field(description="PreppedTarget schema object")
     ligand: Ligand = Field(description="Ligand schema object")
-    ligand_chain: str = Field(..., description="Chain ID of ligand in complex")
 
     # Overload from base class to check target and ligand individually
     def data_equal(self, other: PreppedComplex):

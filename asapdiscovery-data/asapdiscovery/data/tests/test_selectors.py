@@ -1,5 +1,6 @@
 import pytest
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.selectors.pairwise_selector import PairwiseSelector
@@ -75,10 +76,10 @@ def test_mcs_selector(ligands, complexes):
     # should be 4 pairs
     assert len(pairs) == 4
     # as we matched against the exact smiles of the first 4 complex ligands, they should be in order
-    assert pairs[0] == (ligands[0], complexes[0])
-    assert pairs[1] == (ligands[1], complexes[1])
-    assert pairs[2] == (ligands[2], complexes[2])
-    assert pairs[3] == (ligands[3], complexes[3])
+    assert pairs[0] == CompoundStructurePair(ligand=ligands[0], complex=complexes[0])
+    assert pairs[1] == CompoundStructurePair(ligand=ligands[1], complex=complexes[1])
+    assert pairs[2] == CompoundStructurePair(ligand=ligands[2], complex=complexes[2])
+    assert pairs[3] == CompoundStructurePair(ligand=ligands[3], complex=complexes[3])
 
 
 def test_mcs_select_prepped(ligands, prepped_complexes):
@@ -86,11 +87,10 @@ def test_mcs_select_prepped(ligands, prepped_complexes):
     pairs = selector.select(ligands, prepped_complexes, n_select=1)
     # should be 4 pairs
     assert len(pairs) == 4
-    # as we matched against the exact smiles of the first complex ligands
-    assert pairs[0] == (ligands[0], prepped_complexes[0])
-    assert pairs[1] == (ligands[1], prepped_complexes[1])
-    assert pairs[2] == (ligands[2], prepped_complexes[1])
-    assert pairs[3] == (ligands[3], prepped_complexes[0])
+    assert pairs[0] == DockingInputPair(ligand=ligands[0], complex=prepped_complexes[0])
+    assert pairs[1] == DockingInputPair(ligand=ligands[1], complex=prepped_complexes[1])
+    assert pairs[2] == DockingInputPair(ligand=ligands[2], complex=prepped_complexes[1])
+    assert pairs[3] == DockingInputPair(ligand=ligands[3], complex=prepped_complexes[0])
 
 
 def test_mcs_selector_ndraw(ligands, complexes):
@@ -98,7 +98,9 @@ def test_mcs_selector_ndraw(ligands, complexes):
     pairs = selector.select(ligands, complexes, n_select=2)
     # should be 8 pairs
     assert len(pairs) == 8
-    assert pairs[0][1].ligand.smiles == "Cc1ccncc1N(C)C(=O)Cc2cccc(c2)Cl"  # exact match
     assert (
-        pairs[1][1].ligand.smiles == "Cc1ccncc1NC(=O)Cc2cc(cc(c2)Cl)OC"
+        pairs[0].complex.ligand.smiles == "Cc1ccncc1N(C)C(=O)Cc2cccc(c2)Cl"
+    )  # exact match
+    assert (
+        pairs[1].complex.ligand.smiles == "Cc1ccncc1NC(=O)Cc2cc(cc(c2)Cl)OC"
     )  # clearly related

@@ -2,7 +2,7 @@ from typing import Literal, Union
 
 import numpy as np
 from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex, ComplexBase
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.selectors.selector import SelectorBase
@@ -47,6 +47,11 @@ class MCSSelector(SelectorBase):
         list[tuple[Ligand, Complex]]
             List of ligand and complex pairs
         """
+
+        if not all(isinstance(c, ComplexBase) for c in complexes):
+            raise ValueError("All complexes must be of the same type")
+
+        pair_cls = self._pair_type_from_complex(complexes[0])
 
         # clip n_select if it is larger than length of complexes to search from
         n_select = min(n_select, len(complexes))
@@ -115,7 +120,7 @@ class MCSSelector(SelectorBase):
             complexes_sorted = np.asarray(complexes)[sort_idx]
 
             for i in range(n_select):
-                pairs.append((ligand, complexes_sorted[i]))
+                pairs.append(pair_cls(ligand=ligand, complex=complexes_sorted[i]))
 
         return pairs
 
