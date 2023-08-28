@@ -12,33 +12,33 @@ def complex_pdb():
 
 
 def test_compoundstructure_pair(complex_pdb):
-    c = Complex.from_pdb(
+    cmplx = Complex.from_pdb(
         complex_pdb,
         target_kwargs={"target_name": "test"},
         ligand_kwargs={"compound_name": "test"},
     )
-    l = Ligand.from_smiles("c1cc[nH]c(=O)c1", compound_name="test")
-    _ = CompoundStructurePair(complex=c, ligand=l)
+    lig = Ligand.from_smiles("c1cc[nH]c(=O)c1", compound_name="test")
+    _ = CompoundStructurePair(complex=cmplx, ligand=lig)
 
 
 def test_dockinginput_pair_from_compoundstructure_pair(complex_pdb):
-    c = Complex.from_pdb(
+    cmplx = Complex.from_pdb(
         complex_pdb,
         target_kwargs={"target_name": "test"},
         ligand_kwargs={"compound_name": "test"},
     )
-    l = Ligand.from_smiles("c1cc[nH]c(=O)c1", compound_name="test")
-    cs_pair = CompoundStructurePair(complex=c, ligand=l)
+    lig = Ligand.from_smiles("c1cc[nH]c(=O)c1", compound_name="test")
+    cs_pair = CompoundStructurePair(complex=cmplx, ligand=lig)
     _ = DockingInputPair.from_compound_structure_pair(cs_pair)
 
 
 def test_dockinginput_pair(complex_pdb):
-    c = PreppedComplex.from_complex(
+    cmplx = PreppedComplex.from_complex(
         Complex.from_pdb(
             complex_pdb,
             target_kwargs={"target_name": "test"},
             ligand_kwargs={"compound_name": "test"},
         )
     )
-    l = Ligand.from_smiles("c1cc[nH]c(=O)c1", compound_name="test")
-    _ = DockingInputPair(complex=c, ligand=l)
+    lig = Ligand.from_smiles("c1cc[nH]c(=O)c1", compound_name="test")
+    _ = DockingInputPair(complex=cmplx, ligand=lig)
