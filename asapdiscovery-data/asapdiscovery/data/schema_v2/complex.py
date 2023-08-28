@@ -17,7 +17,19 @@ from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field
 
 
-class Complex(DataModelAbstractBase):
+class ComplexBase(DataModelAbstractBase):
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, ComplexBase):
+            return NotImplemented
+
+        # Just check that both Targets and Ligands are the same
+        return (self.target == other.target) and (self.ligand == other.ligand)
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+
+class Complex(ComplexBase):
     """
     Schema for a Complex, containing both a Target and Ligand
     In this case the Target field is required to be protein only
@@ -60,16 +72,6 @@ class Complex(DataModelAbstractBase):
             target=target, ligand=ligand, ligand_chain=split_dict["keep_lig_chain"]
         )
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Complex):
-            return NotImplemented
-
-        # Just check that both Targets and Ligands are the same
-        return (self.target == other.target) and (self.ligand == other.ligand)
-
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
-
     def to_combined_oemol(self):
         """
         Combine the target and ligand into a single oemol
@@ -79,7 +81,7 @@ class Complex(DataModelAbstractBase):
         )
 
 
-class PreppedComplex(DataModelAbstractBase):
+class PreppedComplex(ComplexBase):
     """
     Schema for a Complex, containing both a PreppedTarget and Ligand
     In this case the PreppedTarget contains the protein and ligand.
@@ -87,6 +89,7 @@ class PreppedComplex(DataModelAbstractBase):
 
     target: PreppedTarget = Field(description="PreppedTarget schema object")
     ligand: Ligand = Field(description="Ligand schema object")
+    ligand_chain: str = Field(..., description="Chain ID of ligand in complex")
 
     # Overload from base class to check target and ligand individually
     def data_equal(self, other: PreppedComplex):
@@ -118,6 +121,9 @@ class PreppedComplex(DataModelAbstractBase):
         oedu = ProteinPrepper(**prep_kwargs).prep(complex.to_combined_oemol())
         # copy over ids from complex
         prepped_target = PreppedTarget.from_oedu(
-            oedu, ids=complex.target.ids, target_name=complex.target.target_name
+            oedu,
+            ids=complex.target.ids,
+            target_name=complex.target.target_name,
+            ligand_chain=complex.ligand_chain,
         )
         return cls(target=prepped_target, ligand=complex.ligand)
