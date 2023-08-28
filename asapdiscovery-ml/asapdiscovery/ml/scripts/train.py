@@ -805,20 +805,7 @@ def main():
     exp_configure.update({"start_epoch": start_epoch})
 
     # Set up the loss function
-    if (args.loss is None) or (args.loss.lower() == "step"):
-        loss_func = MSELoss(args.loss)
-        lt = "standard" if args.loss is None else args.loss.lower()
-        print(f"Using {lt} MSE loss", flush=True)
-    elif "uncertainty" in args.loss.lower():
-        keep_sq = "sq" in args.loss.lower()
-        loss_func = GaussianNLLLoss(keep_sq, args.sq)
-        print(
-            f"Using Gaussian NLL loss with{'out'*(not keep_sq)}",
-            "semiquant values",
-            flush=True,
-        )
-    else:
-        raise ValueError(f"Unknown loss type {args.loss}")
+    loss_func = build_loss_function(args.grouped, args.loss, args.sq)
 
     print("sq", args.sq, flush=True)
     loss_str = args.loss.lower() if args.loss else "mse"

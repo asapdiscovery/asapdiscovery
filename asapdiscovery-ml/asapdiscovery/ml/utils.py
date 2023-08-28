@@ -190,6 +190,47 @@ def build_dataset(
     return ds, exp_data
 
 
+def build_loss_function(grouped, loss_type=None, semiquant_fill=None):
+    """
+    Build appropriate loss function for training.
+
+    Parameters
+    ----------
+    loss_type : str, optional
+        Loss type ["step", "uncertainty", "uncertainty_sq"]
+
+    Returns
+    -------
+    Union[MSELoss, GroupedMSELoss, GaussianNLLLoss]
+    """
+    from asapdiscovery.ml.loss import MSELoss, GroupedMSELoss, GaussianNLLLoss
+
+    try:
+        loss_type = loss_type.lower()
+    except AttributeError:
+        pass
+
+    if (loss_type is None) or (loss_type == "step"):
+        if grouped:
+            loss_func = GroupedMSELoss(loss_type)
+        else:
+            loss_func = MSELoss(loss_type)
+        lt = "standard" if loss_type is None else loss_type
+        print(f"Using {lt} MSE loss", flush=True)
+    elif "uncertainty" in loss_type:
+        keep_sq = "sq" in loss_type
+        loss_func = GaussianNLLLoss(keep_sq, semiquant_fill)
+        print(
+            f"Using Gaussian NLL loss with{'out'*(not keep_sq)}",
+            "semiquant values",
+            flush=True,
+        )
+    else:
+        raise ValueError(f"Unknown loss type {loss_type}")
+
+    return loss_func
+
+
 def build_model(
     model_type,
     e3nn_params=None,
