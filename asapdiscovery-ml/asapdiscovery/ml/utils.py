@@ -1428,6 +1428,7 @@ def train(
     target_dict,
     n_epochs,
     device,
+    grouped=False,
     loss_fn=None,
     save_file=None,
     lr=1e-4,
@@ -1608,7 +1609,10 @@ def train(
 
             # Make prediction and calculate loss
             pred = model(pose).reshape(target.shape)
-            loss = loss_fn(pred, target, in_range, uncertainty)
+            if grouped:
+                loss = loss_fn(pred, model, target, in_range, uncertainty)
+            else:
+                loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
             update_loss_dict(
@@ -1634,7 +1638,8 @@ def train(
             # Perform backprop if we've done all the preds for this batch
             if batch_counter == batch_size:
                 # Backprop
-                batch_loss.backward()
+                if not grouped:
+                    batch_loss.backward()
                 optimizer.step()
 
                 # Reset batch tracking
@@ -1644,84 +1649,92 @@ def train(
 
         if batch_counter > 0:
             # Backprop for final incomplete batch
-            batch_loss.backward()
+            if not grouped:
+                batch_loss.backward()
             optimizer.step()
         end_time = time()
 
         epoch_train_loss = np.mean(tmp_loss)
 
-        with torch.no_grad():
-            tmp_loss = []
-            for compound, pose in ds_val:
-                if type(compound) is tuple:
-                    compound_id = compound[1]
-                else:
-                    compound_id = compound
+        model.eval()
+        tmp_loss = []
+        for compound, pose in ds_val:
+            if type(compound) is tuple:
+                compound_id = compound[1]
+            else:
+                compound_id = compound
 
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[target_dict[compound_id]["pIC50"]]], device=device
-                ).float()
-                in_range = torch.tensor(
-                    [[target_dict[compound_id]["pIC50_range"]]], device=device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[target_dict[compound_id]["pIC50_stderr"]]], device=device
-                ).float()
+            # convert to float to match other types
+            target = torch.tensor(
+                [[target_dict[compound_id]["pIC50"]]], device=device
+            ).float()
+            in_range = torch.tensor(
+                [[target_dict[compound_id]["pIC50_range"]]], device=device
+            ).float()
+            uncertainty = torch.tensor(
+                [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+            ).float()
 
-                # Make prediction and calculate loss
-                pred = model(pose).reshape(target.shape)
+            # Make prediction and calculate loss
+            pred = model(pose).reshape(target.shape)
+            if grouped:
+                loss = loss_fn(pred, model, target, in_range, uncertainty)
+            else:
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
-                # Update loss_dict
-                update_loss_dict(
-                    "val",
-                    compound_id,
-                    target.item(),
-                    in_range.item(),
-                    uncertainty.item(),
-                    pred.item(),
-                    loss.item(),
-                )
+            # Update loss_dict
+            update_loss_dict(
+                "val",
+                compound_id,
+                target.item(),
+                in_range.item(),
+                uncertainty.item(),
+                pred.item(),
+                loss.item(),
+            )
 
-                tmp_loss.append(loss.item())
-            epoch_val_loss = np.mean(tmp_loss)
+            tmp_loss.append(loss.item())
+        epoch_val_loss = np.mean(tmp_loss)
 
-            tmp_loss = []
-            for compound, pose in ds_test:
-                if type(compound) is tuple:
-                    compound_id = compound[1]
-                else:
-                    compound_id = compound
+        tmp_loss = []
+        for compound, pose in ds_test:
+            if type(compound) is tuple:
+                compound_id = compound[1]
+            else:
+                compound_id = compound
 
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[target_dict[compound_id]["pIC50"]]], device=device
-                ).float()
-                in_range = torch.tensor(
-                    [[target_dict[compound_id]["pIC50_range"]]], device=device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[target_dict[compound_id]["pIC50_stderr"]]], device=device
-                ).float()
+            # convert to float to match other types
+            target = torch.tensor(
+                [[target_dict[compound_id]["pIC50"]]], device=device
+            ).float()
+            in_range = torch.tensor(
+                [[target_dict[compound_id]["pIC50_range"]]], device=device
+            ).float()
+            uncertainty = torch.tensor(
+                [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+            ).float()
 
-                # Make prediction and calculate loss
-                pred = model(pose).reshape(target.shape)
+            # Make prediction and calculate loss
+            pred = model(pose).reshape(target.shape)
+            if grouped:
+                loss = loss_fn(pred, model, target, in_range, uncertainty)
+            else:
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
-                # Update loss_dict
-                update_loss_dict(
-                    "test",
-                    compound_id,
-                    target.item(),
-                    in_range.item(),
-                    uncertainty.item(),
-                    pred.item(),
-                    loss.item(),
-                )
+            # Update loss_dict
+            update_loss_dict(
+                "test",
+                compound_id,
+                target.item(),
+                in_range.item(),
+                uncertainty.item(),
+                pred.item(),
+                loss.item(),
+            )
 
-                tmp_loss.append(loss.item())
-            epoch_test_loss = np.mean(tmp_loss)
+            tmp_loss.append(loss.item())
+        epoch_test_loss = np.mean(tmp_loss)
+        model.train()
 
         if use_wandb:
             wandb.log(
