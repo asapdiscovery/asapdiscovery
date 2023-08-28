@@ -49,6 +49,9 @@ class MCSSelector(SelectorBase):
         """
 
         if not all(isinstance(c, ComplexBase) for c in complexes):
+            raise ValueError("All complexes must be of type Complex, or PreppedComplex")
+
+        if not all(isinstance(c, type(complexes[0])) for c in complexes):
             raise ValueError("All complexes must be of the same type")
 
         pair_cls = self._pair_type_from_complex(complexes[0])
