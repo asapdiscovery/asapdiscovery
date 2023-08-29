@@ -124,4 +124,8 @@ class ProteinPrepper(ProteinPrepperBase):
         return du
 
     def provenance(self) -> dict[str, str]:
-        return {"prepper_type": self.prepper_type}
+        return {
+            "prepper_type": self.prepper_type,
+            "oechem": oechem.OEChemGetVersion(),
+            "oespruce": oechem.OESpruceGetVersion(),
+        }
