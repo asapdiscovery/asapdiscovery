@@ -311,6 +311,8 @@ def build_model(
         combination = config["comb"].lower() if "comb" in config else comb.lower()
         if combination == "mean":
             combination = mtenn.model.MeanCombination()
+        elif combination == "max":
+            combination = mtenn.model.MaxCombination()
         elif combination == "boltzmann":
             combination = mtenn.model.BoltzmannCombination()
         else:
