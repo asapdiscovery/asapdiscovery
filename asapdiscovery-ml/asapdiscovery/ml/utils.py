@@ -1286,13 +1286,16 @@ def make_subsets(ds, idx_lists, split_lens):
     seen_idx = set()
     prev_idx = 0
     # Go up to the last split so we can add anything that got left out from rounding
-    for n_mols in split_lens[:-1]:
+    for i, n_mols in enumerate(split_lens[:-1]):
         n_mols_cur = 0
         subset_idx = []
         cur_idx = prev_idx
         # Keep adding groups until the split is as big as it needs to be, or we reach
-        #  the end of the array
-        while (n_mols_cur < n_mols) and (cur_idx < len(idx_lists)):
+        #  the end of the array (making sure to save at least some molecules for the
+        #  rest of the splits)
+        while (n_mols_cur < n_mols) and (
+            cur_idx < (len(idx_lists) - (len(split_lens) - i))
+        ):
             subset_idx.extend(idx_lists[cur_idx])
             n_mols_cur += len(idx_lists[cur_idx])
             cur_idx += 1
