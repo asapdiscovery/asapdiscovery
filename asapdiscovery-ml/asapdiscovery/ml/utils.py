@@ -1651,7 +1651,7 @@ def train(
             # Make prediction and calculate loss
             pred = model(pose).reshape(target.shape)
             if grouped:
-                loss = loss_fn(pred, model, target, in_range, uncertainty)
+                loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
@@ -1682,6 +1682,8 @@ def train(
                 if not grouped:
                     batch_loss.backward()
                 optimizer.step()
+                if any([p.grad.isnan().any().item() for p in model.parameters()]):
+                    raise ValueError("NaN gradients")
 
                 # Reset batch tracking
                 batch_counter = 0
@@ -1693,6 +1695,8 @@ def train(
             if not grouped:
                 batch_loss.backward()
             optimizer.step()
+            if any([p.grad.isnan().any().item() for p in model.parameters()]):
+                raise ValueError("NaN gradients")
         end_time = time()
 
         epoch_train_loss = np.mean(tmp_loss)
@@ -1719,7 +1723,7 @@ def train(
             # Make prediction and calculate loss
             pred = model(pose).reshape(target.shape)
             if grouped:
-                loss = loss_fn(pred, model, target, in_range, uncertainty)
+                loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
@@ -1758,7 +1762,7 @@ def train(
             # Make prediction and calculate loss
             pred = model(pose).reshape(target.shape)
             if grouped:
-                loss = loss_fn(pred, model, target, in_range, uncertainty)
+                loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
