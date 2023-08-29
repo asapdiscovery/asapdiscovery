@@ -261,7 +261,7 @@ def build_model(
         Whether to group structures by ligand
     comb : str, optional
         Which method to use to combine predictions for multiple poses in a
-        grouped model. Current options are ["mean", "boltzmann"]
+        grouped model. Current options are ["mean", "max", "boltzmann"]
     pred_r : str, optional
         Which readout method to use for the individual pose predictions. Current
         options are ["pic50"]
@@ -318,7 +318,7 @@ def build_model(
         else:
             raise ValueError(
                 f"Unknown value for -comb: {combination}, "
-                "must be one of [mean, boltzmann]."
+                "must be one of [mean, max, boltzmann]."
             )
     except AttributeError:
         # This will be triggered if combination is left blank
