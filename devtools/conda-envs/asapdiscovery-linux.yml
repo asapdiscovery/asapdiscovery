@@ -2,6 +2,7 @@ name: asapdiscovery
 channels:
   - openeye
   - conda-forge
+  - dglteam
 dependencies:
   # Base depends
   - pip
