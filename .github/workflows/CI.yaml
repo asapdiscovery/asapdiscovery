@@ -44,14 +44,26 @@ jobs:
         uname -a
         df -h
         ulimit -a
+    
+    - name: Determine Conda env file
+      id: conda-env-file
+      run: |
+        if [[ "${{ matrix.os }}" == "macOS-latest" ]]; then
+          echo "CONDA_ENV_FILE=devtools/conda-envs/asapdiscovery-macos.yaml" >> "$GITHUB_OUTPUT"
+        else
+          echo "CONDA_ENV_FILE=devtools/conda-envs/asapdiscovery-linux.yaml" >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash -l {0}
 
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
+      env:
+          CONDA_ENV_FILE: ${{ steps.conda-env-file.outputs.CONDA_ENV_FILE }}
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: devtools/conda-envs/asapdiscovery.yaml
+        environment-file: ${{ CONDA_ENV_FILE }}
         environment-name: asapdiscovery
-        channels: jaimergp/label/unsupported-cudatoolkit-shim,conda-forge,openeye,dglteam
+        channels: jaimergp/label/unsupported-cudatoolkit-shim,conda-forge,openeye
         cache-env: true
         cache-downloads: true
         create-args: >-

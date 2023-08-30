@@ -2,7 +2,6 @@ name: asapdiscovery
 channels:
   - openeye
   - conda-forge
-  - dglteam
 dependencies:
   # Base depends
   - pip
@@ -22,7 +21,7 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
-  - openeye-toolkits<=2022.2.2
+  - openeye-toolkits <=2022.2.2
   - pandas
   - pebble
   - pydantic >=1.10.8,<2.0.0a0
@@ -56,12 +55,12 @@ dependencies:
   - openmmforcefields
   - mdtraj
   - openff-toolkit
-#  - cudatoolkit=11.7 # may need to specify explicitly for lilac
+ - cudatoolkit <=11.7 # need to specify explicitly for lilac
 
   # execution
   - distributed
   - dask
-# - dask-cuda # will only work on linux machines and not macs
+  - dask-cuda
   - dask-jobqueue
   - netifaces
 
