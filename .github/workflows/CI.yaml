@@ -55,6 +55,12 @@ jobs:
         fi
       shell: bash -l {0}
 
+    - name: test Conda Environment
+      env:
+          CONDA_ENV_FILE: ${{ steps.conda-env-file.outputs.CONDA_ENV_FILE }}
+      run: echo "The env is $CONDA_ENV_FILE"
+
+
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
       env:
