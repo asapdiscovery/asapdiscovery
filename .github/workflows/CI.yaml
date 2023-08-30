@@ -61,7 +61,7 @@ jobs:
           CONDA_ENV_FILE: ${{ steps.conda-env-file.outputs.CONDA_ENV_FILE }}
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: ${{ CONDA_ENV_FILE }}
+        environment-file: $CONDA_ENV_FILE
         environment-name: asapdiscovery
         channels: jaimergp/label/unsupported-cudatoolkit-shim,conda-forge,openeye
         cache-env: true
