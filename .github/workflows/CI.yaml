@@ -49,9 +49,9 @@ jobs:
       id: conda-env-file
       run: |
         if [[ "${{ matrix.os }}" == "macOS-latest" ]]; then
-          echo ::set-output name=CONDA_ENV_FILE::devtools/conda-envs/asapdiscovery-macos.yml
+          echo "CONDA_ENV_FILE=devtools/conda-envs/asapdiscovery-macos.yml" >> $GITHUB_OUTPUT
         else
-          echo ::set-output name=CONDA_ENV_FILE::devtools/conda-envs/asapdiscovery-linux.yml
+          echo "CONDA_ENV_FILE=devtools/conda-envs/asapdiscovery-linux.yml" >> $GITHUB_OUTPUT
         fi
       shell: bash -l {0}
 
