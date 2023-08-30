@@ -41,7 +41,7 @@ def gather(network: str, allow_missing: bool):
 
     # show the network status
     status = client.network_status(planned_network=planned_network)
-    if not allow_missing and len(status) > 1:
+    if not allow_missing and 'waiting' in status:
         raise RuntimeError(
             "Not all calculations have finished, to collect the current results use the flag `--allow_missing`."
         )

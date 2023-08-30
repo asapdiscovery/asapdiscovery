@@ -5,6 +5,7 @@ channels:
   - dglteam
 dependencies:
   # Base depends
+  - python=3.10
   - pip
 
   # Testing

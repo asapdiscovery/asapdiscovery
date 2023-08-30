@@ -62,8 +62,8 @@ def submit(network: str, organization: str, campaign: str, project: str):
         planned_network=planned_network, scope=network_scope
     )
     # write the network with its key to file before we try and add compute incase we hit an issue
-    click.echo("Network made saving network key to network file")
-    submitted_network.to_file("planned_network.json")
+    click.echo("Network made; saving network key to network file")
+    submitted_network.to_file(network)
     # now action the tasks
     click.echo("Creating and actioning FEC tasks on Alchemiscale...")
     task_ids = client.action_network(planned_network=submitted_network)
