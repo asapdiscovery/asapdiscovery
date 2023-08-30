@@ -55,12 +55,10 @@ dependencies:
   - openmmforcefields
   - mdtraj
   - openff-toolkit
-#  - cudatoolkit=11.7 # may need to specify explicitly for lilac
 
   # execution
   - distributed
   - dask
-# - dask-cuda # will only work on linux machines and not macs
   - dask-jobqueue
   - netifaces
 
