@@ -71,5 +71,5 @@ def submit(network: str, organization: str, campaign: str, project: str):
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
     click.echo(
-        f"{total_tasks - missing_tasks}/{total_tasks} created. Status can be checked using `asap-fec status`"
+        f"{total_tasks - missing_tasks}/{total_tasks} created. Status can be checked using `asap-alchemy status`"
     )
