@@ -61,8 +61,7 @@ jobs:
       with:
         environment-file: ${{ steps.conda-env-file.outputs.CONDA_ENV_FILE }}
         environment-name: asapdiscovery
-        channels: jaimergp/label/unsupported-cudatoolkit-shim,conda-forge,openeye
-        cache-env: true
+        cache-environment: true
         cache-downloads: true
         create-args: >-
           python==${{ matrix.python-version }}
