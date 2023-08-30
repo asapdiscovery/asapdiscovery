@@ -60,7 +60,6 @@ dependencies:
   # execution
   - distributed
   - dask
-  - dask-cuda
   - dask-jobqueue
   - netifaces
 
@@ -84,3 +83,5 @@ dependencies:
     # viz
     - pygifsicle
     - sigfig
+    # execution, cannot be installed from conda deps for some reason
+    - dask_cuda
