@@ -78,7 +78,7 @@ dependencies:
     - validators
     - pyyaml
     # ml
-    - git+https://github.com/choderalab/mtenn@0.2.1
+    - git+https://github.com/choderalab/mtenn@0.3.0
     # testing
     - pytest-console-scripts
     - pytest-timeout

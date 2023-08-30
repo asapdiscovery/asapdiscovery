@@ -176,7 +176,7 @@ def test_ligand_json_roundtrip(
     assert l1 == l2
 
 
-def test_ligand_sdf_rountrip(moonshot_sdf, tmp_path):
+def test_ligand_sdf_roundtrip(moonshot_sdf, tmp_path):
     l1 = Ligand.from_sdf(moonshot_sdf, compound_name="test_name")
     l1.to_sdf(tmp_path / "test.sdf")
     l2 = Ligand.from_sdf(tmp_path / "test.sdf")
@@ -191,7 +191,7 @@ def test_ligand_sdf_rountrip(moonshot_sdf, tmp_path):
 @pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
 @pytest.mark.parametrize("compchem_id", [uuid4(), None])
 @pytest.mark.parametrize("compound_name", ["test_name"])
-def test_ligand_sdf_rountrip_data_only(
+def test_ligand_sdf_roundtrip_data_only(
     moonshot_sdf,
     compound_name,
     compchem_id,
@@ -263,7 +263,7 @@ def test_ligand_json_file_roundtrip(
     assert l1 == l2
 
 
-def test_ligand_oemol_rountrip(moonshot_sdf):
+def test_ligand_oemol_roundtrip(moonshot_sdf):
     mol = load_openeye_sdf(str(moonshot_sdf))
     l1 = Ligand.from_oemol(mol, compound_name="blahblah")
     mol_res = l1.to_oemol()
@@ -271,7 +271,7 @@ def test_ligand_oemol_rountrip(moonshot_sdf):
     assert l2 == l1
 
 
-def test_ligand_oemol_rountrip_data_only(moonshot_sdf):
+def test_ligand_oemol_roundtrip_data_only(moonshot_sdf):
     mol = load_openeye_sdf(str(moonshot_sdf))
     l1 = Ligand.from_oemol(mol, compound_name="blahblah")
     mol_res = l1.to_oemol()
@@ -316,7 +316,7 @@ def test_clear_sd_data_reserved_fails(moonshot_sdf):
 @pytest.mark.parametrize("manifold_api_id", [uuid4(), None])
 @pytest.mark.parametrize("compchem_id", [uuid4(), None])
 @pytest.mark.parametrize("compound_name", ["test_name"])
-def test_ligand_sdf_rountrip_SD(
+def test_ligand_sdf_roundtrip_SD(
     moonshot_sdf,
     compound_name,
     compchem_id,
