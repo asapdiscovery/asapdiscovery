@@ -755,6 +755,8 @@ def split_openeye_design_unit(du, lig=None, lig_title=None):
     # complex_ = du_to_complex(du, include_solvent=include_solvent)
     du.GetProtein(prot)
     if not lig:
+        if not du.HasLigand():
+            return None, prot, prot
         lig = oechem.OEGraphMol()
         du.GetLigand(lig)
 
