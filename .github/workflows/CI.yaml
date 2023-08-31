@@ -45,21 +45,12 @@ jobs:
         df -h
         ulimit -a
 
-    - name: Determine Conda env file
-      id: conda-env-file
-      run: |
-        if [[ "${{ matrix.os }}" == "macOS-latest" ]]; then
-          echo "CONDA_ENV_FILE=devtools/conda-envs/asapdiscovery-macos.yml" >> $GITHUB_OUTPUT
-        else
-          echo "CONDA_ENV_FILE=devtools/conda-envs/asapdiscovery-linux.yml" >> $GITHUB_OUTPUT
-        fi
-      shell: bash -l {0}
 
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: ${{ steps.conda-env-file.outputs.CONDA_ENV_FILE }}
+        environment-file: devtools/conda-envs/asapdiscovery-${{ matrix.os }}.yml
         environment-name: asapdiscovery
         cache-environment: true
         cache-downloads: true
