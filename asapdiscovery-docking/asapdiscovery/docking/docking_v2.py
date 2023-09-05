@@ -1,10 +1,11 @@
-from pydantic import BaseModel, Field, PositiveInt, root_validator
-from pathlib import Path
-from asapdiscovery.data.openeye import oedocking, oeomega, save_openeye_pdb
-from asapdiscovery.data.schema_v2.pairs import DockingInputPair
-from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from enum import Enum
+from pathlib import Path
+
+from asapdiscovery.data.openeye import oedocking, oeomega, save_openeye_pdb
+from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
+from asapdiscovery.data.schema_v2.pairs import DockingInputPair
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
 class DockingResult(BaseModel):
