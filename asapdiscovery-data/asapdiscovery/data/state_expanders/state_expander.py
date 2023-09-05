@@ -60,7 +60,7 @@ class StateExpansionSet(BaseModel):
 
     @classmethod
     def from_ligands(
-        cls, ligands: list[Ligand], no_tag: str = "ignore", infer_parents: bool = True
+        cls, ligands: list[Ligand], no_tag: str = "ignore"
     ) -> "StateExpansionSet":
         has_tag = [ligand for ligand in ligands if ligand.expansion_tag is not None]
         if not all(has_tag):
@@ -89,25 +89,6 @@ class StateExpansionSet(BaseModel):
 
         # check for unassigned ligands
         unassigned = [ligand for ligand in ligands if ligand not in assigned]
-
-        if infer_parents:
-            parent_ligands_unassigned = [
-                Ligand.from_inchi(
-                    ligand.expansion_tag.parent_inchi, compound_name="INFERRED_PARENT"
-                )
-                for ligand in unassigned
-                if ligand.expansion_tag is not None
-            ]
-
-            # assign them a parent tag
-            for l in parent_ligands_unassigned:
-                _ = l.make_parent_tag()
-                l.expansion_tag.inferred = True
-
-            ligands_w_unassigned = ligands + parent_ligands_unassigned
-            return cls.from_ligands(
-                ligands=ligands_w_unassigned, no_tag=no_tag, infer_parents=False
-            )
 
         return StateExpansionSet(expansions=expansions, unassigned=unassigned)
 
