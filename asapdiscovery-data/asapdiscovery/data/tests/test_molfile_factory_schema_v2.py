@@ -1,9 +1,6 @@
-from pathlib import Path
-
 import pytest
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")
