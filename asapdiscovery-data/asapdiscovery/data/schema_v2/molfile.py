@@ -9,7 +9,7 @@ from pydantic import Field, validator
 
 class MolFileFactory(DataModelAbstractBase):
     """
-    Factory for a loading a generic molecule file into a list of Ligand objects
+    Factory for a loading a generic molecule file into a list of Ligand objects.
     """
 
     filename: str = Field(..., description="Path to the molecule file")
@@ -33,6 +33,9 @@ class MolFileFactory(DataModelAbstractBase):
             compound_name = mol.GetTitle()
             if not compound_name:
                 compound_name = f"unknown_ligand_{i}"
+            # can possibly do more here to get more information from the molecule
+            # but for now just get the name, as the rest of the information is
+            # not often stored in a consistent way eg in SDF tags
             ligand = Ligand.from_oemol(mol, compound_name=compound_name)
             ligands.append(ligand)
 
