@@ -1,8 +1,9 @@
-from pydantic import BaseModel, Field, PositiveInt
-from asapdiscovery.data.openeye import oedocking, oeomega
+from pydantic import BaseModel, Field, PositiveInt, root_validator
+from pathlib import Path
+from asapdiscovery.data.openeye import oedocking, oeomega, save_openeye_pdb
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
-from asapdiscovery.data.schema_v2.ligand import Ligand
-
+from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from enum import Enum
 
 
@@ -11,6 +12,18 @@ class DockingResult(BaseModel):
     posed_ligand: Ligand = Field(description="Posed ligand")
     probability: float = Field(description="Probability")
     chemgauss_score: float = Field(description="Chemgauss4 score")
+    provenance: dict[str, str] = Field(description="Provenance")
+
+    @root_validator
+    @classmethod
+    def smiles_match(cls, values):
+        posed_ligand = values.get("posed_ligand")
+        input_pair = values.get("input_pair")
+        if posed_ligand.smiles != input_pair.ligand.smiles:
+            raise ValueError(
+                "SMILES of ligand and ligand in input docking pair not match"
+            )
+        return values
 
 
 class DockingBase(BaseModel):
@@ -50,10 +63,6 @@ class POSITDocker(DockingBase):
     Docker class for POSIT.
     """
 
-    output_dir: str = Field(
-        "docking", description="Output directory for docking results"
-    )
-    write_files: bool = Field(True, description="Write docking results to file")
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
         description="When to check for relaxation either, 'clash', 'all', 'none'",
@@ -75,6 +84,21 @@ class POSITDocker(DockingBase):
     allow_final_clash: bool = Field(
         False, description="Allow clashing poses in last stage of docking"
     )
+    output_dir: str = Field(
+        "docking", description="Output directory for docking results"
+    )
+    write_files: bool = Field(True, description="Write docked pose results to file")
+
+    @root_validator
+    @classmethod
+    def _output_dir_write_file(cls, values):
+        output_dir = values.get("output_dir")
+        write_files = values.get("write_file")
+        if write_files and not output_dir:
+            raise ValueError("Output directory must be set if write_file is True")
+
+        if not Path(output_dir).exists():
+            raise ValueError("Output directory does not exist")
 
     @staticmethod
     def run_oe_posit_docking(opts, pose_res, du, lig, num_poses):
@@ -89,6 +113,12 @@ class POSITDocker(DockingBase):
         """
         Dock the inputs
         """
+
+        ligs = [pair.ligand for pair in inputs]
+        names_unique = compound_names_unique(ligs)
+        # if names are not unique, we will use unknown_ligand_{i} as the output directory
+        # when writing files
+
         docking_results = []
 
         for pair in inputs:
@@ -153,7 +183,11 @@ class POSITDocker(DockingBase):
 
                     posed_ligand = Ligand.from_oemol(posed_mol, **lig.dict())
                     # set SD tags
-                    sd_data = {"probability": prob, "chemgauss_score": chemgauss_score}
+                    sd_data = {
+                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
+                        DockingResultCols.DOCKING_SCORE_POSIT.value: chemgauss_score,
+                        DockingResultCols.POSIT_METHOD.value: self.posit_method.value,
+                    }
                     posed_ligand.set_SD_data(sd_data)
 
                     docking_result = DockingResult(
@@ -164,6 +198,22 @@ class POSITDocker(DockingBase):
                         provenance=self.provenance(),
                     )
                     docking_results.append(docking_result)
+
+                    if self.write_files:
+                        # write out the docked pose
+                        if names_unique:
+                            output_dir = self.output_dir / lig.compound_name
+                        else:
+                            output_dir = self.output_dir / f"unknown_ligand_{i}"
+                        output_dir.mkdir(parents=True, exist_ok=True)
+                        output_sdf_file = output_dir / "docked.sdf"
+                        output_pdb_file = output_dir / "docked_complex.pdb"
+
+                        posed_ligand.to_sdf_file(output_sdf_file)
+
+                        combined_oemol = docking_result.to_posed_oemol()
+                        save_openeye_pdb(output_pdb_file, combined_oemol)
+
             else:
                 pass
 
