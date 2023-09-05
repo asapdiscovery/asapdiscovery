@@ -239,6 +239,8 @@ def build_model(
     comb=None,
     pred_r=None,
     comb_r=None,
+    comb_neg=True,
+    comb_scale=1000.0,
     substrate=None,
     km=None,
     config=None,
@@ -268,6 +270,10 @@ def build_model(
     comb_r : str, optional
         Which readout method to use for the combined pose prediction. Current
         options are ["pic50"]
+    comb_neg : bool, default=True
+        Value to pass for neg when creating MaxCombination
+    comb_scale : float, default=1000.0
+        Value to pass for scale when creating MaxCombination.
     substrate : float, optional
         Substrate concentration for use in the Cheng-Prusoff equation. Assumed to be
         in the same units as km
@@ -312,7 +318,10 @@ def build_model(
         if combination == "mean":
             combination = mtenn.model.MeanCombination()
         elif combination == "max":
-            combination = mtenn.model.MaxCombination()
+            # Take MTENN args from config if present, else from args
+            comb_neg = config["comb_neg"] if "comb_neg" in config else comb_neg
+            comb_scale = config["comb_scale"] if "comb_scale" in config else comb_scale
+            combination = mtenn.model.MaxCombination(neg=comb_neg, scale=comb_scale)
         elif combination == "boltzmann":
             combination = mtenn.model.BoltzmannCombination()
         else:

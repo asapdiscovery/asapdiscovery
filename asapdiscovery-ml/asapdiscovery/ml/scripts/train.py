@@ -439,6 +439,18 @@ def get_args():
         ),
     )
     parser.add_argument(
+        "-comb_neg",
+        type=bool,
+        default=True,
+        help="Value to pass for neg when creating MaxCombination.",
+    )
+    parser.add_argument(
+        "-comb_scale",
+        type=float,
+        default=1000.0,
+        help="Value to pass for scale when creating MaxCombination.",
+    )
+    parser.add_argument(
         "-sub",
         "--substrate_conc",
         type=float,
@@ -510,6 +522,10 @@ def init(args, rank=False):
         args.pred_r = model_config["pred_r"]
     if "comb_r" in model_config:
         args.comb_r = model_config["comb_r"]
+    if "comb_neg" in model_config:
+        args.comb_neg = model_config["comb_neg"]
+    if "comb_scale" in model_config:
+        args.comb_scale = model_config["comb_scale"]
     if "substrate" in model_config:
         args.substrate_conc = model_config["substrate"]
     if "km" in model_config:
@@ -631,6 +647,8 @@ def init(args, rank=False):
         comb=args.comb,
         pred_r=args.pred_r,
         comb_r=args.comb_r,
+        comb_neg=args.comb_neg,
+        comb_scale=args.comb_scale,
         substrate=args.substrate_conc,
         km=args.michaelis_const,
         config=model_config,
