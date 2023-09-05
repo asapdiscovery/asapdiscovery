@@ -193,6 +193,17 @@ class Ligand(DataModelAbstractBase):
         mol = sdf_string_to_oemol(self.data)
         return oemol_to_smiles(mol)
 
+    @classmethod
+    def from_inchi(cls, inchi: str, **kwargs) -> "Ligand":
+        """
+        Create a Ligand from an InChI string
+        """
+        kwargs.pop("data", None)
+        mol = oechem.OEGraphMol()
+        oechem.OEInChIToMol(mol, inchi)
+        sdf_str = oemol_to_sdf_string(mol)
+        return cls(data=sdf_str, **kwargs)
+
     @property
     def inchi(self) -> str:
         """
@@ -369,7 +380,7 @@ class Ligand(DataModelAbstractBase):
         StateExpansionTag
             The new expansion tag
         """
-        tag = StateExpansionTag.parent(self.inchikey, provenance=provenance)
+        tag = StateExpansionTag.parent(self.inchi, provenance=provenance)
         self.expansion_tag = tag
         return tag
 
@@ -385,7 +396,7 @@ class Ligand(DataModelAbstractBase):
             The parent ligand
         """
         self.expansion_tag = StateExpansionTag.from_parent(
-            parent.expansion_tag, self.inchikey, provenance=provenance
+            parent.expansion_tag, self.inchi, provenance=provenance
         )
 
 

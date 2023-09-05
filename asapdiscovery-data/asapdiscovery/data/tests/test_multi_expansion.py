@@ -27,6 +27,12 @@ def test_expand_from_mol_collect_graph(wafarin_smi):
     stereo_expander = StereoExpander(stereo_expand_defined=True)
     ligands = stereo_expander.expand(ligands=[l1])
     assert len(ligands) == 2
+    state_expansion_set = StateExpansionSet.from_ligands(ligands)
+    print(state_expansion_set)
+    graph = state_expansion_set.to_networkx()
+    assert len(graph.nodes) == 3
+    assert len(graph.edges) == 3
+
     protomer_expander = ProtomerExpander()
     ligands = protomer_expander.expand(ligands=ligands)
     assert len(ligands) == 4
