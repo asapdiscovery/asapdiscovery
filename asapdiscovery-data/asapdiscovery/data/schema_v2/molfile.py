@@ -24,12 +24,8 @@ class MolFileFactory(DataModelAbstractBase):
         if not retcode:
             raise ValueError(f"Could not open {filename}")
 
-        mollist = []
-        for mol in ifs.GetOEGraphMols():
-            mollist.append(mol.CreateCopy())
-
         ligands = []
-        for i, mol in enumerate(mollist):
+        for i, mol in enumerate(ifs.GetOEGraphMols()):
             compound_name = mol.GetTitle()
             if not compound_name:
                 compound_name = f"unknown_ligand_{i}"
