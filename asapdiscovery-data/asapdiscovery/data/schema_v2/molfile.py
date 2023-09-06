@@ -35,7 +35,7 @@ class MolFileFactory(DataModelAbstractBase):
                 compound_name = f"unknown_ligand_{i}"
             # can possibly do more here to get more information from the molecule
             # but for now just get the name, as the rest of the information is
-            # not often stored in a consistent way eg in SDF tags
+            # not often stored in a consistent way eg in SD tags
             ligand = Ligand.from_oemol(mol, compound_name=compound_name)
             ligands.append(ligand)
 
