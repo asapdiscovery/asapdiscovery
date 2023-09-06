@@ -26,7 +26,7 @@ class MolFileFactory(DataModelAbstractBase):
 
         mollist = []
         for mol in ifs.GetOEGraphMols():
-            mollist.append(oechem.OEGraphMol(mol))
+            mollist.append(mol.CreateCopy())
 
         ligands = []
         for i, mol in enumerate(mollist):
