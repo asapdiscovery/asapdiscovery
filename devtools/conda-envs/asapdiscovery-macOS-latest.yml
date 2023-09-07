@@ -91,4 +91,4 @@ dependencies:
     - pygifsicle
     - sigfig
     - alchemiscale
-    - git+https://github.com/OpenFreeEnergy/cinnabar.git@7c3e47bf2df496daf02d8d185645dfbf9e9b7245
+    - git+https://github.com/OpenFreeEnergy/cinnabar.git@8ce28bb107b96f48b542ae2bd3dc4fabccc614c3
