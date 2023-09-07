@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macOS-latest, ubuntu-latest]
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.9.2", "3.10"]
 
     env:
       OE_LICENSE: ${{ github.workspace }}/oe_license.txt
@@ -45,14 +45,14 @@ jobs:
         df -h
         ulimit -a
 
+
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: devtools/conda-envs/asapdiscovery.yaml
+        environment-file: devtools/conda-envs/asapdiscovery-${{ matrix.os }}.yml
         environment-name: asapdiscovery
-        channels: jaimergp/label/unsupported-cudatoolkit-shim,conda-forge,openeye,dglteam
-        cache-env: true
+        cache-environment: true
         cache-downloads: true
         create-args: >-
           python==${{ matrix.python-version }}

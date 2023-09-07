@@ -5,8 +5,9 @@ channels:
   - dglteam
 dependencies:
   # Base depends
-  - python=3.10
   - pip
+  # need python > 3.9.2 for dask-distributed issues
+  - python >= 3.9.2
 
   # Testing
   - pytest
@@ -55,12 +56,10 @@ dependencies:
   - openmmforcefields
   - mdtraj
   - openff-toolkit
-#  - cudatoolkit=11.7 # may need to specify explicitly for lilac
 
   # execution
   - distributed
   - dask
-# - dask-cuda # will only work on linux machines and not macs
   - dask-jobqueue
   - netifaces
 
@@ -84,7 +83,7 @@ dependencies:
     - validators
     - pyyaml
     # ml
-    - git+https://github.com/choderalab/mtenn@0.2.0
+    - git+https://github.com/choderalab/mtenn@0.3.0
     # testing
     - pytest-console-scripts
     - pytest-timeout

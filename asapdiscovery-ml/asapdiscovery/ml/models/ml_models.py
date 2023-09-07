@@ -1,3 +1,4 @@
+import warnings
 from datetime import date
 from enum import Enum
 from pathlib import Path
@@ -214,8 +215,10 @@ class MLModelRegistry(BaseModel):
         """
         models = self.get_models_for_target_and_type(target, type)
         if len(models) == 0:
-            raise ValueError(f"No models available for target {target} and type {type}")
-        return max(models, key=lambda model: model.last_updated)
+            warnings.warn(f"No models available for target {target} and type {type}")
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
 
     def get_model(self, name: str) -> MLModelSpec:
         """
