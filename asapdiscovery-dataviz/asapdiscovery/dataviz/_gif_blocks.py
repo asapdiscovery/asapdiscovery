@@ -157,10 +157,10 @@ class GIFBlockData:
     # first define the residues that span the subpockets
     # SARS2
     pocket_dict_SARS_CoV_2_Mpro = {
-        "subP1": "140-145+163+172",
-        "subP1_prime": "25-27",
+        "subP1": "140+141+142+143+144+145+163+172",
+        "subP1_prime": "25+26+27",
         "subP2": "41+49+54",
-        "subP3_4_5": "165-168+189-192",
+        "subP3_4_5": "165+166+167+168+189+190+191+192",
         "sars_unique": "25+49+142+164+168+169+181+186+188+190+191",
     }
 
