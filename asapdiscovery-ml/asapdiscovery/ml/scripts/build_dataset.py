@@ -76,6 +76,11 @@ def get_args():
 
     # Output arguments
     parser.add_argument("-o", help="Output file.")
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite output file if it already exists.",
+    )
 
     return parser.parse_args()
 
@@ -84,7 +89,7 @@ def main():
     args = get_args()
 
     # Check that file doesn't already exist
-    if os.path.isfile(args.o):
+    if os.path.isfile(args.o) and (not args.overwrite):
         print("File already exists, exiting.", flush=True)
         return
 
