@@ -6,18 +6,16 @@ from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
-    combine_protein_ligand,
     load_openeye_pdb,
     load_openeye_sdf,
     oechem,
     oemol_to_pdb_string,
     oemol_to_sdf_string,
     openeye_perceive_residues,
-    save_openeye_pdb,
 )
 
 from ._gif_blocks import GIFBlockData
-from ._html_blocks import HTMLBlockData, make_core_html
+from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
 
 
