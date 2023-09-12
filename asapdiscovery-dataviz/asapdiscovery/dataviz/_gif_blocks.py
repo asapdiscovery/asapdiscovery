@@ -190,8 +190,8 @@ class GIFBlockData:
     }
 
     color_dict_Mac1 = {
-        "nucleotide": "paleyellow",
-        "bridge": "darksalmon",
-        "phosphate": "brightorange",
-        "anion_hole": "slate",
+        "nucleotide": "yellow",
+        "bridge": "pink",
+        "phosphate": "orange",
+        "anion_hole": "blue",
     }

@@ -119,7 +119,7 @@ class HTMLBlockData:
 """
     color_method_fitness = """\
         protein.removeAllRepresentations();
-        protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
+        protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
         protein.addRepresentation( 'ball+stick', {sele: 'ligand', opacity: 1, multipleBond: 'symmetric'} );
 """
 

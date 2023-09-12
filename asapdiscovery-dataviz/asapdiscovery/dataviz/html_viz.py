@@ -346,38 +346,7 @@ class HTMLVisualizer:
                             viewer.render();"
                     )
 
-        print(a)
-
-    def make_fitness_bfactors(self) -> set[int]:
-        """
-        Given a dict of fitness values, swap out the b-factors in the protein.
-        """
-
-        self.logger.info("Swapping b-factor with fitness score.")
-
-        # this loop looks a bit strange but OEResidue state is not saved without a loop over atoms
-        missed_res = set()
-        for atom in self.protein.GetAtoms():
-            thisRes = oechem.OEAtomGetResidue(atom)
-            res_num = thisRes.GetResidueNumber()
-            thisRes.SetBFactor(
-                0.0
-            )  # reset b-factor to 0 for all residues first, so that missing ones can have blue overlaid nicely.
-            try:
-                thisRes.SetBFactor(self.fitness_data[res_num])
-            except KeyError:
-                missed_res.add(res_num)
-            oechem.OEAtomSetResidue(atom, thisRes)  # store updated residue
-
-        if self.debug:
-            self.logger.info(
-                f"Missed {len(missed_res)} residues when mapping fitness data."
-            )
-            self.logger.info(f"Missed residues: {missed_res}")
-            self.logger.info("Writing protein with fitness b-factors to file.")
-            save_openeye_pdb(self.protein, "protein_fitness.pdb")
-
-        return missed_res
+        return str(a)
 
     def write_pose_visualizations(self):
         """
@@ -395,36 +364,7 @@ class HTMLVisualizer:
         """
         Write HTML visualisation for a single pose.
         """
-        html = self.get_html(pose)
-        self.get_html_airium(pose)
+        # html = self.get_html(pose)
+        html = self.get_html_airium(pose)
         self.write_html(html, path)
         return path
-
-    def get_html(self, pose):
-        """
-        Get HTML for visualizing a single pose.
-        """
-        return self.get_html_body(pose) + self.get_html_footer()
-
-    def get_html_body(self, pose):
-        """
-        Get HTML body for pose visualization
-        """
-        mol = combine_protein_ligand(self.protein, pose)
-        oechem.OESuppressHydrogens(mol, True)  # remove hydrogens retaining polar ones
-        joint_pdb = oemol_to_pdb_string(mol)
-
-        html_body = make_core_html(joint_pdb)
-        return html_body
-
-    def get_html_footer(self):
-        """
-        Get HTML footer for pose visualization
-        """
-
-        colour = HTMLBlockData.get_pocket_color(self.target)
-
-        method = HTMLBlockData.get_color_method(self.color_method)
-        orient_tail = HTMLBlockData.get_orient_tail(self.target)
-
-        return colour + method + orient_tail
