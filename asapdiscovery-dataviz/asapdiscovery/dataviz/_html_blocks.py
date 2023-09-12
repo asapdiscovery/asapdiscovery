@@ -23,15 +23,6 @@ class HTMLBlockData:
         return getattr(cls, f"color_method_{method}")
 
     @classmethod
-    def get_orient_tail(cls, target: str) -> str:
-        """
-        Get the orient tail for a target.
-        """
-        # need underscore full name
-        target_ = VizTargets.get_name_underscore(target)
-        return getattr(cls, f"orient_tail_{target_}")
-
-    @classmethod
     def get_missing_residues(cls, missing_residues: set[int] = None) -> str:
         """
         Get the missing residues block for a target.
