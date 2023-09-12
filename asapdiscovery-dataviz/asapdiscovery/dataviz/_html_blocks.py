@@ -108,6 +108,10 @@ class HTMLBlockData:
     ]
     """
 
+    HTML_orient_MERS_CoV_Mpro = """\
+    [-40.052249328550225, -96.01719571090237, 2.0532316220967157, 54.161214447021486, 0.10313246368166844, 0.25413742037735987, 0.9514159603894136, 0.13994833623584255]
+    """
+
     color_method_subpockets = """\
         protein.removeAllRepresentations();
         protein.addRepresentation( 'surface', {color: pocket_scheme, sele: 'not ligand', opacity: 0.8, side: 'front', surfaceType: 'av'} );
@@ -118,6 +122,25 @@ class HTMLBlockData:
         protein.addRepresentation( 'surface', {color: 'bfactor', sele: 'not ligand', opacity: 1, side: 'front', surfaceType: 'av'} );
         protein.addRepresentation( 'ball+stick', {sele: 'ligand', opacity: 1, multipleBond: 'symmetric'} );
 """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     visualisation_header = """\
 <div id="viewport"
 role="NGL"
