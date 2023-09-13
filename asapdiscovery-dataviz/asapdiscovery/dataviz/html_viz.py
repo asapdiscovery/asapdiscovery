@@ -3,11 +3,15 @@ from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
 
 from airium import Airium
+from plip.structure.preparation import PDBComplex
+
 from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
+    combine_protein_ligand,
     load_openeye_pdb,
     load_openeye_sdf,
+    save_openeye_pdb,
     oechem,
     oemol_to_pdb_string,
     oemol_to_sdf_string,
@@ -18,6 +22,7 @@ from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
 
+import sys
 
 class HTMLVisualizer:
     """
@@ -205,6 +210,38 @@ class HTMLVisualizer:
                     color_res_dict[color].append(res_num)
 
         return color_res_dict
+    
+    def get_interactions_plip(self, pose) -> Dict:
+        """
+        Get protein-ligand interactions according to PLIP
+        """
+        # combine_protein_ligand
+        # oemol_to_pdb_string
+
+
+        """
+
+        load complex with plip
+        get interactions, then return dict (see below HTML for form)
+            need atom numbers, types, coordinates, intn_type, color per intn_type
+        return the dict
+        """
+        intn_dict = None
+        # TODO: make this not use a tmp file. PLIP can only ingest PDB file, not PDB string.
+        save_openeye_pdb(combine_protein_ligand(self.protein, pose), "tmp_complex.pdb")
+
+        my_mol = PDBComplex()
+        my_mol.load_pdb('1eve.pdb')
+
+        my_mol.analyze()
+
+        print(my_mol)
+
+        print(intn_dict)
+
+        return intn_dict
+    
+
 
     def get_html_airium(self, pose):
         """
@@ -291,7 +328,7 @@ class HTMLVisualizer:
                         + residue_coloring_function_js
                         + " \
                                          }}; \
-                            viewer.addSurface(\"VDW\", {colorfunc: colorAsSnake, opacity: 0.9}) \n \
+                            viewer.addSurface(\"MS\", {colorfunc: colorAsSnake, opacity: 0.9}) \n \
                         \n \
                             viewer.setStyle({bonds: 0}, {sphere:{radius:0.5}}); //water molecules\n \
                         \n \
@@ -362,7 +399,9 @@ class HTMLVisualizer:
         """
         Write HTML visualisation for a single pose.
         """
-        # html = self.get_html(pose)
+        self.get_interactions_plip(pose)
+        sys.exit()
+
         html = self.get_html_airium(pose)
         self.write_html(html, path)
         return path
