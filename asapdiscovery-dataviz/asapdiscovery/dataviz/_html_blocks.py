@@ -2,8 +2,9 @@ from .viz_targets import VizTargets
 
 """
 HTML blocks for visualising poses.
-Pose orientation per target can be found by 
+Pose orientation per target can be found by
 """
+
 
 class HTMLBlockData:
     @classmethod

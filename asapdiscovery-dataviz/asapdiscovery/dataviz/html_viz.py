@@ -1,28 +1,27 @@
 import logging
+import sys
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
 
 from airium import Airium
-from plip.structure.preparation import PDBComplex
-
 from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
     load_openeye_sdf,
-    save_openeye_pdb,
     oechem,
     oemol_to_pdb_string,
     oemol_to_sdf_string,
     openeye_perceive_residues,
+    save_openeye_pdb,
 )
+from plip.structure.preparation import PDBComplex
 
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
 
-import sys
 
 class HTMLVisualizer:
     """
@@ -210,14 +209,13 @@ class HTMLVisualizer:
                     color_res_dict[color].append(res_num)
 
         return color_res_dict
-    
-    def get_interactions_plip(self, pose) -> Dict:
+
+    def get_interactions_plip(self, pose) -> dict:
         """
         Get protein-ligand interactions according to PLIP
         """
         # combine_protein_ligand
         # oemol_to_pdb_string
-
 
         """
 
@@ -231,7 +229,7 @@ class HTMLVisualizer:
         save_openeye_pdb(combine_protein_ligand(self.protein, pose), "tmp_complex.pdb")
 
         my_mol = PDBComplex()
-        my_mol.load_pdb('1eve.pdb')
+        my_mol.load_pdb("1eve.pdb")
 
         my_mol.analyze()
 
@@ -240,8 +238,6 @@ class HTMLVisualizer:
         print(intn_dict)
 
         return intn_dict
-    
-
 
     def get_html_airium(self, pose):
         """
