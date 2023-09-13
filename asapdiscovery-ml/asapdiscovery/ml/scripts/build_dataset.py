@@ -89,9 +89,12 @@ def main():
     args = get_args()
 
     # Check that file doesn't already exist
-    if os.path.isfile(args.o) and (not args.overwrite):
-        print("File already exists, exiting.", flush=True)
-        return
+    if os.path.isfile(args.o):
+        if args.overwrite:
+            os.remove(args.o)
+        else:
+            print("File already exists, exiting.", flush=True)
+            return
 
     if args.i:
         # Parse compounds from args.i
