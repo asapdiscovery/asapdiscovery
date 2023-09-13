@@ -69,6 +69,7 @@ dependencies:
   - imageio
   - pymol-open-source
   - gifsicle
+  - plip
 
 
   # Pip-only installs
@@ -85,3 +86,4 @@ dependencies:
     # viz
     - pygifsicle
     - sigfig
+    - airium
