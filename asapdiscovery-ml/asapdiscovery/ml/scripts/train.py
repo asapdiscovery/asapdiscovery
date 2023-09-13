@@ -709,6 +709,8 @@ def init(args, rank=False):
             {
                 "mtenn:strategy": args.strat,
                 "mtenn:combination": args.comb,
+                "mtenn:comb_neg": args.comb_neg,
+                "mtenn:comb_scale": args.comb_scale,
                 "mtenn:pred_readout": args.pred_r,
                 "mtenn:comb_readout": args.comb_r,
             }
