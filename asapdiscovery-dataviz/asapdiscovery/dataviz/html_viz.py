@@ -1,9 +1,12 @@
 import logging
-import sys
+import sys, os, shutil
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
-
+import subprocess
+import xmltodict
+import xml.etree.ElementTree as ET
 from airium import Airium
+
 from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
@@ -16,7 +19,6 @@ from asapdiscovery.data.openeye import (
     openeye_perceive_residues,
     save_openeye_pdb,
 )
-from plip.structure.preparation import PDBComplex
 
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
@@ -209,36 +211,98 @@ class HTMLVisualizer:
                     color_res_dict[color].append(res_num)
 
         return color_res_dict
+    
+    @staticmethod
+    def get_interaction_color(intn_type) -> str:
+        """
+        Generated using PLIP docs; colors match PyMol interaction colors. See
+        https://github.com/pharmai/plip/blob/master/DOCUMENTATION.md
+        converted RGB to HEX using https://www.rgbtohex.net/
+        """
+        if intn_type == "hydrophobic_interaction":
+            return "#808080"
+        elif intn_type == "hydrogen_bond":
+            return "#0000FF"
+        elif intn_type == "water_bridge":
+            return "#BFBFFF"
+        elif intn_type == "salt_bridge":
+            return "#FFFF00"
+        elif intn_type == "pi_stack":
+            return "#00FF00"
+        elif intn_type == "pi_cation_interaction":
+            return "#FF8000"
+        elif intn_type == "halogen_bond":
+            return "#36FFBF"
+        elif intn_type == "metal_complex":
+            return "#8C4099"
+        else:
+            raise ValueError(f"Interaction type {intn_type} not recognized.")
 
+    def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type) -> Union:
+        """
+        Parses a PLIP interaction dict 
+        """
+        k = f"{intn_counter}_{plip_xml_dict['restype']}{plip_xml_dict['resnr']}.{plip_xml_dict['reschain']}"
+        
+        v = {
+            "lig_at_x" : plip_xml_dict["ligcoo"]["x"],
+            "lig_at_y" : plip_xml_dict["ligcoo"]["y"],
+            "lig_at_z" : plip_xml_dict["ligcoo"]["z"],
+            "prot_at_x" : plip_xml_dict["protcoo"]["x"],
+            "prot_at_y" : plip_xml_dict["protcoo"]["y"],
+            "prot_at_z" : plip_xml_dict["protcoo"]["z"],
+            "type" : intn_type,
+            "color" : self.get_interaction_color(intn_type)
+            }
+        return k, v
+    
+    @staticmethod
     def get_interactions_plip(self, pose) -> dict:
         """
-        Get protein-ligand interactions according to PLIP
-        """
-        # combine_protein_ligand
-        # oemol_to_pdb_string
+        Get protein-ligand interactions according to PLIP.
 
+        TODO:
+        currently this uses a tmp PDB file, uses PLIP CLI (python package throws
+        ```
+        libc++abi: terminating with uncaught exception of type swig::stop_iteration
+        Abort trap: 6
+        ```
+        ), then parses XML to get interactions. This is a bit convoluted, we could refactor 
+        this to use OE's InteractionHints instead? ProLIF struggles to detect incorrections
+        because it's v sensitive to protonation. PLIP does protonation itself.
         """
-
-        load complex with plip
-        get interactions, then return dict (see below HTML for form)
-            need atom numbers, types, coordinates, intn_type, color per intn_type
-        return the dict
-        """
-        intn_dict = None
-        # TODO: make this not use a tmp file. PLIP can only ingest PDB file, not PDB string.
+        # create the complex PDB file.
         save_openeye_pdb(combine_protein_ligand(self.protein, pose), "tmp_complex.pdb")
 
-        my_mol = PDBComplex()
-        my_mol.load_pdb("1eve.pdb")
+        # run the PLIP CLI.
+        subprocess.run(["plip", "-f", "tmp_complex.pdb", "-x", "-o", "tmp"])
 
-        my_mol.analyze()
+        # load the XML produced by PLIP that contains all the interaction data.
+        intn_dict_xml = xmltodict.parse(ET.tostring(ET.parse('tmp/report.xml').getroot()))
 
-        print(my_mol)
+        intn_dict = {}
+        intn_counter = 0
+        # wrangle all interactions into a dict that can be read directly by 3DMol.
+        for _, data in intn_dict_xml['report']['bindingsite']['interactions'].items():
+            if data:
+                for intn_type, intn_data in data.items():
+                    if isinstance(intn_data, list): # multiple interactions of this type
+                        for intn_data_i in intn_data:
+                            k, v = self.build_interaction_dict(intn_data_i, intn_counter, intn_type)
+                            intn_dict[k] = v
+                            intn_counter += 1
 
-        print(intn_dict)
+                    elif isinstance(intn_data, dict): # single interaction of this type
+                        k, v = self.build_interaction_dict(intn_data, intn_counter, intn_type)
+                        intn_dict[k] = v
+                        intn_counter += 1
+
+        # remove tmp files/folder.
+        os.remove("tmp_complex.pdb")
+        shutil.rmtree('tmp')
 
         return intn_dict
-
+    
     def get_html_airium(self, pose):
         """
         Get HTML for visualizing a single pose. This uses Airium which is a handy tool to write
@@ -353,11 +417,12 @@ class HTMLVisualizer:
                             viewer.setHoverDuration(100); // makes resn popup instant on hover\n \
                         \n \
                             //////////////// add protein-ligand interactions\n \
-                            var intn_dict = {'3_ILE23.A': {'lig_at_x': 6.1168, 'lig_at_y': -15.1724, 'lig_at_z': 15.0378, 'prot_at_x': 7.836, 'prot_at_y': -14.648, 'prot_at_z': 12.562, 'type': 'HBAcceptor', 'color': 'yellow'}, '4_VAL49.A': {'lig_at_x': 4.6893, 'lig_at_y': -13.8543, 'lig_at_z': 22.5618, 'prot_at_x': 7.458, 'prot_at_y': -13.695, 'prot_at_z': 21.342, 'type': 'HBAcceptor', 'color': 'yellow'}, '5_ILE131.A': {'lig_at_x': 2.7582, 'lig_at_y': -15.0623, 'lig_at_z': 23.3433, 'prot_at_x': 0.121, 'prot_at_y': -15.462, 'prot_at_z': 24.94, 'type': 'HBAcceptor', 'color': 'yellow'}, '8_PHE156.A': {'lig_at_x': 6.86024, 'lig_at_y': -16.45794, 'lig_at_z': 17.0304, 'prot_at_x': 6.938333333333333, 'prot_at_y': -20.451999999999998, 'prot_at_z': 14.069999999999999, 'type': 'PiStacking', 'color': 'purple'}};\n \
-                        \n \
+                            var intn_dict = " \
+                            + str(self.get_interactions_plip(self, pose)) + \
+                        "\n \
                             for (const [_, intn] of Object.entries(intn_dict)) {\n \
-                                viewer.addCylinder({start:{x:intn[\"lig_at_x\"],y:intn[\"lig_at_y\"],z:intn[\"lig_at_z\"]},\n \
-                                                        end:{x:intn[\"prot_at_x\"],y:intn[\"prot_at_y\"],z:intn[\"prot_at_z\"]},\n \
+                                viewer.addCylinder({start:{x:parseFloat(intn[\"lig_at_x\"]),y:parseFloat(intn[\"lig_at_y\"]),z:parseFloat(intn[\"lig_at_z\"])},\n \
+                                                        end:{x:parseFloat(intn[\"prot_at_x\"]),y:parseFloat(intn[\"prot_at_y\"]),z:parseFloat(intn[\"prot_at_z\"])},\n \
                                                         radius:0.1,\n \
                                                         dashed:true,\n \
                                                         fromCap:2,\n \
@@ -395,9 +460,6 @@ class HTMLVisualizer:
         """
         Write HTML visualisation for a single pose.
         """
-        self.get_interactions_plip(pose)
-        sys.exit()
-
         html = self.get_html_airium(pose)
         self.write_html(html, path)
         return path
