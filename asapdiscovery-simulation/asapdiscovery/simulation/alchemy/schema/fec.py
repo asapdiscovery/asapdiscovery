@@ -3,8 +3,6 @@ from typing import Literal, Optional
 import gufe
 import openfe
 from alchemiscale import ScopedKey
-from asapdiscovery.simulation.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.simulation.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
@@ -19,6 +17,8 @@ from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
 
+from .base import _SchemaBase, _SchemaBaseFrozen
+from .network import NetworkPlanner, PlannedNetwork
 
 class AlchemiscaleSettings(BaseSettings):
     """

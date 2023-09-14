@@ -1,15 +1,15 @@
 from typing import Optional
 
 from alchemiscale import Scope, ScopedKey
-from asapdiscovery.simulation.schema.fec import (
+from openmm.app import ForceField, Modeller, PDBFile
+
+from .schema.fec import (
     AlchemiscaleResults,
     AlchemiscaleSettings,
     FreeEnergyCalculationNetwork,
     TransformationResult,
 )
-from asapdiscovery.simulation.schema.schema import ForceFieldParams
-from openmm.app import ForceField, Modeller, PDBFile
-
+from .schema.forcefield import ForceFieldParams
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
     # Input Files

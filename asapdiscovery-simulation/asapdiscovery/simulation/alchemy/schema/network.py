@@ -1,14 +1,14 @@
 from typing import Literal, Optional, Union
 
 import openfe
-from asapdiscovery.simulation.schema.atom_mapping import (
+from pydantic import Field
+
+from .atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
     PersesAtomMapper,
 )
-from asapdiscovery.simulation.schema.base import _SchemaBase
-from pydantic import Field
-
+from .base import _SchemaBase
 
 class _NetworkPlannerSettings(_SchemaBase):
     """
