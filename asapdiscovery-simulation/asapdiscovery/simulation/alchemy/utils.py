@@ -11,6 +11,7 @@ from .schema.fec import (
 )
 from .schema.forcefield import ForceFieldParams
 
+
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
     # Input Files
     pdb = PDBFile(input_pdb_path)

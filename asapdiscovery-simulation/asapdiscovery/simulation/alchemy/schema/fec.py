@@ -20,6 +20,7 @@ from pydantic import BaseSettings, Field
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
 
+
 class AlchemiscaleSettings(BaseSettings):
     """
     General settings class to capture Alchemiscale credentials from the environment.

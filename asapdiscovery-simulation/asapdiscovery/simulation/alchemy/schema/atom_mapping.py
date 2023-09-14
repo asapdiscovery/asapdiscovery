@@ -5,6 +5,7 @@ from pydantic import Field, PositiveFloat, PositiveInt
 
 from .base import _SchemaBase
 
+
 class _BaseAtomMapper(_SchemaBase):
     """
     A base atom mapper which should be used to configure the method used to generate atom mappings.
