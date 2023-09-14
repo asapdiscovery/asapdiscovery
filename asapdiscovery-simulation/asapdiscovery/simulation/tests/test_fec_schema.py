@@ -1,18 +1,18 @@
 import openfe
 import pytest
 from alchemiscale import Scope, ScopedKey
-from asapdiscovery.simulation.schema.atom_mapping import (
+from asapdiscovery.simulation.alchemy.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
     PersesAtomMapper,
 )
-from asapdiscovery.simulation.schema.fec import (
+from asapdiscovery.simulation.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationFactory,
     SolventSettings,
     TransformationResult,
 )
-from asapdiscovery.simulation.schema.network import NetworkPlanner
+from asapdiscovery.simulation.alchemy.schema.network import NetworkPlanner
 from openff.units import unit as OFFUnit
 
 
