@@ -7,6 +7,7 @@ import click
 def cli():
     pass
 
+
 @cli.command()
 @click.argument(
     "filename",
@@ -70,8 +71,9 @@ def plan(
     import pathlib
 
     import openfe
-    from .schema.fec import FreeEnergyCalculationFactory
     from rdkit import Chem
+
+    from .schema.fec import FreeEnergyCalculationFactory
 
     click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
@@ -163,6 +165,7 @@ def submit(network: str, organization: str, campaign: str, project: str):
         project: The name of the project this network should be submitted under.
     """
     from alchemiscale import Scope
+
     from .schema.fec import FreeEnergyCalculationNetwork
     from .simulation.utils import AlchemiscaleHelper
 
