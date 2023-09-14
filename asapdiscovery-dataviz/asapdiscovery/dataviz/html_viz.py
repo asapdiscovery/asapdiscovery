@@ -100,7 +100,9 @@ class HTMLVisualizer:
         # make sure all paths exist, otherwise skip
         for pose, path in zip(poses, output_paths):
             if pose and Path(pose).exists():
-                self.poses.append(load_openeye_sdf(str(pose)))
+                mol = load_openeye_sdf(str(pose))
+                oechem.OESuppressHydrogens(mol, True, True)  # retain polar hydrogens and hydrogens on chiral centers
+                self.poses.append(mol)
                 self.output_paths.append(path)
             else:
                 self.logger.warning(f"Pose {pose} does not exist, skipping.")
