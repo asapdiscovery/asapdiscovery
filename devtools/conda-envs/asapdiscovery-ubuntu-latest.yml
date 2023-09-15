@@ -69,6 +69,7 @@ dependencies:
   - imageio
   - pymol-open-source
   - gifsicle
+  - plip
 
   # simulation
   - openfe =0.11.0
