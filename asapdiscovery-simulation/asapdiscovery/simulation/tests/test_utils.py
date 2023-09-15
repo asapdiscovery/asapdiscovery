@@ -1,26 +1,23 @@
+import itertools
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from asapdiscovery.simulation.utils import AlchemiscaleHelper
-from gufe.protocols import ProtocolUnitResult
+from gufe.protocols import ProtocolUnitResult, ProtocolDAGResult, ProtocolUnitFailure
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
 
 
-def test_create_network(monkeypatch, tyk2_fec_network):
+def test_create_network(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
     """Make sure our alchemiscale helper can create a network and update the results"""
-    # mock some env variables
-    monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
-    monkeypatch.setenv(name="ALCHEMISCALE_KEY", value="key")
 
     # mock the client function
     def create_network(network, scope):
         return ScopedKey(gufe_key=network.key, **scope.dict())
 
     # use a fake api url for testing
-    client = AlchemiscaleHelper(api_url="")
+    client = mock_alchemiscale_client
 
     # make sure the env variables were picked up
     assert client._client.identifier == "asap"
@@ -39,15 +36,10 @@ def test_create_network(monkeypatch, tyk2_fec_network):
     )
 
 
-def test_network_status(monkeypatch, tyk2_fec_network):
+def test_network_status(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
     """Make sure we can correctly get the status of a network"""
 
-    # mock some env variables
-    monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
-    monkeypatch.setenv(name="ALCHEMISCALE_KEY", value="key")
-
-    # use a fake api url for testing
-    client = AlchemiscaleHelper(api_url="")
+    client = mock_alchemiscale_client
 
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     network_key = ScopedKey(
@@ -70,15 +62,11 @@ def test_network_status(monkeypatch, tyk2_fec_network):
     assert status == {"complete": 1}
 
 
-def test_action_tasks(monkeypatch, tyk2_fec_network):
+def test_action_tasks(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
     """Make sure the helper can action tasks on alchemiscale"""
 
-    # mock some env variables
-    monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
-    monkeypatch.setenv(name="ALCHEMISCALE_KEY", value="key")
-
     # use a fake api url for testing
-    client = AlchemiscaleHelper(api_url="")
+    client = mock_alchemiscale_client
 
     # mock a key onto the network assuming it has already been created
     scope = Scope(org="asap", campaign="testing", project="tyk2")
@@ -121,15 +109,11 @@ def test_action_tasks(monkeypatch, tyk2_fec_network):
     assert len(tasks) == (result_network.n_repeats + 1) * len(alchem_network.edges)
 
 
-def test_collect_results(monkeypatch, tyk2_fec_network):
+def test_collect_results(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
     """Make sure the help function can correctly collect results"""
 
-    # mock some env variables
-    monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
-    monkeypatch.setenv(name="ALCHEMISCALE_KEY", value="key")
-
     # use a fake api url for testing
-    client = AlchemiscaleHelper(api_url="")
+    client = mock_alchemiscale_client
 
     # mock a key onto the network assuming it has already been created
     scope = Scope(org="asap", campaign="testing", project="tyk2")
@@ -185,3 +169,53 @@ def test_collect_results(monkeypatch, tyk2_fec_network):
     assert (
         len(result_map.graph.nodes) == len(alchem_network.nodes) / 2
     )  # divide by 2 as we have a node for the solvent and complex phase
+
+
+def test_get_failures(monkeypatch, tyk2_fec_network, mock_alchemiscale_client, dummy_protocol_units, protocol_unit_failures):
+    """Make sure we can get exceptions and tracebacks from failures in a task"""
+
+    # use a fake api url for testing
+    client = mock_alchemiscale_client
+
+    scope = Scope(org="asap", campaign="testing", project="tyk2")
+    network_key = ScopedKey(
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+    )
+
+    alchem_network = tyk2_fec_network.to_alchemical_network()
+    # set the key and get the status
+    result_network = FreeEnergyCalculationNetwork(
+        **tyk2_fec_network.dict(exclude={"results"}),
+        results=AlchemiscaleResults(network_key=network_key),
+    )
+
+    # mock the client functions
+    def get_network_tasks(key, status=None) -> list[ScopedKey]:
+        """Mock pulling the transforms from alchemiscale"""
+        assert key == network_key
+        tasks = []
+        for edge in alchem_network.edges:
+            tf_key = edge.key
+            task_key = tf_key.replace("Transformation", "Task")
+            tasks.append(ScopedKey(gufe_key=task_key, **scope.dict()))
+        return tasks
+
+    def get_task_failures(key) -> list[ProtocolDAGResult]:
+        """Mock pulling the task failures from alchemiscale"""
+        dagresult = ProtocolDAGResult(
+            protocol_units=dummy_protocol_units,
+            protocol_unit_results=list(itertools.chain(*protocol_unit_failures)),
+            transformation_key=None,
+        )
+        task_failures = [dagresult]
+        return task_failures
+
+    # mock the status function
+    monkeypatch.setattr(client._client, "get_network_tasks", get_network_tasks)
+    monkeypatch.setattr(client._client, "get_task_failures", get_task_failures)
+
+    # Collect errors without traceback
+    errors = client.collect_errors(planned_network=result_network, traceback=False)
+
+    # With complete traceback
+    errors = client.collect_errors(planned_network=result_network, traceback=True)
