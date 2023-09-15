@@ -5,7 +5,7 @@ from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from gufe.protocols import ProtocolUnitResult, ProtocolDAGResult
+from gufe.protocols import ProtocolDAGResult, ProtocolUnitResult
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
 
