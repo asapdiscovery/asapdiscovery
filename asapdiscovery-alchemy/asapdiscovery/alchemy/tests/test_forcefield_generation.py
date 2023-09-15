@@ -1,7 +1,7 @@
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.simulation.alchemy.schema.forcefield import DefaultForceFieldParams
-from asapdiscovery.simulation.alchemy.utils import create_protein_only_system
+from asapdiscovery.alchemy.schema.forcefield import DefaultForceFieldParams
+from asapdiscovery.alchemy.utils import create_protein_only_system
 from openmm import System
 
 

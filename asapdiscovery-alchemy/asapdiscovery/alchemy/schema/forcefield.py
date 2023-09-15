@@ -3,6 +3,7 @@ from collections import namedtuple
 from openmm.app import PME, HBonds
 from openmm.unit import amu, nanometers
 
+
 ForceFieldParams = namedtuple(
     "ForceFieldParams",
     [

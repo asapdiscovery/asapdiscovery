@@ -1,9 +1,9 @@
 from alchemiscale import Scope, ScopedKey
-from asapdiscovery.simulation.alchemy.schema.fec import (
+from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from asapdiscovery.simulation.alchemy.utils import AlchemiscaleHelper
+from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from gufe.protocols import ProtocolUnitResult
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
