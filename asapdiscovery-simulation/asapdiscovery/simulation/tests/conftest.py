@@ -1,10 +1,11 @@
 import datetime
+
 import openfe
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.simulation.utils import AlchemiscaleHelper
-from gufe.protocols.protocolunit import ProtocolUnit, Context, ProtocolUnitFailure
+from gufe.protocols.protocolunit import Context, ProtocolUnit, ProtocolUnitFailure
 from rdkit import Chem
 
 
@@ -47,6 +48,7 @@ def mock_alchemiscale_client(monkeypatch):
 
 # Gufe fixtures for mocking purposes
 
+
 @pytest.fixture
 class DummyUnit(ProtocolUnit):
     @staticmethod
@@ -70,10 +72,18 @@ def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailur
     t1 = datetime.datetime.now()
     t2 = datetime.datetime.now()
 
-    return [[ProtocolUnitFailure(source_key=u.key, inputs=u.inputs,
-                                 outputs=dict(),
-                                 exception=('ValueError', "Didn't feel like it"),
-                                 traceback='foo',
-                                 start_time=t1, end_time=t2)
-             for _ in range(2)]
-            for u in dummy_protocol_units]
+    return [
+        [
+            ProtocolUnitFailure(
+                source_key=u.key,
+                inputs=u.inputs,
+                outputs=dict(),
+                exception=("ValueError", "Didn't feel like it"),
+                traceback="foo",
+                start_time=t1,
+                end_time=t2,
+            )
+            for _ in range(2)
+        ]
+        for u in dummy_protocol_units
+    ]

@@ -1,10 +1,11 @@
 import itertools
+
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from gufe.protocols import ProtocolUnitResult, ProtocolDAGResult, ProtocolUnitFailure
+from gufe.protocols import ProtocolDAGResult, ProtocolUnitFailure, ProtocolUnitResult
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
 
@@ -171,7 +172,13 @@ def test_collect_results(monkeypatch, tyk2_fec_network, mock_alchemiscale_client
     )  # divide by 2 as we have a node for the solvent and complex phase
 
 
-def test_get_failures(monkeypatch, tyk2_fec_network, mock_alchemiscale_client, dummy_protocol_units, protocol_unit_failures):
+def test_get_failures(
+    monkeypatch,
+    tyk2_fec_network,
+    mock_alchemiscale_client,
+    dummy_protocol_units,
+    protocol_unit_failures,
+):
     """Make sure we can get exceptions and tracebacks from failures in a task"""
 
     # use a fake api url for testing
