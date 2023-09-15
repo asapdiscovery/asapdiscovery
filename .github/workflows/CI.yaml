@@ -84,7 +84,7 @@ jobs:
         # run each package test suite; append to coverage file
         # Exit immediately if a command exits with a non-zero status.
         set -e
-        pytest --durations=10 -v --cov-report=xml --cov-report=term --color=yes \
+        pytest -n auto --durations=10 -v --cov-report=xml --cov-report=term --color=yes \
                        --cov=asapdiscovery-alchemy \
                        --cov=asapdiscovery-data \
                        --cov=asapdiscovery-dataviz \
