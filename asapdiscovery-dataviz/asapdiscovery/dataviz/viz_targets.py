@@ -1,5 +1,7 @@
 from enum import Enum
 
+# PUT ALL THIS INTO YAML, READ IN HERE ON IMPORT
+
 PROTEIN_MAPPING = {
     "SARS-CoV-2-Mpro": "Mpro",
     "MERS-CoV-Mpro": "Mpro",
