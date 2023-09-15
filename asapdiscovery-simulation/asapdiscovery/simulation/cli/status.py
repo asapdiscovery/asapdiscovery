@@ -17,8 +17,20 @@ def validate_traceback_flag(ctx, param, value):
     default="planned_network.json",
     show_default=True,
 )
-@click.option("--errors", is_flag=True, default=False, help="Output errors from the network, if any.")
-@click.option("--with-traceback", is_flag=True, default=False, help="Output the tracebacks from the failing tasks. Only usable in conjunction with --errors.", callback=validate_traceback_flag, is_eager=True)
+@click.option(
+    "--errors",
+    is_flag=True,
+    default=False,
+    help="Output errors from the network, if any.",
+)
+@click.option(
+    "--with-traceback",
+    is_flag=True,
+    default=False,
+    help="Output the tracebacks from the failing tasks. Only usable in conjunction with --errors.",
+    callback=validate_traceback_flag,
+    is_eager=True,
+)
 def status(network: str, errors: bool, with_traceback: bool):
     """
     Get the status of the submitted network on alchemiscale.
@@ -40,6 +52,7 @@ def status(network: str, errors: bool, with_traceback: bool):
     client.network_status(planned_network=planned_network)
     # Output errors
     if errors:
-        task_errors = client.collect_errors(planned_network, with_traceback=with_traceback)
+        task_errors = client.collect_errors(
+            planned_network, with_traceback=with_traceback
+        )
         print(task_errors)
-

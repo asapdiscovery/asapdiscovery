@@ -177,7 +177,11 @@ class AlchemiscaleHelper:
 
         return network_with_results
 
-    def collect_errors(self, planned_network: FreeEnergyCalculationNetwork, with_traceback: bool = False) -> dict[str, dict[str, str]]:
+    def collect_errors(
+        self,
+        planned_network: FreeEnergyCalculationNetwork,
+        with_traceback: bool = False,
+    ) -> dict[str, dict[str, str]]:
         """
         Collect errors from failed tasks.
 

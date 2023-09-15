@@ -1,13 +1,19 @@
 import datetime
 import itertools
-import pytest
 
+import pytest
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from gufe.protocols import ProtocolUnitResult, ProtocolDAGResult, ProtocolUnit, ProtocolUnitFailure, Context
+from gufe.protocols import (
+    Context,
+    ProtocolDAGResult,
+    ProtocolUnit,
+    ProtocolUnitFailure,
+    ProtocolUnitResult,
+)
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
 
@@ -271,4 +277,6 @@ def test_get_failures(
     # With complete traceback
     errors = client.collect_errors(planned_network=result_network, with_traceback=True)
     assert n_errors == 18, f"Expected 18 errors, received {n_errors} errors."
-    assert all("traceback" in data.keys() for data in errors.values()), "`traceback` key expected and not found in results dictionary."
+    assert all(
+        "traceback" in data.keys() for data in errors.values()
+    ), "`traceback` key expected and not found in results dictionary."
