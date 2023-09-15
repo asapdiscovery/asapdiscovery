@@ -45,14 +45,14 @@ jobs:
         df -h
         ulimit -a
 
+
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: devtools/conda-envs/asapdiscovery.yaml
+        environment-file: devtools/conda-envs/asapdiscovery-${{ matrix.os }}.yml
         environment-name: asapdiscovery
-        channels: jaimergp/label/unsupported-cudatoolkit-shim,conda-forge,openeye,dglteam
-        cache-env: true
+        cache-environment: true
         cache-downloads: true
         create-args: >-
           python==${{ matrix.python-version }}
@@ -83,7 +83,7 @@ jobs:
         # run each package test suite; append to coverage file
         # Exit immediately if a command exits with a non-zero status.
         set -e
-        pytest -n auto --durations=10 --cov=asapdiscovery-modeling --cov=asapdiscovery-data --cov=asapdiscovery-dataviz --cov=asapdiscovery-docking --cov=asapdiscovery-ml -v --cov-report=xml --cov-report=term --color=yes asapdiscovery-data/asapdiscovery/data/tests asapdiscovery-dataviz/asapdiscovery/dataviz/tests asapdiscovery-modeling/asapdiscovery/modeling/tests asapdiscovery-docking/asapdiscovery/docking/tests asapdiscovery-ml/asapdiscovery/ml/tests
+        pytest -n auto --durations=10 --cov=asapdiscovery-modeling --cov=asapdiscovery-data --cov=asapdiscovery-dataviz --cov=asapdiscovery-docking --cov=asapdiscovery-ml --cov=asapdiscovery-simulation -v --cov-report=xml --cov-report=term --color=yes asapdiscovery-data/asapdiscovery/data/tests asapdiscovery-dataviz/asapdiscovery/dataviz/tests asapdiscovery-modeling/asapdiscovery/modeling/tests asapdiscovery-docking/asapdiscovery/docking/tests asapdiscovery-ml/asapdiscovery/ml/tests asapdiscovery-simulation/asapdiscovery/simulation/tests
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3
