@@ -1,11 +1,8 @@
-import datetime
-
 import openfe
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.simulation.utils import AlchemiscaleHelper
-from gufe.protocols.protocolunit import Context, ProtocolUnit, ProtocolUnitFailure
 from rdkit import Chem
 
 
@@ -44,46 +41,3 @@ def mock_alchemiscale_client(monkeypatch):
     client = AlchemiscaleHelper(api_url="")
 
     return client
-
-
-# Gufe fixtures for mocking purposes
-
-
-@pytest.fixture
-class DummyUnit(ProtocolUnit):
-    @staticmethod
-    def _execute(ctx: Context, an_input=2, **inputs):
-        if an_input != 2:
-            raise ValueError("`an_input` should always be 2(!!!)")
-
-        return {"foo": "bar"}
-
-
-@pytest.fixture
-def dummy_protocol_units() -> list[ProtocolUnit]:
-    """Create list of 3 Dummy protocol units"""
-    units = [DummyUnit(name=f"dummy{i}") for i in range(3)]
-    return units
-
-
-@pytest.fixture()
-def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailure]]:
-    """generate 2 unit failures for every task"""
-    t1 = datetime.datetime.now()
-    t2 = datetime.datetime.now()
-
-    return [
-        [
-            ProtocolUnitFailure(
-                source_key=u.key,
-                inputs=u.inputs,
-                outputs=dict(),
-                exception=("ValueError", "Didn't feel like it"),
-                traceback="foo",
-                start_time=t1,
-                end_time=t2,
-            )
-            for _ in range(2)
-        ]
-        for u in dummy_protocol_units
-    ]

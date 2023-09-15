@@ -1,13 +1,55 @@
+import datetime
 import itertools
+import pytest
 
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.simulation.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from gufe.protocols import ProtocolDAGResult, ProtocolUnitResult
+from gufe.protocols import ProtocolUnitResult, ProtocolDAGResult, ProtocolUnit, ProtocolUnitFailure, Context
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
+
+
+# Test gufe "fixtures"
+class DummyUnit(ProtocolUnit):
+    @staticmethod
+    def _execute(ctx: Context, an_input=2, **inputs):
+        if an_input != 2:
+            raise ValueError("`an_input` should always be 2(!!!)")
+
+        return {"foo": "bar"}
+
+
+@pytest.fixture
+def dummy_protocol_units() -> list[ProtocolUnit]:
+    """Create list of 3 Dummy protocol units"""
+    units = [DummyUnit(name=f"dummy{i}") for i in range(3)]
+    return units
+
+
+@pytest.fixture()
+def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailure]]:
+    """generate 2 unit failures for every task"""
+    t1 = datetime.datetime.now()
+    t2 = datetime.datetime.now()
+
+    return [
+        [
+            ProtocolUnitFailure(
+                source_key=u.key,
+                inputs=u.inputs,
+                outputs=dict(),
+                exception=("ValueError", "Didn't feel like it"),
+                traceback="foo",
+                start_time=t1,
+                end_time=t2,
+            )
+            for _ in range(2)
+        ]
+        for u in dummy_protocol_units
+    ]
 
 
 def test_create_network(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
@@ -179,7 +221,7 @@ def test_get_failures(
     dummy_protocol_units,
     protocol_unit_failures,
 ):
-    """Make sure we can get exceptions and tracebacks from failures in a task"""
+    """Make sure we can get exceptions and tracebacks from failures in a network"""
 
     # use a fake api url for testing
     client = mock_alchemiscale_client
