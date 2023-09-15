@@ -1,7 +1,7 @@
 import openfe
 import pytest
-from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 from rdkit import Chem
 
 
