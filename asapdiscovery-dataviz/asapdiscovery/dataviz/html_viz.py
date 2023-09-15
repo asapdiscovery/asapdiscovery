@@ -1,12 +1,14 @@
 import logging
-import sys, os, shutil
+import os
+import shutil
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
-import subprocess
-import xmltodict
-import xml.etree.ElementTree as ET
-from airium import Airium
 
+import xmltodict
+from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
@@ -101,7 +103,9 @@ class HTMLVisualizer:
         for pose, path in zip(poses, output_paths):
             if pose and Path(pose).exists():
                 mol = load_openeye_sdf(str(pose))
-                oechem.OESuppressHydrogens(mol, True, True)  # retain polar hydrogens and hydrogens on chiral centers
+                oechem.OESuppressHydrogens(
+                    mol, True, True
+                )  # retain polar hydrogens and hydrogens on chiral centers
                 self.poses.append(mol)
                 self.output_paths.append(path)
             else:
@@ -213,7 +217,7 @@ class HTMLVisualizer:
                     color_res_dict[color].append(res_num)
 
         return color_res_dict
-    
+
     @staticmethod
     def get_interaction_color(intn_type) -> str:
         """
@@ -242,22 +246,22 @@ class HTMLVisualizer:
 
     def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type) -> Union:
         """
-        Parses a PLIP interaction dict 
+        Parses a PLIP interaction dict
         """
         k = f"{intn_counter}_{plip_xml_dict['restype']}{plip_xml_dict['resnr']}.{plip_xml_dict['reschain']}"
-        
+
         v = {
-            "lig_at_x" : plip_xml_dict["ligcoo"]["x"],
-            "lig_at_y" : plip_xml_dict["ligcoo"]["y"],
-            "lig_at_z" : plip_xml_dict["ligcoo"]["z"],
-            "prot_at_x" : plip_xml_dict["protcoo"]["x"],
-            "prot_at_y" : plip_xml_dict["protcoo"]["y"],
-            "prot_at_z" : plip_xml_dict["protcoo"]["z"],
-            "type" : intn_type,
-            "color" : self.get_interaction_color(intn_type)
-            }
+            "lig_at_x": plip_xml_dict["ligcoo"]["x"],
+            "lig_at_y": plip_xml_dict["ligcoo"]["y"],
+            "lig_at_z": plip_xml_dict["ligcoo"]["z"],
+            "prot_at_x": plip_xml_dict["protcoo"]["x"],
+            "prot_at_y": plip_xml_dict["protcoo"]["y"],
+            "prot_at_z": plip_xml_dict["protcoo"]["z"],
+            "type": intn_type,
+            "color": self.get_interaction_color(intn_type),
+        }
         return k, v
-    
+
     @staticmethod
     def get_interactions_plip(self, pose) -> dict:
         """
@@ -269,7 +273,7 @@ class HTMLVisualizer:
         libc++abi: terminating with uncaught exception of type swig::stop_iteration
         Abort trap: 6
         ```
-        ), then parses XML to get interactions. This is a bit convoluted, we could refactor 
+        ), then parses XML to get interactions. This is a bit convoluted, we could refactor
         this to use OE's InteractionHints instead? ProLIF struggles to detect incorrections
         because it's v sensitive to protonation. PLIP does protonation itself.
         """
@@ -280,31 +284,39 @@ class HTMLVisualizer:
         subprocess.run(["plip", "-f", "tmp_complex.pdb", "-x", "-o", "tmp"])
 
         # load the XML produced by PLIP that contains all the interaction data.
-        intn_dict_xml = xmltodict.parse(ET.tostring(ET.parse('tmp/report.xml').getroot()))
+        intn_dict_xml = xmltodict.parse(
+            ET.tostring(ET.parse("tmp/report.xml").getroot())
+        )
 
         intn_dict = {}
         intn_counter = 0
         # wrangle all interactions into a dict that can be read directly by 3DMol.
-        for _, data in intn_dict_xml['report']['bindingsite']['interactions'].items():
+        for _, data in intn_dict_xml["report"]["bindingsite"]["interactions"].items():
             if data:
                 for intn_type, intn_data in data.items():
-                    if isinstance(intn_data, list): # multiple interactions of this type
+                    if isinstance(
+                        intn_data, list
+                    ):  # multiple interactions of this type
                         for intn_data_i in intn_data:
-                            k, v = self.build_interaction_dict(intn_data_i, intn_counter, intn_type)
+                            k, v = self.build_interaction_dict(
+                                intn_data_i, intn_counter, intn_type
+                            )
                             intn_dict[k] = v
                             intn_counter += 1
 
-                    elif isinstance(intn_data, dict): # single interaction of this type
-                        k, v = self.build_interaction_dict(intn_data, intn_counter, intn_type)
+                    elif isinstance(intn_data, dict):  # single interaction of this type
+                        k, v = self.build_interaction_dict(
+                            intn_data, intn_counter, intn_type
+                        )
                         intn_dict[k] = v
                         intn_counter += 1
 
         # remove tmp files/folder.
         os.remove("tmp_complex.pdb")
-        shutil.rmtree('tmp')
+        shutil.rmtree("tmp")
 
         return intn_dict
-    
+
     def get_html_airium(self, pose):
         """
         Get HTML for visualizing a single pose. This uses Airium which is a handy tool to write
@@ -419,24 +431,24 @@ class HTMLVisualizer:
                             viewer.setHoverDuration(100); // makes resn popup instant on hover\n \
                         \n \
                             //////////////// add protein-ligand interactions\n \
-                            var intn_dict = " \
-                            + str(self.get_interactions_plip(self, pose)) + \
-                        "\n \
+                            var intn_dict = "
+                        + str(self.get_interactions_plip(self, pose))
+                        + '\n \
                             for (const [_, intn] of Object.entries(intn_dict)) {\n \
-                                viewer.addCylinder({start:{x:parseFloat(intn[\"lig_at_x\"]),y:parseFloat(intn[\"lig_at_y\"]),z:parseFloat(intn[\"lig_at_z\"])},\n \
-                                                        end:{x:parseFloat(intn[\"prot_at_x\"]),y:parseFloat(intn[\"prot_at_y\"]),z:parseFloat(intn[\"prot_at_z\"])},\n \
+                                viewer.addCylinder({start:{x:parseFloat(intn["lig_at_x"]),y:parseFloat(intn["lig_at_y"]),z:parseFloat(intn["lig_at_z"])},\n \
+                                                        end:{x:parseFloat(intn["prot_at_x"]),y:parseFloat(intn["prot_at_y"]),z:parseFloat(intn["prot_at_z"])},\n \
                                                         radius:0.1,\n \
                                                         dashed:true,\n \
                                                         fromCap:2,\n \
                                                         toCap:2,\n \
-                                                        color:intn[\"color\"]},\n \
+                                                        color:intn["color"]},\n \
                                                         );\n \
                             }\n \
                         \n \
                             ////////////////// set the view correctly\n \
                             viewer.setBackgroundColor(0xffffffff);\n \
                             viewer.setView(\n \
-                            "
+                            '
                         + HTMLBlockData.get_orient(self.target)
                         + " \
                             )\n \
