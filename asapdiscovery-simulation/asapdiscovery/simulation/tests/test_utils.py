@@ -264,7 +264,11 @@ def test_get_failures(
     monkeypatch.setattr(client._client, "get_task_failures", get_task_failures)
 
     # Collect errors without traceback
-    errors = client.collect_errors(planned_network=result_network, traceback=False)
+    errors = client.collect_errors(planned_network=result_network, with_traceback=False)
+    n_errors = len(errors)
+    assert n_errors == 18, f"Expected 18 errors, received {n_errors} errors."
 
     # With complete traceback
-    errors = client.collect_errors(planned_network=result_network, traceback=True)
+    errors = client.collect_errors(planned_network=result_network, with_traceback=True)
+    assert n_errors == 18, f"Expected 18 errors, received {n_errors} errors."
+    assert all("traceback" in data.keys() for data in errors.values()), "`traceback` key expected and not found in results dictionary."
