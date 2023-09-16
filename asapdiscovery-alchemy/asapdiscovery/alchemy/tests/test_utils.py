@@ -10,7 +10,6 @@ from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
 
 
-
 def test_create_network(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     """Make sure our alchemiscale helper can create a network and update the results"""
 
@@ -87,8 +86,10 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
 
     def create_tasks(transformation, count):
         "Mock creating tasks for a transform"
-        return [ScopedKey(gufe_key=uuid4().hex, **transformation.scope.dict()) 
-                for _ in range(count)]
+        return [
+            ScopedKey(gufe_key=uuid4().hex, **transformation.scope.dict())
+            for _ in range(count)
+        ]
 
     def action_tasks(tasks, network):
         "mock actioning tasks"
@@ -174,11 +175,9 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     alchemical_network = tyk2_fec_network.to_alchemical_network()
 
-    network_key = ScopedKey(
-        gufe_key=alchemical_network.key, **scope.dict()
-    )
+    network_key = ScopedKey(gufe_key=alchemical_network.key, **scope.dict())
 
-    def get_network_tasks(key: ScopedKey, status: str ):
+    def get_network_tasks(key: ScopedKey, status: str):
         assert key == network_key
         # pretend 7 tasks have status == 'error'
         return [ScopedKey(gufe_key=uuid4().hex, **key.scope.dict()) for _ in range(7)]

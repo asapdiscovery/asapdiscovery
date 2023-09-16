@@ -1,7 +1,7 @@
 import openfe
 import pytest
-from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from rdkit import Chem
 
@@ -32,7 +32,6 @@ def tyk2_fec_network():
 
 @pytest.fixture(scope="function")
 def alchemiscale_helper(monkeypatch):
-
     monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
     monkeypatch.setenv(name="ALCHEMISCALE_KEY", value="key")
 

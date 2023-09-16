@@ -294,9 +294,7 @@ def status(network: str):
     help="Verbosity of output; one `-v` will give ScopedKeys of restarted Tasks",
 )
 def restart(network: str, verbose):
-    """Restart all errored Tasks for the given FEC network.
-
-    """
+    """Restart all errored Tasks for the given FEC network."""
     from .schema.fec import FreeEnergyCalculationNetwork
     from .utils import AlchemiscaleHelper
 

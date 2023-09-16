@@ -134,8 +134,8 @@ class AlchemiscaleHelper:
             A dict of the status type and the number of instances.
         """
         network_key = planned_network.results.network_key
-        errored_tasks = self._client.get_network_tasks(network_key, status='error')
-        restarted_tasks = self._client.set_tasks_status(errored_tasks, status='waiting')
+        errored_tasks = self._client.get_network_tasks(network_key, status="error")
+        restarted_tasks = self._client.set_tasks_status(errored_tasks, status="waiting")
 
         return restarted_tasks
 
