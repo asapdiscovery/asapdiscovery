@@ -1,5 +1,6 @@
 import openfe
 import pytest
+from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from rdkit import Chem
@@ -27,3 +28,19 @@ def tyk2_fec_network():
     """Create a FEC planned network from file"""
     fec_network = fetch_test_file("tyk2_small_network.json")
     return FreeEnergyCalculationNetwork.from_file(fec_network)
+
+
+@pytest.fixture(scope="function")
+def alchemiscale_helper(monkeypatch):
+
+    monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
+    monkeypatch.setenv(name="ALCHEMISCALE_KEY", value="key")
+
+    # use a fake api url for testing
+    client = AlchemiscaleHelper(api_url="")
+
+    # make sure the env variables were picked up
+    assert client._client.identifier == "asap"
+    assert client._client.key == "key"
+
+    return client

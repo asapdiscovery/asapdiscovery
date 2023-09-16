@@ -121,6 +121,24 @@ class AlchemiscaleHelper:
         network_key = planned_network.results.network_key
         return self._client.get_network_status(network_key)
 
+    def restart_tasks(
+        self, planned_network: FreeEnergyCalculationNetwork
+    ) -> list[ScopedKey]:
+        """
+        Restart errored tasks on alchemiscale for this network.
+
+        Args:
+            planned_network: The network which we should look up in alchemiscale.
+
+        Returns:
+            A dict of the status type and the number of instances.
+        """
+        network_key = planned_network.results.network_key
+        errored_tasks = self._client.get_network_tasks(network_key, status='error')
+        restarted_tasks = self._client.set_tasks_status(errored_tasks, status='waiting')
+
+        return restarted_tasks
+
     def collect_results(
         self, planned_network: FreeEnergyCalculationNetwork
     ) -> FreeEnergyCalculationNetwork:

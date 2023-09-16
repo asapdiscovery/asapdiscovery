@@ -278,5 +278,37 @@ def status(network: str):
     client.network_status(planned_network=planned_network)
 
 
+@cli.command()
+@click.option(
+    "-n",
+    "--network",
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
+    help="The name of the JSON file containing a planned FEC network.",
+    default="planned_network.json",
+    show_default=True,
+)
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    help="Verbosity of output; one `-v` will give ScopedKeys of restarted Tasks",
+)
+def restart(network: str, verbose):
+    """Restart all errored Tasks for the given FEC network.
+
+    """
+    from .schema.fec import FreeEnergyCalculationNetwork
+    from .utils import AlchemiscaleHelper
+
+    client = AlchemiscaleHelper()
+    planned_network = FreeEnergyCalculationNetwork.from_file(network)
+
+    restarted_tasks = client.restart_tasks(planned_network)
+    if verbose == 1:
+        click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
+    else:
+        click.echo(f"Restarted {len(restarted_tasks)} Tasks")
+
+
 if __name__ == "__main__":
     cli()
