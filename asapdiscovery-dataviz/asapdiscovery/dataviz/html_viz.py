@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
@@ -278,15 +279,17 @@ class HTMLVisualizer:
         because it's v sensitive to protonation. PLIP does protonation itself.
         """
         # create the complex PDB file.
-        save_openeye_pdb(combine_protein_ligand(self.protein, pose), "tmp_complex.pdb")
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmp_pdb = os.path.join(tmpdirname, "tmp_complex.pdb")
+            save_openeye_pdb(combine_protein_ligand(self.protein, pose), tmp_pdb)
 
-        # run the PLIP CLI.
-        subprocess.run(["plip", "-f", "tmp_complex.pdb", "-x", "-o", "tmp"])
+            # run the PLIP CLI.
+            subprocess.run(["plip", "-f", tmp_pdb, "-x", "-o", tmpdirname])
 
-        # load the XML produced by PLIP that contains all the interaction data.
-        intn_dict_xml = xmltodict.parse(
-            ET.tostring(ET.parse("tmp/report.xml").getroot())
-        )
+            # load the XML produced by PLIP that contains all the interaction data.
+            intn_dict_xml = xmltodict.parse(
+                ET.tostring(ET.parse(os.path.join(tmp_pdb, "report.xml")).getroot())
+            )
 
         intn_dict = {}
         intn_counter = 0
