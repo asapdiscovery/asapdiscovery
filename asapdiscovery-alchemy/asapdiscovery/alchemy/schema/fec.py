@@ -375,7 +375,9 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         """
         # check that all ligands are unique in the series
         if len(set(ligands)) != len(ligands):
-            raise ValueError("ligand series contains duplicate ligands; duplicates are not allowed")
+            raise ValueError(
+                "ligand series contains duplicate ligands; duplicates are not allowed"
+            )
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
