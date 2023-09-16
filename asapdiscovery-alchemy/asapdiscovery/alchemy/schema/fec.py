@@ -334,7 +334,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     stateB=system_b,
                     mapping={"ligand": mapping},
                     protocol=protocol,  # use protocol created above
-                    name=f"{self.dataset_name}{system_a.name}_{system_b.name}",
+                    name=f"{system_a.name}_{system_b.name}",
                 )
                 transformations.append(transformation)
 
@@ -373,6 +373,9 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
          Returns:
              The planned FEC network which can be executed locally or submitted to alchemiscale.
         """
+        # check that all ligands are unique in the series
+        if len(set(ligands)) != len(ligands):
+            raise ValueError("ligand series contains duplicate ligands; duplicates are not allowed")
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
