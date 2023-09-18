@@ -1,4 +1,6 @@
+import json
 import click
+
 
 
 def validate_traceback_flag(ctx, param, value):
@@ -54,4 +56,4 @@ def status(network: str, errors: bool, with_traceback: bool):
         task_errors = client.collect_errors(
             planned_network, with_traceback=with_traceback
         )
-        print(task_errors)
+        print(json.dumps(task_errors, indent=4))
