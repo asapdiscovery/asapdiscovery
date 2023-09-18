@@ -294,7 +294,14 @@ class HTMLVisualizer:
         intn_dict = {}
         intn_counter = 0
         # wrangle all interactions into a dict that can be read directly by 3DMol.
-        for _, data in intn_dict_xml["report"]["bindingsite"]["interactions"].items():
+        binding_site_data = intn_dict_xml["report"]["bindingsite"]
+        if isinstance(binding_site_data, list):
+            # this can happen if multiple binding sites (e.g. dimer) exist
+            interaction_data = [ binding_site["interactions"].items() for binding_site in binding_site_data ]
+        elif isinstance(binding_site_data, dict):
+            interaction_data = binding_site_data["interactions"].items()
+
+        for _, data in interaction_data:
             if data:
                 for intn_type, intn_data in data.items():
                     if isinstance(
