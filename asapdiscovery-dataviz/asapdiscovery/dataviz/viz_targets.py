@@ -5,8 +5,6 @@ from enum import Enum
 PROTEIN_MAPPING = {
     "SARS-CoV-2-Mpro": "Mpro",
     "MERS-CoV-Mpro": "Mpro",
-    "MERS-CoV-Mpro-7ene": "Mpro",
-    "MERS-CoV-Mpro-272": "Mpro",
     "SARS-CoV-2-Mac1": "Mac1",
     "SARS-CoV-2-Mac1-monomer": "Mac1",
 }
@@ -15,8 +13,6 @@ PROTEIN_MAPPING = {
 TARGET_MAPPING = {
     "SARS-CoV-2-Mpro": "SARS-CoV-2-Mpro",
     "MERS-CoV-Mpro": "MERS-CoV-Mpro",
-    "MERS-CoV-Mpro-7ene": "MERS-CoV-Mpro",
-    "MERS-CoV-Mpro-272": "MERS-CoV-Mpro",
     "SARS-CoV-2-Mac1": "SARS-CoV-2-Mac1",
     "SARS-CoV-2-Mac1-monomer": "SARS-CoV-2-Mac1",
 }
@@ -27,8 +23,6 @@ TARGET_MAPPING = {
 class VizTargets(Enum):
     viz_SARS_CoV_2_Mpro = "SARS-CoV-2-Mpro"
     viz_MERS_CoV_Mpro = "MERS-CoV-Mpro"
-    viz_MERS_CoV_Mpro_7ene = "MERS-CoV-Mpro-7ene"
-    viz_MERS_CoV_Mpro_272 = "MERS-CoV-Mpro-272"
     viz_SARS_CoV_2_Mac1 = "SARS-CoV-2-Mac1"
     viz_SARS_CoV_2_Mac1_monomer = "SARS-CoV-2-Mac1-monomer"
 
