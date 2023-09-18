@@ -288,7 +288,7 @@ class HTMLVisualizer:
 
             # load the XML produced by PLIP that contains all the interaction data.
             intn_dict_xml = xmltodict.parse(
-                ET.tostring(ET.parse(os.path.join(tmp_pdb, "report.xml")).getroot())
+                ET.tostring(ET.parse(os.path.join(tmpdirname, "report.xml")).getroot())
             )
 
         intn_dict = {}
@@ -313,10 +313,6 @@ class HTMLVisualizer:
                         )
                         intn_dict[k] = v
                         intn_counter += 1
-
-        # remove tmp files/folder.
-        os.remove("tmp_complex.pdb")
-        shutil.rmtree("tmp")
 
         return intn_dict
 
