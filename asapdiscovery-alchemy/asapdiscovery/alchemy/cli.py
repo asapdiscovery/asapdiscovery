@@ -166,7 +166,6 @@ def submit(network: str, organization: str, campaign: str, project: str):
         project: The name of the project this network should be submitted under.
     """
     from alchemiscale import Scope
-
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
