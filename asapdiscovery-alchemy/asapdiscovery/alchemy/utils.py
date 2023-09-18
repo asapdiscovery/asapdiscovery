@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Optional
 
 from alchemiscale import Scope, ScopedKey
@@ -128,7 +129,7 @@ class AlchemiscaleHelper:
         Collect the results for the given network.
 
         Args:
-            planned_network: The network who's results we should collect.
+            planned_network: The network whose results we should collect.
 
         Returns:
             A FreeEnergyCalculationNetwork with all current results. If any are missing and allow missing is false an error is raised.
@@ -175,3 +176,30 @@ class AlchemiscaleHelper:
         )
 
         return network_with_results
+
+    def collect_errors(
+        self,
+        planned_network: FreeEnergyCalculationNetwork,
+        with_traceback: bool = False,
+    ) -> dict[str, dict[str, str]]:
+        """
+        Collect errors from failed tasks.
+
+        Args:
+            planned_network: Network to get failed tasks from.
+            with_traceback: Output the complete traceback for the failed tasks.
+
+        Returns:
+            Nested dictionary with task key as value and a dictionary with errors and tracebacks as values.
+        """
+        network_key = planned_network.results.network_key
+        errored_tasks = self._client.get_network_tasks(network_key, status="error")
+
+        error_data = defaultdict(dict)
+        for task in errored_tasks:
+            for err_result in self._client.get_task_failures(task):
+                for failure in err_result.protocol_unit_failures:
+                    error_data[str(task.gufe_key)]["errors"] = failure.exception
+                    if with_traceback:
+                        error_data[str(task.gufe_key)]["traceback"] = failure.traceback
+        return dict(error_data)
