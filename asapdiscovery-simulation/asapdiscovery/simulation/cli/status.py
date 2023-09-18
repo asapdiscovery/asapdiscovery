@@ -29,11 +29,10 @@ def validate_traceback_flag(ctx, param, value):
     default=False,
     help="Output the tracebacks from the failing tasks. Only usable in conjunction with --errors.",
     callback=validate_traceback_flag,
-    is_eager=True,
 )
 def status(network: str, errors: bool, with_traceback: bool):
     """
-    Get the status of the submitted network on alchemiscale.
+    Get the status of the submitted network on alchemiscale.\f
 
     Args:
         network: The name of the JSON file containing the FreeEnergyCalculationNetwork we should check the status of.
