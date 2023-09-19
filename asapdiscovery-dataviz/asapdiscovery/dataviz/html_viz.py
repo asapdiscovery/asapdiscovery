@@ -297,14 +297,16 @@ class HTMLVisualizer:
         binding_site_data = intn_dict_xml["report"]["bindingsite"]
         if isinstance(binding_site_data, list):
             # this can happen if multiple binding sites (e.g. dimer) exist
-            interaction_data = [
-                binding_site["interactions"].items()
+            interaction_data = {}
+            [
+                interaction_data.update(binding_site["interactions"])
                 for binding_site in binding_site_data
             ]
+            
         elif isinstance(binding_site_data, dict):
-            interaction_data = binding_site_data["interactions"].items()
+            interaction_data = binding_site_data["interactions"]
 
-        for _, data in interaction_data:
+        for _, data in interaction_data.items():
             if data:
                 for intn_type, intn_data in data.items():
                     if isinstance(
