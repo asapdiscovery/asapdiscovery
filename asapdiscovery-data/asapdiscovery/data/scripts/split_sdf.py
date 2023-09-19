@@ -34,7 +34,7 @@ def get_args():
     )
     parser.add_argument(
         "--name_convention",
-        options=["integer", "name"],
+        choices=["integer", "name"],
         default="integer",
         help="How to name the output files. 'integer' will name them 1.sdf, 2.sdf, etc. 'name' will name them "
              "according to the name of the molecule in the SDF file",)
