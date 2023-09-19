@@ -183,6 +183,22 @@ def test_fec_to_openfe_protocol():
         == factory.simulation_settings.equilibration_length
     )
 
+def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
+
+    # duplicate a ligand
+    ligands = tyk2_ligands[-1:] + tyk2_ligands
+
+    factory = FreeEnergyCalculationFactory()
+    with pytest.raises(ValueError, match="1 duplicate ligands"):
+        planned_network = factory.create_fec_dataset(dataset_name="TYK2-test-dataset-duplicated", receptor=tyk2_protein, ligands=ligands)
+
+    ligands = ligands + tyk2_ligands[:1]
+
+    factory = FreeEnergyCalculationFactory()
+    with pytest.raises(ValueError, match="2 duplicate ligands"):
+        planned_network = factory.create_fec_dataset(
+            dataset_name="TYK2-test-dataset-duplicated", receptor=tyk2_protein, ligands=ligands
+        )
 
 def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
     """Make sure we can run the full FEC workflow"""
