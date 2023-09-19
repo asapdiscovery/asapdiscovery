@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import Literal, Optional
 
 import gufe
@@ -334,7 +335,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     stateB=system_b,
                     mapping={"ligand": mapping},
                     protocol=protocol,  # use protocol created above
-                    name=f"{self.dataset_name}{system_a.name}_{system_b.name}",
+                    name=f"{system_a.name}_{system_b.name}",
                 )
                 transformations.append(transformation)
 
@@ -373,6 +374,13 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
          Returns:
              The planned FEC network which can be executed locally or submitted to alchemiscale.
         """
+        # check that all ligands are unique in the series
+        if len(set(ligands)) != len(ligands):
+            count = Counter(ligands)
+            duplicated = [key.name for key, value in count.items() if value > 1]
+            raise ValueError(
+                f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
+            )
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
