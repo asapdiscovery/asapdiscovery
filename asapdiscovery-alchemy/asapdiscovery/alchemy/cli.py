@@ -267,12 +267,14 @@ def validate_traceback_flag(ctx, param, value):
     show_default=True,
 )
 @click.option(
+    "-e",
     "--errors",
     is_flag=True,
     default=False,
     help="Output errors from the network, if any.",
 )
 @click.option(
+    "-t",
     "--with-traceback",
     is_flag=True,
     default=False,
