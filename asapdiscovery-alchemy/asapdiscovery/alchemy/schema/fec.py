@@ -1,6 +1,6 @@
+from collections import Counter
 from typing import Literal, Optional
 
-from collections import Counter
 import gufe
 import openfe
 from alchemiscale import ScopedKey
@@ -378,7 +378,9 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         if len(set(ligands)) != len(ligands):
             count = Counter(ligands)
             duplicated = [key.name for key, value in count.items() if value > 1]
-            raise ValueError(f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}")
+            raise ValueError(
+                f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
+            )
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
