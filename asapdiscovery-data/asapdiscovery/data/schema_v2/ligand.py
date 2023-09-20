@@ -51,16 +51,16 @@ class LigandIdentifiers(DataModelAbstractBase):
         Unique ID for P5 compchem reference, unused for now, by default None
     """
 
-    moonshot_compound_id: str | None = Field(
+    moonshot_compound_id: Optional[str] = Field(
         None, description="Moonshot compound ID"
     )
-    manifold_api_id: UUID | None = Field(
+    manifold_api_id: Optional[UUID] = Field(
         None, description="Unique ID from Postera Manifold API"
     )
-    manifold_vc_id: str | None = Field(
+    manifold_vc_id: Optional[str] = Field(
         None, description="Unique VC ID (virtual compound ID) from Postera Manifold"
     )
-    compchem_id: UUID4 | None = Field(
+    compchem_id: Optional[UUID4] = Field(
         None, description="Unique ID for P5 compchem reference, unused for now"
     )
 
@@ -102,11 +102,11 @@ class Ligand(DataModelAbstractBase):
     """
 
     compound_name: str = Field(None, description="Name of compound")
-    ids: LigandIdentifiers | None = Field(
+    ids: Optional[LigandIdentifiers] = Field(
         None,
         description="LigandIdentifiers Schema for identifiers associated with this ligand",
     )
-    experimental_data: ExperimentalCompoundData | None = Field(
+    experimental_data: Optional[ExperimentalCompoundData] = Field(
         None,
         description="ExperimentalCompoundData Schema for experimental data associated with the compound",
     )
@@ -164,8 +164,8 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_oemol(
-        cls, mol: oechem.OEMol, compound_name: str | None = None, **kwargs
-    ) -> Ligand:
+        cls, mol: oechem.OEMol, compound_name: Optional[str] = None, **kwargs
+    ) -> "Ligand":
         """
         Create a Ligand from an OEMol
         """
@@ -181,8 +181,8 @@ class Ligand(DataModelAbstractBase):
 
     @classmethod
     def from_smiles(
-        cls, smiles: str, compound_name: str | None = None, **kwargs
-    ) -> Ligand:
+        cls, smiles: str, compound_name: Optional[str] = None, **kwargs
+    ) -> "Ligand":
         """
         Create a Ligand from a SMILES string
         """
@@ -217,11 +217,11 @@ class Ligand(DataModelAbstractBase):
     @classmethod
     def from_sdf(
         cls,
-        sdf_file: str | Path,
-        compound_name: str | None = None,
+        sdf_file: Union[str, Path],
+        compound_name: Optional[str] = None,
         read_SD_attrs: bool = True,
         **kwargs,
-    ) -> Ligand:
+    ) -> "Ligand":
         """
         Read in a ligand from an SDF file.
         If read_SD_attrs is True, then SD tags will be read in as attributes, overriding kwargs where double defined.
@@ -250,7 +250,7 @@ class Ligand(DataModelAbstractBase):
         lig.validate(lig.dict())
         return lig
 
-    def to_sdf(self, filename: str | Path, write_SD_attrs: bool = True) -> None:
+    def to_sdf(self, filename: Union[str, Path], write_SD_attrs: bool = True) -> None:
         """
         Write out the ligand to an SDF file
         If write_SD_attrs is True, then SD tags will be written out as attributes
@@ -367,4 +367,4 @@ class Ligand(DataModelAbstractBase):
 
 
 class ReferenceLigand(Ligand):
-    target_name: str | None = None
+    target_name: Optional[str] = None
