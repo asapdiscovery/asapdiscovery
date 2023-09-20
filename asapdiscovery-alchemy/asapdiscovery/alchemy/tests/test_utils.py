@@ -37,7 +37,7 @@ def dummy_protocol_units() -> list[ProtocolUnit]:
 
 @pytest.fixture()
 def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailure]]:
-    """generate 2 unit failures for every task"""
+    """generate 2 unit failures for every protocol unit"""
     t1 = datetime.datetime.now()
     t2 = datetime.datetime.now()
 
@@ -47,7 +47,7 @@ def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailur
                 source_key=u.key,
                 inputs=u.inputs,
                 outputs=dict(),
-                exception=("ValueError", "Didn't feel like it"),
+                exception=("ValueError", ("Didn't feel like it",)),
                 traceback="foo",
                 start_time=t1,
                 end_time=t2,
@@ -252,13 +252,14 @@ def test_get_failures(
         for edge in alchem_network.edges:
             tf_key = edge.key
             task_key = tf_key.replace("Transformation", "Task")
+            # 1 task per edge -- 18 tasks in total
             tasks.append(ScopedKey(gufe_key=task_key, **scope.dict()))
         return tasks
 
     def get_task_failures(key) -> list[ProtocolDAGResult]:
         """Mock pulling the task failures from alchemiscale"""
         dagresult = ProtocolDAGResult(
-            protocol_units=dummy_protocol_units,
+            protocol_units=dummy_protocol_units,  # 3 dummy units per dag result
             protocol_unit_results=list(itertools.chain(*protocol_unit_failures)),
             transformation_key=None,
         )
@@ -269,14 +270,12 @@ def test_get_failures(
     monkeypatch.setattr(client._client, "get_network_tasks", get_network_tasks)
     monkeypatch.setattr(client._client, "get_task_failures", get_task_failures)
 
-    # Collect errors without traceback
-    errors = client.collect_errors(planned_network=result_network, with_traceback=False)
+    # Collect errors and tracebacks
+    errors = client.collect_errors(planned_network=result_network)
     n_errors = len(errors)
-    assert n_errors == 18, f"Expected 18 errors, received {n_errors} errors."
-
-    # With complete traceback
-    errors = client.collect_errors(planned_network=result_network, with_traceback=True)
-    assert n_errors == 18, f"Expected 18 errors, received {n_errors} errors."
+    n_expected_errors = 108  # 18*3*2 (18 tasks, 3 units/protocol, 2 failures/unit)
+    assert n_errors == n_expected_errors, f"Expected {n_expected_errors} errors, received {n_errors} errors."
+    # Check tracebacks
     assert all(
-        "traceback" in data.keys() for data in errors.values()
-    ), "`traceback` key expected and not found in results dictionary."
+        "foo" == data.traceback for data in errors
+    ), "'foo' string expected in `traceback` attribute."

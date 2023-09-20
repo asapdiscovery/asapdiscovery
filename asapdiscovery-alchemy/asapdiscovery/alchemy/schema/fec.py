@@ -1,9 +1,10 @@
-from typing import Literal, Optional
+from typing import Literal, Optional, Any
 
 import gufe
 import openfe
 from alchemiscale import ScopedKey
 from gufe import settings
+from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
     AlchemicalSettings,
@@ -386,3 +387,23 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             **self.dict(exclude={"type", "network_planner"}),
         )
         return planned_fec_network
+
+
+class _BaseFailure(_SchemaBaseFrozen):
+    """Base class for collecting errors and tracebacks from failed FEC runs"""
+
+    type: Literal["_BaseFailure"] = "_BaseFailure"
+
+    error: tuple[str, tuple[Any, ...]] = Field(tuple(), description="Exception raised and associated message.")
+    traceback: str = Field("", description="Complete traceback associated with the failure.")
+
+
+class AlchemiscaleFailure(_BaseFailure):
+    """Class for collecting errors and tracebacks from errored tasks in an alchemiscale network"""
+
+    type: Literal["AlchemiscaleFailure"] = "AlchemiscaleFailure"
+
+    network_key: ScopedKey = Field(..., description="The alchemiscale key associated with this submitted network, which is used to gather the failed results from the client.")
+    task_key: GufeKey = Field(..., description="Task key for the errored task.")
+    unit_key: GufeKey = Field(..., description="Protocol unit key associated to the errored task.")
+    dag_result_key: GufeKey = Field(..., description="Protocol DAG result key associated to the errored task.")

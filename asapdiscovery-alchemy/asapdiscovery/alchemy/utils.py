@@ -9,6 +9,7 @@ from .schema.fec import (
     AlchemiscaleSettings,
     FreeEnergyCalculationNetwork,
     TransformationResult,
+    AlchemiscaleFailure,
 )
 from .schema.forcefield import ForceFieldParams
 
@@ -180,26 +181,23 @@ class AlchemiscaleHelper:
     def collect_errors(
         self,
         planned_network: FreeEnergyCalculationNetwork,
-        with_traceback: bool = False,
-    ) -> dict[str, dict[str, str]]:
+    ) -> list[AlchemiscaleFailure]:
         """
-        Collect errors from failed tasks.
+        Collect errors and tracebacks from failed tasks.
 
         Args:
             planned_network: Network to get failed tasks from.
-            with_traceback: Output the complete traceback for the failed tasks.
 
         Returns:
-            Nested dictionary with task key as value and a dictionary with errors and tracebacks as values.
+            List of AlchemiscaleFailure objects with errors and tracebacks for the failed tasks in the network.
         """
         network_key = planned_network.results.network_key
         errored_tasks = self._client.get_network_tasks(network_key, status="error")
 
-        error_data = defaultdict(dict)
+        error_data = list()
         for task in errored_tasks:
             for err_result in self._client.get_task_failures(task):
                 for failure in err_result.protocol_unit_failures:
-                    error_data[str(task.gufe_key)]["errors"] = failure.exception
-                    if with_traceback:
-                        error_data[str(task.gufe_key)]["traceback"] = failure.traceback
-        return dict(error_data)
+                    failure = AlchemiscaleFailure(network_key=network_key, task_key=task.gufe_key, unit_key=failure.source_key, dag_result_key=err_result.key, error=failure.exception, traceback=failure.traceback)
+                    error_data.append(failure)
+        return error_data
