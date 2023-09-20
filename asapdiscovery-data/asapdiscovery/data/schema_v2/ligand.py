@@ -154,6 +154,9 @@ class Ligand(DataModelAbstractBase):
         return v
 
     def __eq__(self, other: "Ligand") -> bool:
+        return self.data_equal(other)
+
+    def data_equal(self, other: "Ligand") -> bool:
         # Take out the header block since those aren't really important in checking
         # equality
         return "\n".join(self.data.split("\n")[2:]) == "\n".join(
