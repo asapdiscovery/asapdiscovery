@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 from uuid import UUID
@@ -155,7 +153,7 @@ class Ligand(DataModelAbstractBase):
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
         return v
 
-    def __eq__(self, other: Ligand) -> bool:
+    def __eq__(self, other: "Ligand") -> bool:
         # Take out the header block since those aren't really important in checking
         # equality
         return "\n".join(self.data.split("\n")[2:]) == "\n".join(
