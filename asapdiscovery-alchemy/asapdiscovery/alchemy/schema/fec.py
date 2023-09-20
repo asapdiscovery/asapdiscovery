@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Literal, Optional, Any
+from typing import Any, Literal, Optional
 
 import gufe
 import openfe
@@ -402,8 +402,12 @@ class _BaseFailure(_SchemaBaseFrozen):
 
     type: Literal["_BaseFailure"] = "_BaseFailure"
 
-    error: tuple[str, tuple[Any, ...]] = Field(tuple(), description="Exception raised and associated message.")
-    traceback: str = Field("", description="Complete traceback associated with the failure.")
+    error: tuple[str, tuple[Any, ...]] = Field(
+        tuple(), description="Exception raised and associated message."
+    )
+    traceback: str = Field(
+        "", description="Complete traceback associated with the failure."
+    )
 
 
 class AlchemiscaleFailure(_BaseFailure):
@@ -411,7 +415,14 @@ class AlchemiscaleFailure(_BaseFailure):
 
     type: Literal["AlchemiscaleFailure"] = "AlchemiscaleFailure"
 
-    network_key: ScopedKey = Field(..., description="The alchemiscale key associated with this submitted network, which is used to gather the failed results from the client.")
+    network_key: ScopedKey = Field(
+        ...,
+        description="The alchemiscale key associated with this submitted network, which is used to gather the failed results from the client.",
+    )
     task_key: GufeKey = Field(..., description="Task key for the errored task.")
-    unit_key: GufeKey = Field(..., description="Protocol unit key associated to the errored task.")
-    dag_result_key: GufeKey = Field(..., description="Protocol DAG result key associated to the errored task.")
+    unit_key: GufeKey = Field(
+        ..., description="Protocol unit key associated to the errored task."
+    )
+    dag_result_key: GufeKey = Field(
+        ..., description="Protocol DAG result key associated to the errored task."
+    )
