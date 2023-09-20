@@ -251,8 +251,9 @@ def gather(network: str, allow_missing: bool):
 
 def validate_traceback_flag(ctx, param, value):
     """Validate traceback flag --with-traceback is only used in conjunction with --errors flag."""
-    if not ctx.params.get("errors"):
-        raise click.UsageError("--with-traceback requires --errors flag to be set.")
+    if value:
+        if not ctx.params.get("errors"):
+            raise click.UsageError("--with-traceback requires --errors flag to be set.")
     return value
 
 
@@ -304,12 +305,15 @@ def status(network: str, errors: bool, with_traceback: bool):
         task_errors = client.collect_errors(
             planned_network,
         )
-        # output errors in readable text
+        # output errors in readable format
         for failure in task_errors:
-            click.echo(f"Task: {failure.task_key}")
-            click.echo(f"\tError: {failure.error}")
+            click.echo(click.style("Task:", bold=True))
+            click.echo(f"{failure.task_key}")
+            click.echo(click.style("Error:", bold=True))
+            click.echo(f"{failure.error}")
             if with_traceback:
-                click.echo(f"\tTraceback: {failure.traceback}")
+                click.echo(click.style("Traceback:", bold=True))
+                click.echo(f"{failure.traceback}")
             click.echo()
 
 
