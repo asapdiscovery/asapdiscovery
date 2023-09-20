@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Optional
 
 from alchemiscale import Scope, ScopedKey
