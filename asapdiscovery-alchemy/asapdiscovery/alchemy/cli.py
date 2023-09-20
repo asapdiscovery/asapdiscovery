@@ -300,12 +300,18 @@ def status(network: str, errors: bool, with_traceback: bool):
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
     # check the status
     client.network_status(planned_network=planned_network)
-    # Output errors
+    # collect errors
     if errors:
         task_errors = client.collect_errors(
-            planned_network, with_traceback=with_traceback
+            planned_network,
         )
-        print(json.dumps(task_errors, indent=4))
+        # output errors in readable text
+        for failure in task_errors:
+            click.echo(f"Task: {failure.task_key}")
+            click.echo(f"\tError: {failure.error}")
+            if with_traceback:
+                click.echo(f"\tTraceback: {failure.traceback}")
+            click.echo()
 
 
 if __name__ == "__main__":
