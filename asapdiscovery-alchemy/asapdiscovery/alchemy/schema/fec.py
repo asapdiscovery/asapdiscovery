@@ -419,7 +419,7 @@ class AlchemiscaleFailure(_BaseFailure):
         ...,
         description="The alchemiscale key associated with this submitted network, which is used to gather the failed results from the client.",
     )
-    task_key: GufeKey = Field(..., description="Task key for the errored task.")
+    task_key: ScopedKey = Field(..., description="Task key for the errored task.")
     unit_key: GufeKey = Field(
         ..., description="Protocol unit key associated to the errored task."
     )

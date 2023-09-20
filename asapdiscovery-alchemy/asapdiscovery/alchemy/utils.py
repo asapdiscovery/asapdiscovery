@@ -199,7 +199,7 @@ class AlchemiscaleHelper:
                 for failure in err_result.protocol_unit_failures:
                     failure = AlchemiscaleFailure(
                         network_key=network_key,
-                        task_key=task.gufe_key,
+                        task_key=task,
                         unit_key=failure.source_key,
                         dag_result_key=err_result.key,
                         error=failure.exception,
