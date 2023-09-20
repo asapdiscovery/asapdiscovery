@@ -193,7 +193,7 @@ class AlchemiscaleHelper:
         network_key = planned_network.results.network_key
         errored_tasks = self._client.get_network_tasks(network_key, status="error")
 
-        error_data = list()
+        error_data = []
         for task in errored_tasks:
             for err_result in self._client.get_task_failures(task):
                 for failure in err_result.protocol_unit_failures:
