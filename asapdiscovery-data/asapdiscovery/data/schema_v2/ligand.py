@@ -51,9 +51,7 @@ class LigandIdentifiers(DataModelAbstractBase):
         Unique ID for P5 compchem reference, unused for now, by default None
     """
 
-    moonshot_compound_id: str | None = Field(
-        None, description="Moonshot compound ID"
-    )
+    moonshot_compound_id: str | None = Field(None, description="Moonshot compound ID")
     manifold_api_id: UUID | None = Field(
         None, description="Unique ID from Postera Manifold API"
     )
