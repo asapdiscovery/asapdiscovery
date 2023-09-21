@@ -38,6 +38,9 @@ class FragalysisFactory(DataModelAbstractBase):
 
         return all([c1 == c2 for c1, c2 in zip(self.complexes, other.complexes)])
 
+    def __iter__(self):
+        yield from self.complexes
+
     # Overload from base class to check each complex
     def data_equal(self, other: FragalysisFactory):
         if len(self) != len(other):
@@ -51,6 +54,7 @@ class FragalysisFactory(DataModelAbstractBase):
     def from_dir(
         cls,
         parent_dir: str | Path,
+        csv_name="metadata.csv",
         xtal_col="crystal_name",
         compound_col="alternate_name",
         fail_missing=False,
@@ -79,7 +83,7 @@ class FragalysisFactory(DataModelAbstractBase):
         """
         parent_dir = Path(parent_dir)
         try:
-            df = pandas.read_csv(parent_dir / "metadata.csv")
+            df = pandas.read_csv(parent_dir / csv_name)
         except FileNotFoundError as e:
             raise FileNotFoundError("No metadata.csv file found in parent_dir.") from e
 
