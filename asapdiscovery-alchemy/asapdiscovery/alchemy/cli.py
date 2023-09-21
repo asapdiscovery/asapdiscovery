@@ -304,6 +304,7 @@ def restart(network: str, verbose: bool, tasks):
 
     """
     from alchemiscale import ScopedKey
+
     from .schema.fec import FreeEnergyCalculationNetwork
     from .utils import AlchemiscaleHelper
 

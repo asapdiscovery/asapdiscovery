@@ -200,8 +200,10 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert [isinstance(i, ScopedKey) for i in restarted_tasks]
 
     # restart only a subset of the errored tasks
-    errored_tasks = client._client.get_network_tasks(network_key, status='error')
-    restarted_tasks = client.restart_tasks(planned_network=result_network, tasks=errored_tasks[:2])
+    errored_tasks = client._client.get_network_tasks(network_key, status="error")
+    restarted_tasks = client.restart_tasks(
+        planned_network=result_network, tasks=errored_tasks[:2]
+    )
 
     assert len(restarted_tasks) == 2
     assert [isinstance(i, ScopedKey) for i in restarted_tasks]
