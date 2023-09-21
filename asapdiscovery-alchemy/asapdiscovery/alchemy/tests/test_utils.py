@@ -246,7 +246,7 @@ def test_get_failures(
 
     # mock the client functions
     def get_network_tasks(key, status=None) -> list[ScopedKey]:
-        """Mock pulling the transforms from alchemiscale"""
+        """Mock getting back a single Task for each Transformation in an AlchemicalNetwork"""
         assert key == network_key
         tasks = []
         for edge in alchem_network.edges:
@@ -257,7 +257,7 @@ def test_get_failures(
         return tasks
 
     def get_task_failures(key) -> list[ProtocolDAGResult]:
-        """Mock pulling the task failures from alchemiscale"""
+        """Mock pulling the Task failures from alchemiscale"""
         dagresult = ProtocolDAGResult(
             protocol_units=dummy_protocol_units,  # 3 dummy units per dag result
             protocol_unit_results=list(itertools.chain(*protocol_unit_failures)),
@@ -273,7 +273,7 @@ def test_get_failures(
     # Collect errors and tracebacks
     errors = client.collect_errors(planned_network=result_network)
     n_errors = len(errors)
-    n_expected_errors = 108  # 18*3*2 (18 tasks, 3 units/protocol, 2 failures/unit)
+    n_expected_errors = 108  # 18*3*2 (18 tasks, 1 dag/task, 3 units/dag, 2 failures/unit)
     assert (
         n_errors == n_expected_errors
     ), f"Expected {n_expected_errors} errors, received {n_errors} errors."
