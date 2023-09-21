@@ -44,6 +44,7 @@ def run_docking_oe(
     posit_method: str = "all",
     compound_name=None,
     use_omega=False,
+    omega_dense=False,
     num_poses=1,
     log_name="run_docking_oe",
     openeye_logname="openeye-log.txt",
@@ -136,7 +137,10 @@ def run_docking_oe(
     if use_omega:
         from asapdiscovery.data.openeye import oeomega
 
-        omegaOpts = oeomega.OEOmegaOptions()
+        if omega_dense:
+            omegaOpts = oeomega.OEOmegaOptions(oeomega.OEOmegaSampling_Dense)
+        else:
+            omegaOpts = oeomega.OEOmegaOptions()
         omega = oeomega.OEOmega(omegaOpts)
         ret_code = omega.Build(dock_lig)
         if ret_code:
