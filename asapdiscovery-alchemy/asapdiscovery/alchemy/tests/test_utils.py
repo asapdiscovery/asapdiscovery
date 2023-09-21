@@ -273,7 +273,9 @@ def test_get_failures(
     # Collect errors and tracebacks
     errors = client.collect_errors(planned_network=result_network)
     n_errors = len(errors)
-    n_expected_errors = 108  # 18*3*2 (18 tasks, 1 dag/task, 3 units/dag, 2 failures/unit)
+    n_expected_errors = (
+        108  # 18*3*2 (18 tasks, 1 dag/task, 3 units/dag, 2 failures/unit)
+    )
     assert (
         n_errors == n_expected_errors
     ), f"Expected {n_expected_errors} errors, received {n_errors} errors."
