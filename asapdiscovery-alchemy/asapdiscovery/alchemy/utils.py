@@ -124,7 +124,7 @@ class AlchemiscaleHelper:
     def restart_tasks(
         self,
         planned_network: FreeEnergyCalculationNetwork,
-        tasks: list[ScopedKey],
+        tasks: Optional[list[ScopedKey]] = None,
     ) -> list[ScopedKey]:
         """
         Restart errored tasks on alchemiscale for this network.
