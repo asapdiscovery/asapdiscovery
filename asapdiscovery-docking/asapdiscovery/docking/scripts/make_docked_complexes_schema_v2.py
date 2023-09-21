@@ -26,8 +26,17 @@ def make_docked_complex(docked_fn, xtal_dir, out_name, compound_regex, xtal_rege
     if isinstance(xtal_regex, str):
         xtal_regex = construct_regex_function(xtal_regex)
 
-    compound_id = compound_regex(docked_fn.parts[-2])
-    xtal_id = xtal_regex(docked_fn.parts[-2])
+    try:
+        compound_id = compound_regex(docked_fn.parts[-2])
+    except ValueError:
+        print(f"Couldn't find compound id regex match for {str(docked_fn)}", flush=True)
+        return
+    try:
+        xtal_id = xtal_regex(docked_fn.parts[-2])
+    except ValueError:
+        print(f"Couldn't find xtal id regex match for {str(docked_fn)}", flush=True)
+        return
+
     all_ligs = [
         Ligand.from_oemol(mol, compound_name=compound_id)
         for mol in load_openeye_sdfs(docked_fn)
