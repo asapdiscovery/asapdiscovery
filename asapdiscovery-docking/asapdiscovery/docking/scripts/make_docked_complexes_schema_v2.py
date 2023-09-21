@@ -2,6 +2,8 @@
 Make complex PDB files for docked SDF files.
 """
 import argparse
+from functools import partial
+import multiprocessing as mp
 from pathlib import Path
 
 from asapdiscovery.data.openeye import load_openeye_sdfs
@@ -13,6 +15,29 @@ from asapdiscovery.data.utils import (
     MPRO_ID_REGEX,
     construct_regex_function,
 )
+
+
+def make_docked_complex(docked_fn, xtal_dir, out_name, compound_regex, xtal_regex):
+    print(docked_fn, flush=True)
+
+    # Build regex functions if not already built
+    if isinstance(compound_regex, str):
+        compound_regex = construct_regex_function(compound_regex)
+    if isinstance(xtal_regex, str):
+        xtal_regex = construct_regex_function(xtal_regex)
+
+    compound_id = compound_regex(docked_fn.parts[-2])
+    xtal_id = xtal_regex(docked_fn.parts[-2])
+    all_ligs = [
+        Ligand.from_oemol(mol, compound_name=compound_id)
+        for mol in load_openeye_sdfs(docked_fn)
+    ]
+    target_fn = xtal_dir / "aligned" / xtal_id / f"{xtal_id}_bound.pdb"
+    target = Target.from_pdb(target_fn, target_name=xtal_id)
+
+    for i, ligand in enumerate(all_ligs):
+        out_fn = docked_fn.parent / f"{docked_fn.parts[-2]}_{i}_{out_name}"
+        Complex(target=target, ligand=ligand).to_pdb(out_fn)
 
 
 ################################################################################
@@ -49,6 +74,11 @@ def get_args():
         help="Regex for capturing crystal id.",
     )
 
+    # Multiprocessing args
+    parser.add_argument(
+        "-w", "--num_workers", default=1, help="Number of concurrent processes to run."
+    )
+
     return parser.parse_args()
 
 
@@ -58,26 +88,20 @@ def main():
     compound_regex = construct_regex_function(args.cpd_regex)
     xtal_regex = construct_regex_function(args.xtal_regex)
 
-    # Memoization of Targets
-    target_dict = {}
-    for fn in args.docked_dir.rglob(f"*/{args.res_name}"):
-        print(fn, flush=True)
-        compound_id = compound_regex(fn.parts[-2])
-        xtal_id = xtal_regex(fn.parts[-2])
-        all_ligs = [
-            Ligand.from_oemol(mol, compound_name=compound_id)
-            for mol in load_openeye_sdfs(fn)
-        ]
-        try:
-            target = target_dict[xtal_id]
-        except KeyError:
-            target_fn = args.xtal_dir / "aligned" / xtal_id / f"{xtal_id}_bound.pdb"
-            target = Target.from_pdb(target_fn, target_name=xtal_id)
-            target_dict[xtal_id] = target
+    mp_fn_partial = partial(
+        make_docked_complex,
+        xtal_dir=args.xtal_dir,
+        out_name=args.out_name,
+        compound_regex=compound_regex,
+        xtal_regex=xtal_regex,
+    )
 
-        for i, ligand in enumerate(all_ligs):
-            out_fn = fn.parent / f"{fn.parts[-2]}_{i}_{args.out_name}"
-            Complex(target=target, ligand=ligand).to_pdb(out_fn)
+    if args.num_workers <= 1:
+        for fn in args.docked_dir.rglob(f"*/{args.res_name}"):
+            mp_fn_partial(fn)
+    else:
+        with mp.Pool(processes=args.num_workers) as pool:
+            pool.map(mp_fn_partial, args.docked_dir.rglob(f"*/{args.res_name}"))
 
 
 if __name__ == "__main__":
