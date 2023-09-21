@@ -176,7 +176,9 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     alchemical_network = tyk2_fec_network.to_alchemical_network()
 
     network_key = ScopedKey(gufe_key=alchemical_network.key, **scope.dict())
-    task_keys = [ScopedKey(gufe_key=uuid4().hex, **network_key.scope.dict()) for _ in range(7)]
+    task_keys = [
+        ScopedKey(gufe_key=uuid4().hex, **network_key.scope.dict()) for _ in range(7)
+    ]
 
     def get_network_tasks(key: ScopedKey, status: str):
         assert key == network_key
