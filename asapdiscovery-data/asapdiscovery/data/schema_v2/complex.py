@@ -3,7 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from asapdiscovery.data.openeye import load_openeye_pdb
+from asapdiscovery.data.openeye import (
+    combine_protein_ligand,
+    load_openeye_pdb,
+    save_openeye_pdb,
+)
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.target import Target
@@ -46,9 +50,18 @@ class Complex(DataModelAbstractBase):
 
         # Create Target and Ligand objects
         target = Target.from_oemol(split_dict["prot"], **target_kwargs)
+        lig_mol = split_dict["lig"]
+        lig_mol.SetTitle(ligand_kwargs["compound_name"])
         ligand = Ligand.from_oemol(split_dict["lig"], **ligand_kwargs)
 
         return cls(target=target, ligand=ligand)
+
+    def to_pdb(self, pdb_file: str | Path):
+        lig_mol = self.ligand.to_oemol()
+        target_mol = self.target.to_oemol()
+        complex_mol = combine_protein_ligand(target_mol, lig_mol)
+
+        save_openeye_pdb(complex_mol, pdb_file)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Complex):
