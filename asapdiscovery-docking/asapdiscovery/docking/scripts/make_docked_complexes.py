@@ -45,18 +45,26 @@ def main():
     args = get_args()
 
     # Load docking results
-    df = pandas.read_csv(args.in_file, index_col=0)
+    df = pandas.read_csv(args.in_file)
 
     # Dict to hold loaded Mpro structures to avoid reloading the same one a
     #  bunch of times
     xtal_structs = {}
     use_cols = ["ligand_id", "du_structure", "docked_file"]
-    for _, (compound_id, struct, docked_fn) in df[use_cols].iterrows():
+    if "pose_id" in df.columns:
+        use_cols += ["pose_id"]
+    for _, r in df[use_cols].iterrows():
+        try:
+            compound_id, struct, docked_fn, pose_id = r
+        except KeyError:
+            compound_id, struct, docked_fn = r
+            pose_id = None
+
         try:
             xtal = xtal_structs[struct][0].CreateCopy()
             new_resid, new_atomid = xtal_structs[struct][1:]
         except KeyError:
-            xtal_fn = f"{args.xtal_dir}/{struct}/{struct}_apo.pdb"
+            xtal_fn = f"{args.xtal_dir}/{struct}/{struct}_bound.pdb"
             xtal = load_openeye_pdb(xtal_fn)
 
             # Get rid of non-protein atoms
@@ -99,6 +107,8 @@ def main():
         )
 
         out_base = f"{compound_id}_{struct}"
+        if pose_id is not None:
+            out_base = f"{out_base}_{pose_id}"
         if args.out_dir:
             out_fn = f"{args.out_dir}/{out_base}_bound.pdb"
         else:
