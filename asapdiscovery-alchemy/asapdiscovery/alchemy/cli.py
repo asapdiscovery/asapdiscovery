@@ -290,19 +290,30 @@ def status(network: str):
 @click.option(
     "-v",
     "--verbose",
-    count=True,
-    help="Verbosity of output; one `-v` will give ScopedKeys of restarted Tasks",
+    is_flag=True,
+    help="Increase verbosity of output; will give ScopedKeys of restarted Tasks",
 )
-def restart(network: str, verbose):
-    """Restart all errored Tasks for the given FEC network."""
+@click.argument(
+    "tasks",
+    nargs=-1,
+)
+def restart(network: str, verbose: bool, tasks):
+    """Restart errored Tasks for the given FEC network.
+
+    If TASKS specified, then only these will be restarted.
+
+    """
+    from alchemiscale import ScopedKey
     from .schema.fec import FreeEnergyCalculationNetwork
     from .utils import AlchemiscaleHelper
 
     client = AlchemiscaleHelper()
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
 
-    restarted_tasks = client.restart_tasks(planned_network)
-    if verbose == 1:
+    tasks = [ScopedKey.from_str(task) for task in tasks]
+
+    restarted_tasks = client.restart_tasks(planned_network, tasks)
+    if verbose:
         click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
     else:
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
