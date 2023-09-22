@@ -77,10 +77,6 @@ class Complex(ComplexBase):
     def to_pdb(self, pdb_file: str | Path):
         save_openeye_pdb(self.to_combined_oemol(), pdb_file)
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Complex):
-            return NotImplemented
-
     def to_combined_oemol(self):
         """
         Combine the target and ligand into a single oemol
