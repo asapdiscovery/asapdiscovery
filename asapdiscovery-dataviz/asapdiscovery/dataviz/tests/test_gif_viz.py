@@ -18,6 +18,7 @@ def traj():
     traj = fetch_test_file("example_traj.xtc")
     return traj
 
+
 @pytest.mark.parametrize(
     "logger",
     [
@@ -32,7 +33,7 @@ def test_gif_viz(traj, top, logger, tmp_path):
         [traj],
         [top],
         [tmp_path / "gif_viz.gif"],
-        "SARS-CoV-2-Mpro", # just do a fast test with one target
+        "SARS-CoV-2-Mpro",  # just do a fast test with one target
         frames_per_ns=200,
         smooth=5,
         start=0,
