@@ -31,7 +31,7 @@ def traj():
         ).getLogger(),
     ],
 )
-def test_gif_viz(traj, top, logger, target, tmp_path):
+def test_html_viz(traj, top, logger, target, tmp_path):
     gif_visualiser = GIFVisualizer(
         [traj],
         [top],
