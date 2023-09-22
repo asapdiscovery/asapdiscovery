@@ -67,7 +67,8 @@ class Complex(ComplexBase):
         # Create Target and Ligand objects
         target = Target.from_oemol(split_dict["prot"], **target_kwargs)
         lig_mol = split_dict["lig"]
-        lig_mol.SetTitle(ligand_kwargs["compound_name"])
+        if "compound_name" in ligand_kwargs:
+            lig_mol.SetTitle(ligand_kwargs["compound_name"])
         ligand = Ligand.from_oemol(split_dict["lig"], **ligand_kwargs)
 
         return cls(
