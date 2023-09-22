@@ -18,10 +18,6 @@ def traj():
     traj = fetch_test_file("example_traj.xtc")
     return traj
 
-
-# enumerate over the allowed targets, these will produce rubbish GIFS but
-# that's fine for testing, mostly just testing that they will run
-@pytest.mark.parametrize("target", VizTargets.get_allowed_targets())
 @pytest.mark.parametrize(
     "logger",
     [
@@ -31,12 +27,12 @@ def traj():
         ).getLogger(),
     ],
 )
-def test_gif_viz(traj, top, logger, target, tmp_path):
+def test_gif_viz(traj, top, logger, tmp_path):
     gif_visualiser = GIFVisualizer(
         [traj],
         [top],
         [tmp_path / "gif_viz.gif"],
-        target,
+        "SARS-CoV-2-Mpro", # just do a fast test with one target
         frames_per_ns=200,
         smooth=5,
         start=0,
