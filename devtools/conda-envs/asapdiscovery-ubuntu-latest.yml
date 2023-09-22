@@ -56,20 +56,28 @@ dependencies:
   - openmmforcefields
   - mdtraj
   - openff-toolkit
-#  - cudatoolkit=11.7 # may need to specify explicitly for lilac
+  - cudatoolkit<=11.7 # need to specify explicitly for lilac
 
   # execution
   - distributed
   - dask
-# - dask-cuda # will only work on linux machines and not macs
   - dask-jobqueue
+  - dask-cuda
   - netifaces
 
   # viz
   - imageio
   - pymol-open-source
   - gifsicle
+  - plip
 
+  # simulation
+  - openfe =0.11.0
+  - gufe =0.9.1
+  - httpx
+  - perses >=0.10.2
+  - kartograf
+  - rich
 
   # Pip-only installs
   - pip:
@@ -85,3 +93,6 @@ dependencies:
     # viz
     - pygifsicle
     - sigfig
+    - airium
+    - alchemiscale
+    - git+https://github.com/OpenFreeEnergy/cinnabar.git@8ce28bb107b96f48b542ae2bd3dc4fabccc614c3

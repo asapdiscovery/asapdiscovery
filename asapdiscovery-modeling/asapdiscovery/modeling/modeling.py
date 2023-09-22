@@ -303,7 +303,7 @@ def spruce_protein(
         build_loops_success and build_sidechains_success and place_hydrogens_success
     )
     # Re-percieve residues so that atom number and connect records dont get screwed up
-    initial_prot = openeye_perceive_residues(initial_prot, preserve_all=True)
+    initial_prot = openeye_perceive_residues(initial_prot, preserve_all=False)
     return success, spruce_error_msg, initial_prot
 
 
@@ -676,19 +676,30 @@ def split_openeye_mol(
     # Get rid of any straggling extra copies of the ligand
     prot_mol = trim_small_chains(prot_mol, prot_cutoff_len)
 
+    if molecule_filter.ligand_chain:
+        keep_lig_chain = molecule_filter.ligand_chain
+    else:
+        keep_lig_chain = None
     # Get rid of extra copies of the ligand
     if keep_one_lig:
         all_lig_chains = [res.GetChainID() for res in oechem.OEGetResidues(lig_mol)]
         # Handle the case where the input has no ligand, otherwise throws an IndexError
         if len(all_lig_chains) > 0:
             # Keep first alphabetically, for reproducibility
-            keep_lig_chain = sorted(all_lig_chains)[0]
+            if not keep_lig_chain:
+                keep_lig_chain = sorted(all_lig_chains)[0]
             for a in lig_mol.GetAtoms():
                 # Delete all atoms that don't match
                 if oechem.OEAtomGetResidue(a).GetChainID() != keep_lig_chain:
                     lig_mol.DeleteAtom(a)
 
-    return {"prot": prot_mol, "lig": lig_mol, "wat": water_mol, "oth": oth_mol}
+    return {
+        "prot": prot_mol,
+        "lig": lig_mol,
+        "wat": water_mol,
+        "oth": oth_mol,
+        "keep_lig_chain": keep_lig_chain,
+    }
 
 
 def save_design_unit(
@@ -741,8 +752,13 @@ def split_openeye_design_unit(du, lig=None, lig_title=None):
     """
     prot = oechem.OEGraphMol()
     complex_ = oechem.OEGraphMol()
-    # complex_ = du_to_complex(du, include_solvent=include_solvent)
+
     du.GetProtein(prot)
+
+    # if no ligand, return protein and complex with no ligand
+    if not du.HasLigand():
+        return None, prot, prot
+
     if not lig:
         lig = oechem.OEGraphMol()
         du.GetLigand(lig)
