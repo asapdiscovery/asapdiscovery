@@ -85,7 +85,11 @@ def get_args():
 
     # Multiprocessing args
     parser.add_argument(
-        "-w", "--num_workers", default=1, help="Number of concurrent processes to run."
+        "-w",
+        "--num_workers",
+        default=1,
+        type=int,
+        help="Number of concurrent processes to run.",
     )
 
     return parser.parse_args()
