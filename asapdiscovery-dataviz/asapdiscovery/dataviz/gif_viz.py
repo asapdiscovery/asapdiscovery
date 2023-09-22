@@ -319,12 +319,11 @@ class GIFVisualizer:
         # now compress the GIF with the method that imagio recommends (https://imageio.readthedocs.io/en/stable/examples.html).
         self.logger.info("Compressing animated gif...")
         gifsicle(
-            sources=str(path), # happens in-place
-            optimize=True, 
+            sources=str(path),  # happens in-place
+            optimize=True,
             colors=256,
-            options=["--loopcount"] # this makes sure the GIF loops
+            options=["--loopcount"],  # this makes sure the GIF loops
         )
-
 
         # remove tmpdir
         shutil.rmtree(tmpdir)
