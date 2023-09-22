@@ -2,13 +2,13 @@
 Make complex PDB files for docked SDF files.
 """
 import argparse
-from functools import partial
 import multiprocessing as mp
+from functools import partial
 from pathlib import Path
 
 from asapdiscovery.data.openeye import load_openeye_sdfs
-from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.target import Target
 from asapdiscovery.data.utils import (
     MOONSHOT_CDD_ID_REGEX,

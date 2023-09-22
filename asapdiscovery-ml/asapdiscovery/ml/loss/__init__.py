@@ -1,5 +1,5 @@
 from .GaussianNLLLoss import GaussianNLLLoss
-from .MSELoss import MSELoss
 from .GroupedMSELoss import GroupedMSELoss
+from .MSELoss import MSELoss
 
 __all__ = ["MSELoss", "GroupedMSELoss", "GaussianNLLLoss"]

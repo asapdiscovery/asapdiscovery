@@ -203,7 +203,7 @@ def build_loss_function(grouped, loss_type=None, semiquant_fill=None):
     -------
     Union[MSELoss, GroupedMSELoss, GaussianNLLLoss]
     """
-    from asapdiscovery.ml.loss import MSELoss, GroupedMSELoss, GaussianNLLLoss
+    from asapdiscovery.ml.loss import GaussianNLLLoss, GroupedMSELoss, MSELoss
 
     try:
         loss_type = loss_type.lower()
