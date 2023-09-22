@@ -1559,8 +1559,6 @@ def train(
 
     import torch
 
-    from . import MSELoss
-
     if use_wandb:
         import wandb
 
@@ -1625,6 +1623,8 @@ def train(
     print("Using optimizer", optimizer, flush=True)
 
     if loss_fn is None:
+        from asapdiscovery.ml.loss.MSELoss import MSELoss
+
         loss_fn = MSELoss()
     print("Using loss function", loss_fn, flush=True)
 
