@@ -1838,7 +1838,7 @@ def train(
 
         # Stop training if EarlyStopping says to
         if es:
-            from asapdiscovery.ml import BestEarlyStopping, ConvergedEarlyStopping
+            from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 
             if isinstance(es, BestEarlyStopping) and es.check(
                 epoch_idx, epoch_val_loss, model.state_dict()

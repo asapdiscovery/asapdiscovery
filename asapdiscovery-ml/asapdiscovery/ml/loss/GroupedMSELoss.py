@@ -1,4 +1,4 @@
-from asapdiscovery.ml.loss import MSELoss
+from asapdiscovery.ml.loss.MSELoss import MSELoss
 
 
 class GroupedMSELoss(MSELoss):
