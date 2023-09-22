@@ -309,7 +309,9 @@ class HTMLVisualizer:
                                 intn_dict[k] = v
                                 intn_counter += 1
 
-                        elif isinstance(intn_data, dict):  # single interaction of this type
+                        elif isinstance(
+                            intn_data, dict
+                        ):  # single interaction of this type
                             k, v = self.build_interaction_dict(
                                 intn_data, intn_counter, intn_type
                             )
