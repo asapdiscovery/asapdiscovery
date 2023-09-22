@@ -294,37 +294,27 @@ class HTMLVisualizer:
         intn_dict = {}
         intn_counter = 0
         # wrangle all interactions into a dict that can be read directly by 3DMol.
-        binding_site_data = intn_dict_xml["report"]["bindingsite"]
-        if isinstance(binding_site_data, list):
-            # this can happen if multiple binding sites (e.g. dimer) exist
-            interaction_data = {}
-            [
-                interaction_data.update(binding_site["interactions"])
-                for binding_site in binding_site_data
-            ]
+        for bs in intn_dict_xml["report"]["bindingsite"]:
+            for _, data in bs["interactions"].items():
+                if data:
+                    # we build keys for the dict to be unique, so no interactions are overwritten
+                    for intn_type, intn_data in data.items():
+                        if isinstance(
+                            intn_data, list
+                        ):  # multiple interactions of this type
+                            for intn_data_i in intn_data:
+                                k, v = self.build_interaction_dict(
+                                    intn_data_i, intn_counter, intn_type
+                                )
+                                intn_dict[k] = v
+                                intn_counter += 1
 
-        elif isinstance(binding_site_data, dict):
-            interaction_data = binding_site_data["interactions"]
-
-        for _, data in interaction_data.items():
-            if data:
-                for intn_type, intn_data in data.items():
-                    if isinstance(
-                        intn_data, list
-                    ):  # multiple interactions of this type
-                        for intn_data_i in intn_data:
+                        elif isinstance(intn_data, dict):  # single interaction of this type
                             k, v = self.build_interaction_dict(
-                                intn_data_i, intn_counter, intn_type
+                                intn_data, intn_counter, intn_type
                             )
                             intn_dict[k] = v
                             intn_counter += 1
-
-                    elif isinstance(intn_data, dict):  # single interaction of this type
-                        k, v = self.build_interaction_dict(
-                            intn_data, intn_counter, intn_type
-                        )
-                        intn_dict[k] = v
-                        intn_counter += 1
 
         return intn_dict
 
