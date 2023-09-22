@@ -9,14 +9,14 @@ from asapdiscovery.dataviz.viz_targets import VizTargets
 
 @pytest.fixture(scope="session")
 def top():
-    pose = fetch_test_file("example_traj_top.pdb")
-    return pose
+    top = fetch_test_file("example_traj_top.pdb")
+    return top
 
 
 @pytest.fixture(scope="session")
 def traj():
-    protein = fetch_test_file("example_traj.xtc")
-    return protein
+    traj = fetch_test_file("example_traj.xtc")
+    return traj
 
 
 # enumerate over the allowed targets, these will produce rubbish GIFS but
