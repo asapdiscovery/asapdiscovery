@@ -29,12 +29,7 @@ from asapdiscovery.data.utils import (
     check_filelist_has_elements,
     extract_compounds_from_filenames,
 )
-from asapdiscovery.ml import (  # noqa: E402
-    BestEarlyStopping,
-    ConvergedEarlyStopping,
-    GaussianNLLLoss,
-    MSELoss,
-)
+from asapdiscovery.ml import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.utils import (
     build_dataset,
     build_loss_function,
