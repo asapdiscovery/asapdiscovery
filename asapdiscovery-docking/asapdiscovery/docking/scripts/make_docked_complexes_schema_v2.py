@@ -94,15 +94,12 @@ def get_args():
 def main():
     args = get_args()
 
-    compound_regex = construct_regex_function(args.cpd_regex)
-    xtal_regex = construct_regex_function(args.xtal_regex)
-
     mp_fn_partial = partial(
         make_docked_complex,
         xtal_dir=args.xtal_dir,
         out_name=args.out_name,
-        compound_regex=compound_regex,
-        xtal_regex=xtal_regex,
+        compound_regex=args.cpd_regex,
+        xtal_regex=args.xtal_regex,
     )
 
     if args.num_workers <= 1:
