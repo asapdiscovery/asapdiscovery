@@ -30,14 +30,17 @@ def tyk2_fec_network():
     return FreeEnergyCalculationNetwork.from_file(fec_network)
 
 
-@pytest.fixture()
-def mock_alchemiscale_client(monkeypatch):
-    """Mock alchemiscale client for testing purposes"""
-    # mock some env variables
+
+@pytest.fixture(scope="function")
+def alchemiscale_helper(monkeypatch):
     monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
     monkeypatch.setenv(name="ALCHEMISCALE_KEY", value="key")
 
     # use a fake api url for testing
     client = AlchemiscaleHelper(api_url="")
+
+    # make sure the env variables were picked up
+    assert client._client.identifier == "asap"
+    assert client._client.key == "key"
 
     return client

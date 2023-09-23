@@ -2,6 +2,8 @@ import datetime
 import itertools
 
 import pytest
+from uuid import uuid4
+
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
@@ -58,24 +60,20 @@ def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailur
     ]
 
 
-def test_create_network(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
+def test_create_network(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     """Make sure our alchemiscale helper can create a network and update the results"""
+
+    client = alchemiscale_helper
 
     # mock the client function
     def create_network(network, scope):
         return ScopedKey(gufe_key=network.key, **scope.dict())
 
-    # use a fake api url for testing
-    client = mock_alchemiscale_client
-
-    # make sure the env variables were picked up
-    assert client._client.identifier == "asap"
-    assert client._client.key == "key"
-
     # mock the network creation
     monkeypatch.setattr(client._client, "create_network", create_network)
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     assert tyk2_fec_network.results is None
+
     result = client.create_network(planned_network=tyk2_fec_network, scope=scope)
     # make sure the results have been updated
     assert isinstance(result.results, AlchemiscaleResults)
@@ -85,10 +83,11 @@ def test_create_network(monkeypatch, tyk2_fec_network, mock_alchemiscale_client)
     )
 
 
-def test_network_status(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
+
+def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     """Make sure we can correctly get the status of a network"""
 
-    client = mock_alchemiscale_client
+    client = alchemiscale_helper
 
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     network_key = ScopedKey(
@@ -111,11 +110,10 @@ def test_network_status(monkeypatch, tyk2_fec_network, mock_alchemiscale_client)
     assert status == {"complete": 1}
 
 
-def test_action_tasks(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
+def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     """Make sure the helper can action tasks on alchemiscale"""
 
-    # use a fake api url for testing
-    client = mock_alchemiscale_client
+    client = alchemiscale_helper
 
     # mock a key onto the network assuming it has already been created
     scope = Scope(org="asap", campaign="testing", project="tyk2")
@@ -139,7 +137,10 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
 
     def create_tasks(transformation, count):
         "Mock creating tasks for a transform"
-        return [transformation for _ in range(count)]
+        return [
+            ScopedKey(gufe_key=uuid4().hex, **transformation.scope.dict())
+            for _ in range(count)
+        ]
 
     def action_tasks(tasks, network):
         "mock actioning tasks"
@@ -158,11 +159,10 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
     assert len(tasks) == (result_network.n_repeats + 1) * len(alchem_network.edges)
 
 
-def test_collect_results(monkeypatch, tyk2_fec_network, mock_alchemiscale_client):
+def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     """Make sure the help function can correctly collect results"""
 
-    # use a fake api url for testing
-    client = mock_alchemiscale_client
+    client = alchemiscale_helper
 
     # mock a key onto the network assuming it has already been created
     scope = Scope(org="asap", campaign="testing", project="tyk2")
@@ -220,10 +220,53 @@ def test_collect_results(monkeypatch, tyk2_fec_network, mock_alchemiscale_client
     )  # divide by 2 as we have a node for the solvent and complex phase
 
 
+def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
+    client = alchemiscale_helper
+
+    scope = Scope(org="asap", campaign="testing", project="tyk2")
+    alchemical_network = tyk2_fec_network.to_alchemical_network()
+
+    network_key = ScopedKey(gufe_key=alchemical_network.key, **scope.dict())
+    task_keys = [
+        ScopedKey(gufe_key=uuid4().hex, **network_key.scope.dict()) for _ in range(7)
+    ]
+
+    def get_network_tasks(key: ScopedKey, status: str):
+        assert key == network_key
+        # pretend 7 tasks have status == 'error'
+        return task_keys
+
+    def set_tasks_status(tasks: list[ScopedKey], status: str):
+        return tasks
+
+    # mock the AlchemiscaleClient calls
+    monkeypatch.setattr(client._client, "get_network_tasks", get_network_tasks)
+    monkeypatch.setattr(client._client, "set_tasks_status", set_tasks_status)
+
+    # set the key and get the status
+    result_network = FreeEnergyCalculationNetwork(
+        **tyk2_fec_network.dict(exclude={"results"}),
+        results=AlchemiscaleResults(network_key=network_key),
+    )
+    restarted_tasks = client.restart_tasks(planned_network=result_network)
+    assert len(restarted_tasks) == 7
+    assert [isinstance(i, ScopedKey) for i in restarted_tasks]
+
+    # restart only a subset of the errored tasks
+    errored_tasks = client._client.get_network_tasks(network_key, status="error")
+    restarted_tasks = client.restart_tasks(
+        planned_network=result_network, tasks=errored_tasks[:2]
+    )
+
+    assert len(restarted_tasks) == 2
+    assert [isinstance(i, ScopedKey) for i in restarted_tasks]
+    assert restarted_tasks == errored_tasks[:2]
+
+
 def test_get_failures(
     monkeypatch,
     tyk2_fec_network,
-    mock_alchemiscale_client,
+    alchemiscale_helper,
     dummy_protocol_units,
     protocol_unit_failures,
 ):
@@ -238,12 +281,7 @@ def test_get_failures(
     )
 
     alchem_network = tyk2_fec_network.to_alchemical_network()
-    # set the key and get the status
-    result_network = FreeEnergyCalculationNetwork(
-        **tyk2_fec_network.dict(exclude={"results"}),
-        results=AlchemiscaleResults(network_key=network_key),
-    )
-
+    
     # mock the client functions
     def get_network_tasks(key, status=None) -> list[ScopedKey]:
         """Mock getting back a single Task for each Transformation in an AlchemicalNetwork"""
