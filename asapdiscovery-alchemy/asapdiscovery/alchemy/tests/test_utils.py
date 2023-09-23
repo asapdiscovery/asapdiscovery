@@ -1,9 +1,8 @@
 import datetime
 import itertools
-
-import pytest
 from uuid import uuid4
 
+import pytest
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
@@ -81,7 +80,6 @@ def test_create_network(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert result.results.network_key == ScopedKey(
         gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
     )
-
 
 
 def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
@@ -281,7 +279,7 @@ def test_get_failures(
     )
 
     alchem_network = tyk2_fec_network.to_alchemical_network()
-    
+
     # mock the client functions
     def get_network_tasks(key, status=None) -> list[ScopedKey]:
         """Mock getting back a single Task for each Transformation in an AlchemicalNetwork"""

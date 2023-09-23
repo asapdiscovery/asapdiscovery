@@ -30,7 +30,6 @@ def tyk2_fec_network():
     return FreeEnergyCalculationNetwork.from_file(fec_network)
 
 
-
 @pytest.fixture(scope="function")
 def alchemiscale_helper(monkeypatch):
     monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
