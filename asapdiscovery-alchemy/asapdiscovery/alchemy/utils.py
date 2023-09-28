@@ -223,14 +223,14 @@ class AlchemiscaleHelper:
         error_data = []
         for task in errored_tasks:
             for err_result in self._client.get_task_failures(task):
-                for failure in err_result.protocol_unit_failures:
+                for protocol_failure in err_result.protocol_unit_failures:
                     failure = AlchemiscaleFailure(
                         network_key=network_key,
                         task_key=task,
-                        unit_key=failure.source_key,
+                        unit_key=protocol_failure.source_key,
                         dag_result_key=err_result.key,
-                        error=failure.exception,
-                        traceback=failure.traceback,
+                        error=protocol_failure.exception,
+                        traceback=protocol_failure.traceback,
                     )
                     error_data.append(failure)
         return error_data
