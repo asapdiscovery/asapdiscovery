@@ -271,7 +271,7 @@ def test_get_failures(
     """Make sure we can get exceptions and tracebacks from failures in a network"""
 
     # use a fake api url for testing
-    client = mock_alchemiscale_client
+    client = alchemiscale_helper
 
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     network_key = ScopedKey(
@@ -279,6 +279,10 @@ def test_get_failures(
     )
 
     alchem_network = tyk2_fec_network.to_alchemical_network()
+    result_network = FreeEnergyCalculationNetwork(
+        **tyk2_fec_network.dict(exclude={"results"}),
+        results=AlchemiscaleResults(network_key=network_key),
+    )
 
     # mock the client functions
     def get_network_tasks(key, status=None) -> list[ScopedKey]:
