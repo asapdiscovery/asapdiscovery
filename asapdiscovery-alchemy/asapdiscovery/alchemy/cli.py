@@ -270,7 +270,7 @@ def gather(network: str, allow_missing: bool):
     "--with-traceback",
     is_flag=True,
     default=False,
-    help="Output the tracebacks from the failing tasks. Only usable in conjunction with --errors.",
+    help="Output the errors and tracebacks from the failing tasks.",
 )
 def status(network: str, errors: bool, with_traceback: bool):
     """
