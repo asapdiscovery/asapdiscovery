@@ -249,14 +249,6 @@ def gather(network: str, allow_missing: bool):
     network_with_results.to_file("result_network.json")
 
 
-def validate_traceback_flag(ctx, param, value):
-    """Validate traceback flag --with-traceback is only used in conjunction with --errors flag."""
-    if value:
-        if not ctx.params.get("errors"):
-            raise click.UsageError("--with-traceback requires --errors flag to be set.")
-    return value
-
-
 @cli.command()
 @click.option(
     "-n",
@@ -279,7 +271,6 @@ def validate_traceback_flag(ctx, param, value):
     is_flag=True,
     default=False,
     help="Output the tracebacks from the failing tasks. Only usable in conjunction with --errors.",
-    callback=validate_traceback_flag,
 )
 def status(network: str, errors: bool, with_traceback: bool):
     """
@@ -301,7 +292,7 @@ def status(network: str, errors: bool, with_traceback: bool):
     # check the status
     client.network_status(planned_network=planned_network)
     # collect errors
-    if errors:
+    if errors or with_traceback:
         task_errors = client.collect_errors(
             planned_network,
         )
