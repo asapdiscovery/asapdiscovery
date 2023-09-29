@@ -167,7 +167,7 @@ def submit(network: str, organization: str, campaign: str, project: str):
     from alchemiscale import Scope
 
     from .schema.fec import FreeEnergyCalculationNetwork
-    from .simulation.utils import AlchemiscaleHelper
+    from .utils import AlchemiscaleHelper
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
