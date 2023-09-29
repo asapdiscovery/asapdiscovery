@@ -1,8 +1,6 @@
 import logging
 import os
-import shutil
 import subprocess
-import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -171,7 +169,7 @@ class HTMLVisualizer:
             res for sublist in color_res_dict.values() for res in sublist
         ]
         non_treated_res_nums = [
-            res for res in set(protein_residues) if not res in treated_res_nums
+            res for res in set(protein_residues) if res not in treated_res_nums
         ]
         color_res_dict["white"] = non_treated_res_nums
 
@@ -205,14 +203,14 @@ class HTMLVisualizer:
             try:
                 # color residue white->red depending on fitness value.
                 color = hex_color_codes[int(self.fitness_data[res_num] / 10)]
-                if not color in color_res_dict:
+                if color not in color_res_dict:
                     color_res_dict[color] = [res_num]
                 else:
                     color_res_dict[color].append(res_num)
             except KeyError:
                 # fitness data is missing for this residue, color blue instead.
                 color = "#642df0"
-                if not color in color_res_dict:
+                if color not in color_res_dict:
                     color_res_dict[color] = [res_num]
                 else:
                     color_res_dict[color].append(res_num)

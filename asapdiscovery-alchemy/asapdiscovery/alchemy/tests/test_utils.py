@@ -1,13 +1,62 @@
+import datetime
+import itertools
 from uuid import uuid4
 
+import pytest
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from gufe.protocols import ProtocolUnitResult
+from gufe.protocols import (
+    Context,
+    ProtocolDAGResult,
+    ProtocolUnit,
+    ProtocolUnitFailure,
+    ProtocolUnitResult,
+)
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
+
+
+# Test gufe "fixtures"
+class DummyUnit(ProtocolUnit):
+    @staticmethod
+    def _execute(ctx: Context, an_input=2, **inputs):
+        if an_input != 2:
+            raise ValueError("`an_input` should always be 2(!!!)")
+
+        return {"foo": "bar"}
+
+
+@pytest.fixture
+def dummy_protocol_units() -> list[ProtocolUnit]:
+    """Create list of 3 Dummy protocol units"""
+    units = [DummyUnit(name=f"dummy{i}") for i in range(3)]
+    return units
+
+
+@pytest.fixture()
+def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailure]]:
+    """generate 2 unit failures for every protocol unit"""
+    t1 = datetime.datetime.now()
+    t2 = datetime.datetime.now()
+
+    return [
+        [
+            ProtocolUnitFailure(
+                source_key=u.key,
+                inputs=u.inputs,
+                outputs=dict(),
+                exception=("ValueError", ("Didn't feel like it",)),
+                traceback="foo",
+                start_time=t1,
+                end_time=t2,
+            )
+            for _ in range(2)
+        ]
+        for u in dummy_protocol_units
+    ]
 
 
 def test_create_network(monkeypatch, tyk2_fec_network, alchemiscale_helper):
@@ -197,7 +246,6 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
         **tyk2_fec_network.dict(exclude={"results"}),
         results=AlchemiscaleResults(network_key=network_key),
     )
-
     restarted_tasks = client.restart_tasks(planned_network=result_network)
     assert len(restarted_tasks) == 7
     assert [isinstance(i, ScopedKey) for i in restarted_tasks]
@@ -211,3 +259,67 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert len(restarted_tasks) == 2
     assert [isinstance(i, ScopedKey) for i in restarted_tasks]
     assert restarted_tasks == errored_tasks[:2]
+
+
+def test_get_failures(
+    monkeypatch,
+    tyk2_fec_network,
+    alchemiscale_helper,
+    dummy_protocol_units,
+    protocol_unit_failures,
+):
+    """Make sure we can get exceptions and tracebacks from failures in a network"""
+
+    # use a fake api url for testing
+    client = alchemiscale_helper
+
+    scope = Scope(org="asap", campaign="testing", project="tyk2")
+    network_key = ScopedKey(
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+    )
+
+    alchem_network = tyk2_fec_network.to_alchemical_network()
+    result_network = FreeEnergyCalculationNetwork(
+        **tyk2_fec_network.dict(exclude={"results"}),
+        results=AlchemiscaleResults(network_key=network_key),
+    )
+
+    # mock the client functions
+    def get_network_tasks(key, status=None) -> list[ScopedKey]:
+        """Mock getting back a single Task for each Transformation in an AlchemicalNetwork"""
+        assert key == network_key
+        tasks = []
+        for edge in alchem_network.edges:
+            tf_key = edge.key
+            task_key = tf_key.replace("Transformation", "Task")
+            # 1 task per edge -- 18 tasks in total
+            tasks.append(ScopedKey(gufe_key=task_key, **scope.dict()))
+        return tasks
+
+    def get_task_failures(key) -> list[ProtocolDAGResult]:
+        """Mock pulling the Task failures from alchemiscale"""
+        dagresult = ProtocolDAGResult(
+            protocol_units=dummy_protocol_units,  # 3 dummy units per dag result
+            protocol_unit_results=list(itertools.chain(*protocol_unit_failures)),
+            transformation_key=None,
+        )
+        task_failures = [dagresult]
+        return task_failures
+
+    # mock the status function
+    monkeypatch.setattr(client._client, "get_network_tasks", get_network_tasks)
+    monkeypatch.setattr(client._client, "get_task_failures", get_task_failures)
+
+    # Collect errors and tracebacks
+    errors = client.collect_errors(planned_network=result_network)
+    n_errors = len(errors)
+    n_expected_errors = (
+        108  # 18*3*2 (18 tasks, 1 dag/task, 3 units/dag, 2 failures/unit)
+    )
+    assert (
+        n_errors == n_expected_errors
+    ), f"Expected {n_expected_errors} errors, received {n_errors} errors."
+    # Check tracebacks
+    assert all(
+        "foo" == data.traceback for data in errors
+    ), "'foo' string expected in `traceback` attribute."
