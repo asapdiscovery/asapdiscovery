@@ -1,4 +1,4 @@
-name: CI
+name: docking-ci
 
 on:
   push:
