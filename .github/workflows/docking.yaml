@@ -66,6 +66,7 @@ jobs:
 
     - name: Install packages
       run: |
+        python -m pip install -e ./asapdiscovery-data --no-deps
         python -m pip install -e ./asapdiscovery-docking --no-deps
         micromamba list
 
