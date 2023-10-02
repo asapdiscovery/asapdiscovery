@@ -1577,7 +1577,9 @@ def train(
     if not loss_dict:
         loss_dict = {"train": {}, "val": {}, "test": {}}
 
-    def update_loss_dict(split, compound_id, target, in_range, uncertainty, pred, loss):
+    def update_loss_dict(
+        split, compound_id, target, in_range, uncertainty, pred, loss, pose_preds=None
+    ):
         """
         Update (in-place) loss_dict info from training/evaluation on a molecule.
 
@@ -1597,9 +1599,13 @@ def train(
             Model prediction
         loss : float
             Prediction loss
+        pose_preds : float, optional
+            Single-pose model prediction for each pose in input (for multi-pose models)
         """
         if compound_id in loss_dict[split]:
             loss_dict[split][compound_id]["preds"].append(pred)
+            if pose_preds is not None:
+                loss_dict[split][compound_id]["pose_preds"].append(pose_preds)
             loss_dict[split][compound_id]["losses"].append(loss)
         else:
             loss_dict[split][compound_id] = {
@@ -1609,6 +1615,8 @@ def train(
                 "preds": [pred],
                 "losses": [loss],
             }
+            if pose_preds is not None:
+                loss_dict[split][compound_id]["pose_preds"] = [pose_preds]
 
     # Send model to desired device if it's not there already
     model = model.to(device)
@@ -1663,10 +1671,14 @@ def train(
             ).float()
 
             # Make prediction and calculate loss
-            pred = model(pose).reshape(target.shape)
             if grouped:
+                pred, pose_preds = model(pose)
+                pred = pred.reshape(target.shape)
+                pose_preds = pose_preds.tolist()
                 loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
+                pred = model(pose).reshape(target.shape)
+                pose_preds = None
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
@@ -1678,6 +1690,7 @@ def train(
                 uncertainty.item(),
                 pred.item(),
                 loss.item(),
+                pose_preds=pose_preds,
             )
 
             # Keep track of loss for each sample
@@ -1735,10 +1748,14 @@ def train(
             ).float()
 
             # Make prediction and calculate loss
-            pred = model(pose).reshape(target.shape)
             if grouped:
+                pred, pose_preds = model(pose)
+                pred = pred.reshape(target.shape)
+                pose_preds = pose_preds.tolist()
                 loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
+                pred = model(pose).reshape(target.shape)
+                pose_preds = None
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
@@ -1750,6 +1767,7 @@ def train(
                 uncertainty.item(),
                 pred.item(),
                 loss.item(),
+                pose_preds=pose_preds,
             )
 
             tmp_loss.append(loss.item())
@@ -1774,10 +1792,14 @@ def train(
             ).float()
 
             # Make prediction and calculate loss
-            pred = model(pose).reshape(target.shape)
             if grouped:
+                pred, pose_preds = model(pose)
+                pred = pred.reshape(target.shape)
+                pose_preds = pose_preds.tolist()
                 loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
+                pred = model(pose).reshape(target.shape)
+                pose_preds = None
                 loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
@@ -1789,6 +1811,7 @@ def train(
                 uncertainty.item(),
                 pred.item(),
                 loss.item(),
+                pose_preds=pose_preds,
             )
 
             tmp_loss.append(loss.item())
