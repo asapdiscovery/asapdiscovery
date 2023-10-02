@@ -790,7 +790,7 @@ def main():
 
     # Load model weights as necessary
     if args.cont:
-        start_epoch, wts_fn = find_most_recent(args.model_o)
+        start_epoch, wts_fn = find_most_recent(model_dir)
 
         # Load error dicts
         if os.path.isfile(f"{args.model_o}/loss_dict.json"):
