@@ -1,5 +1,5 @@
 
-import pytest 
+import pytest # noqa: F401
 
 def test_placeholder():
-    import asapdiscovery.simulation as sim
+   ...
