@@ -68,6 +68,10 @@ class POSIT_METHOD(Enum):
     MCS = oedocking.OEPositMethod_MCS
     SHAPEFIT = oedocking.OEPositMethod_SHAPEFIT
 
+    @classmethod
+    def reverse_lookup(cls, value):
+        return cls(value).name
+
 
 class POSIT_RELAX_MODE(Enum):
     CLASH = oedocking.OEPoseRelaxMode_CLASHED
@@ -139,7 +143,7 @@ class POSITDocker(DockingBase):
 
         docking_results = []
 
-        for pair in inputs:
+        for i, pair in enumerate(inputs):
             du = pair.complex.target.to_oedu()
             lig = pair.ligand
             lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
@@ -206,7 +210,9 @@ class POSITDocker(DockingBase):
                     sd_data = {
                         DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
                         DockingResultCols.DOCKING_SCORE_POSIT.value: chemgauss_score,
-                        DockingResultCols.POSIT_METHOD.value: self.posit_method.value,
+                        DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
+                            self.posit_method.value
+                        ),
                     }
                     posed_ligand.set_SD_data(sd_data)
 
