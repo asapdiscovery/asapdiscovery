@@ -1,9 +1,11 @@
-from typing import Literal, Optional
+from collections import Counter
+from typing import Any, Literal, Optional
 
 import gufe
 import openfe
 from alchemiscale import ScopedKey
 from gufe import settings
+from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
     AlchemicalSettings,
@@ -334,7 +336,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     stateB=system_b,
                     mapping={"ligand": mapping},
                     protocol=protocol,  # use protocol created above
-                    name=f"{self.dataset_name}{system_a.name}_{system_b.name}",
+                    name=f"{system_a.name}_{system_b.name}",
                 )
                 transformations.append(transformation)
 
@@ -373,6 +375,13 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
          Returns:
              The planned FEC network which can be executed locally or submitted to alchemiscale.
         """
+        # check that all ligands are unique in the series
+        if len(set(ligands)) != len(ligands):
+            count = Counter(ligands)
+            duplicated = [key.name for key, value in count.items() if value > 1]
+            raise ValueError(
+                f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
+            )
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
@@ -386,3 +395,34 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             **self.dict(exclude={"type", "network_planner"}),
         )
         return planned_fec_network
+
+
+class _BaseFailure(_SchemaBaseFrozen):
+    """Base class for collecting errors and tracebacks from failed FEC runs"""
+
+    type: Literal["_BaseFailure"] = "_BaseFailure"
+
+    error: tuple[str, tuple[Any, ...]] = Field(
+        tuple(), description="Exception raised and associated message."
+    )
+    traceback: str = Field(
+        "", description="Complete traceback associated with the failure."
+    )
+
+
+class AlchemiscaleFailure(_BaseFailure):
+    """Class for collecting errors and tracebacks from errored tasks in an alchemiscale network"""
+
+    type: Literal["AlchemiscaleFailure"] = "AlchemiscaleFailure"
+
+    network_key: ScopedKey = Field(
+        ...,
+        description="The alchemiscale key associated with this submitted network, which is used to gather the failed results from the client.",
+    )
+    task_key: ScopedKey = Field(..., description="Task key for the errored task.")
+    unit_key: GufeKey = Field(
+        ..., description="Protocol unit key associated to the errored task."
+    )
+    dag_result_key: GufeKey = Field(
+        ..., description="Protocol DAG result key associated to the errored task."
+    )

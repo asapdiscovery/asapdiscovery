@@ -27,7 +27,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-asap-alchemy = "asapdiscovery.simulation.alchemy.cli:cli"
+asap-alchemy = "asapdiscovery.alchemy.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

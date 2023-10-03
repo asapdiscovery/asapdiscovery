@@ -267,7 +267,7 @@ class GIFVisualizer:
         p.cmd.align(complex_name, complex_name_min)
         p.cmd.delete(complex_name_min)
         # Process the trajectory in a temporary directory
-        from pygifsicle import optimize
+        from pygifsicle import gifsicle
 
         # now make the movie.
         self.logger.info("Rendering images for frames...")
@@ -318,7 +318,12 @@ class GIFVisualizer:
 
         # now compress the GIF with the method that imagio recommends (https://imageio.readthedocs.io/en/stable/examples.html).
         self.logger.info("Compressing animated gif...")
-        optimize(str(path))  # this is in-place.
+        gifsicle(
+            sources=str(path),  # happens in-place
+            optimize=True,
+            colors=256,
+            options=["--loopcount"],  # this makes sure the GIF loops
+        )
 
         # remove tmpdir
         shutil.rmtree(tmpdir)

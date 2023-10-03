@@ -4,6 +4,7 @@ from alchemiscale import Scope, ScopedKey
 from openmm.app import ForceField, Modeller, PDBFile
 
 from .schema.fec import (
+    AlchemiscaleFailure,
     AlchemiscaleResults,
     AlchemiscaleSettings,
     FreeEnergyCalculationNetwork,
@@ -121,6 +122,33 @@ class AlchemiscaleHelper:
         network_key = planned_network.results.network_key
         return self._client.get_network_status(network_key)
 
+    def restart_tasks(
+        self,
+        planned_network: FreeEnergyCalculationNetwork,
+        tasks: Optional[list[ScopedKey]] = None,
+    ) -> list[ScopedKey]:
+        """
+        Restart errored tasks on alchemiscale for this network.
+
+        Args:
+            planned_network: The network which we should look up in alchemiscale.
+            tasks: ScopedKeys to limit restarts to; if empty, then all errored tasks restarted.
+
+        Returns:
+            list of ScopedKeys for the tasks that were restarted
+        """
+        network_key = planned_network.results.network_key
+        errored_tasks = self._client.get_network_tasks(network_key, status="error")
+
+        if tasks:
+            to_restart = list(set(tasks) & set(errored_tasks))
+        else:
+            to_restart = errored_tasks
+
+        restarted_tasks = self._client.set_tasks_status(to_restart, status="waiting")
+
+        return restarted_tasks
+
     def collect_results(
         self, planned_network: FreeEnergyCalculationNetwork
     ) -> FreeEnergyCalculationNetwork:
@@ -128,7 +156,7 @@ class AlchemiscaleHelper:
         Collect the results for the given network.
 
         Args:
-            planned_network: The network who's results we should collect.
+            planned_network: The network whose results we should collect.
 
         Returns:
             A FreeEnergyCalculationNetwork with all current results. If any are missing and allow missing is false an error is raised.
@@ -175,3 +203,34 @@ class AlchemiscaleHelper:
         )
 
         return network_with_results
+
+    def collect_errors(
+        self,
+        planned_network: FreeEnergyCalculationNetwork,
+    ) -> list[AlchemiscaleFailure]:
+        """
+        Collect errors and tracebacks from failed tasks.
+
+        Args:
+            planned_network: Network to get failed tasks from.
+
+        Returns:
+            List of AlchemiscaleFailure objects with errors and tracebacks for the failed tasks in the network.
+        """
+        network_key = planned_network.results.network_key
+        errored_tasks = self._client.get_network_tasks(network_key, status="error")
+
+        error_data = []
+        for task in errored_tasks:
+            for err_result in self._client.get_task_failures(task):
+                for protocol_failure in err_result.protocol_unit_failures:
+                    failure = AlchemiscaleFailure(
+                        network_key=network_key,
+                        task_key=task,
+                        unit_key=protocol_failure.source_key,
+                        dag_result_key=err_result.key,
+                        error=protocol_failure.exception,
+                        traceback=protocol_failure.traceback,
+                    )
+                    error_data.append(failure)
+        return error_data
