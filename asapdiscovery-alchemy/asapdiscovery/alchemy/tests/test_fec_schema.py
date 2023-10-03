@@ -190,7 +190,7 @@ def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
 
     factory = FreeEnergyCalculationFactory()
     with pytest.raises(ValueError, match="1 duplicate ligands"):
-        planned_network = factory.create_fec_dataset(
+        _ = factory.create_fec_dataset(
             dataset_name="TYK2-test-dataset-duplicated",
             receptor=tyk2_protein,
             ligands=ligands,
@@ -200,7 +200,7 @@ def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
 
     factory = FreeEnergyCalculationFactory()
     with pytest.raises(ValueError, match="2 duplicate ligands"):
-        planned_network = factory.create_fec_dataset(
+        _ = factory.create_fec_dataset(
             dataset_name="TYK2-test-dataset-duplicated",
             receptor=tyk2_protein,
             ligands=ligands,

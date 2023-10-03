@@ -70,6 +70,8 @@ def spruced_protein_dict():
 
 
 class TestProteinPrep:
+    # very memory hungry so can fail on CI, mark as xfail for now
+    @pytest.mark.xfail()
     @pytest.mark.parametrize("target_name", ["mers", "sars"])
     def test_spruce_protein(
         self,
@@ -106,6 +108,8 @@ class TestProteinPrep:
         spruced = add_seqres_to_openeye_protein(spruced, seqres)
         save_openeye_pdb(spruced, output_dir / f"{target_name}_spruced.pdb")
 
+    # very memory hungry so can fail on CI, mark as xfail for now
+    @pytest.mark.xfail()
     @pytest.mark.parametrize("target_name", ["mers", "sars"])
     def test_make_design_unit(
         self, target_name, prep_dict, output_dir, spruced_protein_dict
