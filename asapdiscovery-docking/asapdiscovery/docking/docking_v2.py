@@ -3,10 +3,17 @@ from enum import Enum
 from pathlib import Path
 
 import pandas as pd
-from asapdiscovery.data.openeye import oechem, oedocking, oeomega, save_openeye_pdb
+from asapdiscovery.data.openeye import (
+    oechem,
+    oedocking,
+    oeomega,
+    save_openeye_pdb,
+    combine_protein_ligand,
+)
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
@@ -27,16 +34,13 @@ class DockingResult(BaseModel):
                 "SMILES of ligand and ligand in input docking pair not match"
             )
         return values
-    
+
     def to_posed_oemol(self) -> oechem.OEMol:
         """
         Combine the target and ligand into a single oemol
         """
-        return combine_protein_ligand(
-            self.input_pair.complex.target.to_oedu(),
-            self.posed_ligand.to_oemol(),
-            self.input_pair.complex.ligand_chain,
-        )
+        _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
+        return combine_protein_ligand(prot, self.posed_ligand.to_oemol())
 
 
 class DockingBase(BaseModel):
@@ -228,7 +232,7 @@ class POSITDocker(DockingBase):
                         posed_ligand.to_sdf(output_sdf_file)
 
                         combined_oemol = docking_result.to_posed_oemol()
-                        save_openeye_pdb(output_pdb_file, combined_oemol)
+                        save_openeye_pdb(combined_oemol, output_pdb_file)
 
             else:
                 pass
