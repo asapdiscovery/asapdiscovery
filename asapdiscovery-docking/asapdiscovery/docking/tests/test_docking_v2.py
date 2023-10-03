@@ -33,6 +33,7 @@ def test_docking(docking_input_pair):
     results = docker.dock([docking_input_pair])
     assert len(results) == 1
 
+
 def test_docking_multiple(docking_input_pair):
     docker = POSITDocker()
     results = docker.dock([docking_input_pair, docking_input_pair, docking_input_pair])

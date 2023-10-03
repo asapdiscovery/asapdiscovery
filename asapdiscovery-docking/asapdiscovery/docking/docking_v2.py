@@ -27,7 +27,7 @@ class DockingResult(BaseModel):
                 "SMILES of ligand and ligand in input docking pair not match"
             )
         return values
-    
+
     def to_posed_oemol(self) -> oechem.OEMol:
         """
         Combine the target and ligand into a single oemol
