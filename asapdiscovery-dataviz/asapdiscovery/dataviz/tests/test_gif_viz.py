@@ -4,7 +4,6 @@ import pytest
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
-from asapdiscovery.dataviz.viz_targets import VizTargets
 
 
 @pytest.fixture(scope="session")
