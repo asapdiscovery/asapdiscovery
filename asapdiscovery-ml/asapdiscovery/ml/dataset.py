@@ -509,7 +509,7 @@ class GraphInferenceDataset(Dataset):
         exp_compounds,
         node_featurizer=None,
         edge_featurizer=None,
-        cache_file="./cache.bin",
+        cache_file=None,
     ):
         """
         Parameters
