@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
+from typing import Any, Dict, Optional, List, Union  # noqa: F401
 from uuid import UUID
 
 from asapdiscovery.data.openeye import (
@@ -170,6 +170,7 @@ class Ligand(DataModelAbstractBase):
         """
         Create a Ligand from an OEMol
         """
+        kwargs.pop("data", None)
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
 
@@ -187,6 +188,7 @@ class Ligand(DataModelAbstractBase):
         """
         Create a Ligand from a SMILES string
         """
+        kwargs.pop("data", None)
         mol = smiles_to_oemol(smiles)
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, compound_name=compound_name, **kwargs)
@@ -238,6 +240,7 @@ class Ligand(DataModelAbstractBase):
             Whether to read in SD tags as attributes, by default True, overrides kwargs
         """
         # directly read in data
+        kwargs.pop("data", None)
         sdf_str = read_file_directly(sdf_file)
         # we have to skip validation here, because we don't have a bunch of fields as they
         # still need to be read in from the SD tags

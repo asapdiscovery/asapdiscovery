@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 from pathlib import Path
-from asapdiscovery.data.openeye import oedocking, oeomega, save_openeye_pdb
+from asapdiscovery.data.openeye import oedocking, oeomega, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from enum import Enum
-
+import pandas as pd
+import abc
 
 class DockingResult(BaseModel):
     input_pair: DockingInputPair = Field(description="Input pair")
@@ -24,7 +25,6 @@ class DockingResult(BaseModel):
                 "SMILES of ligand and ligand in input docking pair not match"
             )
         return values
-
 
 class DockingBase(BaseModel):
     """
@@ -45,17 +45,17 @@ class DockingBase(BaseModel):
 
 
 class POSIT_METHOD(Enum):
-    ALL = (oedocking.OEPositMethod_ALL,)
-    HYBRID = (oedocking.OEPositMethod_HYBRID,)
-    FRED = (oedocking.OEPositMethod_FRED,)
-    MCS = (oedocking.OEPositMethod_MCS,)
-    SHAPEFIT = (oedocking.OEPositMethod_SHAPEFIT,)
+    ALL = oedocking.OEPositMethod_ALL
+    HYBRID = oedocking.OEPositMethod_HYBRID
+    FRED = oedocking.OEPositMethod_FRED
+    MCS = oedocking.OEPositMethod_MCS
+    SHAPEFIT = oedocking.OEPositMethod_SHAPEFIT
 
 
 class POSIT_RELAX_MODE(Enum):
-    CLASH = (oedocking.OEPositRelaxMode_CLASH,)
-    ALL = (oedocking.OEPositRelaxMode_ALL,)
-    NONE = oedocking.OEPositRelaxMode_NONE
+    CLASH = oedocking.OEPoseRelaxMode_CLASHED
+    ALL = oedocking.OEPoseRelaxMode_ALL
+    NONE = oedocking.OEPoseRelaxMode_NONE
 
 
 class POSITDocker(DockingBase):
@@ -87,7 +87,7 @@ class POSITDocker(DockingBase):
     output_dir: str = Field(
         "docking", description="Output directory for docking results"
     )
-    write_files: bool = Field(True, description="Write docked pose results to file")
+    write_files: bool = Field(False, description="Write docked pose results to file")
 
     @root_validator
     @classmethod
@@ -97,9 +97,10 @@ class POSITDocker(DockingBase):
         if write_files and not output_dir:
             raise ValueError("Output directory must be set if write_file is True")
 
-        if not Path(output_dir).exists():
-            raise ValueError("Output directory does not exist")
-
+        if write_files and not Path(output_dir).exists():
+                raise ValueError("Output directory does not exist")
+        return values
+    
     @staticmethod
     def run_oe_posit_docking(opts, pose_res, du, lig, num_poses):
         poser = oedocking.OEPosit(opts)
@@ -122,13 +123,13 @@ class POSITDocker(DockingBase):
         docking_results = []
 
         for pair in inputs:
-            du = pair.complex.to_oedu()
-            lig = pair.ligand.to_oemol()
-
+            du = pair.complex.target.to_oedu()
+            lig = pair.ligand
+            lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
             if self.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
                 omega = oeomega.OEOmega(omegaOpts)
-                ret_code = omega.Build(lig)
+                ret_code = omega.Build(lig_oemol)
                 if ret_code:
                     raise ValueError(
                         f"Omega failed with error code {oeomega.OEGetOmegaError(ret_code)}"
@@ -141,14 +142,14 @@ class POSITDocker(DockingBase):
 
             pose_res = oedocking.OEPositResults()
             pose_res, retcode = self.run_oe_posit_docking(
-                opts, pose_res, du, lig, self.num_poses
+                opts, pose_res, du, lig_oemol, self.num_poses
             )
 
             # try again with no relaxation
             if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
                 opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
                 pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig, self.num_poses
+                    opts, pose_res, du, lig_oemol, self.num_poses
                 )
 
             # try again with low posit probability
@@ -159,7 +160,7 @@ class POSITDocker(DockingBase):
                 opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
                 opts.SetMinProbability(self.low_posit_prob_thresh)
                 pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig, self.num_poses
+                    opts, pose_res, du, lig_oemol, self.num_poses
                 )
 
             # try again allowing clashes
@@ -170,7 +171,7 @@ class POSITDocker(DockingBase):
                 opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
                 opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
                 pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig, self.num_poses
+                    opts, pose_res, du, lig_oemol, self.num_poses
                 )
 
             if ret_code == oedocking.OEDockingReturnCode_Success:
@@ -181,7 +182,7 @@ class POSITDocker(DockingBase):
                     pose_scorer.Initialize(du)
                     chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
 
-                    posed_ligand = Ligand.from_oemol(posed_mol, **lig.dict())
+                    posed_ligand = Ligand.from_oemol(posed_mol, **pair.ligand.dict())
                     # set SD tags
                     sd_data = {
                         DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
