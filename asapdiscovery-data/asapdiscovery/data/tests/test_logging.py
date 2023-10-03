@@ -1,6 +1,4 @@
 import logging
-
-import pytest
 from asapdiscovery.data.logging import FileLogger
 
 
