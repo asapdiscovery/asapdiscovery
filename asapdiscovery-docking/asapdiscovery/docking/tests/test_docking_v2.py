@@ -1,15 +1,17 @@
-import pytest 
-from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.docking.docking_v2 import POSITDocker
+import pytest
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
+from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.docking.docking_v2 import POSITDocker
 
 
 @pytest.fixture(scope="session")
 def docking_data():
     sdf_file = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf")
-    pdb_file = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
+    pdb_file = fetch_test_file(
+        "Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb"
+    )
     ligand = Ligand.from_sdf(sdf_file, compound_name="test")
     cmplx = Complex.from_pdb(
         pdb_file,
@@ -31,4 +33,3 @@ def test_docking(docking_input_pair):
     results = docker.dock([docking_input_pair])
     assert len(results) == 1
     print(results)
-

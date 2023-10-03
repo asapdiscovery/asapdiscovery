@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, List, Union  # noqa: F401
+from typing import Any, Dict, List, Optional, Union  # noqa: F401
 from uuid import UUID
 
 from asapdiscovery.data.openeye import (
@@ -374,7 +374,7 @@ class ReferenceLigand(Ligand):
     target_name: Optional[str] = None
 
 
-def compound_names_unique(ligands: List[Ligand]) -> bool:
+def compound_names_unique(ligands: list[Ligand]) -> bool:
     """
     Check that all the compound names in a list of ligands are unique
     """

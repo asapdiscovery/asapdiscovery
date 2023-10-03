@@ -167,5 +167,3 @@ def test_failing_kwargs(
     # should fail when specifying a single receptor and by_compound
     ret = script_runner.run(*args)
     assert not ret.success
-
-

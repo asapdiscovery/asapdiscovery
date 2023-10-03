@@ -1,12 +1,14 @@
-from pydantic import BaseModel, Field, PositiveInt, root_validator
-from pathlib import Path
-from asapdiscovery.data.openeye import oedocking, oeomega, oechem, save_openeye_pdb
-from asapdiscovery.data.schema_v2.pairs import DockingInputPair
-from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from enum import Enum
-import pandas as pd
 import abc
+from enum import Enum
+from pathlib import Path
+
+import pandas as pd
+from asapdiscovery.data.openeye import oechem, oedocking, oeomega, save_openeye_pdb
+from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
+from asapdiscovery.data.schema_v2.pairs import DockingInputPair
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from pydantic import BaseModel, Field, PositiveInt, root_validator
+
 
 class DockingResult(BaseModel):
     input_pair: DockingInputPair = Field(description="Input pair")
@@ -25,6 +27,7 @@ class DockingResult(BaseModel):
                 "SMILES of ligand and ligand in input docking pair not match"
             )
         return values
+
 
 class DockingBase(BaseModel):
     """
@@ -98,9 +101,9 @@ class POSITDocker(DockingBase):
             raise ValueError("Output directory must be set if write_file is True")
 
         if write_files and not Path(output_dir).exists():
-                raise ValueError("Output directory does not exist")
+            raise ValueError("Output directory does not exist")
         return values
-    
+
     @staticmethod
     def run_oe_posit_docking(opts, pose_res, du, lig, num_poses):
         poser = oedocking.OEPosit(opts)
