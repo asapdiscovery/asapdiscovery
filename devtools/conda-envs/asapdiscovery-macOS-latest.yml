@@ -67,7 +67,15 @@ dependencies:
   - imageio
   - pymol-open-source
   - gifsicle
+  - plip
 
+  # simulation
+  - openfe =0.11.0
+  - gufe =0.9.1
+  - httpx
+  - perses >=0.10.2
+  - kartograf
+  - rich
 
   # Pip-only installs
   - pip:
@@ -83,3 +91,6 @@ dependencies:
     # viz
     - pygifsicle
     - sigfig
+    - airium
+    - alchemiscale
+    - git+https://github.com/OpenFreeEnergy/cinnabar.git@8ce28bb107b96f48b542ae2bd3dc4fabccc614c3

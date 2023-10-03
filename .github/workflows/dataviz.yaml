@@ -1,4 +1,4 @@
-name: CI
+name: dataviz-ci
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-latest, ubuntu-latest]
+        os: [ubuntu-latest]
         python-version: ["3.9.2", "3.10"]
 
     env:
@@ -72,7 +72,6 @@ jobs:
         python -m pip install -e ./asapdiscovery-ml --no-deps
         python -m pip install -e ./asapdiscovery-modeling --no-deps
         python -m pip install -e ./asapdiscovery-simulation --no-deps
-
         micromamba list
 
     - name: Run tests
@@ -83,7 +82,9 @@ jobs:
         # run each package test suite; append to coverage file
         # Exit immediately if a command exits with a non-zero status.
         set -e
-        pytest -n auto --durations=10 --cov=asapdiscovery-modeling --cov=asapdiscovery-data --cov=asapdiscovery-dataviz --cov=asapdiscovery-docking --cov=asapdiscovery-ml -v --cov-report=xml --cov-report=term --color=yes asapdiscovery-data/asapdiscovery/data/tests asapdiscovery-dataviz/asapdiscovery/dataviz/tests asapdiscovery-modeling/asapdiscovery/modeling/tests asapdiscovery-docking/asapdiscovery/docking/tests asapdiscovery-ml/asapdiscovery/ml/tests
+        pytest -n auto --durations=10 -v --cov-report=xml --cov-report=term --color=yes \
+                       --cov=asapdiscovery-dataviz \
+                       asapdiscovery-dataviz/asapdiscovery/dataviz/tests
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3

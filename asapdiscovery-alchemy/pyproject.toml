@@ -3,13 +3,13 @@ requires = ["setuptools>=61.0", "versioningit"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "asapdiscovery-simulation"
+name = "asapdiscovery-alchemy"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
 ]
-description = "API and scripts for running molecular dynamics simulations"
+description = "Tooling for performing alchemical free energy calculations via OpenFE and alchemiscale"
 readme = "README.md"
 requires-python = ">=3.9,<3.11"
 classifiers = [
@@ -19,10 +19,7 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 dependencies = [
-    "pandas",
-    "rdkit",
-    #"openeye-toolkit",
-    "plotly",
+    "alchemiscale"
 ]
 
 [project.urls]
@@ -30,6 +27,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
+asap-alchemy = "asapdiscovery.alchemy.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]
