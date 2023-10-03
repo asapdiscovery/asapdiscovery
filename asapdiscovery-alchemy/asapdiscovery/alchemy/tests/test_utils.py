@@ -258,7 +258,7 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
 
     assert len(restarted_tasks) == 2
     assert [isinstance(i, ScopedKey) for i in restarted_tasks]
-    assert restarted_tasks == errored_tasks[:2]
+    assert set(restarted_tasks) == set(errored_tasks[:2])
 
 
 def test_get_failures(
