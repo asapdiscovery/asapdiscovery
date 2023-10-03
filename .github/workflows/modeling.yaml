@@ -1,0 +1,98 @@
+name: modeling-ci
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+  schedule:
+    # Nightly tests run on main by default:
+    #   Scheduled workflows run on the latest commit on the default or base branch.
+    #   (from https://help.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule)
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.9.2", "3.10"]
+
+    env:
+      OE_LICENSE: ${{ github.workspace }}/oe_license.txt
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Get Info About Runner
+      run: |
+        uname -a
+        df -h
+        ulimit -a
+
+
+    # More info on options: https://github.com/mamba-org/provision-with-micromamba
+    - name: Setup Conda Environment
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-file: devtools/conda-envs/asapdiscovery-${{ matrix.os }}.yml
+        environment-name: asapdiscovery
+        cache-environment: true
+        cache-downloads: true
+        create-args: >-
+          python==${{ matrix.python-version }}
+
+    - name: Test OE License & Write License to File
+      env:
+        OE_LICENSE_TEXT: ${{ secrets.OE_LICENSE }}
+      run: |
+        echo "${OE_LICENSE_TEXT}" > ${OE_LICENSE}
+        python -c "import openeye; assert openeye.oechem.OEChemIsLicensed(), 'OpenEye license checks failed!'"
+
+    - name: Install packages
+      run: |
+        python -m pip install -e ./asapdiscovery-data --no-deps
+        python -m pip install -e ./asapdiscovery-dataviz --no-deps
+        python -m pip install -e ./asapdiscovery-docking --no-deps
+        python -m pip install -e ./asapdiscovery-ml --no-deps
+        python -m pip install -e ./asapdiscovery-modeling --no-deps
+        python -m pip install -e ./asapdiscovery-simulation --no-deps
+        micromamba list
+
+    - name: Run tests
+      env:
+        CDDTOKEN: ${{ secrets.ASAP_CDD_VAULT_TOKEN_READ_ONLY }}
+        MOONSHOT_CDD_VAULT_NUMBER: ${{ secrets.MOONSHOT_CDD_VAULT_NUMBER }}
+      run: |
+        # run each package test suite; append to coverage file
+        # Exit immediately if a command exits with a non-zero status.
+        set -e
+        pytest -n auto --durations=10 -v --cov-report=xml --cov-report=term --color=yes \
+                       --cov=asapdiscovery-modeling \
+                       asapdiscovery-modeling/asapdiscovery/modeling/tests
+
+    - name: Upload Code Coverage to Codecov
+      uses: codecov/codecov-action@v3
+      # Don't upload coverage scheduled or on fork
+      if: ${{ github.repository == 'choderalab/asapdiscovery'
+              && github.event != 'schedule' }}
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
+        fail_ci_if_error: false
