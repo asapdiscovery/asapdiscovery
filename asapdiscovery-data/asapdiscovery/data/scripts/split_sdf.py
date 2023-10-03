@@ -37,7 +37,8 @@ def get_args():
         choices=["integer", "name"],
         default="integer",
         help="How to name the output files. 'integer' will name them 1.sdf, 2.sdf, etc. 'name' will name them "
-             "according to the name of the molecule in the SDF file",)
+        "according to the name of the molecule in the SDF file",
+    )
     return parser.parse_args()
 
 
@@ -78,7 +79,10 @@ def main():
         if args.name_convention == "integer":
             save_openeye_sdfs(mols_chunk, os.path.join(args.out_dir, f"{i+1}.sdf"))
         elif args.name_convention == "name":
-            save_openeye_sdfs(mols_chunk, os.path.join(args.out_dir, f"{mols_chunk[0].GetTitle()}.sdf"))
+            save_openeye_sdfs(
+                mols_chunk,
+                os.path.join(args.out_dir, f"{mols_chunk[0].GetTitle()}.sdf"),
+            )
 
     if remainder:
         print(f"Saving {remainder} remainder molecules to {n_chunks+1}.sdf")
