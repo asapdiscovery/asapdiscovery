@@ -292,7 +292,13 @@ class HTMLVisualizer:
         intn_dict = {}
         intn_counter = 0
         # wrangle all interactions into a dict that can be read directly by 3DMol.
-        for bs in intn_dict_xml["report"]["bindingsite"]:
+
+        # if there is only one site we get a dict, otherwise a list of dicts.
+        sites = intn_dict_xml["report"]["bindingsite"]
+        if isinstance(sites, dict):
+            sites = [sites]
+
+        for bs in sites:
             for _, data in bs["interactions"].items():
                 if data:
                     # we build keys for the dict to be unique, so no interactions are overwritten
