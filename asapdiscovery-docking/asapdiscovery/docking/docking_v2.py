@@ -27,6 +27,16 @@ class DockingResult(BaseModel):
                 "SMILES of ligand and ligand in input docking pair not match"
             )
         return values
+    
+    def to_posed_oemol(self) -> oechem.OEMol:
+        """
+        Combine the target and ligand into a single oemol
+        """
+        return combine_protein_ligand(
+            self.input_pair.complex.target.to_oedu(),
+            self.posed_ligand.to_oemol(),
+            self.input_pair.complex.ligand_chain,
+        )
 
 
 class DockingBase(BaseModel):
@@ -87,8 +97,8 @@ class POSITDocker(DockingBase):
     allow_final_clash: bool = Field(
         False, description="Allow clashing poses in last stage of docking"
     )
-    output_dir: str = Field(
-        "docking", description="Output directory for docking results"
+    output_dir: Path = Field(
+        Path("./docking"), description="Output directory for docking results"
     )
     write_files: bool = Field(False, description="Write docked pose results to file")
 
@@ -147,6 +157,8 @@ class POSITDocker(DockingBase):
             pose_res, retcode = self.run_oe_posit_docking(
                 opts, pose_res, du, lig_oemol, self.num_poses
             )
+
+            # TODO: all this retrying is very inefficient, this should be able to be done faster.
 
             # try again with no relaxation
             if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
@@ -213,7 +225,7 @@ class POSITDocker(DockingBase):
                         output_sdf_file = output_dir / "docked.sdf"
                         output_pdb_file = output_dir / "docked_complex.pdb"
 
-                        posed_ligand.to_sdf_file(output_sdf_file)
+                        posed_ligand.to_sdf(output_sdf_file)
 
                         combined_oemol = docking_result.to_posed_oemol()
                         save_openeye_pdb(output_pdb_file, combined_oemol)

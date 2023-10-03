@@ -32,4 +32,13 @@ def test_docking(docking_input_pair):
     docker = POSITDocker()
     results = docker.dock([docking_input_pair])
     assert len(results) == 1
-    print(results)
+
+def test_docking_multiple(docking_input_pair):
+    docker = POSITDocker()
+    results = docker.dock([docking_input_pair, docking_input_pair, docking_input_pair])
+    assert len(results) == 3
+
+
+def test_docking_with_file_write(docking_input_pair, tmp_path):
+    docker = POSITDocker(write_files=True, output_dir=tmp_path)
+    results = docker.dock([docking_input_pair])
