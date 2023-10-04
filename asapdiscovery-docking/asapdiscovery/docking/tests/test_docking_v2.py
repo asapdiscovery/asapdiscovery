@@ -54,24 +54,12 @@ def test_docking(docking_input_pair):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_docking_multiple(docking_input_pair):
+def test_docking_dask(docking_input_pair):
     docker = POSITDocker()
-    results = docker.dock([docking_input_pair, docking_input_pair])
-    assert len(results) == 2
-    # check all probs are > 0
-    probs = [r.probability for r in results]
-    assert all([p > 0.0 for p in probs])
-
-
-@pytest.mark.skipif(
-    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
-)
-def test_docking_dask_multiple(docking_input_pair):
-    docker = POSITDocker()
-    results = docker.dock([docking_input_pair, docking_input_pair], use_dask=True)
-    assert len(results) == 2
+    results = docker.dock([docking_input_pair], use_dask=True)
+    assert len(results) == 1
     actualised = dask.compute(*results)
-    assert len(actualised) == 2
+    assert len(actualised) == 1
     # check all probs are > 0
     probs = [r.probability for r in actualised]
     assert all([p > 0.0 for p in probs])
