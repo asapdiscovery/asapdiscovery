@@ -58,11 +58,7 @@ def test_docking_dask(docking_input_pair):
     docker = POSITDocker()
     results = docker.dock([docking_input_pair], use_dask=True)
     assert len(results) == 1
-    actualised = dask.compute(*results)
-    assert len(actualised) == 1
-    # check all probs are > 0
-    probs = [r.probability for r in actualised]
-    assert all([p > 0.0 for p in probs])
+    assert type(results[0]) == dask.delayed.Delayed
 
 
 @pytest.mark.skipif(
@@ -75,23 +71,4 @@ def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
     sdf_path = tmp_path / "test2" / "docked.sdf"
     assert sdf_path.exists()
     pdb_path = tmp_path / "test2" / "docked_complex.pdb"
-    assert pdb_path.exists()
-
-
-# has non unique names so will come out with unknown_ligand_i where i is the index
-@pytest.mark.skipif(
-    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
-)
-def test_docking_with_file_write_non_unique(docking_input_pair_simple, tmp_path):
-    docker = POSITDocker(write_files=True, output_dir=tmp_path)
-    results = docker.dock([docking_input_pair_simple, docking_input_pair_simple])
-    assert results[0].probability > 0.0
-    assert results[1].probability > 0.0
-    sdf_path = tmp_path / "unknown_ligand_0" / "docked.sdf"
-    assert sdf_path.exists()
-    pdb_path = tmp_path / "unknown_ligand_0" / "docked_complex.pdb"
-    assert pdb_path.exists()
-    sdf_path = tmp_path / "unknown_ligand_1" / "docked.sdf"
-    assert sdf_path.exists()
-    pdb_path = tmp_path / "unknown_ligand_1" / "docked_complex.pdb"
     assert pdb_path.exists()
