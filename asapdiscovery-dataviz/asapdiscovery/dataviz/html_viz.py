@@ -254,7 +254,6 @@ class HTMLVisualizer:
         backbone_atoms = [ at.GetIdx() for at in self.protein.GetAtoms(oechem.OEIsBackboneAtom()) ]
 
         # with oe, iterate over atoms until this one's found. then use oechem.OEIsBackboneAtom
-        import sys
         is_backbone = False
         for idx, res_coords in self.protein.GetCoords().items():
             # round to 3 because OE pointlessly extends the coordinates float.
@@ -271,7 +270,6 @@ class HTMLVisualizer:
             # in which case the above coordinate matching doesn't find any atoms. pi-pi of this form
             # can never be on backbone anyway, so this works.
             return False
-        # sys.exit()
 
 
     def get_interaction_fitness_color(self, plip_xml_dict) -> str:
