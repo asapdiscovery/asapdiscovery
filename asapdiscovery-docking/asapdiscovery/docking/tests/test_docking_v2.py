@@ -1,5 +1,7 @@
-import pytest
 import dask
+import pytest
+
+import os
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
@@ -39,7 +41,9 @@ def docking_input_pair_simple(ligand_simple, prepped_complex):
     return DockingInputPair(complex=prepped_complex, ligand=ligand_simple)
 
 
-# @pytest.mark.para
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_docking(docking_input_pair):
     docker = POSITDocker()
     results = docker.dock([docking_input_pair])
@@ -47,6 +51,9 @@ def test_docking(docking_input_pair):
     assert results[0].probability > 0.0
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_docking_multiple(docking_input_pair):
     docker = POSITDocker()
     results = docker.dock([docking_input_pair, docking_input_pair])
@@ -56,6 +63,9 @@ def test_docking_multiple(docking_input_pair):
     assert all([p > 0.0 for p in probs])
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_docking_dask_multiple(docking_input_pair):
     docker = POSITDocker()
     results = docker.dock([docking_input_pair, docking_input_pair], use_dask=True)
@@ -67,6 +77,9 @@ def test_docking_dask_multiple(docking_input_pair):
     assert all([p > 0.0 for p in probs])
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
     docker = POSITDocker(write_files=True, output_dir=tmp_path)
     results = docker.dock([docking_input_pair_simple])
@@ -78,6 +91,9 @@ def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
 
 
 # has non unique names so will come out with unknown_ligand_i where i is the index
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_docking_with_file_write_non_unique(docking_input_pair_simple, tmp_path):
     docker = POSITDocker(write_files=True, output_dir=tmp_path)
     results = docker.dock([docking_input_pair_simple, docking_input_pair_simple])
