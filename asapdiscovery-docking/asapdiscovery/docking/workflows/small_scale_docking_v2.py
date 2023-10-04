@@ -59,8 +59,6 @@ def small_scale_docking(filename=None, receptor=None, postera=False, postera_upl
     ... # combine with dataframe
 
 
-
-
     if postera_upload:
         postera_uploader = PosteraUploader(settings=settings, molecule_set_name=inputs.postera_molset_name, artifact_cols=[...]) #TODO: make this more compact wrapper for postera uploader
         postera_uploader.upload(df)
