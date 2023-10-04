@@ -242,25 +242,28 @@ class HTMLVisualizer:
             return "#8C4099"
         else:
             raise ValueError(f"Interaction type {intn_type} not recognized.")
-        
+
     def is_backbone_residue(self, x, y, z) -> bool:
         """
         Given xyz coordinates, find the atom in the protein and return whether
         it is a backbone atom. This would be much easier if PLIP would return
         the atom idx of the protein, currently all we have are the coordinates.
         """
-        # make a list with this protein's backbone atom indices. Could do higher up, 
-        # but this is very fast so ok to repeat. 
-        backbone_atoms = [ at.GetIdx() for at in self.protein.GetAtoms(oechem.OEIsBackboneAtom()) ]
+        # make a list with this protein's backbone atom indices. Could do higher up,
+        # but this is very fast so ok to repeat.
+        backbone_atoms = [
+            at.GetIdx() for at in self.protein.GetAtoms(oechem.OEIsBackboneAtom())
+        ]
 
         # with oe, iterate over atoms until this one's found. then use oechem.OEIsBackboneAtom
         is_backbone = False
         for idx, res_coords in self.protein.GetCoords().items():
             # round to 3 because OE pointlessly extends the coordinates float.
-            if float(x) == round(res_coords[0], 3) and \
-                float(y) == round(res_coords[1], 3) and \
-                float(z) == round(res_coords[2], 3):
-
+            if (
+                float(x) == round(res_coords[0], 3)
+                and float(y) == round(res_coords[1], 3)
+                and float(z) == round(res_coords[2], 3)
+            ):
                 is_backbone = True if idx in backbone_atoms else False
 
         if is_backbone:
@@ -271,11 +274,10 @@ class HTMLVisualizer:
             # can never be on backbone anyway, so this works.
             return False
 
-
     def get_interaction_fitness_color(self, plip_xml_dict) -> str:
         """
-        Get fitness color for a residue. If the interaction is with a backbone atom on 
-        the residue, color it green. 
+        Get fitness color for a residue. If the interaction is with a backbone atom on
+        the residue, color it green.
         """
         # first get the fitness color of the residue the interaction hits, this
         # can be white->red or blue if fitness data is missing.
@@ -286,13 +288,15 @@ class HTMLVisualizer:
                 break
 
         # overwrite the interaction as green if it hits a backbone atom.
-        if self.is_backbone_residue(plip_xml_dict["protcoo"]["x"], 
-                                    plip_xml_dict["protcoo"]["y"], 
-                                    plip_xml_dict["protcoo"]["z"]):
+        if self.is_backbone_residue(
+            plip_xml_dict["protcoo"]["x"],
+            plip_xml_dict["protcoo"]["y"],
+            plip_xml_dict["protcoo"]["z"],
+        ):
             intn_color = "#008000"
-        
+
         return intn_color
-        
+
     def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type) -> Union:
         """
         Parses a PLIP interaction dict and builds the dict key values needed for 3DMol.
