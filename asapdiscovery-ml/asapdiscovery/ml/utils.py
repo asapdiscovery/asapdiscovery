@@ -199,9 +199,9 @@ def build_loss_function(grouped, loss_type=None, semiquant_fill=None):
 
     Returns
     -------
-    Union[MSELoss, GroupedMSELoss, GaussianNLLLoss]
+    Union[MSELoss, GaussianNLLLoss]
     """
-    from asapdiscovery.ml.loss import GaussianNLLLoss, GroupedMSELoss, MSELoss
+    from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss
 
     try:
         loss_type = loss_type.lower()
@@ -209,10 +209,7 @@ def build_loss_function(grouped, loss_type=None, semiquant_fill=None):
         pass
 
     if (loss_type is None) or (loss_type == "step"):
-        if grouped:
-            loss_func = GroupedMSELoss(loss_type)
-        else:
-            loss_func = MSELoss(loss_type)
+        loss_func = MSELoss(loss_type)
         lt = "standard" if loss_type is None else loss_type
         print(f"Using {lt} MSE loss", flush=True)
     elif "uncertainty" in loss_type:
@@ -1678,11 +1675,10 @@ def train(
                 pred, pose_preds = model(pose)
                 pred = pred.reshape(target.shape)
                 pose_preds = pose_preds.tolist()
-                loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
                 pred = model(pose).reshape(target.shape)
                 pose_preds = None
-                loss = loss_fn(pred, target, in_range, uncertainty)
+            loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
             update_loss_dict(
@@ -1709,8 +1705,7 @@ def train(
             # Perform backprop if we've done all the preds for this batch
             if batch_counter == batch_size:
                 # Backprop
-                if not grouped:
-                    batch_loss.backward()
+                batch_loss.backward()
                 optimizer.step()
                 if any(
                     [
@@ -1761,11 +1756,10 @@ def train(
                 pred, pose_preds = model(pose)
                 pred = pred.reshape(target.shape)
                 pose_preds = pose_preds.tolist()
-                loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
                 pred = model(pose).reshape(target.shape)
                 pose_preds = None
-                loss = loss_fn(pred, target, in_range, uncertainty)
+            loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
             update_loss_dict(
@@ -1805,11 +1799,10 @@ def train(
                 pred, pose_preds = model(pose)
                 pred = pred.reshape(target.shape)
                 pose_preds = pose_preds.tolist()
-                loss = loss_fn(model, pred, target, in_range, uncertainty)
             else:
                 pred = model(pose).reshape(target.shape)
                 pose_preds = None
-                loss = loss_fn(pred, target, in_range, uncertainty)
+            loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
             update_loss_dict(
