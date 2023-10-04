@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Union, Literal
+from typing import Literal, Union
 
 import dask
 from asapdiscovery.data.openeye import (
@@ -15,7 +15,7 @@ from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
-from pydantic import BaseModel, Field, PositiveInt, PositiveFloat, root_validator
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 
 
 class DockingResult(BaseModel):
