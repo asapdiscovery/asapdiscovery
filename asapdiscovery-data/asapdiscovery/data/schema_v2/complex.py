@@ -5,9 +5,9 @@ from typing import Any, Union
 
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
-    oechem,
     load_openeye_design_unit,
     load_openeye_pdb,
+    oechem,
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
@@ -100,7 +100,7 @@ class PreppedComplex(ComplexBase):
     @classmethod
     def from_oedu(
         cls, oedu: oechem.OEDesignUnit, target_kwargs={}, ligand_kwargs={}
-    ) -> "PreppedComplex":
+    ) -> PreppedComplex:
         prepped_target = PreppedTarget.from_oedu(oedu, **target_kwargs)
         lig_oemol = oechem.OEMol()
         oedu.GetLigand(lig_oemol)
@@ -110,7 +110,7 @@ class PreppedComplex(ComplexBase):
         )
 
     @classmethod
-    def from_oedu_file(cls, oedu_file: Union[str, Path], **kwargs) -> "PreppedComplex":
+    def from_oedu_file(cls, oedu_file: str | Path, **kwargs) -> PreppedComplex:
         oedu = load_openeye_design_unit(oedu_file)
         return cls.from_oedu(oedu=oedu, **kwargs)
 
