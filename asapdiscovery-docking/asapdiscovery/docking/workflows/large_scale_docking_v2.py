@@ -1,6 +1,6 @@
 
 
-def large_scale_docking(filename=None, frag_dir=None, postera=False, postera_upload=False, postera_molset_name=None, du_cache=None, settings=None, target=None):
+def large_scale_docking(filename=None, frag_dir=None, postera=False, postera_upload=False, postera_molset_name=None, du_cache=None, target=None):
 
     inputs = LargeScaleDockingInputs( # TODO: make this class that validates inputs
         filename=filename,
@@ -9,15 +9,14 @@ def large_scale_docking(filename=None, frag_dir=None, postera=False, postera_upl
         postera_upload=postera_upload,
         postera_molset_name=postera_molset_name,
         du_cache=du_cache,
-        settings=settings,
         target=target,
     ) 
 
 
     if postera:
         # load postera
-        postera_settigns = PosteraSettings()
-        postera = PosteraFactory(settings=settings, molecule_set_name=inputs.postera_molset_name)
+        postera_settings = PosteraSettings()
+        postera = PosteraFactory(settings=postera_settings, molecule_set_name=inputs.postera_molset_name)
         query_ligands = postera.pull()
     else:
         # load from file
