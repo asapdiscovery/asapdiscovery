@@ -1,8 +1,10 @@
 import abc
+import dask
+
 from enum import Enum
 from pathlib import Path
+from typing import Union
 
-import pandas as pd
 from asapdiscovery.data.openeye import (
     oechem,
     oedocking,
@@ -18,6 +20,12 @@ from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
 class DockingResult(BaseModel):
+    """
+    Schema for a DockingResult, containing both a DockingInputPair used as input to the workflow
+    and a Ligand object containing the docked pose.
+    Also contains the probability and chemgauss4 score of the docked pose.
+    """
+
     input_pair: DockingInputPair = Field(description="Input pair")
     posed_ligand: Ligand = Field(description="Posed ligand")
     probability: float = Field(description="Probability")
@@ -52,8 +60,16 @@ class DockingBase(BaseModel):
     def _dock() -> list[DockingResult]:
         ...
 
-    def dock(self, inputs: list[DockingInputPair]) -> list[DockingResult]:
-        outputs = self._dock(inputs=inputs)
+    def dock(
+        self, inputs: list[DockingInputPair], use_dask: bool = False
+    ) -> Union[list[dask.delayed], list[DockingResult]]:
+        if use_dask:
+            outputs = []
+            for inp in inputs:
+                out = dask.delayed(self._dock)(inputs=[inp])
+                outputs.append(out[0])  # flatten
+        else:
+            outputs = self._dock(inputs=inputs)
         return outputs
 
     @abc.abstractmethod

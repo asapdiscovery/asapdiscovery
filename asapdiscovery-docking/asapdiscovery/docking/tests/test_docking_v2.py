@@ -1,4 +1,5 @@
 import pytest
+import dask
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
@@ -38,26 +39,55 @@ def docking_input_pair_simple(ligand_simple, prepped_complex):
     return DockingInputPair(complex=prepped_complex, ligand=ligand_simple)
 
 
+# @pytest.mark.para
 def test_docking(docking_input_pair):
     docker = POSITDocker()
     results = docker.dock([docking_input_pair])
     assert len(results) == 1
+    assert results[0].probability > 0.0
 
 
 def test_docking_multiple(docking_input_pair):
     docker = POSITDocker()
-    results = docker.dock([docking_input_pair, docking_input_pair, docking_input_pair])
-    assert len(results) == 3
+    results = docker.dock([docking_input_pair, docking_input_pair])
+    assert len(results) == 2
+    # check all probs are > 0
+    probs = [r.probability for r in results]
+    assert all([p > 0.0 for p in probs])
+
+
+def test_docking_dask_multiple(docking_input_pair):
+    docker = POSITDocker()
+    results = docker.dock([docking_input_pair, docking_input_pair], use_dask=True)
+    assert len(results) == 2
+    actualised = dask.compute(*results)
+    assert len(actualised) == 2
+    # check all probs are > 0
+    probs = [r.probability for r in actualised]
+    assert all([p > 0.0 for p in probs])
 
 
 def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
     docker = POSITDocker(write_files=True, output_dir=tmp_path)
     results = docker.dock([docking_input_pair_simple])
     assert results[0].probability > 0.0
+    sdf_path = tmp_path / "test2" / "docked.sdf"
+    assert sdf_path.exists()
+    pdb_path = tmp_path / "test2" / "docked_complex.pdb"
+    assert pdb_path.exists()
 
 
+# has non unique names so will come out with unknown_ligand_i where i is the index
 def test_docking_with_file_write_non_unique(docking_input_pair_simple, tmp_path):
     docker = POSITDocker(write_files=True, output_dir=tmp_path)
     results = docker.dock([docking_input_pair_simple, docking_input_pair_simple])
     assert results[0].probability > 0.0
     assert results[1].probability > 0.0
+    sdf_path = tmp_path / "unknown_ligand_0" / "docked.sdf"
+    assert sdf_path.exists()
+    pdb_path = tmp_path / "unknown_ligand_0" / "docked_complex.pdb"
+    assert pdb_path.exists()
+    sdf_path = tmp_path / "unknown_ligand_1" / "docked.sdf"
+    assert sdf_path.exists()
+    pdb_path = tmp_path / "unknown_ligand_1" / "docked_complex.pdb"
+    assert pdb_path.exists()
