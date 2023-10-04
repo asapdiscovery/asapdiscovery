@@ -23,12 +23,9 @@ def ligand_simple():
 
 @pytest.fixture(scope="session")
 def prepped_complex():
-    cmplx = Complex.from_pdb(
-        fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb"),
-        target_kwargs={"target_name": "test"},
-        ligand_kwargs={"compound_name": "test"},
+    return PreppedComplex.from_oedu_file(
+        fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu")
     )
-    return PreppedComplex.from_complex(cmplx)
 
 
 @pytest.fixture(scope="session")
