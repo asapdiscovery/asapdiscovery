@@ -1674,7 +1674,7 @@ def train(
             if grouped:
                 pred, pose_preds = model(pose)
                 pred = pred.reshape(target.shape)
-                pose_preds = pose_preds.tolist()
+                pose_preds = pose_preds
             else:
                 pred = model(pose).reshape(target.shape)
                 pose_preds = None
@@ -1755,7 +1755,7 @@ def train(
             if grouped:
                 pred, pose_preds = model(pose)
                 pred = pred.reshape(target.shape)
-                pose_preds = pose_preds.tolist()
+                pose_preds = pose_preds
             else:
                 pred = model(pose).reshape(target.shape)
                 pose_preds = None
@@ -1798,7 +1798,7 @@ def train(
             if grouped:
                 pred, pose_preds = model(pose)
                 pred = pred.reshape(target.shape)
-                pose_preds = pose_preds.tolist()
+                pose_preds = pose_preds
             else:
                 pred = model(pose).reshape(target.shape)
                 pose_preds = None
