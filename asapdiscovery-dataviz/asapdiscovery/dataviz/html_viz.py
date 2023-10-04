@@ -299,6 +299,10 @@ class HTMLVisualizer:
         """
         k = f"{intn_counter}_{plip_xml_dict['restype']}{plip_xml_dict['resnr']}.{plip_xml_dict['reschain']}"
 
+        if self.color_method == "fitness":
+            intn_color = self.get_interaction_fitness_color(plip_xml_dict)
+        else:
+            intn_color = self.get_interaction_color(intn_type)
         v = {
             "lig_at_x": plip_xml_dict["ligcoo"]["x"],
             "lig_at_y": plip_xml_dict["ligcoo"]["y"],
@@ -307,10 +311,8 @@ class HTMLVisualizer:
             "prot_at_y": plip_xml_dict["protcoo"]["y"],
             "prot_at_z": plip_xml_dict["protcoo"]["z"],
             "type": intn_type,
-            "color": self.get_interaction_color(intn_type),
-            "color_fitness": self.get_interaction_fitness_color(plip_xml_dict),
+            "color": intn_color,
         }
-        
         return k, v
 
     @staticmethod
