@@ -242,10 +242,31 @@ class HTMLVisualizer:
             return "#8C4099"
         else:
             raise ValueError(f"Interaction type {intn_type} not recognized.")
+        
+    def get_interaction_fitness_color(self, plip_xml_dict) -> str:
+        """
+        Get fitness color for a residue. If the interaction is with a backbone atom on 
+        the residue, color it green. 
+        """
+        # first get the fitness color of the residue the interaction hits, this
+        # can be white->red or blue if fitness data is missing.
+        intn_color = None
+        for fitness_color, res_nums in self.make_color_res_fitness().items():
+            if int(plip_xml_dict["resnr"]) in res_nums:
+                intn_color = fitness_color
+                break
 
+        # overwrite the interaction as green if it hits a backbone atom.
+        if self.is_backbone_residue(plip_xml_dict["protcoo"]["x"], 
+                                    plip_xml_dict["protcoo"]["y"], 
+                                    plip_xml_dict["protcoo"]["z"]):
+            intn_color = "#008000"
+        
+        return intn_color
+        
     def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type) -> Union:
         """
-        Parses a PLIP interaction dict
+        Parses a PLIP interaction dict and builds the dict key values needed for 3DMol.
         """
         k = f"{intn_counter}_{plip_xml_dict['restype']}{plip_xml_dict['resnr']}.{plip_xml_dict['reschain']}"
 
@@ -258,7 +279,9 @@ class HTMLVisualizer:
             "prot_at_z": plip_xml_dict["protcoo"]["z"],
             "type": intn_type,
             "color": self.get_interaction_color(intn_type),
+            "color_fitness": self.get_interaction_fitness_color(plip_xml_dict),
         }
+        
         return k, v
 
     @staticmethod
