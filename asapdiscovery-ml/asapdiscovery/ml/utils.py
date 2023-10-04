@@ -288,6 +288,8 @@ def build_model(
     """
     import mtenn.conversion_utils
     import mtenn.model
+    from mtenn.combination import MeanCombination, MaxCombination, BoltzmannCombination
+    from mtenn.readout import PIC50Readout
 
     # Correct model name if needed
     model_type = model_type.lower()
@@ -301,9 +303,9 @@ def build_model(
             print("Using wandb config for model building.", flush=True)
         except Exception:
             config = {}
-    elif (type(config) is str) or isinstance(config, Path):
+    elif isinstance(config, str) or isinstance(config, Path):
         config = parse_config(config)
-    elif type(config) is not dict:
+    elif not isinstance(config, dict):
         config = {}
 
     # Take MTENN args from config if present, else from args
@@ -314,14 +316,14 @@ def build_model(
     try:
         combination = config["comb"].lower() if "comb" in config else comb.lower()
         if combination == "mean":
-            combination = mtenn.model.MeanCombination()
+            combination = MeanCombination()
         elif combination == "max":
             # Take MTENN args from config if present, else from args
             comb_neg = config["comb_neg"] if "comb_neg" in config else comb_neg
             comb_scale = config["comb_scale"] if "comb_scale" in config else comb_scale
-            combination = mtenn.model.MaxCombination(neg=comb_neg, scale=comb_scale)
+            combination = MaxCombination(neg=comb_neg, scale=comb_scale)
         elif combination == "boltzmann":
-            combination = mtenn.model.BoltzmannCombination()
+            combination = BoltzmannCombination()
         else:
             raise ValueError(
                 f"Unknown value for -comb: {combination}, "
@@ -344,7 +346,7 @@ def build_model(
             config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
         )
         if pred_readout == "pic50":
-            pred_readout = mtenn.model.PIC50Readout(substrate=substrate, Km=km)
+            pred_readout = PIC50Readout(substrate=substrate, Km=km)
         elif pred_readout == "none":
             pred_readout = None
         else:
@@ -363,7 +365,7 @@ def build_model(
             config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
         )
         if comb_readout == "pic50":
-            comb_readout = mtenn.model.PIC50Readout(substrate=substrate, Km=km)
+            comb_readout = PIC50Readout(substrate=substrate, Km=km)
         elif comb_readout == "none":
             comb_readout = None
         else:
