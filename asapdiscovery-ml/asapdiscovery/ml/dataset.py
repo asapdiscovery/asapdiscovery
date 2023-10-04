@@ -41,9 +41,11 @@ class DockedDataset(Dataset):
 
         # Function to extract from extra_dict (just to make the list
         #  comprehension look a bit nicer)
-        get_extra = lambda compound: (  # noqa" E731
-            extra_dict[compound] if (extra_dict and (compound in extra_dict)) else None
-        )
+        def get_extra(compound):
+            return (
+                extra_dict[compound] if extra_dict and compound in extra_dict else None
+            )
+
         mp_args = [
             (fn, compound, ignore_h, lig_resn, get_extra(compound))
             for i, (fn, compound) in enumerate(zip(str_fns, compounds))
