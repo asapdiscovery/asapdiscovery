@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Union
+from typing import Union, Literal
 
 import dask
 from asapdiscovery.data.openeye import (
@@ -15,7 +15,7 @@ from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
-from pydantic import BaseModel, Field, PositiveInt, root_validator
+from pydantic import BaseModel, Field, PositiveInt, PositiveFloat, root_validator
 
 
 class DockingResult(BaseModel):
@@ -27,7 +27,7 @@ class DockingResult(BaseModel):
 
     input_pair: DockingInputPair = Field(description="Input pair")
     posed_ligand: Ligand = Field(description="Posed ligand")
-    probability: float = Field(description="Probability")
+    probability: PositiveFloat = Field(description="Probability")
     chemgauss_score: float = Field(description="Chemgauss4 score")
     provenance: dict[str, str] = Field(description="Provenance")
 
@@ -54,6 +54,8 @@ class DockingBase(BaseModel):
     """
     Base class for docking.
     """
+
+    type: Literal["DockingBase"] = "DockingBase"
 
     @abc.abstractmethod
     def _dock() -> list[DockingResult]:
@@ -98,6 +100,8 @@ class POSITDocker(DockingBase):
     """
     Docker class for POSIT.
     """
+
+    type: Literal["POSITDocker"] = "POSITDocker"
 
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
@@ -261,4 +265,8 @@ class POSITDocker(DockingBase):
         return docking_results
 
     def provenance(self) -> dict[str, str]:
-        return {"oedocking": "POSIT"}
+        return {
+            "oechem": oechem.OEChemGetVersion(),
+            "oeomega": oeomega.OEOmegaGetVersion(),
+            "oedocking": oedocking.OEDockingGetVersion(),
+        }
