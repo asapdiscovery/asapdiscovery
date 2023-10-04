@@ -1,7 +1,7 @@
+import os
+
 import dask
 import pytest
-
-import os
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair

@@ -1,16 +1,15 @@
 import abc
-import dask
-
 from enum import Enum
 from pathlib import Path
 from typing import Union
 
+import dask
 from asapdiscovery.data.openeye import (
+    combine_protein_ligand,
     oechem,
     oedocking,
     oeomega,
     save_openeye_pdb,
-    combine_protein_ligand,
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
