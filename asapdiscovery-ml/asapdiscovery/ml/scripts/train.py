@@ -356,6 +356,15 @@ def get_args():
         action="store_true",
         help="Group poses for the same compound into one prediction.",
     )
+    parser.add_argument(
+        "--target_prop",
+        choices=["pIC50", "dG", "dG_kT"],
+        default="pIC50",
+        help=(
+            "Which property to train against: "
+            "pIC50, delta G [kcal/mol], delta G [kT units]."
+        ),
+    )
 
     # Early stopping argumens
     parser.add_argument(
@@ -858,6 +867,7 @@ def main():
         batch_size=args.batch_size,
         es=es,
         optimizer=optimizer,
+        target_prop=args.target_prop,
     )
 
     if args.wandb or args.sweep:

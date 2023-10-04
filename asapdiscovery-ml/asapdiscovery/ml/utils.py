@@ -155,11 +155,9 @@ def build_dataset(
         extra_dict = {
             compound: {
                 "smiles": smiles,
-                "pIC50": exp_data_dict[compound]["pIC50"],
-                "pIC50_range": exp_data_dict[compound]["pIC50_range"],
-                "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
                 "date_created": dates_dict[compound],
             }
+            | exp_data_dict[compound]
             for compound, smiles in smiles_dict.items()
         }
 
@@ -1493,6 +1491,7 @@ def train(
     batch_size=1,
     optimizer=None,
     es=None,
+    target_prop="pIC50",
 ):
     """
     Train a model.
@@ -1540,6 +1539,8 @@ def train(
         optimizer
     es : Union[asapdiscovery.ml.BestEarlyStopping, asapdiscovery.ml.ConvergedEarlyStopping]
         EarlyStopping object to keep track of early stopping
+    target_prop: str, default="pIC50"
+        Property to train against in `target_dict`
 
     Returns
     -------
@@ -1661,13 +1662,13 @@ def train(
 
             # convert to float to match other types
             target = torch.tensor(
-                [[target_dict[compound_id]["pIC50"]]], device=device
+                [[target_dict[compound_id][target_prop]]], device=device
             ).float()
             in_range = torch.tensor(
                 [[target_dict[compound_id]["pIC50_range"]]], device=device
             ).float()
             uncertainty = torch.tensor(
-                [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+                [[target_dict[compound_id][f"{target_prop}_stderr"]]], device=device
             ).float()
 
             # Make prediction and calculate loss
@@ -1709,7 +1710,13 @@ def train(
                 if not grouped:
                     batch_loss.backward()
                 optimizer.step()
-                if any([p.grad.isnan().any().item() for p in model.parameters()]):
+                if any(
+                    [
+                        p.grad.isnan().any().item()
+                        for p in model.parameters()
+                        if p.grad is not None
+                    ]
+                ):
                     raise ValueError("NaN gradients")
 
                 # Reset batch tracking
@@ -1738,13 +1745,13 @@ def train(
 
             # convert to float to match other types
             target = torch.tensor(
-                [[target_dict[compound_id]["pIC50"]]], device=device
+                [[target_dict[compound_id][target_prop]]], device=device
             ).float()
             in_range = torch.tensor(
                 [[target_dict[compound_id]["pIC50_range"]]], device=device
             ).float()
             uncertainty = torch.tensor(
-                [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+                [[target_dict[compound_id][f"{target_prop}_stderr"]]], device=device
             ).float()
 
             # Make prediction and calculate loss
@@ -1782,13 +1789,13 @@ def train(
 
             # convert to float to match other types
             target = torch.tensor(
-                [[target_dict[compound_id]["pIC50"]]], device=device
+                [[target_dict[compound_id][target_prop]]], device=device
             ).float()
             in_range = torch.tensor(
                 [[target_dict[compound_id]["pIC50_range"]]], device=device
             ).float()
             uncertainty = torch.tensor(
-                [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+                [[target_dict[compound_id][f"{target_prop}_stderr"]]], device=device
             ).float()
 
             # Make prediction and calculate loss
