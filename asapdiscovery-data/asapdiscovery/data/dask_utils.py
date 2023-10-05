@@ -1,11 +1,12 @@
 from enum import Enum
-from typing import Optional, Iterable
+from typing import Optional
+from collections.abc import Iterable
 
 import dask
-from distributed import Client
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
+from distributed import Client
 from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
