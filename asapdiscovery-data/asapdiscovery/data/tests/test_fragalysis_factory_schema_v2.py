@@ -69,16 +69,16 @@ def test_manual_creation(mpro_frag_dir, mpro_frag_compound_mapping):
         )
         for p in all_paths[1:]
     ]
-    ff = FragalysisFactory(parent_dir=parent_dir, complexes=all_complexes)
-
-    assert len(ff) == 10
+    ff = FragalysisFactory(parent_dir=parent_dir)
+    complexes = ff.load()
+    assert len(complexes) == 10
 
 
 def test_creation_from_dir(mpro_frag_dir):
     parent_dir, all_paths = mpro_frag_dir
     ff = FragalysisFactory.from_dir(parent_dir)
-
-    assert len(ff) == 10
+    complexes = ff.load()
+    assert len(complexes) == 10
 
 
 def test_validation_fails_nonexistent(tmp_path):

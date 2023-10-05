@@ -30,9 +30,6 @@ class FragalysisFactory(DataModelAbstractBase):
     )
     fail_missing: bool = Field(False, description="Whether to fail on missing files.")
 
-    def __len__(self):
-        return len(self.complexes)
-
     def __eq__(self, other: FragalysisFactory):
         if self.parent_dir != other.parent_dir:
             return False
@@ -78,28 +75,25 @@ class FragalysisFactory(DataModelAbstractBase):
                 "No aligned directories found with entries in metadata.csv."
             )
 
+        # assign delay processing function if using dask
+        if use_dask:
+            parse_fn = dask.delayed(self.process_fragalysis_pdb)
+
+        else:
+            parse_fn = self.process_fragalysis_pdb
+
         # Loop through directories and load each bound file
         complexes = []
         for _, (xtal_name, compound_name) in df[
             [self.xtal_col, self.compound_col]
         ].iterrows():
-            complexes = []
-            if use_dask:
-                c = dask.delayed(
-                    self.process_fragalysis_pdb_dask(
-                        self.parent_dir,
-                        xtal_name,
-                        compound_name,
-                        fail_missing=self.fail_missing,
-                    )
-                )
-            else:
-                c = self.process_fragalysis_pdb(
-                    self.parent_dir,
-                    xtal_name,
-                    compound_name,
-                    fail_missing=self.fail_missing,
-                )
+            c = parse_fn(
+                self.parent_dir,
+                xtal_name,
+                compound_name,
+                fail_missing=self.fail_missing,
+            )
+
             complexes.append(c)
 
         if use_dask:
