@@ -2,12 +2,11 @@ import datetime
 
 import openfe
 import pytest
-from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
-from rdkit import Chem
-
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
+from rdkit import Chem
 
 
 @pytest.fixture(scope="session")
