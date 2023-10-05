@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
