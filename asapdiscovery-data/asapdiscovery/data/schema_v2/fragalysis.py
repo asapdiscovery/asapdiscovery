@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dask
 import os
 from pathlib import Path
 from typing import List  # noqa: F401
@@ -7,6 +8,7 @@ from typing import List  # noqa: F401
 import pandas
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from pydantic import Field, validator
 
 
@@ -22,9 +24,11 @@ class FragalysisFactory(DataModelAbstractBase):
     parent_dir: Path = Field(
         description="Top level directory of the Fragalysis database."
     )
-    complexes: list[Complex] = Field(
-        [], description="Complex objects in the Fragalysis database.", repr=False
+    xtal_col: str = Field("crystal_name", description="Name of the crystal column.")
+    compound_col: str = Field(
+        "alternate_name", description="Name of the compound column."
     )
+    fail_missing: bool = Field(False, description="Whether to fail on missing files.")
 
     def __len__(self):
         return len(self.complexes)
@@ -46,6 +50,93 @@ class FragalysisFactory(DataModelAbstractBase):
         return all(
             [c1.data_equal(c2) for c1, c2 in zip(self.complexes, other.complexes)]
         )
+
+    def load(self, use_dask=False, dask_client=None) -> List[Complex]:
+        try:
+            df = pandas.read_csv(self.parent_dir / "metadata.csv")
+        except FileNotFoundError as e:
+            raise FileNotFoundError("No metadata.csv file found in parent_dir.") from e
+
+        if len(df) == 0:
+            raise ValueError("metadata.csv file is empty.")
+
+        if (self.xtal_col not in df.columns) or (self.compound_col not in df.columns):
+            raise ValueError(
+                "metadata.csv file must contain a crystal name column and a "
+                "compound name column."
+            )
+
+        try:
+            all_xtal_dirs = os.listdir(self.parent_dir / "aligned")
+        except FileNotFoundError as e:
+            raise FileNotFoundError("No aligned/ directory found in parent_dir.") from e
+
+        # Subset metadata to only contain rows with directories in aligned/
+        df = df.loc[df[self.xtal_col].isin(all_xtal_dirs), :]
+        if df.shape[0] == 0:
+            raise ValueError(
+                "No aligned directories found with entries in metadata.csv."
+            )
+
+        # Loop through directories and load each bound file
+        complexes = []
+        for _, (xtal_name, compound_name) in df[
+            [self.xtal_col, self.compound_col]
+        ].iterrows():
+            complexes = []
+            if use_dask:
+                c = dask.delayed(
+                    self.process_fragalysis_pdb_dask(
+                        self.parent_dir,
+                        xtal_name,
+                        compound_name,
+                        fail_missing=self.fail_missing,
+                    )
+                )
+            else:
+                c = self.process_fragalysis_pdb(
+                    self.parent_dir,
+                    xtal_name,
+                    compound_name,
+                    fail_missing=self.fail_missing,
+                )
+            complexes.append(c)
+
+        if use_dask:
+            complexes = actualise_dask_delayed_iterable(
+                complexes, dask_client=dask_client
+            )
+
+        # remove None values
+        complexes = [c for c in complexes if c is not None]
+
+        return complexes
+
+    @staticmethod
+    def process_fragalysis_pdb(
+        parent_dir, xtal_name, compound_name, fail_missing=False
+    ):
+        pdb_fn = parent_dir / "aligned" / xtal_name / f"{xtal_name}_bound.pdb"
+        if not pdb_fn.exists():
+            if fail_missing:
+                raise FileNotFoundError(f"No PDB file found for {xtal_name}.")
+            else:
+                print(f"No PDB file found for {xtal_name}.", flush=True)
+                return None
+
+        try:
+            c = Complex.from_pdb(
+                pdb_fn,
+                target_kwargs={"target_name": xtal_name},
+                ligand_kwargs={"compound_name": compound_name},
+            )
+            return c
+        except Exception as e:
+            if fail_missing:
+                raise ValueError(f"Unable to parse PDB file for {xtal_name}.") from e
+            else:
+                print(f"Unable to parse PDB file for {xtal_name}.", flush=True)
+                return None
 
     @classmethod
     def from_dir(
@@ -77,62 +168,13 @@ class FragalysisFactory(DataModelAbstractBase):
         -------
         FragalysisFactory
         """
-        parent_dir = Path(parent_dir)
-        try:
-            df = pandas.read_csv(parent_dir / "metadata.csv")
-        except FileNotFoundError as e:
-            raise FileNotFoundError("No metadata.csv file found in parent_dir.") from e
 
-        if len(df) == 0:
-            raise ValueError("metadata.csv file is empty.")
-
-        if (xtal_col not in df.columns) or (compound_col not in df.columns):
-            raise ValueError(
-                "metadata.csv file must contain a crystal name column and a "
-                "compound name column."
-            )
-
-        try:
-            all_xtal_dirs = os.listdir(parent_dir / "aligned")
-        except FileNotFoundError as e:
-            raise FileNotFoundError("No aligned/ directory found in parent_dir.") from e
-
-        # Subset metadata to only contain rows with directories in aligned/
-        df = df.loc[df[xtal_col].isin(all_xtal_dirs), :]
-        if df.shape[0] == 0:
-            raise ValueError(
-                "No aligned directories found with entries in metadata.csv."
-            )
-
-        # Loop through directories and load each bound file
-        complexes = []
-        for _, (xtal_name, compound_name) in df[[xtal_col, compound_col]].iterrows():
-            pdb_fn = parent_dir / "aligned" / xtal_name / f"{xtal_name}_bound.pdb"
-            if not pdb_fn.exists():
-                if fail_missing:
-                    raise FileNotFoundError(f"No PDB file found for {xtal_name}.")
-                else:
-                    print(f"No PDB file found for {xtal_name}.", flush=True)
-                    continue
-
-            try:
-                c = Complex.from_pdb(
-                    pdb_fn,
-                    target_kwargs={"target_name": xtal_name},
-                    ligand_kwargs={"compound_name": compound_name},
-                )
-            except Exception as e:
-                if fail_missing:
-                    raise ValueError(
-                        f"Unable to parse PDB file for {xtal_name}."
-                    ) from e
-                else:
-                    print(f"Unable to parse PDB file for {xtal_name}.", flush=True)
-                    continue
-
-            complexes.append(c)
-
-        return cls(parent_dir=parent_dir, complexes=complexes)
+        return cls(
+            parent_dir=Path(parent_dir),
+            xtal_col=xtal_col,
+            compound_col=compound_col,
+            fail_missing=fail_missing,
+        )
 
     @validator("parent_dir")
     @classmethod
