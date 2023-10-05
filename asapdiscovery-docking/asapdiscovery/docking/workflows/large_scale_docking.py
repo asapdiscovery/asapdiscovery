@@ -35,7 +35,9 @@ class LargeScaleDockingInputs(BaseModel):
         description="Whether to write the final docked poses to an SDF file.",
     )
 
-    dask_type: DaskType = Field(description="Dask client to use for parallelism.")
+    dask_type: DaskType = Field(
+        DaskType.LOCAL, description="Dask client to use for parallelism."
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -84,9 +86,9 @@ def large_scale_docking(
     target: TargetTags,
     n_select: int,
     write_final_sdf: bool,
-    dask_type: str,
+    dask_type: DaskType = DaskType.LOCAL,
     filename: Optional[str | Path] = None,
-    frag_dir: Optional[str | Path] = None,
+    fragalysis_dir: Optional[str | Path] = None,
     structure_dir: Optional[str | Path] = None,
     postera_molset_name: Optional[str] = None,
     du_cache: Optional[str | Path] = None,
@@ -98,7 +100,7 @@ def large_scale_docking(
     # Code for large scale docking
     inputs = LargeScaleDockingInputs(
         filename=filename,
-        frag_dir=frag_dir,
+        fragalysis_dir=fragalysis_dir,
         structure_dir=structure_dir,
         postera=postera,
         postera_upload=postera_upload,

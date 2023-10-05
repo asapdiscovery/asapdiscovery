@@ -5,7 +5,7 @@ from typing import Optional
 
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
-from asapdiscovery.docking.workflows import large_scale_docking
+from asapdiscovery.docking.workflows.large_scale_docking import large_scale_docking
 
 
 @click.group()
@@ -45,7 +45,8 @@ def cli():
 )
 @click.option(
     "--dask-type",
-    type=str,
+    type=DaskType,
+    default=DaskType.LOCAL,
     help="The type of dask cluster to use. Can be 'local' or 'lilac-cpu'.",
 )
 @click.option(
