@@ -100,8 +100,9 @@ def large_scale_docking(filename=None, frag_dir=None, postera=False, postera_upl
 
     # load fragalysis and ligands
     fragalysis = FragalysisFactory.from_dir(inputs.frag_dir)
+    complexes = fragalysis.load() # TODO: factory pattern for loading complexes
     prepper = ProteinPrepper()
-    prepped_complexes = prepper.prep(fragalysis.complexes, du_cache_dir=inputs.du_cache, use_dask=True, dask_client=inputs.dask_client)
+    prepped_complexes = prepper.prep(complexes, du_cache_dir=inputs.du_cache, use_dask=True, dask_client=inputs.dask_client) #TODO: fix + caching
 
 
     # define selector and select pairs
