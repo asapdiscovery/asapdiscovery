@@ -3,6 +3,9 @@ from typing import Optional
 from pathlib import Path
 
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
 
 
@@ -10,7 +13,7 @@ class LargeScaleDockingInputs(BaseModel):
     filename: Optional[str] = Field(
         None, description="Path to a molecule file containing query ligands."
     )
-    frag_dir: Optional[str] = Field(
+    fragalysis_dir: Optional[str] = Field(
         None, description="Path to a directory containing a Fragalysis dump."
     )
     structure_dir: Optional[str] = Field(
@@ -49,7 +52,7 @@ class LargeScaleDockingInputs(BaseModel):
         Validate inputs
         """
         filename = values.get("filename")
-        frag_dir = values.get("frag_dir")
+        fragalysis_dir = values.get("fragalysis_dir")
         structure_dir = values.get("structure_dir")
         postera = values.get("postera")
         postera_upload = values.get("postera_upload")
@@ -71,11 +74,11 @@ class LargeScaleDockingInputs(BaseModel):
                 "Must specify postera_molset_name if uploading to postera."
             )
 
-        if frag_dir and structure_dir:
-            raise ValueError("Cannot specify both frag_dir and structure_dir.")
+        if fragalysis_dir and structure_dir:
+            raise ValueError("Cannot specify both fragalysis_dir and structure_dir.")
 
-        if not frag_dir and not structure_dir:
-            raise ValueError("Must specify either frag_dir or structure_dir.")
+        if not fragalysis_dir and not structure_dir:
+            raise ValueError("Must specify either fragalysis_dir or structure_dir.")
 
         return values
 
@@ -126,8 +129,10 @@ def large_scale_docking(
         query_ligands = molfile.ligands
 
     # load fragalysis and ligands
-    fragalysis = FragalysisFactory.from_dir(inputs.frag_dir)
-    complexes = fragalysis.load()  # TODO: factory pattern for loading complexes
+    fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
+    complexes = fragalysis.load(
+        use_dask=True, dask_client=dask_client
+    )  # TODO: factory pattern for loading complexes
     prepper = ProteinPrepper()
     prepped_complexes = prepper.prep(
         complexes, du_cache_dir=inputs.du_cache, use_dask=True, dask_client=dask_client
