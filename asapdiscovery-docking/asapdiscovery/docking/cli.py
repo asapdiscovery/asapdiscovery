@@ -1,7 +1,10 @@
 import click
-from pathlib import Path
+
+# from pathlib import Path
 from typing import Optional
 
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
 from asapdiscovery.docking.workflows import large_scale_docking
 
 
@@ -11,6 +14,40 @@ def cli():
 
 
 @cli.command()
+@click.option(
+    "--postera",
+    is_flag=True,
+    default=False,
+    help="Whether to download complexes from Postera.",
+)
+@click.option(
+    "--postera-upload",
+    is_flag=True,
+    default=False,
+    help="Whether to upload the results to Postera.",
+)
+@click.option(
+    "--target",
+    type=str,
+    help="The target to dock against.",
+)
+@click.option(
+    "--n-select",
+    type=int,
+    default=10,
+    help="The number of targets to dock each ligand against, sorted by MCS",
+)
+@click.option(
+    "--write-final-sdf",
+    is_flag=True,
+    default=True,
+    help="Whether to write the final docked poses to an SDF file.",
+)
+@click.option(
+    "--dask-type",
+    type=str,
+    help="The type of dask cluster to use. Can be 'local' or 'lilac-cpu'.",
+)
 @click.option(
     "-l",
     "--ligands",
@@ -28,18 +65,6 @@ def cli():
     help="Path to a directory containing structures to dock instead of a full fragalysis database.",
 )
 @click.option(
-    "--postera",
-    is_flag=True,
-    default=False,
-    help="Whether to download complexes from Postera.",
-)
-@click.option(
-    "--postera-upload",
-    is_flag=True,
-    default=False,
-    help="Whether to upload the results to Postera.",
-)
-@click.option(
     "--postera-molset-name",
     type=str,
     default=None,
@@ -47,30 +72,8 @@ def cli():
 )
 @click.option(
     "--du-cache",
-    click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="Path to a directory where design units are cached",
-)
-@click.option(
-    "--target",
-    type=TargetTags,
-    help="The target to dock against.",
-)
-@click.option(
-    "--n-select",
-    type=int,
-    default=10,
-    help="The number of targets to dock each ligand against, sorted by MCS",
-)
-@click.option(
-    "--write-final-sdf",
-    is_flag=True,
-    default=True,
-    help="Whether to write the final docked poses to an SDF file.",
-)
-@click.option(
-    "--dask-type",
-    type=DaskType,
-    help="The type of dask cluster to use. Can be 'local' or 'slurm'.",
 )
 def large_scale(
     postera: bool,
@@ -79,11 +82,11 @@ def large_scale(
     n_select: int,
     write_final_sdf: bool,
     dask_type: str,
-    filename: Optional[str | Path] = None,
-    fragalysis_dir: Optional[str | Path] = None,
-    structure_dir: Optional[str | Path] = None,
+    ligands: Optional[str] = None,
+    fragalysis_dir: Optional[str] = None,
+    structure_dir: Optional[str] = None,
     postera_molset_name: Optional[str] = None,
-    du_cache: Optional[str | Path] = None,
+    du_cache: Optional[str] = None,
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -96,7 +99,7 @@ def large_scale(
         n_select=n_select,
         write_final_sdf=write_final_sdf,
         dask_type=dask_type,
-        filename=filename,
+        filename=ligands,
         fragalysis_dir=fragalysis_dir,
         structure_dir=structure_dir,
         postera_molset_name=postera_molset_name,

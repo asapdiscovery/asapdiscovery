@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Optional
 
 from dask import config as cfg
+import distributed
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
 from pydantic import BaseModel, Field
@@ -10,6 +11,50 @@ from .execution_utils import guess_network_interface
 
 cfg.set({"distributed.scheduler.worker-ttl": None})
 cfg.set({"distributed.admin.tick.limit": "2h"})
+
+
+class DaskType(Enum):
+    """
+    Enum for Dask types
+    """
+
+    LOCAL = "local"
+    LILAC_GPU = "lilac-gpu"
+    LILAC_CPU = "lilac-cpu"
+
+
+def dask_client_from_type(dask_type: DaskType):
+    """
+    Get a dask client from a DaskType
+
+    Parameters
+    ----------
+    dask_type : DaskType
+        The type of dask client to get
+
+    Returns
+    -------
+    dask.distributed.Client
+        A dask client
+    """
+    if dask_type == DaskType.LOCAL:
+        from distributed import Client
+
+        client = Client()
+    elif dask_type == DaskType.LILAC_GPU:
+        from distributed import Client
+
+        client = Client(
+            LilacGPUDaskCluster.from_gpu().to_cluster(exclude_interface="lo")
+        )
+    elif dask_type == DaskType.LILAC_CPU:
+        from distributed import Client
+
+        client = Client(LilacDaskCluster().to_cluster(exclude_interface="lo"))
+    else:
+        raise ValueError(f"Unknown dask type {dask_type}")
+
+    return client
 
 
 class GPU(str, Enum):

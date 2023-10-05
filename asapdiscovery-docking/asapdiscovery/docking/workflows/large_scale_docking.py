@@ -1,6 +1,9 @@
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, validator
 from typing import Optional
+from pathlib import Path
+
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
 
 
 class LargeScaleDockingInputs(BaseModel):
@@ -32,9 +35,7 @@ class LargeScaleDockingInputs(BaseModel):
         description="Whether to write the final docked poses to an SDF file.",
     )
 
-    dask_client: Optional[distributed.Client] = Field(
-        description="Dask client to use for parallelism."
-    )
+    dask_type: DaskType = Field(description="Dask client to use for parallelism.")
 
     class Config:
         arbitrary_types_allowed = True
@@ -75,14 +76,6 @@ class LargeScaleDockingInputs(BaseModel):
             raise ValueError("Must specify either frag_dir or structure_dir.")
 
         return values
-
-    @validator("dask_client")
-    @classmethod
-    def spawn_dask_client(cls, v):
-        if v is None:
-            return distributed.Client()
-        else:
-            return v
 
 
 def large_scale_docking(
