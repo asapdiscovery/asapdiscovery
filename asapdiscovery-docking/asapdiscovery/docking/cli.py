@@ -10,31 +10,97 @@ def cli():
     pass
 
 
+@cli.command()
+@click.option(
+    "-l",
+    "--ligands",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="Path to a file containing a list of complexes to dock.",
+)
+@click.option(
+    "--fragalysis-dir",
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
+    help="Path to a directory containing fragments to dock.",
+)
+@click.option(
+    "--structure-dir",
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
+    help="Path to a directory containing structures to dock instead of a full fragalysis database.",
+)
+@click.option(
+    "--postera",
+    is_flag=True,
+    default=False,
+    help="Whether to download complexes from Postera.",
+)
+@click.option(
+    "--postera-upload",
+    is_flag=True,
+    default=False,
+    help="Whether to upload the results to Postera.",
+)
+@click.option(
+    "--postera-molset-name",
+    type=str,
+    default=None,
+    help="The name of the molecule set to pull from and upload to.",
+)
+@click.option(
+    "--du-cache",
+    click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="Path to a directory where design units are cached",
+)
+@click.option(
+    "--target",
+    type=TargetTags,
+    help="The target to dock against.",
+)
+@click.option(
+    "--n-select",
+    type=int,
+    default=10,
+    help="The number of targets to dock each ligand against, sorted by MCS",
+)
+@click.option(
+    "--write-final-sdf",
+    is_flag=True,
+    default=True,
+    help="Whether to write the final docked poses to an SDF file.",
+)
+@click.option(
+    "--dask-type",
+    type=DaskType,
+    help="The type of dask cluster to use. Can be 'local' or 'slurm'.",
+)
 def large_scale(
-    filename: Optional[str | Path],
-    frag_dir: Optional[str | Path],
     postera: bool,
     postera_upload: bool,
-    postera_molset_name: Optional[str],
-    du_cache: Optional[str | Path],
     target: TargetTags,
+    n_select: int,
     write_final_sdf: bool,
-    dask_client: Optional[str],
+    dask_type: str,
+    filename: Optional[str | Path] = None,
+    fragalysis_dir: Optional[str | Path] = None,
+    structure_dir: Optional[str | Path] = None,
+    postera_molset_name: Optional[str] = None,
+    du_cache: Optional[str | Path] = None,
 ):
     """
-    Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
-    in a folder named after the dataset.
+    Run large scale docking on a set of ligands, against a set of targets.
     """
+
     large_scale_docking(
-        filename=None,
-        frag_dir=None,
-        postera=False,
-        postera_upload=False,
-        postera_molset_name=None,
-        du_cache=None,
-        target=None,
-        write_final_sdf=False,
-        dask_client=None,
+        postera=postera,
+        postera_upload=postera_upload,
+        target=target,
+        n_select=n_select,
+        write_final_sdf=write_final_sdf,
+        dask_type=dask_type,
+        filename=filename,
+        fragalysis_dir=fragalysis_dir,
+        structure_dir=structure_dir,
+        postera_molset_name=postera_molset_name,
+        du_cache=du_cache,
     )
 
 
