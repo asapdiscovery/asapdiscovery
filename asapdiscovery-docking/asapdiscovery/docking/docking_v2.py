@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal, Union, Optional
 
 import dask
 from asapdiscovery.data.openeye import (
@@ -12,10 +12,15 @@ from asapdiscovery.data.openeye import (
     save_openeye_pdb,
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
+
+
+class SCORE_TYPE(Enum):
+    CHEMGAUSS4 = "chemgauss4"
 
 
 class DockingResult(BaseModel):
@@ -27,8 +32,9 @@ class DockingResult(BaseModel):
 
     input_pair: DockingInputPair = Field(description="Input pair")
     posed_ligand: Ligand = Field(description="Posed ligand")
-    probability: PositiveFloat = Field(description="Probability")
-    chemgauss_score: float = Field(description="Chemgauss4 score")
+    probability: Optional[PositiveFloat] = Field(description="Probability")
+    score_type: SCORE_TYPE = Field(description="Docking score type")
+    score: float = Field(description="Docking score")
     provenance: dict[str, str] = Field(description="Provenance")
 
     @root_validator
@@ -62,13 +68,16 @@ class DockingBase(BaseModel):
         ...
 
     def dock(
-        self, inputs: list[DockingInputPair], use_dask: bool = False
+        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
     ) -> Union[list[dask.delayed], list[DockingResult]]:
         if use_dask:
-            outputs = []
+            delayed_outputs = []
             for inp in inputs:
                 out = dask.delayed(self._dock)(inputs=[inp])
-                outputs.append(out[0])  # flatten
+                delayed_outputs.append(out[0])  # flatten
+            outputs = actualise_dask_delayed_iterable(
+                delayed_outputs, dask_client=dask_client
+            )
         else:
             outputs = self._dock(inputs=inputs)
         return outputs
@@ -102,6 +111,7 @@ class POSITDocker(DockingBase):
     """
 
     type: Literal["POSITDocker"] = "POSITDocker"
+    score_type: Literal[SCORE_TYPE.CHEMGAUSS4] = SCORE_TYPE.CHEMGAUSS4
 
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
@@ -239,7 +249,8 @@ class POSITDocker(DockingBase):
                         input_pair=pair,
                         posed_ligand=posed_ligand,
                         probability=prob,
-                        chemgauss_score=chemgauss_score,
+                        score=chemgauss_score,
+                        score_type=self.score_type,
                         provenance=self.provenance(),
                     )
                     docking_results.append(docking_result)

@@ -57,7 +57,7 @@ def test_docking_dask(docking_input_pair):
     docker = POSITDocker()
     results = docker.dock([docking_input_pair], use_dask=True)
     assert len(results) == 1
-    assert dask.is_dask_collection(results[0])
+    assert results[0].probability > 0.0
 
 
 @pytest.mark.skipif(

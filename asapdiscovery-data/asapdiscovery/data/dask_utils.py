@@ -1,6 +1,8 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Iterable
 
+import dask
+from distributed import Client
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
@@ -8,8 +10,36 @@ from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
 
+# some reasonable defaults for distributed timeouts, warning overrides on import
+# TODO: probably should be wrapped in a function to avoid global state
 cfg.set({"distributed.scheduler.worker-ttl": None})
 cfg.set({"distributed.admin.tick.limit": "2h"})
+
+
+def actualise_dask_delayed_iterable(
+    delayed_iterable: Iterable, dask_client: Optional[Client] = None
+):
+    """
+    Run a list of dask delayed functions or collections, and return the results
+    If a dask client is provided is run as a future, otherwise as a compute
+
+    Parameters
+    ----------
+    delayed_iterable : Iterable
+        List of dask delayed functions
+    dask_client Client, optional
+        Dask client to use, by default None
+
+    Returns
+    -------
+    iterable: Iterable
+        Iterable of computed results from the dask delayed functions
+    """
+    if dask_client is None:
+        return dask.compute(*delayed_iterable)
+    else:
+        futures = dask_client.submit(delayed_iterable)
+    return dask_client.gather(futures)
 
 
 class GPU(str, Enum):
