@@ -285,7 +285,7 @@ def build_model(
     """
     import mtenn.conversion_utils
     import mtenn.model
-    from mtenn.combination import MeanCombination, MaxCombination, BoltzmannCombination
+    from mtenn.combination import BoltzmannCombination, MaxCombination, MeanCombination
     from mtenn.readout import PIC50Readout
 
     # Correct model name if needed
