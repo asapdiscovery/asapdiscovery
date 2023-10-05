@@ -76,6 +76,7 @@ dependencies:
   - perses >=0.10.2
   - kartograf
   - rich
+  - alchemiscale-client
 
   # Pip-only installs
   - pip:
@@ -92,5 +93,4 @@ dependencies:
     - pygifsicle
     - sigfig
     - airium
-    - alchemiscale
     - git+https://github.com/OpenFreeEnergy/cinnabar.git@8ce28bb107b96f48b542ae2bd3dc4fabccc614c3
