@@ -51,7 +51,7 @@ from asapdiscovery.modeling.schema import (
     PreppedTarget,
     PreppedTargets,
 )
-from asapdiscovery.simulation.simulate import VanillaMDSimulator
+from asapdiscovery.simulation.simulate import VanillaMDSimulator, OpenMMPlatform
 from asapdiscovery.simulation.szybki import (
     SzybkiFreeformConformerAnalyzer,
     SzybkiResultCols,
@@ -332,6 +332,14 @@ parser.add_argument(
     type=int,
     default=2500000,
     help="Number of MD steps to run.",
+)
+
+parser.add_argument(
+    "--openmm-platform",
+    type=str,
+    default="Fastest",
+    choices=OpenMMPlatform,
+    help="OpenMM platform to use for MD.",
 )
 
 
@@ -983,6 +991,7 @@ def main():
                     output_paths=[output_path],
                     num_steps=args.md_steps,
                     reporting_interval=reporting_interval,
+                    openmm_platform=args.openmm_platform,
                 )
                 retcode = simulator.run_all_simulations()
                 if len(retcode) != 1:
@@ -1015,6 +1024,7 @@ def main():
                 output_paths=no_clash["_outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
+                openmm_platform=args.openmm_platform,
             )
             simulator.run_all_simulations()
 
