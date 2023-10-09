@@ -1,16 +1,21 @@
+from collections.abc import Iterable
 from enum import Enum
 from typing import Optional, Iterable
 
+import dask
 from dask import config as cfg
 import distributed
 import dask
 from distributed import Client
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
+from distributed import Client
 from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
 
+# some reasonable defaults for distributed timeouts, warning overrides on import
+# TODO: probably should be wrapped in a function to avoid global state
 cfg.set({"distributed.scheduler.worker-ttl": None})
 cfg.set({"distributed.admin.tick.limit": "2h"})
 

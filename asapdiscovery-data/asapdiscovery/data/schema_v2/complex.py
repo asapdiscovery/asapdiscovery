@@ -3,7 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from asapdiscovery.data.openeye import combine_protein_ligand, load_openeye_pdb
+from asapdiscovery.data.openeye import (
+    combine_protein_ligand,
+    load_openeye_design_unit,
+    load_openeye_pdb,
+    oechem,
+)
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target
@@ -90,6 +95,23 @@ class PreppedComplex(ComplexBase):
         return self.target.data_equal(other.target) and self.ligand.data_equal(
             other.ligand
         )
+
+    @classmethod
+    def from_oedu(
+        cls, oedu: oechem.OEDesignUnit, target_kwargs={}, ligand_kwargs={}
+    ) -> PreppedComplex:
+        prepped_target = PreppedTarget.from_oedu(oedu, **target_kwargs)
+        lig_oemol = oechem.OEMol()
+        oedu.GetLigand(lig_oemol)
+        return cls(
+            target=prepped_target,
+            ligand=Ligand.from_oemol(lig_oemol, **ligand_kwargs),
+        )
+
+    @classmethod
+    def from_oedu_file(cls, oedu_file: str | Path, **kwargs) -> PreppedComplex:
+        oedu = load_openeye_design_unit(oedu_file)
+        return cls.from_oedu(oedu=oedu, **kwargs)
 
     @classmethod
     def from_complex(cls, complex: Complex, prep_kwargs={}) -> PreppedComplex:
