@@ -42,7 +42,7 @@ class ProteinPrepperBase(BaseModel):
             delayed_outputs = []
             for inp in inputs:
                 out = dask.delayed(self._prep)(inputs=[inp])
-                delayed_outputs.append(out)  # flatten
+                delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client, errors="skip"
             )  # skip here as some complexes may fail for various reasons

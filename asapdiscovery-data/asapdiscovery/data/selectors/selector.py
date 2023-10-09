@@ -1,8 +1,11 @@
 import abc
+import dask
 from typing import Literal, Union
 
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from pydantic import BaseModel, Field
 
 
@@ -17,15 +20,31 @@ class SelectorBase(abc.ABC, BaseModel):
     )
 
     @abc.abstractmethod
-    def _select(
-        self, *args, **kwargs
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    def _select(self) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         ...
 
     def select(
-        self, *args, **kwargs
+        self,
+        ligands: list[Ligand],
+        complexes: list[Union[Complex, PreppedComplex]],
+        use_dask: bool = False,
+        dask_client=None,
+        **kwargs,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
-        return self._select(*args, **kwargs)
+        if use_dask:
+            delayed_outputs = []
+            for lig in ligands:
+                out = dask.delayed(self._select)(
+                    ligands=[lig], complexes=complexes, **kwargs
+                )  # be careful here, need ALL complexes to perform a full search, ie no parallelism over complexes is possible.
+                delayed_outputs.append(out)
+            outputs = actualise_dask_delayed_iterable(
+                delayed_outputs, dask_client, errors="error"
+            )
+        else:
+            outputs = self._select(ligands=ligands, complexes=complexes, **kwargs)
+
+        return outputs
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:

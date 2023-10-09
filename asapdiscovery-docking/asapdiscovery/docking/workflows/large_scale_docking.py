@@ -4,9 +4,14 @@ from pathlib import Path
 
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+from asapdiscovery.data.postera.postera_factory import PosteraFactory
+from asapdiscovery.data.postera.postera_uploader import PosteraUploader
+from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 
 
 class LargeScaleDockingInputs(BaseModel):
@@ -33,8 +38,9 @@ class LargeScaleDockingInputs(BaseModel):
         None, description="Path to a directory where design units are cached"
     )
 
-    gen_cache: Optional[str] = Field(
-        None, description="Path to a directory where generated files are cached"
+    gen_du_cache: Optional[str] = Field(
+        None,
+        description="Path to a directory where generated design units should be cached",
     )
 
     target: TargetTags = Field(None, description="The target to dock against.")
@@ -86,7 +92,7 @@ class LargeScaleDockingInputs(BaseModel):
             raise ValueError("Must specify either fragalysis_dir or structure_dir.")
 
         if du_cache and gen_du_cache:
-            raise ValueError("Cannot specify both du_cache and gen_cache.")
+            raise ValueError("Cannot specify both du_cache and gen_du_cache.")
 
         return values
 
@@ -102,42 +108,13 @@ class LargeScaleDockingInputs(BaseModel):
         return v
 
 
-def large_scale_docking(
-    postera: bool,
-    postera_upload: bool,
-    target: TargetTags,
-    n_select: int,
-    write_final_sdf: bool,
-    dask_type: DaskType = DaskType.LOCAL,
-    filename: Optional[str | Path] = None,
-    fragalysis_dir: Optional[str | Path] = None,
-    structure_dir: Optional[str | Path] = None,
-    postera_molset_name: Optional[str] = None,
-    du_cache: Optional[str | Path] = None,
-    gen_du_cache: Optional[str | Path] = None,
-):
+def large_scale_docking(inputs: LargeScaleDockingInputs):
     """
     Run large scale docking on a set of ligands, against a single target.
     """
-
-    # Code for large scale docking
-    inputs = LargeScaleDockingInputs(
-        filename=filename,
-        fragalysis_dir=fragalysis_dir,
-        structure_dir=structure_dir,
-        postera=postera,
-        postera_upload=postera_upload,
-        postera_molset_name=postera_molset_name,
-        du_cache=du_cache,
-        target=target,
-        write_final_sdf=write_final_sdf,
-        dask_type=dask_type,
-        gen_du_cache=gen_du_cache,
-    )
-
     dask_client = dask_client_from_type(inputs.dask_type)
 
-    if postera:
+    if inputs.postera:
         # load postera
         postera_settings = PosteraSettings()
         postera = PosteraFactory(
@@ -149,14 +126,19 @@ def large_scale_docking(
         molfile = MolFileFactory.from_file(inputs.filename)
         query_ligands = molfile.ligands
 
-    # load fragalysis and ligands
-    fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-    complexes = fragalysis.load(use_dask=True, dask_client=None)
+    # load complexes from a directory or from fragalysis
+    if inputs.structure_dir:
+        structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
+        complexes = structure_factory.load(use_dask=True, dask_client=dask_client)
+    else:
+        fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
+        complexes = fragalysis.load(use_dask=True, dask_client=dask_client)
+
     prepper = ProteinPrepper(du_cache=inputs.du_cache)
     prepped_complexes = prepper.prep(complexes, use_dask=True, dask_client=dask_client)
 
     if inputs.gen_du_cache and not inputs.du_cache:
-        prepped_complexes = prepper.cache(prepped_complexes, inputs.gen_du_cache)
+        prepper.cache(prepped_complexes, inputs.gen_du_cache)
 
     # define selector and select pairs
     selector = MCSSelector()
@@ -166,7 +148,7 @@ def large_scale_docking(
         n_select=10,
         use_dask=True,
         dask_client=dask_client,
-    )  # TODO: add dask parallelism to selector
+    )
 
     # dock pairs
     docker = POSITDocker()
@@ -182,16 +164,16 @@ def large_scale_docking(
     result_df = make_df_from_docking_results(results)
     result_df = rename_output_columns_for_manifold(
         result_df,
-        target,
+        inputs.target,
         [DockingResultCols],
         manifold_validate=True,
         drop_non_output=True,
     )  # TODO:  we can make this nicer for sure, this function is ugly AF
     result_df.to_csv("docking_results.csv", index=False)
 
-    if postera_upload:
+    if inputs.postera_upload:
         postera_uploader = PosteraUploader(
-            settings=settings, molecule_set_name=inputs.postera_molset_name
+            settings=inputs.settings, molecule_set_name=inputs.postera_molset_name
         )  # TODO: make this more compact wrapper for postera uploader
         postera_uploader.upload(df)
 

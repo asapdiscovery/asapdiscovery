@@ -5,7 +5,10 @@ from typing import Optional
 
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
-from asapdiscovery.docking.workflows.large_scale_docking import large_scale_docking
+from asapdiscovery.docking.workflows.large_scale_docking import (
+    large_scale_docking,
+    LargeScaleDockingInputs,
+)
 
 
 @click.group()
@@ -78,7 +81,7 @@ def cli():
 )
 @click.option(
     "--gen-du-cache",
-    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    type=click.Path(resolve_path=True, exists=False, file_okay=False, dir_okay=True),
     help="Path to a directory where a design unit cache should be generated",
 )
 def large_scale(
@@ -99,7 +102,7 @@ def large_scale(
     Run large scale docking on a set of ligands, against a set of targets.
     """
 
-    large_scale_docking(
+    inputs = LargeScaleDockingInputs(
         postera=postera,
         postera_upload=postera_upload,
         target=target,
@@ -113,6 +116,8 @@ def large_scale(
         du_cache=du_cache,
         gen_du_cache=gen_du_cache,
     )
+
+    large_scale_docking(inputs)
 
 
 if __name__ == "__main__":
