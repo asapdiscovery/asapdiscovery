@@ -16,7 +16,7 @@ from openmmtools.utils import get_fastest_platform
 from rdkit import Chem
 
 
-class OpenMMPlatform(str, Enum):
+class OpenMMPlatform(Enum):
     """
     Enum for OpenMM platforms.
     """
@@ -35,6 +35,10 @@ class OpenMMPlatform(str, Enum):
             return get_fastest_platform()
         else:
             return Platform.getPlatformByName(self.value)
+
+    @classmethod
+    def get_values(cls):
+        return [platform.value for platform in cls]
 
 
 class VanillaMDSimulator:
@@ -143,7 +147,7 @@ class VanillaMDSimulator:
         # check whether we have a GPU platform and if so set the precision to mixed
         self.logger.info("Setting platform for MD run")
 
-        self.platform = self.openmm_platform.get_platform()
+        self.platform = OpenMMPlatform(self.openmm_platform).get_platform()
 
         if self.platform.getName() == "CUDA" or self.platform.getName() == "OpenCL":
             self.platform.setPropertyDefaultValue("Precision", "mixed")

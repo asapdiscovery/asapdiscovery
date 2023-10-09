@@ -336,9 +336,8 @@ parser.add_argument(
 
 parser.add_argument(
     "--openmm-platform",
-    type=str,
-    default="Fastest",
-    choices=OpenMMPlatform,
+    default=OpenMMPlatform.Fastest,
+    choices=OpenMMPlatform.get_values(),
     help="OpenMM platform to use for MD.",
 )
 
