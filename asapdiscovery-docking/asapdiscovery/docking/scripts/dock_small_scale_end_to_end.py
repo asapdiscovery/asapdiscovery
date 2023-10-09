@@ -51,7 +51,7 @@ from asapdiscovery.modeling.schema import (
     PreppedTarget,
     PreppedTargets,
 )
-from asapdiscovery.simulation.simulate import VanillaMDSimulator, OpenMMPlatform
+from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.simulation.szybki import (
     SzybkiFreeformConformerAnalyzer,
     SzybkiResultCols,

@@ -1,8 +1,8 @@
 # Configure logging
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import List  # noqa: F401
-from enum import Enum
 
 import mdtraj
 import openmm
