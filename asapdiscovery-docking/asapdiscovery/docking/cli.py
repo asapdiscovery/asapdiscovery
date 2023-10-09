@@ -73,8 +73,13 @@ def cli():
 )
 @click.option(
     "--du-cache",
-    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
     help="Path to a directory where design units are cached",
+)
+@click.option(
+    "--gen-du-cache",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="Path to a directory where a design unit cache should be generated",
 )
 def large_scale(
     postera: bool,
@@ -88,6 +93,7 @@ def large_scale(
     structure_dir: Optional[str] = None,
     postera_molset_name: Optional[str] = None,
     du_cache: Optional[str] = None,
+    gen_du_cache: Optional[str] = None,
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -105,6 +111,7 @@ def large_scale(
         structure_dir=structure_dir,
         postera_molset_name=postera_molset_name,
         du_cache=du_cache,
+        gen_du_cache=gen_du_cache,
     )
 
 

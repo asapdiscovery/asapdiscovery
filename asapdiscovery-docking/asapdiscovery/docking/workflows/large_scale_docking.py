@@ -6,7 +6,6 @@ from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
-
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 
 
@@ -33,6 +32,11 @@ class LargeScaleDockingInputs(BaseModel):
     du_cache: Optional[str] = Field(
         None, description="Path to a directory where design units are cached"
     )
+
+    gen_cache: Optional[str] = Field(
+        None, description="Path to a directory where generated files are cached"
+    )
+
     target: TargetTags = Field(None, description="The target to dock against.")
     write_final_sdf: bool = Field(
         default=False,
@@ -59,7 +63,7 @@ class LargeScaleDockingInputs(BaseModel):
         postera_upload = values.get("postera_upload")
         postera_molset_name = values.get("postera_molset_name")
         du_cache = values.get("du_cache")
-        target = values.get("target")
+        gen_du_cache = values.get("gen_du_cache")
 
         if postera and filename:
             raise ValueError("Cannot specify both filename and postera.")
@@ -80,6 +84,9 @@ class LargeScaleDockingInputs(BaseModel):
 
         if not fragalysis_dir and not structure_dir:
             raise ValueError("Must specify either fragalysis_dir or structure_dir.")
+
+        if du_cache and gen_du_cache:
+            raise ValueError("Cannot specify both du_cache and gen_cache.")
 
         return values
 
@@ -107,6 +114,7 @@ def large_scale_docking(
     structure_dir: Optional[str | Path] = None,
     postera_molset_name: Optional[str] = None,
     du_cache: Optional[str | Path] = None,
+    gen_du_cache: Optional[str | Path] = None,
 ):
     """
     Run large scale docking on a set of ligands, against a single target.
@@ -124,6 +132,7 @@ def large_scale_docking(
         target=target,
         write_final_sdf=write_final_sdf,
         dask_type=dask_type,
+        gen_du_cache=gen_du_cache,
     )
 
     dask_client = dask_client_from_type(inputs.dask_type)
@@ -143,10 +152,11 @@ def large_scale_docking(
     # load fragalysis and ligands
     fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
     complexes = fragalysis.load(use_dask=True, dask_client=None)
-
     prepper = ProteinPrepper(du_cache=inputs.du_cache)
     prepped_complexes = prepper.prep(complexes, use_dask=True, dask_client=dask_client)
-    print(prepped_complexes)
+
+    if inputs.gen_du_cache and not inputs.du_cache:
+        prepped_complexes = prepper.cache(prepped_complexes, inputs.gen_du_cache)
 
     # define selector and select pairs
     selector = MCSSelector()

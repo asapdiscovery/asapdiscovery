@@ -16,7 +16,9 @@ cfg.set({"distributed.admin.tick.limit": "2h"})
 
 
 def actualise_dask_delayed_iterable(
-    delayed_iterable: Iterable, dask_client: Optional[Client] = None
+    delayed_iterable: Iterable,
+    dask_client: Optional[Client] = None,
+    errors: str = "raise",
 ):
     """
     Run a list of dask delayed functions or collections, and return the results
@@ -35,8 +37,8 @@ def actualise_dask_delayed_iterable(
     if dask_client is None:
         return dask.compute(*delayed_iterable)
     else:
-        futures = dask_client.submit(*delayed_iterable)
-    return dask_client.gather(futures)
+        futures = dask_client.compute(delayed_iterable)
+    return dask_client.gather(futures, errors=errors)
 
 
 class DaskType(Enum):

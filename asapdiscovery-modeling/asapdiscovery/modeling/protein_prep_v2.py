@@ -1,6 +1,6 @@
 import abc
 from pathlib import Path
-from typing import Literal, Optional, List
+from typing import Literal, Optional, List, Union
 import dask
 import warnings
 
@@ -42,8 +42,10 @@ class ProteinPrepperBase(BaseModel):
             delayed_outputs = []
             for inp in inputs:
                 out = dask.delayed(self._prep)(inputs=[inp])
-                delayed_outputs.append(out[0])  # flatten
-            outputs = actualise_dask_delayed_iterable(delayed_outputs, dask_client)
+                delayed_outputs.append(out)  # flatten
+            outputs = actualise_dask_delayed_iterable(
+                delayed_outputs, dask_client, errors="skip"
+            )  # skip here as some complexes may fail for various reasons
         else:
             outputs = self._prep(inputs=inputs)
         return outputs
@@ -107,7 +109,7 @@ class ProteinPrepper(ProteinPrepperBase):
         Prepares a series of proteins for docking using OESpruce.
         """
         prepped_complexes = []
-        if self.du_cache():
+        if self.du_cache:
             for complex in inputs:
                 # check matching du exists
                 du_name = complex.target.target_name + ".oedu"
@@ -188,3 +190,17 @@ class ProteinPrepper(ProteinPrepperBase):
             "oechem": oechem.OEChemGetVersion(),
             "oespruce": oechem.OESpruceGetVersion(),
         }
+
+    @staticmethod
+    def cache(prepped_complexes: List[PreppedComplex], dir: Union[str, Path]) -> None:
+        """
+        Cache a set of design units for use later.
+        """
+        dir = Path(dir)
+        if not dir.exists():
+            dir.mkdir(parents=True)
+
+        for pc in prepped_complexes:
+            du_name = pc.target.target_name + ".oedu"
+            du_path = dir / du_name
+            pc.target.to_oedu_file(du_path)
