@@ -1,10 +1,12 @@
 import abc
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, List
+import dask
 
 import yaml
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.utils import seqres_to_res_list
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.modeling.modeling import (
     make_design_unit,
     mutate_residues,
@@ -12,6 +14,8 @@ from asapdiscovery.modeling.modeling import (
     superpose_molecule,
 )
 from pydantic import BaseModel, Field, root_validator
+from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema_v2.target import PreppedTarget
 
 
 class ProteinPrepperBase(BaseModel):
@@ -27,11 +31,21 @@ class ProteinPrepperBase(BaseModel):
         arbitrary_types_allowed = True
 
     @abc.abstractmethod
-    def _prep(self, *args, **kwargs) -> oechem.OEDesignUnit:
+    def _prep(self) -> List[PreppedComplex]:
         ...
 
-    def prep(self, *args, **kwargs) -> oechem.OEDesignUnit:
-        return self._prep(*args, **kwargs)
+    def prep(
+        self, inputs: List[Complex], use_dask: bool = False, dask_client=None
+    ) -> List[PreppedComplex]:
+        if use_dask:
+            delayed_outputs = []
+            for inp in inputs:
+                out = dask.delayed(self._prep)(inputs=[inp])
+                delayed_outputs.append(out[0])  # flatten
+            outputs = actualise_dask_delayed_iterable(delayed_outputs, dask_client)
+        else:
+            outputs = self._prep(inputs=inputs)
+        return outputs
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
@@ -65,6 +79,9 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
+    du_cache: Optional[Path] = Field(
+        None, description="Path to a directory where design units are cached"
+    )
 
     @root_validator
     @classmethod
@@ -81,47 +98,66 @@ class ProteinPrepper(ProteinPrepperBase):
             raise ValueError("Must provide active_site_chain if align is provided")
         return values
 
-    def _prep(self, prot: oechem.OEMol) -> oechem.OEDesignUnit:
+    def _prep(self, inputs: List[Complex]) -> List[PreppedComplex]:
         """
-        Prepares a protein for docking using OESpruce.
+        Prepares a series of proteins for docking using OESpruce.
         """
-        # align
-        if self.align:
-            prot, _ = superpose_molecule(
-                self.align, prot, self.ref_chain, self.active_site_chain
-            )
+        prepped_complexes = []
+        if self.du_cache():
+            ...
 
-        # mutate residues
-        if self.seqres_yaml:
-            with open(self.seqres_yaml) as f:
-                seqres_dict = yaml.safe_load(f)
-            seqres = seqres_dict["SEQRES"]
-            res_list = seqres_to_res_list(seqres)
-            prot = mutate_residues(prot, res_list, place_h=True)
-            protein_sequence = " ".join(res_list)
         else:
-            seqres = None
-            protein_sequence = None
+            for complex in inputs:
+                # load protein
+                prot = complex.to_combined_oemol()
 
-        # spruce protein
-        success, spruce_error_message, spruced = spruce_protein(
-            initial_prot=prot,
-            protein_sequence=protein_sequence,
-            loop_db=str(self.loop_db),
-        )
+                if self.align:
+                    prot, _ = superpose_molecule(
+                        self.align, prot, self.ref_chain, self.active_site_chain
+                    )
 
-        if not success:
-            raise ValueError(f"Prep failed, with error message: {spruce_error_message}")
+                # mutate residues
+                if self.seqres_yaml:
+                    with open(self.seqres_yaml) as f:
+                        seqres_dict = yaml.safe_load(f)
+                    seqres = seqres_dict["SEQRES"]
+                    res_list = seqres_to_res_list(seqres)
+                    prot = mutate_residues(prot, res_list, place_h=True)
+                    protein_sequence = " ".join(res_list)
+                else:
+                    seqres = None
+                    protein_sequence = None
 
-        success, du = make_design_unit(
-            spruced,
-            site_residue=self.oe_active_site_residue,
-            protein_sequence=protein_sequence,
-        )
-        if not success:
-            raise ValueError("Failed to make design unit.")
+                # spruce protein
+                success, spruce_error_message, spruced = spruce_protein(
+                    initial_prot=prot,
+                    protein_sequence=protein_sequence,
+                    loop_db=str(self.loop_db),
+                )
 
-        return du
+                if not success:
+                    raise ValueError(
+                        f"Prep failed, with error message: {spruce_error_message}"
+                    )
+
+                success, du = make_design_unit(
+                    spruced,
+                    site_residue=self.oe_active_site_residue,
+                    protein_sequence=protein_sequence,
+                )
+                if not success:
+                    raise ValueError("Failed to make design unit.")
+
+                prepped_target = PreppedTarget.from_oedu(
+                    du,
+                    ids=complex.target.ids,
+                    target_name=complex.target.target_name,
+                    ligand_chain=complex.ligand_chain,
+                )
+                pc = PreppedComplex(target=prepped_target, ligand=complex.ligand)
+                prepped_complexes.append(pc)
+
+        return prepped_complexes
 
     def provenance(self) -> dict[str, str]:
         return {

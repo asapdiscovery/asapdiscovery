@@ -8,7 +8,6 @@ from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target
 from asapdiscovery.modeling.modeling import split_openeye_mol
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field
 
@@ -110,15 +109,11 @@ class PreppedComplex(ComplexBase):
         PreppedComplex
             PreppedComplex object
         """
+        # use local import here to avoid circular imports
+        from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+
         # overwrite ligand_chain with ligand_chain from complex if it exists
         prep_kwargs.pop("ligand_chain", None)
         prep_kwargs["ligand_chain"] = complex.ligand_chain
-        oedu = ProteinPrepper(**prep_kwargs).prep(complex.to_combined_oemol())
+        oedu = ProteinPrepper(**prep_kwargs).prep(inputs=[complex])
         # copy over ids from complex
-        prepped_target = PreppedTarget.from_oedu(
-            oedu,
-            ids=complex.target.ids,
-            target_name=complex.target.target_name,
-            ligand_chain=complex.ligand_chain,
-        )
-        return cls(target=prepped_target, ligand=complex.ligand)

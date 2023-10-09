@@ -35,7 +35,7 @@ def actualise_dask_delayed_iterable(
     if dask_client is None:
         return dask.compute(*delayed_iterable)
     else:
-        futures = dask_client.submit(delayed_iterable)
+        futures = dask_client.submit(*delayed_iterable)
     return dask_client.gather(futures)
 
 

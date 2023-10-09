@@ -5,8 +5,9 @@ from pathlib import Path
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
+
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 
 
 class LargeScaleDockingInputs(BaseModel):
@@ -82,6 +83,17 @@ class LargeScaleDockingInputs(BaseModel):
 
         return values
 
+    @validator("du_cache")
+    @classmethod
+    def du_cache_must_be_directory(cls, v):
+        """
+        Validate that the DU cache is a directory
+        """
+        if v is not None:
+            if not Path(v).is_dir():
+                raise ValueError("Du cache must be a directory.")
+        return v
+
 
 def large_scale_docking(
     postera: bool,
@@ -130,12 +142,13 @@ def large_scale_docking(
 
     # load fragalysis and ligands
     fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-    complexes = fragalysis.load(
-        use_dask=True, dask_client=dask_client
-    )  # TODO: factory pattern for loading complexes
-    prepper = ProteinPrepper()
+    complexes = fragalysis.load(use_dask=True, dask_client=None)
+    print([complex.target.target_name for complex in complexes])
+    print([complex.ligand.compound_name for complex in complexes])
+
+    prepper = ProteinPrepper(du_cache=inputs.du_cache)
     prepped_complexes = prepper.prep(
-        complexes, du_cache_dir=inputs.du_cache, use_dask=True, dask_client=dask_client
+        complexes, use_dask=True, dask_client=dask_client
     )  # TODO: fix + caching
 
     # define selector and select pairs
