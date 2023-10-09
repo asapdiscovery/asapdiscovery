@@ -70,10 +70,13 @@ class DockingResult(BaseModel):
             docking_dict = {}
             docking_dict["compound_name"] = result.input_pair.ligand.compound_name
             docking_dict["target_name"] = result.input_pair.complex.target.target_name
+            docking_dict[
+                "target_compound_smiles"
+            ] = result.input_pair.complex.ligand.smiles
+            docking_dict["query_ligand_smiles"] = result.input_pair.ligand.smiles
             docking_dict["probability"] = result.probability
             docking_dict["score"] = result.score
             docking_dict["score_type"] = result.score_type.value
-            docking_dict["smiles"] = result.input_pair.ligand.smiles
             df_prep.append(docking_dict)
 
         df = pd.DataFrame(df_prep)
