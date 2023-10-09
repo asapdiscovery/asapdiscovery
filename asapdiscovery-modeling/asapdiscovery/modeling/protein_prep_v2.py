@@ -2,6 +2,7 @@ import abc
 from pathlib import Path
 from typing import Literal, Optional, List
 import dask
+import warnings
 
 import yaml
 from asapdiscovery.data.openeye import oechem
@@ -82,6 +83,9 @@ class ProteinPrepper(ProteinPrepperBase):
     du_cache: Optional[Path] = Field(
         None, description="Path to a directory where design units are cached"
     )
+    fail_missing_cache: bool = Field(
+        False, description="Whether to fail on missing files when loading from cache"
+    )
 
     @root_validator
     @classmethod
@@ -104,7 +108,26 @@ class ProteinPrepper(ProteinPrepperBase):
         """
         prepped_complexes = []
         if self.du_cache():
-            ...
+            for complex in inputs:
+                # check matching du exists
+                du_name = complex.target.target_name + ".oedu"
+                du_path = self.du_cache / du_name
+                if du_path.exists():
+                    prepped_target = PreppedTarget.from_oedu_file(
+                        du_path,
+                        ids=complex.target.ids,
+                        target_name=complex.target.target_name,
+                        ligand_chain=complex.ligand_chain,
+                    )
+                    pc = PreppedComplex(target=prepped_target, ligand=complex.ligand)
+                    prepped_complexes.append(pc)
+                else:
+                    if self.fail_missing_cache:
+                        raise FileNotFoundError(
+                            f"Missing cached design unit: {du_path}"
+                        )
+                    else:
+                        warnings.warn(f"Missing cached design unit: {du_path}")
 
         else:
             for complex in inputs:

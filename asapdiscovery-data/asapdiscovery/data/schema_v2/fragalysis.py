@@ -4,7 +4,7 @@ import dask
 import os
 from pathlib import Path
 from typing import List  # noqa: F401
-
+import warnings
 import pandas
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
@@ -115,7 +115,7 @@ class FragalysisFactory(DataModelAbstractBase):
             if fail_missing:
                 raise FileNotFoundError(f"No PDB file found for {xtal_name}.")
             else:
-                print(f"No PDB file found for {xtal_name}.", flush=True)
+                warnings.warn(f"No PDB file found for {xtal_name}.")
                 return None
 
         try:

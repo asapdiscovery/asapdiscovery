@@ -143,13 +143,10 @@ def large_scale_docking(
     # load fragalysis and ligands
     fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
     complexes = fragalysis.load(use_dask=True, dask_client=None)
-    print([complex.target.target_name for complex in complexes])
-    print([complex.ligand.compound_name for complex in complexes])
 
     prepper = ProteinPrepper(du_cache=inputs.du_cache)
-    prepped_complexes = prepper.prep(
-        complexes, use_dask=True, dask_client=dask_client
-    )  # TODO: fix + caching
+    prepped_complexes = prepper.prep(complexes, use_dask=True, dask_client=dask_client)
+    print(prepped_complexes)
 
     # define selector and select pairs
     selector = MCSSelector()
