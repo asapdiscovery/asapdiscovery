@@ -146,8 +146,8 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         query_ligands,
         prepped_complexes,
         n_select=10,
-        use_dask=True,
-        dask_client=dask_client,
+        use_dask=False, #TODO fix dask here
+        dask_client=None,
     )
 
     # dock pairs
