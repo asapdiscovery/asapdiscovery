@@ -39,7 +39,7 @@ class SelectorBase(abc.ABC, BaseModel):
                 )  # be careful here, need ALL complexes to perform a full search, ie no parallelism over complexes is possible.
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="error"
+                delayed_outputs, dask_client, errors="raise"
             )
         else:
             outputs = self._select(ligands=ligands, complexes=complexes, **kwargs)

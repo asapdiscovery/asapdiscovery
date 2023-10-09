@@ -48,6 +48,8 @@ class ProteinPrepperBase(BaseModel):
             )  # skip here as some complexes may fail for various reasons
         else:
             outputs = self._prep(inputs=inputs)
+
+        outputs = [o for o in outputs if o is not None]
         return outputs
 
     @abc.abstractmethod
@@ -130,6 +132,7 @@ class ProteinPrepper(ProteinPrepperBase):
                         )
                     else:
                         warnings.warn(f"Missing cached design unit: {du_path}")
+                        prepped_complexes.append(None)
 
         else:
             for complex in inputs:
