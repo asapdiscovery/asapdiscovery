@@ -889,3 +889,19 @@ def bytes64_to_oedu(bytes: bytes) -> oechem.OEDesignUnit:
     if not retcode:
         oechem.OEThrow.Fatal("Cannot read DesignUnit from bytes")
     return du
+
+
+def oe_smiles_roundtrip(smiles: str) -> str:
+    """
+    Canonical SMILES string of an OpenEye OEMol
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+    Returns
+    -------
+    str
+       SMILES string of molecule
+    """
+    mol = smiles_to_oemol(smiles)
+    return oemol_to_smiles(mol)

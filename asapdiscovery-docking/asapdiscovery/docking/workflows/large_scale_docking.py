@@ -12,6 +12,7 @@ from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
+from asapdiscovery.docking.docking_v2 import POSITDocker, DockingResult
 
 
 class LargeScaleDockingInputs(BaseModel):
@@ -146,22 +147,22 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         query_ligands,
         prepped_complexes,
         n_select=10,
-        use_dask=False, #TODO fix dask here
+        use_dask=False,  # TODO fix dask here
         dask_client=None,
     )
 
     # dock pairs
-    docker = POSITDocker()
+    docker = POSITDocker(write_files=True, output_dir="docking_results")
     results = docker.dock(
         pairs,
         use_dask=True,
-        dask_client=inputs.dask_client,
-        write_files=True,
-        output_dir="docking_results",
+        dask_client=dask_client,
     )
 
     # write results to dataframe
-    result_df = make_df_from_docking_results(results)
+    result_df = DockingResult.make_df_from_docking_results(results)
+    result_df.to_csv("docking_results_prep.csv", index=False)
+
     result_df = rename_output_columns_for_manifold(
         result_df,
         inputs.target,

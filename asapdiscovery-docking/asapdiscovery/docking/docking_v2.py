@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, List
 
 import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
@@ -14,6 +14,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
+from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
@@ -42,9 +43,11 @@ class DockingResult(BaseModel):
     def smiles_match(cls, values):
         posed_ligand = values.get("posed_ligand")
         input_pair = values.get("input_pair")
-        if posed_ligand.smiles != input_pair.ligand.smiles:
+        if oe_smiles_roundtrip(posed_ligand.smiles) != oe_smiles_roundtrip(
+            input_pair.ligand.smiles
+        ):
             raise ValueError(
-                "SMILES of ligand and ligand in input docking pair not match"
+                f"SMILES of ligand: {posed_ligand.smiles} and ligand in input docking pair: {input_pair.ligand.smiles} do not match "
             )
         return values
 
@@ -54,6 +57,27 @@ class DockingResult(BaseModel):
         """
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
         return combine_protein_ligand(prot, self.posed_ligand.to_oemol())
+
+    @staticmethod
+    def make_df_from_docking_results(results: List["DockingResult"]):
+        """
+        Make a dataframe from a list of DockingResults
+        """
+        import pandas as pd
+
+        df_prep = []
+        for result in results:
+            docking_dict = {}
+            docking_dict["compound_name"] = result.input_pair.ligand.compound_name
+            docking_dict["target_name"] = result.input_pair.complex.target.target_name
+            docking_dict["probability"] = result.probability
+            docking_dict["score"] = result.score
+            docking_dict["score_type"] = result.score_type.value
+            docking_dict["smiles"] = result.input_pair.ligand.smiles
+            df_prep.append(docking_dict)
+
+        df = pd.DataFrame(df_prep)
+        return df
 
 
 class DockingBase(BaseModel):
@@ -76,7 +100,7 @@ class DockingBase(BaseModel):
                 out = dask.delayed(self._dock)(inputs=[inp])
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client
+                delayed_outputs, dask_client=dask_client, errors="skip"
             )
         else:
             outputs = self._dock(inputs=inputs)
