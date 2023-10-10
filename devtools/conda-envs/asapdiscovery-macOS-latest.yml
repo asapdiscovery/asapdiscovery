@@ -1,0 +1,96 @@
+name: asapdiscovery
+channels:
+  - openeye
+  - conda-forge
+  - dglteam
+dependencies:
+  # Base depends
+  - pip
+  # need python > 3.9.2 for dask-distributed issues
+  - python >= 3.9.2
+
+  # Testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - codecov
+
+  # cli
+  - click
+
+  # Others
+  - appdirs
+  - mdanalysis
+  - openff-toolkit
+  - openeye-toolkits<=2022.2.2
+  - pandas
+  - pebble
+  - pydantic >=1.10.8,<2.0.0a0
+  - rdkit
+  - seaborn
+  - pebble
+
+  # data
+  - requests
+  - boto3
+  - moto
+  - flask
+  - flask-cors
+
+  # ml
+  - pytorch
+  - pytorch_geometric
+  - pytorch_cluster
+  - pytorch_scatter
+  - pytorch_sparse
+  - numpy
+  - h5py
+  - e3nn
+  - dgl
+  - dgllife
+  - pooch
+
+
+  # md
+  - openmm
+  - openmmforcefields
+  - mdtraj
+  - openff-toolkit
+
+  # execution
+  - distributed
+  - dask
+  - dask-jobqueue
+  - netifaces
+
+  # viz
+  - imageio
+  - pymol-open-source
+  - gifsicle
+  - plip
+
+  # simulation
+  - openfe =0.11.0
+  - gufe =0.9.1
+  - httpx
+  - perses >=0.10.2
+  - kartograf
+  - rich
+
+  # Pip-only installs
+  - pip:
+    - biopython
+    - ase
+    - validators
+    - pyyaml
+    # ml
+    - git+https://github.com/choderalab/mtenn@0.3.0
+    # testing
+    - pytest-console-scripts
+    - pytest-timeout
+    # viz
+    - pygifsicle
+    - sigfig
+    - airium
+    - alchemiscale
+    - git+https://github.com/OpenFreeEnergy/cinnabar.git@8ce28bb107b96f48b542ae2bd3dc4fabccc614c3

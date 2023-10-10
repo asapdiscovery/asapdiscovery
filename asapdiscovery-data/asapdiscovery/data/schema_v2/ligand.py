@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 from uuid import UUID
 
+from pydantic import UUID4, Field, root_validator, validator
+
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
     _set_SD_data_repr,
@@ -15,7 +17,6 @@ from asapdiscovery.data.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
-from pydantic import UUID4, Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -158,6 +159,16 @@ class Ligand(DataModelAbstractBase):
             if k in reser_attr_names:
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
         return v
+
+    def __eq__(self, other: "Ligand") -> bool:
+        return self.data_equal(other)
+
+    def data_equal(self, other: "Ligand") -> bool:
+        # Take out the header block since those aren't really important in checking
+        # equality
+        return "\n".join(self.data.split("\n")[2:]) == "\n".join(
+            other.data.split("\n")[2:]
+        )
 
     @classmethod
     def from_oemol(cls, mol: oechem.OEMol, **kwargs) -> "Ligand":

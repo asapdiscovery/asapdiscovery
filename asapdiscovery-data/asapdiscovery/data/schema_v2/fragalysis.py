@@ -12,7 +12,7 @@ from pydantic import Field, validator
 
 class FragalysisFactory(DataModelAbstractBase):
     """
-    Schema for a loading a Fragalysis dump. The directoory given by parent_dir should
+    Schema for a loading a Fragalysis dump. The directory given by parent_dir should
     contain (at a minimum):
      * a metadata.csv file with the columns "crystal_name" and "alternate_name"
      * an aligned/ subdirectory, containing a subdirectory for each entry in
