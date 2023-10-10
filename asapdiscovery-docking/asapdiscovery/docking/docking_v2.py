@@ -31,6 +31,7 @@ class DockingResult(BaseModel):
     Also contains the probability and chemgauss4 score of the docked pose.
     """
 
+    type: Literal["DockingResult"] = "DockingResult"
     input_pair: DockingInputPair = Field(description="Input pair")
     posed_ligand: Ligand = Field(description="Posed ligand")
     probability: Optional[PositiveFloat] = Field(description="Probability")
@@ -51,6 +52,16 @@ class DockingResult(BaseModel):
             )
         return values
 
+    def get_output(self) -> dict:
+        """
+        return a dictionary of some of the fields of the DockingResult
+        """
+        dct = self.dict()
+        dct.pop("input_pair")
+        dct.pop("posed_ligand")
+        dct.pop("type")
+        return dct
+
     def to_posed_oemol(self) -> oechem.OEMol:
         """
         Combine the target and ligand into a single oemol
@@ -65,17 +76,36 @@ class DockingResult(BaseModel):
         """
         import pandas as pd
 
+        return pd.DataFrame([r.get_output() for r in results])
+
+
+class POSITDockingResults(DockingResult):
+    type: Literal["POSITDockingResults"] = "POSITDockingResults"
+
+    @staticmethod
+    def make_df_from_docking_results(results: List["DockingResult"]):
+        """
+        Make a dataframe from a list of DockingResults
+        """
+        import pandas as pd
+
         df_prep = []
         for result in results:
             docking_dict = {}
-            docking_dict["compound_name"] = result.input_pair.ligand.compound_name
-            docking_dict["target_name"] = result.input_pair.complex.target.target_name
             docking_dict[
-                "target_compound_smiles"
+                DockingResultCols.LIGAND_ID
+            ] = result.input_pair.ligand.compound_name
+            docking_dict[
+                DockingResultCols.TARGET_ID
+            ] = result.input_pair.complex.target.target_name
+            docking_dict[
+                "target_bound_compound_smiles"
             ] = result.input_pair.complex.ligand.smiles
-            docking_dict["query_ligand_smiles"] = result.input_pair.ligand.smiles
-            docking_dict["probability"] = result.probability
-            docking_dict["score"] = result.score
+            docking_dict[DockingResultCols.SMILES] = result.input_pair.ligand.smiles
+            docking_dict[
+                DockingResultCols.DOCKING_CONFIDENCE_POSIT
+            ] = result.probability
+            docking_dict[DockingResultCols.DOCKING_SCORE_POSIT] = result.score
             docking_dict["score_type"] = result.score_type.value
             df_prep.append(docking_dict)
 
@@ -138,6 +168,7 @@ class POSITDocker(DockingBase):
     """
 
     type: Literal["POSITDocker"] = "POSITDocker"
+
     score_type: Literal[SCORE_TYPE.CHEMGAUSS4] = SCORE_TYPE.CHEMGAUSS4
 
     relax: POSIT_RELAX_MODE = Field(
@@ -165,6 +196,10 @@ class POSITDocker(DockingBase):
         Path("./docking"), description="Output directory for docking results"
     )
     write_files: bool = Field(False, description="Write docked pose results to file")
+
+    @staticmethod
+    def to_result_type():
+        return POSITDockingResults
 
     @root_validator
     @classmethod
@@ -202,6 +237,7 @@ class POSITDocker(DockingBase):
         for i, pair in enumerate(inputs):
             du = pair.complex.target.to_oedu()
             lig = pair.ligand
+            target = pair.complex.target
             lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
             if self.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
@@ -272,7 +308,7 @@ class POSITDocker(DockingBase):
                     }
                     posed_ligand.set_SD_data(sd_data)
 
-                    docking_result = DockingResult(
+                    docking_result = POSITDockingResults(
                         input_pair=pair,
                         posed_ligand=posed_ligand,
                         probability=prob,
@@ -284,8 +320,9 @@ class POSITDocker(DockingBase):
 
                     if self.write_files:
                         # write out the docked pose
+                        run_name = f"{target.target_name}_+_{lig.compound_name}"
                         if names_unique:
-                            output_dir = self.output_dir / lig.compound_name
+                            output_dir = self.output_dir / run_name
                         else:
                             output_dir = self.output_dir / f"unknown_ligand_{i}"
                         output_dir.mkdir(parents=True, exist_ok=True)

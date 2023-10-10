@@ -21,8 +21,10 @@ def read_file_directly(file: str | Path) -> str:
     return contents
 
 
-def write_file_directly(file: str | Path, data: str) -> None:
-    with open(str(file), "w") as f:
+def write_file_directly(file: str | Path, data: str, mode: str = "w") -> None:
+    if mode not in ["w", "a"]:
+        raise ValueError(f"mode must be either 'w' or 'a', got {mode}")
+    with open(str(file), mode) as f:
         f.write(data)
 
 

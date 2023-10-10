@@ -254,7 +254,12 @@ class Ligand(DataModelAbstractBase):
         lig.validate(lig.dict())
         return lig
 
-    def to_sdf(self, filename: Union[str, Path], write_SD_attrs: bool = True) -> None:
+    def to_sdf(
+        self,
+        filename: Union[str, Path],
+        write_SD_attrs: bool = True,
+        allow_append=False,
+    ) -> None:
         """
         Write out the ligand to an SDF file
         If write_SD_attrs is True, then SD tags will be written out as attributes
@@ -272,8 +277,13 @@ class Ligand(DataModelAbstractBase):
             data_to_write = self.flush_attrs_to_SD_data()
         else:
             data_to_write = self.data
+
+        if allow_append:
+            fmode = "a"
+        else:
+            fmode = "w"
         # directly write out data
-        write_file_directly(filename, data_to_write)
+        write_file_directly(filename, data_to_write, mode=fmode)
 
     def set_SD_data(self, data: dict[str, str]) -> None:
         """
@@ -380,3 +390,15 @@ def compound_names_unique(ligands: list[Ligand]) -> bool:
     """
     compound_names = [ligand.compound_name for ligand in ligands]
     return len(set(compound_names)) == len(compound_names)
+
+
+def write_ligands_to_multi_sdf(sdf_name: Union[str, Path], ligands: list[Ligand]):
+    """
+    Dumb way to do this, but just write out each ligand to the same.
+    Alternate way would be to flush each to OEMol and then write out
+    using OE but seems convoluted.
+    """
+    if not sdf_name.split(".")[-1] == "sdf":
+        raise ValueError("SDF name must end in .sdf")
+    for ligand in ligands:
+        ligand.to_sdf(sdf_name, allow_append=True)

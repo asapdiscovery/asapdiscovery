@@ -31,8 +31,9 @@ def cli():
 )
 @click.option(
     "--target",
-    type=str,
+    type=click.Choice(TargetTags.get_values(), case_sensitive=True),
     help="The target to dock against.",
+    required=True,
 )
 @click.option(
     "--n-select",

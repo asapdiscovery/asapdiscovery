@@ -6,13 +6,18 @@ from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
+from asapdiscovery.data.postera.manifold_data_validation import (
+    rename_output_columns_for_manifold,
+)
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.docking.docking_v2 import POSITDocker, DockingResult
+from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.docking import DockingResultCols
 
 
 class LargeScaleDockingInputs(BaseModel):
@@ -160,8 +165,8 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     )
 
     # write results to dataframe
-    result_df = DockingResult.make_df_from_docking_results(results)
-    result_df.to_csv("docking_results_prep.csv", index=False)
+    result_df = docker.to_result_type().make_df_from_docking_results(results)
+    result_df.to_csv("docking_results_pre.csv", index=False)
 
     result_df = rename_output_columns_for_manifold(
         result_df,
@@ -170,13 +175,15 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         manifold_validate=True,
         drop_non_output=True,
     )  # TODO:  we can make this nicer for sure, this function is ugly AF
-    result_df.to_csv("docking_results.csv", index=False)
+    result_df.to_csv("docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
         postera_uploader = PosteraUploader(
             settings=inputs.settings, molecule_set_name=inputs.postera_molset_name
         )  # TODO: make this more compact wrapper for postera uploader
-        postera_uploader.upload(df)
+        postera_uploader.upload(result_df)
 
     if inputs.write_final_sdf:
-        write_multi_sdf(results, "docking_results.sdf")
+        write_ligands_to_multi_sdf(
+            "docking_results.sdf", [r.posed_ligand for r in results]
+        )

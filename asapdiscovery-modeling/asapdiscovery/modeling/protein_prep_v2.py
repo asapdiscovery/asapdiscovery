@@ -50,6 +50,10 @@ class ProteinPrepperBase(BaseModel):
             outputs = self._prep(inputs=inputs)
 
         outputs = [o for o in outputs if o is not None]
+        if len(outputs) == 0:
+            raise ValueError(
+                "No complexes were successfully prepped, likely that nothing was passed in, cache was mis-specified or cache was empty."
+            )
         return outputs
 
     @abc.abstractmethod

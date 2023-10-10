@@ -23,6 +23,7 @@ class DockingResultCols(Enum):
     SMILES = "SMILES"  # postera
     COMPUTED_GAT_PIC50 = "computed-GAT-pIC50"  # postera
     COMPUTED_SCHNET_PIC50 = "computed-SchNet-pIC50"  # postera
+    TARGET_ID = "_target_id"
 
     @classmethod
     def get_columns(cls) -> list[str]:
