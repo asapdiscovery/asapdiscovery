@@ -1,23 +1,23 @@
-from pydantic import BaseModel, Field, root_validator, validator
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.postera.postera_factory import PosteraFactory
+from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
 from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.services_config import PosteraSettings
-from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking import DockingResultCols
+from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from pydantic import BaseModel, Field, root_validator, validator
 
 
 class LargeScaleDockingInputs(BaseModel):

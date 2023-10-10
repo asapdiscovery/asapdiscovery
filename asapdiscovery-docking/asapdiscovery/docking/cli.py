@@ -1,13 +1,12 @@
-import click
-
 # from pathlib import Path
 from typing import Optional
 
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+import click
 from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.docking.workflows.large_scale_docking import (
-    large_scale_docking,
     LargeScaleDockingInputs,
+    large_scale_docking,
 )
 
 

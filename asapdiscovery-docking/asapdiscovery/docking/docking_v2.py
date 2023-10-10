@@ -1,12 +1,13 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional, Union, List
+from typing import List, Literal, Optional, Union
 
 import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
+    oe_smiles_roundtrip,
     oechem,
     oedocking,
     oeomega,
@@ -14,7 +15,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
-from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
@@ -70,7 +70,7 @@ class DockingResult(BaseModel):
         return combine_protein_ligand(prot, self.posed_ligand.to_oemol())
 
     @staticmethod
-    def make_df_from_docking_results(results: List["DockingResult"]):
+    def make_df_from_docking_results(results: list["DockingResult"]):
         """
         Make a dataframe from a list of DockingResults
         """
@@ -83,7 +83,7 @@ class POSITDockingResults(DockingResult):
     type: Literal["POSITDockingResults"] = "POSITDockingResults"
 
     @staticmethod
-    def make_df_from_docking_results(results: List["DockingResult"]):
+    def make_df_from_docking_results(results: list["DockingResult"]):
         """
         Make a dataframe from a list of DockingResults
         """

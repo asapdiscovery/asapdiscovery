@@ -1,13 +1,15 @@
 import abc
-from pathlib import Path
-from typing import Literal, Optional, List, Union
-import dask
 import warnings
+from pathlib import Path
+from typing import List, Literal, Optional, Union
 
+import dask
 import yaml
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema_v2.target import PreppedTarget
+from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.modeling.modeling import (
     make_design_unit,
     mutate_residues,
@@ -15,8 +17,6 @@ from asapdiscovery.modeling.modeling import (
     superpose_molecule,
 )
 from pydantic import BaseModel, Field, root_validator
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-from asapdiscovery.data.schema_v2.target import PreppedTarget
 
 
 class ProteinPrepperBase(BaseModel):
@@ -32,12 +32,12 @@ class ProteinPrepperBase(BaseModel):
         arbitrary_types_allowed = True
 
     @abc.abstractmethod
-    def _prep(self) -> List[PreppedComplex]:
+    def _prep(self) -> list[PreppedComplex]:
         ...
 
     def prep(
-        self, inputs: List[Complex], use_dask: bool = False, dask_client=None
-    ) -> List[PreppedComplex]:
+        self, inputs: list[Complex], use_dask: bool = False, dask_client=None
+    ) -> list[PreppedComplex]:
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
@@ -110,7 +110,7 @@ class ProteinPrepper(ProteinPrepperBase):
             raise ValueError("Must provide active_site_chain if align is provided")
         return values
 
-    def _prep(self, inputs: List[Complex]) -> List[PreppedComplex]:
+    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
         """
         Prepares a series of proteins for docking using OESpruce.
         """
@@ -199,7 +199,7 @@ class ProteinPrepper(ProteinPrepperBase):
         }
 
     @staticmethod
-    def cache(prepped_complexes: List[PreppedComplex], dir: Union[str, Path]) -> None:
+    def cache(prepped_complexes: list[PreppedComplex], dir: Union[str, Path]) -> None:
         """
         Cache a set of design units for use later.
         """

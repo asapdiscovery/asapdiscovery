@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import dask
 import os
+import warnings
 from pathlib import Path
 from typing import List  # noqa: F401
-import warnings
+
+import dask
 import pandas
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from pydantic import Field, validator
 
 
@@ -48,7 +49,7 @@ class FragalysisFactory(DataModelAbstractBase):
             [c1.data_equal(c2) for c1, c2 in zip(self.complexes, other.complexes)]
         )
 
-    def load(self, use_dask=False, dask_client=None) -> List[Complex]:
+    def load(self, use_dask=False, dask_client=None) -> list[Complex]:
         try:
             df = pandas.read_csv(self.parent_dir / "metadata.csv")
         except FileNotFoundError as e:
