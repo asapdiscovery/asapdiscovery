@@ -118,14 +118,6 @@ def run_docking_oe(
         logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
     logger.info(f"Running docking for {compound_name}")
 
-    # Set up OEThrow logging
-    # this can sometimes interfere with OEOmega see https://github.com/openforcefield/openff-toolkit/issues/1615
-    errfs = oechem.oeofstream(openeye_logname)
-    oechem.OEThrow.SetOutputStream(errfs)
-    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-    oechem.OEThrow.Info(f"Starting docking for {logname}")
-    oechem.OEThrow.Debug("Confirm that OE logging is working")
-
     # Make copy so we can keep the original for RMSD purposes
     orig_mol = orig_mol.CreateCopy()
 
@@ -297,8 +289,6 @@ def run_docking_oe(
             logger.error(
                 f"Pose generation failed for {compound_name} ({err_type})",
             )
-        errfs.flush()
-        errfs.close()
         return False, None, None
 
     # Set docking_id key for SD tags
@@ -340,8 +330,6 @@ def run_docking_oe(
     for mol in posed_mols[1:]:
         combined_mol.NewConf(mol)
     assert combined_mol.NumConfs() == len(posed_mols)
-    errfs.flush()
-    errfs.close()
     return True, combined_mol, docking_id
 
 
