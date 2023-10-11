@@ -129,9 +129,6 @@ class POSITDocker(DockingBase):
     allow_final_clash: bool = Field(
         False, description="Allow clashing poses in last stage of docking"
     )
-    output_dir: Path = Field(
-        Path("./docking"), description="Output directory for docking results"
-    )
     write_files: bool = Field(False, description="Write docked pose results to file")
 
     @root_validator
@@ -161,9 +158,6 @@ class POSITDocker(DockingBase):
         """
 
         ligs = [pair.ligand for pair in inputs]
-        names_unique = compound_names_unique(ligs)
-        # if names are not unique, we will use unknown_ligand_{i} as the output directory
-        # when writing files
 
         docking_results = []
 
@@ -248,27 +242,43 @@ class POSITDocker(DockingBase):
                     )
                     docking_results.append(docking_result)
 
-                    if self.write_files:
-                        # write out the docked pose
-                        if names_unique:
-                            output_dir = self.output_dir / lig.compound_name
-                        else:
-                            output_dir = self.output_dir / f"unknown_ligand_{i}"
-                        output_dir.mkdir(parents=True, exist_ok=True)
-                        output_sdf_file = output_dir / "docked.sdf"
-                        output_pdb_file = output_dir / "docked_complex.pdb"
-
-                        posed_ligand.to_sdf(output_sdf_file)
-
-                        combined_oemol = docking_result.to_posed_oemol()
-                        save_openeye_pdb(combined_oemol, output_pdb_file)
-
             else:
                 warnings.warn(
                     "docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
                 )
 
         return docking_results
+
+    @staticmethod
+    def write_docking_files(
+        docking_results: list[DockingResult], output_dir: Union[str, Path]
+    ):
+        ligs = [docking_result.input_pair.ligand for docking_result in docking_results]
+        names_unique = compound_names_unique(ligs)
+        output_dir = Path(output_dir)
+        # if names are not unique, we will use unknown_ligand_{i} as the output directory
+        # when writing files
+        # write out the docked pose
+        for result in docking_results:
+            if (
+                not result.input_pair.ligand.compound_name
+                == result.posed_ligand.compound_name
+            ):
+                raise ValueError(
+                    "Compound names of input pair and posed ligand do not match"
+                )
+            if names_unique:
+                output_dir = output_dir / result.posed_ligand.compound_name
+            else:
+                output_dir = output_dir / f"unknown_ligand_{i}"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_sdf_file = output_dir / "docked.sdf"
+            output_pdb_file = output_dir / "docked_complex.pdb"
+
+            result.posed_ligand.to_sdf(output_sdf_file)
+
+            combined_oemol = result.to_posed_oemol()
+            save_openeye_pdb(combined_oemol, output_pdb_file)
 
     def provenance(self) -> dict[str, str]:
         return {
