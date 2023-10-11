@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
-from uuid import UUID
+
+from pydantic import Field, root_validator, validator
 
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
@@ -14,8 +15,8 @@ from asapdiscovery.data.openeye import (
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
+from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
-from pydantic import UUID4, Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -32,45 +33,6 @@ class InvalidLigandError(ValueError):
 
 
 # Ligand Schema
-
-
-class LigandIdentifiers(DataModelAbstractBase):
-    """
-    This is a schema for the identifiers associated with a ligand
-
-    Parameters
-    ----------
-    moonshot_compound_id : Optional[str], optional
-        Moonshot compound ID, by default None
-    manifold_api_id : Optional[UUID], optional
-        Unique ID from Postera Manifold API, by default None
-    manifold_vc_id : Optional[str], optional
-        Unique VC ID (virtual compound ID) from Postera Manifold, by default None
-    compchem_id : Optional[UUID4], optional
-        Unique ID for P5 compchem reference, unused for now, by default None
-    """
-
-    moonshot_compound_id: Optional[str] = Field(
-        None, description="Moonshot compound ID"
-    )
-    manifold_api_id: Optional[UUID] = Field(
-        None, description="Unique ID from Postera Manifold API"
-    )
-    manifold_vc_id: Optional[str] = Field(
-        None, description="Unique VC ID (virtual compound ID) from Postera Manifold"
-    )
-    compchem_id: Optional[UUID4] = Field(
-        None, description="Unique ID for P5 compchem reference, unused for now"
-    )
-
-    def to_SD_tags(self) -> dict[str, str]:
-        """
-        Convert to a dictionary of SD tags
-        """
-        data = self.dict()
-        return {str(k): str(v) for k, v in data.items() if v is not None}
-
-
 class Ligand(DataModelAbstractBase):
     """
     Schema for a Ligand.
@@ -219,16 +181,36 @@ class Ligand(DataModelAbstractBase):
         """
         Get the InChI string for the ligand
         """
-        mol = sdf_string_to_oemol(self.data)
-        return oemol_to_inchi(mol)
+        mol = self.to_oemol()
+        return oemol_to_inchi(mol=mol, fixed_hydrogens=False)
+
+    @property
+    def fixed_inchi(self) -> str:
+        """
+        Returns
+        -------
+            The fixed hydrogen inchi for the ligand.
+        """
+        mol = self.to_oemol()
+        return oemol_to_inchi(mol=mol, fixed_hydrogens=True)
 
     @property
     def inchikey(self) -> str:
         """
         Get the InChIKey string for the ligand
         """
-        mol = sdf_string_to_oemol(self.data)
-        return oemol_to_inchikey(mol)
+        mol = self.to_oemol()
+        return oemol_to_inchikey(mol=mol, fixed_hydrogens=False)
+
+    @property
+    def fixed_inchikey(self) -> str:
+        """
+        Returns
+        -------
+         The fixed hydrogen layer inchi key for the ligand
+        """
+        mol = self.to_oemol()
+        return oemol_to_inchikey(mol=mol, fixed_hydrogens=True)
 
     @classmethod
     def from_sdf(
@@ -379,34 +361,39 @@ class Ligand(DataModelAbstractBase):
         # reinitialise object
         self.__init__(**data)
 
-    def make_parent_tag(
-        self, provenance: Optional[dict[str, Any]] = None
-    ) -> StateExpansionTag:
-        """
-        Create a new expansion tag for the ligand, set it and return it
+    # def make_parent_tag(
+    #     self, provenance: Optional[dict[str, Any]] = None
+    # ) -> StateExpansionTag:
+    #     """
+    #     Create a new expansion tag for the ligand, set it and return it
+    #
+    #     Returns
+    #     -------
+    #     StateExpansionTag
+    #         The new expansion tag
+    #     """
+    #     tag = StateExpansionTag.parent(self.inchi, provenance=provenance)
+    #     self.expansion_tag = tag
+    #     return tag
 
-        Returns
-        -------
-        StateExpansionTag
-            The new expansion tag
-        """
-        tag = StateExpansionTag.parent(self.inchi, provenance=provenance)
-        self.expansion_tag = tag
-        return tag
-
-    def set_parent(
-        self, parent: "Ligand", provenance: Optional[dict[str, Any]] = None
+    def set_expansion(
+        self,
+        parent: "Ligand",
+        provenance: dict[str, Any],
+        state_information: Optional[dict[str, Any]] = None,
     ) -> None:
         """
-        Set the parent of the ligand
+        Set the expansion of the ligand with a reference to the parent ligand and the settings used to create the
+        expansion.
 
         Parameters
         ----------
-        parent : Ligand
-            The parent ligand
+            parent: The parent ligand from which this child was created.
+            provenance: The provenance dictionary of the state expander used to create this ligand.
+            state_information: Any extra state information produced as part of the expansion.
         """
         self.expansion_tag = StateExpansionTag.from_parent(
-            parent.expansion_tag, self.inchi, provenance=provenance
+            parent=parent, provenance=provenance, state_information=state_information
         )
 
 

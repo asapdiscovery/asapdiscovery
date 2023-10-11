@@ -715,7 +715,7 @@ def oe_smiles_roundtrip(smiles: str) -> str:
     return oemol_to_smiles(mol)
 
 
-def oemol_to_inchi(mol: oechem.OEMol) -> str:
+def oemol_to_inchi(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
     """
     InChI string of an OpenEye OEMol
 
@@ -723,16 +723,26 @@ def oemol_to_inchi(mol: oechem.OEMol) -> str:
     --------
     mol: oechem.OEMol
         OpenEye OEMol
+    fixed_hydrogens: bool
+        If a fixed hydrogen layer should be added to the InChI, if `True` this will result in a non-standard inchi
+        which can distinguish tautomers.
 
     Returns
     -------
     str
        InChI string of molecule
     """
-    return oechem.OECreateInChI(mol)
+    if fixed_hydrogens:
+        inchi_opts = oechem.OEInChIOptions()
+        inchi_opts.SetFixedHLayer(True)
+        inchi = oechem.OEMolToInChI(mol)
+    else:
+        inchi = oechem.OEMolToSTDInChI(mol)
+
+    return inchi
 
 
-def oemol_to_inchikey(mol: oechem.OEMol) -> str:
+def oemol_to_inchikey(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
     """
     InChI key string of an OpenEye OEMol
 
@@ -741,12 +751,22 @@ def oemol_to_inchikey(mol: oechem.OEMol) -> str:
     mol: oechem.OEMol
         OpenEye OEMol
 
+    fixed_hydrogens: bool
+        If a fixed hydrogen layer should be added to the InChI, if `True` this will result in a non-standard inchi
+        which can distinguish tautomers.
     Returns
     -------
     str
        InChI key string of molecule
     """
-    return oechem.OECreateInChIKey(mol)
+    if fixed_hydrogens:
+        inchi_opts = oechem.OEInChIOptions()
+        inchi_opts.SetFixedHLayer(True)
+        inchi_key = oechem.OEMolToInChIKey(mol)
+    else:
+        inchi_key = oechem.OEMolToSTDInChIKey(mol)
+
+    return inchi_key
 
 
 def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
