@@ -118,7 +118,6 @@ class POSITDocker(DockingBase):
     )
     use_omega: bool = Field(True, description="Use omega to generate conformers")
     num_poses: PositiveInt = Field(1, description="Number of poses to generate")
-    log_name: str = Field("run_docking_oe", description="Name of the log file")
     openeye_logname: str = Field(
         "openeye-log.txt", description="Name of the openeye log file"
     )
