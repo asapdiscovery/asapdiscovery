@@ -802,8 +802,8 @@ def main():
         start_epoch, wts_fn = find_most_recent(model_dir)
 
         # Load error dicts
-        if os.path.isfile(f"{args.model_o}/loss_dict.json"):
-            loss_dict = json.load(open(f"{args.model_o}/loss_dict.json"))
+        if os.path.isfile(f"{model_dir}/loss_dict.json"):
+            loss_dict = json.load(open(f"{model_dir}/loss_dict.json"))
         else:
             print("Couldn't find loss dict file.", flush=True)
             loss_dict = None
