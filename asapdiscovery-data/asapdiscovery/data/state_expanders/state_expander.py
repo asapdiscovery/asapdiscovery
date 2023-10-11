@@ -1,10 +1,9 @@
 import abc
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
 # import networkx as nx
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from pydantic import BaseModel, Field
 
 
 class StateExpanderBase(abc.ABC, BaseModel):

@@ -1,9 +1,8 @@
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 from uuid import UUID
 
-from pydantic import UUID4, Field
-
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
+from pydantic import UUID4, Field
 
 
 class LigandIdentifiers(DataModelAbstractBase):
