@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Literal, Optional, Union
 
 import dask
+import warnings
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -19,10 +20,6 @@ from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 
 
-class SCORE_TYPE(Enum):
-    CHEMGAUSS4 = "chemgauss4"
-
-
 class DockingResult(BaseModel):
     """
     Schema for a DockingResult, containing both a DockingInputPair used as input to the workflow
@@ -32,9 +29,9 @@ class DockingResult(BaseModel):
 
     input_pair: DockingInputPair = Field(description="Input pair")
     posed_ligand: Ligand = Field(description="Posed ligand")
-    probability: Optional[PositiveFloat] = Field(description="Probability")
-    score_type: SCORE_TYPE = Field(description="Docking score type")
-    score: float = Field(description="Docking score")
+    probability: Optional[PositiveFloat] = Field(
+        description="Probability"
+    )  # not easy to get the probability from rescoring
     provenance: dict[str, str] = Field(description="Provenance")
 
     @root_validator
@@ -111,7 +108,6 @@ class POSITDocker(DockingBase):
     """
 
     type: Literal["POSITDocker"] = "POSITDocker"
-    score_type: Literal[SCORE_TYPE.CHEMGAUSS4] = SCORE_TYPE.CHEMGAUSS4
 
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
@@ -249,8 +245,6 @@ class POSITDocker(DockingBase):
                         input_pair=pair,
                         posed_ligand=posed_ligand,
                         probability=prob,
-                        score=chemgauss_score,
-                        score_type=self.score_type,
                         provenance=self.provenance(),
                     )
                     docking_results.append(docking_result)
@@ -271,7 +265,9 @@ class POSITDocker(DockingBase):
                         save_openeye_pdb(combined_oemol, output_pdb_file)
 
             else:
-                pass
+                warnings.warn(
+                    "docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
+                )
 
         return docking_results
 

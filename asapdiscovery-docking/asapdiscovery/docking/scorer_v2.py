@@ -77,6 +77,10 @@ class ChemGauss4Scorer(ScorerBase):
 
 
 class MLModelScorer(ScorerBase):
+    """
+    Score from some kind of ML model
+    """
+
     model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
     targets: set[TargetTags] = Field(
         ..., description="Which targets can this model do predictions for"
