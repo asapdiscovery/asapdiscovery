@@ -14,7 +14,6 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdf,
     oechem,
     oedocking,
-    save_openeye_pdb,
     save_openeye_sdf,
 )
 from asapdiscovery.data.utils import check_name_length_and_truncate
