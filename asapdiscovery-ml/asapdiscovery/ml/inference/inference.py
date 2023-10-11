@@ -300,8 +300,9 @@ class StructuralInference(InferenceBase):
         np.ndarray or float
             Model prediction(s)
         """
-        from asapdiscovery.data.openeye import oechem, oemol_to_pdb_string
         from io import StringIO
+
+        from asapdiscovery.data.openeye import oechem, oemol_to_pdb_string
 
         if isinstance(pose, oechem.OEMolBase):
             pose = [pose]
