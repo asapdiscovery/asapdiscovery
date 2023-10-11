@@ -1,16 +1,16 @@
 import abc
-import dask
-
 from enum import Enum
-from typing import Union, Literal, Optional
 from tempfile import NamedTemporaryFile
-from pydantic import BaseModel, Field, ClassVar
-from asapdiscovery.docking.docking_v2 import DockingResult
+from typing import Literal, Optional, Union
+
+import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oedocking, save_openeye_pdb
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.ml.ml_models import MLModelType
+from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
+from asapdiscovery.ml.ml_models import MLModelType
+from pydantic import BaseModel, ClassVar, Field
 
 
 class ScoreType(str, Enum):
