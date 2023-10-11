@@ -1,5 +1,6 @@
 # Configure logging
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import List  # noqa: F401
 
@@ -11,7 +12,33 @@ from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
+from openmmtools.utils import get_fastest_platform
 from rdkit import Chem
+
+
+class OpenMMPlatform(Enum):
+    """
+    Enum for OpenMM platforms.
+    """
+
+    CPU = "CPU"
+    CUDA = "CUDA"
+    OpenCL = "OpenCL"
+    Reference = "Reference"
+    Fastest = "Fastest"
+
+    def get_platform(self):
+        if Platform.getNumPlatforms() == 0:
+            raise ValueError("No compatible OpenMM patforms detected")
+
+        if self.value == "Fastest":
+            return get_fastest_platform()
+        else:
+            return Platform.getPlatformByName(self.value)
+
+    @classmethod
+    def get_values(cls):
+        return [platform.value for platform in cls]
 
 
 class VanillaMDSimulator:
@@ -33,6 +60,7 @@ class VanillaMDSimulator:
         output_paths: list[Path] = None,
         logger: FileLogger = None,
         openmm_logname: str = "openmm_log.tsv",
+        openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
         debug: bool = False,
     ):
         """
@@ -87,6 +115,7 @@ class VanillaMDSimulator:
         self.n_snapshots = int(self.num_steps / self.reporting_interval)
         self.num_steps = self.n_snapshots * self.reporting_interval
         self.openmm_logname = openmm_logname
+        self.openmm_platform = openmm_platform
 
         if output_paths is None:
             outdir = Path("md").mkdir(exist_ok=True)
@@ -105,7 +134,7 @@ class VanillaMDSimulator:
         self.logger.info("Starting MD run")
         self.debug = debug
         if self.debug:
-            self.logger.SetLevel(logging.DEBUG)
+            self.logger.setLevel(logging.DEBUG)
             self.logger.debug("Running in debug mode")
         self.logger.debug(f"Running MD on {len(self.ligand_paths)} ligands")
         self.logger.debug(f"Running MD on {self.protein_path} protein")
@@ -117,28 +146,19 @@ class VanillaMDSimulator:
         # could use structuring to increase flexibility
         # check whether we have a GPU platform and if so set the precision to mixed
         self.logger.info("Setting platform for MD run")
-        speed = 0
 
-        if Platform.getNumPlatforms() == 0:
-            raise ValueError("No compatible OpenMM patforms detected")
+        self.platform = OpenMMPlatform(self.openmm_platform).get_platform()
 
-        for i in range(Platform.getNumPlatforms()):
-            p = Platform.getPlatform(i)
-            if p.getSpeed() > speed:
-                platform = p
-                speed = p.getSpeed()
-
-        if platform.getName() == "CUDA" or platform.getName() == "OpenCL":
-            platform.setPropertyDefaultValue("Precision", "mixed")
+        if self.platform.getName() == "CUDA" or self.platform.getName() == "OpenCL":
+            self.platform.setPropertyDefaultValue("Precision", "mixed")
             self.logger.info(
-                f"Setting precision for platform {platform.getName()} to mixed"
+                f"Setting precision for platform {self.platform.getName()} to mixed"
             )
 
-        self.logger.info("Using platform {platform.getName()}")
-        self.platform = platform
+        self.logger.info(f"Using platform {self.platform.getName()}")
         if self.debug:
             self.logger.debug("Setting platform to CPU for debugging")
-            self.platform = Platform.getPlatformByName("CPU")
+            self.platform = OpenMMPlatform.CPU.get_platform()
 
     def process_ligand(self, ligand_path) -> Molecule:
         self.logger.debug("Prepping ligand")
@@ -206,7 +226,7 @@ class VanillaMDSimulator:
         # we use the 'padding' option to define the periodic box. The PDB file does not contain any
         # unit cell information so we just create a box that has a 9A padding around the complex.
         modeller.addSolvent(
-            system_generator.forcefield, model="tip3p", padding=9.0 * unit.angstroms
+            system_generator.forcefield, model="tip3p", padding=12.0 * unit.angstroms
         )
         self.logger.info(f"System has {modeller.topology.getNumAtoms()} atoms")
         return modeller, molecules_atom_indices
