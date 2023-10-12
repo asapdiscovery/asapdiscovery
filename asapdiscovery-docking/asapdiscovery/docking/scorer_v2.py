@@ -228,10 +228,7 @@ class MetaScorer(ScorerBase):
 
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
-        for inp in inputs:
-            scores = []
-            for scorer in self.scorers:
-                scores.extend(scorer.score(inputs=[inp]))
-            results.append(scores)
+        for scorer in self.scorers:
+            results.extend(scorer._score(inputs=inputs))
 
         return results
