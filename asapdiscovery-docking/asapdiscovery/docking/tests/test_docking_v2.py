@@ -17,10 +17,12 @@ def test_docking(docking_input_pair):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_docking_dask(docking_input_pair):
+@pytest.mark.parametrize("use_dask", [True, False])
+@pytest.mark.parametrize("repeat", range(3)) # burden test
+def test_docking_dask(docking_input_pair, docking_input_pair_simple, use_dask, repeat):
     docker = POSITDocker()
-    results = docker.dock([docking_input_pair], use_dask=True)
-    assert len(results) == 1
+    results = docker.dock([docking_input_pair, docking_input_pair_simple], use_dask=use_dask)
+    assert len(results) == 2
     assert results[0].probability > 0.0
 
 
