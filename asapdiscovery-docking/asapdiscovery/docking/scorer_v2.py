@@ -147,7 +147,7 @@ class MLModelScorer(ScorerBase):
     Score from some kind of ML model
     """
 
-    model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
+    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
     score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
 
     targets: set[TargetTags] = Field(
