@@ -218,7 +218,9 @@ class _FreeEnergyBase(_SchemaBase):
     )
     # note alchemical_sampler_settings.n_repeats specifies the number of times each transformation will be run
     alchemical_sampler_settings: AlchemicalSamplerSettings = Field(
-        AlchemicalSamplerSettings(),
+        AlchemicalSamplerSettings(
+            n_repeats=1
+        ),  # Run one calculation in serial and parallise accross alchemiscale workers see n_repeats on the _FreeEnergyBase object
         description="Settings for the Equilibrium Alchemical sampler, currently supporting either MultistateSampler, SAMSSampler or ReplicaExchangeSampler.",
     )
     engine_settings: OpenMMEngineSettings = Field(
