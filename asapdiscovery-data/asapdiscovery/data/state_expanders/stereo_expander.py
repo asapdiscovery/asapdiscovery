@@ -1,9 +1,10 @@
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import oechem, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class StereoExpander(StateExpanderBase):
@@ -23,36 +24,12 @@ class StereoExpander(StateExpanderBase):
             "omega": oeomega.OEOmegaGetVersion(),
         }
 
-    def _check_stereo_matches(
-        self, ref_ligand: oechem.OEMol, enantiomer: oechem.OEMol
-    ) -> bool:
-        """
-        Make sure that the stereo tags for all defined centers and bonds match between the two molecules.
-        Parameters
-        ----------
-        ref_ligand
-        enantiomer
-
-        Returns
-        -------
-
-        """
-        for ref_atom, enantiomer_atom in zip(
-            ref_ligand.GetAtoms(), enantiomer.GetAtoms()
-        ):
-            if ref_atom.IsChiral() and ref_atom.HasStereoSpecified():
-                if oechem.OEPerceiveCIPStereo(
-                    ref_ligand, ref_atom
-                ) != oechem.OEPerceiveCIPStereo(enantiomer, enantiomer_atom):
-                    return False
-        return True
-
     def _expand(self, ligands: list[Ligand]) -> list[Ligand]:
         """
         Expand the stereoisomers of the input molecules.
 
         Note:
-        The input molecules are not included in the outputs.
+            Input molecules with no possible expansions are passed through without an expansion tag set.
 
         Parameters
         ----------
@@ -63,27 +40,36 @@ class StereoExpander(StateExpanderBase):
             A list of expanded ligand states.
 
         """
-        flipperOpts = oeomega.OEFlipperOptions()
-        # Work around openeye only expanding the first center when many are not specified
-        flipperOpts.SetEnumSpecifiedStereo(True)
         provenance = self.provenance()
+        omegaOpts = oeomega.OEOmegaOptions()
+        omega = oeomega.OEOmega(omegaOpts)
+        maxcenters = 20
+        force_flip = self.stereo_expand_defined
+        enum_nitrogen = (
+            False  # WARNING: This creates multiple microstates with same SMILES if True
+        )
+        warts = True  # add suffix for stereoisomers
 
-        expanded_states = []
-
+        enantiomers = []
         for parent_ligand in ligands:
             oemol = parent_ligand.to_oemol()
-            for enantiomer in oeomega.OEFlipper(oemol, flipperOpts):
-                fmol = oechem.OEMol(enantiomer)
-                enantiomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
-                # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
-                # down the track.
-                # filter out molecules which expand the wrong centers
-                if not self.stereo_expand_defined and not self._check_stereo_matches(
-                    ref_ligand=oemol, enantiomer=fmol
-                ):
-                    continue
-                enantiomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
-                enantiomer_ligand.set_expansion(parent_ligand, provenance=provenance)
-                expanded_states.append(enantiomer_ligand)
+            for enantiomer in oeomega.OEFlipper(
+                oemol, maxcenters, force_flip, enum_nitrogen, warts
+            ):
+                enantiomer = oechem.OEMol(enantiomer)
+                omega.Build(
+                    enantiomer
+                )  # a single conformer needs to be built to fully define stereochemistry
+                enantiomer_ligand = Ligand.from_oemol(
+                    enantiomer, **parent_ligand.dict()
+                )
+                # if the ligand is the parent ie no possible expansions don't tag it
+                if enantiomer_ligand.fixed_inchikey == parent_ligand.fixed_inchikey:
+                    enantiomers.append(parent_ligand)
+                else:
+                    enantiomer_ligand.set_expansion(
+                        parent_ligand, provenance=provenance
+                    )
+                    enantiomers.append(enantiomer_ligand)
 
-        return expanded_states
+        return enantiomers

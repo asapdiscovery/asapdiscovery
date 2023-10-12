@@ -1,9 +1,10 @@
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import oechem, oequacpac
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class TautomerExpander(StateExpanderBase):
@@ -47,9 +48,13 @@ class TautomerExpander(StateExpanderBase):
                 # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
                 # down the track.
                 tautomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
-                tautomer_ligand.set_expansion(
-                    parent=parent_ligand, provenance=provenance
-                )
-                expanded_states.append(tautomer_ligand)
+                # only add the expansion tag to new molecules
+                if tautomer_ligand.fixed_inchikey != parent_ligand.fixed_inchikey:
+                    tautomer_ligand.set_expansion(
+                        parent=parent_ligand, provenance=provenance
+                    )
+                    expanded_states.append(tautomer_ligand)
+                else:
+                    expanded_states.append(parent_ligand)
 
         return expanded_states

@@ -1,7 +1,8 @@
 from typing import Any, Optional
 
-from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from pydantic import BaseModel, Field
+
+from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 
 
 class StateExpansionTag(BaseModel):
@@ -27,12 +28,6 @@ class StateExpansionTag(BaseModel):
         ...,
         description="Provenance of the software used during the expansion and the state expander..",
     )
-    state_information: Optional[dict[str, Any]] = Field(
-        None,
-        description="Any extra information output by the expansion"
-        "can be stored here like the epik state"
-        "penalty.",
-    )
 
     def __hash__(self) -> int:
         return hash(self.json())
@@ -56,11 +51,10 @@ class StateExpansionTag(BaseModel):
     #     return cls(inchi=inchi, parent_inchi=inchi, provenance=provenance)
 
     @classmethod
-    def from_parent(cls, parent, provenance: dict[str, str], state_information):
+    def from_parent(cls, parent, provenance: dict[str, str]):
         return cls(
             parent_fixed_inchikey=parent.fixed_inchikey,
             parent_smiles=parent.smiles,
             parent_identifiers=parent.ids,
             provenance=provenance,
-            state_information=state_information,
         )

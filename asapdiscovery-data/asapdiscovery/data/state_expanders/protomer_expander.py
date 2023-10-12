@@ -1,6 +1,9 @@
 import os
 import subprocess
+import tempfile
 from typing import Literal
+
+from pydantic import Field
 
 from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
@@ -10,7 +13,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -36,10 +38,14 @@ class ProtomerExpander(StateExpanderBase):
                 # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
                 # down the track.
                 protomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
-                protomer_ligand.set_expandsion(
-                    parent=parent_ligand, provenance=provenance
-                )
-                expanded_states.append(protomer_ligand)
+                if protomer_ligand.fixed_inchikey != parent_ligand.fixed_inchikey:
+                    # only add tags to new microstates of the input molecule
+                    protomer_ligand.set_expansion(
+                        parent=parent_ligand, provenance=provenance
+                    )
+                    expanded_states.append(protomer_ligand)
+                else:
+                    expanded_states.append(parent_ligand)
 
         return expanded_states
 
@@ -144,7 +150,8 @@ class EpikExpander(StateExpanderBase):
         Expand the protomers and tautomers of the input molecules using Epik and calculate the state penalty.
 
         Note:
-        The input molecules are included in the output.
+         Input molecules who are not expansions have no Epik state penalty and no expansion tag. Epik will give them
+         a score of 0 which just needs to be inferred later in the FEC prediction.
 
         Parameters
         ----------
@@ -154,6 +161,8 @@ class EpikExpander(StateExpanderBase):
         -------
             A list of expanded ligand states.
         """
+        # store where we are as we run epik in a tempdir
+        home = os.getcwd()
         # calculate it once as its expensive to call epik every time
         provenance = self.provenance()
 
@@ -165,24 +174,29 @@ class EpikExpander(StateExpanderBase):
             lig.set_SD_data({"parent": fixed_inchikey})
             parents_by_inchikey[fixed_inchikey] = lig
 
-        # create the mae file
-        self._prepare_ligands(ligands=ligands)
+        with tempfile.TemporaryDirectory() as tempdir:
+            os.chdir(tempdir)
 
-        # call epik
-        self._call_epik()
+            # create the mae file
+            self._prepare_ligands(ligands=ligands)
 
-        # convert the ligands to sdf
-        expanded_ligands = self._extract_ligands()
+            # call epik
+            self._call_epik()
 
-        # set the expansion tag for each molecule
+            # convert the ligands to sdf, epik tags are automatically picked up and stored
+            expanded_ligands = self._extract_ligands()
+
+            # move back to the home dir
+            os.chdir(home)
+
+        # set the expansion tag only for new microstate ligands
         for ligand in expanded_ligands:
+            # do not set the expansion tag if the molecule is the same as the parent and has a score of 0
+            state_pentalty = ligand.tags["r_epik_State_Penalty"]
+            if ligand.tags["parent"] == ligand.fixed_inchikey and state_pentalty == 0:
+                continue
+
             parent = parents_by_inchikey[ligand.tags["parent"]]
-            # extract the epik data
-            state_info = {
-                (key, value) for key, value in ligand.tags.items() if "epik" in key
-            }
-            ligand.set_expansion(
-                parent=parent, provenance=provenance, state_information=state_info
-            )
+            ligand.set_expansion(parent=parent, provenance=provenance)
 
         return expanded_ligands
