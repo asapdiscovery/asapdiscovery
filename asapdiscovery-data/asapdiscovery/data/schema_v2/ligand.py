@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
+from pydantic import Field, root_validator, validator
+
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
     _set_SD_data_repr,
@@ -15,7 +17,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
-from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -141,9 +142,10 @@ class Ligand(DataModelAbstractBase):
 
     def to_oemol(self) -> oechem.OEGraphMol:
         """
-        Convert to an OEMol
+        Convert the current molecule state to an OEMol
         """
-        mol = sdf_string_to_oemol(self.data)
+        # note we include all SD tags in the new molecule so the state is consistent
+        mol = sdf_string_to_oemol(self.flush_attrs_to_SD_data())
         return mol
 
     @classmethod
@@ -161,7 +163,7 @@ class Ligand(DataModelAbstractBase):
         """
         Get the SMILES string for the ligand
         """
-        mol = sdf_string_to_oemol(self.data)
+        mol = self.to_oemol()
         return oemol_to_smiles(mol)
 
     @classmethod
