@@ -1,7 +1,8 @@
 from typing import Any, Optional
 
-from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from pydantic import BaseModel, Field
+
+from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 
 
 class StateExpansionTag(BaseModel):
@@ -27,6 +28,9 @@ class StateExpansionTag(BaseModel):
         ...,
         description="Provenance of the software used during the expansion and the state expander..",
     )
+
+    class Config:
+        allow_mutation = False
 
     def __hash__(self) -> int:
         return hash(self.json())

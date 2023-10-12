@@ -3,6 +3,8 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
     oechem,
@@ -11,7 +13,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -107,7 +108,7 @@ class EpikExpander(StateExpanderBase):
         convert_cmd = self._create_cmd("utilities", "structconvert")
         with open("structconvert.log", "w") as log:
             subprocess.run(
-                convert_cmd + "input.sdf input.mae",
+                convert_cmd + " input.sdf input.mae",
                 shell=True,
                 stdout=log,
                 stderr=log,
@@ -124,7 +125,7 @@ class EpikExpander(StateExpanderBase):
         convert_cmd = self._create_cmd("utilities", "structconvert")
         with open("structconvert.log", "w") as log:
             subprocess.run(
-                convert_cmd + "output.mae output.sdf",
+                convert_cmd + " output.mae output.sdf",
                 shell=True,
                 stdout=log,
                 stderr=log,
