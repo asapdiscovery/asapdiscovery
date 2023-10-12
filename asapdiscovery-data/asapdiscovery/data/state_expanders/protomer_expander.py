@@ -3,7 +3,10 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
+    get_SD_data,
     load_openeye_sdfs,
     oechem,
     oequacpac,
@@ -11,7 +14,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -132,7 +134,12 @@ class EpikExpander(StateExpanderBase):
             )
         oe_mols = load_openeye_sdfs(sdf_fn="output.sdf")
         # parse into ligand objects
-        return [Ligand.from_oemol(oe_mol) for oe_mol in oe_mols]
+        return [
+            Ligand.from_oemol(
+                oe_mol, compound_name=get_SD_data(oe_mol)["compound_name"]
+            )
+            for oe_mol in oe_mols
+        ]
 
     def _call_epik(self):
         """Call Epik on the local ligands file."""
