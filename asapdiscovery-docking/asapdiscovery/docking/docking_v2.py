@@ -157,13 +157,11 @@ class POSITDocker(DockingBase):
         Dock the inputs
         """
 
-        ligs = [pair.ligand for pair in inputs]
 
         docking_results = []
 
-        for i, pair in enumerate(inputs):
+        for pair in inputs:
             du = pair.complex.target.to_oedu()
-            lig = pair.ligand
             lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
             if self.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
@@ -259,7 +257,7 @@ class POSITDocker(DockingBase):
         # if names are not unique, we will use unknown_ligand_{i} as the output directory
         # when writing files
         # write out the docked pose
-        for result in docking_results:
+        for i, result in enumerate(docking_results):
             if (
                 not result.input_pair.ligand.compound_name
                 == result.posed_ligand.compound_name
