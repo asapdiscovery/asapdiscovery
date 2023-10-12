@@ -561,6 +561,7 @@ def main():
         else:
             logger.info(f"Using reference protein: {args.ref_prot}")
 
+    # here instead get reference structure from storage based on target name
     reference_structure = args.ref_prot if args.ref_prot else receptor
 
     prep_opts = PrepOpts(
