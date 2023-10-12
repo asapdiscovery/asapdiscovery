@@ -19,8 +19,9 @@ class ScoreType(str, Enum):
     """
 
     chemgauss4 = "chemgauss4"
-    schnet = "schnet"
     GAT = "GAT"
+    schnet = "schnet"
+    INVALID = "INVALID"
 
 
 class Score(BaseModel):
@@ -37,12 +38,18 @@ class ScorerBase(BaseModel):
     Base class for docking.
     """
 
+    score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
+
     @abc.abstractmethod
     def _score() -> list[DockingResult]:
         ...
 
     def score(
-        self, inputs: list[DockingResult], use_dask: bool = False, dask_client=None
+        self,
+        inputs: list[DockingResult],
+        use_dask: bool = False,
+        dask_client=None,
+        return_df: bool = False,
     ) -> list[Score]:
         if use_dask:
             delayed_outputs = []
@@ -54,7 +61,11 @@ class ScorerBase(BaseModel):
             )
         else:
             outputs = self._score(inputs=inputs)
-        return outputs
+
+        if return_df:
+            return self.scores_to_df(outputs)
+        else:
+            return outputs
 
     @staticmethod
     def scores_to_df(scores: list[Score]) -> pd.DataFrame:
@@ -79,17 +90,18 @@ class ChemGauss4Scorer(ScorerBase):
     Scoring using ChemGauss.
     """
 
+    score_type: ClassVar[ScoreType.chemgauss4] = ScoreType.chemgauss4
+
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
+        print(inputs)
         for inp in inputs:
             posed_mol = inp.posed_ligand.to_oemol()
             pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
             du = inp.input_pair.complex.target.to_oedu()
             pose_scorer.Initialize(du)
             chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
-            results.append(
-                Score(score_type=ScoreType.chemgauss4, score=chemgauss_score)
-            )
+            results.append(Score(score_type=self.score_type, score=chemgauss_score))
         return results
 
 
@@ -99,6 +111,8 @@ class MLModelScorer(ScorerBase):
     """
 
     model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
+    score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
+
     targets: set[TargetTags] = Field(
         ..., description="Which targets can this model do predictions for"
     )
@@ -138,12 +152,13 @@ class GATScorer(MLModelScorer):
     """
 
     model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
+    score_type: ClassVar[ScoreType.GAT] = ScoreType.GAT
 
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
-            results.append(Score(score_type=ScoreType.GAT, score=gat_score))
+            results.append(Score(score_type=self.score_type, score=gat_score))
         return results
 
 
@@ -153,12 +168,13 @@ class SchnetScorer(MLModelScorer):
     """
 
     model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
+    score_type: ClassVar[ScoreType.schnet] = ScoreType.schnet
 
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
             schnet_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
-            results.append(Score(score_type=ScoreType.SCHNET, score=schnet_score))
+            results.append(Score(score_type=self.score_type, score=schnet_score))
         return results
 
 
