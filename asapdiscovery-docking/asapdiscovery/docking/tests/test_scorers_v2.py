@@ -70,5 +70,5 @@ def test_meta_scorer_df(results_multi):
     )
 
     scores = scorer.score(results_multi, return_df=True)
-    assert type(scores) == pd.DataFrame
-    assert len(scores) == 6  # 3 scores for each of 2 inputs
+    assert type(scores[0]) == pd.DataFrame
+    assert len(scores) == 3  # 3 scorers for each of 2 inputs

@@ -219,16 +219,31 @@ class SchnetScorer(MLModelScorer):
         return results
 
 
-class MetaScorer(ScorerBase):
+class MetaScorer(BaseModel):
     """
     Score from a combination of other scorers
     """
 
     scorers: list[ScorerBase] = Field(..., description="Scorers to score with")
 
-    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+    def score(
+        self,
+        inputs: list[DockingResult],
+        use_dask: bool = False,
+        dask_client=None,
+        return_df: bool = False,
+    ) -> list[Score]:
         results = []
         for scorer in self.scorers:
-            results.extend(scorer._score(inputs=inputs))
+            vals = scorer.score(
+                inputs=inputs,
+                use_dask=use_dask,
+                dask_client=dask_client,
+                return_df=return_df,
+            )
+            results.append(vals)
 
-        return results
+        if return_df:
+            return results
+
+        return np.ravel(results).tolist()
