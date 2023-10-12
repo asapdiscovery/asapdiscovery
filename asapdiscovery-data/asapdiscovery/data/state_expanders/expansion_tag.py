@@ -1,8 +1,7 @@
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
-
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
+from pydantic import BaseModel, Field
 
 
 class StateExpansionTag(BaseModel):
