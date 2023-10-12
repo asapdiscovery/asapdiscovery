@@ -1,16 +1,16 @@
 import abc
 from enum import Enum
-from tempfile import NamedTemporaryFile
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, ClassVar
 
 import dask
+import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.openeye import oedocking, save_openeye_pdb
+from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
-from asapdiscovery.ml.ml_models import MLModelType
-from pydantic import BaseModel, ClassVar, Field
+from asapdiscovery.ml.models.ml_models import MLModelType
+from pydantic import BaseModel, Field
 
 
 class ScoreType(str, Enum):
@@ -18,12 +18,12 @@ class ScoreType(str, Enum):
     Enum for score types.
     """
 
-    CHEMGAUSS4 = "chemgauss4"
-    SCHNET = "schnet"
-    GAT = "gat"
+    chemgauss4 = "chemgauss4"
+    schnet = "schnet"
+    GAT = "GAT"
 
 
-class ScoreResult(BaseModel):
+class Score(BaseModel):
     """
     Result of scoring.
     """
@@ -43,7 +43,7 @@ class ScorerBase(BaseModel):
 
     def score(
         self, inputs: list[DockingResult], use_dask: bool = False, dask_client=None
-    ) -> list[ScoreResult]:
+    ) -> list[Score]:
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
@@ -56,13 +56,30 @@ class ScorerBase(BaseModel):
             outputs = self._score(inputs=inputs)
         return outputs
 
+    @staticmethod
+    def scores_to_df(scores: list[Score]) -> pd.DataFrame:
+        """
+        Convert a list of scores to a dataframe.
+
+        Parameters
+        ----------
+        scores : list[Score]
+            List of scores
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe of scores
+        """
+        return pd.DataFrame([score.dict() for score in scores])
+
 
 class ChemGauss4Scorer(ScorerBase):
     """
     Scoring using ChemGauss.
     """
 
-    def _score(self, inputs: list[DockingResult]) -> list[ScoreResult]:
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
             posed_mol = inp.posed_ligand.to_oemol()
@@ -71,7 +88,7 @@ class ChemGauss4Scorer(ScorerBase):
             pose_scorer.Initialize(du)
             chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
             results.append(
-                ScoreResult(score_type=ScoreType.CHEMGAUSS4, score=chemgauss_score)
+                Score(score_type=ScoreType.chemgauss4, score=chemgauss_score)
             )
         return results
 
@@ -122,11 +139,11 @@ class GATScorer(MLModelScorer):
 
     model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
 
-    def _score(self, inputs: list[DockingResult]) -> list[ScoreResult]:
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
-            results.append(ScoreResult(score_type=ScoreType.GAT, score=gat_score))
+            results.append(Score(score_type=ScoreType.GAT, score=gat_score))
         return results
 
 
@@ -135,13 +152,29 @@ class SchnetScorer(MLModelScorer):
     Scoring using Schnet ML Model
     """
 
-    def _score(self, inputs: list[DockingResult]) -> list[ScoreResult]:
+    model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
+
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
-            # TODO: this is a hack, we should be able to do this without saving
-            # the file to disk see # 253
-            with NamedTemporaryFile() as temp_file:
-                pdb_temp = save_openeye_pdb(inp.to_posed_oemol(), temp_file.name)
-                schnet_score = self.inference_cls.predict_from_structure_file(pdb_temp)
-            results.append(ScoreResult(score_type=ScoreType.SCHNET, score=schnet_score))
+            schnet_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
+            results.append(Score(score_type=ScoreType.SCHNET, score=schnet_score))
+        return results
+
+
+class MetaScorer(ScorerBase):
+    """
+    Score from a combination of other scorers
+    """
+
+    scorers: list[ScorerBase] = Field(..., description="Scorers to score with")
+
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+        results = []
+        for inp in inputs:
+            scores = []
+            for scorer in self.scorers:
+                scores.extend(scorer.score(inputs=[inp]))
+            results.append(scores)
+
         return results

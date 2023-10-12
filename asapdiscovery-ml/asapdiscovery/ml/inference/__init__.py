@@ -4,6 +4,7 @@ from .inference import (
     InferenceBase,
     SchnetInference,
     StructuralInference,
+    get_inference_cls_from_model_type,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "StructuralInference",
     "SchnetInference",
     "E3nnInference",
+    "get_inference_cls_from_model_type",
 ]

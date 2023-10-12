@@ -1,42 +1,7 @@
 import os
 
 import pytest
-from asapdiscovery.data.schema_v2.complex import PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.pairs import DockingInputPair
-from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.docking_v2 import POSITDocker
-
-
-@pytest.fixture(scope="session")
-def ligand():
-    return Ligand.from_sdf(
-        fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"), compound_name="test"
-    )
-
-
-@pytest.fixture(scope="session")
-def ligand_simple():
-    return Ligand.from_smiles("CCCOCO", compound_name="test2")
-
-
-@pytest.fixture(scope="session")
-def prepped_complex():
-    return PreppedComplex.from_oedu_file(
-        fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu"),
-        ligand_kwargs={"compound_name": "test"},
-        target_kwargs={"target_name": "test"},
-    )
-
-
-@pytest.fixture(scope="session")
-def docking_input_pair(ligand, prepped_complex):
-    return DockingInputPair(complex=prepped_complex, ligand=ligand)
-
-
-@pytest.fixture(scope="session")
-def docking_input_pair_simple(ligand_simple, prepped_complex):
-    return DockingInputPair(complex=prepped_complex, ligand=ligand_simple)
 
 
 @pytest.mark.skipif(
@@ -63,9 +28,10 @@ def test_docking_dask(docking_input_pair):
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
 def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
-    docker = POSITDocker(write_files=True, output_dir=tmp_path)
+    docker = POSITDocker()
     results = docker.dock([docking_input_pair_simple])
     assert results[0].probability > 0.0
+    docker.write_docking_files(results, tmp_path)
     sdf_path = tmp_path / "test2" / "docked.sdf"
     assert sdf_path.exists()
     pdb_path = tmp_path / "test2" / "docked_complex.pdb"
