@@ -18,7 +18,7 @@ def test_chemgauss_scorer(results):
     scores = scorer.score(results)
     assert len(scores) == 1
     assert scores[0].score_type == "chemgauss4"
-    assert scores[0].score > 0.0
+    assert scores[0].score < 0.0
 
 
 def test_gat_scorer(results):
