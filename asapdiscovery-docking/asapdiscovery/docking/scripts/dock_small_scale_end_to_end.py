@@ -563,6 +563,7 @@ def main():
 
     # here instead get reference structure from storage based on target name
     reference_structure = args.ref_prot if args.ref_prot else receptor
+    print(reference_structure)
 
     prep_opts = PrepOpts(
         ref_fn=reference_structure,
