@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
-from typing import Optional, ClassVar
-import numpy as np
+from typing import ClassVar, Optional
+
 import dask
 import numpy as np
 import pandas as pd

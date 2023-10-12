@@ -157,7 +157,6 @@ class POSITDocker(DockingBase):
         Dock the inputs
         """
 
-
         docking_results = []
 
         for pair in inputs:
