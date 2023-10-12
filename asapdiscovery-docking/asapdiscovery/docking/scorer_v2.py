@@ -1,8 +1,9 @@
 import abc
 from enum import Enum
-from typing import Literal, Optional, Union, ClassVar
-import numpy as np
+from typing import ClassVar, Literal, Optional, Union
+
 import dask
+import numpy as np
 import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oedocking
