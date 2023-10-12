@@ -1,12 +1,14 @@
 import abc
 from enum import Enum
 from typing import Literal, Optional, Union, ClassVar
-
+import numpy as np
 import dask
 import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
+from asapdiscovery.data.schema_v2.target import TargetIdentifiers
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models.ml_models import MLModelType
@@ -26,11 +28,31 @@ class ScoreType(str, Enum):
 
 class Score(BaseModel):
     """
-    Result of scoring.
+    Result of scoring, we don't embed the input result because it can be large,
+    instead we just store the input result ids.
     """
 
     score_type: ScoreType
     score: float
+    compound_name: Optional[str]
+    smiles: Optional[str]
+    target_name: Optional[str]
+    ligand_identifiers: Optional[LigandIdentifiers]
+    target_identifiers: Optional[TargetIdentifiers]
+
+    @classmethod
+    def from_score_and_docking_result(
+        cls, score: float, score_type: ScoreType, docking_result: DockingResult
+    ):
+        return cls(
+            score_type=score_type,
+            score=score,
+            compound_name=docking_result.posed_ligand.compound_name,
+            smiles=docking_result.posed_ligand.smiles,
+            target_name=docking_result.input_pair.complex.target.target_name,
+            ligand_ids=docking_result.posed_ligand.ids,
+            target_ids=docking_result.input_pair.complex.target.ids,
+        )
 
 
 class ScorerBase(BaseModel):
@@ -82,7 +104,18 @@ class ScorerBase(BaseModel):
         pd.DataFrame
             Dataframe of scores
         """
-        return pd.DataFrame([score.dict() for score in scores])
+        # gather some fields from the input
+        data_list = []
+        # flatten the list of scores
+        scores = np.ravel(scores)
+
+        for score in scores:
+            dct = score.dict()
+            dct["score_type"] = score.score_type.value + "_score"  # convert to string
+            data_list.append(dct)
+        # convert to a dataframe
+        df = pd.DataFrame(data_list)
+        return df
 
 
 class ChemGauss4Scorer(ScorerBase):
@@ -94,14 +127,17 @@ class ChemGauss4Scorer(ScorerBase):
 
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
-        print(inputs)
         for inp in inputs:
             posed_mol = inp.posed_ligand.to_oemol()
             pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
             du = inp.input_pair.complex.target.to_oedu()
             pose_scorer.Initialize(du)
             chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
-            results.append(Score(score_type=self.score_type, score=chemgauss_score))
+            results.append(
+                Score.from_score_and_docking_result(
+                    chemgauss_score, self.score_type, inp
+                )
+            )
         return results
 
 
@@ -158,7 +194,9 @@ class GATScorer(MLModelScorer):
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
-            results.append(Score(score_type=self.score_type, score=gat_score))
+            results.append(
+                Score.from_score_and_docking_result(gat_score, self.score_type, inp)
+            )
         return results
 
 
@@ -174,7 +212,9 @@ class SchnetScorer(MLModelScorer):
         results = []
         for inp in inputs:
             schnet_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
-            results.append(Score(score_type=self.score_type, score=schnet_score))
+            results.append(
+                Score.from_score_and_docking_result(schnet_score, self.score_type, inp)
+            )
         return results
 
 

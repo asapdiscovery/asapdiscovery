@@ -5,6 +5,7 @@ from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.docking.docking_v2 import POSITDocker
 
 
 @pytest.fixture(scope="session")
@@ -56,3 +57,22 @@ def docking_input_pair(ligand, prepped_complex):
 @pytest.fixture(scope="session")
 def docking_input_pair_simple(ligand_simple, prepped_complex):
     return DockingInputPair(complex=prepped_complex, ligand=ligand_simple)
+
+
+@pytest.fixture(scope="session")
+def results(docking_input_pair):
+    docker = POSITDocker()
+    results = docker.dock([docking_input_pair])
+    return results
+
+
+@pytest.fixture(scope="session")
+def results_simple(docking_input_pair_simple):
+    docker = POSITDocker()
+    results = docker.dock([docking_input_pair_simple])
+    return results
+
+
+@pytest.fixture(scope="session")
+def results_multi(results, results_simple):
+    return results + results_simple
