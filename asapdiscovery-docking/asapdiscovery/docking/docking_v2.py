@@ -1,4 +1,5 @@
 import abc
+import warnings
 from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Optional, Union
@@ -20,10 +21,6 @@ from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 
 
-class SCORE_TYPE(Enum):
-    CHEMGAUSS4 = "chemgauss4"
-
-
 class DockingResult(BaseModel):
     """
     Schema for a DockingResult, containing both a DockingInputPair used as input to the workflow
@@ -34,9 +31,9 @@ class DockingResult(BaseModel):
     type: Literal["DockingResult"] = "DockingResult"
     input_pair: DockingInputPair = Field(description="Input pair")
     posed_ligand: Ligand = Field(description="Posed ligand")
-    probability: Optional[PositiveFloat] = Field(description="Probability")
-    score_type: SCORE_TYPE = Field(description="Docking score type")
-    score: float = Field(description="Docking score")
+    probability: Optional[PositiveFloat] = Field(
+        description="Probability"
+    )  # not easy to get the probability from rescoring
     provenance: dict[str, str] = Field(description="Provenance")
 
     @root_validator
@@ -169,8 +166,6 @@ class POSITDocker(DockingBase):
 
     type: Literal["POSITDocker"] = "POSITDocker"
 
-    score_type: Literal[SCORE_TYPE.CHEMGAUSS4] = SCORE_TYPE.CHEMGAUSS4
-
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
         description="When to check for relaxation either, 'clash', 'all', 'none'",
@@ -180,20 +175,16 @@ class POSITDocker(DockingBase):
     )
     use_omega: bool = Field(True, description="Use omega to generate conformers")
     num_poses: PositiveInt = Field(1, description="Number of poses to generate")
-    log_name: str = Field("run_docking_oe", description="Name of the log file")
     openeye_logname: str = Field(
         "openeye-log.txt", description="Name of the openeye log file"
     )
     allow_low_posit_prob: bool = Field(False, description="Allow low posit probability")
     low_posit_prob_thresh: float = Field(
         0.1,
-        description="Minimum posit probability threshold if allow_low_posit_prob is True",
+        description="Minimum posit probability threshold if allow_low_posit_prob is False",
     )
     allow_final_clash: bool = Field(
         False, description="Allow clashing poses in last stage of docking"
-    )
-    output_dir: Path = Field(
-        Path("./docking"), description="Output directory for docking results"
     )
     write_files: bool = Field(False, description="Write docked pose results to file")
 
@@ -227,17 +218,10 @@ class POSITDocker(DockingBase):
         Dock the inputs
         """
 
-        ligs = [pair.ligand for pair in inputs]
-        names_unique = compound_names_unique(ligs)
-        # if names are not unique, we will use unknown_ligand_{i} as the output directory
-        # when writing files
-
         docking_results = []
 
-        for i, pair in enumerate(inputs):
+        for pair in inputs:
             du = pair.complex.target.to_oedu()
-            lig = pair.ligand
-            target = pair.complex.target
             lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
             if self.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
@@ -312,32 +296,47 @@ class POSITDocker(DockingBase):
                         input_pair=pair,
                         posed_ligand=posed_ligand,
                         probability=prob,
-                        score=chemgauss_score,
-                        score_type=self.score_type,
                         provenance=self.provenance(),
                     )
                     docking_results.append(docking_result)
 
-                    if self.write_files:
-                        # write out the docked pose
-                        run_name = f"{target.target_name}_+_{lig.compound_name}"
-                        if names_unique:
-                            output_dir = self.output_dir / run_name
-                        else:
-                            output_dir = self.output_dir / f"unknown_ligand_{i}"
-                        output_dir.mkdir(parents=True, exist_ok=True)
-                        output_sdf_file = output_dir / "docked.sdf"
-                        output_pdb_file = output_dir / "docked_complex.pdb"
-
-                        posed_ligand.to_sdf(output_sdf_file)
-
-                        combined_oemol = docking_result.to_posed_oemol()
-                        save_openeye_pdb(combined_oemol, output_pdb_file)
-
             else:
-                pass
+                warnings.warn(
+                    "docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
+                )
 
         return docking_results
+
+    @staticmethod
+    def write_docking_files(
+        docking_results: list[DockingResult], output_dir: Union[str, Path]
+    ):
+        ligs = [docking_result.input_pair.ligand for docking_result in docking_results]
+        names_unique = compound_names_unique(ligs)
+        output_dir = Path(output_dir)
+        # if names are not unique, we will use unknown_ligand_{i} as the output directory
+        # when writing files
+        # write out the docked pose
+        for i, result in enumerate(docking_results):
+            if (
+                not result.input_pair.ligand.compound_name
+                == result.posed_ligand.compound_name
+            ):
+                raise ValueError(
+                    "Compound names of input pair and posed ligand do not match"
+                )
+            if names_unique:
+                output_dir = output_dir / result.posed_ligand.compound_name
+            else:
+                output_dir = output_dir / f"unknown_ligand_{i}"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_sdf_file = output_dir / "docked.sdf"
+            output_pdb_file = output_dir / "docked_complex.pdb"
+
+            result.posed_ligand.to_sdf(output_sdf_file)
+
+            combined_oemol = result.to_posed_oemol()
+            save_openeye_pdb(combined_oemol, output_pdb_file)
 
     def provenance(self) -> dict[str, str]:
         return {

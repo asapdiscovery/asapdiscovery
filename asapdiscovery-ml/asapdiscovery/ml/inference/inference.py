@@ -4,6 +4,7 @@ from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 import dgl
 import numpy as np
 import torch
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
 from asapdiscovery.ml.models.ml_models import (
@@ -283,6 +284,48 @@ class StructuralInference(InferenceBase):
             data = data.item()
         return data
 
+    def predict_from_oemol(
+        self, pose: Union[oechem.OEMol, list[oechem.OEMol]]
+    ) -> Union[np.ndarray, float]:
+        """
+        Predict on a (list of) OEMol objects.
+
+        Parameters
+        ----------
+        pose : Union[oechem.OEMol, list[oechem.OEMol]]
+            (List of) OEMol pose(s)
+
+        Returns
+        -------
+        np.ndarray or float
+            Model prediction(s)
+        """
+        from io import StringIO
+
+        from asapdiscovery.data.openeye import oechem, oemol_to_pdb_string
+
+        if isinstance(pose, oechem.OEMolBase):
+            pose = [pose]
+
+        # Convert each pose OEMol to a string and open as StringIO handle
+        stringio_handles = [StringIO(oemol_to_pdb_string(p)) for p in pose]
+        # Load each structure from the StringIO handle
+        pose = [
+            DockedDataset._load_structure(p, ("pose", str(i)))
+            for i, p in enumerate(stringio_handles)
+        ]
+        # Close all the handles
+        for h in stringio_handles:
+            h.close()
+
+        # Make predictions
+        preds = [self.predict(p) for p in pose]
+        preds = np.concatenate(np.asarray(preds))
+        # return a scalar float value if we only have one input
+        if np.all(np.array(preds.shape) == 1):
+            preds = preds.item()
+        return preds
+
 
 class SchnetInference(StructuralInference):
     """
@@ -298,3 +341,22 @@ class E3nnInference(StructuralInference):
     """
 
     model_type: ClassVar[MLModelType.e3nn] = MLModelType.e3nn
+
+
+_inferences_classes_meta = [
+    InferenceBase,
+    GATInference,
+    StructuralInference,
+    SchnetInference,
+    E3nnInference,
+]
+
+
+def get_inference_cls_from_model_type(model_type: MLModelType):
+    instantiable_classes = [
+        m for m in _inferences_classes_meta if m.model_type != MLModelType.INVALID
+    ]
+    model_class = [m for m in instantiable_classes if m.model_type == model_type]
+    if len(model_class) != 1:
+        raise Exception("Somehow got multiple models")
+    return model_class[0]
