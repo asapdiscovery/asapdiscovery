@@ -1040,7 +1040,7 @@ def parse_fluorescence_data_cdd(
             return -R * dG_T * np.log(10.0) * pIC50
 
         # dG in implicit kT units
-        def deltaG_kT(IC50):
+        def deltaG_kT(pIC50):
             return np.log(10.0) * pIC50
 
         mol_df["exp_binding_affinity_kcal_mol"] = [
