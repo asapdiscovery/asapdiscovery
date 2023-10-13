@@ -8,7 +8,7 @@ import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
+from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers, Ligand
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
@@ -27,6 +27,17 @@ class ScoreType(str, Enum):
     INVALID = "INVALID"
 
 
+class ScoreUnits(str, Enum):
+    """
+    Enum for score units.
+    """
+
+    arbitrary = "arbitrary"
+    kcal_mol = "kcal/mol"
+    pIC50 = "pIC50"
+    INVALID = "INVALID"
+
+
 class Score(BaseModel):
     """
     Result of scoring, we don't embed the input result because it can be large,
@@ -37,23 +48,45 @@ class Score(BaseModel):
     score: float
     compound_name: Optional[str]
     smiles: Optional[str]
-    target_name: Optional[str]
     ligand_identifiers: Optional[LigandIdentifiers]
+    target_name: Optional[str]
     target_identifiers: Optional[TargetIdentifiers]
+    complex_ligand_smiles: Optional[str]
+    probability: Optional[float]
+    units: ScoreUnits
 
     @classmethod
     def from_score_and_docking_result(
-        cls, score: float, score_type: ScoreType, docking_result: DockingResult
+        cls,
+        score: float,
+        score_type: ScoreType,
+        units: ScoreUnits,
+        docking_result: DockingResult,
     ):
         return cls(
             score_type=score_type,
             score=score,
             compound_name=docking_result.posed_ligand.compound_name,
             smiles=docking_result.posed_ligand.smiles,
-            target_name=docking_result.input_pair.complex.target.target_name,
             ligand_ids=docking_result.posed_ligand.ids,
+            target_name=docking_result.input_pair.complex.target.target_name,
             target_ids=docking_result.input_pair.complex.target.ids,
+            complex_ligand_smiles=docking_result.input_pair.complex.ligand.smiles,
+            probability=docking_result.probability,
+            units=units,
         )
+
+    @staticmethod
+    def _combine_and_pivot_scores_df(dfs: list[pd.DataFrame]) -> pd.DataFrame:
+        """ """
+        df = pd.concat(dfs)
+        indices = set(df.columns) - set(["score_type", "score", "units"])
+        df = df.pivot(
+            index=indices,
+            columns="score_type",
+            values="score",
+        ).reset_index()
+        return df
 
 
 class ScorerBase(BaseModel):
@@ -62,6 +95,7 @@ class ScorerBase(BaseModel):
     """
 
     score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
+    score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
     def _score() -> list[DockingResult]:
@@ -116,6 +150,7 @@ class ScorerBase(BaseModel):
             data_list.append(dct)
         # convert to a dataframe
         df = pd.DataFrame(data_list)
+
         return df
 
 
@@ -125,6 +160,7 @@ class ChemGauss4Scorer(ScorerBase):
     """
 
     score_type: ClassVar[ScoreType.chemgauss4] = ScoreType.chemgauss4
+    units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
@@ -136,7 +172,7 @@ class ChemGauss4Scorer(ScorerBase):
             chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
             results.append(
                 Score.from_score_and_docking_result(
-                    chemgauss_score, self.score_type, inp
+                    chemgauss_score, self.score_type, self.units, inp
                 )
             )
         return results
@@ -149,14 +185,13 @@ class MLModelScorer(ScorerBase):
 
     model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
     score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
+    units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     targets: set[TargetTags] = Field(
         ..., description="Which targets can this model do predictions for"
     )
-    model_name: Optional[str] = Field(
-        None, description="String indicating which model to use"
-    )
-    inference_cls: Optional[InferenceBase] = Field(None)
+    model_name: str = Field(..., description="String indicating which model to use")
+    inference_cls: InferenceBase = Field(..., description="Inference class")
 
     @classmethod
     def from_latest_by_target(cls, target: TargetTags):
@@ -190,13 +225,16 @@ class GATScorer(MLModelScorer):
 
     model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
     score_type: ClassVar[ScoreType.GAT] = ScoreType.GAT
+    units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
             results.append(
-                Score.from_score_and_docking_result(gat_score, self.score_type, inp)
+                Score.from_score_and_docking_result(
+                    gat_score, self.score_type, self.units, inp
+                )
             )
         return results
 
@@ -208,13 +246,16 @@ class SchnetScorer(MLModelScorer):
 
     model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
     score_type: ClassVar[ScoreType.schnet] = ScoreType.schnet
+    units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
             schnet_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
             results.append(
-                Score.from_score_and_docking_result(schnet_score, self.score_type, inp)
+                Score.from_score_and_docking_result(
+                    schnet_score, self.score_type, self.units, inp
+                )
             )
         return results
 
@@ -244,6 +285,6 @@ class MetaScorer(BaseModel):
             results.append(vals)
 
         if return_df:
-            return results
+            return Score._combine_and_pivot_scores_df(results)
 
         return np.ravel(results).tolist()
