@@ -140,12 +140,24 @@ class Ligand(DataModelAbstractBase):
         sdf_str = oemol_to_sdf_string(mol)
         return cls(data=sdf_str, **kwargs)
 
-    def to_oemol(self) -> oechem.OEGraphMol:
+    def to_oemol(
+        self, tags_to_include: Optional[list[str]] = None
+    ) -> oechem.OEGraphMol:
         """
         Convert the current molecule state to an OEMol
+
+        Notes:
+            This method will always include the compound name on the molecule as an SD tag
+
+        Parameters:
+            tags_to_include: A list of tags which should be included on the oemol
         """
-        # note we include all SD tags in the new molecule so the state is consistent
-        mol = sdf_string_to_oemol(self.flush_attrs_to_SD_data())
+        mol = sdf_string_to_oemol(self.data)
+        data = {"compound_name": self.compound_name}
+        if tags_to_include is not None:
+            extra_tags = {(tag, self.tags[tag]) for tag in tags_to_include}
+            data.update(extra_tags)
+            mol = _set_SD_data_repr(mol, data)
         return mol
 
     @classmethod

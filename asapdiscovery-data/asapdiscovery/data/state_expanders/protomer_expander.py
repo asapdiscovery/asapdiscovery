@@ -3,6 +3,8 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
     get_SD_data,
     load_openeye_sdfs,
@@ -12,7 +14,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -103,7 +104,7 @@ class EpikExpander(StateExpanderBase):
         """
         Convert the list of Ligands to a SCHRODINGER mae file before running with Epik.
         """
-        oe_ligands = [ligand.to_oemol() for ligand in ligands]
+        oe_ligands = [ligand.to_oemol(tags_to_include=["parent"]) for ligand in ligands]
         save_openeye_sdfs(oe_ligands, "input.sdf")
         convert_cmd = self._create_cmd("utilities", "structconvert")
         with open("structconvert.log", "w") as log:
@@ -133,12 +134,13 @@ class EpikExpander(StateExpanderBase):
             )
         oe_mols = load_openeye_sdfs(sdf_fn="output.sdf")
         # parse into ligand objects
-        return [
-            Ligand.from_oemol(
-                oe_mol, compound_name=get_SD_data(oe_mol)["compound_name"]
-            )
-            for oe_mol in oe_mols
-        ]
+        expanded_ligands = []
+        for oemol in oe_mols:
+            sd_data = get_SD_data(oemol)
+            # create the ligand and set the compound name and parent from the sdf tag
+            expanded_ligand = Ligand.from_oemol(oemol, **sd_data)
+            expanded_ligands.append(expanded_ligand)
+        return expanded_ligands
 
     def _call_epik(self):
         """Call Epik on the local ligands file."""
@@ -174,7 +176,7 @@ class EpikExpander(StateExpanderBase):
         # as epic runs on all molecules we need to keep track of the parent by tagging it
         parents_by_inchikey = {}
         for lig in ligands:
-            # store the parent inchi key
+            # store the parent inchi key as a tag which will be included in the sdf file
             fixed_inchikey = lig.fixed_inchikey
             lig.set_SD_data({"parent": fixed_inchikey})
             parents_by_inchikey[fixed_inchikey] = lig
