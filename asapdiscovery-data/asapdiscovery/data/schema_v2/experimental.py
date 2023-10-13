@@ -46,3 +46,14 @@ class ExperimentalCompoundData(Model):
         dict(),
         description='Experimental data fields, including "pIC50" and uncertainty (either "pIC50_stderr" or  "pIC50_{lower|upper}"',
     )
+
+    # def to_SD_tags(self) -> tuple[dict[str, str], dict[str, float]]:
+    #     """
+    #     Convert to a dictionary of SD tags
+    #     """
+    #     data = self.dict()
+    #     exp_data = data.pop("experimental_data")
+    #     # cannot use a nested dict in SD tags, so flatten to two tags
+    #     data = {str(k): str(v) for k, v in data.items() if v is not None}
+    #     exp_data = {str(k): float(v) for k, v in exp_data.items() if v is not None}
+    #     return data, exp_data
