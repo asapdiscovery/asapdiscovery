@@ -3,6 +3,8 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
     get_SD_data,
     load_openeye_sdfs,
@@ -12,7 +14,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -138,6 +139,8 @@ class EpikExpander(StateExpanderBase):
             sd_data = get_SD_data(oemol)
             # create the ligand and set the compound name and parent from the sdf tag
             expanded_ligand = Ligand.from_oemol(oemol, **sd_data)
+            # update SD data
+            expanded_ligand.pop_attrs_from_SD_data()
             expanded_ligands.append(expanded_ligand)
         return expanded_ligands
 
