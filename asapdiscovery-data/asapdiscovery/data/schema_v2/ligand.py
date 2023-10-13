@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from pydantic import Field, root_validator, validator
-
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
     _set_SD_data_repr,
@@ -17,6 +15,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
+from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
