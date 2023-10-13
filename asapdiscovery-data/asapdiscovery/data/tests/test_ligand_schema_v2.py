@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
@@ -124,6 +125,23 @@ def test_inchi(smiles):
 def test_inchi_key(smiles):
     lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.inchikey == "IMNFDUFMRHMDMM-UHFFFAOYSA-N"
+
+
+def test_fixed_inchi():
+    "Make sure a tautomer specific inchi is made when requested."
+    lig = Ligand.from_smiles("c1[nH]c2c(=O)[nH]c(nc2n1)N", compound_name="test")
+    assert (
+        lig.fixed_inchi
+        == "InChI=1/C5H5N5O/c6-5-9-3-2(4(11)10-5)7-1-8-3/h1H,(H4,6,7,8,9,10,11)/f/h7,10H,6H2"
+    )
+    assert lig.fixed_inchi != lig.inchi
+
+
+def test_fixed_inchikey():
+    "Make sure a tautomer specific inchikey is made when requested."
+    lig = Ligand.from_smiles("c1[nH]c2c(=O)[nH]c(nc2n1)N", compound_name="test")
+    assert lig.fixed_inchikey == "UYTPUPDQBNUYGX-CQCWYMDMNA-N"
+    assert lig.inchikey != lig.fixed_inchikey
 
 
 @pytest.mark.parametrize(
