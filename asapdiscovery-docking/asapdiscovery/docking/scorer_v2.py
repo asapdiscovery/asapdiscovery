@@ -8,7 +8,7 @@ import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
+from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type

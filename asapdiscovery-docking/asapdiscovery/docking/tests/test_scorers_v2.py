@@ -22,7 +22,7 @@ def test_chemgauss_scorer_df(results_multi):
     scorer = ChemGauss4Scorer()
     scores = scorer.score(results_multi, return_df=True)
     assert len(scores) == 2
-    assert type(scores) == pd.DataFrame
+    assert scores is pd.DataFrame
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
@@ -56,7 +56,7 @@ def test_meta_scorer(results, use_dask):
     scores = scorer.score(results, use_dask=use_dask)
     print(scores)
     assert len(scores) == 3
-    assert type(scores[0]) == Score
+    assert scores[0] is Score
 
 
 def test_meta_scorer_df(results_multi):
