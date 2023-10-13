@@ -148,6 +148,44 @@ def load_openeye_pdb(
         oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
 
 
+def load_openeye_smi(smi_fn: Union[str, Path]) -> oechem.OEGraphMol:
+    """
+    Load an OpenEye SMILES file containing a single molecule and return it as an
+    OpenEye OEGraphMol object.
+    Parameters
+    ----------
+    smi_fn : Union[str, Path]
+        Path to the SMILES file to load.
+    Returns
+    -------
+    oechem.OEGraphMol
+        An OpenEye OEGraphMol object containing the molecule data from the SDF file.
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    oechem.OEError
+        If the CIF file cannot be opened.
+    Notes
+    -----
+    This function assumes that the SDF file contains a single molecule. If the
+    file contains more than one molecule, only the first molecule will be loaded.
+    """
+
+    if not Path(smi_fn).exists():
+        raise FileNotFoundError(f"{smi_fn} does not exist!")
+
+    ifs = oechem.oemolistream()
+    ifs.SetFlavor(oechem.OEFormat_SMI, oechem.OEIFlavor_SMI_DEFAULT)
+    if ifs.open(str(smi_fn)):
+        coords_mol = oechem.OEGraphMol()
+        oechem.OEReadMolecule(ifs, coords_mol)
+        ifs.close()
+        return coords_mol
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {smi_fn}")
+
+
 def load_openeye_cif1(cif1_fn: Union[str, Path]) -> oechem.OEGraphMol:
     """
     Loads a biological assembly file into an OEGraphMol object.
@@ -658,9 +696,9 @@ def oemol_to_smiles(mol: oechem.OEMol) -> str:
     return oechem.OEMolToSmiles(mol)
 
 
-def oemol_to_inchi(mol: oechem.OEMol) -> str:
+def oe_smiles_roundtrip(smiles: str) -> str:
     """
-    InChI string of an OpenEye OEMol
+    Canonical SMILES string of an OpenEye OEMol
 
     Paramers
     --------
@@ -670,12 +708,40 @@ def oemol_to_inchi(mol: oechem.OEMol) -> str:
     Returns
     -------
     str
+       SMILES string of molecule
+    """
+    mol = smiles_to_oemol(smiles)
+    return oemol_to_smiles(mol)
+
+
+def oemol_to_inchi(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
+    """
+    InChI string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+    fixed_hydrogens: bool
+        If a fixed hydrogen layer should be added to the InChI, if `True` this will result in a non-standard inchi
+        which can distinguish tautomers.
+
+    Returns
+    -------
+    str
        InChI string of molecule
     """
-    return oechem.OECreateInChI(mol)
+    if fixed_hydrogens:
+        inchi_opts = oechem.OEInChIOptions()
+        inchi_opts.SetFixedHLayer(True)
+        inchi = oechem.OEMolToInChI(mol)
+    else:
+        inchi = oechem.OEMolToSTDInChI(mol)
+
+    return inchi
 
 
-def oemol_to_inchikey(mol: oechem.OEMol) -> str:
+def oemol_to_inchikey(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
     """
     InChI key string of an OpenEye OEMol
 
@@ -684,12 +750,22 @@ def oemol_to_inchikey(mol: oechem.OEMol) -> str:
     mol: oechem.OEMol
         OpenEye OEMol
 
+    fixed_hydrogens: bool
+        If a fixed hydrogen layer should be added to the InChI, if `True` this will result in a non-standard inchi
+        which can distinguish tautomers.
     Returns
     -------
     str
        InChI key string of molecule
     """
-    return oechem.OECreateInChIKey(mol)
+    if fixed_hydrogens:
+        inchi_opts = oechem.OEInChIOptions()
+        inchi_opts.SetFixedHLayer(True)
+        inchi_key = oechem.OEMolToInChIKey(mol)
+    else:
+        inchi_key = oechem.OEMolToSTDInChIKey(mol)
+
+    return inchi_key
 
 
 def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
