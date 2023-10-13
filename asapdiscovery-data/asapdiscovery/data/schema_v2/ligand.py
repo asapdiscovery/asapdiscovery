@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
 
+from pydantic import Field, root_validator, validator
+
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
@@ -16,8 +18,6 @@ from asapdiscovery.data.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
-from asapdiscovery.data.schema_v2.schema_base import DataStorageType
-from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -61,7 +61,7 @@ class Ligand(DataModelAbstractBase):
         Enum describing the data storage method, by default DataStorageType.sdf
     """
 
-    compound_name: Optional[str] = Field(None, description="Name of compound")
+    compound_name: str = Field(None, description="Name of compound")
     ids: Optional[LigandIdentifiers] = Field(
         None,
         description="LigandIdentifiers Schema for identifiers associated with this ligand",
@@ -74,12 +74,12 @@ class Ligand(DataModelAbstractBase):
     tags: dict[str, str] = Field({}, description="Dictionary of SD tags")
 
     data: str = Field(
-        ...,
+        "",
         description="SDF file stored as a string to hold internal data state",
         repr=False,
     )
-    data_format: DataStorageType = Field(
-        DataStorageType.sdf,
+    data_format: Literal["sdf"] = Field(
+        "sdf",
         description="Enum describing the data storage method",
         const=True,
         allow_mutation=False,
@@ -88,17 +88,21 @@ class Ligand(DataModelAbstractBase):
     @root_validator(pre=True)
     @classmethod
     def _validate_at_least_one_id(cls, v):
-        ids = v.get("ids")
-        compound_name = v.get("compound_name")
-        # check if all the identifiers are None, sometimes when this is called from
-        # already instantiated ligand we need to be able to handle a dict and instantiated class
-        if compound_name is None:
-            if ids is None or all(
-                [v is None for v in schema_dict_get_val_overload(ids)]
-            ):
-                raise ValueError(
-                    "At least one identifier must be provide, or compound_name must be provided"
-                )
+        # check if skip validation
+        if v.get("_skip_validate_ids"):
+            return v
+        else:
+            ids = v.get("ids")
+            compound_name = v.get("compound_name")
+            # check if all the identifiers are None, sometimes when this is called from
+            # already instantiated ligand we need to be able to handle a dict and instantiated class
+            if compound_name is None:
+                if ids is None or all(
+                    [v is None for v in schema_dict_get_val_overload(ids)]
+                ):
+                    raise ValueError(
+                        "At least one identifier must be provide, or compound_name must be provided"
+                    )
         return v
 
     @validator("tags")
@@ -110,9 +114,6 @@ class Ligand(DataModelAbstractBase):
             if k in reser_attr_names:
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
         return v
-
-    def __hash__(self):
-        return self.json().__hash__()
 
     def __eq__(self, other: "Ligand") -> bool:
         return self.data_equal(other)
@@ -156,15 +157,13 @@ class Ligand(DataModelAbstractBase):
         mol = sdf_string_to_oemol(self.data)
         data = {}
         for key in self.__fields__.keys():
-            if key not in ["data", "tags", "data_format"]:
+            if key not in ["data", "tags"]:
                 field = getattr(self, key)
                 try:
                     data[key] = field.json()
                 except AttributeError:
                     if field is not None:
                         data[key] = str(getattr(self, key))
-        # dump the enum via json to get the correct format
-        data["data_format"] = json.dumps(self.data_format)
         # dump tags as separate items
         if self.tags is not None:
             data.update({k: v for k, v in self.tags.items()})
@@ -301,6 +300,96 @@ class Ligand(DataModelAbstractBase):
         """
         self.tags = {}
 
+    # def _clear_internal_SD_data(self) -> None:
+    #     """
+    #     Remove SD data from the internal SDF string
+    #     """
+    #     mol = sdf_string_to_oemol(self.data)
+    #     mol = clear_SD_data(mol)
+    #     self.data = oemol_to_sdf_string(mol)
+
+    # def flush_attrs_to_SD_data(self) -> str:
+    #     """
+    #     Flush all attributes to SD data returning the whole new SDF string
+    #     """
+    #     data = self.dict()
+    #     # remove keys that should not be in SD data
+    #     data.pop("data")
+    #     data.pop("data_format")
+    #     if self.ids is not None:
+    #         data["ids"] = self.ids.to_SD_tags()
+    #     if self.experimental_data is not None:
+    #         # Cannot use nested dicts in SD data so we pop the values in experimental_data to a separate key
+    #         # `experimental_data_values`
+    #         (
+    #             data["experimental_data"],
+    #             data["experimental_data_values"],
+    #         ) = self.experimental_data.to_SD_tags()
+    #
+    #     # get reserved attribute names
+    #     if self.tags is not None:
+    #         data.update({k: v for k, v in self.tags.items()})
+    #     data.pop("tags")
+    #     # update SD data
+    #     sdf_str = self._set_SD_data_repr_to_str(data)
+    #     return sdf_str
+
+    # def pop_attrs_from_SD_data(self) -> None:
+    #     """Pop all attributes from SD data, reserializing the object"""
+    #     sd_data = _get_SD_data_to_object(self.to_oemol())
+    #     data = self.dict()
+    #     # update keys from SD data
+    #     data.update(sd_data)
+    #
+    #     # put experimental data values back into experimental_data if they exist
+    #     if "experimental_data_values" in data:
+    #         data["experimental_data"]["experimental_data"] = data.pop(
+    #             "experimental_data_values"
+    #         )
+    #     # get reserved attribute names
+    #     reser_attr_names = [attr.name for attr in self.__fields__.values()]
+    #     # push all non reserved attribute names to tags
+    #     data["tags"].update(
+    #         {k: v for k, v in data.items() if k not in reser_attr_names}
+    #     )
+    #     # reinitialise object
+    #     self.__init__(**data)
+
+    # def make_parent_tag(
+    #     self, provenance: Optional[dict[str, Any]] = None
+    # ) -> StateExpansionTag:
+    #     """
+    #     Create a new expansion tag for the ligand, set it and return it
+    #
+    #     Returns
+    #     -------
+    #     StateExpansionTag
+    #         The new expansion tag
+    #     """
+    #     tag = StateExpansionTag.parent(self.inchi, provenance=provenance)
+    #     self.expansion_tag = tag
+    #     return tag
+
+    # # put experimental data values back into experimental_data if they exist
+    # if "experimental_data_values" in data:
+    #     data["experimental_data"]["experimental_data"] = data.pop(
+    #         "experimental_data_values"
+    #     )
+    # # get reserved attribute names
+    # reser_attr_names = [attr.name for attr in self.__fields__.values()]
+    # # push all non reserved attribute names to tags
+    # data["tags"].update(
+    #     {k: v for k, v in data.items() if k not in reser_attr_names}
+    # )
+
 
 class ReferenceLigand(Ligand):
     target_name: Optional[str] = None
+
+
+def compound_names_unique(ligands: list[Ligand]) -> bool:
+    """
+    Check that all the compound names in a list of ligands are unique
+    """
+    compound_names = [ligand.compound_name for ligand in ligands]
+    return len(set(compound_names)) == len(compound_names)

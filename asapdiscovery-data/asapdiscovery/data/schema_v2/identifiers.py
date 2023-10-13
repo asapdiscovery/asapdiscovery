@@ -1,7 +1,6 @@
 from typing import Optional
 from uuid import UUID
 
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from pydantic import UUID4, Field
 
 from .schema_base import DataModelAbstractBase
@@ -36,21 +35,9 @@ class LigandIdentifiers(DataModelAbstractBase):
         None, description="Unique ID for P5 compchem reference, unused for now"
     )
 
-
-class TargetIdentifiers(DataModelAbstractBase):
-    """
-    Identifiers for a Target
-    """
-
-    target_type: Optional[TargetTags] = Field(
-        None,
-        description="Tag describing the target type e.g SARS-CoV-2-Mpro, etc.",
-    )
-
-    fragalysis_id: Optional[str] = Field(
-        None, description="The Fragalysis ID of the target if applicable"
-    )
-
-    pdb_code: Optional[str] = Field(
-        None, description="The PDB code of the target if applicable"
-    )
+    # def to_SD_tags(self) -> dict[str, str]:
+    #     """
+    #     Convert to a dictionary of SD tags
+    #     """
+    #     data = self.dict()
+    #     return {str(k): str(v) for k, v in data.items() if v is not None}
