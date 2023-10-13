@@ -1,10 +1,15 @@
+import json
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
+from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
+
+from pydantic import Field, root_validator, validator
 
 from asapdiscovery.data.openeye import (
     _get_SD_data_to_object,
     _set_SD_data_repr,
     clear_SD_data,
+    get_SD_data,
+    load_openeye_sdf,
     oechem,
     oemol_to_inchi,
     oemol_to_inchikey,
@@ -15,13 +20,10 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
-from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
     DataModelAbstractBase,
-    DataStorageType,
-    read_file_directly,
     schema_dict_get_val_overload,
     write_file_directly,
 )
@@ -83,8 +85,8 @@ class Ligand(DataModelAbstractBase):
         description="SDF file stored as a string to hold internal data state",
         repr=False,
     )
-    data_format: DataStorageType = Field(
-        DataStorageType.sdf,
+    data_format: Literal["sdf"] = Field(
+        "sdf",
         description="Enum describing the data storage method",
         const=True,
         allow_mutation=False,
@@ -137,26 +139,40 @@ class Ligand(DataModelAbstractBase):
         """
         kwargs.pop("data", None)
         sdf_str = oemol_to_sdf_string(mol)
+        sd_tags = get_SD_data(mol)
+        for key, value in sd_tags.items():
+            try:
+                kwargs[key] = json.loads(value)
+            except json.JSONDecodeError:
+                kwargs[key] = value
+        # extract all tags
+        tags = {
+            (key, value)
+            for key, value in kwargs.items()
+            if key not in cls.__fields__.keys()
+        }
+        kwargs["tags"] = tags
         return cls(data=sdf_str, **kwargs)
 
-    def to_oemol(
-        self, tags_to_include: Optional[list[str]] = None
-    ) -> oechem.OEGraphMol:
+    def to_oemol(self) -> oechem.OEGraphMol:
         """
-        Convert the current molecule state to an OEMol
+        Convert the current molecule state to an OEMol including all fields as SD tags
 
-        Notes:
-            This method will always include the compound name on the molecule as an SD tag
-
-        Parameters:
-            tags_to_include: A list of tags which should be included on the oemol
         """
         mol = sdf_string_to_oemol(self.data)
-        data = {"compound_name": self.compound_name}
-        if tags_to_include is not None:
-            extra_tags = {(tag, self.tags[tag]) for tag in tags_to_include}
-            data.update(extra_tags)
-            mol = _set_SD_data_repr(mol, data)
+        data = {}
+        for key in self.__fields__.keys():
+            if key not in ["data", "tags"]:
+                field = getattr(self, key)
+                try:
+                    data[key] = field.json()
+                except AttributeError:
+                    if field is not None:
+                        data[key] = str(getattr(self, key))
+        # dump tags as separate items
+        if self.tags is not None:
+            data.update({k: v for k, v in self.tags.items()})
+        mol = _set_SD_data_repr(mol, data)
         return mol
 
     @classmethod
@@ -228,56 +244,32 @@ class Ligand(DataModelAbstractBase):
     def from_sdf(
         cls,
         sdf_file: Union[str, Path],
-        read_SD_attrs: bool = True,
         **kwargs,
     ) -> "Ligand":
         """
-        Read in a ligand from an SDF file.
-        If read_SD_attrs is True, then SD tags will be read in as attributes, overriding kwargs where double defined.
-        If read_SD_attrs is False, then SD tags will not be read in as attributes, and kwargs will be used instead
+        Read in a ligand from an SDF file extracting all possible SD data into internal fields.
 
         Parameters
         ----------
         sdf_file : Union[str, Path]
             Path to the SDF file
             Name of the compound, by default None
-        read_SD_attrs : bool, optional
-            Whether to read in SD tags as attributes, by default True, overrides kwargs
         """
-        # directly read in data
-        kwargs.pop("data", None)
+        oemol = load_openeye_sdf(sdf_file)
+        return cls.from_oemol(oemol, **kwargs)
 
-        sdf_str = read_file_directly(sdf_file)
-        # we have to skip validation here, because we don't have a bunch of fields as they
-        # still need to be read in from the SD tags
-        lig = cls(data=sdf_str, _skip_validate_ids=True, **kwargs)
-        if read_SD_attrs:
-            lig.pop_attrs_from_SD_data()
-        lig._clear_internal_SD_data()
-        # okay now we can validate !
-        lig.validate(lig.dict())
-        return lig
-
-    def to_sdf(self, filename: Union[str, Path], write_SD_attrs: bool = True) -> None:
+    def to_sdf(self, filename: Union[str, Path]) -> None:
         """
-        Write out the ligand to an SDF file
-        If write_SD_attrs is True, then SD tags will be written out as attributes
-        If write_SD_attrs is False, then SD tags will not be written out as attributes
+        Write out the ligand to an SDF file with all attributes stored as SD tags
 
         Parameters
         ----------
         filename : Union[str, Path]
             Path to the SDF file
-        write_SD_attrs : bool, optional
-            Whether to write out attributes as SD tags, by default True
 
         """
-        if write_SD_attrs:
-            data_to_write = self.flush_attrs_to_SD_data()
-        else:
-            data_to_write = self.data
-        # directly write out data
-        write_file_directly(filename, data_to_write)
+        mol = self.to_oemol()
+        write_file_directly(filename, oemol_to_sdf_string(mol))
 
     def set_SD_data(self, data: dict[str, str]) -> None:
         """

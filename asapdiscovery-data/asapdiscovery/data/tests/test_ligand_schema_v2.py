@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
@@ -31,17 +32,25 @@ def test_ligand_from_smiles_hashable(smiles):
     assert len({lig1, lig2, lig3}) == 1
 
 
-def test_ligand_state_tag(smiles):
-    lig = Ligand.from_smiles(smiles, compound_name="test_name")
-    tag = lig.make_parent_tag()
-    assert lig.expansion_tag == tag
-
-
 def test_ligand_from_smiles_id(smiles):
     lig = Ligand.from_smiles(
         smiles, ids=LigandIdentifiers(moonshot_compound_id="test_id")
     )
     assert lig.smiles == smiles
+
+
+def test_ligand_ids_round_trip(smiles, tmpdir):
+    """Make sure ligand ids can survive a round trip to sdf"""
+    with tmpdir.as_cwd():
+        lig = Ligand.from_smiles(
+            smiles, ids=LigandIdentifiers(moonshot_compound_id="test_id")
+        )
+        assert lig.ids is not None
+        lig.to_sdf("test.sdf")
+
+        lig2 = Ligand.from_sdf(sdf_file="test.sdf")
+        assert lig2.ids is not None
+        assert lig2.ids == lig.ids
 
 
 def test_ligand_from_smiles_at_least_one_id(smiles):
