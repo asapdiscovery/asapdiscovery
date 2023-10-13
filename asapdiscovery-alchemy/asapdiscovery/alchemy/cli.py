@@ -20,7 +20,7 @@ def create(filename: str):
     Args:
         filename: The name of the JSON file containing the factory schema.
     """
-    from asapdiscovery.simulation.schema.fec import FreeEnergyCalculationFactory
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
 
     factory = FreeEnergyCalculationFactory()
     factory.to_file(filename=filename)
@@ -165,9 +165,8 @@ def submit(network: str, organization: str, campaign: str, project: str):
         project: The name of the project this network should be submitted under.
     """
     from alchemiscale import Scope
-
-    from .schema.fec import FreeEnergyCalculationNetwork
-    from .simulation.utils import AlchemiscaleHelper
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
@@ -259,16 +258,32 @@ def gather(network: str, allow_missing: bool):
     default="planned_network.json",
     show_default=True,
 )
-def status(network: str):
+@click.option(
+    "-e",
+    "--errors",
+    is_flag=True,
+    default=False,
+    help="Output errors from the network, if any.",
+)
+@click.option(
+    "-t",
+    "--with-traceback",
+    is_flag=True,
+    default=False,
+    help="Output the errors and tracebacks from the failing tasks.",
+)
+def status(network: str, errors: bool, with_traceback: bool):
     """
-    Get the status of the submitted network on alchemiscale.
+    Get the status of the submitted network on alchemiscale.\f
 
     Args:
         network: The name of the JSON file containing the FreeEnergyCalculationNetwork we should check the status of.
+        errors: Flag to show errors from the tasks.
+        with_traceback: Flag to show the complete traceback for the errored tasks.
 
     """
-    from .schema.fec import FreeEnergyCalculationNetwork
-    from .utils import AlchemiscaleHelper
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
     # launch the helper which will try to login
     client = AlchemiscaleHelper()
@@ -276,6 +291,21 @@ def status(network: str):
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
     # check the status
     client.network_status(planned_network=planned_network)
+    # collect errors
+    if errors or with_traceback:
+        task_errors = client.collect_errors(
+            planned_network,
+        )
+        # output errors in readable format
+        for failure in task_errors:
+            click.echo(click.style("Task:", bold=True))
+            click.echo(f"{failure.task_key}")
+            click.echo(click.style("Error:", bold=True))
+            click.echo(f"{failure.error}")
+            if with_traceback:
+                click.echo(click.style("Traceback:", bold=True))
+                click.echo(f"{failure.traceback}")
+            click.echo()
 
 
 @cli.command()

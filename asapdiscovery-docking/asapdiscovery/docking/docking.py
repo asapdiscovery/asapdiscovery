@@ -14,7 +14,6 @@ from asapdiscovery.data.openeye import (
     load_openeye_sdf,
     oechem,
     oedocking,
-    save_openeye_pdb,
     save_openeye_sdf,
 )
 from asapdiscovery.data.utils import check_name_length_and_truncate
@@ -118,14 +117,6 @@ def run_docking_oe(
         logger.addHandler(handler)
         logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
     logger.info(f"Running docking for {compound_name}")
-
-    # Set up OEThrow logging
-    # this can sometimes interfere with OEOmega see https://github.com/openforcefield/openff-toolkit/issues/1615
-    errfs = oechem.oeofstream(openeye_logname)
-    oechem.OEThrow.SetOutputStream(errfs)
-    oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-    oechem.OEThrow.Info(f"Starting docking for {logname}")
-    oechem.OEThrow.Debug("Confirm that OE logging is working")
 
     # Make copy so we can keep the original for RMSD purposes
     orig_mol = orig_mol.CreateCopy()
@@ -301,8 +292,6 @@ def run_docking_oe(
             logger.error(
                 f"Pose generation failed for {compound_name} ({err_type})",
             )
-        errfs.flush()
-        errfs.close()
         return False, None, None
 
     # Set docking_id key for SD tags
@@ -344,8 +333,6 @@ def run_docking_oe(
     for mol in posed_mols[1:]:
         combined_mol.NewConf(mol)
     assert combined_mol.NumConfs() == len(posed_mols)
-    errfs.flush()
-    errfs.close()
     return True, combined_mol, docking_id
 
 
@@ -518,15 +505,9 @@ def dock_and_score_pose_oe(
                 float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4"))
             )
             if schnet_model is not None:
-                # TODO: this is a hack, we should be able to do this without saving
-                # the file to disk see # 253
-                outpath = Path(out_dir) / Path(".posed_mol_schnet_temp.pdb")
-                # join with the protein only structure
                 combined = combine_protein_ligand(prot, conf)
-                pdb_temp = save_openeye_pdb(combined, outpath)
-                schnet_score = schnet_model.predict_from_structure_file(pdb_temp)
+                schnet_score = schnet_model.predict_from_oemol(combined)
                 schnet_scores.append(schnet_score)
-                outpath.unlink()
             else:
                 schnet_scores.append(np.nan)
 

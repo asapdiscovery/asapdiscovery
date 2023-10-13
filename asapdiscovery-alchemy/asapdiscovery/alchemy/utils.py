@@ -4,6 +4,7 @@ from alchemiscale import Scope, ScopedKey
 from openmm.app import ForceField, Modeller, PDBFile
 
 from .schema.fec import (
+    AlchemiscaleFailure,
     AlchemiscaleResults,
     AlchemiscaleSettings,
     FreeEnergyCalculationNetwork,
@@ -155,7 +156,7 @@ class AlchemiscaleHelper:
         Collect the results for the given network.
 
         Args:
-            planned_network: The network who's results we should collect.
+            planned_network: The network whose results we should collect.
 
         Returns:
             A FreeEnergyCalculationNetwork with all current results. If any are missing and allow missing is false an error is raised.
@@ -202,3 +203,34 @@ class AlchemiscaleHelper:
         )
 
         return network_with_results
+
+    def collect_errors(
+        self,
+        planned_network: FreeEnergyCalculationNetwork,
+    ) -> list[AlchemiscaleFailure]:
+        """
+        Collect errors and tracebacks from failed tasks.
+
+        Args:
+            planned_network: Network to get failed tasks from.
+
+        Returns:
+            List of AlchemiscaleFailure objects with errors and tracebacks for the failed tasks in the network.
+        """
+        network_key = planned_network.results.network_key
+        errored_tasks = self._client.get_network_tasks(network_key, status="error")
+
+        error_data = []
+        for task in errored_tasks:
+            for err_result in self._client.get_task_failures(task):
+                for protocol_failure in err_result.protocol_unit_failures:
+                    failure = AlchemiscaleFailure(
+                        network_key=network_key,
+                        task_key=task,
+                        unit_key=protocol_failure.source_key,
+                        dag_result_key=err_result.key,
+                        error=protocol_failure.exception,
+                        traceback=protocol_failure.traceback,
+                    )
+                    error_data.append(failure)
+        return error_data
