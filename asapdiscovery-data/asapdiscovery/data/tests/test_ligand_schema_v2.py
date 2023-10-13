@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 import pytest
-
 from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
