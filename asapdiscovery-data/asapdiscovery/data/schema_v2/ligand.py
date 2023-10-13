@@ -61,7 +61,7 @@ class Ligand(DataModelAbstractBase):
         Enum describing the data storage method, by default DataStorageType.sdf
     """
 
-    compound_name: str = Field(None, description="Name of compound")
+    compound_name: Optional[str] = Field(None, description="Name of compound")
     ids: Optional[LigandIdentifiers] = Field(
         None,
         description="LigandIdentifiers Schema for identifiers associated with this ligand",
@@ -74,7 +74,7 @@ class Ligand(DataModelAbstractBase):
     tags: dict[str, str] = Field({}, description="Dictionary of SD tags")
 
     data: str = Field(
-        "",
+        ...,
         description="SDF file stored as a string to hold internal data state",
         repr=False,
     )
@@ -88,21 +88,17 @@ class Ligand(DataModelAbstractBase):
     @root_validator(pre=True)
     @classmethod
     def _validate_at_least_one_id(cls, v):
-        # check if skip validation
-        if v.get("_skip_validate_ids"):
-            return v
-        else:
-            ids = v.get("ids")
-            compound_name = v.get("compound_name")
-            # check if all the identifiers are None, sometimes when this is called from
-            # already instantiated ligand we need to be able to handle a dict and instantiated class
-            if compound_name is None:
-                if ids is None or all(
-                    [v is None for v in schema_dict_get_val_overload(ids)]
-                ):
-                    raise ValueError(
-                        "At least one identifier must be provide, or compound_name must be provided"
-                    )
+        ids = v.get("ids")
+        compound_name = v.get("compound_name")
+        # check if all the identifiers are None, sometimes when this is called from
+        # already instantiated ligand we need to be able to handle a dict and instantiated class
+        if compound_name is None:
+            if ids is None or all(
+                [v is None for v in schema_dict_get_val_overload(ids)]
+            ):
+                raise ValueError(
+                    "At least one identifier must be provide, or compound_name must be provided"
+                )
         return v
 
     @validator("tags")
@@ -114,6 +110,9 @@ class Ligand(DataModelAbstractBase):
             if k in reser_attr_names:
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
         return v
+
+    def __hash__(self):
+        return self.json().__hash__()
 
     def __eq__(self, other: "Ligand") -> bool:
         return self.data_equal(other)
