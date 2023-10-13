@@ -16,6 +16,12 @@ from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking import DockingResultCols
 from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.scorer_v2 import (
+    MetaScorer,
+    GATScorer,
+    SchnetScorer,
+    ChemGauss4Scorer,
+)
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from pydantic import BaseModel, Field, root_validator, validator
 
@@ -157,16 +163,27 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     )
 
     # dock pairs
-    docker = POSITDocker(write_files=True, output_dir="docking_results")
+    docker = POSITDocker()
     results = docker.dock(
         pairs,
         use_dask=True,
         dask_client=dask_client,
     )
+    POSITDocker.write_docking_files(results, Path("docking_results"))
 
-    # write results to dataframe
-    result_df = docker.to_result_type().make_df_from_docking_results(results)
-    result_df.to_csv("docking_results_pre.csv", index=False)
+    # score results
+    scorer = MetaScorer(
+        scorers=[
+            ChemGauss4Scorer(),
+            GATScorer.from_latest_by_target(inputs.target),
+            SchnetScorer.from_latest_by_target(inputs.target),
+        ]
+    )
+
+    scores_df = scorer.score(
+        results, use_dask=True, dask_client=dask_client, return_df=True
+    )
+    scores_df.to_csv("docking_scores.csv", index=False)
 
     result_df = rename_output_columns_for_manifold(
         result_df,
@@ -175,6 +192,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         manifold_validate=True,
         drop_non_output=True,
     )  # TODO:  we can make this nicer for sure, this function is ugly AF
+
     result_df.to_csv("docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
