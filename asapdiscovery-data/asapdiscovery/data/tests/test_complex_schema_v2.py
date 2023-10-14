@@ -10,6 +10,12 @@ def complex_pdb():
     return pdb
 
 
+@pytest.fixture(scope="session")
+def complex_oedu():
+    oedu = fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu")
+    return oedu
+
+
 def test_complex_from_pdb(complex_pdb):
     c = Complex.from_pdb(
         complex_pdb,
@@ -112,3 +118,13 @@ def test_prepped_complex_from_complex(complex_pdb):
     assert du.HasLigand()
     assert c2.target.target_name == "test"
     assert c2.ligand.compound_name == "test"
+
+
+def test_prepped_complex_from_oedu_file(complex_oedu):
+    c = PreppedComplex.from_oedu_file(
+        complex_oedu,
+        target_kwargs={"target_name": "test"},
+        ligand_kwargs={"compound_name": "test"},
+    )
+    assert c.target.target_name == "test"
+    assert c.ligand.compound_name == "test"

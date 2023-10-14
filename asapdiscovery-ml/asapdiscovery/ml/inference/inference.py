@@ -341,3 +341,22 @@ class E3nnInference(StructuralInference):
     """
 
     model_type: ClassVar[MLModelType.e3nn] = MLModelType.e3nn
+
+
+_inferences_classes_meta = [
+    InferenceBase,
+    GATInference,
+    StructuralInference,
+    SchnetInference,
+    E3nnInference,
+]
+
+
+def get_inference_cls_from_model_type(model_type: MLModelType):
+    instantiable_classes = [
+        m for m in _inferences_classes_meta if m.model_type != MLModelType.INVALID
+    ]
+    model_class = [m for m in instantiable_classes if m.model_type == model_type]
+    if len(model_class) != 1:
+        raise Exception("Somehow got multiple models")
+    return model_class[0]
