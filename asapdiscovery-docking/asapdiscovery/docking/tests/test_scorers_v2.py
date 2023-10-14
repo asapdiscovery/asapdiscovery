@@ -1,11 +1,9 @@
-import pandas as pd
 import pytest
 from asapdiscovery.docking.scorer_v2 import (
     ChemGauss4Scorer,
     GATScorer,
     MetaScorer,
     SchnetScorer,
-    Score,
 )
 
 
