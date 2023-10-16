@@ -17,10 +17,10 @@ from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking import DockingResultCols
 from asapdiscovery.docking.docking_v2 import POSITDocker
 from asapdiscovery.docking.scorer_v2 import (
-    MetaScorer,
-    GATScorer,
-    SchnetScorer,
     ChemGauss4Scorer,
+    GATScorer,
+    MetaScorer,
+    SchnetScorer,
 )
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from pydantic import BaseModel, Field, root_validator, validator
