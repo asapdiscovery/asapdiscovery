@@ -8,7 +8,6 @@ import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
-    oe_smiles_roundtrip,
     oechem,
     oedocking,
     oeomega,

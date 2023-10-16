@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Optional
 
 import dask
-import distributed
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
