@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union  # noqa: F401
 
 from pydantic import Field, root_validator, validator
 
@@ -305,3 +305,11 @@ class Ligand(DataModelAbstractBase):
 
 class ReferenceLigand(Ligand):
     target_name: Optional[str] = None
+
+
+def compound_names_unique(ligands: list[Ligand]) -> bool:
+    """
+    Check that all the compound names in a list of ligands are unique
+    """
+    compound_names = [ligand.compound_name for ligand in ligands]
+    return len(set(compound_names)) == len(compound_names)
