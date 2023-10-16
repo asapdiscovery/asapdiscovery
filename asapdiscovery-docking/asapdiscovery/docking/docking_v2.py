@@ -8,11 +8,11 @@ import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
+    oe_smiles_roundtrip,
     oechem,
     oedocking,
     oeomega,
     save_openeye_pdb,
-    oe_smiles_roundtrip,
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
