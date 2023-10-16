@@ -6,7 +6,7 @@ import dask
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.openeye import oedocking
+from asapdiscovery.data.openeye import oedocking, save_openeye_pdb
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
@@ -49,6 +49,7 @@ _SCORE_MANIFOLD_ALIAS = {
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.INVALID: None,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+    "compound_name": DockingResultCols.LIGAND_ID.value,
 }
 
 
@@ -268,6 +269,7 @@ class SchnetScorer(MLModelScorer):
         results = []
         for inp in inputs:
             schnet_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
+            # save_openeye_pdb(inp.to_posed_oemol(), inp.input_pair.complex.target.target_name + "_+_" + inp.posed_ligand.compound_name + ".pdb")
             results.append(
                 Score.from_score_and_docking_result(
                     schnet_score, self.score_type, self.units, inp

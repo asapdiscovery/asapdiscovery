@@ -42,6 +42,7 @@ class DockingResultColsV2(str, Enum):
     COMPUTED_GAT_PIC50 = "computed-GAT-pIC50"  # postera
     COMPUTED_SCHNET_PIC50 = "computed-SchNet-pIC50"  # postera
     POSIT_METHOD = "_POSIT_method"
+    LIGAND_ID = "ligand_id"
 
     @classmethod
     def get_columns(cls) -> list[str]:

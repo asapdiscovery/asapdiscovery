@@ -92,9 +92,6 @@ class LargeScaleDockingInputs(BaseModel):
         if not postera and not filename:
             raise ValueError("Must specify either filename or postera.")
 
-        if postera_upload and not postera:
-            raise ValueError("Cannot specify postera_upload without postera.")
-
         if postera_upload and not postera_molset_name:
             raise ValueError(
                 "Must specify postera_molset_name if uploading to postera."
@@ -199,15 +196,16 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         [DockingResultCols],
         manifold_validate=True,
         drop_non_output=True,
+        allow=[DockingResultCols.LIGAND_ID.value],
     )  # TODO:  we can make this nicer for sure, this function is ugly AF
 
     result_df.to_csv("docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
         postera_uploader = PosteraUploader(
-            settings=inputs.settings, molecule_set_name=inputs.postera_molset_name
-        )  # TODO: make this more compact wrapper for postera uploader
-        postera_uploader.upload(result_df)
+            settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
+        )
+        postera_uploader.push(result_df)
 
     if inputs.write_final_sdf:
         write_ligands_to_multi_sdf(

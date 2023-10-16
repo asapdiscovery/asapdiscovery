@@ -328,12 +328,22 @@ class POSITDocker(DockingBase):
                     "Compound names of input pair and posed ligand do not match"
                 )
             if names_unique:
-                output_dir = output_dir / result.posed_ligand.compound_name
+                output_pref = (
+                    result.input_pair.complex.target.target_name
+                    + "_+_"
+                    + result.posed_ligand.compound_name
+                )
             else:
-                output_dir = output_dir / f"unknown_ligand_{i}"
-            output_dir.mkdir(parents=True, exist_ok=True)
-            output_sdf_file = output_dir / "docked.sdf"
-            output_pdb_file = output_dir / "docked_complex.pdb"
+                output_pref = (
+                    result.input_pair.complex.target.target_name
+                    + "_+_"
+                    + f"unknown_ligand_{i}"
+                )
+
+            compound_dir = output_dir / output_pref
+            compound_dir.mkdir(parents=True, exist_ok=True)
+            output_sdf_file = compound_dir / "docked.sdf"
+            output_pdb_file = compound_dir / "docked_complex.pdb"
 
             result.posed_ligand.to_sdf(output_sdf_file)
 
