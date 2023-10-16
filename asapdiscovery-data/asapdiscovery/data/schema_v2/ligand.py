@@ -2,8 +2,6 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union  # noqa: F401
 
-from pydantic import Field, root_validator, validator
-
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
@@ -19,6 +17,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from asapdiscovery.data.schema_v2.schema_base import DataStorageType
+from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
