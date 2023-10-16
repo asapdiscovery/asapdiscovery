@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
@@ -23,11 +24,33 @@ def test_ligand_from_smiles(smiles):
     assert lig.smiles == smiles
 
 
+def test_ligand_from_smiles_hashable(smiles):
+    lig1 = Ligand.from_smiles(smiles, compound_name="test_name")
+    lig2 = Ligand.from_smiles(smiles, compound_name="test_name")
+    lig3 = Ligand.from_smiles(smiles, compound_name="test_name")
+
+    assert len({lig1, lig2, lig3}) == 1
+
+
 def test_ligand_from_smiles_id(smiles):
     lig = Ligand.from_smiles(
         smiles, ids=LigandIdentifiers(moonshot_compound_id="test_id")
     )
     assert lig.smiles == smiles
+
+
+def test_ligand_ids_round_trip(smiles, tmpdir):
+    """Make sure ligand ids can survive a round trip to sdf"""
+    with tmpdir.as_cwd():
+        lig = Ligand.from_smiles(
+            smiles, ids=LigandIdentifiers(moonshot_compound_id="test_id")
+        )
+        assert lig.ids is not None
+        lig.to_sdf("test.sdf")
+
+        lig2 = Ligand.from_sdf(sdf_file="test.sdf")
+        assert lig2.ids is not None
+        assert lig2.ids == lig.ids
 
 
 def test_ligand_from_smiles_at_least_one_id(smiles):
@@ -102,6 +125,23 @@ def test_inchi(smiles):
 def test_inchi_key(smiles):
     lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.inchikey == "IMNFDUFMRHMDMM-UHFFFAOYSA-N"
+
+
+def test_fixed_inchi():
+    "Make sure a tautomer specific inchi is made when requested."
+    lig = Ligand.from_smiles("c1[nH]c2c(=O)[nH]c(nc2n1)N", compound_name="test")
+    assert (
+        lig.fixed_inchi
+        == "InChI=1/C5H5N5O/c6-5-9-3-2(4(11)10-5)7-1-8-3/h1H,(H4,6,7,8,9,10,11)/f/h7,10H,6H2"
+    )
+    assert lig.fixed_inchi != lig.inchi
+
+
+def test_fixed_inchikey():
+    "Make sure a tautomer specific inchikey is made when requested."
+    lig = Ligand.from_smiles("c1[nH]c2c(=O)[nH]c(nc2n1)N", compound_name="test")
+    assert lig.fixed_inchikey == "UYTPUPDQBNUYGX-CQCWYMDMNA-N"
+    assert lig.inchikey != lig.fixed_inchikey
 
 
 @pytest.mark.parametrize(
@@ -205,14 +245,6 @@ def test_ligand_sdf_roundtrip_data_only(
     assert l1 == l2
     # checks every field
     assert l1.full_equal(l2)
-    # should already be flushed, but check it doesnt break anything
-    l1.flush_attrs_to_SD_data()
-    l2.flush_attrs_to_SD_data()
-    # checks the same thing l1.data == l2.data
-    assert l1.data_equal(l2)
-    assert l1 == l2
-    # checks every field
-    assert l1.full_equal(l2)
 
 
 @pytest.mark.parametrize(
@@ -255,6 +287,8 @@ def test_ligand_oemol_roundtrip(moonshot_sdf):
     mol_res = l1.to_oemol()
     l2 = Ligand.from_oemol(mol_res, compound_name="blahblah")
     assert l2 == l1
+    # check all internal fields as well
+    assert l2.dict() == l1.dict()
 
 
 def test_ligand_oemol_roundtrip_data_only(moonshot_sdf):
@@ -333,42 +367,3 @@ def test_ligand_sdf_roundtrip_SD(
     # read with SD data
     l2 = Ligand.from_sdf(tmp_path / "test_with_attrs.sdf")
     assert l1 == l2
-
-    # read in without poping SD tags to attributes
-    # as  __eq__ and __ne__ only compare underlying SDF data, this should still be equal
-    l3 = Ligand.from_sdf(
-        tmp_path / "test_with_attrs.sdf", read_SD_attrs=False, compound_name="blah"
-    )
-    assert l3.data_equal(l1)
-
-    l1 = Ligand.from_sdf(
-        moonshot_sdf,
-        compound_name=compound_name,
-        ids=LigandIdentifiers(
-            manifold_api_id=manifold_api_id,
-            manifold_vc_id=manifold_vc_id,
-            moonshot_compound_id=moonshot_compound_id,
-            compchem_id=compchem_id,
-        ),
-        experimental_data=exp_data,
-    )
-
-    # serialize without SD data
-    # as  __eq__ and __ne__ only compare underlying SDF data, this should still be equal
-    l4 = Ligand.from_sdf(
-        moonshot_sdf,
-        compound_name=compound_name,
-        ids=LigandIdentifiers(
-            manifold_api_id=manifold_api_id,
-            manifold_vc_id=manifold_vc_id,
-            moonshot_compound_id=moonshot_compound_id,
-            compchem_id=compchem_id,
-        ),
-        experimental_data=exp_data,
-        read_SD_attrs=False,
-    )
-    l4.to_sdf(tmp_path / "test_without_attrs.sdf", write_SD_attrs=False)
-    l5 = Ligand.from_sdf(
-        tmp_path / "test_without_attrs.sdf", read_SD_attrs=False, compound_name="blah"
-    )
-    assert l4 == l5
