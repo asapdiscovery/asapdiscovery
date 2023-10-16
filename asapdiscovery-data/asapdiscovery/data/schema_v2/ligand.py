@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
 
+from pydantic import Field, root_validator, validator
+
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
@@ -16,7 +18,7 @@ from asapdiscovery.data.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
-from pydantic import Field, root_validator, validator
+from asapdiscovery.data.schema_v2.schema_base import DataStorageType
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -77,8 +79,8 @@ class Ligand(DataModelAbstractBase):
         description="SDF file stored as a string to hold internal data state",
         repr=False,
     )
-    data_format: Literal["sdf"] = Field(
-        "sdf",
+    data_format: DataStorageType = Field(
+        DataStorageType.sdf,
         description="Enum describing the data storage method",
         const=True,
         allow_mutation=False,
@@ -155,13 +157,15 @@ class Ligand(DataModelAbstractBase):
         mol = sdf_string_to_oemol(self.data)
         data = {}
         for key in self.__fields__.keys():
-            if key not in ["data", "tags"]:
+            if key not in ["data", "tags", "data_format"]:
                 field = getattr(self, key)
                 try:
                     data[key] = field.json()
                 except AttributeError:
                     if field is not None:
                         data[key] = str(getattr(self, key))
+        # dump the enum via json to get the correct format
+        data["data_format"] = json.dumps(self.data_format)
         # dump tags as separate items
         if self.tags is not None:
             data.update({k: v for k, v in self.tags.items()})
@@ -297,88 +301,6 @@ class Ligand(DataModelAbstractBase):
         Clear the SD data for the ligand
         """
         self.tags = {}
-
-    # def _clear_internal_SD_data(self) -> None:
-    #     """
-    #     Remove SD data from the internal SDF string
-    #     """
-    #     mol = sdf_string_to_oemol(self.data)
-    #     mol = clear_SD_data(mol)
-    #     self.data = oemol_to_sdf_string(mol)
-
-    # def flush_attrs_to_SD_data(self) -> str:
-    #     """
-    #     Flush all attributes to SD data returning the whole new SDF string
-    #     """
-    #     data = self.dict()
-    #     # remove keys that should not be in SD data
-    #     data.pop("data")
-    #     data.pop("data_format")
-    #     if self.ids is not None:
-    #         data["ids"] = self.ids.to_SD_tags()
-    #     if self.experimental_data is not None:
-    #         # Cannot use nested dicts in SD data so we pop the values in experimental_data to a separate key
-    #         # `experimental_data_values`
-    #         (
-    #             data["experimental_data"],
-    #             data["experimental_data_values"],
-    #         ) = self.experimental_data.to_SD_tags()
-    #
-    #     # get reserved attribute names
-    #     if self.tags is not None:
-    #         data.update({k: v for k, v in self.tags.items()})
-    #     data.pop("tags")
-    #     # update SD data
-    #     sdf_str = self._set_SD_data_repr_to_str(data)
-    #     return sdf_str
-
-    # def pop_attrs_from_SD_data(self) -> None:
-    #     """Pop all attributes from SD data, reserializing the object"""
-    #     sd_data = _get_SD_data_to_object(self.to_oemol())
-    #     data = self.dict()
-    #     # update keys from SD data
-    #     data.update(sd_data)
-    #
-    #     # put experimental data values back into experimental_data if they exist
-    #     if "experimental_data_values" in data:
-    #         data["experimental_data"]["experimental_data"] = data.pop(
-    #             "experimental_data_values"
-    #         )
-    #     # get reserved attribute names
-    #     reser_attr_names = [attr.name for attr in self.__fields__.values()]
-    #     # push all non reserved attribute names to tags
-    #     data["tags"].update(
-    #         {k: v for k, v in data.items() if k not in reser_attr_names}
-    #     )
-    #     # reinitialise object
-    #     self.__init__(**data)
-
-    # def make_parent_tag(
-    #     self, provenance: Optional[dict[str, Any]] = None
-    # ) -> StateExpansionTag:
-    #     """
-    #     Create a new expansion tag for the ligand, set it and return it
-    #
-    #     Returns
-    #     -------
-    #     StateExpansionTag
-    #         The new expansion tag
-    #     """
-    #     tag = StateExpansionTag.parent(self.inchi, provenance=provenance)
-    #     self.expansion_tag = tag
-    #     return tag
-
-    # # put experimental data values back into experimental_data if they exist
-    # if "experimental_data_values" in data:
-    #     data["experimental_data"]["experimental_data"] = data.pop(
-    #         "experimental_data_values"
-    #     )
-    # # get reserved attribute names
-    # reser_attr_names = [attr.name for attr in self.__fields__.values()]
-    # # push all non reserved attribute names to tags
-    # data["tags"].update(
-    #     {k: v for k, v in data.items() if k not in reser_attr_names}
-    # )
 
 
 class ReferenceLigand(Ligand):

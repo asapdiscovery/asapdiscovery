@@ -148,28 +148,24 @@ def load_openeye_pdb(
         oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
 
 
-def load_openeye_smi(smi_fn: Union[str, Path]) -> oechem.OEGraphMol:
+def load_openeye_smi(smi_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     """
-    Load an OpenEye SMILES file containing a single molecule and return it as an
-    OpenEye OEGraphMol object.
+    Load an OpenEye SMILES file containing a set of molecules and return them as
+    OpenEye OEGraphMol objects.
     Parameters
     ----------
     smi_fn : Union[str, Path]
         Path to the SMILES file to load.
     Returns
     -------
-    oechem.OEGraphMol
-        An OpenEye OEGraphMol object containing the molecule data from the SDF file.
+    list[oechem.OEGraphMol]
+        A list of OpenEye OEGraphMol objects corresponding to the data from the SMI file.
     Raises
     ------
     FileNotFoundError
         If the specified file does not exist.
     oechem.OEError
-        If the CIF file cannot be opened.
-    Notes
-    -----
-    This function assumes that the SDF file contains a single molecule. If the
-    file contains more than one molecule, only the first molecule will be loaded.
+        If the SMI file cannot be opened.
     """
 
     if not Path(smi_fn).exists():
@@ -177,13 +173,12 @@ def load_openeye_smi(smi_fn: Union[str, Path]) -> oechem.OEGraphMol:
 
     ifs = oechem.oemolistream()
     ifs.SetFlavor(oechem.OEFormat_SMI, oechem.OEIFlavor_SMI_DEFAULT)
-    if ifs.open(str(smi_fn)):
-        coords_mol = oechem.OEGraphMol()
-        oechem.OEReadMolecule(ifs, coords_mol)
-        ifs.close()
-        return coords_mol
-    else:
-        oechem.OEThrow.Fatal(f"Unable to open {smi_fn}")
+
+    molecules = []
+    for mol in ifs.GetOEGraphMols():
+        molecules.append(oechem.OEGetOEGraphMol(mol))
+
+    return molecules
 
 
 def load_openeye_cif1(cif1_fn: Union[str, Path]) -> oechem.OEGraphMol:
@@ -787,10 +782,10 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     return mol
 
 
-def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, Any]) -> oechem.OEMol:
+def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
-    sets the SD tag to the repr of the value, so that re-reading the SD data with
+    sets the SD tag to the str of the value, so that re-reading the SD data with
     ast.literal_eval in get_SD_data_to_object  give the same value
 
     Parameters
@@ -803,7 +798,7 @@ def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, Any]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    # NOTE: use repr to ensure re-reading the SD data will give the same value
+    # NOTE: use str to ensure re-reading the SD data will give the same value
     mol = set_SD_data(mol, {k: str(v) for k, v in data.items()})
     return mol
 
