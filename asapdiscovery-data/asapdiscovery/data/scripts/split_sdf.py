@@ -6,7 +6,7 @@ import argparse
 import os
 from math import floor
 
-from asapdiscovery.data.openeye import load_openeye_sdfs, save_openeye_sdfs
+from asapdiscovery.data.openeye import load_openeye_sdfs, save_openeye_sdfs, oechem
 
 
 def get_args():
@@ -39,6 +39,13 @@ def get_args():
         help="How to name the output files. 'integer' will name them 1.sdf, 2.sdf, etc. 'name' will name them "
         "according to the name of the molecule in the SDF file",
     )
+    parser.add_argument(
+        "--flatten",
+        action="store_true",
+        default=False,
+        help="If true, will flatten the molecules before saving them. "
+        "This is useful if the molecules have 3D coordinates but you want to save them as 2D",
+    )
     return parser.parse_args()
 
 
@@ -47,6 +54,13 @@ def main():
     print(f"Reading '{args.sdf_fn}'")
 
     mols = load_openeye_sdfs(args.sdf_fn)
+
+    if args.flatten:
+        success = [oechem.OEGenerate2DCoordinates(mol) for mol in mols]
+        if not all(success):
+            raise RuntimeError("Failed to generate 2D coordinates for all molecules")
+        print(f"Flattened molecules to 2D")
+
     print(f"Saving {len(mols)} SDF files to '{args.out_dir}'")
 
     # If the number of molecules is not evenly divisible by the chunk size, we will have a remainder
