@@ -28,3 +28,21 @@ class DockingResultCols(Enum):
     @classmethod
     def get_columns(cls) -> list[str]:
         return [col.value for col in cls]
+
+
+# make a new enum for the postera manifold columns that actually exist
+# so we can deprecate the other one in time.
+
+
+class DockingResultColsV2(str, Enum):
+    DOCKING_CONFIDENCE_POSIT = "docking-confidence-POSIT"  # postera
+    DOCKING_SCORE_POSIT = "docking-score-POSIT"  # postera
+    DOCKING_STRUCTURE_POSIT = "docking-structure-POSIT"  # postera
+    SMILES = "SMILES"  # postera
+    COMPUTED_GAT_PIC50 = "computed-GAT-pIC50"  # postera
+    COMPUTED_SCHNET_PIC50 = "computed-SchNet-pIC50"  # postera
+    POSIT_METHOD = "_POSIT_method"
+
+    @classmethod
+    def get_columns(cls) -> list[str]:
+        return [col.value for col in cls]

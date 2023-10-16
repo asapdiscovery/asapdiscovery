@@ -47,6 +47,12 @@ def cli():
     help="Whether to write the final docked poses to an SDF file.",
 )
 @click.option(
+    "--use-dask",
+    is_flag=True,
+    default=True,
+    help="Whether to use dask for parallelism.",
+)
+@click.option(
     "--dask-type",
     type=DaskType,
     default=DaskType.LOCAL,
@@ -90,6 +96,7 @@ def large_scale(
     target: TargetTags,
     n_select: int,
     write_final_sdf: bool,
+    use_dask: bool,
     dask_type: str,
     ligands: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
@@ -108,6 +115,7 @@ def large_scale(
         target=target,
         n_select=n_select,
         write_final_sdf=write_final_sdf,
+        use_dask=use_dask,
         dask_type=dask_type,
         filename=ligands,
         fragalysis_dir=fragalysis_dir,

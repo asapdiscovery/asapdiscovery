@@ -11,6 +11,9 @@ from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
 from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking_data_validation import (
+    DockingResultColsV2 as DockingResultCols,
+)
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models.ml_models import MLModelType
 from pydantic import BaseModel, Field
@@ -36,6 +39,17 @@ class ScoreUnits(str, Enum):
     kcal_mol = "kcal/mol"
     pIC50 = "pIC50"
     INVALID = "INVALID"
+
+
+# this can possibly be done with subclasses and some aliases, but will do for now
+
+_SCORE_MANIFOLD_ALIAS = {
+    ScoreType.chemgauss4: DockingResultCols.DOCKING_SCORE_POSIT.value,
+    ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
+    ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
+    ScoreType.INVALID: None,
+    "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+}
 
 
 class Score(BaseModel):
@@ -86,6 +100,8 @@ class Score(BaseModel):
             columns="score_type",
             values="score",
         ).reset_index()
+
+        df.rename(columns=_SCORE_MANIFOLD_ALIAS, inplace=True)
         return df
 
 
@@ -146,7 +162,7 @@ class ScorerBase(BaseModel):
 
         for score in scores:
             dct = score.dict()
-            dct["score_type"] = score.score_type.value + "_score"  # convert to string
+            dct["score_type"] = score.score_type.value  # convert to string
             data_list.append(dct)
         # convert to a dataframe
         df = pd.DataFrame(data_list)

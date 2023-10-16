@@ -46,6 +46,13 @@ manifold_outputs:
       units:
       postfix: msk
 
+  - docking-structure: # name of the structure docked against
+      prefix: in-silico
+      tools:
+        - POSIT
+      units:
+      postfix: msk
+
   - docking-pose:
       prefix: in-silico
       tools:

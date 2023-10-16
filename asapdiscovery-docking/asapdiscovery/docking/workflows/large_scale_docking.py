@@ -14,7 +14,9 @@ from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
-from asapdiscovery.docking.docking import DockingResultCols
+from asapdiscovery.docking.docking_data_validation import (
+    DockingResultColsV2 as DockingResultCols,
+)
 from asapdiscovery.docking.docking_v2 import POSITDocker
 from asapdiscovery.docking.scorer_v2 import (
     ChemGauss4Scorer,
@@ -60,6 +62,7 @@ class LargeScaleDockingInputs(BaseModel):
         default=False,
         description="Whether to write the final docked poses to an SDF file.",
     )
+    use_dask: bool = Field(True, description="Whether to use dask for parallelism.")
 
     dask_type: DaskType = Field(
         DaskType.LOCAL, description="Dask client to use for parallelism."
@@ -141,15 +144,19 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     # load complexes from a directory or from fragalysis
     if inputs.structure_dir:
         structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
-        complexes = structure_factory.load(use_dask=True, dask_client=dask_client)
+        complexes = structure_factory.load(
+            use_dask=inputs.use_dask, dask_client=dask_client
+        )
     else:
         fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(use_dask=True, dask_client=dask_client)
+        complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
 
     prepper = ProteinPrepper(du_cache=inputs.du_cache)
-    prepped_complexes = prepper.prep(complexes, use_dask=True, dask_client=dask_client)
+    prepped_complexes = prepper.prep(
+        complexes, use_dask=inputs.use_dask, dask_client=dask_client
+    )
 
-    if inputs.gen_du_cache and not inputs.du_cache:
+    if inputs.gen_du_cache:
         prepper.cache(prepped_complexes, inputs.gen_du_cache)
 
     # define selector and select pairs
@@ -158,7 +165,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         query_ligands,
         prepped_complexes,
         n_select=10,
-        use_dask=True,
+        use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
 
@@ -166,7 +173,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     docker = POSITDocker()
     results = docker.dock(
         pairs,
-        use_dask=True,
+        use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
     POSITDocker.write_docking_files(results, Path("docking_results"))
@@ -181,7 +188,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     )
 
     scores_df = scorer.score(
-        results, use_dask=True, dask_client=dask_client, return_df=True
+        results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
     )
 
     scores_df.to_csv("docking_scores.csv", index=False)
