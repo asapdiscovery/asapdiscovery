@@ -37,10 +37,13 @@ class SelectorBase(abc.ABC, BaseModel):
                 out = dask.delayed(self._select)(
                     ligands=[lig], complexes=complexes, **kwargs
                 )  # be careful here, need ALL complexes to perform a full search, ie no parallelism over complexes is possible.
-                delayed_outputs.append(out[0])  # flatten
+                delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client, errors="raise"
             )
+            outputs = [
+                item for sublist in outputs for item in sublist
+            ]  # flatten post hoc
         else:
             outputs = self._select(ligands=ligands, complexes=complexes, **kwargs)
 

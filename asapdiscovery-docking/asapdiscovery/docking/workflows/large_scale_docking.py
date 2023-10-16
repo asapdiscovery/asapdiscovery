@@ -183,6 +183,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     scores_df = scorer.score(
         results, use_dask=True, dask_client=dask_client, return_df=True
     )
+
     scores_df.to_csv("docking_scores.csv", index=False)
 
     result_df = rename_output_columns_for_manifold(
