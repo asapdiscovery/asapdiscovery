@@ -12,6 +12,7 @@ from asapdiscovery.data.openeye import (
     oedocking,
     oeomega,
     save_openeye_pdb,
+    oe_smiles_roundtrip,
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair

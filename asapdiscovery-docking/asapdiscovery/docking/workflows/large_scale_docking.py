@@ -158,8 +158,8 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         query_ligands,
         prepped_complexes,
         n_select=10,
-        use_dask=False,  # TODO fix dask here
-        dask_client=None,
+        use_dask=True,
+        dask_client=dask_client,
     )
 
     # dock pairs
@@ -186,7 +186,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     scores_df.to_csv("docking_scores.csv", index=False)
 
     result_df = rename_output_columns_for_manifold(
-        result_df,
+        scores_df,
         inputs.target,
         [DockingResultCols],
         manifold_validate=True,
