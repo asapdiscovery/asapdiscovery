@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from asapdicovery.data.schema_v2.identifiers import TargetIdentifiers
+from pydantic import Field, root_validator
+
 from asapdiscovery.data.openeye import (
     bytes64_to_oedu,
     load_openeye_design_unit,
@@ -12,9 +13,9 @@ from asapdiscovery.data.openeye import (
     pdb_string_to_oemol,
     save_openeye_design_unit,
 )
+from asapdiscovery.data.schema_v2.identifiers import TargetIdentifiers
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
-from pydantic import Field, root_validator
 
 from .schema_base import (
     DataModelAbstractBase,
