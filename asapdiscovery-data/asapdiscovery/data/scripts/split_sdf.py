@@ -6,7 +6,7 @@ import argparse
 import os
 from math import floor
 
-from asapdiscovery.data.openeye import load_openeye_sdfs, save_openeye_sdfs, oechem
+from asapdiscovery.data.openeye import load_openeye_sdfs, oechem, save_openeye_sdfs
 
 
 def get_args():
