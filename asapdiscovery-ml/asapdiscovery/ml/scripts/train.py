@@ -857,7 +857,6 @@ def main():
         target_dict=exp_data,
         n_epochs=args.n_epochs,
         device=torch.device(args.device),
-        grouped=args.grouped,
         loss_fn=loss_func,
         save_file=model_dir,
         lr=args.lr,

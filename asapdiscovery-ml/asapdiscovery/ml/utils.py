@@ -1480,7 +1480,6 @@ def train(
     target_dict,
     n_epochs,
     device,
-    grouped=False,
     loss_fn=None,
     save_file=None,
     lr=1e-4,
@@ -1671,13 +1670,9 @@ def train(
             ).float()
 
             # Make prediction and calculate loss
-            if grouped:
-                pred, pose_preds = model(pose)
-                pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
-            else:
-                pred = model(pose).reshape(target.shape)
-                pose_preds = None
+            pred, pose_preds = model(pose)
+            pred = pred.reshape(target.shape)
+            pose_preds = [p.item() for p in pose_preds]
             loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
@@ -1723,8 +1718,7 @@ def train(
 
         if batch_counter > 0:
             # Backprop for final incomplete batch
-            if not grouped:
-                batch_loss.backward()
+            batch_loss.backward()
             optimizer.step()
             if any([p.grad.isnan().any().item() for p in model.parameters()]):
                 raise ValueError("NaN gradients")
@@ -1752,13 +1746,9 @@ def train(
             ).float()
 
             # Make prediction and calculate loss
-            if grouped:
-                pred, pose_preds = model(pose)
-                pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
-            else:
-                pred = model(pose).reshape(target.shape)
-                pose_preds = None
+            pred, pose_preds = model(pose)
+            pred = pred.reshape(target.shape)
+            pose_preds = [p.item() for p in pose_preds]
             loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
@@ -1795,13 +1785,9 @@ def train(
             ).float()
 
             # Make prediction and calculate loss
-            if grouped:
-                pred, pose_preds = model(pose)
-                pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
-            else:
-                pred = model(pose).reshape(target.shape)
-                pose_preds = None
+            pred, pose_preds = model(pose)
+            pred = pred.reshape(target.shape)
+            pose_preds = [p.item() for p in pose_preds]
             loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
