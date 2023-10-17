@@ -1,13 +1,20 @@
 import pytest
+from pydantic import ValidationError
+
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")
 def complex_pdb():
     pdb = fetch_test_file("Mpro-P2660_0A_bound.pdb")
     return pdb
+
+
+@pytest.fixture(scope="session")
+def complex_oedu():
+    oedu = fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu")
+    return oedu
 
 
 def test_complex_from_pdb(complex_pdb):
@@ -112,3 +119,13 @@ def test_prepped_complex_from_complex(complex_pdb):
     assert du.HasLigand()
     assert c2.target.target_name == "test"
     assert c2.ligand.compound_name == "test"
+
+
+def test_prepped_complex_from_oedu_file(complex_oedu):
+    c = PreppedComplex.from_oedu_file(
+        complex_oedu,
+        target_kwargs={"target_name": "test"},
+        ligand_kwargs={"compound_name": "test"},
+    )
+    assert c.target.target_name == "test"
+    assert c.ligand.compound_name == "test"

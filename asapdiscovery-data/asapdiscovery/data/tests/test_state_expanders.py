@@ -1,6 +1,8 @@
+import subprocess
+
 import pytest
 
-from asapdiscovery.data.openeye import oe_smiles_roundtrip
+from asapdiscovery.data.openeye import oe_smiles_roundtrip, save_openeye_sdfs
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import (
     EpikExpander,
@@ -106,8 +108,6 @@ def test_epik_mocked_normal(monkeypatch):
 
     # a ligand which we know epik returns enumerated states
     ligand = Ligand.from_smiles("c1[nH]c2c(=O)[nH]c(nc2n1)N", compound_name="test")
-    # mock the parent being set
-    ligand.set_SD_data({"parent": ligand.fixed_inchikey})
 
     epik_expander = EpikExpander()
 
@@ -119,29 +119,32 @@ def test_epik_mocked_normal(monkeypatch):
     def _do_nothing(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(EpikExpander, "_provenance", _get_version)
-    monkeypatch.setattr(EpikExpander, "_prepare_ligands", _do_nothing)
-    monkeypatch.setattr(EpikExpander, "_call_epik", _do_nothing)
-
-    # mock the return of a ligand with labels
-    def _return_expanded(*args, **kargs):
-        "mock the returned expanded states"
-        # set an epik score on the first ligand
-        l1 = ligand
-        l1.set_SD_data({"r_epik_State_Penalty": 0.1})
-        # create another ligand with some large pentaly
-        l2 = Ligand.from_smiles(
+    # mock the prep call and make the epik output to be read later
+    def _mock_prep(self, ligands):
+        # mock the score for the first ligand
+        ligands[0].set_SD_data({"r_epik_State_Penalty": 0.1})
+        # add an expansion
+        expansion = Ligand.from_smiles(
             "[H]C1=Nc2c(nc(nc2[O-])N([H])[H])N1[H]", compound_name="tautomer"
         )
-        l2.set_SD_data({"parent": ligand.fixed_inchikey})
-        l2.set_SD_data({"r_epik_State_Penalty": 2})
-        return [l1, l2]
+        # set the same parent using the tag that should have been stored by the Epik expander
+        expansion.set_SD_data(
+            {"r_epik_State_Penalty": 2, "parent": ligands[0].tags["parent"]}
+        )
+        ligands.append(expansion)
+        save_openeye_sdfs([ligand.to_oemol() for ligand in ligands], "output.sdf")
 
-    monkeypatch.setattr(EpikExpander, "_extract_ligands", _return_expanded)
+    # patch all functions which call to SCHRODINGER tools
+    monkeypatch.setenv("SCHRODINGER", "path/to/software")
+    monkeypatch.setattr(EpikExpander, "_provenance", _get_version)
+    monkeypatch.setattr(EpikExpander, "_prepare_ligands", _mock_prep)
+    monkeypatch.setattr(subprocess, "run", _do_nothing)
+    monkeypatch.setattr(EpikExpander, "_call_epik", _do_nothing)
 
     expanded_ligands = epik_expander.expand(ligands=[ligand])
     assert len(expanded_ligands) == 2
     for lig in expanded_ligands:
+        assert "parent" in lig.tags
         assert lig.expansion_tag.parent_fixed_inchikey == ligand.fixed_inchikey
 
 

@@ -3,8 +3,9 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
-    get_SD_data,
     load_openeye_sdfs,
     oechem,
     oequacpac,
@@ -12,7 +13,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -103,7 +103,7 @@ class EpikExpander(StateExpanderBase):
         """
         Convert the list of Ligands to a SCHRODINGER mae file before running with Epik.
         """
-        oe_ligands = [ligand.to_oemol(tags_to_include=["parent"]) for ligand in ligands]
+        oe_ligands = [ligand.to_oemol() for ligand in ligands]
         save_openeye_sdfs(oe_ligands, "input.sdf")
         convert_cmd = self._create_cmd("utilities", "structconvert")
         with open("structconvert.log", "w") as log:
@@ -133,14 +133,7 @@ class EpikExpander(StateExpanderBase):
             )
         oe_mols = load_openeye_sdfs(sdf_fn="output.sdf")
         # parse into ligand objects
-        expanded_ligands = []
-        for oemol in oe_mols:
-            sd_data = get_SD_data(oemol)
-            # create the ligand and set the compound name and parent from the sdf tag
-            expanded_ligand = Ligand.from_oemol(oemol, **sd_data)
-            # update SD data
-            expanded_ligand.pop_attrs_from_SD_data()
-            expanded_ligands.append(expanded_ligand)
+        expanded_ligands = [Ligand.from_oemol(oemol) for oemol in oe_mols]
         return expanded_ligands
 
     def _call_epik(self):
@@ -200,7 +193,7 @@ class EpikExpander(StateExpanderBase):
         # set the expansion tag only for new microstate ligands
         for ligand in expanded_ligands:
             # do not set the expansion tag if the molecule is the same as the parent and has a score of 0
-            state_pentalty = ligand.tags["r_epik_State_Penalty"]
+            state_pentalty = float(ligand.tags["r_epik_State_Penalty"])
             if ligand.tags["parent"] == ligand.fixed_inchikey and state_pentalty == 0:
                 continue
 

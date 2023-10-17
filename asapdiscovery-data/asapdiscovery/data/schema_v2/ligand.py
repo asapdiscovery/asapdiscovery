@@ -132,9 +132,7 @@ class Ligand(DataModelAbstractBase):
         )
 
     @classmethod
-    def from_oemol(
-        cls, mol: oechem.OEMol, compound_name: Optional[str] = None, **kwargs
-    ) -> "Ligand":
+    def from_oemol(cls, mol: oechem.OEMol, **kwargs) -> "Ligand":
         """
         Create a Ligand from an OEMol extracting all SD tags into the internal model
         """
