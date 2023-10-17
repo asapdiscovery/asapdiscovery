@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.docking import POSIT_METHODS
 

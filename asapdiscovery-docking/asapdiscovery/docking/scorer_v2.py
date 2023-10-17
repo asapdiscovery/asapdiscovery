@@ -5,8 +5,6 @@ from typing import ClassVar, Optional
 import dask
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field
-
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -15,6 +13,7 @@ from asapdiscovery.data.schema_v2.target import TargetIdentifiers
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models.ml_models import MLModelType
+from pydantic import BaseModel, Field
 
 
 class ScoreType(str, Enum):

@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from asapdiscovery.docking.docking_v2 import POSITDocker
 
 

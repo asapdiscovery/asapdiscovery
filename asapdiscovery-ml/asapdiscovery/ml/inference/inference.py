@@ -4,9 +4,6 @@ from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 import dgl
 import numpy as np
 import torch
-from dgllife.utils import CanonicalAtomFeaturizer
-from pydantic import BaseModel, Field
-
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
@@ -20,6 +17,8 @@ from asapdiscovery.ml.models.ml_models import (
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
+from dgllife.utils import CanonicalAtomFeaturizer
+from pydantic import BaseModel, Field
 
 
 class InferenceBase(BaseModel):
