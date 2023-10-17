@@ -1,10 +1,10 @@
 import pytest
+
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import ProtomerExpander
 from asapdiscovery.data.state_expanders.state_expander import StateExpansionSet
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
-from asapdiscovery.data.state_expanders.tautomer_expander import TautomerExpander
 
 
 @pytest.fixture(scope="session")
@@ -23,20 +23,25 @@ def test_expand_from_mol(wafarin_smi):
 
 
 def test_expand_from_mol_collect_graph(wafarin_smi):
-    l1 = Ligand.from_smiles(wafarin_smi, compound_name="test")
+    l1 = Ligand.from_smiles(wafarin_smi, compound_name="warfarin")
     stereo_expander = StereoExpander(stereo_expand_defined=True)
-    ligands = stereo_expander.expand(ligands=[l1])
-    assert len(ligands) == 2
-    state_expansion_set = StateExpansionSet.from_ligands(ligands)
-    print(state_expansion_set)
-    graph = state_expansion_set.to_networkx()
-    assert len(graph.nodes) == 3
-    assert len(graph.edges) == 3
+    expanded_ligands = stereo_expander.expand(ligands=[l1])
+    assert len(expanded_ligands) == 2
+    # the stereo expander does not keep an undefined input so add it back
+    expanded_ligands.append(l1)
+    state_expansion_set = StateExpansionSet.from_ligands(expanded_ligands)
+    # make sure the expansion is correctly grouped
+    assert len(state_expansion_set.get_stereo_expansions()) == 1
+    assert len(state_expansion_set.get_charge_expansions()) == 0
 
     protomer_expander = ProtomerExpander()
-    ligands = protomer_expander.expand(ligands=ligands)
+    # remove the l1 ligand
+    expanded_ligands.remove(l1)
+    ligands = protomer_expander.expand(ligands=expanded_ligands)
     assert len(ligands) == 4
-    state_expansion_set = StateExpansionSet.from_ligands(ligands)
-    graph = state_expansion_set.to_networkx()
-    assert len(graph.nodes) == 4
-    assert len(graph.edges) == 4
+
+    # merge them together so we have the parent as well
+    expanded_ligands.extend(ligands)
+    state_expansion_set = StateExpansionSet.from_ligands(expanded_ligands)
+    assert len(state_expansion_set.get_stereo_expansions()) == 0
+    assert len(state_expansion_set.get_charge_expansions()) == 2

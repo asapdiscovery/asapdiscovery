@@ -55,8 +55,12 @@ def test_expand_stereo(input_molecule, stereo_expand_defined, expected_states):
     expander = StereoExpander(stereo_expand_defined=stereo_expand_defined)
     ligands = expander.expand(ligands=[l1])
     for ligand in ligands:
-        assert ligand.expansion_tag.parent_fixed_inchikey == l1.fixed_inchikey
-        assert ligand.expansion_tag.provenance == expander.provenance()
+        if l1 != ligand:
+            # molecules are only tagged if they are new
+            assert ligand.expansion_tag.parent_fixed_inchikey == l1.fixed_inchikey
+            assert ligand.expansion_tag.provenance == expander.provenance()
+        else:
+            assert ligand.expansion_tag is None
     assert len(ligands) == expected_states
 
 

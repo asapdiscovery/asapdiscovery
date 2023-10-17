@@ -1,9 +1,10 @@
 import abc
 from typing import Literal
 
+from pydantic import BaseModel, Field
+
 # import networkx as nx
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from pydantic import BaseModel, Field
 
 
 class StateExpanderBase(abc.ABC, BaseModel):
@@ -39,18 +40,25 @@ class StateExpanderBase(abc.ABC, BaseModel):
         return data
 
 
-# class StateExpansion(BaseModel):
-#     parent: Ligand = Field(..., description="The parent ligand")
-#     children: list[Ligand] = Field(
-#         ..., description="The children ligands resulting from expansion"
-#     )
-#
-#     class Config:
-#         allow_mutation = False
-#
-#     @property
-#     def n_expanded_states(self) -> int:
-#         return len(self.children)
+class StateExpansion(BaseModel):
+    parent: Ligand = Field(..., description="The parent ligand")
+    children: list[Ligand] = Field(
+        ..., description="The children ligands resulting from expansion"
+    )
+    expansion: Literal["stereo", "charge"] = Field(
+        ...,
+        description="The type of state expansion, this will be used "
+        "to group the expansions.",
+    )
+
+    class Config:
+        allow_mutation = False
+
+    @property
+    def n_expanded_states(self) -> int:
+        return len(self.children)
+
+
 #
 #     def to_networkx(self) -> nx.DiGraph:
 #         graph = nx.DiGraph()
@@ -59,50 +67,87 @@ class StateExpanderBase(abc.ABC, BaseModel):
 #             graph.add_node(child)
 #             graph.add_edge(self.parent, child)
 #         return graph
-#
-#
-# class StateExpansionSet(BaseModel):
-#     expansions: list[StateExpansion] = Field(..., description="The set of expansions")
-#     unassigned: list[Ligand] = Field(
-#         ..., description="Ligands that could not be assigned a parent"
-#     )
-#
-#     class Config:
-#         allow_mutation = False
-#
-#     @classmethod
-#     def from_ligands(
-#         cls, ligands: list[Ligand], no_tag: str = "ignore"
-#     ) -> "StateExpansionSet":
-#         has_tag = [ligand for ligand in ligands if ligand.expansion_tag is not None]
-#         if not all(has_tag):
-#             if no_tag == "ignore":
-#                 pass
-#             elif no_tag == "raise":
-#                 raise ValueError("Some ligands do not have an expansion tag")
-#             else:
-#                 raise ValueError(
-#                     f"Unknown value for no_tag: {no_tag}, must be 'ignore' or 'raise'"
-#                 )
-#
-#         expansions = []
-#         # keep track of children that have been assigned a parent
-#         assigned = set()
-#         for l1 in has_tag:
-#             children = {
-#                 l2 for l2 in has_tag if l2.expansion_tag.is_child_of(l1.expansion_tag)
-#             }
-#             if len(children) > 0:
-#                 expansion = StateExpansion(
-#                     parent=l1, children=children, expander={}, provenance={}
-#                 )
-#                 expansions.append(expansion)
-#                 assigned.update(children)
-#
-#         # check for unassigned ligands
-#         unassigned = [ligand for ligand in ligands if ligand not in assigned]
-#
-#         return StateExpansionSet(expansions=expansions, unassigned=unassigned)
+
+
+class StateExpansionSet(BaseModel):
+    expansions: list[StateExpansion] = Field(..., description="The set of expansions")
+    unassigned: list[Ligand] = Field(
+        ..., description="Ligands that could not be assigned a parent"
+    )
+
+    class Config:
+        allow_mutation = False
+
+    @classmethod
+    def from_ligands(cls, ligands: list[Ligand]) -> "StateExpansionSet":
+        is_expansion = [
+            ligand for ligand in ligands if ligand.expansion_tag is not None
+        ]
+
+        # if not all(has_tag):
+        #     if no_tag == "ignore":
+        #         pass
+        #     elif no_tag == "raise":
+        #         raise ValueError("Some ligands do not have an expansion tag")
+        #     else:
+        #         raise ValueError(
+        #             f"Unknown value for no_tag: {no_tag}, must be 'ignore' or 'raise'"
+        #         )
+
+        expansions = []
+        # keep track of children that have been assigned a parent
+        assigned = set()
+        for ligand in ligands:
+            inchikey = ligand.fixed_inchikey
+            children = [
+                child
+                for child in is_expansion
+                if child.expansion_tag.parent_fixed_inchikey == inchikey
+            ]
+            if len(children) > 0:
+                # work out the type of expansion, make sure only one type links the children and parents
+                expansion_type = [
+                    child.expansion_tag.provenance["expander"]["expander_type"].lower()
+                    for child in children
+                ]
+                if len(set(expansion_type)) > 1:
+                    raise RuntimeError(
+                        f"Multiple expansion methods link the parent {ligand.smiles} to the child molecules {[child.smiles for child in children]} this should not happen."
+                    )
+                # set the type to one of the two defined types
+                expansion_method = (
+                    "stereo"
+                    if expansion_type[0].lower().find("stereo") == 0
+                    else "charge"
+                )
+
+                expansion = StateExpansion(
+                    parent=ligand, children=children, expansion=expansion_method
+                )
+                expansions.append(expansion)
+                assigned.update(children)
+                assigned.add(ligand)
+
+        # check for unassigned ligands
+        unassigned = [ligand for ligand in ligands if ligand not in assigned]
+
+        return StateExpansionSet(expansions=expansions, unassigned=unassigned)
+
+    def get_stereo_expansions(self) -> list[StateExpansion]:
+        return [
+            expansion
+            for expansion in self.expansions
+            if expansion.expansion == "stereo"
+        ]
+
+    def get_charge_expansions(self) -> list[StateExpansion]:
+        return [
+            expansion
+            for expansion in self.expansions
+            if expansion.expansion == "charge"
+        ]
+
+
 #
 #     @property
 #     def n_expanded_states(self) -> int:
