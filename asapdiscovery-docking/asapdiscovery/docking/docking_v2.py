@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import Literal, Optional, Union
 
 import dask
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
-
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -19,6 +17,7 @@ from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 
 
 class DockingResult(BaseModel):

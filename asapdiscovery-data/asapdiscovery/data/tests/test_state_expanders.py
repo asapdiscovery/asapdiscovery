@@ -1,7 +1,6 @@
 import subprocess
 
 import pytest
-
 from asapdiscovery.data.openeye import oe_smiles_roundtrip, save_openeye_sdfs
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import (
