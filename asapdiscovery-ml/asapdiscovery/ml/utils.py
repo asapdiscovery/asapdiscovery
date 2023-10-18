@@ -266,9 +266,12 @@ def build_model(
         Which readout method to use for the combined pose prediction. Current
         options are ["pic50"]
     comb_neg : bool, default=True
-        Value to pass for neg when creating MaxCombination
+        Value to pass for neg when creating MaxCombination. If True, this will take the
+        minimum instead of maximum
     comb_scale : float, default=1000.0
-        Value to pass for scale when creating MaxCombination.
+        Value to pass for scale when creating MaxCombination. A value of 1 will
+        approximate the Boltzmann mean, while a larger value will more accurately
+        approximate the max/min operation
     substrate : float, optional
         Substrate concentration for use in the Cheng-Prusoff equation. Assumed to be
         in the same units as km
