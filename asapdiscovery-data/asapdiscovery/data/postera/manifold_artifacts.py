@@ -84,6 +84,9 @@ class ManifoldArtifactUploader:
             raise ValueError(
                 f"Target {target} not in allowed values {TargetTags.get_values()}"
             )
+        
+        # drop rows in molecule df where artifact_column is None or NaN
+        self.molecule_dataframe = self.molecule_dataframe.dropna(subset=[self.artifact_column])
 
     def generate_cloudfront_url(
         self, bucket_path, expires_delta: timedelta = timedelta(days=365 * 5)
