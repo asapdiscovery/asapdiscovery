@@ -806,18 +806,23 @@ def filter_molecules_dataframe(
     semiquant_label = [
         is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
     ]
-    keep_idx = [
-        (retain_achiral and achiral_label[i])
-        or (retain_racemic and racemic_label[i])
-        or (retain_enantiopure and enantiopure_label[i])
-        or (retain_semiquantitative_data and semiquant_label[i])
-        for i in range(mol_df.shape[0])
-    ]
-
     mol_df["achiral"] = achiral_label
     mol_df["racemic"] = racemic_label
     mol_df["enantiopure"] = enantiopure_label
     mol_df["semiquant"] = semiquant_label
+
+    # Check which molcules to keep
+    achiral_keep_idx = np.asarray([retain_achiral and lab for lab in achiral_label])
+    racemic_keep_idx = np.asarray([retain_racemic and lab for lab in racemic_label])
+    enantiopure_keep_idx = np.asarray(
+        [retain_enantiopure and lab for lab in enantiopure_label]
+    )
+    keep_idx = achiral_keep_idx | racemic_keep_idx | enantiopure_keep_idx
+
+    # If we do want to keep semiquant data, don't need to do any further filtering
+    if not retain_semiquantitative_data:
+        # Only want to keep non semi-quant data, so negate label first before taking &
+        keep_idx &= ~np.asarray(semiquant_label)
 
     mol_df = mol_df.loc[keep_idx, :]
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries after filtering")
