@@ -10,7 +10,7 @@ class GIFBlockData:
     @classmethod
     def get_view_coords(cls, target):
         target_ = VizTargets.get_name_underscore(target)
-        return getattr(cls, f"view_coords_{target_}")
+        return getattr(cls, "master_view_coords")
 
     @classmethod
     def get_pocket_dict(cls, target):
