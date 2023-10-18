@@ -38,9 +38,6 @@ class FragalysisFactory(DataModelAbstractBase):
 
         return all([c1 == c2 for c1, c2 in zip(self.complexes, other.complexes)])
 
-    def __iter__(self):
-        yield from self.complexes
-
     # Overload from base class to check each complex
     def data_equal(self, other: FragalysisFactory):
         if len(self) != len(other):
