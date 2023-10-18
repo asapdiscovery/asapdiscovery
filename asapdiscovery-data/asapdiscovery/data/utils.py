@@ -734,19 +734,21 @@ def filter_molecules_dataframe(
     from rdkit.Chem import FindMolChiralCenters, MolFromSmiles
 
     # Define functions to evaluate whether molecule is achiral, racemic, or resolved
-    is_achiral = (
-        lambda smi: len(
-            FindMolChiralCenters(
-                MolFromSmiles(smi),
-                includeUnassigned=True,
-                includeCIP=False,
-                useLegacyImplementation=False,
+    def is_achiral(smi):
+        return (
+            len(
+                FindMolChiralCenters(
+                    MolFromSmiles(smi),
+                    includeUnassigned=True,
+                    includeCIP=False,
+                    useLegacyImplementation=False,
+                )
             )
+            == 0
         )
-        == 0
-    )
-    is_racemic = (
-        lambda smi: (
+
+    def is_racemic(smi):
+        return (
             len(
                 FindMolChiralCenters(
                     MolFromSmiles(smi),
@@ -763,9 +765,9 @@ def filter_molecules_dataframe(
                     useLegacyImplementation=False,
                 )
             )
+            > 0
         )
-        > 0
-    )
+
     is_enantiopure = lambda smi: (not is_achiral(smi)) and (  # noqa: E731
         not is_racemic(smi)
     )
