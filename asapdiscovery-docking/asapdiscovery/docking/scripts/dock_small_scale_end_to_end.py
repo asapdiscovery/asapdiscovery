@@ -560,8 +560,11 @@ def main():
             raise ValueError(f"Reference protein file does not exist: {args.ref_prot}")
         else:
             logger.info(f"Using reference protein: {args.ref_prot}")
-
-    reference_structure = args.ref_prot if args.ref_prot else receptor
+            logger.warning(f"Aligning prepped system to {args.ref_prot}; GIF/HTML master view may be off")
+            reference_structure = args.ref_prot
+    else:
+        from asapdiscovery.data.metadata.resources import master_structures
+        reference_structure = master_structures[args.target]
 
     prep_opts = PrepOpts(
         ref_fn=reference_structure,
