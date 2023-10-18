@@ -1,14 +1,18 @@
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import oechem, oequacpac
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class TautomerExpander(StateExpanderBase):
     """
-    Expand a molecule to protomers
+    Expand a molecule to reasonable tautomers using OpenEye.
+
+    Note:
+        The input molecule is also returned.
     """
 
     expander_type: Literal["TautomerExpander"] = "TautomerExpander"
@@ -55,5 +59,9 @@ class TautomerExpander(StateExpanderBase):
                     expanded_states.append(tautomer_ligand)
                 else:
                     expanded_states.append(parent_ligand)
+
+            # return the input ligand
+            if parent_ligand not in expanded_states:
+                expanded_states.append(parent_ligand)
 
         return expanded_states

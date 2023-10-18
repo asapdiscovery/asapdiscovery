@@ -1,14 +1,19 @@
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import oechem, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class StereoExpander(StateExpanderBase):
     """
-    Expand a molecule to stereoisomers
+    Expand a molecule to stereoisomers using OpenEye
+
+    Note:
+        The input molecule is only included if it is fully defined.
+        Input molecules with no possible expansions are passed through without an expansion tag set.
     """
 
     expander_type: Literal["StereoExpander"] = "StereoExpander"
@@ -47,7 +52,7 @@ class StereoExpander(StateExpanderBase):
         enum_nitrogen = (
             False  # WARNING: This creates multiple microstates with same SMILES if True
         )
-        warts = True  # add suffix for stereoisomers
+        warts = False  # add suffix for stereoisomers
 
         enantiomers = []
         for parent_ligand in ligands:

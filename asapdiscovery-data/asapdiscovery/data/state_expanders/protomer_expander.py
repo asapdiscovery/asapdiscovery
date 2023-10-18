@@ -3,6 +3,8 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
     oechem,
@@ -11,12 +13,14 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
     """
-    Expand a molecule to protomers
+    Expand a molecule to protomers using OpenEye reasonable protomer state enumeration.
+
+    Note:
+        The input molecule is included in the output.
     """
 
     expander_type: Literal["ProtomerExpander"] = "ProtomerExpander"
@@ -45,6 +49,9 @@ class ProtomerExpander(StateExpanderBase):
                     expanded_states.append(protomer_ligand)
                 else:
                     expanded_states.append(parent_ligand)
+            # add the parent if it is not present.
+            if parent_ligand not in expanded_states:
+                expanded_states.append(parent_ligand)
 
         return expanded_states
 

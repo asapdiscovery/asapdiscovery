@@ -20,9 +20,9 @@ def main():
     expanded_ligands = expander.expand(ligands=input_ligands)
 
     for ligand in expanded_ligands:
-        print(ligand.smiles)
-        print(ligand.tags)
-    assert len(expanded_ligands) == 1
+        # make sure the Epik tags have been set
+        assert "r_epik_State_Penalty" in ligand.tags
+    assert len(expanded_ligands) == 3
 
 
 if __name__ == "__main__":
