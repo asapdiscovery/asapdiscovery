@@ -9,7 +9,6 @@ session_5.pse with pymol, orienting and running `get_view` in pymol terminal.
 class GIFBlockData:
     @classmethod
     def get_view_coords(cls, target):
-        target_ = VizTargets.get_name_underscore(target)
         return getattr(cls, "master_view_coords")
 
     @classmethod
