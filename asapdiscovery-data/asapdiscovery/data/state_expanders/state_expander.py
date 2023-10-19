@@ -1,9 +1,9 @@
 import abc
 from typing import Literal
 
-# import networkx as nx
-from asapdiscovery.data.schema_v2.ligand import Ligand
 from pydantic import BaseModel, Field
+
+from asapdiscovery.data.schema_v2.ligand import Ligand
 
 
 class StateExpanderBase(abc.ABC, BaseModel):
@@ -58,16 +58,6 @@ class StateExpansion(BaseModel):
         return len(self.children)
 
 
-#
-#     def to_networkx(self) -> nx.DiGraph:
-#         graph = nx.DiGraph()
-#         graph.add_node(self.parent)
-#         for child in self.children:
-#             graph.add_node(child)
-#             graph.add_edge(self.parent, child)
-#         return graph
-
-
 class StateExpansionSet(BaseModel):
     expansions: list[StateExpansion] = Field(..., description="The set of expansions")
     unassigned: list[Ligand] = Field(
@@ -82,16 +72,6 @@ class StateExpansionSet(BaseModel):
         is_expansion = [
             ligand for ligand in ligands if ligand.expansion_tag is not None
         ]
-
-        # if not all(has_tag):
-        #     if no_tag == "ignore":
-        #         pass
-        #     elif no_tag == "raise":
-        #         raise ValueError("Some ligands do not have an expansion tag")
-        #     else:
-        #         raise ValueError(
-        #             f"Unknown value for no_tag: {no_tag}, must be 'ignore' or 'raise'"
-        #         )
 
         expansions = []
         # keep track of children that have been assigned a parent
