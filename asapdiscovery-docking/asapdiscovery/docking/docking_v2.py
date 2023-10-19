@@ -3,6 +3,7 @@ import warnings
 from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Optional, Union
+from warnings import warn
 
 import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
@@ -19,7 +20,6 @@ from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from warnings import warn
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 

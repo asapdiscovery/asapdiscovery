@@ -29,7 +29,7 @@ from asapdiscovery.docking.scorer_v2 import (
     SchnetScorer,
 )
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from pydantic import BaseModel, Field, root_validator, validator, PositiveInt
+from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
 class LargeScaleDockingInputs(BaseModel):
