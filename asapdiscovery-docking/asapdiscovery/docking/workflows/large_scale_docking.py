@@ -25,7 +25,7 @@ from asapdiscovery.docking.scorer_v2 import (
     SchnetScorer,
 )
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, root_validator, validator, PositiveInt
 
 
 class LargeScaleDockingInputs(BaseModel):
@@ -66,6 +66,14 @@ class LargeScaleDockingInputs(BaseModel):
 
     dask_type: DaskType = Field(
         DaskType.LOCAL, description="Dask client to use for parallelism."
+    )
+
+    n_select: PositiveInt = Field(
+        10, description="Number of targets to dock each ligand against, sorted by MCS"
+    )
+
+    top_n: PositiveInt = Field(
+        500, description="Number of docking results to return, ordered by docking score"
     )
 
     class Config:
@@ -126,6 +134,9 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     """
     dask_client = dask_client_from_type(inputs.dask_type)
 
+    # make a directory to store intermediate CSV results
+    data_intermediates = Path("data_intermediates").mkdir(exist_ok=True)
+
     if inputs.postera:
         # load postera
         postera_settings = PosteraSettings()
@@ -161,7 +172,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        n_select=10,
+        n_select=inputs.n_select,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
@@ -188,7 +199,33 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
     )
 
-    scores_df.to_csv("docking_scores.csv", index=False)
+    scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
+
+    # filter for POSIT probability > 0.7
+    scores_df = scores_df[
+        scores_df[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value] > 0.7
+    ]
+
+    # filter out clashes (chemgauss4 score > 0)
+    scores_df = scores_df[scores_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
+
+    # then order by chemgauss4 score and remove duplicates by ligand id
+    scores_df = scores_df.sort_values(
+        DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
+    )
+    scores_df.to_csv(
+        data_intermediates / "docking_scores_filtered_sorted.csv", index=False
+    )
+
+    scores_df = scores_df.drop_duplicates(subset=[DockingResultCols.LIGAND_ID.value])
+
+    # take top n results
+    scores_df = scores_df.head(inputs.top_n)
+
+    scores_df.to_csv(
+        data_intermediates / f"docking_scores_filtered_sorted_top_{inputs.top_n}.csv",
+        index=False,
+    )
 
     result_df = rename_output_columns_for_manifold(
         scores_df,
@@ -197,7 +234,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         manifold_validate=True,
         drop_non_output=True,
         allow=[DockingResultCols.LIGAND_ID.value],
-    )  # TODO:  we can make this nicer for sure, this function is ugly AF
+    )
 
     result_df.to_csv("docking_results_final.csv", index=False)
 

@@ -41,6 +41,12 @@ def cli():
     help="The number of targets to dock each ligand against, sorted by MCS",
 )
 @click.option(
+    "--top-n",
+    type=int,
+    default=500,
+    help="The maximum number of docking results to return, ordered by docking score",
+)
+@click.option(
     "--write-final-sdf",
     is_flag=True,
     default=True,
@@ -95,6 +101,7 @@ def large_scale(
     postera_upload: bool,
     target: TargetTags,
     n_select: int,
+    top_n: int,
     write_final_sdf: bool,
     use_dask: bool,
     dask_type: str,
@@ -114,6 +121,7 @@ def large_scale(
         postera_upload=postera_upload,
         target=target,
         n_select=n_select,
+        top_n=top_n,
         write_final_sdf=write_final_sdf,
         use_dask=use_dask,
         dask_type=dask_type,

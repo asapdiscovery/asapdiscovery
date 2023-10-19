@@ -50,6 +50,8 @@ _SCORE_MANIFOLD_ALIAS = {
     ScoreType.INVALID: None,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
+    "smiles": DockingResultCols.SMILES.value,
+    "probability": DockingResultCols.DOCKING_CONFIDENCE_POSIT.value,
 }
 
 
