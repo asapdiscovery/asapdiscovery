@@ -3,6 +3,8 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
     oechem,
@@ -11,7 +13,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -162,7 +163,7 @@ class EpikExpander(StateExpanderBase):
 
         Note:
          All input molecules are scored by Epik and have the values stored in Ligand.tags. Only new molecules will
-         have an expansion tag however. For example ethane would recive a score
+         have an expansion tag however. For example ethane would receive a score but no expansion tag.
 
         Parameters
         ----------
