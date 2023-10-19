@@ -262,9 +262,9 @@ class Ligand(DataModelAbstractBase):
 
         """
         if allow_append:
-            fmode = 'a'
+            fmode = "a"
         else:
-            fmode = 'w'
+            fmode = "w"
         mol = self.to_oemol()
         write_file_directly(filename, oemol_to_sdf_string(mol), mode=fmode)
 
