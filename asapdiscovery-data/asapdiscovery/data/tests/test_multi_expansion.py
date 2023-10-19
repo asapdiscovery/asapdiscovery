@@ -1,4 +1,5 @@
 import pytest
+
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import ProtomerExpander
@@ -18,7 +19,8 @@ def test_expand_from_mol(wafarin_smi):
     assert len(ligands) == 2
     protomer_expander = ProtomerExpander()
     ligands = protomer_expander.expand(ligands=ligands)
-    assert len(ligands) == 4
+    # we should have two protomers for each input molecule and the two inputs
+    assert len(ligands) == 6
 
 
 def test_expand_from_mol_collect_graph(wafarin_smi):
@@ -37,10 +39,9 @@ def test_expand_from_mol_collect_graph(wafarin_smi):
     # remove the l1 ligand
     expanded_ligands.remove(l1)
     ligands = protomer_expander.expand(ligands=expanded_ligands)
-    assert len(ligands) == 4
+    assert len(ligands) == 6
 
-    # merge them together so we have the parent as well
-    expanded_ligands.extend(ligands)
-    state_expansion_set = StateExpansionSet.from_ligands(expanded_ligands)
+    # group the ligands we should have two expansions one for each stereo isomer of the input molecule
+    state_expansion_set = StateExpansionSet.from_ligands(ligands)
     assert len(state_expansion_set.get_stereo_expansions()) == 0
     assert len(state_expansion_set.get_charge_expansions()) == 2

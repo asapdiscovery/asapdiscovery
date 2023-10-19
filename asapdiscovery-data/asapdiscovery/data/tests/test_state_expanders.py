@@ -1,17 +1,13 @@
 import subprocess
 
 import pytest
+
 from asapdiscovery.data.openeye import oe_smiles_roundtrip, save_openeye_sdfs
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import (
     EpikExpander,
     ProtomerExpander,
 )
-
-# from asapdiscovery.data.state_expanders.state_expander import (
-#     StateExpansion,
-#     StateExpansionSet,
-# )
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
 from asapdiscovery.data.state_expanders.tautomer_expander import TautomerExpander
 from asapdiscovery.data.testing.test_resources import fetch_test_file
@@ -80,15 +76,6 @@ def test_expand_stereo_not_possible():
         assert lig.expansion_tag is None
 
 
-# def test_expand_from_expand_defined_networkx(chalcogran_defined_smi):
-#     l1 = Ligand.from_smiles(chalcogran_defined_smi, compound_name="test")
-#     expander = StereoExpander(stereo_expand_defined=True)
-#     ligands = expander.expand(ligands=[l1])
-#     ses = StateExpansionSet.from_ligands(ligands)
-#     graph = ses.to_networkx()
-#     assert graph.has_edge(l1, ligands[0])
-
-
 def test_expand_from_mol_expand_defined_multi(chalcogran_defined_smi):
     l1 = Ligand.from_smiles(chalcogran_defined_smi, compound_name="test")
     expander = StereoExpander(stereo_expand_defined=True)
@@ -114,7 +101,6 @@ def test_epik_mocked_normal(monkeypatch):
 
     epik_expander = EpikExpander()
 
-    # print(epik_expander.provenance())
     # mock the 4 function calls
     def _get_version(*args, **kwargs):
         return {"epik": 5}
@@ -187,6 +173,16 @@ def test_epik_mocked_no_expansions(monkeypatch):
     assert len(expanded_ligands) == 1
     assert expanded_ligands[0].expansion_tag is None
     assert expanded_ligands[0] == ligand
+
+
+def test_epik_env_not_set(chalcogran_defined_smi):
+    "Make sure an error is raised if we try and call Epik but the path to the software has not been set"
+
+    ligand = Ligand.from_smiles(chalcogran_defined_smi, compound_name="test")
+    expander = EpikExpander()
+
+    with pytest.raises(RuntimeError, match="Epik enumerator requires the path"):
+        _ = expander.expand([ligand])
 
 
 def test_openeye_protomer_expander():

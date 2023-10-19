@@ -1,9 +1,10 @@
 import abc
 from typing import Literal
 
+from pydantic import BaseModel, Field
+
 # import networkx as nx
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from pydantic import BaseModel, Field
 
 
 class StateExpanderBase(abc.ABC, BaseModel):
@@ -145,20 +146,3 @@ class StateExpansionSet(BaseModel):
             for expansion in self.expansions
             if expansion.expansion == "charge"
         ]
-
-
-#
-#     @property
-#     def n_expanded_states(self) -> int:
-#         return sum([expansion.n_expanded_states for expansion in self.expansions])
-#
-#     def to_networkx(self) -> nx.DiGraph:
-#         print("to_networkx")
-#         graphs = []
-#         for expansion in self.expansions:
-#             graph = expansion.to_networkx()
-#             graphs.append(graph)
-#         if len(graphs) == 0:
-#             return nx.DiGraph()
-#         else:
-#             return nx.compose_all(graphs)

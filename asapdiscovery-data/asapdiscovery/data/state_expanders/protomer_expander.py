@@ -3,6 +3,8 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
     oechem,
@@ -11,7 +13,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -80,6 +81,11 @@ class EpikExpander(StateExpanderBase):
         """
         # create a path to epik
         schrodinger_folder = os.getenv("SCHRODINGER")
+        if schrodinger_folder is None:
+            raise RuntimeError(
+                "Epik enumerator requires the path to the shrodinger software to be set as the "
+                "SCHRODINGER environment variable."
+            )
         epik = os.path.join(schrodinger_folder, *programs)
         return epik
 
@@ -156,8 +162,8 @@ class EpikExpander(StateExpanderBase):
         Expand the protomers and tautomers of the input molecules using Epik and calculate the state penalty.
 
         Note:
-         Input molecules who are not expansions have no Epik state penalty and no expansion tag. Epik will give them
-         a score of 0 which just needs to be inferred later in the FEC prediction.
+         All input molecules are scored by Epik and have the values stored in Ligand.tags. Only new molecules will
+         have an expansion tag however. For example ethane would recive a score
 
         Parameters
         ----------
