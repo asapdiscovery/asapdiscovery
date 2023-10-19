@@ -11,10 +11,15 @@ from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
 
-# some reasonable defaults for distributed timeouts, warning overrides on import
-# TODO: probably should be wrapped in a function to avoid global state
-cfg.set({"distributed.scheduler.worker-ttl": None})
-cfg.set({"distributed.admin.tick.limit": "2h"})
+
+def set_dask_config():
+    cfg.set({"distributed.scheduler.worker-ttl": None})
+    cfg.set({"distributed.admin.tick.limit": "2h"})
+    cfg.set({"distributed.scheduler.active-memory-manager.measure": "managed"})
+    cfg.set({"distributed.worker.memory.rebalance.measure": "managed"})
+    cfg.set({"distributed.worker.memory.spill": False})
+    cfg.set({"distributed.worker.memory.pause": True})
+    cfg.set({"distributed.worker.memory.terminate": False})
 
 
 def actualise_dask_delayed_iterable(

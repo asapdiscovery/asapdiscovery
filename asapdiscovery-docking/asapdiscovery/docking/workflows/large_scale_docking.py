@@ -1,7 +1,11 @@
 from pathlib import Path
 from typing import Optional
 
-from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
+from asapdiscovery.data.dask_utils import (
+    DaskType,
+    dask_client_from_type,
+    set_dask_config,
+)
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     rename_output_columns_for_manifold,
@@ -132,7 +136,9 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     """
     Run large scale docking on a set of ligands, against a single target.
     """
-    dask_client = dask_client_from_type(inputs.dask_type)
+    if inputs.use_dask:
+        dask_client = dask_client_from_type(inputs.dask_type)
+        set_dask_config()
 
     # make a directory to store intermediate CSV results
     data_intermediates = Path("data_intermediates")
@@ -174,9 +180,10 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         query_ligands,
         prepped_complexes,
         n_select=inputs.n_select,
-        use_dask=inputs.use_dask,
-        dask_client=dask_client,
-    )
+        use_dask=False,
+        dask_client=None,
+    )  # getting some strange untraceable error when using dask here, possibly related to memory usage
+    # TODO: investigate this, but okay for now.
 
     # dock pairs
     docker = POSITDocker()
@@ -185,6 +192,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
+
     POSITDocker.write_docking_files(results, Path("docking_results"))
 
     # score results

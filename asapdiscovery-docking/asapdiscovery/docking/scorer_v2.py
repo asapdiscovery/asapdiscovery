@@ -144,7 +144,7 @@ class ScorerBase(BaseModel):
             return outputs
 
     @staticmethod
-    def scores_to_df(scores: list[Score], manifold=True) -> pd.DataFrame:
+    def scores_to_df(scores: list[Score]) -> pd.DataFrame:
         """
         Convert a list of scores to a dataframe.
 

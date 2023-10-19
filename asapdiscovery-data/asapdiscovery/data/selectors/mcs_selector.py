@@ -119,10 +119,8 @@ class MCSSelector(SelectorBase):
                     sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
                 except StopIteration:  # no match found
                     sort_args.append((0, 0))
-
             sort_args = np.asarray(sort_args)
             sort_idx = np.lexsort(-sort_args.T)
-
             complexes_sorted = np.asarray(complexes)[sort_idx]
 
             for i in range(n_select):

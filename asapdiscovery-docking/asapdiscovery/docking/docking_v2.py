@@ -19,6 +19,7 @@ from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
+from warnings import warn
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 
@@ -37,19 +38,6 @@ class DockingResult(BaseModel):
         description="Probability"
     )  # not easy to get the probability from rescoring
     provenance: dict[str, str] = Field(description="Provenance")
-
-    @root_validator
-    @classmethod
-    def smiles_match(cls, values):
-        posed_ligand = values.get("posed_ligand")
-        input_pair = values.get("input_pair")
-        if oe_smiles_roundtrip(posed_ligand.smiles) != oe_smiles_roundtrip(
-            input_pair.ligand.smiles
-        ):
-            raise ValueError(
-                f"SMILES of ligand: {posed_ligand.smiles} and ligand in input docking pair: {input_pair.ligand.smiles} do not match "
-            )
-        return values
 
     def get_output(self) -> dict:
         """
@@ -215,7 +203,9 @@ class POSITDocker(DockingBase):
         ret_code = poser.Dock(pose_res, lig, num_poses)
         return pose_res, ret_code
 
-    def _dock(self, inputs: list[DockingInputPair]) -> list[DockingResult]:
+    def _dock(
+        self, inputs: list[DockingInputPair], error="skip"
+    ) -> list[DockingResult]:
         """
         Dock the inputs
         """
@@ -230,9 +220,16 @@ class POSITDocker(DockingBase):
                 omega = oeomega.OEOmega(omegaOpts)
                 ret_code = omega.Build(lig_oemol)
                 if ret_code:
-                    raise ValueError(
-                        f"Omega failed with error code {oeomega.OEGetOmegaError(ret_code)}"
-                    )
+                    if error == "skip":
+                        print(
+                            f"Omega failed with error code {oeomega.OEGetOmegaError(ret_code)}"
+                        )
+                    elif error == "raise":
+                        raise ValueError(
+                            f"Omega failed with error code {oeomega.OEGetOmegaError(ret_code)}"
+                        )
+                    else:
+                        raise ValueError(f"Unknown error handling option {error}")
 
             opts = oedocking.OEPositOptions()
             opts.SetIgnoreNitrogenStereo(True)
@@ -303,9 +300,16 @@ class POSITDocker(DockingBase):
                     docking_results.append(docking_result)
 
             else:
-                warnings.warn(
-                    "docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
-                )
+                if error == "skip":
+                    print(
+                        "docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
+                    )
+                elif error == "raise":
+                    raise ValueError(
+                        "docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
+                    )
+                else:
+                    raise ValueError(f"Unknown error handling option {error}")
 
         return docking_results
 

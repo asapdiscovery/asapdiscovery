@@ -4,6 +4,9 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from pydantic import BaseModel, Field
+from uuid import UUID
+from warnings import warn
+from datetime import datetime
 
 
 class PosteraUploader(BaseModel):
@@ -43,10 +46,53 @@ class PosteraUploader(BaseModel):
                 self.molecule_set_name, ms_api.list_available()
             )
 
-            ms_api.update_molecules_from_df_with_manifold_validation(
-                molecule_set_id=molset_id,
-                df=df,
-                id_field=self.id_field,
-                smiles_field=self.smiles_field,
-                overwrite=True,
-            )
+            if not self.id_data_is_uuid_castable(df, self.id_field):
+                warn(
+                    "Attempting to update existing molecule set without UUID's set as id_field. A new molecule set will be created instead."
+                )
+                new_ms_name = self.molecule_set_name + "_{:%Y-%m-%d-%H-%M}".format(
+                    datetime.now()
+                )
+                if not ms_api.exists(new_ms_name, by="name"):
+                    ms_api.create_molecule_set_from_df_with_manifold_validation(
+                        molecule_set_name=new_ms_name,
+                        df=df,
+                        id_field=self.id_field,
+                        smiles_field=self.smiles_field,
+                    )
+                else:
+                    raise RuntimeError(
+                        f"Collision with updated Molecule set name {new_ms_name} wait a minute and try again."
+                    )
+
+            else:
+                ms_api.update_molecules_from_df_with_manifold_validation(
+                    molecule_set_id=molset_id,
+                    df=df,
+                    id_field=self.id_field,
+                    smiles_field=self.smiles_field,
+                    overwrite=True,
+                )
+
+    @staticmethod
+    def id_data_is_uuid_castable(df, id_field) -> bool:
+        """
+        Check if the id data is castable to UUID
+
+        Parameters
+        ----------
+        df : DataFrame
+            DataFrame of data to upload
+        id_field : str
+            Name of the column in the dataframe to use as the ligand id
+
+        Returns
+        -------
+        bool
+            Whether the data is castable to UUID
+        """
+        try:
+            df[id_field].apply(lambda x: UUID(x))
+            return True
+        except ValueError:
+            return False

@@ -333,8 +333,10 @@ class MoleculeSetAPI(PostEraAPI):
         response = self._session.patch(
             url, json={"moleculesToUpdate": data, "overwrite": overwrite}
         ).json()
-        print(response)
-        return response["moleculesUpdated"]
+        try:
+            return response["moleculesUpdated"]
+        except KeyError:
+            raise ValueError(f"Update failed for molecule set {molecule_set_id}")
 
     def update_molecules_from_df_with_manifold_validation(
         self,
