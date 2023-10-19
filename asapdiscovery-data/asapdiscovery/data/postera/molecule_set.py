@@ -333,7 +333,7 @@ class MoleculeSetAPI(PostEraAPI):
         response = self._session.patch(
             url, json={"moleculesToUpdate": data, "overwrite": overwrite}
         ).json()
-
+        print(response)
         return response["moleculesUpdated"]
 
     def update_molecules_from_df_with_manifold_validation(

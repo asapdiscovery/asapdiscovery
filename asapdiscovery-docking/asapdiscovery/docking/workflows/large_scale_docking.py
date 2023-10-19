@@ -135,7 +135,8 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     dask_client = dask_client_from_type(inputs.dask_type)
 
     # make a directory to store intermediate CSV results
-    data_intermediates = Path("data_intermediates").mkdir(exist_ok=True)
+    data_intermediates = Path("data_intermediates")
+    data_intermediates.mkdir(exist_ok=True)
 
     if inputs.postera:
         # load postera
