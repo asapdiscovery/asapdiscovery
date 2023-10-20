@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -18,6 +19,7 @@ from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
@@ -63,7 +65,7 @@ class LargeScaleDockingInputs(BaseModel):
 
     target: TargetTags = Field(None, description="The target to dock against.")
     write_final_sdf: bool = Field(
-        default=False,
+        default=True,
         description="Whether to write the final docked poses to an SDF file.",
     )
     use_dask: bool = Field(True, description="Whether to use dask for parallelism.")
@@ -79,6 +81,12 @@ class LargeScaleDockingInputs(BaseModel):
     top_n: PositiveInt = Field(
         500, description="Number of docking results to return, ordered by docking score"
     )
+
+    logname: str = Field("large_scale_docking.log", description="Name of the log file.")
+
+    loglevel: int = Field(logging.INFO, description="Logging level.")
+
+    output_dir: Path = Field(Path("output"), description="Output directory")
 
     class Config:
         arbitrary_types_allowed = True
@@ -134,18 +142,34 @@ class LargeScaleDockingInputs(BaseModel):
 
 def large_scale_docking(inputs: LargeScaleDockingInputs):
     """
-    Run large scale docking on a set of ligands, against a single target.
+    Run large scale docking on a set of ligands, against multiple targets
     """
+
+    output_dir = inputs.output_dir
+    output_dir.mkdir(exist_ok=True)
+
+    logger = FileLogger(
+        inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
+    ).getLogger()
+
+    logger.info(f"Running large scale docking with inputs: {inputs}")
+
     if inputs.use_dask:
-        dask_client = dask_client_from_type(inputs.dask_type)
         set_dask_config()
+        logger.info("Using dask for parallelism.")
+
+    dask_client = dask_client_from_type(inputs.dask_type)
+    logger.info(f"Using dask client: {dask_client}")
 
     # make a directory to store intermediate CSV results
-    data_intermediates = Path("data_intermediates")
+    data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
 
     if inputs.postera:
         # load postera
+        logger.info(
+            f"Loading Postera database molecule set {inputs.postera_molset_name}"
+        )
         postera_settings = PosteraSettings()
         postera = PosteraFactory(
             settings=postera_settings, molecule_set_name=inputs.postera_molset_name
@@ -153,28 +177,36 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         query_ligands = postera.pull()
     else:
         # load from file
+        logger.info(f"Loading ligands from file: {inputs.filename}")
         molfile = MolFileFactory.from_file(inputs.filename)
         query_ligands = molfile.ligands
 
     # load complexes from a directory or from fragalysis
     if inputs.structure_dir:
+        logger.info(f"Loading structures from directory: {inputs.structure_dir}")
         structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
         complexes = structure_factory.load(
             use_dask=inputs.use_dask, dask_client=dask_client
         )
     else:
+        logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
         fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
         complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
 
+    # prep complexes
+    logger.info("Prepping complexes")
     prepper = ProteinPrepper(du_cache=inputs.du_cache)
     prepped_complexes = prepper.prep(
         complexes, use_dask=inputs.use_dask, dask_client=dask_client
     )
+    del complexes
 
     if inputs.gen_du_cache:
+        logger.info(f"Generating DU cache at {inputs.gen_du_cache}")
         prepper.cache(prepped_complexes, inputs.gen_du_cache)
 
     # define selector and select pairs
+    logger.info("Selecting pairs for docking based on MCS")
     selector = MCSSelector()
     pairs = selector.select(
         query_ligands,
@@ -185,7 +217,10 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     )  # getting some strange untraceable error when using dask here, possibly related to memory usage
     # TODO: investigate this, but okay for now.
 
+    del prepped_complexes
+
     # dock pairs
+    logger.info("Running docking on selected pairs")
     docker = POSITDocker()
     results = docker.dock(
         pairs,
@@ -193,9 +228,14 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         dask_client=dask_client,
     )
 
-    POSITDocker.write_docking_files(results, Path("docking_results"))
+    del pairs
+
+    # write docking results
+    logger.info("Writing docking results")
+    POSITDocker.write_docking_files(results, output_dir / "docking_results")
 
     # score results
+    logger.info("Scoring docking results")
     scorer = MetaScorer(
         scorers=[
             ChemGauss4Scorer(),
@@ -210,6 +250,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
 
+    logger.info("Filtering docking results")
     # filter for POSIT probability > 0.7
     scores_df = scores_df[
         scores_df[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value] > 0.7
@@ -236,6 +277,8 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         index=False,
     )
 
+    # rename columns for manifold
+    logger.info("Renaming columns for manifold")
     result_df = rename_output_columns_for_manifold(
         scores_df,
         inputs.target,
@@ -248,12 +291,14 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     result_df.to_csv("docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
+        logger.info("Uploading results to Postera")
         postera_uploader = PosteraUploader(
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         postera_uploader.push(result_df)
 
     if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
         write_ligands_to_multi_sdf(
             "docking_results.sdf", [r.posed_ligand for r in results]
         )

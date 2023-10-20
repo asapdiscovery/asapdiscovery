@@ -47,12 +47,6 @@ def cli():
     help="The maximum number of docking results to return, ordered by docking score",
 )
 @click.option(
-    "--no-write-final-sdf",
-    is_flag=True,
-    default=True,
-    help="Whether to write the final docked poses to an SDF file.",
-)
-@click.option(
     "--use-dask",
     is_flag=True,
     default=False,
@@ -102,7 +96,6 @@ def large_scale(
     target: TargetTags,
     n_select: int,
     top_n: int,
-    write_final_sdf: bool,
     use_dask: bool,
     dask_type: str,
     ligands: Optional[str] = None,
@@ -122,7 +115,6 @@ def large_scale(
         target=target,
         n_select=n_select,
         top_n=top_n,
-        write_final_sdf=write_final_sdf,
         use_dask=use_dask,
         dask_type=dask_type,
         filename=ligands,

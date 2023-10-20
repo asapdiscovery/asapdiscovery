@@ -302,11 +302,11 @@ class POSITDocker(DockingBase):
             else:
                 if error == "skip":
                     print(
-                        "docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
+                        f"docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
                     )
                 elif error == "raise":
                     raise ValueError(
-                        "docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
+                        f"docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
                     )
                 else:
                     raise ValueError(f"Unknown error handling option {error}")
