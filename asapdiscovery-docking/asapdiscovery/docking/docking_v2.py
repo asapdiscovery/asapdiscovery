@@ -124,6 +124,8 @@ class DockingBase(BaseModel):
             )
         else:
             outputs = self._dock(inputs=inputs)
+        # filter out None values
+        outputs = [o for o in outputs if o is not None]
         return outputs
 
     @abc.abstractmethod
@@ -302,11 +304,12 @@ class POSITDocker(DockingBase):
             else:
                 if error == "skip":
                     print(
-                        f"docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
+                        f"docking failed for input pair with compound name: {pair.ligand.compound_name}, smiles: {pair.ligand.smiles} and target name: {pair.complex.target.target_name}"
                     )
+                    docking_results.append(None)
                 elif error == "raise":
                     raise ValueError(
-                        f"docking failed for input pair with compound name: {lig.compound_name}, smiles: {lig.smiles} and target name: {pair.complex.target.target_name}"
+                        f"docking failed for input pair with compound name: {pair.ligand.compound_name}, smiles: {pair.ligand.smiles} and target name: {pair.complex.target.target_name}"
                     )
                 else:
                     raise ValueError(f"Unknown error handling option {error}")

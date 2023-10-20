@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from shutil import rmtree
 from typing import Optional
 
 from asapdiscovery.data.dask_utils import (
@@ -146,7 +147,9 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     """
 
     output_dir = inputs.output_dir
-    output_dir.mkdir(exist_ok=True)
+    if output_dir.exists():
+        rmtree(output_dir)
+    output_dir.mkdir()
 
     logger = FileLogger(
         inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
@@ -249,7 +252,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
         write_ligands_to_multi_sdf(
-            "docking_results.sdf", [r.posed_ligand for r in results]
+            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
         )
 
     scores_df = scorer.score(
@@ -298,7 +301,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         allow=[DockingResultCols.LIGAND_ID.value],
     )
 
-    result_df.to_csv("docking_results_final.csv", index=False)
+    result_df.to_csv(output_dir / "docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
         logger.info("Uploading results to Postera")

@@ -48,11 +48,11 @@ class PosteraUploader(BaseModel):
             )
 
             if not self.id_data_is_uuid_castable(df, self.id_field):
-                warn(
-                    "Attempting to update existing molecule set without UUID's set as id_field. A new molecule set will be created instead."
-                )
                 new_ms_name = self.molecule_set_name + "_{:%Y-%m-%d-%H-%M}".format(
                     datetime.now()
+                )
+                warn(
+                    f"Attempting to update existing molecule set {self.molecule_set_name} without UUID's set as id_field. A new molecule set {new_ms_name} will be created instead. To update an existing molecule set, you should pull from Postera as input"
                 )
                 if not ms_api.exists(new_ms_name, by="name"):
                     ms_api.create_molecule_set_from_df_with_manifold_validation(
