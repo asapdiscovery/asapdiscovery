@@ -28,7 +28,11 @@ class StructureDirFactory(BaseModel):
             delayed_outputs = []
             for i, pdb_file in enumerate(pdb_files):
                 stem = pdb_file.stem
-                out = dask.delayed(Complex.from_pdb)(pdb_file, target_kwargs={"target_name":stem}, ligand_kwargs={"compound_name": f"{stem}_ligand"})
+                out = dask.delayed(Complex.from_pdb)(
+                    pdb_file,
+                    target_kwargs={"target_name": stem},
+                    ligand_kwargs={"compound_name": f"{stem}_ligand"},
+                )
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client, errors="raise"
