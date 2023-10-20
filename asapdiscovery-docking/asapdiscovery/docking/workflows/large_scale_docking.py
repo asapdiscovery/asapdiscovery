@@ -211,6 +211,8 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         prepper.cache(prepped_complexes, inputs.gen_du_cache)
 
     # define selector and select pairs
+    # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
+    # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking based on MCS")
     selector = MCSSelector()
     pairs = selector.select(
@@ -219,8 +221,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         n_select=inputs.n_select,
         use_dask=False,
         dask_client=None,
-    )  # getting some strange untraceable error when using dask here, possibly related to memory usage
-    # TODO: investigate this, but okay for now.
+    )
 
     del prepped_complexes
 
