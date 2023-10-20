@@ -157,9 +157,11 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     if inputs.use_dask:
         set_dask_config()
         logger.info("Using dask for parallelism.")
-
-    dask_client = dask_client_from_type(inputs.dask_type)
-    logger.info(f"Using dask client: {dask_client}")
+        dask_client = dask_client_from_type(inputs.dask_type)
+        logger.info(f"Using dask client: {dask_client}")
+        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
+    else:
+        dask_client = None
 
     # make a directory to store intermediate CSV results
     data_intermediates = Path(output_dir / "data_intermediates")
@@ -244,9 +246,17 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         ]
     )
 
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_ligands_to_multi_sdf(
+            "docking_results.sdf", [r.posed_ligand for r in results]
+        )
+
     scores_df = scorer.score(
         results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
     )
+
+    del results
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
 
@@ -296,9 +306,3 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         postera_uploader.push(result_df)
-
-    if inputs.write_final_sdf:
-        logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            "docking_results.sdf", [r.posed_ligand for r in results]
-        )
