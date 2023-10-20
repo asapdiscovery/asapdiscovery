@@ -6,7 +6,7 @@ import dask
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.openeye import oedocking, save_openeye_pdb
+from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers

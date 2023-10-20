@@ -61,7 +61,7 @@ def mpro_frag_compound_mapping(mpro_frag_dir):
 
 def test_manual_creation(mpro_frag_dir, mpro_frag_compound_mapping):
     parent_dir, all_paths = mpro_frag_dir
-    all_complexes = [
+    _ = [
         Complex.from_pdb(
             p,
             target_kwargs={"target_name": p.parts[-2]},

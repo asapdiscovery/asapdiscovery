@@ -1,7 +1,7 @@
 import abc
 import warnings
 from pathlib import Path
-from typing import List, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 import dask
 import yaml

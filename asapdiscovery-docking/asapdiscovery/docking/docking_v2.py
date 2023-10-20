@@ -1,15 +1,12 @@
 import abc
-import warnings
 from enum import Enum
 from pathlib import Path
-from typing import List, Literal, Optional, Union
-from warnings import warn
+from typing import Literal, Optional, Union
 
 import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
-    oe_smiles_roundtrip,
     oechem,
     oedocking,
     oeomega,

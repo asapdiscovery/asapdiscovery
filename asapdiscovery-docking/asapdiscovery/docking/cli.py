@@ -2,7 +2,7 @@
 from typing import Optional
 
 import click
-from asapdiscovery.data.dask_utils import DaskType, dask_client_from_type
+from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,

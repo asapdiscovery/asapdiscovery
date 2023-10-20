@@ -39,20 +39,20 @@ def test_smi_roundtrip(problematic_smiles):
 
 
 def test_load_pdb(pdb_file):
-    oemol = load_openeye_pdb(Path(pdb_file))
+    _ = load_openeye_pdb(Path(pdb_file))
     # try also with str
-    oemol = load_openeye_pdb(str(pdb_file))
+    _ = load_openeye_pdb(str(pdb_file))
 
 
 def test_load_smi(smi_file):
-    oemols = load_openeye_smi(Path(smi_file))
+    _ = load_openeye_smi(Path(smi_file))
     # try also with str
-    oemols = load_openeye_smi(str(smi_file))
+    _ = load_openeye_smi(str(smi_file))
 
 
 def test_load_sdf(sdf_file):
-    oemol = load_openeye_sdf(Path(sdf_file))
-    oemol = load_openeye_sdf(str(sdf_file))
+    _ = load_openeye_sdf(Path(sdf_file))
+    _ = load_openeye_sdf(str(sdf_file))
 
 
 def test_load_sdfs(sdf_file):
