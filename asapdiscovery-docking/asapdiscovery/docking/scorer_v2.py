@@ -271,7 +271,6 @@ class SchnetScorer(MLModelScorer):
         results = []
         for inp in inputs:
             schnet_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
-            # save_openeye_pdb(inp.to_posed_oemol(), inp.input_pair.complex.target.target_name + "_+_" + inp.posed_ligand.compound_name + ".pdb")
             results.append(
                 Score.from_score_and_docking_result(
                     schnet_score, self.score_type, self.units, inp
