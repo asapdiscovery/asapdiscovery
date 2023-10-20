@@ -1,11 +1,12 @@
-import pytest
 from pathlib import Path
+
+import pytest
 from asapdiscovery.data.openeye import (
-    oe_smiles_roundtrip,
     load_openeye_pdb,
-    load_openeye_smi,
     load_openeye_sdf,
     load_openeye_sdfs,
+    load_openeye_smi,
+    oe_smiles_roundtrip,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
