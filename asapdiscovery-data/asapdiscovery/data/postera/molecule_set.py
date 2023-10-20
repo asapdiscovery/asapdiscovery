@@ -193,13 +193,13 @@ class MoleculeSetAPI(PostEraAPI):
             return {result["id"]: result["name"] for result in results}
 
     def exists(self, molecule_set_name: str, by="name") -> bool:
-        """Check if a molecule set exists in PostEra.
+        """
+        Check if a molecule set exists in PostEra.
 
         Parameters
         ----------
         molecule_set_name
             The name of the molecule set to check.
-
         by
             The identifier type to check by. Can be either "id" or "name".
 
