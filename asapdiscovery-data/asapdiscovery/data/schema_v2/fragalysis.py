@@ -30,6 +30,9 @@ class FragalysisFactory(DataModelAbstractBase):
         "alternate_name", description="Name of the compound column."
     )
     fail_missing: bool = Field(False, description="Whether to fail on missing files.")
+    metadata_csv_name: str = Field(
+        "metadata.csv", description="Name of the metadata file."
+    )
 
     def __eq__(self, other: FragalysisFactory):
         if self.parent_dir != other.parent_dir:
@@ -51,16 +54,18 @@ class FragalysisFactory(DataModelAbstractBase):
 
     def load(self, use_dask=False, dask_client=None) -> list[Complex]:
         try:
-            df = pandas.read_csv(self.parent_dir / "metadata.csv")
+            df = pandas.read_csv(self.parent_dir / self.metadata_csv_name)
         except FileNotFoundError as e:
-            raise FileNotFoundError("No metadata.csv file found in parent_dir.") from e
+            raise FileNotFoundError(
+                f"No {self.metadata_csv_name} file found in parent_dir."
+            ) from e
 
         if len(df) == 0:
-            raise ValueError("metadata.csv file is empty.")
+            raise ValueError(f"{self.metadata_csv_name} file is empty.")
 
         if (self.xtal_col not in df.columns) or (self.compound_col not in df.columns):
             raise ValueError(
-                "metadata.csv file must contain a crystal name column and a "
+                f"{self.metadata_csv_name} file must contain a crystal name column and a "
                 "compound name column."
             )
 
@@ -73,7 +78,7 @@ class FragalysisFactory(DataModelAbstractBase):
         df = df.loc[df[self.xtal_col].isin(all_xtal_dirs), :]
         if df.shape[0] == 0:
             raise ValueError(
-                "No aligned directories found with entries in metadata.csv."
+                f"No aligned directories found with entries in {self.metadata_csv_name}."
             )
 
         # assign delay processing function if using dask
@@ -137,6 +142,7 @@ class FragalysisFactory(DataModelAbstractBase):
     def from_dir(
         cls,
         parent_dir: str | Path,
+        metadata_csv_name="metadata.csv",
         xtal_col="crystal_name",
         compound_col="alternate_name",
         fail_missing=False,
@@ -149,11 +155,11 @@ class FragalysisFactory(DataModelAbstractBase):
         parent_dir : str | Path
             Top-level directory of the Fragalysis database
         xtal_col : str, default="crystal_name"
-            Name of the column in metadata.csv giving the crystal names. Defaults to the
+            Name of the column in metadata csv giving the crystal names. Defaults to the
             Fragalysis value. The values in this col MUST match the directories in
             the aligned/ subdirectory
         compound_col : str, default="alternate_name"
-            Name of the column in metadata.csv giving the compound names. Defaults to
+            Name of the column in metadata csv giving the compound names. Defaults to
             the Fragalysis value
         fail_missing : bool, default=False
             If True, raises an error if a PDB file isn't found where expected, or a
@@ -169,6 +175,7 @@ class FragalysisFactory(DataModelAbstractBase):
             xtal_col=xtal_col,
             compound_col=compound_col,
             fail_missing=fail_missing,
+            metadata_csv_name=metadata_csv_name,
         )
 
     @validator("parent_dir")
