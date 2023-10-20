@@ -137,5 +137,5 @@ class PreppedComplex(ComplexBase):
         # overwrite ligand_chain with ligand_chain from complex if it exists
         prep_kwargs.pop("ligand_chain", None)
         prep_kwargs["ligand_chain"] = complex.ligand_chain
-        oedu = ProteinPrepper(**prep_kwargs).prep(inputs=[complex])
-        # copy over ids from complex
+        prepped_complexs = ProteinPrepper(**prep_kwargs).prep(inputs=[complex])
+        return prepped_complexs[0]
