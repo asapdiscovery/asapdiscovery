@@ -26,8 +26,9 @@ class StructureDirFactory(BaseModel):
         pdb_files = list(self.parent_dir.glob("*.pdb"))
         if use_dask:
             delayed_outputs = []
-            for pdb_file in pdb_files:
-                out = dask.delayed(Complex.from_pdb)(pdb_file)
+            for i, pdb_file in enumerate(pdb_files):
+                stem = pdb_file.stem
+                out = dask.delayed(Complex.from_pdb)(pdb_file, target_kwargs={"target_name":stem}, ligand_kwargs={"compound_name": f"{stem}_ligand"})
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client, errors="raise"
