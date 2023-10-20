@@ -35,8 +35,8 @@ from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from pydantic import (
     BaseModel,
     Field,
-    PositiveInt,
     PositiveFloat,
+    PositiveInt,
     root_validator,
     validator,
 )
