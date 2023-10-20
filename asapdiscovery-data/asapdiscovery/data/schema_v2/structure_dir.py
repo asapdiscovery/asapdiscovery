@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, validator
 
 class StructureDirFactory(BaseModel):
     parent_dir: Path = Field(
-        description="Top level directory of the Fragalysis database."
+        description="Directory containing structure files as PDBs."
     )
 
     @validator("parent_dir")
