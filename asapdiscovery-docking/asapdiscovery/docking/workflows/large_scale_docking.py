@@ -8,6 +8,7 @@ from asapdiscovery.data.dask_utils import (
     dask_client_from_type,
     set_dask_config,
 )
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     rename_output_columns_for_manifold,
@@ -20,7 +21,6 @@ from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
