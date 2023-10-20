@@ -318,13 +318,25 @@ def compound_names_unique(ligands: list[Ligand]) -> bool:
     return len(set(compound_names)) == len(compound_names)
 
 
-def write_ligands_to_multi_sdf(sdf_name: Union[str, Path], ligands: list[Ligand]):
+def write_ligands_to_multi_sdf(
+    sdf_name: Union[str, Path], ligands: list[Ligand], overwrite=False
+):
     """
     Dumb way to do this, but just write out each ligand to the same.
     Alternate way would be to flush each to OEMol and then write out
     using OE but seems convoluted.
+
+    Note that this will overwrite the file if it exists unless overwrite is set to False
     """
-    if not sdf_name.split(".")[-1] == "sdf":
+    sdf_file = Path(sdf_name)
+    if sdf_file.exists() and not overwrite:
+        raise FileExistsError(f"{sdf_file} exists and overwrite is False")
+
+    elif sdf_file.exists() and overwrite:
+        sdf_file.unlink()
+
+    if not sdf_file.suffix == ".sdf":
         raise ValueError("SDF name must end in .sdf")
+
     for ligand in ligands:
-        ligand.to_sdf(sdf_name, allow_append=True)
+        ligand.to_sdf(sdf_file, allow_append=True)
