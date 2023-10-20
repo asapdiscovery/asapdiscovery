@@ -59,6 +59,12 @@ def cli():
     help="The type of dask cluster to use. Can be 'local' or 'lilac-cpu'.",
 )
 @click.option(
+    "--posit-confidence-cutoff",
+    type=float,
+    default=0.7,
+    help="The confidence cutoff for POSIT results to be considered",
+)
+@click.option(
     "-l",
     "--ligands",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -98,6 +104,7 @@ def large_scale(
     top_n: int,
     use_dask: bool,
     dask_type: str,
+    posit_confidence_cutoff: float = 0.7,
     ligands: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
@@ -117,6 +124,7 @@ def large_scale(
         top_n=top_n,
         use_dask=use_dask,
         dask_type=dask_type,
+        posit_confidence_cutoff=posit_confidence_cutoff,
         filename=ligands,
         fragalysis_dir=fragalysis_dir,
         structure_dir=structure_dir,

@@ -32,7 +32,14 @@ from asapdiscovery.docking.scorer_v2 import (
     SchnetScorer,
 )
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveInt,
+    PositiveFloat,
+    root_validator,
+    validator,
+)
 
 
 class LargeScaleDockingInputs(BaseModel):
@@ -83,6 +90,10 @@ class LargeScaleDockingInputs(BaseModel):
         500, description="Number of docking results to return, ordered by docking score"
     )
 
+    posit_confidence_cutoff: PositiveFloat = Field(
+        0.7, description="POSIT confidence cutoff used to filter docking results"
+    )
+
     logname: str = Field("large_scale_docking.log", description="Name of the log file.")
 
     loglevel: int = Field(logging.INFO, description="Logging level.")
@@ -91,6 +102,16 @@ class LargeScaleDockingInputs(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @validator("posit_confidence_cutoff")
+    @classmethod
+    def posit_confidence_cutoff_must_be_between_0_and_1(cls, v):
+        """
+        Validate that the POSIT confidence cutoff is between 0 and 1
+        """
+        if v < 0 or v > 1:
+            raise ValueError("POSIT confidence cutoff must be between 0 and 1.")
+        return v
 
     @root_validator
     @classmethod
@@ -267,7 +288,8 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     logger.info("Filtering docking results")
     # filter for POSIT probability > 0.7
     scores_df = scores_df[
-        scores_df[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value] > 0.7
+        scores_df[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value]
+        > inputs.posit_confidence_cutoff
     ]
 
     # filter out clashes (chemgauss4 score > 0)
