@@ -47,7 +47,7 @@ def cli():
     help="The maximum number of docking results to return, ordered by docking score",
 )
 @click.option(
-    "--write-final-sdf",
+    "--no-write-final-sdf",
     is_flag=True,
     default=True,
     help="Whether to write the final docked poses to an SDF file.",
@@ -55,7 +55,7 @@ def cli():
 @click.option(
     "--use-dask",
     is_flag=True,
-    default=True,
+    default=False,
     help="Whether to use dask for parallelism.",
 )
 @click.option(
