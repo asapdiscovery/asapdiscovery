@@ -142,4 +142,4 @@ cluster_scripts/log_files
 # gzip versions of the above
 *.inchi
 *.inchikey
-*.gz 
+*.gz
