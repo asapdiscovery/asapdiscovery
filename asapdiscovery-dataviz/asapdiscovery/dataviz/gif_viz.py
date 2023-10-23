@@ -119,7 +119,7 @@ class GIFVisualizer:
 
         self.debug = debug
         if self.debug:
-            self.logger.SetLevel(logging.DEBUG)
+            self.logger.setLevel(logging.DEBUG)
             self.logger.debug("Running in debug mode, setting pse=True")
             self.pse = True
         self.logger.debug(
