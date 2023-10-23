@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import BaseModel, Field
-
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema_v2.ligand import Ligand
