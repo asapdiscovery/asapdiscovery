@@ -37,11 +37,10 @@ class HTMLBlockData:
         """
 
     @classmethod
-    def get_orient(cls, target: str) -> str:
+    def get_orient(cls) -> str:
         """
-        Get the orient array for a target.
+        Get the master orient array.
         """
-        
         return getattr(cls, f"HTML_orient_master")
 
     HTML_orient_master = """\
