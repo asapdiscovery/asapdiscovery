@@ -8,6 +8,15 @@ from pydantic import BaseModel, Field, validator
 
 
 class StructureDirFactory(BaseModel):
+    """
+    Factory for loading a directory of PDB files as Complex objects.
+
+    Parameters
+    ----------
+    parent_dir : str or Path
+        Directory containing PDB files.
+    """
+
     parent_dir: Path = Field(
         description="Directory containing structure files as PDBs."
     )
@@ -20,9 +29,28 @@ class StructureDirFactory(BaseModel):
 
     @classmethod
     def from_dir(cls, parent_dir: Path | str):
+        """
+        Load a directory of PDB files as Complex objects.
+        """
         return cls(parent_dir=Path(parent_dir))
 
     def load(self, use_dask=True, dask_client=None):
+        """
+        Load a directory of PDB files as Complex objects.
+
+        Parameters
+        ----------
+        use_dask : bool, optional
+            Whether to use dask to parallelise loading of PDB files.
+            Defaults to True.
+        dask_client : dask.distributed.Client, optional
+            Dask client to use for parallelisation. Defaults to None.
+
+        Returns
+        -------
+        List[Complex]
+            List of Complex objects.
+        """
         pdb_files = list(self.parent_dir.glob("*.pdb"))
         if use_dask:
             delayed_outputs = []

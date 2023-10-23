@@ -64,6 +64,22 @@ class FragalysisFactory(BaseModel):
         return values
 
     def load(self, use_dask=False, dask_client=None) -> list[Complex]:
+        """
+        Load a Fragalysis dump as a list of Complex objects.
+
+        Parameters
+        ----------
+        use_dask : bool, optional
+            Whether to use dask to parallelise loading of PDB files.
+            Defaults to False.
+        dask_client : dask.distributed.Client, optional
+            Dask client to use for parallelisation. Defaults to None.
+
+        Returns
+        -------
+        List[Complex]
+            List of Complex objects.
+        """
         df = pandas.read_csv(self.parent_dir / self.metadata_csv_name)
 
         if len(df) == 0:
@@ -119,6 +135,25 @@ class FragalysisFactory(BaseModel):
     def process_fragalysis_pdb(
         parent_dir, xtal_name, compound_name, fail_missing=False
     ):
+        """
+        Process a PDB file from a Fragalysis dump.
+
+        Parameters
+        ----------
+        parent_dir : Path
+            Top-level directory of the Fragalysis database
+        xtal_name : str
+            Name of the crystal
+        compound_name : str
+            Name of the compound
+        fail_missing : bool, default=False
+            If True, raises an error if a PDB file isn't found where expected, or a
+            found PDB file can't be parsed
+
+        Returns
+        -------
+        Complex
+        """
         pdb_fn = parent_dir / "aligned" / xtal_name / f"{xtal_name}_bound.pdb"
         if not pdb_fn.exists():
             if fail_missing:
