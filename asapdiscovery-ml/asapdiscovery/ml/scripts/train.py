@@ -511,33 +511,55 @@ def init(args, rank=False):
         model_config = {}
     print("Using model config:", model_config, flush=True)
 
-    # Override args parameters with model_config parameters
-    # This shouldn't strictly be necessary, as model_config should override
-    #  everything, but just to be safe
+    # Sync model_config and CLI args
     if "grouped" in model_config:
         args.grouped = model_config["grouped"]
+    else:
+        model_config["grouped"] = args.grouped
     if "lig" in model_config:
         args.lig = model_config["lig"]
+    else:
+        model_config["lig"] = args.lig
     if "strat" in model_config:
         args.strat = model_config["strat"]
+    else:
+        model_config["strat"] = args.strat
     if "comb" in model_config:
         args.comb = model_config["comb"]
+    else:
+        model_config["comb"] = args.comb
     if "pred_r" in model_config:
         args.pred_r = model_config["pred_r"]
+    else:
+        model_config["pred_r"] = args.pred_r
     if "comb_r" in model_config:
         args.comb_r = model_config["comb_r"]
+    else:
+        model_config["comb_r"] = args.comb_r
     if "comb_neg" in model_config:
         args.comb_neg = model_config["comb_neg"]
+    else:
+        model_config["comb_neg"] = args.comb_neg
     if "comb_scale" in model_config:
         args.comb_scale = model_config["comb_scale"]
+    else:
+        model_config["comb_scale"] = args.comb_scale
     if "substrate" in model_config:
         args.substrate_conc = model_config["substrate"]
+    else:
+        model_config["substrate"] = args.substrate_conc
     if "km" in model_config:
         args.michaelis_const = model_config["km"]
+    else:
+        model_config["km"] = args.michaelis_const
     if "lr" in model_config:
         args.lr = model_config["lr"]
+    else:
+        model_config["lr"] = args.lr
     if "cutoff" in model_config:
         args.n_dist = model_config["cutoff"]
+    else:
+        model_config["cutoff"] = args.n_dist
 
     # Decide which nan values to filter
     if args.loss is None:
