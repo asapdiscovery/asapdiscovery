@@ -9,11 +9,10 @@ import dask
 import pandas
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from pydantic import Field, validator
+from pydantic import Field, validator, BaseModel, root_validator
 
 
-class FragalysisFactory(DataModelAbstractBase):
+class FragalysisFactory(BaseModel):
     """
     Schema for a loading a Fragalysis dump. The directory given by parent_dir should
     contain (at a minimum):
@@ -34,31 +33,38 @@ class FragalysisFactory(DataModelAbstractBase):
         "metadata.csv", description="Name of the metadata file."
     )
 
-    def __eq__(self, other: FragalysisFactory):
-        if self.parent_dir != other.parent_dir:
-            return False
+    @validator("parent_dir")
+    @classmethod
+    def _validate_parent_dir(cls, v):
+        if not v.exists():
+            raise ValueError("Given parent_dir does not exist.")
 
-        if len(self) != len(other):
-            return False
+        if not v.is_dir():
+            raise ValueError("Given parent_dir is not a directory.")
 
-        return all([c1 == c2 for c1, c2 in zip(self.complexes, other.complexes)])
+        return v
 
-    # Overload from base class to check each complex
-    def data_equal(self, other: FragalysisFactory):
-        if len(self) != len(other):
-            return False
+    @root_validator
+    @classmethod
+    def _validate_metadata_csv_name(cls, values):
+        parent_dir = values.get("parent_dir")
+        metadata_csv_name = values.get("metadata_csv_name")
+        csv_path = parent_dir / metadata_csv_name
+        if not csv_path.exists():
+            raise FileNotFoundError(f"No {csv_path.name} file found in parent_dir.")
+        return values
 
-        return all(
-            [c1.data_equal(c2) for c1, c2 in zip(self.complexes, other.complexes)]
-        )
+    @root_validator
+    @classmethod
+    def _validate_aligned_dir(cls, values):
+        parent_dir = values.get("parent_dir")
+        aligned_dir = parent_dir / "aligned"
+        if not aligned_dir.exists():
+            raise FileNotFoundError("No aligned/ directory found in parent_dir.")
+        return values
 
     def load(self, use_dask=False, dask_client=None) -> list[Complex]:
-        try:
-            df = pandas.read_csv(self.parent_dir / self.metadata_csv_name)
-        except FileNotFoundError as e:
-            raise FileNotFoundError(
-                f"No {self.metadata_csv_name} file found in parent_dir."
-            ) from e
+        df = pandas.read_csv(self.parent_dir / self.metadata_csv_name)
 
         if len(df) == 0:
             raise ValueError(f"{self.metadata_csv_name} file is empty.")
@@ -69,10 +75,7 @@ class FragalysisFactory(DataModelAbstractBase):
                 "compound name column."
             )
 
-        try:
-            all_xtal_dirs = os.listdir(self.parent_dir / "aligned")
-        except FileNotFoundError as e:
-            raise FileNotFoundError("No aligned/ directory found in parent_dir.") from e
+        all_xtal_dirs = os.listdir(self.parent_dir / "aligned")
 
         # Subset metadata to only contain rows with directories in aligned/
         df = df.loc[df[self.xtal_col].isin(all_xtal_dirs), :]
@@ -177,14 +180,3 @@ class FragalysisFactory(DataModelAbstractBase):
             fail_missing=fail_missing,
             metadata_csv_name=metadata_csv_name,
         )
-
-    @validator("parent_dir")
-    @classmethod
-    def _validate_parent_dir(cls, v):
-        if not v.exists():
-            raise ValueError("Given parent_dir does not exist.")
-
-        if not v.is_dir():
-            raise ValueError("Given parent_dir is not a directory.")
-
-        return v

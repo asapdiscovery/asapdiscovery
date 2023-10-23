@@ -94,24 +94,27 @@ def test_validation_fails_not_dir(tmp_path):
 
 
 def test_creation_fails_without_metadata(tmp_path):
-    with pytest.raises(
-        FileNotFoundError, match="No metadata.csv file found in parent_dir."
-    ):
-        _ = FragalysisFactory.from_dir(tmp_path)
+    with pytest.raises(FileNotFoundError, match="file found in parent_dir."):
+        _ = FragalysisFactory.from_dir(tmp_path, metadata_csv_name="wrong_file.csv")
 
 
 def test_creation_fails_with_empty_metadata(tmp_path):
     p = tmp_path / "metadata.csv"
+    aligned_dir = tmp_path / "aligned"
+    aligned_dir.mkdir()
     p.touch()
     with p.open("w") as fp:
         fp.write("a,b,c")
-    with pytest.raises(ValueError, match="metadata.csv file is empty."):
-        _ = FragalysisFactory.from_dir(tmp_path)
+    with pytest.raises(ValueError, match="file is empty."):
+        ff = FragalysisFactory.from_dir(tmp_path)
+        ff.load()
 
 
 def test_creation_fails_without_proper_cols(tmp_path):
     p = tmp_path / "metadata.csv"
     p.touch()
+    aligned_dir = tmp_path / "aligned"
+    aligned_dir.mkdir()
     with p.open("w") as fp:
         fp.write("a,b,c\n")
         fp.write("1,2,3\n")
@@ -122,7 +125,8 @@ def test_creation_fails_without_proper_cols(tmp_path):
             "compound name column."
         ),
     ):
-        _ = FragalysisFactory.from_dir(tmp_path)
+        ff = FragalysisFactory.from_dir(tmp_path)
+        ff.load()
 
     with pytest.raises(
         ValueError,
@@ -131,7 +135,8 @@ def test_creation_fails_without_proper_cols(tmp_path):
             "compound name column."
         ),
     ):
-        _ = FragalysisFactory.from_dir(tmp_path, xtal_col="a")
+        ff = FragalysisFactory.from_dir(tmp_path, xtal_col="a")
+        ff.load()
 
     with pytest.raises(
         ValueError,
@@ -140,7 +145,8 @@ def test_creation_fails_without_proper_cols(tmp_path):
             "compound name column."
         ),
     ):
-        _ = FragalysisFactory.from_dir(tmp_path, compound_col="a")
+        ff = FragalysisFactory.from_dir(tmp_path, compound_col="a")
+        ff.load()
 
 
 def test_creation_fails_without_aligned(mpro_frag_dir_only_metadata):
@@ -156,7 +162,8 @@ def test_creation_fails_with_empty_aligned(mpro_frag_dir_only_metadata):
         ValueError,
         match="No aligned directories found with entries in metadata.csv.",
     ):
-        _ = FragalysisFactory.from_dir(mpro_frag_dir_only_metadata)
+        ff = FragalysisFactory.from_dir(mpro_frag_dir_only_metadata)
+        ff.load()
 
 
 def test_creation_fails_with_missing_file_fail_missing_true(
@@ -166,7 +173,10 @@ def test_creation_fails_with_missing_file_fail_missing_true(
         FileNotFoundError,
         match=f"No PDB file found for {Path(all_mpro_fns[-1]).parts[-2]}.",
     ):
-        _ = FragalysisFactory.from_dir(mpro_frag_dir_missing_one_pdb, fail_missing=True)
+        ff = FragalysisFactory.from_dir(
+            mpro_frag_dir_missing_one_pdb, fail_missing=True
+        )
+        ff.load()
 
 
 def test_creation_succeeds_with_missing_file_fail_missing_false(
@@ -184,40 +194,10 @@ def test_ff_equal(mpro_frag_dir):
     assert ff1 == ff2
 
 
-def test_ff_data_equal(mpro_frag_dir):
-    parent_dir, _ = mpro_frag_dir
-
-    ff1 = FragalysisFactory.from_dir(parent_dir)
-    ff2 = FragalysisFactory.from_dir(parent_dir)
-
-    assert ff1.data_equal(ff2)
-    assert ff2.data_equal(ff1)
-
-
 def test_ff_dict_roundtrip(mpro_frag_dir):
     parent_dir, _ = mpro_frag_dir
 
     ff1 = FragalysisFactory.from_dir(parent_dir)
-    ff2 = FragalysisFactory.from_dict(ff1.dict())
-
-    assert ff1 == ff2
-
-
-def test_ff_json_roundtrip(mpro_frag_dir):
-    parent_dir, _ = mpro_frag_dir
-
-    ff1 = FragalysisFactory.from_dir(parent_dir)
-    ff2 = FragalysisFactory.from_json(ff1.json())
-
-    assert ff1 == ff2
-
-
-def test_ff_json_file_roundtrip(mpro_frag_dir, tmp_path):
-    parent_dir, _ = mpro_frag_dir
-
-    ff1 = FragalysisFactory.from_dir(parent_dir)
-    path = tmp_path / "test.json"
-    ff1.to_json_file(path)
-    ff2 = FragalysisFactory.from_json_file(path)
+    ff2 = FragalysisFactory.parse_obj(ff1.dict())
 
     assert ff1 == ff2
