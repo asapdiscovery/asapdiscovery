@@ -9,7 +9,7 @@ import dask
 import pandas
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.schema_v2.complex import Complex
-from pydantic import Field, validator, BaseModel, root_validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 
 class FragalysisFactory(BaseModel):
