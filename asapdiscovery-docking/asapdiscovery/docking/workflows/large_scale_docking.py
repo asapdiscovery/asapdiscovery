@@ -24,6 +24,7 @@ from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
+from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_v2 import POSITDocker
 from asapdiscovery.docking.scorer_v2 import (
     ChemGauss4Scorer,
@@ -292,8 +293,24 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         > inputs.posit_confidence_cutoff
     ]
 
+    check_empty_dataframe(
+        scores_df,
+        logger=logger,
+        fail="raise",
+        tag="scores",
+        message="No docking results passed the POSIT confidence cutoff",
+    )
+
     # filter out clashes (chemgauss4 score > 0)
     scores_df = scores_df[scores_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
+
+    check_empty_dataframe(
+        scores_df,
+        logger=logger,
+        fail="raise",
+        tag="scores",
+        message="No docking results passed the clash filter",
+    )
 
     # then order by chemgauss4 score and remove duplicates by ligand id
     scores_df = scores_df.sort_values(
@@ -307,6 +324,14 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
 
     # take top n results
     scores_df = scores_df.head(inputs.top_n)
+
+    check_empty_dataframe(
+        scores_df,
+        logger=logger,
+        fail="raise",
+        tag="scores",
+        message="No docking results passed the top n filter",
+    )
 
     scores_df.to_csv(
         data_intermediates / f"docking_scores_filtered_sorted_top_{inputs.top_n}.csv",
