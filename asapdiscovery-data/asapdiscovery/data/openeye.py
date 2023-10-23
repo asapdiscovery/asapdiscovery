@@ -8,6 +8,7 @@ from openeye import (  # noqa: F401
     oedocking,
     oegrid,
     oeomega,
+    oequacpac,
     oespruce,
     oeszybki,
 )
