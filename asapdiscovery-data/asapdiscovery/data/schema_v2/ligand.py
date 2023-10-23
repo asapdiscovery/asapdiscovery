@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
 
+from pydantic import Field, root_validator, validator
+
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
@@ -18,7 +20,6 @@ from asapdiscovery.data.openeye import (
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from asapdiscovery.data.schema_v2.schema_base import DataStorageType
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
-from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -319,7 +320,9 @@ class Ligand(DataModelAbstractBase):
         Parameters
         ----------
             parent: The parent ligand from which this child was created.
-            provenance: The provenance dictionary of the state expander used to create this ligand.
+            provenance: The provenance dictionary of the state expander used to create this ligand created via
+            `expander.provenance()` where the keys are fields of the expander and the values capture the
+            associated settings.
         """
         self.expansion_tag = StateExpansionTag.from_parent(
             parent=parent, provenance=provenance

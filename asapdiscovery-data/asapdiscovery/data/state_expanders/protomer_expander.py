@@ -3,6 +3,8 @@ import subprocess
 import tempfile
 from typing import Literal
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
     load_openeye_sdfs,
     oechem,
@@ -11,7 +13,6 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
-from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):
@@ -82,7 +83,7 @@ class EpikExpander(StateExpanderBase):
         schrodinger_folder = os.getenv("SCHRODINGER")
         if schrodinger_folder is None:
             raise RuntimeError(
-                "Epik enumerator requires the path to the shrodinger software to be set as the "
+                "Epik enumerator requires the path to the schrodinger software to be set as the "
                 "SCHRODINGER environment variable."
             )
         epik = os.path.join(schrodinger_folder, *programs)
@@ -166,7 +167,7 @@ class EpikExpander(StateExpanderBase):
 
         Parameters
         ----------
-        ligands: The list of ligands who's states should be expanded.
+        ligands: The list of ligands whose states should be expanded.
 
         Returns
         -------

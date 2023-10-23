@@ -1,7 +1,11 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
+
+from pydantic import BaseModel, Field
 
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
-from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from asapdiscovery.data.schema_v2.ligand import Ligand
 
 
 class StateExpansionTag(BaseModel):
@@ -35,7 +39,7 @@ class StateExpansionTag(BaseModel):
         return hash(self.json())
 
     @classmethod
-    def from_parent(cls, parent, provenance: dict[str, str]):
+    def from_parent(cls, parent: "Ligand", provenance: dict[str, str]):
         return cls(
             parent_fixed_inchikey=parent.fixed_inchikey,
             parent_smiles=parent.smiles,
