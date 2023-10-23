@@ -259,6 +259,8 @@ class Ligand(DataModelAbstractBase):
         ----------
         filename : Union[str, Path]
             Path to the SDF file
+        allow_append : bool, optional
+            Allow appending to the file, by default False
 
         """
         if allow_append:
@@ -327,6 +329,22 @@ def write_ligands_to_multi_sdf(
     using OE but seems convoluted.
 
     Note that this will overwrite the file if it exists unless overwrite is set to False
+
+    Parameters
+    ----------
+    sdf_name : Union[str, Path]
+        Path to the SDF file
+    ligands : list[Ligand]
+        List of ligands to write out
+    overwrite : bool, optional
+        Overwrite the file if it exists, by default False
+
+    Raises
+    ------
+    FileExistsError
+        If the file exists and overwrite is False
+    ValueError
+        If the sdf_name does not end in .sdf
     """
     sdf_file = Path(sdf_name)
     if sdf_file.exists() and not overwrite:
