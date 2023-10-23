@@ -213,7 +213,7 @@ def build_loss_function(grouped, loss_type=None, semiquant_fill=None):
         lt = "standard" if loss_type is None else loss_type
         print(f"Using {lt} MSE loss", flush=True)
     elif "uncertainty" in loss_type:
-        keep_sq = "sq" in loss_type
+        keep_sq = loss_type.lower() == "uncertainty_sq"
         loss_func = GaussianNLLLoss(keep_sq, semiquant_fill)
         print(
             f"Using Gaussian NLL loss with{'out'*(not keep_sq)}",
