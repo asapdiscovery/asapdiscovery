@@ -1,9 +1,8 @@
-import pytest
 import traceback
 
-from click.testing import CliRunner
-
+import pytest
 from asapdiscovery.docking.cli import cli
+from click.testing import CliRunner
 
 
 def click_success(result):
@@ -36,7 +35,9 @@ def test_large_docking_cli_fragalysis(ligand_file, mpro_frag_dir, tmp_path):
     assert click_success(result)
 
 
-def test_large_docking_cli_structure_directory_dask(ligand_file, structure_dir, tmp_path):
+def test_large_docking_cli_structure_directory_dask(
+    ligand_file, structure_dir, tmp_path
+):
     runner = CliRunner()
 
     struct_dir, _ = structure_dir
