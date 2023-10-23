@@ -160,3 +160,14 @@ def test_schnet_inference_predict_from_pose(docked_structure_file):
     c, pose = dataset[0]
     output = inference_cls.predict(pose)
     assert output is not None
+
+
+def test_schnet_inference_predict_from_oemol(docked_structure_file):
+    from asapdiscovery.data.openeye import load_openeye_pdb
+
+    inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
+
+    pose_oemol = load_openeye_pdb(docked_structure_file)
+    assert inference_cls is not None
+    output = inference_cls.predict_from_oemol(pose_oemol)
+    assert output is not None

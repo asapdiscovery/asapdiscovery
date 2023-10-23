@@ -198,6 +198,8 @@ def build_model(
     comb=None,
     pred_r=None,
     comb_r=None,
+    substrate=None,
+    km=None,
     config=None,
 ):
     """
@@ -225,6 +227,12 @@ def build_model(
     comb_r : str, optional
         Which readout method to use for the combined pose prediction. Current
         options are ["pic50"]
+    substrate : float, optional
+        Substrate concentration for use in the Cheng-Prusoff equation. Assumed to be
+        in the same units as km
+    km : float, optional
+        Km value for use in the Cheng-Prusoff equation. Assumed to be in the same
+        units as substrate
     config : dict, optional
         Override wandb config
 
@@ -250,6 +258,8 @@ def build_model(
             config = {}
     elif (type(config) is str) or isinstance(config, Path):
         config = parse_config(config)
+    elif type(config) is not dict:
+        config = {}
 
     # Take MTENN args from config if present, else from args
     strategy = config["strat"].lower() if "strat" in config else strat.lower()
@@ -274,13 +284,17 @@ def build_model(
             raise ValueError("A value must be provided for -comb if --grouped is set.")
         combination = None
 
+    # Check and parse Cheng-Prusoff values
+    substrate = config["substrate"] if "substrate" in config else substrate
+    km = config["km"] if "km" in config else km
+
     # Check and parse pred readout
     try:
         pred_readout = (
             config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
         )
         if pred_readout == "pic50":
-            pred_readout = mtenn.model.PIC50Readout()
+            pred_readout = mtenn.model.PIC50Readout(substrate=substrate, Km=km)
         elif pred_readout == "none":
             pred_readout = None
         else:
@@ -289,6 +303,8 @@ def build_model(
                 "must be one of [pic50, none]."
             )
     except AttributeError:
+        # This will be triggered if pred_r is left blank
+        #  (None.lower() => AttributeError)
         pred_readout = None
 
     # Check and parse comb readout
@@ -297,7 +313,7 @@ def build_model(
             config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
         )
         if comb_readout == "pic50":
-            comb_readout = mtenn.model.PIC50Readout()
+            comb_readout = mtenn.model.PIC50Readout(substrate=substrate, Km=km)
         elif comb_readout == "none":
             comb_readout = None
         else:
@@ -306,6 +322,8 @@ def build_model(
                 "must be one of [pic50, none]."
             )
     except AttributeError:
+        # This will be triggered if comb_r is left blank
+        #  (None.lower() => AttributeError)
         comb_readout = None
 
     # Build initial model object, which will be used later in the get_model call
@@ -679,13 +697,14 @@ def build_optimizer(model, config=None):
     # Return None (use script default) if not present
     if "optimizer" not in config:
         print("No optimizer specified, using standard Adam.", flush=True)
-        return None
-
-    # Correct model name if needed
-    optim_type = config["optimizer"].lower()
+        optim_type = "adam"
+    else:
+        # Correct model name if needed
+        optim_type = config["optimizer"].lower()
 
     if optim_type == "adam":
         # Defaults from torch if not present in config
+        lr = config["lr"] if "lr" in config else 0.001
         b1 = config["b1"] if "b1" in config else 0.9
         b2 = config["b2"] if "b2" in config else 0.999
         eps = config["eps"] if "eps" in config else 1e-8
@@ -693,12 +712,14 @@ def build_optimizer(model, config=None):
 
         optimizer = torch.optim.Adam(
             model.parameters(),
-            lr=config["lr"],
+            lr=lr,
             betas=(b1, b2),
             eps=eps,
             weight_decay=weight_decay,
         )
     elif optim_type == "sgd":
+        if "lr" not in config:
+            raise ValueError("Learning rate must be specified if using SGD optimizer.")
         # Defaults from torch if not present in config
         momentum = config["momentum"] if "momentum" in config else 0
         weight_decay = config["weight_decay"] if "weight_decay" in config else 0
@@ -712,9 +733,11 @@ def build_optimizer(model, config=None):
             dampening=dampening,
         )
     elif optim_type == "adadelta":
-        optimizer = torch.optim.Adadelta(model.parameters(), lr=config["lr"])
+        lr = config["lr"] if "lr" in config else 1.0
+        optimizer = torch.optim.Adadelta(model.parameters(), lr=lr)
     elif optim_type == "adamw":
         # Defaults from torch if not present in config
+        lr = config["lr"] if "lr" in config else 0.001
         b1 = config["b1"] if "b1" in config else 0.9
         b2 = config["b2"] if "b2" in config else 0.999
         weight_decay = config["weight_decay"] if "weight_decay" in config else 0.01
@@ -1589,7 +1612,7 @@ def train(
 
             # Update loss_dict
             update_loss_dict(
-                "test",
+                "train",
                 compound_id,
                 target.item(),
                 in_range.item(),
@@ -1722,9 +1745,9 @@ def train(
 
         # Stop if loss has gone to infinity or is NaN
         if (
-            np.isnan(epoch_val_loss)
-            or (epoch_val_loss == np.inf)
-            or (epoch_val_loss == -np.inf)
+            np.isnan(epoch_train_loss)
+            or (epoch_train_loss == np.inf)
+            or (epoch_train_loss == -np.inf)
         ):
             if os.path.isdir(save_file):
                 pkl.dump(

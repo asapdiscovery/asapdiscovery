@@ -116,15 +116,15 @@ def make_wandb_table(ds_split):
             compound_id = compound
             tmp_d = d[0]
         try:
-            pic50 = tmp_d["pIC50"].item()
+            pic50 = tmp_d["pIC50"]
         except KeyError:
             pic50 = np.nan
         try:
-            pic50_range = tmp_d["pIC50_range"].item()
+            pic50_range = tmp_d["pIC50_range"]
         except KeyError:
             pic50_range = np.nan
         try:
-            pic50_stderr = tmp_d["pIC50_stderr"].item()
+            pic50_stderr = tmp_d["pIC50_stderr"]
         except KeyError:
             pic50_stderr = np.nan
         except AttributeError:
@@ -437,6 +437,24 @@ def get_args():
             "--grouped is set."
         ),
     )
+    parser.add_argument(
+        "-sub",
+        "--substrate_conc",
+        type=float,
+        help=(
+            "Substrate concentration for use in the Cheng-Prusoff equation. "
+            "Assumed to be in the same units as Km."
+        ),
+    )
+    parser.add_argument(
+        "-km",
+        "--michaelis_const",
+        type=float,
+        help=(
+            "Km value for use in the Cheng-Prusoff equation. "
+            "Assumed to be in the same units as substrate concentration."
+        ),
+    )
 
     return parser.parse_args()
 
@@ -491,6 +509,10 @@ def init(args, rank=False):
         args.pred_r = model_config["pred_r"]
     if "comb_r" in model_config:
         args.comb_r = model_config["comb_r"]
+    if "substrate" in model_config:
+        args.substrate_conc = model_config["substrate"]
+    if "km" in model_config:
+        args.michaelis_const = model_config["km"]
     if "lr" in model_config:
         args.lr = model_config["lr"]
     if "cutoff" in model_config:
@@ -608,12 +630,15 @@ def init(args, rank=False):
         comb=args.comb,
         pred_r=args.pred_r,
         comb_r=args.comb_r,
+        substrate=args.substrate_conc,
+        km=args.michaelis_const,
         config=model_config,
     )
     print("Model", model, flush=True)
 
     # Set up optimizer
     optimizer = build_optimizer(model, model_config)
+    print("Optimizer", optimizer, flush=True)
 
     # Update exp_configure with model parameters
     if args.model == "e3nn":
@@ -654,6 +679,8 @@ def init(args, rank=False):
             "batch_size": args.batch_size,
             "device": args.device,
             "grouped": args.grouped,
+            "substrate_conc": args.substrate_conc,
+            "km": args.michaelis_const,
         }
     )
 

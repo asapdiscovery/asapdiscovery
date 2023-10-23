@@ -41,52 +41,52 @@ files:
 
   # output files for testing filtering
   - resource: test_filter_achiral_enantiopure_out.csv
-    sha256hash: d6fbe1e77f306091142ba1c853c0bf2c4586786042498dbc770a30f795daabe0
+    sha256hash: f49f799bf6bfadda62f2a2310cd8875eed3eee8a3b013d5e8de002632aac2ed9
 
   - resource: test_filter_achiral_enantiopure_semiquant_out.csv
-    sha256hash: 8965a8b36c753f59d043313cb6bcc53bea18d6ac8de1f8188646fd4e8f084fa4
+    sha256hash: d6fbe1e77f306091142ba1c853c0bf2c4586786042498dbc770a30f795daabe0
 
   - resource: test_filter_achiral_out.csv
-    sha256hash: f7b8425e20b64a8d42701a2fd666c5f4ffa8ba4e8bc5ba16401990c54c115f7d
+    sha256hash: ed73edd9e035aa786ec9a2af37fe9035f258043abdce41ca07061bf5cc3b03a1
 
   - resource: test_filter_achiral_racemic_enantiopure_out.csv
-    sha256hash: 48f75eaf8c36feede6e7a7867b41af80ebd8be5108704bb51d0c1eca81060127
+    sha256hash: 2d22e4fa9633e70a5d1b8c9cd7f5f699134bf3c1db0dea1163c1e397492908a4
 
   - resource: test_filter_achiral_racemic_enantiopure_semiquant_out.csv
     sha256hash: 48f75eaf8c36feede6e7a7867b41af80ebd8be5108704bb51d0c1eca81060127
 
   - resource: test_filter_achiral_racemic_out.csv
-    sha256hash: 125842ec72a3a861c874879bd3e12cac972744acdb488f7eff259bd711423dbf
+    sha256hash: 7010e7535e46babef6b32746eb37cf3b80d24a6dc01ccab2770931bae8b7bf0e
 
   - resource: test_filter_achiral_racemic_semiquant_out.csv
-    sha256hash: d1da81ee982ac6f3b40f520460711a94e1240fd6fd4bf29d8a48b4631ba84df0
+    sha256hash: 125842ec72a3a861c874879bd3e12cac972744acdb488f7eff259bd711423dbf
 
   - resource: test_filter_achiral_semiquant_out.csv
-    sha256hash: 223d018df5fe9e3dbe013b8cd02d4e2206f61ca9429303c1dc01a58bef6d1afc
+    sha256hash: f7b8425e20b64a8d42701a2fd666c5f4ffa8ba4e8bc5ba16401990c54c115f7d
 
   - resource: test_filter_enantiopure_out.csv
-    sha256hash: b4e1e4a71831537db0dda7a82a5874aa4a8427050cdaaa581fce4ed88bc72fcb
+    sha256hash: fcf5141a426d4137ca18968a9bd42851cd7bb778df31020bc349067d9f112db2
 
   - resource: test_filter_enantiopure_semiquant_out.csv
-    sha256hash: 2023963421d626c704fbca663f0c9014992290c0c8f146e5b5126085e4afe02e
+    sha256hash: b4e1e4a71831537db0dda7a82a5874aa4a8427050cdaaa581fce4ed88bc72fcb
 
   - resource: test_filter_out.csv
     sha256hash: 6f0fc5096041e06f3daf5754f72760ef05ded36247a6e822af1bbfa34294612b
 
   - resource: test_filter_racemic_enantiopure_out.csv
-    sha256hash: 19507c742903b0ec11ea0ecd934cf0a61981d256b3f6b02aa22af2259d2e88fd
+    sha256hash: a2d38e8231da349ec608bf546db428f05d98388823ff06c15a8e599560f24f70
 
   - resource: test_filter_racemic_enantiopure_semiquant_out.csv
-    sha256hash: 20db83db30393d332e53c6ad2009afbda79e398213f7727db000e9feec70d402
+    sha256hash: 19507c742903b0ec11ea0ecd934cf0a61981d256b3f6b02aa22af2259d2e88fd
 
   - resource: test_filter_racemic_out.csv
-    sha256hash: 8900f160e270ad37302ddecbc154fe51468c13ee0bda8961223fe62c73711528
+    sha256hash: be7c5cd26804f59f0c8936a9195bae027cc110943b2c04312070a9aa91a4a617
 
   - resource: test_filter_racemic_semiquant_out.csv
-    sha256hash: 87b22105b81217dde0b9aab17e98e16e6eafb297b0ef04813f7a7f6e1a95360c
+    sha256hash: 8900f160e270ad37302ddecbc154fe51468c13ee0bda8961223fe62c73711528
 
   - resource: test_filter_semiquant_out.csv
-    sha256hash: c6892cda97ae7d9af3ec68bcd7f0dd4b8c7a77b58e6b8ad30e7f7d92186b726c
+    sha256hash: 6f0fc5096041e06f3daf5754f72760ef05ded36247a6e822af1bbfa34294612b
 
   # input file for testing CDD parsing
   - resource: test_parse_in.csv
@@ -180,6 +180,20 @@ files:
   - resource: example_traj_top.pdb
     sha256hash: 295b59f81dee63c8567adcbe6ebd700f346823309a3bfefa1ca235e709fdaa46
 
+  # used to create FEC networks
+  - resource: tyk2_ligands.sdf
+    sha256hash: 00479cdf26039d7ce14f8f6477a6eb8d6b6645b863cbf3d830ce907b3853c361
+
+  - resource: tyk2_protein.pdb
+    sha256hash: c8473899ea40b3f4d9382fca3a2b5f76b1e878313a7287a9240bc4322a5db79d
+
+  # TYK2 FEC network for testing
+  - resource: tyk2_small_network.json
+    sha256hash: 50178165ee30cab70ba386e42f62be933ae4769ca65c26c8ccce605230baa266
+
+  # SMILES file with fully defined chirality for testing
+  - resource: chalcogran_defined.smi
+    sha256hash: 247e8d51cd6f404180bfe773a4eb2d6fae37b28919d1527d8b39e5286ea9755c
   # FragalysisFactory testing
   - resource: frag_factory_test/metadata.csv
     sha256hash: a5ee3666fb60f11a87eec59757a9295895c58c2880fcf4c6395b052d4fddf5d3

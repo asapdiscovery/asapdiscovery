@@ -9,7 +9,7 @@ dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
 ]
-description = "API and scripts for running molecular dynamics simulations and free energy calculations"
+description = "API and scripts for running molecular dynamics simulations"
 readme = "README.md"
 requires-python = ">=3.9,<3.11"
 classifiers = [
@@ -28,6 +28,8 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
+
+[project.scripts]
 
 [tool.setuptools.packages.find]
 where = ["."]
