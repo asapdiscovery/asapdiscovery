@@ -41,7 +41,7 @@ class HTMLBlockData:
         """
         Get the master orient array.
         """
-        return getattr(cls, f"HTML_orient_master")
+        return getattr(cls, "HTML_orient_master")
 
     HTML_orient_master = """\
     [-20.57886926575674, 1.4522825208738426, -17.79941670319449, 77.15778084734526, -0.5549623159570264, -0.11539982591793649, 0.8088242618222696, -0.15653441006175986]
