@@ -1,8 +1,7 @@
 import pytest
-
-from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 
 
