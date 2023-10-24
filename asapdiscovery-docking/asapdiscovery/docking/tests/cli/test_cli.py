@@ -1,6 +1,5 @@
 import traceback
 
-import pytest
 from asapdiscovery.docking.cli import cli
 from click.testing import CliRunner
 
