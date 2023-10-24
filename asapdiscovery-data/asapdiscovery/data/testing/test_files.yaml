@@ -235,8 +235,8 @@ files:
   - resource: structure_dir/Mpro-x1002_0A_bound.pdb
     sha256hash: cedee5a737bf7a8d6819323b8eb84dc6ad6e63d52d5a64d36a43215419aea522
 
-  - resource: du_cache/Mpro-x0354_0A.oedu
+  - resource: du_cache/Mpro-x0354_0A_bound.oedu
     sha256hash: 6af7a47a4c2a28000cd979422ed88a45432cbe4badfef4badf0d6fbb9a20f673
 
-  - resource: du_cache/Mpro-x1002_0A.oedu
+  - resource: du_cache/Mpro-x1002_0A_bound.oedu
     sha256hash: e1362be3ef584e68d0f25c99d4a6c26497cb4f8633585bf04ea389b30c1c468d
