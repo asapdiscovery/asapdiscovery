@@ -3,12 +3,12 @@ from typing import Optional
 
 import click
 from asapdiscovery.data.dask_utils import DaskType
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
     large_scale_docking,
 )
+from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 
 
 @click.group()

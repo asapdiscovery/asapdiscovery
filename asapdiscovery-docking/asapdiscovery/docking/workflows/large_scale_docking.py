@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional, Union
@@ -14,7 +14,6 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
@@ -28,19 +27,10 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.docking_v2 import POSITDocker
-from asapdiscovery.docking.scorer_v2 import (
-    ChemGauss4Scorer,
-    MLModelScorer,
-    MetaScorer,
-)
+from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from pydantic import (
-    BaseModel,
-    Field,
-    PositiveInt,
-    root_validator,
-    validator,
-)
+from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
 class LargeScaleDockingInputs(BaseModel):
