@@ -112,5 +112,3 @@ def test_mcs_selector_no_match(prepped_complexes):
     lig = Ligand.from_smiles("Si", compound_name="test_no_match")
     selector = MCSSelector()
     pairs = selector.select([lig], prepped_complexes, n_select=1)
-    print(pairs)
-    raise Exception("test")
