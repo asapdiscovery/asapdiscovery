@@ -228,13 +228,8 @@ class MLModelScorer(ScorerBase):
     def from_latest_by_target_and_type(target: TargetTags, type: MLModelType):
         if type == MLModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
-        inference_cls = get_inference_cls_from_model_type(type)
-        inference_instance = inference_cls.from_latest_by_target(target)
-        return inference_cls(
-            targets=inference_instance.targets,
-            model_name=inference_instance.model_name,
-            inference_cls=inference_instance,
-        )
+        scorer_class = get_ml_scorer_cls_from_model_type(type)
+        return scorer_class.from_latest_by_target(target)
 
     @classmethod
     def from_model_name(cls, model_name: str):
@@ -289,6 +284,23 @@ class SchnetScorer(MLModelScorer):
                 )
             )
         return results
+
+
+_ml_scorer_classes_meta = [
+    MLModelScorer,
+    GATScorer,
+    SchnetScorer,
+]
+
+
+def get_ml_scorer_cls_from_model_type(model_type: MLModelType):
+    instantiable_classes = [
+        m for m in _ml_scorer_classes_meta if m.model_type != MLModelType.INVALID
+    ]
+    scorer_class = [m for m in instantiable_classes if m.model_type == model_type]
+    if len(scorer_class) != 1:
+        raise Exception("Somehow got multiple scorers")
+    return scorer_class[0]
 
 
 class MetaScorer(BaseModel):

@@ -147,9 +147,9 @@ class LargeScaleDockingInputs(BaseModel):
         None, description="The name of the ml scorers to use"
     )
 
-    logname: str = Field("large_scale_docking.log", description="Name of the log file.")
+    logname: str = Field("large_scale_docking", description="Name of the log file.")
 
-    loglevel: int = Field(logging.INFO, description="Logging level.")
+    loglevel: int = Field(logging.INFO, description="Logging level")
 
     output_dir: Path = Field(Path("output"), description="Output directory")
 
@@ -421,7 +421,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         logger=logger,
         fail="raise",
         tag="scores",
-        message="No docking results passed the top n filter",
+        message=f"No docking results passed the top {inputs.top_n} filter",
     )
 
     scores_df.to_csv(
