@@ -55,4 +55,4 @@ def test_cache_load_structure_dir(structure_dir, use_dask, du_cache):
     factory = StructureDirFactory.from_dir(struct_dir)
     complexes = factory.load(use_dask=use_dask)
     prepper = ProteinPrepper(du_cache=du_cache_dir)
-    prepped_complexes = prepper.prep(complexes, use_dask=use_dask)
+    _ = prepper.prep(complexes, use_dask=use_dask)
