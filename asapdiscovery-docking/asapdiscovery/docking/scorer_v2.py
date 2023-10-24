@@ -224,6 +224,18 @@ class MLModelScorer(ScorerBase):
             inference_cls=inference_instance,
         )
 
+    @staticmethod
+    def from_latest_by_target_and_type(target: TargetTags, type: MLModelType):
+        if type == MLModelType.INVALID:
+            raise Exception("trying to instantiate some kind a baseclass")
+        inference_cls = get_inference_cls_from_model_type(type)
+        inference_instance = inference_cls.from_latest_by_target(target)
+        return inference_cls(
+            targets=inference_instance.targets,
+            model_name=inference_instance.model_name,
+            inference_cls=inference_instance,
+        )
+
     @classmethod
     def from_model_name(cls, model_name: str):
         if cls.model_type == MLModelType.INVALID:

@@ -30,9 +30,8 @@ from asapdiscovery.docking.docking_data_validation import (
 from asapdiscovery.docking.docking_v2 import POSITDocker
 from asapdiscovery.docking.scorer_v2 import (
     ChemGauss4Scorer,
-    GATScorer,
+    MLModelScorer,
     MetaScorer,
-    SchnetScorer,
 )
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from pydantic import (
@@ -349,17 +348,16 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     logger.info("Writing docking results")
     POSITDocker.write_docking_files(results, output_dir / "docking_results")
 
-    scorers = [
-        ChemGauss4Scorer(),
-        GATScorer.from_latest_by_target(inputs.target)
-        if MLModelType.GAT.value in inputs.ml_scorers
-        else None,
-        SchnetScorer.from_latest_by_target(inputs.target)
-        if MLModelType.schnet.value in inputs.ml_scorers
-        else None,
-    ]
+    # add chemgauss4 scorer
+    scorers = [ChemGauss4Scorer()]
 
-    scorers = [scorer for scorer in scorers if scorer is not None]
+    # load ml scorers
+    if inputs.ml_scorers:
+        for ml_scorer in inputs.ml_scorers:
+            logger.info(f"Loading ml scorer: {ml_scorer}")
+            scorers.append(
+                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
+            )
 
     # score results
     logger.info("Scoring docking results")
