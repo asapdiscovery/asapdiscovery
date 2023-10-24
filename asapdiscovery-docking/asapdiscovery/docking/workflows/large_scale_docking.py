@@ -295,6 +295,11 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
         complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
 
+    n_query_ligands = len(query_ligands)
+    logger.info(f"Loaded {n_query_ligands} query ligands")
+    n_complexes = len(complexes)
+    logger.info(f"Loaded {n_complexes} complexes")
+
     # prep complexes
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(du_cache=inputs.du_cache)
@@ -302,6 +307,9 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         complexes, use_dask=inputs.use_dask, dask_client=dask_client
     )
     del complexes
+
+    n_prepped_complexes = len(prepped_complexes)
+    logger.info(f"Prepped {n_prepped_complexes} complexes")
 
     if inputs.gen_du_cache:
         logger.info(f"Generating DU cache at {inputs.gen_du_cache}")
@@ -320,6 +328,9 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         dask_client=None,
     )
 
+    n_pairs = len(pairs)
+    logger.info(f"Selected {n_pairs} pairs for docking")
+
     del prepped_complexes
 
     # dock pairs
@@ -331,6 +342,8 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         dask_client=dask_client,
     )
 
+    n_results = len(results)
+    logger.info(f"Docked {n_results} pairs successfully")
     del pairs
 
     # write docking results
@@ -373,6 +386,11 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         > inputs.posit_confidence_cutoff
     ]
 
+    n_posit_filtered = len(scores_df)
+    logger.info(
+        f"Filtered to {n_posit_filtered} / {n_results} docking results by POSIT confidence"
+    )
+
     check_empty_dataframe(
         scores_df,
         logger=logger,
@@ -383,6 +401,11 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
 
     # filter out clashes (chemgauss4 score > 0)
     scores_df = scores_df[scores_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
+
+    n_clash_filtered = len(scores_df)
+    logger.info(
+        f"Filtered to {n_clash_filtered} / {n_posit_filtered} docking results by clash filter"
+    )
 
     check_empty_dataframe(
         scores_df,
@@ -402,8 +425,18 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
 
     scores_df = scores_df.drop_duplicates(subset=[DockingResultCols.LIGAND_ID.value])
 
+    n_duplicate_filtered = len(scores_df)
+    logger.info(
+        f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
+    )
+
     # take top n results
     scores_df = scores_df.head(inputs.top_n)
+
+    n_top_n_filtered = len(scores_df)
+    logger.info(
+        f"Filtered to {n_top_n_filtered} / {n_duplicate_filtered} docking results by top n filter"
+    )
 
     check_empty_dataframe(
         scores_df,
