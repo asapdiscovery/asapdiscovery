@@ -162,7 +162,7 @@ class LargeScaleDockingInputs(BaseModel):
 
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
-            f.write(self.json())
+            f.write(self.json(indent=2))
 
     @validator("posit_confidence_cutoff")
     @classmethod

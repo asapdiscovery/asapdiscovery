@@ -66,6 +66,11 @@ def cli():
     help="The confidence cutoff for POSIT results to be considered",
 )
 @click.option(
+    "--input-json",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="Path to a json file containing the inputs to the docking workflow,  WARNING: overrides all other inputs.",
+)
+@click.option(
     "-l",
     "--ligands",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -114,6 +119,7 @@ def large_scale(
     use_dask: bool,
     dask_type: str,
     posit_confidence_cutoff: float = 0.7,
+    input_json: Optional[str] = None,
     ligands: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
@@ -126,23 +132,28 @@ def large_scale(
     Run large scale docking on a set of ligands, against a set of targets.
     """
 
-    inputs = LargeScaleDockingInputs(
-        postera=postera,
-        postera_upload=postera_upload,
-        target=target,
-        n_select=n_select,
-        top_n=top_n,
-        use_dask=use_dask,
-        dask_type=dask_type,
-        posit_confidence_cutoff=posit_confidence_cutoff,
-        filename=ligands,
-        fragalysis_dir=fragalysis_dir,
-        structure_dir=structure_dir,
-        postera_molset_name=postera_molset_name,
-        du_cache=du_cache,
-        gen_du_cache=gen_du_cache,
-        ml_scorers=ml_scorer,
-    )
+    if input_json is not None:
+        print("Loading inputs from json file... Will override all other inputs.")
+        inputs = LargeScaleDockingInputs.from_json_file(input_json)
+
+    else:
+        inputs = LargeScaleDockingInputs(
+            postera=postera,
+            postera_upload=postera_upload,
+            target=target,
+            n_select=n_select,
+            top_n=top_n,
+            use_dask=use_dask,
+            dask_type=dask_type,
+            posit_confidence_cutoff=posit_confidence_cutoff,
+            filename=ligands,
+            fragalysis_dir=fragalysis_dir,
+            structure_dir=structure_dir,
+            postera_molset_name=postera_molset_name,
+            du_cache=du_cache,
+            gen_du_cache=gen_du_cache,
+            ml_scorers=ml_scorer,
+        )
 
     large_scale_docking(inputs)
 
