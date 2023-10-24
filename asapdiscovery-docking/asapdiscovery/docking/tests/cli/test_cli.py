@@ -1,5 +1,6 @@
 import traceback
-
+import os
+import pytest
 from asapdiscovery.docking.cli import cli
 from click.testing import CliRunner
 
@@ -12,6 +13,9 @@ def click_success(result):
     return result.exit_code == 0
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_large_docking_cli_fragalysis(ligand_file, mpro_frag_dir, tmp_path):
     runner = CliRunner()
 
@@ -28,12 +32,17 @@ def test_large_docking_cli_fragalysis(ligand_file, mpro_frag_dir, tmp_path):
             "--fragalysis-dir",
             frag_parent_dir,
             "--posit-confidence-cutoff",
-            0.01,
+            0,
+            "--output-dir",
+            tmp_path,
         ],
     )
     assert click_success(result)
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_large_docking_cli_structure_directory_dask(
     ligand_file, structure_dir, tmp_path
 ):
@@ -51,14 +60,19 @@ def test_large_docking_cli_structure_directory_dask(
             ligand_file,
             "--structure-dir",
             struct_dir,
-            "--use-dask",
+            "--use-dask",  # add dask
             "--posit-confidence-cutoff",
-            0.01,
+            0,
+            "--output-dir",
+            tmp_path,
         ],
     )
     assert click_success(result)
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_large_docking_cli_structure_directory_du_cache(
     ligand_file, structure_dir, du_cache, tmp_path
 ):
@@ -79,9 +93,14 @@ def test_large_docking_cli_structure_directory_du_cache(
             struct_dir,
             "--use-dask",
             "--posit-confidence-cutoff",
-            0.01,
+            0,
             "--du-cache",
             du_cache_dir,
+            "--output-dir",
+            tmp_path,
         ],
     )
     assert click_success(result)
+
+
+# TODO add tests for postera

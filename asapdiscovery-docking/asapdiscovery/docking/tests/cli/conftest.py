@@ -38,7 +38,7 @@ def structure_dir(all_structure_dir_fns):
 
 @pytest.fixture(scope="session")
 def du_cache_files():
-    return ["du_cache/Mpro-x0354_0A.oedu", "du_cache/Mpro-x1002_0A.oedu"]
+    return ["du_cache/Mpro-x0354_0A_bound.oedu", "du_cache/Mpro-x1002_0A_bound.oedu"]
 
 
 @pytest.fixture(scope="session")
