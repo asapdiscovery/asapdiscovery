@@ -1,7 +1,8 @@
 import logging
+import json
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional
+from typing import Optional, Union
 
 from asapdiscovery.data.dask_utils import (
     DaskType,
@@ -13,6 +14,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
@@ -36,7 +38,6 @@ from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from pydantic import (
     BaseModel,
     Field,
-    PositiveFloat,
     PositiveInt,
     root_validator,
     validator,
@@ -44,6 +45,51 @@ from pydantic import (
 
 
 class LargeScaleDockingInputs(BaseModel):
+    """
+    Schema for inputs to large scale docking
+
+    Parameters
+    ----------
+    filename : str, optional
+        Path to a molecule file containing query ligands.
+    fragalysis_dir : str, optional
+        Path to a directory containing a Fragalysis dump.
+    structure_dir : str, optional
+        Path to a directory containing structures to dock instead of a full fragalysis database.
+    postera : bool, optional
+        Whether to use the Postera database as the query set.
+    postera_upload : bool, optional
+        Whether to upload the results to Postera.
+    postera_molset_name : str, optional
+        The name of the molecule set to pull from and/or upload to.
+    du_cache : str, optional
+        Path to a directory where design units are cached
+    gen_du_cache : str, optional
+        Path to a directory where generated design units should be cached
+    target : TargetTags, optional
+        The target to dock against.
+    write_final_sdf : bool, optional
+        Whether to write the final docked poses to an SDF file.
+    use_dask : bool, optional
+        Whether to use dask for parallelism.
+    dask_type : DaskType, optional
+        Type of dask client to use for parallelism.
+    n_select : int, optional
+        Number of targets to dock each ligand against, sorted by MCS
+    top_n : int, optional
+        Number of docking results to return, ordered by docking score
+    posit_confidence_cutoff : float, optional
+        POSIT confidence cutoff used to filter docking results
+    ml_scorers : MLModelType, optional
+        The name of the ml scorers to use.
+    logname : str, optional
+        Name of the log file.
+    loglevel : int, optional
+        Logging level.
+    output_dir : Path, optional
+        Output directory
+    """
+
     filename: Optional[str] = Field(
         None, description="Path to a molecule file containing query ligands."
     )
@@ -91,8 +137,15 @@ class LargeScaleDockingInputs(BaseModel):
         500, description="Number of docking results to return, ordered by docking score"
     )
 
-    posit_confidence_cutoff: PositiveFloat = Field(
-        0.7, description="POSIT confidence cutoff used to filter docking results"
+    posit_confidence_cutoff: float = Field(
+        0.7,
+        le=1.0,
+        ge=0.0,
+        description="POSIT confidence cutoff used to filter docking results",
+    )
+
+    ml_scorers: Optional[list[str]] = Field(
+        None, description="The name of the ml scorers to use"
     )
 
     logname: str = Field("large_scale_docking.log", description="Name of the log file.")
@@ -103,6 +156,14 @@ class LargeScaleDockingInputs(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @classmethod
+    def from_json_file(cls, file: str | Path):
+        return cls.parse_file(str(file))
+
+    def to_json_file(self, file: str | Path):
+        with open(file, "w") as f:
+            f.write(self.json())
 
     @validator("posit_confidence_cutoff")
     @classmethod
@@ -162,10 +223,33 @@ class LargeScaleDockingInputs(BaseModel):
                 raise ValueError("Du cache must be a directory.")
         return v
 
+    @classmethod
+    @validator("ml_scorers")
+    def ml_scorers_must_be_valid(cls, v):
+        """
+        Validate that the ml scorers are valid
+        """
+        if v is not None:
+            for ml_scorer in v:
+                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
+                    raise ValueError(
+                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
+                    )
+        return v
+
 
 def large_scale_docking(inputs: LargeScaleDockingInputs):
     """
     Run large scale docking on a set of ligands, against multiple targets
+
+    Parameters
+    ----------
+    inputs : LargeScaleDockingInputs
+        Inputs to large scale docking
+
+    Returns
+    -------
+    None
     """
 
     output_dir = inputs.output_dir
@@ -178,6 +262,9 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     ).getLogger()
 
     logger.info(f"Running large scale docking with inputs: {inputs}")
+    logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
+
+    inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
 
     if inputs.use_dask:
         set_dask_config()
@@ -262,15 +349,21 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     logger.info("Writing docking results")
     POSITDocker.write_docking_files(results, output_dir / "docking_results")
 
+    scorers = [
+        ChemGauss4Scorer(),
+        GATScorer.from_latest_by_target(inputs.target)
+        if MLModelType.GAT.value in inputs.ml_scorers
+        else None,
+        SchnetScorer.from_latest_by_target(inputs.target)
+        if MLModelType.schnet.value in inputs.ml_scorers
+        else None,
+    ]
+
+    scorers = [scorer for scorer in scorers if scorer is not None]
+
     # score results
     logger.info("Scoring docking results")
-    scorer = MetaScorer(
-        scorers=[
-            ChemGauss4Scorer(),
-            GATScorer.from_latest_by_target(inputs.target),
-            SchnetScorer.from_latest_by_target(inputs.target),
-        ]
-    )
+    scorer = MetaScorer(scorers=scorers)
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")

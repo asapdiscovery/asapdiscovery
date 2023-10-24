@@ -3,6 +3,7 @@ from typing import Optional
 
 import click
 from asapdiscovery.data.dask_utils import DaskType
+from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
@@ -89,12 +90,20 @@ def cli():
 @click.option(
     "--du-cache",
     type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
-    help="Path to a directory where design units are cached",
+    help="Path to a directory where design units are cached.",
 )
 @click.option(
     "--gen-du-cache",
     type=click.Path(resolve_path=True, exists=False, file_okay=False, dir_okay=True),
-    help="Path to a directory where a design unit cache should be generated",
+    help="Path to a directory where a design unit cache should be generated.",
+)
+@click.option(
+    "--ml-scorer",
+    type=click.Choice(
+        ASAPMLModelRegistry.get_implemented_model_types(), case_sensitive=True
+    ),
+    multiple=True,
+    help="The names of the ml scorer to use, can be specified multiple times to use multiple ml scorers.",
 )
 def large_scale(
     postera: bool,
@@ -111,6 +120,7 @@ def large_scale(
     postera_molset_name: Optional[str] = None,
     du_cache: Optional[str] = None,
     gen_du_cache: Optional[str] = None,
+    ml_scorer: Optional[list[str]] = None,
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -131,6 +141,7 @@ def large_scale(
         postera_molset_name=postera_molset_name,
         du_cache=du_cache,
         gen_du_cache=gen_du_cache,
+        ml_scorers=ml_scorer,
     )
 
     large_scale_docking(inputs)
