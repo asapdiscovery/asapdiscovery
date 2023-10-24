@@ -17,6 +17,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
 from asapdiscovery.data.schema_v2.schema_base import DataStorageType
+from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
 from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
@@ -69,6 +70,11 @@ class Ligand(DataModelAbstractBase):
     experimental_data: Optional[ExperimentalCompoundData] = Field(
         None,
         description="ExperimentalCompoundData Schema for experimental data associated with the compound",
+    )
+
+    expansion_tag: Optional[StateExpansionTag] = Field(
+        None,
+        description="Expansion tag linking this ligand to its parent in a state expansion if needed",
     )
 
     tags: dict[str, str] = Field({}, description="Dictionary of SD tags")
@@ -300,6 +306,26 @@ class Ligand(DataModelAbstractBase):
         Clear the SD data for the ligand
         """
         self.tags = {}
+
+    def set_expansion(
+        self,
+        parent: "Ligand",
+        provenance: dict[str, Any],
+    ) -> None:
+        """
+        Set the expansion of the ligand with a reference to the parent ligand and the settings used to create the
+        expansion.
+
+        Parameters
+        ----------
+            parent: The parent ligand from which this child was created.
+            provenance: The provenance dictionary of the state expander used to create this ligand created via
+            `expander.provenance()` where the keys are fields of the expander and the values capture the
+            associated settings.
+        """
+        self.expansion_tag = StateExpansionTag.from_parent(
+            parent=parent, provenance=provenance
+        )
 
 
 class ReferenceLigand(Ligand):

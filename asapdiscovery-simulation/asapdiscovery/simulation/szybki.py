@@ -121,7 +121,7 @@ class SzybkiFreeformConformerAnalyzer:
         self.logger.info("Starting Szybki FreeForm conformer analysis run")
         self.debug = debug
         if self.debug:
-            self.logger.SetLevel(logging.DEBUG)
+            self.logger.setLevel(logging.DEBUG)
             self.logger.debug("Running in debug mode")
         self.logger.debug(
             f"Running Szybki FreeForm on {len(self.ligand_paths)} ligands"
