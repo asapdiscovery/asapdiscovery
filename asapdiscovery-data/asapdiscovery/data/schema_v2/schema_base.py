@@ -44,6 +44,9 @@ class DataModelAbstractBase(BaseModel):
     and other behaviour
     """
 
+    def __hash__(self) -> int:
+        return self.json().__hash__()
+
     @classmethod
     def from_dict(cls, dict):
         return cls.parse_obj(dict)
