@@ -74,10 +74,11 @@ def test_manual_creation(mpro_frag_dir, mpro_frag_compound_mapping):
     assert len(complexes) == 10
 
 
-def test_creation_from_dir(mpro_frag_dir):
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_creation_from_dir(mpro_frag_dir, use_dask):
     parent_dir, all_paths = mpro_frag_dir
     ff = FragalysisFactory.from_dir(parent_dir)
-    complexes = ff.load()
+    complexes = ff.load(use_dask=use_dask)
     assert len(complexes) == 10
 
 
