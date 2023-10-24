@@ -66,6 +66,12 @@ def cli():
     help="The confidence cutoff for POSIT results to be considered",
 )
 @click.option(
+    "--output-dir",
+    type=click.Path(resolve_path=True, exists=False, file_okay=False, dir_okay=True),
+    help="The directory to output results to.",
+    default="output",
+)
+@click.option(
     "--input-json",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="Path to a json file containing the inputs to the docking workflow,  WARNING: overrides all other inputs.",
@@ -119,6 +125,7 @@ def large_scale(
     use_dask: bool,
     dask_type: str,
     posit_confidence_cutoff: float = 0.7,
+    output_dir: str = "output",
     input_json: Optional[str] = None,
     ligands: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
@@ -153,6 +160,7 @@ def large_scale(
             du_cache=du_cache,
             gen_du_cache=gen_du_cache,
             ml_scorers=ml_scorer,
+            output_dir=output_dir,
         )
 
     large_scale_docking(inputs)

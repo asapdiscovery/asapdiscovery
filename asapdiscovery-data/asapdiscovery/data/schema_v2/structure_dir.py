@@ -52,10 +52,18 @@ class StructureDirFactory(BaseModel):
             List of Complex objects.
         """
         pdb_files = list(self.parent_dir.glob("*.pdb"))
+        # check all filenames are unique
+        pdb_stems = [pdb_file.stem for pdb_file in pdb_files]
+        unique = False
+        if len(pdb_stems) == len(set(pdb_stems)):
+            unique = True
+
         if use_dask:
             delayed_outputs = []
             for i, pdb_file in enumerate(pdb_files):
                 stem = pdb_file.stem
+                if not unique:
+                    stem = f"{stem}_{i}"
                 out = dask.delayed(Complex.from_pdb)(
                     pdb_file,
                     target_kwargs={"target_name": stem},
@@ -66,6 +74,16 @@ class StructureDirFactory(BaseModel):
                 delayed_outputs, dask_client, errors="raise"
             )
         else:
-            outputs = [Complex.from_pdb(pdb_file) for pdb_file in pdb_files]
+            outputs = []
+            for i, pdb_file in enumerate(pdb_files):
+                stem = pdb_file.stem
+                if not unique:
+                    stem = f"{stem}_{i}"
+                out = Complex.from_pdb(
+                    pdb_file,
+                    target_kwargs={"target_name": stem},
+                    ligand_kwargs={"compound_name": f"{stem}_ligand"},
+                )
+                outputs.append(out)
 
         return outputs
