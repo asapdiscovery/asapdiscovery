@@ -514,7 +514,7 @@ class HTMLVisualizer:
                             viewer.setBackgroundColor(0xffffffff);\n \
                             viewer.setView(\n \
                             '
-                        + HTMLBlockData.get_orient(self.target)
+                        + HTMLBlockData.get_orient()
                         + " \
                             )\n \
                             viewer.setZoomLimits(1,250) // prevent infinite zooming\n \
