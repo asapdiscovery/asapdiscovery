@@ -37,32 +37,14 @@ class HTMLBlockData:
         """
 
     @classmethod
-    def get_orient(cls, target: str) -> str:
+    def get_orient(cls) -> str:
         """
-        Get the orient array for a target.
+        Get the master orient array.
         """
-        target_ = VizTargets.get_name_underscore(target)
-        return getattr(cls, f"HTML_orient_{target_}")
+        return getattr(cls, "HTML_orient_master")
 
-    HTML_orient_SARS_CoV_2_Mpro = """\
-    [19.43872410226519, 11.81781888855718, 13.596857815858694, 71.59651614705442, 0.8265984029795093, 0.2984942958173893, 0.4405725231221419, 0.18311768736524137]
-    """
-
-    HTML_orient_SARS_CoV_2_Mac1 = HTML_orient_SARS_CoV_2_Mac1_monomer = """\
-    [
-    -3.5200155623997147,
-    -5.050560643099713,
-    -12.108040862949323,
-    71.69598666461106,
-    0.3887976484684321,
-    0.42408332663180826,
-    -0.5833075994459622,
-    -0.5733602402041021
-    ]
-    """
-
-    HTML_orient_MERS_CoV_Mpro = """\
-    [-40.052249328550225, -96.01719571090237, 2.0532316220967157, 54.161214447021486, 0.10313246368166844, 0.25413742037735987, 0.9514159603894136, 0.13994833623584255]
+    HTML_orient_master = """\
+    [-20.57886926575674, 1.4522825208738426, -17.79941670319449, 77.15778084734526, -0.5549623159570264, -0.11539982591793649, 0.8088242618222696, -0.15653441006175986]
     """
 
     color_method_subpockets = """\
