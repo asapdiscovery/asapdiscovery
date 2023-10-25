@@ -22,7 +22,7 @@ There are a range of workflows and tooling to use split into several namespace s
 `asapdiscovery-alchemy`: Free energy calculations using [OpenFE](https://openfree.energy/) and [Alchemiscale](https://docs.alchemiscale.org/en/latest/)
 `asapdiscovery-data`: Core data models and integrations with services such as [Postera.ai](https://postera.ai/)
 `asapdiscovery-dataviz`: Data and structure visualization using `3DMol` and `PyMOL`
-`asapdiscovery-docking`: Docking and compound screening
+`asapdiscovery-docking`: Docking and compound screening with the `OpenEye` toolkit
 `asapdiscovery-ml`: Structure based ML models for predicting compound activity.
 `asapdiscovery-modelling`: Structure prep and standardisation
 `asapdiscovery-simulation`: MD simulations and analysis using OpenMM
