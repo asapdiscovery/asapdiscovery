@@ -142,7 +142,7 @@ class DaskCluster(BaseModel):
         extra = "forbid"
 
     name: str = Field("dask-worker", description="Name of the dask worker")
-    cores: int = Field(1, description="Number of cores per job")
+    cores: int = Field(4, description="Number of cores per job")
     memory: str = Field("20 GB", description="Amount of memory per job")
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
@@ -153,7 +153,7 @@ class LilacDaskCluster(DaskCluster):
     shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
     queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
     project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("1h", description="Walltime for the job")
+    walltime: str = Field("24h", description="Walltime for the job")
     use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
