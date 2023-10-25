@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional
-from distributed import Client
 
 from asapdiscovery.data.dask_utils import (
     DaskType,
@@ -31,6 +30,7 @@ from asapdiscovery.docking.docking_v2 import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
