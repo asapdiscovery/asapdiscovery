@@ -9,6 +9,7 @@ from asapdiscovery.data.dask_utils import (
     dask_cluster_from_type,
     set_dask_config,
 )
+from asapdiscovery.data.execution_utils import estimate_n_workers
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
