@@ -2,10 +2,11 @@ import logging
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional
+from distributed import Client
 
 from asapdiscovery.data.dask_utils import (
     DaskType,
-    dask_client_and_cluster_from_type,
+    dask_cluster_from_type,
     set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
@@ -22,7 +23,6 @@ from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.utils import check_empty_dataframe
-from asapdiscovery.data.execution_utils import estimate_n_workers
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
@@ -257,10 +257,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     if inputs.use_dask:
         set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
-        dask_client, dask_cluster = dask_client_and_cluster_from_type(inputs.dask_type)
-        logger.info(f"Using dask client: {dask_client}")
-        logger.info(f"Using dask cluster: {dask_cluster}")
-        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
+        dask_cluster = dask_cluster_from_type(inputs.dask_type)
 
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
@@ -272,6 +269,11 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
             )
             logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
             dask_cluster.scale(inputs.dask_cluster_n_workers)
+
+        dask_client = Client(dask_cluster)
+        logger.info(f"Using dask client: {dask_client}")
+        logger.info(f"Using dask cluster: {dask_cluster}")
+        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
 
     else:
         dask_client = None

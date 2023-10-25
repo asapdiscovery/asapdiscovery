@@ -6,7 +6,7 @@ import dask
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
-from distributed import Client
+from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
@@ -65,7 +65,7 @@ class DaskType(str, Enum):
         return self in [DaskType.LILAC_CPU, DaskType.LILAC_GPU]
 
 
-def dask_client_and_cluster_from_type(dask_type: DaskType):
+def dask_cluster_from_type(dask_type: DaskType):
     """
     Get a dask client from a DaskType
 
@@ -82,18 +82,15 @@ def dask_client_and_cluster_from_type(dask_type: DaskType):
         A dask cluster
     """
     if dask_type == DaskType.LOCAL:
-        client = Client()
-        cluster = None
+        cluster = LocalCluster()
     elif dask_type == DaskType.LILAC_GPU:
         cluster = LilacGPUDaskCluster().to_cluster(exclude_interface="lo")
-        client = Client(cluster)
     elif dask_type == DaskType.LILAC_CPU:
         cluster = LilacDaskCluster().to_cluster(exclude_interface="lo")
-        client = Client()
     else:
         raise ValueError(f"Unknown dask type {dask_type}")
 
-    return client, cluster
+    return cluster
 
 
 class GPU(str, Enum):
@@ -145,8 +142,8 @@ class DaskCluster(BaseModel):
         extra = "forbid"
 
     name: str = Field("dask-worker", description="Name of the dask worker")
-    cores: int = Field(4, description="Number of cores per job")
-    memory: str = Field("20 GB", description="Amount of memory per job")
+    cores: int = Field(32, description="Number of cores per job")
+    memory: str = Field("120 GB", description="Amount of memory per job")
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
@@ -204,6 +201,7 @@ class LilacGPUDaskCluster(LilacDaskCluster):
     queue: str = "gpuqueue"
     walltime = "24h"
     memory = "48 GB"
+    cores = 1
 
     @classmethod
     def from_gpu(cls, gpu: GPU = GPU.GTX1080TI):
