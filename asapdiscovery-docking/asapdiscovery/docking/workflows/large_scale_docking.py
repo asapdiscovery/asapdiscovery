@@ -8,6 +8,7 @@ from asapdiscovery.data.dask_utils import (
     dask_client_and_cluster_from_type,
     set_dask_config,
 )
+from asapdiscovery.data.execution_utils import estimate_n_workers
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
@@ -22,7 +23,6 @@ from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.utils import check_empty_dataframe
-from asapdiscovery.data.execution_utils import estimate_n_workers
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
