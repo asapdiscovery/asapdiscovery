@@ -7,6 +7,9 @@ asapdiscovery
 
 A toolkit for structure-based open antiviral drug discovery by the [ASAP Discovery Consortium](https://asapdiscovery.org/).
 
+![plot](docs/_static/asap_logo.png)
+
+
 ## Intro
 
 All pandemics are global health threats. Our best defense is a healthy global antiviral discovery community with a robust pipeline of open discovery tools. The AI-driven Structure-enabled Antiviral Platform (ASAP) is making this a reality!
