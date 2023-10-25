@@ -5,7 +5,7 @@ from typing import Optional
 
 from asapdiscovery.data.dask_utils import (
     DaskType,
-    dask_client_from_type,
+    dask_client_and_cluster_from_type,
     set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
@@ -256,9 +256,10 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
 
     if inputs.use_dask:
         set_dask_config()
-        logger.info("Using dask for parallelism.")
-        dask_client = dask_client_from_type(inputs.dask_type)
+        logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        dask_client, dask_cluster = dask_client_and_cluster_from_type(inputs.dask_type)
         logger.info(f"Using dask client: {dask_client}")
+        logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
     else:
         dask_client = None

@@ -55,7 +55,7 @@ def cli():
 )
 @click.option(
     "--dask-type",
-    type=DaskType,
+    type=click.Choice(DaskType.get_values(), case_sensitive=False),
     default=DaskType.LOCAL,
     help="The type of dask cluster to use. Can be 'local' or 'lilac-cpu'.",
 )

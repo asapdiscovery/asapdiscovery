@@ -48,7 +48,7 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-class DaskType(Enum):
+class DaskType(str, Enum):
     """
     Enum for Dask types
     """
@@ -57,39 +57,40 @@ class DaskType(Enum):
     LILAC_GPU = "lilac-gpu"
     LILAC_CPU = "lilac-cpu"
 
+    @classmethod
+    def get_values(cls):
+        return [dask_type.value for dask_type in cls]
 
-def dask_client_from_type(dask_type: DaskType):
+
+def dask_client_and_cluster_from_type(dask_type: DaskType):
     """
     Get a dask client from a DaskType
 
     Parameters
     ----------
     dask_type : DaskType
-        The type of dask client to get
+        The type of dask client / cluster to get
 
     Returns
     -------
     dask.distributed.Client
         A dask client
+    dask_jobqueue.Cluster
+        A dask cluster
     """
     if dask_type == DaskType.LOCAL:
-        from distributed import Client
-
         client = Client()
+        cluster = None
     elif dask_type == DaskType.LILAC_GPU:
-        from distributed import Client
-
-        client = Client(
-            LilacGPUDaskCluster.from_gpu().to_cluster(exclude_interface="lo")
-        )
+        cluster = LilacGPUDaskCluster().to_cluster(exclude_interface="lo")
+        client = Client(cluster)
     elif dask_type == DaskType.LILAC_CPU:
-        from distributed import Client
-
-        client = Client(LilacDaskCluster().to_cluster(exclude_interface="lo"))
+        cluster = LilacDaskCluster().to_cluster(exclude_interface="lo")
+        client = Client()
     else:
         raise ValueError(f"Unknown dask type {dask_type}")
 
-    return client
+    return client, cluster
 
 
 class GPU(str, Enum):
