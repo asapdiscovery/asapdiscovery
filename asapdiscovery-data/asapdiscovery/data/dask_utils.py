@@ -61,6 +61,9 @@ class DaskType(str, Enum):
     def get_values(cls):
         return [dask_type.value for dask_type in cls]
 
+    def is_lilac(self):
+        return self in [DaskType.LILAC_CPU, DaskType.LILAC_GPU]
+
 
 def dask_client_and_cluster_from_type(dask_type: DaskType):
     """

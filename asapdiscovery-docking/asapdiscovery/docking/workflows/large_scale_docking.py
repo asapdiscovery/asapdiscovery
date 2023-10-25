@@ -22,6 +22,7 @@ from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.utils import check_empty_dataframe
+from asapdiscovery.data.execution_utils import estimate_n_workers
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
@@ -117,6 +118,15 @@ class LargeScaleDockingInputs(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
+    dask_cluster_n_workers: PositiveInt = Field(
+        10,
+        description="Number of workers to use as inital guess for Lilac dask cluster",
+    )
+
+    dask_cluster_max_workers: PositiveInt = Field(
+        20, description="Maximum number of workers to use for Lilac dask cluster"
+    )
+
     n_select: PositiveInt = Field(
         10, description="Number of targets to dock each ligand against, sorted by MCS"
     )
@@ -152,16 +162,6 @@ class LargeScaleDockingInputs(BaseModel):
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
             f.write(self.json(indent=2))
-
-    @validator("posit_confidence_cutoff")
-    @classmethod
-    def posit_confidence_cutoff_must_be_between_0_and_1(cls, v):
-        """
-        Validate that the POSIT confidence cutoff is between 0 and 1
-        """
-        if v < 0 or v > 1:
-            raise ValueError("POSIT confidence cutoff must be between 0 and 1.")
-        return v
 
     @root_validator
     @classmethod
@@ -261,6 +261,18 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
+
+        if inputs.dask_type.is_lilac():
+            logger.info("Lilac HPC config selected, setting adaptive scaling")
+            dask_cluster.adapt(
+                minimum=1,
+                maximum=inputs.dask_cluster_max_workers,
+                wait_count=10,
+                interval="2m",
+            )
+            logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
+            dask_cluster.scale(inputs.dask_cluster_n_workers)
+
     else:
         dask_client = None
 
