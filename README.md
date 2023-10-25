@@ -7,7 +7,7 @@ asapdiscovery
 
 A toolkit for structure-based open antiviral drug discovery by the [ASAP Discovery Consortium](https://asapdiscovery.org/).
 
-![plot](docs/_static/asap_logo.png)
+<img src="docs/_static/asap_logo.png" width="200">
 
 
 ## Intro
