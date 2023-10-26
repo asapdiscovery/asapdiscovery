@@ -103,15 +103,10 @@ class GIFVisualizer:
                 self.trajectories.append(trajectory)
                 self.systems.append(system)
                 self.output_paths.append(path)
-            elif (
-                system
-                and Path(system).exists()
-            ):
+            elif system and Path(system).exists():
                 self.systems.append(system)
                 self.output_paths.append(path)
-                self.logger.warning(
-                    f"No trajectory provided - skipping GIF viz."
-                )
+                self.logger.warning(f"No trajectory provided - skipping GIF viz.")
             else:
                 self.logger.warning(
                     f"Trajectory {trajectory} or system {system} does not exist - skipping."
@@ -126,7 +121,7 @@ class GIFVisualizer:
         self.start = start
         self.stop = stop
         self.interval = interval
-        self.bool_static_view_only = True 
+        self.bool_static_view_only = True
         self.debug = debug
 
         if self.debug:
@@ -159,6 +154,7 @@ class GIFVisualizer:
         # when working in parallel, otherwise they will trip over each other and not work.
 
         import pymol2
+
         p = pymol2.PyMOL()
         p.start()
 
@@ -174,7 +170,7 @@ class GIFVisualizer:
         p.cmd.load(str(system), object=complex_name)
 
         if bool_static_view_only:
-            # this may be unprepped/unaligned, so need to align to master structure before writing out. 
+            # this may be unprepped/unaligned, so need to align to master structure before writing out.
             reference_structure = master_structures[self.target]
             p.cmd.load(reference_structure, object="reference_master")
             p.cmd.align(complex_name, "reference_master")
@@ -269,8 +265,8 @@ class GIFVisualizer:
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
         if bool_static_view_only:
-                p.cmd.save(str(parent_path / "session_4_canonical_view.pse"))
-                return path # for static view we can end the function here.
+            p.cmd.save(str(parent_path / "session_4_canonical_view.pse"))
+            return path  # for static view we can end the function here.
 
         # turn on depth cueing
         p.cmd.set("depth_cue", 1)
