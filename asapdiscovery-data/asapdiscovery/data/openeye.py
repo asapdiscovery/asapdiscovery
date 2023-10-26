@@ -1,6 +1,7 @@
 from base64 import b64decode, b64encode
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union  # noqa: F401
+from warnings import warn
 
 from openeye import (  # noqa: F401
     oechem,
@@ -16,7 +17,7 @@ from openeye import (  # noqa: F401
 # exec on module import
 
 if not oechem.OEChemIsLicensed("python"):
-    raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
+    warn("OpenEye license required to use asapdiscovery openeye module")
 
 
 def combine_protein_ligand(
