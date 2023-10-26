@@ -12,3 +12,11 @@ sphinx:
 
 conda:
   environment: docs/requirements.yaml
+
+python:
+  # Install our python package before building the docs
+  install:
+    - method: pip
+      path: asapdiscovery-data
+    - method: pip
+      path: asapdiscovery-dataviz
