@@ -4,6 +4,8 @@ asapdiscovery
 [![GitHub Actions Build Status](https://github.com/choderalab/asapdiscovery/workflows/CI/badge.svg)](https://github.com/choderalab/asapdiscovery/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/choderalab/asapdiscovery/branch/main/graph/badge.svg)](https://codecov.io/gh/choderalab/asapdiscovery/branch/main)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/choderalab/asapdiscovery/main.svg)](https://results.pre-commit.ci/latest/github/choderalab/asapdiscovery/main)
+[![Documentation Status](https://readthedocs.org/projects/asapdiscovery/badge/?version=latest)](https://asapdiscovery.readthedocs.io/en/latest/?badge=latest)
+
 
 A toolkit for structure-based open antiviral drug discovery by the [ASAP Discovery Consortium](https://asapdiscovery.org/).
 
@@ -19,7 +21,8 @@ The toolkit in this repo is a batteries-included drug discovery pipeline being a
 
 ## Getting Started
 
-Install the `asapdiscovery` subpackages and begin to explore!
+Install the `asapdiscovery` subpackages and begin to explore! Our [docs can be found here](https://asapdiscovery.readthedocs.io/en/latest).
+
 There are a range of workflows and tooling to use split into several namespace subpackages by theme.
 
 `asapdiscovery-alchemy`: Free energy calculations using [OpenFE](https://openfree.energy/) and [Alchemiscale](https://docs.alchemiscale.org/en/latest/)
