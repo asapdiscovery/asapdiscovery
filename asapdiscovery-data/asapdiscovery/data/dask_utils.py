@@ -143,7 +143,7 @@ class DaskCluster(BaseModel):
 
     name: str = Field("dask-worker", description="Name of the dask worker")
     cores: int = Field(8, description="Number of cores per job")
-    memory: str = Field("120 GB", description="Amount of memory per job")
+    memory: str = Field("24 GB", description="Amount of memory per job")
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
