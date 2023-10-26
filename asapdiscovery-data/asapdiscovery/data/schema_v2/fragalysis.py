@@ -14,9 +14,9 @@ class FragalysisFactory(DataModelAbstractBase):
     """
     Schema for a loading a Fragalysis dump. The directory given by parent_dir should
     contain (at a minimum):
-     * a metadata.csv file with the columns "crystal_name" and "alternate_name"
-     * an aligned/ subdirectory, containing a subdirectory for each entry in
-       metadata.csv, with these subdirectories containing the bound PDB files
+    1. a metadata.csv file with the columns "crystal_name" and "alternate_name"
+    2. an aligned/ subdirectory, containing a subdirectory for each entry in
+    metadata.csv, with these subdirectories containing the bound PDB files
     """
 
     parent_dir: Path = Field(
