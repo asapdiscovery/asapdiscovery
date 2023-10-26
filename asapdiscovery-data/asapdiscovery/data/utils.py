@@ -701,11 +701,7 @@ def filter_molecules_dataframe(
 
     For example, to filter a DF of molecules so that it only contains achiral
     molecules while allowing for measurements that are semiquantitative:
-    `mol_df = filter_molecules_dataframe(
-        mol_df,
-        retain_achiral=True,
-        retain_semiquantitative_data=True
-    )`
+    `mol_df = filter_molecules_dataframe(mol_df, retain_achiral=True, retain_semiquantitative_data=True)`
 
     Parameters
     ----------
