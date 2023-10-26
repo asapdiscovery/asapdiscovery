@@ -80,6 +80,7 @@ def extract_zip(out_fn):
 def parse_xtal(x_fn, x_dir, p_only=True):
     """
     Load all crystal structures into schema.CrystalCompoundData objects.
+
     Parameters
     ----------
     x_fn : str
@@ -90,6 +91,7 @@ def parse_xtal(x_fn, x_dir, p_only=True):
     p_only : bool, default=True
         Whether to filter to only include fragalysis structures of the
         format Mpro-P*
+
     Returns
     -------
     List[schema.CrystalCompoundData]
@@ -148,6 +150,7 @@ def parse_fragalysis(
 ):
     """
     Load all crystal structures into schema.CrystalCompoundData objects.
+
     Parameters
     ----------
     x_fn : str or Path
@@ -161,6 +164,7 @@ def parse_fragalysis(
         Name of column in the metadata.csv that will be used to filter the dataframe
     drop_duplicate_datasets : bool
         If true, will drop the _1A, _0B, etc duplicate datasets for a given crystal structure.
+
     Returns
     -------
     List[schema.CrystalCompoundData]
