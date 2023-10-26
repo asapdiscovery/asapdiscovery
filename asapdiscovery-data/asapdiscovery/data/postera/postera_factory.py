@@ -23,7 +23,9 @@ class PosteraFactory(BaseModel):
         mols, _ = ms_api.get_molecules_from_id_or_name(self.molecule_set_name)
         ligands = [
             Ligand.from_smiles(
-                smiles=mol.smiles, ids=LigandIdentifiers(manifold_api_id=mol.id)
+                compound_name=mol.id,
+                smiles=mol.smiles,
+                ids=LigandIdentifiers(manifold_api_id=mol.id),
             )
             for _, mol in mols.iterrows()
         ]
