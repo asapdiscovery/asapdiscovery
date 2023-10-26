@@ -21,7 +21,8 @@ The toolkit in this repo is a batteries-included drug discovery pipeline being a
 
 ## Getting Started
 
-Install the `asapdiscovery` subpackages and begin to explore! Our [docs can be found here](https://asapdiscovery.readthedocs.io/en/latest)
+Install the `asapdiscovery` subpackages and begin to explore! Our [docs can be found here](https://asapdiscovery.readthedocs.io/en/latest).
+
 There are a range of workflows and tooling to use split into several namespace subpackages by theme.
 
 `asapdiscovery-alchemy`: Free energy calculations using [OpenFE](https://openfree.energy/) and [Alchemiscale](https://docs.alchemiscale.org/en/latest/)
