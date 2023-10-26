@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Optional, Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
 
 from ._gif_blocks import GIFBlockData
 from .resources.fonts import opensans_regular
@@ -102,6 +103,15 @@ class GIFVisualizer:
                 self.trajectories.append(trajectory)
                 self.systems.append(system)
                 self.output_paths.append(path)
+            elif (
+                system
+                and Path(system).exists()
+            ):
+                self.systems.append(system)
+                self.output_paths.append(path)
+                self.logger.warning(
+                    f"No trajectory provided - skipping GIF viz."
+                )
             else:
                 self.logger.warning(
                     f"Trajectory {trajectory} or system {system} does not exist - skipping."
@@ -116,8 +126,9 @@ class GIFVisualizer:
         self.start = start
         self.stop = stop
         self.interval = interval
-
+        self.bool_static_view_only = True 
         self.debug = debug
+
         if self.debug:
             self.logger.setLevel(logging.DEBUG)
             self.logger.debug("Running in debug mode, setting pse=True")
@@ -140,7 +151,7 @@ class GIFVisualizer:
             output_paths.append(output_path)
         return output_paths
 
-    def write_traj_visualization(self, traj, system, path):
+    def write_traj_visualization(self, traj, system, path, bool_static_view_only):
         """
         Write GIF visualization for a single trajectory.
         """
@@ -148,7 +159,6 @@ class GIFVisualizer:
         # when working in parallel, otherwise they will trip over each other and not work.
 
         import pymol2
-
         p = pymol2.PyMOL()
         p.start()
 
@@ -162,6 +172,13 @@ class GIFVisualizer:
 
         complex_name = "complex"
         p.cmd.load(str(system), object=complex_name)
+
+        if bool_static_view_only:
+            # this may be unprepped/unaligned, so need to align to master structure before writing out. 
+            reference_structure = master_structures[self.target]
+            p.cmd.load(reference_structure, object="reference_master")
+            p.cmd.align(complex_name, "reference_master")
+            p.cmd.delete("reference_master")
 
         if self.pse:
             self.logger.info("Writing PyMol ensemble to session_1_loaded_system.pse...")
@@ -184,12 +201,12 @@ class GIFVisualizer:
             p.cmd.save(str(parent_path / "session_2_colored_subpockets.pse"))
 
         # Select ligand and receptor
-        p.cmd.select("ligand", "resn UNK")
+        p.cmd.select("ligand", "resn UNK or resn LIG")
         p.cmd.select(
             "receptor", "chain A or chain B or chain 1 or chain 2"
         )  # TODO: Modify this to generalize to dimer
         p.cmd.select(
-            "binding_site", "name CA within 7 of resn UNK"
+            "binding_site", "name CA within 7 of resn UNK or name CA within 7 resn LIG"
         )  # automate selection of the binding site
 
         # set a bunch of stuff for visualization
@@ -207,7 +224,7 @@ class GIFVisualizer:
         )  # for some reason sometimes a ligand surface is applied - hide this.
 
         # select the ligand and subpocket residues, show them as sticks w/o nonpolar Hs
-        p.cmd.select("resn UNK")
+        p.cmd.select("resn UNK or resn LIG")
         p.cmd.show("sticks", "sele")
         p.cmd.show("sticks", "subP*")
         p.cmd.hide("sticks", "(elem C extend 1) and (elem H)")
@@ -223,33 +240,37 @@ class GIFVisualizer:
         if self.pse:
             p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
-        # load trajectory; center the system in the simulation and smoothen between frames.
-        p.cmd.load_traj(
-            str(traj),
-            object=complex_name,
-            start=self.start,
-            stop=self.stop,
-            interval=self.interval,
-        )
-        if self.pse:
-            p.cmd.save(str(parent_path / "session_4_loaded_trajectory.pse"))
+        if not bool_static_view_only:
+            # load trajectory; center the system in the simulation and smoothen between frames.
+            p.cmd.load_traj(
+                str(traj),
+                object=complex_name,
+                start=self.start,
+                stop=self.stop,
+                interval=self.interval,
+            )
+            if self.pse:
+                p.cmd.save(str(parent_path / "session_4_loaded_trajectory.pse"))
 
-        # center the system to the minimized structure
-        # reload
-        complex_name_min = "complex_min"
-        p.cmd.load(str(system), object=complex_name_min)
+            # center the system to the minimized structure
+            # reload
+            complex_name_min = "complex_min"
+            p.cmd.load(str(system), object=complex_name_min)
 
-        self.logger.info("Aligning simulation...")
-        if self.smooth:
-            p.cmd.smooth(
-                "all", window=int(self.smooth)
-            )  # perform some smoothing of frames
+            self.logger.info("Aligning simulation...")
+            if self.smooth:
+                p.cmd.smooth(
+                    "all", window=int(self.smooth)
+                )  # perform some smoothing of frames
+
         if self.contacts:
             self.logger.info("Showing contacts...")
             show_contacts(p, "ligand", "receptor")
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
-        # p.cmd.zoom("resn UNK", buffer=4)  # zoom to ligand, this can move the view around a
+        if bool_static_view_only:
+                p.cmd.save(str(parent_path / "session_4_canonical_view.pse"))
+                return path # for static view we can end the function here.
 
         # turn on depth cueing
         p.cmd.set("depth_cue", 1)
