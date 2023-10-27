@@ -1473,3 +1473,21 @@ def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None)
         return truncated_name
     else:
         return name
+
+
+def check_empty_dataframe(
+    df: pandas.DataFrame,
+    logger=None,
+    fail: str = "raise",
+    tag: str = "",
+    message: str = "",
+) -> bool:
+    if df.empty:
+        if logger:
+            logger.warning(f"Dataframe with tag: {tag} is empty due to: {message}")
+        if fail == "raise":
+            raise ValueError(f"Dataframe with tag: {tag} is empty due to: {message}")
+        elif fail == "return":
+            return True
+        else:
+            raise ValueError(f"fail argument {fail} not recognised")

@@ -10,6 +10,9 @@ from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
+from asapdiscovery.docking.docking_data_validation import (
+    DockingResultColsV2 as DockingResultCols,
+)
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models.ml_models import MLModelType
@@ -36,6 +39,20 @@ class ScoreUnits(str, Enum):
     kcal_mol = "kcal/mol"
     pIC50 = "pIC50"
     INVALID = "INVALID"
+
+
+# this can possibly be done with subclasses and some aliases, but will do for now
+
+_SCORE_MANIFOLD_ALIAS = {
+    ScoreType.chemgauss4: DockingResultCols.DOCKING_SCORE_POSIT.value,
+    ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
+    ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
+    ScoreType.INVALID: None,
+    "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+    "compound_name": DockingResultCols.LIGAND_ID.value,
+    "smiles": DockingResultCols.SMILES.value,
+    "probability": DockingResultCols.DOCKING_CONFIDENCE_POSIT.value,
+}
 
 
 class Score(BaseModel):
@@ -86,6 +103,8 @@ class Score(BaseModel):
             columns="score_type",
             values="score",
         ).reset_index()
+
+        df.rename(columns=_SCORE_MANIFOLD_ALIAS, inplace=True)
         return df
 
 
@@ -146,7 +165,7 @@ class ScorerBase(BaseModel):
 
         for score in scores:
             dct = score.dict()
-            dct["score_type"] = score.score_type.value + "_score"  # convert to string
+            dct["score_type"] = score.score_type.value  # convert to string
             data_list.append(dct)
         # convert to a dataframe
         df = pd.DataFrame(data_list)
@@ -205,6 +224,13 @@ class MLModelScorer(ScorerBase):
             inference_cls=inference_instance,
         )
 
+    @staticmethod
+    def from_latest_by_target_and_type(target: TargetTags, type: MLModelType):
+        if type == MLModelType.INVALID:
+            raise Exception("trying to instantiate some kind a baseclass")
+        scorer_class = get_ml_scorer_cls_from_model_type(type)
+        return scorer_class.from_latest_by_target(target)
+
     @classmethod
     def from_model_name(cls, model_name: str):
         if cls.model_type == MLModelType.INVALID:
@@ -258,6 +284,23 @@ class SchnetScorer(MLModelScorer):
                 )
             )
         return results
+
+
+_ml_scorer_classes_meta = [
+    MLModelScorer,
+    GATScorer,
+    SchnetScorer,
+]
+
+
+def get_ml_scorer_cls_from_model_type(model_type: MLModelType):
+    instantiable_classes = [
+        m for m in _ml_scorer_classes_meta if m.model_type != MLModelType.INVALID
+    ]
+    scorer_class = [m for m in instantiable_classes if m.model_type == model_type]
+    if len(scorer_class) != 1:
+        raise Exception("Somehow got multiple scorers")
+    return scorer_class[0]
 
 
 class MetaScorer(BaseModel):
