@@ -57,7 +57,7 @@ def cli():
     "--dask-type",
     type=click.Choice(DaskType.get_values(), case_sensitive=False),
     default=DaskType.LOCAL,
-    help="The type of dask cluster to use. Can be 'local' or 'lilac-cpu'.",
+    help="The type of dask cluster to use. Can be 'local', 'lilac-cpu' or  'lilac-gpu'.",
 )
 @click.option(
     "--posit-confidence-cutoff",

@@ -189,6 +189,8 @@ def dask_cluster_from_type(dask_type: DaskType, gpu: GPU = GPU.GTX1080TI):
     ----------
     dask_type : DaskType
         The type of dask client / cluster to get
+    gpu : GPU, optional
+        The GPU type to use, by default GPU.GTX1080TI
 
     Returns
     -------
