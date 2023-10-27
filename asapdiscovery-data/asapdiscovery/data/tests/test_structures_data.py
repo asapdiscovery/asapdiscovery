@@ -51,6 +51,7 @@ class TestAsapPDB:
     def test_load_save_openeye_pdb(self, tmp_path):
         """Test that a downloaded pdb file can be loaded with the openeye-specific functions"""
         from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
+
         pdb_id = "8DGY"
         file_path = download_pdb_structure(pdb_id, tmp_path, file_format="pdb")
         mol = load_openeye_pdb(file_path)
