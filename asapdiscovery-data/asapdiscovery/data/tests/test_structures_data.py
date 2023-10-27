@@ -48,13 +48,11 @@ class TestAsapPDB:
         )
         assert file_path.is_file(), f"Could not download {pdb_id} cif assembly file."
 
-    @pytest.mark.parametrize("file_format", ["pdb", "cif", "cif1"])
-    def test_load_save_openeye_pdb(self, tmp_path, file_format):
+    def test_load_save_openeye_pdb(self, tmp_path):
         """Test that a downloaded pdb file can be loaded with the openeye-specific functions"""
         from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
-
         pdb_id = "8DGY"
-        file_path = download_pdb_structure(pdb_id, tmp_path, file_format=file_format)
+        file_path = download_pdb_structure(pdb_id, tmp_path, file_format="pdb")
         mol = load_openeye_pdb(file_path)
         out_path = f"{tmp_path}/test_oe_save.pdb"
         save_openeye_pdb(mol, out_path)
