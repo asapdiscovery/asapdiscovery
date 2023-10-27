@@ -300,15 +300,15 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     Convert a CDD-downloaded and filtered CSV file into a JSON file containing
     an ExperimentalCompoundDataUpdate. CSV file should be the result of the
     filter_molecules_dataframe function and must contain the following headers:
-        * name
-        * smiles
-        * achiral
-        * racemic
-        * pIC50
-        * pIC50_stderr
-        * pIC50_95ci_lower
-        * pIC50_95ci_upper
-        * pIC50_range
+    * name
+    * smiles
+    * achiral
+    * racemic
+    * pIC50
+    * pIC50_stderr
+    * pIC50_95ci_lower
+    * pIC50_95ci_upper
+    * pIC50_range
 
     Parameters
     ----------
@@ -459,15 +459,15 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
     Convert a CDD-downloaded and filtered CSV file into a JSON file containing
     an EnantiomerPairList. CSV file should be the result of the
     filter_molecules_dataframe function and must contain the following headers:
-        * name
-        * smiles
-        * achiral
-        * racemic
-        * pIC50
-        * pIC50_stderr
-        * pIC50_95ci_lower
-        * pIC50_95ci_upper
-        * pIC50_range
+    * name
+    * smiles
+    * achiral
+    * racemic
+    * pIC50
+    * pIC50_stderr
+    * pIC50_95ci_lower
+    * pIC50_95ci_upper
+    * pIC50_range
 
     Parameters
     ----------
@@ -688,24 +688,20 @@ def filter_molecules_dataframe(
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
-        * `id_fieldname`
-        * `smiles_fieldname`
-        * "`assay_name`: IC50 (µM)"
+    * `id_fieldname`
+    * `smiles_fieldname`
+    * "`assay_name`: IC50 (µM)"
     Columns that are added to the dataframe by this function:
-        * "name"
-        * "smiles"
-        * "achiral"
-        * "racemic"
-        * "enantiopure"
-        * "semiquant"
+    * "name"
+    * "smiles"
+    * "achiral"
+    * "racemic"
+    * "enantiopure"
+    * "semiquant"
 
     For example, to filter a DF of molecules so that it only contains achiral
     molecules while allowing for measurements that are semiquantitative:
-    `mol_df = filter_molecules_dataframe(
-        mol_df,
-        retain_achiral=True,
-        retain_semiquantitative_data=True
-    )`
+    `mol_df = filter_molecules_dataframe(mol_df, retain_achiral=True, retain_semiquantitative_data=True)`
 
     Parameters
     ----------
@@ -1477,3 +1473,21 @@ def check_name_length_and_truncate(name: str, max_length: int = 70, logger=None)
         return truncated_name
     else:
         return name
+
+
+def check_empty_dataframe(
+    df: pandas.DataFrame,
+    logger=None,
+    fail: str = "raise",
+    tag: str = "",
+    message: str = "",
+) -> bool:
+    if df.empty:
+        if logger:
+            logger.warning(f"Dataframe with tag: {tag} is empty due to: {message}")
+        if fail == "raise":
+            raise ValueError(f"Dataframe with tag: {tag} is empty due to: {message}")
+        elif fail == "return":
+            return True
+        else:
+            raise ValueError(f"fail argument {fail} not recognised")

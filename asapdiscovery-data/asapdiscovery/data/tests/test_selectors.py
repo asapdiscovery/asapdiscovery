@@ -64,15 +64,17 @@ def test_pairwise_selector(ligands, complexes):
     assert len(pairs) == 40
 
 
-def test_pairwise_selector_prepped(ligands, prepped_complexes):
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_pairwise_selector_prepped(ligands, prepped_complexes, use_dask):
     selector = PairwiseSelector()
-    pairs = selector.select(ligands, prepped_complexes)
+    pairs = selector.select(ligands, prepped_complexes, use_dask=use_dask)
     assert len(pairs) == 8
 
 
-def test_mcs_selector(ligands, complexes):
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_mcs_selector(ligands, complexes, use_dask):
     selector = MCSSelector()
-    pairs = selector.select(ligands, complexes, n_select=1)
+    pairs = selector.select(ligands, complexes, n_select=1, use_dask=use_dask)
     # should be 4 pairs
     assert len(pairs) == 4
     # as we matched against the exact smiles of the first 4 complex ligands, they should be in order
@@ -104,3 +106,9 @@ def test_mcs_selector_nselect(ligands, complexes):
     assert (
         pairs[1].complex.ligand.smiles == "Cc1ccncc1NC(=O)Cc2cc(cc(c2)Cl)OC"
     )  # clearly related
+
+
+def test_mcs_selector_no_match(prepped_complexes):
+    lig = Ligand.from_smiles("Si", compound_name="test_no_match")
+    selector = MCSSelector()
+    _ = selector.select([lig], prepped_complexes, n_select=1)

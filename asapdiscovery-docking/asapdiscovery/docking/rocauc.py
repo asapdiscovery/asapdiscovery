@@ -54,6 +54,7 @@ class Rock:
     def calc_auc(self, false_positive_rates, true_positive_rates):
         """
         Calculates the area under the curve using the numpy function!
+
         Parameters
         ----------
         false_positive_rates
@@ -92,6 +93,7 @@ class Rock:
         """
         This function will divide the numerator by the denominator but will
         return zero if the denominator is zero.
+
         Parameters
         ----------
         numerator
