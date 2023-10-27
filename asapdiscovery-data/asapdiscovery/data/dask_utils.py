@@ -65,34 +65,6 @@ class DaskType(str, Enum):
         return self in [DaskType.LILAC_CPU, DaskType.LILAC_GPU]
 
 
-def dask_cluster_from_type(dask_type: DaskType):
-    """
-    Get a dask client from a DaskType
-
-    Parameters
-    ----------
-    dask_type : DaskType
-        The type of dask client / cluster to get
-
-    Returns
-    -------
-    dask.distributed.Client
-        A dask client
-    dask_jobqueue.Cluster
-        A dask cluster
-    """
-    if dask_type == DaskType.LOCAL:
-        cluster = LocalCluster()
-    elif dask_type == DaskType.LILAC_GPU:
-        cluster = LilacGPUDaskCluster().to_cluster(exclude_interface="lo")
-    elif dask_type == DaskType.LILAC_CPU:
-        cluster = LilacDaskCluster().to_cluster(exclude_interface="lo")
-    else:
-        raise ValueError(f"Unknown dask type {dask_type}")
-
-    return cluster
-
-
 class GPU(str, Enum):
     """
     Enum for GPU types
@@ -207,3 +179,31 @@ class LilacGPUDaskCluster(LilacDaskCluster):
     def from_gpu(cls, gpu: GPU = GPU.GTX1080TI):
         gpu_config = LilacGPUConfig.from_gpu(gpu)
         return cls(job_extra_directives=gpu_config.to_job_extra_directives())
+
+
+def dask_cluster_from_type(dask_type: DaskType, gpu: GPU = GPU.GTX1080TI):
+    """
+    Get a dask client from a DaskType
+
+    Parameters
+    ----------
+    dask_type : DaskType
+        The type of dask client / cluster to get
+
+    Returns
+    -------
+    dask.distributed.Client
+        A dask client
+    dask_jobqueue.Cluster
+        A dask cluster
+    """
+    if dask_type == DaskType.LOCAL:
+        cluster = LocalCluster()
+    elif dask_type == DaskType.LILAC_GPU:
+        cluster = LilacGPUDaskCluster().from_gpu(gpu).to_cluster(exclude_interface="lo")
+    elif dask_type == DaskType.LILAC_CPU:
+        cluster = LilacDaskCluster().to_cluster(exclude_interface="lo")
+    else:
+        raise ValueError(f"Unknown dask type {dask_type}")
+
+    return cluster
