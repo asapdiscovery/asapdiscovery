@@ -3,7 +3,7 @@ import mtenn
 import numpy as np
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.inference import GATInference, SchnetInference
+from asapdiscovery.ml.inference.inference import GATInference, SchnetInference
 from numpy.testing import assert_allclose
 
 
