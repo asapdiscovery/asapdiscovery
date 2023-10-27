@@ -14,7 +14,10 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.docking_v2 import DockingResult
-from asapdiscovery.ml.inference.inference import InferenceBase, get_inference_cls_from_model_type
+from asapdiscovery.ml.inference.inference import (
+    InferenceBase,
+    get_inference_cls_from_model_type,
+)
 from asapdiscovery.ml.models.ml_models import MLModelType
 from pydantic import BaseModel, Field
 
