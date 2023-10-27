@@ -124,7 +124,7 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     dask_cluster_max_workers: PositiveInt = Field(
-        20, description="Maximum number of workers to use for Lilac dask cluster"
+        40, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
     n_select: PositiveInt = Field(
@@ -265,7 +265,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
                 minimum=1,
                 maximum=inputs.dask_cluster_max_workers,
                 wait_count=10,
-                interval="2m",
+                interval="1m",
             )
             logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
             dask_cluster.scale(inputs.dask_cluster_n_workers)
