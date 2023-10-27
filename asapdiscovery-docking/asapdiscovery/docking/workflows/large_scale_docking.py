@@ -268,7 +268,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
                 interval="1m",
             )
             logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-            # dask_cluster.scale(inputs.dask_cluster_n_workers)
+            dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
         logger.info(f"Using dask client: {dask_client}")
