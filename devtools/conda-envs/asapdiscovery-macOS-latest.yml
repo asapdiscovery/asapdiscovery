@@ -35,6 +35,7 @@ dependencies:
   - moto
   - flask
   - flask-cors
+  - typing-extensions
 
   # ml
   - pytorch
@@ -67,6 +68,8 @@ dependencies:
   - pymol-open-source
   - gifsicle
   - plip
+  - plotly
+  - dash
 
   # simulation
   - openfe =0.11.0

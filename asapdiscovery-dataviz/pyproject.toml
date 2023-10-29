@@ -18,12 +18,7 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
 ]
-dependencies = [
-    "plotly",
-    "dash",
-    "pandas",
-    #"pymol",
-]
+dependencies = []
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"

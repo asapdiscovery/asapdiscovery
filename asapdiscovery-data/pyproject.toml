@@ -18,21 +18,7 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
 ]
-dependencies = [
-    "pandas",
-    "rdkit",
-    "mdtraj",
-    #"openeye-toolkit",
-    "sigfig",
-    #"pymol",
-    "requests",
-    "typing-extensions",
-    "click",
-    "boto3",
-    "moto",
-    "flask",
-    "flask_cors"
-]
+dependencies = []
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
