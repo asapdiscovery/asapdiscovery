@@ -380,7 +380,7 @@ def main():
     # Set up ML model
     gat_model_string = "asapdiscovery-GAT-2023.05.09"
     if args.gat:
-        from asapdiscovery.ml.inference import GATInference  # noqa: E402
+        from asapdiscovery.ml.inference.inference import GATInference  # noqa: E402
 
         GAT_model = GATInference.from_model_name(gat_model_string)
         logger.info(f"Using GAT model: {gat_model_string}")
@@ -390,7 +390,7 @@ def main():
 
     schnet_model_string = "asapdiscovery-schnet-2023.04.29"
     if args.schnet:
-        from asapdiscovery.ml.inference import SchnetInference  # noqa: E402
+        from asapdiscovery.ml.inference.inference import SchnetInference  # noqa: E402
 
         schnet_model = SchnetInference.from_model_name(schnet_model_string)
         logger.info(f"Using Schnet model: {schnet_model_string}")
