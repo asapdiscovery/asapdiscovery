@@ -1,4 +1,3 @@
-# from pathlib import Path
 from typing import Optional
 
 import click
@@ -66,6 +65,7 @@ def large_scale(
     dask_type: DaskType = DaskType.LOCAL,
     output_dir: str = "output",
     input_json: Optional[str] = None,
+    pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
     du_cache: Optional[str] = None,
@@ -91,6 +91,7 @@ def large_scale(
             dask_type=dask_type,
             posit_confidence_cutoff=posit_confidence_cutoff,
             filename=ligands,
+            pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
             postera_molset_name=postera_molset_name,

@@ -82,6 +82,9 @@ class LargeScaleDockingInputs(BaseModel):
     filename: Optional[str] = Field(
         None, description="Path to a molecule file containing query ligands."
     )
+
+    pdb_file: Optional[str] = Field(None, description="Path to a PDB file.")
+
     fragalysis_dir: Optional[str] = Field(
         None, description="Path to a directory containing a Fragalysis dump."
     )
@@ -189,11 +192,11 @@ class LargeScaleDockingInputs(BaseModel):
                 "Must specify postera_molset_name if uploading to postera."
             )
 
-        if fragalysis_dir and structure_dir:
-            raise ValueError("Cannot specify both fragalysis_dir and structure_dir.")
-
-        if not fragalysis_dir and not structure_dir:
-            raise ValueError("Must specify either fragalysis_dir or structure_dir.")
+        # fragalysis dir, structure dir and PDB file are mutually exclusive
+        if not fragalysis_dir and not structure_dir and not pdb_file:
+            raise ValueError(
+                "Must specify either fragalysis_dir, structure_dir or pdb_file"
+            )
 
         if du_cache and gen_du_cache:
             raise ValueError("Cannot specify both du_cache and gen_du_cache.")
@@ -298,17 +301,27 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         molfile = MolFileFactory.from_file(inputs.filename)
         query_ligands = molfile.ligands
 
-    # load complexes from a directory or from fragalysis
+    # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:
         logger.info(f"Loading structures from directory: {inputs.structure_dir}")
         structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
         complexes = structure_factory.load(
             use_dask=inputs.use_dask, dask_client=dask_client
         )
-    else:
+    elif inputs.fragalysis_dir:
         logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
         fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
         complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
+
+    elif inputs.pdb_file:
+        logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
+        complex = Complex.from_pdb(inputs.pdb_file)
+        complexes = [complex]
+
+    else:
+        raise ValueError(
+            "Must specify either fragalysis_dir, structure_dir or pdb_file"
+        )
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")

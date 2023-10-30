@@ -1,16 +1,13 @@
 from pydantic import BaseModel, Field, root_validator, PositiveInt
 
 from enum import Enum
-
 from pathlib import Path
-
 from typing import Optional
-
 import logging
+from shutil import rmtree
 
 
-
-class PrepInputs(BaseModel):
+class ProteinPrepInputs(BaseModel):
     target: TargetTags = Field(None, description="The target to dock against.")
 
     pdb_file: Optional[str] = Field(None, description="Path to a PDB file.")
@@ -71,8 +68,6 @@ class PrepInputs(BaseModel):
 
     output_dir: Path = Field(Path("output"), description="Output directory")
 
-
-
     class Config:
         arbitrary_types_allowed = True
 
@@ -96,7 +91,7 @@ class PrepInputs(BaseModel):
 
         if pdb_file and fragalysis_dir:
             raise ValueError("Cannot specify both pdb_file and fragalysis_dir.")
-        
+
         if pdb_file and structure_dir:
             raise ValueError("Cannot specify both pdb_file and structure_dir.")
 
@@ -107,12 +102,11 @@ class PrepInputs(BaseModel):
             raise ValueError("Must specify either fragalysis_dir or structure_dir.")
 
         return values
-    
 
-def protein_prep(inputs: PrepInputs):
 
+def protein_prep(inputs: ProteinPrepInputs):
     output_dir = inputs.output_dir
-    
+
     if output_dir.exists():
         rmtree(output_dir)
     output_dir.mkdir()
@@ -154,7 +148,6 @@ def protein_prep(inputs: PrepInputs):
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
 
-
     # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:
         logger.info(f"Loading structures from directory: {inputs.structure_dir}")
@@ -171,15 +164,30 @@ def protein_prep(inputs: PrepInputs):
         logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
         complex = Complex.from_pdb(inputs.pdb_file)
         complexes = [complex]
-    
+
     else:
-        raise ValueError("Must specify either fragalysis_dir, structure_dir or pdb_file")
-    
+        raise ValueError(
+            "Must specify either fragalysis_dir, structure_dir or pdb_file"
+        )
+
     logger.info(f"Loaded {len(complexes)} complexes")
+
+    if not inputs.seqres_yaml:
+        logger.info(
+            f"No seqres yaml specified, selecting based on target: {inputs.target}"
+        )
+        inputs.seqres_yaml = select_seqres_yaml(inputs.target)
 
     # prep complexes
     logger.info("Prepping complexes")
-    prepper = ProteinPrepper()
+    prepper = ProteinPrepper(
+        loop_db=inputs.loop_db,
+        seqres_yaml=inputs.seqres_yaml,
+        oe_active_site_residue=inputs.oe_active_site_residue,
+        align=inputs.align,
+        ref_chain=inputs.ref_chain,
+        active_site_chain=inputs.active_site_chain,
+    )
     prepped_complexes = prepper.prep(
         inputs=complexes, use_dask=inputs.use_dask, dask_client=dask_client
     )

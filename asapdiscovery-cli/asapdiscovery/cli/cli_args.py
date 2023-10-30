@@ -116,7 +116,15 @@ def structure_dir(func):
     return click.option(
         "--structure-dir",
         type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
-        help="Path to a directory containing structures to dock instead of a full fragalysis database.",
+        help="Path to a directory containing structures.",
+    )(func)
+
+
+def pdb_file(func):
+    return click.option(
+        "--pdb-file",
+        type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+        help="Path to a pdb file containing a structure",
     )(func)
 
 
@@ -139,4 +147,4 @@ def gen_du_cache(func):
 
 
 def structure_and_cache_params(func):
-    return fragalysis_dir(structure_dir(du_cache(gen_du_cache(func))))
+    return pdb_file(fragalysis_dir(structure_dir(du_cache(gen_du_cache(func)))))
