@@ -2,7 +2,7 @@ import abc
 import warnings
 from pathlib import Path
 from typing import Literal, Optional, Union
-
+from enum import Enum
 import dask
 import yaml
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
@@ -17,6 +17,15 @@ from asapdiscovery.modeling.modeling import (
     superpose_molecule,
 )
 from pydantic import BaseModel, Field, root_validator
+
+
+class CacheType(str, Enum):
+    """
+    Enum for cache types.
+    """
+
+    DesignUnit = "DesignUnit"
+    JSON = "JSON"
 
 
 class ProteinPrepperBase(BaseModel):
@@ -59,6 +68,29 @@ class ProteinPrepperBase(BaseModel):
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
         ...
+
+    @staticmethod
+    def cache(
+        prepped_complexes: list[PreppedComplex],
+        dir: Union[str, Path],
+        type=CacheType.DesignUnit,
+    ) -> None:
+        """
+        Cache a set of design units for use later.
+        """
+        dir = Path(dir)
+        if not dir.exists():
+            dir.mkdir(parents=True)
+
+        for pc in prepped_complexes:
+            if type == CacheType.DesignUnit:
+                du_name = pc.target.target_name + ".oedu"
+                du_path = dir / du_name
+                pc.target.to_oedu_file(du_path)
+            elif type == CacheType.JSON:
+                json_name = pc.target.target_name + ".json"
+                json_path = dir / json_name
+                pc.target.to_json_file(json_path)
 
 
 class ProteinPrepper(ProteinPrepperBase):
@@ -197,17 +229,3 @@ class ProteinPrepper(ProteinPrepperBase):
             "oechem": oechem.OEChemGetVersion(),
             "oespruce": oechem.OESpruceGetVersion(),
         }
-
-    @staticmethod
-    def cache(prepped_complexes: list[PreppedComplex], dir: Union[str, Path]) -> None:
-        """
-        Cache a set of design units for use later.
-        """
-        dir = Path(dir)
-        if not dir.exists():
-            dir.mkdir(parents=True)
-
-        for pc in prepped_complexes:
-            du_name = pc.target.target_name + ".oedu"
-            du_path = dir / du_name
-            pc.target.to_oedu_file(du_path)

@@ -328,7 +328,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
 
     if inputs.gen_du_cache:
         logger.info(f"Generating DU cache at {inputs.gen_du_cache}")
-        prepper.cache(prepped_complexes, inputs.gen_du_cache)
+        prepper.cache(prepped_complexes, inputs.gen_du_cache, type=CacheType.DesignUnit)
 
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
