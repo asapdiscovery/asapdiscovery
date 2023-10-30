@@ -59,7 +59,7 @@ def main():
         success = [oechem.OEGenerate2DCoordinates(mol) for mol in mols]
         if not all(success):
             raise RuntimeError("Failed to generate 2D coordinates for all molecules")
-        print(f"Flattened molecules to 2D")
+        print("Flattened molecules to 2D")
 
     print(f"Saving {len(mols)} SDF files to '{args.out_dir}'")
 
@@ -88,7 +88,7 @@ def main():
             raise ValueError(
                 f"In trying to slice the molecules into sets of {args.chunk_size}, we have an error:\n"
                 f"len(mols[{start}:{end}]) = {len(mols_chunk)} != {args.chunk_size} = args.chunk_size\n"
-                f"Did something happen to the molecule list?"
+                "Did something happen to the molecule list?"
             )
         if args.name_convention == "integer":
             save_openeye_sdfs(mols_chunk, os.path.join(args.out_dir, f"{i+1}.sdf"))
