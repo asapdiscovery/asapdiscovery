@@ -237,6 +237,18 @@ class MLModelRegistry(BaseModel):
             raise ValueError(f"Model {name} not found in model registry")
         return self.models[name]
 
+    def get_implemented_model_types(self):
+        """
+        Get list of implemented model types
+
+        Returns
+        -------
+        List[str]
+            List of implemented model types
+        """
+        model_types = {model.type.value for model in self.models.values()}
+        return list(model_types)
+
     @classmethod
     def from_yaml(cls, yaml_file: Union[str, Path]) -> "MLModelRegistry":
         """

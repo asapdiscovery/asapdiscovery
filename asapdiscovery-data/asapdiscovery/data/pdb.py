@@ -138,6 +138,7 @@ def pymol_alignment(
     Uses Pymol to align a pdb to reference and save the aligned file.
     Can use a dictionary of the form {'name': 'pymol selection string'}
     to save different selections.
+
     Parameters
     ----------
     pdb_path
@@ -175,6 +176,7 @@ def align_all_pdbs(pdb_list, pdb_dir_path, ref_path=None, ref_name=None, sel_dic
     """
     Given a list of PDB_IDs and the directory to them, align all to a ref or to the
     first in the list.
+
     Parameters
     ----------
     pdb_list

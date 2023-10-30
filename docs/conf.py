@@ -22,12 +22,12 @@ import asapdiscovery
 
 # -- Project information -----------------------------------------------------
 
-project = "COVIDMoonshotML"
+project = "asapdiscovery"
 copyright = (
-    "2022, kaminow. Project structure based on the "
+    "2023, asapdiscovery contributors. Project structure based on the "
     "Computational Molecular Science Python Cookiecutter version 1.6"
 )
-author = "kaminow"
+author = "asapdiscovery contributors"
 
 # The short X.Y version
 version = ""

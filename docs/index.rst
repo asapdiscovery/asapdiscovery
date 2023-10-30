@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to COVIDMoonshotML's documentation!
+Welcome to asapdiscovery's documentation!
 =========================================================
 
 .. toctree::
@@ -11,7 +11,14 @@ Welcome to COVIDMoonshotML's documentation!
    :caption: Contents:
 
    getting_started
-   api
+
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: custom-module-template.rst
+   :recursive:
+
+   asapdiscovery
 
 
 
