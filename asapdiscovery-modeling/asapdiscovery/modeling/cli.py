@@ -3,9 +3,9 @@ from typing import Optional
 import click
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.docking.workflows.large_scale_docking import (
-    LargeScaleDockingInputs,
-    large_scale_docking,
+from asapdiscovery.modeling.workflows.protein_prep import (
+    ProteinPrepInputs,
+    protein_prep,
 )
 
 from asapdiscovery.cli.cli_args import (
@@ -26,17 +26,18 @@ def cli():
 
 @cli.command()
 @target
+@pdb_file
 @fragalysis_dir
 @structure_dir
-@pdb_file
+@gen_cache
 @dask_args
 @output_dir
 @input_json
 def prep(
     target: TargetTags,
+    pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
-    pdb_file: Optional[str] = None,
     gen_du_cache: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,

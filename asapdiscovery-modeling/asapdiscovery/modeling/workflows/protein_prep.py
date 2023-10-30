@@ -7,7 +7,66 @@ import logging
 from shutil import rmtree
 
 
+from asapdiscovery.data.dask_utils import (
+    DaskType,
+    dask_cluster_from_type,
+    set_dask_config,
+)
+from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+)
+from asapdiscovery.data.schema_v2.complex import Complex
+
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper, CacheType
+
+
 class ProteinPrepInputs(BaseModel):
+    """
+    Inputs for Protein Prep
+
+    Parameters
+    ----------
+    target : TargetTags
+        The target to prep
+    pdb_file : Optional[str]
+        Path to a PDB file to prep
+    fragalysis_dir : Optional[str]
+        Path to a fragalysis dump to prep
+    structure_dir : Optional[str]
+        Path to a directory of structures to prep
+    gen_cache : Path
+        Path to a directory to store generated structures
+    cache_types : CacheType
+        Type of cache to make
+    align : Optional[Path]
+        Path to a reference structure to align to
+    ref_chain : Optional[str]
+        Chain ID to align to
+    active_site_chain : Optional[str]
+        Active site chain ID to align to
+    seqres_yaml : Optional[Path]
+        Path to a seqres yaml to mutate to
+    loop_db : Optional[Path]
+        Path to a loop database to use for prepping
+    oe_active_site_residue : Optional[str]
+        OE formatted string of active site residue to use if not ligand bound
+    use_dask : bool
+        Whether to use dask for parallelism
+    dask_type : DaskType
+        Dask client to use for parallelism
+    dask_cluster_n_workers : PositiveInt
+        Number of workers to use as inital guess for Lilac dask cluster
+    dask_cluster_max_workers : PositiveInt
+        Maximum number of workers to use for Lilac dask cluster
+    logname : str
+        Name of the log file
+    loglevel : int
+        Logging level
+    output_dir : Path
+        Output directory
+    """
+
     target: TargetTags = Field(None, description="The target to dock against.")
 
     pdb_file: Optional[str] = Field(None, description="Path to a PDB file.")
@@ -62,7 +121,7 @@ class ProteinPrepInputs(BaseModel):
         40, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
-    logname: str = Field("large_scale_docking", description="Name of the log file.")
+    logname: str = Field("protein_prep", description="Name of the log file.")
 
     loglevel: int = Field(logging.INFO, description="Logging level")
 

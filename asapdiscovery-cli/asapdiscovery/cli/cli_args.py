@@ -136,9 +136,9 @@ def du_cache(func):
     )(func)
 
 
-def gen_du_cache(func):
+def gen_cache(func):
     return click.option(
-        "--gen-du-cache",
+        "--gen-cache",
         type=click.Path(
             resolve_path=True, exists=False, file_okay=False, dir_okay=True
         ),
@@ -146,5 +146,14 @@ def gen_du_cache(func):
     )(func)
 
 
+def cache_type(func):
+    return click.option(
+        "--cache-type",
+        type=click.Choice(CacheType.get_values(), case_sensitive=False),
+        default="DesignUnit",
+        help="The type of cache to use, can be 'JSON' or 'DesignUnit'.",
+    )(func)
+
+
 def structure_and_cache_params(func):
-    return pdb_file(fragalysis_dir(structure_dir(du_cache(gen_du_cache(func)))))
+    return pdb_file(fragalysis_dir(structure_dir(du_cache(gen_cache(func)))))
