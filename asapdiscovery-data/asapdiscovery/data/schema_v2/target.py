@@ -11,7 +11,7 @@ from asapdiscovery.data.openeye import (
     pdb_string_to_oemol,
     save_openeye_design_unit,
 )
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.schema_v2.identifiers import TargetIdentifiers
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field, root_validator
@@ -27,25 +27,6 @@ from .schema_base import (
 
 class InvalidTargetError(ValueError):
     ...
-
-
-class TargetIdentifiers(DataModelAbstractBase):
-    """
-    Identifiers for a Target
-    """
-
-    target_type: Optional[TargetTags] = Field(
-        None,
-        description="Tag describing the target type e.g SARS-CoV-2-Mpro, etc.",
-    )
-
-    fragalysis_id: Optional[str] = Field(
-        None, description="The Fragalysis ID of the target if applicable"
-    )
-
-    pdb_code: Optional[str] = Field(
-        None, description="The PDB code of the target if applicable"
-    )
 
 
 class Target(DataModelAbstractBase):

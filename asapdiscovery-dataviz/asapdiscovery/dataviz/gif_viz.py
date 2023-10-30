@@ -83,7 +83,7 @@ class GIFVisualizer:
 
         # setup view_coords, pocket_dict and color_dict for target
 
-        self.view_coords = GIFBlockData.get_view_coords(self.target)
+        self.view_coords = GIFBlockData.get_view_coords()
 
         self.pocket_dict = GIFBlockData.get_pocket_dict(self.target)
 
@@ -119,7 +119,7 @@ class GIFVisualizer:
 
         self.debug = debug
         if self.debug:
-            self.logger.SetLevel(logging.DEBUG)
+            self.logger.setLevel(logging.DEBUG)
             self.logger.debug("Running in debug mode, setting pse=True")
             self.pse = True
         self.logger.debug(

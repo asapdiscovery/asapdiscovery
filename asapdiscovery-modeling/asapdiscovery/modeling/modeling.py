@@ -199,6 +199,7 @@ def get_oe_prep_opts():
 def get_oe_structure_metadata_from_sequence(initial_prot, protein_sequence):
     """
     Add sequence to structure metadata
+
     Parameters
     ----------
     initial_prot : oechem.OEGraphMol

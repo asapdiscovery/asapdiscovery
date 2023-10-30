@@ -1,6 +1,7 @@
 from base64 import b64decode, b64encode
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union  # noqa: F401
+from warnings import warn
 
 from openeye import (  # noqa: F401
     oechem,
@@ -8,6 +9,7 @@ from openeye import (  # noqa: F401
     oedocking,
     oegrid,
     oeomega,
+    oequacpac,
     oespruce,
     oeszybki,
 )
@@ -15,7 +17,7 @@ from openeye import (  # noqa: F401
 # exec on module import
 
 if not oechem.OEChemIsLicensed("python"):
-    raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
+    warn("OpenEye license required to use asapdiscovery openeye module")
 
 
 def combine_protein_ligand(
@@ -146,6 +148,39 @@ def load_openeye_pdb(
 
     else:
         oechem.OEThrow.Fatal(f"Unable to open {pdb_fn}")
+
+
+def load_openeye_smi(smi_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
+    """
+    Load an OpenEye SMILES file containing a set of molecules and return them as
+    OpenEye OEGraphMol objects.
+    Parameters
+    ----------
+    smi_fn : Union[str, Path]
+        Path to the SMILES file to load.
+    Returns
+    -------
+    list[oechem.OEGraphMol]
+        A list of OpenEye OEGraphMol objects corresponding to the data from the SMI file.
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    oechem.OEError
+        If the SMI file cannot be opened.
+    """
+
+    if not Path(smi_fn).exists():
+        raise FileNotFoundError(f"{smi_fn} does not exist!")
+
+    ifs = oechem.oemolistream()
+    ifs.SetFlavor(oechem.OEFormat_SMI, oechem.OEIFlavor_SMI_DEFAULT)
+
+    molecules = []
+    for mol in ifs.GetOEGraphMols():
+        molecules.append(oechem.OEGetOEGraphMol(mol))
+
+    return molecules
 
 
 def load_openeye_cif1(cif1_fn: Union[str, Path]) -> oechem.OEGraphMol:
@@ -460,20 +495,24 @@ def save_openeye_sdfs(mols, sdf_fn: Union[str, Path]) -> Path:
 def save_openeye_design_unit(du: oechem.OEDesignUnit, du_fn: Union[str, Path]) -> Path:
     """
     Write an OpenEye design unit to a file
+
     Parameters
     ----------
     du : oechem.OEDesignUnit
         The OpenEye DesignUnit to write to the file.
     du_fn : Union[str, Path]
         The path of the DesignUnit file to create or overwrite.
+
     Returns
     -------
     Path
         The path of the DesignUnit file that was written.
+
     Raises
     ------
     oechem.OEError
         If the DesignUnit file cannot be opened.
+
     Notes
     -----
     This function will overwrite any existing file with the same name as `du_fn`.
@@ -522,6 +561,7 @@ def openeye_perceive_residues(
 def save_receptor_grid(du_fn: Union[str, Path], out_fn: Union[str, Path]) -> Path:
     """
     Load in a design unit from a file and write out the receptor grid as a .ccp4 grid file.
+
     Parameters
     ----------
     du_fn: Union[str, Path]
@@ -531,7 +571,8 @@ def save_receptor_grid(du_fn: Union[str, Path], out_fn: Union[str, Path]) -> Pat
 
     Returns
     -------
-
+    Path
+        Path to the receptor grid file
     """
     du = oechem.OEDesignUnit()
     oechem.OEReadDesignUnit(str(du_fn), du)
@@ -658,9 +699,9 @@ def oemol_to_smiles(mol: oechem.OEMol) -> str:
     return oechem.OEMolToSmiles(mol)
 
 
-def oemol_to_inchi(mol: oechem.OEMol) -> str:
+def oe_smiles_roundtrip(smiles: str) -> str:
     """
-    InChI string of an OpenEye OEMol
+    Canonical SMILES string of an OpenEye OEMol
 
     Paramers
     --------
@@ -670,12 +711,40 @@ def oemol_to_inchi(mol: oechem.OEMol) -> str:
     Returns
     -------
     str
+       SMILES string of molecule
+    """
+    mol = smiles_to_oemol(smiles)
+    return oemol_to_smiles(mol)
+
+
+def oemol_to_inchi(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
+    """
+    InChI string of an OpenEye OEMol
+
+    Paramers
+    --------
+    mol: oechem.OEMol
+        OpenEye OEMol
+    fixed_hydrogens: bool
+        If a fixed hydrogen layer should be added to the InChI, if `True` this will result in a non-standard inchi
+        which can distinguish tautomers.
+
+    Returns
+    -------
+    str
        InChI string of molecule
     """
-    return oechem.OECreateInChI(mol)
+    if fixed_hydrogens:
+        inchi_opts = oechem.OEInChIOptions()
+        inchi_opts.SetFixedHLayer(True)
+        inchi = oechem.OEMolToInChI(mol)
+    else:
+        inchi = oechem.OEMolToSTDInChI(mol)
+
+    return inchi
 
 
-def oemol_to_inchikey(mol: oechem.OEMol) -> str:
+def oemol_to_inchikey(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
     """
     InChI key string of an OpenEye OEMol
 
@@ -684,12 +753,22 @@ def oemol_to_inchikey(mol: oechem.OEMol) -> str:
     mol: oechem.OEMol
         OpenEye OEMol
 
+    fixed_hydrogens: bool
+        If a fixed hydrogen layer should be added to the InChI, if `True` this will result in a non-standard inchi
+        which can distinguish tautomers.
     Returns
     -------
     str
        InChI key string of molecule
     """
-    return oechem.OECreateInChIKey(mol)
+    if fixed_hydrogens:
+        inchi_opts = oechem.OEInChIOptions()
+        inchi_opts.SetFixedHLayer(True)
+        inchi_key = oechem.OEMolToInChIKey(mol)
+    else:
+        inchi_key = oechem.OEMolToSTDInChIKey(mol)
+
+    return inchi_key
 
 
 def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
@@ -711,10 +790,10 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     return mol
 
 
-def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, Any]) -> oechem.OEMol:
+def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
-    sets the SD tag to the repr of the value, so that re-reading the SD data with
+    sets the SD tag to the str of the value, so that re-reading the SD data with
     ast.literal_eval in get_SD_data_to_object  give the same value
 
     Parameters
@@ -727,8 +806,8 @@ def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, Any]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    # NOTE: use repr to ensure re-reading the SD data will give the same value
-    mol = set_SD_data(mol, {k: repr(v) for k, v in data.items()})
+    # NOTE: use str to ensure re-reading the SD data will give the same value
+    mol = set_SD_data(mol, {k: str(v) for k, v in data.items()})
     return mol
 
 
