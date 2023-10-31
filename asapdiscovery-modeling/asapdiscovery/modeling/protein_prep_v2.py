@@ -1,8 +1,9 @@
 import abc
 import warnings
+from enum import Enum
 from pathlib import Path
 from typing import Literal, Optional, Union
-from enum import Enum
+
 import dask
 import yaml
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable

@@ -1,11 +1,8 @@
-from pydantic import BaseModel, Field, root_validator, validator, PositiveInt
-
+import logging
 from enum import Enum
 from pathlib import Path
-from typing import Optional
-import logging
 from shutil import rmtree
-
+from typing import Optional
 
 from asapdiscovery.data.dask_utils import (
     DaskType,
@@ -13,16 +10,14 @@ from asapdiscovery.data.dask_utils import (
     set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
-)
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.sequence import seqres_by_target
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper, CacheType
-
+from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
+from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
 class ProteinPrepInputs(BaseModel):
