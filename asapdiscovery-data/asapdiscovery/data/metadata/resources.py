@@ -33,10 +33,14 @@ master_structures = {
     "EV-D68-3Cpro": pkg_resources.resource_filename(
         __name__, "master_structures/ev_d68_3cpro.pdb"
     ),
-    "ZIKV-NS2B-NS3pro": pkg_resources.resource_filename(
-        __name__, "master_structures/zikv_ns2b_ns3pro.pdb"
-    ),
     "EV-A71-3Cpro": pkg_resources.resource_filename(
         __name__, "master_structures/ev_a71_3cpro.pdb"
     ),
+    "ZIKV-NS2B-NS3pro": pkg_resources.resource_filename(
+        __name__, "master_structures/zikv_ns2b_ns3pro.pdb"
+    ),
+    "DENV-NS2B-NS3pro": pkg_resources.resource_filename(
+        __name__, "master_structures/denv_ns2b_ns3pro.pdb"
+    ),
+
 }
