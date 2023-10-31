@@ -1,6 +1,6 @@
 import pkg_resources
 
-# import each file
+# SEQRES in YAML format
 MERS_CoV_Mpro_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/mers_cov_mpro_seqres.yaml"
 )
@@ -11,9 +11,12 @@ SARS_CoV_2_Mac1_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/sars_cov_2_mac1_seqres.yaml"
 )
 
+# Fitness data in JSON format
 SARS_CoV_2_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_sars_cov_2.json"
 )
+
+# Reference PDB files to align targets to for consistent dataviz
 master_structures = {
     "SARS-CoV-2-Mpro": pkg_resources.resource_filename(
         __name__, "master_structures/sars_cov_2_mpro.pdb"
@@ -26,5 +29,8 @@ master_structures = {
     ),
     "MERS-CoV-Mpro": pkg_resources.resource_filename(
         __name__, "master_structures/mers_cov_mpro.pdb"
+    ),
+    "EV-D68-3Cpro": pkg_resources.resource_filename(
+        __name__, "master_structures/ev_d68_3cpro.pdb"
     ),
 }
