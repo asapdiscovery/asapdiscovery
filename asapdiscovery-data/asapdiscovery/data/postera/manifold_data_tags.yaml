@@ -29,6 +29,8 @@ virus:
     - Mac1
   MERS-CoV:
     - Mpro
+  EV-D68:
+    - 3Cpro
 
 # requires both units and tools specified even if empty for clarity.
 manifold_outputs:
