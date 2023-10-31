@@ -31,6 +31,12 @@ virus:
     - Mpro
   EV-D68:
     - 3Cpro
+  EV-A71:
+    - 3Cpro
+  DENV:
+    - NS2B-NS3pro
+  ZIKV:
+    - NS2B-NS3pro
 
 # requires both units and tools specified even if empty for clarity.
 manifold_outputs:
