@@ -106,7 +106,7 @@ class ProteinPrepper(ProteinPrepperBase):
         "ProteinPrepper", description="The type of prepper to use"
     )
 
-    align: Optional[oechem.OEMol] = Field(
+    align: Optional[Complex] = Field(
         None, description="Reference structure to align to."
     )
     ref_chain: Optional[str] = Field(
@@ -124,7 +124,7 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
-    cache_path: Optional[Path] = Field(
+    cache_dir: Optional[Path] = Field(
         None, description="Path to a directory where design units are cached"
     )
     cache_type: CacheType = Field(CacheType.DesignUnit, description="Type of cache")
@@ -153,11 +153,11 @@ class ProteinPrepper(ProteinPrepperBase):
         Prepares a series of proteins for docking using OESpruce.
         """
         prepped_complexes = []
-        if self.cache_path:
+        if self.cache_dir:
             if self.cache_type == CacheType.JSON:
                 for complex in inputs:
                     json_name = complex.target.target_name + ".json"
-                    json_path = self.cache_path / json_name
+                    json_path = self.cache_dir / json_name
                     if json_path.exists():
                         prepped_complexes.append(
                             PreppedComplex.from_json_file(json_path)
@@ -173,7 +173,7 @@ class ProteinPrepper(ProteinPrepperBase):
                 for complex in inputs:
                     # check matching du exists
                     du_name = complex.target.target_name + ".oedu"
-                    du_path = self.du_cache / du_name
+                    du_path = self.cache_dir / du_name
                     if du_path.exists():
                         prepped_target = PreppedTarget.from_oedu_file(
                             du_path,
@@ -205,7 +205,10 @@ class ProteinPrepper(ProteinPrepperBase):
 
                 if self.align:
                     prot, _ = superpose_molecule(
-                        self.align, prot, self.ref_chain, self.active_site_chain
+                        self.align.to_combined_oemol(),
+                        prot,
+                        self.ref_chain,
+                        self.active_site_chain,
                     )
 
                 # mutate residues

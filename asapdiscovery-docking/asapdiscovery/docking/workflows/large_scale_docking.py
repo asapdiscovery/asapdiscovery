@@ -29,7 +29,7 @@ from asapdiscovery.docking.docking_data_validation import (
 from asapdiscovery.docking.docking_v2 import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper, CacheType
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
@@ -52,10 +52,12 @@ class LargeScaleDockingInputs(BaseModel):
         Whether to upload the results to Postera.
     postera_molset_name : str, optional
         The name of the molecule set to pull from and/or upload to.
-    du_cache : str, optional
-        Path to a directory where design units are cached
-    gen_du_cache : str, optional
-        Path to a directory where generated design units should be cached
+    cache_dir : str, optional
+        Path to a directory where structures are cached
+    gen_cache : str, optional
+        Path to a directory where prepped structures should be cached
+    cache_type : list[CacheType], optional
+        The types of cache to use.
     target : TargetTags, optional
         The target to dock against.
     write_final_sdf : bool, optional
@@ -102,16 +104,21 @@ class LargeScaleDockingInputs(BaseModel):
     postera_molset_name: Optional[str] = Field(
         None, description="The name of the molecule set to upload to."
     )
-    du_cache: Optional[str] = Field(
+    cache_dir: Optional[str] = Field(
         None, description="Path to a directory where design units are cached"
     )
 
-    gen_du_cache: Optional[str] = Field(
+    gen_cache: Optional[str] = Field(
         None,
         description="Path to a directory where generated design units should be cached",
     )
 
+    cache_type: Optional[list[str]] = Field(
+        [CacheType.DesignUnit], description="The types of cache to use."
+    )
+
     target: TargetTags = Field(None, description="The target to dock against.")
+
     write_final_sdf: bool = Field(
         default=True,
         description="Whether to write the final docked poses to an SDF file.",
@@ -179,8 +186,8 @@ class LargeScaleDockingInputs(BaseModel):
         postera = values.get("postera")
         postera_upload = values.get("postera_upload")
         postera_molset_name = values.get("postera_molset_name")
-        du_cache = values.get("du_cache")
-        gen_du_cache = values.get("gen_du_cache")
+        cache_dir = values.get("cache_dir")
+        gen_cache = values.get("gen_cache")
 
         if postera and filename:
             raise ValueError("Cannot specify both filename and postera.")
@@ -199,14 +206,14 @@ class LargeScaleDockingInputs(BaseModel):
                 "Must specify either fragalysis_dir, structure_dir or pdb_file"
             )
 
-        if du_cache and gen_du_cache:
-            raise ValueError("Cannot specify both du_cache and gen_du_cache.")
+        if cache_dir and gen_cache:
+            raise ValueError("Cannot specify both cache_dir and gen_cache.")
 
         return values
 
-    @validator("du_cache")
+    @validator("cache_dir")
     @classmethod
-    def du_cache_must_be_directory(cls, v):
+    def cache_dir_must_be_directory(cls, v):
         """
         Validate that the DU cache is a directory
         """
@@ -335,7 +342,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     # prep complexes
     logger.info("Prepping complexes")
-    prepper = ProteinPrepper(du_cache=inputs.du_cache)
+    prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
     prepped_complexes = prepper.prep(
         complexes, use_dask=inputs.use_dask, dask_client=dask_client
     )
@@ -344,9 +351,12 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     n_prepped_complexes = len(prepped_complexes)
     logger.info(f"Prepped {n_prepped_complexes} complexes")
 
-    if inputs.gen_du_cache:
-        logger.info(f"Generating DU cache at {inputs.gen_du_cache}")
-        prepper.cache(prepped_complexes, inputs.gen_du_cache, type=CacheType.DesignUnit)
+    if inputs.gen_cache:
+        # cache prepped complexes
+        cache_path = output_dir / inputs.gen_cache
+        logger.info(f"Caching prepped complexes to {cache_path}")
+        for cache_type in inputs.cache_type:
+            prepper.cache(prepped_complexes, cache_path, type=cache_type)
 
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory

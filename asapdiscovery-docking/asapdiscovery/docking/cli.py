@@ -16,7 +16,12 @@ from asapdiscovery.cli.cli_args import (
     output_dir,
     input_json,
     ligands,
-    structure_and_cache_params,
+    pdb_file,
+    fragalysis_dir,
+    structure_dir,
+    cache_dir,
+    gen_cache,
+    cache_type,
 )
 
 
@@ -47,10 +52,15 @@ def cli():
 )
 @ligands
 @postera_args
+@pdb_file
+@fragalysis_dir
+@structure_dir
+@gen_cache
+@cache_dir
+@cache_type
 @dask_args
 @output_dir
 @input_json
-@structure_and_cache_params
 @ml_scorer
 def large_scale(
     target: TargetTags,
@@ -61,15 +71,16 @@ def large_scale(
     postera: bool = False,
     postera_molset_name: Optional[str] = None,
     postera_upload: bool = False,
-    use_dask: bool = False,
-    dask_type: DaskType = DaskType.LOCAL,
-    output_dir: str = "output",
-    input_json: Optional[str] = None,
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
-    du_cache: Optional[str] = None,
-    gen_du_cache: Optional[str] = None,
+    gen_cache: Optional[str] = None,
+    cache_dir: Optional[str] = None,
+    cache_type: Optional[str] = None,
+    output_dir: str = "output",
+    input_json: Optional[str] = None,
+    use_dask: bool = False,
+    dask_type: DaskType = DaskType.LOCAL,
     ml_scorer: Optional[list[str]] = None,
 ):
     """
@@ -95,8 +106,9 @@ def large_scale(
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
             postera_molset_name=postera_molset_name,
-            du_cache=du_cache,
-            gen_du_cache=gen_du_cache,
+            cache_dir=cache_dir,
+            gen_cache=gen_cache,
+            cache_type=cache_type,
             ml_scorers=ml_scorer,
             output_dir=output_dir,
         )

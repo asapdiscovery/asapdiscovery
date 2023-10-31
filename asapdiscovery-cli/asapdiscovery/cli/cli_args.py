@@ -129,11 +129,22 @@ def pdb_file(func):
     )(func)
 
 
-def du_cache(func):
+def cache_dir(func):
     return click.option(
-        "--du-cache",
+        "--cache-dir",
         type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
         help="Path to a directory where design units are cached.",
+    )(func)
+
+
+def gen_cache_w_default(func):
+    return click.option(
+        "--gen-cache",
+        type=click.Path(
+            resolve_path=False, exists=False, file_okay=False, dir_okay=True
+        ),
+        help="Path to a directory where a design unit cache should be generated.",
+        default="prepped_structure_cache",
     )(func)
 
 
@@ -144,7 +155,6 @@ def gen_cache(func):
             resolve_path=False, exists=False, file_okay=False, dir_okay=True
         ),
         help="Path to a directory where a design unit cache should be generated.",
-        default="prepped_structure_cache",
     )(func)
 
 
@@ -156,7 +166,3 @@ def cache_type(func):
         multiple=True,
         help="The type of cache to use, can be 'JSON' or 'DesignUnit', an be specified multiple times to use cache",
     )(func)
-
-
-def structure_and_cache_params(func):
-    return pdb_file(fragalysis_dir(structure_dir(du_cache(gen_cache(func)))))

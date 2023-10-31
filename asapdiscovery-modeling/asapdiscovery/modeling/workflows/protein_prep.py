@@ -251,13 +251,23 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         )
         inputs.seqres_yaml = seqres_by_target(inputs.target)
 
+    if inputs.align:
+        # load reference structure
+        logger.info(f"Loading and aligning to reference structure: {inputs.align}")
+        ref_complex = Complex.from_pdb(
+            inputs.align,
+            target_kwargs={"target_name": "ref"},
+            ligand_kwargs={"compound_name": "ref_ligand"},
+        )
+    else:
+        ref_complex = None
     # prep complexes
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(
         loop_db=inputs.loop_db,
         seqres_yaml=inputs.seqres_yaml,
         oe_active_site_residue=inputs.oe_active_site_residue,
-        align=inputs.align,
+        align=ref_complex,
         ref_chain=inputs.ref_chain,
         active_site_chain=inputs.active_site_chain,
     )

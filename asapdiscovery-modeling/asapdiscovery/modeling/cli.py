@@ -18,7 +18,7 @@ from asapdiscovery.cli.cli_args import (
     fragalysis_dir,
     structure_dir,
     pdb_file,
-    gen_cache,
+    gen_cache_w_default,
     cache_type,
 )
 
@@ -63,7 +63,7 @@ def cli():
 @pdb_file
 @fragalysis_dir
 @structure_dir
-@gen_cache
+@gen_cache_w_default
 @cache_type
 @dask_args
 @output_dir
