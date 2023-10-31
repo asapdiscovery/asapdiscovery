@@ -54,11 +54,11 @@ def run_docking_oe(
     """
     Run docking using OpenEye. The returned OEGraphMol object will have the
     following SD tags set:
-      * Docking_<docking_id>_RMSD: RMSD score to original molecule
-      * Docking_<docking_id>_POSIT: POSIT probability
-      * Docking_<docking_id>_POSIT_method: POSIT method used in docking
-      * Docking_<docking_id>_Chemgauss4: Chemgauss4 score
-      * Docking_<docking_id>_clash: clash results
+    * Docking_<docking_id>_RMSD: RMSD score to original molecule
+    * Docking_<docking_id>_POSIT: POSIT probability
+    * Docking_<docking_id>_POSIT_method: POSIT method used in docking
+    * Docking_<docking_id>_Chemgauss4: Chemgauss4 score
+    * Docking_<docking_id>_clash: clash results
 
     Parameters
     ----------

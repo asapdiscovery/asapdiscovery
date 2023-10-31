@@ -65,6 +65,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/_autosummary/
 
 # PyBuilder
 target/
@@ -122,3 +123,24 @@ cluster_scripts/log_files
 *.stderr
 *.out
 *-log.txt
+
+
+# structure and molecule files
+*.xyz
+*.mol
+*.pdb
+*.cif
+*.sdf
+*.mol2
+*.oedu
+*.oeb
+*.oez
+*.mmcif
+*.mmtf
+*.fasta
+*.smi
+*.smiles
+# gzip versions of the above
+*.inchi
+*.inchikey
+*.gz

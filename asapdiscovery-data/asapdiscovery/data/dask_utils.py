@@ -6,31 +6,36 @@ import dask
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
-from distributed import Client
+from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
 
-# some reasonable defaults for distributed timeouts, warning overrides on import
-# TODO: probably should be wrapped in a function to avoid global state
-cfg.set({"distributed.scheduler.worker-ttl": None})
-cfg.set({"distributed.admin.tick.limit": "2h"})
+
+def set_dask_config():
+    cfg.set({"distributed.scheduler.worker-ttl": None})
+    cfg.set({"distributed.admin.tick.limit": "2h"})
+    cfg.set({"distributed.scheduler.active-memory-manager.measure": "managed"})
+    cfg.set({"distributed.worker.memory.rebalance.measure": "managed"})
+    cfg.set({"distributed.worker.memory.spill": False})
+    cfg.set({"distributed.worker.memory.pause": True})
+    cfg.set({"distributed.worker.memory.terminate": False})
 
 
 def actualise_dask_delayed_iterable(
-    delayed_iterable: Iterable, dask_client: Optional[Client] = None
+    delayed_iterable: Iterable,
+    dask_client: Optional[Client] = None,
+    errors: str = "raise",
 ):
     """
     Run a list of dask delayed functions or collections, and return the results
     If a dask client is provided is run as a future, otherwise as a compute
-
     Parameters
     ----------
     delayed_iterable : Iterable
         List of dask delayed functions
     dask_client Client, optional
         Dask client to use, by default None
-
     Returns
     -------
     iterable: Iterable
@@ -39,8 +44,25 @@ def actualise_dask_delayed_iterable(
     if dask_client is None:
         return dask.compute(*delayed_iterable)
     else:
-        futures = dask_client.submit(delayed_iterable)
-    return dask_client.gather(futures)
+        futures = dask_client.compute(delayed_iterable)
+    return dask_client.gather(futures, errors=errors)
+
+
+class DaskType(str, Enum):
+    """
+    Enum for Dask types
+    """
+
+    LOCAL = "local"
+    LILAC_GPU = "lilac-gpu"
+    LILAC_CPU = "lilac-cpu"
+
+    @classmethod
+    def get_values(cls):
+        return [dask_type.value for dask_type in cls]
+
+    def is_lilac(self):
+        return self in [DaskType.LILAC_CPU, DaskType.LILAC_GPU]
 
 
 class GPU(str, Enum):
@@ -92,8 +114,8 @@ class DaskCluster(BaseModel):
         extra = "forbid"
 
     name: str = Field("dask-worker", description="Name of the dask worker")
-    cores: int = Field(1, description="Number of cores per job")
-    memory: str = Field("20 GB", description="Amount of memory per job")
+    cores: int = Field(8, description="Number of cores per job")
+    memory: str = Field("24 GB", description="Amount of memory per job")
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
@@ -103,7 +125,7 @@ class LilacDaskCluster(DaskCluster):
     shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
     queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
     project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("1h", description="Walltime for the job")
+    walltime: str = Field("24h", description="Walltime for the job")
     use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
@@ -151,8 +173,39 @@ class LilacGPUDaskCluster(LilacDaskCluster):
     queue: str = "gpuqueue"
     walltime = "24h"
     memory = "48 GB"
+    cores = 1
 
     @classmethod
     def from_gpu(cls, gpu: GPU = GPU.GTX1080TI):
         gpu_config = LilacGPUConfig.from_gpu(gpu)
         return cls(job_extra_directives=gpu_config.to_job_extra_directives())
+
+
+def dask_cluster_from_type(dask_type: DaskType, gpu: GPU = GPU.GTX1080TI):
+    """
+    Get a dask client from a DaskType
+
+    Parameters
+    ----------
+    dask_type : DaskType
+        The type of dask client / cluster to get
+    gpu : GPU, optional
+        The GPU type to use, by default GPU.GTX1080TI
+
+    Returns
+    -------
+    dask.distributed.Client
+        A dask client
+    dask_jobqueue.Cluster
+        A dask cluster
+    """
+    if dask_type == DaskType.LOCAL:
+        cluster = LocalCluster()
+    elif dask_type == DaskType.LILAC_GPU:
+        cluster = LilacGPUDaskCluster().from_gpu(gpu).to_cluster(exclude_interface="lo")
+    elif dask_type == DaskType.LILAC_CPU:
+        cluster = LilacDaskCluster().to_cluster(exclude_interface="lo")
+    else:
+        raise ValueError(f"Unknown dask type {dask_type}")
+
+    return cluster
