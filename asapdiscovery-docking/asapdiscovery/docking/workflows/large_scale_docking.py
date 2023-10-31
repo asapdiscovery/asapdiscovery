@@ -84,12 +84,12 @@ class LargeScaleDockingInputs(BaseModel):
         None, description="Path to a molecule file containing query ligands."
     )
 
-    pdb_file: Optional[str] = Field(None, description="Path to a PDB file.")
+    pdb_file: Optional[Path] = Field(None, description="Path to a PDB file.")
 
-    fragalysis_dir: Optional[str] = Field(
+    fragalysis_dir: Optional[Path] = Field(
         None, description="Path to a directory containing a Fragalysis dump."
     )
-    structure_dir: Optional[str] = Field(
+    structure_dir: Optional[Path] = Field(
         None,
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
     )
@@ -316,7 +316,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     elif inputs.pdb_file:
         logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
-        complex = Complex.from_pdb(inputs.pdb_file)
+        complex = Complex.from_pdb(
+            inputs.pdb_file,
+            target_kwargs={"target_name": inputs.pdb_file.stem},
+            ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
+        )
         complexes = [complex]
 
     else:
