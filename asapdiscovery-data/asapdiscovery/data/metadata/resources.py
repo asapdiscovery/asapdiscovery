@@ -2,13 +2,13 @@ import pkg_resources
 
 # import each file
 MERS_CoV_Mpro_SEQRES = pkg_resources.resource_filename(
-    __name__, "master_seqres/mpro_mers_seqres.yaml"
+    __name__, "master_seqres/mers_cov_mpro_seqres.yaml"
 )
 SARS_CoV_2_Mpro_SEQRES = pkg_resources.resource_filename(
-    __name__, "master_seqres/mpro_sars2_seqres.yaml"
+    __name__, "master_seqres/sars_cov_2_mpro_seqres.yaml"
 )
 SARS_CoV_2_Mac1_SEQRES = pkg_resources.resource_filename(
-    __name__, "master_seqres/mac1_sars2_seqres.yaml"
+    __name__, "master_seqres/sars_cov_2_mac1_seqres.yaml"
 )
 
 SARS_CoV_2_fitness_data = pkg_resources.resource_filename(
