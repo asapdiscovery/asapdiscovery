@@ -61,7 +61,7 @@ def target(func):
     return click.option(
         "--target",
         type=click.Choice(TargetTags.get_values(), case_sensitive=True),
-        help="The target to dock against.",
+        help="The target for the workflow",
         required=True,
     )(func)
 
@@ -143,6 +143,7 @@ def gen_cache(func):
             resolve_path=True, exists=False, file_okay=False, dir_okay=True
         ),
         help="Path to a directory where a design unit cache should be generated.",
+        default="prepped_structure_cache",
     )(func)
 
 

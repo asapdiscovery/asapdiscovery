@@ -5,7 +5,7 @@ from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
-    large_scale_docking,
+    large_scale_docking_workflow,
 )
 
 from asapdiscovery.cli.cli_args import (
@@ -101,7 +101,7 @@ def large_scale(
             output_dir=output_dir,
         )
 
-    large_scale_docking(inputs)
+    large_scale_docking_workflow(inputs)
 
 
 if __name__ == "__main__":

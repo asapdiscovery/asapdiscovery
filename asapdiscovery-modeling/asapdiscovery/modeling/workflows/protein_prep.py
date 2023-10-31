@@ -17,8 +17,11 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
 )
 from asapdiscovery.data.schema_v2.complex import Complex
-
+from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper, CacheType
+
+from distributed import Client
 
 
 class ProteinPrepInputs(BaseModel):
@@ -79,7 +82,7 @@ class ProteinPrepInputs(BaseModel):
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
     )
     gen_cache: Path = Field(
-        Path("gen_cache"),
+        Path("prepped_structure_cache"),
         description="Path to a directory where generated prepped complexes should be cached",
     )
 
@@ -157,13 +160,15 @@ class ProteinPrepInputs(BaseModel):
         if fragalysis_dir and structure_dir:
             raise ValueError("Cannot specify both fragalysis_dir and structure_dir.")
 
-        if not fragalysis_dir and not structure_dir:
-            raise ValueError("Must specify either fragalysis_dir or structure_dir.")
+        if not fragalysis_dir and not structure_dir and not pdb_file:
+            raise ValueError(
+                "Must specify either pdb, fragalysis_dir or structure_dir."
+            )
 
         return values
 
 
-def protein_prep(inputs: ProteinPrepInputs):
+def protein_prep_workflow(inputs: ProteinPrepInputs):
     output_dir = inputs.output_dir
 
     if output_dir.exists():
@@ -235,7 +240,7 @@ def protein_prep(inputs: ProteinPrepInputs):
         logger.info(
             f"No seqres yaml specified, selecting based on target: {inputs.target}"
         )
-        inputs.seqres_yaml = select_seqres_yaml(inputs.target)
+        inputs.seqres_yaml = seqres_by_target(inputs.target)
 
     # prep complexes
     logger.info("Prepping complexes")

@@ -57,6 +57,13 @@ class TagEnumBase(str, Enum):
         extra_cols = [col for col in df.columns if col not in allowed_columns]
         return df.drop(columns=extra_cols)
 
+    @classmethod
+    def get_values_underscored(cls):
+        return [e.value.replace("-", "_") for e in cls]
+
+    def get_value_underscored(self):
+        return self.value.replace("-", "_")
+
 
 def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     """

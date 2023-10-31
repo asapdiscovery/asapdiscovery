@@ -19,6 +19,7 @@ from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
+from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.utils import check_empty_dataframe
@@ -229,7 +230,7 @@ class LargeScaleDockingInputs(BaseModel):
         return v
 
 
-def large_scale_docking(inputs: LargeScaleDockingInputs):
+def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     """
     Run large scale docking on a set of ligands, against multiple targets
 
