@@ -27,6 +27,10 @@ class CacheType(str, Enum):
     DesignUnit = "DesignUnit"
     JSON = "JSON"
 
+    @classmethod
+    def get_values(cls) -> list[str]:
+        return [c.value for c in cls]
+
 
 class ProteinPrepperBase(BaseModel):
     """
@@ -90,7 +94,7 @@ class ProteinPrepperBase(BaseModel):
             elif type == CacheType.JSON:
                 json_name = pc.target.target_name + ".json"
                 json_path = dir / json_name
-                pc.target.to_json_file(json_path)
+                pc.to_json_file(json_path)
 
 
 class ProteinPrepper(ProteinPrepperBase):
@@ -120,9 +124,11 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
-    du_cache: Optional[Path] = Field(
+    cache_path: Optional[Path] = Field(
         None, description="Path to a directory where design units are cached"
     )
+    cache_type: CacheType = Field(CacheType.DesignUnit, description="Type of cache")
+
     fail_missing_cache: bool = Field(
         False, description="Whether to fail on missing files when loading from cache"
     )
@@ -147,28 +153,50 @@ class ProteinPrepper(ProteinPrepperBase):
         Prepares a series of proteins for docking using OESpruce.
         """
         prepped_complexes = []
-        if self.du_cache:
-            for complex in inputs:
-                # check matching du exists
-                du_name = complex.target.target_name + ".oedu"
-                du_path = self.du_cache / du_name
-                if du_path.exists():
-                    prepped_target = PreppedTarget.from_oedu_file(
-                        du_path,
-                        ids=complex.target.ids,
-                        target_name=complex.target.target_name,
-                        ligand_chain=complex.ligand_chain,
-                    )
-                    pc = PreppedComplex(target=prepped_target, ligand=complex.ligand)
-                    prepped_complexes.append(pc)
-                else:
-                    if self.fail_missing_cache:
-                        raise FileNotFoundError(
-                            f"Missing cached design unit: {du_path}"
+        if self.cache_path:
+            if self.cache_type == CacheType.JSON:
+                for complex in inputs:
+                    json_name = complex.target.target_name + ".json"
+                    json_path = self.cache_path / json_name
+                    if json_path.exists():
+                        prepped_complexes.append(
+                            PreppedComplex.from_json_file(json_path)
                         )
                     else:
-                        warnings.warn(f"Missing cached design unit: {du_path}")
-                        prepped_complexes.append(None)
+                        if self.fail_missing_cache:
+                            raise FileNotFoundError(f"Missing cached json: {json_path}")
+                        else:
+                            warnings.warn(f"Missing cached json: {json_path}")
+                            prepped_complexes.append(None)
+
+            elif self.cache_type == CacheType.DesignUnit:
+                for complex in inputs:
+                    # check matching du exists
+                    du_name = complex.target.target_name + ".oedu"
+                    du_path = self.du_cache / du_name
+                    if du_path.exists():
+                        prepped_target = PreppedTarget.from_oedu_file(
+                            du_path,
+                            ids=complex.target.ids,
+                            target_name=complex.target.target_name,
+                            ligand_chain=complex.ligand_chain,
+                        )
+                        pc = PreppedComplex(
+                            target=prepped_target, ligand=complex.ligand
+                        )
+                        prepped_complexes.append(pc)
+                    else:
+                        if self.fail_missing_cache:
+                            raise FileNotFoundError(
+                                f"Missing cached design unit: {du_path}"
+                            )
+                        else:
+                            warnings.warn(f"Missing cached design unit: {du_path}")
+                            prepped_complexes.append(None)
+            else:
+                raise ValueError(
+                    f"Cache type {self.cache_type} not supported for ProteinPrepper"
+                )
 
         else:
             for complex in inputs:

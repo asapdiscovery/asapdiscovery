@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, root_validator, PositiveInt
+from pydantic import BaseModel, Field, root_validator, validator, PositiveInt
 
 from enum import Enum
 from pathlib import Path
@@ -18,6 +18,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper, CacheType
 
@@ -81,13 +82,13 @@ class ProteinPrepInputs(BaseModel):
         None,
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
     )
-    gen_cache: Path = Field(
-        Path("prepped_structure_cache"),
+    gen_cache: str = Field(
+        "prepped_structure_cache",
         description="Path to a directory where generated prepped complexes should be cached",
     )
 
-    cache_types: CacheType = Field(
-        CacheType.DesignUnit, description="Type of cache to make"
+    cache_type: Optional[list[str]] = Field(
+        [CacheType.DesignUnit], description="The types of cache to use."
     )
 
     align: Optional[Path] = Field(
@@ -167,6 +168,14 @@ class ProteinPrepInputs(BaseModel):
 
         return values
 
+    @validator("cache_type")
+    @classmethod
+    def check_cache_type(cls, v):
+        # must be unique
+        if len(v) != len(set(v)):
+            raise ValueError("cache_type must be unique")
+        return v
+
 
 def protein_prep_workflow(inputs: ProteinPrepInputs):
     output_dir = inputs.output_dir
@@ -182,7 +191,7 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     logger.info(f"Running large scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
-    inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
+    inputs.to_json_file(output_dir / "protein_prep.json")
 
     if inputs.use_dask:
         set_dask_config()
@@ -207,10 +216,6 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
 
     else:
         dask_client = None
-
-    # make a directory to store intermediate CSV results
-    data_intermediates = Path(output_dir / "data_intermediates")
-    data_intermediates.mkdir(exist_ok=True)
 
     # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:
@@ -256,9 +261,13 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         inputs=complexes, use_dask=inputs.use_dask, dask_client=dask_client
     )
     logger.info(f"Prepped {len(prepped_complexes)} complexes")
+    del complexes
 
     # cache prepped complexes
-    logger.info("Caching prepped complexes")
-    prepper.cache(prepped_complexes, inputs.gen_du_cache, type=CacheType.DesignUnit)
+    cache_path = output_dir / inputs.gen_cache
+
+    logger.info(f"Caching prepped complexes to {cache_path}")
+    for cache_type in inputs.cache_type:
+        prepper.cache(prepped_complexes, cache_path, type=cache_type)
 
     logger.info("Done")

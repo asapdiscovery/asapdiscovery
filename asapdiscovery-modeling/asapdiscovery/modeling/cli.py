@@ -7,6 +7,8 @@ from asapdiscovery.modeling.workflows.protein_prep import (
     ProteinPrepInputs,
     protein_prep_workflow,
 )
+from asapdiscovery.modeling.protein_prep_v2 import CacheType
+
 
 from asapdiscovery.cli.cli_args import (
     target,
@@ -17,6 +19,7 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     pdb_file,
     gen_cache,
+    cache_type,
 )
 
 
@@ -61,6 +64,7 @@ def cli():
 @fragalysis_dir
 @structure_dir
 @gen_cache
+@cache_type
 @dask_args
 @output_dir
 @input_json
@@ -76,6 +80,7 @@ def protein_prep(
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
     gen_cache: Optional[str] = "prepped_structure_cache",
+    cache_type: Optional[list[str]] = [CacheType.DesignUnit],
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
     output_dir: str = "output",
@@ -90,6 +95,8 @@ def protein_prep(
         inputs = ProteinPrepInputs.from_json_file(input_json)
 
     else:
+        print(output_dir)
+        print(gen_cache)
         inputs = ProteinPrepInputs(
             target=target,
             align=align,
@@ -102,6 +109,7 @@ def protein_prep(
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
             gen_cache=gen_cache,
+            cache_type=cache_type,
             use_dask=use_dask,
             dask_type=dask_type,
             output_dir=output_dir,

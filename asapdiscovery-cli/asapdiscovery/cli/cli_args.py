@@ -2,6 +2,7 @@ import click
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
+from asapdiscovery.modeling.protein_prep_v2 import CacheType
 
 
 def postera(func):
@@ -140,7 +141,7 @@ def gen_cache(func):
     return click.option(
         "--gen-cache",
         type=click.Path(
-            resolve_path=True, exists=False, file_okay=False, dir_okay=True
+            resolve_path=False, exists=False, file_okay=False, dir_okay=True
         ),
         help="Path to a directory where a design unit cache should be generated.",
         default="prepped_structure_cache",
@@ -151,8 +152,9 @@ def cache_type(func):
     return click.option(
         "--cache-type",
         type=click.Choice(CacheType.get_values(), case_sensitive=False),
-        default="DesignUnit",
-        help="The type of cache to use, can be 'JSON' or 'DesignUnit'.",
+        default=[CacheType.DesignUnit],
+        multiple=True,
+        help="The type of cache to use, can be 'JSON' or 'DesignUnit', an be specified multiple times to use cache",
     )(func)
 
 
