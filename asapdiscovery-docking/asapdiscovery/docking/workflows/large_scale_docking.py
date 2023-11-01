@@ -124,7 +124,7 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     dask_cluster_max_workers: PositiveInt = Field(
-        100, description="Maximum number of workers to use for Lilac dask cluster"
+        200, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
     n_select: PositiveInt = Field(
@@ -262,7 +262,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
-                minimum=1,
+                minimum=10,
                 maximum=inputs.dask_cluster_max_workers,
                 wait_count=10,
                 interval="1m",
