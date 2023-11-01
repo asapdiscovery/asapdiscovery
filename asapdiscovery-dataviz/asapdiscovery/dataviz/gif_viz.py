@@ -239,7 +239,6 @@ class GIFVisualizer:
         if self.pse:
             p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
-        p.cmd.extract("ligand_obj", "ligand")
         if not self.static_view_only:
             # load trajectory; center the system in the simulation and smoothen between frames.
             p.cmd.load_traj(
@@ -265,6 +264,8 @@ class GIFVisualizer:
 
         if self.contacts:
             self.logger.info("Showing contacts...")
+            p.cmd.extract("ligand_obj", "ligand")
+
             show_contacts(p, "ligand_obj", "receptor")
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
