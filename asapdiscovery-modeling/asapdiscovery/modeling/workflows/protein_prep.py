@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional

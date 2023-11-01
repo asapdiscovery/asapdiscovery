@@ -188,6 +188,7 @@ class LargeScaleDockingInputs(BaseModel):
         postera_molset_name = values.get("postera_molset_name")
         cache_dir = values.get("cache_dir")
         gen_cache = values.get("gen_cache")
+        pdb_file = values.get("pdb_file")
 
         if postera and filename:
             raise ValueError("Cannot specify both filename and postera.")
