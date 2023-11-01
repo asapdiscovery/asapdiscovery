@@ -59,12 +59,12 @@ def test_prep_cli_structure_dir(structure_dir, tmp_path):
     )
     assert click_success(result)
 
+
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Prep tests slow on GHA on macOS"
 )
 def test_prep_cli_pdb_file(pdb_file, tmp_path):
     runner = CliRunner()
-
 
     result = runner.invoke(
         cli,
@@ -81,3 +81,28 @@ def test_prep_cli_pdb_file(pdb_file, tmp_path):
     assert click_success(result)
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Prep tests slow on GHA on macOS"
+)
+def test_prep_cli_pdb_file(pdb_file, tmp_path):
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli,
+        [
+            "protein-prep",
+            "--target",
+            "SARS-CoV-2-Mpro",
+            "--pdb-file",
+            pdb_file,
+            "--align",
+            pdb_file,
+            "--ref-chain",
+            "A",
+            "--active-site-chain",
+            "A",
+            "--output-dir",
+            tmp_path,
+        ],
+    )
+    assert click_success(result)
