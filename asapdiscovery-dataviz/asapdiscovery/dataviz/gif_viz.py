@@ -269,7 +269,7 @@ class GIFVisualizer:
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
         if self.static_view_only:
-            p.cmd.save(str(parent_path / "canonical_view.pse"))
+            p.cmd.save(str(path))
             return path  # for static view we can end the function here.
 
         # turn on depth cueing
