@@ -146,7 +146,7 @@ class GIFVisualizer:
             output_paths.append(output_path)
         return output_paths
 
-    def write_traj_visualization(self, traj, system, path, bool_static_view_only):
+    def write_traj_visualization(self, traj, system, path, bool_static_view_only=False):
         """
         Write GIF visualization for a single trajectory.
         """
