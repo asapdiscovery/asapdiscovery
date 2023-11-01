@@ -82,6 +82,14 @@ class GIFBlockData:
         "subP4" : "122+124+125+126+170",
     }
 
+    pocket_dict_EV_A71_3Cpro = {
+        "subP1": "126+125+122+170+163+164+165",
+        "subP1_prime": "162+127+128+130+129+131",
+        "subP2": "20+23+25+24+106+147+145",
+        "subP3": "21+22+40+38+71+69",
+        "subP4" : "42+43+39+73+59+60+61",
+    }
+
     # now define the colors per subpocket
     color_dict_Mpro = {
         "subP1": "yellow",
