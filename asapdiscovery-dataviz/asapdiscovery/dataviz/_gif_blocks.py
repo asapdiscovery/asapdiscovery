@@ -90,7 +90,7 @@ class GIFBlockData:
         "subP4" : "42+43+39+73+59+60+61",
     }
 
-    # now define the colors per subpocket
+    # now define the colors per subpocket for each target (cross-variant)
     color_dict_Mpro = {
         "subP1": "yellow",
         "subP1_prime": "orange",
