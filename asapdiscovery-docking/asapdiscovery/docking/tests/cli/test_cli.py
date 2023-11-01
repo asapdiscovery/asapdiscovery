@@ -107,9 +107,7 @@ def test_large_docking_cli_structure_directory_du_cache(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_large_docking_cli_pdb_file(
-    ligand_file, pdb_file, du_cache, tmp_path
-):
+def test_large_docking_cli_pdb_file(ligand_file, pdb_file, du_cache, tmp_path):
     runner = CliRunner()
 
     du_cache_dir, _ = du_cache
