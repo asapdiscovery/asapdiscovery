@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import List, Optional, Union  # noqa: F401
+from typing import Union  # noqa: F401
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
@@ -109,7 +109,7 @@ class GIFVisualizer:
             elif system and Path(system).exists():
                 self.systems.append(system)
                 self.output_paths.append(path)
-                self.logger.warning(f"No trajectory provided - skipping GIF viz.")
+                self.logger.warning("No trajectory provided - skipping GIF viz.")
             else:
                 self.logger.warning(
                     f"Trajectory {trajectory} or system {system} does not exist - skipping."

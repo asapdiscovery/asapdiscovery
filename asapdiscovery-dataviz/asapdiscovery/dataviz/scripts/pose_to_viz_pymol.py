@@ -1,11 +1,8 @@
 import argparse
 import logging
-import os
-import tempfile
 from pathlib import Path
 
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.viz_targets import VizTargets
 
