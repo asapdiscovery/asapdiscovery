@@ -79,7 +79,7 @@ class GIFBlockData:
         "subP1_prime": "161+166+141+142+143+144+147",
         "subP2": "130+131+132+133+69+71+39+40",
         "subP3": "127+128+129+162+163+164+165",
-        "subP4" : "122+124+125+126+170",
+        "subP4": "122+124+125+126+170",
     }
 
     pocket_dict_EV_A71_3Cpro = {
@@ -87,7 +87,7 @@ class GIFBlockData:
         "subP1_prime": "162+127+128+130+129+131",
         "subP2": "20+23+25+24+106+147+145",
         "subP3": "21+22+40+38+71+69",
-        "subP4" : "42+43+39+73+59+60+61",
+        "subP4": "42+43+39+73+59+60+61",
     }
 
     pocket_dict_ZIKV_NS2B_NS3pro = {
@@ -123,7 +123,7 @@ class GIFBlockData:
         "subP1_prime": "yellow",
         "subP2": "blue",
         "subP3": "cyan",
-        "subP4" : "magenta"
+        "subP4": "magenta",
     }
     color_dict_NS3pro = {
         "subP1": "yellow",
