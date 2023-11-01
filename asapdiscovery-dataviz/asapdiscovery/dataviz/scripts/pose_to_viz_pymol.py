@@ -66,9 +66,7 @@ def main():
         pse=False,  # can set these to True to debug viz steps.
         pse_share=False,
     )
-    gif_visualiser.write_traj_visualization(
-        traj=None, system=complex, path=out
-    )
+    gif_visualiser.write_traj_visualization(traj=None, system=complex, path=out)
 
     logger.info("Done")
 
