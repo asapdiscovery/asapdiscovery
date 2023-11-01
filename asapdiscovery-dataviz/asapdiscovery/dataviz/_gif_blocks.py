@@ -73,6 +73,15 @@ class GIFBlockData:
         "anion_hole": "129+157+160+136+164",
     }
 
+    # 3CPRO
+    pocket_dict_EV_D68_3Cpro = {
+        "subP1": "23+24+25+145+112+106+107+108",
+        "subP1_prime": "161+166+141+142+143+144+147",
+        "subP2": "130+131+132+133+69+71+39+40",
+        "subP3": "127+128+129+162+163+164+165",
+        "subP4" : "122+124+125+126+170",
+    }
+
     # now define the colors per subpocket
     color_dict_Mpro = {
         "subP1": "yellow",
@@ -86,4 +95,11 @@ class GIFBlockData:
         "bridge": "pink",
         "phosphate": "orange",
         "anion_hole": "blue",
+    }
+    color_dict_3Cpro = {
+        "subP1": "orange",
+        "subP1_prime": "yellow",
+        "subP2": "blue",
+        "subP3": "cyan",
+        "subP4" : "magenta"
     }
