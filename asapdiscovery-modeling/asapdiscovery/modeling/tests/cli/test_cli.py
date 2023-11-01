@@ -84,7 +84,7 @@ def test_prep_cli_pdb_file(pdb_file, tmp_path):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Prep tests slow on GHA on macOS"
 )
-def test_prep_cli_pdb_file(pdb_file, tmp_path):
+def test_prep_cli_pdb_file_align(pdb_file, tmp_path):
     runner = CliRunner()
 
     result = runner.invoke(
