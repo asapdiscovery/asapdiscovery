@@ -42,5 +42,4 @@ master_structures = {
     "DENV-NS2B-NS3pro": pkg_resources.resource_filename(
         __name__, "master_structures/denv_ns2b_ns3pro.pdb"
     ),
-
 }
