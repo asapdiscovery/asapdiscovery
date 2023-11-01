@@ -207,7 +207,6 @@ class FragalysisFactory(BaseModel):
         -------
         FragalysisFactory
         """
-
         return cls(
             parent_dir=Path(parent_dir),
             xtal_col=xtal_col,
