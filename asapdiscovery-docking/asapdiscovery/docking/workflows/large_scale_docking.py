@@ -124,7 +124,7 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     dask_cluster_max_workers: PositiveInt = Field(
-        40, description="Maximum number of workers to use for Lilac dask cluster"
+        100, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
     n_select: PositiveInt = Field(
