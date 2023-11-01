@@ -18,21 +18,21 @@ parser.add_argument(
     type=str,
     required=True,
     choices=VizTargets.get_allowed_targets(),
-    help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
+    help="Target to write visualizations for",
 )
 
 parser.add_argument(
     "--complex",
     type=str,
     required=True,
-    help="Path to the PDB ligand-protein complex file",
+    help="Path to the PDB ligand-protein complex file (UNK or LIG as ligand entry in PDB file)",
 )
 
 parser.add_argument(
     "--out",
     type=str,
     required=True,
-    help="Path to the output gif file",
+    help="Path to the output .PSE file",
 )
 
 
@@ -61,13 +61,14 @@ def main():
         args.viz_target,
         frames_per_ns=0,
         smooth=5,
+        static_view_only=True,
         start=0,
         logger=logger,
         pse=False,  # can set these to True to debug viz steps.
         pse_share=False,
     )
     gif_visualiser.write_traj_visualization(
-        traj=None, system=complex, path=out, bool_static_view_only=True
+        traj=None, system=complex, path=out
     )
 
     logger.info("Done")

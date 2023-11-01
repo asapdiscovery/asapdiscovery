@@ -31,6 +31,7 @@ class GIFVisualizer:
         pse_share: bool = False,  # set to True for GIF viz debugging
         smooth: int = 3,
         contacts: bool = True,
+        static_view_only: bool = False,
         start: int = 1,
         stop: int = -1,
         interval: int = 1,
@@ -54,6 +55,8 @@ class GIFVisualizer:
             Number of frames to smooth over.
         contacts : bool
             Whether to show contacts.
+        static_view_only : bool
+            If True, only write out a .PSE file with the canonical view; don't load trajectory
         start : int
             Start frame to load
         stop : int
@@ -121,7 +124,7 @@ class GIFVisualizer:
         self.start = start
         self.stop = stop
         self.interval = interval
-        self.bool_static_view_only = True
+        self.static_view_only = static_view_only
         self.debug = debug
 
         if self.debug:
@@ -146,7 +149,7 @@ class GIFVisualizer:
             output_paths.append(output_path)
         return output_paths
 
-    def write_traj_visualization(self, traj, system, path, bool_static_view_only=False):
+    def write_traj_visualization(self, traj, system, path):
         """
         Write GIF visualization for a single trajectory.
         """
@@ -169,7 +172,7 @@ class GIFVisualizer:
         complex_name = "complex"
         p.cmd.load(str(system), object=complex_name)
 
-        if bool_static_view_only:
+        if self.static_view_only:
             # this may be unprepped/unaligned, so need to align to master structure before writing out.
             reference_structure = master_structures[self.target]
             p.cmd.load(reference_structure, object="reference_master")
@@ -237,7 +240,7 @@ class GIFVisualizer:
             p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
         p.cmd.extract("ligand_obj", "ligand")
-        if not bool_static_view_only:
+        if not self.static_view_only:
             # load trajectory; center the system in the simulation and smoothen between frames.
             p.cmd.load_traj(
                 str(traj),
@@ -265,7 +268,7 @@ class GIFVisualizer:
             show_contacts(p, "ligand_obj", "receptor")
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
-        if bool_static_view_only:
+        if self.static_view_only:
             p.cmd.save(str(parent_path / "canonical_view.pse"))
             return path  # for static view we can end the function here.
 
