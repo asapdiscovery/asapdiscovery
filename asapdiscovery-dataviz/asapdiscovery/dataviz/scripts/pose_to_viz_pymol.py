@@ -51,7 +51,6 @@ def main():
     if not complex.exists():
         raise FileNotFoundError(f"Topology file {complex} does not exist")
     out = Path(args.out)
-    logger.info(f"Topology file: {complex}: roundtripping with OpenEye.")
     logger.info(f"Output file: {out}")
 
     gif_visualiser = GIFVisualizer(
