@@ -90,6 +90,20 @@ class GIFBlockData:
         "subP4" : "42+43+39+73+59+60+61",
     }
 
+    pocket_dict_ZIKV_NS2B_NS3pro = {
+        "subP1": "151+161+129+160+150+130+131+132+135+134",
+        "subP1_prime": "54+51+52+36+35+133",
+        "subP2": "75+72+81+83+152",
+        "subP3": "153+154+155+86+85+84",
+    }
+
+    pocket_dict_DENV_NS2B_NS3pro = {
+        "subP1": "135+151+161+159+129+150+130+132+131",
+        "subP1_prime": "51+52+36+38+54",
+        "subP2": "83+82+81+72+50+75+152",
+        "subP3": "85+84+153+154+155+86",
+    }
+
     # now define the colors per subpocket for each target (cross-variant)
     color_dict_Mpro = {
         "subP1": "yellow",
@@ -110,4 +124,10 @@ class GIFBlockData:
         "subP2": "blue",
         "subP3": "cyan",
         "subP4" : "magenta"
+    }
+    color_dict_NS3pro = {
+        "subP1": "yellow",
+        "subP1_prime": "orange",
+        "subP2": "blue",
+        "subP3": "cyan",
     }
