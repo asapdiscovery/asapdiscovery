@@ -2,9 +2,10 @@ import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
-@pytest.fixture 
+@pytest.fixture
 def pdb_file():
     return fetch_test_file("Mpro-P2660_0A_bound_oe_processed.pdb")
+
 
 @pytest.fixture(scope="session")
 def all_mpro_fns():
