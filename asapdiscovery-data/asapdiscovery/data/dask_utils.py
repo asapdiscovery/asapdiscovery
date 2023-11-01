@@ -148,6 +148,9 @@ class LilacDaskCluster(DaskCluster):
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
     )
+    job_script_prologue: list[str] = Field(
+        ["ulimit -c 0"], description="Job prologue, default is to turn off core dumps"
+    )
 
     def to_cluster(self, exclude_interface: Optional[str] = "lo") -> LSFCluster:
         interface = guess_network_interface(exclude=[exclude_interface])
