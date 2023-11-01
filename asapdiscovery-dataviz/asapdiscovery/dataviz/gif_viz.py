@@ -236,6 +236,7 @@ class GIFVisualizer:
         if self.pse:
             p.cmd.save(str(parent_path / "session_3_set_ligand_view.pse"))
 
+        p.cmd.extract("ligand_obj", "ligand")
         if not bool_static_view_only:
             # load trajectory; center the system in the simulation and smoothen between frames.
             p.cmd.load_traj(
@@ -261,7 +262,7 @@ class GIFVisualizer:
 
         if self.contacts:
             self.logger.info("Showing contacts...")
-            show_contacts(p, "ligand", "receptor")
+            show_contacts(p, "ligand_obj", "receptor")
 
         p.cmd.set_view(self.view_coords)  # sets general orientation
         if bool_static_view_only:
@@ -273,7 +274,7 @@ class GIFVisualizer:
 
         # now, select stuff to hide; we select everything that is
         # farther than 15 Ang from our ligand.
-        p.cmd.select("th", "(all) and not ( (all) within 15 of ligand)")
+        p.cmd.select("th", "(all) and not ( (all) within 15 of ligand_obj)")
         # hide it to save rendering time.
         p.cmd.hide("everything", "th")
 
