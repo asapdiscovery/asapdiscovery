@@ -77,6 +77,18 @@ class GPU(str, Enum):
         return [gpu.value for gpu in cls]
 
 
+class CPU(str, Enum):
+    """
+    Enum for CPU types
+    """
+
+    LT = "LT"
+
+    @classmethod
+    def get_values(cls):
+        return [cpu.value for cpu in cls]
+
+
 _LILAC_GPU_GROUPS = {
     GPU.GTX1080TI: "lt-gpu",
 }
@@ -85,6 +97,12 @@ _LILAC_GPU_EXTRAS = {
     GPU.GTX1080TI: [
         '-R "select[hname!=lt16]"'
     ],  # random node that has something wrong with its GPU driver versioning
+}
+
+# Lilac does not have a specific CPU group, but we can use the lt-gpu group
+# for CPU jobs in combination with `cpuqueue` (per MSK HPC) as lt has the most nodes.
+_LILAC_CPU_GROUPS = {
+    CPU.LT: "lt-gpu",
 }
 
 
@@ -169,6 +187,24 @@ class LilacGPUConfig(BaseModel):
         )
 
 
+class LilacCPUConfig(BaseModel):
+    cpu: CPU = Field(..., description="CPU type")
+    cpu_group: str = Field(..., description="CPU group")
+    extra: Optional[list[str]] = Field(
+        None, description="Extra directives to pass to LSF"
+    )
+
+    def to_job_extra_directives(self):
+        return [
+            f"-m {self.cpu_group}",
+            *self.extra,
+        ]
+
+    @classmethod
+    def from_cpu(cls, cpu: CPU):
+        return cls(cpu=cpu, cpu_group=_LILAC_CPU_GROUPS[cpu], extra=[])
+
+
 class LilacGPUDaskCluster(LilacDaskCluster):
     queue: str = "gpuqueue"
     walltime = "24h"
@@ -181,7 +217,18 @@ class LilacGPUDaskCluster(LilacDaskCluster):
         return cls(job_extra_directives=gpu_config.to_job_extra_directives())
 
 
-def dask_cluster_from_type(dask_type: DaskType, gpu: GPU = GPU.GTX1080TI):
+class LilacCPUDaskCluster(LilacDaskCluster):
+    # uses default
+
+    @classmethod
+    def from_cpu(cls, cpu: CPU = CPU.LT):
+        cpu_config = LilacCPUConfig.from_cpu(cpu)
+        return cls(job_extra_directives=cpu_config.to_job_extra_directives())
+
+
+def dask_cluster_from_type(
+    dask_type: DaskType, gpu: GPU = GPU.GTX1080TI, cpu: CPU = CPU.LT
+):
     """
     Get a dask client from a DaskType
 
@@ -190,12 +237,12 @@ def dask_cluster_from_type(dask_type: DaskType, gpu: GPU = GPU.GTX1080TI):
     dask_type : DaskType
         The type of dask client / cluster to get
     gpu : GPU, optional
-        The GPU type to use, by default GPU.GTX1080TI
+        The GPU type to use if type is GPU, by default GPU.GTX1080TI
+    cpu : CPU, optional
+        The CPU type to use if type is CPU, by default CPU.LT
 
     Returns
     -------
-    dask.distributed.Client
-        A dask client
     dask_jobqueue.Cluster
         A dask cluster
     """
@@ -204,7 +251,7 @@ def dask_cluster_from_type(dask_type: DaskType, gpu: GPU = GPU.GTX1080TI):
     elif dask_type == DaskType.LILAC_GPU:
         cluster = LilacGPUDaskCluster().from_gpu(gpu).to_cluster(exclude_interface="lo")
     elif dask_type == DaskType.LILAC_CPU:
-        cluster = LilacDaskCluster().to_cluster(exclude_interface="lo")
+        cluster = LilacCPUDaskCluster().from_cpu(cpu).to_cluster(exclude_interface="lo")
     else:
         raise ValueError(f"Unknown dask type {dask_type}")
 
