@@ -201,16 +201,10 @@ class LargeScaleDockingInputs(BaseModel):
                 "Must specify postera_molset_name if uploading to postera."
             )
 
-        # fragalysis dir, structure dir and PDB file are mutually exclusive
-        if not fragalysis_dir and not structure_dir and not pdb_file:
-            raise ValueError(
-                "Must specify either fragalysis_dir, structure_dir or pdb_file"
-            )
-
         # can only specify one of fragalysis dir, structure dir and PDB file
-        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) > 1:
+        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:
             raise ValueError(
-                "Can only specify one of fragalysis_dir, structure_dir or pdb_file"
+                "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
             )
 
         if cache_dir and gen_cache:
