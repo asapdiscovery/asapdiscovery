@@ -274,6 +274,9 @@ def get_args():
         help="Use Omega conformer enumeration.",
     )
     parser.add_argument(
+        "--omega_dense", action="store_true", help="Use dense sampling with Omega."
+    )
+    parser.add_argument(
         "-p",
         "--num_poses",
         type=int,
@@ -537,6 +540,7 @@ def main():
                 args.posit_method.lower(),
                 f"{compound_ids[i]}_{x}",
                 args.omega,
+                args.omega_dense,
                 args.num_poses,
             )
             for du, x in zip(dock_dus, xtals)
@@ -596,7 +600,7 @@ def main():
             #  this way so we can keep track of which compound:xtals timed out
             res_iter = res.result()
             for args_list in mp_args:
-                docking_run_name = args_list[9]
+                docking_run_name = args_list[10]
                 try:
                     cur_res = next(res_iter)
                     results_list += [cur_res]

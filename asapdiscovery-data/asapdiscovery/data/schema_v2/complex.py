@@ -8,6 +8,7 @@ from asapdiscovery.data.openeye import (
     load_openeye_design_unit,
     load_openeye_pdb,
     oechem,
+    save_openeye_pdb,
 )
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
@@ -71,6 +72,9 @@ class Complex(ComplexBase):
         return cls(
             target=target, ligand=ligand, ligand_chain=split_dict["keep_lig_chain"]
         )
+
+    def to_pdb(self, pdb_file: str | Path):
+        save_openeye_pdb(self.to_combined_oemol(), pdb_file)
 
     def to_combined_oemol(self):
         """
