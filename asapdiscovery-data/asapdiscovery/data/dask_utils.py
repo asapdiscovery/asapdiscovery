@@ -175,7 +175,7 @@ class LilacDaskCluster(DaskCluster):
     job_script_prologue: list[str] = Field(
         ["ulimit -c 0"], description="Job prologue, default is to turn off core dumps"
     )
-    dashboard_address: str = Field(":9234", description="port to activate dashboard on")
+    dashboard_address: str = Field(":9123", description="port to activate dashboard on")
     lifetime_margin: str = Field(
         "10m",
         description="Margin to shut down workers before their walltime is up to ensure clean exit",
