@@ -2,7 +2,7 @@ import os
 import traceback
 
 import pytest
-from asapdiscovery.docking.cli import cli
+from asapdiscovery.docking.cli import docking as cli
 from click.testing import CliRunner
 
 
@@ -95,8 +95,36 @@ def test_large_docking_cli_structure_directory_du_cache(
             "--use-dask",
             "--posit-confidence-cutoff",
             0,
-            "--du-cache",
+            "--cache-dir",
             du_cache_dir,
+            "--output-dir",
+            tmp_path,
+        ],
+    )
+    assert click_success(result)
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+def test_large_docking_cli_pdb_file(ligand_file, pdb_file, du_cache, tmp_path):
+    runner = CliRunner()
+
+    du_cache_dir, _ = du_cache
+
+    result = runner.invoke(
+        cli,
+        [
+            "large-scale",
+            "--target",
+            "SARS-CoV-2-Mpro",
+            "--ligands",
+            ligand_file,
+            "--pdb-file",
+            pdb_file,
+            "--use-dask",
+            "--posit-confidence-cutoff",
+            0,
             "--output-dir",
             tmp_path,
         ],
