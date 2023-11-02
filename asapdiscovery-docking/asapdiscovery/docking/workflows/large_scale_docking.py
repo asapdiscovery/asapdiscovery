@@ -105,12 +105,12 @@ class LargeScaleDockingInputs(BaseModel):
         None, description="The name of the molecule set to upload to."
     )
     cache_dir: Optional[str] = Field(
-        None, description="Path to a directory where design units are cached"
+        None, description="Path to a directory where a cache has been generated"
     )
 
     gen_cache: Optional[str] = Field(
         None,
-        description="Path to a directory where generated design units should be cached",
+        description="Generate a cache from structures prepped in this workflow run in this directory",
     )
 
     cache_type: Optional[list[str]] = Field(
