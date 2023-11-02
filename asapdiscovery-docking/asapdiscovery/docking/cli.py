@@ -63,7 +63,7 @@ def docking():
 @ml_scorer
 def large_scale(
     target: TargetTags,
-    n_select: int = 10,
+    n_select: int = 5,
     top_n: int = 500,
     posit_confidence_cutoff: float = 0.7,
     ligands: Optional[str] = None,
