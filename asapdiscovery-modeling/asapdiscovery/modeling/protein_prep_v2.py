@@ -91,11 +91,13 @@ class ProteinPrepperBase(BaseModel):
             if type == CacheType.DesignUnit:
                 du_name = pc.target.target_name + ".oedu"
                 du_path = dir / du_name
-                pc.target.to_oedu_file(du_path)
+                if not du_path.exists():
+                    pc.target.to_oedu_file(du_path)
             elif type == CacheType.JSON:
                 json_name = pc.target.target_name + ".json"
                 json_path = dir / json_name
-                pc.to_json_file(json_path)
+                if not json_path.exists():
+                    pc.to_json_file(json_path)
 
     @staticmethod
     def load_cache(
