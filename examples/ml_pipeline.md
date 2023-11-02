@@ -100,17 +100,42 @@ you want to inspect how the MCS algorithm is working, but for production is not
 necessary, so we use `-n_draw 0`.
 
 ## Prep OpenEye Design Units
+This script takes advantage of the new `click` CLI, so it can only be called using the
+CLI command `asap-prep`. In the future, the other steps in this pipeline will be updated
+to follow this same pattern.
+
+This example will prep every structure downloaded in Fragalysis
+(`--fragalysis-dir ./mpro_fragalysis/`), and will store each individual prepped
+structure as both a `.oedu` file and a JSON file
+(`--gen-cache structures --cache-type DesignUnit --cache-type JSON`). We also use `dask`
+to parallelize the job locally (`--use-dask --dask-type local`). We will also use the
+RCSB OpenEye loop database (`--loop-db ./rcsb_spruce.loop_db`), which will need to be
+downloaded separately.
+```bash
+mkdir -p prepped_receptors
+asap-prep protein-prep \
+    --target SARS-CoV-2-Mpro \
+    --loop-db ./rcsb_spruce.loop_db \
+    --fragalysis-dir ./mpro_fragalysis/ \
+    --gen-cache structures \
+    --cache-type DesignUnit \
+    --cache-type JSON \
+    --use-dask \
+    --dask-type local \
+    --output-dir ./prepped_receptors
+```
 
 ## Run Docking
 The final step in preparing the structural data is to run docking. There are a number of
 options that can be configured, but this a minimal example that will dock each compound
 to its top match from the MCS search. This step is again parallelized (`-n 32`), which
-can be adjusted based on your machine.
+can be adjusted based on your machine. Note that the single quotes in the `-r` option
+are required to prevent the shell from expanding the wildcard.
 ```bash
 mkdir -p docking_results
 python /path/to/docking/scripts/run_docking_oe.py \
     -e cdd_achiral_enantiopure_semiquant_schema.json \
-    -r ./prepped_receptors/*/prepped_receptor.oedu \
+    -r './prepped_receptors/structures/*.oedu' \
     -s ./mcs_results/mcs_sort_index.pkl \
     -o ./docking_results/ \
     -n 32
