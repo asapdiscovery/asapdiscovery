@@ -24,26 +24,13 @@ class GIFBlockData:
         protein_name = VizTargets.get_protein_name(target, underscore=True)
         return getattr(cls, f"color_dict_{protein_name}")
 
-    master_view_coords = (
-        -0.735560179,
-        -0.330644876,
-        -0.591291904,
-        0.100930467,
-        -0.916550815,
-        0.386970639,
-        -0.669899166,
-        0.224961400,
-        0.707550228,
-        -0.000009850,
-        0.000009298,
-        -69.100456238,
-        12.334323883,
-        -0.101311684,
-        20.903310776,
-        -66.815620422,
-        205.012481689,
-        -20.000000000,
-    )
+    master_view_coords = (\
+    -0.628761828,   -0.263300329,   -0.731650949,\
+     0.114790931,   -0.962037563,    0.247575894,\
+    -0.769056857,    0.071688004,    0.635130227,\
+     0.000792170,    0.000284056,  -84.839714050,\
+    13.786006927,   -0.540415287,   17.228797913,\
+    48.075538635,  121.599494934,  -20.000000000 )
 
     # set colorings of subpockets by resn. This may change over time.,
     # first define the residues that span the subpockets
