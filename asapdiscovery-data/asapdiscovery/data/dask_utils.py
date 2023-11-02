@@ -167,7 +167,7 @@ class LilacDaskCluster(DaskCluster):
     shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
     queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
     project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("1h", description="Walltime for the job")
+    walltime: str = Field("12h", description="Walltime for the job")
     use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
