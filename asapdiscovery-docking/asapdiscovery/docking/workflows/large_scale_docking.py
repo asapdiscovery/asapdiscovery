@@ -207,6 +207,12 @@ class LargeScaleDockingInputs(BaseModel):
                 "Must specify either fragalysis_dir, structure_dir or pdb_file"
             )
 
+        # can only specify one of fragalysis dir, structure dir and PDB file
+        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) > 1:
+            raise ValueError(
+                "Can only specify one of fragalysis_dir, structure_dir or pdb_file"
+            )
+
         if cache_dir and gen_cache:
             raise ValueError("Cannot specify both cache_dir and gen_cache.")
 
