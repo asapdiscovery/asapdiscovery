@@ -140,15 +140,14 @@ def dask_time_delta_diff(time_str_1: str, time_str_2: str) -> str:
     Returns
     -------
     str
-        A dask timedelta string that is the difference between time_str_1 and time_str_2
+        A dask timedelta string that is the difference between time_str_1 and time_str_2 in seconds
     """
     seconds_1 = parse_timedelta(time_str_1)
     seconds_2 = parse_timedelta(time_str_2)
     seconds_diff = seconds_1 - seconds_2
     if seconds_diff < 0:
-        raise ValueError("time_str_1 must be greater than time_str_2")
-    timedelta_str = format_time(seconds_diff)
-    return timedelta_str
+        raise ValueError(f"Time difference is negative: {seconds_diff}")
+    return str(seconds_diff) + "s"
 
 
 class DaskCluster(BaseModel):
