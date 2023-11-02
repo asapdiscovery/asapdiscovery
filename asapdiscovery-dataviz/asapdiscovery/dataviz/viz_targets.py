@@ -25,7 +25,6 @@ TARGET_MAPPING = {
     "DENV-NS2B-NS3pro": "DENV-NS2B-NS3pro",
 }
 
-
 # enum for allowed targets
 # TODO make configurable from YAML file
 class VizTargets(Enum):
@@ -37,7 +36,7 @@ class VizTargets(Enum):
     viz_EV_A71_3Cpro = "EV-A71-3Cpro"
     viz_ZIKV_NS2B_NS3pro = "ZIKV-NS2B-NS3pro"
     viz_DENV_NS2B_NS3pro = "DENV-NS2B-NS3pro"
-    
+
     @classmethod
     def get_allowed_targets(cls) -> list[str]:
         return [t.value for t in cls]

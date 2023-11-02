@@ -23,7 +23,6 @@ DENV_NS2B_NS3pro_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/denv_ns2b_ns3pro.yaml"
 )
 
-# Fitness data in JSON format
 seqres_data = {
     "MERS-CoV-Mpro": MERS_CoV_Mpro_SEQRES,
     "SARS-CoV-2-Mpro": SARS_CoV_2_Mpro_SEQRES,
@@ -33,13 +32,13 @@ seqres_data = {
     "ZIKV-NS2B-NS3pro": ZIKV_NS2B_NS3pro_SEQRES,
     "DENV-NS2B-NS3pro": DENV_NS2B_NS3pro_SEQRES,
 }
-    
+
+# Fitness data in JSON format
 SARS_CoV_2_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_sars_cov_2.json"
 )
 
 # Reference PDB files to align targets to for consistent dataviz
-=======
 master_structures = {
     "SARS-CoV-2-Mpro": pkg_resources.resource_filename(
         __name__, "master_structures/sars_cov_2_mpro.pdb"
