@@ -3,11 +3,6 @@ from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.fixture
-def ligand_file():
-    return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf")
-
-
-@pytest.fixture
 def pdb_file():
     return fetch_test_file("Mpro-P2660_0A_bound_oe_processed.pdb")
 
