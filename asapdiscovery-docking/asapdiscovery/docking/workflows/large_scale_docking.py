@@ -86,7 +86,9 @@ class LargeScaleDockingInputs(BaseModel):
         None, description="Path to a molecule file containing query ligands."
     )
 
-    pdb_file: Optional[Path] = Field(None, description="Path to a PDB file to prep and dock to.")
+    pdb_file: Optional[Path] = Field(
+        None, description="Path to a PDB file to prep and dock to."
+    )
 
     fragalysis_dir: Optional[Path] = Field(
         None, description="Path to a directory containing a Fragalysis dump."
