@@ -143,7 +143,7 @@ class LilacDaskCluster(DaskCluster):
     shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
     queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
     project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("24h", description="Walltime for the job")
+    walltime: str = Field("1h", description="Walltime for the job")
     use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
@@ -151,13 +151,17 @@ class LilacDaskCluster(DaskCluster):
     job_script_prologue: list[str] = Field(
         ["ulimit -c 0"], description="Job prologue, default is to turn off core dumps"
     )
+    dashboard_address: str = Field(":9234", description="port to activate dashboard on")
 
     def to_cluster(self, exclude_interface: Optional[str] = "lo") -> LSFCluster:
         interface = guess_network_interface(exclude=[exclude_interface])
         _walltime = dask_timedelta_to_hh_mm(self.walltime)
         return LSFCluster(
             interface=interface,
-            scheduler_options={"interface": interface},
+            scheduler_options={
+                "interface": interface,
+                "dashboard_address": self.dashboard_address,
+            },
             worker_extra_args=[
                 "--lifetime",
                 f"{self.walltime}",
@@ -165,7 +169,7 @@ class LilacDaskCluster(DaskCluster):
                 "2m",
             ],  # leave a slight buffer
             walltime=_walltime,  # convert to LSF units manually
-            **self.dict(exclude={"walltime"}),
+            **self.dict(exclude={"walltime", "dashboard_address"}),
         )
 
 
