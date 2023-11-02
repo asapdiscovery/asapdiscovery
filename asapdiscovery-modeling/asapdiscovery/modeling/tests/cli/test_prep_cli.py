@@ -2,7 +2,7 @@ import os
 import traceback
 
 import pytest
-from asapdiscovery.modeling.cli import cli
+from asapdiscovery.modeling.cli import modeling as cli
 from click.testing import CliRunner
 
 

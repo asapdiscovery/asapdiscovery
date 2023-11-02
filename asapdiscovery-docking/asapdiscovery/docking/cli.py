@@ -25,11 +25,11 @@ from asapdiscovery.docking.workflows.large_scale_docking import (
 
 
 @click.group()
-def cli():
+def docking():
     pass
 
 
-@cli.command()
+@docking.command()
 @target
 @click.option(
     "--n-select",
@@ -116,4 +116,4 @@ def large_scale(
 
 
 if __name__ == "__main__":
-    cli()
+    docking()

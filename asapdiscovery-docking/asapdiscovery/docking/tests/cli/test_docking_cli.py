@@ -2,7 +2,7 @@ import os
 import traceback
 
 import pytest
-from asapdiscovery.docking.cli import cli
+from asapdiscovery.docking.cli import docking as cli
 from click.testing import CliRunner
 
 

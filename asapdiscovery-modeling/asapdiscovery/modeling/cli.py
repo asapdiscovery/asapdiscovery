@@ -22,11 +22,11 @@ from asapdiscovery.modeling.workflows.protein_prep import (
 
 
 @click.group()
-def cli():
+def modeling():
     pass
 
 
-@cli.command()
+@modeling.command()
 @target
 @click.option(
     "--align",
@@ -117,4 +117,4 @@ def protein_prep(
 
 
 if __name__ == "__main__":
-    cli()
+    modeling()
