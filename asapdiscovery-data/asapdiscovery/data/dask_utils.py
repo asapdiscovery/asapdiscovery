@@ -4,7 +4,7 @@ from typing import Optional
 
 import dask
 from dask import config as cfg
-from dask.utils import parse_timedelta, format_time
+from dask.utils import format_time, parse_timedelta
 from dask_jobqueue import LSFCluster
 from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
