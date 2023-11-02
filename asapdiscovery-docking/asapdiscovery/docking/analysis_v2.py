@@ -141,6 +141,7 @@ def calculate_rmsd_stats(
 
             # n_allowed_refs = n_references if cumulative else ref_structure_stride
 
+            # TODO: Replace all these hard-coded names with
             return_df = pd.DataFrame(
                 {
                     "Fraction": score_list,
