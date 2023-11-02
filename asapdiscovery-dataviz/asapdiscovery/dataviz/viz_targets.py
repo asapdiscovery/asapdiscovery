@@ -25,6 +25,7 @@ TARGET_MAPPING = {
     "DENV-NS2B-NS3pro": "DENV-NS2B-NS3pro",
 }
 
+
 # enum for allowed targets
 # TODO make configurable from YAML file
 class VizTargets(Enum):
