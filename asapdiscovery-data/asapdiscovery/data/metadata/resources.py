@@ -49,9 +49,6 @@ master_structures = {
     "SARS-CoV-2-Mac1-monomer": pkg_resources.resource_filename(
         __name__, "master_structures/sars_cov_2_mac1.pdb"
     ),
-    "SARS-CoV-2-Mac1-monomer": pkg_resources.resource_filename(
-        __name__, "master_sars_cov_2_mac1.pdb"
-    ),
     "MERS-CoV-Mpro": pkg_resources.resource_filename(
         __name__, "master_structures/mers_cov_mpro.pdb"
     ),
