@@ -7,6 +7,10 @@ PROTEIN_MAPPING = {
     "MERS-CoV-Mpro": "Mpro",
     "SARS-CoV-2-Mac1": "Mac1",
     "SARS-CoV-2-Mac1-monomer": "Mac1",
+    "EV-D68-3Cpro": "3Cpro",
+    "EV-A71-3Cpro": "3Cpro",
+    "ZIKV-NS2B-NS3pro": "NS3pro",
+    "DENV-NS2B-NS3pro": "NS3pro",
 }
 
 # needs underscores to match attr names
@@ -15,6 +19,10 @@ TARGET_MAPPING = {
     "MERS-CoV-Mpro": "MERS-CoV-Mpro",
     "SARS-CoV-2-Mac1": "SARS-CoV-2-Mac1",
     "SARS-CoV-2-Mac1-monomer": "SARS-CoV-2-Mac1",
+    "EV-D68-3Cpro": "EV-D68-3Cpro",
+    "EV-A71-3Cpro": "EV-A71-3Cpro",
+    "ZIKV-NS2B-NS3pro": "ZIKV-NS2B-NS3pro",
+    "DENV-NS2B-NS3pro": "DENV-NS2B-NS3pro",
 }
 
 
@@ -25,7 +33,11 @@ class VizTargets(Enum):
     viz_MERS_CoV_Mpro = "MERS-CoV-Mpro"
     viz_SARS_CoV_2_Mac1 = "SARS-CoV-2-Mac1"
     viz_SARS_CoV_2_Mac1_monomer = "SARS-CoV-2-Mac1-monomer"
-
+    viz_EV_D68_3Cpro = "EV-D68-3Cpro"
+    viz_EV_A71_3Cpro = "EV-A71-3Cpro"
+    viz_ZIKV_NS2B_NS3pro = "ZIKV-NS2B-NS3pro"
+    viz_DENV_NS2B_NS3pro = "DENV-NS2B-NS3pro"
+    
     @classmethod
     def get_allowed_targets(cls) -> list[str]:
         return [t.value for t in cls]
