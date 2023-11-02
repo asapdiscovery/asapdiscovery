@@ -146,14 +146,11 @@ class ProteinPrepInputs(BaseModel):
         structure_dir = values.get("structure_dir")
         pdb_file = values.get("pdb_file")
 
-        if pdb_file and fragalysis_dir:
-            raise ValueError("Cannot specify both pdb_file and fragalysis_dir.")
-
-        if pdb_file and structure_dir:
-            raise ValueError("Cannot specify both pdb_file and structure_dir.")
-
-        if fragalysis_dir and structure_dir:
-            raise ValueError("Cannot specify both fragalysis_dir and structure_dir.")
+        # can only specify one of fragalysis dir, structure dir and PDB file
+        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) > 1:
+            raise ValueError(
+                "Can only specify one of fragalysis_dir, structure_dir or pdb_file"
+            )
 
         if not fragalysis_dir and not structure_dir and not pdb_file:
             raise ValueError(
