@@ -11,9 +11,17 @@ SARS_CoV_2_Mac1_SEQRES = pkg_resources.resource_filename(
     __name__, "mac1_sars2_seqres.yaml"
 )
 
+seqres_data = {
+    "MERS-CoV-Mpro": MERS_CoV_Mpro_SEQRES,
+    "SARS-CoV-2-Mpro": SARS_CoV_2_Mpro_SEQRES,
+    "SARS-CoV-2-Mac1": SARS_CoV_2_Mac1_SEQRES,
+}
+
+
 SARS_CoV_2_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_sars_cov_2.json"
 )
+
 master_structures = {
     "SARS-CoV-2-Mpro": pkg_resources.resource_filename(
         __name__, "master_sars_cov_2_mpro.pdb"
