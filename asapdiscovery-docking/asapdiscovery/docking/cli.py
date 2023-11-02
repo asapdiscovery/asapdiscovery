@@ -1,27 +1,26 @@
 from typing import Optional
 
 import click
+from asapdiscovery.cli.cli_args import (
+    cache_dir,
+    cache_type,
+    dask_args,
+    fragalysis_dir,
+    gen_cache,
+    input_json,
+    ligands,
+    ml_scorer,
+    output_dir,
+    pdb_file,
+    postera_args,
+    structure_dir,
+    target,
+)
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
     large_scale_docking_workflow,
-)
-
-from asapdiscovery.cli.cli_args import (
-    postera_args,
-    ml_scorer,
-    target,
-    dask_args,
-    output_dir,
-    input_json,
-    ligands,
-    pdb_file,
-    fragalysis_dir,
-    structure_dir,
-    cache_dir,
-    gen_cache,
-    cache_type,
 )
 
 

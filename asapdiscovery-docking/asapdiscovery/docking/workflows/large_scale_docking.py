@@ -15,11 +15,11 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
+from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.utils import check_empty_dataframe
@@ -29,7 +29,7 @@ from asapdiscovery.docking.docking_data_validation import (
 from asapdiscovery.docking.docking_v2 import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper, CacheType
+from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
@@ -135,7 +135,7 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     dask_cluster_max_workers: PositiveInt = Field(
-        40, description="Maximum number of workers to use for Lilac dask cluster"
+        200, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
     n_select: PositiveInt = Field(
@@ -188,6 +188,7 @@ class LargeScaleDockingInputs(BaseModel):
         postera_molset_name = values.get("postera_molset_name")
         cache_dir = values.get("cache_dir")
         gen_cache = values.get("gen_cache")
+        pdb_file = values.get("pdb_file")
 
         if postera and filename:
             raise ValueError("Cannot specify both filename and postera.")
@@ -273,7 +274,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
-                minimum=1,
+                minimum=10,
                 maximum=inputs.dask_cluster_max_workers,
                 wait_count=10,
                 interval="1m",

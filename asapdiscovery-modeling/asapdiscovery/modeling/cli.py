@@ -1,25 +1,23 @@
 from typing import Optional
 
 import click
+from asapdiscovery.cli.cli_args import (
+    cache_type,
+    dask_args,
+    fragalysis_dir,
+    gen_cache_w_default,
+    input_json,
+    output_dir,
+    pdb_file,
+    structure_dir,
+    target,
+)
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.modeling.protein_prep_v2 import CacheType
 from asapdiscovery.modeling.workflows.protein_prep import (
     ProteinPrepInputs,
     protein_prep_workflow,
-)
-from asapdiscovery.modeling.protein_prep_v2 import CacheType
-
-
-from asapdiscovery.cli.cli_args import (
-    target,
-    dask_args,
-    output_dir,
-    input_json,
-    fragalysis_dir,
-    structure_dir,
-    pdb_file,
-    gen_cache_w_default,
-    cache_type,
 )
 
 
