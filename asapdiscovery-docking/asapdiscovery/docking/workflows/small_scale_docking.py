@@ -34,9 +34,9 @@ from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
-class LargeScaleDockingInputs(BaseModel):
+class SmallScaleDockingInputs(BaseModel):
     """
-    Schema for inputs to large scale docking
+    Schema for inputs to small scale docking
 
     Parameters
     ----------
@@ -66,10 +66,6 @@ class LargeScaleDockingInputs(BaseModel):
         Whether to use dask for parallelism.
     dask_type : DaskType, optional
         Type of dask client to use for parallelism.
-    n_select : int, optional
-        Number of targets to dock each ligand against, sorted by MCS
-    top_n : int, optional
-        Number of docking results to return, ordered by docking score
     posit_confidence_cutoff : float, optional
         POSIT confidence cutoff used to filter docking results
     ml_scorers : MLModelType, optional
@@ -140,16 +136,8 @@ class LargeScaleDockingInputs(BaseModel):
         200, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
-    n_select: PositiveInt = Field(
-        10, description="Number of targets to dock each ligand against, sorted by MCS"
-    )
-
-    top_n: PositiveInt = Field(
-        500, description="Number of docking results to return, ordered by docking score"
-    )
-
     posit_confidence_cutoff: float = Field(
-        0.7,
+        0.1,
         le=1.0,
         ge=0.0,
         description="POSIT confidence cutoff used to filter docking results",
@@ -159,7 +147,15 @@ class LargeScaleDockingInputs(BaseModel):
         None, description="The name of the ml scorers to use"
     )
 
-    logname: str = Field("large_scale_docking", description="Name of the log file.")
+    md: bool = Field(False, description="Whether to run MD on the docked poses")
+    md_steps: PositiveInt = Field(2500000, description="Number of MD steps to run")
+    md_report_interval: PositiveInt = Field(
+        1250, description="MD report interval for writing to disk"
+    )
+    md_openmm_platform: OpenMMPlatform = Field(
+        OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
+    )
+    logname: str = Field("small_scale_docking", description="Name of the log file.")
 
     loglevel: int = Field(logging.INFO, description="Logging level")
 
@@ -191,6 +187,8 @@ class LargeScaleDockingInputs(BaseModel):
         cache_dir = values.get("cache_dir")
         gen_cache = values.get("gen_cache")
         pdb_file = values.get("pdb_file")
+        md = values.get("md")
+        dask_type = values.get("dask_type")
 
         if postera and filename:
             raise ValueError("Cannot specify both filename and postera.")
@@ -211,6 +209,11 @@ class LargeScaleDockingInputs(BaseModel):
 
         if cache_dir and gen_cache:
             raise ValueError("Cannot specify both cache_dir and gen_cache.")
+
+        if md and dask_type == DaskType.LILAC_CPU:
+            raise ValueError(
+                "Cannot run MD on Lilac CPU queue, use Lilac GPU queue instead."
+            )
 
         return values
 
@@ -240,14 +243,14 @@ class LargeScaleDockingInputs(BaseModel):
         return v
 
 
-def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
+def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     """
-    Run large scale docking on a set of ligands, against multiple targets
+    Run small scale docking on a set of ligands, against multiple targets
 
     Parameters
     ----------
-    inputs : LargeScaleDockingInputs
-        Inputs to large scale docking
+    inputs : SmallScaleDockingInputs
+        Inputs to small scale docking
 
     Returns
     -------
@@ -263,10 +266,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
     ).getLogger()
 
-    logger.info(f"Running large scale docking with inputs: {inputs}")
+    logger.info(f"Running small scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
-    inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
+    inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
         set_dask_config()
@@ -302,6 +305,15 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             f"Loading Postera database molecule set {inputs.postera_molset_name}"
         )
         postera_settings = PosteraSettings()
+
+        logger.info("Poster settings loaded")
+
+        if inputs.postera_upload:
+            logger.info(" Postera upload specified, checking for AWS credentials")
+            aws_s3_settings = S3Settings()
+            aws_cloudfront_settings = CloudfrontSettings()
+            logger.info("AWS S3 and CloudFront credentials found")
+
         postera = PosteraFactory(
             settings=postera_settings, molecule_set_name=inputs.postera_molset_name
         )
@@ -369,7 +381,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        n_select=inputs.n_select,
+        n_select=1,
         use_dask=False,
         dask_client=None,
     )
@@ -407,26 +419,23 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
                 MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
             )
 
-    # score results
-    logger.info("Scoring docking results")
-    scorer = MetaScorer(scorers=scorers)
-
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
         write_ligands_to_multi_sdf(
             output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
         )
 
+    # score results
+    logger.info("Scoring docking results")
+    scorer = MetaScorer(scorers=scorers)
     scores_df = scorer.score(
         results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
     )
 
-    del results
-
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
 
     logger.info("Filtering docking results")
-    # filter for POSIT probability > 0.7
+    # filter for POSIT probability
     scores_df = scores_df[
         scores_df[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value]
         > inputs.posit_confidence_cutoff
@@ -461,41 +470,44 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         message="No docking results passed the clash filter",
     )
 
-    # then order by chemgauss4 score and remove duplicates by ligand id
-    scores_df = scores_df.sort_values(
-        DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
+    logger.info("Running HTML visualiser for docked poses")
+    html_ouptut_dir = output_dir / "poses"
+    html_visualiser = HTMLVisualizer(
+        type=HTMLVizType.POSE, target=inputs.target, output_dir=html_ouptut_dir
     )
-    scores_df.to_csv(
-        data_intermediates / "docking_scores_filtered_sorted.csv", index=False
-    )
-
-    scores_df = scores_df.drop_duplicates(subset=[DockingResultCols.LIGAND_ID.value])
-
-    n_duplicate_filtered = len(scores_df)
-    logger.info(
-        f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
+    visualisatons = html_visualiser.visualize(
+        results, use_dask=inputs.use_dask, dask_client=dask_client
     )
 
-    # take top n results
-    scores_df = scores_df.head(inputs.top_n)
+    # join
 
-    n_top_n_filtered = len(scores_df)
-    logger.info(
-        f"Filtered to {n_top_n_filtered} / {n_duplicate_filtered} docking results by top n filter"
+    logger.info("Running fitness HTML visualiser")
+    html_fitness_output_dir = output_dir / "fitness"
+    html_fitness_visualiser = HTMLVisualizer(
+        type=HTMLVizType.FITNESS,
+        target=inputs.target,
+        output_dir=html_fitness_output_dir,
+    )
+    fitness_visualisations = html_fitness_visualiser.visualize(
+        results, use_dask=inputs.use_dask, dask_client=dask_client
     )
 
-    check_empty_dataframe(
-        scores_df,
-        logger=logger,
-        fail="raise",
-        tag="scores",
-        message=f"No docking results passed the top {inputs.top_n} filter",
-    )
+    # join
 
-    scores_df.to_csv(
-        data_intermediates / f"docking_scores_filtered_sorted_top_{inputs.top_n}.csv",
-        index=False,
-    )
+    if inputs.md:
+        md_output_dir = output_dir / "md"
+        md_simulator = VanillaMDSimulator(output_dir=md_output_dir)
+        simulation_results = md_simulator.simulate(
+            results, use_dask=inputs.use_dask, dask_client=dask_client
+        )
+
+        gif_output_dir = output_dir / "gifs"
+        gif_maker = GIFVisualizer(output_dir=gif_output_dir, target=inputs.target)
+        gifs = gif_maker.visualize(
+            simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
+        )
+
+        # join
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
@@ -511,8 +523,26 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     result_df.to_csv(output_dir / "docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
-        logger.info("Uploading results to Postera")
+        logger.info("Uploading numerical results to Postera")
         postera_uploader = PosteraUploader(
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         postera_uploader.push(result_df)
+
+        logger.info("Uploading artifacts to PostEra")
+        s3 = S3.from_settings(aws_s3_settings)
+        cf = CloudFront.from_settings(aws_cloudfront_settings)
+
+        # make an uploader for the poses and upload them
+        pose_uploader = ManifoldArtifactUploader(
+            data_df,
+            inputs.molset_id,
+            inputs.postera_molset_name,
+            cf,
+            s3,
+            inputs.target,
+            artifact_types=[ArtifactType.DOCKING_POSE_POSIT, blah, blah],
+            artifact_columns=["blah", "blah", "blah"],
+            bucket_name=aws_s3_settings.BUCKET_NAME,
+        )
+        pose_uploader.upload_artifacts()
