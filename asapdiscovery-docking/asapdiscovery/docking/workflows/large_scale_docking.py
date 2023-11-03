@@ -403,9 +403,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
             logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorers.append(
-                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
+            scorer = MLModelScorer.from_latest_by_target_and_type(
+                inputs.target, ml_scorer
             )
+            if scorer:
+                scorers.append(scorer)
 
     # score results
     logger.info("Scoring docking results")
