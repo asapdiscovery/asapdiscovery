@@ -31,6 +31,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--viz-type",
+    type=str,
+    required=False,
+    default="subpockets",
+    choices=["subpockets", "fitness"],
+    help="Whether to show subpocket color mapping (default) or fitness color mapping",
+)
+
+parser.add_argument(
     "--out",
     type=str,
     required=True,
