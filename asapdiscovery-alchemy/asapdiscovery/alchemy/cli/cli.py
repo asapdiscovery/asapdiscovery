@@ -1,5 +1,4 @@
 import click
-
 from asapdiscovery.alchemy.cli.alchemy import alchemy
 from asapdiscovery.alchemy.cli.prep import prep
 

@@ -1,9 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import UUID4, Field
-
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from pydantic import UUID4, Field
 
 from .schema_base import DataModelAbstractBase
 

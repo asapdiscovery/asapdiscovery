@@ -1,11 +1,10 @@
 from pathlib import Path
 from typing import List  # noqa: F401
 
-from pydantic import Field, validator
-
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
+from pydantic import Field, validator
 
 
 class MolFileFactory(DataModelAbstractBase):
