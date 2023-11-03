@@ -31,7 +31,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--viz-type",
+    "--color-method",
     type=str,
     required=False,
     default="subpockets",
@@ -72,6 +72,7 @@ def main():
     html_visualizer = HTMLVisualizer(
         poses=[str(pose)],
         output_paths=[out],
+        color_method=args.color_method,
         target=args.viz_target,
         protein=protein,
         logger=logger,
