@@ -129,7 +129,7 @@ def large_scale(
 @click.option(
     "--posit-confidence-cutoff",
     type=float,
-    default=0.7,
+    default=0.1,
     help="The confidence cutoff for POSIT results to be considered",
 )
 @ligands
