@@ -134,7 +134,9 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         )
 
     if target not in ("SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"):
-        raise NotImplementedError(f"Fitness data not yet available for {target}. Add to metadata if/when available.")
+        raise NotImplementedError(
+            f"Fitness data not yet available for {target}. Add to metadata if/when available."
+        )
 
     with open(SARS_CoV_2_fitness_data) as f:
         data = json.load(f)
