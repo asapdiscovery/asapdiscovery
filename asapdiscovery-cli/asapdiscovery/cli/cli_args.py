@@ -182,6 +182,7 @@ def md_steps(func):
     return click.option(
         "--md-steps",
         type=int,
+        default=2500000,
         help="Number of MD steps",
     )(func)
 

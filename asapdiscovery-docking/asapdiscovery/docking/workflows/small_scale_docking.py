@@ -21,7 +21,13 @@ from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
@@ -71,6 +77,14 @@ class SmallScaleDockingInputs(BaseModel):
         POSIT confidence cutoff used to filter docking results
     ml_scorers : MLModelType, optional
         The name of the ml scorers to use.
+    md : bool, optional
+        Whether to run MD on the docked poses
+    md_steps : PositiveInt, optional
+        Number of MD steps to run
+    md_report_interval : PositiveInt, optional
+        MD report interval for writing to disk
+    md_openmm_platform : OpenMMPlatform, optional
+        OpenMM platform to use for MD
     logname : str, optional
         Name of the log file.
     loglevel : int, optional
