@@ -69,7 +69,7 @@ To install an `asapdiscovery` package hosted in this repository, we recommend th
     conda activate asapdiscovery
     ```
 
-5. Install the individual `asapdiscovery` packages you want to use with `pip` into the environment.
+3. Install the individual `asapdiscovery` packages you want to use with `pip` into the environment.
    For example, `asapdiscovery-data`:
 
     ```
