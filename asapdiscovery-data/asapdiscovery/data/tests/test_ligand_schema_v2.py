@@ -1,7 +1,8 @@
 from uuid import uuid4
 
 import pytest
-from asapdiscovery.data.openeye import load_openeye_sdf
+
+from asapdiscovery.data.openeye import get_SD_data, load_openeye_sdf, set_SD_data
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
@@ -21,6 +22,22 @@ def moonshot_sdf():
 def test_ligand_from_smiles(smiles):
     lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.smiles == smiles
+
+
+def test_from_smiles_ids_made(smiles):
+    """Make sure the ligand provenance is automatically generated."""
+    lig = Ligand.from_smiles(smiles, compound_name="test_name")
+    assert lig.provenance.isomeric_smiles == smiles
+
+
+def test_from_oemol_sd_tags_left(moonshot_sdf):
+    """Make sure any sd tags on an oemol are not lost when building a ligand."""
+    mol = load_openeye_sdf(str(moonshot_sdf))
+    sd_data = {"compound_name": "moonshot-mol", "energy": "1"}
+    set_SD_data(mol, sd_data)
+    # create a ligand keeping the original sd safe
+    _ = Ligand.from_oemol(mol)
+    assert get_SD_data(mol) == sd_data
 
 
 def test_ligand_from_smiles_hashable(smiles):

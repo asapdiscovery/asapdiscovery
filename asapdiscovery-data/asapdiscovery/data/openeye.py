@@ -172,12 +172,12 @@ def load_openeye_smi(smi_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     if not Path(smi_fn).exists():
         raise FileNotFoundError(f"{smi_fn} does not exist!")
 
-    ifs = oechem.oemolistream()
+    ifs = oechem.oemolistream(smi_fn)
     ifs.SetFlavor(oechem.OEFormat_SMI, oechem.OEIFlavor_SMI_DEFAULT)
 
     molecules = []
     for mol in ifs.GetOEGraphMols():
-        molecules.append(oechem.OEGetOEGraphMol(mol))
+        molecules.append(oechem.OEGraphMol(mol))
 
     return molecules
 

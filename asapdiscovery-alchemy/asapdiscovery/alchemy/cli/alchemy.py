@@ -4,11 +4,12 @@ import click
 
 
 @click.group()
-def cli():
+def alchemy():
+    """Tools to create and execute Alchemy networks using OpenFE and alchemiscale."""
     pass
 
 
-@cli.command()
+@alchemy.command()
 @click.argument(
     "filename",
     type=click.Path(exists=False, file_okay=True, dir_okay=False, writable=True),
@@ -26,7 +27,7 @@ def create(filename: str):
     factory.to_file(filename=filename)
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-f",
     "--factory-file",
@@ -122,7 +123,7 @@ def plan(
         output.write(planned_network.network.graphml)
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-n",
     "--network",
@@ -165,6 +166,7 @@ def submit(network: str, organization: str, campaign: str, project: str):
         project: The name of the project this network should be submitted under.
     """
     from alchemiscale import Scope
+
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
@@ -196,7 +198,7 @@ def submit(network: str, organization: str, campaign: str, project: str):
     )
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-n",
     "--network",
@@ -249,7 +251,7 @@ def gather(network: str, allow_missing: bool):
     network_with_results.to_file("result_network.json")
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-n",
     "--network",
@@ -308,7 +310,7 @@ def status(network: str, errors: bool, with_traceback: bool):
             click.echo()
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-n",
     "--network",
@@ -348,7 +350,3 @@ def restart(network: str, verbose: bool, tasks):
         click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
     else:
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
-
-
-if __name__ == "__main__":
-    cli()

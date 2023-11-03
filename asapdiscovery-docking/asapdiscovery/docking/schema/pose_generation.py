@@ -1,9 +1,24 @@
 import abc
 from typing import Any, Literal, Optional
 
-from asapdiscovery.data.schema_v2.ligand import Ligand, ReferenceLigand
-from asapdiscovery.data.schema_v2.target import PreppedTarget
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+
+from asapdiscovery.data.openeye import oechem, oedocking, oeomega
+from asapdiscovery.data.schema_v2.complex import PreppedComplex
+from asapdiscovery.data.schema_v2.ligand import Ligand
+
+
+class PosedLigands(BaseModel):
+    """
+    A results class to handle the posed and failed ligands.
+    """
+
+    posed_ligands: list[Ligand] = Field(
+        [], description="A list of Ligands with a single final pose."
+    )
+    failed_ligands: list[Ligand] = Field(
+        [], description="The list of Ligands which failed the pose generation stage."
+    )
 
 
 class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
@@ -22,28 +37,19 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
     def _generate_poses(
         self,
-        receptor: PreppedTarget,
-        reference_ligand: ReferenceLigand,
+        prepared_complex: PreppedComplex,
         ligands: list[Ligand],
-        core_smarts: str,
-    ) -> list[Ligand]:
+        core_smarts: Optional[str] = None,
+    ) -> tuple[list[oechem.OEMol], list[oechem.OEMol]]:
         """The main worker method which should generate ligand poses in the receptor using the reference ligand where required."""
         ...
 
-    def _validate_ligands(self, ligands: list[Ligand]):
-        """
-        For the given set of ligands make sure that the docked ligand is the intended ligand target i.e does the
-        3D stereo match what we intend at input.
-        """
-        pass
-
     def generate_poses(
         self,
-        receptor: PreppedTarget,
-        reference_ligand: ReferenceLigand,
+        prepared_complex: PreppedComplex,
         ligands: list[Ligand],
-        core_smarts: str,
-    ) -> list[Ligand]:
+        core_smarts: Optional[str],
+    ) -> PosedLigands:
         """
         Generate poses for the given list of molecules in the target receptor.
 
@@ -52,24 +58,30 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
         Parameters
         ----------
-        receptor: The prepared receptor file with the reference ligand removed.
-        reference_ligand: The reference ligand which should be used to constrain the pose generation.
+        prepared_complex: The prepared receptor and reference ligand which will be used to constrain the pose of the target ligands.
         ligands: The list of ligands which require poses in the target receptor.
-        core_smarts: The smarts string which should be used to identify the MCS between the ligand and the reference.
+        core_smarts: An optional smarts string which should be used to identify the MCS between the ligand and the reference, if not
+        provided the MCS will be found using RDKit to preserve chiral centers.
 
         Returns
         -------
-            A list of ligands with new poses generated
-            # TODO maybe we need some pose generation result object? or to store the results on the ligand schema?
+            A list of ligands with new poses generated and list of ligands for which we could not generate a pose.
         """
-        ligands = self._generate_poses(
-            receptor=receptor,
-            reference_ligand=reference_ligand,
+
+        posed_ligands, failed_ligands = self._generate_poses(
+            prepared_complex=prepared_complex,
             ligands=ligands,
             core_smarts=core_smarts,
         )
-        self._validate_ligands(ligands=ligands)
-        return ligands
+        # store the results, unpacking each posed conformer to a separate molecule
+        result = PosedLigands()
+        for oemol in posed_ligands:
+            result.posed_ligands.append(Ligand.from_oemol(oemol))
+
+        for fail_oemol in failed_ligands:
+            result.failed_ligands.append(Ligand.from_oemol(fail_oemol))
+
+        return result
 
 
 class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
@@ -79,9 +91,17 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
     )
     energy_window: PositiveFloat = Field(
         20,
-        description="Sets the maximum allowable energy difference between the lowest and the highest energy conformers, in units of kcal/mol",
+        description="Sets the maximum allowable energy difference between the lowest and the highest energy conformers,"
+        " in units of kcal/mol.",
     )
-    clash_cutoff: PositiveFloat = Field(2.0, description="The ")
+    clash_cutoff: PositiveFloat = Field(
+        2.0,
+        description="The distance cutoff for which we check for clashes in Angstroms.",
+    )
+    selector: Literal["Chemgauss4"] = Field(
+        "Chemgauss4",
+        description="The method which should be used to select the optimial conformer.",
+    )
 
     def provenance(self) -> dict[str, Any]:
         from openeye import oechem, oeomega
@@ -89,25 +109,36 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         return {
             "oechem": oechem.OEChemGetVersion(),
             "oeomega": oeomega.OEOmegaGetVersion(),
+            "oedocking": oedocking.OEDockingGetVersion(),
         }
 
-    def _generate_poses(
-        self,
-        receptor: PreppedTarget,
-        reference_ligand: ReferenceLigand,
-        ligands: list[Ligand],
-        core_smarts: str,
-    ) -> list[Ligand]:
-        """Use openeye oeomega to generate constrained poses for ligands"""
+    def _generate_core_fragment(
+        self, reference_ligand: Ligand, core_smarts: str
+    ) -> oechem.OEGraphMol:
+        """
+        Generate an openeye GraphMol of the core fragment made from the MCS match between the ligand and core smarts
+        which will be used to constrain the geometries of the ligands during pose generation.
 
-        from openeye import oechem, oeomega
+        Parameters
+        ----------
+        reference_ligand: The ligand whose pose we will be constrained to match.
+        core_smarts: The SMARTS pattern used to identify the MCS in the reference ligand.
 
-        # Make oechem be quiet
-        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Quiet)
+        Returns
+        -------
+            An OEGraphMol of the MCS matched core fragment.
+        """
 
         ref_mol = reference_ligand.to_oemol()
-        # Prep the substructure searching
-        ss = oechem.OESubSearch(core_smarts)
+        # build a query mol which allows for wild card matches
+        # <https://github.com/choderalab/asapdiscovery/pull/430#issuecomment-1702360130>
+        smarts_mol = oechem.OEGraphMol()
+        oechem.OESmilesToMol(smarts_mol, core_smarts)
+        pattern_query = oechem.OEQMol(smarts_mol)
+        atomexpr = oechem.OEExprOpts_DefaultAtoms
+        bondexpr = oechem.OEExprOpts_DefaultBonds
+        pattern_query.BuildExpressions(atomexpr, bondexpr)
+        ss = oechem.OESubSearch(pattern_query)
         oechem.OEPrepareSearch(ref_mol, ss)
         core_fragment = None
 
@@ -120,15 +151,34 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             raise RuntimeError(
                 f"A core fragment could not be extracted from the reference ligand using core smarts {core_smarts}"
             )
+        return core_fragment
+
+    def _generate_omega_instance(
+        self, core_fragment: oechem.OEGraphMol
+    ) -> oeomega.OEOmega:
+        """
+        Create an instance of omega for constrained pose generation using the input core molecule and the runtime
+        settings.
+
+        Parameters
+        ----------
+        core_fragment: The OEGraphMol which should be used to define the constrained atoms during generation.
+
+        Returns
+        -------
+            An instance of omega configured for the current run.
+        """
 
         # Create an Omega instance
-        omega_opts = oeomega.OEOmegaOptions(oeomega.OEOmegaSampYEling_Dense)
+        omega_opts = oeomega.OEOmegaOptions(oeomega.OEOmegaSampling_Dense)
         # Set the fixed reference molecule
         omega_fix_opts = oeomega.OEConfFixOptions()
         omega_fix_opts.SetFixMaxMatch(10)  # allow multiple MCSS matches
         omega_fix_opts.SetFixDeleteH(True)  # only use heavy atoms
-        omega_fix_opts.SetFixMol(core_fragment)
-        omega_fix_opts.SetFixRMS(1.0)
+        omega_fix_opts.SetFixMol(core_fragment)  # Provide the reference ligand
+        omega_fix_opts.SetFixRMS(
+            1.0
+        )  # The maximum distance between two atoms which is considered identical
         # set the matching atom and bond expressions
         atomexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_AtomicNumber
         bondexpr = oechem.OEExprOpts_BondOrder | oechem.OEExprOpts_Aromaticity
@@ -148,51 +198,139 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         omega_opts.SetEnergyWindow(self.energy_window)  # allow high energies
         omega_generator = oeomega.OEOmega(omega_opts)
 
+        return omega_generator
+
+    def _generate_poses(
+        self,
+        prepared_complex: PreppedComplex,
+        ligands: list[Ligand],
+        core_smarts: Optional[str] = None,
+    ) -> tuple[list[oechem.OEMol], list[oechem.OEMol]]:
+        """
+        Use openeye oeomega to generate constrained poses for the input ligands. The core smarts is used to decide
+        which atoms should be constrained if not supplied the MCS will be found by openeye.
+        """
+
+        # Make oechem be quiet
+        oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Quiet)
+
+        # generate a core fragment used to constrain the generated poses
+        if core_smarts:
+            core_fragment = self._generate_core_fragment(
+                reference_ligand=prepared_complex.ligand, core_smarts=core_smarts
+            )
+        else:
+            # use the reference ligand and let openeye find the mcs match
+            core_fragment = prepared_complex.ligand.to_oemol()
+
+        # build and configure omega
+        omega_generator = self._generate_omega_instance(core_fragment=core_fragment)
+
         # process the ligands
         result_ligands = []
         failed_ligands = []
         for mol in ligands:
-            oe_mol = mol.to_oemol()
+            oe_mol = oechem.OEMol(mol.to_oemol())
             # run omega
             return_code = omega_generator.Build(oe_mol)
+
+            # deal with strange hydrogen DO NOT REMOVE
+            oechem.OESuppressHydrogens(oe_mol)
+            oechem.OEAddExplicitHydrogens(oe_mol)
+
             if (oe_mol.GetDimension() != 3) or (
                 return_code != oeomega.OEOmegaReturnCode_Success
             ):
                 # omega failed for this ligand, how do we track this?
-                failed_ligands.append(Ligand.from_oemol(oe_mol))
+                failed_ligands.append(oe_mol)
 
             else:
-                result_ligands.append(Ligand.from_oemol(oe_mol))
+                result_ligands.append(oe_mol)
 
+        # prue down the conformers
+        oedu_receptor = prepared_complex.target.to_oedu()
+        oe_receptor = oechem.OEGraphMol()
+        oedu_receptor.GetProtein(oe_receptor)
 
-class PoseGeneratedLigands(BaseModel):
-    """
-    A basic results class to document the inputs and outputs of the docking.
-    """
+        self._prue_clashes(receptor=oe_receptor, ligands=result_ligands)
+        # select the best pose to be kept
+        posed_ligands = self._select_best_pose(
+            receptor=oe_receptor, ligands=result_ligands
+        )
 
-    type: Literal["PoseGenerationResult"] = "PoseGenerationResult"
+        return posed_ligands, failed_ligands
 
-    class Config:
-        allow_mutation = False
-        arbitrary_types_allowed = True
+    def _prue_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
+        """
+        Edit the conformers on the molecules in place to remove clashes with the receptor.
 
-    pose_generator: OpenEyeConstrainedPoseGenerator = Field(
-        ...,
-        description="The pose generation engine and run time settings to generate the poses.",
-    )
-    provenance: dict[str, Any] = Field(
-        ..., description="The provenance of the pose generation engine used."
-    )
-    receptor: PreppedTarget = Field(
-        ..., description="The prepared receptor which was used in pose generation."
-    )
-    ligands: list[Ligand] = Field(
-        ..., description="The list of ligands with their generated poses."
-    )
-    reference_ligand: ReferenceLigand = Field(
-        ...,
-        description="The reference ligand which is associated with the prepared target.",
-    )
-    failed_ligands: Optional[list[Ligand]] = Field(
-        None, description="A list of ligands for which we failed to generate a pose."
-    )
+        Parameters
+        ----------
+        receptor: The receptor with which we should check for clashes.
+        ligands: The list of ligands with conformers to prune.
+
+        """
+        import numpy as np
+
+        # setup the function to check for close neighbours
+        near_nbr = oechem.OENearestNbrs(receptor, self.clash_cutoff)
+
+        for ligand in ligands:
+            if ligand.NumConfs() < 10:
+                # only filter if we have more than 10 confs
+                continue
+
+            poses = []
+            for conformer in ligand.GetConfs():
+                clash_score = 0
+                for nb in near_nbr.GetNbrs(conformer):
+                    if (not nb.GetBgn().IsHydrogen()) and (
+                        not nb.GetEnd().IsHydrogen()
+                    ):
+                        # use an exponentially decaying penalty on each distance below the cutoff not between hydrogen
+                        clash_score += np.exp(
+                            -0.5 * (nb.GetDist() / self.clash_cutoff) ** 2
+                        )
+
+                poses.append((clash_score, conformer))
+            # eliminate the worst 50% of clashes
+            print(poses)
+            poses = sorted(poses, key=lambda x: x[0])
+            for _, conformer in poses[int(0.5 * len(poses)) :]:
+                ligand.DeleteConf(conformer)
+
+    def _select_best_pose(
+        self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]
+    ) -> list[oechem.OEGraphMol]:
+        """
+        Select the best pose for each ligand in place using the selected criteria.
+
+        TODO split into separate methods once we have more selection options
+
+        Parameters
+        ----------
+        receptor: The receptor the ligands poses should be scored against.
+        ligands: The list of multi-conformer ligands for which we want to select the best pose.
+
+        Returns
+        -------
+        A list of single conformer oe molecules with the optimal pose
+
+        """
+        score = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
+        score.Initialize(receptor)
+        posed_ligands = []
+        for ligand in ligands:
+            poses = [
+                (score.ScoreLigand(conformer), conformer)
+                for conformer in ligand.GetConfs()
+            ]
+            # set the best score as the active conformer
+            poses = sorted(poses, key=lambda x: x[0])
+            print(poses)
+            # set the best conformer as active
+            ligand.SetActive(poses[0][1])
+            oechem.OESetSDData(ligand, "Chemgauss4_score", str(poses[0][0]))
+            posed_ligands.append(oechem.OEGraphMol(ligand))
+
+        return posed_ligands
