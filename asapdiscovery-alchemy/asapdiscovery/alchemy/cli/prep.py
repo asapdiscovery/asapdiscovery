@@ -3,10 +3,11 @@ from typing import Optional
 
 import click
 import rich
-from asapdiscovery.alchemy.cli.utils import print_header
-from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from rich import pretty
 from rich.padding import Padding
+
+from asapdiscovery.alchemy.cli.utils import print_header
+from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 
 
 @click.group()
@@ -104,11 +105,6 @@ def run(
     console = rich.get_console()
     print_header(console)
 
-    if factory_file is None and core_smarts is None:
-        raise click.ClickException(
-            "The core smarts (-cs/--core-smarts) must be supplied when using the default workflow."
-        )
-
     # load the factory and set the core smarts if supplied
     if factory_file is not None:
         factory = AlchemyPrepWorkflow.parse_file(factory_file)
@@ -119,8 +115,7 @@ def run(
 
     # load the molecules
     asap_ligands = MolFileFactory.from_file(filename=ligands).ligands
-    for ligand in asap_ligands:
-        print(ligand)
+
     message = Padding(
         f"Loaded {len(asap_ligands)} ligands from [repr.filename]{ligands}[/repr.filename]",
         (1, 0, 1, 0),
