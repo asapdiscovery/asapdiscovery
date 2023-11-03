@@ -16,7 +16,7 @@ from openmmtools.utils import get_fastest_platform
 from rdkit import Chem
 
 
-class OpenMMPlatform(Enum):
+class OpenMMPlatform(str, Enum):
     """
     Enum for OpenMM platforms.
     """

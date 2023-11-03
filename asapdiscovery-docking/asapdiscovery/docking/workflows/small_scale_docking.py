@@ -32,6 +32,7 @@ from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
 class SmallScaleDockingInputs(BaseModel):

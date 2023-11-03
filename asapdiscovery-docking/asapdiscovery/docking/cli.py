@@ -21,12 +21,13 @@ from asapdiscovery.cli.cli_args import (
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
     large_scale_docking_workflow,
 )
 
-from asapdiscovery.docking.workflows.large_scale_docking import (
+from asapdiscovery.docking.workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
 )
@@ -166,10 +167,10 @@ def small_scale(
     ml_scorer: Optional[list[str]] = None,
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
-    md_openmm_platform: OpenMMPaltform = OpenMMPaltform.Fastest,
+    md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
 ):
     """
-    Run large scale docking on a set of ligands, against a set of targets.
+    Run small scale docking on a set of ligands, against a set of targets.
     """
 
     if input_json is not None:
