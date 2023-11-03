@@ -8,9 +8,11 @@ session_5.pse with pymol, orienting and running `get_view` in pymol terminal.
 
 class GIFBlockData:
     @classmethod
-    def get_view_coords(cls, target):
-        target_ = VizTargets.get_name_underscore(target)
-        return getattr(cls, f"view_coords_{target_}")
+    def get_view_coords(cls):
+        """
+        Get the master orient coords.
+        """
+        return getattr(cls, "master_view_coords")
 
     @classmethod
     def get_pocket_dict(cls, target):
@@ -22,90 +24,24 @@ class GIFBlockData:
         protein_name = VizTargets.get_protein_name(target, underscore=True)
         return getattr(cls, f"color_dict_{protein_name}")
 
-    view_coords_SARS_CoV_2_Mpro = (
-        -0.339127213,
-        -0.370405823,
-        -0.864748597,
-        0.307130545,
-        -0.912446380,
-        0.270390421,
-        -0.889192164,
-        -0.173893914,
-        0.423199117,
-        0.000072375,
-        0.000199302,
-        -80.242187500,
-        6.715160370,
-        92.460678101,
-        114.338867188,
-        -458.494476318,
-        618.980895996,
-        -20.000000000,
-    )
-
-    # MERS
-    view_coords_MERS_CoV_Mpro = (
-        1.000000000,
+    master_view_coords = (
+        -0.711445928,
+        -0.178503618,
+        -0.679694653,
+        -0.008906467,
+        -0.964834511,
+        0.262710690,
+        -0.702686131,
+        0.192958608,
+        0.684835911,
         0.000000000,
         0.000000000,
-        0.000000000,
-        1.000000000,
-        0.000000000,
-        0.000000000,
-        0.000000000,
-        1.000000000,
-        0.000000000,
-        0.000000000,
-        -251.536392212,
-        20.614479065,
-        103.459030151,
-        18.874790192,
-        199.195358276,
-        303.877410889,
-        -20.000000000,
-    )
-
-    # mac1
-    view_coords_SARS_CoV_2_Mac1 = (
-        0.199152365,
-        -0.560011566,
-        -0.804189026,
-        -0.606427014,
-        0.574200273,
-        -0.550032735,
-        0.769795358,
-        0.597223163,
-        -0.225250959,
-        0.000011945,
-        -0.000066146,
-        -74.581398010,
-        13.680676460,
-        25.153524399,
-        -0.173997879,
-        -2000.212524414,
-        2149.432861328,
-        -20.000000000,
-    )
-
-    # mac1 monomers from 07-19 release
-    view_coords_SARS_CoV_2_Mac1_monomer = (
-        0.088525243,
-        0.968614519,
-        0.232240111,
-        -0.460261583,
-        0.246554896,
-        -0.852860034,
-        -0.883353055,
-        -0.031390585,
-        0.467653960,
-        0.000071935,
-        -0.000032585,
-        -91.646080017,
-        2.006669521,
-        -8.887639046,
-        14.542367935,
-        64.035736084,
-        119.277297974,
+        -93.089912415,
+        13.605349541,
+        -1.358839035,
+        15.771842957,
+        63.240909576,
+        122.938896179,
         -20.000000000,
     )
 
@@ -137,7 +73,38 @@ class GIFBlockData:
         "anion_hole": "129+157+160+136+164",
     }
 
-    # now define the colors per subpocket
+    # 3CPRO
+    pocket_dict_EV_D68_3Cpro = {
+        "subP1": "23+24+25+145+112+106+107+108+22",
+        "subP1_prime": "161+166+141+142+143+144+147+109",
+        "subP2": "130+131+132+133+69+71+39+40",
+        "subP3": "127+128+129+162+163+164+165",
+        "subP4": "122+124+125+126+170",
+    }
+
+    pocket_dict_EV_A71_3Cpro = {
+        "subP1": "125+122+170+163+164+165+142+143+144+161",
+        "subP1_prime": "162+127+128+130+129+131+126",
+        "subP2": "20+23+25+24+106+147+145",
+        "subP3": "21+22+40+38+71+69",
+        "subP4": "42+43+39+73+59+60+61",
+    }
+
+    pocket_dict_ZIKV_NS2B_NS3pro = {
+        "subP1": "151+161+129+160+150+130+131+132+135+134",
+        "subP1_prime": "51+52+36+35+133",
+        "subP2": "152+83+75+81+82+72",
+        "subP3": "153+154+155",
+    }
+
+    pocket_dict_DENV_NS2B_NS3pro = {
+        "subP1": "135+151+161+159+129+150+130+132+131",
+        "subP1_prime": "51+52+36+38+54",
+        "subP2": "82+81+72+50+75+152",
+        "subP3": "83+85+84+153+154+155+86",
+    }
+
+    # now define the colors per subpocket for each target (cross-variant)
     color_dict_Mpro = {
         "subP1": "yellow",
         "subP1_prime": "orange",
@@ -150,4 +117,17 @@ class GIFBlockData:
         "bridge": "pink",
         "phosphate": "orange",
         "anion_hole": "blue",
+    }
+    color_dict_3Cpro = {
+        "subP1": "orange",
+        "subP1_prime": "yellow",
+        "subP2": "blue",
+        "subP3": "cyan",
+        "subP4": "magenta",
+    }
+    color_dict_NS3pro = {
+        "subP1": "yellow",
+        "subP1_prime": "orange",
+        "subP2": "blue",
+        "subP3": "cyan",
     }

@@ -35,7 +35,7 @@ def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
     results = docker.dock([docking_input_pair_simple])
     assert results[0].probability > 0.0
     docker.write_docking_files(results, tmp_path)
-    sdf_path = tmp_path / "test2" / "docked.sdf"
+    sdf_path = tmp_path / "test_+_test2" / "docked.sdf"
     assert sdf_path.exists()
-    pdb_path = tmp_path / "test2" / "docked_complex.pdb"
+    pdb_path = tmp_path / "test_+_test2" / "docked_complex.pdb"
     assert pdb_path.exists()

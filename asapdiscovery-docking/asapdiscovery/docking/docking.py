@@ -43,6 +43,7 @@ def run_docking_oe(
     posit_method: str = "all",
     compound_name=None,
     use_omega=False,
+    omega_dense=False,
     num_poses=1,
     log_name="run_docking_oe",
     openeye_logname="openeye-log.txt",
@@ -53,11 +54,11 @@ def run_docking_oe(
     """
     Run docking using OpenEye. The returned OEGraphMol object will have the
     following SD tags set:
-      * Docking_<docking_id>_RMSD: RMSD score to original molecule
-      * Docking_<docking_id>_POSIT: POSIT probability
-      * Docking_<docking_id>_POSIT_method: POSIT method used in docking
-      * Docking_<docking_id>_Chemgauss4: Chemgauss4 score
-      * Docking_<docking_id>_clash: clash results
+    * Docking_<docking_id>_RMSD: RMSD score to original molecule
+    * Docking_<docking_id>_POSIT: POSIT probability
+    * Docking_<docking_id>_POSIT_method: POSIT method used in docking
+    * Docking_<docking_id>_Chemgauss4: Chemgauss4 score
+    * Docking_<docking_id>_clash: clash results
 
     Parameters
     ----------
@@ -127,7 +128,10 @@ def run_docking_oe(
     if use_omega:
         from asapdiscovery.data.openeye import oeomega
 
-        omegaOpts = oeomega.OEOmegaOptions()
+        if omega_dense:
+            omegaOpts = oeomega.OEOmegaOptions(oeomega.OEOmegaSampling_Dense)
+        else:
+            omegaOpts = oeomega.OEOmegaOptions()
         omega = oeomega.OEOmega(omegaOpts)
         ret_code = omega.Build(dock_lig)
         if ret_code:

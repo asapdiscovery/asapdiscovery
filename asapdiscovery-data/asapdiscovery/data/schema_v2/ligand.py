@@ -281,7 +281,7 @@ class Ligand(DataModelAbstractBase):
         oemol = load_openeye_sdf(sdf_file)
         return cls.from_oemol(oemol, **kwargs)
 
-    def to_sdf(self, filename: Union[str, Path]) -> None:
+    def to_sdf(self, filename: Union[str, Path], allow_append=False) -> None:
         """
         Write out the ligand to an SDF file with all attributes stored as SD tags
 
@@ -289,10 +289,16 @@ class Ligand(DataModelAbstractBase):
         ----------
         filename : Union[str, Path]
             Path to the SDF file
+        allow_append : bool, optional
+            Allow appending to the file, by default False
 
         """
+        if allow_append:
+            fmode = "a"
+        else:
+            fmode = "w"
         mol = self.to_oemol()
-        write_file_directly(filename, oemol_to_sdf_string(mol))
+        write_file_directly(filename, oemol_to_sdf_string(mol), mode=fmode)
 
     def set_SD_data(self, data: dict[str, str]) -> None:
         """
@@ -380,3 +386,43 @@ def compound_names_unique(ligands: list[Ligand]) -> bool:
     """
     compound_names = [ligand.compound_name for ligand in ligands]
     return len(set(compound_names)) == len(compound_names)
+
+
+def write_ligands_to_multi_sdf(
+    sdf_name: Union[str, Path], ligands: list[Ligand], overwrite=False
+):
+    """
+    Dumb way to do this, but just write out each ligand to the same.
+    Alternate way would be to flush each to OEMol and then write out
+    using OE but seems convoluted.
+
+    Note that this will overwrite the file if it exists unless overwrite is set to False
+
+    Parameters
+    ----------
+    sdf_name : Union[str, Path]
+        Path to the SDF file
+    ligands : list[Ligand]
+        List of ligands to write out
+    overwrite : bool, optional
+        Overwrite the file if it exists, by default False
+
+    Raises
+    ------
+    FileExistsError
+        If the file exists and overwrite is False
+    ValueError
+        If the sdf_name does not end in .sdf
+    """
+    sdf_file = Path(sdf_name)
+    if sdf_file.exists() and not overwrite:
+        raise FileExistsError(f"{sdf_file} exists and overwrite is False")
+
+    elif sdf_file.exists() and overwrite:
+        sdf_file.unlink()
+
+    if not sdf_file.suffix == ".sdf":
+        raise ValueError("SDF name must end in .sdf")
+
+    for ligand in ligands:
+        ligand.to_sdf(sdf_file, allow_append=True)

@@ -29,6 +29,14 @@ virus:
     - Mac1
   MERS-CoV:
     - Mpro
+  EV-D68:
+    - 3Cpro
+  EV-A71:
+    - 3Cpro
+  DENV:
+    - NS2B-NS3pro
+  ZIKV:
+    - NS2B-NS3pro
 
 # requires both units and tools specified even if empty for clarity.
 manifold_outputs:
@@ -40,6 +48,13 @@ manifold_outputs:
       postfix: msk
 
   - docking-confidence:
+      prefix: in-silico
+      tools:
+        - POSIT
+      units:
+      postfix: msk
+
+  - docking-structure: # name of the structure docked against
       prefix: in-silico
       tools:
         - POSIT

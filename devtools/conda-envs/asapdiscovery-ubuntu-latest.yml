@@ -2,12 +2,11 @@ name: asapdiscovery
 channels:
   - openeye
   - conda-forge
-  - dglteam
 dependencies:
   # Base depends
   - pip
   # need python > 3.9.2 for dask-distributed issues
-  - python >= 3.9.2
+  - python >= 3.10
 
   # Testing
   - pytest
@@ -22,7 +21,7 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
-  - openeye-toolkits<=2022.2.2
+  - openeye-toolkits
   - pandas
   - pebble
   - pydantic >=1.10.8,<2.0.0a0
@@ -36,6 +35,7 @@ dependencies:
   - moto
   - flask
   - flask-cors
+  - typing-extensions
 
   # ml
   - pytorch
@@ -70,6 +70,8 @@ dependencies:
   - pymol-open-source
   - gifsicle
   - plip
+  - plotly
+  - dash
 
   # simulation
   - openfe =0.11.0
@@ -87,7 +89,7 @@ dependencies:
     - validators
     - pyyaml
     # ml
-    - git+https://github.com/choderalab/mtenn@0.3.0
+    - git+https://github.com/choderalab/mtenn@0.4.0
     # testing
     - pytest-console-scripts
     - pytest-timeout

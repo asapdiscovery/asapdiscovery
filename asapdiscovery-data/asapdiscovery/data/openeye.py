@@ -1,6 +1,7 @@
 from base64 import b64decode, b64encode
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union  # noqa: F401
+from warnings import warn
 
 from openeye import (  # noqa: F401
     oechem,
@@ -16,7 +17,7 @@ from openeye import (  # noqa: F401
 # exec on module import
 
 if not oechem.OEChemIsLicensed("python"):
-    raise RuntimeError("OpenEye license required to use asapdiscovery openeye module")
+    warn("OpenEye license required to use asapdiscovery openeye module")
 
 
 def combine_protein_ligand(
@@ -494,20 +495,24 @@ def save_openeye_sdfs(mols, sdf_fn: Union[str, Path]) -> Path:
 def save_openeye_design_unit(du: oechem.OEDesignUnit, du_fn: Union[str, Path]) -> Path:
     """
     Write an OpenEye design unit to a file
+
     Parameters
     ----------
     du : oechem.OEDesignUnit
         The OpenEye DesignUnit to write to the file.
     du_fn : Union[str, Path]
         The path of the DesignUnit file to create or overwrite.
+
     Returns
     -------
     Path
         The path of the DesignUnit file that was written.
+
     Raises
     ------
     oechem.OEError
         If the DesignUnit file cannot be opened.
+
     Notes
     -----
     This function will overwrite any existing file with the same name as `du_fn`.
@@ -556,6 +561,7 @@ def openeye_perceive_residues(
 def save_receptor_grid(du_fn: Union[str, Path], out_fn: Union[str, Path]) -> Path:
     """
     Load in a design unit from a file and write out the receptor grid as a .ccp4 grid file.
+
     Parameters
     ----------
     du_fn: Union[str, Path]
@@ -565,7 +571,8 @@ def save_receptor_grid(du_fn: Union[str, Path], out_fn: Union[str, Path]) -> Pat
 
     Returns
     -------
-
+    Path
+        Path to the receptor grid file
     """
     du = oechem.OEDesignUnit()
     oechem.OEReadDesignUnit(str(du_fn), du)
