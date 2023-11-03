@@ -62,13 +62,14 @@ To install an `asapdiscovery` package hosted in this repository, we recommend th
     ```
 
 2. Install the dependencies into a new `conda` environment, and activate it:
+   NOTE: Conda will almost certainly fail to build the environment - `mamba` is a drop-in replacement for `conda` that is much faster and more reliable.
 
     ```
-    conda install -n asapdiscovery -f devtools/conda-envs/asapdiscovery-{platform}.yaml
+    mamba env create -f devtools/conda-envs/asapdiscovery-{platform}.yaml
     conda activate asapdiscovery
     ```
 
-3. Install the individual `asapdiscovery` packages you want to use with `pip` into the environment.
+5. Install the individual `asapdiscovery` packages you want to use with `pip` into the environment.
    For example, `asapdiscovery-data`:
 
     ```
