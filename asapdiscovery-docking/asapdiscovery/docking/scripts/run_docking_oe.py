@@ -609,10 +609,10 @@ def main():
                     break
                 except TimeoutError:
                     # This compound:xtal combination timed out
-                    logger.error("Docking timed out for", docking_run_name)
+                    logger.error(f"Docking timed out for: {docking_run_name}")
                     failed_runs += [docking_run_name]
                 except pebble.ProcessExpired as e:
-                    logger.error("Docking failed for", docking_run_name)
+                    logger.error(f"Docking failed for: {docking_run_name}")
                     logger.error(f"\t{e}. Exit code {e.exitcode}")
                     failed_runs += [docking_run_name]
                 except Exception as e:
