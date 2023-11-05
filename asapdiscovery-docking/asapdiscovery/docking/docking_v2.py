@@ -239,6 +239,10 @@ class POSITDocker(DockingBase):
     allow_final_clash: bool = Field(
         False, description="Allow clashing poses in last stage of docking"
     )
+    allow_retries: bool = Field(
+        True,
+        description="Allow retries with different options if docking fails initially",
+    )
 
     @staticmethod
     def to_result_type():
@@ -326,50 +330,45 @@ class POSITDocker(DockingBase):
                 opts, pose_res, du, lig_oemol, self.num_poses
             )
 
-            # TODO: all this retrying is very inefficient, this should be able to be done faster.
+            if self.allow_retries:
+                # try again with no relaxation
+                if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
+                    opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
+                    pose_res, retcode = self.run_oe_posit_docking(
+                        opts, pose_res, du, lig_oemol, self.num_poses
+                    )
 
-            # try again with no relaxation
-            if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
-                opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
-                pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig_oemol, self.num_poses
-                )
+                # try again with low posit probability
+                if (
+                    retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                    and self.allow_low_posit_prob
+                ):
+                    opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
+                    opts.SetMinProbability(self.low_posit_prob_thresh)
+                    pose_res, retcode = self.run_oe_posit_docking(
+                        opts, pose_res, du, lig_oemol, self.num_poses
+                    )
 
-            # try again with low posit probability
-            if (
-                retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-                and self.allow_low_posit_prob
-            ):
-                opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                opts.SetMinProbability(self.low_posit_prob_thresh)
-                pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig_oemol, self.num_poses
-                )
-
-            # try again allowing clashes
-            if (
-                self.allow_final_clash
-                and ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-            ):
-                opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
-                pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig_oemol, self.num_poses
-                )
+                # try again allowing clashes
+                if (
+                    self.allow_final_clash
+                    and ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                ):
+                    opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
+                    opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
+                    pose_res, retcode = self.run_oe_posit_docking(
+                        opts, pose_res, du, lig_oemol, self.num_poses
+                    )
 
             if ret_code == oedocking.OEDockingReturnCode_Success:
                 for result in pose_res.GetSinglePoseResults():
                     posed_mol = result.GetPose()
                     prob = result.GetProbability()
-                    pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
-                    pose_scorer.Initialize(du)
-                    chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
 
                     posed_ligand = Ligand.from_oemol(posed_mol, **pair.ligand.dict())
                     # set SD tags
                     sd_data = {
                         DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
-                        DockingResultCols.DOCKING_SCORE_POSIT.value: chemgauss_score,
                         DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
                             self.posit_method.value
                         ),
