@@ -155,6 +155,14 @@ class LargeScaleDockingInputs(BaseModel):
         description="POSIT confidence cutoff used to filter docking results",
     )
 
+    use_omega: bool = Field(
+        False, description="Whether to use omega confomer enumeration in docking"
+    )
+
+    allow_retries: bool = Field(
+        False, description="Whether to allow retries in docking with varying settings"
+    )
+
     ml_scorers: Optional[list[str]] = Field(
         None, description="The name of the ml scorers to use"
     )
@@ -381,7 +389,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker()
+    docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
     results = docker.dock(
         pairs,
         use_dask=inputs.use_dask,

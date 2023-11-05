@@ -289,8 +289,8 @@ class POSITDocker(DockingBase):
         retcode = poser.AddReceptor(du)
         if not retcode:
             raise ValueError("Failed to add receptor to POSIT")
-        ret_code = poser.Dock(pose_res, lig, num_poses)
-        return pose_res, ret_code
+        retcode = poser.Dock(pose_res, lig, num_poses)
+        return pose_res, retcode
 
     def _dock(
         self, inputs: list[DockingInputPair], error="skip"
@@ -307,15 +307,15 @@ class POSITDocker(DockingBase):
             if self.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
                 omega = oeomega.OEOmega(omegaOpts)
-                ret_code = omega.Build(lig_oemol)
-                if ret_code:
+                omega_retcode = omega.Build(lig_oemol)
+                if retcode:
                     if error == "skip":
                         print(
-                            f"Omega failed with error code {oeomega.OEGetOmegaError(ret_code)}"
+                            f"Omega failed with error code {oeomega.OEGetOmegaError(omega_retcode)}"
                         )
                     elif error == "raise":
                         raise ValueError(
-                            f"Omega failed with error code {oeomega.OEGetOmegaError(ret_code)}"
+                            f"Omega failed with error code {oeomega.OEGetOmegaError(omega_retcode)}"
                         )
                     else:
                         raise ValueError(f"Unknown error handling option {error}")
@@ -352,7 +352,7 @@ class POSITDocker(DockingBase):
                 # try again allowing clashes
                 if (
                     self.allow_final_clash
-                    and ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                    and retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
                 ):
                     opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
                     opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
@@ -360,7 +360,7 @@ class POSITDocker(DockingBase):
                         opts, pose_res, du, lig_oemol, self.num_poses
                     )
 
-            if ret_code == oedocking.OEDockingReturnCode_Success:
+            if retcode == oedocking.OEDockingReturnCode_Success:
                 for result in pose_res.GetSinglePoseResults():
                     posed_mol = result.GetPose()
                     prob = result.GetProbability()
