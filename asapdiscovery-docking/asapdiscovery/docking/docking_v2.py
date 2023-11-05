@@ -308,7 +308,7 @@ class POSITDocker(DockingBase):
                 omegaOpts = oeomega.OEOmegaOptions()
                 omega = oeomega.OEOmega(omegaOpts)
                 omega_retcode = omega.Build(lig_oemol)
-                if retcode:
+                if omega_retcode:
                     if error == "skip":
                         print(
                             f"Omega failed with error code {oeomega.OEGetOmegaError(omega_retcode)}"
