@@ -141,7 +141,7 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     n_select: PositiveInt = Field(
-        10, description="Number of targets to dock each ligand against, sorted by MCS"
+        5, description="Number of targets to dock each ligand against, sorted by MCS"
     )
 
     top_n: PositiveInt = Field(
@@ -156,11 +156,13 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     use_omega: bool = Field(
-        False, description="Whether to use omega confomer enumeration in docking"
+        False,
+        description="Whether to use omega confomer enumeration in docking, warning: more expensive",
     )
 
-    allow_retries: bool = Field(
-        False, description="Whether to allow retries in docking with varying settings"
+    allow_posit_retries: bool = Field(
+        False,
+        description="Whether to allow retries in docking with varying settings, warning: more expensive",
     )
 
     ml_scorers: Optional[list[str]] = Field(
@@ -389,7 +391,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
+    docker = POSITDocker(
+        use_omega=inputs.use_omega, allow_retries=inputs.allow_posit_retries
+    )
     results = docker.dock(
         pairs,
         use_dask=inputs.use_dask,
