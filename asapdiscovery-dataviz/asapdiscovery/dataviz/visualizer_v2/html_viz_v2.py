@@ -3,6 +3,8 @@ from asapdiscovery.data.fitness import target_has_fitness_data
 from pydantic import Field, root_validator
 from asapdiscovery.dataviz.viz_v2.visualizer_v2 import VisualizerBase
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
+from tempfile import NamedTemporaryFile
+from pathlib import Path
 
 
 
@@ -41,13 +43,15 @@ class HTMLVisualizerV2(VisualizerBase):
     def _visualize(self, docking_results: list[DockingResult]) -> pd.DataFrame:
         """
         Visualize a list of docking results.
+
+        This is currently a translation layer between the old and new visualizers with the API we want moving forward.
+
+        WARNING - this is currently a hacky implementation that will be replaced with a better one in the future.
         """
         ligs = [docking_result.input_pair.ligand for docking_result in docking_results]
         names_unique = compound_names_unique(ligs)
         # if names are not unique, we will use unknown_ligand_{i} as the ligand portion of directory
         # when writing files
-
-        # write out the docked pose
         for i, result in enumerate(docking_results):
             if (
                 not result.input_pair.ligand.compound_name
@@ -69,18 +73,14 @@ class HTMLVisualizerV2(VisualizerBase):
                     + f"unknown_ligand_{i}"
                 )
             
-            pose_temp = tempfile.NamedTemporaryFile(suffix=".pdb")
-            
+            pose_path = result.posed_ligand.to_sdf(NamedTemporaryFile(suffix=".sdf"))
+            outpath = Path(self.output_dir) / output_pref
+            protein_path = result.input_pair.complex.to_pdb(NamedTemporaryFile(suffix=".pdb"))
 
-
-
-
-
-
-
-            
-            viz_class = HTMLVisualizer([pose_path], outpath, self.target, protein, self.colour_method, logger=None, debug=self.debug)
+            viz_class = HTMLVisualizer(pose_path, outpath, self.target, protein_path, self.colour_method, logger=None, debug=self.debug)
             outpaths = viz_class.write_pose_visualizations()
+                
+
 
 
 

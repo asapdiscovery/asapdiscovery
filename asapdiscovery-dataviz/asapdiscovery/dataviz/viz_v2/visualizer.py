@@ -41,7 +41,6 @@ class VisualizerBase(abc.ABC, BaseModel):
     def provenance(self) -> dict[str, str]:
         ...
 
-
     @staticmethod
     def write_data(data, path):
         """
@@ -56,5 +55,3 @@ class VisualizerBase(abc.ABC, BaseModel):
         """
         with open(path, "w") as f:
             f.write(data)
-    
-    

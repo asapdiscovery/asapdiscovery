@@ -39,6 +39,8 @@ from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 from asapdiscovery.simulation.simulate import OpenMMPlatform
+from asapdiscovery.dataviz.viz_v2.html_viz import HTMLVisualizerV2, ColourMethod
+from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizer
 
 
 class SmallScaleDockingInputs(BaseModel):
@@ -487,7 +489,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     logger.info("Running HTML visualiser for docked poses")
     html_ouptut_dir = output_dir / "poses"
-    html_visualiser = HTMLVisualizerV2(colour_method="subpockets", target=inputs.target, output_dir=html_ouptut_dir
+    html_visualiser = HTMLVisualizerV2(
+        colour_method=ColourMethod.subpockets,
+        target=inputs.target,
+        output_dir=html_ouptut_dir,
     )
     visualisatons = html_visualiser.visualize(
         results, use_dask=inputs.use_dask, dask_client=dask_client
@@ -497,8 +502,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     logger.info("Running fitness HTML visualiser")
     html_fitness_output_dir = output_dir / "fitness"
-    html_fitness_visualiser = HTMLVisualizer(
-        type=HTMLVizType.FITNESS,
+    html_fitness_visualiser = HTMLVisualizerV2(
+        colour_method=ColourMethod.subpockets,
         target=inputs.target,
         output_dir=html_fitness_output_dir,
     )
@@ -516,7 +521,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         gif_output_dir = output_dir / "gifs"
-        gif_maker = GIFVisualizer(output_dir=gif_output_dir, target=inputs.target)
+        gif_maker = GIFVisualizerV2(output_dir=gif_output_dir, target=inputs.target)
         gifs = gif_maker.visualize(
             simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
         )

@@ -1,8 +1,6 @@
-
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
 from pydantic import BaseModel, Field, root_validator
-from asapdiscovery.dataviz.visualize_v2.visualize_v2VisualizerBase
-
+from asapdiscovery.dataviz.visualize_v2.visualize_v2 import VisualizerBase
 
 
 class ColourMethod(str, Enum):
@@ -10,7 +8,7 @@ class ColourMethod(str, Enum):
     fitness = "fitness"
 
 
-class HTMLVisualizerV2(BaseModel):
+class HTMLVisualizerV2(VisualizerBase):
     """
     Class for generating HTML visualizations of poses.
     """
@@ -39,8 +37,3 @@ class HTMLVisualizerV2(BaseModel):
         """
         Visualize a list of docking results.
         """
-
-
-
-
-
