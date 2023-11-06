@@ -67,8 +67,19 @@ class DockingResult(BaseModel):
         oechem.OEMol
             Combined oemol
         """
+        return combine_protein_ligand(self.to_protein(), self.posed_ligand.to_oemol())
+    
+    def to_protein(self) -> oechem.OEMol:
+        """
+        Return the protein from the original target
+
+        Returns
+        -------
+        oechem.OEMol
+            Protein oemol
+        """
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
-        return combine_protein_ligand(prot, self.posed_ligand.to_oemol())
+        return prot
 
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):

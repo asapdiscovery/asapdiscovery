@@ -8,7 +8,7 @@ from typing import Dict, Optional, Union  # noqa: F401
 
 import xmltodict
 from airium import Airium
-from asapdiscovery.data.fitness import parse_fitness_json
+from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -81,9 +81,9 @@ class HTMLVisualizer:
         if self.color_method == "subpockets":
             self.logger.info("Mapping interactive view by subpocket dict")
         elif self.color_method == "fitness":
-            if self.target == "MERS-CoV-Mpro":
+            if not target_has_fitness_data(self.target):
                 raise NotImplementedError(
-                    "No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`."
+                    "No viral fitness data available for target set `color_method` to `subpockets`."
                 )
             self.logger.info(
                 "Mapping interactive view by fitness (visualised with b-factor)"
