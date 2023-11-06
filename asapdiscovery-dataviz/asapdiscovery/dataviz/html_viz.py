@@ -65,7 +65,9 @@ class HTMLVisualizer:
             raise ValueError("Number of poses and paths must be equal.")
 
         if target not in self.allowed_targets:
-            raise ValueError(f"Target must be one of: {self.allowed_targets}")
+            raise ValueError(
+                f"Target {target} invalid, must be one of: {self.allowed_targets}"
+            )
         self.target = target
 
         # init loggers
@@ -100,8 +102,11 @@ class HTMLVisualizer:
         self.output_paths = []
         # make sure all paths exist, otherwise skip
         for pose, path in zip(poses, output_paths):
-            if pose and Path(pose).exists():
-                mol = load_openeye_sdf(str(pose))
+            if pose:
+                if isinstance(pose, oechem.OEMolBase):
+                    mol = pose.CreateCopy()
+                else:
+                    mol = load_openeye_sdf(str(pose))
                 oechem.OESuppressHydrogens(
                     mol, True, True
                 )  # retain polar hydrogens and hydrogens on chiral centers
@@ -110,12 +115,14 @@ class HTMLVisualizer:
             else:
                 self.logger.warning(f"Pose {pose} does not exist, skipping.")
 
-        if not protein.exists():
-            raise ValueError(f"Protein {protein} does not exist.")
-
-        self.protein = openeye_perceive_residues(
-            load_openeye_pdb(str(protein)), preserve_all=True
-        )
+        if isinstance(protein, oechem.OEMolBase):
+            self.protein = protein.CreateCopy()
+        else:
+            if not protein.exists():
+                raise ValueError(f"Protein {protein} does not exist.")
+            self.protein = openeye_perceive_residues(
+                load_openeye_pdb(str(protein)), preserve_all=True
+            )
 
         self.logger.debug(
             f"Writing HTML visualisations for {len(self.output_paths)} ligands"

@@ -511,7 +511,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     logger.info("Running fitness HTML visualiser")
     html_fitness_output_dir = output_dir / "fitness"
     html_fitness_visualiser = HTMLVisualizerV2(
-        colour_method=ColourMethod.subpockets,
+        colour_method=ColourMethod.fitness,
         target=inputs.target,
         output_dir=html_fitness_output_dir,
     )

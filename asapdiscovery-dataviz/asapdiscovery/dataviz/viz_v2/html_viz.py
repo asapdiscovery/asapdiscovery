@@ -11,6 +11,7 @@ from pathlib import Path
 from enum import Enum
 from tempfile import NamedTemporaryFile
 
+
 class ColourMethod(str, Enum):
     subpockets = "subpockets"
     fitness = "fitness"
@@ -50,20 +51,28 @@ class HTMLVisualizerV2(VisualizerBase):
 
         NOTE: This is an extremely bad way of doing this, but it's a quick fix for now
         """
-
-        # write out the docked pose
+        outpaths = []
         for result in docking_results:
-            output_pref = result.input_pair.complex.target.target_name + "_+_" + result.posed_ligand.compound_name + ".html"
-            outpath = self.output_dir / output_pref
-            with NamedTemporaryFile("w", suffix=".pdb") as 
-            save_openeye_pdb(result.to_protein(), pdb_temp_path)
-            pose_temp_path = NamedTemporaryFile(suffix=".sdf")
-            result.posed_ligand.to_sdf(pose_temp_path)
-            viz_class = HTMLVisualizer([pose_temp_path], [outpath], pdb_temp_path, self.colour_method, logger=None, debug=self.debug)
-            outpaths = viz_class.write_pose_visualizations()
-        # flatten 
+            # sorryyyyy
+            output_pref = (
+                result.input_pair.complex.target.target_name
+                + "_+_"
+                + result.posed_ligand.compound_name
+            )
+            outpath = self.output_dir / output_pref / "pose.html"
+            viz_class = HTMLVisualizer(
+                [result.posed_ligand.to_oemol()],
+                [outpath],
+                self.target,
+                result.to_protein(),
+                self.colour_method,
+                logger=None,
+                debug=self.debug,
+            )
+            outpaths.append(viz_class.write_pose_visualizations())
+        # flatten
         outpaths = [item for sublist in outpaths for item in sublist]
         return outpaths
-        
+
     def provenance(self):
         return {}
