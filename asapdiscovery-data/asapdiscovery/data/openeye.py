@@ -7,6 +7,7 @@ from openeye import (  # noqa: F401
     oechem,
     oedepict,
     oedocking,
+    oeff,
     oegrid,
     oeomega,
     oequacpac,

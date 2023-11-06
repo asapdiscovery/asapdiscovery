@@ -3,7 +3,7 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
-from asapdiscovery.data.openeye import oechem, oedocking, oeomega
+from asapdiscovery.data.openeye import oechem, oedocking, oeff, oeomega
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 
@@ -98,9 +98,17 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         2.0,
         description="The distance cutoff for which we check for clashes in Angstroms.",
     )
-    selector: Literal["Chemgauss4"] = Field(
+    selector: Literal["Chemgauss4", "Chemgauss3"] = Field(
         "Chemgauss4",
-        description="The method which should be used to select the optimial conformer.",
+        description="The method which should be used to select the optimal conformer.",
+    )
+    backup_score: Literal["MMFF", "Sage", "Parsley"] = Field(
+        "Sage",
+        description="If the main scoring function fails to descriminate between conformers the backup score will be used based on the internal energy of the molecule.",
+    )
+    solid_body_optimisation: bool = Field(
+        False,
+        description="If a solid body optimisation should be performed on the poses before scoring to help remove clashes.",
     )
 
     def provenance(self) -> dict[str, Any]:
@@ -255,7 +263,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         self._prue_clashes(receptor=oe_receptor, ligands=result_ligands)
         # select the best pose to be kept
         posed_ligands = self._select_best_pose(
-            receptor=oe_receptor, ligands=result_ligands
+            receptor=oedu_receptor, ligands=result_ligands
         )
 
         return posed_ligands, failed_ligands
@@ -316,19 +324,63 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         A list of single conformer oe molecules with the optimal pose
 
         """
-        score = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
+        scorers = {
+            "Chemgauss4": oedocking.OEScoreType_Chemgauss4,
+            "Chemgauss3": oedocking.OEScoreType_Chemgauss3,
+        }
+        score = oedocking.OEScore(scorers[self.selector])
         score.Initialize(receptor)
         posed_ligands = []
         for ligand in ligands:
+            if self.solid_body_optimisation:
+                # run the solid body optimisation to remove some clashes
+                score.SystematicSolidBodyOptimize(ligand)
+
             poses = [
                 (score.ScoreLigand(conformer), conformer)
                 for conformer in ligand.GetConfs()
             ]
-            # set the best score as the active conformer
-            poses = sorted(poses, key=lambda x: x[0])
-            # set the best conformer as active
-            ligand.SetActive(poses[0][1])
-            oechem.OESetSDData(ligand, "Chemgauss4_score", str(poses[0][0]))
+
+            # check that the scorer worked else call the backup
+            # this will select the lowest energy conformer
+            unique_scores = {pose[0] for pose in poses}
+            if len(unique_scores) == 1 and len(poses) != 1:
+                self._select_by_energy(ligand)
+
+            else:
+                # set the best score as the active conformer
+                poses = sorted(poses, key=lambda x: x[0])
+                ligand.SetActive(poses[0][1])
+                oechem.OESetSDData(ligand, f"{self.selector}_score", str(poses[0][0]))
+
+            # turn back into a single conformer molecule
             posed_ligands.append(oechem.OEGraphMol(ligand))
 
         return posed_ligands
+
+    def _select_by_energy(self, ligand: oechem.OEMol):
+        """
+        Calculate the internal energy of each conformer of the ligand using the backup score force field and select the lowest energy pose as active
+
+        Parameters
+        ----------
+        ligand: A multi-conformer OEMol we want to calculate the energies of.
+
+        """
+        force_fields = {
+            "MMFF": oeff.OEMMFF,
+            "Sage": oeff.OESage,
+            "Parsley": oeff.OEParsley,
+        }
+        ff = force_fields[self.backup_score]()
+        ff.PrepMol(ligand)
+        ff.Setup(ligand)
+        vec_coords = oechem.OEDoubleArray(3 * ligand.GetMaxAtomIdx())
+        poses = []
+        for conformer in ligand.GetConfs():
+            conformer.GetCoords(vec_coords)
+            poses.append((ff(vec_coords), conformer))
+
+        poses = sorted(poses, key=lambda x: x[0])
+        ligand.SetActive(poses[0][1])
+        oechem.OESetSDData(ligand, f"{self.backup_score}_energy", str(poses[0][0]))
