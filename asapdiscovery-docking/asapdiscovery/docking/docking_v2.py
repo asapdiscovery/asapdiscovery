@@ -20,6 +20,8 @@ from asapdiscovery.docking.docking_data_validation import (
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 
+# TODO: Enable Multi-receptor docking
+
 
 class DockingResult(BaseModel):
     """
@@ -29,7 +31,7 @@ class DockingResult(BaseModel):
 
     Parameters
     ----------
-    input_pair : DockingInputPair
+    input_pair : DockingInputPair # TODO: change to not need a pair?
         Input pair
     posed_ligand : Ligand
         Posed ligand
@@ -41,7 +43,9 @@ class DockingResult(BaseModel):
     """
 
     type: Literal["DockingResult"] = "DockingResult"
-    input_pair: DockingInputPair = Field(description="Input pair")
+    input_pair: DockingInputPair = Field(
+        description="Input pair"
+    )  # TODO: change to not need a pair?
     posed_ligand: Ligand = Field(description="Posed ligand")
     probability: Optional[PositiveFloat] = Field(
         description="Probability"
@@ -53,7 +57,7 @@ class DockingResult(BaseModel):
         return a dictionary of some of the fields of the DockingResult
         """
         dct = self.dict()
-        dct.pop("input_pair")
+        dct.pop("input_pair")  # TODO: change to not need a pair?
         dct.pop("posed_ligand")
         dct.pop("type")
         return dct
@@ -67,7 +71,9 @@ class DockingResult(BaseModel):
         oechem.OEMol
             Combined oemol
         """
-        _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
+        _, prot, _ = split_openeye_design_unit(
+            self.input_pair.complex.target.to_oedu()
+        )  # TODO: change to not need a pair?
         return combine_protein_ligand(prot, self.posed_ligand.to_oemol())
 
     @staticmethod
@@ -151,7 +157,10 @@ class DockingBase(BaseModel):
         ...
 
     def dock(
-        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
+        self,
+        inputs: list[DockingInputPair],
+        use_dask: bool = False,
+        dask_client=None,  # TODO: change to not need a pair?
     ) -> Union[list[dask.delayed], list[DockingResult]]:
         if use_dask:
             delayed_outputs = []
@@ -257,7 +266,9 @@ class POSITDocker(DockingBase):
         return values
 
     @staticmethod
-    def run_oe_posit_docking(opts, pose_res, du, lig, num_poses):
+    def run_oe_posit_docking(
+        opts, pose_res, du, lig, num_poses
+    ):  # TODO: change to take a list of dus?
         """
         Helper function to run OEPosit docking
 
@@ -267,7 +278,7 @@ class POSITDocker(DockingBase):
             OEPosit options
         pose_res : oedocking.OEPositResults
             OEPosit results
-        du : oedocking.OEDesignUnit
+        du : oedocking.OEDesignUnit # TODO: change to take a list of dus?
             OEDesignUnit
         lig : oechem.OEMol
             Ligand
@@ -282,14 +293,18 @@ class POSITDocker(DockingBase):
             Return code
         """
         poser = oedocking.OEPosit(opts)
-        retcode = poser.AddReceptor(du)
+        retcode = poser.AddReceptor(
+            du
+        )  # TODO: make this a for loop over all the DUs in a list?
         if not retcode:
             raise ValueError("Failed to add receptor to POSIT")
         ret_code = poser.Dock(pose_res, lig, num_poses)
         return pose_res, ret_code
 
     def _dock(
-        self, inputs: list[DockingInputPair], error="skip"
+        self,
+        inputs: list[DockingInputPair],
+        error="skip",  # TODO: change to not need a DockingInputPair?
     ) -> list[DockingResult]:
         """
         Docking workflow using OEPosit
@@ -298,7 +313,7 @@ class POSITDocker(DockingBase):
         docking_results = []
 
         for pair in inputs:
-            du = pair.complex.target.to_oedu()
+            du = pair.complex.target.to_oedu()  # TODO: change to take a list of dus?
             lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
             if self.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
@@ -377,7 +392,7 @@ class POSITDocker(DockingBase):
                     posed_ligand.set_SD_data(sd_data)
 
                     docking_result = POSITDockingResults(
-                        input_pair=pair,
+                        input_pair=pair,  # TODO: change to not need a pair?
                         posed_ligand=posed_ligand,
                         probability=prob,
                         provenance=self.provenance(),

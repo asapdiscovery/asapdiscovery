@@ -8,6 +8,8 @@ from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInp
 from asapdiscovery.data.selectors.selector import SelectorBase
 from pydantic import Field
 
+# TODO: enable selectors that don't necessarily return a pair?
+
 
 class MCSSelector(SelectorBase):
     """

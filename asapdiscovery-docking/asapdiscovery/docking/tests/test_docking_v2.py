@@ -39,3 +39,10 @@ def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
     assert sdf_path.exists()
     pdb_path = tmp_path / "test_+_test2" / "docked_complex.pdb"
     assert pdb_path.exists()
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+def test_multireceptor_docking():
+    pass
