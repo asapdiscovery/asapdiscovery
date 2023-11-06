@@ -1,20 +1,8 @@
-import logging
-import os
-import subprocess
-import tempfile
-import xml.etree.ElementTree as ET
-from pathlib import Path
-from typing import Dict, Optional, Union  # noqa: F401
-from enum import Enum
 
-import xmltodict
-from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
 from pydantic import BaseModel, Field, root_validator
+from asapdiscovery.dataviz.visualize_v2.visualize_v2VisualizerBase
 
-from ._gif_blocks import GIFBlockData
-from ._html_blocks import HTMLBlockData
-from .viz_targets import VizTargets
 
 
 class ColourMethod(str, Enum):
@@ -51,8 +39,8 @@ class HTMLVisualizerV2(BaseModel):
         """
         Visualize a list of docking results.
         """
-        for pose in inputs:
-            oemol = pose.to_posed_oemol()
 
-            if self.colour_method == ColourMethod.fitness:
-                fitness_data = parse_fitness_json(self.target)
+
+
+
+

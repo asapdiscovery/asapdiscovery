@@ -487,8 +487,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     logger.info("Running HTML visualiser for docked poses")
     html_ouptut_dir = output_dir / "poses"
-    html_visualiser = HTMLVisualizer(
-        type=HTMLVizType.POSE, target=inputs.target, output_dir=html_ouptut_dir
+    html_visualiser = HTMLVisualizerV2(colour_method="subpockets", target=inputs.target, output_dir=html_ouptut_dir
     )
     visualisatons = html_visualiser.visualize(
         results, use_dask=inputs.use_dask, dask_client=dask_client
