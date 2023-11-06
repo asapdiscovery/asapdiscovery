@@ -1,10 +1,11 @@
 import abc
 from typing import Any, Literal, Optional
 
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 
 class PosedLigands(BaseModel):
@@ -293,7 +294,6 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
                 poses.append((clash_score, conformer))
             # eliminate the worst 50% of clashes
-            print(poses)
             poses = sorted(poses, key=lambda x: x[0])
             for _, conformer in poses[int(0.5 * len(poses)) :]:
                 ligand.DeleteConf(conformer)
@@ -326,7 +326,6 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             ]
             # set the best score as the active conformer
             poses = sorted(poses, key=lambda x: x[0])
-            print(poses)
             # set the best conformer as active
             ligand.SetActive(poses[0][1])
             oechem.OESetSDData(ligand, "Chemgauss4_score", str(poses[0][0]))
