@@ -31,6 +31,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--color-method",
+    type=str,
+    required=False,
+    default="subpockets",
+    choices=["subpockets", "fitness"],
+    help="Whether to show subpocket color mapping (default) or fitness color mapping",
+)
+
+parser.add_argument(
     "--out",
     type=str,
     required=True,
@@ -63,6 +72,7 @@ def main():
     html_visualizer = HTMLVisualizer(
         poses=[str(pose)],
         output_paths=[out],
+        color_method=args.color_method,
         target=args.viz_target,
         protein=protein,
         logger=logger,
