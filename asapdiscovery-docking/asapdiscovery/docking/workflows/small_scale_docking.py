@@ -40,7 +40,7 @@ from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.dataviz.viz_v2.html_viz import HTMLVisualizerV2, ColourMethod
-from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizer
+from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 
 
 class SmallScaleDockingInputs(BaseModel):
@@ -158,6 +158,14 @@ class SmallScaleDockingInputs(BaseModel):
         le=1.0,
         ge=0.0,
         description="POSIT confidence cutoff used to filter docking results",
+    )
+
+    use_omega: bool = Field(
+        True,
+        description="Whether to use omega for conformer generation prior to docking",
+    )
+    allow_retries: bool = Field(
+        True, description="Whether to allow retries for docking failures"
     )
 
     ml_scorers: Optional[list[str]] = Field(
@@ -410,7 +418,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker()
+    docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
     results = docker.dock(
         pairs,
         use_dask=inputs.use_dask,

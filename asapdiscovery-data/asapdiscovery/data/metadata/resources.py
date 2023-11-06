@@ -1,6 +1,6 @@
 import pkg_resources
 
-from asapdiscovery.data.manifold_data_validation import TargetTags
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 
 # SEQRES in YAML format

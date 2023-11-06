@@ -1,6 +1,9 @@
-from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
-from pydantic import BaseModel, Field, root_validator
-from asapdiscovery.dataviz.visualize_v2.visualize_v2 import VisualizerBase
+from asapdiscovery.data.fitness import target_has_fitness_data
+from pydantic import Field, root_validator
+from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.docking.docking_v2 import DockingResult
+from enum import Enum
 
 
 class ColourMethod(str, Enum):
@@ -37,3 +40,6 @@ class HTMLVisualizerV2(VisualizerBase):
         """
         Visualize a list of docking results.
         """
+
+    def provenance(self):
+        return {}

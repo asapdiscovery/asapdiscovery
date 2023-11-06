@@ -3,7 +3,8 @@ from typing import Literal, Union
 
 import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from pydantic import BaseModel, Field
+from asapdiscovery.docking.docking_v2 import DockingResult
+from pydantic import BaseModel
 import pandas as pd
 
 
@@ -13,12 +14,12 @@ class VisualizerBase(abc.ABC, BaseModel):
     """
 
     @abc.abstractmethod
-    def _visualize(self) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    def _visualize(self) -> pd.DataFrame:
         ...
 
     def visualize(
         self,
-        docking_results: list[DockingInputPair],
+        docking_results: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
         **kwargs,
