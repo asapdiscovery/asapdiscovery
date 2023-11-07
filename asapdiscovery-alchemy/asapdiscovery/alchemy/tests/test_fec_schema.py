@@ -1,6 +1,8 @@
 import openfe
 import pytest
 from alchemiscale import Scope, ScopedKey
+from openff.units import unit as OFFUnit
+
 from asapdiscovery.alchemy.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
@@ -13,7 +15,6 @@ from asapdiscovery.alchemy.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.alchemy.schema.network import NetworkPlanner
-from openff.units import unit as OFFUnit
 
 
 @pytest.mark.parametrize(
@@ -70,6 +71,7 @@ def test_mapper_provenance(mapper, programs):
         pytest.param("radial", id="Radial"),
         pytest.param("maximal", id="Maximal"),
         pytest.param("minimal_spanning", id="Minimal Spanning"),
+        pytest.param("minimal_redundant_network", id="Minimal redundan"),
     ],
 )
 def test_network_planner_get_network(network_type):
@@ -103,6 +105,7 @@ def test_network_planner_get_scorer(scorer):
         pytest.param("radial", id="Radial"),
         pytest.param("maximal", id="Maximal"),
         pytest.param("minimal_spanning", id="Minimal Spanning"),
+        pytest.param("minimal_redundant_network", id="Minimal redundant"),
     ],
 )
 def test_generate_network_lomap(network_type, tyk2_ligands):
@@ -129,6 +132,14 @@ def test_generate_network_lomap(network_type, tyk2_ligands):
     if network_type == "radial":
         # radial should have all ligands connected to the central node
         assert len(fe_network.edges) == 9
+
+    elif network_type == "minimal_spanning":
+        # there should be only 1 edge connecting each ligand to the network
+        assert len(fe_network.edges) == 9
+
+    elif network_type == "minimal_redundant_network":
+        # there should be two minimal networks
+        assert len(fe_network.edges) == 18
 
     # make sure we can convert back to openfe ligands
     openfe_ligands = planned_network.to_openfe_ligands()

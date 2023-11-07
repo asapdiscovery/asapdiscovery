@@ -24,8 +24,10 @@ class _NetworkPlannerSettings(_SchemaBase):
         "default_lomap",
         description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
     )
-    network_planning_method: Literal["radial", "maximal", "minimal_spanning"] = Field(
-        "minimal_spanning",
+    network_planning_method: Literal[
+        "radial", "maximal", "minimal_spanning", "minimal_redundant_network"
+    ] = Field(
+        "minimal_redundant_network",
         description="The way in which the ligand network should be connected. Note radial requires a central ligand node.",
     )
 
@@ -102,6 +104,8 @@ class NetworkPlanner(_NetworkPlannerSettings):
             return openfe.ligand_network_planning.generate_radial_network
         elif self.network_planning_method == "maximal":
             return openfe.ligand_network_planning.generate_maximal_network
+        elif self.network_planning_method == "minimal_redundant_network":
+            return openfe.ligand_network_planning.generate_minimal_redundant_network
         else:
             return openfe.ligand_network_planning.generate_minimal_spanning_network
 
