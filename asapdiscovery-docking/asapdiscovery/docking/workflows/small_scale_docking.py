@@ -41,6 +41,11 @@ from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.dataviz.viz_v2.html_viz import HTMLVisualizerV2, ColourMethod
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
+from asapdiscovery.data.postera.manifold_artifacts import (
+    ManifoldArtifactUploader,
+    ArtifactType,
+)
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 
 
 class SmallScaleDockingInputs(BaseModel):
@@ -324,20 +329,21 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
 
+    if inputs.postera_upload:
+        postera_settings = PosteraSettings()
+        logger.info("Postera settings loaded")
+        logger.info("Postera upload specified, checking for AWS credentials")
+        aws_s3_settings = S3Settings()
+        aws_cloudfront_settings = CloudfrontSettings()
+        logger.info("AWS S3 and CloudFront credentials found")
+
     if inputs.postera:
-        # load postera
+        # can specify postera without uploading
+        postera_settings = PosteraSettings()
+        logger.info("Postera settings loaded")
         logger.info(
             f"Loading Postera database molecule set {inputs.postera_molset_name}"
         )
-        postera_settings = PosteraSettings()
-
-        logger.info("Poster settings loaded")
-
-        if inputs.postera_upload:
-            logger.info(" Postera upload specified, checking for AWS credentials")
-            aws_s3_settings = S3Settings()
-            aws_cloudfront_settings = CloudfrontSettings()
-            logger.info("AWS S3 and CloudFront credentials found")
 
         postera = PosteraFactory(
             settings=postera_settings, molecule_set_name=inputs.postera_molset_name
@@ -479,10 +485,68 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         message="No docking results passed the POSIT confidence cutoff",
     )
 
-    # filter out clashes (chemgauss4 score > 0)
-    scores_df = scores_df[scores_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
+    logger.info("Running HTML visualiser for docked poses")
+    html_ouptut_dir = output_dir / "poses"
+    html_visualizer = HTMLVisualizerV2(
+        colour_method=ColourMethod.subpockets,
+        target=inputs.target,
+        output_dir=html_ouptut_dir,
+    )
+    pose_visualizatons = html_visualizer.visualize(
+        results, use_dask=inputs.use_dask, dask_client=dask_client
+    )
+    # rename visualisations target id column to POSIT structure tag so we can join
+    pose_visualizatons.rename(
+        columns={
+            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        },
+        inplace=True,
+    )
 
-    n_clash_filtered = len(scores_df)
+    # join the two dataframes on ligand_id, target_id and smiles
+    combined_df = scores_df.merge(
+        pose_visualizatons,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",
+    )
+
+    logger.info("Running fitness HTML visualiser")
+    html_fitness_output_dir = output_dir / "fitness"
+    html_fitness_visualizer = HTMLVisualizerV2(
+        colour_method=ColourMethod.fitness,
+        target=inputs.target,
+        output_dir=html_fitness_output_dir,
+    )
+    fitness_visualizations = html_fitness_visualizer.visualize(
+        results, use_dask=inputs.use_dask, dask_client=dask_client
+    )
+
+    # rename fitness visualisations target id column to POSIT structure tag so we can join
+    fitness_visualizations.rename(
+        columns={
+            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        },
+        inplace=True,
+    )
+    # join the two dataframes on ligand_id, target_id and smiles
+    combined_df = combined_df.merge(
+        fitness_visualizations,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",
+    )
+
+    # filter out clashes (chemgauss4 score > 0)
+    combined_df = combined_df[combined_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
+
+    n_clash_filtered = len(combined_df)
     logger.info(
         f"Filtered to {n_clash_filtered} / {n_posit_filtered} docking results by clash filter"
     )
@@ -494,32 +558,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         tag="scores",
         message="No docking results passed the clash filter",
     )
-
-    logger.info("Running HTML visualiser for docked poses")
-    html_ouptut_dir = output_dir / "poses"
-    html_visualiser = HTMLVisualizerV2(
-        colour_method=ColourMethod.subpockets,
-        target=inputs.target,
-        output_dir=html_ouptut_dir,
-    )
-    visualisatons = html_visualiser.visualize(
-        results, use_dask=inputs.use_dask, dask_client=dask_client
-    )
-
-    # join
-
-    logger.info("Running fitness HTML visualiser")
-    html_fitness_output_dir = output_dir / "fitness"
-    html_fitness_visualiser = HTMLVisualizerV2(
-        colour_method=ColourMethod.fitness,
-        target=inputs.target,
-        output_dir=html_fitness_output_dir,
-    )
-    fitness_visualisations = html_fitness_visualiser.visualize(
-        results, use_dask=inputs.use_dask, dask_client=dask_client
-    )
-
-    # join
 
     if inputs.md:
         md_output_dir = output_dir / "md"
@@ -539,12 +577,17 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
     result_df = rename_output_columns_for_manifold(
-        scores_df,
+        combined_df,
         inputs.target,
         [DockingResultCols],
         manifold_validate=True,
         drop_non_output=True,
-        allow=[DockingResultCols.LIGAND_ID.value],
+        allow=[
+            DockingResultCols.HTML_PATH_POSE.value,
+            DockingResultCols.HTML_PATH_FITNESS.value,
+            DockingResultCols.GIF_PATH.value,
+            DockingResultCols.LIGAND_ID.value,
+        ],
     )
 
     result_df.to_csv(output_dir / "docking_results_final.csv", index=False)
@@ -557,19 +600,30 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         postera_uploader.push(result_df)
 
         logger.info("Uploading artifacts to PostEra")
-        s3 = S3.from_settings(aws_s3_settings)
-        cf = CloudFront.from_settings(aws_cloudfront_settings)
 
         # make an uploader for the poses and upload them
-        pose_uploader = ManifoldArtifactUploader(
-            data_df,
-            inputs.molset_id,
-            inputs.postera_molset_name,
-            cf,
-            s3,
+
+        artifact_columns = [
+            DockingResultCols.HTML_PATH_POSE.value,
+            DockingResultCols.HTML_PATH_FITNESS.value,
+        ]
+        artifact_types = [
+            ArtifactType.DOCKING_POSE_POSIT,
+            ArtifactType.DOCKING_POSE_FITNESS_POSIT,
+        ]
+        if inputs.md:
+            artifact_columns.append(DockingResultCols.GIF_PATH.value)
+            artifact_types.append(ArtifactType.MD_POSE)
+
+        uploader = ManifoldArtifactUploader(
             inputs.target,
-            artifact_types=[ArtifactType.DOCKING_POSE_POSIT, blah, blah],
-            artifact_columns=["blah", "blah", "blah"],
+            combined_df,
+            inputs.postera_molset_name,
             bucket_name=aws_s3_settings.BUCKET_NAME,
+            artifact_types=artifact_types,
+            artifact_columns=artifact_columns,
+            moleculeset_api=MoleculeSetAPI.from_settings(postera_settings),
+            s3=S3.from_settings(aws_s3_settings),
+            cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
         )
-        pose_uploader.upload_artifacts()
+        uploader.upload_artifacts()

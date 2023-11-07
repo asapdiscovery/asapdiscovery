@@ -68,7 +68,7 @@ class DockingResult(BaseModel):
             Combined oemol
         """
         return combine_protein_ligand(self.to_protein(), self.posed_ligand.to_oemol())
-    
+
     def to_protein(self) -> oechem.OEMol:
         """
         Return the protein from the original target
@@ -80,6 +80,21 @@ class DockingResult(BaseModel):
         """
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
         return prot
+
+    def get_combined_id(self) -> str:
+        """
+        Get a unique ID for the DockingResult
+
+        Returns
+        -------
+        str
+            Unique ID
+        """
+        return (
+            self.input_pair.complex.target.target_name
+            + "_+_"
+            + self.input_pair.ligand.compound_name
+        )
 
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):
@@ -254,18 +269,6 @@ class POSITDocker(DockingBase):
     @staticmethod
     def to_result_type():
         return POSITDockingResults
-
-    @root_validator
-    @classmethod
-    def _output_dir_write_file(cls, values):
-        output_dir = values.get("output_dir")
-        write_files = values.get("write_file")
-        if write_files and not output_dir:
-            raise ValueError("Output directory must be set if write_file is True")
-
-        if write_files and not Path(output_dir).exists():
-            raise ValueError("Output directory does not exist")
-        return values
 
     @staticmethod
     def run_oe_posit_docking(opts, pose_res, du, lig, num_poses):
@@ -448,11 +451,7 @@ class POSITDocker(DockingBase):
                     "Compound names of input pair and posed ligand do not match"
                 )
             if names_unique:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + result.posed_ligand.compound_name
-                )
+                output_pref = result.get_combined_id()
             else:
                 output_pref = (
                     result.input_pair.complex.target.target_name

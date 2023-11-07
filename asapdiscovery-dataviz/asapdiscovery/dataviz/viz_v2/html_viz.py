@@ -5,7 +5,9 @@ from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.data.openeye import save_openeye_pdb
-
+from asapdiscovery.docking.docking_data_validation import (
+    DockingResultColsV2 as DockingResultCols,
+)
 
 from pathlib import Path
 from enum import Enum
@@ -45,20 +47,25 @@ class HTMLVisualizerV2(VisualizerBase):
             )
         return values
 
+    def get_tag_for_colour_method(self):
+        """
+        Get the tag to use for the colour method.
+        """
+        if self.colour_method == ColourMethod.subpockets:
+            return DockingResultCols.HTML_PATH_POSE.value
+        elif self.colour_method == ColourMethod.fitness:
+            return DockingResultCols.HTML_PATH_FITNESS.value
+
     def _visualize(self, docking_results: list[DockingResult]):
         """
         Visualize a list of docking results.
 
         NOTE: This is an extremely bad way of doing this, but it's a quick fix for now
         """
-        outpaths = []
+        data = []
         for result in docking_results:
             # sorryyyyy
-            output_pref = (
-                result.input_pair.complex.target.target_name
-                + "_+_"
-                + result.posed_ligand.compound_name
-            )
+            output_pref = result.get_combined_id()
             outpath = self.output_dir / output_pref / "pose.html"
             viz_class = HTMLVisualizer(
                 [result.posed_ligand.to_oemol()],
@@ -69,10 +76,24 @@ class HTMLVisualizerV2(VisualizerBase):
                 logger=None,
                 debug=self.debug,
             )
-            outpaths.append(viz_class.write_pose_visualizations())
-        # flatten
-        outpaths = [item for sublist in outpaths for item in sublist]
-        return outpaths
+            outpaths = viz_class.write_pose_visualizations()
+            if len(outpaths) != 1:
+                raise ValueError(
+                    f"Expected 1 HTML file to be written, but got {len(outpaths)}"
+                )
+            # make dataframe with ligand name, target name, and path to HTML
+            row = {}
+            row[
+                DockingResultCols.LIGAND_ID.value
+            ] = result.input_pair.ligand.compound_name
+            row[
+                DockingResultCols.TARGET_ID.value
+            ] = result.input_pair.complex.target.target_name
+            row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
+            row[self.get_tag_for_colour_method()] = outpaths[0]
+            data.append(row)
+
+        return data
 
     def provenance(self):
         return {}

@@ -1,9 +1,15 @@
 from datetime import datetime, timedelta
 from enum import Enum
 from uuid import UUID
-
+from typing import Union
 import pandas as pd
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
+
+from asapdiscovery.data.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
 
 from ..aws.cloudfront import CloudFront
 from ..aws.s3 import S3
@@ -33,15 +39,15 @@ class ManifoldArtifactUploader:
 
     def __init__(
         self,
-        molecule_dataframe: pd.DataFrame,
-        molecule_set_id: UUID,
-        artifact_type: ArtifactType,
-        moleculeset_api: MoleculeSetAPI,
-        cloudfront: CloudFront,
-        s3: S3,
         target: str,
-        artifact_column: str,
+        molecule_dataframe: pd.DataFrame,
+        molecule_set_id_or_name: Union[str, UUID],
         bucket_name: str,
+        artifact_columns: list[str],
+        artifact_types: list[ArtifactType],
+        moleculeset_api: MoleculeSetAPI = None,
+        cloudfront: CloudFront = None,
+        s3: S3 = None,
         manifold_id_column: str = DockingResultCols.LIGAND_ID.value,
     ):
         """
@@ -69,25 +75,43 @@ class ManifoldArtifactUploader:
         manifold_id_column : str
             The name of the column containing the manifold id
         """
-        self.molecule_dataframe = molecule_dataframe.copy()
-        self.molecule_set_id = molecule_set_id
-        self.artifact_type = artifact_type
-        self.moleculeset_api = moleculeset_api
-        self.cloudfront = cloudfront
-        self.s3 = s3
         self.target = target
-        self.artifact_column = artifact_column
+        self.molecule_dataframe = molecule_dataframe.copy()
+        self.molecule_set_id_or_name = molecule_set_id_or_name
         self.bucket_name = bucket_name
+        self.artifact_columns = artifact_columns
+        self.artifact_types = artifact_types
+
+        if moleculeset_api is None:
+            moleculeset_api = MoleculeSetAPI().from_settings(PosteraSettings())
+        self.moleculeset_api = moleculeset_api
+
+        self.molset_id = self.moleculeset_api.molecule_set_id_or_name(
+            self.molecule_set_id_or_name, self.moleculeset_api.list_available()
+        )
+
+        if cloudfront is None:
+            cloudfront = CloudFront.from_settings(CloudfrontSettings())
+        self.cloudfront = cloudfront
+
+        if s3 is None:
+            s3 = S3.from_settings(S3Settings())
+        self.s3 = s3
+
         self.manifold_id_column = manifold_id_column
+        if len(self.artifact_columns) != len(self.artifact_types):
+            raise ValueError(
+                "Number of artifact columns must match number of artifact types"
+            )
 
         if not TargetTags.is_in_values(target):
             raise ValueError(
                 f"Target {target} not in allowed values {TargetTags.get_values()}"
             )
 
-        # drop rows in molecule df where artifact_column is None or NaN
+        # drop rows in molecule df where artifact_columns is None or NaN
         self.molecule_dataframe = self.molecule_dataframe.dropna(
-            subset=[self.artifact_column]
+            subset=self.artifact_columns
         )
 
     def generate_cloudfront_url(
@@ -116,34 +140,39 @@ class ManifoldArtifactUploader:
         """
         Upload the artifacts to Postera Manifold and S3
         """
+        for artifact_column, artifact_type in zip(
+            self.artifact_columns, self.artifact_types
+        ):
+            subset_df = self.molecule_dataframe[
+                [artifact_column, self.manifold_id_column]
+            ].copy()
+            # rename columns to match manifold
+            output_tag_name = map_output_col_to_manifold_tag(ArtifactType, self.target)[
+                artifact_type.value
+            ]
 
-        # rename columns to match manifold
-        output_tag_name = map_output_col_to_manifold_tag(ArtifactType, self.target)[
-            self.artifact_type.value
-        ]
+            subset_df[f"_bucket_path_{artifact_column}"] = subset_df[
+                self.manifold_id_column
+            ].apply(lambda x: f"{output_tag_name}/{self.molset_id}/{x}.html")
 
-        self.molecule_dataframe["_bucket_path"] = self.molecule_dataframe[
-            self.manifold_id_column
-        ].apply(lambda x: f"{output_tag_name}/{self.molecule_set_id}/{x}.html")
+            # now make urls
+            subset_df[output_tag_name] = subset_df[
+                f"_bucket_path_{artifact_column}"
+            ].apply(lambda x: self.generate_cloudfront_url(x))
 
-        # now make urls
-        self.molecule_dataframe[output_tag_name] = self.molecule_dataframe[
-            "_bucket_path"
-        ].apply(lambda x: self.generate_cloudfront_url(x))
+            # this will trim the dataframe to only the columns we want to update
+            self.moleculeset_api.update_molecules_from_df_with_manifold_validation(
+                self.molset_id,
+                subset_df,
+                id_field=self.manifold_id_column,
+            )
 
-        # this will trim the dataframe to only the columns we want to update
-        self.moleculeset_api.update_molecules_from_df_with_manifold_validation(
-            self.molecule_set_id,
-            self.molecule_dataframe,
-            id_field=self.manifold_id_column,
-        )
-
-        # push to s3
-        self.molecule_dataframe.apply(
-            lambda x: self.s3.push_file(
-                x[self.artifact_column],
-                location=x["_bucket_path"],
-                content_type=ARTIFACT_TYPE_TO_S3_CONTENT_TYPE[self.artifact_type],
-            ),
-            axis=1,
-        )
+            # push to s3
+            subset_df.apply(
+                lambda x: self.s3.push_file(
+                    x[artifact_column],
+                    location=x[f"_bucket_path_{artifact_column}"],
+                    content_type=ARTIFACT_TYPE_TO_S3_CONTENT_TYPE[artifact_type],
+                ),
+                axis=1,
+            )

@@ -36,7 +36,7 @@ class VisualizerBase(abc.ABC, BaseModel):
         else:
             outputs = self._visualize(docking_results=docking_results, **kwargs)
 
-        return outputs
+        return pd.DataFrame(outputs)
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
