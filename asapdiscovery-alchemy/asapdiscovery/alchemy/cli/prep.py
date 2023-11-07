@@ -3,10 +3,11 @@ from typing import Optional
 
 import click
 import rich
-from asapdiscovery.alchemy.cli.utils import print_header
-from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from rich import pretty
 from rich.padding import Padding
+
+from asapdiscovery.alchemy.cli.utils import print_header
+from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 
 
 @click.group()
@@ -153,6 +154,12 @@ def run(
     )
     console.print(message)
 
+    if alchemy_dataset.failed_ligands:
+        message = Padding(
+            f"[yellow]WARNING some ligands failed to have poses generated see failed_ligands files in [repr.filename]{output_folder}[/repr.filename][/yellow]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
     for fail_type, ligands in alchemy_dataset.failed_ligands.items():
         fails = [ligand.to_oemol() for ligand in ligands]
         failed_ligand_file = output_folder.joinpath(f"failed_ligands_{fail_type}.sdf")

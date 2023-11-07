@@ -1,10 +1,11 @@
 import abc
 from typing import Any, Literal, Optional
 
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+
 from asapdiscovery.data.openeye import oechem, oedocking, oeff, oeomega
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 
 class PosedLigands(BaseModel):
@@ -98,16 +99,12 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         description="The distance cutoff for which we check for clashes in Angstroms.",
     )
     selector: Literal["Chemgauss4", "Chemgauss3"] = Field(
-        "Chemgauss4",
+        "Chemgauss3",
         description="The method which should be used to select the optimal conformer.",
     )
     backup_score: Literal["MMFF", "Sage", "Parsley"] = Field(
         "Sage",
         description="If the main scoring function fails to descriminate between conformers the backup score will be used based on the internal energy of the molecule.",
-    )
-    solid_body_optimisation: bool = Field(
-        False,
-        description="If a solid body optimisation should be performed on the poses before scoring to help remove clashes.",
     )
 
     def provenance(self) -> dict[str, Any]:
@@ -259,7 +256,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         oe_receptor = oechem.OEGraphMol()
         oedu_receptor.GetProtein(oe_receptor)
 
-        self._prue_clashes(receptor=oe_receptor, ligands=result_ligands)
+        self._prune_clashes(receptor=oe_receptor, ligands=result_ligands)
         # select the best pose to be kept
         posed_ligands = self._select_best_pose(
             receptor=oedu_receptor, ligands=result_ligands
@@ -267,7 +264,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         return posed_ligands, failed_ligands
 
-    def _prue_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
+    def _prune_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
         """
         Edit the conformers on the molecules in place to remove clashes with the receptor.
 
@@ -331,10 +328,6 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         score.Initialize(receptor)
         posed_ligands = []
         for ligand in ligands:
-            if self.solid_body_optimisation:
-                # run the solid body optimisation to remove some clashes
-                score.SystematicSolidBodyOptimize(ligand)
-
             poses = [
                 (score.ScoreLigand(conformer), conformer)
                 for conformer in ligand.GetConfs()

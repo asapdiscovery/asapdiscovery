@@ -2,14 +2,15 @@ import copy
 from typing import Any, Literal, Optional
 
 import rich
+from pydantic import Field
+from rich import pretty
+
 from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import EpikExpander
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
-from pydantic import Field
-from rich import pretty
 
 
 class _AlchemyPrepBase(_SchemaBase):
@@ -37,11 +38,11 @@ class _AlchemyPrepBase(_SchemaBase):
     core_smarts: Optional[str] = Field(
         None,
         description="The SMARTS string which should be used to identify the MCS between the "
-        "input and reference ligand if not provided the MCS will be automatically generated.",
+        "input and reference ligand if not provided the MCS will be automatically generated. SMARTS strings can be created manually, or with e.g. ChemDraw or https://smarts.plus/.",
     )
     strict_stereo: bool = Field(
         True,
-        description="Molecules will have conformers generated if there stereo chemistry matches the input molecule.",
+        description="Molecules will have conformers generated if their stereo chemistry matches the input molecule.",
     )
 
 
@@ -166,6 +167,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             console.print(
                 "[yellow]! WARNING the reference structure is chiral, check output structures carefully! [/yellow]"
             )
+            console.line()
 
         pose_status.start()
         pose_result = self.pose_generator.generate_poses(
