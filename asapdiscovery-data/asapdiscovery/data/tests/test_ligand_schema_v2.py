@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from asapdiscovery.data.openeye import get_SD_data, load_openeye_sdf, set_SD_data
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
@@ -108,28 +109,17 @@ def test_ligand_from_sdf(moonshot_sdf):
     assert (
         lig.smiles == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
     )
+    assert lig.compound_name == "test_name"
 
 
-def test_ligand_from_sdf_at_least_one_id(moonshot_sdf):
-    # neither id is set
+def test_ligand_from_sdf_title_used(moonshot_sdf):
+    # make sure the ligand title is used as the compound ID if not set
     # important test this due to complicated skip and validation logic
-    with pytest.raises(ValueError):
-        lig = Ligand.from_sdf(moonshot_sdf)
-        assert (
-            lig.smiles
-            == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
-        )
-
-
-def test_ligand_from_sdf_at_least_one_ligand_id(moonshot_sdf):
-    # LigandIdentifiers is set but empty
-    # important test this due to complicated skip and validation logic
-    with pytest.raises(ValueError):
-        lig = Ligand.from_sdf(moonshot_sdf, ids=LigandIdentifiers())
-        assert (
-            lig.smiles
-            == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
-        )
+    lig = Ligand.from_sdf(moonshot_sdf)
+    assert (
+        lig.smiles == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
+    )
+    assert lig.compound_name == "Mpro-P0008_0A_ERI-UCB-ce40166b-17"
 
 
 def test_inchi(smiles):

@@ -1,7 +1,8 @@
 import pytest
+from pydantic import ValidationError
+
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")
@@ -61,12 +62,7 @@ def test_data_equal(complex_pdb):
 
 
 def test_complex_from_pdb_needs_ids(complex_pdb):
-    with pytest.raises(ValidationError):
-        Complex.from_pdb(complex_pdb, target_kwargs={"target_name": "test"})
-
-    with pytest.raises(ValidationError):
-        Complex.from_pdb(complex_pdb, ligand_kwargs={"compound_name": "test"})
-
+    """Make sure an error is raised if we do not supply ligand and receptor ids"""
     with pytest.raises(ValidationError):
         Complex.from_pdb(complex_pdb)
 
