@@ -2,6 +2,7 @@
 This collects all the selectors into a single enum
 """
 from enum import Enum
+
 from mcs_selector import MCSSelector
 from pairwise_selector import PairwiseSelector
 
