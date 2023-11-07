@@ -2,8 +2,8 @@ from typing import Any, Union
 
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
+from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from pydantic import Field
 
 
