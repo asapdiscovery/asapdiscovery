@@ -6,6 +6,8 @@ from typing import Literal, Optional, Union
 
 import dask
 import yaml
+from pydantic import BaseModel, Field, root_validator
+
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
@@ -17,7 +19,6 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field, root_validator
 
 
 class CacheType(str, Enum):
@@ -245,7 +246,7 @@ class ProteinPrepper(ProteinPrepperBase):
                 success, spruce_error_message, spruced = spruce_protein(
                     initial_prot=prot,
                     protein_sequence=protein_sequence,
-                    loop_db=str(self.loop_db),
+                    loop_db=self.loop_db,
                 )
 
                 if not success:
