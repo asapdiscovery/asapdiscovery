@@ -20,58 +20,13 @@ from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking_v2 import (
+    DockingResult,
+    DockingBase,
+    DockingInputsBase,
+)
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
-
-
-class POSITDockingResults(DockingResult):
-    """
-    Schema for a DockingResult from OEPosit, containing both a DockingInputPair used as input to the workflow
-    and a Ligand object containing the docked pose.
-    """
-
-    type: Literal["POSITDockingResults"] = "POSITDockingResults"
-
-    @staticmethod
-    def make_df_from_docking_results(results: list["DockingResult"]):
-        """
-        Make a dataframe from a list of DockingResults
-
-        Parameters
-        ----------
-        results : list[DockingResult]
-            List of DockingResults
-
-        Returns
-        -------
-        pd.DataFrame
-            Dataframe of results
-        """
-        import pandas as pd
-
-        df_prep = []
-        for result in results:
-            docking_dict = {}
-            docking_dict[
-                DockingResultCols.LIGAND_ID
-            ] = result.input_pair.ligand.compound_name
-            docking_dict[
-                DockingResultCols.TARGET_ID
-            ] = result.input_pair.complex.target.target_name
-            docking_dict[
-                "target_bound_compound_smiles"
-            ] = result.input_pair.complex.ligand.smiles
-            docking_dict[DockingResultCols.SMILES] = result.input_pair.ligand.smiles
-            docking_dict[
-                DockingResultCols.DOCKING_CONFIDENCE_POSIT
-            ] = result.probability
-            docking_dict[DockingResultCols.DOCKING_SCORE_POSIT] = result.score
-            docking_dict["score_type"] = result.score_type.value
-            df_prep.append(docking_dict)
-
-        df = pd.DataFrame(df_prep)
-        return df
 
 
 class POSIT_METHOD(Enum):
@@ -100,9 +55,9 @@ class POSIT_RELAX_MODE(Enum):
     NONE = oedocking.OEPoseRelaxMode_NONE
 
 
-class POSITDocker(DockingBase):
+class POSITInputs(DockingInputsBase):
     """
-    Docking workflow using OEPosit
+    POSITInputs schema
 
     Parameters
     ----------
@@ -146,6 +101,8 @@ class POSITDocker(DockingBase):
         description="Allow retries with different options if docking fails initially",
     )
 
+
+class POSITDocker(DockingBase):
     @staticmethod
     def to_result_type():
         return POSITDockingResults
@@ -366,3 +323,52 @@ class POSITDocker(DockingBase):
             "oeomega": oeomega.OEOmegaGetVersion(),
             "oedocking": oedocking.OEDockingGetVersion(),
         }
+
+
+class POSITDockingResults(DockingResult):
+    """
+    Schema for a DockingResult from OEPosit, containing both a DockingInputPair used as input to the workflow
+    and a Ligand object containing the docked pose.
+    """
+
+    type: Literal["POSITDockingResults"] = "POSITDockingResults"
+
+    @staticmethod
+    def make_df_from_docking_results(results: list["DockingResult"]):
+        """
+        Make a dataframe from a list of DockingResults
+
+        Parameters
+        ----------
+        results : list[DockingResult]
+            List of DockingResults
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe of results
+        """
+        import pandas as pd
+
+        df_prep = []
+        for result in results:
+            docking_dict = {}
+            docking_dict[
+                DockingResultCols.LIGAND_ID
+            ] = result.input_pair.ligand.compound_name
+            docking_dict[
+                DockingResultCols.TARGET_ID
+            ] = result.input_pair.complex.target.target_name
+            docking_dict[
+                "target_bound_compound_smiles"
+            ] = result.input_pair.complex.ligand.smiles
+            docking_dict[DockingResultCols.SMILES] = result.input_pair.ligand.smiles
+            docking_dict[
+                DockingResultCols.DOCKING_CONFIDENCE_POSIT
+            ] = result.probability
+            docking_dict[DockingResultCols.DOCKING_SCORE_POSIT] = result.score
+            docking_dict["score_type"] = result.score_type.value
+            df_prep.append(docking_dict)
+
+        df = pd.DataFrame(df_prep)
+        return df

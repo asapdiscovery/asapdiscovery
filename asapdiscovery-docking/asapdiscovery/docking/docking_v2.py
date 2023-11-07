@@ -151,6 +151,39 @@ class DockingInputsBase(BaseModel):
         return v
 
 
+class DockingBase(BaseModel):
+    """
+    Base class for running docking
+    """
+
+    type: Literal["DockingBase"] = "DockingBase"
+
+    @abc.abstractmethod
+    def _dock() -> list[DockingResult]:
+        ...
+
+    def dock(
+        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
+    ) -> Union[list[dask.delayed], list[DockingResult]]:
+        if use_dask:
+            delayed_outputs = []
+            for inp in inputs:
+                out = dask.delayed(self._dock)(inputs=[inp])
+                delayed_outputs.append(out[0])  # flatten
+            outputs = actualise_dask_delayed_iterable(
+                delayed_outputs, dask_client=dask_client, errors="skip"
+            )
+        else:
+            outputs = self._dock(inputs=inputs)
+        # filter out None values
+        outputs = [o for o in outputs if o is not None]
+        return outputs
+
+    @abc.abstractmethod
+    def provenance(self) -> dict[str, str]:
+        ...
+
+
 class DockingResult(BaseModel):
     """
     Schema for a DockingResult, containing both a DockingInputPair used as input to the workflow
@@ -218,36 +251,3 @@ class DockingResult(BaseModel):
         import pandas as pd
 
         return pd.DataFrame([r.get_output() for r in results])
-
-
-class DockingBase(BaseModel):
-    """
-    Base class for running docking
-    """
-
-    type: Literal["DockingBase"] = "DockingBase"
-
-    @abc.abstractmethod
-    def _dock() -> list[DockingResult]:
-        ...
-
-    def dock(
-        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
-    ) -> Union[list[dask.delayed], list[DockingResult]]:
-        if use_dask:
-            delayed_outputs = []
-            for inp in inputs:
-                out = dask.delayed(self._dock)(inputs=[inp])
-                delayed_outputs.append(out[0])  # flatten
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client, errors="skip"
-            )
-        else:
-            outputs = self._dock(inputs=inputs)
-        # filter out None values
-        outputs = [o for o in outputs if o is not None]
-        return outputs
-
-    @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
