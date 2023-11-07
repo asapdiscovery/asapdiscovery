@@ -21,9 +21,9 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.docking_v2 import (
-    DockingResult,
     DockingBase,
     DockingInputsBase,
+    DockingResult,
 )
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
