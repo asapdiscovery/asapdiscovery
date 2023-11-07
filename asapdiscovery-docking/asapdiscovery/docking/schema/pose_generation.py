@@ -108,12 +108,13 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
     )
 
     def provenance(self) -> dict[str, Any]:
-        from openeye import oechem, oeomega
+        from openeye import oechem, oeff, oeomega
 
         return {
             "oechem": oechem.OEChemGetVersion(),
             "oeomega": oeomega.OEOmegaGetVersion(),
             "oedocking": oedocking.OEDockingGetVersion(),
+            "oeff": oeff.OEFFGetVersion(),
         }
 
     def _generate_core_fragment(
