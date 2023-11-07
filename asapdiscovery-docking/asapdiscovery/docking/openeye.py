@@ -77,8 +77,6 @@ class POSITInputs(DockingInputsBase):
         Whether to allow clashing poses in last stage of docking, by default False
     """
 
-    type: Literal["POSITDocker"] = "POSITDocker"
-
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
         description="When to check for relaxation either, 'clash', 'all', 'none'",
@@ -103,6 +101,9 @@ class POSITInputs(DockingInputsBase):
 
 
 class POSITDocker(DockingBase):
+    posit_inputs: POSITInputs = Field(..., description="POSIT inputs")
+    type: Literal["POSITDocker"] = "POSITDocker"
+
     @staticmethod
     def to_result_type():
         return POSITDockingResults
@@ -163,7 +164,7 @@ class POSITDocker(DockingBase):
         for pair in inputs:
             du = pair.complex.target.to_oedu()
             lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
-            if self.use_omega:
+            if self.posit_inputs.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
                 omega = oeomega.OEOmega(omegaOpts)
                 omega_retcode = omega.Build(lig_oemol)
@@ -181,42 +182,42 @@ class POSITDocker(DockingBase):
 
             opts = oedocking.OEPositOptions()
             opts.SetIgnoreNitrogenStereo(True)
-            opts.SetPositMethods(self.posit_method.value)
-            opts.SetPoseRelaxMode(self.relax.value)
+            opts.SetPositMethods(self.posit_inputs.posit_method.value)
+            opts.SetPoseRelaxMode(self.posit_inputs.relax.value)
 
             pose_res = oedocking.OEPositResults()
             pose_res, retcode = self.run_oe_posit_docking(
-                opts, pose_res, du, lig_oemol, self.num_poses
+                opts, pose_res, du, lig_oemol, self.posit_inputs.num_poses
             )
 
-            if self.allow_retries:
+            if self.posit_inputs.allow_retries:
                 # try again with no relaxation
                 if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
                     opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
                     pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, du, lig_oemol, self.num_poses
+                        opts, pose_res, du, lig_oemol, self.posit_inputs.num_poses
                     )
 
                 # try again with low posit probability
                 if (
                     retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-                    and self.allow_low_posit_prob
+                    and self.posit_inputs.allow_low_posit_prob
                 ):
                     opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                    opts.SetMinProbability(self.low_posit_prob_thresh)
+                    opts.SetMinProbability(self.posit_inputs.low_posit_prob_thresh)
                     pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, du, lig_oemol, self.num_poses
+                        opts, pose_res, du, lig_oemol, self.posit_inputs.num_poses
                     )
 
                 # try again allowing clashes
                 if (
-                    self.allow_final_clash
+                    self.posit_inputs.allow_final_clash
                     and retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
                 ):
                     opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
                     opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
                     pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, du, lig_oemol, self.num_poses
+                        opts, pose_res, du, lig_oemol, self.posit_inputs.num_poses
                     )
 
             if retcode == oedocking.OEDockingReturnCode_Success:
@@ -229,7 +230,7 @@ class POSITDocker(DockingBase):
                     sd_data = {
                         DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
                         DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
-                            self.posit_method.value
+                            self.posit_inputs.posit_method.value
                         ),
                     }
                     posed_ligand.set_SD_data(sd_data)

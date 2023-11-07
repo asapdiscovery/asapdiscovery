@@ -159,12 +159,12 @@ class DockingBase(BaseModel):
     type: Literal["DockingBase"] = "DockingBase"
 
     @abc.abstractmethod
-    def _dock() -> list[DockingResult]:
+    def _dock() -> list["DockingResult"]:
         ...
 
     def dock(
         self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
-    ) -> Union[list[dask.delayed], list[DockingResult]]:
+    ) -> Union[list[dask.delayed], list["DockingResult"]]:
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
