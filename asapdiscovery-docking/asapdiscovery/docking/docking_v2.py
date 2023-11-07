@@ -2,34 +2,27 @@
 Defines docking base schema.
 """
 
-import logging
-from asapdiscovery.data.dask_utils import (
-    DaskType,
-)
-
-from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
-)
-from asapdiscovery.modeling.protein_prep_v2 import CacheType
-
-from pydantic import validator
-
 import abc
-
+import logging
 from pathlib import Path
 from typing import Literal, Optional, Union
 
 import dask
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.openeye import (
-    combine_protein_ligand,
-    oechem,
-)
+from asapdiscovery.data.dask_utils import DaskType, actualise_dask_delayed_iterable
+from asapdiscovery.data.openeye import combine_protein_ligand, oechem
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
-
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
+from asapdiscovery.modeling.protein_prep_v2 import CacheType
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveFloat,
+    PositiveInt,
+    root_validator,
+    validator,
+)
 
 
 class DockingInputsBase(BaseModel):
