@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from pydantic import BaseModel, Field, model_validator
 import torch
-from typing import Callable, Iterator, List, Optional
+from typing import Callable, ClassVar, Iterator, List, Optional
 
 # from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 
@@ -117,14 +117,25 @@ class ModelType(str, Enum):
     e3nn = "e3nn"
 
 
-class ModelConfig(BaseModel):
+class GATModelConfig(BaseModel):
     """
-    Class for constructing an ML model.
+    Class for constructing a GAT ML model. Note that there are two methods for defining
+    the size of the model:
+    * If single values are passed for all parameters, the value of `num_layers` will be
+    used as the size of the model, and each layer will have the parameters given
+    * If a list of values is passed for any parameters, all parameters must either be
+    lists of the same size, or single values. For parameters that are single values,
+    that same value will be used for each layer. For parameters that are lists, those
+    lists will be used
+
+    If there are parameters that have list values but the lists are different sizes, an
+    error will be raised.
     """
 
     from dgllife.utils import CanonicalAtomFeaturizer
 
-    # GAT-specific params
+    model_type: ClassVar[ModelType.gat] = ModelType.gat
+
     in_feats: int = Field(
         CanonicalAtomFeaturizer().feat_size(),
         description=(
@@ -208,7 +219,7 @@ class ModelConfig(BaseModel):
     )
 
     @model_validator(mode="after")
-    def massage_into_lists(self) -> "ModelConfig":
+    def massage_into_lists(self) -> "GATModelConfig":
         list_params = [
             "hidden_feats",
             "num_heads",
@@ -235,5 +246,33 @@ class ModelConfig(BaseModel):
             return self
 
         # Otherwise need to do a bit more logic to get things right
+        list_lens = {}
+        for p in list_params:
+            param_val = getattr(self, p)
+            if not isinstance(param_val, list):
+                param_val = [param_val]
+                setattr(self, p, param_val)
+            list_lens[p] = len(param_val)
+
+        # Check that there's only one length present
+        list_lens_set = set(list_lens.values())
+        # This could be 0 if lists of length 1 were passed, which is valid
+        if len(list_lens_set - {1}) > 1:
+            raise ValueError(
+                (
+                    "All passed parameter lists must be the same value. "
+                    f"Instead got: {list_lens}"
+                )
+            )
+
+        num_layers = max(list_lens_set)
+        # If we just want a model with one layer, can return early
+        if num_layers == 1:
+            return self
+
+        # Adjust any length 1 list to be the right length
+        for p, list_len in list_lens.items():
+            if list_len == 1:
+                setattr(self, p, [getattr(self, p)] * num_layers)
 
         return self
