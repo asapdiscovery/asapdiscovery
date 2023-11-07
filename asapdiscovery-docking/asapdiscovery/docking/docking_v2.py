@@ -159,7 +159,7 @@ class DockingBase(BaseModel):
     type: Literal["DockingBase"] = "DockingBase"
 
     @abc.abstractmethod
-    def _dock() -> list["DockingResult"]:
+    def _dock(self, inputs: list[DockingInputPair]) -> list["DockingResult"]:
         ...
 
     def dock(
