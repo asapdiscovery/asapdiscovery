@@ -5,8 +5,6 @@ from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from pydantic import Field
 
-# TODO: Change this to just be "docking inputs" to not require that it is a pair of ligands / complexes
-
 
 class PairBase(DataModelAbstractBase):
     """
@@ -34,9 +32,7 @@ class CompoundStructurePair(PairBase):
     ligand: Ligand = Field(description="Ligand schema object")
 
 
-class DockingInputPair(
-    PairBase
-):  # TODO: convert to DockingInput and not require a single complex / ligand?
+class DockingInputPair(PairBase):
     """
     Schema for a DockingInputPair, containing both a PreppedComplex and Ligand
     This is designed to track a matched ligand and complex pair for investigation
