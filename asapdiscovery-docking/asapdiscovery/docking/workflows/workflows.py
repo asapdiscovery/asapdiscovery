@@ -88,14 +88,6 @@ class WorkflowInputsBase(BaseModel):
         with open(file, "w") as f:
             f.write(self.json(indent=2))
 
-    @abc.abstractmethod
-    @classmethod
-    def _check_inputs(cls, values):
-        """
-        Subclass-specific input validation.
-        """
-        return values
-
     @root_validator
     @classmethod
     def check_inputs(cls, values):
