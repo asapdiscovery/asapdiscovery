@@ -56,7 +56,7 @@ class HTMLVisualizerV2(VisualizerBase):
         elif self.colour_method == ColourMethod.fitness:
             return DockingResultCols.HTML_PATH_FITNESS.value
 
-    def _visualize(self, docking_results: list[DockingResult]):
+    def _visualize(self, docking_results: list[DockingResult]) -> list[dict[str, str]]:
         """
         Visualize a list of docking results.
 

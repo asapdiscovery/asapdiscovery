@@ -39,6 +39,7 @@ from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 from asapdiscovery.simulation.simulate import OpenMMPlatform
+from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
 from asapdiscovery.dataviz.viz_v2.html_viz import HTMLVisualizerV2, ColourMethod
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -561,7 +562,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     if inputs.md:
         md_output_dir = output_dir / "md"
-        md_simulator = VanillaMDSimulator(output_dir=md_output_dir)
+        md_simulator = VanillaMDSimulatorV2(output_dir=md_output_dir)
         simulation_results = md_simulator.simulate(
             results, use_dask=inputs.use_dask, dask_client=dask_client
         )

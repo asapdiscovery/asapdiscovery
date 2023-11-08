@@ -46,6 +46,9 @@ class DockingResultColsV2(str, Enum):
     HTML_PATH_POSE = "html_path_pose"
     HTML_PATH_FITNESS = "html_path_fitness"
     GIF_PATH = "gif_path"
+    MD_PATH_TRAJ = "md_path_traj"
+    MD_PATH_MIN_PDB = "md_path_min_pdb"
+    MD_PATH_MIN_GIF = "md_path_min_gif"
 
     @classmethod
     def get_columns(cls) -> list[str]:
