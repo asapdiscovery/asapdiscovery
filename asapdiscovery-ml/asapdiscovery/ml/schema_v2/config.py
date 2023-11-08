@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 from enum import Enum
 from pathlib import Path
 from typing import Callable, ClassVar
@@ -117,9 +118,23 @@ class ModelType(str, Enum):
     gat = "gat"
     schnet = "schnet"
     e3nn = "e3nn"
+    INVALID = "INVALID"
 
 
-class GATModelConfig(BaseModel):
+class ModelConfigBase(BaseModel):
+    import mtenn
+
+    model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
+
+    @abc.abstractmethod
+    def _build(self) -> (torch.nn.Module, Callable):
+        ...
+
+    def build(self) -> mtenn.model.Model:
+        pass
+
+
+class GATModelConfig(ModelConfigBase):
     """
     Class for constructing a GAT ML model. Note that there are two methods for defining
     the size of the model:
