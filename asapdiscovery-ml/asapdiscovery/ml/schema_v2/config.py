@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import abc
+from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
 from typing import Callable, ClassVar, Optional
-from collections.abc import Iterator
-import torch
-from pydantic import BaseModel, Field, root_validator
 
 import mtenn
+import torch
+from pydantic import BaseModel, Field, root_validator
 
 
 class OptimizerType(str, Enum):
@@ -163,20 +163,20 @@ class ModelConfigBase(BaseModel):
             "representations in the MTENN Model."
         ),
     )
-    pred_readout: Optional[MTENNReadout] = Field(
+    pred_readout: MTENNReadout | None = Field(
         None,
         description=(
             "Which Readout to use for the model predictions. This corresponds "
             "to the individual pose predictions in the case of a GroupedModel."
         ),
     )
-    combination: Optional[MTENNCombination] = Field(
+    combination: MTENNCombination | None = Field(
         None,
         description=(
             "Which Combination to use for combining predictions in a GroupedModel."
         ),
     )
-    comb_readout: Optional[MTENNReadout] = Field(
+    comb_readout: MTENNReadout | None = Field(
         None,
         description=(
             "Which Readout to use for the combined model predictions. This is only "
