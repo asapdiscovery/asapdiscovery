@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Callable, ClassVar
+from typing import Callable, ClassVar, Optional
 from collections.abc import Iterator
 
 import torch
@@ -121,10 +121,72 @@ class ModelType(str, Enum):
     INVALID = "INVALID"
 
 
+class MTENNStrategy(str, Enum):
+    """
+    Enum for possible MTENN Strategy classes.
+    """
+
+    # delta G strategy
+    delta = "delta"
+    # ML concatenation strategy
+    concat = "concat"
+    # Complex-only strategy
+    complex = "complex"
+
+
+class MTENNReadout(str, Enum):
+    """
+    Enum for possible MTENN Readout classes.
+    """
+
+    pic50 = "pic50"
+    none = "none"
+
+
+class MTENNCombination(str, Enum):
+    """
+    Enum for possible MTENN Readout classes.
+    """
+
+    mean = "mean"
+    max = "max"
+    boltzmann = "boltzmann"
+
+
 class ModelConfigBase(BaseModel):
     import mtenn
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
+
+    # Not sure if I can do this...
+    grouped: bool = Field(False, description="Model is a grouped (multi-pose) model.")
+    strategy: MTENNStrategy = Field(
+        MTENNStrategy.delta,
+        description=(
+            "Which Strategy to use for combining complex, protein, and ligand "
+            "representations in the MTENN Model."
+        ),
+    )
+    pred_readout: Optional[MTENNReadout] = Field(
+        None,
+        description=(
+            "Which Readout to use for the model predictions. This corresponds "
+            "to the individual pose predictions in the case of a GroupedModel."
+        ),
+    )
+    combination: Optional[MTENNCombination] = Field(
+        None,
+        description=(
+            "Which Combination to use for combining predictions in a GroupedModel."
+        ),
+    )
+    comb_readout: Optional[MTENNReadout] = Field(
+        None,
+        description=(
+            "Which Readout to use for the combined model predictions. This is only "
+            "relevant in the case of a GroupedModel."
+        ),
+    )
 
     @abc.abstractmethod
     def _build(self) -> (torch.nn.Module, Callable):
@@ -235,6 +297,7 @@ class GATModelConfig(ModelConfigBase):
         False, description="Allow zero in degree nodes for all graph layers."
     )
 
+    @staticmethod
     @root_validator(pre=False)
     def massage_into_lists(cls, values) -> GATModelConfig:
         list_params = [
