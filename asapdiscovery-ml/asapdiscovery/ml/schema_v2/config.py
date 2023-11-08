@@ -261,7 +261,7 @@ class GATModelConfig(BaseModel):
             raise ValueError(
                 (
                     "All passed parameter lists must be the same value. "
-                    f"Instead got: {list_lens}"
+                    f"Instead got list lengths of: {list_lens}"
                 )
             )
 
