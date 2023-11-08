@@ -339,10 +339,3 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     )
 
     result_df.to_csv(output_dir / "docking_results_final.csv", index=False)
-
-    if inputs.postera_upload:
-        logger.info("Uploading results to Postera")
-        postera_uploader = PosteraUploader(
-            settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
-        )
-        postera_uploader.push(result_df)
