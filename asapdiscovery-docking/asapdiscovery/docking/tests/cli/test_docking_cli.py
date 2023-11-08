@@ -154,8 +154,6 @@ def test_cross_docking_cli_structure_directory_du_cache(
             "--structure-dir",
             struct_dir,
             "--use-dask",
-            "--posit-confidence-cutoff",
-            0,
             "--cache-dir",
             du_cache_dir,
             "--output-dir",
