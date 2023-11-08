@@ -2,41 +2,31 @@
 A test-oriented docking workflow for testing the docking pipeline.
 Removes all the additional layers in the other workflows and adds some features to make running cross-docking easier
 """
-import logging
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional
-
 from asapdiscovery.data.dask_utils import (
-    DaskType,
     dask_cluster_from_type,
     set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.postera.postera_factory import PosteraFactory
-from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.services_config import PosteraSettings
-from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
-from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer
 from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from distributed import Client
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt
 
 
 class CrossDockingWorkflowInputs(WorkflowInputsBase):
