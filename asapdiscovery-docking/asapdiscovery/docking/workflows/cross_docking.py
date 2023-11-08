@@ -4,10 +4,8 @@ Removes all the additional layers in the other workflows and adds some features 
 """
 from pathlib import Path
 from shutil import rmtree
-from asapdiscovery.data.dask_utils import (
-    dask_cluster_from_type,
-    set_dask_config,
-)
+
+from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
