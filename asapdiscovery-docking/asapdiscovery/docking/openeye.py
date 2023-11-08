@@ -13,7 +13,6 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from asapdiscovery.docking.docking_v2 import (
     DockingBase,
-    DockingInputsBase,
     DockingResult,
 )
 from pydantic import Field, PositiveInt, root_validator
@@ -45,9 +44,9 @@ class POSIT_RELAX_MODE(Enum):
     NONE = oedocking.OEPoseRelaxMode_NONE
 
 
-class POSITInputs(DockingInputsBase):
+class POSITDocker(DockingBase):
     """
-    POSITInputs schema
+    Docking workflow using OEPosit
 
     Parameters
     ----------
@@ -66,6 +65,8 @@ class POSITInputs(DockingInputsBase):
     allow_final_clash : bool
         Whether to allow clashing poses in last stage of docking, by default False
     """
+
+    type: Literal["POSITDocker"] = "POSITDocker"
 
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
@@ -88,11 +89,6 @@ class POSITInputs(DockingInputsBase):
         True,
         description="Allow retries with different options if docking fails initially",
     )
-
-
-class POSITDocker(DockingBase):
-    posit_inputs: POSITInputs = Field(..., description="POSIT inputs")
-    type: Literal["POSITDocker"] = "POSITDocker"
 
     @staticmethod
     def to_result_type():
@@ -154,7 +150,7 @@ class POSITDocker(DockingBase):
         for pair in inputs:
             du = pair.complex.target.to_oedu()
             lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
-            if self.posit_inputs.use_omega:
+            if self.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
                 omega = oeomega.OEOmega(omegaOpts)
                 omega_retcode = omega.Build(lig_oemol)
@@ -172,42 +168,42 @@ class POSITDocker(DockingBase):
 
             opts = oedocking.OEPositOptions()
             opts.SetIgnoreNitrogenStereo(True)
-            opts.SetPositMethods(self.posit_inputs.posit_method.value)
-            opts.SetPoseRelaxMode(self.posit_inputs.relax.value)
+            opts.SetPositMethods(self.posit_method.value)
+            opts.SetPoseRelaxMode(self.relax.value)
 
             pose_res = oedocking.OEPositResults()
             pose_res, retcode = self.run_oe_posit_docking(
-                opts, pose_res, du, lig_oemol, self.posit_inputs.num_poses
+                opts, pose_res, du, lig_oemol, self.num_poses
             )
 
-            if self.posit_inputs.allow_retries:
+            if self.allow_retries:
                 # try again with no relaxation
                 if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
                     opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
                     pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, du, lig_oemol, self.posit_inputs.num_poses
+                        opts, pose_res, du, lig_oemol, self.num_poses
                     )
 
                 # try again with low posit probability
                 if (
                     retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-                    and self.posit_inputs.allow_low_posit_prob
+                    and self.allow_low_posit_prob
                 ):
                     opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                    opts.SetMinProbability(self.posit_inputs.low_posit_prob_thresh)
+                    opts.SetMinProbability(self.low_posit_prob_thresh)
                     pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, du, lig_oemol, self.posit_inputs.num_poses
+                        opts, pose_res, du, lig_oemol, self.num_poses
                     )
 
                 # try again allowing clashes
                 if (
-                    self.posit_inputs.allow_final_clash
+                    self.allow_final_clash
                     and retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
                 ):
                     opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
                     opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
                     pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, du, lig_oemol, self.posit_inputs.num_poses
+                        opts, pose_res, du, lig_oemol, self.num_poses
                     )
 
             if retcode == oedocking.OEDockingReturnCode_Success:
@@ -220,7 +216,7 @@ class POSITDocker(DockingBase):
                     sd_data = {
                         DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
                         DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
-                            self.posit_inputs.posit_method.value
+                            self.posit_method.value
                         ),
                     }
                     posed_ligand.set_SD_data(sd_data)
