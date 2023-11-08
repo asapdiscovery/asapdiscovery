@@ -6,11 +6,10 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
-
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.modeling.protein_prep_v2 import CacheType
+from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
 class WorkflowInputsBase(BaseModel):
