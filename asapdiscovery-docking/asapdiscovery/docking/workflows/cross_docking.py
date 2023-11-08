@@ -122,21 +122,10 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
 
-    if inputs.postera:
-        # load postera
-        logger.info(
-            f"Loading Postera database molecule set {inputs.postera_molset_name}"
-        )
-        postera_settings = PosteraSettings()
-        postera = PosteraFactory(
-            settings=postera_settings, molecule_set_name=inputs.postera_molset_name
-        )
-        query_ligands = postera.pull()
-    else:
-        # load from file
-        logger.info(f"Loading ligands from file: {inputs.filename}")
-        molfile = MolFileFactory.from_file(inputs.filename)
-        query_ligands = molfile.ligands
+    # load from file
+    logger.info(f"Loading ligands from file: {inputs.filename}")
+    molfile = MolFileFactory.from_file(inputs.filename)
+    query_ligands = molfile.ligands
 
     # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:
