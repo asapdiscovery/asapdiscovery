@@ -3,14 +3,13 @@ This module contains the inputs, docker, and output schema for using POSIT
 """
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal
 from asapdiscovery.data.openeye import (
     oechem,
     oedocking,
     oeomega,
-    save_openeye_pdb,
 )
-from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
@@ -251,66 +250,6 @@ class POSITDocker(DockingBase):
                     raise ValueError(f"Unknown error handling option {error}")
 
         return docking_results
-
-    @staticmethod
-    def write_docking_files(
-        docking_results: list[DockingResult], output_dir: Union[str, Path]
-    ):
-        """
-        Write docking results to files in output_dir, directories will have the form:
-        {target_name}_+_{ligand_name}/docked.sdf
-        {target_name}_+_{ligand_name}/docked_complex.pdb
-
-        Parameters
-        ----------
-        docking_results : list[DockingResult]
-            List of DockingResults
-        output_dir : Union[str, Path]
-            Output directory
-
-        Raises
-        ------
-        ValueError
-            If compound names of input pair and posed ligand do not match
-
-        """
-        ligs = [docking_result.input_pair.ligand for docking_result in docking_results]
-        names_unique = compound_names_unique(ligs)
-        output_dir = Path(output_dir)
-        # if names are not unique, we will use unknown_ligand_{i} as the ligand portion of directory
-        # when writing files
-
-        # write out the docked pose
-        for i, result in enumerate(docking_results):
-            if (
-                not result.input_pair.ligand.compound_name
-                == result.posed_ligand.compound_name
-            ):
-                raise ValueError(
-                    "Compound names of input pair and posed ligand do not match"
-                )
-            if names_unique:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + result.posed_ligand.compound_name
-                )
-            else:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + f"unknown_ligand_{i}"
-                )
-
-            compound_dir = output_dir / output_pref
-            compound_dir.mkdir(parents=True, exist_ok=True)
-            output_sdf_file = compound_dir / "docked.sdf"
-            output_pdb_file = compound_dir / "docked_complex.pdb"
-
-            result.posed_ligand.to_sdf(output_sdf_file)
-
-            combined_oemol = result.to_posed_oemol()
-            save_openeye_pdb(combined_oemol, output_pdb_file)
 
     def provenance(self) -> dict[str, str]:
         return {
