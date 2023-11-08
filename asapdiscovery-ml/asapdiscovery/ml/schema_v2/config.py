@@ -266,6 +266,7 @@ class GATModelConfig(BaseModel):
             )
 
         num_layers = max(list_lens_set)
+        values["num_layers"] = num_layers
         # If we just want a model with one layer, can return early since we've already
         #  converted everything into lists
         if num_layers == 1:
