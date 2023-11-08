@@ -136,6 +136,7 @@ def large_scale(
 
 
 @docking.command()
+@target
 @click.option(
     "--use-omega",
     is_flag=True,
@@ -159,6 +160,7 @@ def large_scale(
 @output_dir
 @input_json
 def cross_docking(
+    target: TargetTags,
     use_omega: bool = False,
     allow_posit_retries: bool = False,
     ligands: Optional[str] = None,
