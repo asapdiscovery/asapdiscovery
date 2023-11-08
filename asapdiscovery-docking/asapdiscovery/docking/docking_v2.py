@@ -12,11 +12,7 @@ from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_open
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
-from pydantic import (
-    BaseModel,
-    Field,
-    PositiveFloat,
-)
+from pydantic import BaseModel, Field, PositiveFloat
 
 
 class DockingBase(BaseModel):
