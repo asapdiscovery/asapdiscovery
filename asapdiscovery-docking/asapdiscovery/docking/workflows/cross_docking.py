@@ -30,9 +30,9 @@ from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
-from asapdiscovery.docking.openeye import POSITDocker, POSIT_RELAX_MODE, POSIT_METHOD
+from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
 from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
