@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, root_validator
 import torch
 from typing import Callable, ClassVar, Iterator, List, Optional
 
@@ -218,8 +218,8 @@ class GATModelConfig(BaseModel):
         False, description="Allow zero in degree nodes for all graph layers."
     )
 
-    @model_validator(mode="after")
-    def massage_into_lists(self) -> "GATModelConfig":
+    @root_validator(pre=False)
+    def massage_into_lists(cls, values) -> "GATModelConfig":
         list_params = [
             "hidden_feats",
             "num_heads",
@@ -232,7 +232,7 @@ class GATModelConfig(BaseModel):
             "biases",
         ]
         # First check if any of the list-optional params are lists
-        if any([isinstance(getattr(self, p)), list] for p in list_params):
+        if any([isinstance(values[p], list) for p in list_params]):
             use_num_layers = False
         else:
             use_num_layers = True
@@ -241,17 +241,17 @@ class GATModelConfig(BaseModel):
         #  lists based on num_layers and return
         if use_num_layers:
             for p in list_params:
-                setattr(self, p, [getattr(self, p)] * self.num_layers)
+                values[p] = [values[p]] * values["num_layers"]
 
-            return self
+            return values
 
         # Otherwise need to do a bit more logic to get things right
         list_lens = {}
         for p in list_params:
-            param_val = getattr(self, p)
+            param_val = values[p]
             if not isinstance(param_val, list):
                 param_val = [param_val]
-                setattr(self, p, param_val)
+                values[p] = param_val
             list_lens[p] = len(param_val)
 
         # Check that there's only one length present
@@ -266,13 +266,14 @@ class GATModelConfig(BaseModel):
             )
 
         num_layers = max(list_lens_set)
-        # If we just want a model with one layer, can return early
+        # If we just want a model with one layer, can return early since we've already
+        #  converted everything into lists
         if num_layers == 1:
-            return self
+            return values
 
         # Adjust any length 1 list to be the right length
         for p, list_len in list_lens.items():
             if list_len == 1:
-                setattr(self, p, [getattr(self, p)] * num_layers)
+                values[p] = values[p] * num_layers
 
-        return self
+        return values
