@@ -5,11 +5,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Callable, ClassVar, Optional
 from collections.abc import Iterator
-
 import torch
 from pydantic import BaseModel, Field, root_validator
 
-# from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
+import mtenn
 
 
 class OptimizerType(str, Enum):
@@ -140,7 +139,6 @@ class MTENNReadout(str, Enum):
     """
 
     pic50 = "pic50"
-    none = "none"
 
 
 class MTENNCombination(str, Enum):
@@ -154,8 +152,6 @@ class MTENNCombination(str, Enum):
 
 
 class ModelConfigBase(BaseModel):
-    import mtenn
-
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
 
     # Not sure if I can do this...
@@ -189,11 +185,50 @@ class ModelConfigBase(BaseModel):
     )
 
     @abc.abstractmethod
-    def _build(self) -> (torch.nn.Module, Callable):
+    def _build(self, mtenn_params={}) -> mtenn.model.Model:
         ...
 
     def build(self) -> mtenn.model.Model:
-        pass
+        # First handle the MTENN classes
+        match self.combination:
+            case MTENNCombination.mean:
+                mtenn_combination = mtenn.combination.MeanCombination()
+            case MTENNCombination.max:
+                mtenn_combination = mtenn.combination.MaxCombination()
+            case MTENNCombination.boltzmann:
+                mtenn_combination = mtenn.combination.BoltzmannCombination()
+            case None:
+                mtenn_combination = None
+
+        match self.pred_readout:
+            case MTENNReadout.pic50:
+                mtenn_pred_readout = mtenn.readout.PIC50Readout()
+            case None:
+                mtenn_pred_readout = None
+
+        match self.comb_readout:
+            case MTENNReadout.pic50:
+                mtenn_comb_readout = mtenn.readout.PIC50Readout()
+            case None:
+                mtenn_comb_readout = None
+
+        mtenn_params = {
+            "combination": mtenn_combination,
+            "pred_readout": mtenn_pred_readout,
+            "comb_readout": mtenn_comb_readout,
+        }
+
+        # Build the actual Model
+        return self._build(mtenn_params)
+
+    @staticmethod
+    def _check_grouped(cls, values):
+        """
+        Makes sure that a Combination method is passed if using a GroupedModel. Only
+        needs to be called for structure-based models.
+        """
+        if values["grouped"] and (not values["combination"]):
+            raise ValueError("combination must be specified for a GroupedModel.")
 
 
 class GATModelConfig(ModelConfigBase):
@@ -297,7 +332,6 @@ class GATModelConfig(ModelConfigBase):
         False, description="Allow zero in degree nodes for all graph layers."
     )
 
-    @staticmethod
     @root_validator(pre=False)
     def massage_into_lists(cls, values) -> GATModelConfig:
         list_params = [
@@ -357,18 +391,20 @@ class GATModelConfig(ModelConfigBase):
 
         return values
 
-    def _build(self):
+    def _build(self, mtenn_params={}):
         """
-        Build an MTENN GAT model from this config, and return the function necessary for
-        converting that model into a full MTENN Model.
+        Build an MTENN GAT Model from this config.
+
+        Parameters
+        ----------
+        mtenn_params: dict
+            Dict giving the MTENN Readout. This will be passed by the `build` method in
+            the abstract base class
 
         Returns
         -------
-        mtenn.conversion_utils.gat.GAT
-            MTENN GAT model (not an MTENN Model)
-        function
-            Function from mtenn.conversion_utils.gat to convert the GAT model into a
-            full MTENN Model
+        mtenn.model.Model
+            MTENN GAT LigandOnlyModel
         """
         from mtenn.conversion_utils import GAT
 
@@ -385,4 +421,8 @@ class GATModelConfig(ModelConfigBase):
             biases=self.biases,
             allow_zero_in_degree=self.allow_zero_in_degree,
         )
-        return model, GAT.get_model
+
+        pred_readout = (
+            mtenn_params["pred_readout"] if "pred_readout" in mtenn_params else None
+        )
+        return GAT.get_model(model=model, pred_readout=pred_readout, fix_device=True)
