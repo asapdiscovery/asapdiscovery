@@ -100,7 +100,7 @@ class DockingInputsBase(BaseModel):
         with open(file, "w") as f:
             f.write(self.json(indent=2))
 
-    @abc.abstractmethod()
+    @abc.abstractmethod
     @classmethod
     def _check_inputs(cls, values):
         """
