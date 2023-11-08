@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
-from pydantic import BaseModel, Field, root_validator
+from typing import Callable, ClassVar, List, Optional
+from collections.abc import Iterator
+
 import torch
-from typing import Callable, ClassVar, Iterator, List, Optional
+from pydantic import BaseModel, Field, root_validator
 
 # from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 
@@ -149,7 +151,7 @@ class GATModelConfig(BaseModel):
             "other argument."
         ),
     )
-    hidden_feats: int | List[int] = Field(
+    hidden_feats: int | list[int] = Field(
         32,
         description=(
             "Output size of each GAT layer. If an int is passed, the value for "
@@ -158,56 +160,56 @@ class GATModelConfig(BaseModel):
             "the list."
         ),
     )
-    num_heads: int | List[int] = Field(
+    num_heads: int | list[int] = Field(
         4,
         description=(
             "Number of attention heads for each GAT layer. Passing an int or list of "
             "ints functions similarly as for hidden_feats."
         ),
     )
-    feat_drops: float | List[float] = Field(
+    feat_drops: float | list[float] = Field(
         0,
         description=(
             "Dropout of input features for each GAT layer. Passing an float or list of "
             "floats functions similarly as for hidden_feats."
         ),
     )
-    attn_drops: float | List[float] = Field(
+    attn_drops: float | list[float] = Field(
         0,
         description=(
             "Dropout of attention values for each GAT layer. Passing an float or list "
             "of floats functions similarly as for hidden_feats."
         ),
     )
-    alphas: float | List[float] = Field(
+    alphas: float | list[float] = Field(
         0.2,
         description=(
             "Hyperparameter for LeakyReLU gate for each GAT layer. Passing an float or "
             "list of floats functions similarly as for hidden_feats."
         ),
     )
-    residuals: bool | List[bool] = Field(
+    residuals: bool | list[bool] = Field(
         True,
         description=(
             "Whether to use residual connection for each GAT layer. Passing a bool or "
             "list of bools functions similarly as for hidden_feats."
         ),
     )
-    agg_modes: str | List[str] = Field(
+    agg_modes: str | list[str] = Field(
         "flatten",
         description=(
             "Which aggregation mode [flatten, mean] to use for each GAT layer. "
             "Passing a str or list of strs functions similarly as for hidden_feats."
         ),
     )
-    activations: Optional[Callable | List[Callable]] = Field(
+    activations: Callable | list[Callable] | None = Field(
         None,
         description=(
             "Activation function for each GAT layer. Passing a function or "
             "list of functions functions similarly as for hidden_feats."
         ),
     )
-    biases: bool | List[bool] = Field(
+    biases: bool | list[bool] = Field(
         True,
         description=(
             "Whether to use bias for each GAT layer. Passing a bool or "
@@ -219,7 +221,7 @@ class GATModelConfig(BaseModel):
     )
 
     @root_validator(pre=False)
-    def massage_into_lists(cls, values) -> "GATModelConfig":
+    def massage_into_lists(cls, values) -> GATModelConfig:
         list_params = [
             "hidden_feats",
             "num_heads",
@@ -259,10 +261,8 @@ class GATModelConfig(BaseModel):
         # This could be 0 if lists of length 1 were passed, which is valid
         if len(list_lens_set - {1}) > 1:
             raise ValueError(
-                (
                     "All passed parameter lists must be the same value. "
                     f"Instead got list lengths of: {list_lens}"
-                )
             )
 
         num_layers = max(list_lens_set)
