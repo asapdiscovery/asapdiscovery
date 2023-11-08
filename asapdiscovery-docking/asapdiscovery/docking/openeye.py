@@ -4,12 +4,8 @@ This module contains the inputs, docker, and output schema for using POSIT
 from enum import Enum
 from pathlib import Path
 from typing import Literal, Union
-from asapdiscovery.data.openeye import (
-    oechem,
-    oedocking,
-    oeomega,
-    save_openeye_pdb,
-)
+
+from asapdiscovery.data.openeye import oechem, oedocking, oeomega, save_openeye_pdb
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
 from asapdiscovery.data.schema_v2.pairs import DockingInputPair
 from asapdiscovery.docking.docking_data_validation import (
