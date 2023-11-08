@@ -36,6 +36,7 @@ from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
+
 # TODO: delete this and use the one from the other branch once it's merged
 class DockingInputs(BaseModel):
     filename: Optional[str] = Field(
