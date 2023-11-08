@@ -227,16 +227,6 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
 
-    # load ml scorers
-    if inputs.ml_scorers:
-        for ml_scorer in inputs.ml_scorers:
-            logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorer = MLModelScorer.from_latest_by_target_and_type(
-                inputs.target, ml_scorer
-            )
-            if scorer:
-                scorers.append(scorer)
-
     # score results
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
@@ -254,13 +244,6 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     del results
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
-
-    logger.info("Filtering docking results")
-    # filter for POSIT probability > 0.7
-    scores_df = scores_df[
-        scores_df[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value]
-        > inputs.posit_confidence_cutoff
-    ]
 
     n_posit_filtered = len(scores_df)
     logger.info(
