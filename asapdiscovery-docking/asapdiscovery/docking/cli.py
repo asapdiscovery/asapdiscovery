@@ -144,10 +144,16 @@ def large_scale(
     help="Whether to use OEOmega conformer enumeration before docking (slower, more accurate)",
 )
 @click.option(
-    "--allow-posit-retries",
+    "--allow-retries",
     is_flag=True,
     default=False,
     help="Whether to allow POSIT to retry with relaxed parameters if docking fails (slower, more likely to succeed)",
+)
+@click.option(
+    "--allow-final-clash",
+    is_flag=True,
+    default=False,
+    help="Allow clashing poses in last stage of docking",
 )
 @ligands
 @pdb_file
@@ -162,7 +168,8 @@ def large_scale(
 def cross_docking(
     target: TargetTags,
     use_omega: bool = False,
-    allow_posit_retries: bool = False,
+    allow_retries: bool = False,
+    allow_final_clash: bool = False,
     ligands: Optional[str] = None,
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
@@ -189,7 +196,7 @@ def cross_docking(
             use_dask=use_dask,
             dask_type=dask_type,
             use_omega=use_omega,
-            allow_posit_retries=allow_posit_retries,
+            allow_retries=allow_retries,
             filename=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
@@ -198,6 +205,7 @@ def cross_docking(
             gen_cache=gen_cache,
             cache_type=cache_type,
             output_dir=output_dir,
+            allow_final_clash=allow_final_clash,
         )
 
     cross_docking_workflow(inputs)
