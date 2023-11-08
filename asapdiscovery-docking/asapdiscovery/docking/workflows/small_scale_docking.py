@@ -597,7 +597,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         postera_uploader = PosteraUploader(
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
-        postera_uploader.push(result_df)
+
+        # push the results to PostEra, making a new molecule set if necessary
+        result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
+
+        if made_new_molset:
+            logger.info(f"Made new molecule set with name: {molset_name}")
 
         logger.info("Uploading artifacts to PostEra")
 
@@ -617,8 +622,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
         uploader = ManifoldArtifactUploader(
             inputs.target,
-            combined_df,
-            inputs.postera_molset_name,
+            result_df,
+            molset_name,
             bucket_name=aws_s3_settings.BUCKET_NAME,
             artifact_types=artifact_types,
             artifact_columns=artifact_columns,

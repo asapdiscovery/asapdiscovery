@@ -410,7 +410,9 @@ class MoleculeSetAPI(PostEraAPI):
         )
 
         # push updates to postera
-        retcode = self.create(molecule_set_name, mol_list)
+        id = self.create(molecule_set_name, mol_list, return_full=False)
 
-        if not retcode:
+        if not id:
             raise ValueError(f"Create failed for molecule set {molecule_set_name}")
+
+        return id
