@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
-from typing import Callable, ClassVar, List, Optional
+from typing import Callable, ClassVar
 from collections.abc import Iterator
 
 import torch
@@ -261,8 +261,8 @@ class GATModelConfig(BaseModel):
         # This could be 0 if lists of length 1 were passed, which is valid
         if len(list_lens_set - {1}) > 1:
             raise ValueError(
-                    "All passed parameter lists must be the same value. "
-                    f"Instead got list lengths of: {list_lens}"
+                "All passed parameter lists must be the same value. "
+                f"Instead got list lengths of: {list_lens}"
             )
 
         num_layers = max(list_lens_set)
@@ -278,3 +278,33 @@ class GATModelConfig(BaseModel):
                 values[p] = values[p] * num_layers
 
         return values
+
+    def _build(self):
+        """
+        Build an MTENN GAT model from this config, and return the function necessary for
+        converting that model into a full MTENN Model.
+
+        Returns
+        -------
+        mtenn.conversion_utils.gat.GAT
+            MTENN GAT model (not an MTENN Model)
+        function
+            Function from mtenn.conversion_utils.gat to convert the GAT model into a
+            full MTENN Model
+        """
+        from mtenn.conversion_utils import GAT
+
+        model = GAT(
+            in_feats=self.in_feats,
+            hidden_feats=self.hidden_feats,
+            num_heads=self.num_heads,
+            feat_drops=self.feat_drops,
+            attn_drops=self.attn_drops,
+            alphas=self.alphas,
+            residuals=self.residuals,
+            agg_modes=self.agg_modes,
+            activations=self.activations,
+            biases=self.biases,
+            allow_zero_in_degree=self.allow_zero_in_degree,
+        )
+        return model, GAT.get_model
