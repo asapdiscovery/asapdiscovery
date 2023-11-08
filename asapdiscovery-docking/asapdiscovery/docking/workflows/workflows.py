@@ -70,7 +70,8 @@ class WorkflowInputsBase(BaseModel):
         5, description="Number of targets to dock each ligand against."
     )
 
-    logname: str = Field("cross_docking", description="Name of the log file.")
+    # TODO: make this an "abstractmethod" kinda thing that needs to be re-named in subclasses
+    logname: str = Field("docking_workflow_base", description="Name of the log file.")
 
     loglevel: int = Field(logging.INFO, description="Logging level")
 

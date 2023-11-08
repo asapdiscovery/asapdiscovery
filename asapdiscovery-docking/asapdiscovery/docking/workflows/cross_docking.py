@@ -30,238 +30,50 @@ from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.openeye import POSITDocker
+from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
+from asapdiscovery.docking.openeye import POSITDocker, POSIT_RELAX_MODE, POSIT_METHOD
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt, root_validator, validator
 
 
-class LargeScaleDockingInputs(BaseModel):
+class CrossDockingWorkflowInputs(WorkflowInputsBase):
+    logname: str = Field("cross_docking", description="Name of the log file.")
+
+    # Copied from POSITDocker
+    relax: POSIT_RELAX_MODE = Field(
+        POSIT_RELAX_MODE.NONE,
+        description="When to check for relaxation either, 'clash', 'all', 'none'",
+    )
+    posit_method: POSIT_METHOD = Field(
+        POSIT_METHOD.ALL, description="POSIT method to use"
+    )
+    use_omega: bool = Field(True, description="Use omega to generate conformers")
+    num_poses: PositiveInt = Field(1, description="Number of poses to generate")
+    allow_low_posit_prob: bool = Field(False, description="Allow low posit probability")
+    low_posit_prob_thresh: float = Field(
+        0.1,
+        description="Minimum posit probability threshold if allow_low_posit_prob is False",
+    )
+    allow_final_clash: bool = Field(
+        False, description="Allow clashing poses in last stage of docking"
+    )
+    allow_retries: bool = Field(
+        True,
+        description="Allow retries with different options if docking fails initially",
+    )
+
+
+def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     """
-    Schema for inputs to large scale docking
+    Run cross docking on a set of ligands, against multiple targets
 
     Parameters
     ----------
-    filename : str, optional
-        Path to a molecule file containing query ligands.
-    fragalysis_dir : str, optional
-        Path to a directory containing a Fragalysis dump.
-    structure_dir : str, optional
-        Path to a directory containing structures to dock instead of a full fragalysis database.
-    postera : bool, optional
-        Whether to use the Postera database as the query set.
-    postera_upload : bool, optional
-        Whether to upload the results to Postera.
-    postera_molset_name : str, optional
-        The name of the molecule set to pull from and/or upload to.
-    cache_dir : str, optional
-        Path to a directory where structures are cached
-    gen_cache : str, optional
-        Path to a directory where prepped structures should be cached
-    cache_type : list[CacheType], optional
-        The types of cache to use.
-    target : TargetTags, optional
-        The target to dock against.
-    write_final_sdf : bool, optional
-        Whether to write the final docked poses to an SDF file.
-    use_dask : bool, optional
-        Whether to use dask for parallelism.
-    dask_type : DaskType, optional
-        Type of dask client to use for parallelism.
-    n_select : int, optional
-        Number of targets to dock each ligand against, sorted by MCS
-    top_n : int, optional
-        Number of docking results to return, ordered by docking score
-    posit_confidence_cutoff : float, optional
-        POSIT confidence cutoff used to filter docking results
-    ml_scorers : MLModelType, optional
-        The name of the ml scorers to use.
-    logname : str, optional
-        Name of the log file.
-    loglevel : int, optional
-        Logging level.
-    output_dir : Path, optional
-        Output directory
-    """
-
-    filename: Optional[str] = Field(
-        None, description="Path to a molecule file containing query ligands."
-    )
-
-    pdb_file: Optional[Path] = Field(
-        None, description="Path to a PDB file to prep and dock to."
-    )
-
-    fragalysis_dir: Optional[Path] = Field(
-        None, description="Path to a directory containing a Fragalysis dump."
-    )
-    structure_dir: Optional[Path] = Field(
-        None,
-        description="Path to a directory containing structures to dock instead of a full fragalysis database.",
-    )
-    postera: bool = Field(
-        False, description="Whether to use the Postera database as the query set."
-    )
-    postera_upload: bool = Field(
-        False, description="Whether to upload the results to Postera."
-    )
-    postera_molset_name: Optional[str] = Field(
-        None, description="The name of the molecule set to upload to."
-    )
-    cache_dir: Optional[str] = Field(
-        None, description="Path to a directory where a cache has been generated"
-    )
-
-    gen_cache: Optional[str] = Field(
-        None,
-        description="Generate a cache from structures prepped in this workflow run in this directory",
-    )
-
-    cache_type: Optional[list[str]] = Field(
-        [CacheType.DesignUnit], description="The types of cache to use."
-    )
-
-    target: TargetTags = Field(None, description="The target to dock against.")
-
-    write_final_sdf: bool = Field(
-        default=True,
-        description="Whether to write the final docked poses to an SDF file.",
-    )
-    use_dask: bool = Field(True, description="Whether to use dask for parallelism.")
-
-    dask_type: DaskType = Field(
-        DaskType.LOCAL, description="Dask client to use for parallelism."
-    )
-
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
-    )
-
-    n_select: PositiveInt = Field(
-        5, description="Number of targets to dock each ligand against, sorted by MCS"
-    )
-
-    top_n: PositiveInt = Field(
-        500, description="Number of docking results to return, ordered by docking score"
-    )
-
-    posit_confidence_cutoff: float = Field(
-        0.7,
-        le=1.0,
-        ge=0.0,
-        description="POSIT confidence cutoff used to filter docking results",
-    )
-
-    use_omega: bool = Field(
-        False,
-        description="Whether to use omega confomer enumeration in docking, warning: more expensive",
-    )
-
-    allow_posit_retries: bool = Field(
-        False,
-        description="Whether to allow retries in docking with varying settings, warning: more expensive",
-    )
-
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
-    )
-
-    logname: str = Field("large_scale_docking", description="Name of the log file.")
-
-    loglevel: int = Field(logging.INFO, description="Logging level")
-
-    output_dir: Path = Field(Path("output"), description="Output directory")
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @classmethod
-    def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
-
-    def to_json_file(self, file: str | Path):
-        with open(file, "w") as f:
-            f.write(self.json(indent=2))
-
-    @root_validator
-    @classmethod
-    def check_inputs(cls, values):
-        """
-        Validate inputs
-        """
-        filename = values.get("filename")
-        fragalysis_dir = values.get("fragalysis_dir")
-        structure_dir = values.get("structure_dir")
-        postera = values.get("postera")
-        postera_upload = values.get("postera_upload")
-        postera_molset_name = values.get("postera_molset_name")
-        cache_dir = values.get("cache_dir")
-        gen_cache = values.get("gen_cache")
-        pdb_file = values.get("pdb_file")
-
-        if postera and filename:
-            raise ValueError("Cannot specify both filename and postera.")
-
-        if not postera and not filename:
-            raise ValueError("Must specify either filename or postera.")
-
-        if postera_upload and not postera_molset_name:
-            raise ValueError(
-                "Must specify postera_molset_name if uploading to postera."
-            )
-
-        # can only specify one of fragalysis dir, structure dir and PDB file
-        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:
-            raise ValueError(
-                "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
-            )
-
-        if cache_dir and gen_cache:
-            raise ValueError("Cannot specify both cache_dir and gen_cache.")
-
-        return values
-
-    @validator("cache_dir")
-    @classmethod
-    def cache_dir_must_be_directory(cls, v):
-        """
-        Validate that the DU cache is a directory
-        """
-        if v is not None:
-            if not Path(v).is_dir():
-                raise ValueError("Du cache must be a directory.")
-        return v
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
-
-
-def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
-    """
-    Run large scale docking on a set of ligands, against multiple targets
-
-    Parameters
-    ----------
-    inputs : LargeScaleDockingInputs
-        Inputs to large scale docking
+    inputs : CrossDockingWorkflowInputs
+        Inputs to cross docking
 
     Returns
     -------
@@ -277,7 +89,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
     ).getLogger()
 
-    logger.info(f"Running large scale docking with inputs: {inputs}")
+    logger.info(f"Running cross docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
     inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
