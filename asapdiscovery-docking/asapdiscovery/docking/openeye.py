@@ -1,15 +1,10 @@
 """
 This module contains the inputs, docker, and output schema for using POSIT
 """
-import abc
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional, Union
-
-import dask
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from typing import Literal, Union
 from asapdiscovery.data.openeye import (
-    combine_protein_ligand,
     oechem,
     oedocking,
     oeomega,
@@ -25,8 +20,7 @@ from asapdiscovery.docking.docking_v2 import (
     DockingInputsBase,
     DockingResult,
 )
-from asapdiscovery.modeling.modeling import split_openeye_design_unit
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
+from pydantic import Field, PositiveInt, root_validator
 
 
 class POSIT_METHOD(Enum):
