@@ -1,7 +1,6 @@
 """
 Schema for workflows base classes
 """
-import abc
 import logging
 from pathlib import Path
 from typing import Optional
