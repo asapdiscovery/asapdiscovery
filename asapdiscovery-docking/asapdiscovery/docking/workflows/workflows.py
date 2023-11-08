@@ -116,7 +116,6 @@ class WorkflowInputsBase(BaseModel):
 
         if cache_dir and gen_cache:
             raise ValueError("Cannot specify both cache_dir and gen_cache.")
-        cls._check_inputs(values)
         return values
 
     @validator("cache_dir")
