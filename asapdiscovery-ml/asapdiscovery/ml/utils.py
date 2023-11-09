@@ -155,11 +155,9 @@ def build_dataset(
         extra_dict = {
             compound: {
                 "smiles": smiles,
-                "pIC50": exp_data_dict[compound]["pIC50"],
-                "pIC50_range": exp_data_dict[compound]["pIC50_range"],
-                "pIC50_stderr": exp_data_dict[compound]["pIC50_stderr"],
                 "date_created": dates_dict[compound],
             }
+            | exp_data_dict[compound]
             for compound, smiles in smiles_dict.items()
         }
 
@@ -190,6 +188,44 @@ def build_dataset(
     return ds, exp_data
 
 
+def build_loss_function(grouped, loss_type=None, semiquant_fill=None):
+    """
+    Build appropriate loss function for training.
+
+    Parameters
+    ----------
+    loss_type : str, optional
+        Loss type ["step", "uncertainty", "uncertainty_sq"]
+
+    Returns
+    -------
+    Union[MSELoss, GaussianNLLLoss]
+    """
+    from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss
+
+    try:
+        loss_type = loss_type.lower()
+    except AttributeError:
+        pass
+
+    if (loss_type is None) or (loss_type == "step"):
+        loss_func = MSELoss(loss_type)
+        lt = "standard" if loss_type is None else loss_type
+        print(f"Using {lt} MSE loss", flush=True)
+    elif "uncertainty" in loss_type:
+        keep_sq = loss_type.lower() == "uncertainty_sq"
+        loss_func = GaussianNLLLoss(keep_sq, semiquant_fill)
+        print(
+            f"Using Gaussian NLL loss with{'out'*(not keep_sq)}",
+            "semiquant values",
+            flush=True,
+        )
+    else:
+        raise ValueError(f"Unknown loss type {loss_type}")
+
+    return loss_func
+
+
 def build_model(
     model_type,
     e3nn_params=None,
@@ -198,6 +234,8 @@ def build_model(
     comb=None,
     pred_r=None,
     comb_r=None,
+    comb_neg=True,
+    comb_scale=1000.0,
     substrate=None,
     km=None,
     config=None,
@@ -220,13 +258,20 @@ def build_model(
         Whether to group structures by ligand
     comb : str, optional
         Which method to use to combine predictions for multiple poses in a
-        grouped model. Current options are ["mean", "boltzmann"]
+        grouped model. Current options are ["mean", "max", "boltzmann"]
     pred_r : str, optional
         Which readout method to use for the individual pose predictions. Current
         options are ["pic50"]
     comb_r : str, optional
         Which readout method to use for the combined pose prediction. Current
         options are ["pic50"]
+    comb_neg : bool, default=True
+        Value to pass for neg when creating MaxCombination. If True, this will take the
+        minimum instead of maximum
+    comb_scale : float, default=1000.0
+        Value to pass for scale when creating MaxCombination. A value of 1 will
+        approximate the Boltzmann mean, while a larger value will more accurately
+        approximate the max/min operation
     substrate : float, optional
         Substrate concentration for use in the Cheng-Prusoff equation. Assumed to be
         in the same units as km
@@ -243,6 +288,8 @@ def build_model(
     """
     import mtenn.conversion_utils
     import mtenn.model
+    from mtenn.combination import BoltzmannCombination, MaxCombination, MeanCombination
+    from mtenn.readout import PIC50Readout
 
     # Correct model name if needed
     model_type = model_type.lower()
@@ -256,9 +303,9 @@ def build_model(
             print("Using wandb config for model building.", flush=True)
         except Exception:
             config = {}
-    elif (type(config) is str) or isinstance(config, Path):
+    elif isinstance(config, str) or isinstance(config, Path):
         config = parse_config(config)
-    elif type(config) is not dict:
+    elif not isinstance(config, dict):
         config = {}
 
     # Take MTENN args from config if present, else from args
@@ -269,13 +316,18 @@ def build_model(
     try:
         combination = config["comb"].lower() if "comb" in config else comb.lower()
         if combination == "mean":
-            combination = mtenn.model.MeanCombination()
+            combination = MeanCombination()
+        elif combination == "max":
+            # Take MTENN args from config if present, else from args
+            comb_neg = config["comb_neg"] if "comb_neg" in config else comb_neg
+            comb_scale = config["comb_scale"] if "comb_scale" in config else comb_scale
+            combination = MaxCombination(neg=comb_neg, scale=comb_scale)
         elif combination == "boltzmann":
-            combination = mtenn.model.BoltzmannCombination()
+            combination = BoltzmannCombination()
         else:
             raise ValueError(
                 f"Unknown value for -comb: {combination}, "
-                "must be one of [mean, boltzmann]."
+                "must be one of [mean, max, boltzmann]."
             )
     except AttributeError:
         # This will be triggered if combination is left blank
@@ -294,7 +346,7 @@ def build_model(
             config["pred_r"].lower() if "pred_r" in config else pred_r.lower()
         )
         if pred_readout == "pic50":
-            pred_readout = mtenn.model.PIC50Readout(substrate=substrate, Km=km)
+            pred_readout = PIC50Readout(substrate=substrate, Km=km)
         elif pred_readout == "none":
             pred_readout = None
         else:
@@ -313,7 +365,7 @@ def build_model(
             config["comb_r"].lower() if "comb_r" in config else comb_r.lower()
         )
         if comb_readout == "pic50":
-            comb_readout = mtenn.model.PIC50Readout(substrate=substrate, Km=km)
+            comb_readout = PIC50Readout(substrate=substrate, Km=km)
         elif comb_readout == "none":
             comb_readout = None
         else:
@@ -1245,13 +1297,16 @@ def make_subsets(ds, idx_lists, split_lens):
     seen_idx = set()
     prev_idx = 0
     # Go up to the last split so we can add anything that got left out from rounding
-    for n_mols in split_lens[:-1]:
+    for i, n_mols in enumerate(split_lens[:-1]):
         n_mols_cur = 0
         subset_idx = []
         cur_idx = prev_idx
         # Keep adding groups until the split is as big as it needs to be, or we reach
-        #  the end of the array
-        while (n_mols_cur < n_mols) and (cur_idx < len(idx_lists)):
+        #  the end of the array (making sure to save at least some molecules for the
+        #  rest of the splits)
+        while (n_mols_cur < n_mols) and (
+            cur_idx < (len(idx_lists) - (len(split_lens) - i))
+        ):
             subset_idx.extend(idx_lists[cur_idx])
             n_mols_cur += len(idx_lists[cur_idx])
             cur_idx += 1
@@ -1437,6 +1492,7 @@ def train(
     batch_size=1,
     optimizer=None,
     es=None,
+    target_prop="pIC50",
 ):
     """
     Train a model.
@@ -1484,6 +1540,8 @@ def train(
         optimizer
     es : Union[asapdiscovery.ml.BestEarlyStopping, asapdiscovery.ml.ConvergedEarlyStopping]
         EarlyStopping object to keep track of early stopping
+    target_prop: str, default="pIC50"
+        Property to train against in `target_dict`
 
     Returns
     -------
@@ -1503,8 +1561,6 @@ def train(
 
     import torch
 
-    from . import MSELoss
-
     if use_wandb:
         import wandb
 
@@ -1523,7 +1579,9 @@ def train(
     if not loss_dict:
         loss_dict = {"train": {}, "val": {}, "test": {}}
 
-    def update_loss_dict(split, compound_id, target, in_range, uncertainty, pred, loss):
+    def update_loss_dict(
+        split, compound_id, target, in_range, uncertainty, pred, loss, pose_preds=None
+    ):
         """
         Update (in-place) loss_dict info from training/evaluation on a molecule.
 
@@ -1543,9 +1601,13 @@ def train(
             Model prediction
         loss : float
             Prediction loss
+        pose_preds : float, optional
+            Single-pose model prediction for each pose in input (for multi-pose models)
         """
         if compound_id in loss_dict[split]:
             loss_dict[split][compound_id]["preds"].append(pred)
+            if pose_preds is not None:
+                loss_dict[split][compound_id]["pose_preds"].append(pose_preds)
             loss_dict[split][compound_id]["losses"].append(loss)
         else:
             loss_dict[split][compound_id] = {
@@ -1555,6 +1617,8 @@ def train(
                 "preds": [pred],
                 "losses": [loss],
             }
+            if pose_preds is not None:
+                loss_dict[split][compound_id]["pose_preds"] = [pose_preds]
 
     # Send model to desired device if it's not there already
     model = model.to(device)
@@ -1569,6 +1633,8 @@ def train(
     print("Using optimizer", optimizer, flush=True)
 
     if loss_fn is None:
+        from asapdiscovery.ml.loss.MSELoss import MSELoss
+
         loss_fn = MSELoss()
     print("Using loss function", loss_fn, flush=True)
 
@@ -1597,17 +1663,19 @@ def train(
 
             # convert to float to match other types
             target = torch.tensor(
-                [[target_dict[compound_id]["pIC50"]]], device=device
+                [[target_dict[compound_id][target_prop]]], device=device
             ).float()
             in_range = torch.tensor(
                 [[target_dict[compound_id]["pIC50_range"]]], device=device
             ).float()
             uncertainty = torch.tensor(
-                [[target_dict[compound_id]["pIC50_stderr"]]], device=device
+                [[target_dict[compound_id][f"{target_prop}_stderr"]]], device=device
             ).float()
 
             # Make prediction and calculate loss
-            pred = model(pose).reshape(target.shape)
+            pred, pose_preds = model(pose)
+            pred = pred.reshape(target.shape)
+            pose_preds = [p.item() for p in pose_preds]
             loss = loss_fn(pred, target, in_range, uncertainty)
 
             # Update loss_dict
@@ -1619,6 +1687,7 @@ def train(
                 uncertainty.item(),
                 pred.item(),
                 loss.item(),
+                pose_preds=pose_preds,
             )
 
             # Keep track of loss for each sample
@@ -1636,6 +1705,14 @@ def train(
                 # Backprop
                 batch_loss.backward()
                 optimizer.step()
+                if any(
+                    [
+                        p.grad.isnan().any().item()
+                        for p in model.parameters()
+                        if p.grad is not None
+                    ]
+                ):
+                    raise ValueError("NaN gradients")
 
                 # Reset batch tracking
                 batch_counter = 0
@@ -1646,82 +1723,91 @@ def train(
             # Backprop for final incomplete batch
             batch_loss.backward()
             optimizer.step()
+            if any([p.grad.isnan().any().item() for p in model.parameters()]):
+                raise ValueError("NaN gradients")
         end_time = time()
 
         epoch_train_loss = np.mean(tmp_loss)
 
-        with torch.no_grad():
-            tmp_loss = []
-            for compound, pose in ds_val:
-                if type(compound) is tuple:
-                    compound_id = compound[1]
-                else:
-                    compound_id = compound
+        model.eval()
+        tmp_loss = []
+        for compound, pose in ds_val:
+            if type(compound) is tuple:
+                compound_id = compound[1]
+            else:
+                compound_id = compound
 
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[target_dict[compound_id]["pIC50"]]], device=device
-                ).float()
-                in_range = torch.tensor(
-                    [[target_dict[compound_id]["pIC50_range"]]], device=device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[target_dict[compound_id]["pIC50_stderr"]]], device=device
-                ).float()
+            # convert to float to match other types
+            target = torch.tensor(
+                [[target_dict[compound_id][target_prop]]], device=device
+            ).float()
+            in_range = torch.tensor(
+                [[target_dict[compound_id]["pIC50_range"]]], device=device
+            ).float()
+            uncertainty = torch.tensor(
+                [[target_dict[compound_id][f"{target_prop}_stderr"]]], device=device
+            ).float()
 
-                # Make prediction and calculate loss
-                pred = model(pose).reshape(target.shape)
-                loss = loss_fn(pred, target, in_range, uncertainty)
+            # Make prediction and calculate loss
+            pred, pose_preds = model(pose)
+            pred = pred.reshape(target.shape)
+            pose_preds = [p.item() for p in pose_preds]
+            loss = loss_fn(pred, target, in_range, uncertainty)
 
-                # Update loss_dict
-                update_loss_dict(
-                    "val",
-                    compound_id,
-                    target.item(),
-                    in_range.item(),
-                    uncertainty.item(),
-                    pred.item(),
-                    loss.item(),
-                )
+            # Update loss_dict
+            update_loss_dict(
+                "val",
+                compound_id,
+                target.item(),
+                in_range.item(),
+                uncertainty.item(),
+                pred.item(),
+                loss.item(),
+                pose_preds=pose_preds,
+            )
 
-                tmp_loss.append(loss.item())
-            epoch_val_loss = np.mean(tmp_loss)
+            tmp_loss.append(loss.item())
+        epoch_val_loss = np.mean(tmp_loss)
 
-            tmp_loss = []
-            for compound, pose in ds_test:
-                if type(compound) is tuple:
-                    compound_id = compound[1]
-                else:
-                    compound_id = compound
+        tmp_loss = []
+        for compound, pose in ds_test:
+            if type(compound) is tuple:
+                compound_id = compound[1]
+            else:
+                compound_id = compound
 
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[target_dict[compound_id]["pIC50"]]], device=device
-                ).float()
-                in_range = torch.tensor(
-                    [[target_dict[compound_id]["pIC50_range"]]], device=device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[target_dict[compound_id]["pIC50_stderr"]]], device=device
-                ).float()
+            # convert to float to match other types
+            target = torch.tensor(
+                [[target_dict[compound_id][target_prop]]], device=device
+            ).float()
+            in_range = torch.tensor(
+                [[target_dict[compound_id]["pIC50_range"]]], device=device
+            ).float()
+            uncertainty = torch.tensor(
+                [[target_dict[compound_id][f"{target_prop}_stderr"]]], device=device
+            ).float()
 
-                # Make prediction and calculate loss
-                pred = model(pose).reshape(target.shape)
-                loss = loss_fn(pred, target, in_range, uncertainty)
+            # Make prediction and calculate loss
+            pred, pose_preds = model(pose)
+            pred = pred.reshape(target.shape)
+            pose_preds = [p.item() for p in pose_preds]
+            loss = loss_fn(pred, target, in_range, uncertainty)
 
-                # Update loss_dict
-                update_loss_dict(
-                    "test",
-                    compound_id,
-                    target.item(),
-                    in_range.item(),
-                    uncertainty.item(),
-                    pred.item(),
-                    loss.item(),
-                )
+            # Update loss_dict
+            update_loss_dict(
+                "test",
+                compound_id,
+                target.item(),
+                in_range.item(),
+                uncertainty.item(),
+                pred.item(),
+                loss.item(),
+                pose_preds=pose_preds,
+            )
 
-                tmp_loss.append(loss.item())
-            epoch_test_loss = np.mean(tmp_loss)
+            tmp_loss.append(loss.item())
+        epoch_test_loss = np.mean(tmp_loss)
+        model.train()
 
         if use_wandb:
             wandb.log(

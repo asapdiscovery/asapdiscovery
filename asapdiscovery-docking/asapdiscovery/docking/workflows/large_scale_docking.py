@@ -15,6 +15,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
+from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
@@ -25,10 +26,10 @@ from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.ml.models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
@@ -51,10 +52,12 @@ class LargeScaleDockingInputs(BaseModel):
         Whether to upload the results to Postera.
     postera_molset_name : str, optional
         The name of the molecule set to pull from and/or upload to.
-    du_cache : str, optional
-        Path to a directory where design units are cached
-    gen_du_cache : str, optional
-        Path to a directory where generated design units should be cached
+    cache_dir : str, optional
+        Path to a directory where structures are cached
+    gen_cache : str, optional
+        Path to a directory where prepped structures should be cached
+    cache_type : list[CacheType], optional
+        The types of cache to use.
     target : TargetTags, optional
         The target to dock against.
     write_final_sdf : bool, optional
@@ -82,10 +85,15 @@ class LargeScaleDockingInputs(BaseModel):
     filename: Optional[str] = Field(
         None, description="Path to a molecule file containing query ligands."
     )
-    fragalysis_dir: Optional[str] = Field(
+
+    pdb_file: Optional[Path] = Field(
+        None, description="Path to a PDB file to prep and dock to."
+    )
+
+    fragalysis_dir: Optional[Path] = Field(
         None, description="Path to a directory containing a Fragalysis dump."
     )
-    structure_dir: Optional[str] = Field(
+    structure_dir: Optional[Path] = Field(
         None,
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
     )
@@ -98,16 +106,21 @@ class LargeScaleDockingInputs(BaseModel):
     postera_molset_name: Optional[str] = Field(
         None, description="The name of the molecule set to upload to."
     )
-    du_cache: Optional[str] = Field(
-        None, description="Path to a directory where design units are cached"
+    cache_dir: Optional[str] = Field(
+        None, description="Path to a directory where a cache has been generated"
     )
 
-    gen_du_cache: Optional[str] = Field(
+    gen_cache: Optional[str] = Field(
         None,
-        description="Path to a directory where generated design units should be cached",
+        description="Generate a cache from structures prepped in this workflow run in this directory",
+    )
+
+    cache_type: Optional[list[str]] = Field(
+        [CacheType.DesignUnit], description="The types of cache to use."
     )
 
     target: TargetTags = Field(None, description="The target to dock against.")
+
     write_final_sdf: bool = Field(
         default=True,
         description="Whether to write the final docked poses to an SDF file.",
@@ -124,11 +137,11 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     dask_cluster_max_workers: PositiveInt = Field(
-        40, description="Maximum number of workers to use for Lilac dask cluster"
+        200, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
     n_select: PositiveInt = Field(
-        10, description="Number of targets to dock each ligand against, sorted by MCS"
+        5, description="Number of targets to dock each ligand against, sorted by MCS"
     )
 
     top_n: PositiveInt = Field(
@@ -140,6 +153,16 @@ class LargeScaleDockingInputs(BaseModel):
         le=1.0,
         ge=0.0,
         description="POSIT confidence cutoff used to filter docking results",
+    )
+
+    use_omega: bool = Field(
+        False,
+        description="Whether to use omega confomer enumeration in docking, warning: more expensive",
+    )
+
+    allow_posit_retries: bool = Field(
+        False,
+        description="Whether to allow retries in docking with varying settings, warning: more expensive",
     )
 
     ml_scorers: Optional[list[str]] = Field(
@@ -175,8 +198,9 @@ class LargeScaleDockingInputs(BaseModel):
         postera = values.get("postera")
         postera_upload = values.get("postera_upload")
         postera_molset_name = values.get("postera_molset_name")
-        du_cache = values.get("du_cache")
-        gen_du_cache = values.get("gen_du_cache")
+        cache_dir = values.get("cache_dir")
+        gen_cache = values.get("gen_cache")
+        pdb_file = values.get("pdb_file")
 
         if postera and filename:
             raise ValueError("Cannot specify both filename and postera.")
@@ -189,20 +213,20 @@ class LargeScaleDockingInputs(BaseModel):
                 "Must specify postera_molset_name if uploading to postera."
             )
 
-        if fragalysis_dir and structure_dir:
-            raise ValueError("Cannot specify both fragalysis_dir and structure_dir.")
+        # can only specify one of fragalysis dir, structure dir and PDB file
+        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:
+            raise ValueError(
+                "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
+            )
 
-        if not fragalysis_dir and not structure_dir:
-            raise ValueError("Must specify either fragalysis_dir or structure_dir.")
-
-        if du_cache and gen_du_cache:
-            raise ValueError("Cannot specify both du_cache and gen_du_cache.")
+        if cache_dir and gen_cache:
+            raise ValueError("Cannot specify both cache_dir and gen_cache.")
 
         return values
 
-    @validator("du_cache")
+    @validator("cache_dir")
     @classmethod
-    def du_cache_must_be_directory(cls, v):
+    def cache_dir_must_be_directory(cls, v):
         """
         Validate that the DU cache is a directory
         """
@@ -226,7 +250,7 @@ class LargeScaleDockingInputs(BaseModel):
         return v
 
 
-def large_scale_docking(inputs: LargeScaleDockingInputs):
+def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     """
     Run large scale docking on a set of ligands, against multiple targets
 
@@ -262,7 +286,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
-                minimum=1,
+                minimum=10,
                 maximum=inputs.dask_cluster_max_workers,
                 wait_count=10,
                 interval="1m",
@@ -298,17 +322,31 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
         molfile = MolFileFactory.from_file(inputs.filename)
         query_ligands = molfile.ligands
 
-    # load complexes from a directory or from fragalysis
+    # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:
         logger.info(f"Loading structures from directory: {inputs.structure_dir}")
         structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
         complexes = structure_factory.load(
             use_dask=inputs.use_dask, dask_client=dask_client
         )
-    else:
+    elif inputs.fragalysis_dir:
         logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
         fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
         complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
+
+    elif inputs.pdb_file:
+        logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
+        complex = Complex.from_pdb(
+            inputs.pdb_file,
+            target_kwargs={"target_name": inputs.pdb_file.stem},
+            ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
+        )
+        complexes = [complex]
+
+    else:
+        raise ValueError(
+            "Must specify either fragalysis_dir, structure_dir or pdb_file"
+        )
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
@@ -317,7 +355,7 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
 
     # prep complexes
     logger.info("Prepping complexes")
-    prepper = ProteinPrepper(du_cache=inputs.du_cache)
+    prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
     prepped_complexes = prepper.prep(
         complexes, use_dask=inputs.use_dask, dask_client=dask_client
     )
@@ -326,9 +364,12 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     n_prepped_complexes = len(prepped_complexes)
     logger.info(f"Prepped {n_prepped_complexes} complexes")
 
-    if inputs.gen_du_cache:
-        logger.info(f"Generating DU cache at {inputs.gen_du_cache}")
-        prepper.cache(prepped_complexes, inputs.gen_du_cache)
+    if inputs.gen_cache:
+        # cache prepped complexes
+        cache_path = output_dir / inputs.gen_cache
+        logger.info(f"Caching prepped complexes to {cache_path}")
+        for cache_type in inputs.cache_type:
+            prepper.cache(prepped_complexes, cache_path, type=cache_type)
 
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
@@ -350,7 +391,9 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker()
+    docker = POSITDocker(
+        use_omega=inputs.use_omega, allow_retries=inputs.allow_posit_retries
+    )
     results = docker.dock(
         pairs,
         use_dask=inputs.use_dask,
@@ -372,9 +415,11 @@ def large_scale_docking(inputs: LargeScaleDockingInputs):
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
             logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorers.append(
-                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
+            scorer = MLModelScorer.from_latest_by_target_and_type(
+                inputs.target, ml_scorer
             )
+            if scorer:
+                scorers.append(scorer)
 
     # score results
     logger.info("Scoring docking results")

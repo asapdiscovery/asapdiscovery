@@ -392,6 +392,17 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                 {
                     "dG": c["exp_binding_affinity_kcal_mol"],
                     "dG_stderr": c["exp_binding_affinity_kcal_mol_stderr"],
+                    "dG_95ci_lower": c["exp_binding_affinity_kcal_mol_95ci_lower"],
+                    "dG_95ci_upper": c["exp_binding_affinity_kcal_mol_95ci_upper"],
+                }
+            )
+        if "exp_binding_affinity_kT" in c:
+            experimental_data.update(
+                {
+                    "dG_kT": c["exp_binding_affinity_kT"],
+                    "dG_kT_stderr": c["exp_binding_affinity_kT_stderr"],
+                    "dG_kT_95ci_lower": c["exp_binding_affinity_kT_95ci_lower"],
+                    "dG_kT_95ci_upper": c["exp_binding_affinity_kT_95ci_upper"],
                 }
             )
 
@@ -856,6 +867,10 @@ def parse_fluorescence_data_cdd(
         * "exp_binding_affinity_kcal_mol_stderr"
         * "exp_binding_affinity_kcal_mol_95ci_lower"
         * "exp_binding_affinity_kcal_mol_95ci_upper"
+        * "exp_binding_affinity_kT"
+        * "exp_binding_affinity_kT_stderr"
+        * "exp_binding_affinity_kT_95ci_lower"
+        * "exp_binding_affinity_kT_95ci_upper"
 
     Parameters
     ----------
@@ -993,16 +1008,32 @@ def parse_fluorescence_data_cdd(
         def deltaG(IC50):
             return R * dG_T * np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
 
+        # dG in implicit kT units
+        def deltaG_kT(IC50):
+            return np.log(IC50 / (1 + cp_values[0] / cp_values[1]))
+
         mol_df["exp_binding_affinity_kcal_mol"] = [
             deltaG(IC50) if not np.isnan(IC50) else np.nan
+            for IC50 in mol_df["IC50 (M)"]
+        ]
+        mol_df["exp_binding_affinity_kT"] = [
+            deltaG_kT(IC50) if not np.isnan(IC50) else np.nan
             for IC50 in mol_df["IC50 (M)"]
         ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_lower"] = [
             deltaG(IC50_lower) if not np.isnan(IC50_lower) else np.nan
             for IC50_lower in mol_df["IC50_95ci_lower (M)"]
         ]
+        mol_df["exp_binding_affinity_kT_95ci_lower"] = [
+            deltaG_kT(IC50_lower) if not np.isnan(IC50_lower) else np.nan
+            for IC50_lower in mol_df["IC50_95ci_lower (M)"]
+        ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
             deltaG(IC50_upper) if not np.isnan(IC50_upper) else np.nan
+            for IC50_upper in mol_df["IC50_95ci_upper (M)"]
+        ]
+        mol_df["exp_binding_affinity_kT_95ci_upper"] = [
+            deltaG_kT(IC50_upper) if not np.isnan(IC50_upper) else np.nan
             for IC50_upper in mol_df["IC50_95ci_upper (M)"]
         ]
     else:
@@ -1011,8 +1042,16 @@ def parse_fluorescence_data_cdd(
         def deltaG(pIC50):
             return -R * dG_T * np.log(10.0) * pIC50
 
+        # dG in implicit kT units
+        def deltaG_kT(pIC50):
+            return np.log(10.0) * pIC50
+
         mol_df["exp_binding_affinity_kcal_mol"] = [
             deltaG(pIC50) if not np.isnan(pIC50) else np.nan
+            for pIC50 in mol_df["pIC50"]
+        ]
+        mol_df["exp_binding_affinity_kT"] = [
+            deltaG_kT(pIC50) if not np.isnan(pIC50) else np.nan
             for pIC50 in mol_df["pIC50"]
         ]
         # Need to flip upper/lower bounds again
@@ -1020,8 +1059,16 @@ def parse_fluorescence_data_cdd(
             deltaG(pIC50_upper) if not np.isnan(pIC50_upper) else np.nan
             for pIC50_upper in mol_df["pIC50_95ci_upper"]
         ]
+        mol_df["exp_binding_affinity_kT_95ci_lower"] = [
+            deltaG_kT(pIC50_upper) if not np.isnan(pIC50_upper) else np.nan
+            for pIC50_upper in mol_df["pIC50_95ci_upper"]
+        ]
         mol_df["exp_binding_affinity_kcal_mol_95ci_upper"] = [
             deltaG(pIC50_lower) if not np.isnan(pIC50_lower) else np.nan
+            for pIC50_lower in mol_df["pIC50_95ci_lower"]
+        ]
+        mol_df["exp_binding_affinity_kT_95ci_upper"] = [
+            deltaG_kT(pIC50_lower) if not np.isnan(pIC50_lower) else np.nan
             for pIC50_lower in mol_df["pIC50_95ci_lower"]
         ]
     # Based on already calculated dG values so can be the same for both
@@ -1033,6 +1080,17 @@ def parse_fluorescence_data_cdd(
             [
                 "exp_binding_affinity_kcal_mol_95ci_lower",
                 "exp_binding_affinity_kcal_mol_95ci_upper",
+            ]
+        ].iterrows()
+    ]
+    mol_df["exp_binding_affinity_kT_stderr"] = [
+        abs(affinity_upper - affinity_lower) / 4.0
+        if ((not np.isnan(affinity_lower)) and (not np.isnan(affinity_upper)))
+        else np.nan
+        for _, (affinity_lower, affinity_upper) in mol_df[
+            [
+                "exp_binding_affinity_kT_95ci_lower",
+                "exp_binding_affinity_kT_95ci_upper",
             ]
         ].iterrows()
     ]
@@ -1187,35 +1245,6 @@ def get_compound_id_xtal_dicts(sars_xtals):
         xtal_to_compound[dataset] = compound_id
 
     return (compound_to_xtals, xtal_to_compound)
-
-
-def get_ligand_rmsd_openeye(ref: oechem.OEMolBase, mobile: oechem.OEMolBase):
-    return oechem.OERMSD(ref, mobile)
-
-
-def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
-    import mdtraj as md
-
-    ref = md.load_pdb(ref_fn)
-    mobile = md.load_pdb(mobile_fn)
-
-    ref_idx = ref.topology.select("resname LIG and not type H and chainid 1")
-    mobile_idx = mobile.topology.select("resname LIG and not type H")
-    print(ref_idx)
-    print(mobile_idx)
-
-    ref_lig = ref.atom_slice(ref_idx)
-    mobile_lig = mobile.atom_slice(mobile_idx)
-    print(ref_lig)
-    print(mobile_lig)
-
-    rmsd_array = md.rmsd(ref_lig, mobile_lig, precentered=True)
-    per_res_rmsd = rmsd_array[0] / ref_lig.n_atoms
-    #
-    rmsd_array2 = md.rmsd(
-        ref, mobile, atom_indices=mobile_idx, ref_atom_indices=ref_idx
-    )
-    print(rmsd_array, per_res_rmsd, rmsd_array2)
 
 
 def filter_docking_inputs(

@@ -29,11 +29,10 @@ from asapdiscovery.data.utils import (
     check_filelist_has_elements,
     extract_compounds_from_filenames,
 )
-from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping  # noqa: E402
-from asapdiscovery.ml.loss.GaussianNLLLoss import GaussianNLLLoss
-from asapdiscovery.ml.loss.MSELoss import MSELoss
+from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.utils import (
     build_dataset,
+    build_loss_function,
     build_model,
     build_optimizer,
     calc_e3nn_model_info,
@@ -357,6 +356,15 @@ def get_args():
         action="store_true",
         help="Group poses for the same compound into one prediction.",
     )
+    parser.add_argument(
+        "--target_prop",
+        choices=["pIC50", "dG", "dG_kT"],
+        default="pIC50",
+        help=(
+            "Which property to train against: "
+            "pIC50, delta G [kcal/mol], delta G [kT units]."
+        ),
+    )
 
     # Early stopping argumens
     parser.add_argument(
@@ -435,6 +443,18 @@ def get_args():
         ),
     )
     parser.add_argument(
+        "-comb_neg",
+        type=bool,
+        default=True,
+        help="Value to pass for neg when creating MaxCombination.",
+    )
+    parser.add_argument(
+        "-comb_scale",
+        type=float,
+        default=1000.0,
+        help="Value to pass for scale when creating MaxCombination.",
+    )
+    parser.add_argument(
         "-sub",
         "--substrate_conc",
         type=float,
@@ -491,29 +511,55 @@ def init(args, rank=False):
         model_config = {}
     print("Using model config:", model_config, flush=True)
 
-    # Override args parameters with model_config parameters
-    # This shouldn't strictly be necessary, as model_config should override
-    #  everything, but just to be safe
+    # Sync model_config and CLI args
     if "grouped" in model_config:
         args.grouped = model_config["grouped"]
+    else:
+        model_config["grouped"] = args.grouped
     if "lig" in model_config:
         args.lig = model_config["lig"]
+    else:
+        model_config["lig"] = args.lig
     if "strat" in model_config:
         args.strat = model_config["strat"]
+    else:
+        model_config["strat"] = args.strat
     if "comb" in model_config:
         args.comb = model_config["comb"]
+    else:
+        model_config["comb"] = args.comb
     if "pred_r" in model_config:
         args.pred_r = model_config["pred_r"]
+    else:
+        model_config["pred_r"] = args.pred_r
     if "comb_r" in model_config:
         args.comb_r = model_config["comb_r"]
+    else:
+        model_config["comb_r"] = args.comb_r
+    if "comb_neg" in model_config:
+        args.comb_neg = model_config["comb_neg"]
+    else:
+        model_config["comb_neg"] = args.comb_neg
+    if "comb_scale" in model_config:
+        args.comb_scale = model_config["comb_scale"]
+    else:
+        model_config["comb_scale"] = args.comb_scale
     if "substrate" in model_config:
         args.substrate_conc = model_config["substrate"]
+    else:
+        model_config["substrate"] = args.substrate_conc
     if "km" in model_config:
         args.michaelis_const = model_config["km"]
+    else:
+        model_config["km"] = args.michaelis_const
     if "lr" in model_config:
         args.lr = model_config["lr"]
+    else:
+        model_config["lr"] = args.lr
     if "cutoff" in model_config:
         args.n_dist = model_config["cutoff"]
+    else:
+        model_config["cutoff"] = args.n_dist
 
     # Decide which nan values to filter
     if args.loss is None:
@@ -627,6 +673,8 @@ def init(args, rank=False):
         comb=args.comb,
         pred_r=args.pred_r,
         comb_r=args.comb_r,
+        comb_neg=args.comb_neg,
+        comb_scale=args.comb_scale,
         substrate=args.substrate_conc,
         km=args.michaelis_const,
         config=model_config,
@@ -687,6 +735,8 @@ def init(args, rank=False):
             {
                 "mtenn:strategy": args.strat,
                 "mtenn:combination": args.comb,
+                "mtenn:comb_neg": args.comb_neg,
+                "mtenn:comb_scale": args.comb_scale,
                 "mtenn:pred_readout": args.pred_r,
                 "mtenn:comb_readout": args.comb_r,
             }
@@ -771,11 +821,11 @@ def main():
 
     # Load model weights as necessary
     if args.cont:
-        start_epoch, wts_fn = find_most_recent(args.model_o)
+        start_epoch, wts_fn = find_most_recent(model_dir)
 
         # Load error dicts
-        if os.path.isfile(f"{args.model_o}/loss_dict.json"):
-            loss_dict = json.load(open(f"{args.model_o}/loss_dict.json"))
+        if os.path.isfile(f"{model_dir}/loss_dict.json"):
+            loss_dict = json.load(open(f"{model_dir}/loss_dict.json"))
         else:
             print("Couldn't find loss dict file.", flush=True)
             loss_dict = None
@@ -802,20 +852,7 @@ def main():
     exp_configure.update({"start_epoch": start_epoch})
 
     # Set up the loss function
-    if (args.loss is None) or (args.loss.lower() == "step"):
-        loss_func = MSELoss(args.loss)
-        lt = "standard" if args.loss is None else args.loss.lower()
-        print(f"Using {lt} MSE loss", flush=True)
-    elif "uncertainty" in args.loss.lower():
-        keep_sq = "sq" in args.loss.lower()
-        loss_func = GaussianNLLLoss(keep_sq, args.sq)
-        print(
-            f"Using Gaussian NLL loss with{'out'*(not keep_sq)}",
-            "semiquant values",
-            flush=True,
-        )
-    else:
-        raise ValueError(f"Unknown loss type {args.loss}")
+    loss_func = build_loss_function(args.grouped, args.loss, args.sq)
 
     print("sq", args.sq, flush=True)
     loss_str = args.loss.lower() if args.loss else "mse"
@@ -851,6 +888,7 @@ def main():
         batch_size=args.batch_size,
         es=es,
         optimizer=optimizer,
+        target_prop=args.target_prop,
     )
 
     if args.wandb or args.sweep:

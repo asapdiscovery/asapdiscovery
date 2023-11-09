@@ -171,7 +171,7 @@ class InferenceBase(BaseModel):
         # feed in data in whatever format is required by the model
         with torch.no_grad():
             input_tensor = torch.tensor(input_data).to(self.device)
-            output_tensor = self.model(input_tensor)
+            output_tensor = self.model(input_tensor)[0]
             return output_tensor.cpu().numpy().ravel()
 
 
@@ -196,7 +196,7 @@ class GATInference(InferenceBase):
             Predictions for each graph.
         """
         with torch.no_grad():
-            output_tensor = self.model({"g": g})
+            output_tensor = self.model({"g": g})[0]
             # we ravel to always get a 1D array
             return output_tensor.cpu().numpy().ravel()
 
@@ -252,7 +252,7 @@ class StructuralInference(InferenceBase):
             Predictions for a pose.
         """
         with torch.no_grad():
-            output_tensor = self.model(pose_dict)
+            output_tensor = self.model(pose_dict)[0]
             # we ravel to always get a 1D array
             return output_tensor.cpu().numpy().ravel()
 

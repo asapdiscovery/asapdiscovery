@@ -348,7 +348,10 @@ def main():
     in_df = pandas.read_csv(args.in_csv)
 
     # Build DF from losses
-    loss_df = load_all_losses(in_df, args.rel_dir, convert_pic50_param)
+    try:
+        loss_df = load_all_losses(in_df, args.rel_dir, convert_pic50_param)
+    except FileNotFoundError:
+        loss_df = load_all_losses_dict(in_df, args.rel_dir, convert_pic50_param)
 
     # Get rid of other cols if we only want test
     if args.test_only:

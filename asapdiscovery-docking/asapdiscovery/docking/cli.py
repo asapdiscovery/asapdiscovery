@@ -1,44 +1,44 @@
-# from pathlib import Path
 from typing import Optional
 
 import click
+from asapdiscovery.cli.cli_args import (
+    cache_dir,
+    cache_type,
+    dask_args,
+    fragalysis_dir,
+    gen_cache,
+    input_json,
+    ligands,
+    ml_scorer,
+    output_dir,
+    pdb_file,
+    postera_args,
+    structure_dir,
+    target,
+)
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.docking.workflows.cross_docking import (
+    CrossDockingWorkflowInputs,
+    cross_docking_workflow,
+)
 from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
-    large_scale_docking,
+    large_scale_docking_workflow,
 )
-from asapdiscovery.ml.models import ASAPMLModelRegistry
 
 
 @click.group()
-def cli():
+def docking():
     pass
 
 
-@cli.command()
-@click.option(
-    "--postera",
-    is_flag=True,
-    default=False,
-    help="Whether to download complexes from Postera.",
-)
-@click.option(
-    "--postera-upload",
-    is_flag=True,
-    default=False,
-    help="Whether to upload the results to Postera.",
-)
-@click.option(
-    "--target",
-    type=click.Choice(TargetTags.get_values(), case_sensitive=True),
-    help="The target to dock against.",
-    required=True,
-)
+@docking.command()
+@target
 @click.option(
     "--n-select",
     type=int,
-    default=10,
+    default=5,
     help="The number of targets to dock each ligand against, sorted by MCS",
 )
 @click.option(
@@ -48,91 +48,56 @@ def cli():
     help="The maximum number of docking results to return, ordered by docking score",
 )
 @click.option(
-    "--use-dask",
-    is_flag=True,
-    default=False,
-    help="Whether to use dask for parallelism.",
-)
-@click.option(
-    "--dask-type",
-    type=click.Choice(DaskType.get_values(), case_sensitive=False),
-    default=DaskType.LOCAL,
-    help="The type of dask cluster to use. Can be 'local', 'lilac-cpu' or  'lilac-gpu'.",
-)
-@click.option(
     "--posit-confidence-cutoff",
     type=float,
     default=0.7,
     help="The confidence cutoff for POSIT results to be considered",
 )
 @click.option(
-    "--output-dir",
-    type=click.Path(resolve_path=True, exists=False, file_okay=False, dir_okay=True),
-    help="The directory to output results to.",
-    default="output",
+    "--use-omega",
+    is_flag=True,
+    default=False,
+    help="Whether to use OEOmega conformer enumeration before docking (slower, more accurate)",
 )
 @click.option(
-    "--input-json",
-    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-    help="Path to a json file containing the inputs to the docking workflow,  WARNING: overrides all other inputs.",
+    "--allow-posit-retries",
+    is_flag=True,
+    default=False,
+    help="Whether to allow POSIT to retry with relaxed parameters if docking fails (slower, more likely to succeed)",
 )
-@click.option(
-    "-l",
-    "--ligands",
-    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-    help="Path to a file containing a list of complexes to dock.",
-)
-@click.option(
-    "--fragalysis-dir",
-    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
-    help="Path to a directory containing fragments to dock.",
-)
-@click.option(
-    "--structure-dir",
-    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
-    help="Path to a directory containing structures to dock instead of a full fragalysis database.",
-)
-@click.option(
-    "--postera-molset-name",
-    type=str,
-    default=None,
-    help="The name of the molecule set to pull from and upload to.",
-)
-@click.option(
-    "--du-cache",
-    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
-    help="Path to a directory where design units are cached.",
-)
-@click.option(
-    "--gen-du-cache",
-    type=click.Path(resolve_path=True, exists=False, file_okay=False, dir_okay=True),
-    help="Path to a directory where a design unit cache should be generated.",
-)
-@click.option(
-    "--ml-scorer",
-    type=click.Choice(
-        ASAPMLModelRegistry.get_implemented_model_types(), case_sensitive=True
-    ),
-    multiple=True,
-    help="The names of the ml scorer to use, can be specified multiple times to use multiple ml scorers.",
-)
+@ligands
+@postera_args
+@pdb_file
+@fragalysis_dir
+@structure_dir
+@gen_cache
+@cache_dir
+@cache_type
+@dask_args
+@output_dir
+@input_json
+@ml_scorer
 def large_scale(
-    postera: bool,
-    postera_upload: bool,
     target: TargetTags,
-    n_select: int,
-    top_n: int,
-    use_dask: bool,
-    dask_type: str,
+    n_select: int = 5,
+    top_n: int = 500,
     posit_confidence_cutoff: float = 0.7,
-    output_dir: str = "output",
-    input_json: Optional[str] = None,
+    use_omega: bool = False,
+    allow_posit_retries: bool = False,
     ligands: Optional[str] = None,
+    postera: bool = False,
+    postera_molset_name: Optional[str] = None,
+    postera_upload: bool = False,
+    pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
-    postera_molset_name: Optional[str] = None,
-    du_cache: Optional[str] = None,
-    gen_du_cache: Optional[str] = None,
+    gen_cache: Optional[str] = None,
+    cache_dir: Optional[str] = None,
+    cache_type: Optional[str] = None,
+    output_dir: str = "output",
+    input_json: Optional[str] = None,
+    use_dask: bool = False,
+    dask_type: DaskType = DaskType.LOCAL,
     ml_scorer: Optional[list[str]] = None,
 ):
     """
@@ -153,18 +118,98 @@ def large_scale(
             use_dask=use_dask,
             dask_type=dask_type,
             posit_confidence_cutoff=posit_confidence_cutoff,
+            use_omega=use_omega,
+            allow_posit_retries=allow_posit_retries,
             filename=ligands,
+            pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
             postera_molset_name=postera_molset_name,
-            du_cache=du_cache,
-            gen_du_cache=gen_du_cache,
+            cache_dir=cache_dir,
+            gen_cache=gen_cache,
+            cache_type=cache_type,
             ml_scorers=ml_scorer,
             output_dir=output_dir,
         )
 
-    large_scale_docking(inputs)
+    large_scale_docking_workflow(inputs)
+
+
+@docking.command()
+@target
+@click.option(
+    "--use-omega",
+    is_flag=True,
+    default=False,
+    help="Whether to use OEOmega conformer enumeration before docking (slower, more accurate)",
+)
+@click.option(
+    "--allow-retries",
+    is_flag=True,
+    default=False,
+    help="Whether to allow POSIT to retry with relaxed parameters if docking fails (slower, more likely to succeed)",
+)
+@click.option(
+    "--allow-final-clash",
+    is_flag=True,
+    default=False,
+    help="Allow clashing poses in last stage of docking",
+)
+@ligands
+@pdb_file
+@fragalysis_dir
+@structure_dir
+@gen_cache
+@cache_dir
+@cache_type
+@dask_args
+@output_dir
+@input_json
+def cross_docking(
+    target: TargetTags,
+    use_omega: bool = False,
+    allow_retries: bool = False,
+    allow_final_clash: bool = False,
+    ligands: Optional[str] = None,
+    pdb_file: Optional[str] = None,
+    fragalysis_dir: Optional[str] = None,
+    structure_dir: Optional[str] = None,
+    gen_cache: Optional[str] = None,
+    cache_dir: Optional[str] = None,
+    cache_type: Optional[str] = None,
+    output_dir: str = "output",
+    input_json: Optional[str] = None,
+    use_dask: bool = False,
+    dask_type: DaskType = DaskType.LOCAL,
+):
+    """
+    Run cross docking on a set of ligands, against a set of targets.
+    """
+
+    if input_json is not None:
+        print("Loading inputs from json file... Will override all other inputs.")
+        inputs = CrossDockingWorkflowInputs.from_json_file(input_json)
+
+    else:
+        inputs = CrossDockingWorkflowInputs(
+            target=target,
+            use_dask=use_dask,
+            dask_type=dask_type,
+            use_omega=use_omega,
+            allow_retries=allow_retries,
+            filename=ligands,
+            pdb_file=pdb_file,
+            fragalysis_dir=fragalysis_dir,
+            structure_dir=structure_dir,
+            cache_dir=cache_dir,
+            gen_cache=gen_cache,
+            cache_type=cache_type,
+            output_dir=output_dir,
+            allow_final_clash=allow_final_clash,
+        )
+
+    cross_docking_workflow(inputs)
 
 
 if __name__ == "__main__":
-    cli()
+    docking()

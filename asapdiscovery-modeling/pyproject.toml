@@ -32,6 +32,7 @@ split-oedu-and-save = "asapdiscovery.modeling.scripts.split_oedu_and_save:main"
 slice-fragalysis-structures-with-mdtraj = "asapdiscovery.modeling.scripts.slice_fragalysis_structures_with_mdtraj:main"
 create-prep-inputs = "asapdiscovery.modeling.scripts.create_prep_inputs:main"
 prep-targets = "asapdiscovery.modeling.scripts.prep_targets:main"
+asap-prep = "asapdiscovery.modeling.cli:modeling"
 
 [tool.setuptools.packages.find]
 where = ["."]
