@@ -645,8 +645,8 @@ class E3NNModelConfig(ModelConfigBase):
         return values
 
     def _build(self, mtenn_params={}):
-        from mtenn.conversion_utils import E3NN
         from e3nn.o3 import Irreps
+        from mtenn.conversion_utils import E3NN
 
         model = E3NN(
             model_kwargs={
