@@ -107,17 +107,6 @@ class POSITDocker(DockingBase):
         retcode = poser.Dock(pose_res, lig, num_poses)
         return pose_res, retcode
 
-    @staticmethod
-    def to_design_units(
-        set: Union[DockingInputPair, DockingInputMultiStructure]
-    ) -> list[oechem.OEDesignUnit]:
-        if isinstance(set, DockingInputPair):
-            return [set.complex.target.to_oedu()]
-        elif isinstance(set, DockingInputMultiStructure):
-            return [
-                protein_complex.target.to_oedu() for protein_complex in set.complexes
-            ]
-
     def _dock(
         self,
         inputs: list[
@@ -135,7 +124,7 @@ class POSITDocker(DockingBase):
         docking_results = []
 
         for set in inputs:
-            dus = self.to_design_unit(set)
+            dus = set.to_design_units()
             lig_oemol = oechem.OEMol(set.ligand.to_oemol())
             if self.use_omega:
                 omegaOpts = oeomega.OEOmegaOptions()
@@ -208,8 +197,18 @@ class POSITDocker(DockingBase):
                     }
                     posed_ligand.set_SD_data(sd_data)
 
+                    # Generate info about which target was actually used by multi-reference docking
+                    if isinstance(set, DockingInputMultiStructure):
+                        docked_target = set.complexes[result.GetReceptorIndex()]
+                        print(f"{docked_target.target.target_name} was docked")
+                        input_pair = DockingInputPair(
+                            ligand=set.ligand, complex=docked_target
+                        )
+                    else:
+                        input_pair = set
+
                     docking_result = POSITDockingResults(
-                        input_pair=set,
+                        input_pair=input_pair,
                         posed_ligand=posed_ligand,
                         probability=prob,
                         provenance=self.provenance(),
