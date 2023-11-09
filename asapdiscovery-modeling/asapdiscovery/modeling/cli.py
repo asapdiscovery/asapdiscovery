@@ -1,7 +1,6 @@
 from typing import Optional
 
 import click
-
 from asapdiscovery.cli.cli_args import (
     dask_args,
     fragalysis_dir,
