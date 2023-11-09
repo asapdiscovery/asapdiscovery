@@ -19,7 +19,8 @@ from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.docking_methods import DockingMethod
+
+# from asapdiscovery.docking.docking_methods import DockingMethod
 from asapdiscovery.docking.docking_v2 import DockingInputMultiStructure
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer
@@ -32,7 +33,7 @@ from pydantic import Field, PositiveInt
 class CrossDockingWorkflowInputs(WorkflowInputsBase):
     logname: str = Field("cross_docking", description="Name of the log file.")
 
-    structure_selector: StructureSelector = Field(
+    structure_selector: str = Field(
         StructureSelector.PAIRWISE.name,
         description="Structure selector to use for docking",
     )
