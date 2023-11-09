@@ -3,10 +3,11 @@ from typing import Optional
 
 import click
 import rich
-from asapdiscovery.alchemy.cli.utils import print_header
-from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from rich import pretty
 from rich.padding import Padding
+
+from asapdiscovery.alchemy.cli.utils import print_header
+from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 
 
 @click.group()
@@ -125,7 +126,7 @@ def run(
     if ".json" in receptor_complex:
         ref_complex = PreppedComplex.parse_file(receptor_complex)
     else:
-        receptor_complex = PreppedComplex.from_oedu_file(receptor_complex)
+        ref_complex = PreppedComplex.from_oedu_file(receptor_complex)
 
     message = Padding(
         f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",

@@ -1,10 +1,11 @@
 import abc
 from typing import Any, Literal, Optional
 
-from asapdiscovery.data.openeye import oechem, oedocking, oeff, oeomega
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+
+from asapdiscovery.data.openeye import oechem, oedocking, oeff, oeomega, set_SD_data
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 
 class PosedLigands(BaseModel):
@@ -180,12 +181,17 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         omega_fix_opts.SetFixMaxMatch(10)  # allow multiple MCSS matches
         omega_fix_opts.SetFixDeleteH(True)  # only use heavy atoms
         omega_fix_opts.SetFixMol(core_fragment)  # Provide the reference ligand
+        omega_fix_opts.SetFixMCS(True)
         omega_fix_opts.SetFixRMS(
             1.0
         )  # The maximum distance between two atoms which is considered identical
         # set the matching atom and bond expressions
-        atomexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_AtomicNumber
-        bondexpr = oechem.OEExprOpts_BondOrder | oechem.OEExprOpts_Aromaticity
+        atomexpr = (
+            oechem.OEExprOpts_Aromaticity
+            | oechem.OEExprOpts_AtomicNumber
+            | oechem.OEExprOpts_RingMember
+        )
+        bondexpr = oechem.OEExprOpts_Aromaticity | oechem.OEExprOpts_RingMember
         omega_fix_opts.SetAtomExpr(atomexpr)
         omega_fix_opts.SetBondExpr(bondexpr)
         omega_opts.SetConfFixOptions(omega_fix_opts)
@@ -245,6 +251,11 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             if (oe_mol.GetDimension() != 3) or (
                 return_code != oeomega.OEOmegaReturnCode_Success
             ):
+                # add the failure message as an SD tag, should be able to see visually if the molecule is 2D
+                set_SD_data(
+                    mol=oe_mol,
+                    data={"omega_return_code": oeomega.OEGetOmegaError(return_code)},
+                )
                 # omega failed for this ligand, how do we track this?
                 failed_ligands.append(oe_mol)
 
