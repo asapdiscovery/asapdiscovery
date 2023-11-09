@@ -4,7 +4,7 @@ import abc
 from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
-from typing import Callable, ClassVar, Optional
+from typing import Callable, ClassVar
 
 import mtenn
 import torch
@@ -244,6 +244,8 @@ class GATModelConfig(ModelConfigBase):
 
     If there are parameters that have list values but the lists are different sizes, an
     error will be raised.
+
+    Default values here are the default values given in DGL-LifeSci.
     """
 
     from dgllife.utils import CanonicalAtomFeaturizer
@@ -426,3 +428,67 @@ class GATModelConfig(ModelConfigBase):
             mtenn_params["pred_readout"] if "pred_readout" in mtenn_params else None
         )
         return GAT.get_model(model=model, pred_readout=pred_readout, fix_device=True)
+
+
+class SchNetModelConfig(ModelConfigBase):
+    """
+    Class for constructing a GAT ML model. Default values here are the default values
+    given in PyG.
+    """
+
+    model_type: ClassVar[ModelType.schnet] = ModelType.schnet
+
+    hidden_channels: int = Field(128, description=("Hidden embedding size."))
+    num_filters: int = Field(
+        128, description=("Number of filters to use in the cfconv layers.")
+    )
+    num_interactions: int = Field(6, description=("Number of interaction blocks."))
+    num_gaussians: int = Field(
+        50, description=("Number of gaussians to use in the interaction blocks.")
+    )
+    interaction_graph: Callable | None = Field(
+        None,
+        description=(
+            "Function to compute the pairwise interaction graph and "
+            "interatomic distances."
+        ),
+    )
+    cutoff: float = Field(
+        10, description="Cutoff distance for interatomic interactions."
+    )
+    max_num_neighbors: int = Field(
+        32, description="Maximum number of neighbors to collect for each node."
+    )
+    readout: str = Field(
+        "add", description="Which global aggregation to use [add, mean]."
+    )
+    dipole: bool = Field(
+        False,
+        description=(
+            "Whether to use the magnitude of the dipole moment to make the "
+            "final prediction."
+        ),
+    )
+    mean: float | None = Field(
+        None,
+        description=(
+            "Mean of property to predict, to be added to the model prediction before "
+            "returning. This value is only used if dipole is False and a value is also "
+            "passed for std."
+        ),
+    )
+    std: float | None = Field(
+        None,
+        description=(
+            "Standard deviation of property to predict, used to scale the model "
+            "prediction before returning. This value is only used if dipole is False "
+            "and a value is also passed for mean."
+        ),
+    )
+    atomref: torch.Tensor | None = Field(
+        None,
+        description=(
+            "Reference values for single-atom properties. Should have shape "
+            "(max_atomic_number, )."
+        ),
+    )
