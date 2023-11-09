@@ -17,7 +17,7 @@ class PairwiseSelector(SelectorBase):
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
 
@@ -45,7 +45,7 @@ class LeaveOneOutSelector(SelectorBase):
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
 
@@ -76,7 +76,7 @@ class SelfDockingSelector(SelectorBase):
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
 
