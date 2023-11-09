@@ -21,7 +21,6 @@ from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
@@ -141,21 +140,9 @@ class LargeScaleDockingInputs(BaseModel):
         200, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
-    structure_selector: StructureSelector = Field(
-        "MCS", description="Structure selector to use for docking"
-    )
-
     n_select: PositiveInt = Field(
         5, description="Number of targets to dock each ligand against, sorted by MCS"
     )
-
-    multi_reference: bool = Field(
-        False,
-        description="Whether to use multi reference docking, in which the docking_method "
-        "recieves a DockingInputMultiStructure object instead of a DockingInputPair object",
-    )
-
-    docking_method: DockingMethod = Field("POSIT", description="Docking method to use")
 
     top_n: PositiveInt = Field(
         500, description="Number of docking results to return, ordered by docking score"

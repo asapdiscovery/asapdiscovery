@@ -15,13 +15,14 @@ from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.selectors.pairwise_selector import PairwiseSelector
+from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer
 from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
+from asapdiscovery.docking.docking_methods import DockingMethod
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from distributed import Client
 from pydantic import Field, PositiveInt
@@ -29,6 +30,19 @@ from pydantic import Field, PositiveInt
 
 class CrossDockingWorkflowInputs(WorkflowInputsBase):
     logname: str = Field("cross_docking", description="Name of the log file.")
+
+    structure_selector: StructureSelector = Field(
+        StructureSelector.PAIRWISE, description="Structure selector to use for docking"
+    )
+    multi_reference: bool = Field(
+        False,
+        description="Whether to use multi reference docking, in which the docking_method "
+        "recieves a DockingInputMultiStructure object instead of a DockingInputPair object",
+    )
+
+    docking_method: DockingMethod = Field(
+        DockingMethod.POSIT, description="Docking method to use"
+    )
 
     # Copied from POSITDocker
     relax: POSIT_RELAX_MODE = Field(
