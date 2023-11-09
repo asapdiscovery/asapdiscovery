@@ -18,11 +18,11 @@ from asapdiscovery.cli.cli_args import (
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.workflows.cross_docking import (
     CrossDockingWorkflowInputs,
     cross_docking_workflow,
 )
-from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
     large_scale_docking_workflow,
