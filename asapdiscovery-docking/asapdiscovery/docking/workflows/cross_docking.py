@@ -15,7 +15,7 @@ from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.selectors.pairwise_selector import PairwiseSelector
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
@@ -167,12 +167,11 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
-    logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector()
+    logger.info("Selecting pairs for docking")
+    selector = PairwiseSelector()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        n_select=inputs.n_select,
         use_dask=False,
         dask_client=None,
     )
