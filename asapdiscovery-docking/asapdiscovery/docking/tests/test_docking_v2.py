@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.openeye import POSITDocker
 
 
 @pytest.mark.skipif(
