@@ -183,7 +183,16 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
+    docker = POSITDocker(
+        relax=inputs.relax,
+        posit_method=inputs.posit_method,
+        use_omega=inputs.use_omega,
+        num_poses=inputs.num_poses,
+        allow_low_posit_prob=inputs.allow_low_posit_prob,
+        low_posit_prob_thresh=inputs.low_posit_prob_thresh,
+        allow_final_clash=inputs.allow_final_clash,
+        allow_retries=inputs.allow_retries,
+    )
     results = docker.dock(
         pairs,
         use_dask=inputs.use_dask,

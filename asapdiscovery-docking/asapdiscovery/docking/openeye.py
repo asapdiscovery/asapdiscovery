@@ -42,27 +42,6 @@ class POSIT_RELAX_MODE(Enum):
 
 
 class POSITDocker(DockingBase):
-    """
-    Docking workflow using OEPosit
-
-    Parameters
-    ----------
-    relax : POSIT_RELAX_MODE
-        whether to allow receptor relaxation either, 'clash', 'all', 'none', by default POSIT_RELAX_MODE.NONE
-    posit_method : POSIT_METHOD
-        POSIT method to use, by default POSIT_METHOD.ALL
-    use_omega : bool
-        Whether to use OEOmega to generate conformers, by default True
-    num_poses : PositiveInt
-        Number of poses to generate, by default 1
-    allow_low_posit_prob : bool
-        Whether to allow low posit probability, by default False
-    low_posit_prob_thresh : float
-        Minimum posit probability threshold if allow_low_posit_prob is False, by default 0.1
-    allow_final_clash : bool
-        Whether to allow clashing poses in last stage of docking, by default False
-    """
-
     type: Literal["POSITDocker"] = "POSITDocker"
 
     relax: POSIT_RELAX_MODE = Field(
