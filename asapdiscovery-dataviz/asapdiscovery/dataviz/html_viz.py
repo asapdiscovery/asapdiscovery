@@ -549,3 +549,11 @@ class HTMLVisualizer:
         html = self.get_html_airium(pose)
         self.write_html(html, path)
         return path
+
+    def make_poses_html(self):
+        html_renders = []
+        for pose, path in zip(self.poses, self.output_paths):
+            html = self.get_html_airium(pose)
+            html_renders.append(html)
+        return html_renders
+
