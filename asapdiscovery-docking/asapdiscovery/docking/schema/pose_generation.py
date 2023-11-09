@@ -1,11 +1,10 @@
 import abc
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
-
 from asapdiscovery.data.openeye import oechem, oedocking, oeff, oeomega, set_SD_data
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 
 class PosedLigands(BaseModel):
