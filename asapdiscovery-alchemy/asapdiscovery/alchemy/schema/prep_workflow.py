@@ -2,15 +2,14 @@ import copy
 from typing import Any, Literal, Optional
 
 import rich
-from pydantic import Field
-from rich import pretty
-
 from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import EpikExpander
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
+from pydantic import Field
+from rich import pretty
 
 
 class _AlchemyPrepBase(_SchemaBase):

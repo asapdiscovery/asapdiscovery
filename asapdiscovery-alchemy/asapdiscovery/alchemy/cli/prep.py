@@ -3,11 +3,10 @@ from typing import Optional
 
 import click
 import rich
-from rich import pretty
-from rich.padding import Padding
-
 from asapdiscovery.alchemy.cli.utils import print_header
 from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
+from rich import pretty
+from rich.padding import Padding
 
 
 @click.group()

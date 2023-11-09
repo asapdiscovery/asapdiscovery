@@ -1,5 +1,4 @@
 import pytest
-
 from asapdiscovery.data.openeye import oemol_to_inchikey
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
