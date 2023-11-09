@@ -222,7 +222,7 @@ class ModelConfigBase(BaseModel):
         return self._build(mtenn_params)
 
     @staticmethod
-    def _check_grouped(cls, values):
+    def _check_grouped(values):
         """
         Makes sure that a Combination method is passed if using a GroupedModel. Only
         needs to be called for structure-based models.
@@ -424,9 +424,7 @@ class GATModelConfig(ModelConfigBase):
             allow_zero_in_degree=self.allow_zero_in_degree,
         )
 
-        pred_readout = (
-            mtenn_params["pred_readout"] if "pred_readout" in mtenn_params else None
-        )
+        pred_readout = mtenn_params.get("pred_readout", None)
         return GAT.get_model(model=model, pred_readout=pred_readout, fix_device=True)
 
 
@@ -485,10 +483,72 @@ class SchNetModelConfig(ModelConfigBase):
             "and a value is also passed for mean."
         ),
     )
-    atomref: torch.Tensor | None = Field(
+    atomref: list[float] | None = Field(
         None,
         description=(
-            "Reference values for single-atom properties. Should have shape "
-            "(max_atomic_number, )."
+            "Reference values for single-atom properties. Should have length of 100 to "
+            "match with PyG."
         ),
     )
+
+    @root_validator(pre=False)
+    def validate(cls, values):
+        # Make sure the grouped stuff is properly assigned
+        ModelConfigBase._check_grouped(values)
+
+        # Make sure atomref length is correct (this is required by PyG)
+        atomref = values["atomref"]
+        if (atomref is not None) and (len(atomref) != 100):
+            raise ValueError(f"atomref must be length 100 (got {len(atomref)})")
+
+        return values
+
+    def _build(self, mtenn_params={}):
+        """
+        Build an MTENN SchNet Model from this config.
+
+        Parameters
+        ----------
+        mtenn_params: dict
+            Dict giving the MTENN Readout. This will be passed by the `build` method in
+            the abstract base class
+
+        Returns
+        -------
+        mtenn.model.Model
+            MTENN SchNet Model/GroupedModel
+        """
+        from mtenn.conversion_utils import SchNet
+        from torch_geometric.nn.models import SchNet as PygSchNet
+
+        # Create an MTENN SchNet model from PyG SchNet model
+        model = SchNet(
+            PygSchNet(
+                hidden_channels=self.hidden_channels,
+                num_filters=self.num_filters,
+                num_interactions=self.num_interactions,
+                num_gaussians=self.num_gaussians,
+                interaction_graph=self.interaction_graph,
+                cutoff=self.cutoff,
+                max_num_neighbors=self.max_num_neighbors,
+                readout=self.readout,
+                dipole=self.dipole,
+                mean=self.mean,
+                std=self.std,
+                atomref=self.atomref,
+            )
+        )
+
+        combination = mtenn_params.get("combination", None)
+        pred_readout = mtenn_params.get("pred_readout", None)
+        comb_readout = mtenn_params.get("comb_readout", None)
+
+        return SchNet.get_model(
+            model=model,
+            grouped=self.grouped,
+            fix_device=True,
+            strategy=self.strategy,
+            combination=combination,
+            pred_readout=pred_readout,
+            comb_readout=comb_readout,
+        )
