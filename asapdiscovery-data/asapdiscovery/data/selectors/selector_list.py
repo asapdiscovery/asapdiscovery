@@ -5,8 +5,8 @@ from enum import Enum
 
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.selectors.pairwise_selector import (
-    PairwiseSelector,
     LeaveOneOutSelector,
+    PairwiseSelector,
     SelfDockingSelector,
 )
 
