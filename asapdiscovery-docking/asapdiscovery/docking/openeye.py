@@ -2,7 +2,6 @@
 This module contains the inputs, docker, and output schema for using POSIT
 """
 from enum import Enum
-from pathlib import Path
 from typing import Literal
 
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
@@ -12,7 +11,7 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.docking_v2 import DockingBase, DockingResult
-from pydantic import Field, PositiveInt, root_validator
+from pydantic import Field, PositiveInt
 
 
 class POSIT_METHOD(Enum):
