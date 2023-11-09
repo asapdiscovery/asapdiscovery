@@ -1,11 +1,11 @@
 """
-Script to download the COVID Moonshot data from CDD.
+Script to download the data from CDD (defaults to COVID Moonshot data).
 """
 import argparse
 import logging
 import os
 
-from asapdiscovery.data.moonshot import download_molecules  # noqa: E402
+from asapdiscovery.data.cdd import download_molecules  # noqa: E402
 
 
 ################################################################################
@@ -35,7 +35,7 @@ def get_args():
         default="sars_fluorescence_noncovalent_w_dates",
         help=(
             "Either a search id or entry in MOONSHOT_SEARCH_DICT "
-            "(see asapdiscovery.data.moonshot for more details). Defaults to search "
+            "(see asapdiscovery.data.cdd for more details). Defaults to search "
             "with all noncovalent molecules in the SARS-CoV-2 dose response assay."
         ),
     )

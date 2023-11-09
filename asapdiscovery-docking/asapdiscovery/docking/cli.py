@@ -34,7 +34,7 @@ def docking():
 @click.option(
     "--n-select",
     type=int,
-    default=10,
+    default=5,
     help="The number of targets to dock each ligand against, sorted by MCS",
 )
 @click.option(
@@ -48,6 +48,18 @@ def docking():
     type=float,
     default=0.7,
     help="The confidence cutoff for POSIT results to be considered",
+)
+@click.option(
+    "--use-omega",
+    is_flag=True,
+    default=False,
+    help="Whether to use OEOmega conformer enumeration before docking (slower, more accurate)",
+)
+@click.option(
+    "--allow-posit-retries",
+    is_flag=True,
+    default=False,
+    help="Whether to allow POSIT to retry with relaxed parameters if docking fails (slower, more likely to succeed)",
 )
 @ligands
 @postera_args
@@ -66,6 +78,8 @@ def large_scale(
     n_select: int = 5,
     top_n: int = 500,
     posit_confidence_cutoff: float = 0.7,
+    use_omega: bool = False,
+    allow_posit_retries: bool = False,
     ligands: Optional[str] = None,
     postera: bool = False,
     postera_molset_name: Optional[str] = None,
@@ -100,6 +114,8 @@ def large_scale(
             use_dask=use_dask,
             dask_type=dask_type,
             posit_confidence_cutoff=posit_confidence_cutoff,
+            use_omega=use_omega,
+            allow_posit_retries=allow_posit_retries,
             filename=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
