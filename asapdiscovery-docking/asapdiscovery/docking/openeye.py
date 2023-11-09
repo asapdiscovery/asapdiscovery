@@ -70,18 +70,6 @@ class POSITDocker(DockingBase):
     def to_result_type():
         return POSITDockingResults
 
-    @root_validator
-    @classmethod
-    def _output_dir_write_file(cls, values):
-        output_dir = values.get("output_dir")
-        write_files = values.get("write_file")
-        if write_files and not output_dir:
-            raise ValueError("Output directory must be set if write_file is True")
-
-        if write_files and not Path(output_dir).exists():
-            raise ValueError("Output directory does not exist")
-        return values
-
     @staticmethod
     def run_oe_posit_docking(opts, pose_res, du, lig, num_poses):
         """
