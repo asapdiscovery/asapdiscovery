@@ -2,7 +2,7 @@ from itertools import product
 from typing import Literal, Union
 
 from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.selectors.selector import SelectorBase
 from asapdiscovery.docking.docking_v2 import DockingInputPair
