@@ -81,35 +81,35 @@ def test_self_docking_selector(ligands, complexes):
     assert len(pairs) == 4
 
 
-# @pytest.mark.parametrize("use_dask", [True, False])
-# def test_pairwise_selector_prepped(ligands, prepped_complexes, use_dask):
-#     selector = PairwiseSelector()
-#     pairs = selector.select(ligands, prepped_complexes, use_dask=use_dask)
-#     assert len(pairs) == 8
-#
-#
-# @pytest.mark.parametrize("use_dask", [True, False])
-# def test_mcs_selector(ligands, complexes, use_dask):
-#     selector = MCSSelector()
-#     pairs = selector.select(ligands, complexes, n_select=1, use_dask=use_dask)
-#     # should be 4 pairs
-#     assert len(pairs) == 4
-#     # as we matched against the exact smiles of the first 4 complex ligands, they should be in order
-#     assert pairs[0] == CompoundStructurePair(ligand=ligands[0], complex=complexes[0])
-#     assert pairs[1] == CompoundStructurePair(ligand=ligands[1], complex=complexes[1])
-#     assert pairs[2] == CompoundStructurePair(ligand=ligands[2], complex=complexes[2])
-#     assert pairs[3] == CompoundStructurePair(ligand=ligands[3], complex=complexes[3])
-#
-#
-# def test_mcs_select_prepped(ligands, prepped_complexes):
-#     selector = MCSSelector()
-#     pairs = selector.select(ligands, prepped_complexes, n_select=1)
-#     # should be 4 pairs
-#     assert len(pairs) == 4
-#     assert pairs[0] == DockingInputPair(ligand=ligands[0], complex=prepped_complexes[0])
-#     assert pairs[1] == DockingInputPair(ligand=ligands[1], complex=prepped_complexes[1])
-#     assert pairs[2] == DockingInputPair(ligand=ligands[2], complex=prepped_complexes[1])
-#     assert pairs[3] == DockingInputPair(ligand=ligands[3], complex=prepped_complexes[0])
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_pairwise_selector_prepped(ligands, prepped_complexes, use_dask):
+    selector = PairwiseSelector()
+    pairs = selector.select(ligands, prepped_complexes, use_dask=use_dask)
+    assert len(pairs) == 8
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_mcs_selector(ligands, complexes, use_dask):
+    selector = MCSSelector()
+    pairs = selector.select(ligands, complexes, n_select=1, use_dask=use_dask)
+    # should be 4 pairs
+    assert len(pairs) == 4
+    # as we matched against the exact smiles of the first 4 complex ligands, they should be in order
+    assert pairs[0] == CompoundStructurePair(ligand=ligands[0], complex=complexes[0])
+    assert pairs[1] == CompoundStructurePair(ligand=ligands[1], complex=complexes[1])
+    assert pairs[2] == CompoundStructurePair(ligand=ligands[2], complex=complexes[2])
+    assert pairs[3] == CompoundStructurePair(ligand=ligands[3], complex=complexes[3])
+
+
+def test_mcs_select_prepped(ligands, prepped_complexes):
+    selector = MCSSelector()
+    pairs = selector.select(ligands, prepped_complexes, n_select=1)
+    # should be 4 pairs
+    assert len(pairs) == 4
+    assert pairs[0] == DockingInputPair(ligand=ligands[0], complex=prepped_complexes[0])
+    assert pairs[1] == DockingInputPair(ligand=ligands[1], complex=prepped_complexes[1])
+    assert pairs[2] == DockingInputPair(ligand=ligands[2], complex=prepped_complexes[1])
+    assert pairs[3] == DockingInputPair(ligand=ligands[3], complex=prepped_complexes[0])
 
 
 def test_mcs_selector_nselect(ligands, complexes):
