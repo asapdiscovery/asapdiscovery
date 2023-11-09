@@ -5,7 +5,8 @@ import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
+from asapdiscovery.docking.docking_v2 import DockingInputPair
 from pydantic import BaseModel, Field
 
 

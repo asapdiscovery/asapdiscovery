@@ -3,7 +3,8 @@ from typing import Literal, Union
 
 from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
+from asapdiscovery.docking.docking_v2 import DockingInputPair
 from asapdiscovery.data.selectors.selector import SelectorBase
 
 
