@@ -430,7 +430,7 @@ class GATModelConfig(ModelConfigBase):
 
 class SchNetModelConfig(ModelConfigBase):
     """
-    Class for constructing a GAT ML model. Default values here are the default values
+    Class for constructing a SchNet ML model. Default values here are the default values
     given in PyG.
     """
 
@@ -552,3 +552,74 @@ class SchNetModelConfig(ModelConfigBase):
             pred_readout=pred_readout,
             comb_readout=comb_readout,
         )
+
+
+class E3NNModelConfig(ModelConfigBase):
+    """
+    Class for constructing an e3nn ML model.
+    """
+
+    model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
+
+    n_atom_types: int = Field(
+        100,
+        description=(
+            "Number of different atom types. In general, this will just be the "
+            "max atomic number of all input atoms."
+        ),
+    )
+    irreps_hidden: dict[str, int] | str = Field(
+        {"0": 10, "1": 3, "2": 2, "3": 1},
+        description=(
+            "Irreps for the hidden layers of the network. "
+            "This can either take the form of an Irreps string, or a dict mapping "
+            "L levels (parity optional) to the number of Irreps of that level. "
+            "If parity is not passed for a given level, both parities will be used. If "
+            "you only want one parity for a given level, make sure you specify it."
+        ),
+    )
+
+    @root_validator(pre=False)
+    def massage_irreps(cls, values):
+        from e3nn import o3
+
+        # First just check that the grouped stuff is properly assigned
+        ModelConfigBase._check_grouped(values)
+
+        # Now deal with irreps
+        irreps = values["irreps_hidden"]
+        if isinstance(irreps, str):
+            try:
+                _ = o3.Irreps(irreps)
+            except ValueError:
+                raise ValueError(f"Invalid irreps string: {irreps}")
+
+            # If already in a good string, can just return
+            return values
+
+        # If we got a dict, need to massage that into an Irreps string
+        # First make a copy of the input dict in case of errors
+        orig_irreps = irreps.copy()
+        # Find L levels that got an unspecified parity
+        unspecified_l = [k for k in irreps.keys() if ("o" not in k) and ("e" not in k)]
+        for irreps_l in unspecified_l:
+            num_irreps = irreps.pop(irreps_l)
+            irreps[f"{irreps_l}o"] = num_irreps
+            irreps[f"{irreps_l}e"] = num_irreps
+
+        # Combine Irreps into str
+        irreps = "+".join(
+            [f"{num_irreps}x{irrep}" for irrep, num_irreps in irreps.items()]
+        )
+
+        # Make sure this Irreps string is valid
+        try:
+            _ = o3.Irreps(irreps)
+        except ValueError:
+            raise ValueError(f"Couldn't parse irreps dict: {orig_irreps}")
+
+        values["irreps_hidden"] = irreps
+        return values
+
+    def _build(self, mtenn_params={}):
+        pass
