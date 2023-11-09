@@ -122,7 +122,12 @@ def run(
     )
     console.print(message)
 
-    ref_complex = PreppedComplex.parse_file(receptor_complex)
+    # TODO make a general from_file which handles this
+    if ".json" in receptor_complex:
+        ref_complex = PreppedComplex.parse_file(receptor_complex)
+    else:
+        receptor_complex = PreppedComplex.from_oedu_file(receptor_complex)
+
     message = Padding(
         f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",
         (1, 0, 1, 0),
