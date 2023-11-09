@@ -561,7 +561,7 @@ class E3NNModelConfig(ModelConfigBase):
 
     model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
 
-    n_atom_types: int = Field(
+    num_atom_types: int = Field(
         100,
         description=(
             "Number of different atom types. In general, this will just be the "
@@ -578,6 +578,29 @@ class E3NNModelConfig(ModelConfigBase):
             "you only want one parity for a given level, make sure you specify it."
         ),
     )
+    lig: bool = Field(
+        False, description="Include ligand labels as a node attribute information."
+    )
+    irreps_edge_attr: int = Field(
+        3,
+        description=(
+            "Which level of spherical harmonics to use for encoding edge attributes "
+            "internally."
+        ),
+    )
+    num_layers: int = Field(3, description="Number of network layers.")
+    neighbor_dist: float = Field(
+        10, description="Cutoff distance for including atoms as neighbors."
+    )
+    num_basis: int = Field(
+        10, description="Number of bases on which the edge length are projected."
+    )
+    num_radial_layers: int = Field(1, description="Number of radial layers.")
+    num_radial_neurons: int = Field(
+        128, description="Number of neurons in each radial layer."
+    )
+    num_neighbors: float = Field(25, description="Typical number of neighbor nodes.")
+    num_nodes: float = Field(4700, description="Typical number of nodes in a graph.")
 
     @root_validator(pre=False)
     def massage_irreps(cls, values):
@@ -622,4 +645,37 @@ class E3NNModelConfig(ModelConfigBase):
         return values
 
     def _build(self, mtenn_params={}):
-        pass
+        from mtenn.conversion_utils import E3NN
+        from e3nn.o3 import Irreps
+
+        model = E3NN(
+            model_kwargs={
+                "irreps_in": f"{self.num_atom_types}x0e",
+                "irreps_hidden": self.irreps_hidden,
+                "irreps_out": "1x0e",
+                "irreps_node_attr": "1x0e" if self.lig else None,
+                "irreps_edge_attr": Irreps.spherical_harmonics(self.irreps_edge_attr),
+                "layers": self.num_layers,
+                "max_radius": self.neighbor_dist,
+                "number_of_basis": self.num_basis,
+                "radial_layers": self.num_radial_layers,
+                "radial_neurons": self.num_radial_neurons,
+                "num_neighbors": self.num_neighbors,
+                "num_nodes": self.num_nodes,
+                "reduce_output": True,
+            }
+        )
+
+        combination = mtenn_params.get("combination", None)
+        pred_readout = mtenn_params.get("pred_readout", None)
+        comb_readout = mtenn_params.get("comb_readout", None)
+
+        return E3NN.get_model(
+            model=model,
+            grouped=self.grouped,
+            fix_device=True,
+            strategy=self.strategy,
+            combination=combination,
+            pred_readout=pred_readout,
+            comb_readout=comb_readout,
+        )
