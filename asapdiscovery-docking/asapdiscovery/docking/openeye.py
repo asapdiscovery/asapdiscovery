@@ -2,7 +2,7 @@
 This module contains the inputs, docker, and output schema for using POSIT
 """
 from enum import Enum
-from typing import Literal, Union, overload
+from typing import Literal, Union
 
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
