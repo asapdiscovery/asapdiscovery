@@ -240,3 +240,7 @@ files:
 
   - resource: du_cache/Mpro-x1002_0A_bound.oedu
     sha256hash: e1362be3ef584e68d0f25c99d4a6c26497cb4f8633585bf04ea389b30c1c468d
+
+  # protein prep testing
+  - resource: SARS2_Mac1A-A1013.pdb
+    sha256hash: 2109f9581336b5e6332fee3136f59ef677a3dbf76cdabf0b4316ec705a1a4a3b
