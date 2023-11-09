@@ -38,7 +38,7 @@ class CrossDockingWorkflowInputs(WorkflowInputsBase):
     posit_method: POSIT_METHOD = Field(
         POSIT_METHOD.ALL, description="POSIT method to use"
     )
-    use_omega: bool = Field(True, description="Use omega to generate conformers")
+    use_omega: bool = Field(False, description="Use omega to generate conformers")
     num_poses: PositiveInt = Field(1, description="Number of poses to generate")
     allow_low_posit_prob: bool = Field(False, description="Allow low posit probability")
     low_posit_prob_thresh: float = Field(
