@@ -3,6 +3,9 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
+from distributed import Client
+from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+
 from asapdiscovery.data.dask_utils import (
     DaskType,
     dask_cluster_from_type,
@@ -14,9 +17,7 @@ from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.sequence import seqres_by_target
-from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
-from distributed import Client
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 
 
 class ProteinPrepInputs(BaseModel):
@@ -35,8 +36,6 @@ class ProteinPrepInputs(BaseModel):
         Path to a directory of structures to prep
     gen_cache : Path
         Path to a directory to store generated structures
-    cache_types : CacheType
-        Type of cache to make
     align : Optional[Path]
         Path to a reference structure to align to
     ref_chain : Optional[str]
@@ -81,9 +80,9 @@ class ProteinPrepInputs(BaseModel):
         description="Path to a directory where generated prepped complexes should be cached",
     )
 
-    cache_type: Optional[list[str]] = Field(
-        [CacheType.DesignUnit], description="The types of cache to use."
-    )
+    # cache_type: Optional[list[str]] = Field(
+    #     [CacheType.DesignUnit], description="The types of cache to use."
+    # )
 
     align: Optional[Path] = Field(
         None, description="Reference structure pdb to align to."
@@ -112,7 +111,7 @@ class ProteinPrepInputs(BaseModel):
 
     dask_cluster_n_workers: PositiveInt = Field(
         10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
+        description="Number of workers to use as initial guess for Lilac dask cluster",
     )
 
     dask_cluster_max_workers: PositiveInt = Field(
@@ -267,7 +266,6 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     cache_path = output_dir / inputs.gen_cache
 
     logger.info(f"Caching prepped complexes to {cache_path}")
-    for cache_type in inputs.cache_type:
-        prepper.cache(prepped_complexes, cache_path, type=cache_type)
+    prepper.cache(prepped_complexes, cache_path)
 
     logger.info("Done")
