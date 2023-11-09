@@ -11,9 +11,9 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from asapdiscovery.docking.docking_v2 import (
     DockingBase,
-    DockingResult,
-    DockingInputPair,
     DockingInputMultiStructure,
+    DockingInputPair,
+    DockingResult,
 )
 from pydantic import Field, PositiveInt
 
