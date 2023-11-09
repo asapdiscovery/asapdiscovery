@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from asapdiscovery.ml.models.ml_models import (
+from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
     LocalMLModelSpec,
     MLModelRegistry,

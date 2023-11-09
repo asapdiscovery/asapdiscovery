@@ -7,7 +7,7 @@ import torch
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
-from asapdiscovery.ml.models.ml_models import (
+from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
     LocalMLModelSpec,
     MLModelRegistry,

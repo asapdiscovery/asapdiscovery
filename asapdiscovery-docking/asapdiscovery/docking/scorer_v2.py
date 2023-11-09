@@ -18,7 +18,7 @@ from asapdiscovery.ml.inference import (
     InferenceBase,
     get_inference_cls_from_model_type,
 )
-from asapdiscovery.ml.models.ml_models import MLModelType
+from asapdiscovery.ml.models import MLModelType
 from pydantic import BaseModel, Field
 
 

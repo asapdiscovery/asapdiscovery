@@ -8,7 +8,7 @@ from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
     large_scale_docking,
 )
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
+from asapdiscovery.ml.models import ASAPMLModelRegistry
 
 
 @click.group()
