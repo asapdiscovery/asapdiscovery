@@ -155,6 +155,12 @@ def large_scale(
     default=False,
     help="Allow clashing poses in last stage of docking",
 )
+@click.option(
+    "--multi-reference",
+    is_flag=True,
+    default=False,
+    help="Whether to pass multiple references to the docker for each ligand instead of just one at a time",
+)
 @ligands
 @pdb_file
 @fragalysis_dir
@@ -167,6 +173,7 @@ def large_scale(
 @input_json
 def cross_docking(
     target: TargetTags,
+    multi_reference: bool = False,
     use_omega: bool = False,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
@@ -193,6 +200,7 @@ def cross_docking(
     else:
         inputs = CrossDockingWorkflowInputs(
             target=target,
+            multi_reference=multi_reference,
             use_dask=use_dask,
             dask_type=dask_type,
             use_omega=use_omega,
