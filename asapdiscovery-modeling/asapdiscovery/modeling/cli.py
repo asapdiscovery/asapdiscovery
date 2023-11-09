@@ -1,8 +1,8 @@
 from typing import Optional
 
 import click
+
 from asapdiscovery.cli.cli_args import (
-    cache_type,
     dask_args,
     fragalysis_dir,
     gen_cache_w_default,
@@ -14,7 +14,6 @@ from asapdiscovery.cli.cli_args import (
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.modeling.protein_prep_v2 import CacheType
 from asapdiscovery.modeling.workflows.protein_prep import (
     ProteinPrepInputs,
     protein_prep_workflow,
@@ -62,7 +61,6 @@ def modeling():
 @fragalysis_dir
 @structure_dir
 @gen_cache_w_default
-@cache_type
 @dask_args
 @output_dir
 @input_json
@@ -78,7 +76,6 @@ def protein_prep(
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
     gen_cache: Optional[str] = "prepped_structure_cache",
-    cache_type: Optional[list[str]] = [CacheType.DesignUnit],
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
     output_dir: str = "output",
@@ -107,7 +104,6 @@ def protein_prep(
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
             gen_cache=gen_cache,
-            cache_type=cache_type,
             use_dask=use_dask,
             dask_type=dask_type,
             output_dir=output_dir,

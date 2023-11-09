@@ -6,6 +6,8 @@ from typing import Literal, Optional, Union
 
 import dask
 import yaml
+from pydantic import BaseModel, Field, root_validator
+
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
@@ -17,7 +19,6 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field, root_validator
 
 
 class CacheType(str, Enum):
@@ -115,7 +116,7 @@ class ProteinPrepperBase(BaseModel):
     def load_cache(
         complexes: list[Complex],
         cache_dir: Union[str, Path],
-        cache_type: CacheType,
+        # cache_type: CacheType,
         fail_missing_cache: bool = False,
     ) -> list[PreppedComplex]:
         """
@@ -124,43 +125,21 @@ class ProteinPrepperBase(BaseModel):
         if not Path(cache_dir).exists():
             raise ValueError(f"Cache directory {cache_dir} does not exist.")
 
-        if cache_type not in CacheType.get_values():
-            raise ValueError(f"Cache type {cache_type} not supported.")
-
         prepped_complexes = []
-        for complex in complexes:
-            if cache_type == CacheType.JSON:
-                json_name = complex.target.target_name + ".json"
-                json_path = cache_dir / json_name
-                if json_path.exists():
-                    prepped_complexes.append(PreppedComplex.from_json_file(json_path))
-                else:
-                    if fail_missing_cache:
-                        raise FileNotFoundError(f"Missing cached json: {json_path}")
-                    else:
-                        warnings.warn(f"Missing cached json: {json_path}")
-                        prepped_complexes.append(None)
+        for complex_target in complexes:
+            complex_file = cache_dir.joinpath(
+                complex_target.target.target_name,
+                complex_target.target.target_name + ".json",
+            )
+            if complex_file.exists():
+                prepped_complexes.append(PreppedComplex.from_json_file(complex_file))
 
-            elif cache_type == CacheType.DesignUnit:
-                du_name = complex.target.target_name + ".oedu"
-                du_path = cache_dir / du_name
-                if du_path.exists():
-                    prepped_target = PreppedTarget.from_oedu_file(
-                        du_path,
-                        ids=complex.target.ids,
-                        target_name=complex.target.target_name,
-                        ligand_chain=complex.ligand_chain,
-                    )
-                    pc = PreppedComplex(target=prepped_target, ligand=complex.ligand)
-                    prepped_complexes.append(pc)
+            else:
+                if fail_missing_cache:
+                    raise FileNotFoundError(f"Missing cached json: {complex_file}")
                 else:
-                    if fail_missing_cache:
-                        raise FileNotFoundError(
-                            f"Missing cached design unit: {du_path}"
-                        )
-                    else:
-                        warnings.warn(f"Missing cached design unit: {du_path}")
-                        prepped_complexes.append(None)
+                    warnings.warn(f"Missing cached json: {complex_file}")
+                    prepped_complexes.append(None)
 
         return prepped_complexes
 
