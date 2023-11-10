@@ -154,7 +154,7 @@ class MTENNCombination(str, Enum):
 class ModelConfigBase(BaseModel):
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
 
-    # Not sure if I can do this...
+    # Shared parameters for MTENN
     grouped: bool = Field(False, description="Model is a grouped (multi-pose) model.")
     strategy: MTENNStrategy = Field(
         MTENNStrategy.delta,
@@ -184,6 +184,60 @@ class ModelConfigBase(BaseModel):
         ),
     )
 
+    # Parameters for MaxCombination
+    max_comb_neg: bool = Field(
+        True,
+        description=(
+            "Whether to take the min instead of max when combining pose predictions "
+            "with MaxCombination."
+        ),
+    )
+    max_comb_scale: float = Field(
+        1000,
+        description=(
+            "Scaling factor for values when taking the max/min when combining pose "
+            "predictions with MaxCombination. A value of 1 will approximate the "
+            "Boltzmann mean, while a larger value will more accurately approximate the "
+            "max/min operation."
+        ),
+    )
+
+    # Parameters for PIC50Readout for pred_readout
+    pred_substrate: float | None = Field(
+        None,
+        description=(
+            "Substrate concentration to use when using the Cheng-Prusoff equation to "
+            "convert deltaG -> IC50 in PIC50Readout for pred_readout. Assumed to be in "
+            "the same units as pred_km."
+        ),
+    )
+    pred_km: float | None = Field(
+        None,
+        description=(
+            "Km value to use when using the Cheng-Prusoff equation to convert "
+            "deltaG -> IC50 in PIC50Readout for pred_readout. Assumed to be in "
+            "the same units as pred_substrate."
+        ),
+    )
+
+    # Parameters for PIC50Readout for comb_readout
+    comb_substrate: float | None = Field(
+        None,
+        description=(
+            "Substrate concentration to use when using the Cheng-Prusoff equation to "
+            "convert deltaG -> IC50 in PIC50Readout for comb_readout. Assumed to be in "
+            "the same units as comb_km."
+        ),
+    )
+    comb_km: float | None = Field(
+        None,
+        description=(
+            "Km value to use when using the Cheng-Prusoff equation to convert "
+            "deltaG -> IC50 in PIC50Readout for comb_readout. Assumed to be in "
+            "the same units as comb_substrate."
+        ),
+    )
+
     @abc.abstractmethod
     def _build(self, mtenn_params={}) -> mtenn.model.Model:
         ...
@@ -194,7 +248,9 @@ class ModelConfigBase(BaseModel):
             case MTENNCombination.mean:
                 mtenn_combination = mtenn.combination.MeanCombination()
             case MTENNCombination.max:
-                mtenn_combination = mtenn.combination.MaxCombination()
+                mtenn_combination = mtenn.combination.MaxCombination(
+                    neg=self.max_comb_neg, scale=self.max_comb_scale
+                )
             case MTENNCombination.boltzmann:
                 mtenn_combination = mtenn.combination.BoltzmannCombination()
             case None:
@@ -202,13 +258,17 @@ class ModelConfigBase(BaseModel):
 
         match self.pred_readout:
             case MTENNReadout.pic50:
-                mtenn_pred_readout = mtenn.readout.PIC50Readout()
+                mtenn_pred_readout = mtenn.readout.PIC50Readout(
+                    substrate=self.pred_substrate, Km=self.pred_km
+                )
             case None:
                 mtenn_pred_readout = None
 
         match self.comb_readout:
             case MTENNReadout.pic50:
-                mtenn_comb_readout = mtenn.readout.PIC50Readout()
+                mtenn_comb_readout = mtenn.readout.PIC50Readout(
+                    substrate=self.comb_substrate, Km=self.comb_km
+                )
             case None:
                 mtenn_comb_readout = None
 
