@@ -1,4 +1,5 @@
 from typing import Any
+from collections import defaultdict
 
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -30,16 +31,12 @@ class MultiStructureBase(DataModelAbstractBase):
         Create a list of CompoundMultiStructures from a list of CompoundStructurePairs.
         Automatically separates out the ligands.
         """
-        ligand_complexes_dict = {}
+        ligand_complexes_dict = defaultdict(list)
 
         for pair in pair_list:
             ligand = pair.ligand
             complex = pair.complex
-
-            if ligand in ligand_complexes_dict:
-                ligand_complexes_dict[ligand].append(complex)
-            else:
-                ligand_complexes_dict[ligand] = [complex]
+            ligand_complexes_dict[ligand].append(complex)
 
         compound_multi_structures = [
             cls(ligand=ligand, complexes=complexes)
