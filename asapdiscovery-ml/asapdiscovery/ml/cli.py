@@ -1,5 +1,6 @@
 import asapdiscovery.ml.schema_v2.config as ascfg
 import click
+from dgllife.utils import CanonicalAtomFeaturizer
 
 
 @click.group()
@@ -108,6 +109,93 @@ def ml():
         "the same units as comb_substrate."
     ),
 )
+# GAT-specific parameters
+@click.option(
+    "--in-feats",
+    type=int,
+    default=CanonicalAtomFeaturizer().feat_size(),
+    help=("Input node feature size. Defaults to size of the CanonicalAtomFeaturizer."),
+)
+@click.option(
+    "--num-layers",
+    type=int,
+    default=2,
+    help=(
+        "Number of GAT layers. Ignored if multiple values are passed for any "
+        "other GAT argument. To define a model with only one layer, this must be "
+        "explicitly set to 1."
+    ),
+)
+@click.option(
+    "--hidden-feats",
+    default="32",
+    help=(
+        "Output size of each GAT layer. This can either be a single value, which will "
+        "be broadcasted to each layer, or a comma-separated list with each value "
+        "corresponding to one layer in the model."
+    ),
+)
+@click.option(
+    "--num-heads",
+    default="4",
+    help=(
+        "Number of attention heads for each GAT layer. Passing a single value or "
+        "multiple values functions similarly as for --hidden-feats."
+    ),
+)
+@click.option(
+    "--feat-drops",
+    default="0",
+    help=(
+        "Dropout of input features for each GAT layer. Passing a single value or "
+        "multiple values functions similarly as for --hidden-feats."
+    ),
+)
+@click.option(
+    "--attn-drops",
+    default="0",
+    help=(
+        "Dropout of attention values for each GAT layer. Passing a single value or "
+        "multiple values functions similarly as for --hidden-feats."
+    ),
+)
+@click.option(
+    "--alphas",
+    default="0.2",
+    help=(
+        "Hyperparameter for LeakyReLU gate for each GAT layer. Passing a single value "
+        "or multiple values functions similarly as for --hidden-feats."
+    ),
+)
+@click.option(
+    "--residuals",
+    default="True",
+    help=(
+        "Whether to use residual connection for each GAT layer. Passing a single value "
+        "or multiple values functions similarly as for --hidden-feats."
+    ),
+)
+@click.option(
+    "--agg-modes",
+    default="flatten",
+    help=(
+        "Which aggregation mode [flatten, mean] to use for each GAT layer. Passing a "
+        "single value or multiple values functions similarly as for --hidden-feats."
+    ),
+)
+@click.option(
+    "--biases",
+    default="True",
+    help=(
+        "Whether to use bias for each GAT layer. Passing a single value "
+        "or multiple values functions similarly as for --hidden-feats."
+    ),
+)
+@click.option(
+    "--allow-zero-in-degree",
+    is_flag=True,
+    help="Allow zero in degree nodes for all graph layers.",
+)
 def test(
     model_type: ascfg.ModelType,
     grouped: bool = False,
@@ -121,6 +209,17 @@ def test(
     pred_km: float | None = None,
     comb_substrate: float | None = None,
     comb_km: float | None = None,
+    in_feats: int = CanonicalAtomFeaturizer().feat_size(),
+    num_layers: int = 2,
+    hidden_feats: str = "32",
+    num_heads: str = "4",
+    feat_drops: str = "0",
+    attn_drops: str = "0",
+    alphas: str = "0.2",
+    residuals: str = "True",
+    agg_modes: str = "flatten",
+    biases: str = "True",
+    allow_zero_in_degree: bool = False,
 ):
     # Build the model
     match model_type:
@@ -137,6 +236,17 @@ def test(
                 pred_km=pred_km,
                 comb_substrate=comb_substrate,
                 comb_km=comb_km,
+                in_feats=in_feats,
+                num_layers=num_layers,
+                hidden_feats=hidden_feats,
+                num_heads=num_heads,
+                feat_drops=feat_drops,
+                attn_drops=attn_drops,
+                alphas=alphas,
+                residuals=residuals,
+                agg_modes=agg_modes,
+                biases=biases,
+                allow_zero_in_degree=allow_zero_in_degree,
             )
         case ascfg.ModelType.schnet:
             config = ascfg.SchNetModelConfig(
@@ -168,5 +278,6 @@ def test(
             )
         case unknown:
             raise ValueError(f"Unknown model type: {unknown}")
+    print(config, flush=True)
     model = config.build()
     print(model, flush=True)
