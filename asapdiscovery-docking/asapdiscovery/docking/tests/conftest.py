@@ -4,7 +4,10 @@ import pytest
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.docking.docking_v2 import DockingInputPair
+from asapdiscovery.docking.docking_v2 import (
+    DockingInputPair,
+    DockingInputMultiStructure,
+)
 from asapdiscovery.docking.openeye import POSITDocker
 
 
@@ -51,14 +54,18 @@ def prepped_complex():
 
 @pytest.fixture(scope="session")
 def prepped_complexes():
-    # A list of PreppedComplex objects
-
-    # TODO: add another prepped complex to AWS
-    return PreppedComplex.from_oedu_file(
-        fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu"),
-        ligand_kwargs={"compound_name": "test"},
-        target_kwargs={"target_name": "test"},
-    )
+    cached_dus = {
+        "Mpro-x0354": "du_cache/Mpro-x0354_0A_bound.oedu",
+        "Mpro-x1002": "du_cache/Mpro-x1002_0A_bound.oedu",
+    }
+    return [
+        PreppedComplex.from_oedu_file(
+            fetch_test_file(cached_du),
+            ligand_kwargs={"compound_name": "test"},
+            target_kwargs={"target_name": "name"},
+        )
+        for name, cached_du in cached_dus.items()
+    ]
 
 
 @pytest.fixture(scope="session")
@@ -69,6 +76,11 @@ def docking_input_pair(ligand, prepped_complex):
 @pytest.fixture(scope="session")
 def docking_input_pair_simple(ligand_simple, prepped_complex):
     return DockingInputPair(complex=prepped_complex, ligand=ligand_simple)
+
+
+@pytest.fixture(scope="session")
+def docking_multi_structure(prepped_complexes, ligand):
+    return DockingInputMultiStructure(complexes=prepped_complexes, ligand=ligand)
 
 
 @pytest.fixture(scope="session")

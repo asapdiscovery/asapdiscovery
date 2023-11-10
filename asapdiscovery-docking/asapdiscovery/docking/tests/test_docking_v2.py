@@ -44,5 +44,9 @@ def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_multireceptor_docking():
-    pass
+def test_multireceptor_docking(docking_multi_structure):
+    assert len(docking_multi_structure.complexes) == 2
+    docker = POSITDocker()
+    results = docker.dock([docking_multi_structure])
+    assert len(results) == 1
+    assert results[0].probability > 0.0
