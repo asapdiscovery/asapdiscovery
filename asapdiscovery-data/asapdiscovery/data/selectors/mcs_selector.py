@@ -1,4 +1,4 @@
-from typing import Union, ClassVar
+from typing import ClassVar, Union
 
 import numpy as np
 from asapdiscovery.data.openeye import oechem
