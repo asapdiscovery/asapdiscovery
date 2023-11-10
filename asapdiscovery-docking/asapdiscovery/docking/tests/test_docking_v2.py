@@ -49,4 +49,5 @@ def test_multireceptor_docking(docking_multi_structure):
     docker = POSITDocker()
     results = docker.dock([docking_multi_structure])
     assert len(results) == 1
+    assert results[0].input_pair.complex.target.target_name == "Mpro-x0354"
     assert results[0].probability > 0.0
