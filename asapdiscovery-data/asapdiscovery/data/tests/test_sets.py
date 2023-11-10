@@ -1,4 +1,5 @@
 from itertools import product
+
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.schema_v2.sets import CompoundMultiStructure
 
