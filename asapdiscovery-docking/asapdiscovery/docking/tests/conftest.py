@@ -62,7 +62,7 @@ def prepped_complexes():
         PreppedComplex.from_oedu_file(
             fetch_test_file(cached_du),
             ligand_kwargs={"compound_name": "test"},
-            target_kwargs={"target_name": "name"},
+            target_kwargs={"target_name": name},
         )
         for name, cached_du in cached_dus.items()
     ]
