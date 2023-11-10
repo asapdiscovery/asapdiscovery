@@ -11,7 +11,7 @@ from asapdiscovery.modeling.protein_prep_v2 import CacheType
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
-class WorkflowInputsBase(BaseModel):
+class DockingWorkflowInputsBase(BaseModel):
     filename: Optional[str] = Field(
         None, description="Path to a molecule file containing query ligands."
     )

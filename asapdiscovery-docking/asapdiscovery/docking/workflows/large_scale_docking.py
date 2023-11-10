@@ -32,9 +32,10 @@ from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from asapdiscovery.docking.workflows.workflows import DockingWorkflowInputsBase
 
 
-class LargeScaleDockingInputs(BaseModel):
+class LargeScaleDockingInputs(DockingWorkflowInputsBase):
     """
     Schema for inputs to large scale docking
 
@@ -82,68 +83,6 @@ class LargeScaleDockingInputs(BaseModel):
         Output directory
     """
 
-    filename: Optional[str] = Field(
-        None, description="Path to a molecule file containing query ligands."
-    )
-
-    pdb_file: Optional[Path] = Field(
-        None, description="Path to a PDB file to prep and dock to."
-    )
-
-    fragalysis_dir: Optional[Path] = Field(
-        None, description="Path to a directory containing a Fragalysis dump."
-    )
-    structure_dir: Optional[Path] = Field(
-        None,
-        description="Path to a directory containing structures to dock instead of a full fragalysis database.",
-    )
-    postera: bool = Field(
-        False, description="Whether to use the Postera database as the query set."
-    )
-    postera_upload: bool = Field(
-        False, description="Whether to upload the results to Postera."
-    )
-    postera_molset_name: Optional[str] = Field(
-        None, description="The name of the molecule set to upload to."
-    )
-    cache_dir: Optional[str] = Field(
-        None, description="Path to a directory where a cache has been generated"
-    )
-
-    gen_cache: Optional[str] = Field(
-        None,
-        description="Generate a cache from structures prepped in this workflow run in this directory",
-    )
-
-    cache_type: Optional[list[str]] = Field(
-        [CacheType.DesignUnit], description="The types of cache to use."
-    )
-
-    target: TargetTags = Field(None, description="The target to dock against.")
-
-    write_final_sdf: bool = Field(
-        default=True,
-        description="Whether to write the final docked poses to an SDF file.",
-    )
-    use_dask: bool = Field(True, description="Whether to use dask for parallelism.")
-
-    dask_type: DaskType = Field(
-        DaskType.LOCAL, description="Dask client to use for parallelism."
-    )
-
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
-    )
-
-    n_select: PositiveInt = Field(
-        5, description="Number of targets to dock each ligand against, sorted by MCS"
-    )
-
     top_n: PositiveInt = Field(
         500, description="Number of docking results to return, ordered by docking score"
     )
@@ -170,10 +109,6 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     logname: str = Field("large_scale_docking", description="Name of the log file.")
-
-    loglevel: int = Field(logging.INFO, description="Logging level")
-
-    output_dir: Path = Field(Path("output"), description="Output directory")
 
     class Config:
         arbitrary_types_allowed = True
