@@ -7,7 +7,7 @@ from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.docking.docking_v2 import DockingInputPair
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class SelectorBase(abc.ABC, BaseModel):
