@@ -1,6 +1,5 @@
-import click
-
 import asapdiscovery.ml.schema_v2.config as ascfg
+import click
 
 
 @click.group()
