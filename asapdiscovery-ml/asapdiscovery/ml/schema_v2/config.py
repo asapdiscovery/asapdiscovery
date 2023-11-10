@@ -417,10 +417,8 @@ class GATModelConfig(ModelConfigBase):
                     param_val = list(map(param_type, param_val.split(",")))
                 except ValueError:
                     raise ValueError(
-                        (
                             f"Unable to parse value {param_val} for parameter {param}. "
                             f"Expected type of {param_type}."
-                        )
                     )
                 values[param] = param_val
 
