@@ -86,7 +86,7 @@ class POSITDocker(DockingBase):
             OEPosit options
         pose_res : oedocking.OEPositResults
             OEPosit results
-        dus : oedocking.OEDesignUnit
+        dus : list[oedocking.OEDesignUnit]
             OEDesignUnit
         lig : oechem.OEMol
             Ligand
