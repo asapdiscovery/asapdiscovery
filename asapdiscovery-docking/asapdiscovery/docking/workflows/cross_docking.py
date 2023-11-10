@@ -187,7 +187,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking")
     # TODO: MCS takes an n_select arg but Pairwise does not...meaning we are losing that option the way this is written
-    selector = inputs.structure_selector.to_selector_cls()
+    selector = inputs.structure_selector.selector_cls()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,

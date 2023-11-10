@@ -164,9 +164,7 @@ def large_scale(
 )
 @click.option(
     "--structure-selector",
-    type=click.Choice(
-        [selector.name for selector in StructureSelector], case_sensitive=True
-    ),
+    type=StructureSelector,
     default=StructureSelector.PAIRWISE,
     help="The type of structure selector to use. Defaults to pairwise (all pairwise combinations of ligand and complex)",
 )
@@ -208,6 +206,8 @@ def cross_docking(
         inputs = CrossDockingWorkflowInputs.from_json_file(input_json)
 
     else:
+        print(type(structure_selector))
+        print(structure_selector)
         inputs = CrossDockingWorkflowInputs(
             target=target,
             multi_reference=multi_reference,

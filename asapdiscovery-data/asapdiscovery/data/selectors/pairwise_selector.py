@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Literal, Union
+from typing import Union, ClassVar
 
 from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -12,7 +12,7 @@ class PairwiseSelector(SelectorBase):
     Selects ligand and complex pairs by enumerating all possible pairs.
     """
 
-    selector_type: Literal["PairwiseSelector"] = "PairwiseSelector"
+    selector_type: ClassVar[str] = "PairwiseSelector"
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
@@ -40,7 +40,7 @@ class LeaveOneOutSelector(SelectorBase):
     Selects ligand and complex pairs by enumerating all possible pairs except the self-docked pair
     """
 
-    selector_type: Literal["LeaveOneOutSelector"] = "LeaveOneOutSelector"
+    selector_type: ClassVar[str] = "LeaveOneOutSelector"
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
@@ -70,7 +70,7 @@ class SelfDockingSelector(SelectorBase):
     Selects ligand and complex pairs only including the self-docked pair
     """
 
-    selector_type: Literal["SelfDockingSelector"] = "SelfDockingSelector"
+    selector_type: ClassVar[str] = "SelfDockingSelector"
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]

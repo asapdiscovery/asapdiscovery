@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Union, ClassVar
 
 import numpy as np
 from asapdiscovery.data.openeye import oechem
@@ -18,7 +18,7 @@ class MCSSelector(SelectorBase):
     (MCS) search.
     """
 
-    expander_type: Literal["MCSSelector"] = "MCSSelector"
+    selector_type: ClassVar[str] = "MCSSelector"
 
     structure_based: bool = Field(
         False,

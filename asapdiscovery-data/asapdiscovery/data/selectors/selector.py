@@ -16,9 +16,10 @@ class SelectorBase(abc.ABC, BaseModel):
     """
 
     # records what kind of selector class was used, overridden in subclasses
-    selector_type: Literal["SelectorBase"] = Field(
-        "SelectorBase", description="The type of selector to use"
-    )
+    @property
+    @abc.abstractmethod
+    def selector_type(self) -> str:
+        ...
 
     @abc.abstractmethod
     def _select(self) -> list[Union[CompoundStructurePair, DockingInputPair]]:
