@@ -12,7 +12,7 @@ class PairwiseSelector(SelectorBase):
     Selects ligand and complex pairs by enumerating all possible pairs.
     """
 
-    expander_type: Literal["PairwiseSelector"] = "PairwiseSelector"
+    selector_type: Literal["PairwiseSelector"] = "PairwiseSelector"
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
@@ -40,7 +40,7 @@ class LeaveOneOutSelector(SelectorBase):
     Selects ligand and complex pairs by enumerating all possible pairs except the self-docked pair
     """
 
-    expander_type: Literal["LeaveOneOutSelector"] = "LeaveOneOutSelector"
+    selector_type: Literal["LeaveOneOutSelector"] = "LeaveOneOutSelector"
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
@@ -55,9 +55,8 @@ class LeaveOneOutSelector(SelectorBase):
 
         pairs = []
         for lig, complex in product(ligands, complexes):
+            # Need to compare chemical identity instead of compound ID
             if not lig.inchi == complex.ligand.inchi:
-                print("Lig 1:", lig)
-                print("Lig 2:", complex.ligand)
                 pairs.append(pair_cls(complex=complex, ligand=lig))
 
         return pairs
@@ -71,7 +70,7 @@ class SelfDockingSelector(SelectorBase):
     Selects ligand and complex pairs only including the self-docked pair
     """
 
-    expander_type: Literal["SelfDockingSelector"] = "SelfDockingSelector"
+    selector_type: Literal["SelfDockingSelector"] = "SelfDockingSelector"
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
@@ -86,6 +85,7 @@ class SelfDockingSelector(SelectorBase):
 
         pairs = []
         for lig, complex in product(ligands, complexes):
+            # Need to compare chemical identity instead of compound ID
             if lig.inchi == complex.ligand.inchi:
                 pairs.append(pair_cls(complex=complex, ligand=lig))
 
