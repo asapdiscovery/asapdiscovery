@@ -5,8 +5,8 @@ from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.docking_v2 import (
-    DockingInputPair,
     DockingInputMultiStructure,
+    DockingInputPair,
 )
 from asapdiscovery.docking.openeye import POSITDocker
 
