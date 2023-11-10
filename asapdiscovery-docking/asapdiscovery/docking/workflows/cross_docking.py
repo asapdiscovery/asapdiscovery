@@ -33,8 +33,8 @@ from pydantic import Field, PositiveInt
 class CrossDockingWorkflowInputs(WorkflowInputsBase):
     logname: str = Field("cross_docking", description="Name of the log file.")
 
-    structure_selector: str = Field(
-        StructureSelector.PAIRWISE.name,
+    structure_selector: StructureSelector = Field(
+        StructureSelector.PAIRWISE,
         description="Structure selector to use for docking",
     )
     multi_reference: bool = Field(
@@ -187,8 +187,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking")
     # TODO: MCS takes an n_select arg but Pairwise does not...meaning we are losing that option the way this is written
-    # Also this is hacky but I couldn't figure out how to get the inputs to serialize without just using the name
-    selector = StructureSelector[inputs.structure_selector].value()
+    selector = inputs.structure_selector.to_selector_cls()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,

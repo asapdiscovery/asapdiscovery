@@ -167,7 +167,7 @@ def large_scale(
     type=click.Choice(
         [selector.name for selector in StructureSelector], case_sensitive=True
     ),
-    default=StructureSelector.PAIRWISE.name,
+    default=StructureSelector.PAIRWISE,
     help="The type of structure selector to use. Defaults to pairwise (all pairwise combinations of ligand and complex)",
 )
 @ligands
@@ -183,7 +183,7 @@ def large_scale(
 def cross_docking(
     target: TargetTags,
     multi_reference: bool = False,
-    structure_selector: StructureSelector = StructureSelector.PAIRWISE.name,
+    structure_selector: StructureSelector = StructureSelector.PAIRWISE,
     use_omega: bool = False,
     allow_retries: bool = False,
     allow_final_clash: bool = False,

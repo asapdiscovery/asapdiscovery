@@ -5,10 +5,12 @@ from enum import Enum
 
 from asapdiscovery.docking.openeye import POSITDocker
 
+_ALL_DOCKING_METHODS = {POSITDocker.type: POSITDocker}
+
 
 class DockingMethod(Enum):
     """
     Enum of all docking methods.
     """
 
-    POSIT = POSITDocker
+    POSIT = POSITDocker.type

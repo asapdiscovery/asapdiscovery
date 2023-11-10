@@ -55,8 +55,8 @@ def prepped_complex():
 @pytest.fixture(scope="session")
 def prepped_complexes():
     cached_dus = {
-        "Mpro-x0354": "du_cache/Mpro-x0354_0A_bound.oedu",
         "Mpro-x1002": "du_cache/Mpro-x1002_0A_bound.oedu",
+        "Mpro-x0354": "du_cache/Mpro-x0354_0A_bound.oedu",
     }
     return [
         PreppedComplex.from_oedu_file(

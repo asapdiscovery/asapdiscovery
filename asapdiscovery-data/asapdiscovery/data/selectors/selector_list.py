@@ -10,13 +10,21 @@ from asapdiscovery.data.selectors.pairwise_selector import (
     SelfDockingSelector,
 )
 
+_ALL_SELECTORS = {LeaveOneOutSelector.selector_type: LeaveOneOutSelector}
+
 
 class StructureSelector(Enum):
     """
     Enum of all selectors.
     """
 
-    MCS = MCSSelector
-    PAIRWISE = PairwiseSelector
-    LEAVE_ONE_OUT = LeaveOneOutSelector
-    SELF_DOCKING = SelfDockingSelector
+    MCS = MCSSelector.selector_type
+    PAIRWISE = PairwiseSelector.selector_type
+    LEAVE_ONE_OUT = LeaveOneOutSelector.selector_type
+    SELF_DOCKING = SelfDockingSelector.selector_type
+
+    def to_selector_cls(self):
+        """
+        Returns the selector class.
+        """
+        return _ALL_SELECTORS[self.value]
