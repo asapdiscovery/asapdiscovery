@@ -297,13 +297,15 @@ class GATModelConfig(ModelConfigBase):
     the size of the model:
     * If single values are passed for all parameters, the value of `num_layers` will be
     used as the size of the model, and each layer will have the parameters given
-    * If a list of values is passed for any parameters, all parameters must either be
-    lists of the same size, or single values. For parameters that are single values,
-    that same value will be used for each layer. For parameters that are lists, those
-    lists will be used
+    * If a list of values is passed for any parameters, all parameters must be lists of
+    the same size, or single values. For parameters that are single values, that same
+    value will be used for each layer. For parameters that are lists, those lists will
+    be used
 
-    If there are parameters that have list values but the lists are different sizes, an
-    error will be raised.
+    Parameters passed as strings are assumed to be comma-separated lists, and will first
+    be cast to lists of the appropriate type, and then processed as described above.
+
+    If lists of multiple different (non-1) sizes are found, an error will be raised.
 
     Default values here are the default values given in DGL-LifeSci.
     """
@@ -325,7 +327,7 @@ class GATModelConfig(ModelConfigBase):
             "other argument."
         ),
     )
-    hidden_feats: int | list[int] = Field(
+    hidden_feats: str | list[int] = Field(
         32,
         description=(
             "Output size of each GAT layer. If an int is passed, the value for "
@@ -334,35 +336,35 @@ class GATModelConfig(ModelConfigBase):
             "the list."
         ),
     )
-    num_heads: int | list[int] = Field(
+    num_heads: str | list[int] = Field(
         4,
         description=(
             "Number of attention heads for each GAT layer. Passing an int or list of "
             "ints functions similarly as for hidden_feats."
         ),
     )
-    feat_drops: float | list[float] = Field(
+    feat_drops: str | list[float] = Field(
         0,
         description=(
             "Dropout of input features for each GAT layer. Passing an float or list of "
             "floats functions similarly as for hidden_feats."
         ),
     )
-    attn_drops: float | list[float] = Field(
+    attn_drops: str | list[float] = Field(
         0,
         description=(
             "Dropout of attention values for each GAT layer. Passing an float or list "
             "of floats functions similarly as for hidden_feats."
         ),
     )
-    alphas: float | list[float] = Field(
+    alphas: str | list[float] = Field(
         0.2,
         description=(
             "Hyperparameter for LeakyReLU gate for each GAT layer. Passing an float or "
             "list of floats functions similarly as for hidden_feats."
         ),
     )
-    residuals: bool | list[bool] = Field(
+    residuals: str | list[bool] = Field(
         True,
         description=(
             "Whether to use residual connection for each GAT layer. Passing a bool or "
@@ -376,14 +378,14 @@ class GATModelConfig(ModelConfigBase):
             "Passing a str or list of strs functions similarly as for hidden_feats."
         ),
     )
-    activations: Callable | list[Callable] | None = Field(
+    activations: list[Callable] | None = Field(
         None,
         description=(
             "Activation function for each GAT layer. Passing a function or "
             "list of functions functions similarly as for hidden_feats."
         ),
     )
-    biases: bool | list[bool] = Field(
+    biases: str | list[bool] = Field(
         True,
         description=(
             "Whether to use bias for each GAT layer. Passing a bool or "
@@ -396,36 +398,38 @@ class GATModelConfig(ModelConfigBase):
 
     @root_validator(pre=False)
     def massage_into_lists(cls, values) -> GATModelConfig:
-        list_params = [
-            "hidden_feats",
-            "num_heads",
-            "feat_drops",
-            "attn_drops",
-            "alphas",
-            "residuals",
-            "agg_modes",
-            "activations",
-            "biases",
-        ]
-        # First check if any of the list-optional params are lists
-        if any([isinstance(values[p], list) for p in list_params]):
-            use_num_layers = False
-        else:
-            use_num_layers = True
+        list_params = {
+            "hidden_feats": int,
+            "num_heads": int,
+            "feat_drops": float,
+            "attn_drops": float,
+            "alphas": float,
+            "residuals": bool,
+            "agg_modes": str,
+            "activations": None,
+            "biases": bool,
+        }
+        # First convert string lists to actual lists
+        for param, param_type in list_params.items():
+            param_val = values[param]
+            if isinstance(param_val, str):
+                try:
+                    param_val = list(map(param_type, param_val.split(",")))
+                except ValueError:
+                    raise ValueError(
+                        (
+                            f"Unable to parse value {param_val} for parameter {param}. "
+                            f"Expected type of {param_type}."
+                        )
+                    )
+                values[param] = param_val
 
-        # If all values are just ints/floats/bools (ie no lists), we can just make the
-        #  lists based on num_layers and return
-        if use_num_layers:
-            for p in list_params:
-                values[p] = [values[p]] * values["num_layers"]
-
-            return values
-
-        # Otherwise need to do a bit more logic to get things right
+        # Get sizes of all lists
         list_lens = {}
         for p in list_params:
             param_val = values[p]
             if not isinstance(param_val, list):
+                # Shouldn't be possible at this point but just in case
                 param_val = [param_val]
                 values[p] = param_val
             list_lens[p] = len(param_val)
@@ -438,8 +442,13 @@ class GATModelConfig(ModelConfigBase):
                 "All passed parameter lists must be the same value. "
                 f"Instead got list lengths of: {list_lens}"
             )
+        elif list_lens_set == {1}:
+            # If all lists have only one value, we defer to the value passed to
+            #  num_layers, as described in the class docstring
+            num_layers = values["num_layers"]
+        else:
+            num_layers = max(list_lens_set)
 
-        num_layers = max(list_lens_set)
         values["num_layers"] = num_layers
         # If we just want a model with one layer, can return early since we've already
         #  converted everything into lists
