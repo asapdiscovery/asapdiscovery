@@ -40,9 +40,9 @@ from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform
