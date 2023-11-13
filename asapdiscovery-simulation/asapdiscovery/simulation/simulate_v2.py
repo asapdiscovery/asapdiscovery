@@ -1,26 +1,26 @@
+import abc
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Optional  # noqa: F401
+
 import dask
 import mdtraj
 import openmm
+import pandas as pd
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import save_openeye_pdb
+from asapdiscovery.docking.docking_data_validation import (
+    DockingResultColsV2 as DockingResultCols,
+)
+from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
-from rdkit import Chem
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
-
-from asapdiscovery.simulation.simulate import OpenMMPlatform
-from asapdiscovery.docking.docking_v2 import DockingResult
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-import pandas as pd
-from tempfile import NamedTemporaryFile
-import abc
+from rdkit import Chem
 
 
 class SimulatorBase(BaseModel):

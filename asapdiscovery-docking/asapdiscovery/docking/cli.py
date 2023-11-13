@@ -9,19 +9,18 @@ from asapdiscovery.cli.cli_args import (
     gen_cache,
     input_json,
     ligands,
+    md,
+    md_openmm_platform,
+    md_steps,
     ml_scorer,
     output_dir,
     pdb_file,
     postera_args,
     structure_dir,
     target,
-    md,
-    md_steps,
-    md_openmm_platform,
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.docking.workflows.cross_docking import (
     CrossDockingWorkflowInputs,
     cross_docking_workflow,
@@ -30,11 +29,11 @@ from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
     large_scale_docking_workflow,
 )
-
 from asapdiscovery.docking.workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
 )
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
 @click.group()
@@ -220,7 +219,6 @@ def cross_docking(
     cross_docking_workflow(inputs)
 
 
-
 @docking.command()
 @target
 @click.option(
@@ -298,6 +296,7 @@ def small_scale(
         )
 
     small_scale_docking_workflow(inputs)
+
 
 if __name__ == "__main__":
     docking()

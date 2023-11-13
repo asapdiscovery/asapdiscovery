@@ -1,7 +1,5 @@
 import pkg_resources
-
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-
 
 # SEQRES in YAML format
 MERS_CoV_Mpro_SEQRES = pkg_resources.resource_filename(

@@ -3,17 +3,24 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import (
     DaskType,
     dask_cluster_from_type,
     set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.postera.manifold_artifacts import (
+    ArtifactType,
+    ManifoldArtifactUploader,
+)
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
@@ -27,9 +34,9 @@ from asapdiscovery.data.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.aws.cloudfront import CloudFront
-from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.utils import check_empty_dataframe
+from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
+from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
@@ -37,17 +44,10 @@ from asapdiscovery.docking.docking_v2 import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
-from distributed import Client
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
-from asapdiscovery.dataviz.viz_v2.html_viz import HTMLVisualizerV2, ColourMethod
-from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
-from asapdiscovery.data.postera.manifold_artifacts import (
-    ManifoldArtifactUploader,
-    ArtifactType,
-)
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+from distributed import Client
+from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
 class SmallScaleDockingInputs(BaseModel):

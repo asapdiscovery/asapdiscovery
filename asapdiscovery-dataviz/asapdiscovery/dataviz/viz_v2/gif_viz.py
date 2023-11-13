@@ -1,19 +1,20 @@
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from pydantic import Field, PositiveInt, BaseModel
+import shutil
 from enum import Enum
 from pathlib import Path
+
+import dask
 import pandas as pd
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.dataviz._gif_blocks import GIFBlockData
+from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar
+from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-import dask
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.dataviz._gif_blocks import GIFBlockData
-from asapdiscovery.dataviz.show_contacts import show_contacts
-from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar
-import shutil
 from asapdiscovery.simulation.simulate_v2 import SimulationResult
+from pydantic import BaseModel, Field, PositiveInt
 
 
 class GIFVisualizerV2(BaseModel):

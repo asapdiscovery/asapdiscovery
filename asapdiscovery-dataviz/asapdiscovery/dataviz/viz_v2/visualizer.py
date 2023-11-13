@@ -2,10 +2,10 @@ import abc
 from typing import Literal, Union
 
 import dask
+import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.docking.docking_v2 import DockingResult
 from pydantic import BaseModel
-import pandas as pd
 
 
 class VisualizerBase(abc.ABC, BaseModel):
