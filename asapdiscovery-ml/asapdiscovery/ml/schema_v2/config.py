@@ -395,6 +395,10 @@ class GATModelConfig(ModelConfigBase):
         False, description="Allow zero in degree nodes for all graph layers."
     )
 
+    # Internal tracker for if the parameters were originally built from lists or using
+    #  num_layers
+    _from_num_layers = False
+
     @root_validator(pre=False)
     def massage_into_lists(cls, values) -> GATModelConfig:
         list_params = {
@@ -443,8 +447,10 @@ class GATModelConfig(ModelConfigBase):
             # If all lists have only one value, we defer to the value passed to
             #  num_layers, as described in the class docstring
             num_layers = values["num_layers"]
+            values["_from_num_layers"] = True
         else:
             num_layers = max(list_lens_set)
+            values["_from_num_layers"] = False
 
         values["num_layers"] = num_layers
         # If we just want a model with one layer, can return early since we've already
