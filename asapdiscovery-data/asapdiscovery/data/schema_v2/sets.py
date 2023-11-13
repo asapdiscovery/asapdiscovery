@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import Any
 
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
