@@ -1,7 +1,5 @@
-import logging
-from enum import Enum
 from pathlib import Path
-from typing import List  # noqa: F401
+from typing import Optional  # noqa: F401
 import dask
 import mdtraj
 import openmm
@@ -16,9 +14,10 @@ from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.docking.docking_v2 import DockingResult
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.docking.docking_data_validation import (
+    DockingResultColsV2 as DockingResultCols,
+)
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.schema_v2.ligand import Ligand
 import pandas as pd
 from tempfile import NamedTemporaryFile
 import abc
@@ -33,7 +32,7 @@ class SimulatorBase(BaseModel):
     debug: bool = Field(False, description="Debug mode of the simulation")
 
     @abc.abstractmethod
-    def _simulate(self) -> pd.DataFrame:
+    def _simulate(self) -> list["SimulationResult"]:
         ...
 
     def simulate(
@@ -55,11 +54,20 @@ class SimulatorBase(BaseModel):
         else:
             outputs = self._simulate(docking_results=docking_results, **kwargs)
 
-        return pd.DataFrame(outputs)
+        return outputs
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
         ...
+
+
+class SimulationResult(BaseModel):
+    traj_path: Path
+    minimized_pdb_path: Path
+    final_pdb_path: Optional[Path]
+    success: Optional[bool]
+    input_docking_result: Optional[DockingResult]
+    simulator: Optional[SimulatorBase]
 
 
 class VanillaMDSimulatorV2(SimulatorBase):
@@ -102,10 +110,10 @@ class VanillaMDSimulatorV2(SimulatorBase):
         if self.debug:
             self._platform = OpenMMPlatform.CPU.get_platform()
 
-    def _simulate(self, docking_results: list[DockingResult]) -> list[dict[str, str]]:
+    def _simulate(self, docking_results: list[DockingResult]) -> list[SimulationResult]:
         self._to_openmm_units()
 
-        data = []
+        results = []
         for result in docking_results:
             output_pref = result.get_combined_id()
             outpath = self.output_dir / output_pref
@@ -136,22 +144,19 @@ class VanillaMDSimulatorV2(SimulatorBase):
             retcode = self.run_production_simulation(
                 simulation, context, output_indices, output_topology, outpath
             )
-            row = {}
-            row[
-                DockingResultCols.LIGAND_ID.value
-            ] = result.input_pair.ligand.compound_name
-            row[
-                DockingResultCols.TARGET_ID.value
-            ] = result.input_pair.complex.target.target_name
-            row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
-            row[DockingResultCols.MD_PATH_TRAJ.value] = outpath / "traj.xtc"
-            row[DockingResultCols.MD_PATH_MIN_PDB.value] = outpath / "minimized.pdb"
-            row[DockingResultCols.MD_PATH_FINAL_PDB.value] = outpath / "final.pdb"
-            row["md_success"] = retcode
 
-            data.append(row)
+            sim_result = SimulationResult(
+                input_docking_result=result,
+                traj_path=outpath / "traj.xtc",
+                minimized_pdb_path=outpath / "minimized.pdb",
+                final_pdb_path=outpath / "final.pdb",
+                success=retcode,
+                simulator=self,
+            )
 
-        return data
+            results.append(sim_result)
+
+        return results
 
     @staticmethod
     def process_ligand_rdkit(sdf_path) -> Molecule:

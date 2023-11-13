@@ -13,6 +13,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
@@ -387,9 +388,24 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
+    logger.info("Using canonical structure")
+    align_struct = master_structures[inputs.target]
+
+    ref_complex = Complex.from_pdb(
+        align_struct,
+        target_kwargs={"target_name": "ref"},
+        ligand_kwargs={"compound_name": "ref_ligand"},
+    )
+
     # prep complexes
     logger.info("Prepping complexes")
-    prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
+    prepper = ProteinPrepper(
+        cache_dir=inputs.cache_dir,
+        align=ref_complex,
+        align_chain="A",
+        ref_chain="A",
+        active_site_chain="A",
+    )
     prepped_complexes = prepper.prep(
         complexes, use_dask=inputs.use_dask, dask_client=dask_client
     )
@@ -526,13 +542,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         results, use_dask=inputs.use_dask, dask_client=dask_client
     )
 
-    # rename fitness visualisations target id column to POSIT structure tag so we can join
-    fitness_visualizations.rename(
-        columns={
-            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        },
-        inplace=True,
-    )
+    # duplicate target id column so we can join
+    fitness_visualizations[
+        DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+    ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+
     # join the two dataframes on ligand_id, target_id and smiles
     combined_df = combined_df.merge(
         fitness_visualizations,
@@ -562,7 +576,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     if inputs.md:
         md_output_dir = output_dir / "md"
-        md_simulator = VanillaMDSimulatorV2(output_dir=md_output_dir)
+        md_simulator = VanillaMDSimulatorV2(
+            output_dir=md_output_dir,
+            openmm_platform=inputs.md_openmm_platform,
+            num_steps=inputs.md_steps,
+            reporting_interval=inputs.md_report_interval,
+        )
         simulation_results = md_simulator.simulate(
             results, use_dask=inputs.use_dask, dask_client=dask_client
         )
@@ -573,7 +592,16 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
         )
 
-        # join
+        # join the two dataframes on ligand_id, target_id and smiles
+        combined_df = combined_df.merge(
+            gifs,
+            on=[
+                DockingResultCols.LIGAND_ID.value,
+                DockingResultCols.TARGET_ID.value,
+                DockingResultCols.SMILES.value,
+            ],
+            how="outer",
+        )
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")

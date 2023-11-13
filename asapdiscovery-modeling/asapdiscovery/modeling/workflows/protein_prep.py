@@ -9,12 +9,14 @@ from asapdiscovery.data.dask_utils import (
     set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
+
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
@@ -240,13 +242,16 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     if inputs.align:
         # load reference structure
         logger.info(f"Loading and aligning to reference structure: {inputs.align}")
-        ref_complex = Complex.from_pdb(
-            inputs.align,
-            target_kwargs={"target_name": "ref"},
-            ligand_kwargs={"compound_name": "ref_ligand"},
-        )
+        align_struct = inputs.align
     else:
-        ref_complex = None
+        logger.info("No reference structure specified, using canonical structure")
+        align_struct = master_structures[inputs.target]
+
+    ref_complex = Complex.from_pdb(
+        align_struct,
+        target_kwargs={"target_name": "ref"},
+        ligand_kwargs={"compound_name": "ref_ligand"},
+    )
     # prep complexes
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(

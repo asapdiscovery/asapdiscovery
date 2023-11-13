@@ -20,6 +20,7 @@ class VisualizerBase(abc.ABC, BaseModel):
     def visualize(
         self,
         docking_results: list[DockingResult],
+        *args,
         use_dask: bool = False,
         dask_client=None,
         **kwargs,
@@ -34,7 +35,7 @@ class VisualizerBase(abc.ABC, BaseModel):
             )
             outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
-            outputs = self._visualize(docking_results=docking_results, **kwargs)
+            outputs = self._visualize(docking_results=docking_results, *args, **kwargs)
 
         return pd.DataFrame(outputs)
 
