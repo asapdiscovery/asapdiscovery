@@ -1,5 +1,4 @@
 import shutil
-from enum import Enum
 from pathlib import Path
 
 import dask
