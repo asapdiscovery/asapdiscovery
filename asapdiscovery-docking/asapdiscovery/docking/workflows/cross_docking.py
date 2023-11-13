@@ -15,10 +15,11 @@ from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.selectors.pairwise_selector import PairwiseSelector
+from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
+from asapdiscovery.docking.docking_v2 import DockingInputMultiStructure
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer
 from asapdiscovery.docking.workflows.workflows import DockingWorkflowInputsBase
@@ -29,6 +30,16 @@ from pydantic import Field, PositiveInt
 
 class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):
     logname: str = Field("cross_docking", description="Name of the log file.")
+
+    structure_selector: StructureSelector = Field(
+        StructureSelector.PAIRWISE,
+        description="Structure selector to use for docking",
+    )
+    multi_reference: bool = Field(
+        False,
+        description="Whether to use multi reference docking, in which the docking_method "
+        "recieves a DockingInputMultiStructure object instead of a DockingInputPair object",
+    )
 
     # Copied from POSITDocker
     relax: POSIT_RELAX_MODE = Field(
@@ -80,7 +91,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     logger.info(f"Running cross docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
-    inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
+    inputs.to_json_file(output_dir / "cross_docking_inputs.json")
 
     if inputs.use_dask:
         set_dask_config()
@@ -168,7 +179,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking")
-    selector = PairwiseSelector()
+    # TODO: MCS takes an n_select arg but Pairwise does not...meaning we are losing that option the way this is written
+    selector = inputs.structure_selector.selector_cls()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
@@ -178,6 +190,14 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     n_pairs = len(pairs)
     logger.info(f"Selected {n_pairs} pairs for docking")
+
+    if inputs.multi_reference:
+        # Generate one-to-many objects for multi-reference docking
+        logger.info("Generating one-to-many objects for multi-reference docking")
+        sets = DockingInputMultiStructure.from_pairs(pairs)
+        logger.info(f"Generated {len(sets)} ligand-protein sets for docking")
+    else:
+        sets = pairs
 
     del prepped_complexes
 
@@ -194,7 +214,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         allow_retries=inputs.allow_retries,
     )
     results = docker.dock(
-        pairs,
+        sets,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
