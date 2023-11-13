@@ -1,6 +1,7 @@
 import asapdiscovery.ml.schema_v2.config as ascfg
 import click
-from dgllife.utils import CanonicalAtomFeaturizer
+import json
+from pathlib import Path
 
 
 @click.group()
@@ -15,6 +16,14 @@ def ml():
     required=True,
     type=ascfg.ModelType,
     help="Which model type to use.",
+)
+@click.option(
+    "--config-file",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help=(
+        "JSON file giving model config. Any passed CLI args will overwrite the options "
+        "in this file."
+    ),
 )
 # Shared MTENN-related parameters
 @click.option(
@@ -277,6 +286,7 @@ def ml():
 @click.option("--num-nodes", type=float, help="Typical number of nodes in a graph.")
 def test(
     model_type: ascfg.ModelType,
+    config_file: Path | None = None,
     grouped: bool | None = None,
     strategy: ascfg.MTENNStrategy | None = None,
     pred_readout: ascfg.MTENNReadout | None = None,
@@ -406,7 +416,16 @@ def test(
     # Only keep values CLI config vals that actually had a value passed
     cli_config_vals = {k: v for k, v in cli_config_vals.items() if v is not None}
     print(cli_config_vals, flush=True)
-    config = config_class(**cli_config_vals)
+
+    # Parse config file (if given), and reconcile those args with CLI args
+    if config_file:
+        fn_config_vals = json.load(config_file.open())
+    else:
+        fn_config_vals = {}
+    # Want CLI args to overwrite file args
+    config_vals = fn_config_vals | cli_config_vals
+
+    config = config_class(**config_vals)
 
     print(config, flush=True)
     model = config.build()
