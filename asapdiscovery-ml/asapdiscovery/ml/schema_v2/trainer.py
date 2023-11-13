@@ -1,10 +1,13 @@
 from typing import Callable
 
 import mtenn
-import torch
+
+# import torch
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.schema_v2.config import ModelConfigBase, OptimizerConfig
+from pathlib import Path
 from pydantic import BaseModel, Field
+import wandb
 
 
 class Trainer(BaseModel):
@@ -37,9 +40,105 @@ class Trainer(BaseModel):
         1, description="Number of samples to predict on before performing backprop."
     )
     target_prop: str = Field("pIC50", description="Target property to train against.")
+    cont: bool = Field(
+        False, description="This is a continuation of a previous training run."
+    )
+
+    # I/O options
+    output_dir: Path = Field(
+        ...,
+        description=(
+            "Top-level output directory. A subdirectory with the current W&B "
+            "run ID will be made/searched if W&B is being used."
+        ),
+    )
+
+    # W&B parameters
+    use_wandb: bool = Field(False, description="Use W&B to log model training.")
+    sweep: bool = Field(False, description="This run is part of a W&B sweep.")
+    wandb_project: str | None = Field(None, description="W&B project name.")
+    wandb_name: str | None = Field(None, description="W&B project name.")
+    extra_config: list[str] | None = Field(
+        None,
+        description=(
+            "Any extra config options to log to W&B, as a list of "
+            "comma-separated pairs."
+        ),
+    )
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
     _is_initialized = False
+
+    # Temporary fix for now. This is necessary for the asapdiscovery Dataset classes,
+    #  but we should probably figure out a workaround eventurally.
+    class Config:
+        arbitrary_types_allowed = True
+
+    def wandb_init(
+        self,
+    ):
+        """
+        Initialize WandB, handling saving the run ID (for continuing the run later).
+
+        Returns
+        -------
+        str
+            The WandB run ID for the initialized run
+        """
+
+        if self.sweep:
+            run_id = wandb.init().id
+        else:
+            try:
+                run_id_fn = self.output_dir / "run_id"
+            except TypeError:
+                run_id_fn = None
+
+            if self.cont:
+                if run_id_fn is None:
+                    raise ValueError(
+                        "No model_o directory specified, can't continue run."
+                    )
+
+                # Load run_id to continue from file
+                # First make sure the file exists
+                try:
+                    run_id = open(run_id_fn).read().strip()
+                except FileNotFoundError:
+                    raise FileNotFoundError(
+                        "Couldn't find run_id file to continue run."
+                    )
+                # Make sure the run_id is legit
+                try:
+                    wandb.init(project=self.wandb_project, id=run_id, resume="must")
+                except wandb.errors.UsageError:
+                    raise wandb.errors.UsageError(
+                        f"Run in run_id file ({run_id}) doesn't exist"
+                    )
+                # Update run config to reflect it's been resumed
+                wandb.config.update(
+                    {"continue": True},
+                    allow_val_change=True,
+                )
+            else:
+                # Start new run
+                run_id = wandb.init(
+                    project=self.wandb_project,
+                    config=self.make_wandb_config(),
+                    name=self.wandb_name,
+                ).id
+
+                # Save run_id in case we want to continue later
+                if run_id_fn is None:
+                    print(
+                        "No model_o directory specified, not saving run_id anywhere.",
+                        flush=True,
+                    )
+                else:
+                    with open(run_id_fn, "w") as fp:
+                        fp.write(run_id)
+
+        return run_id
 
     def initialize(self):
         """
@@ -51,16 +150,23 @@ class Trainer(BaseModel):
         # Build the Model
         self.model = self.model_config.build()
 
+        # Adjust output_dir and make sure it exists
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        if self.sweep or self.use_wandb:
+            run_id = self.wandb_init()
+            self.output_dir = self.output_dir / run_id
+        self.output_dir.mkdir(exist_ok=True)
+
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
-    def train(self) -> (mtenn.Model, dict):
+    def train(self) -> (mtenn.model.Model, dict):
         """
         Train the model, returning the trained model and loss_dict.
 
         Returns
         -------
-        mtenn.Model
+        mtenn.model.Model
             Trained model
         dict
             Loss dict
