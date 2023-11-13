@@ -41,10 +41,10 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
-from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
+from asapdiscovery.ml.models import ASAPMLModelRegistry
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
 from distributed import Client
@@ -349,7 +349,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     prepper = ProteinPrepper(
         cache_dir=inputs.cache_dir,
         align=ref_complex,
-        align_chain="A",
         ref_chain="A",
         active_site_chain="A",
     )
