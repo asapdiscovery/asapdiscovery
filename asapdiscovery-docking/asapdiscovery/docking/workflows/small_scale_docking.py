@@ -40,7 +40,7 @@ from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
+from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.ml.models import ASAPMLModelRegistry
@@ -51,40 +51,20 @@ from distributed import Client
 from pydantic import Field, PositiveInt, root_validator, validator
 
 
-class SmallScaleDockingInputs(WorkflowInputsBase):
+class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     """
     Schema for inputs to small scale docking
 
     Parameters
     ----------
-    filename : str, optional
-        Path to a molecule file containing query ligands.
-    fragalysis_dir : str, optional
-        Path to a directory containing a Fragalysis dump.
-    structure_dir : str, optional
-        Path to a directory containing structures to dock instead of a full fragalysis database.
-    postera : bool, optional
-        Whether to use the Postera database as the query set.
-    postera_upload : bool, optional
-        Whether to upload the results to Postera.
-    postera_molset_name : str, optional
-        The name of the molecule set to pull from and/or upload to.
-    cache_dir : str, optional
-        Path to a directory where structures are cached
-    gen_cache : str, optional
-        Path to a directory where prepped structures should be cached
-    cache_type : list[CacheType], optional
-        The types of cache to use.
-    target : TargetTags, optional
-        The target to dock against.
-    write_final_sdf : bool, optional
-        Whether to write the final docked poses to an SDF file.
-    use_dask : bool, optional
-        Whether to use dask for parallelism.
-    dask_type : DaskType, optional
-        Type of dask client to use for parallelism.
     posit_confidence_cutoff : float, optional
         POSIT confidence cutoff used to filter docking results
+    use_omega : bool
+        Whether to use omega for conformer generation prior to docking
+    allow_retries : bool
+        Whether to allow retries for docking failures
+    n_select : PositiveInt
+        Number of targets to dock each ligand against.
     ml_scorers : MLModelType, optional
         The name of the ml scorers to use.
     md : bool, optional
@@ -97,15 +77,7 @@ class SmallScaleDockingInputs(WorkflowInputsBase):
         OpenMM platform to use for MD
     logname : str, optional
         Name of the log file.
-    loglevel : int, optional
-        Logging level.
-    output_dir : Path, optional
-        Output directory
     """
-
-    postera_upload: bool = Field(
-        False, description="Whether to upload the results to Postera."
-    )
 
     posit_confidence_cutoff: float = Field(
         0.1,
@@ -118,6 +90,7 @@ class SmallScaleDockingInputs(WorkflowInputsBase):
         True,
         description="Whether to use omega for conformer generation prior to docking",
     )
+
     allow_retries: bool = Field(
         True, description="Whether to allow retries for docking failures"
     )
@@ -139,73 +112,6 @@ class SmallScaleDockingInputs(WorkflowInputsBase):
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
     logname: str = Field("small_scale_docking", description="Name of the log file.")
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @classmethod
-    def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
-
-    def to_json_file(self, file: str | Path):
-        with open(file, "w") as f:
-            f.write(self.json(indent=2))
-
-    @root_validator
-    @classmethod
-    def check_inputs(cls, values):
-        """
-        Validate inputs
-        """
-        filename = values.get("filename")
-        fragalysis_dir = values.get("fragalysis_dir")
-        structure_dir = values.get("structure_dir")
-        postera = values.get("postera")
-        postera_upload = values.get("postera_upload")
-        postera_molset_name = values.get("postera_molset_name")
-        cache_dir = values.get("cache_dir")
-        gen_cache = values.get("gen_cache")
-        pdb_file = values.get("pdb_file")
-        md = values.get("md")
-        dask_type = values.get("dask_type")
-
-        if postera and filename:
-            raise ValueError("Cannot specify both filename and postera.")
-
-        if not postera and not filename:
-            raise ValueError("Must specify either filename or postera.")
-
-        if postera_upload and not postera_molset_name:
-            raise ValueError(
-                "Must specify postera_molset_name if uploading to postera."
-            )
-
-        # can only specify one of fragalysis dir, structure dir and PDB file
-        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:
-            raise ValueError(
-                "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
-            )
-
-        if cache_dir and gen_cache:
-            raise ValueError("Cannot specify both cache_dir and gen_cache.")
-
-        if md and dask_type == DaskType.LILAC_CPU:
-            raise ValueError(
-                "Cannot run MD on Lilac CPU queue, use Lilac GPU queue instead."
-            )
-
-        return values
-
-    @validator("cache_dir")
-    @classmethod
-    def cache_dir_must_be_directory(cls, v):
-        """
-        Validate that the DU cache is a directory
-        """
-        if v is not None:
-            if not Path(v).is_dir():
-                raise ValueError("Du cache must be a directory.")
-        return v
 
     @classmethod
     @validator("ml_scorers")
