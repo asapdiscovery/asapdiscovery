@@ -3,12 +3,12 @@ from enum import Enum
 from typing import Optional
 
 import dask
+from asapdiscovery.data.enum import StringEnum
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
 from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
-from asapdiscovery.data.enum import StringEnum
 
 from .execution_utils import guess_network_interface
 

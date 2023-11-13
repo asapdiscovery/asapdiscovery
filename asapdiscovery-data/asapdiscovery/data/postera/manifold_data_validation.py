@@ -3,11 +3,11 @@ from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Tuple, Union  # noqa: F401
-from asapdiscovery.data.enum import StringEnum
 
 import pandas as pd
 import pkg_resources
 import yaml
+from asapdiscovery.data.enum import StringEnum
 
 
 # util function to open a yaml file and return the data

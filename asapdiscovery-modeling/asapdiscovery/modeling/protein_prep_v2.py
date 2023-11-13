@@ -7,12 +7,11 @@ from typing import Literal, Optional, Union
 import dask
 import yaml
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.target import PreppedTarget
 from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.data.enum import StringEnum
-
 from asapdiscovery.modeling.modeling import (
     make_design_unit,
     mutate_residues,

@@ -7,9 +7,9 @@ from urllib.parse import urljoin
 
 import pooch
 import yaml
+from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
-from asapdiscovery.data.enum import StringEnum
 from pydantic import BaseModel, Field, HttpUrl
 
 

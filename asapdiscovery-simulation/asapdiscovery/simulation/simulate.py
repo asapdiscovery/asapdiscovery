@@ -6,8 +6,8 @@ from typing import List  # noqa: F401
 
 import mdtraj
 import openmm
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.enum import StringEnum
+from asapdiscovery.data.logging import FileLogger
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
