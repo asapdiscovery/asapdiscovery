@@ -162,9 +162,12 @@ def large_scale(
     default=False,
     help="Whether to pass multiple references to the docker for each ligand instead of just one at a time",
 )
+
+        
+
 @click.option(
     "--structure-selector",
-    type=StructureSelector,
+    type=click.Choice(StructureSelector.get_values(), case_sensitive=False),
     default=StructureSelector.PAIRWISE,
     help="The type of structure selector to use. Defaults to pairwise (all pairwise combinations of ligand and complex)",
 )

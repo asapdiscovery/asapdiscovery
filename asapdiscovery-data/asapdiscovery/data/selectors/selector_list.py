@@ -18,7 +18,7 @@ _ALL_SELECTORS = {
 }
 
 
-class StructureSelector(Enum):
+class StructureSelector(str, Enum):
     """
     Enum of all selectors.
     """
@@ -34,3 +34,10 @@ class StructureSelector(Enum):
         Returns the selector class.
         """
         return _ALL_SELECTORS[self.value]
+
+    @classmethod
+    def get_values(cls):
+        """
+        Returns all the values of the enum.
+        """
+        return [selector.value for selector in cls]
