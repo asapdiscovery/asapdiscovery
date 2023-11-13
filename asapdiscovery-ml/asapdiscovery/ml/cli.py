@@ -11,6 +11,18 @@ def ml():
 
 
 @ml.command()
+@click.option(
+    "-o",
+    "--output-dir",
+    required=True,
+    type=click.Path(
+        exists=False, file_okay=False, dir_okay=True, writable=True, path_type=Path
+    ),
+    help=(
+        "Top-level output directory. A subdirectory with the current W&B "
+        "run ID will be made/searched if W&B is being used."
+    ),
+)
 # Model setup args
 @click.option(
     "-model",
@@ -37,8 +49,9 @@ def ml():
     "--extra_config",
     multiple=True,
     help=(
-        "Any extra config options to log to W&B. Can be provided as many times "
-        "as desired (eg -e key1,val1 -e key2,val2 -e key3,val3)."
+        "Any extra config options to log to W&B, provided as comma-separated pairs. "
+        "Can be provided as many times as desired "
+        "(eg -e key1,val1 -e key2,val2 -e key3,val3)."
     ),
 )
 # Shared MTENN-related parameters
@@ -301,6 +314,7 @@ def ml():
 @click.option("--num-neighbors", type=float, help="Typical number of neighbor nodes.")
 @click.option("--num-nodes", type=float, help="Typical number of nodes in a graph.")
 def test(
+    output_dir: Path,
     model_type: ascfg.ModelType,
     config_file: Path | None = None,
     use_wandb: bool = False,
