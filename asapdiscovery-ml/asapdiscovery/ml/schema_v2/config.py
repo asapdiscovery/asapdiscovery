@@ -417,8 +417,8 @@ class GATModelConfig(ModelConfigBase):
                     param_val = list(map(param_type, param_val.split(",")))
                 except ValueError:
                     raise ValueError(
-                            f"Unable to parse value {param_val} for parameter {param}. "
-                            f"Expected type of {param_type}."
+                        f"Unable to parse value {param_val} for parameter {param}. "
+                        f"Expected type of {param_type}."
                     )
                 values[param] = param_val
 
@@ -503,13 +503,13 @@ class SchNetModelConfig(ModelConfigBase):
 
     model_type: ClassVar[ModelType.schnet] = ModelType.schnet
 
-    hidden_channels: int = Field(128, description=("Hidden embedding size."))
+    hidden_channels: int = Field(128, description="Hidden embedding size.")
     num_filters: int = Field(
-        128, description=("Number of filters to use in the cfconv layers.")
+        128, description="Number of filters to use in the cfconv layers."
     )
-    num_interactions: int = Field(6, description=("Number of interaction blocks."))
+    num_interactions: int = Field(6, description="Number of interaction blocks.")
     num_gaussians: int = Field(
-        50, description=("Number of gaussians to use in the interaction blocks.")
+        50, description="Number of gaussians to use in the interaction blocks."
     )
     interaction_graph: Callable | None = Field(
         None,
@@ -586,24 +586,21 @@ class SchNetModelConfig(ModelConfigBase):
             MTENN SchNet Model/GroupedModel
         """
         from mtenn.conversion_utils import SchNet
-        from torch_geometric.nn.models import SchNet as PygSchNet
 
         # Create an MTENN SchNet model from PyG SchNet model
         model = SchNet(
-            PygSchNet(
-                hidden_channels=self.hidden_channels,
-                num_filters=self.num_filters,
-                num_interactions=self.num_interactions,
-                num_gaussians=self.num_gaussians,
-                interaction_graph=self.interaction_graph,
-                cutoff=self.cutoff,
-                max_num_neighbors=self.max_num_neighbors,
-                readout=self.readout,
-                dipole=self.dipole,
-                mean=self.mean,
-                std=self.std,
-                atomref=self.atomref,
-            )
+            hidden_channels=self.hidden_channels,
+            num_filters=self.num_filters,
+            num_interactions=self.num_interactions,
+            num_gaussians=self.num_gaussians,
+            interaction_graph=self.interaction_graph,
+            cutoff=self.cutoff,
+            max_num_neighbors=self.max_num_neighbors,
+            readout=self.readout,
+            dipole=self.dipole,
+            mean=self.mean,
+            std=self.std,
+            atomref=self.atomref,
         )
 
         combination = mtenn_params.get("combination", None)
@@ -716,21 +713,19 @@ class E3NNModelConfig(ModelConfigBase):
         from mtenn.conversion_utils import E3NN
 
         model = E3NN(
-            model_kwargs={
-                "irreps_in": f"{self.num_atom_types}x0e",
-                "irreps_hidden": self.irreps_hidden,
-                "irreps_out": "1x0e",
-                "irreps_node_attr": "1x0e" if self.lig else None,
-                "irreps_edge_attr": Irreps.spherical_harmonics(self.irreps_edge_attr),
-                "layers": self.num_layers,
-                "max_radius": self.neighbor_dist,
-                "number_of_basis": self.num_basis,
-                "radial_layers": self.num_radial_layers,
-                "radial_neurons": self.num_radial_neurons,
-                "num_neighbors": self.num_neighbors,
-                "num_nodes": self.num_nodes,
-                "reduce_output": True,
-            }
+            irreps_in=f"{self.num_atom_types}x0e",
+            irreps_hidden=self.irreps_hidden,
+            irreps_out="1x0e",
+            irreps_node_attr="1x0e" if self.lig else None,
+            irreps_edge_attr=Irreps.spherical_harmonics(self.irreps_edge_attr),
+            layers=self.num_layers,
+            max_radius=self.neighbor_dist,
+            number_of_basis=self.num_basis,
+            radial_layers=self.num_radial_layers,
+            radial_neurons=self.num_radial_neurons,
+            num_neighbors=self.num_neighbors,
+            num_nodes=self.num_nodes,
+            reduce_output=True,
         )
 
         combination = mtenn_params.get("combination", None)
