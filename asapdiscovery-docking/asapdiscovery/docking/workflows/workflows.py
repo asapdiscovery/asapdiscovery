@@ -11,7 +11,7 @@ from asapdiscovery.modeling.protein_prep_v2 import CacheType
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
-class WorkflowInputsBase(BaseModel):
+class DockingWorkflowInputsBase(BaseModel):
     filename: Optional[str] = Field(
         None, description="Path to a molecule file containing query ligands."
     )
@@ -26,9 +26,6 @@ class WorkflowInputsBase(BaseModel):
     structure_dir: Optional[Path] = Field(
         None,
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
-    )
-    postera: bool = Field(
-        False, description="Whether to use the Postera database as the query set."
     )
 
     cache_dir: Optional[str] = Field(
@@ -125,3 +122,16 @@ class WorkflowInputsBase(BaseModel):
             if not Path(v).is_dir():
                 raise ValueError("Du cache must be a directory.")
         return v
+
+
+class PosteraDockingWorkflowInputs(DockingWorkflowInputsBase):
+    postera: bool = Field(
+        False, description="Whether to use the Postera database as the query set."
+    )
+
+    postera_upload: bool = Field(
+        False, description="Whether to upload the results to Postera."
+    )
+    postera_molset_name: Optional[str] = Field(
+        None, description="The name of the molecule set to upload to."
+    )

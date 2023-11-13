@@ -22,13 +22,13 @@ from asapdiscovery.docking.docking_data_validation import (
 from asapdiscovery.docking.docking_v2 import DockingInputMultiStructure
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer
-from asapdiscovery.docking.workflows.workflows import WorkflowInputsBase
+from asapdiscovery.docking.workflows.workflows import DockingWorkflowInputsBase
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from distributed import Client
 from pydantic import Field, PositiveInt
 
 
-class CrossDockingWorkflowInputs(WorkflowInputsBase):
+class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):
     logname: str = Field("cross_docking", description="Name of the log file.")
 
     structure_selector: StructureSelector = Field(
