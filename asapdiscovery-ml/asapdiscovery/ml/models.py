@@ -1,6 +1,5 @@
 import warnings
 from datetime import date
-from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Union  # noqa: F401
 from urllib.parse import urljoin
