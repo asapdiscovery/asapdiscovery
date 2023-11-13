@@ -196,6 +196,67 @@ def ml():
     is_flag=True,
     help="Allow zero in degree nodes for all graph layers.",
 )
+# SchNet-specific parameters
+@click.option("--hidden-channels", type=int, default=128, help="Hidden embedding size.")
+@click.option(
+    "--num-filters",
+    type=int,
+    default=128,
+    help="Number of filters to use in the cfconv layers.",
+)
+@click.option(
+    "--num-interactions", type=int, default=6, help="Number of interaction blocks."
+)
+@click.option(
+    "--num-gaussians",
+    type=int,
+    default=50,
+    help="Number of gaussians to use in the interaction blocks.",
+)
+@click.option(
+    "--cutoff",
+    type=float,
+    default=10,
+    help="Cutoff distance for interatomic interactions.",
+)
+@click.option(
+    "--max-num-neighbors",
+    type=int,
+    default=32,
+    help="Maximum number of neighbors to collect for each node.",
+)
+@click.option(
+    "--readout",
+    type=click.Choice(["add", "mean"]),
+    default="add",
+    help="Which global aggregation to use [add, mean].",
+)
+@click.option(
+    "--dipole",
+    is_flag=True,
+    help=(
+        "Whether to use the magnitude of the dipole moment to make the final "
+        "prediction."
+    ),
+)
+@click.option(
+    "--mean",
+    type=float,
+    help=(
+        "Mean of property to predict, to be added to the model prediction before "
+        "returning. This value is only used if dipole is False and a value is also "
+        "passed for --std."
+    ),
+)
+@click.option(
+    "--std",
+    type=float,
+    help=(
+        "Standard deviation of property to predict, used to scale the model "
+        "prediction before returning. This value is only used if dipole is False "
+        "and a value is also passed for --mean."
+    ),
+)
 def test(
     model_type: ascfg.ModelType,
     grouped: bool = False,
@@ -220,6 +281,16 @@ def test(
     agg_modes: str = "flatten",
     biases: str = "True",
     allow_zero_in_degree: bool = False,
+    hidden_channels: int = 128,
+    num_filters: int = 128,
+    num_interactions: int = 6,
+    num_gaussians: int = 50,
+    cutoff: float = 10,
+    max_num_neighbors: int = 32,
+    readout: str = "add",
+    dipole: bool = False,
+    mean: float | None = None,
+    std: float | None = None,
 ):
     # Build the model
     match model_type:
@@ -261,6 +332,16 @@ def test(
                 pred_km=pred_km,
                 comb_substrate=comb_substrate,
                 comb_km=comb_km,
+                hidden_channels=hidden_channels,
+                num_filters=num_filters,
+                num_interactions=num_interactions,
+                num_gaussians=num_gaussians,
+                cutoff=cutoff,
+                max_num_neighbors=max_num_neighbors,
+                readout=readout,
+                dipole=dipole,
+                mean=mean,
+                std=std,
             )
         case ascfg.ModelType.e3nn:
             config = ascfg.E3NNModelConfig(
