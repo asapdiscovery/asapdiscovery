@@ -29,6 +29,9 @@ class PosteraUploader(BaseModel):
         DockingResultCols.SMILES.value,
         description="Name of the column in the dataframe to use as the SMILES field",
     )
+    overwrite: bool = Field(
+        False, description="Overwrite existing data on molecule set"
+    )
 
     def push(self, df) -> None:
         """
@@ -95,7 +98,7 @@ class PosteraUploader(BaseModel):
                     df=df,
                     id_field=self.id_field,
                     smiles_field=self.smiles_field,
-                    overwrite=False,
+                    overwrite=self.overwrite,
                 )
         return df_copy, molset_name, new_molset
 

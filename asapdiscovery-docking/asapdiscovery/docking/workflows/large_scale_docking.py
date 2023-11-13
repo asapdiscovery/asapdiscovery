@@ -26,9 +26,9 @@ from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
+from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
@@ -141,7 +141,7 @@ class LargeScaleDockingInputs(BaseModel):
     )
 
     n_select: PositiveInt = Field(
-        10, description="Number of targets to dock each ligand against, sorted by MCS"
+        5, description="Number of targets to dock each ligand against, sorted by MCS"
     )
 
     top_n: PositiveInt = Field(
@@ -153,6 +153,16 @@ class LargeScaleDockingInputs(BaseModel):
         le=1.0,
         ge=0.0,
         description="POSIT confidence cutoff used to filter docking results",
+    )
+
+    use_omega: bool = Field(
+        False,
+        description="Whether to use omega confomer enumeration in docking, warning: more expensive",
+    )
+
+    allow_posit_retries: bool = Field(
+        False,
+        description="Whether to allow retries in docking with varying settings, warning: more expensive",
     )
 
     ml_scorers: Optional[list[str]] = Field(
@@ -381,7 +391,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker()
+    docker = POSITDocker(
+        use_omega=inputs.use_omega, allow_retries=inputs.allow_posit_retries
+    )
     results = docker.dock(
         pairs,
         use_dask=inputs.use_dask,
@@ -403,9 +415,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
             logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorers.append(
-                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
+            scorer = MLModelScorer.from_latest_by_target_and_type(
+                inputs.target, ml_scorer
             )
+            if scorer:
+                scorers.append(scorer)
 
     # score results
     logger.info("Scoring docking results")

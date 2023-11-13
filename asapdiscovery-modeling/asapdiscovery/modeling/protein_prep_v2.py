@@ -245,7 +245,7 @@ class ProteinPrepper(ProteinPrepperBase):
                 success, spruce_error_message, spruced = spruce_protein(
                     initial_prot=prot,
                     protein_sequence=protein_sequence,
-                    loop_db=str(self.loop_db),
+                    loop_db=self.loop_db,
                 )
 
                 if not success:
