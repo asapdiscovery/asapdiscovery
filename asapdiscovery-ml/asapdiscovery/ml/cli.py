@@ -117,7 +117,7 @@ def ml():
     help=("Input node feature size. Defaults to size of the CanonicalAtomFeaturizer."),
 )
 @click.option(
-    "--num-layers",
+    "--num-layers-gat",
     type=int,
     default=2,
     help=(
@@ -257,6 +257,63 @@ def ml():
         "and a value is also passed for --mean."
     ),
 )
+# e3nn-specific parameters
+@click.option(
+    "--num-atom-types",
+    type=int,
+    default=100,
+    help=(
+        "Number of different atom types. In general, this will just be the "
+        "max atomic number of all input atoms."
+    ),
+)
+@click.option(
+    "--irreps-hidden",
+    default="10x0o+10x0e+3x1o+3x1e+2x2o+2x2e+1x3o+1x3e",
+    help="Irreps for the hidden layers of the network.",
+)
+@click.option(
+    "--lig", is_flag=True, help="Include ligand labels as a node attribute information."
+)
+@click.option(
+    "--irreps-edge-attr",
+    type=int,
+    default=3,
+    help=(
+        "Which level of spherical harmonics to use for encoding edge attributes "
+        "internally."
+    ),
+)
+@click.option(
+    "--num-layers-schnet", type=int, default=3, help="Number of network layers."
+)
+@click.option(
+    "--neighbor-dist",
+    type=float,
+    default=10,
+    help="Cutoff distance for including atoms as neighbors.",
+)
+@click.option(
+    "--num-basis",
+    type=int,
+    default=10,
+    help="Number of bases on which the edge length are projected.",
+)
+@click.option(
+    "--num-radial-layers", type=int, default=1, help="Number of radial layers."
+)
+@click.option(
+    "--num-radial-neurons",
+    type=int,
+    default=128,
+    help="Number of neurons in each radial layer.",
+)
+@click.option(
+    "--num-neighbors", type=float, default=25, help="Typical number of neighbor nodes."
+)
+@click.option(
+    "--num-nodes", type=float, default=4700, help="Typical number of nodes in a graph."
+)
 def test(
     model_type: ascfg.ModelType,
     grouped: bool = False,
@@ -271,7 +328,7 @@ def test(
     comb_substrate: float | None = None,
     comb_km: float | None = None,
     in_feats: int = CanonicalAtomFeaturizer().feat_size(),
-    num_layers: int = 2,
+    num_layers_gat: int = 2,
     hidden_feats: str = "32",
     num_heads: str = "4",
     feat_drops: str = "0",
@@ -291,6 +348,17 @@ def test(
     dipole: bool = False,
     mean: float | None = None,
     std: float | None = None,
+    num_atom_types: int = 100,
+    irreps_hidden: dict[str, int] | str = "10x0o+10x0e+3x1o+3x1e+2x2o+2x2e+1x3o+1x3e",
+    lig: bool = False,
+    irreps_edge_attr: int = 3,
+    num_layers_schnet: int = 3,
+    neighbor_dist: float = 10,
+    num_basis: int = 10,
+    num_radial_layers: int = 1,
+    num_radial_neurons: int = 128,
+    num_neighbors: float = 25,
+    num_nodes: float = 4700,
 ):
     # Build the model
     match model_type:
@@ -308,7 +376,7 @@ def test(
                 comb_substrate=comb_substrate,
                 comb_km=comb_km,
                 in_feats=in_feats,
-                num_layers=num_layers,
+                num_layers=num_layers_gat,
                 hidden_feats=hidden_feats,
                 num_heads=num_heads,
                 feat_drops=feat_drops,
@@ -356,6 +424,17 @@ def test(
                 pred_km=pred_km,
                 comb_substrate=comb_substrate,
                 comb_km=comb_km,
+                num_atom_types=num_atom_types,
+                irreps_hidden=irreps_hidden,
+                lig=lig,
+                irreps_edge_attr=irreps_edge_attr,
+                num_layers=num_layers_schnet,
+                neighbor_dist=neighbor_dist,
+                num_basis=num_basis,
+                num_radial_layers=num_radial_layers,
+                num_radial_neurons=num_radial_neurons,
+                num_neighbors=num_neighbors,
+                num_nodes=num_nodes,
             )
         case unknown:
             raise ValueError(f"Unknown model type: {unknown}")
