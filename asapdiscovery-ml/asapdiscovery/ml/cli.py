@@ -10,6 +10,7 @@ def ml():
 
 
 @ml.command()
+# Model setup args
 @click.option(
     "-model",
     "--model-type",
@@ -23,6 +24,20 @@ def ml():
     help=(
         "JSON file giving model config. Any passed CLI args will overwrite the options "
         "in this file."
+    ),
+)
+# W&B args
+@click.option("--use-wandb", is_flag=True, help="Use W&B to log model training.")
+@click.option("--sweep", is_flag=True, help="This run is part of a W&B sweep.")
+@click.option("-proj", "--wandb-project", help="W&B project name.")
+@click.option("-name", "--wandb-name", help="W&B project name.")
+@click.option(
+    "-e",
+    "--extra_config",
+    multiple=True,
+    help=(
+        "Any extra config options to log to W&B. Can be provided as many times "
+        "as desired (eg -e key1,val1 -e key2,val2 -e key3,val3)."
     ),
 )
 # Shared MTENN-related parameters
@@ -287,6 +302,11 @@ def ml():
 def test(
     model_type: ascfg.ModelType,
     config_file: Path | None = None,
+    use_wandb: bool = False,
+    sweep: bool = False,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
     grouped: bool | None = None,
     strategy: ascfg.MTENNStrategy | None = None,
     pred_readout: ascfg.MTENNReadout | None = None,
