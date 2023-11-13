@@ -20,7 +20,6 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 
-# from asapdiscovery.docking.docking_methods import DockingMethod
 from asapdiscovery.docking.docking_v2 import DockingInputMultiStructure
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer
@@ -42,11 +41,6 @@ class CrossDockingWorkflowInputs(WorkflowInputsBase):
         description="Whether to use multi reference docking, in which the docking_method "
         "recieves a DockingInputMultiStructure object instead of a DockingInputPair object",
     )
-
-    # TODO: this is an enhancement for future me to make
-    # docking_method: DockingMethod = Field(
-    #     DockingMethod.POSIT.name, description="Docking method to use"
-    # )
 
     # Copied from POSITDocker
     relax: POSIT_RELAX_MODE = Field(
