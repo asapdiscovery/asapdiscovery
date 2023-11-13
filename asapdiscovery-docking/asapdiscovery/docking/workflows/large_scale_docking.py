@@ -104,7 +104,6 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
 
     logname: str = Field("large_scale_docking", description="Name of the log file.")
 
-
     @classmethod
     @validator("ml_scorers")
     def ml_scorers_must_be_valid(cls, v):

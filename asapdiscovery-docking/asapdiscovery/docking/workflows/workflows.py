@@ -122,10 +122,9 @@ class DockingWorkflowInputsBase(BaseModel):
             if not Path(v).is_dir():
                 raise ValueError("Du cache must be a directory.")
         return v
-    
+
 
 class PosteraDockingWorkflowInputs(DockingWorkflowInputsBase):
-
     postera: bool = Field(
         False, description="Whether to use the Postera database as the query set."
     )
