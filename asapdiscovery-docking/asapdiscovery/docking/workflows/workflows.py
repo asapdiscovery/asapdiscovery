@@ -31,6 +31,10 @@ class WorkflowInputsBase(BaseModel):
         False, description="Whether to use the Postera database as the query set."
     )
 
+    postera_molset_name: Optional[str] = Field(
+        None, description="The name of the molecule set to upload to."
+    )
+
     cache_dir: Optional[str] = Field(
         None, description="Path to a directory where a cache has been generated"
     )
