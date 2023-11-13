@@ -349,7 +349,7 @@ def test(
     mean: float | None = None,
     std: float | None = None,
     num_atom_types: int = 100,
-    irreps_hidden: dict[str, int] | str = "10x0o+10x0e+3x1o+3x1e+2x2o+2x2e+1x3o+1x3e",
+    irreps_hidden: str = "10x0o+10x0e+3x1o+3x1e+2x2o+2x2e+1x3o+1x3e",
     lig: bool = False,
     irreps_edge_attr: int = 3,
     num_layers_schnet: int = 3,

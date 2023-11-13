@@ -639,7 +639,9 @@ class E3NNModelConfig(ModelConfigBase):
             "This can either take the form of an Irreps string, or a dict mapping "
             "L levels (parity optional) to the number of Irreps of that level. "
             "If parity is not passed for a given level, both parities will be used. If "
-            "you only want one parity for a given level, make sure you specify it."
+            "you only want one parity for a given level, make sure you specify it. "
+            "A dict can also be specified as a string, in the format of a comma "
+            "separated list of <irreps_l>:<num_irreps>."
         ),
     )
     lig: bool = Field(
@@ -675,14 +677,28 @@ class E3NNModelConfig(ModelConfigBase):
 
         # Now deal with irreps
         irreps = values["irreps_hidden"]
+        # First see if this string should be converted into a dict
         if isinstance(irreps, str):
-            try:
-                _ = o3.Irreps(irreps)
-            except ValueError:
-                raise ValueError(f"Invalid irreps string: {irreps}")
+            if ("," in irreps) and (":" in irreps):
+                orig_irreps = irreps
+                irreps = [i.split(":") for i in irreps.split(",")]
+                try:
+                    irreps = {
+                        irreps_l: int(num_irreps) for irreps_l, num_irreps in irreps
+                    }
+                except ValueError:
+                    raise ValueError(
+                        f"Unable to parse irreps dict string: {orig_irreps}"
+                    )
+            else:
+                # If not, try and convert directly to Irreps
+                try:
+                    _ = o3.Irreps(irreps)
+                except ValueError:
+                    raise ValueError(f"Invalid irreps string: {irreps}")
 
-            # If already in a good string, can just return
-            return values
+                # If already in a good string, can just return
+                return values
 
         # If we got a dict, need to massage that into an Irreps string
         # First make a copy of the input dict in case of errors
