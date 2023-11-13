@@ -11,6 +11,8 @@ from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.target import PreppedTarget
 from asapdiscovery.data.utils import seqres_to_res_list
+from asapdiscovery.data.enum import StringEnum
+
 from asapdiscovery.modeling.modeling import (
     make_design_unit,
     mutate_residues,
@@ -20,17 +22,13 @@ from asapdiscovery.modeling.modeling import (
 from pydantic import BaseModel, Field, root_validator
 
 
-class CacheType(str, Enum):
+class CacheType(StringEnum):
     """
     Enum for cache types.
     """
 
     DesignUnit = "DesignUnit"
     JSON = "JSON"
-
-    @classmethod
-    def get_values(cls) -> list[str]:
-        return [c.value for c in cls]
 
 
 class ProteinPrepperBase(BaseModel):

@@ -7,6 +7,7 @@ from typing import List  # noqa: F401
 import mdtraj
 import openmm
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.enum import StringEnum
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
@@ -16,7 +17,7 @@ from openmmtools.utils import get_fastest_platform
 from rdkit import Chem
 
 
-class OpenMMPlatform(Enum):
+class OpenMMPlatform(StringEnum):
     """
     Enum for OpenMM platforms.
     """
@@ -35,10 +36,6 @@ class OpenMMPlatform(Enum):
             return get_fastest_platform()
         else:
             return Platform.getPlatformByName(self.value)
-
-    @classmethod
-    def get_values(cls):
-        return [platform.value for platform in cls]
 
 
 class VanillaMDSimulator:

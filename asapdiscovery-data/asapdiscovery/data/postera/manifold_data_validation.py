@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Tuple, Union  # noqa: F401
+from asapdiscovery.data.enum import StringEnum
 
 import pandas as pd
 import pkg_resources
@@ -19,15 +20,7 @@ def load_yaml(yaml_path: Union[str, Path]) -> dict:
 # we define a new Enum class with some handy methods
 
 
-class TagEnumBase(str, Enum):
-    @classmethod
-    def get_values(cls):
-        return [e.value for e in cls]
-
-    @classmethod
-    def get_names(cls):
-        return [e.name for e in cls]
-
+class TagEnumBase(StringEnum):
     @classmethod
     def is_in_values(cls, tag: str) -> bool:
         return tag in cls.get_values()
