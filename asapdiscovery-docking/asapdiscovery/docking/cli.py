@@ -162,9 +162,6 @@ def large_scale(
     default=False,
     help="Whether to pass multiple references to the docker for each ligand instead of just one at a time",
 )
-
-        
-
 @click.option(
     "--structure-selector",
     type=click.Choice(StructureSelector.get_values(), case_sensitive=False),
