@@ -74,9 +74,7 @@ class Trainer(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def wandb_init(
-        self,
-    ):
+    def wandb_init(self):
         """
         Initialize WandB, handling saving the run ID (for continuing the run later).
 
@@ -89,22 +87,14 @@ class Trainer(BaseModel):
         if self.sweep:
             run_id = wandb.init().id
         else:
-            try:
-                run_id_fn = self.output_dir / "run_id"
-            except TypeError:
-                run_id_fn = None
+            run_id_fn = self.output_dir / "run_id"
 
             if self.cont:
-                if run_id_fn is None:
-                    raise ValueError(
-                        "No model_o directory specified, can't continue run."
-                    )
-
                 # Load run_id to continue from file
                 # First make sure the file exists
-                try:
-                    run_id = open(run_id_fn).read().strip()
-                except FileNotFoundError:
+                if run_id_fn.exists():
+                    run_id = run_id_fn.read_text().strip()
+                else:
                     raise FileNotFoundError(
                         "Couldn't find run_id file to continue run."
                     )
@@ -116,10 +106,7 @@ class Trainer(BaseModel):
                         f"Run in run_id file ({run_id}) doesn't exist"
                     )
                 # Update run config to reflect it's been resumed
-                wandb.config.update(
-                    {"continue": True},
-                    allow_val_change=True,
-                )
+                wandb.config.update({"continue": True}, allow_val_change=True)
             else:
                 # Start new run
                 run_id = wandb.init(
@@ -129,14 +116,13 @@ class Trainer(BaseModel):
                 ).id
 
                 # Save run_id in case we want to continue later
-                if run_id_fn is None:
+                if not self.output_dir.exists():
                     print(
-                        "No model_o directory specified, not saving run_id anywhere.",
+                        "No output directory specified, not saving run_id anywhere.",
                         flush=True,
                     )
                 else:
-                    with open(run_id_fn, "w") as fp:
-                        fp.write(run_id)
+                    run_id_fn.write_text(run_id)
 
         return run_id
 
@@ -152,6 +138,7 @@ class Trainer(BaseModel):
 
         # Adjust output_dir and make sure it exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        # Start the W&B process
         if self.sweep or self.use_wandb:
             run_id = self.wandb_init()
             self.output_dir = self.output_dir / run_id
