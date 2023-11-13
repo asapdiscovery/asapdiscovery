@@ -1,7 +1,8 @@
-import asapdiscovery.ml.schema_v2.config as ascfg
-import click
 import json
 from pathlib import Path
+
+import asapdiscovery.ml.schema_v2.config as ascfg
+import click
 
 
 @click.group()
