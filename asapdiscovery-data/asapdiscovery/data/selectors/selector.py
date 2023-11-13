@@ -16,7 +16,6 @@ class SelectorBase(abc.ABC, BaseModel):
     """
 
     # records what kind of selector class was used, overridden in subclasses
-    @property
     @abc.abstractmethod
     def selector_type(self) -> str:
         ...
