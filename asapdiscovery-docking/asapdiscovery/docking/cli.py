@@ -206,8 +206,6 @@ def cross_docking(
         inputs = CrossDockingWorkflowInputs.from_json_file(input_json)
 
     else:
-        print(type(structure_selector))
-        print(structure_selector)
         inputs = CrossDockingWorkflowInputs(
             target=target,
             multi_reference=multi_reference,
