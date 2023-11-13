@@ -26,7 +26,7 @@ from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInpu
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from distributed import Client
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt, validator
 
 
 class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
@@ -35,46 +35,20 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
 
     Parameters
     ----------
-    filename : str, optional
-        Path to a molecule file containing query ligands.
-    fragalysis_dir : str, optional
-        Path to a directory containing a Fragalysis dump.
-    structure_dir : str, optional
-        Path to a directory containing structures to dock instead of a full fragalysis database.
-    postera : bool, optional
-        Whether to use the Postera database as the query set.
-    postera_upload : bool, optional
-        Whether to upload the results to Postera.
-    postera_molset_name : str, optional
-        The name of the molecule set to pull from and/or upload to.
-    cache_dir : str, optional
-        Path to a directory where structures are cached
-    gen_cache : str, optional
-        Path to a directory where prepped structures should be cached
-    cache_type : list[CacheType], optional
-        The types of cache to use.
-    target : TargetTags, optional
-        The target to dock against.
-    write_final_sdf : bool, optional
-        Whether to write the final docked poses to an SDF file.
-    use_dask : bool, optional
-        Whether to use dask for parallelism.
-    dask_type : DaskType, optional
-        Type of dask client to use for parallelism.
     n_select : int, optional
         Number of targets to dock each ligand against, sorted by MCS
     top_n : int, optional
         Number of docking results to return, ordered by docking score
     posit_confidence_cutoff : float, optional
         POSIT confidence cutoff used to filter docking results
+    use_omega : bool
+        Whether to use omega confomer enumeration in docking, warning: more expensive
+    allow_posit_retries : bool
+        Whether to allow retries in docking with varying settings, warning: more expensive
     ml_scorers : MLModelType, optional
         The name of the ml scorers to use.
     logname : str, optional
         Name of the log file.
-    loglevel : int, optional
-        Logging level.
-    output_dir : Path, optional
-        Output directory
     """
 
     top_n: PositiveInt = Field(
