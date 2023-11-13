@@ -13,15 +13,6 @@ class MultiStructureBase(DataModelAbstractBase):
     Base class for one ligand to many possible reference structures.
     """
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, MultiStructureBase):
-            return NotImplemented
-
-        # Just check that the Ligands and sets of Complexes are the same
-        return (self.ligand == other.ligand) and (
-            set(self.complex) == set(other.complex)
-        )
-
     @classmethod
     def _from_pairs(
         cls,
