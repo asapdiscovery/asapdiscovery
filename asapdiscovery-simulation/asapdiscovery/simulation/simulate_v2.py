@@ -120,7 +120,7 @@ class VanillaMDSimulatorV2(SimulatorBase):
             )
             # write pdb to pre file
             pre_pdb_path = outpath / "pre.pdb"
-            save_openeye_pdb(result.to_posed_oemol(), pre_pdb_path)
+            save_openeye_pdb(result.to_protein(), pre_pdb_path)
 
             modeller, ligand_mol = self.get_complex_model(ligand_mol, pre_pdb_path)
             modeller, mol_atom_indices = self.setup_and_solvate(
