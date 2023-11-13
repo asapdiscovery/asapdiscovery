@@ -9,10 +9,60 @@ from typing import Literal, Optional, Union
 import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
+from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
-from asapdiscovery.data.schema_v2.pairs import DockingInputPair
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
+from asapdiscovery.data.schema_v2.sets import MultiStructureBase
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
+
+
+class DockingInputBase(BaseModel):
+    """
+    Base class for functionality all docking inputs should have.
+    """
+
+    @abc.abstractmethod
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        ...
+
+
+class DockingInputPair(CompoundStructurePair, DockingInputBase):
+    """
+    Schema for a DockingInputPair, containing both a PreppedComplex and Ligand
+    This is designed to track a matched ligand and complex pair for investigation
+    but with the complex prepped for docking, ie in OEDesignUnit format.
+    """
+
+    complex: PreppedComplex = Field(description="Target schema object")
+
+    @classmethod
+    def from_compound_structure_pair(
+        cls, compound_structure_pair: CompoundStructurePair
+    ) -> "DockingInputPair":
+        prepped_complex = PreppedComplex.from_complex(compound_structure_pair.complex)
+        return cls(complex=prepped_complex, ligand=compound_structure_pair.ligand)
+
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        return [self.complex.target.to_oedu()]
+
+
+class DockingInputMultiStructure(MultiStructureBase):
+    """
+    Schema for one ligand to many possible reference structures.
+    """
+
+    ligand: Ligand = Field(description="Ligand schema object")
+    complexes: list[PreppedComplex] = Field(description="List of reference structures")
+
+    @classmethod
+    def from_pairs(
+        cls, pair_list: list[DockingInputPair]
+    ) -> list["DockingInputMultiStructure"]:
+        return cls._from_pairs(pair_list)
+
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        return [protein_complex.target.to_oedu() for protein_complex in self.complexes]
 
 
 class DockingBase(BaseModel):

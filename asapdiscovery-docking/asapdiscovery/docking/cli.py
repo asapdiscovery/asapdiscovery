@@ -18,6 +18,7 @@ from asapdiscovery.cli.cli_args import (
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.workflows.cross_docking import (
     CrossDockingWorkflowInputs,
     cross_docking_workflow,
@@ -155,6 +156,18 @@ def large_scale(
     default=False,
     help="Allow clashing poses in last stage of docking",
 )
+@click.option(
+    "--multi-reference",
+    is_flag=True,
+    default=False,
+    help="Whether to pass multiple references to the docker for each ligand instead of just one at a time",
+)
+@click.option(
+    "--structure-selector",
+    type=click.Choice(StructureSelector.get_values(), case_sensitive=False),
+    default=StructureSelector.PAIRWISE,
+    help="The type of structure selector to use. Defaults to pairwise (all pairwise combinations of ligand and complex)",
+)
 @ligands
 @pdb_file
 @fragalysis_dir
@@ -167,6 +180,8 @@ def large_scale(
 @input_json
 def cross_docking(
     target: TargetTags,
+    multi_reference: bool = False,
+    structure_selector: StructureSelector = StructureSelector.PAIRWISE,
     use_omega: bool = False,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
@@ -193,6 +208,8 @@ def cross_docking(
     else:
         inputs = CrossDockingWorkflowInputs(
             target=target,
+            multi_reference=multi_reference,
+            structure_selector=structure_selector,
             use_dask=use_dask,
             dask_type=dask_type,
             use_omega=use_omega,
