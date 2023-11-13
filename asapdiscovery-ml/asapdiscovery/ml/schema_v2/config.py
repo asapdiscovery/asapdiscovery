@@ -311,6 +311,18 @@ class GATModelConfig(ModelConfigBase):
 
     from dgllife.utils import CanonicalAtomFeaturizer
 
+    LIST_PARAMS: ClassVar[dict] = {
+        "hidden_feats": int,
+        "num_heads": int,
+        "feat_drops": float,
+        "attn_drops": float,
+        "alphas": float,
+        "residuals": bool,
+        "agg_modes": str,
+        "activations": None,
+        "biases": bool,
+    }
+
     model_type: ClassVar[ModelType.gat] = ModelType.gat
 
     in_feats: int = Field(
@@ -401,19 +413,8 @@ class GATModelConfig(ModelConfigBase):
 
     @root_validator(pre=False)
     def massage_into_lists(cls, values) -> GATModelConfig:
-        list_params = {
-            "hidden_feats": int,
-            "num_heads": int,
-            "feat_drops": float,
-            "attn_drops": float,
-            "alphas": float,
-            "residuals": bool,
-            "agg_modes": str,
-            "activations": None,
-            "biases": bool,
-        }
         # First convert string lists to actual lists
-        for param, param_type in list_params.items():
+        for param, param_type in cls.LIST_PARAMS.items():
             param_val = values[param]
             if isinstance(param_val, str):
                 try:
@@ -427,7 +428,7 @@ class GATModelConfig(ModelConfigBase):
 
         # Get sizes of all lists
         list_lens = {}
-        for p in list_params:
+        for p in cls.LIST_PARAMS:
             param_val = values[p]
             if not isinstance(param_val, list):
                 # Shouldn't be possible at this point but just in case
@@ -498,6 +499,26 @@ class GATModelConfig(ModelConfigBase):
 
         pred_readout = mtenn_params.get("pred_readout", None)
         return GAT.get_model(model=model, pred_readout=pred_readout, fix_device=True)
+
+    def _update(self, config_updates={}) -> "GATModelConfig":
+        orig_config = self.dict()
+        if self._from_num_layers:
+            # If originally generated from num_layers, want to pull out the first entry
+            #  in each list param so it can be re-broadcast with (potentially) new
+            #  num_layers
+            for param_name in GATModelConfig.LIST_PARAMS.keys():
+                orig_config[param_name] = orig_config[param_name][0]
+
+        # Get new config by overwriting old stuff with any new stuff
+        new_config = orig_config | config_updates
+
+        # A bit hacky, maybe try and change?
+        if isinstance(new_config["activations"], list) and (
+            new_config["activations"][0] is None
+        ):
+            new_config["activations"] = None
+
+        return GATModelConfig(**new_config)
 
 
 class SchNetModelConfig(ModelConfigBase):
