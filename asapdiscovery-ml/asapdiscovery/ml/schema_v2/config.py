@@ -500,7 +500,7 @@ class GATModelConfig(ModelConfigBase):
         pred_readout = mtenn_params.get("pred_readout", None)
         return GAT.get_model(model=model, pred_readout=pred_readout, fix_device=True)
 
-    def _update(self, config_updates={}) -> "GATModelConfig":
+    def _update(self, config_updates={}) -> GATModelConfig:
         orig_config = self.dict()
         if self._from_num_layers:
             # If originally generated from num_layers, want to pull out the first entry

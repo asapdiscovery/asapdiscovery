@@ -1,13 +1,13 @@
+from pathlib import Path
 from typing import Callable
 
 import mtenn
+import wandb
 
 # import torch
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.schema_v2.config import ModelConfigBase, OptimizerConfig
-from pathlib import Path
 from pydantic import BaseModel, Field
-import wandb
 
 
 class Trainer(BaseModel):
