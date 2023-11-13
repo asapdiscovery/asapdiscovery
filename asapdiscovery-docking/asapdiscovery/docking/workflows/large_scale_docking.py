@@ -104,65 +104,6 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
 
     logname: str = Field("large_scale_docking", description="Name of the log file.")
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @classmethod
-    def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
-
-    def to_json_file(self, file: str | Path):
-        with open(file, "w") as f:
-            f.write(self.json(indent=2))
-
-    @root_validator
-    @classmethod
-    def check_inputs(cls, values):
-        """
-        Validate inputs
-        """
-        filename = values.get("filename")
-        fragalysis_dir = values.get("fragalysis_dir")
-        structure_dir = values.get("structure_dir")
-        postera = values.get("postera")
-        postera_upload = values.get("postera_upload")
-        postera_molset_name = values.get("postera_molset_name")
-        cache_dir = values.get("cache_dir")
-        gen_cache = values.get("gen_cache")
-        pdb_file = values.get("pdb_file")
-
-        if postera and filename:
-            raise ValueError("Cannot specify both filename and postera.")
-
-        if not postera and not filename:
-            raise ValueError("Must specify either filename or postera.")
-
-        if postera_upload and not postera_molset_name:
-            raise ValueError(
-                "Must specify postera_molset_name if uploading to postera."
-            )
-
-        # can only specify one of fragalysis dir, structure dir and PDB file
-        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:
-            raise ValueError(
-                "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
-            )
-
-        if cache_dir and gen_cache:
-            raise ValueError("Cannot specify both cache_dir and gen_cache.")
-
-        return values
-
-    @validator("cache_dir")
-    @classmethod
-    def cache_dir_must_be_directory(cls, v):
-        """
-        Validate that the DU cache is a directory
-        """
-        if v is not None:
-            if not Path(v).is_dir():
-                raise ValueError("Du cache must be a directory.")
-        return v
 
     @classmethod
     @validator("ml_scorers")
