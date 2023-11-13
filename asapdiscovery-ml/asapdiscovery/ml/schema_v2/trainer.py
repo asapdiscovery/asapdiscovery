@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field
-import torch
 from typing import Callable
 
-from asapdiscovery.ml.dataset import DockedDataset, GroupedDockedDataset, GraphDataset
-from asapdiscovery.ml.schema_v2.config import OptimizerConfig, ModelConfigBase
 import mtenn
+import torch
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
+from asapdiscovery.ml.schema_v2.config import ModelConfigBase, OptimizerConfig
+from pydantic import BaseModel, Field
 
 
 class Trainer(BaseModel):
