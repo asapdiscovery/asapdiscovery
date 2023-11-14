@@ -1,12 +1,21 @@
 from pathlib import Path
+from time import time
 from typing import Callable
 
+import json
 import mtenn
+import numpy as np
 import wandb
+import pickle as pkl
 import torch
 
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
-from asapdiscovery.ml.schema_v2.config import ModelConfigBase, OptimizerConfig
+from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
+from asapdiscovery.ml.schema_v2.config import (
+    EarlyStoppingConfig,
+    ModelConfigBase,
+    OptimizerConfig,
+)
 from pydantic import BaseModel, Field, validator
 
 
@@ -22,6 +31,9 @@ class Trainer(BaseModel):
     model_config: ModelConfigBase = Field(
         ..., description="Config describing the model to train."
     )
+    es_config: EarlyStoppingConfig | None = Field(
+        None, description="Config describing the early stopping check to use."
+    )
     dataset: DockedDataset | GroupedDockedDataset | GraphDataset = Field(
         ..., description="Dataset object to train on."
     )
@@ -35,7 +47,17 @@ class Trainer(BaseModel):
             "done when train is called."
         ),
     )
-    n_epochs: int = Field(300, description="Number of epochs to train for.")
+    start_epoch: int = Field(
+        0,
+        description="Which epoch to start training at (used for continuing training runs).",
+    )
+    n_epochs: int = Field(
+        300,
+        description=(
+            "Which epoch to stop training at. For non-continuation runs, this "
+            "will be the total number of epochs to train for."
+        ),
+    )
     batch_size: int = Field(
         1, description="Number of samples to predict on before performing backprop."
     )
@@ -171,6 +193,10 @@ class Trainer(BaseModel):
         # Build the Optimizer
         self.optimizer = self.optimizer_config.build(self.model.parameters())
 
+        # Build early stopping
+        if self.es_config:
+            self.es = self.es_config.build()
+
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
@@ -190,6 +216,240 @@ class Trainer(BaseModel):
                 self.initialize()
             else:
                 raise ValueError("Trainer was not initialized before trying to train.")
+
+        # Save initial model weights for debugging
+        torch.save(self.model.state_dict(), self.output_dir / "init.th")
+
+        # Train for n epochs
+        for epoch_idx in range(self.start_epoch, self.n_epochs):
+            print(f"Epoch {epoch_idx}/{self.n_epochs}", flush=True)
+            if epoch_idx % 10 == 0 and epoch_idx > 0:
+                train_loss = np.mean(
+                    [v["losses"][-1] for v in self.loss_dict["train"].values()]
+                )
+                val_loss = np.mean(
+                    [v["losses"][-1] for v in self.loss_dict["val"].values()]
+                )
+                test_loss = np.mean(
+                    [v["losses"][-1] for v in self.loss_dict["test"].values()]
+                )
+                print(f"Training loss: {train_loss:0.5f}")
+                print(f"Validation loss: {val_loss:0.5f}")
+                print(f"Testing loss: {test_loss:0.5f}", flush=True)
+            tmp_loss = []
+
+            # Initialize batch
+            batch_counter = 0
+            self.optimizer.zero_grad()
+            batch_loss = None
+            start_time = time()
+            for compound, pose in ds_train:
+                if type(compound) is tuple:
+                    compound_id = compound[1]
+                else:
+                    compound_id = compound
+
+                # convert to float to match other types
+                target = torch.tensor(
+                    [[pose[self.target_prop]]], device=self.device
+                ).float()
+                in_range = torch.tensor(
+                    [[pose["pIC50_range"]]], device=self.device
+                ).float()
+                uncertainty = torch.tensor(
+                    [[pose[f"{self.target_prop}_stderr"]]],
+                    device=self.device,
+                ).float()
+
+                # Make prediction and calculate loss
+                pred, pose_preds = self.model(pose)
+                pred = pred.reshape(target.shape)
+                pose_preds = [p.item() for p in pose_preds]
+                loss = self.loss_func(pred, target, in_range, uncertainty)
+
+                # Update loss_dict
+                self._update_loss_dict(
+                    "train",
+                    compound_id,
+                    target.item(),
+                    in_range.item(),
+                    uncertainty.item(),
+                    pred.item(),
+                    loss.item(),
+                    pose_preds=pose_preds,
+                )
+
+                # Keep track of loss for each sample
+                tmp_loss.append(loss.item())
+
+                # Update batch_loss
+                if batch_loss is None:
+                    batch_loss = loss
+                else:
+                    batch_loss += loss
+                batch_counter += 1
+
+                # Perform backprop if we've done all the preds for this batch
+                if batch_counter == self.batch_size:
+                    # Backprop
+                    batch_loss.backward()
+                    self.optimizer.step()
+                    if any(
+                        [
+                            p.grad.isnan().any().item()
+                            for p in self.model.parameters()
+                            if p.grad is not None
+                        ]
+                    ):
+                        raise ValueError("NaN gradients")
+
+                    # Reset batch tracking
+                    batch_counter = 0
+                    self.optimizer.zero_grad()
+                    batch_loss = None
+
+            if batch_counter > 0:
+                # Backprop for final incomplete batch
+                batch_loss.backward()
+                self.optimizer.step()
+                if any([p.grad.isnan().any().item() for p in self.model.parameters()]):
+                    raise ValueError("NaN gradients")
+            end_time = time()
+
+            epoch_train_loss = np.mean(tmp_loss)
+
+            self.model.eval()
+            tmp_loss = []
+            for compound, pose in ds_val:
+                if type(compound) is tuple:
+                    compound_id = compound[1]
+                else:
+                    compound_id = compound
+
+                # convert to float to match other types
+                target = torch.tensor(
+                    [[pose[self.target_prop]]], device=self.device
+                ).float()
+                in_range = torch.tensor(
+                    [[pose["pIC50_range"]]], device=self.device
+                ).float()
+                uncertainty = torch.tensor(
+                    [[pose[f"{self.target_prop}_stderr"]]],
+                    device=self.device,
+                ).float()
+
+                # Make prediction and calculate loss
+                pred, pose_preds = self.model(pose)
+                pred = pred.reshape(target.shape)
+                pose_preds = [p.item() for p in pose_preds]
+                loss = self.loss_func(pred, target, in_range, uncertainty)
+
+                # Update loss_dict
+                self._update_loss_dict(
+                    "val",
+                    compound_id,
+                    target.item(),
+                    in_range.item(),
+                    uncertainty.item(),
+                    pred.item(),
+                    loss.item(),
+                    pose_preds=pose_preds,
+                )
+
+                tmp_loss.append(loss.item())
+            epoch_val_loss = np.mean(tmp_loss)
+
+            tmp_loss = []
+            for compound, pose in ds_test:
+                if type(compound) is tuple:
+                    compound_id = compound[1]
+                else:
+                    compound_id = compound
+
+                # convert to float to match other types
+                target = torch.tensor(
+                    [[pose[self.target_prop]]], device=self.device
+                ).float()
+                in_range = torch.tensor(
+                    [[pose["pIC50_range"]]], device=self.device
+                ).float()
+                uncertainty = torch.tensor(
+                    [[pose[f"{self.target_prop}_stderr"]]],
+                    device=self.device,
+                ).float()
+
+                # Make prediction and calculate loss
+                pred, pose_preds = self.model(pose)
+                pred = pred.reshape(target.shape)
+                pose_preds = [p.item() for p in pose_preds]
+                loss = self.loss_func(pred, target, in_range, uncertainty)
+
+                # Update loss_dict
+                self._update_loss_dict(
+                    "test",
+                    compound_id,
+                    target.item(),
+                    in_range.item(),
+                    uncertainty.item(),
+                    pred.item(),
+                    loss.item(),
+                    pose_preds=pose_preds,
+                )
+
+                tmp_loss.append(loss.item())
+            epoch_test_loss = np.mean(tmp_loss)
+            self.model.train()
+
+            if self.use_wandb or self.sweep:
+                wandb.log(
+                    {
+                        "train_loss": epoch_train_loss,
+                        "val_loss": epoch_val_loss,
+                        "test_loss": epoch_test_loss,
+                        "epoch": epoch_idx,
+                        "epoch_time": end_time - start_time,
+                    }
+                )
+            torch.save(self.model.state_dict(), self.output_dir / f"{epoch_idx}.th")
+            (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
+
+            # Stop if loss has gone to infinity or is NaN
+            if (
+                np.isnan(epoch_train_loss)
+                or (epoch_train_loss == np.inf)
+                or (epoch_train_loss == -np.inf)
+            ):
+                (self.output_dir / "ds_train.pkl").write_bytes(pkl.dumps(ds_train))
+                (self.output_dir / "ds_val.pkl").write_bytes(pkl.dumps(ds_val))
+                (self.output_dir / "ds_test.pkl").write_bytes(pkl.dumps(ds_test))
+                raise ValueError("Unrecoverable loss value reached.")
+
+            # Stop training if EarlyStopping says to
+            if self.es:
+                if isinstance(self.es, BestEarlyStopping) and self.es.check(
+                    epoch_idx, epoch_val_loss, self.model.state_dict()
+                ):
+                    print(
+                        (
+                            f"Stopping training after epoch {epoch_idx}, "
+                            f"using weights from epoch {self.es.best_epoch}"
+                        ),
+                        flush=True,
+                    )
+                    self.model.load_state_dict(self.es.best_wts)
+                    if self.use_wandb or self.sweep:
+                        wandb.log(
+                            {
+                                "best_epoch": self.es.best_epoch,
+                                "best_loss": self.es.best_loss,
+                            }
+                        )
+                    break
+                elif isinstance(self.es, ConvergedEarlyStopping) and self.es.check(
+                    epoch_val_loss
+                ):
+                    print(f"Stopping training after epoch {epoch_idx}", flush=True)
+                    break
 
     def _update_loss_dict(
         self,
@@ -218,7 +478,7 @@ class Trainer(BaseModel):
         uncertainty : float
             Experimental measurement uncertainty
         pred : float
-            Model prediction
+           Model prediction
         loss : float
             Prediction loss
         pose_preds : float, optional
