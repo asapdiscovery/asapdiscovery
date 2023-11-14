@@ -1,17 +1,15 @@
+from enum import Enum
+from pathlib import Path
+
 from asapdiscovery.data.fitness import target_has_fitness_data
-from pydantic import Field, root_validator
-from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.data.openeye import save_openeye_pdb
+from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-
-from pathlib import Path
-from enum import Enum
-from tempfile import NamedTemporaryFile
+from asapdiscovery.docking.docking_v2 import DockingResult
+from pydantic import Field, root_validator
 
 
 class ColourMethod(str, Enum):

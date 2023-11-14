@@ -1,12 +1,12 @@
 import abc
 import warnings
-from enum import Enum
 from pathlib import Path
 from typing import Literal, Optional, Union
 
 import dask
 import yaml
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.target import PreppedTarget
@@ -20,17 +20,13 @@ from asapdiscovery.modeling.modeling import (
 from pydantic import BaseModel, Field, root_validator
 
 
-class CacheType(str, Enum):
+class CacheType(StringEnum):
     """
     Enum for cache types.
     """
 
     DesignUnit = "DesignUnit"
     JSON = "JSON"
-
-    @classmethod
-    def get_values(cls) -> list[str]:
-        return [c.value for c in cls]
 
 
 class ProteinPrepperBase(BaseModel):
@@ -165,11 +161,9 @@ class ProteinPrepper(ProteinPrepperBase):
     align: Optional[Complex] = Field(
         None, description="Reference structure to align to."
     )
-    ref_chain: Optional[str] = Field(
-        None, description="Reference chain ID to align to."
-    )
+    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
     active_site_chain: Optional[str] = Field(
-        None, description="Chain ID to align to reference."
+        "A", description="Chain ID to align to reference."
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
@@ -245,7 +239,7 @@ class ProteinPrepper(ProteinPrepperBase):
                 success, spruce_error_message, spruced = spruce_protein(
                     initial_prot=prot,
                     protein_sequence=protein_sequence,
-                    loop_db=str(self.loop_db),
+                    loop_db=self.loop_db,
                 )
 
                 if not success:

@@ -1,6 +1,7 @@
 import abc
 from enum import Enum
 from typing import ClassVar, Optional
+from warnings import warn
 
 import dask
 import numpy as np
@@ -15,7 +16,7 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
-from asapdiscovery.ml.models.ml_models import MLModelType
+from asapdiscovery.ml.models import MLModelType
 from pydantic import BaseModel, Field
 
 
@@ -218,11 +219,17 @@ class MLModelScorer(ScorerBase):
             raise Exception("trying to instantiate some kind a baseclass")
         inference_cls = get_inference_cls_from_model_type(cls.model_type)
         inference_instance = inference_cls.from_latest_by_target(target)
-        return cls(
-            targets=inference_instance.targets,
-            model_name=inference_instance.model_name,
-            inference_cls=inference_instance,
-        )
+        if inference_instance is None:
+            warn(
+                f"no ML model of type {cls.model_type} found for target: {target}, skipping"
+            )
+            return None
+        else:
+            return cls(
+                targets=inference_instance.targets,
+                model_name=inference_instance.model_name,
+                inference_cls=inference_instance,
+            )
 
     @staticmethod
     def from_latest_by_target_and_type(target: TargetTags, type: MLModelType):

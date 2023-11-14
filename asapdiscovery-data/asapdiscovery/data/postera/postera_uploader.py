@@ -2,17 +2,14 @@ from datetime import datetime
 from uuid import UUID
 from warnings import warn
 
+from asapdiscovery.data.openeye import oe_smiles_roundtrip
+from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from pydantic import BaseModel, Field
-from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
 
 
 class PosteraUploader(BaseModel):
@@ -28,6 +25,9 @@ class PosteraUploader(BaseModel):
     smiles_field: str = Field(
         DockingResultCols.SMILES.value,
         description="Name of the column in the dataframe to use as the SMILES field",
+    )
+    overwrite: bool = Field(
+        False, description="Overwrite existing data on molecule set"
     )
 
     def push(self, df) -> None:
@@ -95,7 +95,7 @@ class PosteraUploader(BaseModel):
                     df=df,
                     id_field=self.id_field,
                     smiles_field=self.smiles_field,
-                    overwrite=False,
+                    overwrite=self.overwrite,
                 )
         return df_copy, molset_name, new_molset
 

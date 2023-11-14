@@ -1,11 +1,10 @@
 import abc
-from typing import Literal, Union
 
 import dask
+import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.docking.docking_v2 import DockingResult
 from pydantic import BaseModel
-import pandas as pd
 
 
 class VisualizerBase(abc.ABC, BaseModel):
@@ -20,6 +19,7 @@ class VisualizerBase(abc.ABC, BaseModel):
     def visualize(
         self,
         docking_results: list[DockingResult],
+        *args,
         use_dask: bool = False,
         dask_client=None,
         **kwargs,
@@ -34,7 +34,7 @@ class VisualizerBase(abc.ABC, BaseModel):
             )
             outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
-            outputs = self._visualize(docking_results=docking_results, **kwargs)
+            outputs = self._visualize(docking_results=docking_results, *args, **kwargs)
 
         return pd.DataFrame(outputs)
 

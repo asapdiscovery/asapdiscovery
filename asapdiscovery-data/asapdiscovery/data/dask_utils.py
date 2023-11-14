@@ -1,8 +1,8 @@
 from collections.abc import Iterable
-from enum import Enum
 from typing import Optional
 
 import dask
+from asapdiscovery.data.enum import StringEnum
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
@@ -48,7 +48,7 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-class DaskType(str, Enum):
+class DaskType(StringEnum):
     """
     Enum for Dask types
     """
@@ -57,36 +57,24 @@ class DaskType(str, Enum):
     LILAC_GPU = "lilac-gpu"
     LILAC_CPU = "lilac-cpu"
 
-    @classmethod
-    def get_values(cls):
-        return [dask_type.value for dask_type in cls]
-
     def is_lilac(self):
         return self in [DaskType.LILAC_CPU, DaskType.LILAC_GPU]
 
 
-class GPU(str, Enum):
+class GPU(StringEnum):
     """
     Enum for GPU types
     """
 
     GTX1080TI = "GTX1080TI"
 
-    @classmethod
-    def get_values(cls):
-        return [gpu.value for gpu in cls]
 
-
-class CPU(str, Enum):
+class CPU(StringEnum):
     """
     Enum for CPU types
     """
 
     LT = "LT"
-
-    @classmethod
-    def get_values(cls):
-        return [cpu.value for cpu in cls]
 
 
 _LILAC_GPU_GROUPS = {
@@ -126,6 +114,30 @@ def dask_timedelta_to_hh_mm(time_str: str) -> str:
     return f"{hours:02d}:{minutes:02d}"
 
 
+def dask_time_delta_diff(time_str_1: str, time_str_2: str) -> str:
+    """
+    Get the difference between two dask timedelta strings
+
+    Parameters
+    ----------
+    time_str_1 : str
+        A dask timedelta string, e.g. "1h30m"
+    time_str_2 : str
+        A dask timedelta string, e.g. "1h30m"
+
+    Returns
+    -------
+    str
+        A dask timedelta string that is the difference between time_str_1 and time_str_2 in seconds
+    """
+    seconds_1 = parse_timedelta(time_str_1)
+    seconds_2 = parse_timedelta(time_str_2)
+    seconds_diff = seconds_1 - seconds_2
+    if seconds_diff < 0:
+        raise ValueError(f"Time difference is negative: {seconds_diff}")
+    return str(seconds_diff) + "s"
+
+
 class DaskCluster(BaseModel):
     class Config:
         allow_mutation = False
@@ -143,7 +155,7 @@ class LilacDaskCluster(DaskCluster):
     shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
     queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
     project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("1h", description="Walltime for the job")
+    walltime: str = Field("12h", description="Walltime for the job")
     use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
@@ -151,7 +163,11 @@ class LilacDaskCluster(DaskCluster):
     job_script_prologue: list[str] = Field(
         ["ulimit -c 0"], description="Job prologue, default is to turn off core dumps"
     )
-    dashboard_address: str = Field(":9234", description="port to activate dashboard on")
+    dashboard_address: str = Field(":9123", description="port to activate dashboard on")
+    lifetime_margin: str = Field(
+        "10m",
+        description="Margin to shut down workers before their walltime is up to ensure clean exit",
+    )
 
     def to_cluster(self, exclude_interface: Optional[str] = "lo") -> LSFCluster:
         interface = guess_network_interface(exclude=[exclude_interface])
@@ -164,12 +180,12 @@ class LilacDaskCluster(DaskCluster):
             },
             worker_extra_args=[
                 "--lifetime",
-                f"{self.walltime}",
+                dask_time_delta_diff(self.walltime, self.lifetime_margin),
                 "--lifetime-stagger",
-                "2m",
-            ],  # leave a slight buffer
+                "10s",
+            ],  # leave a buffer to cleanly exit
             walltime=_walltime,  # convert to LSF units manually
-            **self.dict(exclude={"walltime", "dashboard_address"}),
+            **self.dict(exclude={"walltime", "dashboard_address", "lifetime_margin"}),
         )
 
 

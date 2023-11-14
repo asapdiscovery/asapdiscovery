@@ -1,18 +1,20 @@
-import logging
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from asapdiscovery.data.dask_utils import (
-    DaskType,
-    dask_cluster_from_type,
-    set_dask_config,
-)
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.postera.manifold_artifacts import (
+    ArtifactType,
+    ManifoldArtifactUploader,
+)
 from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
@@ -26,63 +28,37 @@ from asapdiscovery.data.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.aws.cloudfront import CloudFront
-from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.utils import check_empty_dataframe
+from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
+from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
-from distributed import Client
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
+from asapdiscovery.ml.models import ASAPMLModelRegistry
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
-from asapdiscovery.dataviz.viz_v2.html_viz import HTMLVisualizerV2, ColourMethod
-from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
-from asapdiscovery.data.postera.manifold_artifacts import (
-    ManifoldArtifactUploader,
-    ArtifactType,
-)
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+from distributed import Client
+from pydantic import Field, PositiveInt, validator
 
 
-class SmallScaleDockingInputs(BaseModel):
+class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     """
     Schema for inputs to small scale docking
 
     Parameters
     ----------
-    filename : str, optional
-        Path to a molecule file containing query ligands.
-    fragalysis_dir : str, optional
-        Path to a directory containing a Fragalysis dump.
-    structure_dir : str, optional
-        Path to a directory containing structures to dock instead of a full fragalysis database.
-    postera : bool, optional
-        Whether to use the Postera database as the query set.
-    postera_upload : bool, optional
-        Whether to upload the results to Postera.
-    postera_molset_name : str, optional
-        The name of the molecule set to pull from and/or upload to.
-    cache_dir : str, optional
-        Path to a directory where structures are cached
-    gen_cache : str, optional
-        Path to a directory where prepped structures should be cached
-    cache_type : list[CacheType], optional
-        The types of cache to use.
-    target : TargetTags, optional
-        The target to dock against.
-    write_final_sdf : bool, optional
-        Whether to write the final docked poses to an SDF file.
-    use_dask : bool, optional
-        Whether to use dask for parallelism.
-    dask_type : DaskType, optional
-        Type of dask client to use for parallelism.
     posit_confidence_cutoff : float, optional
         POSIT confidence cutoff used to filter docking results
+    use_omega : bool
+        Whether to use omega for conformer generation prior to docking
+    allow_retries : bool
+        Whether to allow retries for docking failures
+    n_select : PositiveInt
+        Number of targets to dock each ligand against.
     ml_scorers : MLModelType, optional
         The name of the ml scorers to use.
     md : bool, optional
@@ -95,69 +71,7 @@ class SmallScaleDockingInputs(BaseModel):
         OpenMM platform to use for MD
     logname : str, optional
         Name of the log file.
-    loglevel : int, optional
-        Logging level.
-    output_dir : Path, optional
-        Output directory
     """
-
-    filename: Optional[str] = Field(
-        None, description="Path to a molecule file containing query ligands."
-    )
-
-    pdb_file: Optional[Path] = Field(
-        None, description="Path to a PDB file to prep and dock to."
-    )
-
-    fragalysis_dir: Optional[Path] = Field(
-        None, description="Path to a directory containing a Fragalysis dump."
-    )
-    structure_dir: Optional[Path] = Field(
-        None,
-        description="Path to a directory containing structures to dock instead of a full fragalysis database.",
-    )
-    postera: bool = Field(
-        False, description="Whether to use the Postera database as the query set."
-    )
-    postera_upload: bool = Field(
-        False, description="Whether to upload the results to Postera."
-    )
-    postera_molset_name: Optional[str] = Field(
-        None, description="The name of the molecule set to upload to."
-    )
-    cache_dir: Optional[str] = Field(
-        None, description="Path to a directory where a cache has been generated"
-    )
-
-    gen_cache: Optional[str] = Field(
-        None,
-        description="Generate a cache from structures prepped in this workflow run in this directory",
-    )
-
-    cache_type: Optional[list[str]] = Field(
-        [CacheType.DesignUnit], description="The types of cache to use."
-    )
-
-    target: TargetTags = Field(None, description="The target to dock against.")
-
-    write_final_sdf: bool = Field(
-        default=True,
-        description="Whether to write the final docked poses to an SDF file.",
-    )
-    use_dask: bool = Field(True, description="Whether to use dask for parallelism.")
-
-    dask_type: DaskType = Field(
-        DaskType.LOCAL, description="Dask client to use for parallelism."
-    )
-
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
-    )
 
     posit_confidence_cutoff: float = Field(
         0.1,
@@ -170,8 +84,13 @@ class SmallScaleDockingInputs(BaseModel):
         True,
         description="Whether to use omega for conformer generation prior to docking",
     )
+
     allow_retries: bool = Field(
         True, description="Whether to allow retries for docking failures"
+    )
+
+    n_select: PositiveInt = Field(
+        1, description="Number of targets to dock each ligand against."
     )
 
     ml_scorers: Optional[list[str]] = Field(
@@ -187,77 +106,6 @@ class SmallScaleDockingInputs(BaseModel):
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
     logname: str = Field("small_scale_docking", description="Name of the log file.")
-
-    loglevel: int = Field(logging.INFO, description="Logging level")
-
-    output_dir: Path = Field(Path("output"), description="Output directory")
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @classmethod
-    def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
-
-    def to_json_file(self, file: str | Path):
-        with open(file, "w") as f:
-            f.write(self.json(indent=2))
-
-    @root_validator
-    @classmethod
-    def check_inputs(cls, values):
-        """
-        Validate inputs
-        """
-        filename = values.get("filename")
-        fragalysis_dir = values.get("fragalysis_dir")
-        structure_dir = values.get("structure_dir")
-        postera = values.get("postera")
-        postera_upload = values.get("postera_upload")
-        postera_molset_name = values.get("postera_molset_name")
-        cache_dir = values.get("cache_dir")
-        gen_cache = values.get("gen_cache")
-        pdb_file = values.get("pdb_file")
-        md = values.get("md")
-        dask_type = values.get("dask_type")
-
-        if postera and filename:
-            raise ValueError("Cannot specify both filename and postera.")
-
-        if not postera and not filename:
-            raise ValueError("Must specify either filename or postera.")
-
-        if postera_upload and not postera_molset_name:
-            raise ValueError(
-                "Must specify postera_molset_name if uploading to postera."
-            )
-
-        # can only specify one of fragalysis dir, structure dir and PDB file
-        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:
-            raise ValueError(
-                "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
-            )
-
-        if cache_dir and gen_cache:
-            raise ValueError("Cannot specify both cache_dir and gen_cache.")
-
-        if md and dask_type == DaskType.LILAC_CPU:
-            raise ValueError(
-                "Cannot run MD on Lilac CPU queue, use Lilac GPU queue instead."
-            )
-
-        return values
-
-    @validator("cache_dir")
-    @classmethod
-    def cache_dir_must_be_directory(cls, v):
-        """
-        Validate that the DU cache is a directory
-        """
-        if v is not None:
-            if not Path(v).is_dir():
-                raise ValueError("Du cache must be a directory.")
-        return v
 
     @classmethod
     @validator("ml_scorers")
@@ -387,9 +235,23 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
+    logger.info("Using canonical structure")
+    align_struct = master_structures[inputs.target]
+
+    ref_complex = Complex.from_pdb(
+        align_struct,
+        target_kwargs={"target_name": "ref"},
+        ligand_kwargs={"compound_name": "ref_ligand"},
+    )
+
     # prep complexes
     logger.info("Prepping complexes")
-    prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
+    prepper = ProteinPrepper(
+        cache_dir=inputs.cache_dir,
+        align=ref_complex,
+        ref_chain="A",
+        active_site_chain="A",
+    )
     prepped_complexes = prepper.prep(
         complexes, use_dask=inputs.use_dask, dask_client=dask_client
     )
@@ -413,7 +275,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        n_select=1,
+        n_select=inputs.n_select,
         use_dask=False,
         dask_client=None,
     )
@@ -526,13 +388,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         results, use_dask=inputs.use_dask, dask_client=dask_client
     )
 
-    # rename fitness visualisations target id column to POSIT structure tag so we can join
-    fitness_visualizations.rename(
-        columns={
-            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        },
-        inplace=True,
-    )
+    # duplicate target id column so we can join
+    fitness_visualizations[
+        DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+    ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+
     # join the two dataframes on ligand_id, target_id and smiles
     combined_df = combined_df.merge(
         fitness_visualizations,
@@ -562,7 +422,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     if inputs.md:
         md_output_dir = output_dir / "md"
-        md_simulator = VanillaMDSimulatorV2(output_dir=md_output_dir)
+        md_simulator = VanillaMDSimulatorV2(
+            output_dir=md_output_dir,
+            openmm_platform=inputs.md_openmm_platform,
+            num_steps=inputs.md_steps,
+            reporting_interval=inputs.md_report_interval,
+        )
         simulation_results = md_simulator.simulate(
             results, use_dask=inputs.use_dask, dask_client=dask_client
         )
@@ -573,7 +438,16 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
         )
 
-        # join
+        # join the two dataframes on ligand_id, target_id and smiles
+        combined_df = combined_df.merge(
+            gifs,
+            on=[
+                DockingResultCols.LIGAND_ID.value,
+                DockingResultCols.TARGET_ID.value,
+                DockingResultCols.SMILES.value,
+            ],
+            how="outer",
+        )
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")

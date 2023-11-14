@@ -1247,35 +1247,6 @@ def get_compound_id_xtal_dicts(sars_xtals):
     return (compound_to_xtals, xtal_to_compound)
 
 
-def get_ligand_rmsd_openeye(ref: oechem.OEMolBase, mobile: oechem.OEMolBase):
-    return oechem.OERMSD(ref, mobile)
-
-
-def get_ligand_RMSD_mdtraj(ref_fn, mobile_fn):
-    import mdtraj as md
-
-    ref = md.load_pdb(ref_fn)
-    mobile = md.load_pdb(mobile_fn)
-
-    ref_idx = ref.topology.select("resname LIG and not type H and chainid 1")
-    mobile_idx = mobile.topology.select("resname LIG and not type H")
-    print(ref_idx)
-    print(mobile_idx)
-
-    ref_lig = ref.atom_slice(ref_idx)
-    mobile_lig = mobile.atom_slice(mobile_idx)
-    print(ref_lig)
-    print(mobile_lig)
-
-    rmsd_array = md.rmsd(ref_lig, mobile_lig, precentered=True)
-    per_res_rmsd = rmsd_array[0] / ref_lig.n_atoms
-    #
-    rmsd_array2 = md.rmsd(
-        ref, mobile, atom_indices=mobile_idx, ref_atom_indices=ref_idx
-    )
-    print(rmsd_array, per_res_rmsd, rmsd_array2)
-
-
 def filter_docking_inputs(
     smarts_queries=pkg_resources.resource_filename(
         "asapdiscovery.data", "data/smarts_queries.csv"

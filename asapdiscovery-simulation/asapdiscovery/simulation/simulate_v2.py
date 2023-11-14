@@ -1,27 +1,22 @@
-import logging
-from enum import Enum
+import abc
 from pathlib import Path
-from typing import List  # noqa: F401
+from typing import Optional  # noqa: F401
+
 import dask
 import mdtraj
 import openmm
-from asapdiscovery.data.logging import FileLogger
+import pandas as pd
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.openeye import save_openeye_pdb
+from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
-from rdkit import Chem
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
-
-from asapdiscovery.simulation.simulate import OpenMMPlatform
-from asapdiscovery.docking.docking_v2 import DockingResult
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.schema_v2.ligand import Ligand
-import pandas as pd
-
-import abc
+from rdkit import Chem
 
 
 class SimulatorBase(BaseModel):
@@ -33,7 +28,7 @@ class SimulatorBase(BaseModel):
     debug: bool = Field(False, description="Debug mode of the simulation")
 
     @abc.abstractmethod
-    def _simulate(self) -> pd.DataFrame:
+    def _simulate(self) -> list["SimulationResult"]:
         ...
 
     def simulate(
@@ -53,13 +48,22 @@ class SimulatorBase(BaseModel):
             )
             outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
-            outputs = self._visualize(docking_results=docking_results, **kwargs)
+            outputs = self._simulate(docking_results=docking_results, **kwargs)
 
-        return pd.DataFrame(outputs)
+        return outputs
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
         ...
+
+
+class SimulationResult(BaseModel):
+    traj_path: Path
+    minimized_pdb_path: Path
+    final_pdb_path: Optional[Path]
+    success: Optional[bool]
+    input_docking_result: Optional[DockingResult]
+    simulator: Optional[SimulatorBase]
 
 
 class VanillaMDSimulatorV2(SimulatorBase):
@@ -85,41 +89,49 @@ class VanillaMDSimulatorV2(SimulatorBase):
 
     class Config:
         arbitrary_types_allowed = True
+        extra = "allow"
 
-    def _simulate(self, docking_results: list[DockingResult]) -> list[dict[str, str]]:
-        self.temperature = self.temperature * unit.kelvin
-        pressure = pressure * unit.atmospheres
-        collision_rate = collision_rate / unit.picoseconds
-        timestep = timestep * unit.femtoseconds
-        equilibration_steps = equilibration_steps
-        reporting_interval = reporting_interval
-        num_steps = num_steps
-        n_snapshots = int(self.num_steps / self.reporting_interval)
-        num_steps = self.n_snapshots * self.reporting_interval
-
+    def _to_openmm_units(self):
+        self._temperature = self.temperature * unit.kelvin
+        self._pressure = self.pressure * unit.atmospheres
+        self._collision_rate = self.collision_rate / unit.picoseconds
+        self._timestep = self.timestep * unit.femtoseconds
+        self.n_snapshots = int(self.num_steps / self.reporting_interval)
+        self.num_steps = self.n_snapshots * self.reporting_interval
         # set platform
-        platform = OpenMMPlatform(self.openmm_platform).get_platform()
-        if platform.getName() == "CUDA" or platform.getName() == "OpenCL":
-            platform.setPropertyDefaultValue("Precision", "mixed")
+        self._platform = OpenMMPlatform(self.openmm_platform).get_platform()
+        if self._platform.getName() == "CUDA" or self._platform.getName() == "OpenCL":
+            self._platform.setPropertyDefaultValue("Precision", "mixed")
 
         if self.debug:
-            self.platform = OpenMMPlatform.CPU.get_platform()
+            self._platform = OpenMMPlatform.CPU.get_platform()
 
-        data = []
+    def _simulate(self, docking_results: list[DockingResult]) -> list[SimulationResult]:
+        self._to_openmm_units()
+
+        results = []
         for result in docking_results:
             output_pref = result.get_combined_id()
             outpath = self.output_dir / output_pref
             if not outpath.exists():
                 outpath.mkdir(parents=True)
 
-            ligand_off_mol = self.process_ligand_rdkit(result.posed_ligand)
-            system_generator, ligand_mol = self.create_system_generator(ligand_off_mol)
-            modeller, ligand_mol = self.get_complex_model(ligand_mol, self.protein_path)
+            posed_sdf_path = outpath / "posed_ligand.sdf"
+            result.posed_ligand.to_sdf(posed_sdf_path)
+            processed_ligand = self.process_ligand_rdkit(posed_sdf_path)
+            system_generator, ligand_mol = self.create_system_generator(
+                processed_ligand
+            )
+            # write pdb to pre file
+            pre_pdb_path = outpath / "pre.pdb"
+            save_openeye_pdb(result.to_protein(), pre_pdb_path)
+
+            modeller, ligand_mol = self.get_complex_model(ligand_mol, pre_pdb_path)
             modeller, mol_atom_indices = self.setup_and_solvate(
                 system_generator, modeller, ligand_mol
             )
             system, output_indices, output_topology = self.create_system(
-                system_generator, modeller, mol_atom_indices, ligand_off_mol
+                system_generator, modeller, mol_atom_indices, processed_ligand
             )
             simulation, context = self.setup_simulation(
                 modeller, system, output_indices, output_topology, outpath
@@ -128,26 +140,23 @@ class VanillaMDSimulatorV2(SimulatorBase):
             retcode = self.run_production_simulation(
                 simulation, context, output_indices, output_topology, outpath
             )
-            row = {}
-            row[
-                DockingResultCols.LIGAND_ID.value
-            ] = result.input_pair.ligand.compound_name
-            row[
-                DockingResultCols.TARGET_ID.value
-            ] = result.input_pair.complex.target.target_name
-            row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
-            row[DockingResultCols.MD_PATH_TRAJ.value] = outpath / "traj.xtc"
-            row[DockingResultCols.MD_PATH_MIN_PDB.value] = outpath / "minimized.pdb"
-            row[DockingResultCols.MD_PATH_FINAL_PDB.value] = outpath / "final.pdb"
-            row["md_success"] = retcode
 
-            data.append(row)
+            sim_result = SimulationResult(
+                input_docking_result=result,
+                traj_path=outpath / "traj.xtc",
+                minimized_pdb_path=outpath / "minimized.pdb",
+                final_pdb_path=outpath / "final.pdb",
+                success=retcode,
+                simulator=self,
+            )
 
-        return data
+            results.append(sim_result)
+
+        return results
 
     @staticmethod
-    def process_ligand_rdkit(ligand: Ligand) -> Molecule:
-        rdkitmol = Chem.MolFromSmiles(ligand.smiles)
+    def process_ligand_rdkit(sdf_path) -> Molecule:
+        rdkitmol = Chem.SDMolSupplier(str(sdf_path))[0]
         rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True)
         # ensure the chiral centers are all defined
         Chem.AssignAtomChiralTagsFromStructure(rdkitmolh)
@@ -156,7 +165,7 @@ class VanillaMDSimulatorV2(SimulatorBase):
         return ligand_mol
 
     @staticmethod
-    def create_system_generator(ligand_off_mol):
+    def create_system_generator(ligand_mol):
         forcefield_kwargs = {
             "constraints": app.HBonds,
             "rigidWater": True,
@@ -167,15 +176,15 @@ class VanillaMDSimulatorV2(SimulatorBase):
         system_generator = SystemGenerator(
             forcefields=["amber/ff14SB.xml", "amber/tip3p_standard.xml"],
             small_molecule_forcefield="openff-1.3.1",
-            molecules=[ligand_off_mol],
+            molecules=[ligand_mol],
             cache=None,
             forcefield_kwargs=forcefield_kwargs,
             periodic_forcefield_kwargs=periodic_forcefield_kwargs,
         )
-        return system_generator, ligand_off_mol
+        return system_generator, ligand_mol
 
     @staticmethod
-    def get_complex_model(ligand_off_mol, protein_path):
+    def get_complex_model(ligand_mol, protein_path):
         protein_pdb = PDBFile(str(protein_path))
         modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
         # This next bit is black magic.
@@ -184,10 +193,10 @@ class VanillaMDSimulatorV2(SimulatorBase):
         # The topology part is described in the openforcefield API but the positions part grabs the first (and only)
         # conformer and passes it to Modeller. It works. Don't ask why!
         modeller.add(
-            ligand_off_mol.to_topology().to_openmm(),
-            ligand_off_mol.conformers[0].to_openmm(),
+            ligand_mol.to_topology().to_openmm(),
+            ligand_mol.conformers[0].to_openmm(),
         )
-        return modeller, ligand_off_mol
+        return modeller, ligand_mol
 
     @staticmethod
     def setup_and_solvate(system_generator, modeller, ligand_mol):
@@ -234,14 +243,14 @@ class VanillaMDSimulatorV2(SimulatorBase):
     ):
         # Add barostat
 
-        system.addForce(MonteCarloBarostat(self.pressure, self.temperature))
+        system.addForce(MonteCarloBarostat(self._pressure, self._temperature))
 
         integrator = LangevinMiddleIntegrator(
-            self.temperature, self.collision_rate, self.timestep
+            self._temperature, self._collision_rate, self._timestep
         )
 
         simulation = Simulation(
-            modeller.topology, system, integrator, platform=self.platform
+            modeller.topology, system, integrator, platform=self._platform
         )
         context = simulation.context
         context.setPositions(modeller.positions)
@@ -264,7 +273,7 @@ class VanillaMDSimulatorV2(SimulatorBase):
 
     def equilibrate(self, simulation):
         # Equilibrate
-        simulation.context.setVelocitiesToTemperature(self.temperature)
+        simulation.context.setVelocitiesToTemperature(self._temperature)
         simulation.step(self.equilibration_steps)
         return simulation
 
