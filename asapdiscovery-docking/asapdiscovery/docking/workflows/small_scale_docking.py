@@ -42,7 +42,7 @@ from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
 from distributed import Client
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt, validator
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
