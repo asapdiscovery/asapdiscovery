@@ -74,6 +74,13 @@ class Trainer(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+    def make_wandb_config(self):
+        """
+        Nest all the different interal dicts into one dict to be used as the W&B run
+        config.
+        """
+        pass
+
     def wandb_init(self):
         """
         Initialize WandB, handling saving the run ID (for continuing the run later).
@@ -130,11 +137,6 @@ class Trainer(BaseModel):
         """
         Build the Optimizer and ML Model described by the stored config.
         """
-        # Build the Optimizer
-        self.optimizer = self.optimizer_config.build()
-
-        # Build the Model
-        self.model = self.model_config.build()
 
         # Adjust output_dir and make sure it exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -143,6 +145,21 @@ class Trainer(BaseModel):
             run_id = self.wandb_init()
             self.output_dir = self.output_dir / run_id
         self.output_dir.mkdir(exist_ok=True)
+
+        # If sweep or continuing a run, get the optimizer and model config options from
+        #  the W&B config
+        if self.sweep or self.cont:
+            wandb_optimizer_config = wandb.config["optimizer"]
+            wandb_model_config = wandb.config["model"]
+
+            self.optimizer_config = self.optimizer_config.update(wandb_optimizer_config)
+            self.model_config = self.model_config.update(wandb_model_config)
+
+        # Build the Optimizer
+        self.optimizer = self.optimizer_config.build()
+
+        # Build the Model
+        self.model = self.model_config.build()
 
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
