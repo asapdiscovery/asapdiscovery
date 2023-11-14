@@ -3,11 +3,11 @@ from typing import Callable
 
 import mtenn
 import wandb
+import torch
 
-# import torch
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.schema_v2.config import ModelConfigBase, OptimizerConfig
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 class Trainer(BaseModel):
@@ -44,6 +44,7 @@ class Trainer(BaseModel):
         False, description="This is a continuation of a previous training run."
     )
     loss_dict: dict = Field({}, description="Dict keeping track of training loss.")
+    device: torch.device = Field("cpu", description="Device to train on.")
 
     # I/O options
     output_dir: Path = Field(
@@ -79,6 +80,16 @@ class Trainer(BaseModel):
         # For now exclude, but would be good to handle custom serialization for these
         #  classes so we can include as much info as possible
         fields = {"dataset": {"exclude": True}, "loss_dict": {"exclude": True}}
+
+    # Validator to make sure that if output_dir exists, it is a directory
+    @validator("output_dir")
+    def output_dir_check(cls, p):
+        if p.exists():
+            assert (
+                p.isdir()
+            ), "If given output_dir already exists, it must be a directory."
+
+        return p
 
     def wandb_init(self):
         """
@@ -154,11 +165,11 @@ class Trainer(BaseModel):
             self.optimizer_config = self.optimizer_config.update(wandb_optimizer_config)
             self.model_config = self.model_config.update(wandb_model_config)
 
-        # Build the Optimizer
-        self.optimizer = self.optimizer_config.build()
-
         # Build the Model
-        self.model = self.model_config.build()
+        self.model = self.model_config.build().to(self.device)
+
+        # Build the Optimizer
+        self.optimizer = self.optimizer_config.build(self.model.parameters())
 
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
