@@ -3,8 +3,14 @@ from __future__ import annotations
 import abc
 from collections.abc import Iterator
 from enum import Enum
+from pathlib import Path
+import pickle as pkl
 from typing import Callable, ClassVar
 
+from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
+from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 import mtenn
 import torch
@@ -120,11 +126,7 @@ class EarlyStoppingType(str, Enum):
 
 class EarlyStoppingConfig(BaseModel):
     """
-    Class for constructing an ML optimizer. All parameter defaults are their defaults in
-    pytorch.
-
-    NOTE: some of the parameters have different defaults between different optimizers,
-    need to figure out how to deal with that
+    Class for constructing an early stopping class.
     """
 
     es_type: EarlyStoppingType = Field(
@@ -180,6 +182,93 @@ class EarlyStoppingConfig(BaseModel):
                 return ConvergedEarlyStopping(self.n_check, self.divergence)
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
+
+
+class DatasetType(str, Enum):
+    """
+    Enum for different Dataset types.
+    """
+
+    graph = "graph"
+    structural = "structural"
+
+
+class DatasetConfig(BaseModel):
+    """
+    Class for constructing an ML Dataset class.
+    """
+
+    # Graph or structure-based dataset
+    ds_type: DatasetType = Field(
+        ..., description="Type of dataset to build. Options are [graph, structural]."
+    )
+
+    # Required inputs used to build the dataset
+    exp_data: ExperimentalCompoundDataUpdate = Field(
+        ..., description="Experimental data."
+    )
+    input_data: list[Complex] | list[Ligand] = Field(
+        ...,
+        description=(
+            "List of Complex objects (structure-based models) or Ligand objects "
+            "(graph-based models), which will be used to generate the input structures."
+        ),
+    )
+
+    # Cache file to save to/load from. Probably want to move away from pickle eventually
+    cache_file: Path | None = Field(
+        None, description="Pickle cache file of the actual dataset object."
+    )
+
+    # Parallelize data processing
+    num_workers: int = Field(1, "Number of threads to use for dataset processing.")
+
+    # Multi-pose or not
+    grouped: bool = Field(False, "Build a GroupedDockedDataset.")
+
+    @root_validator(pre=False)
+    def check_data_type(cls, values):
+        inp = values["input_data"][0]
+        match values["ds_type"]:
+            case DatasetType.graph:
+                assert isinstance(inp, Ligand), (
+                    "Expected Ligand input data for graph-based model, but got "
+                    f"{type(inp)}."
+                )
+            case DatasetType.structural:
+                assert isinstance(inp, Complex), (
+                    "Expected Complex input data for structure-based model, but got "
+                    f"{type(inp)}."
+                )
+            case other:
+                raise ValueError(f"Unknown dataset type {other}.")
+
+        return values
+
+    def build(self):
+        # Load from the cache file if it exists
+        if self.cache_file and self.cache_file.exists():
+            return pkl.loads(self.cache_file.read_bytes())
+
+        # Convert ExperimentalCompoundDataUpdate to a dict of relevant info
+        exp_dict = self.exp_dict()
+
+        # Build directly from Complexes/Ligands
+        #  (still needs to be implemented on the Dataset side)
+        match self.ds_type:
+            case DatasetType.graph:
+                return GraphDataset.from_ligands(self.input_data, exp_dict=exp_dict)
+            case DatasetType.structural:
+                if self.grouped:
+                    return GroupedDockedDataset.from_complexes(
+                        self.input_data, exp_dict=exp_dict
+                    )
+                else:
+                    return DockedDataset.from_complexes(
+                        self.input_data, exp_dict=exp_dict
+                    )
+            case other:
+                raise ValueError(f"Unknwon dataset type {other}.")
 
 
 class ModelType(str, Enum):
