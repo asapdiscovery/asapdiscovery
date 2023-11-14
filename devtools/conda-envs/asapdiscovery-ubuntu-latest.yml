@@ -81,6 +81,7 @@ dependencies:
   - kartograf
   - rich
   - alchemiscale-client
+  - cinnabar >=0.4.1
 
   # Pip-only installs
   - pip:
@@ -97,4 +98,4 @@ dependencies:
     - pygifsicle
     - sigfig
     - airium
-    - git+https://github.com/OpenFreeEnergy/cinnabar.git@8ce28bb107b96f48b542ae2bd3dc4fabccc614c3
+#    - git+https://github.com/OpenFreeEnergy/cinnabar.git@8ce28bb107b96f48b542ae2bd3dc4fabccc614c3
