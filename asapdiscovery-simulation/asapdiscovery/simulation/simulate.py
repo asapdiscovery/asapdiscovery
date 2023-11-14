@@ -1,11 +1,11 @@
 # Configure logging
 import logging
-from enum import Enum
 from pathlib import Path
 from typing import List  # noqa: F401
 
 import mdtraj
 import openmm
+from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.logging import FileLogger
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
@@ -16,7 +16,7 @@ from openmmtools.utils import get_fastest_platform
 from rdkit import Chem
 
 
-class OpenMMPlatform(str, Enum):
+class OpenMMPlatform(StringEnum):
     """
     Enum for OpenMM platforms.
     """
@@ -35,10 +35,6 @@ class OpenMMPlatform(str, Enum):
             return get_fastest_platform()
         else:
             return Platform.getPlatformByName(self.value)
-
-    @classmethod
-    def get_values(cls):
-        return [platform.value for platform in cls]
 
 
 class VanillaMDSimulator:

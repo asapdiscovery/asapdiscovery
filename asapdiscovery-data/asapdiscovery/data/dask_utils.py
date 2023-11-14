@@ -1,8 +1,8 @@
 from collections.abc import Iterable
-from enum import Enum
 from typing import Optional
 
 import dask
+from asapdiscovery.data.enum import StringEnum
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
@@ -48,7 +48,7 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-class DaskType(str, Enum):
+class DaskType(StringEnum):
     """
     Enum for Dask types
     """
@@ -57,36 +57,24 @@ class DaskType(str, Enum):
     LILAC_GPU = "lilac-gpu"
     LILAC_CPU = "lilac-cpu"
 
-    @classmethod
-    def get_values(cls):
-        return [dask_type.value for dask_type in cls]
-
     def is_lilac(self):
         return self in [DaskType.LILAC_CPU, DaskType.LILAC_GPU]
 
 
-class GPU(str, Enum):
+class GPU(StringEnum):
     """
     Enum for GPU types
     """
 
     GTX1080TI = "GTX1080TI"
 
-    @classmethod
-    def get_values(cls):
-        return [gpu.value for gpu in cls]
 
-
-class CPU(str, Enum):
+class CPU(StringEnum):
     """
     Enum for CPU types
     """
 
     LT = "LT"
-
-    @classmethod
-    def get_values(cls):
-        return [cpu.value for cpu in cls]
 
 
 _LILAC_GPU_GROUPS = {

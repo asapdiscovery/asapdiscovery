@@ -1,12 +1,12 @@
 import abc
 import warnings
-from enum import Enum
 from pathlib import Path
 from typing import Literal, Optional, Union
 
 import dask
 import yaml
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.target import PreppedTarget
@@ -20,17 +20,13 @@ from asapdiscovery.modeling.modeling import (
 from pydantic import BaseModel, Field, root_validator
 
 
-class CacheType(str, Enum):
+class CacheType(StringEnum):
     """
     Enum for cache types.
     """
 
     DesignUnit = "DesignUnit"
     JSON = "JSON"
-
-    @classmethod
-    def get_values(cls) -> list[str]:
-        return [c.value for c in cls]
 
 
 class ProteinPrepperBase(BaseModel):
