@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import abc
+import pickle as pkl
 from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
-import pickle as pkl
 from typing import Callable, ClassVar
 
+import mtenn
+import torch
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
-import mtenn
-import torch
 from pydantic import BaseModel, Field, root_validator
 
 

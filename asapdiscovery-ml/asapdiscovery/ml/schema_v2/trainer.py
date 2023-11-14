@@ -1,14 +1,13 @@
+import json
+import pickle as pkl
 from pathlib import Path
 from time import time
 from typing import Callable
 
-import json
 import mtenn
 import numpy as np
-import wandb
-import pickle as pkl
 import torch
-
+import wandb
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.schema_v2.config import (
