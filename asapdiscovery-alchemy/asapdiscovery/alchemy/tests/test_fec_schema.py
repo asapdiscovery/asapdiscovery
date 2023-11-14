@@ -3,8 +3,6 @@ import functools
 import openfe
 import pytest
 from alchemiscale import Scope, ScopedKey
-from openff.units import unit as OFFUnit
-
 from asapdiscovery.alchemy.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
@@ -23,6 +21,7 @@ from asapdiscovery.alchemy.schema.network import (
     NetworkPlanner,
     RadialPlanner,
 )
+from openff.units import unit as OFFUnit
 
 
 @pytest.mark.parametrize(
