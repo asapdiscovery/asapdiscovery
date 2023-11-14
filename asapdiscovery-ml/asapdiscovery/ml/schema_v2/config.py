@@ -280,6 +280,23 @@ class ModelConfigBase(BaseModel):
         # Build the actual Model
         return self._build(mtenn_params)
 
+    def update(self, config_updates={}) -> ModelConfigBase:
+        return self._update(config_updates)
+
+    def _update(self, config_updates={}) -> ModelConfigBase:
+        """
+        Default version of this function. Just update original config with new options,
+        and generate new object. Designed to be overloaded if there are specific things
+        that a class needs to handle (see GATModelConfig as an example).
+        """
+
+        orig_config = self.dict()
+
+        # Get new config by overwriting old stuff with any new stuff
+        new_config = orig_config | config_updates
+
+        return type(self)(**new_config)
+
     @staticmethod
     def _check_grouped(values):
         """
