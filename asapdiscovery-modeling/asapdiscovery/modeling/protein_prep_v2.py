@@ -1,4 +1,5 @@
 import abc
+import datetime
 import warnings
 from enum import Enum
 from pathlib import Path
@@ -6,6 +7,8 @@ from typing import Literal, Optional, Union
 
 import dask
 import yaml
+from pydantic import BaseModel, Field, root_validator
+
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
@@ -17,7 +20,6 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field, root_validator
 
 
 class CacheType(str, Enum):
@@ -78,7 +80,6 @@ class ProteinPrepperBase(BaseModel):
     def cache(
         prepped_complexes: list[PreppedComplex],
         dir: Union[str, Path],
-        # type=CacheType.DesignUnit,
     ) -> None:
         """
         Cache the list of PreppedComplex in its own folder. Each is saved as a JSON, oedu PDB and ligand SDF for vis.
@@ -87,9 +88,11 @@ class ProteinPrepperBase(BaseModel):
         if not dir.exists():
             dir.mkdir(parents=True)
 
+        today = datetime.date.today()
+
         for pc in prepped_complexes:
             # create a folder for the complex data
-            complex_folder = dir.joinpath(pc.target.target_name)
+            complex_folder = dir.joinpath(f"{str(today)}-{pc.target.target_name}")
             complex_folder.mkdir(parents=True)
             pc.to_json_file(complex_folder.joinpath(pc.target.target_name + ".json"))
             pc.target.to_oedu_file(
@@ -100,22 +103,10 @@ class ProteinPrepperBase(BaseModel):
             )
             pc.ligand.to_sdf(complex_folder.joinpath(pc.ligand.compound_name + ".sdf"))
 
-            # if type == CacheType.DesignUnit:
-            #     du_name = pc.target.target_name + ".oedu"
-            #     du_path = dir / du_name
-            #     if not du_path.exists():
-            #         pc.target.to_oedu_file(du_path)
-            # elif type == CacheType.JSON:
-            #     json_name = pc.target.target_name + ".json"
-            #     json_path = dir / json_name
-            #     if not json_path.exists():
-            #         pc.to_json_file(json_path)
-
     @staticmethod
     def load_cache(
         complexes: list[Complex],
         cache_dir: Union[str, Path],
-        # cache_type: CacheType,
         fail_missing_cache: bool = False,
     ) -> list[PreppedComplex]:
         """
@@ -173,7 +164,6 @@ class ProteinPrepper(ProteinPrepperBase):
     cache_dir: Optional[Path] = Field(
         None, description="Path to a directory where design units are cached"
     )
-    # cache_type: CacheType = Field(CacheType.DesignUnit, description="Type of cache")
 
     fail_missing_cache: bool = Field(
         False, description="Whether to fail on missing files when loading from cache"
@@ -203,7 +193,6 @@ class ProteinPrepper(ProteinPrepperBase):
             prepped_complexes = self.load_cache(
                 complexes=inputs,
                 cache_dir=self.cache_dir,
-                cache_type=self.cache_type,
                 fail_missing_cache=self.fail_missing_cache,
             )
         else:

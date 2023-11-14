@@ -1,8 +1,11 @@
+import os.path
+
 import pytest
+from pydantic import ValidationError
+
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target, TargetIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")
@@ -175,6 +178,16 @@ def test_preppedtarget_from_oedu_file(oedu_file):
     pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName")
     oedu = pt.to_oedu()
     assert oedu.GetTitle() == "(AB) > LIG(A-403)"  # from one of the old files
+
+
+def test_preppedtarget_to_pdb_file(oedu_file, tmpdir):
+    """Make sure a target can be saved to pdb file for vis"""
+
+    with tmpdir.as_cwd():
+        pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTest")
+        file_name = "test_protein.pdb"
+        pt.to_pdb_file(file_name)
+        assert os.path.exists(file_name) is True
 
 
 def test_preppedtarget_from_oedu_file_at_least_one_id(oedu_file):
