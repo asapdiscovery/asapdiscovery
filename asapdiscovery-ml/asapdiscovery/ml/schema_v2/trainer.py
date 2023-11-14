@@ -43,6 +43,7 @@ class Trainer(BaseModel):
     cont: bool = Field(
         False, description="This is a continuation of a previous training run."
     )
+    loss_dict: dict = Field({}, description="Dict keeping track of training loss.")
 
     # I/O options
     output_dir: Path = Field(
@@ -77,7 +78,7 @@ class Trainer(BaseModel):
 
         # For now exclude, but would be good to handle custom serialization for these
         #  classes so we can include as much info as possible
-        fields = {"dataset": {"exclude": True}}
+        fields = {"dataset": {"exclude": True}, "loss_dict": {"exclude": True}}
 
     def wandb_init(self):
         """
@@ -178,3 +179,52 @@ class Trainer(BaseModel):
                 self.initialize()
             else:
                 raise ValueError("Trainer was not initialized before trying to train.")
+
+    def _update_loss_dict(
+        self,
+        split,
+        compound_id,
+        target,
+        in_range,
+        uncertainty,
+        pred,
+        loss,
+        pose_preds=None,
+    ):
+        """
+        Update (in-place) loss_dict info from training/evaluation on a molecule.
+
+        Parameters
+        ----------
+        split : str
+            Which split ["train", "val", "test"]
+        compound_id : str
+            Compound ID
+        target : float
+            Target value for this compound
+        in_range : int
+            Whether target is below (-1), within (0), or above (1) the assay range
+        uncertainty : float
+            Experimental measurement uncertainty
+        pred : float
+            Model prediction
+        loss : float
+            Prediction loss
+        pose_preds : float, optional
+            Single-pose model prediction for each pose in input (for multi-pose models)
+        """
+        if compound_id in self.loss_dict[split]:
+            self.loss_dict[split][compound_id]["preds"].append(pred)
+            if pose_preds is not None:
+                self.loss_dict[split][compound_id]["pose_preds"].append(pose_preds)
+            self.loss_dict[split][compound_id]["losses"].append(loss)
+        else:
+            self.loss_dict[split][compound_id] = {
+                "target": target,
+                "in_range": in_range,
+                "uncertainty": uncertainty,
+                "preds": [pred],
+                "losses": [loss],
+            }
+            if pose_preds is not None:
+                self.loss_dict[split][compound_id]["pose_preds"] = [pose_preds]
