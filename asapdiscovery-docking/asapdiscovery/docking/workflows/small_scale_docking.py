@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional
@@ -6,7 +5,6 @@ from typing import Optional
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import (
-    DaskType,
     dask_cluster_from_type,
     set_dask_config,
 )
@@ -17,7 +15,6 @@ from asapdiscovery.data.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
