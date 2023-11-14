@@ -46,7 +46,7 @@ def test_docking_cli_fragalysis(ligand_file, mpro_frag_dir, tmp_path, subcommand
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_docking_cli_structure_directory_dask(
+def test_docking_cli_structure_directory(
     ligand_file, structure_dir, tmp_path, subcommand
 ):
     runner = CliRunner()
@@ -109,7 +109,7 @@ def test_docking_cli_structure_directory_du_cache(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_large_docking_cli_pdb_file(ligand_file, pdb_file, tmp_path, subcommand):
+def test_docking_cli_pdb_file(ligand_file, pdb_file, tmp_path, subcommand):
     runner = CliRunner()
 
     result = runner.invoke(
