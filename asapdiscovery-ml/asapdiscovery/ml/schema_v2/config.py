@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from enum import Enum
 from typing import Callable, ClassVar
 
+from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 import mtenn
 import torch
 from pydantic import BaseModel, Field, root_validator
@@ -106,6 +107,79 @@ class OptimizerConfig(BaseModel):
             case optimizer_type:
                 # Shouldn't be possible but just in case
                 raise ValueError(f"Unknown value for optimizer_type: {optimizer_type}")
+
+
+class EarlyStoppingType(str, Enum):
+    """
+    Enum for early stopping classes.
+    """
+
+    best = "best"
+    converged = "converged"
+
+
+class EarlyStoppingConfig(BaseModel):
+    """
+    Class for constructing an ML optimizer. All parameter defaults are their defaults in
+    pytorch.
+
+    NOTE: some of the parameters have different defaults between different optimizers,
+    need to figure out how to deal with that
+    """
+
+    es_type: EarlyStoppingType = Field(
+        ...,
+        description=("Tyoe of early stopping to use. Options are [best, converged]."),
+    )
+    # Parameters for best
+    patience: int = Field(
+        None,
+        description=(
+            "The maximum number of epochs to continue training with no improvement in "
+            "the val loss. Used only in BestEarlyStopping."
+        ),
+    )
+    # Parameters for converged
+    n_check: int = Field(
+        None,
+        description=(
+            "Number of past epochs to keep track of when calculating divergence. "
+            "Used only in ConvergedEarlyStopping."
+        ),
+    )
+    divergence: float = Field(
+        None,
+        description=(
+            "Max allowable difference from the mean of the losses. "
+            "Used only in ConvergedEarlyStopping."
+        ),
+    )
+
+    @root_validator(pre=False)
+    def check_args(cls, values):
+        match values["es_type"]:
+            case EarlyStoppingType.best:
+                assert (
+                    values["patience"] is not None
+                ), "Value required for patience when using BestEarlyStopping."
+            case EarlyStoppingType.converged:
+                assert (values["n_check"] is not None) and (
+                    values["divergence"] is not None
+                ), (
+                    "Values required for n_check and divergence when using "
+                    "ConvergedEarlyStopping."
+                )
+            case other:
+                raise ValueError(f"Unknown EarlyStoppingType: {other}")
+
+    def build(self) -> BestEarlyStopping | ConvergedEarlyStopping:
+        match self.es_type:
+            case EarlyStoppingType.best:
+                return BestEarlyStopping(self.patience)
+            case EarlyStoppingType.converged:
+                return ConvergedEarlyStopping(self.n_check, self.divergence)
+            case other:
+                raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
 
 class ModelType(str, Enum):
