@@ -69,17 +69,15 @@ class Trainer(BaseModel):
     # Tracker to make sure the optimizer and ML model are built before trying to train
     _is_initialized = False
 
-    # Temporary fix for now. This is necessary for the asapdiscovery Dataset classes,
-    #  but we should probably figure out a workaround eventurally.
     class Config:
+        # Temporary fix for now. This is necessary for the asapdiscovery Dataset
+        #  classes, but we should probably figure out a workaround eventurally. Probably
+        #  best to implement __get_validators__ for the Dataset classes.
         arbitrary_types_allowed = True
 
-    def make_wandb_config(self):
-        """
-        Nest all the different interal dicts into one dict to be used as the W&B run
-        config.
-        """
-        pass
+        # For now exclude, but would be good to handle custom serialization for these
+        #  classes so we can include as much info as possible
+        fields = {"dataset": {"exclude": True}}
 
     def wandb_init(self):
         """
@@ -118,7 +116,7 @@ class Trainer(BaseModel):
                 # Start new run
                 run_id = wandb.init(
                     project=self.wandb_project,
-                    config=self.make_wandb_config(),
+                    config=self.dict(),
                     name=self.wandb_name,
                 ).id
 
@@ -149,8 +147,8 @@ class Trainer(BaseModel):
         # If sweep or continuing a run, get the optimizer and model config options from
         #  the W&B config
         if self.sweep or self.cont:
-            wandb_optimizer_config = wandb.config["optimizer"]
-            wandb_model_config = wandb.config["model"]
+            wandb_optimizer_config = wandb.config["optimizer_config"]
+            wandb_model_config = wandb.config["model_config"]
 
             self.optimizer_config = self.optimizer_config.update(wandb_optimizer_config)
             self.model_config = self.model_config.update(wandb_model_config)
