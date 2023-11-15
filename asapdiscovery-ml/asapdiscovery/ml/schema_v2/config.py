@@ -4,6 +4,7 @@ import abc
 import pickle as pkl
 from collections.abc import Iterator
 from enum import Enum
+import numpy as np
 from pathlib import Path
 from typing import Callable, ClassVar
 
@@ -221,10 +222,12 @@ class DatasetConfig(BaseModel):
     )
 
     # Parallelize data processing
-    num_workers: int = Field(1, "Number of threads to use for dataset processing.")
+    num_workers: int = Field(
+        1, description="Number of threads to use for dataset processing."
+    )
 
     # Multi-pose or not
-    grouped: bool = Field(False, "Build a GroupedDockedDataset.")
+    grouped: bool = Field(False, description="Build a GroupedDockedDataset.")
 
     @root_validator(pre=False)
     def check_data_type(cls, values):
@@ -257,18 +260,79 @@ class DatasetConfig(BaseModel):
         #  (still needs to be implemented on the Dataset side)
         match self.ds_type:
             case DatasetType.graph:
-                return GraphDataset.from_ligands(self.input_data, exp_dict=exp_dict)
+                ds = GraphDataset.from_ligands(self.input_data, exp_dict=exp_dict)
             case DatasetType.structural:
                 if self.grouped:
-                    return GroupedDockedDataset.from_complexes(
+                    ds = GroupedDockedDataset.from_complexes(
                         self.input_data, exp_dict=exp_dict
                     )
                 else:
-                    return DockedDataset.from_complexes(
+                    ds = DockedDataset.from_complexes(
                         self.input_data, exp_dict=exp_dict
                     )
             case other:
                 raise ValueError(f"Unknwon dataset type {other}.")
+
+        if self.cache_file:
+            self.cache_file.write_bytes(pkl.dumps(ds))
+
+        return ds
+
+
+class DatasetSplitterType(str, Enum):
+    """
+    Enum for different methods of splitting a dataset.
+    """
+
+    random = "random"
+    temporal = "temporal"
+
+
+class DatasetSplitterConfig(BaseModel):
+    """
+    Class for splitting an ML Dataset class.
+    """
+
+    # Parameter for splitting
+    split_type: DatasetSplitterType = Field(
+        ..., description="Method to use for splitting."
+    )
+
+    # Multi-pose or not
+    grouped: bool = Field(False, description="Build a GroupedDockedDataset.")
+
+    # Split sizes
+    train_frac: float = Field(
+        0.8, description="Fraction of dataset to put in the train split."
+    )
+    val_frac: float = Field(
+        0.1, description="Fraction of dataset to put in the val split."
+    )
+    test_frac: float = Field(
+        0.1, description="Fraction of dataset to put in the test split."
+    )
+    enforce_1: bool = Field(
+        False, description="Make sure that all split fractions add up to 1."
+    )
+
+    # Seed for randomly splitting data
+    rand_seed: int = Field(
+        42, description="Random seed to use if randomly splitting data."
+    )
+
+    @root_validator(pre=False)
+    def check_frac_sum(cls, values):
+        frac_sum = sum([values["train_frac"], values["val_frac"], values["test_frac"]])
+        if not np.isclose(frac_sum, 1):
+            warn_msg = f"Split fractions add to {frac_sum:0.2f}, not 1."
+            if values["enforce_1"]:
+                raise ValueError(warn_msg)
+            else:
+                from warnings import warn
+
+                warn(warn_msg, RuntimeWarning)
+
+        return values
 
 
 class ModelType(str, Enum):
