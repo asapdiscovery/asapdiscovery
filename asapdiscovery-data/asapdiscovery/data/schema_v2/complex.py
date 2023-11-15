@@ -3,8 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field
-
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_design_unit,
@@ -17,6 +15,7 @@ from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
+from pydantic import Field
 
 
 class ComplexBase(DataModelAbstractBase):

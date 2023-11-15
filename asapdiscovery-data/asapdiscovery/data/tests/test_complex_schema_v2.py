@@ -1,8 +1,7 @@
 import pytest
-from pydantic import ValidationError
-
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")

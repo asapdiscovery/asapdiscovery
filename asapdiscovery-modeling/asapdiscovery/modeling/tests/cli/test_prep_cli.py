@@ -3,9 +3,8 @@ import shutil
 import traceback
 
 import pytest
-from click.testing import CliRunner
-
 from asapdiscovery.modeling.cli import modeling as cli
+from click.testing import CliRunner
 
 
 def click_success(result):
