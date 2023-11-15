@@ -48,6 +48,17 @@ class ProteinPrepperBase(BaseModel):
     def prep(
         self, inputs: list[Complex], use_dask: bool = False, dask_client=None
     ) -> list[PreppedComplex]:
+        """
+        Prepare the list of input receptor ligand complexs re-using any found in the cache.
+        Parameters
+        ----------
+        inputs: The list of complexs to prepare.
+        use_dask: If dask should be used to distribute the jobs.
+        dask_client: The dask client that should be used to submit the jobs.
+        Returns
+        -------
+            A list of prepared complexs.
+        """
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
@@ -74,77 +85,40 @@ class ProteinPrepperBase(BaseModel):
     def cache(
         prepped_complexes: list[PreppedComplex],
         dir: Union[str, Path],
-        type=CacheType.DesignUnit,
     ) -> None:
         """
-        Cache a set of design units for use later.
+        Cache the list of PreppedComplex in its own folder. Each is saved as a JSON, oedu PDB and ligand SDF for vis.
         """
         dir = Path(dir)
         if not dir.exists():
             dir.mkdir(parents=True)
 
         for pc in prepped_complexes:
-            if type == CacheType.DesignUnit:
-                du_name = pc.target.target_name + ".oedu"
-                du_path = dir / du_name
-                if not du_path.exists():
-                    pc.target.to_oedu_file(du_path)
-            elif type == CacheType.JSON:
-                json_name = pc.target.target_name + ".json"
-                json_path = dir / json_name
-                if not json_path.exists():
-                    pc.to_json_file(json_path)
+            # create a folder for the complex data
+            complex_folder = dir.joinpath(f"{pc.target.target_name}-{pc.hash()}")
+            complex_folder.mkdir(parents=True, exist_ok=True)
+            pc.to_json_file(complex_folder.joinpath(pc.target.target_name + ".json"))
+            pc.target.to_oedu_file(
+                complex_folder.joinpath(pc.target.target_name + ".oedu")
+            )
+            pc.target.to_pdb_file(
+                complex_folder.joinpath(pc.target.target_name + ".pdb")
+            )
+            pc.ligand.to_sdf(complex_folder.joinpath(pc.ligand.compound_name + ".sdf"))
 
     @staticmethod
     def load_cache(
-        complexes: list[Complex],
         cache_dir: Union[str, Path],
-        cache_type: CacheType,
-        fail_missing_cache: bool = False,
     ) -> list[PreppedComplex]:
         """
-        Load a set of cached PreppedComplexes.
+        Load a set of cached PreppedComplexes which can be reused.
         """
-        if not Path(cache_dir).exists():
+        if not (cache_dir := Path(cache_dir)).exists():
             raise ValueError(f"Cache directory {cache_dir} does not exist.")
 
-        if cache_type not in CacheType.get_values():
-            raise ValueError(f"Cache type {cache_type} not supported.")
-
         prepped_complexes = []
-        for complex in complexes:
-            if cache_type == CacheType.JSON:
-                json_name = complex.target.target_name + ".json"
-                json_path = cache_dir / json_name
-                if json_path.exists():
-                    prepped_complexes.append(PreppedComplex.from_json_file(json_path))
-                else:
-                    if fail_missing_cache:
-                        raise FileNotFoundError(f"Missing cached json: {json_path}")
-                    else:
-                        warnings.warn(f"Missing cached json: {json_path}")
-                        prepped_complexes.append(None)
-
-            elif cache_type == CacheType.DesignUnit:
-                du_name = complex.target.target_name + ".oedu"
-                du_path = cache_dir / du_name
-                if du_path.exists():
-                    prepped_target = PreppedTarget.from_oedu_file(
-                        du_path,
-                        ids=complex.target.ids,
-                        target_name=complex.target.target_name,
-                        ligand_chain=complex.ligand_chain,
-                    )
-                    pc = PreppedComplex(target=prepped_target, ligand=complex.ligand)
-                    prepped_complexes.append(pc)
-                else:
-                    if fail_missing_cache:
-                        raise FileNotFoundError(
-                            f"Missing cached design unit: {du_path}"
-                        )
-                    else:
-                        warnings.warn(f"Missing cached design unit: {du_path}")
-                        prepped_complexes.append(None)
+        for complex_file in cache_dir.rglob("*.json"):
+            prepped_complexes.append(PreppedComplex.from_json_file(complex_file))
 
         return prepped_complexes
 
@@ -179,8 +153,6 @@ class ProteinPrepper(ProteinPrepperBase):
     cache_dir: Optional[Path] = Field(
         None, description="Path to a directory where design units are cached"
     )
-    cache_type: CacheType = Field(CacheType.DesignUnit, description="Type of cache")
-
     fail_missing_cache: bool = Field(
         False, description="Whether to fail on missing files when loading from cache"
     )
@@ -205,66 +177,59 @@ class ProteinPrepper(ProteinPrepperBase):
         Prepares a series of proteins for docking using OESpruce.
         """
         prepped_complexes = []
-        if self.cache_dir:
-            prepped_complexes = self.load_cache(
-                complexes=inputs,
-                cache_dir=self.cache_dir,
-                cache_type=self.cache_type,
-                fail_missing_cache=self.fail_missing_cache,
+        for complex_target in inputs:
+            # load protein
+            prot = complex_target.to_combined_oemol()
+
+            if self.align:
+                prot, _ = superpose_molecule(
+                    self.align.to_combined_oemol(),
+                    prot,
+                    self.ref_chain,
+                    self.active_site_chain,
+                )
+
+            # mutate residues
+            if self.seqres_yaml:
+                with open(self.seqres_yaml) as f:
+                    seqres_dict = yaml.safe_load(f)
+                seqres = seqres_dict["SEQRES"]
+                res_list = seqres_to_res_list(seqres)
+                prot = mutate_residues(prot, res_list, place_h=True)
+                protein_sequence = " ".join(res_list)
+            else:
+                seqres = None
+                protein_sequence = None
+
+            # spruce protein
+            success, spruce_error_message, spruced = spruce_protein(
+                initial_prot=prot,
+                protein_sequence=protein_sequence,
+                loop_db=self.loop_db,
             )
-        else:
-            for complex in inputs:
-                # load protein
-                prot = complex.to_combined_oemol()
 
-                if self.align:
-                    prot, _ = superpose_molecule(
-                        self.align.to_combined_oemol(),
-                        prot,
-                        self.ref_chain,
-                        self.active_site_chain,
-                    )
-
-                # mutate residues
-                if self.seqres_yaml:
-                    with open(self.seqres_yaml) as f:
-                        seqres_dict = yaml.safe_load(f)
-                    seqres = seqres_dict["SEQRES"]
-                    res_list = seqres_to_res_list(seqres)
-                    prot = mutate_residues(prot, res_list, place_h=True)
-                    protein_sequence = " ".join(res_list)
-                else:
-                    seqres = None
-                    protein_sequence = None
-
-                # spruce protein
-                success, spruce_error_message, spruced = spruce_protein(
-                    initial_prot=prot,
-                    protein_sequence=protein_sequence,
-                    loop_db=self.loop_db,
+            if not success:
+                raise ValueError(
+                    f"Prep failed, with error message: {spruce_error_message}"
                 )
 
-                if not success:
-                    raise ValueError(
-                        f"Prep failed, with error message: {spruce_error_message}"
-                    )
+            success, du = make_design_unit(
+                spruced,
+                site_residue=self.oe_active_site_residue,
+                protein_sequence=protein_sequence,
+            )
+            if not success:
+                raise ValueError("Failed to make design unit.")
 
-                success, du = make_design_unit(
-                    spruced,
-                    site_residue=self.oe_active_site_residue,
-                    protein_sequence=protein_sequence,
-                )
-                if not success:
-                    raise ValueError("Failed to make design unit.")
-
-                prepped_target = PreppedTarget.from_oedu(
-                    du,
-                    ids=complex.target.ids,
-                    target_name=complex.target.target_name,
-                    ligand_chain=complex.ligand_chain,
-                )
-                pc = PreppedComplex(target=prepped_target, ligand=complex.ligand)
-                prepped_complexes.append(pc)
+            prepped_target = PreppedTarget.from_oedu(
+                du,
+                ids=complex_target.target.ids,
+                target_name=complex_target.target.target_name,
+                ligand_chain=complex_target.ligand_chain,
+                target_hash=complex_target.target.hash()
+            )
+            pc = PreppedComplex(target=prepped_target, ligand=complex_target.ligand)
+            prepped_complexes.append(pc)
 
         return prepped_complexes
 

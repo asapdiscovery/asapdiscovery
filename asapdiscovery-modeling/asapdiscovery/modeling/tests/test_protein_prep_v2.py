@@ -50,6 +50,12 @@ def du_cache(du_cache_files):
     return all_paths[0].parent, all_paths
 
 
+@pytest.fixture(scope="session")
+def json_cache():
+    """A mock json cache of prepared proteins"""
+    return fetch_test_file("protein_json_cache/Mpro-x0354_0A_bound.json")
+
+
 @pytest.mark.parametrize("use_dask", [True, False])
 def test_protein_prep(prep_complex, use_dask):
     target = TargetTags["SARS-CoV-2-Mac1"]
@@ -60,11 +66,12 @@ def test_protein_prep(prep_complex, use_dask):
     assert pcs[0].ligand.compound_name == "test2"
 
 
-@pytest.mark.parametrize("use_dask", [True, False])
-def test_cache_load_structure_dir(structure_dir, use_dask, du_cache):
-    struct_dir, _ = structure_dir
-    du_cache_dir, _ = du_cache
-    factory = StructureDirFactory.from_dir(struct_dir)
-    complexes = factory.load(use_dask=use_dask)
-    prepper = ProteinPrepper(du_cache=du_cache_dir)
-    _ = prepper.prep(complexes, use_dask=use_dask)
+def test_cache_load(json_cache):
+    """Test loading cached PreppedComplex files."""
+
+    cached_complexs = ProteinPrepper.load_cache(cache_dir=json_cache.parent)
+    assert len(cached_complexs) == 1
+    assert (
+        cached_complexs[0].hash()
+        == "9e2ea19d1a175314647dacb9d878138a80b8443cff5faf56031bf4af61179a0a+GIIIJZOPGUFGBF-QXYFZJGFNA-O"
+    )

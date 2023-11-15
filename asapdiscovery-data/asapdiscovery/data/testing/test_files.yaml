@@ -244,3 +244,6 @@ files:
   # protein prep testing
   - resource: SARS2_Mac1A-A1013.pdb
     sha256hash: 2109f9581336b5e6332fee3136f59ef677a3dbf76cdabf0b4316ec705a1a4a3b
+
+  - resource: protein_json_cache/Mpro-x0354_0A_bound.json
+    sha256hash: c15f4c5520d52044bbf5e1c43f2f9bf07144edb1736ea555f8365a6fbcd42927

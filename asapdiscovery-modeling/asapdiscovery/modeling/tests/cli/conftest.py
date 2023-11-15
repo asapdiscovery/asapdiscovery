@@ -45,3 +45,9 @@ def du_cache_files():
 def du_cache(du_cache_files):
     all_paths = [fetch_test_file(f) for f in du_cache_files]
     return all_paths[0].parent, all_paths
+
+
+@pytest.fixture(scope="session")
+def json_cache():
+    """A mock json cache of prepared proteins"""
+    return fetch_test_file("protein_json_cache/Mpro-x0354_0A_bound.json")
