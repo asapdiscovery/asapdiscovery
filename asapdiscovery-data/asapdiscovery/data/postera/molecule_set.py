@@ -335,11 +335,8 @@ class MoleculeSetAPI(PostEraAPI):
         ).json()
         try:
             return response["moleculesUpdated"]
-
-        except Exception as e:
-            raise ValueError(
-                f"Update failed for molecule set {molecule_set_id}, with response: {response}"
-            ) from e
+        except KeyError:
+            raise ValueError(f"Update failed for molecule set {molecule_set_id}")
 
     def update_molecules_from_df_with_manifold_validation(
         self,

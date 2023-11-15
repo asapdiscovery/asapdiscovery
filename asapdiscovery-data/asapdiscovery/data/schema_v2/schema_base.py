@@ -86,7 +86,7 @@ class DataModelAbstractBase(BaseModel):
 
     # use data_equal instead
     def __ne__(self, other: DataModelAbstractBase) -> bool:
-        return not self.__eq__(other)
+        return not self.data_equal(other)
 
     class Config:
         validate_assignment = True

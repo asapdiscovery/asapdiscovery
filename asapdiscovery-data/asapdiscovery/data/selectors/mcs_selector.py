@@ -1,12 +1,11 @@
-from typing import ClassVar, Union
+from typing import Literal, Union
 
 import numpy as np
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair, DockingInputPair
 from asapdiscovery.data.selectors.selector import SelectorBase
-from asapdiscovery.docking.docking_v2 import DockingInputPair
 from pydantic import Field
 
 
@@ -16,7 +15,7 @@ class MCSSelector(SelectorBase):
     (MCS) search.
     """
 
-    selector_type: ClassVar[str] = "MCSSelector"
+    expander_type: Literal["MCSSelector"] = "MCSSelector"
 
     structure_based: bool = Field(
         False,

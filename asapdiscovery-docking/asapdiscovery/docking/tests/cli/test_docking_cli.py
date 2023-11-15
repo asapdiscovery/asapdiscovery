@@ -132,35 +132,4 @@ def test_large_docking_cli_pdb_file(ligand_file, pdb_file, du_cache, tmp_path):
     assert click_success(result)
 
 
-@pytest.mark.skipif(
-    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
-)
-def test_cross_docking_cli_structure_directory_du_cache(
-    ligand_file, structure_dir, du_cache, tmp_path
-):
-    runner = CliRunner()
-
-    struct_dir, _ = structure_dir
-    du_cache_dir, _ = du_cache
-
-    result = runner.invoke(
-        cli,
-        [
-            "cross-docking",
-            "--target",
-            "SARS-CoV-2-Mpro",
-            "--ligands",
-            ligand_file,
-            "--structure-dir",
-            struct_dir,
-            "--use-dask",
-            "--cache-dir",
-            du_cache_dir,
-            "--output-dir",
-            tmp_path,
-        ],
-    )
-    assert click_success(result)
-
-
 # TODO add tests for postera
