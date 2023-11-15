@@ -1,5 +1,4 @@
 import pytest
-
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.sequence import seqres_by_target

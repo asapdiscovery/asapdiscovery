@@ -2,9 +2,6 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from distributed import Client
-from pydantic import BaseModel, Field, PositiveInt, root_validator
-
 from asapdiscovery.data.dask_utils import (
     DaskType,
     dask_cluster_from_type,
@@ -17,6 +14,8 @@ from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from distributed import Client
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
 class ProteinPrepInputs(BaseModel):
