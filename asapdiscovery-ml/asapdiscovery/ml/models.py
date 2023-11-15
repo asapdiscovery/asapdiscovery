@@ -1,18 +1,18 @@
 import warnings
 from datetime import date
-from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Union  # noqa: F401
 from urllib.parse import urljoin
 
 import pooch
 import yaml
+from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from pydantic import BaseModel, Field, HttpUrl
 
 
-class MLModelType(str, Enum):
+class MLModelType(StringEnum):
     """
     Enum for model types
 
@@ -26,18 +26,6 @@ class MLModelType(str, Enum):
     schnet = "schnet"
     e3nn = "e3nn"
     INVALID = "INVALID"
-
-    @classmethod
-    def get_values(cls) -> list[str]:
-        """
-        Get list of valid model types
-
-        Returns
-        -------
-        List[str]
-            List of valid model types
-        """
-        return [model_type.value for model_type in cls]
 
 
 class MLModelBase(BaseModel):

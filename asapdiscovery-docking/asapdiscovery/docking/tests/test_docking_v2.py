@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.openeye import POSITDocker
 
 
 @pytest.mark.skipif(
@@ -39,3 +39,15 @@ def test_docking_with_file_write(docking_input_pair_simple, tmp_path):
     assert sdf_path.exists()
     pdb_path = tmp_path / "test_+_test2" / "docked_complex.pdb"
     assert pdb_path.exists()
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+def test_multireceptor_docking(docking_multi_structure):
+    assert len(docking_multi_structure.complexes) == 2
+    docker = POSITDocker()
+    results = docker.dock([docking_multi_structure])
+    assert len(results) == 1
+    assert results[0].input_pair.complex.target.target_name == "Mpro-x0354"
+    assert results[0].probability > 0.0
