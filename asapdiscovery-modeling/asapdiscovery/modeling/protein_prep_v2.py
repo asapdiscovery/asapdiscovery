@@ -226,7 +226,7 @@ class ProteinPrepper(ProteinPrepperBase):
                 ids=complex_target.target.ids,
                 target_name=complex_target.target.target_name,
                 ligand_chain=complex_target.ligand_chain,
-                target_hash=complex_target.target.hash()
+                target_hash=complex_target.target.hash(),
             )
             pc = PreppedComplex(target=prepped_target, ligand=complex_target.ligand)
             prepped_complexes.append(pc)

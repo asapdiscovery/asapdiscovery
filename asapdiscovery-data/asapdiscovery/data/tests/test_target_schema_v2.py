@@ -192,6 +192,7 @@ def test_preppedtarget_to_pdb_file(oedu_file, tmpdir):
         pt.to_pdb_file(file_name)
         assert os.path.exists(file_name) is True
 
+
 def test_preppedtarget_from_oedu_file_at_least_one_target_id(oedu_file):
     with pytest.raises(ValidationError):
         _ = PreppedTarget.from_oedu_file(oedu_file, ids=TargetIdentifiers())

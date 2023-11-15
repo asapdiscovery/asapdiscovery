@@ -8,13 +8,13 @@ from asapdiscovery.data.openeye import (
     oechem,
     oedu_to_bytes64,
     oemol_to_pdb_string,
+    openeye_perceive_residues,
     pdb_string_to_oemol,
     save_openeye_design_unit,
-    openeye_perceive_residues,
-    save_openeye_pdb
+    save_openeye_pdb,
 )
 from asapdiscovery.data.schema_v2.identifiers import TargetIdentifiers
-from asapdiscovery.modeling.modeling import split_openeye_mol, split_openeye_design_unit
+from asapdiscovery.modeling.modeling import split_openeye_design_unit, split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field, root_validator
 
@@ -184,7 +184,6 @@ class PreppedTarget(DataModelAbstractBase):
     def to_oedu_file(self, filename: Union[str, Path]) -> None:
         oedu = self.to_oedu()
         save_openeye_design_unit(oedu, filename)
-
 
     def to_pdb_file(self, filename: str):
         """
