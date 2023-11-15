@@ -4,11 +4,11 @@ import abc
 import pickle as pkl
 from collections.abc import Iterator
 from enum import Enum
-import numpy as np
 from pathlib import Path
 from typing import Callable, ClassVar
 
 import mtenn
+import numpy as np
 import torch
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.data.schema_v2.complex import Complex

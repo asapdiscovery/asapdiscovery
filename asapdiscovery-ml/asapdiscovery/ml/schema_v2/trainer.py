@@ -10,9 +10,9 @@ import torch
 import wandb
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.schema_v2.config import (
-    EarlyStoppingConfig,
     DatasetConfig,
     DatasetSplitterConfig,
+    EarlyStoppingConfig,
     ModelConfigBase,
     OptimizerConfig,
 )
