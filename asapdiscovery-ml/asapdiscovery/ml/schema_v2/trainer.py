@@ -8,10 +8,11 @@ import mtenn
 import numpy as np
 import torch
 import wandb
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.schema_v2.config import (
     EarlyStoppingConfig,
+    DatasetConfig,
+    DatasetSplitterConfig,
     ModelConfigBase,
     OptimizerConfig,
 )
@@ -33,8 +34,15 @@ class Trainer(BaseModel):
     es_config: EarlyStoppingConfig | None = Field(
         None, description="Config describing the early stopping check to use."
     )
-    dataset: DockedDataset | GroupedDockedDataset | GraphDataset = Field(
-        ..., description="Dataset object to train on."
+    ds_config: DatasetConfig = Field(
+        ..., description="Config describing the dataset object to train on."
+    )
+    ds_splitter_config: DatasetSplitterConfig = Field(
+        ...,
+        description=(
+            "Config describing how to split the dataset into train, val, and "
+            "test splits."
+        ),
     )
     loss_func: Callable = Field(..., description="Loss function for training.")
 
@@ -85,7 +93,7 @@ class Trainer(BaseModel):
         None,
         description=(
             "Any extra config options to log to W&B, as a list of "
-            "comma-separated pairs."
+            "comma-separated key:value pairs."
         ),
     )
 
@@ -196,6 +204,12 @@ class Trainer(BaseModel):
         if self.es_config:
             self.es = self.es_config.build()
 
+        # Build dataset and split
+        self.ds = self.ds_config.build()
+        self.ds_train, self.ds_val, self.ds_test = self.ds_splitter_config.split(
+            self.ds
+        )
+
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
@@ -242,7 +256,7 @@ class Trainer(BaseModel):
             self.optimizer.zero_grad()
             batch_loss = None
             start_time = time()
-            for compound, pose in ds_train:
+            for compound, pose in self.ds_train:
                 if type(compound) is tuple:
                     compound_id = compound[1]
                 else:
@@ -319,7 +333,7 @@ class Trainer(BaseModel):
 
             self.model.eval()
             tmp_loss = []
-            for compound, pose in ds_val:
+            for compound, pose in self.ds_val:
                 if type(compound) is tuple:
                     compound_id = compound[1]
                 else:
@@ -359,7 +373,7 @@ class Trainer(BaseModel):
             epoch_val_loss = np.mean(tmp_loss)
 
             tmp_loss = []
-            for compound, pose in ds_test:
+            for compound, pose in self.ds_test:
                 if type(compound) is tuple:
                     compound_id = compound[1]
                 else:
@@ -418,9 +432,9 @@ class Trainer(BaseModel):
                 or (epoch_train_loss == np.inf)
                 or (epoch_train_loss == -np.inf)
             ):
-                (self.output_dir / "ds_train.pkl").write_bytes(pkl.dumps(ds_train))
-                (self.output_dir / "ds_val.pkl").write_bytes(pkl.dumps(ds_val))
-                (self.output_dir / "ds_test.pkl").write_bytes(pkl.dumps(ds_test))
+                (self.output_dir / "ds_train.pkl").write_bytes(pkl.dumps(self.ds_train))
+                (self.output_dir / "ds_val.pkl").write_bytes(pkl.dumps(self.ds_val))
+                (self.output_dir / "ds_test.pkl").write_bytes(pkl.dumps(self.ds_test))
                 raise ValueError("Unrecoverable loss value reached.")
 
             # Stop training if EarlyStopping says to
