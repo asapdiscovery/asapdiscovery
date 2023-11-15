@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
+from pydantic import Field, root_validator
+
 from asapdiscovery.data.openeye import (
     bytes64_to_oedu,
     load_openeye_design_unit,
@@ -16,7 +18,6 @@ from asapdiscovery.data.openeye import (
 from asapdiscovery.data.schema_v2.identifiers import TargetIdentifiers
 from asapdiscovery.modeling.modeling import split_openeye_design_unit, split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
-from pydantic import Field, root_validator
 
 from .schema_base import (
     DataModelAbstractBase,
@@ -114,6 +115,12 @@ class Target(DataModelAbstractBase):
             self.data, other.data, "MASTER"
         )
 
+    def hash(self):
+        "Create a hash based on the pdb file contents"
+        import hashlib
+
+        return hashlib.sha256(self.data.encode()).hexdigest()
+
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
@@ -138,6 +145,11 @@ class PreppedTarget(DataModelAbstractBase):
     data_format: DataStorageType = Field(
         DataStorageType.b64oedu,
         description="Enum describing the data storage method",
+        allow_mutation=False,
+    )
+    target_hash: str = Field(
+        ...,
+        description="A unique reproduceable hash based on the contents of the pdb file which created the target.",
         allow_mutation=False,
     )
 

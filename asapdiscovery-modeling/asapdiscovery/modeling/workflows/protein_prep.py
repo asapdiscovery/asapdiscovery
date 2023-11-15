@@ -1,7 +1,9 @@
 import logging
 from pathlib import Path
-from shutil import rmtree
 from typing import Optional
+
+from distributed import Client
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 from asapdiscovery.data.dask_utils import (
     DaskType,
@@ -15,8 +17,6 @@ from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from distributed import Client
-from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
 class ProteinPrepInputs(BaseModel):
@@ -78,11 +78,6 @@ class ProteinPrepInputs(BaseModel):
         "prepped_structure_cache",
         description="Path to a directory where generated prepped complexes should be cached",
     )
-
-    # cache_type: Optional[list[str]] = Field(
-    #     [CacheType.DesignUnit], description="The types of cache to use."
-    # )
-
     align: Optional[Path] = Field(
         None, description="Reference structure pdb to align to."
     )
@@ -152,27 +147,17 @@ class ProteinPrepInputs(BaseModel):
 
         return values
 
-    # @validator("cache_type")
-    # @classmethod
-    # def check_cache_type(cls, v):
-    #     # must be unique
-    #     if len(v) != len(set(v)):
-    #         raise ValueError("cache_type must be unique")
-    #     return v
-
 
 def protein_prep_workflow(inputs: ProteinPrepInputs):
     output_dir = inputs.output_dir
 
-    if output_dir.exists():
-        rmtree(output_dir)
-    output_dir.mkdir()
+    output_dir.mkdir(exist_ok=True)
 
     logger = FileLogger(
         inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
     ).getLogger()
 
-    logger.info(f"Running large scale docking with inputs: {inputs}")
+    logger.info(f"Running protein prep with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
     inputs.to_json_file(output_dir / "protein_prep.json")
@@ -215,12 +200,12 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
 
     elif inputs.pdb_file:
         logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
-        complex = Complex.from_pdb(
+        complex_target = Complex.from_pdb(
             inputs.pdb_file,
             target_kwargs={"target_name": inputs.pdb_file.stem},
             ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
         )
-        complexes = [complex]
+        complexes = [complex_target]
 
     else:
         raise ValueError(
@@ -245,6 +230,35 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         )
     else:
         ref_complex = None
+
+    # setup the path to cached structures
+    cache_path = output_dir / inputs.gen_cache
+
+    # load the cache
+    try:
+        cached_complexs = ProteinPrepper.load_cache(cache_dir=cache_path)
+        logger.info(
+            f"Loaded {len(cached_complexs)} cached structures from: {cache_path}."
+        )
+    except ValueError:
+        cached_complexs = []
+
+    # workout what can be reused
+    if cached_complexs:
+        cached_by_hash = {comp.hash(): comp for comp in cached_complexs}
+        # gather outputs which are in the cache
+        cached_outputs = [
+            cached_by_hash[inp.hash()]
+            for inp in complexes
+            if inp.hash() in cached_by_hash
+        ]
+        if cached_outputs:
+            logger.info(
+                f"Matched {len(cached_outputs)} cached structures which will be reused."
+            )
+        # update the list of jobs by removing any already in the cache
+        complexes = [inp for inp in complexes if inp.hash() not in cached_by_hash]
+
     # prep complexes
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(
@@ -255,16 +269,16 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         ref_chain=inputs.ref_chain,
         active_site_chain=inputs.active_site_chain,
     )
-    prepped_complexes = prepper.prep(
-        inputs=complexes, use_dask=inputs.use_dask, dask_client=dask_client
-    )
-    logger.info(f"Prepped {len(prepped_complexes)} complexes")
-    del complexes
 
-    # cache prepped complexes
-    cache_path = output_dir / inputs.gen_cache
+    # only run prep if we have something new to run
+    if complexes:
+        prepped_complexes = prepper.prep(
+            inputs=complexes, use_dask=inputs.use_dask, dask_client=dask_client
+        )
+        logger.info(f"Prepped {len(prepped_complexes)} complexes")
+        del complexes
 
-    logger.info(f"Caching prepped complexes to {cache_path}")
-    prepper.cache(prepped_complexes, cache_path)
+        logger.info(f"Caching prepped complexes to {cache_path}")
+        prepper.cache(prepped_complexes, cache_path)
 
     logger.info("Done")

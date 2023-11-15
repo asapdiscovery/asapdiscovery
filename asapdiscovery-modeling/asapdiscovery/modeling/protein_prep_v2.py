@@ -1,6 +1,5 @@
 import abc
-import datetime
-import warnings
+
 from pathlib import Path
 from typing import Literal, Optional, Union
 
@@ -49,6 +48,19 @@ class ProteinPrepperBase(BaseModel):
     def prep(
         self, inputs: list[Complex], use_dask: bool = False, dask_client=None
     ) -> list[PreppedComplex]:
+        """
+        Prepare the list of input receptor ligand complexs re-using any found in the cache.
+
+        Parameters
+        ----------
+        inputs: The list of complexs to prepare.
+        use_dask: If dask should be used to distribute the jobs.
+        dask_client: The dask client that should be used to submit the jobs.
+
+        Returns
+        -------
+            A list of prepared complexs.
+        """
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
@@ -83,12 +95,10 @@ class ProteinPrepperBase(BaseModel):
         if not dir.exists():
             dir.mkdir(parents=True)
 
-        today = datetime.date.today()
-
         for pc in prepped_complexes:
             # create a folder for the complex data
-            complex_folder = dir.joinpath(f"{str(today)}-{pc.target.target_name}")
-            complex_folder.mkdir(parents=True)
+            complex_folder = dir.joinpath(f"{pc.target.target_name}-{pc.hash()}")
+            complex_folder.mkdir(parents=True, exist_ok=True)
             pc.to_json_file(complex_folder.joinpath(pc.target.target_name + ".json"))
             pc.target.to_oedu_file(
                 complex_folder.joinpath(pc.target.target_name + ".oedu")
@@ -100,31 +110,17 @@ class ProteinPrepperBase(BaseModel):
 
     @staticmethod
     def load_cache(
-        complexes: list[Complex],
         cache_dir: Union[str, Path],
-        fail_missing_cache: bool = False,
     ) -> list[PreppedComplex]:
         """
-        Load a set of cached PreppedComplexes.
+        Load a set of cached PreppedComplexes which can be reused.
         """
-        if not Path(cache_dir).exists():
+        if not (cache_dir := Path(cache_dir)).exists():
             raise ValueError(f"Cache directory {cache_dir} does not exist.")
 
         prepped_complexes = []
-        for complex_target in complexes:
-            complex_file = cache_dir.joinpath(
-                complex_target.target.target_name,
-                complex_target.target.target_name + ".json",
-            )
-            if complex_file.exists():
-                prepped_complexes.append(PreppedComplex.from_json_file(complex_file))
-
-            else:
-                if fail_missing_cache:
-                    raise FileNotFoundError(f"Missing cached json: {complex_file}")
-                else:
-                    warnings.warn(f"Missing cached json: {complex_file}")
-                    prepped_complexes.append(None)
+        for complex_file in cache_dir.rglob("*.json"):
+            prepped_complexes.append(PreppedComplex.from_json_file(complex_file))
 
         return prepped_complexes
 
@@ -240,6 +236,7 @@ class ProteinPrepper(ProteinPrepperBase):
                     ids=complex.target.ids,
                     target_name=complex.target.target_name,
                     ligand_chain=complex.ligand_chain,
+                    target_hash=complex.target.hash(),
                 )
                 pc = PreppedComplex(target=prepped_target, ligand=complex.ligand)
                 prepped_complexes.append(pc)

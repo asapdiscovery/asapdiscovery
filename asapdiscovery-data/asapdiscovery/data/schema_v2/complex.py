@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from pydantic import Field
+
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_design_unit,
@@ -15,7 +17,6 @@ from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
-from pydantic import Field
 
 
 class ComplexBase(DataModelAbstractBase):
@@ -84,6 +85,9 @@ class Complex(ComplexBase):
             self.target.to_oemol(), self.ligand.to_oemol(), lig_chain=self.ligand_chain
         )
 
+    def hash(self):
+        return f"{self.target.hash()}+{self.ligand.fixed_inchikey}"
+
 
 class PreppedComplex(ComplexBase):
     """
@@ -143,3 +147,6 @@ class PreppedComplex(ComplexBase):
         prep_kwargs["ligand_chain"] = complex.ligand_chain
         prepped_complexs = ProteinPrepper(**prep_kwargs).prep(inputs=[complex])
         return prepped_complexs[0]
+
+    def hash(self):
+        return f"{self.target.target_hash}+{self.ligand.fixed_inchikey}"
