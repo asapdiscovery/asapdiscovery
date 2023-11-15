@@ -1,7 +1,8 @@
 import pytest
+from pydantic import ValidationError
+
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")
@@ -123,8 +124,25 @@ def test_prepped_complex_from_complex(complex_pdb):
 def test_prepped_complex_from_oedu_file(complex_oedu):
     c = PreppedComplex.from_oedu_file(
         complex_oedu,
-        target_kwargs={"target_name": "test"},
+        target_kwargs={"target_name": "test", "target_hash": "test hash"},
         ligand_kwargs={"compound_name": "test"},
     )
     assert c.target.target_name == "test"
     assert c.ligand.compound_name == "test"
+
+
+def test_prepped_complex_hash(complex_pdb):
+    comp = Complex.from_pdb(
+        complex_pdb,
+        target_kwargs={"target_name": "receptor1"},
+        ligand_kwargs={"compound_name": "ligand1"},
+    )
+    pc = PreppedComplex.from_complex(comp)
+    assert (
+        pc.target.target_hash
+        == "843587eb7f589836d67da772b11584da4fa02fba63d6d3f3062e98c177306abb"
+    )
+    assert (
+        pc.hash()
+        == "843587eb7f589836d67da772b11584da4fa02fba63d6d3f3062e98c177306abb+JZJCSVMJFIAMQB-DLYUOGNHNA-N"
+    )
