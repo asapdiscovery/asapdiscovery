@@ -1,7 +1,5 @@
 import os
 import traceback
-import os
-import traceback
 
 import pytest
 from asapdiscovery.docking.cli import docking as cli
