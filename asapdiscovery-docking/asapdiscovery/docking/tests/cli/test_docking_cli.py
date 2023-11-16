@@ -141,6 +141,37 @@ def test_project_support_docking_cli_pdb_file_dask(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
+def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path):
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli,
+        [
+            "small-scale",
+            "--target",
+            "SARS-CoV-2-Mpro",
+            "--ligands",
+            ligand_file,
+            "--pdb-file",
+            pdb_file,
+            "--use-dask",
+            "--posit-confidence-cutoff",
+            0,
+            "--output-dir",
+            tmp_path,
+            "--md",
+            "--md-steps",
+            1000,
+            "--md-openmm-platform",
+            "CPU",
+        ],
+    )
+    assert click_success(result)
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_cross_docking_cli_structure_directory_du_cache(
     ligand_file, structure_dir, du_cache, tmp_path
 ):
