@@ -63,7 +63,6 @@ class SimulationResult(BaseModel):
     final_pdb_path: Optional[Path]
     success: Optional[bool]
     input_docking_result: Optional[DockingResult]
-    simulator: Optional[SimulatorBase]
 
 
 class VanillaMDSimulatorV2(SimulatorBase):
@@ -147,7 +146,6 @@ class VanillaMDSimulatorV2(SimulatorBase):
                 minimized_pdb_path=outpath / "minimized.pdb",
                 final_pdb_path=outpath / "final.pdb",
                 success=retcode,
-                simulator=self,
             )
 
             results.append(sim_result)
