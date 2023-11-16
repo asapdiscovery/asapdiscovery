@@ -27,7 +27,7 @@ There are a range of workflows and tooling to use split into several namespace s
 
 `asapdiscovery-alchemy`: Free energy calculations using [OpenFE](https://openfree.energy/) and [Alchemiscale](https://docs.alchemiscale.org/en/latest/)
 
-`asapdiscovery-cli`: Command line tools uniting the whole repo. 
+`asapdiscovery-cli`: Command line tools uniting the whole repo.
 
 `asapdiscovery-data`: Core data models and integrations with services such as [Postera.ai](https://postera.ai/)
 
