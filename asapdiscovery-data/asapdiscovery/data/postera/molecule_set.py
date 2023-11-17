@@ -2,12 +2,11 @@ import uuid
 from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
+from asapdiscovery.data.enum import StringEnum
 from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
-
-from asapdiscovery.data.enum import StringEnum
 
 
 class MoleculeSetKeys(StringEnum):
