@@ -8,7 +8,9 @@ from typing_extensions import TypedDict
 from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
 
-_POSTERA_COLUMN_BLEACHING_ACTIVE = True  # NOTE: this is fix for postera bleaching see issues #629 #628
+_POSTERA_COLUMN_BLEACHING_ACTIVE = (
+    True  # NOTE: this is fix for postera bleaching see issues #629 #628
+)
 
 
 class Molecule(TypedDict):
