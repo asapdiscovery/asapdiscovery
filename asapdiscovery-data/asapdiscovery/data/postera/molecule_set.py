@@ -11,11 +11,6 @@ import warnings
 
 _POSTERA_COLUMN_BLEACHING_ACTIVE = True
 
-if _POSTERA_COLUMN_BLEACHING_ACTIVE:
-    warnings.warn(
-        "Fix currently applied for postera column name bleaching see issues #629 #628"
-    )
-
 
 class Molecule(TypedDict):
     """Data type to build MoleculeList"""
@@ -360,6 +355,10 @@ class MoleculeSetAPI(PostEraAPI):
         bleached: bool = _POSTERA_COLUMN_BLEACHING_ACTIVE,  # NOTE: this is fix for postera bleaching see issues #629 #628
         debug_df_path: str = None,
     ) -> list[str]:
+        if bleached:
+            warnings.warn(
+                "Fix currently applied for postera column name bleaching see issues #629 #628"
+            )
         df = ManifoldAllowedTags.filter_dataframe_cols(
             df, allow=[smiles_field, id_field], bleached=bleached
         )
