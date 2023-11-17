@@ -4,7 +4,7 @@ from warnings import warn
 
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
@@ -106,17 +106,25 @@ class PosteraUploader(BaseModel):
         that is returned from a query to the manifold API
         """
         data = original.copy()
-        subset = molset_query_df[["id", "smiles"]]
+        subset = molset_query_df[
+            [MoleculeSetKeys.id.value, MoleculeSetKeys.smiles.value]
+        ]
         # do a roundtrip to canonicalize the smiles
-        subset["smiles"] = subset["smiles"].apply(oe_smiles_roundtrip)
+        subset[MoleculeSetKeys.smiles.value] = subset[
+            MoleculeSetKeys.smiles.value
+        ].apply(oe_smiles_roundtrip)
         # give it the right column names
         subset.rename(
-            columns={"smiles": ManifoldAllowedTags.SMILES.value}, inplace=True
+            columns={MoleculeSetKeys.smiles.value: ManifoldAllowedTags.SMILES.value},
+            inplace=True,
         )
         data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
         # drop original ID column and replace with the manifold ID
         data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
-        data.rename(columns={"id": DockingResultCols.LIGAND_ID.value}, inplace=True)
+        data.rename(
+            columns={MoleculeSetKeys.id.value: DockingResultCols.LIGAND_ID.value},
+            inplace=True,
+        )
         return data
 
     @staticmethod
