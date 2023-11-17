@@ -313,6 +313,7 @@ def rename_output_columns_for_manifold(
     df: pd.DataFrame,
     target: str,
     output_enums: list[Enum],
+    bleach_columns: bool = True,
     manifold_validate: Optional[bool] = True,
     drop_non_output: Optional[bool] = True,
     allow: Optional[list[str]] = [],
@@ -337,6 +338,8 @@ def rename_output_columns_for_manifold(
         Target name
     output_enums : list[Enum]
         List of enums to rename the columns of
+    bleach_columns : bool, optional
+        If True, bleach the column names so that - is replaced with _ see #629 and #628
     manifold_validate : bool, optional
         If True, validate that the columns are valid for Postera Manifold
     drop_non_output : bool, optional
@@ -368,4 +371,8 @@ def rename_output_columns_for_manifold(
             )
     # rename columns
     df = df.rename(columns=mapping)
+
+    if bleach_columns:
+        df.columns = [col.replace("-", "_") for col in df.columns]
+
     return df
