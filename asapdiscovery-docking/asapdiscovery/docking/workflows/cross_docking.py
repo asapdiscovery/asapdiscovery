@@ -50,6 +50,7 @@ class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):
         POSIT_METHOD.ALL, description="POSIT method to use"
     )
     use_omega: bool = Field(False, description="Use omega to generate conformers")
+    omega_dense: bool = Field(False, description="Use dense conformer generation")
     num_poses: PositiveInt = Field(1, description="Number of poses to generate")
     allow_low_posit_prob: bool = Field(False, description="Allow low posit probability")
     low_posit_prob_thresh: float = Field(
@@ -207,6 +208,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         relax=inputs.relax,
         posit_method=inputs.posit_method,
         use_omega=inputs.use_omega,
+        omega_dense=inputs.omega_dense,
         num_poses=inputs.num_poses,
         allow_low_posit_prob=inputs.allow_low_posit_prob,
         low_posit_prob_thresh=inputs.low_posit_prob_thresh,
