@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.schema_v2.ligand import Ligand, ChemicalRelationship
+from asapdiscovery.data.schema_v2.ligand import ChemicalRelationship, Ligand
 
 
 @pytest.fixture(scope="session")
@@ -20,7 +20,6 @@ def different_name():
 
 @pytest.fixture(scope="session")
 def stereoisomer():
-
     return Ligand.from_smiles(
         compound_name="EDG-MED-5d232de5-4",
         smiles="CC(=O)N1CC[C@@H](c2c1ccc(c2)Cl)C(=O)Nc3cncc4c3cccc4",
@@ -31,7 +30,7 @@ def stereoisomer():
 def tautomer():
     return Ligand.from_smiles(
         compound_name="EDG-MED-5d232de5-3_tautomer",
-        smiles="CC(N1CC[C@@H](/C(O)=N\c2c3ccccc3cnc2)c4cc(Cl)ccc41)=O",
+        smiles=r"CC(N1CC[C@@H](/C(O)=N\c2c3ccccc3cnc2)c4cc(Cl)ccc41)=O",
     )
 
 

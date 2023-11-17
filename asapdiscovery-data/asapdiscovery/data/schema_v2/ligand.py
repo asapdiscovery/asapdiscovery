@@ -1,18 +1,19 @@
 import json
+from enum import Flag, auto
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
-from enum import Flag, auto
+
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
     get_SD_data,
     load_openeye_sdf,
     oechem,
-    oequacpac,
     oemol_to_inchi,
     oemol_to_inchikey,
     oemol_to_sdf_string,
     oemol_to_smiles,
+    oequacpac,
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
