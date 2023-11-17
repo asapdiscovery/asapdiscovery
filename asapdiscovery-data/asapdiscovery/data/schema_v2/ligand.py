@@ -364,7 +364,7 @@ class Ligand(DataModelAbstractBase):
         """
         mol = self.to_oemol()
         canonical_tautomer = oechem.OEGraphMol()
-        if oequacpac.OEGetUniqueProtomer(canonical_tautomer, mol) == True:
+        if oequacpac.OEGetUniqueProtomer(canonical_tautomer, mol):
             return Ligand.from_oemol(
                 compound_name=self.compound_name,
                 mol=canonical_tautomer,
