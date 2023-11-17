@@ -8,7 +8,9 @@ from typing_extensions import TypedDict
 from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
 
-_POSTERA_COLUMN_BLEACHING_ACTIVE = True  # NOTE: this is fix for postera bleaching see issues #629 #628
+_POSTERA_COLUMN_BLEACHING_ACTIVE = (
+    True  # NOTE: this is fix for postera bleaching see issues #629 #628
+)
 
 
 class Molecule(TypedDict):
@@ -395,14 +397,19 @@ class MoleculeSetAPI(PostEraAPI):
         df: pd.DataFrame,
         smiles_field: str = "smiles",
         id_field: str = "id",
+        bleached: bool = _POSTERA_COLUMN_BLEACHING_ACTIVE,  # NOTE: this is fix for postera bleaching see issues #629 #628
         debug_df_path: str = None,
     ) -> str:
+        if bleached:
+            warnings.warn(
+                "Fix currently applied for postera column name bleaching see issues #629 #628"
+            )
         df = ManifoldAllowedTags.filter_dataframe_cols(
-            df, allow=[smiles_field, id_field]
+            df, allow=[smiles_field, id_field], bleached=bleached
         )
 
         if not ManifoldAllowedTags.all_in_values(
-            df.columns, allow=[id_field, smiles_field]
+            df.columns, allow=[id_field, smiles_field], bleached=bleached
         ):
             raise ValueError(
                 f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
