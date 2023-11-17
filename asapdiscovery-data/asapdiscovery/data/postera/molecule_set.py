@@ -1,4 +1,5 @@
 import uuid
+import warnings
 from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
@@ -6,8 +7,6 @@ from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
-import warnings
-
 
 _POSTERA_COLUMN_BLEACHING_ACTIVE = True
 
