@@ -9,9 +9,7 @@ from asapdiscovery.cli.cli_args import (
     gen_cache,
     input_json,
     ligands,
-    md,
-    md_openmm_platform,
-    md_steps,
+    md_args,
     ml_scorer,
     output_dir,
     pdb_file,
@@ -256,9 +254,7 @@ def cross_docking(
 @output_dir
 @input_json
 @ml_scorer
-@md
-@md_steps
-@md_openmm_platform
+@md_args
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
