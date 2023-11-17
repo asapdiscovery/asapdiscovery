@@ -121,7 +121,7 @@ class HTMLVisualizer:
             if not protein.exists():
                 raise ValueError(f"Protein {protein} does not exist.")
             self.protein = openeye_perceive_residues(
-                load_openeye_pdb(str(protein)), preserve_all=True
+                load_openeye_pdb(protein), preserve_all=True
             )
 
         self.logger.debug(
