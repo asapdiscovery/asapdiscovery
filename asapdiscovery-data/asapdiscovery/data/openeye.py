@@ -682,7 +682,7 @@ def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
     return mol
 
 
-def oemol_to_smiles(mol: oechem.OEMol) -> str:
+def oemol_to_smiles(mol: oechem.OEMol, isomeric=True) -> str:
     """
     Canonical SMILES string of an OpenEye OEMol
 
@@ -696,7 +696,10 @@ def oemol_to_smiles(mol: oechem.OEMol) -> str:
     str
        SMILES string of molecule
     """
-    return oechem.OEMolToSmiles(mol)
+    if isomeric:
+        return oechem.OEMolToSmiles(mol)
+    else:
+        return oechem.OECreateCanSmiString(mol)
 
 
 def oe_smiles_roundtrip(smiles: str) -> str:

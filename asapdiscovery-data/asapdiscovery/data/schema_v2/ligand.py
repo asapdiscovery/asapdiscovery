@@ -1,13 +1,14 @@
 import json
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
-
+from enum import Flag, auto
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
     get_SD_data,
     load_openeye_sdf,
     oechem,
+    oequacpac,
     oemol_to_inchi,
     oemol_to_inchikey,
     oemol_to_sdf_string,
@@ -30,6 +31,19 @@ from .schema_base import (
 
 class InvalidLigandError(ValueError):
     ...
+
+
+class ChemicalRelationship(Flag):
+    """
+    Enum describing the chemical relationship between two ligands.
+    Currently not distinguishing between conjugate acids / bases and tautomers, which means that ligands which are
+    technically constitutional isomers (i.e. +/- a proton) will be considered tautomers
+    """
+
+    DISTINCT = auto()
+    IDENTICAL = auto()
+    STEREOISOMER = auto()
+    TAUTOMER = auto()
 
 
 # Ligand Schema
@@ -189,10 +203,18 @@ class Ligand(DataModelAbstractBase):
     @property
     def smiles(self) -> str:
         """
-        Get the SMILES string for the ligand
+        Get the canonical isomeric SMILES string for the ligand
         """
         mol = self.to_oemol()
         return oemol_to_smiles(mol)
+
+    @property
+    def non_iso_smiles(self) -> str:
+        """
+        Get the non-isomeric canonical SMILES string for the ligand
+        """
+        mol = self.to_oemol()
+        return oemol_to_smiles(mol, isomeric=False)
 
     @classmethod
     def from_inchi(cls, inchi: str, **kwargs) -> "Ligand":
@@ -332,6 +354,102 @@ class Ligand(DataModelAbstractBase):
         self.expansion_tag = StateExpansionTag.from_parent(
             parent=parent, provenance=provenance
         )
+
+    @property
+    def canonical_tautomer(self) -> "Ligand":
+        """
+        Get the canonical tautomer of the ligand.
+        Not necessarily the most physiologically relevant tautomer, but helpful for comparing ligands.
+        """
+        mol = self.to_oemol()
+        canonical_tautomer = oechem.OEGraphMol()
+        if oequacpac.OEGetUniqueProtomer(canonical_tautomer, mol) == True:
+            return Ligand.from_oemol(
+                compound_name=self.compound_name,
+                mol=canonical_tautomer,
+                expansion_tag=StateExpansionTag.from_parent(
+                    parent=self,
+                    provenance={
+                        "expander": "oequacpac.OEGetUniqueProtomer",
+                        "oechem": oechem.OEChemGetVersion(),
+                        "quacpac": oequacpac.OEQuacPacGetVersion(),
+                    },
+                ),
+            )
+        else:
+            raise ValueError("Unable to generate canonical tautomer")
+
+    @property
+    def has_defined_stereo(self) -> bool:
+        """
+        Check if the ligand has defined stereochemistry
+        """
+        mol = self.to_oemol()
+        return mol.HasPerceived(oechem.OEPerceived_AtomStereo) or mol.HasPerceived(
+            oechem.OEPerceived_BondStereo
+        )
+
+    def is_chemically_equal(self, other: "Ligand") -> bool:
+        """
+        Check if the ligand is chemically equal to another ligand using the inchikey.
+        Both ligands must both have defined stereochemistry or both not have defined stereochemistry.
+        """
+        return (
+            self.fixed_inchikey == other.fixed_inchikey
+            and self.has_defined_stereo == other.has_defined_stereo
+        )
+
+    def is_stereoisomer(self, other: "Ligand"):
+        """
+        Check if the ligand is a possible stereoisomer of another ligand.
+        Returns False if the ligands are the same.
+        """
+        # First check if molecules are the same
+        if self.is_chemically_equal(other):
+            return False
+
+        return self.non_iso_smiles == other.non_iso_smiles
+
+    def is_tautomer(self, other: "Ligand"):
+        """
+        Check if the ligand is a tautomer of another ligand, collapsing protonation states.
+        Returns False if the ligands are the same or stereoisomers.
+        """
+        # First check if molecules are the same or just a stereoisomer
+        if self.is_chemically_equal(other) or self.is_stereoisomer(other):
+            return False
+        return self.canonical_tautomer.is_chemically_equal(other.canonical_tautomer)
+
+    def is_related(self, other: "Ligand"):
+        """
+        Check if the ligand is a steroisomer of a tautomer of another ligand.
+        Returns False if the ligands are the same, stereoisomers, or tautomers with the same stereochem.
+        """
+        # First check if molecules are the same or just a stereoisomer or a tautomer
+        if (
+            self.is_chemically_equal(other)
+            or self.is_stereoisomer(other)
+            or self.is_tautomer(other)
+        ):
+            return False
+        else:
+            # Get the canonical tautomers and check if the non-iso smiles are the same
+            return self.canonical_tautomer.is_stereoisomer(other.canonical_tautomer)
+
+    def get_chemical_relationship(self, other: "Ligand") -> ChemicalRelationship:
+        """
+        Get the chemical relationship between two ligands
+        """
+        if self.is_chemically_equal(other):
+            return ChemicalRelationship.IDENTICAL
+        elif self.is_stereoisomer(other):
+            return ChemicalRelationship.STEREOISOMER
+        elif self.is_tautomer(other):
+            return ChemicalRelationship.TAUTOMER
+        elif self.is_related(other):
+            return ChemicalRelationship.TAUTOMER | ChemicalRelationship.STEREOISOMER
+        else:
+            return ChemicalRelationship.DISTINCT
 
 
 class ReferenceLigand(Ligand):
