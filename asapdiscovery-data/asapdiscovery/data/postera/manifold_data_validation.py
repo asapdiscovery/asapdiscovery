@@ -22,12 +22,17 @@ def load_yaml(yaml_path: Union[str, Path]) -> dict:
 
 class TagEnumBase(StringEnum):
     @classmethod
-    def is_in_values(cls, tag: str) -> bool:
-        return tag in cls.get_values()
+    def is_in_values(cls, tag: str, bleached: bool = False) -> bool:
+        vals = cls.get_values_underscored() if bleached else cls.get_values()
+        return tag in vals
 
     @classmethod
-    def all_in_values(cls, query: list[str], allow: list[str] = []) -> bool:
-        return all([cls.is_in_values(q) for q in query if q not in allow])
+    def all_in_values(
+        cls, query: list[str], allow: list[str] = [], bleached: bool = False
+    ) -> bool:
+        return all(
+            [cls.is_in_values(q, bleached=bleached) for q in query if q not in allow]
+        )
 
     @classmethod
     def from_iterable(cls, name: str, iter: Iterable) -> Enum:
@@ -39,10 +44,14 @@ class TagEnumBase(StringEnum):
 
     @classmethod
     def filter_dataframe_cols(
-        cls, df: pd.DataFrame, allow: Optional[list[str]] = None
+        cls, df: pd.DataFrame, allow: Optional[list[str]] = None, bleached: bool = False
     ) -> pd.DataFrame:
         # construct list of allowed columns
         allowed_columns = cls.get_values()
+
+        if bleached:
+            allowed_columns = [col.replace("-", "_") for col in allowed_columns]
+
         if allow is not None:
             allowed_columns.extend(allow)
 
