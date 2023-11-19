@@ -15,7 +15,7 @@ from asapdiscovery.docking.docking_v2 import (
     DockingInputPair,
     DockingResult,
 )
-from pydantic import Field, PositiveInt
+from pydantic import Field, PositiveInt, root_validator
 
 
 class POSIT_METHOD(Enum):
@@ -55,6 +55,9 @@ class POSITDocker(DockingBase):
         POSIT_METHOD.ALL, description="POSIT method to use"
     )
     use_omega: bool = Field(True, description="Use omega to generate conformers")
+    omega_dense: bool = Field(
+        False, description="Use dense conformer generation with omega"
+    )
     num_poses: PositiveInt = Field(1, description="Number of poses to generate")
     allow_low_posit_prob: bool = Field(False, description="Allow low posit probability")
     low_posit_prob_thresh: float = Field(
@@ -68,6 +71,18 @@ class POSITDocker(DockingBase):
         True,
         description="Allow retries with different options if docking fails initially",
     )
+
+    @root_validator
+    @classmethod
+    def omega_dense_check(cls, values):
+        """
+        Validate omega_dense
+        """
+        omega_dense = values.get("omega_dense")
+        use_omega = values.get("use_omega")
+        if omega_dense and not use_omega:
+            raise ValueError("Cannot use omega_dense without use_omega")
+        return values
 
     @staticmethod
     def to_result_type():
@@ -127,7 +142,10 @@ class POSITDocker(DockingBase):
             dus = set.to_design_units()
             lig_oemol = oechem.OEMol(set.ligand.to_oemol())
             if self.use_omega:
-                omegaOpts = oeomega.OEOmegaOptions()
+                if self.omega_dense:
+                    omegaOpts = oeomega.OEOmegaOptions(oeomega.OEOmegaSampling_Dense)
+                else:
+                    omegaOpts = oeomega.OEOmegaOptions()
                 omega = oeomega.OEOmega(omegaOpts)
                 omega_retcode = omega.Build(lig_oemol)
                 if omega_retcode:
