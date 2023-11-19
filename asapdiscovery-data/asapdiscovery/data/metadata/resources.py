@@ -1,4 +1,5 @@
 import pkg_resources
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 # SEQRES in YAML format
 MERS_CoV_Mpro_SEQRES = pkg_resources.resource_filename(
@@ -24,19 +25,25 @@ DENV_NS2B_NS3pro_SEQRES = pkg_resources.resource_filename(
 )
 
 seqres_data = {
-    "MERS-CoV-Mpro": MERS_CoV_Mpro_SEQRES,
-    "SARS-CoV-2-Mpro": SARS_CoV_2_Mpro_SEQRES,
-    "SARS-CoV-2-Mac1": SARS_CoV_2_Mac1_SEQRES,
-    "EV-D68-3Cpro": EV_D68_3Cpro_SEQRES,
-    "EV-A71-3Cpro": EV_A71_3Cpro_SEQRES,
-    "ZIKV-NS2B-NS3pro": ZIKV_NS2B_NS3pro_SEQRES,
-    "DENV-NS2B-NS3pro": DENV_NS2B_NS3pro_SEQRES,
+    TargetTags("MERS-CoV-Mpro").value: MERS_CoV_Mpro_SEQRES,
+    TargetTags("SARS-CoV-2-Mpro").value: SARS_CoV_2_Mpro_SEQRES,
+    TargetTags("SARS-CoV-2-Mac1").value: SARS_CoV_2_Mac1_SEQRES,
+    TargetTags("EV-D68-3Cpro").value: EV_D68_3Cpro_SEQRES,
+    TargetTags("EV-A71-3Cpro").value: EV_A71_3Cpro_SEQRES,
+    TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_SEQRES,
+    TargetTags("DENV-NS2B-NS3pro").value: DENV_NS2B_NS3pro_SEQRES,
 }
 
 # Fitness data in JSON format
 SARS_CoV_2_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_sars_cov_2.json"
 )
+
+
+targets_with_fitness_data = [
+    TargetTags("SARS-CoV-2-Mpro"),
+    TargetTags("SARS-CoV-2-Mac1"),
+]
 
 # Reference PDB files to align targets to for consistent dataviz
 master_structures = {
