@@ -8,7 +8,7 @@ from typing import Dict, Optional, Union  # noqa: F401
 
 import xmltodict
 from airium import Airium
-from asapdiscovery.data.fitness import parse_fitness_json
+from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -65,7 +65,9 @@ class HTMLVisualizer:
             raise ValueError("Number of poses and paths must be equal.")
 
         if target not in self.allowed_targets:
-            raise ValueError(f"Target must be one of: {self.allowed_targets}")
+            raise ValueError(
+                f"Target {target} invalid, must be one of: {self.allowed_targets}"
+            )
         self.target = target
 
         # init loggers
@@ -81,9 +83,9 @@ class HTMLVisualizer:
         if self.color_method == "subpockets":
             self.logger.info("Mapping interactive view by subpocket dict")
         elif self.color_method == "fitness":
-            if self.target == "MERS-CoV-Mpro":
+            if not target_has_fitness_data(self.target):
                 raise NotImplementedError(
-                    "No viral fitness data available for MERS-CoV-Mpro: set `color_method` to `subpockets`."
+                    "No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
                 )
             self.logger.info(
                 "Mapping interactive view by fitness (visualised with b-factor)"
@@ -100,8 +102,11 @@ class HTMLVisualizer:
         self.output_paths = []
         # make sure all paths exist, otherwise skip
         for pose, path in zip(poses, output_paths):
-            if pose and Path(pose).exists():
-                mol = load_openeye_sdf(str(pose))
+            if pose:
+                if isinstance(pose, oechem.OEMolBase):
+                    mol = pose.CreateCopy()
+                else:
+                    mol = load_openeye_sdf(str(pose))
                 oechem.OESuppressHydrogens(
                     mol, True, True
                 )  # retain polar hydrogens and hydrogens on chiral centers
@@ -110,12 +115,14 @@ class HTMLVisualizer:
             else:
                 self.logger.warning(f"Pose {pose} does not exist, skipping.")
 
-        if not protein.exists():
-            raise ValueError(f"Protein {protein} does not exist.")
-
-        self.protein = openeye_perceive_residues(
-            load_openeye_pdb(str(protein)), preserve_all=True
-        )
+        if isinstance(protein, oechem.OEMolBase):
+            self.protein = protein.CreateCopy()
+        else:
+            if not protein.exists():
+                raise ValueError(f"Protein {protein} does not exist.")
+            self.protein = openeye_perceive_residues(
+                load_openeye_pdb(protein), preserve_all=True
+            )
 
         self.logger.debug(
             f"Writing HTML visualisations for {len(self.output_paths)} ligands"
