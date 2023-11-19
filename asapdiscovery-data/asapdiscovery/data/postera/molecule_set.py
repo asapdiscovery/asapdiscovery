@@ -370,15 +370,11 @@ class MoleculeSetAPI(PostEraAPI):
             warnings.warn(
                 "Fix currently applied for postera column name bleaching see issues #629 #628"
             )
-        print("update")
-        print(df)
-        print(df.columns)
+
         df = ManifoldAllowedTags.filter_dataframe_cols(
             df, allow=[smiles_field, id_field], bleached=bleached
         )
 
-        print(df)
-        print(df.columns)
         if not ManifoldAllowedTags.all_in_values(
             df.columns, allow=[id_field, smiles_field], bleached=bleached
         ):
