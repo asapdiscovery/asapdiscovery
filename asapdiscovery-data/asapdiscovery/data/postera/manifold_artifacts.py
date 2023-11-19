@@ -14,7 +14,7 @@ from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from ..aws.cloudfront import CloudFront
 from ..aws.s3 import S3
 from .manifold_data_validation import TargetTags, map_output_col_to_manifold_tag
-from .molecule_set import MoleculeSetAPI
+from .molecule_set import MoleculeSetAPI, _POSTERA_COLUMN_BLEACHING_ACTIVE
 
 
 class ArtifactType(Enum):
@@ -136,13 +136,17 @@ class ManifoldArtifactUploader:
         expiry = datetime.utcnow() + expires_delta
         return self.cloudfront.generate_signed_url(bucket_path, expiry)
 
-    def upload_artifacts(self) -> None:
+    def upload_artifacts(self, bleached=_POSTERA_COLUMN_BLEACHING_ACTIVE) -> None:
         """
         Upload the artifacts to Postera Manifold and S3
         """
         for artifact_column, artifact_type in zip(
             self.artifact_columns, self.artifact_types
         ):
+            if bleached:
+                artifact_column = artifact_column.replace(
+                    "-", "_"
+                )  # NOTE: remove when bleaching is removed
             subset_df = self.molecule_dataframe[
                 [artifact_column, self.manifold_id_column]
             ].copy()
@@ -150,6 +154,11 @@ class ManifoldArtifactUploader:
             output_tag_name = map_output_col_to_manifold_tag(ArtifactType, self.target)[
                 artifact_type.value
             ]
+
+            if bleached:
+                output_tag_name = output_tag_name.replace(
+                    "-", "_"
+                )  # NOTE: remove when bleaching is removed
 
             subset_df[f"_bucket_path_{artifact_column}"] = subset_df[
                 self.manifold_id_column
@@ -165,6 +174,7 @@ class ManifoldArtifactUploader:
                 self.molset_id,
                 subset_df,
                 id_field=self.manifold_id_column,
+                bleached=bleached,
             )
 
             # push to s3

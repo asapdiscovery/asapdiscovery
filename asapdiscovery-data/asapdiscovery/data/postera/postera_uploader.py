@@ -4,7 +4,11 @@ from warnings import warn
 
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
+<<<<<<< HEAD
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
+=======
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+>>>>>>> small_scale_w_bleach_fix
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,

@@ -1,4 +1,5 @@
 import itertools
+import warnings
 from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
@@ -57,6 +58,10 @@ class TagEnumBase(StringEnum):
 
         # drop columns that are not allowed
         extra_cols = [col for col in df.columns if col not in allowed_columns]
+        if len(extra_cols) > 0:
+            warnings.warn(
+                f"Columns {extra_cols} are not allowed. Dropping them from the dataframe"
+            )
         return df.drop(columns=extra_cols)
 
     @classmethod
