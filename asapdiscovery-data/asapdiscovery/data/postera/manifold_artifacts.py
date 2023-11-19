@@ -14,7 +14,7 @@ from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from ..aws.cloudfront import CloudFront
 from ..aws.s3 import S3
 from .manifold_data_validation import TargetTags, map_output_col_to_manifold_tag
-from .molecule_set import MoleculeSetAPI, _POSTERA_COLUMN_BLEACHING_ACTIVE
+from .molecule_set import _POSTERA_COLUMN_BLEACHING_ACTIVE, MoleculeSetAPI
 
 
 class ArtifactType(Enum):
