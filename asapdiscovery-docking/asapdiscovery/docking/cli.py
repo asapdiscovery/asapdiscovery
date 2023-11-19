@@ -151,6 +151,12 @@ def large_scale(
     help="Whether to use OEOmega conformer enumeration before docking (slower, more accurate)",
 )
 @click.option(
+    "--omega-dense",
+    is_flag=True,
+    default=False,
+    help="Whether to use dense conformer enumeration with OEOmega (slower, more accurate)",
+)
+@click.option(
     "--allow-retries",
     is_flag=True,
     default=False,
@@ -189,6 +195,7 @@ def cross_docking(
     multi_reference: bool = False,
     structure_selector: StructureSelector = StructureSelector.PAIRWISE,
     use_omega: bool = False,
+    omega_dense: bool = False,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
     ligands: Optional[str] = None,
@@ -219,6 +226,7 @@ def cross_docking(
             use_dask=use_dask,
             dask_type=dask_type,
             use_omega=use_omega,
+            omega_dense=omega_dense,
             allow_retries=allow_retries,
             filename=ligands,
             pdb_file=pdb_file,
