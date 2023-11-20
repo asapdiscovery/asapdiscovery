@@ -74,7 +74,7 @@ def plan(
     import openfe
     from rdkit import Chem
 
-    from .schema.fec import FreeEnergyCalculationFactory
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
 
     click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
