@@ -2,14 +2,21 @@ import json
 
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.metadata.resources import SARS_CoV_2_fitness_data
+from asapdiscovery.data.metadata.resources import (
+    SARS_CoV_2_fitness_data,
+    targets_with_fitness_data,
+)
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 _TARGET_TO_GENE = {
-    "SARS-CoV-2-Mpro": "nsp5 (Mpro)",
-    "MERS-CoV-Mpro": "not_available",
-    "SARS-CoV-2-Mac1": "nsp3",
+    TargetTags("SARS-CoV-2-Mpro").value: "nsp5 (Mpro)",
+    TargetTags("MERS-CoV-Mpro").value: "not_available",
+    TargetTags("SARS-CoV-2-Mac1").value: "nsp3",
 }
+
+
+def target_has_fitness_data(target: TargetTags) -> bool:
+    return target in targets_with_fitness_data
 
 
 def bloom_abstraction(fitness_scores_this_site: dict) -> int:

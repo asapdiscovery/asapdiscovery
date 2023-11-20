@@ -36,11 +36,13 @@ def modeling():
 @click.option(
     "--ref-chain",
     type=str,
+    default="A",
     help="Chain ID to align to",
 )
 @click.option(
     "--active-site-chain",
     type=str,
+    default="A",
     help="Active site chain ID to align to",
 )
 @click.option(

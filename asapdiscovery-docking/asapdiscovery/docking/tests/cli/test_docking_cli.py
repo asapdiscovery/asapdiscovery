@@ -17,7 +17,10 @@ def click_success(result):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_large_docking_cli_fragalysis(ligand_file, mpro_frag_dir, tmp_path):
+@pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
+def test_project_support_docking_cli_fragalysis(
+    ligand_file, mpro_frag_dir, tmp_path, subcommand
+):
     runner = CliRunner()
 
     frag_parent_dir, _ = mpro_frag_dir
@@ -25,7 +28,7 @@ def test_large_docking_cli_fragalysis(ligand_file, mpro_frag_dir, tmp_path):
     result = runner.invoke(
         cli,
         [
-            "large-scale",
+            subcommand,
             "--target",
             "SARS-CoV-2-Mpro",
             "--ligands",
@@ -44,8 +47,9 @@ def test_large_docking_cli_fragalysis(ligand_file, mpro_frag_dir, tmp_path):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_large_docking_cli_structure_directory_dask(
-    ligand_file, structure_dir, tmp_path
+@pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
+def test_project_support_docking_cli_structure_directory_dask(
+    ligand_file, structure_dir, tmp_path, subcommand
 ):
     runner = CliRunner()
 
@@ -54,7 +58,7 @@ def test_large_docking_cli_structure_directory_dask(
     result = runner.invoke(
         cli,
         [
-            "large-scale",
+            subcommand,
             "--target",
             "SARS-CoV-2-Mpro",
             "--ligands",
@@ -74,8 +78,9 @@ def test_large_docking_cli_structure_directory_dask(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_large_docking_cli_structure_directory_du_cache(
-    ligand_file, structure_dir, du_cache, tmp_path
+@pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
+def test_project_support_docking_cli_structure_directory_du_cache_dask(
+    ligand_file, structure_dir, du_cache, tmp_path, subcommand
 ):
     runner = CliRunner()
 
@@ -85,7 +90,7 @@ def test_large_docking_cli_structure_directory_du_cache(
     result = runner.invoke(
         cli,
         [
-            "large-scale",
+            subcommand,
             "--target",
             "SARS-CoV-2-Mpro",
             "--ligands",
@@ -107,15 +112,16 @@ def test_large_docking_cli_structure_directory_du_cache(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_large_docking_cli_pdb_file(ligand_file, pdb_file, du_cache, tmp_path):
+@pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
+def test_project_support_docking_cli_pdb_file_dask(
+    ligand_file, pdb_file, tmp_path, subcommand
+):
     runner = CliRunner()
-
-    du_cache_dir, _ = du_cache
 
     result = runner.invoke(
         cli,
         [
-            "large-scale",
+            subcommand,
             "--target",
             "SARS-CoV-2-Mpro",
             "--ligands",
@@ -127,6 +133,37 @@ def test_large_docking_cli_pdb_file(ligand_file, pdb_file, du_cache, tmp_path):
             0,
             "--output-dir",
             tmp_path,
+        ],
+    )
+    assert click_success(result)
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path):
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli,
+        [
+            "small-scale",
+            "--target",
+            "SARS-CoV-2-Mpro",
+            "--ligands",
+            ligand_file,
+            "--pdb-file",
+            pdb_file,
+            "--use-dask",
+            "--posit-confidence-cutoff",
+            0,
+            "--output-dir",
+            tmp_path,
+            "--md",
+            "--md-steps",
+            1000,
+            "--md-openmm-platform",
+            "CPU",
         ],
     )
     assert click_success(result)
@@ -161,6 +198,3 @@ def test_cross_docking_cli_structure_directory_du_cache(
         ],
     )
     assert click_success(result)
-
-
-# TODO add tests for postera
