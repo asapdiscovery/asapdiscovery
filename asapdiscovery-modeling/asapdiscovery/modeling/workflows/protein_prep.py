@@ -9,6 +9,7 @@ from asapdiscovery.data.dask_utils import (
     set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
@@ -82,11 +83,9 @@ class ProteinPrepInputs(BaseModel):
     align: Optional[Path] = Field(
         None, description="Reference structure pdb to align to."
     )
-    ref_chain: Optional[str] = Field(
-        None, description="Reference chain ID to align to."
-    )
+    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
     active_site_chain: Optional[str] = Field(
-        None, description="Chain ID to align to reference."
+        "A", description="Chain ID to align to reference."
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
@@ -223,13 +222,16 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     if inputs.align:
         # load reference structure
         logger.info(f"Loading and aligning to reference structure: {inputs.align}")
-        ref_complex = Complex.from_pdb(
-            inputs.align,
-            target_kwargs={"target_name": "ref"},
-            ligand_kwargs={"compound_name": "ref_ligand"},
-        )
+        align_struct = inputs.align
     else:
-        ref_complex = None
+        logger.info("No reference structure specified, using canonical structure")
+        align_struct = master_structures[inputs.target]
+
+    ref_complex = Complex.from_pdb(
+        align_struct,
+        target_kwargs={"target_name": "ref"},
+        ligand_kwargs={"compound_name": "ref_ligand"},
+    )
 
     # setup the path to cached structures
     cache_path = output_dir / inputs.gen_cache

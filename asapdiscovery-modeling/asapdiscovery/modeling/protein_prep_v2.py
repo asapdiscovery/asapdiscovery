@@ -135,11 +135,9 @@ class ProteinPrepper(ProteinPrepperBase):
     align: Optional[Complex] = Field(
         None, description="Reference structure to align to."
     )
-    ref_chain: Optional[str] = Field(
-        None, description="Reference chain ID to align to."
-    )
+    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
     active_site_chain: Optional[str] = Field(
-        None, description="Chain ID to align to reference."
+        "A", description="Chain ID to align to reference."
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
