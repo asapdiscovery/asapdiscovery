@@ -1,9 +1,10 @@
+import os
+
 import pytest
 from asapdiscovery.data.openeye import load_openeye_design_unit, oechem
 from asapdiscovery.data.schema_v2.target import PreppedTarget, Target, TargetIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from pydantic import ValidationError
-import os
 
 
 @pytest.fixture(scope="session")
@@ -173,7 +174,9 @@ def test_target_moonshot_pdb_processed_no_ligand(moonshot_pdb):
 
 
 def test_preppedtarget_from_oedu_file(oedu_file):
-    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash")
+    pt = PreppedTarget.from_oedu_file(
+        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
+    )
     oedu = pt.to_oedu()
     assert oedu.GetTitle() == "(AB) > LIG(A-403)"  # from one of the old files
 
@@ -188,7 +191,9 @@ def test_preppedtarget_to_pdb_file(oedu_file, tmpdir):
     """Make sure a target can be saved to pdb file for vis"""
 
     with tmpdir.as_cwd():
-        pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTest", target_hash="mock-hash")
+        pt = PreppedTarget.from_oedu_file(
+            oedu_file, target_name="PreppedTargetTest", target_hash="mock-hash"
+        )
         file_name = "test_protein.pdb"
         pt.to_pdb_file(file_name)
         assert os.path.exists(file_name) is True
@@ -210,16 +215,22 @@ def test_prepped_target_from_oedu_file_bad_file():
 def test_prepped_target_from_oedu(oedu_file):
     loaded_oedu = load_openeye_design_unit(oedu_file)
     loaded_oedu.SetTitle("PreppedTargetTestName")
-    pt = PreppedTarget.from_oedu(loaded_oedu, target_name="PreppedTargetTestName", target_hash="mock-hash")
+    pt = PreppedTarget.from_oedu(
+        loaded_oedu, target_name="PreppedTargetTestName", target_hash="mock-hash"
+    )
     oedu = pt.to_oedu()
     assert oedu.GetTitle() == "PreppedTargetTestName"
 
 
 def test_prepped_target_from_oedu_file_roundtrip(oedu_file, tmp_path):
-    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash")
+    pt = PreppedTarget.from_oedu_file(
+        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
+    )
     pt.to_oedu_file(tmp_path / "test.oedu")
     pt2 = PreppedTarget.from_oedu_file(
-        tmp_path / "test.oedu", target_name="PreppedTargetTestName", target_hash="mock-hash"
+        tmp_path / "test.oedu",
+        target_name="PreppedTargetTestName",
+        target_hash="mock-hash",
     )
     # these two comparisons should be the same
     assert pt == pt2
@@ -227,16 +238,22 @@ def test_prepped_target_from_oedu_file_roundtrip(oedu_file, tmp_path):
 
 
 def test_prepped_target_from_oedu_roundtrip(oedu_file):
-    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash")
+    pt = PreppedTarget.from_oedu_file(
+        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
+    )
     du = pt.to_oedu()
-    pt2 = PreppedTarget.from_oedu(du, target_name="PreppedTargetTestName", target_hash="mock-hash")
+    pt2 = PreppedTarget.from_oedu(
+        du, target_name="PreppedTargetTestName", target_hash="mock-hash"
+    )
     # these two comparisons should be the same
     assert pt == pt2
     assert pt.data_equal(pt2)
 
 
 def test_prepped_target_json_roundtrip(oedu_file):
-    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash")
+    pt = PreppedTarget.from_oedu_file(
+        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
+    )
     js = pt.json()
     pt2 = PreppedTarget.from_json(js)
     # these two comparisons should be the same
@@ -247,7 +264,9 @@ def test_prepped_target_json_roundtrip(oedu_file):
 
 
 def test_prepped_target_json_file_roundtrip(oedu_file, tmp_path):
-    pt = PreppedTarget.from_oedu_file(oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash")
+    pt = PreppedTarget.from_oedu_file(
+        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
+    )
     path = tmp_path / "test.json"
     pt.to_json_file(path)
     pt2 = PreppedTarget.from_json_file(path)
