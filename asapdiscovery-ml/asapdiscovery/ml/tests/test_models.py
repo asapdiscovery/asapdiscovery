@@ -67,7 +67,7 @@ def test_get_model():
 
 def test_get_latest_model_for_target_and_type():
     model = ASAPMLModelRegistry.get_latest_model_for_target_and_type(
-        "SARS-CoV-2-Mpro", "GAT"
+        "SARS-CoV-2-Mpro", "schnet"
     )
     other_models = ASAPMLModelRegistry.get_models_for_target("SARS-CoV-2-Mpro")
     # sort by date updated
