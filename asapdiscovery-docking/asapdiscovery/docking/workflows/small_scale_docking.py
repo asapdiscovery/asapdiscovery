@@ -478,6 +478,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")
+        else:
+            molset_name = inputs.postera_molset_name
 
         logger.info("Uploading artifacts to PostEra")
 
