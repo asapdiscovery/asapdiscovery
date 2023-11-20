@@ -93,5 +93,5 @@ def test_using_chemical_relationship_flags(
         in stereoisomerically_related
     )
     assert (
-        base_ligand.get_chemical_relationship(other) in stereoisomerically_related
-    ) is False
+        base_ligand.get_chemical_relationship(other) not in stereoisomerically_related
+    )
