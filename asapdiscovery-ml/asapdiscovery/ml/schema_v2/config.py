@@ -3,13 +3,13 @@ from __future__ import annotations
 import abc
 import pickle as pkl
 from collections.abc import Iterator
-from enum import Enum
 from pathlib import Path
 from typing import Callable, ClassVar
 
 import mtenn
 import numpy as np
 import torch
+from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -18,7 +18,7 @@ from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from pydantic import BaseModel, Field, root_validator
 
 
-class OptimizerType(str, Enum):
+class OptimizerType(StringEnum):
     """
     Enum for training optimizers.
     """
@@ -41,7 +41,8 @@ class OptimizerConfig(BaseModel):
     optimizer_type: OptimizerType = Field(
         OptimizerType.adam,
         description=(
-            "Tyoe of optimizer to use. Options are [sgd, adam, adadelta, adamw]."
+            "Type of optimizer to use. "
+            f"Options are [{', '.join(OptimizerType.get_values())}]."
         ),
     )
     # Common parameters
@@ -116,7 +117,7 @@ class OptimizerConfig(BaseModel):
                 raise ValueError(f"Unknown value for optimizer_type: {optimizer_type}")
 
 
-class EarlyStoppingType(str, Enum):
+class EarlyStoppingType(StringEnum):
     """
     Enum for early stopping classes.
     """
@@ -132,7 +133,10 @@ class EarlyStoppingConfig(BaseModel):
 
     es_type: EarlyStoppingType = Field(
         ...,
-        description=("Tyoe of early stopping to use. Options are [best, converged]."),
+        description=(
+            "Type of early stopping to use. "
+            f"Options are [{', '.join(EarlyStoppingType.get_values())}]."
+        ),
     )
     # Parameters for best
     patience: int = Field(
@@ -185,7 +189,7 @@ class EarlyStoppingConfig(BaseModel):
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
 
-class DatasetType(str, Enum):
+class DatasetType(StringEnum):
     """
     Enum for different Dataset types.
     """
@@ -201,7 +205,11 @@ class DatasetConfig(BaseModel):
 
     # Graph or structure-based dataset
     ds_type: DatasetType = Field(
-        ..., description="Type of dataset to build. Options are [graph, structural]."
+        ...,
+        description=(
+            "Type of dataset to build. "
+            f"Options are [{', '.join(DatasetType.get_values())}]."
+        ),
     )
 
     # Required inputs used to build the dataset
@@ -279,7 +287,7 @@ class DatasetConfig(BaseModel):
         return ds
 
 
-class DatasetSplitterType(str, Enum):
+class DatasetSplitterType(StringEnum):
     """
     Enum for different methods of splitting a dataset.
     """
@@ -295,7 +303,11 @@ class DatasetSplitterConfig(BaseModel):
 
     # Parameter for splitting
     split_type: DatasetSplitterType = Field(
-        ..., description="Method to use for splitting."
+        ...,
+        description=(
+            "Method to use for splitting. "
+            f"Options are [{', '.join(DatasetSplitterType.get_values())}]."
+        ),
     )
 
     # Multi-pose or not
@@ -558,7 +570,7 @@ class DatasetSplitterConfig(BaseModel):
         return ds_train, ds_val, ds_test
 
 
-class ModelType(str, Enum):
+class ModelType(StringEnum):
     """
     Enum for model types.
     """
@@ -569,7 +581,7 @@ class ModelType(str, Enum):
     INVALID = "INVALID"
 
 
-class MTENNStrategy(str, Enum):
+class MTENNStrategy(StringEnum):
     """
     Enum for possible MTENN Strategy classes.
     """
@@ -582,7 +594,7 @@ class MTENNStrategy(str, Enum):
     complex = "complex"
 
 
-class MTENNReadout(str, Enum):
+class MTENNReadout(StringEnum):
     """
     Enum for possible MTENN Readout classes.
     """
@@ -590,7 +602,7 @@ class MTENNReadout(str, Enum):
     pic50 = "pic50"
 
 
-class MTENNCombination(str, Enum):
+class MTENNCombination(StringEnum):
     """
     Enum for possible MTENN Readout classes.
     """
@@ -609,27 +621,31 @@ class ModelConfigBase(BaseModel):
         MTENNStrategy.delta,
         description=(
             "Which Strategy to use for combining complex, protein, and ligand "
-            "representations in the MTENN Model."
+            "representations in the MTENN Model. "
+            f"Options are [{', '.join(MTENNStrategy.get_values())}]."
         ),
     )
     pred_readout: MTENNReadout | None = Field(
         None,
         description=(
             "Which Readout to use for the model predictions. This corresponds "
-            "to the individual pose predictions in the case of a GroupedModel."
+            "to the individual pose predictions in the case of a GroupedModel. "
+            f"Options are [{', '.join(MTENNReadout.get_values())}]."
         ),
     )
     combination: MTENNCombination | None = Field(
         None,
         description=(
-            "Which Combination to use for combining predictions in a GroupedModel."
+            "Which Combination to use for combining predictions in a GroupedModel. "
+            f"Options are [{', '.join(MTENNCombination.get_values())}]."
         ),
     )
     comb_readout: MTENNReadout | None = Field(
         None,
         description=(
             "Which Readout to use for the combined model predictions. This is only "
-            "relevant in the case of a GroupedModel."
+            "relevant in the case of a GroupedModel. "
+            f"Options are [{', '.join(MTENNReadout.get_values())}]."
         ),
     )
 
