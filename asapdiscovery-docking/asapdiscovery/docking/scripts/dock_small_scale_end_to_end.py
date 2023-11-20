@@ -1200,14 +1200,14 @@ def main():
         ]
         # make an uploader for the poses and upload them
         pose_uploader = ManifoldArtifactUploader(
+            args.target,
             pose_df,
             molset_id,
-            ArtifactType.DOCKING_POSE_POSIT,
-            ms,
-            cf,
-            s3,
-            args.target,
-            artifact_column="_outpath_pose",
+            artifact_types=[ArtifactType.DOCKING_POSE_POSIT],
+            artifact_columns=["_outpath_pose"],
+            moleculeset_api=ms,
+            cloudfront=cf,
+            s3=s3,
             bucket_name=aws_s3_settings.BUCKET_NAME,
         )
         pose_uploader.upload_artifacts()
@@ -1217,14 +1217,14 @@ def main():
                 [DockingResultCols.LIGAND_ID.value, "_outpath_pose_fitness"]
             ]
             fitness_uploader = ManifoldArtifactUploader(
+                args.target,
                 fitness_df,
                 molset_id,
-                ArtifactType.DOCKING_POSE_FITNESS_POSIT,
-                ms,
-                cf,
-                s3,
-                args.target,
-                artifact_column="_outpath_pose_fitness",
+                artifact_types=[ArtifactType.DOCKING_POSE_FITNESS_POSIT],
+                artifact_columns=["_outpath_pose_fitness"],
+                moleculeset_api=ms,
+                cloudfront=cf,
+                s3=s3,
                 bucket_name=aws_s3_settings.BUCKET_NAME,
             )
             fitness_uploader.upload_artifacts()
@@ -1234,14 +1234,14 @@ def main():
                 [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
             ]
             md_uploader = ManifoldArtifactUploader(
+                args.target,
                 md_df,
                 molset_id,
-                ArtifactType.MD_POSE,
-                ms,
-                cf,
-                s3,
-                args.target,
-                artifact_column="_outpath_gif",
+                artifact_types=[ArtifactType.MD_POSE],
+                artifact_columns=["_outpath_gif"],
+                moleculeset_api=ms,
+                cloudfront=cf,
+                s3=s3,
                 bucket_name=aws_s3_settings.BUCKET_NAME,
             )
             md_uploader.upload_artifacts()
