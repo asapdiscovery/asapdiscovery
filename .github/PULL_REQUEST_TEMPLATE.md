@@ -6,7 +6,7 @@ Notable points that this PR has either accomplished or will accomplish.
 - [ ] Point 1 ...
 
 ## Questions
-- [ ] Question 1 .. 
+- [ ] Question 1 ..
 
 ## Status
 - [ ] Ready to go
