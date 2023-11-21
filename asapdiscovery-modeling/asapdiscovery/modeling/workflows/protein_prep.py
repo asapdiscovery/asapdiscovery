@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from shutil import rmtree
 from typing import Optional
 
 from asapdiscovery.data.dask_utils import (
