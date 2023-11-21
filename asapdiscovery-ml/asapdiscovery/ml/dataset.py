@@ -1,7 +1,6 @@
-from torch.utils.data import Dataset, Subset
-
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
+from torch.utils.data import Dataset, Subset
 
 
 class DockedDataset(Dataset):

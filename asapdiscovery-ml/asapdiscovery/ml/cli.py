@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 
-from asapdiscovery.ml.models import MLModelType
 import asapdiscovery.ml.schema_v2.config as ascfg
 import click
+from asapdiscovery.ml.models import MLModelType
 
 
 @click.group()
