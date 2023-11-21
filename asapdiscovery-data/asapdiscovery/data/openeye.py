@@ -700,7 +700,7 @@ def oemol_to_smiles(mol: oechem.OEMol, isomeric=True) -> str:
     str
        SMILES string of molecule
     """
-    # By default, OEMoleToSmiles generates isomeric SMILES, which includes stereochemistry
+    # By default, OEMolToSmiles generates isomeric SMILES, which includes stereochemistry
     if isomeric:
         return oechem.OEMolToSmiles(mol)
 
