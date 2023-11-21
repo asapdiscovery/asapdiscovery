@@ -70,33 +70,22 @@ class HTMLVisualizer:
             )
         self.target = target
 
-        # init loggers
-        if logger is None:
-            self.logger = FileLogger(
-                "html_visualizer_log.txt", "./", stdout=True, level=logging.INFO
-            ).getLogger()
-        else:
-            self.logger = logger
         self.debug = debug
 
         self.color_method = color_method
         if self.color_method == "subpockets":
-            self.logger.info("Mapping interactive view by subpocket dict")
+            pass
         elif self.color_method == "fitness":
             if not target_has_fitness_data(self.target):
                 raise NotImplementedError(
                     "No viral fitness data available for target set `color_method` to `subpockets`."
                 )
-            self.logger.info(
-                "Mapping interactive view by fitness (visualised with b-factor)"
-            )
             self.fitness_data = parse_fitness_json(self.target)
         else:
             raise ValueError(
                 "variable `color_method` must be either of ['subpockets', 'fitness']"
             )
 
-        self.logger.info(f"Visualising poses for {self.target}")
 
         self.poses = []
         self.output_paths = []
@@ -113,7 +102,7 @@ class HTMLVisualizer:
                 self.poses.append(mol)
                 self.output_paths.append(path)
             else:
-                self.logger.warning(f"Pose {pose} does not exist, skipping.")
+                pass
 
         if isinstance(protein, oechem.OEMolBase):
             self.protein = protein.CreateCopy()
@@ -124,9 +113,7 @@ class HTMLVisualizer:
                 load_openeye_pdb(str(protein)), preserve_all=True
             )
 
-        self.logger.debug(
-            f"Writing HTML visualisations for {len(self.output_paths)} ligands"
-        )
+
 
     @staticmethod
     def write_html(html, path):
