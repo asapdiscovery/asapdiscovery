@@ -67,35 +67,19 @@ class PosteraUploader(BaseModel):
             )
 
             if not self.id_data_is_uuid_castable(df, self.id_field):
-                new_ms_name = self.molecule_set_name + "_{:%Y-%m-%d-%H-%M}".format(
-                    datetime.now()
-                )
-                warn(
-                    f"Attempting to update existing molecule set {self.molecule_set_name} without UUID's set as id_field. A new molecule set {new_ms_name} will be created instead. To update an existing molecule set, you should pull from Postera as input"
-                )
-                if not ms_api.exists(new_ms_name, by="name"):
-                    id = ms_api.create_molecule_set_from_df_with_manifold_validation(
-                        molecule_set_name=new_ms_name,
-                        df=df,
-                        id_field=self.id_field,
-                        smiles_field=self.smiles_field,
-                    )
-                    new_data = ms_api.get_molecules(id, return_as="dataframe")
-                    df_copy = self.join_with_manifold_data(df_copy, new_data)
-                    new_molset = True
-                    molset_name = new_ms_name
-                else:
-                    raise RuntimeError(
-                        f"Collision with updated Molecule set name {new_ms_name} wait a minute and try again."
-                    )
+                new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
+                print(new_data)
+                df_copy = self.join_with_manifold_data(df_copy, new_data)
+                # drop rows with nan manifold id
+                print("Dropping rows with nan manifold id")
+                print(df_copy)
 
-            else:
-                ms_api.update_molecules_from_df_with_manifold_validation(
-                    molecule_set_id=molset_id,
-                    df=df,
-                    id_field=self.id_field,
-                    smiles_field=self.smiles_field,
-                    overwrite=self.overwrite,
+            ms_api.update_molecules_from_df_with_manifold_validation(
+                molecule_set_id=molset_id,
+                df=df_copy,
+                id_field=self.id_field,
+                smiles_field=self.smiles_field,
+                overwrite=self.overwrite,
                 )
         return df_copy, molset_name, new_molset
 
