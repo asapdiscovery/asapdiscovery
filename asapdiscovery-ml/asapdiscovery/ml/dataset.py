@@ -1,5 +1,7 @@
-from asapdiscovery.data.schema import ExperimentalCompoundData
 from torch.utils.data import Dataset, Subset
+
+from asapdiscovery.data.schema import ExperimentalCompoundData
+from asapdiscovery.data.schema_v2.complex import Complex
 
 
 class DockedDataset(Dataset):
@@ -8,8 +10,69 @@ class DockedDataset(Dataset):
     learning.
     """
 
-    def __init__(
-        self,
+    def __init__(self, compounds={}, structures=[]):
+        """
+        Constructor for DockedDataset object.
+
+        Parameters
+        ----------
+        compounds : dict[(str, str), list[int]]
+            Dict mapping a compound tuple (xtal_id, compound_id) to a list of indices in
+            structures that are poses for that id pair
+        structures : list[dict]
+            List of pose dicts, containing at minimum tensors for atomic number, atomic
+            positions, and a ligand idx. Indices in this list should match the indices
+            in the lists in compounds.
+        """
+        super().__init__()
+
+        self.compounds = compounds
+        self.structures = structures
+
+    @classmethod
+    def from_complexes(cls, complexes: list[Complex], exp_dict={}):
+        """
+        Build from a list of Complex objects.
+
+        Parameters
+        ----------
+        complexes : list[Complex]
+            List of Complex schema objects to build into a DockedDataset object
+        exp_dict : dict[str, dict[str, int | float]]
+            Dict mapping compound_id to an experimental results dict. The dict for a
+            compound will be added to the pose representation of each Complex containing
+            a ligand witht that compound_id
+
+        Returns
+        -------
+        DockedDataset
+        """
+
+        # Helper function to grab all relevant
+        def get_complex_id(c):
+            # First build target id from target_name and all identifiers
+            target_name = c.target.target_name
+            target_ids = {k: v for k, v in c.target.ids.dict() if v}
+            target_id = []
+            if target_name:
+                target_id += [target_name]
+            if len(target_ids):
+                target_id += [target_ids]
+
+            # Build ligand_id from compound_name and all identifiers
+            compound_name = c.ligand.compound_name
+            compound_ids = {k: v for k, v in c.ligand.ids.dict() if v}
+            compound_id = []
+            if compound_name:
+                compound_id += [compound_name]
+            if len(compound_ids):
+                compound_id += [compound_ids]
+
+            return tuple(target_id), tuple(compound_id)
+
+    @classmethod
+    def from_files(
+        cls,
         str_fns,
         compounds,
         ignore_h=True,
@@ -37,7 +100,6 @@ class DockedDataset(Dataset):
         num_workers : int, default=1
             Number of cores to use to load structures
         """
-        super().__init__()
 
         # Function to extract from extra_dict (just to make the list
         #  comprehension look a bit nicer)
@@ -60,14 +122,16 @@ class DockedDataset(Dataset):
         else:
             all_structures = [DockedDataset._load_structure(*args) for args in mp_args]
 
-        self.compounds = {}
-        self.structures = []
+        compound_idxs = {}
+        structures = []
         for i, (compound, struct) in enumerate(zip(compounds, all_structures)):
             try:
-                self.compounds[compound].append(i)
+                compound_idxs[compound].append(i)
             except KeyError:
-                self.compounds[compound] = [i]
-            self.structures.append(struct)
+                compound_idxs[compound] = [i]
+            structures.append(struct)
+
+        return cls(compound_idxs, structures)
 
     @staticmethod
     def _load_structure(fn, compound, ignore_h=True, lig_resn="LIG", extra_dict=None):
