@@ -15,6 +15,7 @@ from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
+from asapdiscovery.ml.models import MLModelType
 from pydantic import BaseModel, Field, root_validator
 
 
@@ -568,17 +569,6 @@ class DatasetSplitterConfig(BaseModel):
         return all_subsets
 
 
-class ModelType(StringEnum):
-    """
-    Enum for model types.
-    """
-
-    gat = "gat"
-    schnet = "schnet"
-    e3nn = "e3nn"
-    INVALID = "INVALID"
-
-
 class MTENNStrategy(StringEnum):
     """
     Enum for possible MTENN Strategy classes.
@@ -611,7 +601,7 @@ class MTENNCombination(StringEnum):
 
 
 class ModelConfigBase(BaseModel):
-    model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
+    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
 
     # Shared parameters for MTENN
     grouped: bool = Field(False, description="Model is a grouped (multi-pose) model.")
@@ -804,7 +794,7 @@ class GATModelConfig(ModelConfigBase):
         "biases": bool,
     }
 
-    model_type: ClassVar[ModelType.gat] = ModelType.gat
+    model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
 
     in_feats: int = Field(
         CanonicalAtomFeaturizer().feat_size(),
@@ -1008,7 +998,7 @@ class SchNetModelConfig(ModelConfigBase):
     given in PyG.
     """
 
-    model_type: ClassVar[ModelType.schnet] = ModelType.schnet
+    model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
 
     hidden_channels: int = Field(128, description="Hidden embedding size.")
     num_filters: int = Field(
@@ -1130,7 +1120,7 @@ class E3NNModelConfig(ModelConfigBase):
     Class for constructing an e3nn ML model.
     """
 
-    model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
+    model_type: ClassVar[MLModelType.e3nn] = MLModelType.e3nn
 
     num_atom_types: int = Field(
         100,

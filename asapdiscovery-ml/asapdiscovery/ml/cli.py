@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from asapdiscovery.ml.models import MLModelType
 import asapdiscovery.ml.schema_v2.config as ascfg
 import click
 
@@ -28,7 +29,7 @@ def ml():
     "-model",
     "--model-type",
     required=True,
-    type=ascfg.ModelType,
+    type=MLModelType,
     help="Which model type to use.",
 )
 @click.option(
@@ -315,7 +316,7 @@ def ml():
 @click.option("--num-nodes", type=float, help="Typical number of nodes in a graph.")
 def test(
     output_dir: Path,
-    model_type: ascfg.ModelType,
+    model_type: MLModelType,
     config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
@@ -368,7 +369,7 @@ def test(
 ):
     # Build the model
     match model_type:
-        case ascfg.ModelType.gat:
+        case MLModelType.GAT:
             config_class = ascfg.GATModelConfig
             cli_config_vals = {
                 "grouped": grouped,
@@ -394,7 +395,7 @@ def test(
                 "biases": biases,
                 "allow_zero_in_degree": allow_zero_in_degree,
             }
-        case ascfg.ModelType.schnet:
+        case MLModelType.schnet:
             config_class = ascfg.SchNetModelConfig
             cli_config_vals = {
                 "grouped": grouped,
@@ -419,7 +420,7 @@ def test(
                 "mean": mean,
                 "std": std,
             }
-        case ascfg.ModelType.e3nn:
+        case MLModelType.e3nn:
             config_class = ascfg.E3NNModelConfig
             cli_config_vals = {
                 "grouped": grouped,
