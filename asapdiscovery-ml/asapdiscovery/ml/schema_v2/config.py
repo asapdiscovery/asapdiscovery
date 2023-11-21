@@ -563,11 +563,9 @@ class DatasetSplitterConfig(BaseModel):
 
         # Take out the sink split
         if sink_split:
-            ds_train, ds_val, _, ds_test = all_subsets
-        else:
-            ds_train, ds_val, ds_test = all_subsets
+            all_subsets = all_subsets[:2] + all_subsets[3]
 
-        return ds_train, ds_val, ds_test
+        return all_subsets
 
 
 class ModelType(StringEnum):
