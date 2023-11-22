@@ -68,11 +68,7 @@ class PosteraUploader(BaseModel):
 
             if not self.id_data_is_uuid_castable(df, self.id_field):
                 new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
-                print(new_data)
                 df_copy = self.join_with_manifold_data(df_copy, new_data)
-                # drop rows with nan manifold id
-                print("Dropping rows with nan manifold id")
-                print(df_copy)
 
             ms_api.update_molecules_from_df_with_manifold_validation(
                 molecule_set_id=molset_id,
@@ -80,7 +76,7 @@ class PosteraUploader(BaseModel):
                 id_field=self.id_field,
                 smiles_field=self.smiles_field,
                 overwrite=self.overwrite,
-                )
+            )
         return df_copy, molset_name, new_molset
 
     @staticmethod
@@ -97,12 +93,18 @@ class PosteraUploader(BaseModel):
         subset[MoleculeSetKeys.smiles.value] = subset[
             MoleculeSetKeys.smiles.value
         ].apply(oe_smiles_roundtrip)
+        # do the same to the original data
+        data[ManifoldAllowedTags.SMILES.value] = data[
+            ManifoldAllowedTags.SMILES.value
+        ].apply(oe_smiles_roundtrip)
         # give it the right column names
         subset.rename(
             columns={MoleculeSetKeys.smiles.value: ManifoldAllowedTags.SMILES.value},
             inplace=True,
         )
-        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
+        # merge the data
+
+        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="inner")
         # drop original ID column and replace with the manifold ID
         data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
         data.rename(
