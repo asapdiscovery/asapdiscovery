@@ -141,7 +141,7 @@ class Ligand(DataModelAbstractBase):
         """
         Create a Ligand from an OEMol extracting all SD tags into the internal model
         """
-        # work with a copy as we change the sate of the molecule
+        # work with a copy as we change the state of the molecule
         input_mol = copy.deepcopy(mol)
         kwargs.pop("data", None)
         sd_tags = get_SD_data(input_mol)
@@ -162,7 +162,7 @@ class Ligand(DataModelAbstractBase):
         # clean the sdf data for the internal model
         sdf_str = oemol_to_sdf_string(clear_SD_data(input_mol))
         # create a smiles which does not have nitrogen stereo
-        smiles = oemol_to_smiles(input_mol).replace("[N@@]", "N").replace("[N@]", "N")
+        smiles = oemol_to_smiles(input_mol)
         # create the internal LigandProvenance model
         if "provenance" not in kwargs:
             provenance = LigandProvenance(

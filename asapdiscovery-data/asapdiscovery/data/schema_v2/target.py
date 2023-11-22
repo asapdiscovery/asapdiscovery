@@ -10,9 +10,11 @@ from asapdiscovery.data.openeye import (
     oemol_to_pdb_string,
     pdb_string_to_oemol,
     save_openeye_design_unit,
+    openeye_perceive_residues,
+    save_openeye_pdb
 )
 from asapdiscovery.data.schema_v2.identifiers import TargetIdentifiers
-from asapdiscovery.modeling.modeling import split_openeye_mol
+from asapdiscovery.modeling.modeling import split_openeye_mol, split_openeye_design_unit
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field, root_validator
 
@@ -171,3 +173,16 @@ class PreppedTarget(DataModelAbstractBase):
     def to_oedu_file(self, filename: Union[str, Path]) -> None:
         oedu = self.to_oedu()
         save_openeye_design_unit(oedu, filename)
+
+    def to_pdb_file(self, filename: str):
+        """
+        Write the prepared target receptor to PDB file using openeye.
+        Parameters
+        ----------
+        filename: The name of the pdb file the target should be writen to.
+        """
+        oedu = self.to_oedu()
+        _, oe_receptor, _ = split_openeye_design_unit(du=oedu)
+        # As advised by Alex <https://github.com/choderalab/asapdiscovery/pull/608#discussion_r1388067468>
+        openeye_perceive_residues(oe_receptor)
+        save_openeye_pdb(oe_receptor, pdb_fn=filename)

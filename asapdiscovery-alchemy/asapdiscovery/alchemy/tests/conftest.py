@@ -5,6 +5,7 @@ import pytest
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
 from rdkit import Chem
 
@@ -86,3 +87,9 @@ def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailur
         ]
         for u in dummy_protocol_units
     ]
+
+
+@pytest.fixture(scope="session")
+def mac1_complex():
+    return PreppedComplex.parse_file(fetch_test_file("constrained_conformer/complex.json"))
+

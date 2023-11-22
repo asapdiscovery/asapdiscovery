@@ -191,18 +191,19 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             stereo_status.start()
             stereo_fails = self._validate_ligands(ligands=posed_ligands)
-            # add the new fails to the rest
-            failed_ligands["InconsistentStereo"] = stereo_fails
-            # we need to carefully remove the molecules from the posed_ligands list
-            failed_hash = [ligand.provenance.fixed_inchikey for ligand in stereo_fails]
-            posed_ligands = [
-                mol
-                for mol in posed_ligands
-                if mol.provenance.fixed_inchikey not in failed_hash
-            ]
+            if stereo_fails:
+                # add the new fails to the rest
+                failed_ligands["InconsistentStereo"] = stereo_fails
+                # we need to carefully remove the molecules from the posed_ligands list
+                failed_hash = [ligand.provenance.fixed_inchikey for ligand in stereo_fails]
+                posed_ligands = [
+                    mol
+                    for mol in posed_ligands
+                    if mol.provenance.fixed_inchikey not in failed_hash
+                ]
             stereo_status.stop()
             console.print(
-                f"[[green]✓[/green]] Stereochemistry filtering complete {len(failed_hash)} molecules removed."
+                f"[[green]✓[/green]] Stereochemistry filtering complete {len(stereo_fails)} molecules removed."
             )
             console.line()
 

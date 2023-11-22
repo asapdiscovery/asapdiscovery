@@ -47,7 +47,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         self,
         prepared_complex: PreppedComplex,
         ligands: list[Ligand],
-        core_smarts: Optional[str],
+        core_smarts: Optional[str] = None,
     ) -> PosedLigands:
         """
         Generate poses for the given list of molecules in the target receptor.
@@ -158,7 +158,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         return core_fragment
 
     def _generate_omega_instance(
-        self, core_fragment: oechem.OEGraphMol
+        self, core_fragment: oechem.OEGraphMol, use_mcs: bool
     ) -> oeomega.OEOmega:
         """
         Create an instance of omega for constrained pose generation using the input core molecule and the runtime
@@ -167,6 +167,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         Parameters
         ----------
         core_fragment: The OEGraphMol which should be used to define the constrained atoms during generation.
+        use_mcs: If the core fragment is not defined by the user try and mcs match between it and the target ligands.
 
         Returns
         -------
@@ -180,7 +181,8 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         omega_fix_opts.SetFixMaxMatch(10)  # allow multiple MCSS matches
         omega_fix_opts.SetFixDeleteH(True)  # only use heavy atoms
         omega_fix_opts.SetFixMol(core_fragment)  # Provide the reference ligand
-        omega_fix_opts.SetFixMCS(True)
+        if use_mcs:
+            omega_fix_opts.SetFixMCS(True)
         omega_fix_opts.SetFixRMS(
             1.0
         )  # The maximum distance between two atoms which is considered identical
@@ -228,12 +230,14 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             core_fragment = self._generate_core_fragment(
                 reference_ligand=prepared_complex.ligand, core_smarts=core_smarts
             )
+            use_mcs = False
         else:
             # use the reference ligand and let openeye find the mcs match
             core_fragment = prepared_complex.ligand.to_oemol()
+            use_mcs = True
 
         # build and configure omega
-        omega_generator = self._generate_omega_instance(core_fragment=core_fragment)
+        omega_generator = self._generate_omega_instance(core_fragment=core_fragment, use_mcs=use_mcs)
 
         # process the ligands
         result_ligands = []
@@ -313,7 +317,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 ligand.DeleteConf(conformer)
 
     def _select_best_pose(
-        self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]
+        self, receptor: oechem.OEDesignUnit, ligands: list[oechem.OEMol]
     ) -> list[oechem.OEGraphMol]:
         """
         Select the best pose for each ligand in place using the selected criteria.
@@ -322,7 +326,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         Parameters
         ----------
-        receptor: The receptor the ligands poses should be scored against.
+        receptor: The receptor oedu of the receptor with the binding site defined
         ligands: The list of multi-conformer ligands for which we want to select the best pose.
 
         Returns

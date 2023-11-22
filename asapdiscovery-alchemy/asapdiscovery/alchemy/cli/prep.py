@@ -68,7 +68,7 @@ def create(filename: str, core_smarts: str):
     "-r",
     "--receptor-complex",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-    help="The name of the file which contains the prepared receptor complex including the crystal ligand.",
+    help="The name of the JSON file which contains the prepared receptor complex including the crystal ligand.",
 )
 @click.option(
     "-cs",
@@ -120,12 +120,8 @@ def run(
         (1, 0, 1, 0),
     )
     console.print(message)
-
-    # TODO make a general from_file which handles this
-    if ".json" in receptor_complex:
-        ref_complex = PreppedComplex.parse_file(receptor_complex)
-    else:
-        ref_complex = PreppedComplex.from_oedu_file(receptor_complex)
+    # always expect the JSON file
+    ref_complex = PreppedComplex.parse_file(receptor_complex)
 
     message = Padding(
         f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",
