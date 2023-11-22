@@ -67,8 +67,8 @@ def test_prune_clashes(mol_with_constrained_confs, mac1_complex):
 @pytest.mark.parametrize(
     "chemgauss, best_score",
     [
-        pytest.param("Chemgauss4", "-9.747581481933594", id="Chemgauss4"),
-        pytest.param("Chemgauss3", "-74.73448944091797", id="Chemgauss3"),
+        pytest.param("Chemgauss4", -9.747581481933594, id="Chemgauss4"),
+        pytest.param("Chemgauss3", -74.73448944091797, id="Chemgauss3"),
     ],
 )
 def test_select_best_chemgauss(
@@ -90,15 +90,15 @@ def test_select_best_chemgauss(
         single_conf_ligands[0], oechem.OEGraphMol
     )  # checks its a single conf mol
     assert mol_with_constrained_confs.GetCoords() != current_active.GetCoords()
-    assert get_SD_data(single_conf_ligands[0])[f"{chemgauss}_score"] == pytest.approx(best_score)
+    assert float(get_SD_data(single_conf_ligands[0])[f"{chemgauss}_score"]) == pytest.approx(best_score)
 
 
 @pytest.mark.parametrize(
     "forcefield, ff_energy",
     [
-        pytest.param("MMFF", "43.42778156043702", id="MMFF"),
-        pytest.param("Sage", "68.88487057483857", id="Sage"),
-        pytest.param("Parsley", "128.38592742407758", id="Parsley"),
+        pytest.param("MMFF", 43.42778156043702, id="MMFF"),
+        pytest.param("Sage", 68.88487057483857, id="Sage"),
+        pytest.param("Parsley", 128.38592742407758, id="Parsley"),
     ],
 )
 def test_select_by_energy(forcefield, ff_energy, mol_with_constrained_confs):
@@ -113,7 +113,7 @@ def test_select_by_energy(forcefield, ff_energy, mol_with_constrained_confs):
     assert (
         mol_with_constrained_confs.GetActive().GetCoords() != current_active.GetCoords()
     )
-    assert get_SD_data(mol_with_constrained_confs)[f"{forcefield}_energy"] == pytest.approx(ff_energy)
+    assert float(get_SD_data(mol_with_constrained_confs)[f"{forcefield}_energy"]) == pytest.approx(ff_energy)
 
 
 def test_omega_fail_codes(mac1_complex):
