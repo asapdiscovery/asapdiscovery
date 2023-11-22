@@ -92,9 +92,9 @@ def test_select_best_chemgauss(
         single_conf_ligands[0], oechem.OEGraphMol
     )  # checks its a single conf mol
     assert mol_with_constrained_confs.GetCoords() != current_active.GetCoords()
-    assert float(get_SD_data(single_conf_ligands[0])[f"{chemgauss}_score"]) == pytest.approx(
-        best_score
-    )
+    assert float(
+        get_SD_data(single_conf_ligands[0])[f"{chemgauss}_score"]
+    ) == pytest.approx(best_score)
 
 
 @pytest.mark.parametrize(
@@ -117,9 +117,9 @@ def test_select_by_energy(forcefield, ff_energy, mol_with_constrained_confs):
     assert (
         mol_with_constrained_confs.GetActive().GetCoords() != current_active.GetCoords()
     )
-    assert float(get_SD_data(mol_with_constrained_confs)[
-        f"{forcefield}_energy"
-    ]) == pytest.approx(ff_energy)
+    assert float(
+        get_SD_data(mol_with_constrained_confs)[f"{forcefield}_energy"]
+    ) == pytest.approx(ff_energy)
 
 
 def test_omega_fail_codes(mac1_complex):
