@@ -201,7 +201,7 @@ asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.11.20:
     sha256hash: 18bc1633f15aa892de48d691356aad63894bfc6135f92e9ec7ac27a6c36edb91
   config:
     resource: asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.11.20.json
-    sha256hash: 20e44f25882fbda23acc821b63121fa621b3437480c366cdeaf1c28b8e6aa06c
+    sha256hash: 7065befd76cdcc79b4211c624a948c17a989110ebad3971b6bd10438e674a5fe
   last_updated: 2023-11-20
   targets:
     - SARS-CoV-2-Mpro
