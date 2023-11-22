@@ -41,7 +41,9 @@ def test_generate_omega():
     """Make sure omega is correctly made from the settings."""
     asprin = Ligand.from_smiles("O=C(C)Oc1ccccc1C(=O)O", compound_name="asprin")
     pose_generator = OpenEyeConstrainedPoseGenerator()
-    omega = pose_generator._generate_omega_instance(core_fragment=asprin.to_oemol(), use_mcs=True)
+    omega = pose_generator._generate_omega_instance(
+        core_fragment=asprin.to_oemol(), use_mcs=True
+    )
     assert omega.GetEnergyWindow() == pose_generator.energy_window
     assert omega.GetMaxConfs() == pose_generator.max_confs
 
@@ -90,7 +92,9 @@ def test_select_best_chemgauss(
         single_conf_ligands[0], oechem.OEGraphMol
     )  # checks its a single conf mol
     assert mol_with_constrained_confs.GetCoords() != current_active.GetCoords()
-    assert get_SD_data(single_conf_ligands[0])[f"{chemgauss}_score"] == pytest.approx(best_score)
+    assert get_SD_data(single_conf_ligands[0])[f"{chemgauss}_score"] == pytest.approx(
+        best_score
+    )
 
 
 @pytest.mark.parametrize(
@@ -113,7 +117,9 @@ def test_select_by_energy(forcefield, ff_energy, mol_with_constrained_confs):
     assert (
         mol_with_constrained_confs.GetActive().GetCoords() != current_active.GetCoords()
     )
-    assert get_SD_data(mol_with_constrained_confs)[f"{forcefield}_energy"] == pytest.approx(ff_energy)
+    assert get_SD_data(mol_with_constrained_confs)[
+        f"{forcefield}_energy"
+    ] == pytest.approx(ff_energy)
 
 
 def test_omega_fail_codes(mac1_complex):
