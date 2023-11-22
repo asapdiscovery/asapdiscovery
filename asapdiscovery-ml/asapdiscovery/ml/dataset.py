@@ -1,5 +1,6 @@
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
+import torch
 from torch.utils.data import Dataset, Subset
 
 
@@ -29,7 +30,7 @@ class DockedDataset(Dataset):
         self.structures = structures
 
     @classmethod
-    def from_complexes(cls, complexes: list[Complex], exp_dict={}):
+    def from_complexes(cls, complexes: list[Complex], exp_dict={}, ignore_h=True):
         """
         Build from a list of Complex objects.
 
@@ -37,10 +38,12 @@ class DockedDataset(Dataset):
         ----------
         complexes : list[Complex]
             List of Complex schema objects to build into a DockedDataset object
-        exp_dict : dict[str, dict[str, int | float]]
+        exp_dict : dict[str, dict[str, int | float]], optional
             Dict mapping compound_id to an experimental results dict. The dict for a
             compound will be added to the pose representation of each Complex containing
             a ligand witht that compound_id
+        ignore_h : bool, default=True
+            Whether to remove hydrogens from the loaded structure
 
         Returns
         -------
@@ -68,6 +71,54 @@ class DockedDataset(Dataset):
                 compound_id += [compound_ids]
 
             return tuple(target_id), tuple(compound_id)
+
+        # Helper function to convert a Complex to a pose
+        def complex_to_pose(comp, compound=None, exp_dict={}):
+            # First get target atom positions and atomic numbers
+            target_mol = comp.target.to_oemol()
+            target_coords = target_mol.GetCoords()
+            target_pos = []
+            target_z = []
+            for atom in target_mol.GetAtoms():
+                target_pos.append(target_coords[atom.GetIdx()])
+                target_z.append(atom.GetAtomicNum())
+
+            # Get ligand atom positions and atomic numbers
+            ligand_mol = comp.ligand.to_oemol()
+            ligand_coords = ligand_mol.GetCoords()
+            ligand_pos = []
+            ligand_z = []
+            for atom in ligand_mol.GetAtoms():
+                ligand_pos.append(ligand_coords[atom.GetIdx()])
+                ligand_z.append(atom.GetAtomicNum())
+
+            # Combine the two
+            all_pos = torch.tensor(target_pos + ligand_pos).float()
+            all_z = torch.tensor(target_z + ligand_z)
+            all_lig = torch.tensor(
+                [False] * target_mol.NumAtoms() + [True] * ligand_mol.NumAtoms()
+            )
+
+            pose = {"pos": all_pos, "z": all_z, "lig": all_lig}
+            if compound:
+                pose["compound"] = compound
+            return pose | exp_dict
+
+        compound_idxs = {}
+        structures = []
+        for i, comp in enumerate(complexes):
+            # compound = get_complex_id(comp)
+            compound = (comp.target.target_name, comp.ligand.compound_name)
+            try:
+                compound_idxs[compound].append(i)
+            except KeyError:
+                compound_idxs[compound] = [i]
+
+            comp_exp_dict = exp_dict.get(comp.ligand.compound_name, {})
+            pose = complex_to_pose(comp, compound=compound, exp_dict=comp_exp_dict)
+            structures.append(pose)
+
+        return cls(compound_idxs, structures)
 
     @classmethod
     def from_files(
