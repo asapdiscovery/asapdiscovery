@@ -56,7 +56,7 @@ def create(filename: str):
     "-ad",
     "--alchemy-dataset",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-    help="The JSON file containing an AlchemyDataset created with ASAP-Alchemy prep run. This defines the ligands and the receptor."
+    help="The JSON file containing an AlchemyDataset created with ASAP-Alchemy prep run. This defines the ligands and the receptor.",
 )
 @click.option(
     "-c",
@@ -70,7 +70,7 @@ def plan(
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
     factory_file: Optional[str] = None,
-    alchemy_dataset: Optional[str] = None
+    alchemy_dataset: Optional[str] = None,
 ):
     """
     Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
@@ -79,14 +79,15 @@ def plan(
     import pathlib
 
     import openfe
-    from rdkit import Chem
-
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyDataSet
+    from rdkit import Chem
 
     # check mutually exclusive args
     if ligands is None and alchemy_dataset is None:
-        raise RuntimeError("Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files.")
+        raise RuntimeError(
+            "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
+        )
 
     click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
@@ -98,10 +99,14 @@ def plan(
 
     if alchemy_dataset is not None:
         import tempfile
+
         # load the set of posed ligands and the receptor from our dataset
         click.echo(f"Loading Ligands and protein from AlchemyDataSet {alchemy_dataset}")
         alchemy_ds = AlchemyDataSet.from_file(alchemy_dataset)
-        input_ligands = [openfe.SmallMoleculeComponent.from_sdf_string(mol.to_sdf_str()) for mol in alchemy_ds.posed_ligands]
+        input_ligands = [
+            openfe.SmallMoleculeComponent.from_sdf_string(mol.to_sdf_str())
+            for mol in alchemy_ds.posed_ligands
+        ]
         # write to a temp pdb file and read back in
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
             alchemy_ds.reference_complex.target.to_pdb_file(fp.name)
@@ -112,7 +117,9 @@ def plan(
         click.echo(f"Loading Ligands from {ligands}")
         # parse all required data/ assume sdf currently
         supplier = Chem.SDMolSupplier(ligands, removeHs=False)
-        input_ligands = [openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier]
+        input_ligands = [
+            openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier
+        ]
         click.echo(f"Loading protein from {receptor}")
         receptor = openfe.ProteinComponent.from_pdb_file(receptor)
 
@@ -361,7 +368,6 @@ def restart(network: str, verbose: bool, tasks):
 
     """
     from alchemiscale import ScopedKey
-
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 

@@ -237,7 +237,9 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             use_mcs = True
 
         # build and configure omega
-        omega_generator = self._generate_omega_instance(core_fragment=core_fragment, use_mcs=use_mcs)
+        omega_generator = self._generate_omega_instance(
+            core_fragment=core_fragment, use_mcs=use_mcs
+        )
 
         # process the ligands
         result_ligands = []

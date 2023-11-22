@@ -1,10 +1,16 @@
 import pytest
-from click.testing import CliRunner
 from asapdiscovery.alchemy.cli.cli import alchemy
-from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory, FreeEnergyCalculationNetwork
-from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow, AlchemyDataSet
-from rdkit import Chem
+from asapdiscovery.alchemy.schema.fec import (
+    FreeEnergyCalculationFactory,
+    FreeEnergyCalculationNetwork,
+)
+from asapdiscovery.alchemy.schema.prep_workflow import (
+    AlchemyDataSet,
+    AlchemyPrepWorkflow,
+)
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from click.testing import CliRunner
+from rdkit import Chem
 
 
 def test_alchemy_create(tmpdir):
@@ -15,10 +21,7 @@ def test_alchemy_create(tmpdir):
     with tmpdir.as_cwd():
         result = runner.invoke(
             alchemy,
-            [
-                "create",
-                "workflow.json"
-            ],
+            ["create", "workflow.json"],
         )
         assert result.exit_code == 0
         # make sure we can load the factory
@@ -48,12 +51,14 @@ def test_alchemy_plan_from_raw(tmpdir, tyk2_protein, tyk2_ligands):
                 "-l",
                 "tyk2_ligands.sdf",
                 "-r",
-                "tyk2_protein.pdb"
-            ]
+                "tyk2_protein.pdb",
+            ],
         )
         assert result.exit_code == 0
         # try and open the planned network
-        network = FreeEnergyCalculationNetwork.from_file("tyk2-testing/planned_network.json")
+        network = FreeEnergyCalculationNetwork.from_file(
+            "tyk2-testing/planned_network.json"
+        )
         # make sure all ligands are in the network
         assert len(network.network.ligands) == len(tyk2_ligands)
 
@@ -67,19 +72,14 @@ def test_alchemy_plan_from_alchemy_dataset(tmpdir):
 
     with tmpdir.as_cwd():
         result = runner.invoke(
-            alchemy,
-            [
-                "plan",
-                "-ad",
-                alchemy_data.as_posix(),
-                "-n",
-                "mac1-testing"
-            ]
+            alchemy, ["plan", "-ad", alchemy_data.as_posix(), "-n", "mac1-testing"]
         )
         assert result.exit_code == 0
         assert "Loading Ligands and protein from AlchemyDataSet" in result.stdout
         # try and open the planned network
-        network = FreeEnergyCalculationNetwork.from_file("mac1-testing/planned_network.json")
+        network = FreeEnergyCalculationNetwork.from_file(
+            "mac1-testing/planned_network.json"
+        )
         # make sure all ligands are in the network
         assert len(network.network.ligands) == 3
 
@@ -91,16 +91,13 @@ def test_alchemy_plan_missing():
 
     with pytest.raises(RuntimeError) as error:
         _ = runner.invoke(
-            alchemy,
-            [
-                "plan",
-                "-n",
-                "test-planner"
-            ],
-            catch_exceptions=False
+            alchemy, ["plan", "-n", "test-planner"], catch_exceptions=False
         )
 
-    assert "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files." == str(error.value)
+    assert (
+        "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
+        == str(error.value)
+    )
 
 
 def test_alchemy_prep_create(tmpdir):
@@ -111,15 +108,7 @@ def test_alchemy_prep_create(tmpdir):
     with tmpdir.as_cwd():
         # write a workflow with a core smarts and make sure it can be loaded
         result = runner.invoke(
-            alchemy,
-            [
-                "prep",
-                "create",
-                "-f",
-                "prep-workflow.json",
-                "-cs",
-                "CC"
-            ]
+            alchemy, ["prep", "create", "-f", "prep-workflow.json", "-cs", "CC"]
         )
         assert result.exit_code == 0
         prep_workflow = AlchemyPrepWorkflow.parse_file("prep-workflow.json")
@@ -148,22 +137,36 @@ def test_alchemy_prep_run(tmpdir, mac1_complex):
                 "-l",
                 ligand_file.as_posix(),
                 "-r",
-                "complex.json"
-            ]
+                "complex.json",
+            ],
         )
         assert result.exit_code == 0
         # make sure stereo enum is run
-        assert "[✓] StereoExpander successful,  number of unique ligands 5." in result.stdout
+        assert (
+            "[✓] StereoExpander successful,  number of unique ligands 5."
+            in result.stdout
+        )
         # make sure stereo is detected
-        assert "! WARNING the reference structure is chiral, check output structures carefully!" in result.stdout
+        assert (
+            "! WARNING the reference structure is chiral, check output structures carefully!"
+            in result.stdout
+        )
         # check all molecules have poses made
         assert "[✓] Pose generation successful for 5/5." in result.stdout
         # 2 molecules should be removed due to inconsistent stereo
-        assert "[✓] Stereochemistry filtering complete 2 molecules removed." in result.stdout
+        assert (
+            "[✓] Stereochemistry filtering complete 2 molecules removed."
+            in result.stdout
+        )
         # check a warning is printed if some molecules are removed
-        assert "WARNING some ligands failed to have poses generated see failed_ligands" in result.stdout
+        assert (
+            "WARNING some ligands failed to have poses generated see failed_ligands"
+            in result.stdout
+        )
         # check we can load the result
-        prep_dataset = AlchemyDataSet.from_file("mac1-testing/prepared_alchemy_dataset.json")
+        prep_dataset = AlchemyDataSet.from_file(
+            "mac1-testing/prepared_alchemy_dataset.json"
+        )
         assert prep_dataset.dataset_name == "mac1-testing"
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 3

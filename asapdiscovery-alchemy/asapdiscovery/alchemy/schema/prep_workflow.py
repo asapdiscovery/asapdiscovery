@@ -195,7 +195,9 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 # add the new fails to the rest
                 failed_ligands["InconsistentStereo"] = stereo_fails
                 # we need to carefully remove the molecules from the posed_ligands list
-                failed_hash = [ligand.provenance.fixed_inchikey for ligand in stereo_fails]
+                failed_hash = [
+                    ligand.provenance.fixed_inchikey for ligand in stereo_fails
+                ]
                 posed_ligands = [
                     mol
                     for mol in posed_ligands

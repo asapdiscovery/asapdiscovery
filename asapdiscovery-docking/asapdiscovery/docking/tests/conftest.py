@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import pytest
+from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.data.openeye import oechem
 from asapdiscovery.docking.docking_v2 import (
     DockingInputMultiStructure,
     DockingInputPair,
@@ -102,11 +102,14 @@ def results_simple(docking_input_pair_simple):
 def results_multi(results, results_simple):
     return results + results_simple
 
+
 @pytest.fixture()
 def mol_with_constrained_confs() -> oechem.OEMol:
     """Load a multiconformer OEMol from an sdf"""
     mol = oechem.OEMol()
-    ifs = oechem.oemolistream(str(fetch_test_file("constrained_conformer/ASAP-0008650.sdf")))
+    ifs = oechem.oemolistream(
+        str(fetch_test_file("constrained_conformer/ASAP-0008650.sdf"))
+    )
     ifs.SetConfTest(oechem.OEIsomericConfTest())
     oechem.OEReadMolecule(ifs, mol)
     return mol
@@ -114,4 +117,6 @@ def mol_with_constrained_confs() -> oechem.OEMol:
 
 @pytest.fixture(scope="session")
 def mac1_complex():
-    return PreppedComplex.parse_file(fetch_test_file("constrained_conformer/complex.json"))
+    return PreppedComplex.parse_file(
+        fetch_test_file("constrained_conformer/complex.json")
+    )
