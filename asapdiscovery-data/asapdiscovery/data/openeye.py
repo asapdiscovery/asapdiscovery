@@ -170,11 +170,12 @@ def load_openeye_smi(smi_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     oechem.OEError
         If the SMI file cannot be opened.
     """
+    # convert to path to make consistent
+    smi_fn = Path(smi_fn)
+    if not smi_fn.exists():
+        raise FileNotFoundError(f"{str(smi_fn)} does not exist!")
 
-    if not Path(smi_fn).exists():
-        raise FileNotFoundError(f"{smi_fn} does not exist!")
-
-    ifs = oechem.oemolistream(smi_fn)
+    ifs = oechem.oemolistream(smi_fn.as_posix())
     ifs.SetFlavor(oechem.OEFormat_SMI, oechem.OEIFlavor_SMI_DEFAULT)
 
     molecules = []
