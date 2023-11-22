@@ -2,7 +2,9 @@ from datetime import datetime
 from uuid import UUID
 from warnings import warn
 
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
+from asapdiscovery.data.openeye import oe_smiles_roundtrip
+from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
@@ -36,15 +38,29 @@ class PosteraUploader(BaseModel):
         ----------
         df : DataFrame
             DataFrame of data to upload
+
+        Returns
+        -------
+        DataFrame
+            The dataframe with the manifold id's added if a new molecule set was created
+        molecule_set_id : UUID
+            The UUID of the molecule set
+        new_molset : bool
         """
         ms_api = MoleculeSetAPI.from_settings(self.settings)
+        df_copy = df.copy()
+        new_molset = False
+        molset_name = self.molecule_set_name
         if not ms_api.exists(self.molecule_set_name, by="name"):
-            ms_api.create_molecule_set_from_df_with_manifold_validation(
+            id = ms_api.create_molecule_set_from_df_with_manifold_validation(
                 molecule_set_name=self.molecule_set_name,
                 df=df,
                 id_field=self.id_field,
                 smiles_field=self.smiles_field,
             )
+            new_data = ms_api.get_molecules(id, return_as="dataframe")
+            df_copy = self.join_with_manifold_data(df_copy, new_data)
+            new_molset = True
         else:
             molset_id = ms_api.molecule_set_id_or_name(
                 self.molecule_set_name, ms_api.list_available()
@@ -58,12 +74,16 @@ class PosteraUploader(BaseModel):
                     f"Attempting to update existing molecule set {self.molecule_set_name} without UUID's set as id_field. A new molecule set {new_ms_name} will be created instead. To update an existing molecule set, you should pull from Postera as input"
                 )
                 if not ms_api.exists(new_ms_name, by="name"):
-                    ms_api.create_molecule_set_from_df_with_manifold_validation(
+                    id = ms_api.create_molecule_set_from_df_with_manifold_validation(
                         molecule_set_name=new_ms_name,
                         df=df,
                         id_field=self.id_field,
                         smiles_field=self.smiles_field,
                     )
+                    new_data = ms_api.get_molecules(id, return_as="dataframe")
+                    df_copy = self.join_with_manifold_data(df_copy, new_data)
+                    new_molset = True
+                    molset_name = new_ms_name
                 else:
                     raise RuntimeError(
                         f"Collision with updated Molecule set name {new_ms_name} wait a minute and try again."
@@ -77,6 +97,35 @@ class PosteraUploader(BaseModel):
                     smiles_field=self.smiles_field,
                     overwrite=self.overwrite,
                 )
+        return df_copy, molset_name, new_molset
+
+    @staticmethod
+    def join_with_manifold_data(original, molset_query_df):
+        """
+        Join the original dataframe with manifold data
+        that is returned from a query to the manifold API
+        """
+        data = original.copy()
+        subset = molset_query_df[
+            [MoleculeSetKeys.id.value, MoleculeSetKeys.smiles.value]
+        ]
+        # do a roundtrip to canonicalize the smiles
+        subset[MoleculeSetKeys.smiles.value] = subset[
+            MoleculeSetKeys.smiles.value
+        ].apply(oe_smiles_roundtrip)
+        # give it the right column names
+        subset.rename(
+            columns={MoleculeSetKeys.smiles.value: ManifoldAllowedTags.SMILES.value},
+            inplace=True,
+        )
+        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
+        # drop original ID column and replace with the manifold ID
+        data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
+        data.rename(
+            columns={MoleculeSetKeys.id.value: DockingResultCols.LIGAND_ID.value},
+            inplace=True,
+        )
+        return data
 
     @staticmethod
     def id_data_is_uuid_castable(df, id_field) -> bool:

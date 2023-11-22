@@ -9,6 +9,7 @@ from asapdiscovery.cli.cli_args import (
     gen_cache,
     input_json,
     ligands,
+    md_args,
     ml_scorer,
     output_dir,
     pdb_file,
@@ -27,6 +28,11 @@ from asapdiscovery.docking.workflows.large_scale_docking import (
     LargeScaleDockingInputs,
     large_scale_docking_workflow,
 )
+from asapdiscovery.docking.workflows.small_scale_docking import (
+    SmallScaleDockingInputs,
+    small_scale_docking_workflow,
+)
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
 @click.group()
@@ -145,6 +151,12 @@ def large_scale(
     help="Whether to use OEOmega conformer enumeration before docking (slower, more accurate)",
 )
 @click.option(
+    "--omega-dense",
+    is_flag=True,
+    default=False,
+    help="Whether to use dense conformer enumeration with OEOmega (slower, more accurate)",
+)
+@click.option(
     "--allow-retries",
     is_flag=True,
     default=False,
@@ -183,6 +195,7 @@ def cross_docking(
     multi_reference: bool = False,
     structure_selector: StructureSelector = StructureSelector.PAIRWISE,
     use_omega: bool = False,
+    omega_dense: bool = False,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
     ligands: Optional[str] = None,
@@ -213,6 +226,7 @@ def cross_docking(
             use_dask=use_dask,
             dask_type=dask_type,
             use_omega=use_omega,
+            omega_dense=omega_dense,
             allow_retries=allow_retries,
             filename=ligands,
             pdb_file=pdb_file,
@@ -226,6 +240,83 @@ def cross_docking(
         )
 
     cross_docking_workflow(inputs)
+
+
+@docking.command()
+@target
+@click.option(
+    "--posit-confidence-cutoff",
+    type=float,
+    default=0.1,
+    help="The confidence cutoff for POSIT results to be considered",
+)
+@ligands
+@postera_args
+@pdb_file
+@fragalysis_dir
+@structure_dir
+@gen_cache
+@cache_dir
+@cache_type
+@dask_args
+@output_dir
+@input_json
+@ml_scorer
+@md_args
+def small_scale(
+    target: TargetTags,
+    posit_confidence_cutoff: float = 0.1,
+    ligands: Optional[str] = None,
+    postera: bool = False,
+    postera_molset_name: Optional[str] = None,
+    postera_upload: bool = False,
+    pdb_file: Optional[str] = None,
+    fragalysis_dir: Optional[str] = None,
+    structure_dir: Optional[str] = None,
+    gen_cache: Optional[str] = None,
+    cache_dir: Optional[str] = None,
+    cache_type: Optional[str] = None,
+    output_dir: str = "output",
+    input_json: Optional[str] = None,
+    use_dask: bool = False,
+    dask_type: DaskType = DaskType.LOCAL,
+    ml_scorer: Optional[list[str]] = None,
+    md: bool = False,
+    md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
+    md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
+):
+    """
+    Run small scale docking on a set of ligands, against a set of targets.
+    """
+
+    if input_json is not None:
+        print("Loading inputs from json file... Will override all other inputs.")
+        inputs = SmallScaleDockingInputs.from_json_file(input_json)
+
+    else:
+        inputs = SmallScaleDockingInputs(
+            postera=postera,
+            postera_upload=postera_upload,
+            target=target,
+            use_dask=use_dask,
+            dask_type=dask_type,
+            posit_confidence_cutoff=posit_confidence_cutoff,
+            filename=ligands,
+            pdb_file=pdb_file,
+            fragalysis_dir=fragalysis_dir,
+            structure_dir=structure_dir,
+            postera_molset_name=postera_molset_name,
+            cache_dir=cache_dir,
+            gen_cache=gen_cache,
+            cache_type=cache_type,
+            ml_scorers=ml_scorer,
+            output_dir=output_dir,
+            md=md,
+            md_steps=md_steps,
+            md_openmm_platform=md_openmm_platform,
+        )
+
+    small_scale_docking_workflow(inputs)
 
 
 if __name__ == "__main__":

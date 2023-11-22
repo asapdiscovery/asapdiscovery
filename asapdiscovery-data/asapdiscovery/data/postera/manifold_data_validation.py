@@ -1,4 +1,5 @@
 import itertools
+import warnings
 from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
@@ -22,12 +23,17 @@ def load_yaml(yaml_path: Union[str, Path]) -> dict:
 
 class TagEnumBase(StringEnum):
     @classmethod
-    def is_in_values(cls, tag: str) -> bool:
-        return tag in cls.get_values()
+    def is_in_values(cls, tag: str, bleached: bool = False) -> bool:
+        vals = cls.get_values_underscored() if bleached else cls.get_values()
+        return tag in vals
 
     @classmethod
-    def all_in_values(cls, query: list[str], allow: list[str] = []) -> bool:
-        return all([cls.is_in_values(q) for q in query if q not in allow])
+    def all_in_values(
+        cls, query: list[str], allow: list[str] = [], bleached: bool = False
+    ) -> bool:
+        return all(
+            [cls.is_in_values(q, bleached=bleached) for q in query if q not in allow]
+        )
 
     @classmethod
     def from_iterable(cls, name: str, iter: Iterable) -> Enum:
@@ -39,15 +45,23 @@ class TagEnumBase(StringEnum):
 
     @classmethod
     def filter_dataframe_cols(
-        cls, df: pd.DataFrame, allow: Optional[list[str]] = None
+        cls, df: pd.DataFrame, allow: Optional[list[str]] = None, bleached: bool = False
     ) -> pd.DataFrame:
         # construct list of allowed columns
         allowed_columns = cls.get_values()
+
+        if bleached:
+            allowed_columns = [col.replace("-", "_") for col in allowed_columns]
+
         if allow is not None:
             allowed_columns.extend(allow)
 
         # drop columns that are not allowed
         extra_cols = [col for col in df.columns if col not in allowed_columns]
+        if len(extra_cols) > 0:
+            warnings.warn(
+                f"Columns {extra_cols} are not allowed. Dropping them from the dataframe"
+            )
         return df.drop(columns=extra_cols)
 
     @classmethod
@@ -313,6 +327,7 @@ def rename_output_columns_for_manifold(
     df: pd.DataFrame,
     target: str,
     output_enums: list[Enum],
+    bleach_columns: bool = True,
     manifold_validate: Optional[bool] = True,
     drop_non_output: Optional[bool] = True,
     allow: Optional[list[str]] = [],
@@ -337,6 +352,8 @@ def rename_output_columns_for_manifold(
         Target name
     output_enums : list[Enum]
         List of enums to rename the columns of
+    bleach_columns : bool, optional
+        If True, bleach the column names so that - is replaced with _ see #629 and #628
     manifold_validate : bool, optional
         If True, validate that the columns are valid for Postera Manifold
     drop_non_output : bool, optional
@@ -368,4 +385,8 @@ def rename_output_columns_for_manifold(
             )
     # rename columns
     df = df.rename(columns=mapping)
+
+    if bleach_columns:
+        df.columns = [col.replace("-", "_") for col in df.columns]
+
     return df
