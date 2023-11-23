@@ -201,22 +201,23 @@ class HTMLVisualizer:
 
         hex_color_codes = [
             "#ffffff",
-            "#ffece5",
-            "#ffd9cc",
-            "#ffc6b3",
-            "#ffb29b",
             "#ff9e83",
             "#ff8a6c",
             "#ff7454",
             "#ff5c3d",
             "#ff3f25",
-            "#ff0707",
+            "#ff0707", 
         ]
         color_res_dict = {}
         for res_num in set(protein_residues):
             try:
                 # color residue white->red depending on fitness value.
-                color = hex_color_codes[int(self.fitness_data[res_num] / 10)]
+                color_index_to_grab = int(self.fitness_data[res_num] / 10)
+                try:
+                    color = hex_color_codes[color_index_to_grab]
+                except IndexError:
+                    # insane residue that has tons of fit mutants; just assign the darkest red.
+                    color = hex_color_codes[-1]
                 if color not in color_res_dict:
                     color_res_dict[color] = [res_num]
                 else:

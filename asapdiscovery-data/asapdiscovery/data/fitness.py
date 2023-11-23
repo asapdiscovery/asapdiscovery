@@ -20,7 +20,7 @@ def target_has_fitness_data(target: TargetTags) -> bool:
     return target in targets_with_fitness_data
 
 
-def bloom_abstraction(fitness_scores_this_site: dict, threshold=-1.0) -> int:
+def bloom_abstraction(fitness_scores_this_site: dict, threshold: float) -> int:
     """
     Applies prescribed abstraction of how mutable a residue is given fitness data. Although the mean fitness
     was used at first, the current (2023.08.08) prescribed method is as follows (by Bloom et al):
@@ -30,7 +30,8 @@ def bloom_abstraction(fitness_scores_this_site: dict, threshold=-1.0) -> int:
     ----------
     fitness_scores_this_site: dict
         Dictionary containing fitness scores for a single site
-
+    threshold: float
+        fitness value to use as minimum value threshold to treat a mutation as acceptably fit.
     Returns
     -------
     num_tolerated_mutations: int
@@ -42,7 +43,7 @@ def bloom_abstraction(fitness_scores_this_site: dict, threshold=-1.0) -> int:
     return len(tolerated_mutations)
 
 
-def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame) -> dict:
+def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame, threshold: float) -> dict:
     """
     Read a pandas DF containing fitness data parsed from a JSON in .parse_fitness_json() and return
     a processed dictionary with averaged fitness scores per residue. This is the current recommended
@@ -53,7 +54,8 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame) -> dict:
     ----------
     fitness_dataframe: pd.DataFrame
         DataFrame containing columns [gene, site, mutant, fitness, expected_count, wildtype]
-
+    threshold: float
+        fitness value to use as minimum value threshold to treat a mutation as acceptably fit.
     Returns
     -------
     fitness_dict : dict
@@ -77,7 +79,7 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame) -> dict:
 
         # add all values to a dict
         fitness_dict[idx] = [
-            bloom_abstraction(fitness_scores_this_site),
+            bloom_abstraction(fitness_scores_this_site, threshold),
             fitness_scores_this_site["wildtype"].values[0],  # wildtype residue
             fitness_scores_this_site.sort_values(by="fitness")["mutant"].values[
                 -1
@@ -153,7 +155,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
 
     ## START TODO
     if "SARS-CoV-2" in target: # TODO: generalize this block
-        
+        threshold = -1.0
         with open(SARS_CoV_2_fitness_data) as f:
             data = json.load(f)
         data = data["data"]
@@ -179,6 +181,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
             ]
     # for ZIKV NS2B3 it's simpler - no need to subselect the target from the genome.
     elif target == "ZIKV-NS2B-NS3pro":
+        threshold = 0.0
         with open(ZIKV_NS2B_NS3pro_fitness_data) as f:
             data = json.load(f)
         data = data["data"]
@@ -186,7 +189,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
     ## END TODO
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
-    fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom)
+    fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom, threshold)
     fitness_df_abstract = pd.DataFrame.from_dict(
         fitness_dict_abstract,
         orient="index",
