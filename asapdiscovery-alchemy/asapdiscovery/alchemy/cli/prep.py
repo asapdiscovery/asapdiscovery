@@ -26,9 +26,9 @@ def create(filename: str, core_smarts: str):
     """
     Create a new AlchemyPrepWorkflow with default settings and save it to JSON file.
     """
+    import rich
     from asapdiscovery.alchemy.cli.utils import print_header
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
-    import rich
     from rich import pretty
     from rich.padding import Padding
 
@@ -95,13 +95,14 @@ def run(
         used but a core smarts must be provided.
     core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained. Required if the factory file is not supplied.
     """
+    import pathlib
+
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.openeye import save_openeye_sdfs
     from asapdiscovery.data.schema_v2.complex import PreppedComplex
     from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-    from asapdiscovery.alchemy.cli.utils import print_header
-    from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
-    import rich
-    import pathlib
     from rich import pretty
     from rich.padding import Padding
 
