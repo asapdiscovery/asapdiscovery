@@ -9,8 +9,8 @@ from typing import Dict, Optional, Union  # noqa: F401
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
-from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -21,7 +21,7 @@ from asapdiscovery.data.openeye import (
     openeye_perceive_residues,
     save_openeye_pdb,
 )
-from asapdiscovery.modeling.modeling import superpose_molecule, split_openeye_mol
+from asapdiscovery.modeling.modeling import split_openeye_mol, superpose_molecule
 
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
@@ -43,7 +43,7 @@ class HTMLVisualizer:
         target: str,
         protein: Path,
         color_method: str = "subpockets",
-        align = False,
+        align=False,
         logger: FileLogger = None,
         debug: bool = False,
     ):
@@ -412,12 +412,14 @@ class HTMLVisualizer:
 
             # align complex to master structure
             complex_aligned, _ = superpose_molecule(
-                        self.reference_target,
-                        complex,
-                    )
+                self.reference_target,
+                complex,
+            )
 
             # get pose and protein back
-            split_dict = split_openeye_mol(complex_aligned) # can set lig_title in case of UNK or others
+            split_dict = split_openeye_mol(
+                complex_aligned
+            )  # can set lig_title in case of UNK or others
             self.protein = split_dict["prot"]
             pose = split_dict["lig"]
 
