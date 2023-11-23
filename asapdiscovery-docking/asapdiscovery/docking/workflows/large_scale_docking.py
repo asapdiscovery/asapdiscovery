@@ -337,16 +337,19 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         data_intermediates / "docking_scores_filtered_sorted.csv", index=False
     )
 
-    scores_df = scores_df.drop_duplicates(subset=[DockingResultCols.INCHIKEY.value])
+    scores_df = scores_df.drop_duplicates(
+        subset=[DockingResultCols.INCHIKEY.value], keep="first"
+    )
 
     n_duplicate_filtered = len(scores_df)
     logger.info(
         f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
 
-    # set hit flag on top n
+    # set hit flag to False
     scores_df[DockingResultCols.DOCKING_HIT.value] = False
 
+    # set top n hits to True
     scores_df.loc[
         scores_df.index[: inputs.top_n], DockingResultCols.DOCKING_HIT.value
     ] = True
