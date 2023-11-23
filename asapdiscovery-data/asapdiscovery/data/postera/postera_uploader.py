@@ -83,16 +83,18 @@ class PosteraUploader(BaseModel):
         Join the original dataframe with manifold data
         that is returned from a query to the manifold API
         """
+        print(molset_query_df)
+        print(molset_query_df.columns)
         data = original.copy()
         subset = molset_query_df[
             [MoleculeSetKeys.id.value, MoleculeSetKeys.smiles.value]
         ]
         # do a roundtrip to canonicalize the smiles
-        subset[MoleculeSetKeys.smiles.value] = subset[
+        subset.loc[:, MoleculeSetKeys.smiles.value] = subset[
             MoleculeSetKeys.smiles.value
         ].apply(oe_smiles_roundtrip)
         # do the same to the original data
-        data[ManifoldAllowedTags.SMILES.value] = data[
+        data.loc[:, ManifoldAllowedTags.SMILES.value] = data[
             ManifoldAllowedTags.SMILES.value
         ].apply(oe_smiles_roundtrip)
         # give it the right column names
@@ -101,8 +103,12 @@ class PosteraUploader(BaseModel):
             inplace=True,
         )
         # merge the data
+        print(subset)
+        print(data)
+        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
+        print(data)
+        print(len(data))
 
-        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="inner")
         # drop original ID column and replace with the manifold ID
         data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
         data.rename(

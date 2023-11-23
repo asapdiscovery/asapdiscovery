@@ -15,6 +15,7 @@ from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
@@ -197,6 +198,12 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
+
+    logger.info("Deduplicating by Inchikey")
+    query_ligands = LigandDeDuplicator().deduplicate(query_ligands)
+    n_query_ligands = len(query_ligands)
+    logger.info(f"Deduplicated to {n_query_ligands} query ligands")
+
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
@@ -330,7 +337,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         data_intermediates / "docking_scores_filtered_sorted.csv", index=False
     )
 
-    scores_df = scores_df.drop_duplicates(subset=[DockingResultCols.LIGAND_ID.value])
+    scores_df = scores_df.drop_duplicates(subset=[DockingResultCols.INCHIKEY.value])
 
     n_duplicate_filtered = len(scores_df)
     logger.info(
