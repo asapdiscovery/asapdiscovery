@@ -9,6 +9,7 @@ from typing import Dict, Optional, Union  # noqa: F401
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -20,6 +21,7 @@ from asapdiscovery.data.openeye import (
     openeye_perceive_residues,
     save_openeye_pdb,
 )
+from asapdiscovery.modeling.modeling import superpose_molecule, split_openeye_mol
 
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
@@ -72,6 +74,7 @@ class HTMLVisualizer:
                 f"Target {target} invalid, must be one of: {self.allowed_targets}"
             )
         self.target = target
+        self.reference_target = load_openeye_pdb(master_structures[self.target])
         self.align = align
 
         # init loggers
@@ -403,7 +406,19 @@ class HTMLVisualizer:
         # first check if we need to align the protein and ligand. This already happens during docking, but not
         # during pose_to_viz.py.
         if self.align:
-            print("")
+            # merge
+            complex = combine_protein_ligand(self.protein, pose)
+
+            # align complex to master structure
+            complex_aligned, _ = superpose_molecule(
+                        self.reference_target,
+                        complex,
+                    )
+
+            # get pose and protein back
+            split_dict = split_openeye_mol(complex_aligned) # can set lig_title in case of UNK or others
+            self.protein = split_dict["prot"]
+            pose = split_dict["lig"]
 
         # now prep the coloring function.
         surface_coloring = self.get_color_dict()
