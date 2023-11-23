@@ -65,7 +65,7 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame) -> dict:
             total count (~confidence)
         ]
     """
-    # add this column in case we're pulling in an experiment that has different data. We need to find 
+    # add this column in case we're pulling in an experiment that has different data. We need to find
     # a good way of dealing with all this data coming from different labs.
     if not "expected_count" in fitness_dataframe.columns:
         fitness_dataframe["expected_count"] = 0
@@ -152,8 +152,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         )
 
     ## START TODO
-    if "SARS-CoV-2" in target: # TODO: generalize this block
-        
+    if "SARS-CoV-2" in target:  # TODO: generalize this block
         with open(SARS_CoV_2_fitness_data) as f:
             data = json.load(f)
         data = data["data"]

@@ -46,7 +46,7 @@ ZIKV_NS2B_NS3pro_fitness_data = pkg_resources.resource_filename(
 targets_with_fitness_data = [
     TargetTags("SARS-CoV-2-Mpro"),
     TargetTags("SARS-CoV-2-Mac1"),
-    TargetTags("ZIKV-NS2B-NS3pro")
+    TargetTags("ZIKV-NS2B-NS3pro"),
 ]
 
 # Reference PDB files to align targets to for consistent dataviz
