@@ -41,6 +41,7 @@ class HTMLVisualizer:
         target: str,
         protein: Path,
         color_method: str = "subpockets",
+        align = False,
         logger: FileLogger = None,
         debug: bool = False,
     ):
@@ -57,6 +58,8 @@ class HTMLVisualizer:
             Path to protein PDB file.
         color_method : str
             Protein surface coloring method. Can be either by `subpockets` or `fitness`
+        align : bool
+            Whether or not to align the protein (and poses) to the master structure of the target.
         logger : FileLogger
             Logger to use
 
@@ -69,6 +72,7 @@ class HTMLVisualizer:
                 f"Target {target} invalid, must be one of: {self.allowed_targets}"
             )
         self.target = target
+        self.align = align
 
         # init loggers
         if logger is None:
@@ -396,7 +400,12 @@ class HTMLVisualizer:
         """
         a = Airium()
 
-        # first prep the coloring function.
+        # first check if we need to align the protein and ligand. This already happens during docking, but not
+        # during pose_to_viz.py.
+        if self.align:
+            print("")
+
+        # now prep the coloring function.
         surface_coloring = self.get_color_dict()
         residue_coloring_function_js = ""
         start = True
