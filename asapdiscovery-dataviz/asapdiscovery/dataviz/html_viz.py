@@ -206,7 +206,7 @@ class HTMLVisualizer:
             "#ff7454",
             "#ff5c3d",
             "#ff3f25",
-            "#ff0707", 
+            "#ff0707",
         ]
         color_res_dict = {}
         for res_num in set(protein_residues):

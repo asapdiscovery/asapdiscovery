@@ -154,7 +154,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         )
 
     ## START TODO
-    if "SARS-CoV-2" in target: # TODO: generalize this block
+    if "SARS-CoV-2" in target:  # TODO: generalize this block
         threshold = -1.0
         with open(SARS_CoV_2_fitness_data) as f:
             data = json.load(f)
