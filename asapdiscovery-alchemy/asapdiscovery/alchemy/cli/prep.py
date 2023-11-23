@@ -3,9 +3,9 @@ from typing import Optional
 
 import click
 import rich
-from asapdiscovery.cli.cli_args import ligands, core_smarts
 from asapdiscovery.alchemy.cli.utils import print_header
 from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
+from asapdiscovery.cli.cli_args import core_smarts, ligands
 from rich import pretty
 from rich.padding import Padding
 
@@ -139,10 +139,13 @@ def run(
         (1, 0, 1, 0),
     )
     console.print(message)
-    receptor_file = output_folder.joinpath(f"{alchemy_dataset.reference_complex.target.target_name}.pdb")
+    receptor_file = output_folder.joinpath(
+        f"{alchemy_dataset.reference_complex.target.target_name}.pdb"
+    )
     alchemy_dataset.reference_complex.target.to_pdb_file(receptor_file)
     message = Padding(
-        f"Saved receptor to [repr.filename]{receptor_file}[/repr.filename]", (1, 0, 1, 0),
+        f"Saved receptor to [repr.filename]{receptor_file}[/repr.filename]",
+        (1, 0, 1, 0),
     )
     console.print(message)
 
@@ -154,5 +157,7 @@ def run(
         console.print(message)
         for fail_type, ligands in alchemy_dataset.failed_ligands.items():
             fails = [ligand.to_oemol() for ligand in ligands]
-            failed_ligand_file = output_folder.joinpath(f"failed_ligands_{fail_type}.sdf")
+            failed_ligand_file = output_folder.joinpath(
+                f"failed_ligands_{fail_type}.sdf"
+            )
             save_openeye_sdfs(fails, failed_ligand_file)

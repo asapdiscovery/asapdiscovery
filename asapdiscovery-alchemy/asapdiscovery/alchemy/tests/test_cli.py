@@ -170,7 +170,11 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex):
             "mac1-testing/prepared_alchemy_dataset.json"
         )
         # make sure the receptor is writen to file
-        assert pathlib.Path(prep_dataset.dataset_name).joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb").exists()
+        assert (
+            pathlib.Path(prep_dataset.dataset_name)
+            .joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb")
+            .exists()
+        )
         assert prep_dataset.dataset_name == "mac1-testing"
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 3
@@ -221,10 +225,7 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex):
         # check all molecules have poses made
         assert "[✓] Pose generation successful for 5/5." in result.stdout
         # make sure stereo filtering is not run
-        assert (
-            "[✓] Stereochemistry filtering complete"
-            not in result.stdout
-        )
+        assert "[✓] Stereochemistry filtering complete" not in result.stdout
         # check the failure warning is not printed
         assert (
             "WARNING some ligands failed to have poses generated see failed_ligands"
@@ -235,7 +236,11 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex):
             "mac1-testing/prepared_alchemy_dataset.json"
         )
         # make sure the receptor is writen to file
-        assert pathlib.Path(prep_dataset.dataset_name).joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb").exists()
+        assert (
+            pathlib.Path(prep_dataset.dataset_name)
+            .joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb")
+            .exists()
+        )
         assert prep_dataset.dataset_name == "mac1-testing"
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 5
