@@ -123,8 +123,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     data_intermediates.mkdir(exist_ok=True)
 
     # load from file
-    logger.info(f"Loading ligands from file: {inputs.filename}")
-    molfile = MolFileFactory.from_file(inputs.filename)
+    logger.info(f"Loading ligands from file: {inputs.ligands}")
+    molfile = MolFileFactory.from_file(inputs.ligands)
     query_ligands = molfile.ligands
 
     # load complexes from a directory, from fragalysis or from a pdb file
