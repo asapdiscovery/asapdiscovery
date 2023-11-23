@@ -86,14 +86,14 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
 # Enums for the pose selectors
 class PoseSelectionMethod(str, Enum):
-    Chemgauss4 = "chemgauss4"
-    Chemgauss3 = "chemgauss3"
+    Chemgauss4 = "Chemgauss4"
+    Chemgauss3 = "Chemgauss3"
 
 
 class PoseEnergyMethod(str, Enum):
-    MMFF = "mmff"
-    Sage = "sage"
-    Parsley = "parsley"
+    MMFF = "MMFF"
+    Sage = "Sage"
+    Parsley = "Parsley"
 
 
 class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):

@@ -1,13 +1,6 @@
-import pathlib
 from typing import Optional
 
 import click
-import rich
-from asapdiscovery.alchemy.cli.utils import print_header
-from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
-from asapdiscovery.cli.cli_args import core_smarts, ligands
-from rich import pretty
-from rich.padding import Padding
 
 
 @click.group()
@@ -23,11 +16,21 @@ def prep():
     help="The name of the JSON file the workflow should be saved to.",
     required=True,
 )
-@core_smarts
+@click.option(
+    "-cs",
+    "--core-smarts",
+    type=click.STRING,
+    help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
+)
 def create(filename: str, core_smarts: str):
     """
     Create a new AlchemyPrepWorkflow with default settings and save it to JSON file.
     """
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
+    import rich
+    from rich import pretty
+    from rich.padding import Padding
 
     pretty.install()
     console = rich.get_console()
@@ -54,14 +57,24 @@ def create(filename: str, core_smarts: str):
     type=click.STRING,
     help="The name of the AlchemyDataset this will also be the name of the folder created.",
 )
-@ligands
+@click.option(
+    "-l",
+    "--ligands",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="The file which contains the ligands to use in the planned network.",
+)
 @click.option(
     "-r",
     "--receptor-complex",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="The name of the JSON file which contains the prepared receptor complex including the crystal ligand.",
 )
-@core_smarts
+@click.option(
+    "-cs",
+    "--core-smarts",
+    type=click.STRING,
+    help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
+)
 def run(
     dataset_name: str,
     ligands: str,
@@ -85,6 +98,12 @@ def run(
     from asapdiscovery.data.openeye import save_openeye_sdfs
     from asapdiscovery.data.schema_v2.complex import PreppedComplex
     from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
+    import rich
+    import pathlib
+    from rich import pretty
+    from rich.padding import Padding
 
     pretty.install()
     console = rich.get_console()
