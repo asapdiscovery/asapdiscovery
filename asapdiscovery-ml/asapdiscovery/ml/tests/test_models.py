@@ -64,6 +64,7 @@ def test_get_model():
     model = ASAPMLModelRegistry.get_model("gat_test_v0")
     assert model.type == "GAT"
 
+
 @pytest.mark.parametrize("type", ["GAT", "schnet"])
 def test_get_latest_model_for_target_and_type(type):
     model = ASAPMLModelRegistry.get_latest_model_for_target_and_type(
