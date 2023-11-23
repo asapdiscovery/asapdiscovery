@@ -32,7 +32,7 @@ class _AlchemyPrepBase(_SchemaBase):
     pose_generator: OpenEyeConstrainedPoseGenerator = Field(
         OpenEyeConstrainedPoseGenerator(),
         description="The method "
-        "to generate the intial poses for the molecules for FEC.",
+        "to generate the initial poses for the molecules for FEC.",
     )
     core_smarts: Optional[str] = Field(
         None,
@@ -93,7 +93,8 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
 
     type: Literal["AlchemyPrepWorkflow"] = "AlchemyPrepWorkflow"
 
-    def _validate_ligands(self, ligands: list[Ligand]) -> list[Ligand]:
+    @staticmethod
+    def _validate_ligands(ligands: list[Ligand]) -> list[Ligand]:
         """
         For the given set of ligands make sure that the docked ligand is the intended ligand target i.e does the
         3D stereo match what we intend at input.
@@ -190,7 +191,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 "Removing molecules with inconsistent stereochemistry."
             )
             stereo_status.start()
-            stereo_fails = self._validate_ligands(ligands=posed_ligands)
+            stereo_fails = AlchemyPrepWorkflow._validate_ligands(ligands=posed_ligands)
             if stereo_fails:
                 # add the new fails to the rest
                 failed_ligands["InconsistentStereo"] = stereo_fails

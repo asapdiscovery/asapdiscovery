@@ -359,15 +359,15 @@ class Ligand(DataModelAbstractBase):
 
     def has_stereo(self) -> bool:
         """
-        Check if the ligand has any stereo bonds or chiral centers excluding nitrogen centers.
+        Check if the ligand has any stereo bonds or chiral centers.
 
         Returns
         -------
-            True if the ligand does contain any non-nitrogen stereochemistry else False
+            True if the ligand does contain any stereochemistry else False.
         """
         oe_mol = self.to_oemol()
         for atom in oe_mol.GetAtoms():
-            if atom.IsChiral() and atom.GetAtomicNum() != 7:
+            if atom.IsChiral():
                 return True
         for bond in oe_mol.GetBonds():
             if bond.IsChiral():

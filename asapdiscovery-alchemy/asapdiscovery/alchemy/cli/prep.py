@@ -3,6 +3,7 @@ from typing import Optional
 
 import click
 import rich
+from asapdiscovery.cli.cli_args import ligands, core_smarts
 from asapdiscovery.alchemy.cli.utils import print_header
 from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from rich import pretty
@@ -22,12 +23,7 @@ def prep():
     help="The name of the JSON file the workflow should be saved to.",
     required=True,
 )
-@click.option(
-    "-cs",
-    "--core-smarts",
-    type=click.STRING,
-    help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
-)
+@core_smarts
 def create(filename: str, core_smarts: str):
     """
     Create a new AlchemyPrepWorkflow with default settings and save it to JSON file.
@@ -58,24 +54,14 @@ def create(filename: str, core_smarts: str):
     type=click.STRING,
     help="The name of the AlchemyDataset this will also be the name of the folder created.",
 )
-@click.option(
-    "-l",
-    "--ligands",
-    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-    help="The file which contains the ligands to use in the planned network.",
-)
+@ligands
 @click.option(
     "-r",
     "--receptor-complex",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="The name of the JSON file which contains the prepared receptor complex including the crystal ligand.",
 )
-@click.option(
-    "-cs",
-    "--core-smarts",
-    type=click.STRING,
-    help="The SMARTS string used to identify the atoms in each ligand which should be constrained to the reference pose.",
-)
+@core_smarts
 def run(
     dataset_name: str,
     ligands: str,
@@ -153,6 +139,12 @@ def run(
         (1, 0, 1, 0),
     )
     console.print(message)
+    receptor_file = output_folder.joinpath(f"{alchemy_dataset.reference_complex.target.target_name}.pdb")
+    alchemy_dataset.reference_complex.target.to_pdb_file(receptor_file)
+    message = Padding(
+        f"Saved receptor to [repr.filename]{receptor_file}[/repr.filename]", (1, 0, 1, 0),
+    )
+    console.print(message)
 
     if alchemy_dataset.failed_ligands:
         message = Padding(
@@ -160,7 +152,7 @@ def run(
             (1, 0, 1, 0),
         )
         console.print(message)
-    for fail_type, ligands in alchemy_dataset.failed_ligands.items():
-        fails = [ligand.to_oemol() for ligand in ligands]
-        failed_ligand_file = output_folder.joinpath(f"failed_ligands_{fail_type}.sdf")
-        save_openeye_sdfs(fails, failed_ligand_file)
+        for fail_type, ligands in alchemy_dataset.failed_ligands.items():
+            fails = [ligand.to_oemol() for ligand in ligands]
+            failed_ligand_file = output_folder.joinpath(f"failed_ligands_{fail_type}.sdf")
+            save_openeye_sdfs(fails, failed_ligand_file)

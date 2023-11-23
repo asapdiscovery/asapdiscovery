@@ -69,8 +69,8 @@ def test_prune_clashes(mol_with_constrained_confs, mac1_complex):
 @pytest.mark.parametrize(
     "chemgauss, best_score",
     [
-        pytest.param("Chemgauss4", -9.747581481933594, id="Chemgauss4"),
-        pytest.param("Chemgauss3", -74.73448944091797, id="Chemgauss3"),
+        pytest.param("chemgauss4", -9.747581481933594, id="Chemgauss4"),
+        pytest.param("chemgauss3", -74.73448944091797, id="Chemgauss3"),
     ],
 )
 def test_select_best_chemgauss(
@@ -100,9 +100,9 @@ def test_select_best_chemgauss(
 @pytest.mark.parametrize(
     "forcefield, ff_energy",
     [
-        pytest.param("MMFF", 43.42778156043702, id="MMFF"),
-        pytest.param("Sage", 68.88487057483857, id="Sage"),
-        pytest.param("Parsley", 128.38592742407758, id="Parsley"),
+        pytest.param("mmff", 43.42778156043702, id="MMFF"),
+        pytest.param("sage", 68.88487057483857, id="Sage"),
+        pytest.param("parsley", 128.38592742407758, id="Parsley"),
     ],
 )
 def test_select_by_energy(forcefield, ff_energy, mol_with_constrained_confs):

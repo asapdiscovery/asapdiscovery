@@ -1,3 +1,5 @@
+import pathlib
+
 import pytest
 from asapdiscovery.alchemy.cli.cli import alchemy
 from asapdiscovery.alchemy.schema.fec import (
@@ -115,8 +117,8 @@ def test_alchemy_prep_create(tmpdir):
         assert prep_workflow.core_smarts == "CC"
 
 
-def test_alchemy_prep_run(tmpdir, mac1_complex):
-    """Test running the alchemy prep workflow on a set of mac1 ligands"""
+def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex):
+    """Test running the alchemy prep workflow on a set of mac1 ligands and that failures are captured"""
 
     # locate the ligands input file
     ligand_file = fetch_test_file("constrained_conformer/mac1_ligands.smi")
@@ -167,7 +169,74 @@ def test_alchemy_prep_run(tmpdir, mac1_complex):
         prep_dataset = AlchemyDataSet.from_file(
             "mac1-testing/prepared_alchemy_dataset.json"
         )
+        # make sure the receptor is writen to file
+        assert pathlib.Path(prep_dataset.dataset_name).joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb").exists()
         assert prep_dataset.dataset_name == "mac1-testing"
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 3
         assert len(prep_dataset.failed_ligands["InconsistentStereo"]) == 2
+
+
+def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex):
+    """Test running the alchemy prep workflow and make sure all ligands pass when expected."""
+
+    # locate the ligands input file
+    ligand_file = fetch_test_file("constrained_conformer/mac1_ligands.smi")
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # complex to a local file
+        mac1_complex.to_json_file("complex.json")
+        # create a new prep workflow which allows incorrect stereo
+        workflow = AlchemyPrepWorkflow(strict_stereo=False)
+        workflow.to_file("workflow.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "run",
+                "-f",
+                "workflow.json",
+                "-n",
+                "mac1-testing",
+                "-l",
+                ligand_file.as_posix(),
+                "-r",
+                "complex.json",
+            ],
+        )
+        assert result.exit_code == 0
+        # make sure stereo enum is run
+        assert (
+            "[✓] StereoExpander successful,  number of unique ligands 5."
+            in result.stdout
+        )
+        # make sure stereo is detected
+        assert (
+            "! WARNING the reference structure is chiral, check output structures carefully!"
+            in result.stdout
+        )
+        # check all molecules have poses made
+        assert "[✓] Pose generation successful for 5/5." in result.stdout
+        # make sure stereo filtering is not run
+        assert (
+            "[✓] Stereochemistry filtering complete"
+            not in result.stdout
+        )
+        # check the failure warning is not printed
+        assert (
+            "WARNING some ligands failed to have poses generated see failed_ligands"
+            not in result.stdout
+        )
+        # check we can load the result
+        prep_dataset = AlchemyDataSet.from_file(
+            "mac1-testing/prepared_alchemy_dataset.json"
+        )
+        # make sure the receptor is writen to file
+        assert pathlib.Path(prep_dataset.dataset_name).joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb").exists()
+        assert prep_dataset.dataset_name == "mac1-testing"
+        assert len(prep_dataset.input_ligands) == 5
+        assert len(prep_dataset.posed_ligands) == 5
+        assert prep_dataset.failed_ligands is None

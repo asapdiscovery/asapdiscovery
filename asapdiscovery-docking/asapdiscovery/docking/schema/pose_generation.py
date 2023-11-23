@@ -1,4 +1,5 @@
 import abc
+from enum import Enum
 from typing import Any, Literal, Optional
 
 from asapdiscovery.data.openeye import oechem, oedocking, oeff, oeomega, set_SD_data
@@ -83,6 +84,18 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         return result
 
 
+# Enums for the pose selectors
+class PoseSelectionMethod(str, Enum):
+    Chemgauss4 = "chemgauss4"
+    Chemgauss3 = "chemgauss3"
+
+
+class PoseEnergyMethod(str, Enum):
+    MMFF = "mmff"
+    Sage = "sage"
+    Parsley = "parsley"
+
+
 class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
     type: Literal["OpenEyeConstrainedPoseGenerator"] = "OpenEyeConstrainedPoseGenerator"
     max_confs: PositiveInt = Field(
@@ -97,12 +110,12 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         2.0,
         description="The distance cutoff for which we check for clashes in Angstroms.",
     )
-    selector: Literal["Chemgauss4", "Chemgauss3"] = Field(
-        "Chemgauss3",
+    selector: PoseSelectionMethod = Field(
+        PoseSelectionMethod.Chemgauss3,
         description="The method which should be used to select the optimal conformer.",
     )
-    backup_score: Literal["MMFF", "Sage", "Parsley"] = Field(
-        "Sage",
+    backup_score: PoseEnergyMethod = Field(
+        PoseEnergyMethod.Sage,
         description="If the main scoring function fails to descriminate between conformers the backup score will be used based on the internal energy of the molecule.",
     )
 
@@ -337,8 +350,8 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         """
         scorers = {
-            "Chemgauss4": oedocking.OEScoreType_Chemgauss4,
-            "Chemgauss3": oedocking.OEScoreType_Chemgauss3,
+            PoseSelectionMethod.Chemgauss4: oedocking.OEScoreType_Chemgauss4,
+            PoseSelectionMethod.Chemgauss3: oedocking.OEScoreType_Chemgauss3,
         }
         score = oedocking.OEScore(scorers[self.selector])
         score.Initialize(receptor)
@@ -376,9 +389,9 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         """
         force_fields = {
-            "MMFF": oeff.OEMMFF,
-            "Sage": oeff.OESage,
-            "Parsley": oeff.OEParsley,
+            PoseEnergyMethod.MMFF: oeff.OEMMFF,
+            PoseEnergyMethod.Sage: oeff.OESage,
+            PoseEnergyMethod.Parsley: oeff.OEParsley,
         }
         ff = force_fields[self.backup_score]()
         ff.PrepMol(ligand)
