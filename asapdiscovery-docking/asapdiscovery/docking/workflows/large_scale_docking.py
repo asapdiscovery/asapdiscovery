@@ -333,24 +333,31 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
 
-    # take top n results
-    scores_df = scores_df.head(inputs.top_n)
+    # set hit flag on top n
+    scores_df[DockingResultCols.DOCKING_HIT.value] = False
 
-    n_top_n_filtered = len(scores_df)
+    scores_df.loc[
+        scores_df.index[: inputs.top_n], DockingResultCols.DOCKING_HIT.value
+    ] = True
+
+    hits_df = scores_df[scores_df[DockingResultCols.DOCKING_HIT.value] == True]
+
+    n_top_n_filtered = len(hits_df)
     logger.info(
         f"Filtered to {n_top_n_filtered} / {n_duplicate_filtered} docking results by top n filter"
     )
 
     check_empty_dataframe(
-        scores_df,
+        hits_df,
         logger=logger,
         fail="raise",
         tag="scores",
-        message=f"No docking results passed the top {inputs.top_n} filter",
+        message=f"No docking results passed the top {inputs.top_n} filter, no hits",
     )
 
-    scores_df.to_csv(
-        data_intermediates / f"docking_scores_filtered_sorted_top_{inputs.top_n}.csv",
+    hits_df.to_csv(
+        data_intermediates
+        / f"docking_scores_filtered_sorted_top_{inputs.top_n}_hits.csv",
         index=False,
     )
 
@@ -363,6 +370,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     else:
         bleach_columns = False
 
+    # keep everything not just hits
     result_df = rename_output_columns_for_manifold(
         scores_df,
         inputs.target,
