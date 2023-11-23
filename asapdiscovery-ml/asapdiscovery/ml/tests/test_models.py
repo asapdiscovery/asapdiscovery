@@ -65,11 +65,14 @@ def test_get_model():
     assert model.type == "GAT"
 
 
-def test_get_latest_model_for_target_and_type():
+@pytest.mark.parametrize("type", ["GAT", "schnet"])
+def test_get_latest_model_for_target_and_type(type):
     model = ASAPMLModelRegistry.get_latest_model_for_target_and_type(
-        "SARS-CoV-2-Mpro", "GAT"
+        "SARS-CoV-2-Mpro", type
     )
     other_models = ASAPMLModelRegistry.get_models_for_target("SARS-CoV-2-Mpro")
+    # filter by type
+    other_models = [m for m in other_models if m.type == type]
     # sort by date updated
     other_models.sort(key=lambda x: x.last_updated, reverse=True)
     assert model == other_models[0]

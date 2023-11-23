@@ -71,6 +71,9 @@ class TagEnumBase(StringEnum):
     def get_value_underscored(self):
         return self.value.replace("-", "_")
 
+    def get_value_bleached(self):
+        return self.get_value_underscored()
+
 
 def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     """
