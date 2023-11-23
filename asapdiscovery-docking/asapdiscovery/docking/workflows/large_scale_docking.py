@@ -149,6 +149,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
 
+    if inputs.postera_upload:
+        postera_settings = PosteraSettings()
+        logger.info("Postera settings loaded")
+
     if inputs.postera:
         # load postera
         logger.info(
