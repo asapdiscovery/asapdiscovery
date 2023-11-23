@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from asapdiscovery.data.metadata.resources import (
     SARS_CoV_2_fitness_data,
+    ZIKV_NS2B_NS3pro_fitness_data,
     targets_with_fitness_data,
 )
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -19,7 +20,7 @@ def target_has_fitness_data(target: TargetTags) -> bool:
     return target in targets_with_fitness_data
 
 
-def bloom_abstraction(fitness_scores_this_site: dict) -> int:
+def bloom_abstraction(fitness_scores_this_site: dict, threshold=-1.0) -> int:
     """
     Applies prescribed abstraction of how mutable a residue is given fitness data. Although the mean fitness
     was used at first, the current (2023.08.08) prescribed method is as follows (by Bloom et al):
@@ -36,7 +37,7 @@ def bloom_abstraction(fitness_scores_this_site: dict) -> int:
 
     """
     tolerated_mutations = [
-        val for val in fitness_scores_this_site["fitness"] if val >= -1.0
+        val for val in fitness_scores_this_site["fitness"] if val >= threshold
     ]
     return len(tolerated_mutations)
 
@@ -64,6 +65,11 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame) -> dict:
             total count (~confidence)
         ]
     """
+    # add this column in case we're pulling in an experiment that has different data. We need to find 
+    # a good way of dealing with all this data coming from different labs.
+    if not "expected_count" in fitness_dataframe.columns:
+        fitness_dataframe["expected_count"] = 0
+
     fitness_dict = {}
     for idx, site_df in fitness_dataframe.groupby(by="site"):
         # remove wild type fitness score (this is always 0)
@@ -140,32 +146,44 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
             f"Specified target is not valid, must be one of: {TargetTags.get_values()}"
         )
 
-    if target not in ("SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"):
+    if target not in ("SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "ZIKV-NS2B-NS3pro"):
         raise NotImplementedError(
             f"Fitness data not yet available for {target}. Add to metadata if/when available."
         )
 
-    with open(SARS_CoV_2_fitness_data) as f:
-        data = json.load(f)
-    data = data["data"]
-    fitness_scores_bloom = pd.DataFrame(data)
-    # now get the target-specific entries.
-    fitness_scores_bloom = fitness_scores_bloom[
-        fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
-    ]
-    if target == "SARS-CoV-2-Mac1":
-        # need to subselect from nsp3 multidomain to get just Mac1. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7113668/
+    ## START TODO
+    if "SARS-CoV-2" in target: # TODO: generalize this block
+        
+        with open(SARS_CoV_2_fitness_data) as f:
+            data = json.load(f)
+        data = data["data"]
+        fitness_scores_bloom = pd.DataFrame(data)
+
+        # now get the target-specific entries. Need to do because the phylo data is cross-genome.
         fitness_scores_bloom = fitness_scores_bloom[
-            fitness_scores_bloom["site"].between(209, 372)
+            fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
         ]
-        fitness_scores_bloom[
-            "site"
-        ] -= 208  # reindex to set residue numbers to correct values
-    elif target == "SARS-CoV-2-Mpro":
-        # simpler; can just query the correct gene in the JSON.
-        fitness_scores_bloom = fitness_scores_bloom[
-            fitness_scores_bloom["gene"] == "nsp5 (Mpro)"
-        ]
+
+        if target == "SARS-CoV-2-Mac1":
+            # need to subselect from nsp3 multidomain to get just Mac1. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7113668/
+            fitness_scores_bloom = fitness_scores_bloom[
+                fitness_scores_bloom["site"].between(209, 372)
+            ]
+            fitness_scores_bloom[
+                "site"
+            ] -= 208  # reindex to set residue numbers to correct values
+        elif target == "SARS-CoV-2-Mpro":
+            # simpler; can just query the correct gene in the JSON.
+            fitness_scores_bloom = fitness_scores_bloom[
+                fitness_scores_bloom["gene"] == "nsp5 (Mpro)"
+            ]
+    # for ZIKV NS2B3 it's simpler - no need to subselect the target from the genome.
+    elif target == "ZIKV-NS2B-NS3pro":
+        with open(ZIKV_NS2B_NS3pro_fitness_data) as f:
+            data = json.load(f)
+        data = data["data"]
+        fitness_scores_bloom = pd.DataFrame(data)
+    ## END TODO
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom)
