@@ -11,18 +11,21 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
     VirusTags,
     TargetVirusMap,
-    VirusTargetMap,
 )
 
 _TARGET_TO_GENE = {
     TargetTags("SARS-CoV-2-Mpro").value: "nsp5 (Mpro)",
-    TargetTags("MERS-CoV-Mpro").value: "not_available",
     TargetTags("SARS-CoV-2-Mac1").value: "nsp3",
 }
 
 _VIRUS_TO_FITNESS_DATA = {
     VirusTags("SARS-CoV-2").value: SARS_CoV_2_fitness_data,
     VirusTags("ZIKV").value: ZIKV_NS2B_NS3pro_fitness_data,
+}
+
+_FITNESS_DATA_IS_CROSSGENOME = {
+    VirusTags("SARS-CoV-2").value: True,
+    VirusTags("ZIKV").value: False,
 }
 
 
@@ -163,40 +166,13 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
             f"Fitness data not yet available for {target}. Add to metadata if/when available."
         )
 
-    ## START TODO
-    if "SARS-CoV-2" in target:  # TODO: generalize this block
-        threshold = -1.0
-        with open(SARS_CoV_2_fitness_data) as f:
-            data = json.load(f)
-        data = data["data"]
-        fitness_scores_bloom = pd.DataFrame(data)
+    fitness_scores_bloom = get_fitness_scores_bloom_by_target(target)
 
-        # now get the target-specific entries. Need to do because the phylo data is cross-genome.
-        fitness_scores_bloom = fitness_scores_bloom[
-            fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
-        ]
-
-        if target == "SARS-CoV-2-Mac1":
-            # need to subselect from nsp3 multidomain to get just Mac1. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7113668/
-            fitness_scores_bloom = fitness_scores_bloom[
-                fitness_scores_bloom["site"].between(209, 372)
-            ]
-            fitness_scores_bloom[
-                "site"
-            ] -= 208  # reindex to set residue numbers to correct values
-        elif target == "SARS-CoV-2-Mpro":
-            # simpler; can just query the correct gene in the JSON.
-            fitness_scores_bloom = fitness_scores_bloom[
-                fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
-            ]
-    # for ZIKV NS2B3 it's simpler - no need to subselect the target from the genome.
-    elif target == "ZIKV-NS2B-NS3pro":
+    virus = TargetVirusMap[target]
+    if virus == VirusTags("ZIKV").value:
         threshold = 0.0
-        with open(ZIKV_NS2B_NS3pro_fitness_data) as f:
-            data = json.load(f)
-        data = data["data"]
-        fitness_scores_bloom = pd.DataFrame(data)
-    ## END TODO
+    else:
+        threshold = -1.0
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom, threshold)
@@ -216,3 +192,33 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
     # can instead return DF if ever we need to provide more info (top/worst mutation, confidence etc).
     fitness_df_abstract = normalize_fitness(fitness_df_abstract)
     return dict(zip(fitness_df_abstract.index, fitness_df_abstract["fitness"]))
+
+
+def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
+    # find the virus that corresponds to the target
+    virus = TargetVirusMap[target]
+    # find the fitness data that corresponds to the virus
+    fitness_data = _VIRUS_TO_FITNESS_DATA[virus]
+    # read the fitness data into a dataframe
+    with open(fitness_data) as f:
+        data = json.load(f)
+    data = data["data"]
+    fitness_scores_bloom = pd.DataFrame(data)
+
+    if _FITNESS_DATA_IS_CROSSGENOME[virus]:
+        # now get the target-specific entries. Need to do because the phylo data is cross-genome.
+        fitness_scores_bloom = fitness_scores_bloom[
+            fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
+        ]
+    else:
+        pass  # no need to subselect
+
+    # post-processing for specific targets
+    if target == "SARS-CoV-2-Mac1":
+        # need to subselect from nsp3 multidomain to get just Mac1. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7113668/
+        fitness_scores_bloom = fitness_scores_bloom[
+            fitness_scores_bloom["site"].between(209, 372)
+        ]
+        fitness_scores_bloom["site"] -= 208
+
+    return fitness_scores_bloom
