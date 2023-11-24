@@ -86,7 +86,6 @@ class HTMLVisualizer:
                 "variable `color_method` must be either of ['subpockets', 'fitness']"
             )
 
-
         self.poses = []
         self.output_paths = []
         # make sure all paths exist, otherwise skip
@@ -112,7 +111,6 @@ class HTMLVisualizer:
             self.protein = openeye_perceive_residues(
                 load_openeye_pdb(protein), preserve_all=True
             )
-
 
     @staticmethod
     def write_html(html, path):
@@ -542,4 +540,3 @@ class HTMLVisualizer:
             html = self.get_html_airium(pose)
             html_renders.append(html)
         return html_renders
-
