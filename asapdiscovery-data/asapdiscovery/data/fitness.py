@@ -82,7 +82,7 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame, threshold: float) -
     """
     # add this column in case we're pulling in an experiment that has different data. We need to find
     # a good way of dealing with all this data coming from different labs. See Issue #649
-    if not "expected_count" in fitness_dataframe.columns:
+    if "expected_count" not in fitness_dataframe.columns:
         fitness_dataframe["expected_count"] = 0
 
     fitness_dict = {}
