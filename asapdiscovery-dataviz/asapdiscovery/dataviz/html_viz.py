@@ -78,7 +78,7 @@ class HTMLVisualizer:
         elif self.color_method == "fitness":
             if not target_has_fitness_data(self.target):
                 raise NotImplementedError(
-                    "No viral fitness data available for target set `color_method` to `subpockets`."
+                    "No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
                 )
             self.fitness_data = parse_fitness_json(self.target)
         else:
@@ -110,7 +110,7 @@ class HTMLVisualizer:
             if not protein.exists():
                 raise ValueError(f"Protein {protein} does not exist.")
             self.protein = openeye_perceive_residues(
-                load_openeye_pdb(str(protein)), preserve_all=True
+                load_openeye_pdb(protein), preserve_all=True
             )
 
 

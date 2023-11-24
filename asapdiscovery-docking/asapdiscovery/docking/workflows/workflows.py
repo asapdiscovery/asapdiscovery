@@ -28,10 +28,6 @@ class DockingWorkflowInputsBase(BaseModel):
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
     )
 
-    postera_molset_name: Optional[str] = Field(
-        None, description="The name of the molecule set to upload to."
-    )
-
     cache_dir: Optional[str] = Field(
         None, description="Path to a directory where a cache has been generated"
     )

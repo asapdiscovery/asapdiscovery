@@ -194,3 +194,7 @@ def md_openmm_platform(func):
         default=OpenMMPlatform.Fastest,
         help="The OpenMM platform to use for MD",
     )(func)
+
+
+def md_args(func):
+    return md(md_steps(md_openmm_platform(func)))

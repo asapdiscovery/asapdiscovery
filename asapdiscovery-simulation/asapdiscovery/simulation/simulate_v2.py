@@ -15,8 +15,17 @@ from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 from rdkit import Chem
+
+
+def truncate_num_steps(num_steps, reporting_interval):
+    # Ensure num_steps is at least one reporting interval
+    num_steps = max(num_steps, reporting_interval)
+    # Truncate num_steps to be a multiple of reporting_interval
+    num_steps = (num_steps // reporting_interval) * reporting_interval
+
+    return num_steps
 
 
 class SimulatorBase(BaseModel):
@@ -63,7 +72,6 @@ class SimulationResult(BaseModel):
     final_pdb_path: Optional[Path]
     success: Optional[bool]
     input_docking_result: Optional[DockingResult]
-    simulator: Optional[SimulatorBase]
 
 
 class VanillaMDSimulatorV2(SimulatorBase):
@@ -85,11 +93,35 @@ class VanillaMDSimulatorV2(SimulatorBase):
     reporting_interval: PositiveInt = Field(
         1250, description="Reporting interval of the simulation"
     )
-    num_steps: PositiveInt = Field(2500000, description="Number of simulation steps")
+    num_steps: PositiveInt = Field(
+        2500000,
+        description="Number of simulation steps, must be a multiple of reporting interval or will be truncated to nearest multiple of reporting interval",
+    )
 
     class Config:
         arbitrary_types_allowed = True
         extra = "allow"
+
+    def __init__(self, **kwargs):
+        # truncate num_steps to be a multiple of reporting_interval and at least one reporting interval
+        kwargs["num_steps"] = truncate_num_steps(
+            kwargs["num_steps"], kwargs["reporting_interval"]
+        )
+        super().__init__(**kwargs)
+
+    @root_validator
+    @classmethod
+    def check_steps(cls, values):
+        """
+        Validate num_steps and reporting_interval
+        """
+        num_steps = values.get("num_steps")
+        reporting_interval = values.get("reporting_interval")
+        if num_steps % reporting_interval != 0:
+            raise ValueError(
+                f"num_steps ({num_steps}) must be a multiple of reporting_interval ({reporting_interval})"
+            )
+        return values
 
     def _to_openmm_units(self):
         self._temperature = self.temperature * unit.kelvin
@@ -147,7 +179,6 @@ class VanillaMDSimulatorV2(SimulatorBase):
                 minimized_pdb_path=outpath / "minimized.pdb",
                 final_pdb_path=outpath / "final.pdb",
                 success=retcode,
-                simulator=self,
             )
 
             results.append(sim_result)
