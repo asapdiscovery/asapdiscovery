@@ -1,4 +1,4 @@
-import logging
+import logging  # noqa: F401
 import os
 import subprocess
 import tempfile
@@ -77,33 +77,21 @@ class HTMLVisualizer:
         self.reference_target = load_openeye_pdb(master_structures[self.target])
         self.align = align
 
-        # init loggers
-        if logger is None:
-            self.logger = FileLogger(
-                "html_visualizer_log.txt", "./", stdout=True, level=logging.INFO
-            ).getLogger()
-        else:
-            self.logger = logger
         self.debug = debug
 
         self.color_method = color_method
         if self.color_method == "subpockets":
-            self.logger.info("Mapping interactive view by subpocket dict")
+            pass
         elif self.color_method == "fitness":
             if not target_has_fitness_data(self.target):
                 raise NotImplementedError(
                     "No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
                 )
-            self.logger.info(
-                "Mapping interactive view by fitness (visualised with b-factor)"
-            )
             self.fitness_data = parse_fitness_json(self.target)
         else:
             raise ValueError(
                 "variable `color_method` must be either of ['subpockets', 'fitness']"
             )
-
-        self.logger.info(f"Visualising poses for {self.target}")
 
         self.poses = []
         self.output_paths = []
@@ -120,7 +108,7 @@ class HTMLVisualizer:
                 self.poses.append(mol)
                 self.output_paths.append(path)
             else:
-                self.logger.warning(f"Pose {pose} does not exist, skipping.")
+                pass
 
         if isinstance(protein, oechem.OEMolBase):
             self.protein = protein.CreateCopy()
@@ -130,10 +118,6 @@ class HTMLVisualizer:
             self.protein = openeye_perceive_residues(
                 load_openeye_pdb(protein), preserve_all=True
             )
-
-        self.logger.debug(
-            f"Writing HTML visualisations for {len(self.output_paths)} ligands"
-        )
 
     @staticmethod
     def write_html(html, path):
@@ -312,7 +296,7 @@ class HTMLVisualizer:
 
         return intn_color
 
-    def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type) -> Union:
+    def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type):
         """
         Parses a PLIP interaction dict and builds the dict key values needed for 3DMol.
         """
@@ -576,3 +560,10 @@ class HTMLVisualizer:
         html = self.get_html_airium(pose)
         self.write_html(html, path)
         return path
+
+    def make_poses_html(self):
+        html_renders = []
+        for pose, path in zip(self.poses, self.output_paths):
+            html = self.get_html_airium(pose)
+            html_renders.append(html)
+        return html_renders
