@@ -114,7 +114,6 @@ class HTMLVisualizer:
             )
 
 
-
     @staticmethod
     def write_html(html, path):
         """
@@ -291,7 +290,7 @@ class HTMLVisualizer:
 
         return intn_color
 
-    def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type) -> Union:
+    def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type):
         """
         Parses a PLIP interaction dict and builds the dict key values needed for 3DMol.
         """
