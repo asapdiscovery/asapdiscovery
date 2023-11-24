@@ -7,12 +7,22 @@ from asapdiscovery.data.metadata.resources import (
     ZIKV_NS2B_NS3pro_fitness_data,
     targets_with_fitness_data,
 )
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    VirusTags,
+    TargetVirusMap,
+    VirusTargetMap,
+)
 
 _TARGET_TO_GENE = {
     TargetTags("SARS-CoV-2-Mpro").value: "nsp5 (Mpro)",
     TargetTags("MERS-CoV-Mpro").value: "not_available",
     TargetTags("SARS-CoV-2-Mac1").value: "nsp3",
+}
+
+_VIRUS_TO_FITNESS_DATA = {
+    VirusTags("SARS-CoV-2").value: SARS_CoV_2_fitness_data,
+    VirusTags("ZIKV").value: ZIKV_NS2B_NS3pro_fitness_data,
 }
 
 
@@ -68,7 +78,7 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame, threshold: float) -
         ]
     """
     # add this column in case we're pulling in an experiment that has different data. We need to find
-    # a good way of dealing with all this data coming from different labs.
+    # a good way of dealing with all this data coming from different labs. See Issue #649
     if not "expected_count" in fitness_dataframe.columns:
         fitness_dataframe["expected_count"] = 0
 
@@ -148,7 +158,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
             f"Specified target is not valid, must be one of: {TargetTags.get_values()}"
         )
 
-    if target not in ("SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "ZIKV-NS2B-NS3pro"):
+    if not target_has_fitness_data(target):
         raise NotImplementedError(
             f"Fitness data not yet available for {target}. Add to metadata if/when available."
         )
@@ -177,7 +187,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         elif target == "SARS-CoV-2-Mpro":
             # simpler; can just query the correct gene in the JSON.
             fitness_scores_bloom = fitness_scores_bloom[
-                fitness_scores_bloom["gene"] == "nsp5 (Mpro)"
+                fitness_scores_bloom["gene"] == _TARGET_TO_GENE[target]
             ]
     # for ZIKV NS2B3 it's simpler - no need to subselect the target from the genome.
     elif target == "ZIKV-NS2B-NS3pro":
