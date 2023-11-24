@@ -21,13 +21,6 @@ class MoleculeSetKeys(StringEnum):
     smiles = "smiles"
 
 
-class MoleculeSetKeys(StringEnum):
-    """Keys for the response from the PostEra API when creating, getting or modifying a molecule set"""
-
-    id = "id"
-    smiles = "smiles"
-
-
 class Molecule(TypedDict):
     """Data type to build MoleculeList"""
 

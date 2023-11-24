@@ -1,4 +1,4 @@
-import logging
+import logging  # noqa: F401
 import os
 import subprocess
 import tempfile
