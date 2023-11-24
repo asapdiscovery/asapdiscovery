@@ -1,10 +1,10 @@
 import itertools
 import warnings
+from collections import defaultdict
 from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Tuple, Union  # noqa: F401
-from collections import defaultdict
 
 import pandas as pd
 import pkg_resources

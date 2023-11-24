@@ -9,8 +9,8 @@ from asapdiscovery.data.metadata.resources import (
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetTags,
-    VirusTags,
     TargetVirusMap,
+    VirusTags,
 )
 
 _TARGET_TO_GENE = {
