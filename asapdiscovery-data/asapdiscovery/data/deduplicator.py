@@ -1,11 +1,11 @@
-from pydantic import BaseModel
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from pydantic import BaseModel
+
 
 class LigandDeDuplicator(BaseModel):
     """
     Class to deduplicate ligands based on their inchikey
     """
-
 
     def deduplicate(self, ligands: list[Ligand]):
         seen_values = set()
