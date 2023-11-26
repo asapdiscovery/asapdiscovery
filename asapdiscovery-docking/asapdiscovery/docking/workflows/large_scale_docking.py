@@ -306,7 +306,6 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         return_df=True,
-        include_result_column=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -338,7 +337,34 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
             DockingResultCols.SMILES.value,
         ],
-        how="outer",
+        how="inner",
+    )
+
+    logger.info("Running fitness HTML visualiser")
+    html_fitness_output_dir = output_dir / "fitness"
+    html_fitness_visualizer = HTMLVisualizerV2(
+        colour_method=ColourMethod.fitness,
+        target=inputs.target,
+        output_dir=html_fitness_output_dir,
+    )
+    fitness_visualizations = html_fitness_visualizer.visualize(
+        results, use_dask=inputs.use_dask, dask_client=dask_client
+    )
+
+    # duplicate target id column so we can join
+    fitness_visualizations[
+        DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+    ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+
+    # join the two dataframes on ligand_id, target_id and smiles
+    scores_df = scores_df.merge(
+        fitness_visualizations,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="inner",
     )
 
     logger.info("Filtering docking results")
