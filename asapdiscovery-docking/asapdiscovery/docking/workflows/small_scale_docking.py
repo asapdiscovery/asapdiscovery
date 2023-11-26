@@ -28,6 +28,7 @@ from asapdiscovery.data.services_config import (
     PosteraSettings,
     S3Settings,
 )
+from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
@@ -232,6 +233,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
+    logger.info("Deduplicating by Inchikey")
+    query_ligands = LigandDeDuplicator().deduplicate(query_ligands)
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 

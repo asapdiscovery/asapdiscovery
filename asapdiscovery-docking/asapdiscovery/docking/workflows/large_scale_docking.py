@@ -16,11 +16,23 @@ from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
+from asapdiscovery.data.postera.manifold_artifacts import (
+    ArtifactType,
+    ManifoldArtifactUploader,
+)
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
+from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
@@ -153,6 +165,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     if inputs.postera_upload:
         postera_settings = PosteraSettings()
         logger.info("Postera settings loaded")
+        logger.info("Postera upload specified, checking for AWS credentials")
+        aws_s3_settings = S3Settings()
+        aws_cloudfront_settings = CloudfrontSettings()
+        logger.info("AWS S3 and CloudFront credentials found")
 
     if inputs.postera:
         # load postera
@@ -286,12 +302,44 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         )
 
     scores_df = scorer.score(
-        results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        return_df=True,
+        include_result_column=True,
     )
 
-    del results
-
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
+
+    # run html visualiser
+    logger.info("Running HTML visualiser for docked poses")
+    html_ouptut_dir = output_dir / "poses"
+    html_visualizer = HTMLVisualizerV2(
+        colour_method=ColourMethod.subpockets,
+        target=inputs.target,
+        output_dir=html_ouptut_dir,
+    )
+    pose_visualizatons = html_visualizer.visualize(
+        results, use_dask=inputs.use_dask, dask_client=dask_client
+    )
+    # rename visualisations target id column to POSIT structure tag so we can join
+    pose_visualizatons.rename(
+        columns={
+            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        },
+        inplace=True,
+    )
+
+    # join the two dataframes on ligand_id, target_id and smiles
+    scores_df = scores_df.merge(
+        pose_visualizatons,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",
+    )
 
     logger.info("Filtering docking results")
     # filter for POSIT probability > 0.7
@@ -392,14 +440,45 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         bleach_columns=bleach_columns,
         manifold_validate=True,
         drop_non_output=True,
-        allow=[DockingResultCols.LIGAND_ID.value],
+        allow=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.HTML_PATH_POSE.value,
+            DockingResultCols.HTML_PATH_FITNESS.value,
+        ],
     )
 
     result_df.to_csv(output_dir / "docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
         logger.info("Uploading results to Postera")
+
         postera_uploader = PosteraUploader(
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         postera_uploader.push(result_df)
+
+        logger.info("Uploading artifacts to PostEra")
+
+        # make an uploader for the poses and upload them
+
+        artifact_columns = [
+            DockingResultCols.HTML_PATH_POSE.value,
+            DockingResultCols.HTML_PATH_FITNESS.value,
+        ]
+        artifact_types = [
+            ArtifactType.DOCKING_POSE_POSIT,
+            ArtifactType.DOCKING_POSE_FITNESS_POSIT,
+        ]
+
+        uploader = ManifoldArtifactUploader(
+            inputs.target,
+            result_df,
+            inputs.postera_molset_name,
+            bucket_name=aws_s3_settings.BUCKET_NAME,
+            artifact_types=artifact_types,
+            artifact_columns=artifact_columns,
+            moleculeset_api=MoleculeSetAPI.from_settings(postera_settings),
+            s3=S3.from_settings(aws_s3_settings),
+            cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
+        )
+        uploader.upload_artifacts()
