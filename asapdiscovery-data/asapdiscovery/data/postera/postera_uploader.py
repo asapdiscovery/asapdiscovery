@@ -7,6 +7,7 @@ from asapdiscovery.data.services_config import PosteraSettings
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
+from asapdiscovery.data.rdkit import rdkit_smiles_roundtrip
 from pydantic import BaseModel, Field
 
 
@@ -83,31 +84,31 @@ class PosteraUploader(BaseModel):
         Join the original dataframe with manifold data
         that is returned from a query to the manifold API
         """
-        print(molset_query_df)
-        print(molset_query_df.columns)
         data = original.copy()
         subset = molset_query_df[
             [MoleculeSetKeys.id.value, MoleculeSetKeys.smiles.value]
         ]
+
+        # use rdkit here, to match postera backend which uses rdkit
+        # provides better matching performance with smiles pulled down from postera
+
         # do a roundtrip to canonicalize the smiles
         subset.loc[:, MoleculeSetKeys.smiles.value] = subset[
             MoleculeSetKeys.smiles.value
-        ].apply(oe_smiles_roundtrip)
+        ].apply(rdkit_smiles_roundtrip)
+
         # do the same to the original data
         data.loc[:, ManifoldAllowedTags.SMILES.value] = data[
             ManifoldAllowedTags.SMILES.value
-        ].apply(oe_smiles_roundtrip)
+        ].apply(rdkit_smiles_roundtrip)
+
         # give it the right column names
         subset.rename(
             columns={MoleculeSetKeys.smiles.value: ManifoldAllowedTags.SMILES.value},
             inplace=True,
         )
         # merge the data
-        print(subset)
-        print(data)
-        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
-        print(data)
-        print(len(data))
+        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="inner")
 
         # drop original ID column and replace with the manifold ID
         data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
