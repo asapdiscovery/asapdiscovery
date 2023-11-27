@@ -1,5 +1,5 @@
 from uuid import UUID
-
+import warnings
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
@@ -50,6 +50,9 @@ class PosteraUploader(BaseModel):
         df_copy = df.copy()
         new_molset = False
         molset_name = self.molecule_set_name
+
+        # if the molecule set doesn't exist, create it
+
         if not ms_api.exists(self.molecule_set_name, by="name"):
             id = ms_api.create_molecule_set_from_df_with_manifold_validation(
                 molecule_set_name=self.molecule_set_name,
@@ -57,6 +60,7 @@ class PosteraUploader(BaseModel):
                 id_field=self.id_field,
                 smiles_field=self.smiles_field,
             )
+            # get the new data including manifold UUIDs and join it with the original data
             new_data = ms_api.get_molecules(id, return_as="dataframe")
             df_copy = self.join_with_manifold_data(df_copy, new_data)
             new_molset = True
@@ -65,17 +69,42 @@ class PosteraUploader(BaseModel):
                 self.molecule_set_name, ms_api.list_available()
             )
 
+            # if the id data is not castable to UUID, we need to get the data from the manifold API
             if not self.id_data_is_uuid_castable(df, self.id_field):
+                # grab data and join
                 new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
                 df_copy = self.join_with_manifold_data(df_copy, new_data)
 
-            ms_api.update_molecules_from_df_with_manifold_validation(
-                molecule_set_id=molset_id,
-                df=df_copy,
-                id_field=self.id_field,
-                smiles_field=self.smiles_field,
-                overwrite=self.overwrite,
-            )
+            # find rows with blank id, they need to be added to molset, using **add** endpoint rather than **update**
+            blank_id_rows = df_copy[df_copy[self.id_field].isna()]
+            if not blank_id_rows.empty:
+                ms_api.add_molecules_from_df_with_manifold_validation(
+                    molecule_set_id=molset_id,
+                    df=blank_id_rows,
+                    id_field=self.id_field,
+                    smiles_field=self.smiles_field,
+                )
+                warnings.warn(
+                    "appending to molecule set where some molecules have not been matched to an existing molecule in the molecule set, these ligands will be added to the molecule set"
+                )
+
+            # find rows with a UUID, they need to be updated using the **update** endpoint
+            uuid_rows = df_copy[~df_copy[self.id_field].isna()]
+
+            if not uuid_rows.empty:
+                # rows with a UUID can be updated
+                ms_api.update_molecules_from_df_with_manifold_validation(
+                    molecule_set_id=molset_id,
+                    df=uuid_rows,
+                    id_field=self.id_field,
+                    smiles_field=self.smiles_field,
+                    overwrite=self.overwrite,
+                )
+
+            # now that we have finished all operations, get the updated data following and join it with the original data
+            new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
+            df_copy = self.join_with_manifold_data(df_copy, new_data)
+
         return df_copy, molset_name, new_molset
 
     @staticmethod
@@ -107,9 +136,9 @@ class PosteraUploader(BaseModel):
             columns={MoleculeSetKeys.smiles.value: ManifoldAllowedTags.SMILES.value},
             inplace=True,
         )
-        # merge the data
+        # merge the data, outer join very important here to avoid dropping rows that are present in local data but not in manifold
         data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
-
+        data.to_csv("merge.csv")
         # drop original ID column and replace with the manifold ID
         data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
         data.rename(
