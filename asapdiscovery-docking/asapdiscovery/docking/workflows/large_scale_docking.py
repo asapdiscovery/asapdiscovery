@@ -429,7 +429,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     ] = True  # noqa: E712
 
     hits_df = scores_df[  # noqa: E712
-        scores_df[DockingResultCols.DOCKING_HIT.value] == True # noqa: E712
+        scores_df[DockingResultCols.DOCKING_HIT.value] == True  # noqa: E712
     ]
 
     n_top_n_filtered = len(hits_df)
