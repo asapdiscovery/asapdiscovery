@@ -28,6 +28,10 @@ _FITNESS_DATA_IS_CROSSGENOME = {
     VirusTags("ZIKV").value: False,
 }
 
+_FITNESS_DATA_FIT_THRESHOLD = { # need to do this because different DMS experiments can have different protocols and endpoint readouts
+    VirusTags("SARS-CoV-2").value: -1.0,
+    VirusTags("ZIKV").value: 0.0,   
+}
 
 def target_has_fitness_data(target: TargetTags) -> bool:
     return target in targets_with_fitness_data
@@ -168,11 +172,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
 
     fitness_scores_bloom = get_fitness_scores_bloom_by_target(target)
 
-    virus = TargetVirusMap[target]
-    if virus == VirusTags("ZIKV").value:
-        threshold = 0.0
-    else:
-        threshold = -1.0
+    threshold = _FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[target]]
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom, threshold)
