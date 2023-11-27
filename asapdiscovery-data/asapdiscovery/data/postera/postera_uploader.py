@@ -1,7 +1,6 @@
 import warnings
 from uuid import UUID
 
-from asapdiscovery.data.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
 from asapdiscovery.data.rdkit import rdkit_smiles_roundtrip

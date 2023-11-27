@@ -10,10 +10,10 @@ class LigandDeDuplicator(BaseModel):
     def deduplicate(self, ligands: list[Ligand]):
         seen_values = set()
         deduplicated_list = []
-        for l in ligands:
-            inchikey = l.inchikey
+        for lig in ligands:
+            inchikey = lig.inchikey
             if inchikey not in seen_values:
                 seen_values.add(inchikey)
-                deduplicated_list.append(l)
+                deduplicated_list.append(lig)
 
         return deduplicated_list
