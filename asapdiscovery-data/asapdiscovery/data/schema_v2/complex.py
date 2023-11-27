@@ -87,6 +87,10 @@ class Complex(ComplexBase):
     def hash(self):
         return f"{self.target.hash()}+{self.ligand.fixed_inchikey}"
 
+    def unique_name(self) -> str:
+        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
+        return f"{self.target.target_name}-{self.hash()}"
+
 
 class PreppedComplex(ComplexBase):
     """
@@ -149,3 +153,7 @@ class PreppedComplex(ComplexBase):
 
     def hash(self):
         return f"{self.target.target_hash}+{self.ligand.fixed_inchikey}"
+
+    def unique_name(self) -> str:
+        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
+        return f"{self.target.target_name}-{self.hash()}"

@@ -33,8 +33,10 @@ class ProteinPrepInputs(BaseModel):
         Path to a fragalysis dump to prep
     structure_dir : Optional[str]
         Path to a directory of structures to prep
-    gen_cache : Path
-        Path to a directory to store generated structures
+    cache_dir : Path
+        Path to a directory of cached prepped structures.
+    save_to_cache: bool
+        If newly prepared structures should also be saved to the global cache
     align : Optional[Path]
         Path to a reference structure to align to
     ref_chain : Optional[str]
@@ -74,10 +76,11 @@ class ProteinPrepInputs(BaseModel):
         None,
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
     )
-    gen_cache: str = Field(
+    cache_dir: Optional[str] = Field(
         "prepped_structure_cache",
-        description="Path to a directory where generated prepped complexes should be cached",
+        description="Path to a directory of cached prepared Complex structures.",
     )
+    save_to_cache: bool = Field(True, description="If newly prepared structures should also be saved to the cache_dir, has no effect if the cache_dir is not set.")
 
     align: Optional[Path] = Field(
         None, description="Reference structure pdb to align to."
@@ -115,7 +118,7 @@ class ProteinPrepInputs(BaseModel):
 
     loglevel: int = Field(logging.INFO, description="Logging level")
 
-    output_dir: Path = Field(Path("output"), description="Output directory")
+    output_dir: Path = Field(Path("output"), description="Output directory where newly prepped structures and log files will be saved to.")
 
     class Config:
         arbitrary_types_allowed = True
@@ -232,34 +235,6 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         ligand_kwargs={"compound_name": "ref_ligand"},
     )
 
-    # setup the path to cached structures
-    cache_path = output_dir / inputs.gen_cache
-
-    # load the cache
-    try:
-        cached_complexs = ProteinPrepper.load_cache(cache_dir=cache_path)
-        logger.info(
-            f"Loaded {len(cached_complexs)} cached structures from: {cache_path}."
-        )
-    except ValueError:
-        cached_complexs = []
-
-    # workout what can be reused
-    if cached_complexs:
-        cached_by_hash = {comp.hash(): comp for comp in cached_complexs}
-        # gather outputs which are in the cache
-        cached_outputs = [
-            cached_by_hash[inp.hash()]
-            for inp in complexes
-            if inp.hash() in cached_by_hash
-        ]
-        if cached_outputs:
-            logger.info(
-                f"Matched {len(cached_outputs)} cached structures which will be reused."
-            )
-        # update the list of jobs by removing any already in the cache
-        complexes = [inp for inp in complexes if inp.hash() not in cached_by_hash]
-
     # prep complexes
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(
@@ -270,15 +245,18 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         ref_chain=inputs.ref_chain,
         active_site_chain=inputs.active_site_chain,
     )
-    # only run prep if we have something new to run
-    if complexes:
-        prepped_complexes = prepper.prep(
-            inputs=complexes, use_dask=inputs.use_dask, dask_client=dask_client
-        )
-        logger.info(f"Prepped {len(prepped_complexes)} complexes")
-        del complexes
 
-        logger.info(f"Caching prepped complexes to {cache_path}")
-        prepper.cache(prepped_complexes, cache_path)
+    prepped_complexes = prepper.prep(
+        inputs=complexes, use_dask=inputs.use_dask, dask_client=dask_client, cache_dir=inputs.cache_dir
+    )
+
+    logger.info(f"Prepped {len(prepped_complexes)} complexes")
+
+    logger.info(f"Writing prepped complexes to {inputs.output_dir}")
+    prepper.cache(prepped_complexes, inputs.output_dir)
+
+    if inputs.save_to_cache:
+        logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
+        prepper.cache(prepped_complexes, inputs.cache_dir)
 
     logger.info("Done")

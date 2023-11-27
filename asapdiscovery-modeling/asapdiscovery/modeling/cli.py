@@ -1,10 +1,9 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import click
 from asapdiscovery.cli.cli_args import (
     dask_args,
     fragalysis_dir,
-    gen_cache_w_default,
     input_json,
     output_dir,
     pdb_file,
@@ -12,11 +11,9 @@ from asapdiscovery.cli.cli_args import (
     target,
 )
 from asapdiscovery.data.dask_utils import DaskType
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.modeling.workflows.protein_prep import (
-    ProteinPrepInputs,
-    protein_prep_workflow,
-)
+
+if TYPE_CHECKING:
+    from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 
 @click.group()
@@ -61,12 +58,21 @@ def modeling():
 @pdb_file
 @fragalysis_dir
 @structure_dir
-@gen_cache_w_default
+@click.option(
+    "--cache-dir",
+    help="The path to cached prepared complexes which can be used again.",
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True)
+)
+@click.option(
+    "--save-to-cache/--no-save-to-cache",
+    help="If the newly generated structures should be saved to the cache folder.",
+    default=True
+)
 @dask_args
 @output_dir
 @input_json
 def protein_prep(
-    target: TargetTags,
+    target: "TargetTags",
     align: Optional[str] = None,
     ref_chain: Optional[str] = None,
     active_site_chain: Optional[str] = None,
@@ -76,7 +82,8 @@ def protein_prep(
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
-    gen_cache: Optional[str] = "prepped_structure_cache",
+    cache_dir: Optional[str] = None,
+    save_to_cache: bool = True,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
     output_dir: str = "output",
@@ -85,14 +92,16 @@ def protein_prep(
     """
     Run protein prep on a set of structures.
     """
+    from asapdiscovery.modeling.workflows.protein_prep import (
+        ProteinPrepInputs,
+        protein_prep_workflow,
+    )
 
     if input_json is not None:
         print("Loading inputs from json file... Will override all other inputs.")
         inputs = ProteinPrepInputs.from_json_file(input_json)
 
     else:
-        print(output_dir)
-        print(gen_cache)
         inputs = ProteinPrepInputs(
             target=target,
             align=align,
@@ -104,7 +113,8 @@ def protein_prep(
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
-            gen_cache=gen_cache,
+            cache_dir=cache_dir,
+            save_to_cache=save_to_cache,
             use_dask=use_dask,
             dask_type=dask_type,
             output_dir=output_dir,

@@ -1,6 +1,6 @@
 import abc
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, TYPE_CHECKING
 
 import dask
 import yaml
@@ -17,6 +17,9 @@ from asapdiscovery.modeling.modeling import (
     superpose_molecule,
 )
 from pydantic import BaseModel, Field, root_validator
+
+if TYPE_CHECKING:
+    from distributed import Client
 
 
 class CacheType(StringEnum):
@@ -41,11 +44,40 @@ class ProteinPrepperBase(BaseModel):
         arbitrary_types_allowed = True
 
     @abc.abstractmethod
-    def _prep(self) -> list[PreppedComplex]:
+    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
         ...
 
+    @staticmethod
+    def _gather_new_tasks(complex_to_prep: list[Complex], cached_complexs: list[PreppedComplex]) -> tuple[list[Complex], list[PreppedComplex]]:
+        """
+        For a set of complexs we want to prep gather a list of tasks to do removing complexs that have already
+        been prepped and are in the cache.
+        Parameters
+        ----------
+        complex_to_prep: The list of complexs we want to perform prep on.
+        cached_complexs: The list of PreppedComplexs found in the cache which can be reused.
+
+        Returns
+        -------
+            A tuple of two lists, the first contains the complexs which should be prepped and the second contains
+            the PreppedComplex from the cache which should be reused.
+        """
+        cached_by_hash = {comp.hash(): comp for comp in cached_complexs}
+        # gather outputs which are in the cache
+        cached_outputs = [
+            cached_by_hash[inp.hash()]
+            for inp in complex_to_prep
+            if inp.hash() in cached_by_hash
+        ]
+        if cached_outputs:
+            to_prep = [inp for inp in complex_to_prep if inp.hash() not in cached_by_hash]
+        else:
+            to_prep = complex_to_prep
+
+        return to_prep, cached_outputs
+
     def prep(
-        self, inputs: list[Complex], use_dask: bool = False, dask_client=None
+        self, inputs: list[Complex], use_dask: bool = False, dask_client: Optional["Client"] = None, cache_dir: Optional[str] = None
     ) -> list[PreppedComplex]:
         """
         Prepare the list of input receptor ligand complexs re-using any found in the cache.
@@ -54,27 +86,60 @@ class ProteinPrepperBase(BaseModel):
         inputs: The list of complexs to prepare.
         use_dask: If dask should be used to distribute the jobs.
         dask_client: The dask client that should be used to submit the jobs.
+        cache_dir: The directory of previously cached PreppedComplexs which can be reused.
+
+        Note
+        ----
+            Newly prepared structures are not cached automatically, call `cache` to store the results.
+
         Returns
         -------
             A list of prepared complexs.
         """
-        if use_dask:
-            delayed_outputs = []
-            for inp in inputs:
-                out = dask.delayed(self._prep)(inputs=[inp])
-                delayed_outputs.append(out[0])  # flatten
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="skip"
-            )  # skip here as some complexes may fail for various reasons
-        else:
-            outputs = self._prep(inputs=inputs)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
 
-        outputs = [o for o in outputs if o is not None]
-        if len(outputs) == 0:
+        all_outputs = []
+
+        if cache_dir is not None:
+            cached_complexs = ProteinPrepperBase.load_cache(cache_dir=cache_dir)
+            # workout what we can reuse
+            if cached_complexs:
+                logger.info(f"Loaded {len(cached_complexs)} cached structures from: {cache_dir}.")
+                # reduce the number of tasks using any possible cached structures
+                inputs, cached_outputs = ProteinPrepperBase._gather_new_tasks(complex_to_prep=inputs, cached_complexs=cached_complexs)
+
+                if cached_outputs:
+                    logger.info(
+                        f"Matched {len(cached_outputs)} cached structures which will be reused."
+                    )
+                    all_outputs.extend(cached_outputs)
+
+        # check if we have something to run
+        if inputs:
+            logger.info(f"Prepping {len(inputs)} complexes")
+
+            if use_dask:
+                delayed_outputs = []
+                for inp in inputs:
+                    out = dask.delayed(self._prep)(inputs=[inp])
+                    delayed_outputs.append(out[0])  # flatten
+                outputs = actualise_dask_delayed_iterable(
+                    delayed_outputs, dask_client, errors="skip"
+                )  # skip here as some complexes may fail for various reasons
+            else:
+                outputs = self._prep(inputs=inputs)
+
+            outputs = [o for o in outputs if o is not None]
+            # save the newly calculated outputs
+            all_outputs.extend(outputs)
+
+        if len(all_outputs) == 0:
             raise ValueError(
                 "No complexes were successfully prepped, likely that nothing was passed in, cache was mis-specified or cache was empty."
             )
-        return outputs
+        return all_outputs
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
@@ -83,18 +148,20 @@ class ProteinPrepperBase(BaseModel):
     @staticmethod
     def cache(
         prepped_complexes: list[PreppedComplex],
-        dir: Union[str, Path],
+        cache_dir: Union[str, Path],
     ) -> None:
         """
         Cache the list of PreppedComplex in its own folder. Each is saved as a JSON, oedu PDB and ligand SDF for vis.
+
+        Args:
         """
-        dir = Path(dir)
-        if not dir.exists():
-            dir.mkdir(parents=True)
+        cache_dir = Path(cache_dir)
+        if not cache_dir.exists():
+            cache_dir.mkdir(parents=True)
 
         for pc in prepped_complexes:
             # create a folder for the complex data
-            complex_folder = dir.joinpath(f"{pc.target.target_name}-{pc.hash()}")
+            complex_folder = cache_dir.joinpath(pc.unique_name())
             complex_folder.mkdir(parents=True, exist_ok=True)
             pc.to_json_file(complex_folder.joinpath(pc.target.target_name + ".json"))
             pc.target.to_oedu_file(
@@ -147,12 +214,12 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
-    cache_dir: Optional[Path] = Field(
-        None, description="Path to a directory where design units are cached"
-    )
-    fail_missing_cache: bool = Field(
-        False, description="Whether to fail on missing files when loading from cache"
-    )
+    # cache_dir: Optional[Path] = Field(
+    #     None, description="Path to a directory where design units are cached"
+    # )
+    # fail_missing_cache: bool = Field(
+    #     False, description="Whether to fail on missing files when loading from cache"
+    # )
 
     @root_validator
     @classmethod
