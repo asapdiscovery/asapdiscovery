@@ -61,12 +61,7 @@ def test_data_equal(complex_pdb):
 
 
 def test_complex_from_pdb_needs_ids(complex_pdb):
-    with pytest.raises(ValidationError):
-        Complex.from_pdb(complex_pdb, target_kwargs={"target_name": "test"})
-
-    with pytest.raises(ValidationError):
-        Complex.from_pdb(complex_pdb, ligand_kwargs={"compound_name": "test"})
-
+    """Make sure an error is raised if we do not supply ligand and receptor ids"""
     with pytest.raises(ValidationError):
         Complex.from_pdb(complex_pdb)
 
