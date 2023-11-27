@@ -130,7 +130,6 @@ class ScorerBase(BaseModel):
         use_dask: bool = False,
         dask_client=None,
         return_df: bool = False,
-        include_result_column: bool = False,
     ) -> list[Score]:
         if use_dask:
             delayed_outputs = []
