@@ -1,11 +1,24 @@
 import uuid
+import warnings
 from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
+from asapdiscovery.data.enum import StringEnum
 from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
+
+_POSTERA_COLUMN_BLEACHING_ACTIVE = (
+    True  # NOTE: this is fix for postera bleaching see issues #629 #628
+)
+
+
+class MoleculeSetKeys(StringEnum):
+    """Keys for the response from the PostEra API when creating, getting or modifying a molecule set"""
+
+    id = "id"
+    smiles = "smiles"
 
 
 class Molecule(TypedDict):
@@ -29,13 +42,13 @@ class MoleculeList(list[Molecule]):
     def from_pandas_df(
         cls,
         df: pd.DataFrame,
-        smiles_field: str = "smiles",
-        id_field: str = "id",
+        smiles_field: str = MoleculeSetKeys.smiles.value,
+        id_field: str = MoleculeSetKeys.id.value,
     ):
         return cls(
             [
                 {
-                    "smiles": row[smiles_field],
+                    MoleculeSetKeys.smiles.value: row[smiles_field],
                     "customData": {
                         **{
                             key: value
@@ -56,13 +69,13 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
     def from_pandas_df(
         cls,
         df: pd.DataFrame,
-        smiles_field: str = "smiles",
-        id_field: str = "id",
+        smiles_field: str = MoleculeSetKeys.smiles.value,
+        id_field: str = MoleculeSetKeys.id.value,
     ):
         return cls(
             [
                 {
-                    "id": str(row[id_field]),
+                    MoleculeSetKeys.id.value: str(row[id_field]),
                     "customData": {
                         **{
                             key: value
@@ -153,7 +166,7 @@ class MoleculeSetAPI(PostEraAPI):
         if return_full:
             return response
         else:
-            return response["id"]
+            return response[MoleculeSetKeys.id.value]
 
     def _read_page(self, url: str, page: int) -> (pd.DataFrame, str):
         response = self._session.get(url, params={"page": page}).json()
@@ -190,7 +203,9 @@ class MoleculeSetAPI(PostEraAPI):
         if return_full:
             return results
         else:
-            return {result["id"]: result["name"] for result in results}
+            return {
+                result[MoleculeSetKeys.id.value]: result["name"] for result in results
+            }
 
     def exists(self, molecule_set_name: str, by="name") -> bool:
         """
@@ -261,8 +276,8 @@ class MoleculeSetAPI(PostEraAPI):
         elif return_as == "dataframe":
             response_data = [
                 {
-                    "smiles": result["smiles"],
-                    "id": result["id"],
+                    MoleculeSetKeys.smiles.value: result[MoleculeSetKeys.smiles.value],
+                    MoleculeSetKeys.id.value: result[MoleculeSetKeys.id.value],
                     **result["customData"],
                 }
                 for result in results
@@ -345,17 +360,23 @@ class MoleculeSetAPI(PostEraAPI):
         self,
         molecule_set_id: str,
         df: pd.DataFrame,
-        smiles_field: str = "smiles",
-        id_field: str = "id",
+        smiles_field: str = MoleculeSetKeys.smiles.value,
+        id_field: str = MoleculeSetKeys.id.value,
         overwrite=False,
+        bleached: bool = _POSTERA_COLUMN_BLEACHING_ACTIVE,  # NOTE: this is fix for postera bleaching see issues #629 #628
         debug_df_path: str = None,
     ) -> list[str]:
+        if bleached:
+            warnings.warn(
+                "Fix currently applied for postera column name bleaching see issues #629 #628"
+            )
+
         df = ManifoldAllowedTags.filter_dataframe_cols(
-            df, allow=[smiles_field, id_field]
+            df, allow=[smiles_field, id_field], bleached=bleached
         )
 
         if not ManifoldAllowedTags.all_in_values(
-            df.columns, allow=[id_field, smiles_field]
+            df.columns, allow=[id_field, smiles_field], bleached=bleached
         ):
             raise ValueError(
                 f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
@@ -385,16 +406,21 @@ class MoleculeSetAPI(PostEraAPI):
         self,
         molecule_set_name: str,
         df: pd.DataFrame,
-        smiles_field: str = "smiles",
-        id_field: str = "id",
+        smiles_field: str = MoleculeSetKeys.smiles.value,
+        id_field: str = MoleculeSetKeys.id.value,
+        bleached: bool = _POSTERA_COLUMN_BLEACHING_ACTIVE,  # NOTE: this is fix for postera bleaching see issues #629 #628
         debug_df_path: str = None,
     ) -> str:
+        if bleached:
+            warnings.warn(
+                "Fix currently applied for postera column name bleaching see issues #629 #628"
+            )
         df = ManifoldAllowedTags.filter_dataframe_cols(
-            df, allow=[smiles_field, id_field]
+            df, allow=[smiles_field, id_field], bleached=bleached
         )
 
         if not ManifoldAllowedTags.all_in_values(
-            df.columns, allow=[id_field, smiles_field]
+            df.columns, allow=[id_field, smiles_field], bleached=bleached
         ):
             raise ValueError(
                 f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
@@ -413,7 +439,9 @@ class MoleculeSetAPI(PostEraAPI):
         )
 
         # push updates to postera
-        retcode = self.create(molecule_set_name, mol_list)
+        id = self.create(molecule_set_name, mol_list, return_full=False)
 
-        if not retcode:
+        if not id:
             raise ValueError(f"Create failed for molecule set {molecule_set_name}")
+
+        return id

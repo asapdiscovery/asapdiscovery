@@ -28,7 +28,7 @@ TARGET_MAPPING = {
 
 # enum for allowed targets
 # TODO make configurable from YAML file
-class VizTargets(Enum):
+class VizTargets(str, Enum):
     viz_SARS_CoV_2_Mpro = "SARS-CoV-2-Mpro"
     viz_MERS_CoV_Mpro = "MERS-CoV-Mpro"
     viz_SARS_CoV_2_Mac1 = "SARS-CoV-2-Mac1"

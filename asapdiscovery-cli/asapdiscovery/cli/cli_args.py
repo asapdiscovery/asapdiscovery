@@ -3,6 +3,7 @@ from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import CacheType
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
 def postera(func):
@@ -69,6 +70,7 @@ def target(func):
 
 def ligands(func):
     return click.option(
+        "-l",
         "--ligands",
         type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
         help="File containing ligands",
@@ -165,4 +167,44 @@ def cache_type(func):
         default=[CacheType.DesignUnit],
         multiple=True,
         help="The type of cache to use, can be 'JSON' or 'DesignUnit', an be specified multiple times to use cache",
+    )(func)
+
+
+def md(func):
+    return click.option(
+        "--md",
+        is_flag=True,
+        default=False,
+        help="Whether to run MD",
+    )(func)
+
+
+def md_steps(func):
+    return click.option(
+        "--md-steps",
+        type=int,
+        default=2500000,
+        help="Number of MD steps",
+    )(func)
+
+
+def md_openmm_platform(func):
+    return click.option(
+        "--md-openmm-platform",
+        type=click.Choice(OpenMMPlatform.get_values(), case_sensitive=False),
+        default=OpenMMPlatform.Fastest,
+        help="The OpenMM platform to use for MD",
+    )(func)
+
+
+def md_args(func):
+    return md(md_steps(md_openmm_platform(func)))
+
+
+def core_smarts(func):
+    return click.option(
+        "-cs",
+        "--core-smarts",
+        type=click.STRING,
+        help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
     )(func)
