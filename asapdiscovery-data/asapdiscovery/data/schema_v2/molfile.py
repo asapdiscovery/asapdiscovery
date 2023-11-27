@@ -16,7 +16,7 @@ class MolFileFactory(DataModelAbstractBase):
     ligands: list[Ligand] = Field(..., description="List of Ligand objects")
 
     @classmethod
-    def from_file(cls, filename) -> list[Ligand]:
+    def from_file(cls, filename):
         filename = str(filename)
 
         ifs = oechem.oemolistream()
