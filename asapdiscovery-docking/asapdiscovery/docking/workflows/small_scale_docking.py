@@ -14,6 +14,7 @@ from asapdiscovery.data.postera.manifold_artifacts import (
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
+    map_output_col_to_manifold_tag,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
@@ -477,7 +478,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # push the results to PostEra, making a new molecule set if necessary
-        result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
+        posit_score_tag = map_output_col_to_manifold_tag(
+            DockingResultCols, inputs.target
+        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
+        result_df, molset_name, made_new_molset = postera_uploader.push(
+            result_df, sort_column=posit_score_tag, sort_ascending=True
+        )
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")
