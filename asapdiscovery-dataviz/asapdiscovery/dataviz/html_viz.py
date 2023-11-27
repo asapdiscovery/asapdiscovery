@@ -10,6 +10,7 @@ import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -20,6 +21,7 @@ from asapdiscovery.data.openeye import (
     openeye_perceive_residues,
     save_openeye_pdb,
 )
+from asapdiscovery.modeling.modeling import split_openeye_mol, superpose_molecule
 
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
@@ -41,6 +43,7 @@ class HTMLVisualizer:
         target: str,
         protein: Path,
         color_method: str = "subpockets",
+        align=False,
         logger: FileLogger = None,
         debug: bool = False,
     ):
@@ -57,6 +60,8 @@ class HTMLVisualizer:
             Path to protein PDB file.
         color_method : str
             Protein surface coloring method. Can be either by `subpockets` or `fitness`
+        align : bool
+            Whether or not to align the protein (and poses) to the master structure of the target.
         logger : FileLogger
             Logger to use
 
@@ -69,6 +74,8 @@ class HTMLVisualizer:
                 f"Target {target} invalid, must be one of: {self.allowed_targets}"
             )
         self.target = target
+        self.reference_target = load_openeye_pdb(master_structures[self.target])
+        self.align = align
 
         self.debug = debug
 
@@ -178,10 +185,6 @@ class HTMLVisualizer:
 
         hex_color_codes = [
             "#ffffff",
-            "#ffece5",
-            "#ffd9cc",
-            "#ffc6b3",
-            "#ffb29b",
             "#ff9e83",
             "#ff8a6c",
             "#ff7454",
@@ -193,7 +196,12 @@ class HTMLVisualizer:
         for res_num in set(protein_residues):
             try:
                 # color residue white->red depending on fitness value.
-                color = hex_color_codes[int(self.fitness_data[res_num] / 10)]
+                color_index_to_grab = int(self.fitness_data[res_num] / 10)
+                try:
+                    color = hex_color_codes[color_index_to_grab]
+                except IndexError:
+                    # insane residue that has tons of fit mutants; just assign the darkest red.
+                    color = hex_color_codes[-1]
                 if color not in color_res_dict:
                     color_res_dict[color] = [res_num]
                 else:
@@ -380,7 +388,26 @@ class HTMLVisualizer:
         """
         a = Airium()
 
-        # first prep the coloring function.
+        # first check if we need to align the protein and ligand. This already happens during docking, but not
+        # during pose_to_viz.py.
+        if self.align:
+            # merge
+            complex = combine_protein_ligand(self.protein, pose)
+
+            # align complex to master structure
+            complex_aligned, _ = superpose_molecule(
+                self.reference_target,
+                complex,
+            )
+
+            # get pose and protein back
+            split_dict = split_openeye_mol(
+                complex_aligned
+            )  # can set lig_title in case of UNK or others
+            self.protein = split_dict["prot"]
+            pose = split_dict["lig"]
+
+        # now prep the coloring function.
         surface_coloring = self.get_color_dict()
         residue_coloring_function_js = ""
         start = True

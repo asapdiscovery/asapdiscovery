@@ -39,10 +39,14 @@ SARS_CoV_2_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_sars_cov_2.json"
 )
 
+ZIKV_NS2B_NS3pro_fitness_data = pkg_resources.resource_filename(
+    __name__, "aa_fitness_zikv_ns2b3.json"
+)
 
 targets_with_fitness_data = [
     TargetTags("SARS-CoV-2-Mpro"),
     TargetTags("SARS-CoV-2-Mac1"),
+    TargetTags("ZIKV-NS2B-NS3pro"),
 ]
 
 # Reference PDB files to align targets to for consistent dataviz
