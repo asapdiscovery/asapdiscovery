@@ -5,6 +5,7 @@ from typing import Optional
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
+from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -28,7 +29,6 @@ from asapdiscovery.data.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2

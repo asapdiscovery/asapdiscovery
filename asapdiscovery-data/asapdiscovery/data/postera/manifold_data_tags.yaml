@@ -60,7 +60,7 @@ manifold_outputs:
         - POSIT
       units:
       postfix: msk
-  
+
   - docking-hit:
       prefix: in-silico
       tools:
