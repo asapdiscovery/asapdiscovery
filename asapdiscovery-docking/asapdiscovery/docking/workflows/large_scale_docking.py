@@ -337,7 +337,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
             DockingResultCols.SMILES.value,
         ],
-        how="inner",
+        how="outer",  # preserves rows where there is no visualisation
     )
 
     logger.info("Running fitness HTML visualiser")
@@ -364,7 +364,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
             DockingResultCols.SMILES.value,
         ],
-        how="inner",
+        how="outer",  # preserves rows where there is no fitness visualisation
     )
 
     logger.info("Filtering docking results")

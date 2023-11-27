@@ -108,7 +108,7 @@ class PosteraUploader(BaseModel):
             inplace=True,
         )
         # merge the data
-        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="inner")
+        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
 
         # drop original ID column and replace with the manifold ID
         data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
