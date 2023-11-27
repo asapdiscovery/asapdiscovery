@@ -192,7 +192,7 @@ files:
 
   # TYK2 FEC network for testing
   - resource: tyk2_small_network.json
-    sha256hash: 50178165ee30cab70ba386e42f62be933ae4769ca65c26c8ccce605230baa266
+    sha256hash: 90264719a7e2ca6a6b1f838e5a368cb7fc65774c9edb4c12e82d0279952a9e88
 
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
