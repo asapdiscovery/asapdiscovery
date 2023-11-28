@@ -1,3 +1,5 @@
+import functools
+
 import openfe
 import pytest
 from alchemiscale import Scope, ScopedKey
@@ -12,7 +14,13 @@ from asapdiscovery.alchemy.schema.fec import (
     SolventSettings,
     TransformationResult,
 )
-from asapdiscovery.alchemy.schema.network import NetworkPlanner
+from asapdiscovery.alchemy.schema.network import (
+    MaximalPlanner,
+    MinimalRedundantPlanner,
+    MinimalSpanningPlanner,
+    NetworkPlanner,
+    RadialPlanner,
+)
 from openff.units import unit as OFFUnit
 
 
@@ -22,7 +30,7 @@ from openff.units import unit as OFFUnit
         pytest.param(LomapAtomMapper, "max3d", 30, id="Lomap"),
         pytest.param(PersesAtomMapper, "coordinate_tolerance", 0.15, id="Perses"),
         pytest.param(
-            KartografAtomMapper, "atom_ring_matches_ring", True, id="Kartograph"
+            KartografAtomMapper, "map_exact_ring_matches_only", True, id="Kartograph"
         ),
     ],
 )
@@ -65,20 +73,27 @@ def test_mapper_provenance(mapper, programs):
 
 
 @pytest.mark.parametrize(
-    "network_type",
+    "network_planner, openfe_func",
     [
-        pytest.param("radial", id="Radial"),
-        pytest.param("maximal", id="Maximal"),
-        pytest.param("minimal_spanning", id="Minimal Spanning"),
+        pytest.param(RadialPlanner, "radial", id="Radial"),
+        pytest.param(MaximalPlanner, "maximal", id="Maximal"),
+        pytest.param(MinimalSpanningPlanner, "minimal_spanning", id="Minimal Spanning"),
+        pytest.param(
+            MinimalRedundantPlanner, "minimal_redundant_network", id="Minimal redundant"
+        ),
     ],
 )
-def test_network_planner_get_network(network_type):
+def test_network_planner_get_network(network_planner, openfe_func):
     """Make sure we get the correct network planner based on the network_planning_method setting."""
 
-    planner = NetworkPlanner(network_planning_method=network_type)
+    planner = network_planner()
 
-    planning_func = planner._get_network_plan()
-    assert network_type in planning_func.__name__
+    planning_func = planner.get_planning_function()
+    # check the name of the callable, special case for functools wrapped
+    if isinstance(planning_func, functools.partial):
+        assert openfe_func in planning_func.func.__name__
+    else:
+        assert openfe_func in planning_func.__name__
 
 
 @pytest.mark.parametrize(
@@ -100,15 +115,17 @@ def test_network_planner_get_scorer(scorer):
 @pytest.mark.parametrize(
     "network_type",
     [
-        pytest.param("radial", id="Radial"),
-        pytest.param("maximal", id="Maximal"),
-        pytest.param("minimal_spanning", id="Minimal Spanning"),
+        pytest.param(RadialPlanner, id="Radial"),
+        pytest.param(MaximalPlanner, id="Maximal"),
+        pytest.param(MinimalSpanningPlanner, id="Minimal Spanning"),
+        pytest.param(MinimalRedundantPlanner, id="Minimal redundant"),
     ],
 )
 def test_generate_network_lomap(network_type, tyk2_ligands):
     """Test generating ligand FEC networks with the configured settings using lomap."""
 
-    if network_type == "radial":
+    network_planning_method = network_type()
+    if network_planning_method.type == "RadialPlanner":
         central = tyk2_ligands[0]
         ligands = tyk2_ligands[1:]
     else:
@@ -118,7 +135,7 @@ def test_generate_network_lomap(network_type, tyk2_ligands):
     planner = NetworkPlanner(
         atom_mapping_engine=LomapAtomMapper(),
         scorer="default_lomap",
-        network_planning_method=network_type,
+        network_planning_method=network_planning_method,
     )
 
     planned_network = planner.generate_network(ligands=ligands, central_ligand=central)
@@ -126,9 +143,17 @@ def test_generate_network_lomap(network_type, tyk2_ligands):
     fe_network = planned_network.to_ligand_network()
     # make sure we have all the ligands we expect
     assert len(fe_network.nodes) == 10
-    if network_type == "radial":
+    if network_planning_method.type == "RadialPlanner":
         # radial should have all ligands connected to the central node
         assert len(fe_network.edges) == 9
+
+    elif network_planning_method.type == "MinimalSpanningPlanner":
+        # there should be only 1 edge connecting each ligand to the network
+        assert len(fe_network.edges) == 9
+
+    elif network_planning_method.type == "MinimalSpanningPlanner":
+        # there should be two minimal networks
+        assert len(fe_network.edges) == 18
 
     # make sure we can convert back to openfe ligands
     openfe_ligands = planned_network.to_openfe_ligands()
@@ -138,7 +163,7 @@ def test_generate_network_lomap(network_type, tyk2_ligands):
 
 def test_plan_radial_error(tyk2_ligands):
     """Make sure an error is raised if we try and plan a radial network with no central ligand"""
-    planner = NetworkPlanner(network_planning_method="radial")
+    planner = NetworkPlanner(network_planning_method=RadialPlanner())
     with pytest.raises(RuntimeError):
         _ = planner.generate_network(ligands=tyk2_ligands)
 
