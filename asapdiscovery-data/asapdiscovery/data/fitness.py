@@ -220,8 +220,5 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
             fitness_scores_bloom["site"].between(209, 372)
         ]
         fitness_scores_bloom["site"] -= 208
-    elif target == "ZIKV-NS2B-NS3pro":
-        for (site, wt), row in fitness_scores_bloom.groupby(by=["site", "wildtype"]):
-            print(site, wt)
 
     return fitness_scores_bloom
