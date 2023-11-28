@@ -27,6 +27,7 @@ from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from distributed import Client
 from pydantic import Field, PositiveInt, validator
+import logging
 
 
 class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
