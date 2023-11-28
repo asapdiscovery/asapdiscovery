@@ -339,7 +339,7 @@ def test_results_to_cinnabar_with_prediction(tyk2_result_network):
     row_refs = [
         (0, "lig_ejm_31", -0.133223, 0.075722),
         (2, "lig_ejm_42", 0.678041, 0.093269),
-        (4, "lig_ejm_48", 0.771667, 0.314375)
+        (4, "lig_ejm_48", 0.771667, 0.314375),
     ]
     # grab and check the row calculated row
     for row, label, dg, uncertainty in row_refs:
@@ -355,12 +355,14 @@ def test_results_to_cinnabar_with_prediction(tyk2_result_network):
     row_refs_rel = [
         (0, "lig_ejm_31", "lig_ejm_47", 0.111551, 0.149755),
         (1, "lig_ejm_31", "lig_ejm_42", 0.811265, 0.0861),
-        (4, "lig_ejm_42", "lig_ejm_50", 0.172555, 0.166535)
+        (4, "lig_ejm_42", "lig_ejm_50", 0.172555, 0.166535),
     ]
     for row, label_a, label_b, ddg, uncertainty in row_refs_rel:
         relative_row = relative_dataframe.iloc[row]
         assert relative_row["labelA"] == label_a
         assert relative_row["labelB"] == label_b
         assert relative_row["DDG (kcal/mol)"] == pytest.approx(ddg, abs=1e-6)
-        assert relative_row["uncertainty (kcal/mol)"] == pytest.approx(uncertainty, abs=1e-6)
+        assert relative_row["uncertainty (kcal/mol)"] == pytest.approx(
+            uncertainty, abs=1e-6
+        )
         assert relative_row["source"] == "calculated"
