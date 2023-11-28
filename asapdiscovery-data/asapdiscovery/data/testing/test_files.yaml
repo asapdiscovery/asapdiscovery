@@ -257,3 +257,7 @@ files:
 
   - resource: constrained_conformer/mac1_ligands.smi
     sha256hash: afdab32d12c2b87b995a76368b47e945006ed58aaf66f5e798ae964ab2f123d1
+
+  # alchemy result testing
+  - resource: tyk2_result_network.json
+    sha256hash: 9c29e5db96f8d9f85eec5e8604f0ec9cb503e90a4f1359113352c8352c82fd11
