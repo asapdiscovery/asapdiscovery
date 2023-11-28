@@ -275,7 +275,6 @@ class GIFVisualizer:
         p.cmd.hide("everything", "th")
 
         if self.pse or self.pse_share:
-            self.logger.info("Writing PyMol ensemble to session_5_selections.pse...")
             p.cmd.save(str(parent_path / "session_5_selections.pse"))
 
         p.cmd.align(complex_name, complex_name_min)
