@@ -11,6 +11,7 @@ PROTEIN_MAPPING = {
     "EV-A71-3Cpro": "3Cpro",
     "ZIKV-NS2B-NS3pro": "NS3pro",
     "DENV-NS2B-NS3pro": "NS3pro",
+    "EV-A71-Capsid": "Capsid",
 }
 
 # needs underscores to match attr names
@@ -23,6 +24,7 @@ TARGET_MAPPING = {
     "EV-A71-3Cpro": "EV-A71-3Cpro",
     "ZIKV-NS2B-NS3pro": "ZIKV-NS2B-NS3pro",
     "DENV-NS2B-NS3pro": "DENV-NS2B-NS3pro",
+    "EV-A71-Capsid": "EV-A71-Capsid",
 }
 
 
