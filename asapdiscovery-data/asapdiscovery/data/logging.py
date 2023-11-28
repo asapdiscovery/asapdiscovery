@@ -27,17 +27,18 @@ class FileLogger:
         self.format = format
         self.level = level
         self.stdout = stdout
-        if self.logfile is None:
-            self.logfile = self.name + "-log.txt"
 
         self.logger = logging.getLogger(self.name)
         self.logger.setLevel(self.level)
 
-        self.handler = logging.FileHandler(os.path.join(path, self.logfile), mode="w")
-        self.handler.setLevel(self.level)
-        self.formatter = logging.Formatter(self.format)
-        self.handler.setFormatter(self.formatter)
-        self.logger.addHandler(self.handler)
+        if self.logfile:
+            self.handler = logging.FileHandler(
+                os.path.join(path, self.logfile), mode="w"
+            )
+            self.handler.setLevel(self.level)
+            self.formatter = logging.Formatter(self.format)
+            self.handler.setFormatter(self.formatter)
+            self.logger.addHandler(self.handler)
 
         if self.stdout:
             console = Console()
@@ -46,9 +47,6 @@ class FileLogger:
 
     def getLogger(self) -> logging.Logger:
         return self.logger
-
-    def set_as_default(self) -> None:
-        logging.basicConfig(filename=self.logfile, level=self.level, format=self.format)
 
     def set_level(self, level: int) -> None:
         self.logger.setLevel(level)

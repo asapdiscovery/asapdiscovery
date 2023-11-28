@@ -18,6 +18,10 @@ from openmmforcefields.generators import SystemGenerator
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 from rdkit import Chem
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def truncate_num_steps(num_steps, reporting_interval):
     # Ensure num_steps is at least one reporting interval

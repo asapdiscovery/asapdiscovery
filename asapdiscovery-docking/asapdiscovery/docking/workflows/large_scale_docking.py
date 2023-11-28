@@ -113,7 +113,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     output_dir.mkdir()
 
     logger = FileLogger(
-        "", path=output_dir, stdout=True, level=inputs.loglevel
+        "",
+        path=output_dir,
+        logfile="large-scale-docking.log",
+        stdout=True,
+        level=inputs.loglevel,
     ).getLogger()
 
     logger.info(f"Running large scale docking with inputs: {inputs}")

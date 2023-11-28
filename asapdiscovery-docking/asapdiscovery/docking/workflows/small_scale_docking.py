@@ -142,7 +142,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     output_dir.mkdir()
 
     logger = FileLogger(
-        "", path=output_dir, stdout=True, level=inputs.loglevel
+        "",
+        path=output_dir,
+        logfile="small-scale-docking.log",
+        stdout=True,
+        level=inputs.loglevel,
     ).getLogger()
 
     logger.info(f"Running small scale docking with inputs: {inputs}")
