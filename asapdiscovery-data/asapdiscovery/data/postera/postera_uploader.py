@@ -107,7 +107,7 @@ class PosteraUploader(BaseModel):
                             f"{num_duplicates} duplicate UUIDs found in dataframe, sorting by sort_column and dropping duplicates"
                         )
                         # make sure there are no duplicate UUIDs, sorting by sort col
-                        if not sort_column in uuid_rows.columns:
+                        if sort_column not in uuid_rows.columns:
                             raise ValueError("sort_column not found in dataframe")
                         uuid_rows.sort_values(
                             by=sort_column, inplace=True, ascending=sort_ascending
