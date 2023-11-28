@@ -540,8 +540,8 @@ class HTMLVisualizer:
                         + HTMLBlockData.get_orient()
                         + " \
                             )\n\
-                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n" \
-                        +   self.slab
+                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n"
+                        + self.slab
                         + " viewer.render();"
                     )
 
