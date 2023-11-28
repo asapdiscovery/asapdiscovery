@@ -8,6 +8,11 @@ import numpy as np
 import torch
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def build_dataset(
     model_type,
     exp_fn,
@@ -1081,8 +1086,8 @@ def load_weights(model, wts_fn, check_compatibility=False):
 
     loaded_params = set(wts_dict.keys())
     model_params = set(model.state_dict().keys())
-    print("extra parameters:", loaded_params - model_params)
-    print("missing parameters:", model_params - loaded_params)
+    logger.info(f"extra parameters: {loaded_params - model_params}")
+    logger.info(f"missing parameters: {model_params - loaded_params}")
 
     # Get rid of extra params
     for p in loaded_params - model_params:
@@ -1093,7 +1098,7 @@ def load_weights(model, wts_fn, check_compatibility=False):
         check_model_compatibility(model, wts_dict, check_weights=False)
     # Load model parameters
     model.load_state_dict(wts_dict)
-    print(f"Loaded model weights from {wts_fn}", flush=True)
+    logger.info(f"Loaded model weights from {wts_fn}")
 
     return model
 

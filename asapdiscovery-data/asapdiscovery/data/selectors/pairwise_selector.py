@@ -6,6 +6,10 @@ from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.selectors.selector import SelectorBase
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class PairwiseSelector(SelectorBase):
     """

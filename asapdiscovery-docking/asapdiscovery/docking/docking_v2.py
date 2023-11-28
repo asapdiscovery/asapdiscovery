@@ -16,6 +16,10 @@ from asapdiscovery.data.schema_v2.sets import MultiStructureBase
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class DockingInputBase(BaseModel):
     """

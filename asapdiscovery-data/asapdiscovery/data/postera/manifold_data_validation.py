@@ -11,6 +11,10 @@ import pkg_resources
 import yaml
 from asapdiscovery.data.enum import StringEnum
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 # util function to open a yaml file and return the data
 def load_yaml(yaml_path: Union[str, Path]) -> dict:
@@ -61,6 +65,9 @@ class TagEnumBase(StringEnum):
         extra_cols = [col for col in df.columns if col not in allowed_columns]
         if len(extra_cols) > 0:
             warnings.warn(
+                f"Columns {extra_cols} are not allowed. Dropping them from the dataframe"
+            )
+            logger.warn(
                 f"Columns {extra_cols} are not allowed. Dropping them from the dataframe"
             )
         return df.drop(columns=extra_cols)

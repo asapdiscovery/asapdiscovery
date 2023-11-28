@@ -12,6 +12,11 @@ from asapdiscovery.docking.docking_v2 import DockingResult
 from pydantic import Field, root_validator
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class ColourMethod(str, Enum):
     subpockets = "subpockets"
     fitness = "fitness"
@@ -71,7 +76,6 @@ class HTMLVisualizerV2(VisualizerBase):
                 self.target,
                 result.to_protein(),
                 self.colour_method,
-                logger=None,
                 debug=self.debug,
             )
             outpaths = viz_class.write_pose_visualizations()

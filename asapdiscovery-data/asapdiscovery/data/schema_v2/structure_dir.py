@@ -6,6 +6,10 @@ from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.schema_v2.complex import Complex
 from pydantic import BaseModel, Field, validator
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class StructureDirFactory(BaseModel):
     """

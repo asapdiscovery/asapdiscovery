@@ -9,6 +9,10 @@ from asapdiscovery.data.selectors.selector import SelectorBase
 from asapdiscovery.docking.docking_v2 import DockingInputPair
 from pydantic import Field
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class MCSSelector(SelectorBase):
     """

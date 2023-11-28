@@ -5,6 +5,10 @@ from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from pydantic import Field
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class PairBase(DataModelAbstractBase):
     """

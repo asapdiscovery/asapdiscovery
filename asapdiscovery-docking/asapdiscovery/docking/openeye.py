@@ -18,6 +18,11 @@ from asapdiscovery.docking.docking_v2 import (
 from pydantic import Field, PositiveInt, root_validator
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class POSIT_METHOD(Enum):
     """
     Enum for POSIT methods
@@ -150,7 +155,7 @@ class POSITDocker(DockingBase):
                 omega_retcode = omega.Build(lig_oemol)
                 if omega_retcode:
                     if error == "skip":
-                        print(
+                        logger.error(
                             f"Omega failed with error code {oeomega.OEGetOmegaError(omega_retcode)}"
                         )
                     elif error == "raise":
@@ -235,7 +240,7 @@ class POSITDocker(DockingBase):
 
             else:
                 if error == "skip":
-                    print(
+                    logger.warn(
                         f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
                     )
                     docking_results.append(None)

@@ -28,6 +28,10 @@ from .schema_base import (
     write_file_directly,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class InvalidLigandError(ValueError):
     ...

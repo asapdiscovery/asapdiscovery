@@ -28,6 +28,11 @@ from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class HTMLVisualizer:
     """
     Class for generating HTML visualizations of poses.
@@ -44,7 +49,6 @@ class HTMLVisualizer:
         protein: Path,
         color_method: str = "subpockets",
         align=False,
-        logger: FileLogger = None,
         debug: bool = False,
     ):
         """
@@ -62,9 +66,6 @@ class HTMLVisualizer:
             Protein surface coloring method. Can be either by `subpockets` or `fitness`
         align : bool
             Whether or not to align the protein (and poses) to the master structure of the target.
-        logger : FileLogger
-            Logger to use
-
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")

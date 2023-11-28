@@ -19,6 +19,10 @@ from asapdiscovery.modeling.modeling import (
 )
 from pydantic import BaseModel, Field, root_validator
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class CacheType(StringEnum):
     """

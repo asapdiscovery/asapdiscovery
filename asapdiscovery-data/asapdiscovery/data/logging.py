@@ -3,13 +3,20 @@ import os
 from typing import Optional
 
 
+import os
+import logging
+from typing import Optional
+from rich.console import Console
+from rich.logging import RichHandler
+
+
 class FileLogger:
     def __init__(
         self,
         logname: str,
         path: str,
         logfile: Optional[str] = None,
-        level: Optional[int] = logging.WARNING,
+        level: Optional[int] = logging.DEBUG,
         format: Optional[
             str
         ] = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
@@ -33,10 +40,9 @@ class FileLogger:
         self.logger.addHandler(self.handler)
 
         if self.stdout:
-            self.streamhandler = logging.StreamHandler()
-            self.streamhandler.setLevel(self.level)
-            self.streamhandler.setFormatter(self.formatter)
-            self.logger.addHandler(self.streamhandler)
+            console = Console()
+            rich_handler = RichHandler(console=console)
+            self.logger.addHandler(rich_handler)
 
     def getLogger(self) -> logging.Logger:
         return self.logger
@@ -47,8 +53,6 @@ class FileLogger:
     def set_level(self, level: int) -> None:
         self.logger.setLevel(level)
         self.handler.setLevel(level)
-        if self.stdout:
-            self.streamhandler.setLevel(level)
 
 
 """

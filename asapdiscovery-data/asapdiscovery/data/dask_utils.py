@@ -11,6 +11,10 @@ from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def set_dask_config():
     cfg.set({"distributed.scheduler.worker-ttl": None})
@@ -269,6 +273,7 @@ def dask_cluster_from_type(
     dask_jobqueue.Cluster
         A dask cluster
     """
+    logger.info(f"Getting dask cluster of type {dask_type}")
     if dask_type == DaskType.LOCAL:
         cluster = LocalCluster()
     elif dask_type == DaskType.LILAC_GPU:

@@ -9,6 +9,10 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from pydantic import BaseModel, Field
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class PosteraUploader(BaseModel):
     settings: PosteraSettings = Field(default_factory=PosteraSettings)

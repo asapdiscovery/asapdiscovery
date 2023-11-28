@@ -142,7 +142,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     output_dir.mkdir()
 
     logger = FileLogger(
-        inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
+        "", path=output_dir, stdout=True, level=inputs.loglevel
     ).getLogger()
 
     logger.info(f"Running small scale docking with inputs: {inputs}")
@@ -167,6 +167,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
+        dask_client.forward_logging()
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")

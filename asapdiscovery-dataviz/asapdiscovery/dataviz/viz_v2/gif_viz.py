@@ -16,6 +16,11 @@ from asapdiscovery.simulation.simulate_v2 import SimulationResult
 from pydantic import BaseModel, Field, PositiveInt
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class GIFVisualizerV2(BaseModel):
     """
     Class for generating GIF visualizations of MD simulations.

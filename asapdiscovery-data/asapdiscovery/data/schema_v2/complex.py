@@ -17,6 +17,10 @@ from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ComplexBase(DataModelAbstractBase):
     def __eq__(self, other: Any) -> bool:

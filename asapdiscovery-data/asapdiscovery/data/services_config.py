@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseSettings, Field, validator
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PosteraSettings(BaseSettings):
