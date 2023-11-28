@@ -33,6 +33,7 @@ virus:
     - 3Cpro
   EV-A71:
     - 3Cpro
+    - Capsid
   DENV:
     - NS2B-NS3pro
   ZIKV:
