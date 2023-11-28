@@ -118,6 +118,11 @@ class HTMLVisualizer:
             self.protein = openeye_perceive_residues(
                 load_openeye_pdb(protein), preserve_all=True
             )
+        if target == "EV-A71-Capsid":
+            # because capsid has an encapsulated ligand, we need to Z-clip.
+            self.slab = "viewer.setSlab(-11, 50)\n"
+        else:
+            self.slab = ""
 
     @staticmethod
     def write_html(html, path):
@@ -534,9 +539,10 @@ class HTMLVisualizer:
                             '
                         + HTMLBlockData.get_orient()
                         + " \
-                            )\n \
-                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n \
-                            viewer.render();"
+                            )\n\
+                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n" \
+                        +   self.slab
+                        + " viewer.render();"
                     )
 
         return str(a)
