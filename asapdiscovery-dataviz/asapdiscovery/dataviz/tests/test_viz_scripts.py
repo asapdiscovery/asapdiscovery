@@ -18,7 +18,7 @@ def test_traj_to_viz(tmp_path, script_runner, traj, top):
     assert ret.success
 
 
-@pytest.mark.parametrize("target", TargetTags.get_values())
+@pytest.mark.parametrize("target", sorted(TargetTags.get_values()))
 @pytest.mark.script_launch_mode("subprocess")
 def test_pose_to_viz(tmp_path, script_runner, target, pose, protein):
     ret = script_runner.run(
@@ -35,7 +35,7 @@ def test_pose_to_viz(tmp_path, script_runner, target, pose, protein):
     assert ret.success
 
 
-@pytest.mark.parametrize("target", TargetTags.get_values())
+@pytest.mark.parametrize("target", sorted(TargetTags.get_values()))
 @pytest.mark.script_launch_mode("subprocess")
 def test_pose_to_viz_pymol(tmp_path, script_runner, target, protein):
     ret = script_runner.run(
