@@ -38,7 +38,7 @@ def test_pose_to_viz(tmp_path, script_runner, target, pose, protein):
 
 @pytest.mark.parametrize("target", TargetTags.get_values())
 @pytest.mark.script_launch_mode("subprocess")
-def test_pose_to_viz(tmp_path, script_runner, target, protein):
+def test_pose_to_viz_pymol(tmp_path, script_runner, target, protein):
     ret = script_runner.run(
         "pose-to-viz-pymol",
         "--viz-target",

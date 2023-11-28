@@ -9,7 +9,6 @@ from typing import Dict, Optional, Union  # noqa: F401
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,

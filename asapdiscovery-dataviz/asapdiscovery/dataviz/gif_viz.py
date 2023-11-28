@@ -3,7 +3,6 @@ import shutil
 from pathlib import Path
 from typing import Union  # noqa: F401
 
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
 
 from ._gif_blocks import GIFBlockData
