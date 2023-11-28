@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from pathlib import Path
 
@@ -10,9 +11,6 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from asapdiscovery.docking.docking_v2 import DockingResult
 from pydantic import Field, root_validator
-
-
-import logging
 
 logger = logging.getLogger(__name__)
 

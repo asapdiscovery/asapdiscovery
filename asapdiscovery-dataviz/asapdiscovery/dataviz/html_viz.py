@@ -27,9 +27,6 @@ from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
 
-
-import logging
-
 logger = logging.getLogger(__name__)
 
 

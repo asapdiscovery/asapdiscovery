@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Dict, Tuple, Union  # noqa: F401
 
@@ -7,8 +8,6 @@ from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
-
-import logging
 
 logger = logging.getLogger(__name__)
 

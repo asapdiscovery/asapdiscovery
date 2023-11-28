@@ -1,4 +1,5 @@
 import itertools
+import logging
 import warnings
 from collections import defaultdict
 from collections.abc import Iterable
@@ -10,8 +11,6 @@ import pandas as pd
 import pkg_resources
 import yaml
 from asapdiscovery.data.enum import StringEnum
-
-import logging
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pickle as pkl
 from functools import partial
@@ -6,9 +7,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-
-
-import logging
 
 logger = logging.getLogger(__name__)
 

@@ -11,9 +11,6 @@ from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
 from .viz_targets import VizTargets
 
-
-import logging
-
 logger = logging.getLogger(__name__)
 
 

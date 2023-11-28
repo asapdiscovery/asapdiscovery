@@ -1,4 +1,5 @@
 import abc
+import logging
 from pathlib import Path
 from typing import Optional  # noqa: F401
 
@@ -17,8 +18,6 @@ from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
 from rdkit import Chem
-
-import logging
 
 logger = logging.getLogger(__name__)
 

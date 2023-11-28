@@ -1,3 +1,4 @@
+import logging
 import shutil
 from pathlib import Path
 
@@ -14,9 +15,6 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from asapdiscovery.simulation.simulate_v2 import SimulationResult
 from pydantic import BaseModel, Field, PositiveInt
-
-
-import logging
 
 logger = logging.getLogger(__name__)
 

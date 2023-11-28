@@ -1,6 +1,6 @@
 import pytest
-from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.mark.script_launch_mode("subprocess")

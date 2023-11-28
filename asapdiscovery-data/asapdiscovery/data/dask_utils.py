@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterable
 from typing import Optional
 
@@ -10,8 +11,6 @@ from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
 
 from .execution_utils import guess_network_interface
-
-import logging
 
 logger = logging.getLogger(__name__)
 

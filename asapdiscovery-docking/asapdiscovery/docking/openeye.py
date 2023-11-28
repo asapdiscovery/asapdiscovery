@@ -1,6 +1,7 @@
 """
 This module contains the inputs, docker, and output schema for using POSIT
 """
+import logging
 from enum import Enum
 from typing import Literal, Union
 
@@ -16,9 +17,6 @@ from asapdiscovery.docking.docking_v2 import (
     DockingResult,
 )
 from pydantic import Field, PositiveInt, root_validator
-
-
-import logging
 
 logger = logging.getLogger(__name__)
 

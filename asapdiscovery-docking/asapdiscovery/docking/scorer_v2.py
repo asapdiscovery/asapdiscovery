@@ -1,4 +1,5 @@
 import abc
+import logging
 from enum import Enum
 from typing import ClassVar, Optional
 
@@ -17,8 +18,6 @@ from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models import MLModelType
 from pydantic import BaseModel, Field
-
-import logging
 
 logger = logging.getLogger(__name__)
 

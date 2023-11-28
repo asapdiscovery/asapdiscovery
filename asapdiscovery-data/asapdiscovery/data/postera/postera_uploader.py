@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from asapdiscovery.data.openeye import oe_smiles_roundtrip
@@ -8,8 +9,6 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from pydantic import BaseModel, Field
-
-import logging
 
 logger = logging.getLogger(__name__)
 

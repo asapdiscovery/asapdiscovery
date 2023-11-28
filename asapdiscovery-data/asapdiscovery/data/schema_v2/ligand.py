@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
 
@@ -27,8 +28,6 @@ from .schema_base import (
     schema_dict_get_val_overload,
     write_file_directly,
 )
-
-import logging
 
 logger = logging.getLogger(__name__)
 
