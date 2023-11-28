@@ -105,7 +105,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     md_openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
-    logname: str = Field("small_scale_docking", description="Name of the log file.")
 
     @classmethod
     @validator("ml_scorers")
@@ -142,7 +141,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     output_dir.mkdir()
 
     logger = FileLogger(
-        "",
+        inputs.logname,  # default root logger so that dask logging is forwarded
         path=output_dir,
         logfile="small-scale-docking.log",
         stdout=True,
