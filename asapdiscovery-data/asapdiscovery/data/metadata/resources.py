@@ -35,7 +35,7 @@ seqres_data = {
     TargetTags("EV-A71-3Cpro").value: EV_A71_3Cpro_SEQRES,
     TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_SEQRES,
     TargetTags("DENV-NS2B-NS3pro").value: DENV_NS2B_NS3pro_SEQRES,
-    TargetTags("EV-A71-Capid").value: EV_A71_Capsid_SEQRES,
+    TargetTags("EV-A71-Capsid").value: EV_A71_Capsid_SEQRES,
 }
 
 # Fitness data in JSON format
