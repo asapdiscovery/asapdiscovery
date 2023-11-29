@@ -405,7 +405,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             how="outer",
         )
     else:
-        logger.info(f"Not running fitness HTML visualiser because {inputs.target} does not have fitness data")
+        logger.info(
+            f"Not running fitness HTML visualiser because {inputs.target} does not have fitness data"
+        )
 
     # filter out clashes (chemgauss4 score > 0)
     combined_df = combined_df[combined_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
