@@ -9,7 +9,9 @@ def run_func(name):
 
 
 def test_toplevel(tmp_path):
-    file_logger = FileLogger("top_logger", tmp_path, level=logging.INFO)
+    file_logger = FileLogger(
+        "top_logger", tmp_path, logfile="log.file", level=logging.INFO
+    )
     logger = file_logger.getLogger()
     logger.info("Top level test")
     with open(tmp_path / file_logger.logfile) as f:
@@ -18,7 +20,9 @@ def test_toplevel(tmp_path):
 
 
 def test_internal_func(tmp_path):
-    file_logger = FileLogger("top_logger", tmp_path, level=logging.INFO)
+    file_logger = FileLogger(
+        "top_logger", tmp_path, logfile="log.file", level=logging.INFO
+    )
     logger = file_logger.getLogger()
     logger.info("Top level test")
     run_func(file_logger.name)

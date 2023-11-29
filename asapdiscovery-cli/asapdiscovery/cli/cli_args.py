@@ -70,6 +70,7 @@ def target(func):
 
 def ligands(func):
     return click.option(
+        "-l",
         "--ligands",
         type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
         help="File containing ligands",
@@ -198,3 +199,12 @@ def md_openmm_platform(func):
 
 def md_args(func):
     return md(md_steps(md_openmm_platform(func)))
+
+
+def core_smarts(func):
+    return click.option(
+        "-cs",
+        "--core-smarts",
+        type=click.STRING,
+        help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
+    )(func)

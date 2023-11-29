@@ -1,4 +1,4 @@
-import logging
+import logging  # noqa: F401
 import os
 import subprocess
 import tempfile
@@ -9,7 +9,7 @@ from typing import Dict, Optional, Union  # noqa: F401
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
-from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -20,10 +20,13 @@ from asapdiscovery.data.openeye import (
     openeye_perceive_residues,
     save_openeye_pdb,
 )
+from asapdiscovery.modeling.modeling import split_openeye_mol, superpose_molecule
 
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
+
+logger = logging.getLogger(__name__)
 
 
 class HTMLVisualizer:
@@ -41,7 +44,7 @@ class HTMLVisualizer:
         target: str,
         protein: Path,
         color_method: str = "subpockets",
-        logger: FileLogger = None,
+        align=False,
         debug: bool = False,
     ):
         """
@@ -57,9 +60,8 @@ class HTMLVisualizer:
             Path to protein PDB file.
         color_method : str
             Protein surface coloring method. Can be either by `subpockets` or `fitness`
-        logger : FileLogger
-            Logger to use
-
+        align : bool
+            Whether or not to align the protein (and poses) to the master structure of the target.
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")
@@ -69,34 +71,24 @@ class HTMLVisualizer:
                 f"Target {target} invalid, must be one of: {self.allowed_targets}"
             )
         self.target = target
+        self.reference_target = load_openeye_pdb(master_structures[self.target])
+        self.align = align
 
-        # init loggers
-        if logger is None:
-            self.logger = FileLogger(
-                "html_visualizer_log.txt", "./", stdout=True, level=logging.INFO
-            ).getLogger()
-        else:
-            self.logger = logger
         self.debug = debug
 
         self.color_method = color_method
         if self.color_method == "subpockets":
-            self.logger.info("Mapping interactive view by subpocket dict")
+            pass
         elif self.color_method == "fitness":
             if not target_has_fitness_data(self.target):
                 raise NotImplementedError(
-                    "No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
+                    f"No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
                 )
-            self.logger.info(
-                "Mapping interactive view by fitness (visualised with b-factor)"
-            )
             self.fitness_data = parse_fitness_json(self.target)
         else:
             raise ValueError(
                 "variable `color_method` must be either of ['subpockets', 'fitness']"
             )
-
-        self.logger.info(f"Visualising poses for {self.target}")
 
         self.poses = []
         self.output_paths = []
@@ -113,7 +105,7 @@ class HTMLVisualizer:
                 self.poses.append(mol)
                 self.output_paths.append(path)
             else:
-                self.logger.warning(f"Pose {pose} does not exist, skipping.")
+                pass
 
         if isinstance(protein, oechem.OEMolBase):
             self.protein = protein.CreateCopy()
@@ -123,10 +115,11 @@ class HTMLVisualizer:
             self.protein = openeye_perceive_residues(
                 load_openeye_pdb(protein), preserve_all=True
             )
-
-        self.logger.debug(
-            f"Writing HTML visualisations for {len(self.output_paths)} ligands"
-        )
+        if target == "EV-A71-Capsid":
+            # because capsid has an encapsulated ligand, we need to Z-clip.
+            self.slab = "viewer.setSlab(-11, 50)\n"
+        else:
+            self.slab = ""
 
     @staticmethod
     def write_html(html, path):
@@ -194,10 +187,6 @@ class HTMLVisualizer:
 
         hex_color_codes = [
             "#ffffff",
-            "#ffece5",
-            "#ffd9cc",
-            "#ffc6b3",
-            "#ffb29b",
             "#ff9e83",
             "#ff8a6c",
             "#ff7454",
@@ -209,7 +198,12 @@ class HTMLVisualizer:
         for res_num in set(protein_residues):
             try:
                 # color residue white->red depending on fitness value.
-                color = hex_color_codes[int(self.fitness_data[res_num] / 10)]
+                color_index_to_grab = int(self.fitness_data[res_num] / 10)
+                try:
+                    color = hex_color_codes[color_index_to_grab]
+                except IndexError:
+                    # insane residue that has tons of fit mutants; just assign the darkest red.
+                    color = hex_color_codes[-1]
                 if color not in color_res_dict:
                     color_res_dict[color] = [res_num]
                 else:
@@ -304,7 +298,7 @@ class HTMLVisualizer:
 
         return intn_color
 
-    def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type) -> Union:
+    def build_interaction_dict(self, plip_xml_dict, intn_counter, intn_type):
         """
         Parses a PLIP interaction dict and builds the dict key values needed for 3DMol.
         """
@@ -396,7 +390,26 @@ class HTMLVisualizer:
         """
         a = Airium()
 
-        # first prep the coloring function.
+        # first check if we need to align the protein and ligand. This already happens during docking, but not
+        # during pose_to_viz.py.
+        if self.align:
+            # merge
+            complex = combine_protein_ligand(self.protein, pose)
+
+            # align complex to master structure
+            complex_aligned, _ = superpose_molecule(
+                self.reference_target,
+                complex,
+            )
+
+            # get pose and protein back
+            split_dict = split_openeye_mol(
+                complex_aligned
+            )  # can set lig_title in case of UNK or others
+            self.protein = split_dict["prot"]
+            pose = split_dict["lig"]
+
+        # now prep the coloring function.
         surface_coloring = self.get_color_dict()
         residue_coloring_function_js = ""
         start = True
@@ -488,7 +501,7 @@ class HTMLVisualizer:
                                 console.log('hover', atom);\n \
                                 console.log('view:', viewer.getView()); // to get view for system\n \
                                 if (!atom.label) {\n \
-                                    atom.label = viewer.addLabel(atom.resn + atom.resi, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' });\n \
+                                    atom.label = viewer.addLabel(atom.chain + ': ' +  atom.resn + atom.resi, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' });\n \
                                     // if fitness view, can we show all possible residues it can mutate into with decent fitness?\n \
                                 }\n \
                             },\n \
@@ -523,9 +536,10 @@ class HTMLVisualizer:
                             '
                         + HTMLBlockData.get_orient()
                         + " \
-                            )\n \
-                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n \
-                            viewer.render();"
+                            )\n\
+                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n"
+                        + self.slab
+                        + " viewer.render();"
                     )
 
         return str(a)
@@ -549,3 +563,10 @@ class HTMLVisualizer:
         html = self.get_html_airium(pose)
         self.write_html(html, path)
         return path
+
+    def make_poses_html(self):
+        html_renders = []
+        for pose, path in zip(self.poses, self.output_paths):
+            html = self.get_html_airium(pose)
+            html_renders.append(html)
+        return html_renders

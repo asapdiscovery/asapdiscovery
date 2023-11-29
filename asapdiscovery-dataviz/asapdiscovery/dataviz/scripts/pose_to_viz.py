@@ -75,7 +75,7 @@ def main():
         color_method=args.color_method,
         target=args.viz_target,
         protein=protein,
-        logger=logger,
+        align=True,
     )
     html_visualizer.write_pose_visualizations()
 

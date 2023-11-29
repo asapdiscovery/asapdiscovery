@@ -122,7 +122,7 @@ class KartografAtomMapper(_BaseAtomMapper):
 
     type: Literal["KartografAtomMapper"] = "KartografAtomMapper"
 
-    atom_ring_matches_ring: bool = Field(
+    map_exact_ring_matches_only: bool = Field(
         True, description="If only rings should be matched to other rings."
     )
     atom_max_distance: float = Field(
