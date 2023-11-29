@@ -105,7 +105,6 @@ def main():
         frames_per_ns=args.frames_per_ns,
         smooth=args.smooth,
         start=start,
-        logger=logger,
         pse=True,
         pse_share=True,
     )

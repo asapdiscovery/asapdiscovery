@@ -9,7 +9,6 @@ from typing import Dict, Optional, Union  # noqa: F401
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -26,6 +25,8 @@ from asapdiscovery.modeling.modeling import split_openeye_mol, superpose_molecul
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
+
+logger = logging.getLogger(__name__)
 
 
 class HTMLVisualizer:
@@ -44,7 +45,6 @@ class HTMLVisualizer:
         protein: Path,
         color_method: str = "subpockets",
         align=False,
-        logger: FileLogger = None,
         debug: bool = False,
     ):
         """
@@ -62,9 +62,6 @@ class HTMLVisualizer:
             Protein surface coloring method. Can be either by `subpockets` or `fitness`
         align : bool
             Whether or not to align the protein (and poses) to the master structure of the target.
-        logger : FileLogger
-            Logger to use
-
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")

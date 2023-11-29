@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,8 @@ from asapdiscovery.data.schema_v2.target import PreppedTarget, Target
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field
+
+logger = logging.getLogger(__name__)
 
 
 class ComplexBase(DataModelAbstractBase):
