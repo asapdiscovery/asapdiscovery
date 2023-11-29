@@ -41,7 +41,7 @@ from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
-from aspadiscovery.data.fitness import target_has_fitness_data
+from asapdiscovery.data.fitness import target_has_fitness_data
 from distributed import Client
 from pydantic import Field, PositiveInt, validator
 
