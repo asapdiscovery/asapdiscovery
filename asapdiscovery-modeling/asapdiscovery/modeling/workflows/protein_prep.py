@@ -264,7 +264,7 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     logger.info(f"Writing prepped complexes to {inputs.output_dir}")
     prepper.cache(prepped_complexes, inputs.output_dir)
 
-    if inputs.save_to_cache:
+    if inputs.save_to_cache and inputs.cache_dir is not None:
         logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
         prepper.cache(prepped_complexes, inputs.cache_dir)
 
