@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import logging
 import os
-import warnings
 from pathlib import Path
 from typing import List  # noqa: F401
 
@@ -10,6 +10,8 @@ import pandas
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.schema_v2.complex import Complex
 from pydantic import BaseModel, Field, root_validator, validator
+
+logger = logging.getLogger(__name__)
 
 
 class FragalysisFactory(BaseModel):
@@ -159,7 +161,7 @@ class FragalysisFactory(BaseModel):
             if fail_missing:
                 raise FileNotFoundError(f"No PDB file found for {xtal_name}.")
             else:
-                warnings.warn(f"No PDB file found for {xtal_name}.")
+                logger.warn(f"No PDB file found for {xtal_name}.")
                 return None
 
         try:
@@ -173,7 +175,7 @@ class FragalysisFactory(BaseModel):
             if fail_missing:
                 raise ValueError(f"Unable to parse PDB file for {xtal_name}.") from e
             else:
-                print(f"Unable to parse PDB file for {xtal_name}.", flush=True)
+                logger.warn(f"Unable to parse PDB file for {xtal_name}.")
                 return None
 
     @classmethod

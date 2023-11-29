@@ -3,13 +3,14 @@ import shutil
 from pathlib import Path
 from typing import Union  # noqa: F401
 
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
 
 from ._gif_blocks import GIFBlockData
 from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
 from .viz_targets import VizTargets
+
+logger = logging.getLogger(__name__)
 
 
 class GIFVisualizer:
@@ -35,7 +36,6 @@ class GIFVisualizer:
         start: int = 1,
         stop: int = -1,
         interval: int = 1,
-        logger: FileLogger = None,
         debug: bool = False,
     ):
         """
@@ -63,8 +63,6 @@ class GIFVisualizer:
             Stop frame to load
         interval : int
             Interval between frames to load
-        logger : FileLogger
-            Logger to use
         debug : bool
             Whether to run in debug mode.
 
@@ -72,18 +70,10 @@ class GIFVisualizer:
         if not len(trajectories) == len(output_paths):
             raise ValueError("Number of trajectories and paths must be equal.")
 
-        # init logger
-        if logger is None:
-            self.logger = FileLogger(
-                "gif_visualizer_log.txt", "./", stdout=True, level=logging.INFO
-            ).getLogger()
-        else:
-            self.logger = logger
-
         if target not in self.allowed_targets:
             raise ValueError(f"Target must be one of: {self.allowed_targets}")
         self.target = target
-        self.logger.info(f"Visualizing trajectories for {self.target}")
+        logger.info(f"Visualizing trajectories for {self.target}")
 
         # setup view_coords, pocket_dict and color_dict for target
 
@@ -109,9 +99,9 @@ class GIFVisualizer:
             elif system and Path(system).exists():
                 self.systems.append(system)
                 self.output_paths.append(path)
-                self.logger.warning("No trajectory provided - skipping GIF viz.")
+                logger.critical("No trajectory provided - skipping GIF viz.")
             else:
-                self.logger.warning(
+                logger.critical(
                     f"Trajectory {trajectory} or system {system} does not exist - skipping."
                 )
 
@@ -128,12 +118,10 @@ class GIFVisualizer:
         self.debug = debug
 
         if self.debug:
-            self.logger.setLevel(logging.DEBUG)
-            self.logger.debug("Running in debug mode, setting pse=True")
+            logger.setLevel(logging.DEBUG)
+            logger.debug("Running in debug mode, setting pse=True")
             self.pse = True
-        self.logger.debug(
-            f"Writing GIF visualizations for {len(self.output_paths)} ligands"
-        )
+        logger.debug(f"Writing GIF visualizations for {len(self.output_paths)} ligands")
 
     def write_traj_visualizations(self):
         """
@@ -166,7 +154,7 @@ class GIFVisualizer:
         )  # use parent so we can write the pse files to the same directory
 
         tmpdir = parent_path / "tmp"
-        self.logger.info(f"Creating temporary directory {tmpdir}")
+        logger.info(f"Creating temporary directory {tmpdir}")
         tmpdir.mkdir(parents=True, exist_ok=True)
 
         complex_name = "complex"
@@ -180,7 +168,7 @@ class GIFVisualizer:
             p.cmd.delete("reference_master")
 
         if self.pse:
-            self.logger.info("Writing PyMol ensemble to session_1_loaded_system.pse...")
+            logger.info("Writing PyMol ensemble to session_1_loaded_system.pse...")
             p.cmd.save(str(parent_path / "session_1_loaded_system.pse"))
 
         # now select the residues, name them and color them.
@@ -194,9 +182,7 @@ class GIFVisualizer:
             p.cmd.set("surface_color", color, f"({subpocket_name})")
 
         if self.pse:
-            self.logger.info(
-                "Writing PyMol ensemble to session_2_colored_subpockets.pse"
-            )
+            logger.info("Writing PyMol ensemble to session_2_colored_subpockets.pse")
             p.cmd.save(str(parent_path / "session_2_colored_subpockets.pse"))
 
         # Select ligand and receptor
@@ -256,14 +242,14 @@ class GIFVisualizer:
             complex_name_min = "complex_min"
             p.cmd.load(str(system), object=complex_name_min)
 
-            self.logger.info("Aligning simulation...")
+            logger.info("Aligning simulation...")
             if self.smooth:
                 p.cmd.smooth(
                     "all", window=int(self.smooth)
                 )  # perform some smoothing of frames
 
         if self.contacts:
-            self.logger.info("Showing contacts...")
+            logger.info("Showing contacts...")
             p.cmd.extract("ligand_obj", "ligand")
 
             show_contacts(p, "ligand_obj", "receptor")
@@ -285,7 +271,6 @@ class GIFVisualizer:
         p.cmd.hide("everything", "th")
 
         if self.pse or self.pse_share:
-            self.logger.info("Writing PyMol ensemble to session_5_selections.pse...")
             p.cmd.save(str(parent_path / "session_5_selections.pse"))
 
         p.cmd.align(complex_name, complex_name_min)
@@ -294,7 +279,7 @@ class GIFVisualizer:
         from pygifsicle import gifsicle
 
         # now make the movie.
-        self.logger.info("Rendering images for frames...")
+        logger.info("Rendering images for frames...")
         p.cmd.set(
             "ray_trace_frames", 0
         )  # ray tracing with surface representation is too expensive.
@@ -311,7 +296,7 @@ class GIFVisualizer:
 
         # stop pymol instance
         if self.pse or self.pse_share:
-            self.logger.info("Writing PyMol ensemble to session_6_final.pse...")
+            logger.info("Writing PyMol ensemble to session_6_final.pse...")
             p.cmd.save(str(parent_path / "session_6_final.pse"))
         p.stop()
 
@@ -323,7 +308,7 @@ class GIFVisualizer:
 
         import imageio.v2 as iio
 
-        self.logger.info(f"Creating animated GIF {path} from images...")
+        logger.info(f"Creating animated GIF {path} from images...")
         png_files = glob(f"{prefix}*.png")
         if len(png_files) == 0:
             raise OSError(f"No {prefix}*.png files found - did PyMol not generate any?")
@@ -341,7 +326,7 @@ class GIFVisualizer:
                 writer.append_data(image)
 
         # now compress the GIF with the method that imagio recommends (https://imageio.readthedocs.io/en/stable/examples.html).
-        self.logger.info("Compressing animated gif...")
+        logger.info("Compressing animated gif...")
         gifsicle(
             sources=str(path),  # happens in-place
             optimize=True,

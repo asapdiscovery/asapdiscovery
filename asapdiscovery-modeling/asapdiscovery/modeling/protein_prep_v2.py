@@ -1,4 +1,5 @@
 import abc
+import logging
 import warnings
 from pathlib import Path
 from typing import Literal, Optional, Union
@@ -18,6 +19,8 @@ from asapdiscovery.modeling.modeling import (
     superpose_molecule,
 )
 from pydantic import BaseModel, Field, root_validator
+
+logger = logging.getLogger(__name__)
 
 
 class CacheType(StringEnum):
