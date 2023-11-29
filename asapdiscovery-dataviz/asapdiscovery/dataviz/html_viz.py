@@ -9,7 +9,6 @@ from typing import Dict, Optional, Union  # noqa: F401
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -26,6 +25,8 @@ from asapdiscovery.modeling.modeling import split_openeye_mol, superpose_molecul
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
+
+logger = logging.getLogger(__name__)
 
 
 class HTMLVisualizer:
@@ -44,7 +45,6 @@ class HTMLVisualizer:
         protein: Path,
         color_method: str = "subpockets",
         align=False,
-        logger: FileLogger = None,
         debug: bool = False,
     ):
         """
@@ -62,9 +62,6 @@ class HTMLVisualizer:
             Protein surface coloring method. Can be either by `subpockets` or `fitness`
         align : bool
             Whether or not to align the protein (and poses) to the master structure of the target.
-        logger : FileLogger
-            Logger to use
-
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")
@@ -85,7 +82,7 @@ class HTMLVisualizer:
         elif self.color_method == "fitness":
             if not target_has_fitness_data(self.target):
                 raise NotImplementedError(
-                    "No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
+                    f"No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
                 )
             self.fitness_data = parse_fitness_json(self.target)
         else:
@@ -118,6 +115,11 @@ class HTMLVisualizer:
             self.protein = openeye_perceive_residues(
                 load_openeye_pdb(protein), preserve_all=True
             )
+        if target == "EV-A71-Capsid":
+            # because capsid has an encapsulated ligand, we need to Z-clip.
+            self.slab = "viewer.setSlab(-11, 50)\n"
+        else:
+            self.slab = ""
 
     @staticmethod
     def write_html(html, path):
@@ -499,7 +501,7 @@ class HTMLVisualizer:
                                 console.log('hover', atom);\n \
                                 console.log('view:', viewer.getView()); // to get view for system\n \
                                 if (!atom.label) {\n \
-                                    atom.label = viewer.addLabel(atom.resn + atom.resi, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' });\n \
+                                    atom.label = viewer.addLabel(atom.chain + ': ' +  atom.resn + atom.resi, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' });\n \
                                     // if fitness view, can we show all possible residues it can mutate into with decent fitness?\n \
                                 }\n \
                             },\n \
@@ -534,9 +536,10 @@ class HTMLVisualizer:
                             '
                         + HTMLBlockData.get_orient()
                         + " \
-                            )\n \
-                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n \
-                            viewer.render();"
+                            )\n\
+                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n"
+                        + self.slab
+                        + " viewer.render();"
                     )
 
         return str(a)

@@ -59,7 +59,6 @@ def main():
         smooth=5,
         static_view_only=True,
         start=0,
-        logger=logger,
         pse=False,  # can set these to True to debug viz steps.
         pse_share=False,
     )

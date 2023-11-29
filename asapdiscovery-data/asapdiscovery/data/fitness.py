@@ -13,19 +13,24 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     VirusTags,
 )
 
-_TARGET_TO_GENE = {
+_TARGET_TO_GENE = {  # contains some entries for finding targets when subselecting a genome-wide DMS result.
     TargetTags("SARS-CoV-2-Mpro").value: "nsp5 (Mpro)",
     TargetTags("SARS-CoV-2-Mac1").value: "nsp3",
 }
 
-_VIRUS_TO_FITNESS_DATA = {
+_VIRUS_TO_FITNESS_DATA = {  # points to the vendored DMS data.
     VirusTags("SARS-CoV-2").value: SARS_CoV_2_fitness_data,
     VirusTags("ZIKV").value: ZIKV_NS2B_NS3pro_fitness_data,
 }
 
-_FITNESS_DATA_IS_CROSSGENOME = {
+_FITNESS_DATA_IS_CROSSGENOME = {  # sets whether the DMS data we have for this virus is the whole genome or a single target.
     VirusTags("SARS-CoV-2").value: True,
     VirusTags("ZIKV").value: False,
+}
+
+_FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considered 'fit' for the specific DMS experiment. Directed by Bloom et al.
+    VirusTags("SARS-CoV-2").value: -1.0,
+    VirusTags("ZIKV").value: -1.0,
 }
 
 
@@ -168,11 +173,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
 
     fitness_scores_bloom = get_fitness_scores_bloom_by_target(target)
 
-    virus = TargetVirusMap[target]
-    if virus == VirusTags("ZIKV").value:
-        threshold = 0.0
-    else:
-        threshold = -1.0
+    threshold = _FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[target]]
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom, threshold)

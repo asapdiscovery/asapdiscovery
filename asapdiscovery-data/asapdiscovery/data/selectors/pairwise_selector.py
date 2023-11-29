@@ -1,3 +1,4 @@
+import logging
 from itertools import product
 from typing import ClassVar, Union
 
@@ -5,6 +6,8 @@ from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedCo
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.selectors.selector import SelectorBase
+
+logger = logging.getLogger(__name__)
 
 
 class PairwiseSelector(SelectorBase):

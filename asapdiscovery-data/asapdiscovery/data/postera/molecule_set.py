@@ -1,5 +1,5 @@
+import logging
 import uuid
-import warnings
 from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
@@ -8,6 +8,9 @@ from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
 from .postera_api import PostEraAPI
+
+logger = logging.getLogger(__name__)
+
 
 _POSTERA_COLUMN_BLEACHING_ACTIVE = (
     True  # NOTE: this is fix for postera bleaching see issues #629 #628
@@ -367,10 +370,9 @@ class MoleculeSetAPI(PostEraAPI):
         debug_df_path: str = None,
     ) -> list[str]:
         if bleached:
-            warnings.warn(
+            logger.info(
                 "Fix currently applied for postera column name bleaching see issues #629 #628"
             )
-
         df = ManifoldAllowedTags.filter_dataframe_cols(
             df, allow=[smiles_field, id_field], bleached=bleached
         )
@@ -412,7 +414,7 @@ class MoleculeSetAPI(PostEraAPI):
         debug_df_path: str = None,
     ) -> str:
         if bleached:
-            warnings.warn(
+            logger.info(
                 "Fix currently applied for postera column name bleaching see issues #629 #628"
             )
         df = ManifoldAllowedTags.filter_dataframe_cols(
