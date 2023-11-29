@@ -1,5 +1,7 @@
 import itertools
+import logging
 import warnings
+from collections import defaultdict
 from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
@@ -9,6 +11,8 @@ import pandas as pd
 import pkg_resources
 import yaml
 from asapdiscovery.data.enum import StringEnum
+
+logger = logging.getLogger(__name__)
 
 
 # util function to open a yaml file and return the data
@@ -62,6 +66,9 @@ class TagEnumBase(StringEnum):
             warnings.warn(
                 f"Columns {extra_cols} are not allowed. Dropping them from the dataframe"
             )
+            logger.warn(
+                f"Columns {extra_cols} are not allowed. Dropping them from the dataframe"
+            )
         return df.drop(columns=extra_cols)
 
     @classmethod
@@ -96,11 +103,30 @@ def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     data = load_yaml(yaml_path)
     viruses = data["virus"]
     target_tags = set()
+    target_virus_map = {}
+    virus_target_map = defaultdict(list)
     for v in viruses:
         for target in viruses[v]:
-            target_tags.add(v + "-" + target)
+            tag = v + "-" + target
+            target_tags.add(tag)
+            target_virus_map[tag] = v
+            virus_target_map[v].append(target)
 
-    return TagEnumBase.from_iterable("TargetTags", target_tags), target_tags
+    return (
+        TagEnumBase.from_iterable("TargetTags", target_tags),
+        target_tags,
+        target_virus_map,
+        virus_target_map,
+    )
+
+
+def make_virus_tags(yaml_path: Union[str, Path]) -> Enum:
+    data = load_yaml(yaml_path)
+    viruses = data["virus"]
+    virus_tags = set()
+    for v in viruses:
+        virus_tags.add(v)
+    return TagEnumBase.from_iterable("VirusTags", virus_tags)
 
 
 def make_output_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set, dict]:
@@ -211,7 +237,11 @@ manifold_data_spec = pkg_resources.resource_filename(
 )
 
 # make target enum and set
-TargetTags, target_tag_set = make_target_tags(manifold_data_spec)
+TargetTags, target_tag_set, TargetVirusMap, VirusTargetMap = make_target_tags(
+    manifold_data_spec
+)
+
+VirusTags = make_virus_tags(manifold_data_spec)
 
 # make Output enum and set
 OutputTags, output_tag_set, MANIFOLD_PREFIX_POSTFIX_DICT = make_output_tags(

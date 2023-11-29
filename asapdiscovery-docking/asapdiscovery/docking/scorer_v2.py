@@ -1,7 +1,7 @@
 import abc
+import logging
 from enum import Enum
 from typing import ClassVar, Optional
-from warnings import warn
 
 import dask
 import numpy as np
@@ -18,6 +18,8 @@ from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models import MLModelType
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
 class ScoreType(str, Enum):
@@ -220,7 +222,7 @@ class MLModelScorer(ScorerBase):
         inference_cls = get_inference_cls_from_model_type(cls.model_type)
         inference_instance = inference_cls.from_latest_by_target(target)
         if inference_instance is None:
-            warn(
+            logger.warn(
                 f"no ML model of type {cls.model_type} found for target: {target}, skipping"
             )
             return None

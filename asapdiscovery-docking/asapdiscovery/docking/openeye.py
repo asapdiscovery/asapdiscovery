@@ -1,6 +1,7 @@
 """
 This module contains the inputs, docker, and output schema for using POSIT
 """
+import logging
 from enum import Enum
 from typing import Literal, Union
 
@@ -16,6 +17,8 @@ from asapdiscovery.docking.docking_v2 import (
     DockingResult,
 )
 from pydantic import Field, PositiveInt, root_validator
+
+logger = logging.getLogger(__name__)
 
 
 class POSIT_METHOD(Enum):
@@ -150,7 +153,7 @@ class POSITDocker(DockingBase):
                 omega_retcode = omega.Build(lig_oemol)
                 if omega_retcode:
                     if error == "skip":
-                        print(
+                        logger.error(
                             f"Omega failed with error code {oeomega.OEGetOmegaError(omega_retcode)}"
                         )
                     elif error == "raise":
@@ -235,7 +238,7 @@ class POSITDocker(DockingBase):
 
             else:
                 if error == "skip":
-                    print(
+                    logger.warn(
                         f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
                     )
                     docking_results.append(None)

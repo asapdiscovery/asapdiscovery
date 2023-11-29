@@ -45,9 +45,11 @@ def test_load_pdb(pdb_file):
 
 
 def test_load_smi(smi_file):
-    _ = load_openeye_smi(Path(smi_file))
+    mols = load_openeye_smi(Path(smi_file))
+    assert len(mols) == 556
     # try also with str
-    _ = load_openeye_smi(str(smi_file))
+    mols = load_openeye_smi(str(smi_file))
+    assert len(mols) == 556
 
 
 def test_load_sdf(sdf_file):

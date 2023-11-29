@@ -2,6 +2,9 @@ import logging
 import os
 from typing import Optional
 
+from rich.console import Console
+from rich.logging import RichHandler
+
 
 class FileLogger:
     def __init__(
@@ -9,7 +12,7 @@ class FileLogger:
         logname: str,
         path: str,
         logfile: Optional[str] = None,
-        level: Optional[int] = logging.WARNING,
+        level: Optional[int] = logging.DEBUG,
         format: Optional[
             str
         ] = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
@@ -20,35 +23,30 @@ class FileLogger:
         self.format = format
         self.level = level
         self.stdout = stdout
-        if self.logfile is None:
-            self.logfile = self.name + "-log.txt"
 
         self.logger = logging.getLogger(self.name)
         self.logger.setLevel(self.level)
 
-        self.handler = logging.FileHandler(os.path.join(path, self.logfile), mode="w")
-        self.handler.setLevel(self.level)
-        self.formatter = logging.Formatter(self.format)
-        self.handler.setFormatter(self.formatter)
-        self.logger.addHandler(self.handler)
+        if self.logfile:
+            self.handler = logging.FileHandler(
+                os.path.join(path, self.logfile), mode="w"
+            )
+            self.handler.setLevel(self.level)
+            self.formatter = logging.Formatter(self.format)
+            self.handler.setFormatter(self.formatter)
+            self.logger.addHandler(self.handler)
 
         if self.stdout:
-            self.streamhandler = logging.StreamHandler()
-            self.streamhandler.setLevel(self.level)
-            self.streamhandler.setFormatter(self.formatter)
-            self.logger.addHandler(self.streamhandler)
+            console = Console()
+            rich_handler = RichHandler(console=console)
+            self.logger.addHandler(rich_handler)
 
     def getLogger(self) -> logging.Logger:
         return self.logger
 
-    def set_as_default(self) -> None:
-        logging.basicConfig(filename=self.logfile, level=self.level, format=self.format)
-
     def set_level(self, level: int) -> None:
         self.logger.setLevel(level)
         self.handler.setLevel(level)
-        if self.stdout:
-            self.streamhandler.setLevel(level)
 
 
 """

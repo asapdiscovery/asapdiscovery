@@ -1,4 +1,6 @@
 import abc
+import logging
+import warnings
 from pathlib import Path
 from typing import Literal, Optional, Union, TYPE_CHECKING
 
@@ -20,6 +22,8 @@ from pydantic import BaseModel, Field, root_validator
 
 if TYPE_CHECKING:
     from distributed import Client
+
+logger = logging.getLogger(__name__)
 
 
 class CacheType(StringEnum):
@@ -94,12 +98,8 @@ class ProteinPrepperBase(BaseModel):
 
         Returns
         -------
-            A list of prepared complexs.
+            A list of prepared complexes.
         """
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.INFO)
-
         all_outputs = []
 
         if cache_dir is not None:

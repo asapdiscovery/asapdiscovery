@@ -23,6 +23,9 @@ ZIKV_NS2B_NS3pro_SEQRES = pkg_resources.resource_filename(
 DENV_NS2B_NS3pro_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/denv_ns2b_ns3pro.yaml"
 )
+EV_A71_Capsid_SEQRES = pkg_resources.resource_filename(
+    __name__, "master_seqres/ev_a71_capsid.yaml"
+)
 
 seqres_data = {
     TargetTags("MERS-CoV-Mpro").value: MERS_CoV_Mpro_SEQRES,
@@ -32,6 +35,7 @@ seqres_data = {
     TargetTags("EV-A71-3Cpro").value: EV_A71_3Cpro_SEQRES,
     TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_SEQRES,
     TargetTags("DENV-NS2B-NS3pro").value: DENV_NS2B_NS3pro_SEQRES,
+    TargetTags("EV-A71-Capsid").value: EV_A71_Capsid_SEQRES,
 }
 
 # Fitness data in JSON format
@@ -39,10 +43,14 @@ SARS_CoV_2_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_sars_cov_2.json"
 )
 
+ZIKV_NS2B_NS3pro_fitness_data = pkg_resources.resource_filename(
+    __name__, "aa_fitness_zikv_ns2b3.json"
+)
 
 targets_with_fitness_data = [
     TargetTags("SARS-CoV-2-Mpro"),
     TargetTags("SARS-CoV-2-Mac1"),
+    TargetTags("ZIKV-NS2B-NS3pro"),
 ]
 
 # Reference PDB files to align targets to for consistent dataviz
@@ -70,5 +78,8 @@ master_structures = {
     ),
     "DENV-NS2B-NS3pro": pkg_resources.resource_filename(
         __name__, "master_structures/denv_ns2b_ns3pro.pdb"
+    ),
+    "EV-A71-Capsid": pkg_resources.resource_filename(
+        __name__, "master_structures/ev_a71_capsid.pdb"
     ),
 }

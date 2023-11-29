@@ -785,7 +785,6 @@ def main():
                 [outpath],
                 args.viz_target,
                 protein_path,
-                logger=logger,
             )
             output_paths = html_visualiser.write_pose_visualizations()
 
@@ -811,7 +810,6 @@ def main():
             top_posit["_outpath_pose"],
             args.viz_target,
             protein_path,
-            logger=logger,
         )
         html_visualiser.write_pose_visualizations()
 
@@ -830,7 +828,6 @@ def main():
                     [outpath],
                     args.target,
                     protein_path,
-                    logger=logger,
                     color_method="fitness",
                 )
                 output_paths = html_visualiser.write_pose_visualizations()
@@ -857,7 +854,6 @@ def main():
                 top_posit["_outpath_pose_fitness"],
                 args.target,
                 protein_path,
-                logger=logger,
                 color_method="fitness",
             )
             html_visualiser.write_pose_visualizations()
@@ -992,7 +988,6 @@ def main():
                 simulator = VanillaMDSimulator(
                     [pose],
                     protein_path,
-                    logger=logger,
                     output_paths=[output_path],
                     num_steps=args.md_steps,
                     reporting_interval=reporting_interval,
@@ -1025,7 +1020,6 @@ def main():
             simulator = VanillaMDSimulator(
                 no_clash["_docked_file"],
                 protein_path,
-                logger=logger,
                 output_paths=no_clash["_outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
@@ -1075,7 +1069,6 @@ def main():
                 frames_per_ns=200,
                 smooth=5,
                 start=start,
-                logger=logger,
             )
             output_paths = gif_visualizer.write_traj_visualizations()
 
@@ -1112,7 +1105,6 @@ def main():
                 frames_per_ns=200,
                 smooth=5,
                 start=start,
-                logger=logger,
             )
             gif_visualiser.write_traj_visualizations()
 
