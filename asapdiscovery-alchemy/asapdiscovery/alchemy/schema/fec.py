@@ -114,7 +114,7 @@ class _BaseResults(_SchemaBaseFrozen):
         from collections import defaultdict
 
         import numpy as np
-        from cinnabar import RelativeMeasurement
+        from cinnabar import Measurement
 
         raw_results = defaultdict(list)
         # gather by transform
@@ -143,10 +143,10 @@ class _BaseResults(_SchemaBaseFrozen):
             solvent_leg: TransformationResult = (
                 leg1 if leg1.phase == "solvent" else leg2
             )
-            result = RelativeMeasurement(
+            result = Measurement(
                 labelA=leg1.ligand_a,
                 labelB=leg1.ligand_b,
-                DDG=(complex_leg.estimate - solvent_leg.estimate),
+                DG=(complex_leg.estimate - solvent_leg.estimate),
                 # propagate errors
                 uncertainty=np.sqrt(
                     complex_leg.uncertainty**2 + solvent_leg.uncertainty**2
