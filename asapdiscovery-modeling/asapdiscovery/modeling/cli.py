@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import click
 from asapdiscovery.cli.cli_args import (
@@ -61,12 +61,12 @@ def modeling():
 @click.option(
     "--cache-dir",
     help="The path to cached prepared complexes which can be used again.",
-    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True)
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
 )
 @click.option(
     "--save-to-cache/--no-save-to-cache",
     help="If the newly generated structures should be saved to the cache folder.",
-    default=True
+    default=True,
 )
 @dask_args
 @output_dir

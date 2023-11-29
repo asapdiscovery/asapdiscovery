@@ -80,7 +80,10 @@ class ProteinPrepInputs(BaseModel):
         "prepped_structure_cache",
         description="Path to a directory of cached prepared Complex structures.",
     )
-    save_to_cache: bool = Field(True, description="If newly prepared structures should also be saved to the cache_dir, has no effect if the cache_dir is not set.")
+    save_to_cache: bool = Field(
+        True,
+        description="If newly prepared structures should also be saved to the cache_dir, has no effect if the cache_dir is not set.",
+    )
 
     align: Optional[Path] = Field(
         None, description="Reference structure pdb to align to."
@@ -118,7 +121,10 @@ class ProteinPrepInputs(BaseModel):
 
     loglevel: int = Field(logging.INFO, description="Logging level")
 
-    output_dir: Path = Field(Path("output"), description="Output directory where newly prepped structures and log files will be saved to.")
+    output_dir: Path = Field(
+        Path("output"),
+        description="Output directory where newly prepped structures and log files will be saved to.",
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -247,7 +253,10 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     )
 
     prepped_complexes = prepper.prep(
-        inputs=complexes, use_dask=inputs.use_dask, dask_client=dask_client, cache_dir=inputs.cache_dir
+        inputs=complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        cache_dir=inputs.cache_dir,
     )
 
     logger.info(f"Prepped {len(prepped_complexes)} complexes")

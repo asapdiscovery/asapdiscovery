@@ -2,7 +2,7 @@ import abc
 import logging
 import warnings
 from pathlib import Path
-from typing import Literal, Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import dask
 import yaml
@@ -52,7 +52,9 @@ class ProteinPrepperBase(BaseModel):
         ...
 
     @staticmethod
-    def _gather_new_tasks(complex_to_prep: list[Complex], cached_complexs: list[PreppedComplex]) -> tuple[list[Complex], list[PreppedComplex]]:
+    def _gather_new_tasks(
+        complex_to_prep: list[Complex], cached_complexs: list[PreppedComplex]
+    ) -> tuple[list[Complex], list[PreppedComplex]]:
         """
         For a set of complexs we want to prep gather a list of tasks to do removing complexs that have already
         been prepped and are in the cache.
@@ -74,14 +76,20 @@ class ProteinPrepperBase(BaseModel):
             if inp.hash() in cached_by_hash
         ]
         if cached_outputs:
-            to_prep = [inp for inp in complex_to_prep if inp.hash() not in cached_by_hash]
+            to_prep = [
+                inp for inp in complex_to_prep if inp.hash() not in cached_by_hash
+            ]
         else:
             to_prep = complex_to_prep
 
         return to_prep, cached_outputs
 
     def prep(
-        self, inputs: list[Complex], use_dask: bool = False, dask_client: Optional["Client"] = None, cache_dir: Optional[str] = None
+        self,
+        inputs: list[Complex],
+        use_dask: bool = False,
+        dask_client: Optional["Client"] = None,
+        cache_dir: Optional[str] = None,
     ) -> list[PreppedComplex]:
         """
         Prepare the list of input receptor ligand complexs re-using any found in the cache.
@@ -106,9 +114,13 @@ class ProteinPrepperBase(BaseModel):
             cached_complexs = ProteinPrepperBase.load_cache(cache_dir=cache_dir)
             # workout what we can reuse
             if cached_complexs:
-                logger.info(f"Loaded {len(cached_complexs)} cached structures from: {cache_dir}.")
+                logger.info(
+                    f"Loaded {len(cached_complexs)} cached structures from: {cache_dir}."
+                )
                 # reduce the number of tasks using any possible cached structures
-                inputs, cached_outputs = ProteinPrepperBase._gather_new_tasks(complex_to_prep=inputs, cached_complexs=cached_complexs)
+                inputs, cached_outputs = ProteinPrepperBase._gather_new_tasks(
+                    complex_to_prep=inputs, cached_complexs=cached_complexs
+                )
 
                 if cached_outputs:
                     logger.info(
