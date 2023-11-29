@@ -4,13 +4,13 @@ from pathlib import Path
 # import asapdiscovery.ml.schema_v2.config as ascfg
 import click
 from mtenn.config import (
-    ModelType,
-    StrategyConfig,
-    ReadoutConfig,
     CombinationConfig,
-    GATModelConfig,
-    SchNetModelConfig,
     E3NNModelConfig,
+    GATModelConfig,
+    ModelType,
+    ReadoutConfig,
+    SchNetModelConfig,
+    StrategyConfig,
 )
 
 

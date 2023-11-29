@@ -1,6 +1,6 @@
+import torch
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
-import torch
 from torch.utils.data import Dataset, Subset
 
 
