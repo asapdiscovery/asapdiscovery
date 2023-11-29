@@ -28,7 +28,6 @@ from asapdiscovery.data.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from aspadiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
@@ -42,6 +41,7 @@ from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
+from aspadiscovery.data.fitness import target_has_fitness_data
 from distributed import Client
 from pydantic import Field, PositiveInt, validator
 
