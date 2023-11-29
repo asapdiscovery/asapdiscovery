@@ -13,9 +13,9 @@ from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
     DatasetSplitterConfig,
     EarlyStoppingConfig,
-    ModelConfigBase,
     OptimizerConfig,
 )
+from mtenn.config import ModelConfigBase
 from pydantic import BaseModel, Field, validator
 
 

@@ -1,9 +1,17 @@
 import json
 from pathlib import Path
 
-import asapdiscovery.ml.schema_v2.config as ascfg
+# import asapdiscovery.ml.schema_v2.config as ascfg
 import click
-from asapdiscovery.ml.models import MLModelType
+from mtenn.config import (
+    ModelType,
+    StrategyConfig,
+    ReadoutConfig,
+    CombinationConfig,
+    GATModelConfig,
+    SchNetModelConfig,
+    E3NNModelConfig,
+)
 
 
 @click.group()
@@ -29,7 +37,7 @@ def ml():
     "-model",
     "--model-type",
     required=True,
-    type=MLModelType,
+    type=ModelType,
     help="Which model type to use.",
 )
 @click.option(
@@ -63,7 +71,7 @@ def ml():
 )
 @click.option(
     "--strategy",
-    type=ascfg.MTENNStrategy,
+    type=StrategyConfig,
     help=(
         "Which Strategy to use for combining complex, protein, and ligand "
         "representations in the MTENN Model."
@@ -71,7 +79,7 @@ def ml():
 )
 @click.option(
     "--pred-readout",
-    type=ascfg.MTENNReadout,
+    type=ReadoutConfig,
     help=(
         "Which Readout to use for the model predictions. This corresponds "
         "to the individual pose predictions in the case of a GroupedModel."
@@ -79,12 +87,12 @@ def ml():
 )
 @click.option(
     "--combination",
-    type=ascfg.MTENNCombination,
+    type=CombinationConfig,
     help="Which Combination to use for combining predictions in a GroupedModel.",
 )
 @click.option(
     "--comb-readout",
-    type=ascfg.MTENNReadout,
+    type=ReadoutConfig,
     help=(
         "Which Readout to use for the combined model predictions. This is only "
         "relevant in the case of a GroupedModel."
@@ -316,7 +324,7 @@ def ml():
 @click.option("--num-nodes", type=float, help="Typical number of nodes in a graph.")
 def test(
     output_dir: Path,
-    model_type: MLModelType,
+    model_type: ModelType,
     config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
@@ -324,10 +332,10 @@ def test(
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
     grouped: bool | None = None,
-    strategy: ascfg.MTENNStrategy | None = None,
-    pred_readout: ascfg.MTENNReadout | None = None,
-    combination: ascfg.MTENNCombination | None = None,
-    comb_readout: ascfg.MTENNReadout | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
     max_comb_neg: bool | None = None,
     max_comb_scale: float | None = None,
     pred_substrate: float | None = None,
@@ -369,8 +377,8 @@ def test(
 ):
     # Build the model
     match model_type:
-        case MLModelType.GAT:
-            config_class = ascfg.GATModelConfig
+        case ModelType.GAT:
+            config_class = GATModelConfig
             cli_config_vals = {
                 "grouped": grouped,
                 "strategy": strategy,
@@ -395,8 +403,8 @@ def test(
                 "biases": biases,
                 "allow_zero_in_degree": allow_zero_in_degree,
             }
-        case MLModelType.schnet:
-            config_class = ascfg.SchNetModelConfig
+        case ModelType.schnet:
+            config_class = SchNetModelConfig
             cli_config_vals = {
                 "grouped": grouped,
                 "strategy": strategy,
@@ -420,8 +428,8 @@ def test(
                 "mean": mean,
                 "std": std,
             }
-        case MLModelType.e3nn:
-            config_class = ascfg.E3NNModelConfig
+        case ModelType.e3nn:
+            config_class = E3NNModelConfig
             cli_config_vals = {
                 "grouped": grouped,
                 "strategy": strategy,
