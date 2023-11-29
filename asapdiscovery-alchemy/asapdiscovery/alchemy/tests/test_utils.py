@@ -166,7 +166,7 @@ def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     # convert to cinnabar fep map
     result_map = network_with_results.results.to_fe_map()
     assert (
-        len(result_map.graph.nodes) == len(alchem_network.nodes) / 2
+        result_map.n_ligands == len(alchem_network.nodes) / 2
     )  # divide by 2 as we have a node for the solvent and complex phase
 
 
