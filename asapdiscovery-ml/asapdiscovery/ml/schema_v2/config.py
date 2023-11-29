@@ -208,8 +208,8 @@ class DatasetConfig(BaseModel):
     )
 
     # Required inputs used to build the dataset
-    exp_data: ExperimentalCompoundDataUpdate = Field(
-        ..., description="Experimental data."
+    exp_data: ExperimentalCompoundDataUpdate | None = Field(
+        None, description="Experimental data."
     )
     input_data: list[Complex] | list[Ligand] = Field(
         ...,
@@ -257,7 +257,10 @@ class DatasetConfig(BaseModel):
             return pkl.loads(self.cache_file.read_bytes())
 
         # Convert ExperimentalCompoundDataUpdate to a dict of relevant info
-        exp_dict = self.exp_dict()
+        if self.exp_data:
+            exp_dict = self.exp_dict()
+        else:
+            exp_dict = {}
 
         # Build directly from Complexes/Ligands
         #  (still needs to be implemented on the Dataset side)
@@ -280,6 +283,17 @@ class DatasetConfig(BaseModel):
             self.cache_file.write_bytes(pkl.dumps(ds))
 
         return ds
+
+    def exp_dict(self):
+        exp_dict = {}
+        for i, exp_compound in enumerate(self.exp_data.compounds):
+            if exp_compound.compound_id:
+                compound_id = exp_compound.compound_id
+            else:
+                compound_id = f"compound_{i}"
+            exp_dict[compound_id] = exp_compound.experimental_data
+
+        return exp_dict
 
 
 class DatasetSplitterType(StringEnum):
