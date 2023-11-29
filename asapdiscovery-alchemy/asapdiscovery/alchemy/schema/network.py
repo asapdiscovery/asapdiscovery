@@ -1,10 +1,76 @@
-from typing import Literal, Optional, Union
+import abc
+from typing import Callable, Literal, Optional, Union
 
 import openfe
 from pydantic import Field
 
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
 from .base import _SchemaBase
+
+
+class _NetworkPlannerMethod(_SchemaBase, abc.ABC):
+    """
+    The network planner method and settings which control the type of network produced.
+    """
+
+    type: Literal["_NetworkPlannerMethod"] = "_NetworkPlannerMethod"
+
+    @abc.abstractmethod
+    def get_planning_function(self) -> Callable:
+        """
+        Get the configured network planning function as functools partial which is ready to be called.
+        Returns
+        -------
+            A callable network planning function with runtime options already configured.
+        """
+        ...
+
+
+class RadialPlanner(_NetworkPlannerMethod):
+    """Plan radial type networks using openfe."""
+
+    type: Literal["RadialPlanner"] = "RadialPlanner"
+
+    def get_planning_function(self) -> Callable:
+        return openfe.ligand_network_planning.generate_radial_network
+
+
+class MaximalPlanner(_NetworkPlannerMethod):
+    """Plan maximally connected networks using openfe."""
+
+    type: Literal["MaximalPlanner"] = "MaximalPlanner"
+
+    def get_planning_function(self) -> Callable:
+        return openfe.ligand_network_planning.generate_maximal_network
+
+
+class MinimalSpanningPlanner(_NetworkPlannerMethod):
+    """Plan minimal spanning networks where each ligand has a single connection to the graph with openfe."""
+
+    type: Literal["MinimalSpanningPlanner"] = "MinimalSpanningPlanner"
+
+    def get_planning_function(self) -> Callable:
+        return openfe.ligand_network_planning.generate_minimal_spanning_network
+
+
+class MinimalRedundantPlanner(_NetworkPlannerMethod):
+    """Planing minimally spanning networks with configurable redundancy using openfe."""
+
+    type: Literal["MinimalRedundantPlanner"] = "MinimalSpanningPlanner"
+
+    redundancy: int = Field(
+        2,
+        description="The number of minimal spanning networks which should be combined to make redundant networks.",
+        gt=1,
+    )
+
+    def get_planning_function(self) -> Callable:
+        import functools
+
+        return functools.partial(
+            openfe.ligand_network_planning.generate_minimal_redundant_network,
+            mst_num=self.redundancy,
+        )
 
 
 class _NetworkPlannerSettings(_SchemaBase):
@@ -24,8 +90,10 @@ class _NetworkPlannerSettings(_SchemaBase):
         "default_lomap",
         description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
     )
-    network_planning_method: Literal["radial", "maximal", "minimal_spanning"] = Field(
-        "minimal_spanning",
+    network_planning_method: Union[
+        RadialPlanner, MaximalPlanner, MinimalSpanningPlanner, MinimalRedundantPlanner
+    ] = Field(
+        MinimalRedundantPlanner(),
         description="The way in which the ligand network should be connected. Note radial requires a central ligand node.",
     )
 
@@ -97,14 +165,6 @@ class NetworkPlanner(_NetworkPlannerSettings):
         else:
             return openfe.perses_scorers.default_perses_scorer
 
-    def _get_network_plan(self):
-        if self.network_planning_method == "radial":
-            return openfe.ligand_network_planning.generate_radial_network
-        elif self.network_planning_method == "maximal":
-            return openfe.ligand_network_planning.generate_maximal_network
-        else:
-            return openfe.ligand_network_planning.generate_minimal_spanning_network
-
     def generate_network(
         self,
         ligands: list[openfe.SmallMoleculeComponent],
@@ -121,7 +181,10 @@ class NetworkPlanner(_NetworkPlannerSettings):
         """
 
         # validate the inputs
-        if self.network_planning_method == "radial" and central_ligand is None:
+        if (
+            self.network_planning_method.type == "RadialPlanner"
+            and central_ligand is None
+        ):
             raise RuntimeError(
                 "The radial type network requires a ligand to act as the central node."
             )
@@ -134,10 +197,10 @@ class NetworkPlanner(_NetworkPlannerSettings):
         }
 
         # add the central ligand if required
-        if self.network_planning_method == "radial":
+        if self.network_planning_method.type == "RadialPlanner":
             planner_data["central_ligand"] = central_ligand
 
-        network_method = self._get_network_plan()
+        network_method = self.network_planning_method.get_planning_function()
         ligand_network = network_method(**planner_data)
 
         return PlannedNetwork(

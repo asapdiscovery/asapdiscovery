@@ -7,6 +7,7 @@ from openeye import (  # noqa: F401
     oechem,
     oedepict,
     oedocking,
+    oeff,
     oegrid,
     oeomega,
     oequacpac,
@@ -169,16 +170,17 @@ def load_openeye_smi(smi_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     oechem.OEError
         If the SMI file cannot be opened.
     """
+    # convert to path to make consistent
+    smi_fn = Path(smi_fn)
+    if not smi_fn.exists():
+        raise FileNotFoundError(f"{str(smi_fn)} does not exist!")
 
-    if not Path(smi_fn).exists():
-        raise FileNotFoundError(f"{smi_fn} does not exist!")
-
-    ifs = oechem.oemolistream()
+    ifs = oechem.oemolistream(smi_fn.as_posix())
     ifs.SetFlavor(oechem.OEFormat_SMI, oechem.OEIFlavor_SMI_DEFAULT)
 
     molecules = []
     for mol in ifs.GetOEGraphMols():
-        molecules.append(oechem.OEGetOEGraphMol(mol))
+        molecules.append(oechem.OEGraphMol(mol))
 
     return molecules
 

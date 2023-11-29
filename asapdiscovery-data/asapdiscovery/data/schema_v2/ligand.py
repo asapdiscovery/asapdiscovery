@@ -1,5 +1,7 @@
+import copy
 import json
 from enum import Flag, auto
+import logging
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
 
@@ -17,7 +19,7 @@ from asapdiscovery.data.openeye import (
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
-from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
+from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers, LigandProvenance
 from asapdiscovery.data.schema_v2.schema_base import DataStorageType
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
 from pydantic import Field, root_validator, validator
@@ -28,6 +30,8 @@ from .schema_base import (
     schema_dict_get_val_overload,
     write_file_directly,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InvalidLigandError(ValueError):
@@ -81,6 +85,11 @@ class Ligand(DataModelAbstractBase):
     ids: Optional[LigandIdentifiers] = Field(
         None,
         description="LigandIdentifiers Schema for identifiers associated with this ligand",
+    )
+    provenance: LigandProvenance = Field(
+        ...,
+        description="Identifiers for the input state of the ligand used to ensure the sdf data is correct.",
+        allow_mutation=False,
     )
     experimental_data: Optional[ExperimentalCompoundData] = Field(
         None,
@@ -150,8 +159,10 @@ class Ligand(DataModelAbstractBase):
         """
         Create a Ligand from an OEMol extracting all SD tags into the internal model
         """
+        # work with a copy as we change the state of the molecule
+        input_mol = copy.deepcopy(mol)
         kwargs.pop("data", None)
-        sd_tags = get_SD_data(mol)
+        sd_tags = get_SD_data(input_mol)
         for key, value in sd_tags.items():
             try:
                 # check to see if we have JSON of a model field
@@ -167,10 +178,26 @@ class Ligand(DataModelAbstractBase):
         }
         kwargs["tags"] = tags
         # clean the sdf data for the internal model
-        sdf_str = oemol_to_sdf_string(clear_SD_data(mol))
+        sdf_str = oemol_to_sdf_string(clear_SD_data(input_mol))
+        # create a smiles which does not have nitrogen stereo
+        smiles = oemol_to_smiles(input_mol)
+        # create the internal LigandProvenance model
+        if "provenance" not in kwargs:
+            provenance = LigandProvenance(
+                isomeric_smiles=smiles,
+                inchi=oemol_to_inchi(input_mol),
+                inchi_key=oemol_to_inchikey(input_mol),
+                fixed_inchi=oemol_to_inchi(input_mol, fixed_hydrogens=True),
+                fixed_inchikey=oemol_to_inchikey(input_mol, fixed_hydrogens=True),
+            )
+            kwargs["provenance"] = provenance
+        # check for an openeye title which could be used as a compound name
+        if mol.GetTitle() != "" and kwargs.get("compound_name") is None:
+            kwargs["compound_name"] = mol.GetTitle()
+
         return cls(data=sdf_str, **kwargs)
 
-    def to_oemol(self) -> oechem.OEGraphMol:
+    def to_oemol(self) -> oechem.OEMol:
         """
         Convert the current molecule state to an OEMol including all fields as SD tags
         """

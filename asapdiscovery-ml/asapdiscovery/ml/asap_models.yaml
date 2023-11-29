@@ -189,3 +189,20 @@ asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.08.25:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+
+
+# new SchNet model trained with a lower learning rate to avoid the weights collapsing
+# trained on MTENN 0.4.0
+asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.11.20:
+  type: schnet
+  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/schnet/
+  weights:
+    resource: asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.11.20.th
+    sha256hash: 18bc1633f15aa892de48d691356aad63894bfc6135f92e9ec7ac27a6c36edb91
+  config:
+    resource: asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.11.20.json
+    sha256hash: 7065befd76cdcc79b4211c624a948c17a989110ebad3971b6bd10438e674a5fe
+  last_updated: 2023-11-20
+  targets:
+    - SARS-CoV-2-Mpro
+    - MERS-CoV-Mpro
