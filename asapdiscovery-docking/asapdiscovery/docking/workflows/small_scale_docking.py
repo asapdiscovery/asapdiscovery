@@ -268,12 +268,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     n_prepped_complexes = len(prepped_complexes)
     logger.info(f"Prepped {n_prepped_complexes} complexes")
 
-    if inputs.gen_cache:
-        # cache prepped complexes
-        cache_path = output_dir / inputs.gen_cache
-        logger.info(f"Caching prepped complexes to {cache_path}")
-        for cache_type in inputs.cache_type:
-            prepper.cache(prepped_complexes, cache_path, type=cache_type)
+    if inputs.save_to_cache and inputs.cache_dir is not None:
+        logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
+        prepper.cache(prepped_complexes, inputs.cache_dir)
 
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory

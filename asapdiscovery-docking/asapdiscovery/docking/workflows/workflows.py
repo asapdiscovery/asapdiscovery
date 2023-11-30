@@ -32,8 +32,8 @@ class DockingWorkflowInputsBase(BaseModel):
         None, description="Path to a directory where a cache has been generated"
     )
 
-    gen_cache: Optional[str] = Field(
-        None,
+    save_to_cache: bool = Field(
+        True,
         description="Generate a cache from structures prepped in this workflow run in this directory",
     )
 
@@ -95,7 +95,7 @@ class DockingWorkflowInputsBase(BaseModel):
         structure_dir = values.get("structure_dir")
         postera = values.get("postera")
         cache_dir = values.get("cache_dir")
-        gen_cache = values.get("gen_cache")
+        save_to_cache = values.get("save_to_cache")
         pdb_file = values.get("pdb_file")
 
         if postera and filename:
@@ -109,10 +109,6 @@ class DockingWorkflowInputsBase(BaseModel):
             raise ValueError(
                 "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
             )
-
-        if cache_dir and gen_cache:
-            raise ValueError("Cannot specify both cache_dir and gen_cache.")
-        return values
 
     @validator("cache_dir")
     @classmethod
