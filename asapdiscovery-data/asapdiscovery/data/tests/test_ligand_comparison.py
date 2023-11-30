@@ -60,6 +60,25 @@ def other():
 
 def test_get_2d_ligand(base_ligand, stereoisomer):
     assert base_ligand.flattened.is_chemically_equal(stereoisomer.flattened)
+    assert not base_ligand.is_chemically_equal(stereoisomer)
+
+
+def test_perceived_stereochemistry(base_ligand, stereoisomer, other):
+    # Any molecule with a stereo center should have perceived stereo
+    assert not other.has_perceived_stereo
+    assert base_ligand.has_perceived_stereo
+    assert stereoisomer.has_perceived_stereo
+    assert base_ligand.flattened.has_perceived_stereo
+    assert stereoisomer.flattened.has_perceived_stereo
+
+
+def test_defined_stereochemistry(base_ligand, stereoisomer, other):
+    # Molecules with stereo centers that are defined should have defined stereo
+    assert base_ligand.has_defined_stereo
+    assert stereoisomer.has_defined_stereo
+    assert not base_ligand.flattened.has_defined_stereo
+    assert not stereoisomer.flattened.has_defined_stereo
+    assert not other.has_defined_stereo
 
 
 def test_true_chemical_comparisons(

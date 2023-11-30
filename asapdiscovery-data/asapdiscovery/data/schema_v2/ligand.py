@@ -444,14 +444,39 @@ class Ligand(DataModelAbstractBase):
             raise ValueError("Unable to generate neutralized ligand")
 
     @property
+    def has_perceived_stereo(self) -> bool:
+        """
+        Check if the ligand has any stereo bonds or chiral centers.
+        Will be true if there are chiral centers even if they are undefined.
+        Returns
+        -------
+        True if the ligand does contain any stereochemistry else False.
+        """
+        oe_mol = self.to_oemol()
+        for atom in oe_mol.GetAtoms():
+            if atom.IsChiral():
+                return True
+        for bond in oe_mol.GetBonds():
+            if bond.IsChiral():
+                return True
+        return False
+
+    @property
     def has_defined_stereo(self) -> bool:
         """
-        Check if the ligand has defined stereochemistry
+        Check if the ligand has defined stereochemistry.
+        Will be true if there are chiral centers and they are defined.
+        If there are defined stereo bonds but no chiral centers
+        (possible if some places are "over-defined") this will be false.
         """
         mol = self.to_oemol()
-        return mol.HasPerceived(oechem.OEPerceived_AtomStereo) or mol.HasPerceived(
-            oechem.OEPerceived_BondStereo
-        )
+        for atom in mol.GetAtoms():
+            if atom.IsChiral() and atom.HasStereoSpecified():
+                return True
+        for bond in mol.GetBonds():
+            if bond.IsChiral() and bond.HasStereoSpecified():
+                return True
+        return False
 
     def is_chemically_equal(self, other: "Ligand") -> bool:
         """
