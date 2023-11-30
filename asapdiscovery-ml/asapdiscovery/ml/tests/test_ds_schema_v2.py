@@ -10,6 +10,7 @@ from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedD
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
     DatasetSplitterConfig,
+    DatasetSplitterType,
     DatasetType,
 )
 
@@ -249,3 +250,25 @@ def test_graph_dataset_config_exp_dict(ligand_sdf):
     assert xtal_id == "NA"
     assert compound_id == "test2"
     assert pose["pIC50"] == 6
+
+
+def test_random_splitting_no_seed(ligand_sdf):
+    ligands = [Ligand.from_sdf(ligand_sdf, compound_name=f"test{i}") for i in range(10)]
+    dd = DatasetConfig(ds_type=DatasetType.graph, input_data=ligands).build()
+
+    splitter = DatasetSplitterConfig(split_type=DatasetSplitterType.random)
+    ds_train, ds_val, ds_test = splitter.split(dd)
+
+    assert len(ds_train) == 8
+    assert len(ds_val) == 1
+    assert len(ds_test) == 1
+
+    # Split a couple more times and make sure not all of the train splits are the same
+
+
+def test_random_splitting_set_seed(ligand_sdf):
+    pass
+
+
+def test_temporal_splitting(ligand_sdf):
+    pass
