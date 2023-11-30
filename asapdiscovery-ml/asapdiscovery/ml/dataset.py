@@ -74,38 +74,6 @@ class DockedDataset(Dataset):
 
             return tuple(target_id), tuple(compound_id)
 
-        # Helper function to convert a Complex to a pose
-        def complex_to_pose(comp, compound=None, exp_dict={}):
-            # First get target atom positions and atomic numbers
-            target_mol = comp.target.to_oemol()
-            target_coords = target_mol.GetCoords()
-            target_pos = []
-            target_z = []
-            for atom in target_mol.GetAtoms():
-                target_pos.append(target_coords[atom.GetIdx()])
-                target_z.append(atom.GetAtomicNum())
-
-            # Get ligand atom positions and atomic numbers
-            ligand_mol = comp.ligand.to_oemol()
-            ligand_coords = ligand_mol.GetCoords()
-            ligand_pos = []
-            ligand_z = []
-            for atom in ligand_mol.GetAtoms():
-                ligand_pos.append(ligand_coords[atom.GetIdx()])
-                ligand_z.append(atom.GetAtomicNum())
-
-            # Combine the two
-            all_pos = torch.tensor(target_pos + ligand_pos).float()
-            all_z = torch.tensor(target_z + ligand_z)
-            all_lig = torch.tensor(
-                [False] * target_mol.NumAtoms() + [True] * ligand_mol.NumAtoms()
-            )
-
-            pose = {"pos": all_pos, "z": all_z, "lig": all_lig}
-            if compound:
-                pose["compound"] = compound
-            return pose | exp_dict
-
         compound_idxs = {}
         structures = []
         for i, comp in enumerate(complexes):
@@ -117,10 +85,55 @@ class DockedDataset(Dataset):
                 compound_idxs[compound] = [i]
 
             comp_exp_dict = exp_dict.get(comp.ligand.compound_name, {})
-            pose = complex_to_pose(comp, compound=compound, exp_dict=comp_exp_dict)
+            pose = cls._complex_to_pose(
+                comp, compound=compound, exp_dict=comp_exp_dict, ignore_h=ignore_h
+            )
             structures.append(pose)
 
         return cls(compound_idxs, structures)
+
+    @staticmethod
+    def _complex_to_pose(comp, compound=None, exp_dict={}, ignore_h=True):
+        """
+        Helper function to convert a Complex to a pose.
+        """
+
+        # First get target atom positions and atomic numbers
+        target_mol = comp.target.to_oemol()
+        target_coords = target_mol.GetCoords()
+        target_pos = []
+        target_z = []
+        for atom in target_mol.GetAtoms():
+            target_pos.append(target_coords[atom.GetIdx()])
+            target_z.append(atom.GetAtomicNum())
+
+        # Get ligand atom positions and atomic numbers
+        ligand_mol = comp.ligand.to_oemol()
+        ligand_coords = ligand_mol.GetCoords()
+        ligand_pos = []
+        ligand_z = []
+        for atom in ligand_mol.GetAtoms():
+            ligand_pos.append(ligand_coords[atom.GetIdx()])
+            ligand_z.append(atom.GetAtomicNum())
+
+        # Combine the two
+        all_pos = torch.tensor(target_pos + ligand_pos).float()
+        all_z = torch.tensor(target_z + ligand_z)
+        all_lig = torch.tensor(
+            [False] * target_mol.NumAtoms() + [True] * ligand_mol.NumAtoms()
+        )
+
+        # Subset to remove Hs if desired
+        if ignore_h:
+            h_idx = all_z == 1
+            all_pos = all_pos[~h_idx]
+            all_z = all_z[~h_idx]
+            all_lig = all_lig[~h_idx]
+
+        pose = {"pos": all_pos, "z": all_z, "lig": all_lig}
+        if compound:
+            pose["compound"] = compound
+        return pose | exp_dict
 
     @classmethod
     def from_files(
@@ -323,8 +336,68 @@ class GroupedDockedDataset(Dataset):
     for a given compound can be accessed at a time.
     """
 
-    def __init__(
-        self,
+    def __init__(self, compound_ids: list[str] = [], structures: dict[str, dict] = {}):
+        """
+        Constructor for GroupedDockedDataset object.
+
+        Parameters
+        ----------
+        compound_ids : list[str]
+            List of compound ids. Each entry in this list must have a corresponding
+            entry in structures
+        structures : dict[str, dict]
+            Dict mapping compound_id to a pose dict
+        """
+        import numpy as np
+
+        super().__init__()
+
+        self.compound_ids = np.asarray(compound_ids)
+        self.structures = structures
+
+    @classmethod
+    def from_complexes(cls, complexes: list[Complex], exp_dict={}, ignore_h=True):
+        """
+        Build from a list of Complex objects.
+
+        Parameters
+        ----------
+        complexes : list[Complex]
+            List of Complex schema objects to build into a DockedDataset object
+        exp_dict : dict[str, dict[str, int | float]], optional
+            Dict mapping compound_id to an experimental results dict. The dict for a
+            compound will be added to the pose representation of each Complex containing
+            a ligand witht that compound_id
+        ignore_h : bool, default=True
+            Whether to remove hydrogens from the loaded structure
+
+        Returns
+        -------
+        GroupedDockedDataset
+        """
+
+        compound_ids = []
+        structures = {}
+        for i, comp in enumerate(complexes):
+            # compound = get_complex_id(comp)
+            compound = (comp.target.target_name, comp.ligand.compound_name)
+
+            # Build pose dict
+            comp_exp_dict = exp_dict.get(comp.ligand.compound_name, {})
+            pose = DockedDataset._complex_to_pose(
+                comp, compound=compound, exp_dict=comp_exp_dict, ignore_h=ignore_h
+            )
+            try:
+                structures[comp.ligand.compound_name].append(pose)
+            except KeyError:
+                structures[comp.ligand.compound_name] = [pose]
+                compound_ids.append(comp.ligand.compound_name)
+
+        return cls(compound_ids=compound_ids, structures=structures)
+
+    @classmethod
+    def from_files(
+        cls,
         str_fns,
         compounds,
         ignore_h=True,
@@ -354,8 +427,6 @@ class GroupedDockedDataset(Dataset):
         """
         import numpy as np
 
-        super().__init__()
-
         # Function to extract from extra_dict (just to make the list
         #  comprehension look a bit nicer)
         def get_extra(compound):
@@ -379,15 +450,17 @@ class GroupedDockedDataset(Dataset):
         else:
             all_structures = [DockedDataset._load_structure(*args) for args in mp_args]
 
-        self.compound_ids = []
-        self.structures = {}
+        compound_ids = []
+        structures = {}
         for i, ((_, compound_id), struct) in enumerate(zip(compounds, all_structures)):
             try:
-                self.structures[compound_id].append(struct)
+                structures[compound_id].append(struct)
             except KeyError:
-                self.structures[compound_id] = [struct]
-                self.compound_ids.append(compound_id)
-        self.compound_ids = np.asarray(self.compound_ids)
+                structures[compound_id] = [struct]
+                compound_ids.append(compound_id)
+        compound_ids = np.asarray(compound_ids)
+
+        return cls(compound_ids=compound_ids, structures=structures)
 
     def __len__(self):
         return len(self.compound_ids)
