@@ -7,7 +7,6 @@ from typing import Optional
 
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.modeling.protein_prep_v2 import CacheType
 from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
@@ -90,8 +89,6 @@ class DockingWorkflowInputsBase(BaseModel):
         fragalysis_dir = values.get("fragalysis_dir")
         structure_dir = values.get("structure_dir")
         postera = values.get("postera")
-        cache_dir = values.get("cache_dir")
-        save_to_cache = values.get("save_to_cache")
         pdb_file = values.get("pdb_file")
 
         if postera and filename:
