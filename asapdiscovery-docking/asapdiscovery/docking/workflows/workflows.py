@@ -37,10 +37,6 @@ class DockingWorkflowInputsBase(BaseModel):
         description="Generate a cache from structures prepped in this workflow run in this directory",
     )
 
-    cache_type: Optional[list[str]] = Field(
-        [CacheType.DesignUnit], description="The types of cache to use."
-    )
-
     target: TargetTags = Field(None, description="The target to dock against.")
 
     write_final_sdf: bool = Field(

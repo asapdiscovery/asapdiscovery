@@ -160,16 +160,6 @@ def gen_cache(func):
     )(func)
 
 
-def cache_type(func):
-    return click.option(
-        "--cache-type",
-        type=click.Choice(CacheType.get_values(), case_sensitive=False),
-        default=[CacheType.DesignUnit],
-        multiple=True,
-        help="The type of cache to use, can be 'JSON' or 'DesignUnit', an be specified multiple times to use cache",
-    )(func)
-
-
 def md(func):
     return click.option(
         "--md",

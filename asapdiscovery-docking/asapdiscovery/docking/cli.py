@@ -3,7 +3,6 @@ from typing import Optional
 import click
 from asapdiscovery.cli.cli_args import (
     cache_dir,
-    cache_type,
     dask_args,
     fragalysis_dir,
     input_json,
@@ -79,7 +78,6 @@ def docking():
 @structure_dir
 @save_to_cache
 @cache_dir
-@cache_type
 @dask_args
 @output_dir
 @input_json
@@ -100,7 +98,6 @@ def large_scale(
     structure_dir: Optional[str] = None,
     save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
-    cache_type: Optional[str] = None,
     output_dir: str = "output",
     input_json: Optional[str] = None,
     use_dask: bool = False,
@@ -134,7 +131,6 @@ def large_scale(
             postera_molset_name=postera_molset_name,
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
-            cache_type=cache_type,
             ml_scorers=ml_scorer,
             output_dir=output_dir,
         )
@@ -186,7 +182,6 @@ def large_scale(
 @structure_dir
 @save_to_cache
 @cache_dir
-@cache_type
 @dask_args
 @output_dir
 @input_json
@@ -204,7 +199,6 @@ def cross_docking(
     structure_dir: Optional[str] = None,
     save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
-    cache_type: Optional[str] = None,
     output_dir: str = "output",
     input_json: Optional[str] = None,
     use_dask: bool = False,
@@ -234,7 +228,6 @@ def cross_docking(
             structure_dir=structure_dir,
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
-            cache_type=cache_type,
             output_dir=output_dir,
             allow_final_clash=allow_final_clash,
         )
@@ -263,7 +256,6 @@ def cross_docking(
 @structure_dir
 @save_to_cache
 @cache_dir
-@cache_type
 @dask_args
 @output_dir
 @input_json
@@ -282,7 +274,6 @@ def small_scale(
     structure_dir: Optional[str] = None,
     save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
-    cache_type: Optional[str] = None,
     output_dir: str = "output",
     input_json: Optional[str] = None,
     use_dask: bool = False,
@@ -316,7 +307,6 @@ def small_scale(
             postera_molset_name=postera_molset_name,
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
-            cache_type=cache_type,
             ml_scorers=ml_scorer,
             output_dir=output_dir,
             md=md,
