@@ -1,3 +1,4 @@
+import logging
 from typing import ClassVar, Union
 
 import numpy as np
@@ -8,6 +9,8 @@ from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.selectors.selector import SelectorBase
 from asapdiscovery.docking.docking_v2 import DockingInputPair
 from pydantic import Field
+
+logger = logging.getLogger(__name__)
 
 
 class MCSSelector(SelectorBase):

@@ -3,6 +3,7 @@ Defines docking base schema.
 """
 
 import abc
+import logging
 from pathlib import Path
 from typing import Literal, Optional, Union
 
@@ -15,6 +16,8 @@ from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.schema_v2.sets import MultiStructureBase
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
+
+logger = logging.getLogger(__name__)
 
 
 class DockingInputBase(BaseModel):

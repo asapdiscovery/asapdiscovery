@@ -6,6 +6,7 @@ from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -107,7 +108,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     md_openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
-    logname: str = Field("small_scale_docking", description="Name of the log file.")
 
     @classmethod
     @validator("ml_scorers")
@@ -144,7 +144,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     output_dir.mkdir()
 
     logger = FileLogger(
-        inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
+        inputs.logname,  # default root logger so that dask logging is forwarded
+        path=output_dir,
+        logfile="small-scale-docking.log",
+        stdout=True,
+        level=inputs.loglevel,
     ).getLogger()
 
     logger.info(f"Running small scale docking with inputs: {inputs}")
@@ -169,6 +173,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
+        dask_client.forward_logging()
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
@@ -381,32 +386,37 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         how="outer",
     )
 
-    logger.info("Running fitness HTML visualiser")
-    html_fitness_output_dir = output_dir / "fitness"
-    html_fitness_visualizer = HTMLVisualizerV2(
-        colour_method=ColourMethod.fitness,
-        target=inputs.target,
-        output_dir=html_fitness_output_dir,
-    )
-    fitness_visualizations = html_fitness_visualizer.visualize(
-        results, use_dask=inputs.use_dask, dask_client=dask_client
-    )
+    if target_has_fitness_data(inputs.target):
+        logger.info("Running fitness HTML visualiser")
+        html_fitness_output_dir = output_dir / "fitness"
+        html_fitness_visualizer = HTMLVisualizerV2(
+            colour_method=ColourMethod.fitness,
+            target=inputs.target,
+            output_dir=html_fitness_output_dir,
+        )
+        fitness_visualizations = html_fitness_visualizer.visualize(
+            results, use_dask=inputs.use_dask, dask_client=dask_client
+        )
 
-    # duplicate target id column so we can join
-    fitness_visualizations[
-        DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-    ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        # duplicate target id column so we can join
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
-    # join the two dataframes on ligand_id, target_id and smiles
-    combined_df = combined_df.merge(
-        fitness_visualizations,
-        on=[
-            DockingResultCols.LIGAND_ID.value,
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
-            DockingResultCols.SMILES.value,
-        ],
-        how="outer",
-    )
+        # join the two dataframes on ligand_id, target_id and smiles
+        combined_df = combined_df.merge(
+            fitness_visualizations,
+            on=[
+                DockingResultCols.LIGAND_ID.value,
+                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+                DockingResultCols.SMILES.value,
+            ],
+            how="outer",
+        )
+    else:
+        logger.info(
+            f"Not running fitness HTML visualiser because {inputs.target} does not have fitness data"
+        )
 
     # filter out clashes (chemgauss4 score > 0)
     combined_df = combined_df[combined_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
@@ -496,12 +506,15 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
         artifact_columns = [
             DockingResultCols.HTML_PATH_POSE.value,
-            DockingResultCols.HTML_PATH_FITNESS.value,
         ]
         artifact_types = [
             ArtifactType.DOCKING_POSE_POSIT,
-            ArtifactType.DOCKING_POSE_FITNESS_POSIT,
         ]
+
+        if target_has_fitness_data(inputs.target):
+            artifact_columns.append(DockingResultCols.HTML_PATH_FITNESS.value)
+            artifact_types.append(ArtifactType.DOCKING_POSE_FITNESS_POSIT)
+
         if inputs.md:
             artifact_columns.append(DockingResultCols.GIF_PATH.value)
             artifact_types.append(ArtifactType.MD_POSE)

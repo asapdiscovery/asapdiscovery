@@ -65,7 +65,9 @@ class DockingWorkflowInputsBase(BaseModel):
     n_select: PositiveInt = Field(
         5, description="Number of targets to dock each ligand against."
     )
-    logname: str = Field(..., description="Name of the log file.")
+    logname: str = Field(
+        "", description="Name of the log file."
+    )  # use root logger for proper forwarding of logs from dask
 
     loglevel: int = Field(logging.INFO, description="Logging level")
 

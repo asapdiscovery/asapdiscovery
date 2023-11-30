@@ -76,7 +76,6 @@ def main():
         target=args.viz_target,
         protein=protein,
         align=True,
-        logger=logger,
     )
     html_visualizer.write_pose_visualizations()
 

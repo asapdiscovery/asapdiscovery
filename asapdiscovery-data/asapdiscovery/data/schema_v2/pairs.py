@@ -1,9 +1,12 @@
+import logging
 from typing import Any
 
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from pydantic import Field
+
+logger = logging.getLogger(__name__)
 
 
 class PairBase(DataModelAbstractBase):

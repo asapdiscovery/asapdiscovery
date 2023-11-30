@@ -90,8 +90,6 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
         None, description="The name of the ml scorers to use"
     )
 
-    logname: str = Field("large_scale_docking", description="Name of the log file.")
-
     @classmethod
     @validator("ml_scorers")
     def ml_scorers_must_be_valid(cls, v):
@@ -127,7 +125,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     output_dir.mkdir()
 
     logger = FileLogger(
-        inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
+        inputs.logname,  # default root logger so that dask logging is forwarded
+        path=output_dir,
+        logfile="large-scale-docking.log",
+        stdout=True,
+        level=inputs.loglevel,
     ).getLogger()
 
     logger.info(f"Running large scale docking with inputs: {inputs}")
@@ -152,6 +154,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
+        dask_client.forward_logging()
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")

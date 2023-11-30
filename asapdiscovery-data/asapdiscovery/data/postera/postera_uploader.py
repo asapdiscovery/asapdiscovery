@@ -1,4 +1,5 @@
 import warnings
+import logging
 from uuid import UUID
 
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
@@ -9,6 +10,8 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
 class PosteraUploader(BaseModel):
@@ -88,7 +91,7 @@ class PosteraUploader(BaseModel):
                         id_field=self.id_field,
                         smiles_field=self.smiles_field,
                     )
-                    warnings.warn(
+                    logger.info(
                         "appending to molecule set where some molecules have not been matched to an existing molecule in the molecule set, these ligands will be added to the molecule set"
                     )
 
