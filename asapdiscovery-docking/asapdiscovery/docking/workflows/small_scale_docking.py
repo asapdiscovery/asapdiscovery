@@ -82,7 +82,7 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     )
 
     use_omega: bool = Field(
-        True,
+        False,
         description="Whether to use omega for conformer generation prior to docking",
     )
 
@@ -500,12 +500,15 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
         artifact_columns = [
             DockingResultCols.HTML_PATH_POSE.value,
-            DockingResultCols.HTML_PATH_FITNESS.value,
         ]
         artifact_types = [
             ArtifactType.DOCKING_POSE_POSIT,
-            ArtifactType.DOCKING_POSE_FITNESS_POSIT,
         ]
+
+        if target_has_fitness_data(inputs.target):
+            artifact_columns.append(DockingResultCols.HTML_PATH_FITNESS.value)
+            artifact_types.append(ArtifactType.DOCKING_POSE_FITNESS_POSIT)
+
         if inputs.md:
             artifact_columns.append(DockingResultCols.GIF_PATH.value)
             artifact_types.append(ArtifactType.MD_POSE)
