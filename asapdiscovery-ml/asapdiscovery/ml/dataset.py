@@ -1,4 +1,5 @@
 import torch
+
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -488,12 +489,72 @@ class GraphDataset(Dataset):
         """
         from functools import reduce
 
+        import numpy as np
         import pandas
         from dgllife.data import MoleculeCSVDataset
         from dgllife.utils import SMILESToBigraph
 
-        all_shared_keys = [set(d.keys()) for d in exp_dict.values()]
-        all_shared_keys = reduce(lambda s1, s2: s1.intersection(s2), all_shared_keys)
+        # Make sure that all exp dicts for each compound have all the same keys so the
+        #  DF can be properly constructed
+        all_shared_exp_keys = [set(d.keys()) for d in exp_dict.values()]
+        if len(all_shared_exp_keys) > 0:
+            all_shared_exp_keys = reduce(
+                lambda s1, s2: s1.intersection(s2), all_shared_exp_keys
+            )
+        exp_dict = {
+            compound_id: {k: v for k, v in d.items() if k in all_shared_exp_keys}
+            for compound_id, d in exp_dict.items()
+        }
+
+        # Organize data for DF construction
+        missing_dict = {k: np.nan for k in all_shared_exp_keys}
+        all_info = [
+            [lig.compound_name, lig.smiles]
+            + list(exp_dict.get(lig.compound_name, missing_dict).values())
+            for lig in ligands
+        ]
+
+        # Build DF
+        df_keys = ["compound_id", "smiles"] + list(all_shared_exp_keys)
+        df = pandas.DataFrame(dict(zip(df_keys, zip(*all_info))))
+
+        # Build dataset
+        smiles_to_g = SMILESToBigraph(
+            add_self_loop=True,
+            node_featurizer=node_featurizer,
+            edge_featurizer=edge_featurizer,
+        )
+        dataset = MoleculeCSVDataset(
+            df=df,
+            smiles_to_graph=smiles_to_g,
+            smiles_column="smiles",
+            cache_file_path=cache_file,
+            task_names=list(all_shared_exp_keys),
+        )
+
+        compounds = {}
+        structures = []
+        for i, (compound_info, g) in enumerate(zip(all_info, dataset)):
+            compound_id, smiles, *exp_info = compound_info
+            # Need a tuple to match DockedDataset, but the graph objects aren't
+            #  attached to a protein structure at all
+            compound = ("NA", compound_id)
+
+            # Add data
+            try:
+                compounds[compound].append(i)
+            except KeyError:
+                compounds[compound] = [i]
+            structures.append(
+                {
+                    "smiles": g[0],
+                    "g": g[1],
+                    "compound": compound,
+                }
+                | dict(zip(list(all_shared_exp_keys), exp_info))
+            )
+
+        return cls(compounds, structures)
 
     @classmethod
     def from_exp_compounds(
