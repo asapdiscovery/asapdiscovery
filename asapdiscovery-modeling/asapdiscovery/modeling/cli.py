@@ -7,9 +7,9 @@ from asapdiscovery.cli.cli_args import (
     input_json,
     output_dir,
     pdb_file,
+    save_to_cache,
     structure_dir,
     target,
-    save_to_cache,
 )
 from asapdiscovery.data.dask_utils import DaskType
 

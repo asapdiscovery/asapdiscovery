@@ -13,9 +13,9 @@ from asapdiscovery.cli.cli_args import (
     output_dir,
     pdb_file,
     postera_args,
+    save_to_cache,
     structure_dir,
     target,
-    save_to_cache,
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
