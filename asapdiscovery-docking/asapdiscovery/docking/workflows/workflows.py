@@ -110,6 +110,11 @@ class DockingWorkflowInputsBase(BaseModel):
                 "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
             )
 
+        if not cache_dir and save_to_cache:
+            raise ValueError(
+                "Cannot specify save_to_cache=True if cache_dir is not specified."
+            )
+
     @validator("cache_dir")
     @classmethod
     def cache_dir_must_be_directory(cls, v):
