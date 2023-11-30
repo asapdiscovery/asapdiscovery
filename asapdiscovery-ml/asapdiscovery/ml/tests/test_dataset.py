@@ -173,7 +173,13 @@ def test_graph_dataset_from_exp_compounds(ligand_sdf, tmp_path):
     (xtal_id, compound_id), pose = next(it)
     assert xtal_id == "NA"
     assert compound_id == "test1"
+    assert pose["pIC50"] == 5.1
+    assert pose["pIC50_range"] == 0
+    assert pose["pIC50_stderr"] == 0.3
 
     (xtal_id, compound_id), pose = next(it)
     assert xtal_id == "NA"
     assert compound_id == "test2"
+    assert pose["pIC50"] == 5.1
+    assert pose["pIC50_range"] == 0
+    assert pose["pIC50_stderr"] == 0.3
