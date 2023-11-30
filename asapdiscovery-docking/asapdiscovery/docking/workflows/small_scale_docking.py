@@ -258,7 +258,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         active_site_chain="A",
     )
     prepped_complexes = prepper.prep(
-        complexes, use_dask=inputs.use_dask, dask_client=dask_client
+        complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        cache_dir=inputs.cache_dir,
     )
     del complexes
 

@@ -203,7 +203,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
     prepped_complexes = prepper.prep(
-        complexes, use_dask=inputs.use_dask, dask_client=dask_client
+        complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        cache_dir=inputs.cache_dir,
     )
     del complexes
 

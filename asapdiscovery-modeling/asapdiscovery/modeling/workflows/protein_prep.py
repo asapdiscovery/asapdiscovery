@@ -117,7 +117,7 @@ class ProteinPrepInputs(BaseModel):
         40, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
-    logname: str = Field("protein_prep", description="Name of the log file.")
+    logname: str = Field("", description="Name of the log file.")
 
     loglevel: int = Field(logging.INFO, description="Logging level")
 
@@ -161,7 +161,11 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     output_dir.mkdir(exist_ok=True)
 
     logger = FileLogger(
-        inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
+        inputs.logname,  # default root logger so that dask logging is forwarded
+        path=output_dir,
+        logfile="protein-prep.log",
+        stdout=True,
+        level=inputs.loglevel,
     ).getLogger()
 
     logger.info(f"Running protein prep with inputs: {inputs}")
