@@ -188,7 +188,7 @@ files:
     sha256hash: c8473899ea40b3f4d9382fca3a2b5f76b1e878313a7287a9240bc4322a5db79d
 
   - resource: prepared_alchemy_dataset.json
-    sha256hash: 7115b9fa8ea90497b18a6794bbd661a3b3f1d399893e60e675e9303f5cb41414
+    sha256hash: c988455b3e60d84939666d521415da9c8318fc3b5b4d4606b88acc659763d46d
 
   # TYK2 FEC network for testing
   - resource: tyk2_small_network.json
