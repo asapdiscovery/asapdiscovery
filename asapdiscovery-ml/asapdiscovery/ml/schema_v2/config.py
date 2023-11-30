@@ -470,7 +470,7 @@ class DatasetSplitterConfig(BaseModel):
             Test split
         """
 
-        if self.rand_seed is not None:
+        if self.rand_seed is None:
             g = torch.Generator()
         else:
             g = torch.Generator().manual_seed(self.rand_seed)
