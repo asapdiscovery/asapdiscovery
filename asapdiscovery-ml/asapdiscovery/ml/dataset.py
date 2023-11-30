@@ -1,6 +1,7 @@
 import torch
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from torch.utils.data import Dataset, Subset
 
 
@@ -454,8 +455,48 @@ class GraphDataset(Dataset):
     Class for loading SMILES as graphs.
     """
 
-    def __init__(
-        self,
+    def __init__(self, compounds={}, structures=[]):
+        super().__init__()
+
+        self.compounds = compounds
+        self.structures = structures
+
+    @classmethod
+    def from_ligands(
+        cls,
+        ligands: list[Ligand],
+        exp_dict: dict = {},
+        node_featurizer=None,
+        edge_featurizer=None,
+        cache_file=None,
+    ):
+        """
+        Parameters
+        ----------
+        ligands : list[Ligands]
+            List of Ligand schema objects to build into a GraphDataset object
+        exp_dict : dict[str, dict[str, int | float]], optional
+            Dict mapping compound_id to an experimental results dict. The dict for a
+            compound will be added to the pose representation of each Complex containing
+            a ligand witht that compound_id
+        node_featurizer : BaseAtomFeaturizer, optional
+            Featurizer for node data
+        edge_featurizer : BaseBondFeaturizer, optional
+            Featurizer for edges
+        cache_file : str, optional
+            Cache file for graph dataset
+        """
+        from functools import reduce
+        import pandas
+        from dgllife.data import MoleculeCSVDataset
+        from dgllife.utils import SMILESToBigraph
+
+        all_shared_keys = [set(d.keys()) for d in exp_dict.values()]
+        all_shared_keys = reduce(lambda s1, s2: s1.intersection(s2), all_shared_keys)
+
+    @classmethod
+    def from_exp_compounds(
+        cls,
         exp_compounds,
         node_featurizer=None,
         edge_featurizer=None,
@@ -519,8 +560,8 @@ class GraphDataset(Dataset):
         # Build dict mapping compound to date
         dates_dict = dict(zip(all_compound_ids, all_dates))
 
-        self.compounds = {}
-        self.structures = []
+        compounds = {}
+        structures = []
         for i, (compound_id, g) in enumerate(zip(all_compound_ids, dataset)):
             # Need a tuple to match DockedDataset, but the graph objects aren't
             #  attached to a protein structure at all
@@ -528,10 +569,10 @@ class GraphDataset(Dataset):
 
             # Add data
             try:
-                self.compounds[compound].append(i)
+                compounds[compound].append(i)
             except KeyError:
-                self.compounds[compound] = [i]
-            self.structures.append(
+                compounds[compound] = [i]
+            structures.append(
                 {
                     "smiles": g[0],
                     "g": g[1],
@@ -542,6 +583,8 @@ class GraphDataset(Dataset):
                     "compound": compound,
                 }
             )
+
+        return cls(compounds, structures)
 
     def __len__(self):
         return len(self.structures)
