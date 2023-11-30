@@ -196,15 +196,11 @@ def test_grouped_docked_dataset_config_exp_dict(complex_pdb):
     assert pose_list[1]["pIC50"] == 5
 
 
-def test_graph_dataset_config(ligand_sdf, tmp_path):
+def test_graph_dataset_config(ligand_sdf):
     lig1 = Ligand.from_sdf(ligand_sdf, compound_name="test1")
     lig2 = Ligand.from_sdf(ligand_sdf, compound_name="test2")
 
-    config = DatasetConfig(
-        ds_type=DatasetType.graph,
-        input_data=[lig1, lig2],
-        cache_file=(tmp_path / "cache.bin"),
-    )
+    config = DatasetConfig(ds_type=DatasetType.graph, input_data=[lig1, lig2])
     dd = config.build()
     assert isinstance(dd, GraphDataset)
 
@@ -220,7 +216,7 @@ def test_graph_dataset_config(ligand_sdf, tmp_path):
     assert compound_id == "test2"
 
 
-def test_graph_dataset_config_exp_dict(ligand_sdf, tmp_path):
+def test_graph_dataset_config_exp_dict(ligand_sdf):
     lig1 = Ligand.from_sdf(ligand_sdf, compound_name="test1")
     lig2 = Ligand.from_sdf(ligand_sdf, compound_name="test2")
 
@@ -236,10 +232,7 @@ def test_graph_dataset_config_exp_dict(ligand_sdf, tmp_path):
     )
 
     config = DatasetConfig(
-        ds_type=DatasetType.graph,
-        input_data=[lig1, lig2],
-        exp_data=exp_data,
-        cache_file=(tmp_path / "cache.bin"),
+        ds_type=DatasetType.graph, input_data=[lig1, lig2], exp_data=exp_data
     )
     dd = config.build()
     assert isinstance(dd, GraphDataset)
