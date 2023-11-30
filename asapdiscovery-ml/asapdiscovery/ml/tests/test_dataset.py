@@ -1,13 +1,21 @@
 import pytest
+from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.dataset import DockedDataset, GroupedDockedDataset
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 
 
 @pytest.fixture(scope="session")
 def complex_pdb():
     pdb = fetch_test_file("Mpro-P2660_0A_bound.pdb")
     return pdb
+
+
+@pytest.fixture(scope="session")
+def ligand_sdf():
+    sdf = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf")
+    return sdf
 
 
 def test_docked_dataset_from_complexes(complex_pdb):
@@ -123,3 +131,49 @@ def test_grouped_docked_dataset_from_files(complex_pdb):
         == len(pose_list[1]["lig"])
     )
     assert pose_list[1]["pos"].shape[0] > 0
+
+
+def test_graph_dataset_from_ligands(ligand_sdf, tmp_path):
+    lig1 = Ligand.from_sdf(ligand_sdf, compound_name="test1")
+    lig2 = Ligand.from_sdf(ligand_sdf, compound_name="test2")
+
+    ds = GraphDataset.from_ligands([lig1, lig2], cache_file=str(tmp_path / "cache.bin"))
+
+    assert len(ds) == 2
+
+    it = iter(ds)
+    (xtal_id, compound_id), pose = next(it)
+    assert xtal_id == "NA"
+    assert compound_id == "test1"
+
+    (xtal_id, compound_id), pose = next(it)
+    assert xtal_id == "NA"
+    assert compound_id == "test2"
+
+
+def test_graph_dataset_from_exp_compounds(ligand_sdf, tmp_path):
+    lig = Ligand.from_sdf(ligand_sdf, compound_name="test")
+
+    exp_data = {"pIC50": 5.1, "pIC50_range": 0, "pIC50_stderr": 0.3}
+
+    exp1 = ExperimentalCompoundData(
+        compound_id="test1", smiles=lig.smiles, experimental_data=exp_data
+    )
+    exp2 = ExperimentalCompoundData(
+        compound_id="test2", smiles=lig.smiles, experimental_data=exp_data
+    )
+
+    ds = GraphDataset.from_exp_compounds(
+        [exp1, exp2], cache_file=str(tmp_path / "cache.bin")
+    )
+
+    assert len(ds) == 2
+
+    it = iter(ds)
+    (xtal_id, compound_id), pose = next(it)
+    assert xtal_id == "NA"
+    assert compound_id == "test1"
+
+    (xtal_id, compound_id), pose = next(it)
+    assert xtal_id == "NA"
+    assert compound_id == "test2"
