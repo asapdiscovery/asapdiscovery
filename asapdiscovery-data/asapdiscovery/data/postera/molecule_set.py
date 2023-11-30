@@ -419,7 +419,7 @@ class MoleculeSetAPI(PostEraAPI):
         debug_df_path: str = None,
     ) -> int:
         if bleached:
-            warnings.warn(
+            logger.warn(
                 "Fix currently applied for postera column name bleaching see issues #629 #628"
             )
         df = ManifoldAllowedTags.filter_dataframe_cols(
