@@ -103,6 +103,8 @@ class DockingWorkflowInputsBase(BaseModel):
                 "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
             )
 
+        return values
+
     @validator("cache_dir")
     @classmethod
     def cache_dir_must_be_directory(cls, v):

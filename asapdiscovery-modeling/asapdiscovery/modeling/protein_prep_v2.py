@@ -10,12 +10,14 @@ from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.target import PreppedTarget
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.modeling.modeling import (
     make_design_unit,
     mutate_residues,
     spruce_protein,
     superpose_molecule,
+    split_openeye_design_unit
 )
 from pydantic import BaseModel, Field, root_validator
 
@@ -302,7 +304,10 @@ class ProteinPrepper(ProteinPrepperBase):
                 ligand_chain=complex_target.ligand_chain,
                 target_hash=complex_target.target.hash(),
             )
-            pc = PreppedComplex(target=prepped_target, ligand=complex_target.ligand)
+            # we need the ligand at the new translated coordinates
+            translated_oemol, _, _ = split_openeye_design_unit(du=du)
+            translated_lig = Ligand.from_oemol(translated_oemol, **complex_target.ligand.dict(exclude={'data'}))
+            pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
             prepped_complexes.append(pc)
 
         return prepped_complexes
