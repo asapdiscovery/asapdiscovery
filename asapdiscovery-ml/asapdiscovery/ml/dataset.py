@@ -487,6 +487,7 @@ class GraphDataset(Dataset):
             Cache file for graph dataset
         """
         from functools import reduce
+
         import pandas
         from dgllife.data import MoleculeCSVDataset
         from dgllife.utils import SMILESToBigraph
