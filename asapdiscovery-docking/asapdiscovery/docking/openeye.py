@@ -154,11 +154,11 @@ class POSITDocker(DockingBase):
                 if omega_retcode:
                     if error == "skip":
                         logger.error(
-                            f"Omega failed with error code {oeomega.OEGetOmegaError(omega_retcode)}"
+                            f"Omega failed with error code: {omega_retcode} : {oeomega.OEGetOmegaError(omega_retcode)}"
                         )
                     elif error == "raise":
                         raise ValueError(
-                            f"Omega failed with error code {oeomega.OEGetOmegaError(omega_retcode)}"
+                            f"Omega failed with error code: {omega_retcode} : {oeomega.OEGetOmegaError(omega_retcode)}"
                         )
                     else:
                         raise ValueError(f"Unknown error handling option {error}")

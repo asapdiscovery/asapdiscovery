@@ -250,6 +250,12 @@ def cross_docking(
     default=0.1,
     help="The confidence cutoff for POSIT results to be considered",
 )
+@click.option(
+    "--no-omega",
+    is_flag=True,
+    default=False,
+    help="Whether to use OEOmega conformer enumeration before docking (slower, more accurate)",
+)
 @ligands
 @postera_args
 @pdb_file
@@ -266,6 +272,7 @@ def cross_docking(
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
+    no_omega: bool = False,
     ligands: Optional[str] = None,
     postera: bool = False,
     postera_molset_name: Optional[str] = None,
@@ -301,6 +308,7 @@ def small_scale(
             use_dask=use_dask,
             dask_type=dask_type,
             posit_confidence_cutoff=posit_confidence_cutoff,
+            use_omega=not no_omega,
             filename=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
