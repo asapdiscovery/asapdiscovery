@@ -5,9 +5,9 @@ from typing import Optional
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import (
+    DaskType,
     dask_cluster_from_type,
     set_dask_config,
-    DaskType,
 )
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
@@ -47,7 +47,7 @@ from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
 from distributed import Client
-from pydantic import Field, PositiveInt, validator, root_validator
+from pydantic import Field, PositiveInt, root_validator, validator
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):

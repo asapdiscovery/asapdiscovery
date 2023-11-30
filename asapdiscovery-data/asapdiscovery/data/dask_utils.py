@@ -3,10 +3,10 @@ from collections.abc import Iterable
 from typing import Optional
 
 import dask
-from dask_cuda import LocalCUDACluster
 from asapdiscovery.data.enum import StringEnum
 from dask import config as cfg
 from dask.utils import parse_timedelta
+from dask_cuda import LocalCUDACluster
 from dask_jobqueue import LSFCluster
 from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
