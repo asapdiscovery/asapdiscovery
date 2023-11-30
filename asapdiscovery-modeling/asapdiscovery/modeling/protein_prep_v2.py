@@ -171,17 +171,18 @@ class ProteinPrepperBase(BaseModel):
             cache_dir.mkdir(parents=True)
 
         for pc in prepped_complexes:
-            # create a folder for the complex data
+            # create a folder for the complex data if its not already present
             complex_folder = cache_dir.joinpath(pc.unique_name())
-            complex_folder.mkdir(parents=True, exist_ok=True)
-            pc.to_json_file(complex_folder.joinpath(pc.target.target_name + ".json"))
-            pc.target.to_oedu_file(
-                complex_folder.joinpath(pc.target.target_name + ".oedu")
-            )
-            pc.target.to_pdb_file(
-                complex_folder.joinpath(pc.target.target_name + ".pdb")
-            )
-            pc.ligand.to_sdf(complex_folder.joinpath(pc.ligand.compound_name + ".sdf"))
+            if not complex_folder.exists():
+                complex_folder.mkdir(parents=True, exist_ok=True)
+                pc.to_json_file(complex_folder.joinpath(pc.target.target_name + ".json"))
+                pc.target.to_oedu_file(
+                    complex_folder.joinpath(pc.target.target_name + ".oedu")
+                )
+                pc.target.to_pdb_file(
+                    complex_folder.joinpath(pc.target.target_name + ".pdb")
+                )
+                pc.ligand.to_sdf(complex_folder.joinpath(pc.ligand.compound_name + ".sdf"))
 
     @staticmethod
     def load_cache(

@@ -133,5 +133,7 @@ def test_prep_cli_cache_reuse(structure_dir, json_cache, tmp_path):
 
     assert click_success(result)
     assert "Loaded 2 complexes" in result.output
-    # assert "Matched 1 cached structures which will be reused." in result.output
+    assert "Loaded 1 cached structures" in result.output
+    assert "Matched 1 cached structures" in result.output
+    assert "Prepping 1 complexes" in result.output
     assert "Prepped 2 complexes" in result.output
