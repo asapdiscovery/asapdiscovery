@@ -236,7 +236,7 @@ class Ligand(DataModelAbstractBase):
         Get the canonical isomeric SMILES string for the ligand
         """
         mol = self.to_oemol()
-        return oemol_to_smiles(mol)
+        return oemol_to_smiles(mol, isomeric=True)
 
     @property
     def non_iso_smiles(self) -> str:
