@@ -208,3 +208,11 @@ def core_smarts(func):
         type=click.STRING,
         help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
     )(func)
+
+
+def save_to_cache(func):
+    return click.option(
+        "--save-to-cache/--no-save-to-cache",
+        help="If the newly generated structures should be saved to the cache folder.",
+        default=True,
+    )(func)

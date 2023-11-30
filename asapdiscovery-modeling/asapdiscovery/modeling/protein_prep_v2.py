@@ -225,12 +225,6 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
-    # cache_dir: Optional[Path] = Field(
-    #     None, description="Path to a directory where design units are cached"
-    # )
-    # fail_missing_cache: bool = Field(
-    #     False, description="Whether to fail on missing files when loading from cache"
-    # )
 
     @root_validator
     @classmethod

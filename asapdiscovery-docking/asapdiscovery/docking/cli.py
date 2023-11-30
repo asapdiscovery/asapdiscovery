@@ -6,7 +6,6 @@ from asapdiscovery.cli.cli_args import (
     cache_type,
     dask_args,
     fragalysis_dir,
-    gen_cache,
     input_json,
     ligands,
     md_args,
@@ -16,6 +15,7 @@ from asapdiscovery.cli.cli_args import (
     postera_args,
     structure_dir,
     target,
+    save_to_cache,
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -77,7 +77,7 @@ def docking():
 @pdb_file
 @fragalysis_dir
 @structure_dir
-@gen_cache
+@save_to_cache
 @cache_dir
 @cache_type
 @dask_args
@@ -98,7 +98,7 @@ def large_scale(
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
-    gen_cache: Optional[str] = None,
+    save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
     cache_type: Optional[str] = None,
     output_dir: str = "output",
@@ -133,7 +133,7 @@ def large_scale(
             structure_dir=structure_dir,
             postera_molset_name=postera_molset_name,
             cache_dir=cache_dir,
-            gen_cache=gen_cache,
+            save_to_cache=save_to_cache,
             cache_type=cache_type,
             ml_scorers=ml_scorer,
             output_dir=output_dir,
@@ -184,7 +184,7 @@ def large_scale(
 @pdb_file
 @fragalysis_dir
 @structure_dir
-@gen_cache
+@save_to_cache
 @cache_dir
 @cache_type
 @dask_args
@@ -202,7 +202,7 @@ def cross_docking(
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
-    gen_cache: Optional[str] = None,
+    save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
     cache_type: Optional[str] = None,
     output_dir: str = "output",
@@ -233,7 +233,7 @@ def cross_docking(
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
             cache_dir=cache_dir,
-            gen_cache=gen_cache,
+            save_to_cache=save_to_cache,
             cache_type=cache_type,
             output_dir=output_dir,
             allow_final_clash=allow_final_clash,
@@ -261,7 +261,7 @@ def cross_docking(
 @pdb_file
 @fragalysis_dir
 @structure_dir
-@gen_cache
+@save_to_cache
 @cache_dir
 @cache_type
 @dask_args
@@ -280,7 +280,7 @@ def small_scale(
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
-    gen_cache: Optional[str] = None,
+    save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
     cache_type: Optional[str] = None,
     output_dir: str = "output",
@@ -315,7 +315,7 @@ def small_scale(
             structure_dir=structure_dir,
             postera_molset_name=postera_molset_name,
             cache_dir=cache_dir,
-            gen_cache=gen_cache,
+            save_to_cache=save_to_cache,
             cache_type=cache_type,
             ml_scorers=ml_scorer,
             output_dir=output_dir,
