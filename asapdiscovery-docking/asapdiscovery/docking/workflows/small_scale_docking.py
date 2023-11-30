@@ -134,7 +134,7 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         dask_type = values.get("dask_type")
         md = values.get("md")
 
-        if dask_type.is_lilac_cpu() and md:
+        if dask_type == dask_type.LILAC_CPU and md:
             raise ValueError("Cannot run MD on a CPU cluster, please use a GPU cluster")
         return values
 
@@ -188,7 +188,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
-        dask_client.forward_logging()
+        # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
@@ -448,13 +448,13 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     if inputs.md:
-        if inputs.dask_type == DaskType.LOCAL_CPU:
+        if inputs.dask_type == DaskType.LOCAL:
             logger.info(
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
             dask_cluster = dask_cluster_from_type(DaskType.LOCAL_GPU)
             dask_client = Client(dask_cluster)
-            dask_client.forward_logging()
+            # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
             logger.info(f"Using dask client: {dask_client}")
             logger.info(f"Using dask cluster: {dask_cluster}")
             logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
