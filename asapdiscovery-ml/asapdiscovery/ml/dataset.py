@@ -277,21 +277,21 @@ class DockedDataset(Dataset):
 
         # Figure out the type of the index, and keep note of whether a list was
         #  passed in or not
-        if type(idx) is int:
+        if isinstance(idx, int):
             return_list = False
             idx_type = int
             idx = [idx]
         else:
             return_list = True
-            if type(idx[0]) is int:
+            if isinstance(idx[0], int):
                 idx_type = int
             else:
                 idx_type = tuple
                 if (
-                    (type(idx) is tuple)
+                    isinstance(idx, tuple)
                     and (len(idx) == 2)
-                    and (type(idx[0]) is str)
-                    and (type(idx[1]) is str)
+                    and isinstance(idx[0], str)
+                    and isinstance(idx[1], str)
                 ):
                     idx = [idx]
                 else:
@@ -419,11 +419,11 @@ class GroupedDockedDataset(Dataset):
 
         # Figure out the type of the index, and keep note of whether a list was
         #  passed in or not
-        if (type(idx) is int) or (type(idx) is str):
+        if (isinstance(idx, int)) or (isinstance(idx, str)):
             return_list = False
             idx_type = type(idx)
             idx = [idx]
-        elif (type(idx[0]) is int) or (type(idx[0]) is str):
+        elif (isinstance(idx[0], int)) or (isinstance(idx[0], str)):
             return_list = True
             idx_type = type(idx[0])
         else:
@@ -680,21 +680,21 @@ class GraphDataset(Dataset):
 
         # Figure out the type of the index, and keep note of whether a list was
         #  passed in or not
-        if type(idx) is int:
+        if isinstance(idx, int):
             return_list = False
             idx_type = int
             idx = [idx]
         else:
             return_list = True
-            if type(idx[0]) is int:
+            if isinstance(idx[0], int):
                 idx_type = int
             else:
                 idx_type = tuple
                 if (
-                    (type(idx) is tuple)
+                    isinstance(idx, tuple)
                     and (len(idx) == 2)
-                    and (type(idx[0]) is str)
-                    and (type(idx[1]) is str)
+                    and isinstance(idx[0], str)
+                    and isinstance(idx[1], str)
                 ):
                     idx = [idx]
                 else:
@@ -753,7 +753,7 @@ class GraphInferenceDataset(Dataset):
         self.smiles_dict = {}
         self.graphs = []
 
-        if all([type(exp) is str for exp in exp_compounds]):
+        if all([isinstance(exp, str) for exp in exp_compounds]):
             exp_compounds = [
                 ExperimentalCompoundData(compound_id=i, smiles=c)
                 for i, c in enumerate(exp_compounds)
