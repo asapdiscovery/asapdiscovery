@@ -472,6 +472,7 @@ class DatasetSplitterConfig(BaseModel):
 
         if self.rand_seed is None:
             g = torch.Generator()
+            g.seed()
         else:
             g = torch.Generator().manual_seed(self.rand_seed)
         print("splitting with random seed:", g.initial_seed(), flush=True)
