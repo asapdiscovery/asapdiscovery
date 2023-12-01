@@ -526,7 +526,7 @@ class Ligand(DataModelAbstractBase):
             return False
         return self.canonical_tautomer.is_chemically_equal(other.canonical_tautomer)
 
-    def is_stereoisomer_and_tautomer(self, other: "Ligand"):
+    def is_stereoisomer_and_tautomer(self, other: "Ligand") -> bool:
         """
         Check if the ligand is a steroisomer AND a tautomer of another ligand (or vice versa).
         Includes acid / base conjugates.
