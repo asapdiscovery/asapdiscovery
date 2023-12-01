@@ -423,7 +423,7 @@ class DatasetSplitterConfig(BaseModel):
         seen_idx = set()
         prev_idx = 0
         # Go up to the last split so we can add anything that got left out from rounding
-        for i, n_mols in enumerate(split_lens[:-1]):
+        for i, n_mols in enumerate(split_lens):
             n_mols_cur = 0
             subset_idx = []
             cur_idx = prev_idx
@@ -431,7 +431,7 @@ class DatasetSplitterConfig(BaseModel):
             #  the end of the array (making sure to save at least some molecules for the
             #  rest of the splits)
             while (n_mols_cur < n_mols) and (
-                cur_idx < (len(idx_lists) - (len(split_lens) - i))
+                cur_idx < (len(idx_lists) - (len(split_lens) - i - 1))
             ):
                 subset_idx.extend(idx_lists[cur_idx])
                 n_mols_cur += len(idx_lists[cur_idx])
@@ -444,10 +444,6 @@ class DatasetSplitterConfig(BaseModel):
 
             # Update counter
             prev_idx = cur_idx
-
-        # Finish up anything leftover
-        subset_idx = [i for d in idx_lists[prev_idx:] for i in d if i not in seen_idx]
-        all_subsets.append(torch.utils.data.Subset(ds, subset_idx))
 
         return all_subsets
 
