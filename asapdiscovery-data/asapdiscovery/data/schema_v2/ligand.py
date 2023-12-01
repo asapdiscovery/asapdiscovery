@@ -529,23 +529,6 @@ class Ligand(DataModelAbstractBase):
             return False
         return self.canonical_tautomer.is_chemically_equal(other.canonical_tautomer)
 
-    def is_stereoisomer_and_tautomer(self, other: "Ligand") -> bool:
-        """
-        Check if the ligand is a steroisomer AND a tautomer of another ligand (or vice versa).
-        Includes acid / base conjugates.
-        Returns False otherwise.
-        """
-        # First check if molecules are the same or just a stereoisomer or a tautomer
-        if (
-            self.is_chemically_equal(other)
-            or self.is_stereoisomer(other)
-            or self.is_tautomer(other)
-        ):
-            return False
-        else:
-            # Get the canonical tautomers and check if the non-iso smiles are the same
-            return self.canonical_tautomer.is_stereoisomer(other.canonical_tautomer)
-
     def get_chemical_relationship(self, other: "Ligand") -> ChemicalRelationship:
         """
         Get the chemical relationship between two ligands
