@@ -2,7 +2,6 @@ import click
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import CacheType
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
@@ -160,16 +159,6 @@ def gen_cache(func):
     )(func)
 
 
-def cache_type(func):
-    return click.option(
-        "--cache-type",
-        type=click.Choice(CacheType.get_values(), case_sensitive=False),
-        default=[CacheType.DesignUnit],
-        multiple=True,
-        help="The type of cache to use, can be 'JSON' or 'DesignUnit', an be specified multiple times to use cache",
-    )(func)
-
-
 def md(func):
     return click.option(
         "--md",
@@ -207,4 +196,12 @@ def core_smarts(func):
         "--core-smarts",
         type=click.STRING,
         help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
+    )(func)
+
+
+def save_to_cache(func):
+    return click.option(
+        "--save-to-cache/--no-save-to-cache",
+        help="If the newly generated structures should be saved to the cache folder.",
+        default=True,
     )(func)
