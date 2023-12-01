@@ -1,7 +1,7 @@
 import os
 
-import pytest
 import pandas as pd
+import pytest
 from asapdiscovery.docking.openeye import POSITDocker, POSITDockingResults
 
 

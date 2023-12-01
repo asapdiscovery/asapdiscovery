@@ -117,7 +117,6 @@ class DockingBase(BaseModel):
         use_dask: bool = False,
         dask_client=None,
     ) -> Union[list[dask.delayed], list["DockingResult"]]:
-
         if not overwrite_existing:
             inputs = self.get_unfinished_results(inputs=inputs, output_dir=output_dir)
 
