@@ -2,11 +2,11 @@ import os
 import pathlib
 import traceback
 
-import pytest
-from asapdiscovery.modeling.cli import modeling as cli
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-from click.testing import CliRunner
 import numpy as np
+import pytest
+from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.modeling.cli import modeling as cli
+from click.testing import CliRunner
 
 
 def click_success(result):
@@ -71,7 +71,9 @@ def test_prep_cli_pdb_file(pdb_file, tmpdir):
     runner = CliRunner()
 
     # load the input pdb and not the atom positions of the ligand
-    input_complex = Complex.from_pdb(pdb_file, target_kwargs={"target_name": "align_test"})
+    input_complex = Complex.from_pdb(
+        pdb_file, target_kwargs={"target_name": "align_test"}
+    )
     oe_ligand = input_complex.ligand.to_oemol()
     ligand_coords = np.array(list(oe_ligand.GetCoords().values())).reshape((-1, 3))
     with tmpdir.as_cwd():
@@ -89,8 +91,15 @@ def test_prep_cli_pdb_file(pdb_file, tmpdir):
         )
         assert click_success(result)
         # load the final complex and check the heavy atom positions of the ligand
-        prepped_complex = PreppedComplex.from_json_file(pathlib.Path("output").joinpath("Mpro-P2660_0A_bound_oe_processed-c9e7ff3683441e1c1848ea0a6a699901d81135e2cde78e1b6ff0e160e4f06f2a+JZJCSVMJFIAMQB-DLYUOGNHNA-N", "Mpro-P2660_0A_bound_oe_processed.json"))
-        final_ligand_coords = np.array(list(prepped_complex.ligand.to_oemol().GetCoords().values())).reshape((-1, 3))[:oe_ligand.NumAtoms()]
+        prepped_complex = PreppedComplex.from_json_file(
+            pathlib.Path("output").joinpath(
+                "Mpro-P2660_0A_bound_oe_processed-c9e7ff3683441e1c1848ea0a6a699901d81135e2cde78e1b6ff0e160e4f06f2a+JZJCSVMJFIAMQB-DLYUOGNHNA-N",
+                "Mpro-P2660_0A_bound_oe_processed.json",
+            )
+        )
+        final_ligand_coords = np.array(
+            list(prepped_complex.ligand.to_oemol().GetCoords().values())
+        ).reshape((-1, 3))[: oe_ligand.NumAtoms()]
         assert not np.allclose(ligand_coords, final_ligand_coords)
 
 
