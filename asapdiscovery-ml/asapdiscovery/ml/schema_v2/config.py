@@ -1,11 +1,11 @@
 import pickle as pkl
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
 from asapdiscovery.data.enum import StringEnum
-from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
@@ -208,8 +208,12 @@ class DatasetConfig(BaseModel):
     )
 
     # Required inputs used to build the dataset
-    exp_data: ExperimentalCompoundDataUpdate | None = Field(
-        None, description="Experimental data."
+    exp_data: dict[str, dict[str, Any]] = Field(
+        {},
+        description=(
+            "Dict mapping from compound_id to another dict containing "
+            "experimental data."
+        ),
     )
     input_data: list[Complex] | list[Ligand] = Field(
         ...,
@@ -264,27 +268,23 @@ class DatasetConfig(BaseModel):
         if self.cache_file and self.cache_file.exists():
             return pkl.loads(self.cache_file.read_bytes())
 
-        # Convert ExperimentalCompoundDataUpdate to a dict of relevant info
-        if self.exp_data:
-            exp_dict = self.exp_dict()
-        else:
-            exp_dict = {}
-
         # Build directly from Complexes/Ligands
         #  (still needs to be implemented on the Dataset side)
         match self.ds_type:
             case DatasetType.graph:
                 ds = GraphDataset.from_ligands(
-                    self.input_data, exp_dict=exp_dict, cache_file=self.graph_cache_file
+                    self.input_data,
+                    exp_dict=self.exp_data,
+                    cache_file=self.graph_cache_file,
                 )
             case DatasetType.structural:
                 if self.grouped:
                     ds = GroupedDockedDataset.from_complexes(
-                        self.input_data, exp_dict=exp_dict
+                        self.input_data, exp_dict=self.exp_data
                     )
                 else:
                     ds = DockedDataset.from_complexes(
-                        self.input_data, exp_dict=exp_dict
+                        self.input_data, exp_dict=self.exp_data
                     )
             case other:
                 raise ValueError(f"Unknwon dataset type {other}.")
