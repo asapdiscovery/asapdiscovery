@@ -300,8 +300,6 @@ class POSITDockingResults(DockingResult):
             docking_dict[
                 DockingResultCols.DOCKING_CONFIDENCE_POSIT
             ] = result.probability
-            docking_dict[DockingResultCols.DOCKING_SCORE_POSIT] = result.score
-            docking_dict["score_type"] = result.score_type.value
             df_prep.append(docking_dict)
 
         df = pd.DataFrame(df_prep)

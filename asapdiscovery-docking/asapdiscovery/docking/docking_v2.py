@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Literal, Optional, Union
 
 import dask
+import numpy as np
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
@@ -80,7 +81,10 @@ class DockingBase(BaseModel):
         ...
 
     def dock(
-        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
+        self,
+        inputs: list[DockingInputPair],
+        use_dask: bool = False,
+        dask_client=None,
     ) -> Union[list[dask.delayed], list["DockingResult"]]:
         if use_dask:
             delayed_outputs = []
@@ -92,6 +96,43 @@ class DockingBase(BaseModel):
             )
         else:
             outputs = self._dock(inputs=inputs)
+        # filter out None values
+        outputs = [o for o in outputs if o is not None]
+        return outputs
+
+    def _dock_and_save_single(
+        self,
+        inputs: list[DockingInputPair],
+        output_dir: Union[str, Path],
+    ) -> list["DockingResult"]:
+        results = self._dock(inputs)
+        self.write_docking_files(results, output_dir)
+        return results
+
+    def dock_and_save(
+        self,
+        inputs: list[DockingInputPair],
+        output_dir: Union[str, Path],
+        overwrite_existing: bool = False,
+        use_dask: bool = False,
+        dask_client=None,
+    ) -> Union[list[dask.delayed], list["DockingResult"]]:
+
+        if not overwrite_existing:
+            inputs = self.get_unfinished_results(inputs=inputs, output_dir=output_dir)
+
+        if use_dask:
+            delayed_outputs = []
+            for inp in inputs:
+                out = dask.delayed(self._dock_and_save_single)(
+                    inputs=[inp], output_dir=output_dir
+                )
+                delayed_outputs.append(out[0])  # flatten
+            outputs = actualise_dask_delayed_iterable(
+                delayed_outputs, dask_client=dask_client, errors="skip"
+            )
+        else:
+            outputs = self._dock_and_save_single(inputs=inputs, output_dir=output_dir)
         # filter out None values
         outputs = [o for o in outputs if o is not None]
         return outputs
@@ -155,6 +196,43 @@ class DockingBase(BaseModel):
 
             combined_oemol = result.to_posed_oemol()
             save_openeye_pdb(combined_oemol, output_pdb_file)
+
+            results_df = result.make_df_from_docking_results([result])
+            results_df.to_csv(compound_dir / "docking_results.csv")
+
+    def check_results_exist(
+        self, input: DockingInputPair, output_dir: Union[str, Path]
+    ) -> bool:
+        """Using the same logic as write_docking_files, check if results exist"""
+        output_pref = (
+            input.complex.target.target_name + "_+_" + input.ligand.compound_name
+        )
+        compound_dir = Path(output_dir) / output_pref
+
+        sdf_file = compound_dir / "docked.sdf"
+        pdb_file = compound_dir / "docked_complex.pdb"
+
+        return sdf_file.exists() and pdb_file.exists()
+
+    def get_unfinished_results(
+        self,
+        inputs: list[DockingInputPair],
+        output_dir: Union[str, Path],
+        dask_client=None,
+        use_dask: bool = False,
+    ) -> list[DockingInputPair]:
+        """Return the docking input pairs for which results do not exist in output_dir"""
+        results_exist_delayed = []
+        for inp in inputs:
+            results_exist = dask.delayed(self.check_results_exist)(
+                input=inp, output_dir=output_dir
+            )
+            results_exist_delayed.append(results_exist)
+        results_exist_array = actualise_dask_delayed_iterable(
+            results_exist_delayed, dask_client=dask_client, errors="skip"
+        )
+
+        return np.array(inputs)[np.logical_not(results_exist_array)].tolist()
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
