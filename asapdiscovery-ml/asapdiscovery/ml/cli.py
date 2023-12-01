@@ -15,11 +15,48 @@ from mtenn.config import (
 
 
 @click.group()
-def ml():
+def cli():
     pass
 
 
-@ml.command()
+# Functions for just building a Trainer and then dumping it
+@click.group()
+def build():
+    pass
+
+
+# Function for training using an already built Trainer
+@cli.command()
+def train():
+    pass
+
+
+# Functions for building a Trainer and subsequently training the model
+@click.group(name="build-and-train")
+def build_and_train():
+    pass
+
+
+cli.add_command(build)
+cli.add_command(build_and_train)
+
+
+@build_and_train.command()
+def gat():
+    print("gat", flush=True)
+
+
+@build_and_train.command()
+def schnet():
+    print("schnet", flush=True)
+
+
+@build_and_train.command()
+def e3nn():
+    print("e3nn", flush=True)
+
+
+@cli.command()
 @click.option(
     "-o",
     "--output-dir",
