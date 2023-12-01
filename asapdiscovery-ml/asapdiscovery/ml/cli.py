@@ -5,11 +5,13 @@ import click
 from asapdiscovery.ml.cli_args import (
     output_dir,
     config_file,
+    wandb_args,
     use_wandb,
     sweep,
     proj,
     name,
     extra_config,
+    mtenn_args,
     grouped,
     strategy,
     pred_readout,
@@ -21,6 +23,7 @@ from asapdiscovery.ml.cli_args import (
     pred_km,
     comb_substrate,
     comb_km,
+    gat_args,
     in_feats,
     num_layers_gat,
     hidden_feats,
@@ -32,6 +35,7 @@ from asapdiscovery.ml.cli_args import (
     agg_modes,
     biases,
     allow_zero_in_degree,
+    schnet_args,
     hidden_channels,
     num_filters,
     num_interactions,
@@ -42,11 +46,12 @@ from asapdiscovery.ml.cli_args import (
     dipole,
     mean,
     std,
+    e3nn_args,
     num_atom_types,
     irreps_hidden,
     lig,
     irreps_edge_attr,
-    num_layers_schnet,
+    num_layers_e3nn,
     neighbor_dist,
     num_basis,
     num_radial_layers,
@@ -92,19 +97,123 @@ cli.add_command(build)
 cli.add_command(build_and_train)
 
 
-@build_and_train.command()
-def gat():
-    print("gat", flush=True)
+@build_and_train.command(name="gat")
+@output_dir
+@config_file
+@wandb_args
+@mtenn_args
+@gat_args
+def build_and_train_gat(
+    output_dir: Path,
+    config_file: Path | None = None,
+    use_wandb: bool = False,
+    sweep: bool = False,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    in_feats: int | None = None,
+    num_layers_gat: int | None = None,
+    hidden_feats: str | None = None,
+    num_heads: str | None = None,
+    feat_drops: str | None = None,
+    attn_drops: str | None = None,
+    alphas: str | None = None,
+    residuals: str | None = None,
+    agg_modes: str | None = None,
+    biases: str | None = None,
+    allow_zero_in_degree: bool | None = None,
+):
+    pass
 
 
 @build_and_train.command()
-def schnet():
-    print("schnet", flush=True)
+@output_dir
+@config_file
+@wandb_args
+@mtenn_args
+@schnet_args
+def build_and_train_schnet(
+    output_dir: Path,
+    config_file: Path | None = None,
+    use_wandb: bool = False,
+    sweep: bool = False,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    hidden_channels: int | None = None,
+    num_filters: int | None = None,
+    num_interactions: int | None = None,
+    num_gaussians: int | None = None,
+    cutoff: float | None = None,
+    max_num_neighbors: int | None = None,
+    readout: str | None = None,
+    dipole: bool | None = None,
+    mean: float | None = None,
+    std: float | None = None,
+):
+    pass
 
 
 @build_and_train.command()
-def e3nn():
-    print("e3nn", flush=True)
+@output_dir
+@config_file
+@wandb_args
+@mtenn_args
+@e3nn_args
+def build_and_train_e3nn(
+    output_dir: Path,
+    config_file: Path | None = None,
+    use_wandb: bool = False,
+    sweep: bool = False,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    num_atom_types: int | None = None,
+    irreps_hidden: str | None = None,
+    lig: bool | None = None,
+    irreps_edge_attr: int | None = None,
+    num_layers_e3nn: int | None = None,
+    neighbor_dist: float | None = None,
+    num_basis: int | None = None,
+    num_radial_layers: int | None = None,
+    num_radial_neurons: int | None = None,
+    num_neighbors: float | None = None,
+    num_nodes: float | None = None,
+):
+    pass
 
 
 @cli.command()
@@ -157,7 +266,7 @@ def e3nn():
 @irreps_hidden
 @lig
 @irreps_edge_attr
-@num_layers_schnet
+@num_layers_e3nn
 @neighbor_dist
 @num_basis
 @num_radial_layers
@@ -209,7 +318,7 @@ def test(
     irreps_hidden: str | None = None,
     lig: bool | None = None,
     irreps_edge_attr: int | None = None,
-    num_layers_schnet: int | None = None,
+    num_layers_e3nn: int | None = None,
     neighbor_dist: float | None = None,
     num_basis: int | None = None,
     num_radial_layers: int | None = None,
@@ -288,7 +397,7 @@ def test(
                 "irreps_hidden": irreps_hidden,
                 "lig": lig,
                 "irreps_edge_attr": irreps_edge_attr,
-                "num_layers": num_layers_schnet,
+                "num_layers": num_layers_e3nn,
                 "neighbor_dist": neighbor_dist,
                 "num_basis": num_basis,
                 "num_radial_layers": num_radial_layers,
