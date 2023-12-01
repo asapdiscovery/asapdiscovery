@@ -1,8 +1,7 @@
+from functools import reduce
+from datetime import datetime
+
 import pytest
-from asapdiscovery.data.schema import (
-    ExperimentalCompoundData,
-    ExperimentalCompoundDataUpdate,
-)
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
@@ -69,16 +68,7 @@ def test_docked_dataset_config_exp_dict(complex_pdb):
         ligand_kwargs={"compound_name": "test2"},
     )
 
-    exp_data = ExperimentalCompoundDataUpdate(
-        compounds=[
-            ExperimentalCompoundData(
-                compound_id="test1", experimental_data={"pIC50": 5}
-            ),
-            ExperimentalCompoundData(
-                compound_id="test2", experimental_data={"pIC50": 6}
-            ),
-        ]
-    )
+    exp_data = {"test1": {"pIC50": 5}, "test2": {"pIC50": 6}}
 
     config = DatasetConfig(
         ds_type=DatasetType.structural, input_data=[c1, c2], exp_data=exp_data
@@ -155,13 +145,7 @@ def test_grouped_docked_dataset_config_exp_dict(complex_pdb):
         ligand_kwargs={"compound_name": "test"},
     )
 
-    exp_data = ExperimentalCompoundDataUpdate(
-        compounds=[
-            ExperimentalCompoundData(
-                compound_id="test", experimental_data={"pIC50": 5}
-            ),
-        ]
-    )
+    exp_data = {"test": {"pIC50": 5}}
 
     config = DatasetConfig(
         ds_type=DatasetType.structural,
@@ -221,16 +205,7 @@ def test_graph_dataset_config_exp_dict(ligand_sdf):
     lig1 = Ligand.from_sdf(ligand_sdf, compound_name="test1")
     lig2 = Ligand.from_sdf(ligand_sdf, compound_name="test2")
 
-    exp_data = ExperimentalCompoundDataUpdate(
-        compounds=[
-            ExperimentalCompoundData(
-                compound_id="test1", experimental_data={"pIC50": 5}
-            ),
-            ExperimentalCompoundData(
-                compound_id="test2", experimental_data={"pIC50": 6}
-            ),
-        ]
-    )
+    exp_data = {"test1": {"pIC50": 5}, "test2": {"pIC50": 6}}
 
     config = DatasetConfig(
         ds_type=DatasetType.graph, input_data=[lig1, lig2], exp_data=exp_data
@@ -257,18 +232,99 @@ def test_random_splitting_no_seed(ligand_sdf):
     dd = DatasetConfig(ds_type=DatasetType.graph, input_data=ligands).build()
 
     splitter = DatasetSplitterConfig(split_type=DatasetSplitterType.random)
-    ds_train, ds_val, ds_test = splitter.split(dd)
 
-    assert len(ds_train) == 8
-    assert len(ds_val) == 1
-    assert len(ds_test) == 1
+    # Split a couple times to check randomness
+    all_splits = [splitter.split(dd) for _ in range(10)]
 
-    # Split a couple more times and make sure not all of the train splits are the same
+    # Make sure that each split in each splitting instance is the right length
+    try:
+        assert all([len(sp[0]) == 8 for sp in all_splits])
+    except AssertionError as e:
+        print([(len(sp[0]), len(sp[1]), len(sp[2])) for sp in all_splits], flush=True)
+        print(
+            [[pose["compound"][1] for (_, pose) in d] for d in next(iter(all_splits))],
+            flush=True,
+        )
+        raise e
+    assert all([len(sp[1]) == 1 for sp in all_splits])
+    assert all([len(sp[2]) == 1 for sp in all_splits])
+
+    # Make sure that each split keeps all compounds and there are no duplicates
+    for sp in all_splits:
+        sp_compounds = set()
+        for d in sp:
+            sp_compounds.update([pose["compound"][1] for (_, pose) in d])
+        assert len(sp_compounds) == 10
+
+    # Make sure that not all splits are the same
+    all_train_compound_ids = [
+        {pose["compound"][1] for (_, pose) in sp[0]} for sp in all_splits
+    ]
+    shared_train_compound_ids = reduce(
+        lambda s1, s2: s1.intersection(s2), all_train_compound_ids
+    )
+    assert len(shared_train_compound_ids) < 8
 
 
 def test_random_splitting_set_seed(ligand_sdf):
-    pass
+    ligands = [Ligand.from_sdf(ligand_sdf, compound_name=f"test{i}") for i in range(10)]
+    dd = DatasetConfig(ds_type=DatasetType.graph, input_data=ligands).build()
+
+    splitter = DatasetSplitterConfig(
+        split_type=DatasetSplitterType.random, rand_seed=42
+    )
+
+    # Split a couple times to check randomness
+    all_splits = [splitter.split(dd) for _ in range(10)]
+
+    # Make sure that each split in each splitting instance is the right length
+    try:
+        assert all([len(sp[0]) == 8 for sp in all_splits])
+    except AssertionError as e:
+        print([(len(sp[0]), len(sp[1]), len(sp[2])) for sp in all_splits], flush=True)
+        print(
+            [[pose["compound"][1] for (_, pose) in d] for d in next(iter(all_splits))],
+            flush=True,
+        )
+        raise e
+    assert all([len(sp[1]) == 1 for sp in all_splits])
+    assert all([len(sp[2]) == 1 for sp in all_splits])
+
+    # Make sure that each split keeps all compounds and there are no duplicates
+    for sp in all_splits:
+        sp_compounds = set()
+        for d in sp:
+            sp_compounds.update([pose["compound"][1] for (_, pose) in d])
+        assert len(sp_compounds) == 10
+
+    # Make sure that not all splits are the same
+    all_train_compound_ids = [
+        {pose["compound"][1] for (_, pose) in sp[0]} for sp in all_splits
+    ]
+    shared_train_compound_ids = reduce(
+        lambda s1, s2: s1.intersection(s2), all_train_compound_ids
+    )
+    assert len(shared_train_compound_ids) == 8
 
 
 def test_temporal_splitting(ligand_sdf):
-    pass
+    ligands = [Ligand.from_sdf(ligand_sdf, compound_name=f"test{i}") for i in range(10)]
+
+    # Add date_created field for each pose
+    exp_data = {
+        f"test{i}": {"date_created": datetime(2023, 1, i + 1)} for i in range(10)
+    }
+
+    dd = DatasetConfig(
+        ds_type=DatasetType.graph, input_data=ligands, exp_data=exp_data
+    ).build()
+
+    splitter = DatasetSplitterConfig(split_type=DatasetSplitterType.temporal)
+
+    ds_train, ds_val, ds_test = splitter.split(dd)
+
+    assert {pose["compound"][1] for (_, pose) in ds_train} == {
+        f"test{i}" for i in range(8)
+    }
+    assert {pose["compound"][1] for (_, pose) in ds_val} == {"test8"}
+    assert {pose["compound"][1] for (_, pose) in ds_test} == {"test9"}
