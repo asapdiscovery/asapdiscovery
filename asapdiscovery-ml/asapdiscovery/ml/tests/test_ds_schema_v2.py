@@ -1,5 +1,5 @@
-from functools import reduce
 from datetime import datetime
+from functools import reduce
 
 import pytest
 from asapdiscovery.data.schema_v2.complex import Complex
