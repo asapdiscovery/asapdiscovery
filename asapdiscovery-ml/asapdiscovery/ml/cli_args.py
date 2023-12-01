@@ -1,15 +1,7 @@
 import click
 from pathlib import Path
 
-from mtenn.config import (
-    CombinationConfig,
-    E3NNModelConfig,
-    GATModelConfig,
-    ModelType,
-    ReadoutConfig,
-    SchNetModelConfig,
-    StrategyConfig,
-)
+from mtenn.config import CombinationConfig, ReadoutConfig, StrategyConfig
 
 
 ################################################################################
