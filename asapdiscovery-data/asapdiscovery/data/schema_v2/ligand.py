@@ -516,7 +516,7 @@ class Ligand(DataModelAbstractBase):
             return False
         return self.neutralized.is_chemically_equal(other.neutralized)
 
-    def is_tautomer(self, other: "Ligand"):
+    def is_tautomer(self, other: "Ligand") -> bool:
         """
         Check if the ligand is a tautomer of another ligand, excluding protonation state isomers.
         Returns False if the ligands are the same or stereoisomers.
