@@ -54,6 +54,8 @@ def wandb_args(func):
     for fn in [use_wandb, sweep, proj, name, extra_config]:
         func = fn(func)
 
+    return func
+
 
 def use_wandb(func):
     return click.option(
@@ -93,6 +95,25 @@ def extra_config(func):
 
 ################################################################################
 ## MTENN args
+def mtenn_args(func):
+    for fn in [
+        grouped,
+        strategy,
+        pred_readout,
+        combination,
+        comb_readout,
+        max_comb_neg,
+        max_comb_scale,
+        pred_substrate,
+        pred_km,
+        comb_substrate,
+        comb_km,
+    ]:
+        func = fn(func)
+
+    return func
+
+
 def grouped(func):
     return click.option(
         "--grouped",
@@ -219,6 +240,25 @@ def comb_km(func):
 
 ################################################################################
 ## GAT args
+def gat_args(func):
+    for fn in [
+        in_feats,
+        num_layers_gat,
+        hidden_feats,
+        num_heads,
+        feat_drops,
+        attn_drops,
+        alphas,
+        residuals,
+        agg_modes,
+        biases,
+        allow_zero_in_degree,
+    ]:
+        func = fn(func)
+
+    return func
+
+
 def in_feats(func):
     return click.option("--in-feats", type=int, help="Input node feature size.")(func)
 
@@ -329,6 +369,24 @@ def allow_zero_in_degree(func):
 
 ################################################################################
 ## SchNet args
+def schnet_args(func):
+    for fn in [
+        hidden_channels,
+        num_filters,
+        num_interactions,
+        num_gaussians,
+        cutoff,
+        max_num_neighbors,
+        readout,
+        dipole,
+        mean,
+        std,
+    ]:
+        func = fn(func)
+
+    return func
+
+
 def hidden_channels(func):
     return click.option("--hidden-channels", type=int, help="Hidden embedding size.")(
         func
@@ -421,6 +479,25 @@ def std(func):
 
 ################################################################################
 ## E3NN args
+def e3nn_args(func):
+    for fn in [
+        num_atom_types,
+        irreps_hidden,
+        lig,
+        irreps_edge_attr,
+        num_layers_e3nn,
+        neighbor_dist,
+        num_basis,
+        num_radial_layers,
+        num_radial_neurons,
+        num_neighbors,
+        num_nodes,
+    ]:
+        func = fn(func)
+
+    return func
+
+
 def num_atom_types(func):
     return click.option(
         "--num-atom-types",
@@ -458,7 +535,7 @@ def irreps_edge_attr(func):
     )(func)
 
 
-def num_layers_schnet(func):
+def num_layers_e3nn(func):
     return click.option("--num-layers", type=int, help="Number of network layers.")(
         func
     )
