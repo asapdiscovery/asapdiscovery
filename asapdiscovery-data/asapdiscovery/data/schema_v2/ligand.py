@@ -387,6 +387,9 @@ class Ligand(DataModelAbstractBase):
 
     @property
     def flattened(self) -> "Ligand":
+        """
+        Return a version of the ligand with 3d coordinates from the ligand and stereochemical information removed.
+        """
         return Ligand.from_smiles(
             smiles=self.non_iso_smiles,
             compound_name=self.compound_name,
@@ -488,7 +491,7 @@ class Ligand(DataModelAbstractBase):
             and self.has_defined_stereo == other.has_defined_stereo
         )
 
-    def is_stereoisomer(self, other: "Ligand"):
+    def is_stereoisomer(self, other: "Ligand") -> bool:
         """
         Check if the ligand is a possible stereoisomer of another ligand.
         Returns False if the ligands are the same.
@@ -499,7 +502,7 @@ class Ligand(DataModelAbstractBase):
 
         return self.non_iso_smiles == other.non_iso_smiles
 
-    def has_same_charge(self, other: "Ligand"):
+    def has_same_charge(self, other: "Ligand") -> bool:
         """
         Check if the ligand has the same charge as another ligand (the ligands can be the same).
         """
@@ -507,7 +510,7 @@ class Ligand(DataModelAbstractBase):
             other.to_oemol()
         )
 
-    def is_protonation_state_isomer(self, other: "Ligand"):
+    def is_protonation_state_isomer(self, other: "Ligand") -> bool:
         """
         Check if the ligand is a conjugate acid or base of another ligand
         by neutralizing both ligands and checking if they are chemically equal.
