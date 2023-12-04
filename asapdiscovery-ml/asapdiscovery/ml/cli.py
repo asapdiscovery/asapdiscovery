@@ -199,6 +199,32 @@ def build_and_train_gat(
         eps=eps,
         rho=rho,
     )
+    model_config = _build_model_config(
+        GATModelConfig,
+        config_file=config_file,
+        grouped=grouped,
+        strategy=strategy,
+        pred_readout=pred_readout,
+        combination=combination,
+        comb_readout=comb_readout,
+        max_comb_neg=max_comb_neg,
+        max_comb_scale=max_comb_scale,
+        pred_substrate=pred_substrate,
+        pred_km=pred_km,
+        comb_substrate=comb_substrate,
+        comb_km=comb_km,
+        in_feats=in_feats,
+        num_layers=num_layers,
+        hidden_feats=hidden_feats,
+        num_heads=num_heads,
+        feat_drops=feat_drops,
+        attn_drops=attn_drops,
+        alphas=alphas,
+        residuals=residuals,
+        agg_modes=agg_modes,
+        biases=biases,
+        allow_zero_in_degree=allow_zero_in_degree,
+    )
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=None,
@@ -212,6 +238,7 @@ def build_and_train_gat(
 
     return Trainer(
         optimizer_config=optim_config,
+        model_config=model_config,
         ds_config=ds_config,
     )
 
@@ -285,7 +312,9 @@ def build_and_train_schnet(
         eps=eps,
         rho=rho,
     )
-    model_config = SchNetModelConfig(
+    model_config = _build_model_config(
+        SchNetModelConfig,
+        config_file=config_file,
         grouped=grouped,
         strategy=strategy,
         pred_readout=pred_readout,
@@ -321,6 +350,7 @@ def build_and_train_schnet(
 
     return Trainer(
         optimizer_config=optim_config,
+        model_config=model_config,
         ds_config=ds_config,
     )
 
@@ -395,6 +425,32 @@ def build_and_train_e3nn(
         eps=eps,
         rho=rho,
     )
+    model_config = _build_model_config(
+        E3NNModelConfig,
+        config_file=config_file,
+        grouped=grouped,
+        strategy=strategy,
+        pred_readout=pred_readout,
+        combination=combination,
+        comb_readout=comb_readout,
+        max_comb_neg=max_comb_neg,
+        max_comb_scale=max_comb_scale,
+        pred_substrate=pred_substrate,
+        pred_km=pred_km,
+        comb_substrate=comb_substrate,
+        comb_km=comb_km,
+        num_atom_types=num_atom_types,
+        irreps_hidden=irreps_hidden,
+        lig=lig,
+        irreps_edge_attr=irreps_edge_attr,
+        num_layers=num_layers,
+        neighbor_dist=neighbor_dist,
+        num_basis=num_basis,
+        num_radial_layers=num_radial_layers,
+        num_radial_neurons=num_radial_neurons,
+        num_neighbors=num_neighbors,
+        num_nodes=num_nodes,
+    )
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=structures,
@@ -408,6 +464,7 @@ def build_and_train_e3nn(
 
     return Trainer(
         optimizer_config=optim_config,
+        model_config=model_config,
         ds_config=ds_config,
     )
 
