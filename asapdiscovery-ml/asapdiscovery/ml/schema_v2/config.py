@@ -266,16 +266,20 @@ class DatasetConfig(BaseModel):
     def build(self):
         # Load from the cache file if it exists
         if self.cache_file and self.cache_file.exists():
+            print("loading from cache", flush=True)
             return pkl.loads(self.cache_file.read_bytes())
 
         # Build directly from Complexes/Ligands
         #  (still needs to be implemented on the Dataset side)
         match self.ds_type:
             case DatasetType.graph:
+                from dgllife.utils import CanonicalAtomFeaturizer
+
                 ds = GraphDataset.from_ligands(
                     self.input_data,
                     exp_dict=self.exp_data,
                     cache_file=self.graph_cache_file,
+                    node_featurizer=CanonicalAtomFeaturizer(),
                 )
             case DatasetType.structural:
                 if self.grouped:
