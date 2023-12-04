@@ -742,3 +742,46 @@ def _build_ds_config(
         ds_config_cache.write_text(ds_config.json())
 
     return ds_config
+
+
+def _build_model_config(config_cls, config_file, **model_kwargs):
+    """
+    Helper function to load/build a model config object.
+
+    Parameters
+    ----------
+    config_cls : type
+        ModelConfigBase subclass
+    config_file : Path
+        Path to config file. Will be loaded if it exists, otherwise will be saved after
+        loading.
+    model_kwargs : dict
+        Dict giving all CLI args for model construction. Will discard any that are None
+        to allow the Config defaults to kick in.
+
+    Returns
+    -------
+    config_cls
+        Instance of whatever class is passed
+    """
+
+    # Get file config options
+    if config_file and config_file.exists():
+        model_config = json.loads(config_file.read_text())
+    else:
+        model_config = {}
+
+    # Filter out passed kwargs that are None
+    model_kwargs = {k: v for k, v in model_kwargs.items() if v is not None}
+
+    # Update model_config
+    model_config |= model_kwargs
+
+    # Construct Config object
+    model_config = config_cls(model_config)
+
+    # Save if desired
+    if config_file and (not config_file.exists()):
+        config_file.write_text(model_config.json())
+
+    return model_config
