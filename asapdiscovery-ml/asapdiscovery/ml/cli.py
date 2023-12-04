@@ -4,8 +4,8 @@ from pathlib import Path
 
 import click
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.utils import (
     MOONSHOT_CDD_ID_REGEX,
     MPRO_ID_REGEX,
@@ -74,10 +74,7 @@ from asapdiscovery.ml.cli_args import (
     use_wandb,
     wandb_args,
 )
-from asapdiscovery.ml.schema_v2.config import (
-    DatasetConfig,
-    DatasetType,
-)
+from asapdiscovery.ml.schema_v2.config import DatasetConfig, DatasetType
 from mtenn.config import (
     CombinationConfig,
     E3NNModelConfig,
