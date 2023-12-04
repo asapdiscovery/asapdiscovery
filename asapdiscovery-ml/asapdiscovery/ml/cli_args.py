@@ -2,6 +2,7 @@ from pathlib import Path
 
 import click
 from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
+from asapdiscovery.ml.schema_v2.config import OptimizerType
 from mtenn.config import CombinationConfig, ReadoutConfig, StrategyConfig
 
 
@@ -90,10 +91,23 @@ def ds_config_cache(func):
 ################################################################################
 # Optimizer args
 def optim_args(func):
-    for fn in [lr, weight_decay, momentum, dampening, b1, b2, eps, rho]:
+    for fn in [optimizer_type, lr, weight_decay, momentum, dampening, b1, b2, eps, rho]:
         func = fn(func)
 
     return func
+
+
+def optimizer_type(func):
+    return click.option(
+        "-optim",
+        "--optimizer-type",
+        type=OptimizerType,
+        default=OptimizerType.adam,
+        help=(
+            "Type of optimizer to use. "
+            f"Options are [{', '.join(OptimizerType.get_values())}]."
+        ),
+    )(func)
 
 
 # Common parameters
