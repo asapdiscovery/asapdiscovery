@@ -5,7 +5,7 @@ from mtenn.config import CombinationConfig, ReadoutConfig, StrategyConfig
 
 
 ################################################################################
-## IO args
+# IO args
 def output_dir(func):
     return click.option(
         "-o",
@@ -25,7 +25,53 @@ def output_dir(func):
 
 
 ################################################################################
-## Model setup args
+# Dataset args
+def exp_file(func):
+    return click.option(
+        "-exp",
+        "--exp-file",
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+        help="JSON file giving a list of ExperimentalDataCompound objects.",
+    )(func)
+
+
+def str_files(func):
+    return click.option(
+        "-str",
+        "--structures",
+        help=(
+            "PDB structure files. Can be in one of two forms: either a glob that will "
+            "be expanded and all matching files will be taken, or a directory, in "
+            "which case all top-level PDB files will be taken."
+        ),
+    )(func)
+
+
+def ds_cache(func):
+    return click.option(
+        "--ds-cache",
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        help="Dataset cache file.",
+    )(func)
+
+
+def ds_config_cache(func):
+    return click.option(
+        "--ds-config-cache",
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "Dataset config cache function. If this is given, no other dataset-related "
+            "args are required. If they are supplied, the values will supersede those "
+            "in this config file."
+        ),
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
+# Model setup args
 def config_file(func):
     return click.option(
         "--config-file",
@@ -41,7 +87,7 @@ def config_file(func):
 
 
 ################################################################################
-## W&B args
+# W&B args
 def wandb_args(func):
     for fn in [use_wandb, sweep, proj, name, extra_config]:
         func = fn(func)
@@ -86,7 +132,7 @@ def extra_config(func):
 
 
 ################################################################################
-## MTENN args
+# MTENN args
 def mtenn_args(func):
     for fn in [
         grouped,
@@ -231,7 +277,7 @@ def comb_km(func):
 
 
 ################################################################################
-## GAT args
+# GAT args
 def gat_args(func):
     for fn in [
         in_feats,
@@ -360,7 +406,7 @@ def allow_zero_in_degree(func):
 
 
 ################################################################################
-## SchNet args
+# SchNet args
 def schnet_args(func):
     for fn in [
         hidden_channels,
@@ -470,7 +516,7 @@ def std(func):
 
 
 ################################################################################
-## E3NN args
+# E3NN args
 def e3nn_args(func):
     for fn in [
         num_atom_types,
