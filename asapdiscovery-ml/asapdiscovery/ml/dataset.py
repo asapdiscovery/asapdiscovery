@@ -562,8 +562,6 @@ class GraphDataset(Dataset):
         from functools import reduce
 
         import numpy as np
-        import pandas
-        from dgllife.data import MoleculeCSVDataset
         from dgllife.utils import SMILESToBigraph
 
         # Make sure that all exp dicts for each compound have all the same keys so the
@@ -586,31 +584,23 @@ class GraphDataset(Dataset):
             for lig in ligands
         ]
 
-        # Build DF
-        df_keys = ["compound_id", "smiles"] + list(all_shared_exp_keys)
-        df = pandas.DataFrame(dict(zip(df_keys, zip(*all_info))))
-
-        # Build dataset
+        # Function for encoding SMILES to a graph
         smiles_to_g = SMILESToBigraph(
             add_self_loop=True,
             node_featurizer=node_featurizer,
             edge_featurizer=edge_featurizer,
         )
-        dataset = MoleculeCSVDataset(
-            df=df,
-            smiles_to_graph=smiles_to_g,
-            smiles_column="smiles",
-            cache_file_path=cache_file,
-            task_names=list(all_shared_exp_keys),
-        )
 
         compounds = {}
         structures = []
-        for i, (compound_info, g) in enumerate(zip(all_info, dataset)):
+        for i, compound_info in enumerate(all_info):
             compound_id, smiles, *exp_info = compound_info
             # Need a tuple to match DockedDataset, but the graph objects aren't
             #  attached to a protein structure at all
             compound = ("NA", compound_id)
+
+            # Generate DGL graph
+            g = smiles_to_g(smiles)
 
             # Add data
             try:
@@ -619,8 +609,8 @@ class GraphDataset(Dataset):
                 compounds[compound] = [i]
             structures.append(
                 {
-                    "smiles": g[0],
-                    "g": g[1],
+                    "smiles": smiles,
+                    "g": g,
                     "compound": compound,
                 }
                 | dict(zip(list(all_shared_exp_keys), exp_info))
