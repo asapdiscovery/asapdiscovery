@@ -25,23 +25,23 @@ def test_project_support_docking_cli_fragalysis(
 
     frag_parent_dir, _ = mpro_frag_dir
 
-    args = (
-        [
-            subcommand,
-            "--target",
-            "SARS-CoV-2-Mpro",
-            "--ligands",
-            ligand_file,
-            "--fragalysis-dir",
-            frag_parent_dir,
-            "--posit-confidence-cutoff",
-            0,
-            "--output-dir",
-            tmp_path,
-        ],
-    )
+    args = [
+        subcommand,
+        "--target",
+        "SARS-CoV-2-Mpro",
+        "--ligands",
+        ligand_file,
+        "--fragalysis-dir",
+        frag_parent_dir,
+        "--posit-confidence-cutoff",
+        0,
+        "--output-dir",
+        tmp_path,
+    ]
 
-    if subcommand == "small-scale":  # turn off dask cuda overrides for CI
+    if (
+        subcommand == "small-scale"
+    ):  # turn off dask cuda overrides for CI runners which lack GPUs
         args.extend(["--no-allow-dask-cuda"])
 
     result = runner.invoke(cli, args)
@@ -74,7 +74,9 @@ def test_project_support_docking_cli_structure_directory_dask(
         tmp_path,
     ]
 
-    if subcommand == "small-scale":  # turn off dask cuda overrides for CI
+    if (
+        subcommand == "small-scale"
+    ):  # turn off dask cuda overrides for CI runners which lack GPUs
         args.extend(["--no-allow-dask-cuda"])
 
     result = runner.invoke(cli, args)
@@ -110,7 +112,9 @@ def test_project_support_docking_cli_structure_directory_du_cache_dask(
         tmp_path,
     ]
 
-    if subcommand == "small-scale":  # turn off dask cuda overrides for CI
+    if (
+        subcommand == "small-scale"
+    ):  # turn off dask cuda overrides for CI runners which lack GPUs
         args.extend(["--no-allow-dask-cuda"])
 
     result = runner.invoke(cli, args)
@@ -141,7 +145,9 @@ def test_project_support_docking_cli_pdb_file_dask(
         tmp_path,
     ]
 
-    if subcommand == "small-scale":  # turn off dask cuda overrides for CI
+    if (
+        subcommand == "small-scale"
+    ):  # turn off dask cuda overrides for CI runners which lack GPUs
         args.extend(["--no-allow-dask-cuda"])
 
     result = runner.invoke(cli, args)
