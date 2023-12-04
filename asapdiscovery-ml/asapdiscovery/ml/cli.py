@@ -15,7 +15,10 @@ from asapdiscovery.ml.cli_args import (
     config_file,
     cutoff,
     dipole,
+    ds_cache,
+    ds_config_cache,
     e3nn_args,
+    exp_file,
     extra_config,
     feat_drops,
     gat_args,
@@ -55,6 +58,7 @@ from asapdiscovery.ml.cli_args import (
     schnet_args,
     std,
     strategy,
+    str_files,
     sweep,
     use_wandb,
     wandb_args,
@@ -99,12 +103,18 @@ cli.add_command(build_and_train)
 
 @build_and_train.command(name="gat")
 @output_dir
+@exp_file
+@ds_cache
+@ds_config_cache
 @config_file
 @wandb_args
 @mtenn_args
 @gat_args
 def build_and_train_gat(
     output_dir: Path,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
     config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
@@ -139,12 +149,20 @@ def build_and_train_gat(
 
 @build_and_train.command()
 @output_dir
+@exp_file
+@str_files
+@ds_cache
+@ds_config_cache
 @config_file
 @wandb_args
 @mtenn_args
 @schnet_args
 def build_and_train_schnet(
     output_dir: Path,
+    exp_file: Path | None = None,
+    structures: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
     config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
@@ -178,12 +196,20 @@ def build_and_train_schnet(
 
 @build_and_train.command()
 @output_dir
+@exp_file
+@str_files
+@ds_cache
+@ds_config_cache
 @config_file
 @wandb_args
 @mtenn_args
 @e3nn_args
 def build_and_train_e3nn(
     output_dir: Path,
+    exp_file: Path | None = None,
+    structures: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
     config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
@@ -425,3 +451,50 @@ def test(
     print(config, flush=True)
     model = config.build()
     print(model, flush=True)
+
+
+def _check_ds_args(exp_file, structures, ds_cache, ds_config_cache, is_structural):
+    """
+    Helper function to check that all necessary dataset files were passed.
+
+    Parameters
+    ----------
+    exp_file : Path
+        JSON file giving a list of ExperimentalDataCompound objects
+    structures : Path
+        Glob or directory containing PDB files
+    ds_cache : Path
+        Dataset cache file
+    ds_config_cache : Path
+        Dataset config cache function
+
+    Returns
+    -------
+    bool
+        Whether an appropriate combination of args was passed
+    """
+    # Can just load from the config cache file so don't need anything else
+    if ds_config_cache and ds_config_cache.exists():
+        return True
+
+    # Otherwise need to load data so make sure they all exist
+    if (not exp_file) or (not exp_file.exists()):
+        return False
+    if is_structural:
+        if not structures:
+            return False
+        if structures.is_dir():
+            # Make sure there's at least one PDB file
+            try:
+                _ = next(iter(structures.glob("*.pdb")))
+            except StopIteration:
+                return False
+        else:
+            # Make sure there's at least one file that matches the glob
+            try:
+                _ = next(iter(structures.parent.glob(structures.name)))
+            except StopIteration:
+                return False
+
+    # Nothing has failed so we should be good to go
+    return True

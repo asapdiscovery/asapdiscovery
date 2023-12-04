@@ -39,6 +39,7 @@ def str_files(func):
     return click.option(
         "-str",
         "--structures",
+        type=Path,
         help=(
             "PDB structure files. Can be in one of two forms: either a glob that will "
             "be expanded and all matching files will be taken, or a directory, in "
