@@ -86,7 +86,7 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     )
 
     use_omega: bool = Field(
-        True,
+        False,
         description="Whether to use omega for conformer generation prior to docking",
     )
 
@@ -275,19 +275,19 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         active_site_chain="A",
     )
     prepped_complexes = prepper.prep(
-        complexes, use_dask=inputs.use_dask, dask_client=dask_client
+        complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        cache_dir=inputs.cache_dir,
     )
     del complexes
 
     n_prepped_complexes = len(prepped_complexes)
     logger.info(f"Prepped {n_prepped_complexes} complexes")
 
-    if inputs.gen_cache:
-        # cache prepped complexes
-        cache_path = output_dir / inputs.gen_cache
-        logger.info(f"Caching prepped complexes to {cache_path}")
-        for cache_type in inputs.cache_type:
-            prepper.cache(prepped_complexes, cache_path, type=cache_type)
+    if inputs.save_to_cache and inputs.cache_dir is not None:
+        logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
+        prepper.cache(prepped_complexes, inputs.cache_dir)
 
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
@@ -525,12 +525,15 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
         artifact_columns = [
             DockingResultCols.HTML_PATH_POSE.value,
-            DockingResultCols.HTML_PATH_FITNESS.value,
         ]
         artifact_types = [
             ArtifactType.DOCKING_POSE_POSIT,
-            ArtifactType.DOCKING_POSE_FITNESS_POSIT,
         ]
+
+        if target_has_fitness_data(inputs.target):
+            artifact_columns.append(DockingResultCols.HTML_PATH_FITNESS.value)
+            artifact_types.append(ArtifactType.DOCKING_POSE_FITNESS_POSIT)
+
         if inputs.md:
             artifact_columns.append(DockingResultCols.GIF_PATH.value)
             artifact_types.append(ArtifactType.MD_POSE)

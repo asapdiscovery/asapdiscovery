@@ -248,6 +248,9 @@ files:
   - resource: SARS2_Mac1A-A1013.pdb
     sha256hash: 2109f9581336b5e6332fee3136f59ef677a3dbf76cdabf0b4316ec705a1a4a3b
 
+  - resource: protein_json_cache/Mpro-x0354_0A_bound.json
+    sha256hash: 83bb3460d708a140919f122cbc9c69715ede4521ffa90cda4a9ddb32cae78a79
+
   # constrained conformer generation testing
   - resource: constrained_conformer/ASAP-0008650.sdf
     sha256hash: 2aded7f8f4450b94b6bfeb13095ba755867918fb0195d1176165928fc7e5cd13
