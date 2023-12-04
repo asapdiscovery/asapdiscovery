@@ -1,7 +1,9 @@
 import json
+from glob import glob
 from pathlib import Path
 
 import click
+from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.utils import (
@@ -149,7 +151,7 @@ def build_and_train_gat(
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
-    grouped: bool | None = None,
+    grouped: bool = False,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
@@ -182,10 +184,10 @@ def build_and_train_gat(
         is_structural=False,
         is_grouped=grouped,
     )
-    pass
+    print(ds_config, flush=True)
 
 
-@build_and_train.command()
+@build_and_train.command(name="schnet")
 @output_dir
 @exp_file
 @str_files
@@ -200,7 +202,7 @@ def build_and_train_gat(
 def build_and_train_schnet(
     output_dir: Path,
     exp_file: Path | None = None,
-    structures: Path | None = None,
+    structures: str | None = None,
     cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
     xtal_regex: str = MPRO_ID_REGEX,
     ds_cache: Path | None = None,
@@ -211,7 +213,7 @@ def build_and_train_schnet(
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
-    grouped: bool | None = None,
+    grouped: bool = False,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
@@ -233,10 +235,20 @@ def build_and_train_schnet(
     mean: float | None = None,
     std: float | None = None,
 ):
-    pass
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=structures,
+        xtal_regex=xtal_regex,
+        cpd_regex=cpd_regex,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=True,
+        is_grouped=grouped,
+    )
+    print(ds_config, flush=True)
 
 
-@build_and_train.command()
+@build_and_train.command("e3nn")
 @output_dir
 @exp_file
 @str_files
@@ -251,7 +263,7 @@ def build_and_train_schnet(
 def build_and_train_e3nn(
     output_dir: Path,
     exp_file: Path | None = None,
-    structures: Path | None = None,
+    structures: str | None = None,
     cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
     xtal_regex: str = MPRO_ID_REGEX,
     ds_cache: Path | None = None,
@@ -262,7 +274,7 @@ def build_and_train_e3nn(
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
-    grouped: bool | None = None,
+    grouped: bool = False,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
@@ -285,7 +297,17 @@ def build_and_train_e3nn(
     num_neighbors: float | None = None,
     num_nodes: float | None = None,
 ):
-    pass
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=structures,
+        xtal_regex=xtal_regex,
+        cpd_regex=cpd_regex,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=True,
+        is_grouped=grouped,
+    )
+    print(ds_config, flush=True)
 
 
 @cli.command()
@@ -354,7 +376,7 @@ def test(
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
-    grouped: bool | None = None,
+    grouped: bool = False,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
@@ -529,16 +551,16 @@ def _check_ds_args(exp_file, structures, ds_cache, ds_config_cache, is_structura
     if is_structural:
         if not structures:
             return False
-        if structures.is_dir():
+        if Path(structures).is_dir():
             # Make sure there's at least one PDB file
             try:
-                _ = next(iter(structures.glob("*.pdb")))
+                _ = next(iter(Path(structures).glob("*.pdb")))
             except StopIteration:
                 return False
         else:
             # Make sure there's at least one file that matches the glob
             try:
-                _ = next(iter(structures.parent.glob(structures.name)))
+                _ = next(iter(glob(structures)))
             except StopIteration:
                 return False
 
@@ -586,7 +608,7 @@ def _build_ds_config(
         raise ValueError("Invalid combination of dataset args.")
 
     if ds_config_cache and ds_config_cache.exists():
-        return json.loads(ds_config_cache.read_text())
+        return DatasetConfig(**json.loads(ds_config_cache.read_text()))
 
     # Pick correct DatasetType
     if is_structural:
@@ -595,7 +617,9 @@ def _build_ds_config(
         ds_type = DatasetType.graph
 
     # Parse experimental data
-    exp_compounds = json.loads(exp_file.read_text())
+    exp_compounds = [
+        ExperimentalCompoundData(**d) for d in json.loads(exp_file.read_text())
+    ]
     exp_data = {
         c.compound_id: c.experimental_data | {"date_created": c.date_created}
         for c in exp_compounds
@@ -603,13 +627,14 @@ def _build_ds_config(
 
     # Create Ligand/Complex objects
     if is_structural:
-        if structures.is_dir():
-            all_str_fns = structures.glob("*.pdb")
+        if Path(structures).is_dir():
+            all_str_fns = Path(structures).glob("*.pdb")
         else:
-            all_str_fns = structures.parent.glob(structures.name)
+            all_str_fns = glob(structures)
         compounds = extract_compounds_from_filenames(
             all_str_fns, xtal_pat=xtal_regex, compound_pat=cpd_regex, fail_val="NA"
         )
+        print(len(list(all_str_fns)), len(compounds), flush=True)
         input_data = [
             Complex.from_pdb(
                 fn,
