@@ -249,7 +249,7 @@ def mtenn_args(func):
 def grouped(func):
     return click.option(
         "--grouped",
-        is_flag=True,
+        type=bool,
         help="Model is a grouped (multi-pose) model.",
     )(func)
 
