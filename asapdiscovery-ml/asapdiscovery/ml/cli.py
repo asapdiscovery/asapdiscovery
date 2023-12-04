@@ -57,6 +57,7 @@ from asapdiscovery.ml.cli_args import (
     num_nodes,
     num_radial_layers,
     num_radial_neurons,
+    optim_args,
     output_dir,
     pred_km,
     pred_readout,
@@ -133,6 +134,7 @@ def build_e3nn():
 @exp_file
 @ds_cache
 @ds_config_cache
+@optim_args
 @config_file
 @wandb_args
 @mtenn_args
@@ -142,6 +144,14 @@ def build_and_train_gat(
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
     ds_config_cache: Path | None = None,
+    lr: float = 0.0001,
+    weight_decay: float = 0,
+    momentum: float = 0,
+    dampening: float = 0,
+    b1: float = 0.9,
+    b2: float = 0.999,
+    eps: float = 1e-8,
+    rho: float = 0.9,
     config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
@@ -193,6 +203,7 @@ def build_and_train_gat(
 @str_fn_xtal_regex
 @ds_cache
 @ds_config_cache
+@optim_args
 @config_file
 @wandb_args
 @mtenn_args
@@ -205,6 +216,14 @@ def build_and_train_schnet(
     xtal_regex: str = MPRO_ID_REGEX,
     ds_cache: Path | None = None,
     ds_config_cache: Path | None = None,
+    lr: float = 0.0001,
+    weight_decay: float = 0,
+    momentum: float = 0,
+    dampening: float = 0,
+    b1: float = 0.9,
+    b2: float = 0.999,
+    eps: float = 1e-8,
+    rho: float = 0.9,
     config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
@@ -255,6 +274,7 @@ def build_and_train_schnet(
 @str_fn_xtal_regex
 @ds_cache
 @ds_config_cache
+@optim_args
 @config_file
 @wandb_args
 @mtenn_args
@@ -267,6 +287,14 @@ def build_and_train_e3nn(
     xtal_regex: str = MPRO_ID_REGEX,
     ds_cache: Path | None = None,
     ds_config_cache: Path | None = None,
+    lr: float = 0.0001,
+    weight_decay: float = 0,
+    momentum: float = 0,
+    dampening: float = 0,
+    b1: float = 0.9,
+    b2: float = 0.999,
+    eps: float = 1e-8,
+    rho: float = 0.9,
     config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,

@@ -88,6 +88,85 @@ def ds_config_cache(func):
 
 
 ################################################################################
+# Optimizer args
+def optim_args(func):
+    for fn in [lr, weight_decay, momentum, dampening, b1, b2, eps, rho]:
+        func = fn(func)
+
+    return func
+
+
+# Common parameters
+def lr(func):
+    return click.option(
+        "--lr", type=float, default=0.0001, help="Optimizer learning rate."
+    )(func)
+
+
+def weight_decay(func):
+    return click.option(
+        "--weight-decay",
+        type=float,
+        default=0,
+        help="Optimizer weight decay (L2 penalty).",
+    )(func)
+
+
+# SGD-only parameters
+def momentum(func):
+    return click.option(
+        "--momentum", type=float, default=0, help="Momentum for SGD optimizer."
+    )(func)
+
+
+def dampening(func):
+    return click.option(
+        "--dampening",
+        type=float,
+        default=0,
+        help="Dampening for momentum for SGD optimizer.",
+    )(func)
+
+
+# Adam* parameters
+def b1(func):
+    return click.option(
+        "--b1",
+        type=float,
+        default=0.9,
+        help="B1 parameter for Adam and AdamW optimizers.",
+    )(func)
+
+
+def b2(func):
+    return click.option(
+        "--b2",
+        type=float,
+        default=0.999,
+        help="B2 parameter for Adam and AdamW optimizers.",
+    )(func)
+
+
+def eps(func):
+    return click.option(
+        "--eps",
+        type=float,
+        default=1e-8,
+        help="Epsilon parameter for Adam, AdamW, and Adadelta optimizers.",
+    )(func)
+
+
+# Adadelta parameters
+def rho(func):
+    return click.option(
+        "--rho", type=float, default=0.9, help="Rho parameter for Adadelta optimizer."
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
 # Model setup args
 def config_file(func):
     return click.option(
