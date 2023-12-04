@@ -160,7 +160,7 @@ def build_and_train_gat(
     comb_substrate: float | None = None,
     comb_km: float | None = None,
     in_feats: int | None = None,
-    num_layers_gat: int | None = None,
+    num_layers: int | None = None,
     hidden_feats: str | None = None,
     num_heads: str | None = None,
     feat_drops: str | None = None,
@@ -181,7 +181,8 @@ def build_and_train_gat(
         is_structural=False,
         is_grouped=grouped,
     )
-    print(ds_config, flush=True)
+    ds = ds_config.build()
+    print(next(iter(ds)), flush=True)
 
 
 @build_and_train.command(name="schnet")
@@ -242,7 +243,8 @@ def build_and_train_schnet(
         is_structural=True,
         is_grouped=grouped,
     )
-    print(ds_config, flush=True)
+    ds = ds_config.build()
+    print(next(iter(ds)), flush=True)
 
 
 @build_and_train.command("e3nn")
@@ -286,7 +288,7 @@ def build_and_train_e3nn(
     irreps_hidden: str | None = None,
     lig: bool | None = None,
     irreps_edge_attr: int | None = None,
-    num_layers_e3nn: int | None = None,
+    num_layers: int | None = None,
     neighbor_dist: float | None = None,
     num_basis: int | None = None,
     num_radial_layers: int | None = None,
@@ -304,7 +306,8 @@ def build_and_train_e3nn(
         is_structural=True,
         is_grouped=grouped,
     )
-    print(ds_config, flush=True)
+    ds = ds_config.build()
+    print(next(iter(ds)), flush=True)
 
 
 @cli.command()
@@ -605,6 +608,7 @@ def _build_ds_config(
         raise ValueError("Invalid combination of dataset args.")
 
     if ds_config_cache and ds_config_cache.exists():
+        print("loading from cache", flush=True)
         return DatasetConfig(**json.loads(ds_config_cache.read_text()))
 
     # Pick correct DatasetType
