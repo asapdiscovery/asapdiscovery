@@ -101,6 +101,10 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     ml_scorers: Optional[list[str]] = Field(
         None, description="The name of the ml scorers to use"
     )
+    allow_dask_cuda: bool = Field(
+        True,
+        description="Whether to allow regenerating dask cuda cluster when in local mode",
+    )
 
     md: bool = Field(False, description="Whether to run MD on the docked poses")
     md_steps: PositiveInt = Field(2500000, description="Number of MD steps to run")
@@ -448,7 +452,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     if inputs.md:
-        if inputs.dask_type == DaskType.LOCAL:
+        if inputs.allow_dask_cuda and inputs.dask_type == DaskType.LOCAL_CPU:
             logger.info(
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )

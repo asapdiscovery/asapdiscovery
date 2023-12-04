@@ -6,7 +6,6 @@ import dask
 from asapdiscovery.data.enum import StringEnum
 from dask import config as cfg
 from dask.utils import parse_timedelta
-from dask_cuda import LocalCUDACluster
 from dask_jobqueue import LSFCluster
 from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
@@ -278,6 +277,12 @@ def dask_cluster_from_type(
     if dask_type == DaskType.LOCAL:
         cluster = LocalCluster()
     elif dask_type == DaskType.LOCAL_GPU:
+        try:
+            from dask_cuda import LocalCUDACluster
+        except ImportError:
+            raise ImportError(
+                "dask_cuda is not installed, please install with `pip install dask_cuda`"
+            )
         cluster = LocalCUDACluster()
     elif dask_type == DaskType.LILAC_GPU:
         cluster = LilacGPUDaskCluster().from_gpu(gpu).to_cluster(exclude_interface="lo")
