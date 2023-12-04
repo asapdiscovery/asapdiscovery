@@ -94,7 +94,7 @@ class GIFVisualizerV2(BaseModel):
             p = pymol2.PyMOL()
             p.start()
 
-            out_dir = self.output_dir / res.input_docking_result.get_combined_id()
+            out_dir = self.output_dir / res.input_docking_result.unique_name()
             out_dir.mkdir(parents=True, exist_ok=True)
             path = out_dir / "trajectory.gif"
 
