@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import click
+from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from mtenn.config import CombinationConfig, ReadoutConfig, StrategyConfig
 
 
@@ -48,6 +49,22 @@ def str_files(func):
     )(func)
 
 
+def str_fn_xtal_regex(func):
+    return click.option(
+        "--xtal-regex",
+        default=MPRO_ID_REGEX,
+        help="Regex for extracting crystal structure name from filename.",
+    )(func)
+
+
+def str_fn_cpd_regex(func):
+    return click.option(
+        "--cpd-regex",
+        default=MOONSHOT_CDD_ID_REGEX,
+        help="Regex for extracting compound id from filename.",
+    )(func)
+
+
 def ds_cache(func):
     return click.option(
         "--ds-cache",
@@ -62,8 +79,7 @@ def ds_config_cache(func):
         type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
         help=(
             "Dataset config cache function. If this is given, no other dataset-related "
-            "args are required. If they are supplied, the values will supersede those "
-            "in this config file."
+            "args will be parsed."
         ),
     )(func)
 
