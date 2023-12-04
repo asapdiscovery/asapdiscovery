@@ -75,7 +75,13 @@ from asapdiscovery.ml.cli_args import (
     use_wandb,
     wandb_args,
 )
-from asapdiscovery.ml.schema_v2.config import DatasetConfig, DatasetType
+from asapdiscovery.ml.schema_v2.config import (
+    DatasetConfig,
+    DatasetType,
+    OptimizerConfig,
+    OptimizerType,
+)
+from asapdiscovery.ml.schema_v2.trainer import Trainer
 from mtenn.config import (
     CombinationConfig,
     E3NNModelConfig,
@@ -144,6 +150,7 @@ def build_and_train_gat(
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
     ds_config_cache: Path | None = None,
+    optimizer_type: OptimizerType = OptimizerType.adam,
     lr: float = 0.0001,
     weight_decay: float = 0,
     momentum: float = 0,
@@ -181,6 +188,17 @@ def build_and_train_gat(
     biases: str | None = None,
     allow_zero_in_degree: bool | None = None,
 ):
+    optim_config = OptimizerConfig(
+        optimizer_type=optimizer_type,
+        lr=lr,
+        weight_decay=weight_decay,
+        momentum=momentum,
+        dampening=dampening,
+        b1=b1,
+        b2=b2,
+        eps=eps,
+        rho=rho,
+    )
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=None,
@@ -191,8 +209,11 @@ def build_and_train_gat(
         is_structural=False,
         is_grouped=grouped,
     )
-    ds = ds_config.build()
-    print(next(iter(ds)), flush=True)
+
+    return Trainer(
+        optimizer_config=optim_config,
+        ds_config=ds_config,
+    )
 
 
 @build_and_train.command(name="schnet")
@@ -216,6 +237,7 @@ def build_and_train_schnet(
     xtal_regex: str = MPRO_ID_REGEX,
     ds_cache: Path | None = None,
     ds_config_cache: Path | None = None,
+    optimizer_type: OptimizerType = OptimizerType.adam,
     lr: float = 0.0001,
     weight_decay: float = 0,
     momentum: float = 0,
@@ -252,6 +274,17 @@ def build_and_train_schnet(
     mean: float | None = None,
     std: float | None = None,
 ):
+    optim_config = OptimizerConfig(
+        optimizer_type=optimizer_type,
+        lr=lr,
+        weight_decay=weight_decay,
+        momentum=momentum,
+        dampening=dampening,
+        b1=b1,
+        b2=b2,
+        eps=eps,
+        rho=rho,
+    )
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=structures,
@@ -262,8 +295,11 @@ def build_and_train_schnet(
         is_structural=True,
         is_grouped=grouped,
     )
-    ds = ds_config.build()
-    print(next(iter(ds)), flush=True)
+
+    return Trainer(
+        optimizer_config=optim_config,
+        ds_config=ds_config,
+    )
 
 
 @build_and_train.command("e3nn")
@@ -287,6 +323,7 @@ def build_and_train_e3nn(
     xtal_regex: str = MPRO_ID_REGEX,
     ds_cache: Path | None = None,
     ds_config_cache: Path | None = None,
+    optimizer_type: OptimizerType = OptimizerType.adam,
     lr: float = 0.0001,
     weight_decay: float = 0,
     momentum: float = 0,
@@ -324,6 +361,17 @@ def build_and_train_e3nn(
     num_neighbors: float | None = None,
     num_nodes: float | None = None,
 ):
+    optim_config = OptimizerConfig(
+        optimizer_type=optimizer_type,
+        lr=lr,
+        weight_decay=weight_decay,
+        momentum=momentum,
+        dampening=dampening,
+        b1=b1,
+        b2=b2,
+        eps=eps,
+        rho=rho,
+    )
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=structures,
@@ -334,8 +382,11 @@ def build_and_train_e3nn(
         is_structural=True,
         is_grouped=grouped,
     )
-    ds = ds_config.build()
-    print(next(iter(ds)), flush=True)
+
+    return Trainer(
+        optimizer_config=optim_config,
+        ds_config=ds_config,
+    )
 
 
 @cli.command()
