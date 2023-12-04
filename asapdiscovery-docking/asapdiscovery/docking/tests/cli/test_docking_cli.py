@@ -25,22 +25,26 @@ def test_project_support_docking_cli_fragalysis(
 
     frag_parent_dir, _ = mpro_frag_dir
 
-    result = runner.invoke(
-        cli,
-        [
-            subcommand,
-            "--target",
-            "SARS-CoV-2-Mpro",
-            "--ligands",
-            ligand_file,
-            "--fragalysis-dir",
-            frag_parent_dir,
-            "--posit-confidence-cutoff",
-            0,
-            "--output-dir",
-            tmp_path,
-        ],
-    )
+    args = [
+        subcommand,
+        "--target",
+        "SARS-CoV-2-Mpro",
+        "--ligands",
+        ligand_file,
+        "--fragalysis-dir",
+        frag_parent_dir,
+        "--posit-confidence-cutoff",
+        0,
+        "--output-dir",
+        tmp_path,
+    ]
+
+    if (
+        subcommand == "small-scale"
+    ):  # turn off dask cuda overrides for CI runners which lack GPUs
+        args.extend(["--no-allow-dask-cuda"])
+
+    result = runner.invoke(cli, args)
     assert click_success(result)
 
 
@@ -55,23 +59,27 @@ def test_project_support_docking_cli_structure_directory_dask(
 
     struct_dir, _ = structure_dir
 
-    result = runner.invoke(
-        cli,
-        [
-            subcommand,
-            "--target",
-            "SARS-CoV-2-Mpro",
-            "--ligands",
-            ligand_file,
-            "--structure-dir",
-            struct_dir,
-            "--use-dask",  # add dask
-            "--posit-confidence-cutoff",
-            0,
-            "--output-dir",
-            tmp_path,
-        ],
-    )
+    args = [
+        subcommand,
+        "--target",
+        "SARS-CoV-2-Mpro",
+        "--ligands",
+        ligand_file,
+        "--structure-dir",
+        struct_dir,
+        "--use-dask",  # add dask
+        "--posit-confidence-cutoff",
+        0,
+        "--output-dir",
+        tmp_path,
+    ]
+
+    if (
+        subcommand == "small-scale"
+    ):  # turn off dask cuda overrides for CI runners which lack GPUs
+        args.extend(["--no-allow-dask-cuda"])
+
+    result = runner.invoke(cli, args)
     assert click_success(result)
 
 
@@ -87,25 +95,29 @@ def test_project_support_docking_cli_structure_directory_du_cache_dask(
     struct_dir, _ = structure_dir
     du_cache_dir, _ = du_cache
 
-    result = runner.invoke(
-        cli,
-        [
-            subcommand,
-            "--target",
-            "SARS-CoV-2-Mpro",
-            "--ligands",
-            ligand_file,
-            "--structure-dir",
-            struct_dir,
-            "--use-dask",
-            "--posit-confidence-cutoff",
-            0,
-            "--cache-dir",
-            du_cache_dir,
-            "--output-dir",
-            tmp_path,
-        ],
-    )
+    args = [
+        subcommand,
+        "--target",
+        "SARS-CoV-2-Mpro",
+        "--ligands",
+        ligand_file,
+        "--structure-dir",
+        struct_dir,
+        "--use-dask",
+        "--posit-confidence-cutoff",
+        0,
+        "--cache-dir",
+        du_cache_dir,
+        "--output-dir",
+        tmp_path,
+    ]
+
+    if (
+        subcommand == "small-scale"
+    ):  # turn off dask cuda overrides for CI runners which lack GPUs
+        args.extend(["--no-allow-dask-cuda"])
+
+    result = runner.invoke(cli, args)
     assert click_success(result)
 
 
@@ -118,23 +130,27 @@ def test_project_support_docking_cli_pdb_file_dask(
 ):
     runner = CliRunner()
 
-    result = runner.invoke(
-        cli,
-        [
-            subcommand,
-            "--target",
-            "SARS-CoV-2-Mpro",
-            "--ligands",
-            ligand_file,
-            "--pdb-file",
-            pdb_file,
-            "--use-dask",
-            "--posit-confidence-cutoff",
-            0,
-            "--output-dir",
-            tmp_path,
-        ],
-    )
+    args = [
+        subcommand,
+        "--target",
+        "SARS-CoV-2-Mpro",
+        "--ligands",
+        ligand_file,
+        "--pdb-file",
+        pdb_file,
+        "--use-dask",
+        "--posit-confidence-cutoff",
+        0,
+        "--output-dir",
+        tmp_path,
+    ]
+
+    if (
+        subcommand == "small-scale"
+    ):  # turn off dask cuda overrides for CI runners which lack GPUs
+        args.extend(["--no-allow-dask-cuda"])
+
+    result = runner.invoke(cli, args)
     assert click_success(result)
 
 
@@ -155,6 +171,7 @@ def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path):
             "--pdb-file",
             pdb_file,
             "--use-dask",
+            "--no-allow-dask-cuda",
             "--posit-confidence-cutoff",
             0,
             "--output-dir",
