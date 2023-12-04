@@ -87,6 +87,13 @@ class Complex(ComplexBase):
             self.target.to_oemol(), self.ligand.to_oemol(), lig_chain=self.ligand_chain
         )
 
+    def hash(self):
+        return f"{self.target.hash()}+{self.ligand.fixed_inchikey}"
+
+    def unique_name(self) -> str:
+        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
+        return f"{self.target.target_name}-{self.hash()}"
+
 
 class PreppedComplex(ComplexBase):
     """
@@ -146,3 +153,10 @@ class PreppedComplex(ComplexBase):
         prep_kwargs["ligand_chain"] = complex.ligand_chain
         prepped_complexs = ProteinPrepper(**prep_kwargs).prep(inputs=[complex])
         return prepped_complexs[0]
+
+    def hash(self):
+        return f"{self.target.target_hash}+{self.ligand.fixed_inchikey}"
+
+    def unique_name(self) -> str:
+        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
+        return f"{self.target.target_name}-{self.hash()}"
