@@ -42,7 +42,7 @@ class GIFVisualizerV2(BaseModel):
         False, description="Whether to only generate static views"
     )
     start: PositiveInt = Field(
-        1900,
+        1800,
         description="Start frame - if not defined, will default to last 10% of default trajectory settings",
     )
     stop: int = Field(-1, description="Stop frame")
