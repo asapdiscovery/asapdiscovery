@@ -2,6 +2,13 @@ import json
 from pathlib import Path
 
 import click
+from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.utils import (
+    MOONSHOT_CDD_ID_REGEX,
+    MPRO_ID_REGEX,
+    extract_compounds_from_filenames,
+)
 from asapdiscovery.ml.cli_args import (
     agg_modes,
     allow_zero_in_degree,
@@ -59,9 +66,15 @@ from asapdiscovery.ml.cli_args import (
     std,
     strategy,
     str_files,
+    str_fn_cpd_regex,
+    str_fn_xtal_regex,
     sweep,
     use_wandb,
     wandb_args,
+)
+from asapdiscovery.ml.schema_v2.config import (
+    DatasetConfig,
+    DatasetType,
 )
 from mtenn.config import (
     CombinationConfig,
@@ -99,6 +112,21 @@ def build_and_train():
 
 cli.add_command(build)
 cli.add_command(build_and_train)
+
+
+@build.command(name="gat")
+def build_gat():
+    pass
+
+
+@build.command(name="schnet")
+def build_schnet():
+    pass
+
+
+@build.command(name="e3nn")
+def build_e3nn():
+    pass
 
 
 @build_and_train.command(name="gat")
@@ -144,6 +172,16 @@ def build_and_train_gat(
     biases: str | None = None,
     allow_zero_in_degree: bool | None = None,
 ):
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=None,
+        xtal_regex=None,
+        cpd_regex=None,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=False,
+        is_grouped=grouped,
+    )
     pass
 
 
@@ -151,6 +189,8 @@ def build_and_train_gat(
 @output_dir
 @exp_file
 @str_files
+@str_fn_cpd_regex
+@str_fn_xtal_regex
 @ds_cache
 @ds_config_cache
 @config_file
@@ -161,6 +201,8 @@ def build_and_train_schnet(
     output_dir: Path,
     exp_file: Path | None = None,
     structures: Path | None = None,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
+    xtal_regex: str = MPRO_ID_REGEX,
     ds_cache: Path | None = None,
     ds_config_cache: Path | None = None,
     config_file: Path | None = None,
@@ -198,6 +240,8 @@ def build_and_train_schnet(
 @output_dir
 @exp_file
 @str_files
+@str_fn_cpd_regex
+@str_fn_xtal_regex
 @ds_cache
 @ds_config_cache
 @config_file
@@ -208,6 +252,8 @@ def build_and_train_e3nn(
     output_dir: Path,
     exp_file: Path | None = None,
     structures: Path | None = None,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
+    xtal_regex: str = MPRO_ID_REGEX,
     ds_cache: Path | None = None,
     ds_config_cache: Path | None = None,
     config_file: Path | None = None,
@@ -498,3 +544,96 @@ def _check_ds_args(exp_file, structures, ds_cache, ds_config_cache, is_structura
 
     # Nothing has failed so we should be good to go
     return True
+
+
+def _build_ds_config(
+    exp_file,
+    structures,
+    xtal_regex,
+    cpd_regex,
+    ds_cache,
+    ds_config_cache,
+    is_structural,
+    is_grouped,
+):
+    """
+    Helper function to build a DatasetConfig object.
+
+    Parameters
+    ----------
+    exp_file : Path
+        JSON file giving a list of ExperimentalDataCompound objects
+    structures : Path
+        Glob or directory containing PDB files
+    ds_cache : Path
+        Dataset cache file
+    ds_config_cache : Path
+        Dataset config cache function
+
+    Returns
+    -------
+    DatasetConfig
+        DatasetConfig object
+    """
+
+    if not _check_ds_args(
+        exp_file=exp_file,
+        structures=None,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=False,
+    ):
+        raise ValueError("Invalid combination of dataset args.")
+
+    if ds_config_cache and ds_config_cache.exists():
+        return json.loads(ds_config_cache.read_text())
+
+    # Pick correct DatasetType
+    if is_structural:
+        ds_type = DatasetType.structural
+    else:
+        ds_type = DatasetType.graph
+
+    # Parse experimental data
+    exp_compounds = json.loads(exp_file.read_text())
+    exp_data = {
+        c.compound_id: c.experimental_data | {"date_created": c.date_created}
+        for c in exp_compounds
+    }
+
+    # Create Ligand/Complex objects
+    if is_structural:
+        if structures.is_dir():
+            all_str_fns = structures.glob("*.pdb")
+        else:
+            all_str_fns = structures.parent.glob(structures.name)
+        compounds = extract_compounds_from_filenames(
+            all_str_fns, xtal_pat=xtal_regex, compound_pat=cpd_regex, fail_val="NA"
+        )
+        input_data = [
+            Complex.from_pdb(
+                fn,
+                target_kwargs={"target_name": cpd[0]},
+                ligand_kwargs={"compound_name": cpd[1]},
+            )
+            for fn, cpd in zip(all_str_fns, compounds)
+        ]
+    else:
+        input_data = [
+            Ligand.from_smiles(c.smiles, compound_name=c.compound_id)
+            for c in exp_compounds
+        ]
+
+    ds_config = DatasetConfig(
+        ds_type=ds_type,
+        exp_data=exp_data,
+        input_data=input_data,
+        cache_file=ds_cache,
+        grouped=is_grouped,
+    )
+
+    # Save file if desired
+    if ds_config_cache:
+        ds_config_cache.write_text(ds_config.json())
+
+    return ds_config
