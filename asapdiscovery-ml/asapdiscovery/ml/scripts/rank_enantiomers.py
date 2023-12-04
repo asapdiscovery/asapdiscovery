@@ -6,7 +6,7 @@ import re
 from glob import glob
 
 import torch
-from asapdiscovery.data.schema import EnantiomerPairList, ExperimentalCompoundDataUpdate
+from asapdiscovery.data.schema import EnantiomerPairList
 from asapdiscovery.data.utils import check_filelist_has_elements
 from asapdiscovery.ml.dataset import DockedDataset
 from asapdiscovery.ml.utils import find_most_recent
@@ -21,7 +21,7 @@ from train import (
 def load_affinities(fn):
     """
     Load binding affinities from JSON file of
-    schema.ExperimentalCompoundDataUpdate and group every 2 compounds as an
+    list[ExperimentalCompoundData] and group every 2 compounds as an
     enantiomer pair. Sort each enantiomer pair by decreasing pIC50.
 
     Parameters
@@ -38,7 +38,7 @@ def load_affinities(fn):
     """
     # Load experimental data. Don't need to do any filtering as that's already
     #  been taken care of by this point
-    exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn))).compounds
+    exp_compounds = json.load(open(fn))
     affinity_dict = {c.compound_id: c.experimental_data["pIC50"] for c in exp_compounds}
     all_compounds = {c.compound_id for c in exp_compounds}
 

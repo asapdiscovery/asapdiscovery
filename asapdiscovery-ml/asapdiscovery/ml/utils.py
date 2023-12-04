@@ -935,7 +935,7 @@ def load_exp_data(
 ):
     """
     Load all experimental data from JSON file of
-    schema.ExperimentalCompoundDataUpdate.
+    list[ExperimentalCompoundData].
 
     Parameters
     ----------
@@ -960,11 +960,9 @@ def load_exp_data(
     """
     import json
 
-    from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
-
     # Load all compounds with experimental data and filter to only achiral
     #  molecules (to start)
-    exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn))).compounds
+    exp_compounds = json.load(open(fn))
     exp_compounds = [c for c in exp_compounds if ((not achiral) or c.achiral)]
 
     exp_dict = {

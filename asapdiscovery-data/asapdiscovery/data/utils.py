@@ -16,7 +16,6 @@ from asapdiscovery.data.schema import (
     EnantiomerPair,
     EnantiomerPairList,
     ExperimentalCompoundData,
-    ExperimentalCompoundDataUpdate,
 )
 
 # Not sure if this is the right place for these
@@ -298,7 +297,7 @@ def seqres_to_res_list(seqres_str):
 def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     """
     Convert a CDD-downloaded and filtered CSV file into a JSON file containing
-    an ExperimentalCompoundDataUpdate. CSV file should be the result of the
+    a list[ExperimentalCompoundData]. CSV file should be the result of the
     filter_molecules_dataframe function and must contain the following headers:
     * name
     * smiles
@@ -321,8 +320,8 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
 
     Returns
     -------
-    ExperimentalCompoundDataUpdate
-        The parsed ExperimentalCompoundDataUpdate.
+    list[ExperimentalCompoundData]
+        The parsed list of ExperimentalCompoundData objects.
     """
 
     # Load and remove any straggling compounds w/o SMILES data
@@ -440,8 +439,6 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                 flush=True,
             )
             raise e
-
-    compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
 
     if out_json:
         with open(out_json, "w") as fp:
@@ -1155,7 +1152,7 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
 
     # Dump JSON file
     with open(json_fn, "w") as fp:
-        fp.write(ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json())
+        fp.write(exp_data_compounds.json())
 
 
 def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
