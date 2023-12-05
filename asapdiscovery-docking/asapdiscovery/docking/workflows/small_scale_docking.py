@@ -456,7 +456,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     if inputs.md:
-        if inputs.allow_dask_cuda and inputs.dask_type == DaskType.LOCAL_CPU:
+        if inputs.allow_dask_cuda and inputs.dask_type == DaskType.LOCAL:
             logger.info(
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
