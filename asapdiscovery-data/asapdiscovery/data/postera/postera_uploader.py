@@ -174,7 +174,6 @@ class PosteraUploader(BaseModel):
         )
         # merge the data, outer join very important here to avoid dropping rows that are present in local data but not in manifold
         data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
-        data.to_csv("merge.csv")
         # drop original ID column and replace with the manifold ID
         data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
         data.rename(
