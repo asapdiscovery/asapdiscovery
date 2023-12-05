@@ -586,3 +586,56 @@ class DatasetSplitterConfig(BaseModel):
             all_subsets = all_subsets[:2] + all_subsets[3]
 
         return all_subsets
+
+
+class LossFunctionType(StringEnum):
+    """
+    Enum for different methods of splitting a dataset.
+    """
+
+    # Standard MSE loss
+    mse = "mse"
+    # Stepped MSE loss (adjusted loss for values outside assay range)
+    mse_step = "mse_step"
+    # Gaussian NLL loss (ignoring semiquant values)
+    gaussian = "gaussian"
+    # Gaussian NLL loss (including semiquant values)
+    gaussian_sq = "gaussian_sq"
+
+
+class LossFunctionConfig(BaseModel):
+    """
+    Class for splitting an ML Dataset class.
+    """
+
+    # Parameter for splitting
+    loss_type: LossFunctionType = Field(
+        ...,
+        description=(
+            "Loss function to use. "
+            f"Options are [{', '.join(LossFunctionType.get_values())}]."
+        ),
+    )
+
+    # Value to fill in for semiquant uncertainty values in gaussian_sq loss
+    semiquant_fill: float = Field(
+        None,
+        description=(
+            "Value to fill in for semiquant uncertainty values in gaussian_sq loss."
+        ),
+    )
+
+    def build(self):
+        from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss
+
+        match self.loss_type:
+            case LossFunctionType.mse:
+                return MSELoss()
+            case LossFunctionType.mse_step:
+                return MSELoss("step")
+            case LossFunctionType.gaussian:
+                return GaussianNLLLoss(keep_sq=False)
+            case LossFunctionType.gaussian_sq:
+                return GaussianNLLLoss(keep_sq=True, semiquant_fill=self.semiquant_fill)
+            case other:
+                raise ValueError(f"Unknown LossFunctionType {other}.")
