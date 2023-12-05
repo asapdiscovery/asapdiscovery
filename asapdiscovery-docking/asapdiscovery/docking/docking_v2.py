@@ -125,30 +125,24 @@ class DockingBase(BaseModel):
 
         # write out the docked pose
         for result in docking_results:
-            if (
-                not result.input_pair.ligand.compound_name
-                == result.posed_ligand.compound_name
-            ):
-                raise ValueError(
-                    "Compound names of input pair and posed ligand do not match"
-                )
-
-            output_pref = result.unique_name()
-
-            compound_dir = output_dir / output_pref
-            compound_dir.mkdir(parents=True, exist_ok=True)
-            output_sdf_file = compound_dir / "docked.sdf"
-            output_pdb_file = compound_dir / "docked_complex.pdb"
-            output_json_file = compound_dir / "docking_result.json"
-
-            result.posed_ligand.to_sdf(output_sdf_file)
-            combined_oemol = result.to_posed_oemol()
-            save_openeye_pdb(combined_oemol, output_pdb_file)
-            result.to_json_file(output_json_file)
+            result._write_docking_files(result, output_dir)
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
         ...
+
+    @staticmethod
+    def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
+        output_pref = result.unique_name()
+        compound_dir = output_dir / output_pref
+        compound_dir.mkdir(parents=True, exist_ok=True)
+        output_sdf_file = compound_dir / "docked.sdf"
+        output_pdb_file = compound_dir / "docked_complex.pdb"
+        output_json_file = compound_dir / "docking_result.json"
+        result.posed_ligand.to_sdf(output_sdf_file)
+        combined_oemol = result.to_posed_oemol()
+        save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.to_json_file(output_json_file)
 
 
 class DockingResult(BaseModel):
@@ -181,6 +175,10 @@ class DockingResult(BaseModel):
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
             f.write(self.json(indent=2))
+
+    def from_json_file(file: str | Path) -> "DockingResult":
+        with open(file, "r") as f:
+            return DockingResult.parse_raw(f.read())
 
     def get_output(self) -> dict:
         """

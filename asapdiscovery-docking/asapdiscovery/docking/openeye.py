@@ -142,112 +142,128 @@ class POSITDocker(DockingBase):
         docking_results = []
 
         for set in inputs:
-            dus = set.to_design_units()
-            lig_oemol = oechem.OEMol(set.ligand.to_oemol())
-            if self.use_omega:
-                if self.omega_dense:
-                    omegaOpts = oeomega.OEOmegaOptions(oeomega.OEOmegaSampling_Dense)
-                else:
-                    omegaOpts = oeomega.OEOmegaOptions()
-                omega = oeomega.OEOmega(omegaOpts)
-                omega_retcode = omega.Build(lig_oemol)
-                if omega_retcode:
-                    if error == "skip":
-                        logger.error(
-                            f"Omega failed with error code: {omega_retcode} : {oeomega.OEGetOmegaError(omega_retcode)}"
+            unique_name = DockingInputPair.unique_name()
+
+            if self.output_dir / unique_name.exists():
+                logger.info(
+                    f"Docking result for {unique_name} already exists, reading from disk"
+                )
+                docking_results.append(
+                    DockingResult.from_json_file(
+                        self.output_dir / unique_name / "docking_result.json"
+                    )
+                )
+            else:
+                dus = set.to_design_units()
+                lig_oemol = oechem.OEMol(set.ligand.to_oemol())
+                if self.use_omega:
+                    if self.omega_dense:
+                        omegaOpts = oeomega.OEOmegaOptions(
+                            oeomega.OEOmegaSampling_Dense
                         )
+                    else:
+                        omegaOpts = oeomega.OEOmegaOptions()
+                    omega = oeomega.OEOmega(omegaOpts)
+                    omega_retcode = omega.Build(lig_oemol)
+                    if omega_retcode:
+                        if error == "skip":
+                            logger.error(
+                                f"Omega failed with error code: {omega_retcode} : {oeomega.OEGetOmegaError(omega_retcode)}"
+                            )
+                        elif error == "raise":
+                            raise ValueError(
+                                f"Omega failed with error code: {omega_retcode} : {oeomega.OEGetOmegaError(omega_retcode)}"
+                            )
+                        else:
+                            raise ValueError(f"Unknown error handling option {error}")
+
+                opts = oedocking.OEPositOptions()
+                opts.SetIgnoreNitrogenStereo(True)
+                opts.SetPositMethods(self.posit_method.value)
+                opts.SetPoseRelaxMode(self.relax.value)
+
+                pose_res = oedocking.OEPositResults()
+                pose_res, retcode = self.run_oe_posit_docking(
+                    opts, pose_res, dus, lig_oemol, self.num_poses
+                )
+
+                if self.allow_retries:
+                    # try again with no relaxation
+                    if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
+                        opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
+                        pose_res, retcode = self.run_oe_posit_docking(
+                            opts, pose_res, dus, lig_oemol, self.num_poses
+                        )
+
+                    # try again with low posit probability
+                    if (
+                        retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                        and self.allow_low_posit_prob
+                    ):
+                        opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
+                        opts.SetMinProbability(self.low_posit_prob_thresh)
+                        pose_res, retcode = self.run_oe_posit_docking(
+                            opts, pose_res, dus, lig_oemol, self.num_poses
+                        )
+
+                    # try again allowing clashes
+                    if (
+                        self.allow_final_clash
+                        and retcode
+                        == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                    ):
+                        opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
+                        opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
+                        pose_res, retcode = self.run_oe_posit_docking(
+                            opts, pose_res, dus, lig_oemol, self.num_poses
+                        )
+
+                if retcode == oedocking.OEDockingReturnCode_Success:
+                    for result in pose_res.GetSinglePoseResults():
+                        posed_mol = result.GetPose()
+                        prob = result.GetProbability()
+
+                        posed_ligand = Ligand.from_oemol(posed_mol, **set.ligand.dict())
+                        # set SD tags
+                        sd_data = {
+                            DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
+                            DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
+                                self.posit_method.value
+                            ),
+                        }
+                        posed_ligand.set_SD_data(sd_data)
+
+                        # Generate info about which target was actually used by multi-reference docking
+                        if isinstance(set, DockingInputMultiStructure):
+                            docked_target = set.complexes[result.GetReceptorIndex()]
+                            print(f"{docked_target.target.target_name} was docked")
+                            input_pair = DockingInputPair(
+                                ligand=set.ligand, complex=docked_target
+                            )
+                        else:
+                            input_pair = set
+
+                        docking_result = POSITDockingResults(
+                            input_pair=input_pair,
+                            posed_ligand=posed_ligand,
+                            probability=prob,
+                            provenance=self.provenance(),
+                        )
+                        docking_results.append(docking_result)
+                        self._write_docking_files(docking_result, self.output_dir)
+
+                else:
+                    if error == "skip":
+                        logger.warn(
+                            f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
+                        )
+                        docking_results.append(None)
                     elif error == "raise":
                         raise ValueError(
-                            f"Omega failed with error code: {omega_retcode} : {oeomega.OEGetOmegaError(omega_retcode)}"
+                            f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
                         )
                     else:
                         raise ValueError(f"Unknown error handling option {error}")
-
-            opts = oedocking.OEPositOptions()
-            opts.SetIgnoreNitrogenStereo(True)
-            opts.SetPositMethods(self.posit_method.value)
-            opts.SetPoseRelaxMode(self.relax.value)
-
-            pose_res = oedocking.OEPositResults()
-            pose_res, retcode = self.run_oe_posit_docking(
-                opts, pose_res, dus, lig_oemol, self.num_poses
-            )
-
-            if self.allow_retries:
-                # try again with no relaxation
-                if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
-                    opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
-                    pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, dus, lig_oemol, self.num_poses
-                    )
-
-                # try again with low posit probability
-                if (
-                    retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-                    and self.allow_low_posit_prob
-                ):
-                    opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                    opts.SetMinProbability(self.low_posit_prob_thresh)
-                    pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, dus, lig_oemol, self.num_poses
-                    )
-
-                # try again allowing clashes
-                if (
-                    self.allow_final_clash
-                    and retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-                ):
-                    opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                    opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
-                    pose_res, retcode = self.run_oe_posit_docking(
-                        opts, pose_res, dus, lig_oemol, self.num_poses
-                    )
-
-            if retcode == oedocking.OEDockingReturnCode_Success:
-                for result in pose_res.GetSinglePoseResults():
-                    posed_mol = result.GetPose()
-                    prob = result.GetProbability()
-
-                    posed_ligand = Ligand.from_oemol(posed_mol, **set.ligand.dict())
-                    # set SD tags
-                    sd_data = {
-                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
-                        DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
-                            self.posit_method.value
-                        ),
-                    }
-                    posed_ligand.set_SD_data(sd_data)
-
-                    # Generate info about which target was actually used by multi-reference docking
-                    if isinstance(set, DockingInputMultiStructure):
-                        docked_target = set.complexes[result.GetReceptorIndex()]
-                        print(f"{docked_target.target.target_name} was docked")
-                        input_pair = DockingInputPair(
-                            ligand=set.ligand, complex=docked_target
-                        )
-                    else:
-                        input_pair = set
-
-                    docking_result = POSITDockingResults(
-                        input_pair=input_pair,
-                        posed_ligand=posed_ligand,
-                        probability=prob,
-                        provenance=self.provenance(),
-                    )
-                    docking_results.append(docking_result)
-
-            else:
-                if error == "skip":
-                    logger.warn(
-                        f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
-                    )
-                    docking_results.append(None)
-                elif error == "raise":
-                    raise ValueError(
-                        f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
-                    )
-                else:
-                    raise ValueError(f"Unknown error handling option {error}")
 
         return docking_results
 
