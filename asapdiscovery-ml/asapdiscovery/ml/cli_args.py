@@ -32,6 +32,17 @@ def output_dir(func):
     )(func)
 
 
+def trainer_config_cache(func):
+    return click.option(
+        "--trainer-config-cache",
+        type=click.Path(exists=True, dir_okay=False, path_type=Path),
+        help=(
+            "Trainer Config JSON cache file. All other pass args will supersede "
+            "anything stored in this file."
+        ),
+    )(func)
+
+
 ################################################################################
 
 

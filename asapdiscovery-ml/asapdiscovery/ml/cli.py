@@ -13,18 +13,19 @@ from asapdiscovery.data.utils import (
     extract_compounds_from_filenames,
 )
 from asapdiscovery.ml.cli_args import (
-    model_config_cache,
     ds_split_args,
     e3nn_args,
     es_args,
     gat_args,
     graph_ds_args,
     loss_args,
+    model_config_cache,
     mtenn_args,
     optim_args,
     output_dir,
     schnet_args,
     struct_ds_args,
+    trainer_config_cache,
     wandb_args,
 )
 from asapdiscovery.ml.schema_v2.config import (
@@ -94,6 +95,7 @@ def build_e3nn():
 
 @build_and_train.command(name="gat")
 @output_dir
+@trainer_config_cache
 @optim_args
 @wandb_args
 @model_config_cache
@@ -105,6 +107,7 @@ def build_e3nn():
 @loss_args
 def build_and_train_gat(
     output_dir: Path,
+    trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
     weight_decay: float | None = None,
@@ -239,7 +242,9 @@ def build_and_train_gat(
         semiquant_fill=semiquant_fill,
     )
 
-    t = Trainer(
+    t = _build_arbitrary_config(
+        config_cls=Trainer,
+        config_file=trainer_config_cache,
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
@@ -253,6 +258,7 @@ def build_and_train_gat(
 
 @build_and_train.command(name="schnet")
 @output_dir
+@trainer_config_cache
 @optim_args
 @model_config_cache
 @wandb_args
@@ -265,6 +271,7 @@ def build_and_train_gat(
 @loss_args
 def build_and_train_schnet(
     output_dir: Path,
+    trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
     weight_decay: float | None = None,
@@ -400,7 +407,9 @@ def build_and_train_schnet(
         semiquant_fill=semiquant_fill,
     )
 
-    t = Trainer(
+    t = _build_arbitrary_config(
+        config_cls=Trainer,
+        config_file=trainer_config_cache,
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
@@ -414,6 +423,7 @@ def build_and_train_schnet(
 
 @build_and_train.command("e3nn")
 @output_dir
+@trainer_config_cache
 @optim_args
 @model_config_cache
 @wandb_args
@@ -426,6 +436,7 @@ def build_and_train_schnet(
 @loss_args
 def build_and_train_e3nn(
     output_dir: Path,
+    trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
     weight_decay: float | None = None,
@@ -563,7 +574,9 @@ def build_and_train_e3nn(
         semiquant_fill=semiquant_fill,
     )
 
-    t = Trainer(
+    t = _build_arbitrary_config(
+        config_cls=Trainer,
+        config_file=trainer_config_cache,
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
