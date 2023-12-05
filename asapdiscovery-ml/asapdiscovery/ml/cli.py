@@ -153,7 +153,7 @@ def build_and_train_gat(
     train_frac: float | None = None,
     val_frac: float | None = None,
     test_frac: float | None = None,
-    enforce_1: bool | None = None,
+    enforce_one: bool | None = None,
     rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
@@ -222,7 +222,7 @@ def build_and_train_gat(
         train_frac=train_frac,
         val_frac=val_frac,
         test_frac=test_frac,
-        enforce_1=enforce_1,
+        enforce_one=enforce_one,
         rand_seed=rand_seed,
     )
     loss_config = _build_arbitrary_config(
@@ -232,7 +232,7 @@ def build_and_train_gat(
         semiquant_fill=semiquant_fill,
     )
 
-    return Trainer(
+    t = Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
@@ -240,6 +240,7 @@ def build_and_train_gat(
         ds_splitter_config=ds_splitter_config,
         loss_config=loss_config,
     )
+    print(t, flush=True)
 
 
 @build_and_train.command(name="schnet")
@@ -307,7 +308,7 @@ def build_and_train_schnet(
     train_frac: float | None = None,
     val_frac: float | None = None,
     test_frac: float | None = None,
-    enforce_1: bool | None = None,
+    enforce_one: bool | None = None,
     rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
@@ -375,7 +376,7 @@ def build_and_train_schnet(
         train_frac=train_frac,
         val_frac=val_frac,
         test_frac=test_frac,
-        enforce_1=enforce_1,
+        enforce_one=enforce_one,
         rand_seed=rand_seed,
     )
     loss_config = _build_arbitrary_config(
@@ -385,7 +386,7 @@ def build_and_train_schnet(
         semiquant_fill=semiquant_fill,
     )
 
-    return Trainer(
+    t = Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
@@ -393,6 +394,7 @@ def build_and_train_schnet(
         ds_splitter_config=ds_splitter_config,
         loss_config=loss_config,
     )
+    print(t, flush=True)
 
 
 @build_and_train.command("e3nn")
@@ -461,7 +463,7 @@ def build_and_train_e3nn(
     train_frac: float | None = None,
     val_frac: float | None = None,
     test_frac: float | None = None,
-    enforce_1: bool | None = None,
+    enforce_one: bool | None = None,
     rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
@@ -530,7 +532,7 @@ def build_and_train_e3nn(
         train_frac=train_frac,
         val_frac=val_frac,
         test_frac=test_frac,
-        enforce_1=enforce_1,
+        enforce_one=enforce_one,
         rand_seed=rand_seed,
     )
     loss_config = _build_arbitrary_config(
@@ -540,7 +542,7 @@ def build_and_train_e3nn(
         semiquant_fill=semiquant_fill,
     )
 
-    return Trainer(
+    t = Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
@@ -548,6 +550,7 @@ def build_and_train_e3nn(
         ds_splitter_config=ds_splitter_config,
         loss_config=loss_config,
     )
+    print(t, flush=True)
 
 
 def _check_ds_args(exp_file, structures, ds_cache, ds_config_cache, is_structural):
