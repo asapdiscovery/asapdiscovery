@@ -17,6 +17,7 @@ from asapdiscovery.docking.docking_v2 import (
     DockingResult,
 )
 from pydantic import Field, PositiveInt, root_validator
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +134,7 @@ class POSITDocker(DockingBase):
                 DockingInputMultiStructure,
             ]
         ],
+        output_dir: Union[str, Path],
         error="skip",
     ) -> list[DockingResult]:
         """
@@ -142,15 +144,15 @@ class POSITDocker(DockingBase):
         docking_results = []
 
         for set in inputs:
-            unique_name = DockingInputPair.unique_name()
+            unique_name = set.unique_name()
 
-            if self.output_dir / unique_name.exists():
+            if Path(output_dir / unique_name).exists():
                 logger.info(
                     f"Docking result for {unique_name} already exists, reading from disk"
                 )
                 docking_results.append(
                     DockingResult.from_json_file(
-                        self.output_dir / unique_name / "docking_result.json"
+                        output_dir / unique_name / "docking_result.json"
                     )
                 )
             else:
@@ -250,7 +252,7 @@ class POSITDocker(DockingBase):
                             provenance=self.provenance(),
                         )
                         docking_results.append(docking_result)
-                        self._write_docking_files(docking_result, self.output_dir)
+                        self._write_docking_files(docking_result, output_dir)
 
                 else:
                     if error == "skip":

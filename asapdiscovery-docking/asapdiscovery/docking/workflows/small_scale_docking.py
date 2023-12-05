@@ -295,6 +295,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
     results = docker.dock(
         pairs,
+        output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
@@ -304,8 +305,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     del pairs
 
     # write docking results
-    logger.info("Writing docking results")
-    POSITDocker.write_docking_files(results, output_dir / "docking_results")
+    # logger.info("Writing docking results")
+    # POSITDocker.write_docking_files(results, )
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]

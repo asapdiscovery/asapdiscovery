@@ -79,22 +79,31 @@ class DockingBase(BaseModel):
     type: Literal["DockingBase"] = "DockingBase"
 
     @abc.abstractmethod
-    def _dock(self, inputs: list[DockingInputPair]) -> list["DockingResult"]:
+    def _dock(
+        self, inputs: list[DockingInputPair], output_dir: Union[str, Path]
+    ) -> list["DockingResult"]:
         ...
 
     def dock(
-        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
+        self,
+        inputs: list[DockingInputPair],
+        output_dir: Union[str, Path],
+        use_dask: bool = False,
+        dask_client=None,
     ) -> Union[list[dask.delayed], list["DockingResult"]]:
+        if not Path(output_dir).exists():
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
-                out = dask.delayed(self._dock)(inputs=[inp])
+                out = dask.delayed(self._dock)(inputs=[inp], output_dir=output_dir)
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client=dask_client, errors="skip"
             )
         else:
-            outputs = self._dock(inputs=inputs)
+            outputs = self._dock(inputs=inputs, output_dir=output_dir)
         # filter out None values
         outputs = [o for o in outputs if o is not None]
         return outputs
