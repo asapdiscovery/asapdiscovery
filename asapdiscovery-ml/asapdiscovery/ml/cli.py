@@ -15,6 +15,7 @@ from asapdiscovery.ml.cli_args import (
     config_file,
     ds_cache,
     ds_config_cache,
+    ds_split_args,
     e3nn_args,
     es_args,
     exp_file,
@@ -31,6 +32,8 @@ from asapdiscovery.ml.cli_args import (
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
     DatasetType,
+    DatasetSplitterConfig,
+    DatasetSplitterType,
     EarlyStoppingConfig,
     EarlyStoppingType,
     OptimizerConfig,
@@ -100,6 +103,7 @@ def build_e3nn():
 @mtenn_args
 @gat_args
 @es_args
+@ds_split_args
 def build_and_train_gat(
     output_dir: Path,
     exp_file: Path | None = None,
@@ -147,6 +151,13 @@ def build_and_train_gat(
     es_n_check: int | None = None,
     es_divergence: float | None = None,
     es_config_cache: Path | None = None,
+    split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_1: bool | None = None,
+    rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,
@@ -225,6 +236,7 @@ def build_and_train_gat(
 @mtenn_args
 @schnet_args
 @es_args
+@ds_split_args
 def build_and_train_schnet(
     output_dir: Path,
     exp_file: Path | None = None,
@@ -274,6 +286,13 @@ def build_and_train_schnet(
     es_n_check: int | None = None,
     es_divergence: float | None = None,
     es_config_cache: Path | None = None,
+    split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_1: bool | None = None,
+    rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,
@@ -351,6 +370,7 @@ def build_and_train_schnet(
 @mtenn_args
 @e3nn_args
 @es_args
+@ds_split_args
 def build_and_train_e3nn(
     output_dir: Path,
     exp_file: Path | None = None,
@@ -401,6 +421,13 @@ def build_and_train_e3nn(
     es_n_check: int | None = None,
     es_divergence: float | None = None,
     es_config_cache: Path | None = None,
+    split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_1: bool | None = None,
+    rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,

@@ -5,6 +5,7 @@ from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.schema_v2.config import OptimizerType
 from mtenn.config import (
     CombinationConfig,
+    DatasetSplitterType,
     EarlyStoppingType,
     ReadoutConfig,
     StrategyConfig,
@@ -24,68 +25,6 @@ def output_dir(func):
         help=(
             "Top-level output directory. A subdirectory with the current W&B "
             "run ID will be made/searched if W&B is being used."
-        ),
-    )(func)
-
-
-################################################################################
-
-
-################################################################################
-# Dataset args
-def exp_file(func):
-    return click.option(
-        "-exp",
-        "--exp-file",
-        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
-        help="JSON file giving a list of ExperimentalDataCompound objects.",
-    )(func)
-
-
-def str_files(func):
-    return click.option(
-        "-str",
-        "--structures",
-        type=str,
-        help=(
-            "PDB structure files. Can be in one of two forms: either a glob that will "
-            "be expanded and all matching files will be taken, or a directory, in "
-            "which case all top-level PDB files will be taken."
-        ),
-    )(func)
-
-
-def str_fn_xtal_regex(func):
-    return click.option(
-        "--xtal-regex",
-        default=MPRO_ID_REGEX,
-        help="Regex for extracting crystal structure name from filename.",
-    )(func)
-
-
-def str_fn_cpd_regex(func):
-    return click.option(
-        "--cpd-regex",
-        default=MOONSHOT_CDD_ID_REGEX,
-        help="Regex for extracting compound id from filename.",
-    )(func)
-
-
-def ds_cache(func):
-    return click.option(
-        "--ds-cache",
-        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
-        help="Dataset cache file.",
-    )(func)
-
-
-def ds_config_cache(func):
-    return click.option(
-        "--ds-config-cache",
-        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
-        help=(
-            "DatasetConfig JSON cache file. If this is given, no other dataset-related "
-            "args will be parsed."
         ),
     )(func)
 
@@ -783,6 +722,148 @@ def es_config_cache(func):
         help=(
             "EarlyStoppingConfig JSON cache file. Other early stopping-related args "
             "that are passed will supersede anything stored in this file."
+        ),
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
+# Dataset args
+def exp_file(func):
+    return click.option(
+        "-exp",
+        "--exp-file",
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+        help="JSON file giving a list of ExperimentalDataCompound objects.",
+    )(func)
+
+
+def str_files(func):
+    return click.option(
+        "-str",
+        "--structures",
+        type=str,
+        help=(
+            "PDB structure files. Can be in one of two forms: either a glob that will "
+            "be expanded and all matching files will be taken, or a directory, in "
+            "which case all top-level PDB files will be taken."
+        ),
+    )(func)
+
+
+def str_fn_xtal_regex(func):
+    return click.option(
+        "--xtal-regex",
+        default=MPRO_ID_REGEX,
+        help="Regex for extracting crystal structure name from filename.",
+    )(func)
+
+
+def str_fn_cpd_regex(func):
+    return click.option(
+        "--cpd-regex",
+        default=MOONSHOT_CDD_ID_REGEX,
+        help="Regex for extracting compound id from filename.",
+    )(func)
+
+
+def ds_cache(func):
+    return click.option(
+        "--ds-cache",
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        help="Dataset cache file.",
+    )(func)
+
+
+def ds_config_cache(func):
+    return click.option(
+        "--ds-config-cache",
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "DatasetConfig JSON cache file. If this is given, no other dataset-related "
+            "args will be parsed."
+        ),
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
+# Dataset splitter args
+def ds_split_args(func):
+    for fn in [
+        ds_split_type,
+        train_frac,
+        val_frac,
+        test_frac,
+        enforce_1,
+        rand_seed,
+        ds_split_config_cache,
+    ]:
+        func = fn(func)
+
+    return func
+
+
+def ds_split_type(func):
+    return click.option(
+        "--ds-split-type",
+        type=DatasetSplitterType,
+        help=(
+            "Method to use for splitting. "
+            f"Options are [{', '.join(DatasetSplitterType.get_values())}]."
+        ),
+    )(func)
+
+
+def train_frac(func):
+    return click.option(
+        "--train-frac",
+        type=float,
+        help="Fraction of dataset to put in the train split.",
+    )(func)
+
+
+def val_frac(func):
+    return click.option(
+        "--val-frac",
+        type=float,
+        help="Fraction of dataset to put in the val split.",
+    )(func)
+
+
+def test_frac(func):
+    return click.option(
+        "--test-frac",
+        type=float,
+        help="Fraction of dataset to put in the test split.",
+    )(func)
+
+
+def enforce_1(func):
+    return click.option(
+        "--enforce-one",
+        type=bool,
+        help="Make sure that all split fractions add up to 1.",
+    )(func)
+
+
+def rand_seed(func):
+    return click.option(
+        "--rand-seed", type=int, help="Random seed to use if randomly splitting data."
+    )(func)
+
+
+def ds_split_config_cache(func):
+    return click.option(
+        "--ds-split-config-cache",
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "DatasetSplitterConfig JSON cache file. Other dataset splitter-related "
+            "args that are passed will supersede anything stored in this file."
         ),
     )(func)
 
