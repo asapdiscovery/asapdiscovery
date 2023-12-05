@@ -2,7 +2,6 @@ import json
 import pickle as pkl
 from pathlib import Path
 from time import time
-from typing import Callable
 
 import mtenn
 import numpy as np
@@ -13,6 +12,7 @@ from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
     DatasetSplitterConfig,
     EarlyStoppingConfig,
+    LossFunctionConfig,
     OptimizerConfig,
 )
 from mtenn.config import ModelConfigBase
@@ -44,7 +44,10 @@ class Trainer(BaseModel):
             "test splits."
         ),
     )
-    loss_func: Callable = Field(..., description="Loss function for training.")
+    loss_config: LossFunctionConfig = Field(
+        ...,
+        description="Config describing the loss function for training.",
+    )
 
     # Options for the training process
     auto_init: bool = Field(
