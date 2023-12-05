@@ -11,7 +11,7 @@ import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.schema_v2.sets import MultiStructureBase
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
@@ -48,6 +48,9 @@ class DockingInputPair(CompoundStructurePair, DockingInputBase):
 
     def to_design_units(self) -> list[oechem.OEDesignUnit]:
         return [self.complex.target.to_oedu()]
+
+    def unique_name(self):
+        return f"{self.complex.unique_name()}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"
 
 
 class DockingInputMultiStructure(MultiStructureBase):
@@ -101,9 +104,7 @@ class DockingBase(BaseModel):
         docking_results: list["DockingResult"], output_dir: Union[str, Path]
     ):
         """
-        Write docking results to files in output_dir, directories will have the form:
-        {target_name}_+_{ligand_name}/docked.sdf
-        {target_name}_+_{ligand_name}/docked_complex.pdb
+        Write docking results to files in output_dir
 
         Parameters
         ----------
@@ -118,14 +119,12 @@ class DockingBase(BaseModel):
             If compound names of input pair and posed ligand do not match
 
         """
-        ligs = [docking_result.input_pair.ligand for docking_result in docking_results]
-        names_unique = compound_names_unique(ligs)
         output_dir = Path(output_dir)
         # if names are not unique, we will use unknown_ligand_{i} as the ligand portion of directory
         # when writing files
 
         # write out the docked pose
-        for i, result in enumerate(docking_results):
+        for result in docking_results:
             if (
                 not result.input_pair.ligand.compound_name
                 == result.posed_ligand.compound_name
@@ -133,28 +132,19 @@ class DockingBase(BaseModel):
                 raise ValueError(
                     "Compound names of input pair and posed ligand do not match"
                 )
-            if names_unique:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + result.posed_ligand.compound_name
-                )
-            else:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + f"unknown_ligand_{i}"
-                )
+
+            output_pref = result.unique_name()
 
             compound_dir = output_dir / output_pref
             compound_dir.mkdir(parents=True, exist_ok=True)
             output_sdf_file = compound_dir / "docked.sdf"
             output_pdb_file = compound_dir / "docked_complex.pdb"
+            output_json_file = compound_dir / "docking_result.json"
 
             result.posed_ligand.to_sdf(output_sdf_file)
-
             combined_oemol = result.to_posed_oemol()
             save_openeye_pdb(combined_oemol, output_pdb_file)
+            result.to_json_file(output_json_file)
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
@@ -187,6 +177,10 @@ class DockingResult(BaseModel):
         description="Probability"
     )  # not easy to get the probability from rescoring
     provenance: dict[str, str] = Field(description="Provenance")
+
+    def to_json_file(self, file: str | Path):
+        with open(file, "w") as f:
+            f.write(self.json(indent=2))
 
     def get_output(self) -> dict:
         """
@@ -221,20 +215,8 @@ class DockingResult(BaseModel):
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
         return prot
 
-    def get_combined_id(self) -> str:
-        """
-        Get a unique ID for the DockingResult
-
-        Returns
-        -------
-        str
-            Unique ID
-        """
-        return (
-            self.input_pair.complex.target.target_name
-            + "_+_"
-            + self.input_pair.ligand.compound_name
-        )
+    def unique_name(self):
+        return self.input_pair.unique_name()
 
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):

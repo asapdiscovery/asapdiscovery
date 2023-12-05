@@ -41,7 +41,10 @@ class GIFVisualizerV2(BaseModel):
     static_view_only: bool = Field(
         False, description="Whether to only generate static views"
     )
-    start: PositiveInt = Field(1, description="Start frame")
+    start: PositiveInt = Field(
+        1800,
+        description="Start frame - if not defined, will default to last 10% of default trajectory settings",
+    )
     stop: int = Field(-1, description="Stop frame")
     interval: PositiveInt = Field(1, description="Interval between frames")
     debug: bool = Field(False, description="Whether to run in debug mode")
@@ -94,7 +97,7 @@ class GIFVisualizerV2(BaseModel):
             p = pymol2.PyMOL()
             p.start()
 
-            out_dir = self.output_dir / res.input_docking_result.get_combined_id()
+            out_dir = self.output_dir / res.input_docking_result.unique_name()
             out_dir.mkdir(parents=True, exist_ok=True)
             path = out_dir / "trajectory.gif"
 
@@ -184,6 +187,8 @@ class GIFVisualizerV2(BaseModel):
                 # reload
                 complex_name_min = "complex_min"
                 p.cmd.load(str(system), object=complex_name_min)
+                p.cmd.align(complex_name, complex_name_min)
+                p.cmd.delete(complex_name_min)
 
                 if self.smooth:
                     p.cmd.smooth(
@@ -214,8 +219,6 @@ class GIFVisualizerV2(BaseModel):
             if self.pse or self.pse_share:
                 p.cmd.save(str(out_dir / "session_5_selections.pse"))
 
-            p.cmd.align(complex_name, complex_name_min)
-            p.cmd.delete(complex_name_min)
             # Process the trajectory in a temporary directory
             from pygifsicle import gifsicle
 
