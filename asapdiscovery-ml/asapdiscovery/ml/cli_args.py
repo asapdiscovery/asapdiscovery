@@ -35,7 +35,7 @@ def output_dir(func):
 def trainer_config_cache(func):
     return click.option(
         "--trainer-config-cache",
-        type=click.Path(exists=True, dir_okay=False, path_type=Path),
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
         help=(
             "Trainer Config JSON cache file. All other pass args will supersede "
             "anything stored in this file."
@@ -133,7 +133,7 @@ def rho(func):
 def optimizer_config_cache(func):
     return click.option(
         "--optimizer-config-cache",
-        type=click.Path(exists=True, dir_okay=False, path_type=Path),
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
         help=(
             "Optimizer Config JSON cache file. Other optimizer-related args "
             "that are passed will supersede anything stored in this file."
@@ -149,7 +149,7 @@ def optimizer_config_cache(func):
 def model_config_cache(func):
     return click.option(
         "--model-config-cache",
-        type=click.Path(exists=True, dir_okay=False, path_type=Path),
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
         help=(
             "Model Config JSON cache file. Other model-related args "
             "that are passed will supersede anything stored in this file."
