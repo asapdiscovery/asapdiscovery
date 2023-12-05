@@ -571,14 +571,6 @@ class ReferenceLigand(Ligand):
     target_name: Optional[str] = None
 
 
-def compound_names_unique(ligands: list[Ligand]) -> bool:
-    """
-    Check that all the compound names in a list of ligands are unique
-    """
-    compound_names = [ligand.compound_name for ligand in ligands]
-    return len(set(compound_names)) == len(compound_names)
-
-
 def write_ligands_to_multi_sdf(
     sdf_name: Union[str, Path], ligands: list[Ligand], overwrite=False
 ):

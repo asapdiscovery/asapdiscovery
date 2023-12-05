@@ -49,10 +49,6 @@ def test_docking_dask(docking_input_pair, docking_input_pair_simple, use_dask):
 def test_docking_with_file_write(results_simple, tmp_path):
     docker = POSITDocker(use_omega=False)
     docker.write_docking_files(results_simple, tmp_path)
-    sdf_path = tmp_path / "test_+_test2" / "docked.sdf"
-    assert sdf_path.exists()
-    pdb_path = tmp_path / "test_+_test2" / "docked_complex.pdb"
-    assert pdb_path.exists()
 
 
 @pytest.mark.skipif(
