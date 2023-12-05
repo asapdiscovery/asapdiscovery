@@ -163,7 +163,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             f"Generating constrained poses using {self.pose_generator.type} for {len(ligands)} ligands."
         )
         # check for stereo in the reference ligand
-        if reference_complex.ligand.has_stereo():
+        if reference_complex.ligand.has_perceived_stereo:
             console.print(
                 "[yellow]! WARNING the reference structure is chiral, check output structures carefully! [/yellow]"
             )
