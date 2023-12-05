@@ -9,6 +9,7 @@ from asapdiscovery.data.dask_utils import (
     dask_cluster_from_type,
     set_dask_config,
 )
+from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
@@ -17,6 +18,7 @@ from asapdiscovery.data.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
+    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
@@ -226,8 +228,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         query_ligands = postera.pull()
     else:
         # load from file
-        logger.info(f"Loading ligands from file: {inputs.filename}")
-        molfile = MolFileFactory.from_file(inputs.filename)
+        logger.info(f"Loading ligands from file: {inputs.ligands}")
+        molfile = MolFileFactory.from_file(inputs.ligands)
         query_ligands = molfile.ligands
 
     # load complexes from a directory, from fragalysis or from a pdb file
@@ -258,6 +260,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
+    logger.info("Deduplicating by Inchikey")
+    query_ligands = LigandDeDuplicator().deduplicate(query_ligands)
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
@@ -516,7 +520,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # push the results to PostEra, making a new molecule set if necessary
-        result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
+        posit_score_tag = map_output_col_to_manifold_tag(
+            DockingResultCols, inputs.target
+        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
+        result_df, molset_name, made_new_molset = postera_uploader.push(
+            result_df, sort_column=posit_score_tag, sort_ascending=True
+        )
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")

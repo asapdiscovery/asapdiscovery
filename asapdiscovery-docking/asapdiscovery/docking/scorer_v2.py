@@ -54,6 +54,7 @@ _SCORE_MANIFOLD_ALIAS = {
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
     "smiles": DockingResultCols.SMILES.value,
+    "ligand_inchikey": DockingResultCols.INCHIKEY.value,
     "probability": DockingResultCols.DOCKING_CONFIDENCE_POSIT.value,
 }
 
@@ -69,6 +70,7 @@ class Score(BaseModel):
     compound_name: Optional[str]
     smiles: Optional[str]
     ligand_identifiers: Optional[LigandIdentifiers]
+    ligand_inchikey: Optional[str]
     target_name: Optional[str]
     target_identifiers: Optional[TargetIdentifiers]
     complex_ligand_smiles: Optional[str]
@@ -88,6 +90,7 @@ class Score(BaseModel):
             score=score,
             compound_name=docking_result.posed_ligand.compound_name,
             smiles=docking_result.posed_ligand.smiles,
+            ligand_inchikey=docking_result.posed_ligand.inchikey,
             ligand_ids=docking_result.posed_ligand.ids,
             target_name=docking_result.input_pair.complex.target.target_name,
             target_ids=docking_result.input_pair.complex.target.ids,
