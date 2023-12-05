@@ -2,12 +2,14 @@ from pathlib import Path
 
 import click
 from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
-from asapdiscovery.ml.schema_v2.config import OptimizerType
-from mtenn.config import (
-    CombinationConfig,
+from asapdiscovery.ml.schema_v2.config import (
+    OptimizerType,
     DatasetSplitterType,
     EarlyStoppingType,
     LossFunctionType,
+)
+from mtenn.config import (
+    CombinationConfig,
     ReadoutConfig,
     StrategyConfig,
 )
