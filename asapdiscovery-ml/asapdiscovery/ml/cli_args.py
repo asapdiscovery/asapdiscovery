@@ -3,7 +3,12 @@ from pathlib import Path
 import click
 from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.schema_v2.config import OptimizerType
-from mtenn.config import CombinationConfig, ReadoutConfig, StrategyConfig
+from mtenn.config import (
+    CombinationConfig,
+    EarlyStoppingType,
+    ReadoutConfig,
+    StrategyConfig,
+)
 
 
 ################################################################################
@@ -79,7 +84,7 @@ def ds_config_cache(func):
         "--ds-config-cache",
         type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
         help=(
-            "Dataset config cache function. If this is given, no other dataset-related "
+            "DatasetConfig JSON cache file. If this is given, no other dataset-related "
             "args will be parsed."
         ),
     )(func)
@@ -712,6 +717,73 @@ def num_neighbors(func):
 def num_nodes(func):
     return click.option(
         "--num-nodes", type=float, help="Typical number of nodes in a graph."
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
+# Early stopping args
+def es_args(func):
+    for fn in [es_type, es_patience, es_n_check, es_divergence, es_config_cache]:
+        func = fn(func)
+
+    return func
+
+
+def es_type(func):
+    return click.option(
+        "--es-type",
+        type=EarlyStoppingType,
+        help=(
+            "Which early stopping strategy to use. "
+            f"Options are [{', '.join(OptimizerType.get_values())}]."
+        ),
+    )(func)
+
+
+def es_patience(func):
+    return click.option(
+        "--es-patience",
+        type=int,
+        help=(
+            "Number of training epochs to allow with no improvement in val loss. "
+            "Used if --es_type is best."
+        ),
+    )(func)
+
+
+def es_n_check(func):
+    return click.option(
+        "--es-n-check",
+        type=int,
+        help=(
+            "Number of past epoch losses to keep track of when determining "
+            "convergence. Used if --es_type is converged."
+        ),
+    )(func)
+
+
+def es_divergence(func):
+    return click.option(
+        "--es-divergence",
+        type=float,
+        help=(
+            "Max allowable difference from the mean of the losses as a fraction of the "
+            "average loss. Used if --es_type is converged."
+        ),
+    )(func)
+
+
+def es_config_cache(func):
+    return click.option(
+        "--es-config-cache",
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "EarlyStoppingConfig JSON cache file. Other early stopping-related args "
+            "that are passed will supersede anything stored in this file."
+        ),
     )(func)
 
 
