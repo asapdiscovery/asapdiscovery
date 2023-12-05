@@ -738,7 +738,7 @@ def _build_arbitrary_config(config_cls, config_file, **config_kwargs):
         loaded_kwargs = {}
 
     # Filter out None kwargs so defaults kick in
-    config_kwargs = {k: v for k, v in config_kwargs if v is not None}
+    config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
 
     # Update stored config args
     loaded_kwargs |= config_kwargs
