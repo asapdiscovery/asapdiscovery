@@ -7,6 +7,7 @@ from mtenn.config import (
     CombinationConfig,
     DatasetSplitterType,
     EarlyStoppingType,
+    LossFunctionType,
     ReadoutConfig,
     StrategyConfig,
 )
@@ -877,6 +878,48 @@ def ds_split_config_cache(func):
         type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
         help=(
             "DatasetSplitterConfig JSON cache file. Other dataset splitter-related "
+            "args that are passed will supersede anything stored in this file."
+        ),
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
+# Loss function args
+def loss_args(func):
+    for fn in [loss_type, semiquant_fill, loss_config_cache]:
+        func = fn(func)
+
+    return func
+
+
+def loss_type(func):
+    return click.option(
+        "--loss-type",
+        type=LossFunctionType,
+        help=(
+            "Loss function to use. "
+            f"Options are [{', '.join(LossFunctionType.get_values())}]."
+        ),
+    )(func)
+
+
+def semiquant_fill(func):
+    return click.option(
+        "--semiquant-fill",
+        type=float,
+        help="Value to fill in for semiquant uncertainty values in gaussian_sq loss.",
+    )(func)
+
+
+def loss_config_cache(func):
+    return click.option(
+        "--loss-config-cache",
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "LossFunctionConfig JSON cache file. Other loss function-related "
             "args that are passed will supersede anything stored in this file."
         ),
     )(func)

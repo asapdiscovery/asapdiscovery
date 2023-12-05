@@ -18,6 +18,7 @@ from asapdiscovery.ml.cli_args import (
     es_args,
     gat_args,
     graph_ds_args,
+    loss_args,
     mtenn_args,
     optim_args,
     output_dir,
@@ -32,6 +33,8 @@ from asapdiscovery.ml.schema_v2.config import (
     DatasetType,
     EarlyStoppingConfig,
     EarlyStoppingType,
+    LossFunctionConfig,
+    LossFunctionType,
     OptimizerConfig,
     OptimizerType,
 )
@@ -98,6 +101,7 @@ def build_e3nn():
 @es_args
 @graph_ds_args
 @ds_split_args
+@loss_args
 def build_and_train_gat(
     output_dir: Path,
     optimizer_type: OptimizerType | None = None,
@@ -152,6 +156,9 @@ def build_and_train_gat(
     enforce_1: bool | None = None,
     rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,
@@ -218,6 +225,12 @@ def build_and_train_gat(
         enforce_1=enforce_1,
         rand_seed=rand_seed,
     )
+    loss_config = _build_arbitrary_config(
+        config_cls=LossFunctionConfig,
+        config_file=loss_config_cache,
+        loss_type=loss_type,
+        semiquant_fill=semiquant_fill,
+    )
 
     return Trainer(
         optimizer_config=optim_config,
@@ -225,6 +238,7 @@ def build_and_train_gat(
         es_config=es_config,
         ds_config=ds_config,
         ds_splitter_config=ds_splitter_config,
+        loss_config=loss_config,
     )
 
 
@@ -239,6 +253,7 @@ def build_and_train_gat(
 @graph_ds_args
 @struct_ds_args
 @ds_split_args
+@loss_args
 def build_and_train_schnet(
     output_dir: Path,
     optimizer_type: OptimizerType | None = None,
@@ -295,6 +310,9 @@ def build_and_train_schnet(
     enforce_1: bool | None = None,
     rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,
@@ -360,6 +378,12 @@ def build_and_train_schnet(
         enforce_1=enforce_1,
         rand_seed=rand_seed,
     )
+    loss_config = _build_arbitrary_config(
+        config_cls=LossFunctionConfig,
+        config_file=loss_config_cache,
+        loss_type=loss_type,
+        semiquant_fill=semiquant_fill,
+    )
 
     return Trainer(
         optimizer_config=optim_config,
@@ -367,6 +391,7 @@ def build_and_train_schnet(
         es_config=es_config,
         ds_config=ds_config,
         ds_splitter_config=ds_splitter_config,
+        loss_config=loss_config,
     )
 
 
@@ -381,6 +406,7 @@ def build_and_train_schnet(
 @graph_ds_args
 @struct_ds_args
 @ds_split_args
+@loss_args
 def build_and_train_e3nn(
     output_dir: Path,
     optimizer_type: OptimizerType | None = None,
@@ -438,6 +464,9 @@ def build_and_train_e3nn(
     enforce_1: bool | None = None,
     rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,
@@ -504,6 +533,12 @@ def build_and_train_e3nn(
         enforce_1=enforce_1,
         rand_seed=rand_seed,
     )
+    loss_config = _build_arbitrary_config(
+        config_cls=LossFunctionConfig,
+        config_file=loss_config_cache,
+        loss_type=loss_type,
+        semiquant_fill=semiquant_fill,
+    )
 
     return Trainer(
         optimizer_config=optim_config,
@@ -511,6 +546,7 @@ def build_and_train_e3nn(
         es_config=es_config,
         ds_config=ds_config,
         ds_splitter_config=ds_splitter_config,
+        loss_config=loss_config,
     )
 
 
