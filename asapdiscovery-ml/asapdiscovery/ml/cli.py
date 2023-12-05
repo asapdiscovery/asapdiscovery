@@ -214,12 +214,23 @@ def build_and_train_gat(
         is_structural=False,
         is_grouped=grouped,
     )
+    ds_splitter_config = _build_arbitrary_config(
+        config_cls=DatasetSplitterConfig,
+        config_file=ds_split_config_cache,
+        split_type=split_type,
+        train_frac=train_frac,
+        val_frac=val_frac,
+        test_frac=test_frac,
+        enforce_1=enforce_1,
+        rand_seed=rand_seed,
+    )
 
     return Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
         ds_config=ds_config,
+        ds_splitter_config=ds_splitter_config,
     )
 
 
@@ -349,12 +360,23 @@ def build_and_train_schnet(
         is_structural=True,
         is_grouped=grouped,
     )
+    ds_splitter_config = _build_arbitrary_config(
+        config_cls=DatasetSplitterConfig,
+        config_file=ds_split_config_cache,
+        split_type=split_type,
+        train_frac=train_frac,
+        val_frac=val_frac,
+        test_frac=test_frac,
+        enforce_1=enforce_1,
+        rand_seed=rand_seed,
+    )
 
     return Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
         ds_config=ds_config,
+        ds_splitter_config=ds_splitter_config,
     )
 
 
@@ -486,12 +508,23 @@ def build_and_train_e3nn(
         is_structural=True,
         is_grouped=grouped,
     )
+    ds_splitter_config = _build_arbitrary_config(
+        config_cls=DatasetSplitterConfig,
+        config_file=ds_split_config_cache,
+        split_type=split_type,
+        train_frac=train_frac,
+        val_frac=val_frac,
+        test_frac=test_frac,
+        enforce_1=enforce_1,
+        rand_seed=rand_seed,
+    )
 
     return Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
         es_config=es_config,
         ds_config=ds_config,
+        ds_splitter_config=ds_splitter_config,
     )
 
 
