@@ -44,7 +44,7 @@ class HTMLVisualizer:
         target: str,
         protein: Path,
         color_method: str = "subpockets",
-        align=False,
+        align=True,
         debug: bool = False,
     ):
         """
@@ -61,7 +61,7 @@ class HTMLVisualizer:
         color_method : str
             Protein surface coloring method. Can be either by `subpockets` or `fitness`
         align : bool
-            Whether or not to align the protein (and poses) to the master structure of the target.
+            Whether or not to align the protein (and poses) to the master structure of the target. Redundant if already docked.
         """
         if not len(poses) == len(output_paths):
             raise ValueError("Number of poses and paths must be equal.")
