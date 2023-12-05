@@ -16,6 +16,7 @@ from asapdiscovery.ml.cli_args import (
     ds_cache,
     ds_config_cache,
     e3nn_args,
+    es_args,
     exp_file,
     gat_args,
     mtenn_args,
@@ -30,6 +31,8 @@ from asapdiscovery.ml.cli_args import (
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
     DatasetType,
+    EarlyStoppingConfig,
+    EarlyStoppingType,
     OptimizerConfig,
     OptimizerType,
 )
@@ -96,6 +99,7 @@ def build_e3nn():
 @wandb_args
 @mtenn_args
 @gat_args
+@es_args
 def build_and_train_gat(
     output_dir: Path,
     exp_file: Path | None = None,
@@ -138,6 +142,11 @@ def build_and_train_gat(
     agg_modes: str | None = None,
     biases: str | None = None,
     allow_zero_in_degree: bool | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,
@@ -176,6 +185,13 @@ def build_and_train_gat(
         biases=biases,
         allow_zero_in_degree=allow_zero_in_degree,
     )
+    es_config = _build_es_config(
+        es_config_cache=es_config_cache,
+        es_type=es_type,
+        es_patience=es_patience,
+        es_n_check=es_n_check,
+        es_divergence=es_divergence,
+    )
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=None,
@@ -190,6 +206,7 @@ def build_and_train_gat(
     return Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
+        es_config=es_config,
         ds_config=ds_config,
     )
 
@@ -207,6 +224,7 @@ def build_and_train_gat(
 @wandb_args
 @mtenn_args
 @schnet_args
+@es_args
 def build_and_train_schnet(
     output_dir: Path,
     exp_file: Path | None = None,
@@ -251,6 +269,11 @@ def build_and_train_schnet(
     dipole: bool | None = None,
     mean: float | None = None,
     std: float | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,
@@ -288,6 +311,13 @@ def build_and_train_schnet(
         mean=mean,
         std=std,
     )
+    es_config = _build_es_config(
+        es_config_cache=es_config_cache,
+        es_type=es_type,
+        es_patience=es_patience,
+        es_n_check=es_n_check,
+        es_divergence=es_divergence,
+    )
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=structures,
@@ -302,6 +332,7 @@ def build_and_train_schnet(
     return Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
+        es_config=es_config,
         ds_config=ds_config,
     )
 
@@ -319,6 +350,7 @@ def build_and_train_schnet(
 @wandb_args
 @mtenn_args
 @e3nn_args
+@es_args
 def build_and_train_e3nn(
     output_dir: Path,
     exp_file: Path | None = None,
@@ -364,6 +396,11 @@ def build_and_train_e3nn(
     num_radial_neurons: int | None = None,
     num_neighbors: float | None = None,
     num_nodes: float | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_config_cache: Path | None = None,
 ):
     optim_config = OptimizerConfig(
         optimizer_type=optimizer_type,
@@ -402,6 +439,13 @@ def build_and_train_e3nn(
         num_neighbors=num_neighbors,
         num_nodes=num_nodes,
     )
+    es_config = _build_es_config(
+        es_config_cache=es_config_cache,
+        es_type=es_type,
+        es_patience=es_patience,
+        es_n_check=es_n_check,
+        es_divergence=es_divergence,
+    )
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=structures,
@@ -416,6 +460,7 @@ def build_and_train_e3nn(
     return Trainer(
         optimizer_config=optim_config,
         model_config=model_config,
+        es_config=es_config,
         ds_config=ds_config,
     )
 
@@ -607,3 +652,43 @@ def _build_model_config(config_cls, config_file, **model_kwargs):
         config_file.write_text(model_config.json())
 
     return model_config
+
+
+def _build_es_config(es_config_cache, **es_kwargs):
+    """
+    Helper function to load/build an EarlyStoppingConfig object.
+
+    Parameters
+    ----------
+    es_config_cache : Path | None
+        Path giving a JSON file containing a serialized EarlyStoppingConfig object. Any
+        other kwargs passed in es_kwargs will supersede anything in this Config.
+    es_kwargs : dict
+        Dict giving all CLI args for model construction. Will discard any that are None
+        to allow the Config defaults to kick in.
+
+    Returns
+    -------
+    config_cls
+        Instance of whatever class is passed
+    """
+    if es_config_cache and es_config_cache.exists():
+        print("loading from cache", flush=True)
+        loaded_kwargs = json.loads(es_config_cache.read_text())
+    else:
+        loaded_kwargs = {}
+
+    # Filter out None kwargs so defaults kick in
+    es_kwargs = {k: v for k, v in es_kwargs if v is not None}
+
+    # Update stored config args
+    loaded_kwargs |= es_kwargs
+
+    # Build Config
+    es_config = EarlyStoppingConfig(**loaded_kwargs)
+
+    # If a non-existent file was passed, store the Config
+    if es_config_cache:
+        es_config_cache.write_text(es_config.json())
+
+    return es_config
