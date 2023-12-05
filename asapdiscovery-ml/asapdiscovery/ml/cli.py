@@ -1,9 +1,9 @@
 import json
 from glob import glob
 from pathlib import Path
-import pydantic
 
 import click
+import pydantic
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -803,11 +803,9 @@ def _build_arbitrary_config(config_cls, config_file, **config_kwargs):
         missing_vals = [err["loc"][0] for err in exc.errors()]
 
         raise ValueError(
-            (
                 f"Tried to build {config_cls} but missing required values: ["
                 + ", ".join(missing_vals)
                 + "]"
-            )
         )
 
     # If a non-existent file was passed, store the Config
