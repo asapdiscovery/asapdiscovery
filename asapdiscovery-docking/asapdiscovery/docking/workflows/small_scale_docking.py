@@ -4,12 +4,12 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.dask_utils import (
     DaskType,
     dask_cluster_from_type,
     set_dask_config,
 )
+from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
