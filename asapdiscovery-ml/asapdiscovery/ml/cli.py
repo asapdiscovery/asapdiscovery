@@ -170,8 +170,8 @@ def build_and_train_gat(
         eps=eps,
         rho=rho,
     )
-    model_config = _build_model_config(
-        GATModelConfig,
+    model_config = _build_arbitrary_config(
+        config_cls=GATModelConfig,
         config_file=config_file,
         grouped=grouped,
         strategy=strategy,
@@ -196,8 +196,9 @@ def build_and_train_gat(
         biases=biases,
         allow_zero_in_degree=allow_zero_in_degree,
     )
-    es_config = _build_es_config(
-        es_config_cache=es_config_cache,
+    es_config = _build_arbitrary_config(
+        config_cls=EarlyStoppingConfig,
+        config_file=es_config_cache,
         es_type=es_type,
         es_patience=es_patience,
         es_n_check=es_n_check,
@@ -305,8 +306,8 @@ def build_and_train_schnet(
         eps=eps,
         rho=rho,
     )
-    model_config = _build_model_config(
-        SchNetModelConfig,
+    model_config = _build_arbitrary_config(
+        config_cls=SchNetModelConfig,
         config_file=config_file,
         grouped=grouped,
         strategy=strategy,
@@ -330,8 +331,9 @@ def build_and_train_schnet(
         mean=mean,
         std=std,
     )
-    es_config = _build_es_config(
-        es_config_cache=es_config_cache,
+    es_config = _build_arbitrary_config(
+        config_cls=EarlyStoppingConfig,
+        config_file=es_config_cache,
         es_type=es_type,
         es_patience=es_patience,
         es_n_check=es_n_check,
@@ -440,8 +442,8 @@ def build_and_train_e3nn(
         eps=eps,
         rho=rho,
     )
-    model_config = _build_model_config(
-        E3NNModelConfig,
+    model_config = _build_arbitrary_config(
+        config_cls=E3NNModelConfig,
         config_file=config_file,
         grouped=grouped,
         strategy=strategy,
@@ -466,8 +468,9 @@ def build_and_train_e3nn(
         num_neighbors=num_neighbors,
         num_nodes=num_nodes,
     )
-    es_config = _build_es_config(
-        es_config_cache=es_config_cache,
+    es_config = _build_arbitrary_config(
+        config_cls=EarlyStoppingConfig,
+        config_file=es_config_cache,
         es_type=es_type,
         es_patience=es_patience,
         es_n_check=es_n_check,
@@ -638,19 +641,21 @@ def _build_ds_config(
     return ds_config
 
 
-def _build_model_config(config_cls, config_file, **model_kwargs):
+def _build_arbitrary_config(config_cls, config_file, **config_kwargs):
     """
-    Helper function to load/build a model config object.
+    Helper function to load/build an arbitrary Config object. All kwargs in
+    config_kwargs will overwrite anything in config_file, and everything will be passed
+    to the config_cls constructor, so make sure only the appropriate kwargs are passed.
 
     Parameters
     ----------
     config_cls : type
-        ModelConfigBase subclass
+        Config class. Can in theory be any pydantic schema
     config_file : Path
         Path to config file. Will be loaded if it exists, otherwise will be saved after
-        loading.
-    model_kwargs : dict
-        Dict giving all CLI args for model construction. Will discard any that are None
+        object creation.
+    config_kwargs : dict
+        Dict giving all CLI args for Config construction. Will discard any that are None
         to allow the Config defaults to kick in.
 
     Returns
@@ -659,63 +664,23 @@ def _build_model_config(config_cls, config_file, **model_kwargs):
         Instance of whatever class is passed
     """
 
-    # Get file config options
     if config_file and config_file.exists():
-        model_config = json.loads(config_file.read_text())
-    else:
-        model_config = {}
-
-    # Filter out passed kwargs that are None
-    model_kwargs = {k: v for k, v in model_kwargs.items() if v is not None}
-
-    # Update model_config
-    model_config |= model_kwargs
-
-    # Construct Config object
-    model_config = config_cls(model_config)
-
-    # Save if desired
-    if config_file and (not config_file.exists()):
-        config_file.write_text(model_config.json())
-
-    return model_config
-
-
-def _build_es_config(es_config_cache, **es_kwargs):
-    """
-    Helper function to load/build an EarlyStoppingConfig object.
-
-    Parameters
-    ----------
-    es_config_cache : Path | None
-        Path giving a JSON file containing a serialized EarlyStoppingConfig object. Any
-        other kwargs passed in es_kwargs will supersede anything in this Config.
-    es_kwargs : dict
-        Dict giving all CLI args for model construction. Will discard any that are None
-        to allow the Config defaults to kick in.
-
-    Returns
-    -------
-    config_cls
-        Instance of whatever class is passed
-    """
-    if es_config_cache and es_config_cache.exists():
         print("loading from cache", flush=True)
-        loaded_kwargs = json.loads(es_config_cache.read_text())
+        loaded_kwargs = json.loads(config_file.read_text())
     else:
         loaded_kwargs = {}
 
     # Filter out None kwargs so defaults kick in
-    es_kwargs = {k: v for k, v in es_kwargs if v is not None}
+    config_kwargs = {k: v for k, v in config_kwargs if v is not None}
 
     # Update stored config args
-    loaded_kwargs |= es_kwargs
+    loaded_kwargs |= config_kwargs
 
     # Build Config
-    es_config = EarlyStoppingConfig(**loaded_kwargs)
+    config = config_cls(**loaded_kwargs)
 
     # If a non-existent file was passed, store the Config
-    if es_config_cache:
-        es_config_cache.write_text(es_config.json())
+    if config_file:
+        config_file.write_text(config.json())
 
-    return es_config
+    return config
