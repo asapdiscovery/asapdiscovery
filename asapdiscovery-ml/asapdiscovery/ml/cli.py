@@ -31,9 +31,9 @@ from asapdiscovery.ml.cli_args import (
 )
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
-    DatasetType,
     DatasetSplitterConfig,
     DatasetSplitterType,
+    DatasetType,
     EarlyStoppingConfig,
     EarlyStoppingType,
     OptimizerConfig,
