@@ -62,6 +62,12 @@ manifold_outputs:
       units:
       postfix: msk
 
+  - docking-hit:
+      prefix: in-silico
+      tools:
+      units:
+      postfix: msk
+
   - docking-pose:
       prefix: in-silico
       tools:
