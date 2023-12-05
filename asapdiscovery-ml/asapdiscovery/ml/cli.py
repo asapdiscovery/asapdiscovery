@@ -113,6 +113,7 @@ def build_and_train_gat(
     b2: float | None = None,
     eps: float | None = None,
     rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
     wandb_project: str | None = None,
@@ -160,7 +161,9 @@ def build_and_train_gat(
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
 ):
-    optim_config = OptimizerConfig(
+    optim_config = _build_arbitrary_config(
+        config_cls=OptimizerConfig,
+        config_file=optimizer_config_cache,
         optimizer_type=optimizer_type,
         lr=lr,
         weight_decay=weight_decay,
@@ -266,6 +269,7 @@ def build_and_train_schnet(
     b2: float | None = None,
     eps: float | None = None,
     rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
     wandb_project: str | None = None,
@@ -315,7 +319,9 @@ def build_and_train_schnet(
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
 ):
-    optim_config = OptimizerConfig(
+    optim_config = _build_arbitrary_config(
+        config_cls=OptimizerConfig,
+        config_file=optimizer_config_cache,
         optimizer_type=optimizer_type,
         lr=lr,
         weight_decay=weight_decay,
@@ -420,6 +426,7 @@ def build_and_train_e3nn(
     b2: float | None = None,
     eps: float | None = None,
     rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
     wandb_project: str | None = None,
@@ -470,7 +477,9 @@ def build_and_train_e3nn(
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
 ):
-    optim_config = OptimizerConfig(
+    optim_config = _build_arbitrary_config(
+        config_cls=OptimizerConfig,
+        config_file=optimizer_config_cache,
         optimizer_type=optimizer_type,
         lr=lr,
         weight_decay=weight_decay,

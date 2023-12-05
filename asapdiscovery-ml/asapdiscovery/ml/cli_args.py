@@ -38,7 +38,18 @@ def output_dir(func):
 ################################################################################
 # Optimizer args
 def optim_args(func):
-    for fn in [optimizer_type, lr, weight_decay, momentum, dampening, b1, b2, eps, rho]:
+    for fn in [
+        optimizer_type,
+        lr,
+        weight_decay,
+        momentum,
+        dampening,
+        b1,
+        b2,
+        eps,
+        rho,
+        optimizer_config_cache,
+    ]:
         func = fn(func)
 
     return func
@@ -105,6 +116,17 @@ def eps(func):
 def rho(func):
     return click.option(
         "--rho", type=float, help="Rho parameter for Adadelta optimizer."
+    )(func)
+
+
+def optimizer_config_cache(func):
+    return click.option(
+        "--optimizer-config-cache",
+        type=click.Path(exists=True, dir_okay=False, path_type=Path),
+        help=(
+            "Optimizer Config JSON cache file. Other optimizer-related args "
+            "that are passed will supersede anything stored in this file."
+        ),
     )(func)
 
 
