@@ -110,13 +110,13 @@ def rho(func):
 
 ################################################################################
 # Model setup args
-def config_file(func):
+def model_config_cache(func):
     return click.option(
-        "--config-file",
+        "--model-config-cache",
         type=click.Path(exists=True, dir_okay=False, path_type=Path),
         help=(
-            "JSON file giving model config. Any passed CLI args will overwrite the "
-            "options in this file."
+            "Model Config JSON cache file. Other model-related args "
+            "that are passed will supersede anything stored in this file."
         ),
     )(func)
 

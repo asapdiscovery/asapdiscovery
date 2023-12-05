@@ -12,7 +12,7 @@ from asapdiscovery.data.utils import (
     extract_compounds_from_filenames,
 )
 from asapdiscovery.ml.cli_args import (
-    config_file,
+    model_config_cache,
     ds_cache,
     ds_config_cache,
     ds_split_args,
@@ -98,8 +98,8 @@ def build_e3nn():
 @ds_cache
 @ds_config_cache
 @optim_args
-@config_file
 @wandb_args
+@model_config_cache
 @mtenn_args
 @gat_args
 @es_args
@@ -118,7 +118,6 @@ def build_and_train_gat(
     b2: float | None = None,
     eps: float | None = None,
     rho: float | None = None,
-    config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
     wandb_project: str | None = None,
@@ -135,6 +134,7 @@ def build_and_train_gat(
     pred_km: float | None = None,
     comb_substrate: float | None = None,
     comb_km: float | None = None,
+    model_config_cache: Path | None = None,
     in_feats: int | None = None,
     num_layers: int | None = None,
     hidden_feats: str | None = None,
@@ -172,7 +172,7 @@ def build_and_train_gat(
     )
     model_config = _build_arbitrary_config(
         config_cls=GATModelConfig,
-        config_file=config_file,
+        config_file=model_config_cache,
         grouped=grouped,
         strategy=strategy,
         pred_readout=pred_readout,
@@ -243,7 +243,7 @@ def build_and_train_gat(
 @ds_cache
 @ds_config_cache
 @optim_args
-@config_file
+@model_config_cache
 @wandb_args
 @mtenn_args
 @schnet_args
@@ -266,7 +266,6 @@ def build_and_train_schnet(
     b2: float | None = None,
     eps: float | None = None,
     rho: float | None = None,
-    config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
     wandb_project: str | None = None,
@@ -283,6 +282,7 @@ def build_and_train_schnet(
     pred_km: float | None = None,
     comb_substrate: float | None = None,
     comb_km: float | None = None,
+    model_config_cache: Path | None = None,
     hidden_channels: int | None = None,
     num_filters: int | None = None,
     num_interactions: int | None = None,
@@ -319,7 +319,7 @@ def build_and_train_schnet(
     )
     model_config = _build_arbitrary_config(
         config_cls=SchNetModelConfig,
-        config_file=config_file,
+        config_file=model_config_cache,
         grouped=grouped,
         strategy=strategy,
         pred_readout=pred_readout,
@@ -389,7 +389,7 @@ def build_and_train_schnet(
 @ds_cache
 @ds_config_cache
 @optim_args
-@config_file
+@model_config_cache
 @wandb_args
 @mtenn_args
 @e3nn_args
@@ -412,7 +412,6 @@ def build_and_train_e3nn(
     b2: float | None = None,
     eps: float | None = None,
     rho: float | None = None,
-    config_file: Path | None = None,
     use_wandb: bool = False,
     sweep: bool = False,
     wandb_project: str | None = None,
@@ -429,6 +428,7 @@ def build_and_train_e3nn(
     pred_km: float | None = None,
     comb_substrate: float | None = None,
     comb_km: float | None = None,
+    model_config_cache: Path | None = None,
     num_atom_types: int | None = None,
     irreps_hidden: str | None = None,
     lig: bool | None = None,
@@ -466,7 +466,7 @@ def build_and_train_e3nn(
     )
     model_config = _build_arbitrary_config(
         config_cls=E3NNModelConfig,
-        config_file=config_file,
+        config_file=model_config_cache,
         grouped=grouped,
         strategy=strategy,
         pred_readout=pred_readout,
