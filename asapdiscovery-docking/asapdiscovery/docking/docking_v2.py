@@ -115,15 +115,10 @@ class DockingBase(BaseModel):
 
         Raises
         ------
-        ValueError
-            If compound names of input pair and posed ligand do not match
-
         """
         output_dir = Path(output_dir)
-        # if names are not unique, we will use unknown_ligand_{i} as the ligand portion of directory
-        # when writing files
 
-        # write out the docked pose
+        # write out the docked poses and info
         for result in docking_results:
             result._write_docking_files(result, output_dir)
 
