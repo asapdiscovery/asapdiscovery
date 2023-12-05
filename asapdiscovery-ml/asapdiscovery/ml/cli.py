@@ -246,6 +246,7 @@ def build_and_train_gat(
         ds_config=ds_config,
         ds_splitter_config=ds_splitter_config,
         loss_config=loss_config,
+        output_dir=output_dir,
     )
     print(t, flush=True)
 
@@ -406,6 +407,7 @@ def build_and_train_schnet(
         ds_config=ds_config,
         ds_splitter_config=ds_splitter_config,
         loss_config=loss_config,
+        output_dir=output_dir,
     )
     print(t, flush=True)
 
@@ -568,6 +570,7 @@ def build_and_train_e3nn(
         ds_config=ds_config,
         ds_splitter_config=ds_splitter_config,
         loss_config=loss_config,
+        output_dir=output_dir,
     )
     print(t, flush=True)
 
