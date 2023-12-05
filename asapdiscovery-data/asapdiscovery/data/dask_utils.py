@@ -57,6 +57,7 @@ class DaskType(StringEnum):
     """
 
     LOCAL = "local"
+    LOCAL_GPU = "local-gpu"
     LILAC_GPU = "lilac-gpu"
     LILAC_CPU = "lilac-cpu"
 
@@ -66,7 +67,7 @@ class DaskType(StringEnum):
 
 class GPU(StringEnum):
     """
-    Enum for GPU types
+    Enum for GPU types on lilac
     """
 
     GTX1080TI = "GTX1080TI"
@@ -263,9 +264,9 @@ def dask_cluster_from_type(
     dask_type : DaskType
         The type of dask client / cluster to get
     gpu : GPU, optional
-        The GPU type to use if type is GPU, by default GPU.GTX1080TI
+        The GPU type to use if type is lilac-gpu, by default GPU.GTX1080TI
     cpu : CPU, optional
-        The CPU type to use if type is CPU, by default CPU.LT
+        The CPU type to use if type is lilac-cpu, by default CPU.LT
 
     Returns
     -------
@@ -275,6 +276,14 @@ def dask_cluster_from_type(
     logger.info(f"Getting dask cluster of type {dask_type}")
     if dask_type == DaskType.LOCAL:
         cluster = LocalCluster()
+    elif dask_type == DaskType.LOCAL_GPU:
+        try:
+            from dask_cuda import LocalCUDACluster
+        except ImportError:
+            raise ImportError(
+                "dask_cuda is not installed, please install with `pip install dask_cuda`"
+            )
+        cluster = LocalCUDACluster()
     elif dask_type == DaskType.LILAC_GPU:
         cluster = LilacGPUDaskCluster().from_gpu(gpu).to_cluster(exclude_interface="lo")
     elif dask_type == DaskType.LILAC_CPU:

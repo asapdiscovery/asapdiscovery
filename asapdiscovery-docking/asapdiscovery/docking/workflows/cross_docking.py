@@ -29,7 +29,7 @@ from pydantic import Field, PositiveInt
 
 
 class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):
-    logname: str = Field("cross_docking", description="Name of the log file.")
+    logname: str = Field("", description="Name of the log file.")
 
     structure_selector: StructureSelector = Field(
         StructureSelector.PAIRWISE,
@@ -84,9 +84,12 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     if output_dir.exists():
         rmtree(output_dir)
     output_dir.mkdir()
-
     logger = FileLogger(
-        inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
+        inputs.logname,  # default root logger so that dask logging is forwarded
+        path=output_dir,
+        logfile="cross-docking.log",
+        stdout=True,
+        level=inputs.loglevel,
     ).getLogger()
 
     logger.info(f"Running cross docking with inputs: {inputs}")
@@ -162,19 +165,19 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
     prepped_complexes = prepper.prep(
-        complexes, use_dask=inputs.use_dask, dask_client=dask_client
+        complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        cache_dir=inputs.cache_dir,
     )
     del complexes
 
     n_prepped_complexes = len(prepped_complexes)
     logger.info(f"Prepped {n_prepped_complexes} complexes")
 
-    if inputs.gen_cache:
-        # cache prepped complexes
-        cache_path = output_dir / inputs.gen_cache
-        logger.info(f"Caching prepped complexes to {cache_path}")
-        for cache_type in inputs.cache_type:
-            prepper.cache(prepped_complexes, cache_path, type=cache_type)
+    if inputs.save_to_cache and inputs.cache_dir is not None:
+        logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
+        prepper.cache(prepped_complexes, inputs.cache_dir)
 
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
