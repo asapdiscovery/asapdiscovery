@@ -118,7 +118,7 @@ class Trainer(BaseModel):
     def output_dir_check(cls, p):
         if p.exists():
             assert (
-                p.isdir()
+                p.is_dir()
             ), "If given output_dir already exists, it must be a directory."
 
         return p
