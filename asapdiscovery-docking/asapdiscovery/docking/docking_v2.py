@@ -180,9 +180,10 @@ class DockingResult(BaseModel):
         with open(file, "w") as f:
             f.write(self.json(indent=2))
 
-    def from_json_file(file: str | Path) -> "DockingResult":
+    @classmethod
+    def from_json_file(cls, file: str | Path) -> "DockingResult":
         with open(file, "r") as f:
-            return DockingResult.parse_raw(f.read())
+            return cls.parse_raw(f.read())
 
     def get_output(self) -> dict:
         """

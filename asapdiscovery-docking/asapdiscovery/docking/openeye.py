@@ -48,6 +48,55 @@ class POSIT_RELAX_MODE(Enum):
     NONE = oedocking.OEPoseRelaxMode_NONE
 
 
+class POSITDockingResults(DockingResult):
+    """
+    Schema for a DockingResult from OEPosit, containing both a DockingInputPair used as input to the workflow
+    and a Ligand object containing the docked pose.
+    """
+
+    type: Literal["POSITDockingResults"] = "POSITDockingResults"
+
+    @staticmethod
+    def make_df_from_docking_results(results: list["DockingResult"]):
+        """
+        Make a dataframe from a list of DockingResults
+
+        Parameters
+        ----------
+        results : list[DockingResult]
+            List of DockingResults
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe of results
+        """
+        import pandas as pd
+
+        df_prep = []
+        for result in results:
+            docking_dict = {}
+            docking_dict[
+                DockingResultCols.LIGAND_ID
+            ] = result.input_pair.ligand.compound_name
+            docking_dict[
+                DockingResultCols.TARGET_ID
+            ] = result.input_pair.complex.target.target_name
+            docking_dict[
+                "target_bound_compound_smiles"
+            ] = result.input_pair.complex.ligand.smiles
+            docking_dict[DockingResultCols.SMILES] = result.input_pair.ligand.smiles
+            docking_dict[
+                DockingResultCols.DOCKING_CONFIDENCE_POSIT
+            ] = result.probability
+            docking_dict[DockingResultCols.DOCKING_SCORE_POSIT] = result.score
+            docking_dict["score_type"] = result.score_type.value
+            df_prep.append(docking_dict)
+
+        df = pd.DataFrame(df_prep)
+        return df
+
+
 class POSITDocker(DockingBase):
     type: Literal["POSITDocker"] = "POSITDocker"
 
@@ -151,7 +200,7 @@ class POSITDocker(DockingBase):
                     f"Docking result for {unique_name} already exists, reading from disk"
                 )
                 docking_results.append(
-                    DockingResult.from_json_file(
+                    POSITDockingResults.from_json_file(
                         output_dir / unique_name / "docking_result.json"
                     )
                 )
@@ -275,52 +324,3 @@ class POSITDocker(DockingBase):
             "oeomega": oeomega.OEOmegaGetVersion(),
             "oedocking": oedocking.OEDockingGetVersion(),
         }
-
-
-class POSITDockingResults(DockingResult):
-    """
-    Schema for a DockingResult from OEPosit, containing both a DockingInputPair used as input to the workflow
-    and a Ligand object containing the docked pose.
-    """
-
-    type: Literal["POSITDockingResults"] = "POSITDockingResults"
-
-    @staticmethod
-    def make_df_from_docking_results(results: list["DockingResult"]):
-        """
-        Make a dataframe from a list of DockingResults
-
-        Parameters
-        ----------
-        results : list[DockingResult]
-            List of DockingResults
-
-        Returns
-        -------
-        pd.DataFrame
-            Dataframe of results
-        """
-        import pandas as pd
-
-        df_prep = []
-        for result in results:
-            docking_dict = {}
-            docking_dict[
-                DockingResultCols.LIGAND_ID
-            ] = result.input_pair.ligand.compound_name
-            docking_dict[
-                DockingResultCols.TARGET_ID
-            ] = result.input_pair.complex.target.target_name
-            docking_dict[
-                "target_bound_compound_smiles"
-            ] = result.input_pair.complex.ligand.smiles
-            docking_dict[DockingResultCols.SMILES] = result.input_pair.ligand.smiles
-            docking_dict[
-                DockingResultCols.DOCKING_CONFIDENCE_POSIT
-            ] = result.probability
-            docking_dict[DockingResultCols.DOCKING_SCORE_POSIT] = result.score
-            docking_dict["score_type"] = result.score_type.value
-            df_prep.append(docking_dict)
-
-        df = pd.DataFrame(df_prep)
-        return df

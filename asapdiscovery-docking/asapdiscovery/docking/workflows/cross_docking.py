@@ -228,10 +228,6 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
 
-    # write docking results
-    logger.info("Writing docking results")
-    POSITDocker.write_docking_files(results, output_dir / "docking_results")
-
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
 

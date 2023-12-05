@@ -329,10 +329,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
 
-    # write docking results
-    # logger.info("Writing docking results")
-    # POSITDocker.write_docking_files(results, )
-
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
 
