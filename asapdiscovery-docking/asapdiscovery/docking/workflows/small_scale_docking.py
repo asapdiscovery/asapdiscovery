@@ -484,12 +484,17 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
         )
 
+        # duplicate target id column so we can join
+        gifs[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = gifs[
+            DockingResultCols.TARGET_ID.value
+        ]
+
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
             gifs,
             on=[
                 DockingResultCols.LIGAND_ID.value,
-                DockingResultCols.TARGET_ID.value,
+                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
                 DockingResultCols.SMILES.value,
             ],
             how="outer",
