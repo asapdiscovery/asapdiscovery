@@ -4,7 +4,11 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
+from asapdiscovery.data.dask_utils import (
+    DaskType,
+    dask_cluster_from_type,
+    set_dask_config,
+)
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
@@ -43,7 +47,7 @@ from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
 from distributed import Client
-from pydantic import Field, PositiveInt, validator
+from pydantic import Field, PositiveInt, root_validator, validator
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
@@ -97,6 +101,10 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     ml_scorers: Optional[list[str]] = Field(
         None, description="The name of the ml scorers to use"
     )
+    allow_dask_cuda: bool = Field(
+        True,
+        description="Whether to allow regenerating dask cuda cluster when in local mode",
+    )
 
     md: bool = Field(False, description="Whether to run MD on the docked poses")
     md_steps: PositiveInt = Field(2500000, description="Number of MD steps to run")
@@ -120,6 +128,19 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
                         f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
                     )
         return v
+
+    @root_validator
+    @classmethod
+    def dask_type_cannot_be_lilac_cpu_and_md(cls, values):
+        """
+        Validate that the dask type is not lilac cpu if MD is requested
+        """
+        dask_type = values.get("dask_type")
+        md = values.get("md")
+
+        if dask_type == dask_type.LILAC_CPU and md:
+            raise ValueError("Cannot run MD on a CPU cluster, please use a GPU cluster")
+        return values
 
 
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
@@ -171,7 +192,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
-        dask_client.forward_logging()
+        # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
@@ -431,6 +452,17 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     if inputs.md:
+        if inputs.allow_dask_cuda and inputs.dask_type == DaskType.LOCAL_CPU:
+            logger.info(
+                "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
+            )
+            dask_cluster = dask_cluster_from_type(DaskType.LOCAL_GPU)
+            dask_client = Client(dask_cluster)
+            # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
+            logger.info(f"Using dask client: {dask_client}")
+            logger.info(f"Using dask cluster: {dask_cluster}")
+            logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
+
         md_output_dir = output_dir / "md"
         md_simulator = VanillaMDSimulatorV2(
             output_dir=md_output_dir,
