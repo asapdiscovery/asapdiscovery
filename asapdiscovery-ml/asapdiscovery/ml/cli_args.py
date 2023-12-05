@@ -731,6 +731,20 @@ def es_config_cache(func):
 
 ################################################################################
 # Dataset args
+def graph_ds_args(func):
+    for fn in [exp_file, ds_cache, ds_config_cache]:
+        func = fn(func)
+
+    return func
+
+
+def struct_ds_args(func):
+    for fn in [str_files, str_fn_xtal_regex, str_fn_cpd_regex]:
+        func = fn(func)
+
+    return func
+
+
 def exp_file(func):
     return click.option(
         "-exp",

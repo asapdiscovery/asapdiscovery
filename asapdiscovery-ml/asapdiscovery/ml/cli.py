@@ -13,20 +13,16 @@ from asapdiscovery.data.utils import (
 )
 from asapdiscovery.ml.cli_args import (
     model_config_cache,
-    ds_cache,
-    ds_config_cache,
     ds_split_args,
     e3nn_args,
     es_args,
-    exp_file,
     gat_args,
+    graph_ds_args,
     mtenn_args,
     optim_args,
     output_dir,
     schnet_args,
-    str_files,
-    str_fn_cpd_regex,
-    str_fn_xtal_regex,
+    struct_ds_args,
     wandb_args,
 )
 from asapdiscovery.ml.schema_v2.config import (
@@ -94,21 +90,16 @@ def build_e3nn():
 
 @build_and_train.command(name="gat")
 @output_dir
-@exp_file
-@ds_cache
-@ds_config_cache
 @optim_args
 @wandb_args
 @model_config_cache
 @mtenn_args
 @gat_args
 @es_args
+@graph_ds_args
 @ds_split_args
 def build_and_train_gat(
     output_dir: Path,
-    exp_file: Path | None = None,
-    ds_cache: Path | None = None,
-    ds_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
     weight_decay: float | None = None,
@@ -151,6 +142,9 @@ def build_and_train_gat(
     es_n_check: int | None = None,
     es_divergence: float | None = None,
     es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
     split_type: DatasetSplitterType | None = None,
     train_frac: float | None = None,
     val_frac: float | None = None,
@@ -236,27 +230,17 @@ def build_and_train_gat(
 
 @build_and_train.command(name="schnet")
 @output_dir
-@exp_file
-@str_files
-@str_fn_cpd_regex
-@str_fn_xtal_regex
-@ds_cache
-@ds_config_cache
 @optim_args
 @model_config_cache
 @wandb_args
 @mtenn_args
 @schnet_args
 @es_args
+@graph_ds_args
+@struct_ds_args
 @ds_split_args
 def build_and_train_schnet(
     output_dir: Path,
-    exp_file: Path | None = None,
-    structures: str | None = None,
-    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
-    xtal_regex: str = MPRO_ID_REGEX,
-    ds_cache: Path | None = None,
-    ds_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
     weight_decay: float | None = None,
@@ -298,6 +282,12 @@ def build_and_train_schnet(
     es_n_check: int | None = None,
     es_divergence: float | None = None,
     es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    structures: str | None = None,
+    xtal_regex: str = MPRO_ID_REGEX,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
     split_type: DatasetSplitterType | None = None,
     train_frac: float | None = None,
     val_frac: float | None = None,
@@ -382,27 +372,17 @@ def build_and_train_schnet(
 
 @build_and_train.command("e3nn")
 @output_dir
-@exp_file
-@str_files
-@str_fn_cpd_regex
-@str_fn_xtal_regex
-@ds_cache
-@ds_config_cache
 @optim_args
 @model_config_cache
 @wandb_args
 @mtenn_args
 @e3nn_args
 @es_args
+@graph_ds_args
+@struct_ds_args
 @ds_split_args
 def build_and_train_e3nn(
     output_dir: Path,
-    exp_file: Path | None = None,
-    structures: str | None = None,
-    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
-    xtal_regex: str = MPRO_ID_REGEX,
-    ds_cache: Path | None = None,
-    ds_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
     weight_decay: float | None = None,
@@ -445,6 +425,12 @@ def build_and_train_e3nn(
     es_n_check: int | None = None,
     es_divergence: float | None = None,
     es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    structures: str | None = None,
+    xtal_regex: str = MPRO_ID_REGEX,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
     split_type: DatasetSplitterType | None = None,
     train_frac: float | None = None,
     val_frac: float | None = None,
