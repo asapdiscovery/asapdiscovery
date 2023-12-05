@@ -203,9 +203,14 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
     # read the fitness data into a dataframe
     with open(fitness_data) as f:
         data = json.load(f)
-    data = data["data"]
-    fitness_scores_bloom = pd.DataFrame(data)
-
+    if "data" in data.keys():
+        data = data["data"]
+        fitness_scores_bloom = pd.DataFrame(data)
+    elif "ZIKV NS2B-NS3 (Closed)" in data.keys():
+        data = data['ZIKV NS2B-NS3 (Closed)']['mut_metric_df']
+        fitness_scores_bloom = pd.DataFrame(data).rename(columns={"reference_site": "site", "Log2(Effect)":"fitness"})
+    
+    
     if _FITNESS_DATA_IS_CROSSGENOME[virus]:
         # now get the target-specific entries. Need to do because the phylo data is cross-genome.
         fitness_scores_bloom = fitness_scores_bloom[
@@ -221,5 +226,19 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
             fitness_scores_bloom["site"].between(209, 372)
         ]
         fitness_scores_bloom["site"] -= 208
+    elif target == "ZIKV-NS2B-NS3pro":
+        # cursed. TODO: replace this with an auto-align.
+        ns2b_section = fitness_scores_bloom[fitness_scores_bloom["site"].str.contains("NS2B")]
+        ns2b_section["site"] = [ int(site.replace("(NS2B)","")) for site in ns2b_section["site"].values ]
+        ns2b_section = ns2b_section[ns2b_section["site"].between(46, 89)]
+
+        # repeat for NS3, then add back together and treat as normal downstream.
+        ns3_section = fitness_scores_bloom[fitness_scores_bloom["site"].str.contains("NS3")]
+        ns3_section["site"] = [ int(site.replace("(NS3)","")) for site in ns3_section["site"].values ]
+        ns3_section = ns3_section[ns3_section["site"].between(10, 177)]
+        
+        fitness_scores_bloom = pd.concat([ns2b_section, ns3_section])
+        fitness_scores_bloom.to_csv("tmp_fitness.csv", index=False)
 
     return fitness_scores_bloom
+
