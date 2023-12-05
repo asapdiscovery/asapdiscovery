@@ -124,7 +124,7 @@ def large_scale(
             posit_confidence_cutoff=posit_confidence_cutoff,
             use_omega=use_omega,
             allow_posit_retries=allow_posit_retries,
-            filename=ligands,
+            ligands=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
@@ -222,7 +222,7 @@ def cross_docking(
             use_omega=use_omega,
             omega_dense=omega_dense,
             allow_retries=allow_retries,
-            filename=ligands,
+            ligands=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
@@ -243,6 +243,7 @@ def cross_docking(
     default=0.1,
     help="The confidence cutoff for POSIT results to be considered",
 )
+@click.option("--allow-dask-cuda/--no-allow-dask-cuda", default=True)
 @click.option(
     "--no-omega",
     is_flag=True,
@@ -264,6 +265,7 @@ def cross_docking(
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
+    allow_dask_cuda: bool = True,
     no_omega: bool = False,
     ligands: Optional[str] = None,
     postera: bool = False,
@@ -299,8 +301,9 @@ def small_scale(
             use_dask=use_dask,
             dask_type=dask_type,
             posit_confidence_cutoff=posit_confidence_cutoff,
+            allow_dask_cuda=allow_dask_cuda,
             use_omega=not no_omega,
-            filename=ligands,
+            ligands=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
