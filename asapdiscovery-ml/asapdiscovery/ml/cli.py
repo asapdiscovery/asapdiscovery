@@ -165,94 +165,101 @@ def build_and_train_gat(
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
 ):
-    optim_config = _build_arbitrary_config(
-        config_cls=OptimizerConfig,
-        config_file=optimizer_config_cache,
-        optimizer_type=optimizer_type,
-        lr=lr,
-        weight_decay=weight_decay,
-        momentum=momentum,
-        dampening=dampening,
-        b1=b1,
-        b2=b2,
-        eps=eps,
-        rho=rho,
-    )
-    model_config = _build_arbitrary_config(
-        config_cls=GATModelConfig,
-        config_file=model_config_cache,
-        grouped=grouped,
-        strategy=strategy,
-        pred_readout=pred_readout,
-        combination=combination,
-        comb_readout=comb_readout,
-        max_comb_neg=max_comb_neg,
-        max_comb_scale=max_comb_scale,
-        pred_substrate=pred_substrate,
-        pred_km=pred_km,
-        comb_substrate=comb_substrate,
-        comb_km=comb_km,
-        in_feats=in_feats,
-        num_layers=num_layers,
-        hidden_feats=hidden_feats,
-        num_heads=num_heads,
-        feat_drops=feat_drops,
-        attn_drops=attn_drops,
-        alphas=alphas,
-        residuals=residuals,
-        agg_modes=agg_modes,
-        biases=biases,
-        allow_zero_in_degree=allow_zero_in_degree,
-    )
-    if (es_config_cache and es_config_cache.exists()) or es_type:
-        es_config = _build_arbitrary_config(
-            config_cls=EarlyStoppingConfig,
-            config_file=es_config_cache,
-            es_type=es_type,
-            es_patience=es_patience,
-            es_n_check=es_n_check,
-            es_divergence=es_divergence,
-        )
+    # First check if Trainer cache exists and skip everything else if so
+    if trainer_config_cache and trainer_config_cache.exists():
+        t = Trainer(**json.loads(trainer_config_cache.read_text()))
     else:
-        es_config = None
-    ds_config = _build_ds_config(
-        exp_file=exp_file,
-        structures=None,
-        xtal_regex=None,
-        cpd_regex=None,
-        ds_cache=ds_cache,
-        ds_config_cache=ds_config_cache,
-        is_structural=False,
-        is_grouped=grouped,
-    )
-    ds_splitter_config = _build_arbitrary_config(
-        config_cls=DatasetSplitterConfig,
-        config_file=ds_split_config_cache,
-        split_type=ds_split_type,
-        train_frac=train_frac,
-        val_frac=val_frac,
-        test_frac=test_frac,
-        enforce_one=enforce_one,
-        rand_seed=rand_seed,
-    )
-    loss_config = _build_arbitrary_config(
-        config_cls=LossFunctionConfig,
-        config_file=loss_config_cache,
-        loss_type=loss_type,
-        semiquant_fill=semiquant_fill,
-    )
+        optim_config = _build_arbitrary_config(
+            config_cls=OptimizerConfig,
+            config_file=optimizer_config_cache,
+            optimizer_type=optimizer_type,
+            lr=lr,
+            weight_decay=weight_decay,
+            momentum=momentum,
+            dampening=dampening,
+            b1=b1,
+            b2=b2,
+            eps=eps,
+            rho=rho,
+        )
+        model_config = _build_arbitrary_config(
+            config_cls=GATModelConfig,
+            config_file=model_config_cache,
+            grouped=grouped,
+            strategy=strategy,
+            pred_readout=pred_readout,
+            combination=combination,
+            comb_readout=comb_readout,
+            max_comb_neg=max_comb_neg,
+            max_comb_scale=max_comb_scale,
+            pred_substrate=pred_substrate,
+            pred_km=pred_km,
+            comb_substrate=comb_substrate,
+            comb_km=comb_km,
+            in_feats=in_feats,
+            num_layers=num_layers,
+            hidden_feats=hidden_feats,
+            num_heads=num_heads,
+            feat_drops=feat_drops,
+            attn_drops=attn_drops,
+            alphas=alphas,
+            residuals=residuals,
+            agg_modes=agg_modes,
+            biases=biases,
+            allow_zero_in_degree=allow_zero_in_degree,
+        )
+        if (es_config_cache and es_config_cache.exists()) or es_type:
+            es_config = _build_arbitrary_config(
+                config_cls=EarlyStoppingConfig,
+                config_file=es_config_cache,
+                es_type=es_type,
+                es_patience=es_patience,
+                es_n_check=es_n_check,
+                es_divergence=es_divergence,
+            )
+        else:
+            es_config = None
+        ds_config = _build_ds_config(
+            exp_file=exp_file,
+            structures=None,
+            xtal_regex=None,
+            cpd_regex=None,
+            ds_cache=ds_cache,
+            ds_config_cache=ds_config_cache,
+            is_structural=False,
+            is_grouped=grouped,
+        )
+        ds_splitter_config = _build_arbitrary_config(
+            config_cls=DatasetSplitterConfig,
+            config_file=ds_split_config_cache,
+            split_type=ds_split_type,
+            train_frac=train_frac,
+            val_frac=val_frac,
+            test_frac=test_frac,
+            enforce_one=enforce_one,
+            rand_seed=rand_seed,
+        )
+        loss_config = _build_arbitrary_config(
+            config_cls=LossFunctionConfig,
+            config_file=loss_config_cache,
+            loss_type=loss_type,
+            semiquant_fill=semiquant_fill,
+        )
 
-    t = _build_arbitrary_config(
-        config_cls=Trainer,
-        config_file=trainer_config_cache,
-        optimizer_config=optim_config,
-        model_config=model_config,
-        es_config=es_config,
-        ds_config=ds_config,
-        ds_splitter_config=ds_splitter_config,
-        loss_config=loss_config,
-        output_dir=output_dir,
-    )
+        t = Trainer(
+            optimizer_config=optim_config,
+            model_config=model_config,
+            es_config=es_config,
+            ds_config=ds_config,
+            ds_splitter_config=ds_splitter_config,
+            loss_config=loss_config,
+            output_dir=output_dir,
+        )
+
+        # Save Trainer
+        if trainer_config_cache:
+            trainer_config_cache.write_text(t.json())
+
     print(t, flush=True)
 
 
@@ -331,93 +338,100 @@ def build_and_train_schnet(
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
 ):
-    optim_config = _build_arbitrary_config(
-        config_cls=OptimizerConfig,
-        config_file=optimizer_config_cache,
-        optimizer_type=optimizer_type,
-        lr=lr,
-        weight_decay=weight_decay,
-        momentum=momentum,
-        dampening=dampening,
-        b1=b1,
-        b2=b2,
-        eps=eps,
-        rho=rho,
-    )
-    model_config = _build_arbitrary_config(
-        config_cls=SchNetModelConfig,
-        config_file=model_config_cache,
-        grouped=grouped,
-        strategy=strategy,
-        pred_readout=pred_readout,
-        combination=combination,
-        comb_readout=comb_readout,
-        max_comb_neg=max_comb_neg,
-        max_comb_scale=max_comb_scale,
-        pred_substrate=pred_substrate,
-        pred_km=pred_km,
-        comb_substrate=comb_substrate,
-        comb_km=comb_km,
-        hidden_channels=hidden_channels,
-        num_filters=num_filters,
-        num_interactions=num_interactions,
-        num_gaussians=num_gaussians,
-        cutoff=cutoff,
-        max_num_neighbors=max_num_neighbors,
-        readout=readout,
-        dipole=dipole,
-        mean=mean,
-        std=std,
-    )
-    if (es_config_cache and es_config_cache.exists()) or es_type:
-        es_config = _build_arbitrary_config(
-            config_cls=EarlyStoppingConfig,
-            config_file=es_config_cache,
-            es_type=es_type,
-            es_patience=es_patience,
-            es_n_check=es_n_check,
-            es_divergence=es_divergence,
-        )
+    # First check if Trainer cache exists and skip everything else if so
+    if trainer_config_cache and trainer_config_cache.exists():
+        t = Trainer(**json.loads(trainer_config_cache.read_text()))
     else:
-        es_config = None
-    ds_config = _build_ds_config(
-        exp_file=exp_file,
-        structures=structures,
-        xtal_regex=xtal_regex,
-        cpd_regex=cpd_regex,
-        ds_cache=ds_cache,
-        ds_config_cache=ds_config_cache,
-        is_structural=True,
-        is_grouped=grouped,
-    )
-    ds_splitter_config = _build_arbitrary_config(
-        config_cls=DatasetSplitterConfig,
-        config_file=ds_split_config_cache,
-        split_type=ds_split_type,
-        train_frac=train_frac,
-        val_frac=val_frac,
-        test_frac=test_frac,
-        enforce_one=enforce_one,
-        rand_seed=rand_seed,
-    )
-    loss_config = _build_arbitrary_config(
-        config_cls=LossFunctionConfig,
-        config_file=loss_config_cache,
-        loss_type=loss_type,
-        semiquant_fill=semiquant_fill,
-    )
+        optim_config = _build_arbitrary_config(
+            config_cls=OptimizerConfig,
+            config_file=optimizer_config_cache,
+            optimizer_type=optimizer_type,
+            lr=lr,
+            weight_decay=weight_decay,
+            momentum=momentum,
+            dampening=dampening,
+            b1=b1,
+            b2=b2,
+            eps=eps,
+            rho=rho,
+        )
+        model_config = _build_arbitrary_config(
+            config_cls=SchNetModelConfig,
+            config_file=model_config_cache,
+            grouped=grouped,
+            strategy=strategy,
+            pred_readout=pred_readout,
+            combination=combination,
+            comb_readout=comb_readout,
+            max_comb_neg=max_comb_neg,
+            max_comb_scale=max_comb_scale,
+            pred_substrate=pred_substrate,
+            pred_km=pred_km,
+            comb_substrate=comb_substrate,
+            comb_km=comb_km,
+            hidden_channels=hidden_channels,
+            num_filters=num_filters,
+            num_interactions=num_interactions,
+            num_gaussians=num_gaussians,
+            cutoff=cutoff,
+            max_num_neighbors=max_num_neighbors,
+            readout=readout,
+            dipole=dipole,
+            mean=mean,
+            std=std,
+        )
+        if (es_config_cache and es_config_cache.exists()) or es_type:
+            es_config = _build_arbitrary_config(
+                config_cls=EarlyStoppingConfig,
+                config_file=es_config_cache,
+                es_type=es_type,
+                es_patience=es_patience,
+                es_n_check=es_n_check,
+                es_divergence=es_divergence,
+            )
+        else:
+            es_config = None
+        ds_config = _build_ds_config(
+            exp_file=exp_file,
+            structures=structures,
+            xtal_regex=xtal_regex,
+            cpd_regex=cpd_regex,
+            ds_cache=ds_cache,
+            ds_config_cache=ds_config_cache,
+            is_structural=True,
+            is_grouped=grouped,
+        )
+        ds_splitter_config = _build_arbitrary_config(
+            config_cls=DatasetSplitterConfig,
+            config_file=ds_split_config_cache,
+            split_type=ds_split_type,
+            train_frac=train_frac,
+            val_frac=val_frac,
+            test_frac=test_frac,
+            enforce_one=enforce_one,
+            rand_seed=rand_seed,
+        )
+        loss_config = _build_arbitrary_config(
+            config_cls=LossFunctionConfig,
+            config_file=loss_config_cache,
+            loss_type=loss_type,
+            semiquant_fill=semiquant_fill,
+        )
 
-    t = _build_arbitrary_config(
-        config_cls=Trainer,
-        config_file=trainer_config_cache,
-        optimizer_config=optim_config,
-        model_config=model_config,
-        es_config=es_config,
-        ds_config=ds_config,
-        ds_splitter_config=ds_splitter_config,
-        loss_config=loss_config,
-        output_dir=output_dir,
-    )
+        t = Trainer(
+            optimizer_config=optim_config,
+            model_config=model_config,
+            es_config=es_config,
+            ds_config=ds_config,
+            ds_splitter_config=ds_splitter_config,
+            loss_config=loss_config,
+            output_dir=output_dir,
+        )
+
+        # Save Trainer
+        if trainer_config_cache:
+            trainer_config_cache.write_text(t.json())
+
     print(t, flush=True)
 
 
@@ -497,94 +511,101 @@ def build_and_train_e3nn(
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
 ):
-    optim_config = _build_arbitrary_config(
-        config_cls=OptimizerConfig,
-        config_file=optimizer_config_cache,
-        optimizer_type=optimizer_type,
-        lr=lr,
-        weight_decay=weight_decay,
-        momentum=momentum,
-        dampening=dampening,
-        b1=b1,
-        b2=b2,
-        eps=eps,
-        rho=rho,
-    )
-    model_config = _build_arbitrary_config(
-        config_cls=E3NNModelConfig,
-        config_file=model_config_cache,
-        grouped=grouped,
-        strategy=strategy,
-        pred_readout=pred_readout,
-        combination=combination,
-        comb_readout=comb_readout,
-        max_comb_neg=max_comb_neg,
-        max_comb_scale=max_comb_scale,
-        pred_substrate=pred_substrate,
-        pred_km=pred_km,
-        comb_substrate=comb_substrate,
-        comb_km=comb_km,
-        num_atom_types=num_atom_types,
-        irreps_hidden=irreps_hidden,
-        lig=lig,
-        irreps_edge_attr=irreps_edge_attr,
-        num_layers=num_layers,
-        neighbor_dist=neighbor_dist,
-        num_basis=num_basis,
-        num_radial_layers=num_radial_layers,
-        num_radial_neurons=num_radial_neurons,
-        num_neighbors=num_neighbors,
-        num_nodes=num_nodes,
-    )
-    if (es_config_cache and es_config_cache.exists()) or es_type:
-        es_config = _build_arbitrary_config(
-            config_cls=EarlyStoppingConfig,
-            config_file=es_config_cache,
-            es_type=es_type,
-            es_patience=es_patience,
-            es_n_check=es_n_check,
-            es_divergence=es_divergence,
-        )
+    # First check if Trainer cache exists and skip everything else if so
+    if trainer_config_cache and trainer_config_cache.exists():
+        t = Trainer(**json.loads(trainer_config_cache.read_text()))
     else:
-        es_config = None
-    ds_config = _build_ds_config(
-        exp_file=exp_file,
-        structures=structures,
-        xtal_regex=xtal_regex,
-        cpd_regex=cpd_regex,
-        ds_cache=ds_cache,
-        ds_config_cache=ds_config_cache,
-        is_structural=True,
-        is_grouped=grouped,
-    )
-    ds_splitter_config = _build_arbitrary_config(
-        config_cls=DatasetSplitterConfig,
-        config_file=ds_split_config_cache,
-        split_type=ds_split_type,
-        train_frac=train_frac,
-        val_frac=val_frac,
-        test_frac=test_frac,
-        enforce_one=enforce_one,
-        rand_seed=rand_seed,
-    )
-    loss_config = _build_arbitrary_config(
-        config_cls=LossFunctionConfig,
-        config_file=loss_config_cache,
-        loss_type=loss_type,
-        semiquant_fill=semiquant_fill,
-    )
+        optim_config = _build_arbitrary_config(
+            config_cls=OptimizerConfig,
+            config_file=optimizer_config_cache,
+            optimizer_type=optimizer_type,
+            lr=lr,
+            weight_decay=weight_decay,
+            momentum=momentum,
+            dampening=dampening,
+            b1=b1,
+            b2=b2,
+            eps=eps,
+            rho=rho,
+        )
+        model_config = _build_arbitrary_config(
+            config_cls=E3NNModelConfig,
+            config_file=model_config_cache,
+            grouped=grouped,
+            strategy=strategy,
+            pred_readout=pred_readout,
+            combination=combination,
+            comb_readout=comb_readout,
+            max_comb_neg=max_comb_neg,
+            max_comb_scale=max_comb_scale,
+            pred_substrate=pred_substrate,
+            pred_km=pred_km,
+            comb_substrate=comb_substrate,
+            comb_km=comb_km,
+            num_atom_types=num_atom_types,
+            irreps_hidden=irreps_hidden,
+            lig=lig,
+            irreps_edge_attr=irreps_edge_attr,
+            num_layers=num_layers,
+            neighbor_dist=neighbor_dist,
+            num_basis=num_basis,
+            num_radial_layers=num_radial_layers,
+            num_radial_neurons=num_radial_neurons,
+            num_neighbors=num_neighbors,
+            num_nodes=num_nodes,
+        )
+        if (es_config_cache and es_config_cache.exists()) or es_type:
+            es_config = _build_arbitrary_config(
+                config_cls=EarlyStoppingConfig,
+                config_file=es_config_cache,
+                es_type=es_type,
+                es_patience=es_patience,
+                es_n_check=es_n_check,
+                es_divergence=es_divergence,
+            )
+        else:
+            es_config = None
+        ds_config = _build_ds_config(
+            exp_file=exp_file,
+            structures=structures,
+            xtal_regex=xtal_regex,
+            cpd_regex=cpd_regex,
+            ds_cache=ds_cache,
+            ds_config_cache=ds_config_cache,
+            is_structural=True,
+            is_grouped=grouped,
+        )
+        ds_splitter_config = _build_arbitrary_config(
+            config_cls=DatasetSplitterConfig,
+            config_file=ds_split_config_cache,
+            split_type=ds_split_type,
+            train_frac=train_frac,
+            val_frac=val_frac,
+            test_frac=test_frac,
+            enforce_one=enforce_one,
+            rand_seed=rand_seed,
+        )
+        loss_config = _build_arbitrary_config(
+            config_cls=LossFunctionConfig,
+            config_file=loss_config_cache,
+            loss_type=loss_type,
+            semiquant_fill=semiquant_fill,
+        )
 
-    t = _build_arbitrary_config(
-        config_cls=Trainer,
-        config_file=trainer_config_cache,
-        optimizer_config=optim_config,
-        model_config=model_config,
-        es_config=es_config,
-        ds_config=ds_config,
-        ds_splitter_config=ds_splitter_config,
-        loss_config=loss_config,
-        output_dir=output_dir,
-    )
+        t = Trainer(
+            optimizer_config=optim_config,
+            model_config=model_config,
+            es_config=es_config,
+            ds_config=ds_config,
+            ds_splitter_config=ds_splitter_config,
+            loss_config=loss_config,
+            output_dir=output_dir,
+        )
+
+        # Save Trainer
+        if trainer_config_cache:
+            trainer_config_cache.write_text(t.json())
+
     print(t, flush=True)
 
 
@@ -758,7 +779,7 @@ def _build_arbitrary_config(config_cls, config_file, **config_kwargs):
     """
 
     if config_file and config_file.exists():
-        print("loading from cache", flush=True)
+        print("loading from cache", config_cls, flush=True)
         loaded_kwargs = json.loads(config_file.read_text())
     else:
         loaded_kwargs = {}

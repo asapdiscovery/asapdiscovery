@@ -37,8 +37,8 @@ def trainer_config_cache(func):
         "--trainer-config-cache",
         type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
         help=(
-            "Trainer Config JSON cache file. All other pass args will supersede "
-            "anything stored in this file."
+            "Trainer Config JSON cache file. If this file exists, no other CLI args "
+            "will be parsed."
         ),
     )(func)
 
