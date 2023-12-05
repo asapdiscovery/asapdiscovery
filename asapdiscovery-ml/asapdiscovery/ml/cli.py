@@ -200,14 +200,17 @@ def build_and_train_gat(
         biases=biases,
         allow_zero_in_degree=allow_zero_in_degree,
     )
-    es_config = _build_arbitrary_config(
-        config_cls=EarlyStoppingConfig,
-        config_file=es_config_cache,
-        es_type=es_type,
-        es_patience=es_patience,
-        es_n_check=es_n_check,
-        es_divergence=es_divergence,
-    )
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = _build_arbitrary_config(
+            config_cls=EarlyStoppingConfig,
+            config_file=es_config_cache,
+            es_type=es_type,
+            es_patience=es_patience,
+            es_n_check=es_n_check,
+            es_divergence=es_divergence,
+        )
+    else:
+        es_config = None
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=None,
@@ -357,14 +360,17 @@ def build_and_train_schnet(
         mean=mean,
         std=std,
     )
-    es_config = _build_arbitrary_config(
-        config_cls=EarlyStoppingConfig,
-        config_file=es_config_cache,
-        es_type=es_type,
-        es_patience=es_patience,
-        es_n_check=es_n_check,
-        es_divergence=es_divergence,
-    )
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = _build_arbitrary_config(
+            config_cls=EarlyStoppingConfig,
+            config_file=es_config_cache,
+            es_type=es_type,
+            es_patience=es_patience,
+            es_n_check=es_n_check,
+            es_divergence=es_divergence,
+        )
+    else:
+        es_config = None
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=structures,
@@ -516,14 +522,17 @@ def build_and_train_e3nn(
         num_neighbors=num_neighbors,
         num_nodes=num_nodes,
     )
-    es_config = _build_arbitrary_config(
-        config_cls=EarlyStoppingConfig,
-        config_file=es_config_cache,
-        es_type=es_type,
-        es_patience=es_patience,
-        es_n_check=es_n_check,
-        es_divergence=es_divergence,
-    )
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = _build_arbitrary_config(
+            config_cls=EarlyStoppingConfig,
+            config_file=es_config_cache,
+            es_type=es_type,
+            es_patience=es_patience,
+            es_n_check=es_n_check,
+            es_divergence=es_divergence,
+        )
+    else:
+        es_config = None
     ds_config = _build_ds_config(
         exp_file=exp_file,
         structures=structures,
