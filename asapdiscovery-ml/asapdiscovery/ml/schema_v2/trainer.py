@@ -215,6 +215,9 @@ class Trainer(BaseModel):
             self.ds
         )
 
+        # Build loss function
+        self.loss_func = self.loss_config.build()
+
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
@@ -497,6 +500,7 @@ class Trainer(BaseModel):
         pose_preds : float, optional
             Single-pose model prediction for each pose in input (for multi-pose models)
         """
+
         if compound_id in self.loss_dict[split]:
             self.loss_dict[split][compound_id]["preds"].append(pred)
             if pose_preds is not None:
