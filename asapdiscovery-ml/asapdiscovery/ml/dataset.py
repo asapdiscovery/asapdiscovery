@@ -578,11 +578,11 @@ class GraphDataset(Dataset):
 
         # Organize data for DF construction
         missing_dict = {k: np.nan for k in all_shared_exp_keys}
-        all_info = [
-            [lig.compound_name, lig.smiles]
-            + list(exp_dict.get(lig.compound_name, missing_dict).values())
-            for lig in ligands
-        ]
+        all_info = []
+        for lig in ligands:
+            lig_exp_dict = exp_dict.get(lig.compound_name, missing_dict)
+            exp_info = [lig_exp_dict[k] for k in all_shared_exp_keys]
+            all_info.append([lig.compound_name, lig.smiles] + exp_info)
 
         # Function for encoding SMILES to a graph
         smiles_to_g = SMILESToBigraph(
