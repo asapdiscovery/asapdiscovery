@@ -26,6 +26,7 @@ from asapdiscovery.ml.cli_args import (
     output_dir,
     schnet_args,
     struct_ds_args,
+    trainer_args,
     trainer_config_cache,
     wandb_args,
 )
@@ -106,6 +107,7 @@ def build_e3nn():
 @graph_ds_args
 @ds_split_args
 @loss_args
+@trainer_args
 def build_and_train_gat(
     output_dir: Path,
     trainer_config_cache: Path | None = None,
@@ -165,6 +167,14 @@ def build_and_train_gat(
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
 ):
     # First check if Trainer cache exists and skip everything else if so
     if trainer_config_cache and trainer_config_cache.exists():
@@ -260,6 +270,14 @@ def build_and_train_gat(
             ds_config=ds_config,
             ds_splitter_config=ds_splitter_config,
             loss_config=loss_config,
+            auto_init=auto_init,
+            start_epoch=start_epoch,
+            n_epochs=n_epochs,
+            batch_size=batch_size,
+            target_prop=target_prop,
+            cont=cont,
+            loss_dict=loss_dict,
+            device=device,
             output_dir=output_dir,
         )
 
@@ -283,6 +301,7 @@ def build_and_train_gat(
 @struct_ds_args
 @ds_split_args
 @loss_args
+@trainer_args
 def build_and_train_schnet(
     output_dir: Path,
     trainer_config_cache: Path | None = None,
@@ -344,6 +363,14 @@ def build_and_train_schnet(
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
 ):
     # First check if Trainer cache exists and skip everything else if so
     if trainer_config_cache and trainer_config_cache.exists():
@@ -438,6 +465,14 @@ def build_and_train_schnet(
             ds_config=ds_config,
             ds_splitter_config=ds_splitter_config,
             loss_config=loss_config,
+            auto_init=auto_init,
+            start_epoch=start_epoch,
+            n_epochs=n_epochs,
+            batch_size=batch_size,
+            target_prop=target_prop,
+            cont=cont,
+            loss_dict=loss_dict,
+            device=device,
             output_dir=output_dir,
         )
 
@@ -461,6 +496,7 @@ def build_and_train_schnet(
 @struct_ds_args
 @ds_split_args
 @loss_args
+@trainer_args
 def build_and_train_e3nn(
     output_dir: Path,
     trainer_config_cache: Path | None = None,
@@ -523,6 +559,14 @@ def build_and_train_e3nn(
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
     loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
 ):
     # First check if Trainer cache exists and skip everything else if so
     if trainer_config_cache and trainer_config_cache.exists():
@@ -618,6 +662,14 @@ def build_and_train_e3nn(
             ds_config=ds_config,
             ds_splitter_config=ds_splitter_config,
             loss_config=loss_config,
+            auto_init=auto_init,
+            start_epoch=start_epoch,
+            n_epochs=n_epochs,
+            batch_size=batch_size,
+            target_prop=target_prop,
+            cont=cont,
+            loss_dict=loss_dict,
+            device=device,
             output_dir=output_dir,
         )
 

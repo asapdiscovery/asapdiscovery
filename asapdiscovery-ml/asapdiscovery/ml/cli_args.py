@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import click
+import torch
 from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.schema_v2.config import (
     DatasetSplitterType,
@@ -954,6 +955,74 @@ def loss_config_cache(func):
             "args that are passed will supersede anything stored in this file."
         ),
     )(func)
+
+
+################################################################################
+
+
+################################################################################
+# Training args
+def trainer_args(func):
+    for fn in [start_epoch, n_epochs, batch_size, target_prop, cont, loss_dict, device]:
+        func = fn(func)
+    return func
+
+
+def start_epoch(func):
+    return click.option(
+        "--start-epoch",
+        type=int,
+        help="Which epoch to start training at (used for continuing training runs).",
+    )(func)
+
+
+def n_epochs(func):
+    return click.option(
+        "--n-epochs",
+        type=int,
+        help=(
+            "Which epoch to stop training at. For non-continuation runs, this "
+            "will be the total number of epochs to train for."
+        ),
+    )(func)
+
+
+def batch_size(func):
+    return click.option(
+        "--batch-size",
+        type=int,
+        help="Number of samples to predict on before performing backprop.",
+    )(func)
+
+
+def target_prop(func):
+    return click.option(
+        "--target-prop", type=str, help="Target property to train against."
+    )(func)
+
+
+def cont(func):
+    return click.option(
+        "--continue",
+        type=bool,
+        help="This is a continuation of a previous training run.",
+    )(func)
+
+
+def loss_dict(func):
+    return click.option(
+        "--loss-dict",
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "JSON file storing the dict of losses. Use in continuation runs. If not "
+            "given during a continuation run, loss_dict.json will be loaded from the "
+            "provided output-dir."
+        ),
+    )(func)
+
+
+def device(func):
+    return click.option("--device", type=torch.device, help="Device to train on.")(func)
 
 
 ################################################################################
