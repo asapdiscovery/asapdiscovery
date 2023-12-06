@@ -168,13 +168,13 @@ def wandb_args(func):
 
 def use_wandb(func):
     return click.option(
-        "--use-wandb", is_flag=True, help="Use W&B to log model training."
+        "--use-wandb", type=bool, help="Use W&B to log model training."
     )(func)
 
 
 def sweep(func):
     return click.option(
-        "--sweep", is_flag=True, help="This run is part of a W&B sweep."
+        "--sweep", type=bool, help="This run is part of a W&B sweep."
     )(func)
 
 
@@ -183,7 +183,7 @@ def proj(func):
 
 
 def name(func):
-    return click.option("-name", "--wandb-name", help="W&B project name.")(func)
+    return click.option("-name", "--wandb-name", help="W&B run name.")(func)
 
 
 def extra_config(func):
