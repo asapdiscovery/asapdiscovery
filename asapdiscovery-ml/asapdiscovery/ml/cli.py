@@ -696,7 +696,7 @@ def build_and_train_gat(
     )
 
     t.initialize()
-    model, loss_dict = t.train()
+    t.train()
 
     print("done", flush=True)
 
@@ -857,7 +857,7 @@ def build_and_train_schnet(
     )
 
     t.initialize()
-    model, loss_dict = t.train()
+    t.train()
 
     print("done", flush=True)
 
@@ -1020,7 +1020,7 @@ def build_and_train_e3nn(
     )
 
     t.initialize()
-    model, loss_dict = t.train()
+    t.train()
 
     print("done", flush=True)
 

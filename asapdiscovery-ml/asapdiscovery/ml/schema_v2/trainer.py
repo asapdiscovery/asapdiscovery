@@ -216,16 +216,9 @@ class Trainer(BaseModel):
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
-    def train(self) -> (mtenn.model.Model, dict):
+    def train(self):
         """
-        Train the model, returning the trained model and loss_dict.
-
-        Returns
-        -------
-        mtenn.model.Model
-            Trained model
-        dict
-            Loss dict
+        Train the model, updating the model and loss_dict in-place.
         """
         if not self._is_initialized:
             if self.auto_init:
@@ -466,6 +459,8 @@ class Trainer(BaseModel):
                 ):
                     print(f"Stopping training after epoch {epoch_idx}", flush=True)
                     break
+
+        torch.save(self.model.state_dict(), self.output_dir / "final.th")
 
     def _update_loss_dict(
         self,
