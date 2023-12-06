@@ -125,7 +125,7 @@ class HTMLVisualizer:
             self.slab = "viewer.setSlab(-11, 50)\n"
         else:
             self.slab = ""
-        
+
     @staticmethod
     def write_html(html, path):
         """
@@ -410,20 +410,27 @@ class HTMLVisualizer:
 
             # get pose and protein back
             opts = oechem.OESplitMolComplexOptions()
-            opts.SetProteinFilter(oechem.OEOrRoleSet(
-                oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Protein),
-                oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Peptide)
-            ))
+            opts.SetProteinFilter(
+                oechem.OEOrRoleSet(
+                    oechem.OEMolComplexFilterFactory(
+                        oechem.OEMolComplexFilterCategory_Protein
+                    ),
+                    oechem.OEMolComplexFilterFactory(
+                        oechem.OEMolComplexFilterCategory_Peptide
+                    ),
+                )
+            )
             pose = oechem.OEGraphMol()
             self.protein = oechem.OEGraphMol()
-            oechem.OESplitMolComplex(pose,
-                                     self.protein,
-                                     oechem.OEGraphMol(),
-                                     oechem.OEGraphMol(),
-                                     complex_aligned,
-                                     opts)
-        
-        
+            oechem.OESplitMolComplex(
+                pose,
+                self.protein,
+                oechem.OEGraphMol(),
+                oechem.OEGraphMol(),
+                complex_aligned,
+                opts,
+            )
+
         # now prep the coloring function.
         surface_coloring = self.get_color_dict()
         residue_coloring_function_js = ""
