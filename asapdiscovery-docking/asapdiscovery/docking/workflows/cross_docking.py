@@ -5,7 +5,7 @@ Removes all the additional layers in the other workflows and adds some features 
 from pathlib import Path
 from shutil import rmtree
 
-from asapdiscovery.data.dask_utils import dask_cluster_from_type
+from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
@@ -99,6 +99,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     if inputs.use_dask:
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
 
         if inputs.dask_type.is_lilac():
