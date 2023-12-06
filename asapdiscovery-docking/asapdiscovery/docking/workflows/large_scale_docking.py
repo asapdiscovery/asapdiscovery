@@ -4,7 +4,7 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import dask_cluster_from_type 
+from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -139,8 +139,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     if inputs.use_dask:
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
-
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
