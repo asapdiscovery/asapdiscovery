@@ -9,8 +9,6 @@ from typing import Dict, Optional, Union  # noqa: F401
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -22,6 +20,7 @@ from asapdiscovery.data.openeye import (
     openeye_perceive_residues,
     save_openeye_pdb,
 )
+from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.modeling.modeling import split_openeye_mol, superpose_molecule
 
 from ._gif_blocks import GIFBlockData
@@ -100,7 +99,9 @@ class HTMLVisualizer:
                 if isinstance(pose, oechem.OEMolBase):
                     mol = pose.CreateCopy()
                 else:
-                    mol = MolFileFactory.from_file(str(pose)).ligands # in this way we allow multiple ligands per protein, e.g. for viewing fragments
+                    mol = MolFileFactory.from_file(
+                        str(pose)
+                    ).ligands  # in this way we allow multiple ligands per protein, e.g. for viewing fragments
                     mol = [l.to_oemol() for l in mol]
                     for m in mol:
                         oechem.OESuppressHydrogens(
