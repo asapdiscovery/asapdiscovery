@@ -9,6 +9,8 @@ from typing import Dict, Optional, Union  # noqa: F401
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
+from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -98,11 +100,14 @@ class HTMLVisualizer:
                 if isinstance(pose, oechem.OEMolBase):
                     mol = pose.CreateCopy()
                 else:
-                    mol = load_openeye_sdf(str(pose))
-                oechem.OESuppressHydrogens(
-                    mol, True, True
-                )  # retain polar hydrogens and hydrogens on chiral centers
+                    mol = MolFileFactory.from_file(str(pose)).ligands # in this way we allow multiple ligands per protein, e.g. for viewing fragments
+                    mol = [l.to_oemol() for l in mol]
+                    for m in mol:
+                        oechem.OESuppressHydrogens(
+                            m, True, True
+                        )  # retain polar hydrogens and hydrogens on chiral centers
                 self.poses.append(mol)
+
                 self.output_paths.append(path)
             else:
                 pass
@@ -393,7 +398,9 @@ class HTMLVisualizer:
         # during pose_to_viz.py.
         if self.align:
             # merge
-            complex = combine_protein_ligand(self.protein, pose)
+            complex = self.protein
+            for pos in pose:
+                complex = combine_protein_ligand(complex, pos)
 
             # align complex to master structure
             complex_aligned, _ = superpose_molecule(
