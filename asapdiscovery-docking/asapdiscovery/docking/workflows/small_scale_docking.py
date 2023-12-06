@@ -178,10 +178,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
-
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
@@ -453,7 +452,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     if inputs.md:
-        if inputs.allow_dask_cuda and inputs.dask_type == DaskType.LOCAL_CPU:
+        if inputs.allow_dask_cuda and inputs.dask_type == DaskType.LOCAL:
             logger.info(
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
@@ -481,12 +480,17 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
         )
 
+        # duplicate target id column so we can join
+        gifs[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = gifs[
+            DockingResultCols.TARGET_ID.value
+        ]
+
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
             gifs,
             on=[
                 DockingResultCols.LIGAND_ID.value,
-                DockingResultCols.TARGET_ID.value,
+                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
                 DockingResultCols.SMILES.value,
             ],
             how="outer",

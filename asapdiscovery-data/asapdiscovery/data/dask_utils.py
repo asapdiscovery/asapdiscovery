@@ -17,12 +17,10 @@ logger = logging.getLogger(__name__)
 
 def set_dask_config():
     cfg.set({"distributed.scheduler.worker-ttl": None})
-    cfg.set({"distributed.admin.tick.limit": "2h"})
-    cfg.set({"distributed.scheduler.active-memory-manager.measure": "managed"})
-    cfg.set({"distributed.worker.memory.rebalance.measure": "managed"})
-    cfg.set({"distributed.worker.memory.spill": False})
-    cfg.set({"distributed.worker.memory.pause": True})
-    cfg.set({"distributed.worker.memory.terminate": False})
+    cfg.set({"distributed.admin.tick.limit": "4h"})
+    cfg.set({"distributed.scheduler.allowed-failures": 0})
+    # do not tolerate failures, if work fails once job will be marked as permanently failed
+    # this stops us cycling through jobs that fail losing all other work on the worker at that time
 
 
 def actualise_dask_delayed_iterable(
@@ -149,7 +147,7 @@ class DaskCluster(BaseModel):
 
     name: str = Field("dask-worker", description="Name of the dask worker")
     cores: int = Field(8, description="Number of cores per job")
-    memory: str = Field("24 GB", description="Amount of memory per job")
+    memory: str = Field("48 GB", description="Amount of memory per job")
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
@@ -159,7 +157,7 @@ class LilacDaskCluster(DaskCluster):
     shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
     queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
     project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("12h", description="Walltime for the job")
+    walltime: str = Field("24h", description="Walltime for the job")
     use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
@@ -167,7 +165,7 @@ class LilacDaskCluster(DaskCluster):
     job_script_prologue: list[str] = Field(
         ["ulimit -c 0"], description="Job prologue, default is to turn off core dumps"
     )
-    dashboard_address: str = Field(":9123", description="port to activate dashboard on")
+    dashboard_address: str = Field(":6412", description="port to activate dashboard on")
     lifetime_margin: str = Field(
         "10m",
         description="Margin to shut down workers before their walltime is up to ensure clean exit",
@@ -235,7 +233,7 @@ class LilacCPUConfig(BaseModel):
 class LilacGPUDaskCluster(LilacDaskCluster):
     queue: str = "gpuqueue"
     walltime = "24h"
-    memory = "48 GB"
+    memory = "96 GB"
     cores = 1
 
     @classmethod
