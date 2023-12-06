@@ -7,7 +7,6 @@ from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import (
     DaskType,
     dask_cluster_from_type,
-    set_dask_config,
 )
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
@@ -178,7 +177,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
 

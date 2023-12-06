@@ -5,7 +5,6 @@ from typing import Optional
 from asapdiscovery.data.dask_utils import (
     DaskType,
     dask_cluster_from_type,
-    set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
@@ -174,7 +173,6 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     inputs.to_json_file(output_dir / "protein_prep.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
 

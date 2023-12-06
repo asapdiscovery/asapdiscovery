@@ -15,15 +15,6 @@ from .execution_utils import guess_network_interface
 logger = logging.getLogger(__name__)
 
 
-def set_dask_config():
-    cfg.set({"distributed.scheduler.worker-ttl": None})
-    cfg.set({"distributed.admin.tick.limit": "2h"})
-    cfg.set({"distributed.scheduler.active-memory-manager.measure": "managed"})
-    cfg.set({"distributed.worker.memory.rebalance.measure": "managed"})
-    cfg.set({"distributed.worker.memory.spill": False})
-    cfg.set({"distributed.worker.memory.pause": True})
-    cfg.set({"distributed.worker.memory.terminate": False})
-
 
 def actualise_dask_delayed_iterable(
     delayed_iterable: Iterable,
@@ -167,7 +158,7 @@ class LilacDaskCluster(DaskCluster):
     job_script_prologue: list[str] = Field(
         ["ulimit -c 0"], description="Job prologue, default is to turn off core dumps"
     )
-    dashboard_address: str = Field(":6189", description="port to activate dashboard on")
+    dashboard_address: str = Field(":6489", description="port to activate dashboard on")
     lifetime_margin: str = Field(
         "10m",
         description="Margin to shut down workers before their walltime is up to ensure clean exit",
