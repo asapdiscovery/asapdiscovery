@@ -263,23 +263,31 @@ def build_and_train_gat(
             semiquant_fill=semiquant_fill,
         )
 
-        t = Trainer(
-            optimizer_config=optim_config,
-            model_config=model_config,
-            es_config=es_config,
-            ds_config=ds_config,
-            ds_splitter_config=ds_splitter_config,
-            loss_config=loss_config,
-            auto_init=auto_init,
-            start_epoch=start_epoch,
-            n_epochs=n_epochs,
-            batch_size=batch_size,
-            target_prop=target_prop,
-            cont=cont,
-            loss_dict=loss_dict,
-            device=device,
-            output_dir=output_dir,
-        )
+        # Parse loss_dict
+        if loss_dict:
+            loss_dict = json.loads(loss_dict.read_text())
+
+        # Filter out None Trainer kwargs
+        trainer_kwargs = {
+            "optimizer_config": optim_config,
+            "model_config": model_config,
+            "es_config": es_config,
+            "ds_config": ds_config,
+            "ds_splitter_config": ds_splitter_config,
+            "loss_config": loss_config,
+            "auto_init": auto_init,
+            "start_epoch": start_epoch,
+            "n_epochs": n_epochs,
+            "batch_size": batch_size,
+            "target_prop": target_prop,
+            "cont": cont,
+            "loss_dict": loss_dict,
+            "device": device,
+            "output_dir": output_dir,
+        }
+        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+
+        t = Trainer(**trainer_kwargs)
 
         # Save Trainer
         if trainer_config_cache:
@@ -458,23 +466,31 @@ def build_and_train_schnet(
             semiquant_fill=semiquant_fill,
         )
 
-        t = Trainer(
-            optimizer_config=optim_config,
-            model_config=model_config,
-            es_config=es_config,
-            ds_config=ds_config,
-            ds_splitter_config=ds_splitter_config,
-            loss_config=loss_config,
-            auto_init=auto_init,
-            start_epoch=start_epoch,
-            n_epochs=n_epochs,
-            batch_size=batch_size,
-            target_prop=target_prop,
-            cont=cont,
-            loss_dict=loss_dict,
-            device=device,
-            output_dir=output_dir,
-        )
+        # Parse loss_dict
+        if loss_dict:
+            loss_dict = json.loads(loss_dict.read_text())
+
+        # Filter out None Trainer kwargs
+        trainer_kwargs = {
+            "optimizer_config": optim_config,
+            "model_config": model_config,
+            "es_config": es_config,
+            "ds_config": ds_config,
+            "ds_splitter_config": ds_splitter_config,
+            "loss_config": loss_config,
+            "auto_init": auto_init,
+            "start_epoch": start_epoch,
+            "n_epochs": n_epochs,
+            "batch_size": batch_size,
+            "target_prop": target_prop,
+            "cont": cont,
+            "loss_dict": loss_dict,
+            "device": device,
+            "output_dir": output_dir,
+        }
+        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+
+        t = Trainer(**trainer_kwargs)
 
         # Save Trainer
         if trainer_config_cache:
@@ -655,23 +671,31 @@ def build_and_train_e3nn(
             semiquant_fill=semiquant_fill,
         )
 
-        t = Trainer(
-            optimizer_config=optim_config,
-            model_config=model_config,
-            es_config=es_config,
-            ds_config=ds_config,
-            ds_splitter_config=ds_splitter_config,
-            loss_config=loss_config,
-            auto_init=auto_init,
-            start_epoch=start_epoch,
-            n_epochs=n_epochs,
-            batch_size=batch_size,
-            target_prop=target_prop,
-            cont=cont,
-            loss_dict=loss_dict,
-            device=device,
-            output_dir=output_dir,
-        )
+        # Parse loss_dict
+        if loss_dict:
+            loss_dict = json.loads(loss_dict.read_text())
+
+        # Filter out None Trainer kwargs
+        trainer_kwargs = {
+            "optimizer_config": optim_config,
+            "model_config": model_config,
+            "es_config": es_config,
+            "ds_config": ds_config,
+            "ds_splitter_config": ds_splitter_config,
+            "loss_config": loss_config,
+            "auto_init": auto_init,
+            "start_epoch": start_epoch,
+            "n_epochs": n_epochs,
+            "batch_size": batch_size,
+            "target_prop": target_prop,
+            "cont": cont,
+            "loss_dict": loss_dict,
+            "device": device,
+            "output_dir": output_dir,
+        }
+        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+
+        t = Trainer(**trainer_kwargs)
 
         # Save Trainer
         if trainer_config_cache:
