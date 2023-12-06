@@ -269,6 +269,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     )
     results = docker.dock(
         pairs,
+        output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
