@@ -173,9 +173,9 @@ def use_wandb(func):
 
 
 def sweep(func):
-    return click.option(
-        "--sweep", type=bool, help="This run is part of a W&B sweep."
-    )(func)
+    return click.option("--sweep", type=bool, help="This run is part of a W&B sweep.")(
+        func
+    )
 
 
 def proj(func):
