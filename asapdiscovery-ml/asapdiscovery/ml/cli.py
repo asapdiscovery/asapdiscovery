@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 import pydantic
+import torch
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -167,7 +168,13 @@ def build_and_train_gat(
 ):
     # First check if Trainer cache exists and skip everything else if so
     if trainer_config_cache and trainer_config_cache.exists():
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+        trainer_kwargs = json.loads(trainer_config_cache.read_text())
+        trainer_kwargs["device"] = torch.device(trainer_kwargs["device"])
+        trainer_kwargs["model_config"] = SchNetModelConfig(
+            **trainer_kwargs["model_config"]
+        )
+        print("loaded trainer from cache", flush=True)
+        t = Trainer(**trainer_kwargs)
     else:
         optim_config = _build_arbitrary_config(
             config_cls=OptimizerConfig,
@@ -260,7 +267,7 @@ def build_and_train_gat(
         if trainer_config_cache:
             trainer_config_cache.write_text(t.json())
 
-    print(t, flush=True)
+    print("done", flush=True)
 
 
 @build_and_train.command(name="schnet")
@@ -340,7 +347,13 @@ def build_and_train_schnet(
 ):
     # First check if Trainer cache exists and skip everything else if so
     if trainer_config_cache and trainer_config_cache.exists():
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+        trainer_kwargs = json.loads(trainer_config_cache.read_text())
+        trainer_kwargs["device"] = torch.device(trainer_kwargs["device"])
+        trainer_kwargs["model_config"] = SchNetModelConfig(
+            **trainer_kwargs["model_config"]
+        )
+        print("loaded trainer from cache", flush=True)
+        t = Trainer(**trainer_kwargs)
     else:
         optim_config = _build_arbitrary_config(
             config_cls=OptimizerConfig,
@@ -432,7 +445,7 @@ def build_and_train_schnet(
         if trainer_config_cache:
             trainer_config_cache.write_text(t.json())
 
-    print(t, flush=True)
+    print("done", flush=True)
 
 
 @build_and_train.command("e3nn")
@@ -513,7 +526,13 @@ def build_and_train_e3nn(
 ):
     # First check if Trainer cache exists and skip everything else if so
     if trainer_config_cache and trainer_config_cache.exists():
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+        trainer_kwargs = json.loads(trainer_config_cache.read_text())
+        trainer_kwargs["device"] = torch.device(trainer_kwargs["device"])
+        trainer_kwargs["model_config"] = SchNetModelConfig(
+            **trainer_kwargs["model_config"]
+        )
+        print("loaded trainer from cache", flush=True)
+        t = Trainer(**trainer_kwargs)
     else:
         optim_config = _build_arbitrary_config(
             config_cls=OptimizerConfig,
@@ -606,7 +625,7 @@ def build_and_train_e3nn(
         if trainer_config_cache:
             trainer_config_cache.write_text(t.json())
 
-    print(t, flush=True)
+    print("done", flush=True)
 
 
 def _check_ds_args(exp_file, structures, ds_cache, ds_config_cache, is_structural):
@@ -803,9 +822,9 @@ def _build_arbitrary_config(config_cls, config_file, **config_kwargs):
         missing_vals = [err["loc"][0] for err in exc.errors()]
 
         raise ValueError(
-                f"Tried to build {config_cls} but missing required values: ["
-                + ", ".join(missing_vals)
-                + "]"
+            f"Tried to build {config_cls} but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
         )
 
     # If a non-existent file was passed, store the Config
