@@ -182,7 +182,7 @@ class DockingResult(BaseModel):
 
     @classmethod
     def from_json_file(cls, file: str | Path) -> "DockingResult":
-        with open(file, "r") as f:
+        with open(file) as f:
             return cls.parse_raw(f.read())
 
     def get_output(self) -> dict:
