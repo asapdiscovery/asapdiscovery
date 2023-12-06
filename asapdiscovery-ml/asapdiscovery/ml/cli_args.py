@@ -1003,7 +1003,7 @@ def target_prop(func):
 
 def cont(func):
     return click.option(
-        "--continue",
+        "--cont",
         type=bool,
         help="This is a continuation of a previous training run.",
     )(func)
