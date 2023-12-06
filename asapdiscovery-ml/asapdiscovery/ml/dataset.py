@@ -748,7 +748,11 @@ class GraphDataset(Dataset):
             idx = [idx]
         else:
             return_list = True
-            if isinstance(idx[0], int):
+            if isinstance(idx[0], bool):
+                idx_type = bool
+                if len(idx) != len(self.structures):
+                    raise IndexError("Index length must match number of structures.")
+            elif isinstance(idx[0], int):
                 idx_type = int
             else:
                 idx_type = tuple
@@ -766,6 +770,8 @@ class GraphDataset(Dataset):
         #  otherwise assume it's giving structure name
         if idx_type is int:
             str_idx_list = idx
+        elif idx_type is bool:
+            str_idx_list = [i for i in range(len(self.structures)) if idx[i]]
         else:
             # Need to find the structures that correspond to this compound(s)
             str_idx_list = [i for c in idx for i in self.compounds[c]]
