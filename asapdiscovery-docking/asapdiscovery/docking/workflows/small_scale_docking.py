@@ -178,10 +178,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
-
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
