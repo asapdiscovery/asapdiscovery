@@ -140,7 +140,7 @@ class DaskCluster(BaseModel):
 
     name: str = Field("dask-worker", description="Name of the dask worker")
     cores: int = Field(8, description="Number of cores per job")
-    memory: str = Field("24 GB", description="Amount of memory per job")
+    memory: str = Field("48 GB", description="Amount of memory per job")
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
@@ -158,7 +158,7 @@ class LilacDaskCluster(DaskCluster):
     job_script_prologue: list[str] = Field(
         ["ulimit -c 0"], description="Job prologue, default is to turn off core dumps"
     )
-    dashboard_address: str = Field(":6489", description="port to activate dashboard on")
+    dashboard_address: str = Field(":6412", description="port to activate dashboard on")
     lifetime_margin: str = Field(
         "10m",
         description="Margin to shut down workers before their walltime is up to ensure clean exit",
@@ -226,7 +226,7 @@ class LilacCPUConfig(BaseModel):
 class LilacGPUDaskCluster(LilacDaskCluster):
     queue: str = "gpuqueue"
     walltime = "24h"
-    memory = "48 GB"
+    memory = "96 GB"
     cores = 1
 
     @classmethod
