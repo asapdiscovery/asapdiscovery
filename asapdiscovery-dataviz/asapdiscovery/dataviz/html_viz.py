@@ -120,7 +120,7 @@ class HTMLVisualizer:
             self.slab = "viewer.setSlab(-11, 50)\n"
         else:
             self.slab = ""
-
+        
     @staticmethod
     def write_html(html, path):
         """
@@ -149,7 +149,6 @@ class HTMLVisualizer:
         """
         Based on subpocket coloring, creates a dict where keys are colors, values are residue numbers.
         """
-
         # get a list of all residue numbers of the protein.
         protein_residues = [
             oechem.OEAtomGetResidue(atom).GetResidueNumber()
@@ -403,12 +402,21 @@ class HTMLVisualizer:
             )
 
             # get pose and protein back
-            split_dict = split_openeye_mol(
-                complex_aligned
-            )  # can set lig_title in case of UNK or others
-            self.protein = split_dict["prot"]
-            pose = split_dict["lig"]
-
+            opts = oechem.OESplitMolComplexOptions()
+            opts.SetProteinFilter(oechem.OEOrRoleSet(
+                oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Protein),
+                oechem.OEMolComplexFilterFactory(oechem.OEMolComplexFilterCategory_Peptide)
+            ))
+            pose = oechem.OEGraphMol()
+            self.protein = oechem.OEGraphMol()
+            oechem.OESplitMolComplex(pose,
+                                     self.protein,
+                                     oechem.OEGraphMol(),
+                                     oechem.OEGraphMol(),
+                                     complex_aligned,
+                                     opts)
+        
+        
         # now prep the coloring function.
         surface_coloring = self.get_color_dict()
         residue_coloring_function_js = ""

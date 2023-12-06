@@ -238,7 +238,6 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
         ns3_section = ns3_section[ns3_section["site"].between(10, 177)]
         
         fitness_scores_bloom = pd.concat([ns2b_section, ns3_section])
-        fitness_scores_bloom.to_csv("tmp_fitness.csv", index=False)
 
     return fitness_scores_bloom
 
