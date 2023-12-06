@@ -3,7 +3,6 @@ import pickle as pkl
 from pathlib import Path
 from time import time
 
-import mtenn
 import numpy as np
 import torch
 import wandb
@@ -16,7 +15,7 @@ from asapdiscovery.ml.schema_v2.config import (
     OptimizerConfig,
 )
 from mtenn.config import ModelConfigBase
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 
 
 class Trainer(BaseModel):
@@ -112,6 +111,9 @@ class Trainer(BaseModel):
         # For now exclude, but would be good to handle custom serialization for these
         #  classes so we can include as much info as possible
         fields = {"dataset": {"exclude": True}, "loss_dict": {"exclude": True}}
+
+        # Allow things to be added to the object after initialization/validation
+        extra = Extra.allow
 
     # Validator to make sure that if output_dir exists, it is a directory
     @validator("output_dir")
