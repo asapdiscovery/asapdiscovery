@@ -244,6 +244,9 @@ class DatasetConfig(BaseModel):
     # Multi-pose or not
     grouped: bool = Field(False, description="Build a GroupedDockedDataset.")
 
+    # Don't use (and overwrite) any existing cache_file
+    overwrite: bool = Field(False, description="Overwrite any existing cache_file.")
+
     @root_validator(pre=False)
     def check_data_type(cls, values):
         inp = values["input_data"][0]
@@ -265,7 +268,7 @@ class DatasetConfig(BaseModel):
 
     def build(self):
         # Load from the cache file if it exists
-        if self.cache_file and self.cache_file.exists():
+        if self.cache_file and self.cache_file.exists() and (not self.overwrite):
             print("loading from cache", flush=True)
             return pkl.loads(self.cache_file.read_bytes())
 
