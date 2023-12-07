@@ -48,7 +48,7 @@ class MultiStructureBase(BaseModel):
             raise NotImplementedError
 
         # Just check that both Complexs and Ligands are the same
-        return (self.complexs == other.complexs) and (self.ligand == other.ligand)
+        return (self.complexes == other.complexes) and (self.ligand == other.ligand)
 
     def __neq__(self, other: Any) -> bool:
         return not self.__eq__(other)
