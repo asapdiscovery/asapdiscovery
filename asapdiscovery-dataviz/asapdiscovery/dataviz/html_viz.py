@@ -13,7 +13,6 @@ from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
-    load_openeye_sdf,
     oechem,
     oemol_to_pdb_string,
     oemol_to_sdf_string,
@@ -343,6 +342,7 @@ class HTMLVisualizer:
         # create the complex PDB file.
         with tempfile.TemporaryDirectory() as tmpdirname:
             tmp_pdb = os.path.join(tmpdirname, "tmp_complex.pdb")
+
             save_openeye_pdb(combine_protein_ligand(self.protein, pose), tmp_pdb)
 
             # run the PLIP CLI.
@@ -421,6 +421,9 @@ class HTMLVisualizer:
                     ),
                 )
             )
+            # pretend that the binding site is huge so we make sure that we include all ligands.
+            opts.SetMaxBindingSiteDist(1000)
+
             pose = oechem.OEGraphMol()
             self.protein = oechem.OEGraphMol()
             oechem.OESplitMolComplex(
