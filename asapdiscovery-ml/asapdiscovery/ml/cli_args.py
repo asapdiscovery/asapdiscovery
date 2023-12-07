@@ -44,6 +44,91 @@ def trainer_config_cache(func):
 
 
 ################################################################################
+# Overwrite flags
+def overwrite_args(func):
+    for fn in [
+        trainer_config_cache_overwrite,
+        optimizer_config_cache_overwrite,
+        model_config_cache_overwrite,
+        es_config_cache_overwrite,
+        ds_config_cache_overwrite,
+        ds_cache_overwrite,
+        ds_split_config_cache_overwrite,
+        loss_config_cache_overwrite,
+    ]:
+        func = fn(func)
+
+    return func
+
+
+def trainer_config_cache_overwrite(func):
+    return click.option(
+        "--overwrite-trainer-config-cache",
+        is_flag=True,
+        help="Overwrite any existing Trainer JSON cache file.",
+    )(func)
+
+
+def optimizer_config_cache_overwrite(func):
+    return click.option(
+        "--overwrite-optimizer-config-cache",
+        is_flag=True,
+        help="Overwrite any existing OptimzerConfig JSON cache file.",
+    )(func)
+
+
+def model_config_cache_overwrite(func):
+    return click.option(
+        "--overwrite-model-config-cache",
+        is_flag=True,
+        help="Overwrite any existing ModelConfig JSON cache file.",
+    )(func)
+
+
+def es_config_cache_overwrite(func):
+    return click.option(
+        "--overwrite-es-config-cache",
+        is_flag=True,
+        help="Overwrite any existing EarlyStoppingConfig JSON cache file.",
+    )(func)
+
+
+def ds_config_cache_overwrite(func):
+    return click.option(
+        "--overwrite-ds-config-cache",
+        is_flag=True,
+        help="Overwrite any existing DatasetConfig JSON cache file.",
+    )(func)
+
+
+def ds_cache_overwrite(func):
+    return click.option(
+        "--overwrite-ds-cache",
+        is_flag=True,
+        help="Overwrite any existing Dataset pkl cache file.",
+    )(func)
+
+
+def ds_split_config_cache_overwrite(func):
+    return click.option(
+        "--overwrite-ds-split-config-cache",
+        is_flag=True,
+        help="Overwrite any existing DatasetSplitterConfig JSON cache file.",
+    )(func)
+
+
+def loss_config_cache_overwrite(func):
+    return click.option(
+        "--overwrite-loss-config-cache",
+        is_flag=True,
+        help="Overwrite any existing LossFunctionConfig JSON cache file.",
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
 # Optimizer args
 def optim_args(func):
     for fn in [
