@@ -18,7 +18,6 @@ def output_dir(func):
     return click.option(
         "-o",
         "--output-dir",
-        required=True,
         type=click.Path(
             exists=False, file_okay=False, dir_okay=True, writable=True, path_type=Path
         ),

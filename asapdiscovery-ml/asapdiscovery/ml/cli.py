@@ -97,7 +97,7 @@ cli.add_command(build_and_train)
 @overwrite_args
 @overwrite_args
 def build_gat(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -266,7 +266,7 @@ def build_gat(
 @trainer_args
 @overwrite_args
 def build_schnet(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -439,7 +439,7 @@ def build_schnet(
 @trainer_args
 @overwrite_args
 def build_e3nn(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -613,7 +613,7 @@ def build_e3nn(
 @trainer_args
 @overwrite_args
 def build_and_train_gat(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -787,7 +787,7 @@ def build_and_train_gat(
 @trainer_args
 @overwrite_args
 def build_and_train_schnet(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -965,7 +965,7 @@ def build_and_train_schnet(
 @trainer_args
 @overwrite_args
 def build_and_train_e3nn(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1130,7 +1130,7 @@ def build_and_train_e3nn(
 
 
 def build_trainer_gat(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1332,7 +1332,22 @@ def build_trainer_gat(
         }
         trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        t = Trainer(**trainer_kwargs)
+        try:
+            t = Trainer(**trainer_kwargs)
+        except pydantic.ValidationError as exc:
+            # Only want to handle missing values, so if anything else went wrong just raise
+            #  the pydantic error
+            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+                raise exc
+
+            # Gather all missing values
+            missing_vals = [err["loc"][0] for err in exc.errors()]
+
+            raise ValueError(
+                "Tried to build Trainer but missing required values: ["
+                + ", ".join(missing_vals)
+                + "]"
+            )
 
         # Save Trainer
         if trainer_config_cache and (
@@ -1344,7 +1359,7 @@ def build_trainer_gat(
 
 
 def build_trainer_schnet(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1547,7 +1562,22 @@ def build_trainer_schnet(
         }
         trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        t = Trainer(**trainer_kwargs)
+        try:
+            t = Trainer(**trainer_kwargs)
+        except pydantic.ValidationError as exc:
+            # Only want to handle missing values, so if anything else went wrong just raise
+            #  the pydantic error
+            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+                raise exc
+
+            # Gather all missing values
+            missing_vals = [err["loc"][0] for err in exc.errors()]
+
+            raise ValueError(
+                "Tried to build Trainer but missing required values: ["
+                + ", ".join(missing_vals)
+                + "]"
+            )
 
         # Save Trainer
         if trainer_config_cache and (
@@ -1559,7 +1589,7 @@ def build_trainer_schnet(
 
 
 def build_trainer_e3nn(
-    output_dir: Path,
+    output_dir: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1764,7 +1794,22 @@ def build_trainer_e3nn(
         }
         trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        t = Trainer(**trainer_kwargs)
+        try:
+            t = Trainer(**trainer_kwargs)
+        except pydantic.ValidationError as exc:
+            # Only want to handle missing values, so if anything else went wrong just raise
+            #  the pydantic error
+            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+                raise exc
+
+            # Gather all missing values
+            missing_vals = [err["loc"][0] for err in exc.errors()]
+
+            raise ValueError(
+                "Tried to build Trainer but missing required values: ["
+                + ", ".join(missing_vals)
+                + "]"
+            )
 
         # Save Trainer
         if trainer_config_cache and (
