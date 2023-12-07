@@ -17,7 +17,6 @@ from asapdiscovery.docking.docking_v2 import (
     DockingResult,
 )
 from pydantic import Field, PositiveInt, root_validator
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
