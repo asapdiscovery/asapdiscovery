@@ -4,19 +4,22 @@ from typing import Any
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from pydantic import Field
+from pydantic import Field, BaseModel
+from typing import ClassVar
 
 logger = logging.getLogger(__name__)
 
 
-class PairBase(DataModelAbstractBase):
+class PairBase(BaseModel):
     """
     Base class for pairs.
     """
 
+    is_cacheable: ClassVar[bool] = True
+
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, PairBase):
-            return NotImplemented
+            raise NotImplemented
 
         # Just check that both Complex and Ligands are the same
         return (self.complex == other.complex) and (self.ligand == other.ligand)

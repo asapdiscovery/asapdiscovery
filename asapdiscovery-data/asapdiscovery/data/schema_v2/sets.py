@@ -5,15 +5,21 @@ from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from pydantic import Field
+from pydantic import Field, BaseModel
+from typing import ClassVar, Any
 
 logger = logging.getLogger(__name__)
 
 
-class MultiStructureBase(DataModelAbstractBase):
+class MultiStructureBase(BaseModel):
     """
     Base class for one ligand to many possible reference structures.
     """
+
+    is_cacheable: ClassVar[bool] = False
+
+    ligand: Ligand = Field(description="Ligand schema object")
+    complexes: list[Complex] = Field(description="List of reference structures")
 
     @classmethod
     def _from_pairs(
@@ -38,14 +44,21 @@ class MultiStructureBase(DataModelAbstractBase):
 
         return compound_multi_structures
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, MultiStructureBase):
+            raise NotImplemented
+
+        # Just check that both Complexs and Ligands are the same
+        return (self.complexs == other.complexs) and (self.ligand == other.ligand)
+
+    def __neq__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
 
 class CompoundMultiStructure(MultiStructureBase):
     """
     Schema for one ligand to many possible reference structures.
     """
-
-    ligand: Ligand = Field(description="Ligand schema object")
-    complexes: list[Complex] = Field(description="List of reference structures")
 
     @classmethod
     def from_pairs(

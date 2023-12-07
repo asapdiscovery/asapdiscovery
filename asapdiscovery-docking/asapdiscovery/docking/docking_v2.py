@@ -5,7 +5,7 @@ Defines docking base schema.
 import abc
 import logging
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, Any
 
 import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
@@ -14,6 +14,7 @@ from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.schema_v2.sets import MultiStructureBase
+from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
 
@@ -87,11 +88,12 @@ class DockingBase(BaseModel):
     def dock(
         self,
         inputs: list[DockingInputPair],
-        output_dir: Union[str, Path],
+        output_dir: Optional[Union[str, Path]] = None,
         use_dask: bool = False,
         dask_client=None,
     ) -> Union[list[dask.delayed], list["DockingResult"]]:
-        if not Path(output_dir).exists():
+        # make output dir if it doesn't exist
+        if output_dir and not Path(output_dir).exists():
             Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         if use_dask:
@@ -129,24 +131,11 @@ class DockingBase(BaseModel):
 
         # write out the docked poses and info
         for result in docking_results:
-            result._write_docking_files(result, output_dir)
+            result.write_docking_files(output_dir)
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
         ...
-
-    @staticmethod
-    def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
-        output_pref = result.unique_name()
-        compound_dir = output_dir / output_pref
-        compound_dir.mkdir(parents=True, exist_ok=True)
-        output_sdf_file = compound_dir / "docked.sdf"
-        output_pdb_file = compound_dir / "docked_complex.pdb"
-        output_json_file = compound_dir / "docking_result.json"
-        result.posed_ligand.to_sdf(output_sdf_file)
-        combined_oemol = result.to_posed_oemol()
-        save_openeye_pdb(combined_oemol, output_pdb_file)
-        result.to_json_file(output_json_file)
 
 
 class DockingResult(BaseModel):
@@ -239,3 +228,42 @@ class DockingResult(BaseModel):
         import pandas as pd
 
         return pd.DataFrame([r.get_output() for r in results])
+
+    def write_docking_files(self, output_dir: Union[str, Path]):
+        """
+        Write docking files to output_dir
+
+        Parameters
+        ----------
+        output_dir : Union[str, Path]
+            Output directory
+        """
+        self._write_docking_files(self, output_dir)
+
+    @staticmethod
+    def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
+        output_dir = Path(output_dir)
+        output_pref = result.unique_name()
+        compound_dir = output_dir / output_pref
+        compound_dir.mkdir(parents=True, exist_ok=True)
+        output_sdf_file = compound_dir / "docked.sdf"
+        output_pdb_file = compound_dir / "docked_complex.pdb"
+        output_json_file = compound_dir / "docking_result.json"
+        result.posed_ligand.to_sdf(output_sdf_file)
+        combined_oemol = result.to_posed_oemol()
+        save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.to_json_file(output_json_file)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, DockingResult):
+            raise NotImplemented
+
+        # Just check that both Complexs and Ligands are the same
+        return (
+            (self.input_pair == other.input_pair)
+            and (self.posed_ligand == other.posed_ligand)
+            and (self.probability == other.probability)
+        )
+
+    def __neq__(self, other: Any) -> bool:
+        return not self.__eq__(other)

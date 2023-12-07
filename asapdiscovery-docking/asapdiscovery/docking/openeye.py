@@ -3,7 +3,7 @@ This module contains the inputs, docker, and output schema for using POSIT
 """
 import logging
 from enum import Enum
-from typing import Literal, Union
+from typing import Literal, Union, Optional
 
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -183,7 +183,7 @@ class POSITDocker(DockingBase):
                 DockingInputMultiStructure,
             ]
         ],
-        output_dir: Union[str, Path],
+        output_dir: Optional[Union[str, Path]] = None,
         error="skip",
     ) -> list[DockingResult]:
         """
@@ -193,15 +193,22 @@ class POSITDocker(DockingBase):
         docking_results = []
 
         for set in inputs:
-            unique_name = set.unique_name()
-
-            if Path(output_dir / unique_name).exists():
-                logger.info(
-                    f"Docking result for {unique_name} already exists, reading from disk"
+            if (
+                set.is_cacheable
+                and (output_dir is not None)
+                and (
+                    Path(
+                        Path(output_dir) / set.unique_name() / "docking_result.json"
+                    ).exists()
                 )
+            ):
+                print(
+                    f"Docking result for {set.unique_name()} already exists, reading from disk"
+                )
+                output_dir = Path(output_dir)
                 docking_results.append(
                     POSITDockingResults.from_json_file(
-                        output_dir / unique_name / "docking_result.json"
+                        output_dir / set.unique_name() / "docking_result.json"
                     )
                 )
             else:
@@ -287,7 +294,6 @@ class POSITDocker(DockingBase):
                         # Generate info about which target was actually used by multi-reference docking
                         if isinstance(set, DockingInputMultiStructure):
                             docked_target = set.complexes[result.GetReceptorIndex()]
-                            print(f"{docked_target.target.target_name} was docked")
                             input_pair = DockingInputPair(
                                 ligand=set.ligand, complex=docked_target
                             )
@@ -301,7 +307,8 @@ class POSITDocker(DockingBase):
                             provenance=self.provenance(),
                         )
                         docking_results.append(docking_result)
-                        self._write_docking_files(docking_result, output_dir)
+                        if output_dir is not None:
+                            docking_result.write_docking_files(output_dir)
 
                 else:
                     if error == "skip":
