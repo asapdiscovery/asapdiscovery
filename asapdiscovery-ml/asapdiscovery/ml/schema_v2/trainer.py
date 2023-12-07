@@ -208,6 +208,8 @@ class Trainer(BaseModel):
         # Build early stopping
         if self.es_config:
             self.es = self.es_config.build()
+        else:
+            self.es = None
 
         # Build dataset and split
         self.ds = self.ds_config.build()
