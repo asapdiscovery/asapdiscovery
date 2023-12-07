@@ -308,15 +308,12 @@ class POSITDocker(DockingBase):
                             docking_result.write_docking_files(output_dir)
 
                 else:
+                    error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
                     if error == "skip":
-                        logger.warn(
-                            f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
-                        )
+                        logger.warn(error_msg)
                         docking_results.append(None)
                     elif error == "raise":
-                        raise ValueError(
-                            f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
-                        )
+                        raise ValueError(error_msg)
                     else:
                         raise ValueError(f"Unknown error handling option {error}")
 
