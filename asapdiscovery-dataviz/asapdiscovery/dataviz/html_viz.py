@@ -524,8 +524,12 @@ class HTMLVisualizer:
                                 console.log('hover', atom);\n \
                                 console.log('view:', viewer.getView()); // to get view for system\n \
                                 if (!atom.label) {\n \
-                                    atom.label = viewer.addLabel(atom.chain + ': ' +  atom.resn + atom.resi, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' });\n \
-                                    // if fitness view, can we show all possible residues it can mutate into with decent fitness?\n \
+                                    if (atom.chain === undefined){ \
+                                      display_str = 'LIGAND'; \
+                                      } else { \
+                                        display_str = atom.chain + ': ' +  atom.resn + atom.resi; \
+                                    } \
+                                    atom.label = viewer.addLabel(display_str, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' }); \
                                 }\n \
                             },\n \
                             function (atom) {\n \
