@@ -1,8 +1,9 @@
+import logging
 import os
 from pathlib import Path
+
 import pytest
 from asapdiscovery.docking.openeye import POSITDocker
-import logging
 
 logger = logging.getLogger(__name__)
 

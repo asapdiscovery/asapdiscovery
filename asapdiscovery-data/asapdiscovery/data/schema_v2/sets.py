@@ -1,12 +1,12 @@
 import logging
 from collections import defaultdict
+from typing import Any, ClassVar
 
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from pydantic import Field, BaseModel
-from typing import ClassVar, Any
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
