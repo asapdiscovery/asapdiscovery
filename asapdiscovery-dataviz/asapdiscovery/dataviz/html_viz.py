@@ -487,90 +487,112 @@ class HTMLVisualizer:
                 )
                 a.script(src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js")
                 a.script(src="https://d3js.org/d3.v5.min.js")
-            with a.body():
-                a.div(
-                    id="gldiv", style="width: 100vw; height: 100vh; position: relative;"
+                with a.style():
+                    a('/* Dropdown Button */\n      .dropbtn {\n        background-color: #04AA6D;\n        color: white;\n        padding: 16px;\n        font-size: 16px;\n        border: none;\n        border-radius: 5;\n      }\n\n      /* The container <div> - needed to position the dropdown content */\n      .dropdown {\n        position: absolute;\n        display: inline-block;\n        left: 1%;\n        top: 1%;\n      }\n      .dropdown_ctcs {\n        position: absolute;\n        top: 7%;\n        left: 1%;\n        display: inline-block;\n      }\n\n      /* Dropdown Content (Hidden by Default) */\n      .dropdown-content {\n        display: none;\n        position: relative;\n        background-color: #f1f1f1;\n        min-width: 160px;\n        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);\n        z-index: 1;\n      }\n\n      /* Links inside the dropdown */\n      .dropdown-content a {\n        color: black;\n        padding: 12px 16px;\n        text-decoration: none;\n        display: block;\n        cursor: default;\n      }\n                                                              \n      /* Show the dropdown menu on hover */\n      .dropdown:hover .dropdown-content {display: block;}\n      .dropdown_ctcs:hover .dropdown-content {display: block;}\n      \n      /* Change the background color of the dropdown button when the dropdown content is shown */\n      .dropdown:hover .dropbtn {background-color: #3e8e41;}')
+                with a.style():
+                    a('.box {\n  position: absolute;\n  width: 200px;\n  height: 100px;\n  padding: 10px;\n}')
+                a('<!-- wrap the main JS block to please the frontend gods -->')
+                with a.div(klass='box'):
+                    a.div(id='gldiv', style='width: 100vw; height: 100vh;')
+                a('<!-- show the top dropdown (surfaces) -->')
+                with a.div(klass='dropdown'):
+                    a.button(klass='dropbtn', _t='Key (Surfaces)')
+                    with a.div(klass='dropdown-content', style='text-align: center'):
+                        a.a(href='#', _t='Protein residue surfaces are colored by mutability:')
+                    with a.div(klass='dropdown-content'):
+                        a.a(href='#', _t='⚪ : No fit mutants for residue')
+                        a.a(href='#', _t='🔴 : Fit mutants for residue (n=1-5 with increasing 🔴)')
+                        a.a(href='#', _t='🟣 : No data for residue')
+                a('<!-- show the bottom dropdown (contacts) -->')
+                with a.div(klass='dropdown_ctcs'):
+                    a.button(klass='dropbtn', _t='Key (Contacts)')
+                    with a.div(klass='dropdown-content', style='text-align: center'):
+                        a.a(href='#', _t='Ligand-protein contacts are shown as dashed lines colored by:')
+                    with a.div(klass='dropdown-content'):
+                        a.a(href='#', _t='⬜ : No fit mutants for contacted residue')
+                        a.a(href='#', _t='🟩 : Ligand contacts residue backbone')
+                        a.a(href='#', _t='🟥 : Fit mutants for contacted residue (n=1-5 with increasing 🟥)')
+                        a.a(href='#', _t='🟪 : No data for contacted residue')
+            with a.script():
+                a(
+                    'var viewer=$3Dmol.createViewer($("#gldiv"));\n \
+                    var prot_pdb = `    '
+                    + oemol_to_pdb_string(self.protein)
+                    + "\n \
+                    \n \
+                    `;\n \
+                    var lig_sdf =`  "
+                    + oemol_to_sdf_string(pose)
+                    + '\n \
+                    `;       \n \
+                        //////////////// set up system\n \
+                        viewer.addModel(prot_pdb, "pdb") \n \
+                        // set protein sticks and surface\n \
+                        viewer.setStyle({model: 0}, {stick: {colorscheme: "whiteCarbon", radius:0.15}});\n \
+                        // define a coloring function based on our residue ranges. We can\'t call .addSurface separate times because the surfaces won\'t be merged nicely. \n \
+                        var colorAsSnake = function(atom) { \
+                        '
+                    + residue_coloring_function_js
+                    + " \
+                                        }}; \
+                        viewer.addSurface(\"MS\", {colorfunc: colorAsSnake, opacity: 0.9}) \n \
+                    \n \
+                        viewer.setStyle({bonds: 0}, {sphere:{radius:0.5}}); //water molecules\n \
+                    \n \
+                        viewer.addModel(lig_sdf, \"sdf\")   \n \
+                        // set ligand sticks\n \
+                        viewer.setStyle({model: -1}, {stick: {colorscheme: \"pinkCarbon\"}});\n \
+                    \n \
+                        ////////////////// enable show residue number on hover\n \
+                        viewer.setHoverable({}, true,\n \
+                        function (atom, viewer, event, container) {\n \
+                            console.log('hover', atom);\n \
+                            console.log('view:', viewer.getView()); // to get view for system\n \
+                            if (!atom.label) {\n \
+                                if (atom.chain === undefined){ \
+                                    display_str = 'LIGAND'; \
+                                    } else { \
+                                    display_str = atom.chain + ': ' +  atom.resn + atom.resi; \
+                                } \
+                                atom.label = viewer.addLabel(display_str, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' }); \
+                            }\n \
+                        },\n \
+                        function (atom) {\n \
+                            console.log('unhover', atom);\n \
+                            if (atom.label) {\n \
+                                viewer.removeLabel(atom.label);\n \
+                                delete atom.label;\n \
+                            }\n \
+                        }\n \
+                        );\n \
+                        viewer.setHoverDuration(100); // makes resn popup instant on hover\n \
+                    \n \
+                        //////////////// add protein-ligand interactions\n \
+                        var intn_dict = "
+                    + str(self.get_interactions_plip(self, pose))
+                    + '\n \
+                        for (const [_, intn] of Object.entries(intn_dict)) {\n \
+                            viewer.addCylinder({start:{x:parseFloat(intn["lig_at_x"]),y:parseFloat(intn["lig_at_y"]),z:parseFloat(intn["lig_at_z"])},\n \
+                                                    end:{x:parseFloat(intn["prot_at_x"]),y:parseFloat(intn["prot_at_y"]),z:parseFloat(intn["prot_at_z"])},\n \
+                                                    radius:0.1,\n \
+                                                    dashed:true,\n \
+                                                    fromCap:2,\n \
+                                                    toCap:2,\n \
+                                                    color:intn["color"]},\n \
+                                                    );\n \
+                        }\n \
+                    \n \
+                        ////////////////// set the view correctly\n \
+                        viewer.setBackgroundColor(0xffffffff);\n \
+                        viewer.setView(\n \
+                        '
+                    + HTMLBlockData.get_orient()
+                    + " \
+                        )\n\
+                        viewer.setZoomLimits(1,250) // prevent infinite zooming\n"
+                    + self.slab
+                    + " viewer.render();"
                 )
-                with a.script():
-                    a(
-                        'var viewer=$3Dmol.createViewer($("#gldiv"));\n \
-                        var prot_pdb = `    '
-                        + oemol_to_pdb_string(self.protein)
-                        + "\n \
-                        \n \
-                        `;\n \
-                        var lig_sdf =`  "
-                        + oemol_to_sdf_string(pose)
-                        + '\n \
-                        `;       \n \
-                            //////////////// set up system\n \
-                            viewer.addModel(prot_pdb, "pdb") \n \
-                            // set protein sticks and surface\n \
-                            viewer.setStyle({model: 0}, {stick: {colorscheme: "whiteCarbon", radius:0.15}});\n \
-                            // define a coloring function based on our residue ranges. We can\'t call .addSurface separate times because the surfaces won\'t be merged nicely. \n \
-                            var colorAsSnake = function(atom) { \
-                            '
-                        + residue_coloring_function_js
-                        + " \
-                                         }}; \
-                            viewer.addSurface(\"MS\", {colorfunc: colorAsSnake, opacity: 0.9}) \n \
-                        \n \
-                            viewer.setStyle({bonds: 0}, {sphere:{radius:0.5}}); //water molecules\n \
-                        \n \
-                            viewer.addModel(lig_sdf, \"sdf\")   \n \
-                            // set ligand sticks\n \
-                            viewer.setStyle({model: -1}, {stick: {colorscheme: \"pinkCarbon\"}});\n \
-                        \n \
-                            ////////////////// enable show residue number on hover\n \
-                            viewer.setHoverable({}, true,\n \
-                            function (atom, viewer, event, container) {\n \
-                                console.log('hover', atom);\n \
-                                console.log('view:', viewer.getView()); // to get view for system\n \
-                                if (!atom.label) {\n \
-                                    if (atom.chain === undefined){ \
-                                      display_str = 'LIGAND'; \
-                                      } else { \
-                                        display_str = atom.chain + ': ' +  atom.resn + atom.resi; \
-                                    } \
-                                    atom.label = viewer.addLabel(display_str, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' }); \
-                                }\n \
-                            },\n \
-                            function (atom) {\n \
-                                console.log('unhover', atom);\n \
-                                if (atom.label) {\n \
-                                    viewer.removeLabel(atom.label);\n \
-                                    delete atom.label;\n \
-                                }\n \
-                            }\n \
-                            );\n \
-                            viewer.setHoverDuration(100); // makes resn popup instant on hover\n \
-                        \n \
-                            //////////////// add protein-ligand interactions\n \
-                            var intn_dict = "
-                        + str(self.get_interactions_plip(self, pose))
-                        + '\n \
-                            for (const [_, intn] of Object.entries(intn_dict)) {\n \
-                                viewer.addCylinder({start:{x:parseFloat(intn["lig_at_x"]),y:parseFloat(intn["lig_at_y"]),z:parseFloat(intn["lig_at_z"])},\n \
-                                                        end:{x:parseFloat(intn["prot_at_x"]),y:parseFloat(intn["prot_at_y"]),z:parseFloat(intn["prot_at_z"])},\n \
-                                                        radius:0.1,\n \
-                                                        dashed:true,\n \
-                                                        fromCap:2,\n \
-                                                        toCap:2,\n \
-                                                        color:intn["color"]},\n \
-                                                        );\n \
-                            }\n \
-                        \n \
-                            ////////////////// set the view correctly\n \
-                            viewer.setBackgroundColor(0xffffffff);\n \
-                            viewer.setView(\n \
-                            '
-                        + HTMLBlockData.get_orient()
-                        + " \
-                            )\n\
-                            viewer.setZoomLimits(1,250) // prevent infinite zooming\n"
-                        + self.slab
-                        + " viewer.render();"
-                    )
 
         return str(a)
 
