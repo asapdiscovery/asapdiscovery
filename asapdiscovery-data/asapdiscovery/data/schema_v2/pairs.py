@@ -3,7 +3,6 @@ from typing import Any, ClassVar
 
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -18,7 +17,7 @@ class PairBase(BaseModel):
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, PairBase):
-            raise NotImplemented
+            raise NotImplementedError
 
         # Just check that both Complex and Ligands are the same
         return (self.complex == other.complex) and (self.ligand == other.ligand)

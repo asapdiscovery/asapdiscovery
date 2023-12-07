@@ -256,7 +256,7 @@ class DockingResult(BaseModel):
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, DockingResult):
-            raise NotImplemented
+            raise NotImplementedError
 
         # Just check that both Complexs and Ligands are the same
         return (
