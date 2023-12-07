@@ -163,14 +163,14 @@ def build_gat(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     _ = build_trainer_gat(
         output_dir,
@@ -239,14 +239,14 @@ def build_gat(
         cont,
         loss_dict,
         device,
-        trainer_config_cache_overwrite,
-        optimizer_config_cache_overwrite,
-        model_config_cache_overwrite,
-        es_config_cache_overwrite,
-        ds_config_cache_overwrite,
-        ds_cache_overwrite,
-        ds_split_config_cache_overwrite,
-        loss_config_cache_overwrite,
+        overwrite_trainer_config_cache,
+        overwrite_optimizer_config_cache,
+        overwrite_model_config_cache,
+        overwrite_es_config_cache,
+        overwrite_ds_config_cache,
+        overwrite_ds_cache,
+        overwrite_ds_split_config_cache,
+        overwrite_loss_config_cache,
     )
 
 
@@ -334,14 +334,14 @@ def build_schnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     _ = build_trainer_schnet(
         output_dir,
@@ -412,14 +412,14 @@ def build_schnet(
         cont,
         loss_dict,
         device,
-        trainer_config_cache_overwrite,
-        optimizer_config_cache_overwrite,
-        model_config_cache_overwrite,
-        es_config_cache_overwrite,
-        ds_config_cache_overwrite,
-        ds_cache_overwrite,
-        ds_split_config_cache_overwrite,
-        loss_config_cache_overwrite,
+        overwrite_trainer_config_cache,
+        overwrite_optimizer_config_cache,
+        overwrite_model_config_cache,
+        overwrite_es_config_cache,
+        overwrite_ds_config_cache,
+        overwrite_ds_cache,
+        overwrite_ds_split_config_cache,
+        overwrite_loss_config_cache,
     )
 
 
@@ -508,14 +508,14 @@ def build_e3nn(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     _ = build_trainer_e3nn(
         output_dir,
@@ -587,14 +587,14 @@ def build_e3nn(
         cont,
         loss_dict,
         device,
-        trainer_config_cache_overwrite,
-        optimizer_config_cache_overwrite,
-        model_config_cache_overwrite,
-        es_config_cache_overwrite,
-        ds_config_cache_overwrite,
-        ds_cache_overwrite,
-        ds_split_config_cache_overwrite,
-        loss_config_cache_overwrite,
+        overwrite_trainer_config_cache,
+        overwrite_optimizer_config_cache,
+        overwrite_model_config_cache,
+        overwrite_es_config_cache,
+        overwrite_ds_config_cache,
+        overwrite_ds_cache,
+        overwrite_ds_split_config_cache,
+        overwrite_loss_config_cache,
     )
 
 
@@ -679,14 +679,14 @@ def build_and_train_gat(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     t = build_trainer_gat(
         output_dir,
@@ -755,14 +755,14 @@ def build_and_train_gat(
         cont,
         loss_dict,
         device,
-        trainer_config_cache_overwrite,
-        optimizer_config_cache_overwrite,
-        model_config_cache_overwrite,
-        es_config_cache_overwrite,
-        ds_config_cache_overwrite,
-        ds_cache_overwrite,
-        ds_split_config_cache_overwrite,
-        loss_config_cache_overwrite,
+        overwrite_trainer_config_cache,
+        overwrite_optimizer_config_cache,
+        overwrite_model_config_cache,
+        overwrite_es_config_cache,
+        overwrite_ds_config_cache,
+        overwrite_ds_cache,
+        overwrite_ds_split_config_cache,
+        overwrite_loss_config_cache,
     )
 
     t.initialize()
@@ -855,14 +855,14 @@ def build_and_train_schnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     t = build_trainer_schnet(
         output_dir,
@@ -933,14 +933,14 @@ def build_and_train_schnet(
         cont,
         loss_dict,
         device,
-        trainer_config_cache_overwrite,
-        optimizer_config_cache_overwrite,
-        model_config_cache_overwrite,
-        es_config_cache_overwrite,
-        ds_config_cache_overwrite,
-        ds_cache_overwrite,
-        ds_split_config_cache_overwrite,
-        loss_config_cache_overwrite,
+        overwrite_trainer_config_cache,
+        overwrite_optimizer_config_cache,
+        overwrite_model_config_cache,
+        overwrite_es_config_cache,
+        overwrite_ds_config_cache,
+        overwrite_ds_cache,
+        overwrite_ds_split_config_cache,
+        overwrite_loss_config_cache,
     )
 
     t.initialize()
@@ -1034,14 +1034,14 @@ def build_and_train_e3nn(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     t = build_trainer_e3nn(
         output_dir,
@@ -1113,14 +1113,14 @@ def build_and_train_e3nn(
         cont,
         loss_dict,
         device,
-        trainer_config_cache_overwrite,
-        optimizer_config_cache_overwrite,
-        model_config_cache_overwrite,
-        es_config_cache_overwrite,
-        ds_config_cache_overwrite,
-        ds_cache_overwrite,
-        ds_split_config_cache_overwrite,
-        loss_config_cache_overwrite,
+        overwrite_trainer_config_cache,
+        overwrite_optimizer_config_cache,
+        overwrite_model_config_cache,
+        overwrite_es_config_cache,
+        overwrite_ds_config_cache,
+        overwrite_ds_cache,
+        overwrite_ds_split_config_cache,
+        overwrite_loss_config_cache,
     )
 
     t.initialize()
@@ -1196,20 +1196,20 @@ def build_trainer_gat(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     # First check if Trainer cache exists and skip everything else if so
     if (
         trainer_config_cache
         and trainer_config_cache.exists()
-        and (not trainer_config_cache_overwrite)
+        and (not overwrite_trainer_config_cache)
     ):
         trainer_kwargs = json.loads(trainer_config_cache.read_text())
         trainer_kwargs["device"] = torch.device(trainer_kwargs["device"])
@@ -1222,7 +1222,7 @@ def build_trainer_gat(
         optim_config = _build_arbitrary_config(
             config_cls=OptimizerConfig,
             config_file=optimizer_config_cache,
-            overwrite=optimizer_config_cache_overwrite,
+            overwrite=overwrite_optimizer_config_cache,
             optimizer_type=optimizer_type,
             lr=lr,
             weight_decay=weight_decay,
@@ -1236,7 +1236,7 @@ def build_trainer_gat(
         model_config = _build_arbitrary_config(
             config_cls=GATModelConfig,
             config_file=model_config_cache,
-            overwrite=model_config_cache_overwrite,
+            overwrite=overwrite_model_config_cache,
             grouped=grouped,
             strategy=strategy,
             pred_readout=pred_readout,
@@ -1264,7 +1264,7 @@ def build_trainer_gat(
             es_config = _build_arbitrary_config(
                 config_cls=EarlyStoppingConfig,
                 config_file=es_config_cache,
-                overwrite=es_config_cache_overwrite,
+                overwrite=overwrite_es_config_cache,
                 es_type=es_type,
                 es_patience=es_patience,
                 es_n_check=es_n_check,
@@ -1281,13 +1281,13 @@ def build_trainer_gat(
             ds_config_cache=ds_config_cache,
             is_structural=False,
             is_grouped=grouped,
-            config_overwrite=ds_config_cache_overwrite,
-            pkl_overwrite=ds_cache_overwrite,
+            config_overwrite=overwrite_ds_config_cache,
+            pkl_overwrite=overwrite_ds_cache,
         )
         ds_splitter_config = _build_arbitrary_config(
             config_cls=DatasetSplitterConfig,
             config_file=ds_split_config_cache,
-            overwrite=ds_split_config_cache_overwrite,
+            overwrite=overwrite_ds_split_config_cache,
             split_type=ds_split_type,
             train_frac=train_frac,
             val_frac=val_frac,
@@ -1298,7 +1298,7 @@ def build_trainer_gat(
         loss_config = _build_arbitrary_config(
             config_cls=LossFunctionConfig,
             config_file=loss_config_cache,
-            overwrite=loss_config_cache_overwrite,
+            overwrite=overwrite_loss_config_cache,
             loss_type=loss_type,
             semiquant_fill=semiquant_fill,
         )
@@ -1336,7 +1336,7 @@ def build_trainer_gat(
 
         # Save Trainer
         if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or trainer_config_cache_overwrite
+            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
         ):
             trainer_config_cache.write_text(t.json())
 
@@ -1412,20 +1412,20 @@ def build_trainer_schnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     # First check if Trainer cache exists and skip everything else if so
     if (
         trainer_config_cache
         and trainer_config_cache.exists()
-        and (not trainer_config_cache_overwrite)
+        and (not overwrite_trainer_config_cache)
     ):
         trainer_kwargs = json.loads(trainer_config_cache.read_text())
         trainer_kwargs["device"] = torch.device(trainer_kwargs["device"])
@@ -1438,7 +1438,7 @@ def build_trainer_schnet(
         optim_config = _build_arbitrary_config(
             config_cls=OptimizerConfig,
             config_file=optimizer_config_cache,
-            overwrite=optimizer_config_cache_overwrite,
+            overwrite=overwrite_optimizer_config_cache,
             optimizer_type=optimizer_type,
             lr=lr,
             weight_decay=weight_decay,
@@ -1452,7 +1452,7 @@ def build_trainer_schnet(
         model_config = _build_arbitrary_config(
             config_cls=SchNetModelConfig,
             config_file=model_config_cache,
-            overwrite=model_config_cache_overwrite,
+            overwrite=overwrite_model_config_cache,
             grouped=grouped,
             strategy=strategy,
             pred_readout=pred_readout,
@@ -1479,7 +1479,7 @@ def build_trainer_schnet(
             es_config = _build_arbitrary_config(
                 config_cls=EarlyStoppingConfig,
                 config_file=es_config_cache,
-                overwrite=es_config_cache_overwrite,
+                overwrite=overwrite_es_config_cache,
                 es_type=es_type,
                 es_patience=es_patience,
                 es_n_check=es_n_check,
@@ -1496,13 +1496,13 @@ def build_trainer_schnet(
             ds_config_cache=ds_config_cache,
             is_structural=True,
             is_grouped=grouped,
-            config_overwrite=ds_config_cache_overwrite,
-            pkl_overwrite=ds_cache_overwrite,
+            config_overwrite=overwrite_ds_config_cache,
+            pkl_overwrite=overwrite_ds_cache,
         )
         ds_splitter_config = _build_arbitrary_config(
             config_cls=DatasetSplitterConfig,
             config_file=ds_split_config_cache,
-            overwrite=ds_split_config_cache_overwrite,
+            overwrite=overwrite_ds_split_config_cache,
             split_type=ds_split_type,
             train_frac=train_frac,
             val_frac=val_frac,
@@ -1513,7 +1513,7 @@ def build_trainer_schnet(
         loss_config = _build_arbitrary_config(
             config_cls=LossFunctionConfig,
             config_file=loss_config_cache,
-            overwrite=loss_config_cache_overwrite,
+            overwrite=overwrite_loss_config_cache,
             loss_type=loss_type,
             semiquant_fill=semiquant_fill,
         )
@@ -1551,7 +1551,7 @@ def build_trainer_schnet(
 
         # Save Trainer
         if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or trainer_config_cache_overwrite
+            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
         ):
             trainer_config_cache.write_text(t.json())
 
@@ -1628,20 +1628,20 @@ def build_trainer_e3nn(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
-    trainer_config_cache_overwrite: bool = False,
-    optimizer_config_cache_overwrite: bool = False,
-    model_config_cache_overwrite: bool = False,
-    es_config_cache_overwrite: bool = False,
-    ds_config_cache_overwrite: bool = False,
-    ds_cache_overwrite: bool = False,
-    ds_split_config_cache_overwrite: bool = False,
-    loss_config_cache_overwrite: bool = False,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
 ):
     # First check if Trainer cache exists and skip everything else if so
     if (
         trainer_config_cache
         and trainer_config_cache.exists()
-        and (not trainer_config_cache_overwrite)
+        and (not overwrite_trainer_config_cache)
     ):
         trainer_kwargs = json.loads(trainer_config_cache.read_text())
         trainer_kwargs["device"] = torch.device(trainer_kwargs["device"])
@@ -1654,7 +1654,7 @@ def build_trainer_e3nn(
         optim_config = _build_arbitrary_config(
             config_cls=OptimizerConfig,
             config_file=optimizer_config_cache,
-            overwrite=optimizer_config_cache_overwrite,
+            overwrite=overwrite_optimizer_config_cache,
             optimizer_type=optimizer_type,
             lr=lr,
             weight_decay=weight_decay,
@@ -1668,7 +1668,7 @@ def build_trainer_e3nn(
         model_config = _build_arbitrary_config(
             config_cls=E3NNModelConfig,
             config_file=model_config_cache,
-            overwrite=model_config_cache_overwrite,
+            overwrite=overwrite_model_config_cache,
             grouped=grouped,
             strategy=strategy,
             pred_readout=pred_readout,
@@ -1696,7 +1696,7 @@ def build_trainer_e3nn(
             es_config = _build_arbitrary_config(
                 config_cls=EarlyStoppingConfig,
                 config_file=es_config_cache,
-                overwrite=es_config_cache_overwrite,
+                overwrite=overwrite_es_config_cache,
                 es_type=es_type,
                 es_patience=es_patience,
                 es_n_check=es_n_check,
@@ -1713,13 +1713,13 @@ def build_trainer_e3nn(
             ds_config_cache=ds_config_cache,
             is_structural=True,
             is_grouped=grouped,
-            config_overwrite=ds_config_cache_overwrite,
-            pkl_overwrite=ds_cache_overwrite,
+            config_overwrite=overwrite_ds_config_cache,
+            pkl_overwrite=overwrite_ds_cache,
         )
         ds_splitter_config = _build_arbitrary_config(
             config_cls=DatasetSplitterConfig,
             config_file=ds_split_config_cache,
-            overwrite=ds_split_config_cache_overwrite,
+            overwrite=overwrite_ds_split_config_cache,
             split_type=ds_split_type,
             train_frac=train_frac,
             val_frac=val_frac,
@@ -1730,7 +1730,7 @@ def build_trainer_e3nn(
         loss_config = _build_arbitrary_config(
             config_cls=LossFunctionConfig,
             config_file=loss_config_cache,
-            overwrite=loss_config_cache_overwrite,
+            overwrite=overwrite_loss_config_cache,
             loss_type=loss_type,
             semiquant_fill=semiquant_fill,
         )
@@ -1768,7 +1768,7 @@ def build_trainer_e3nn(
 
         # Save Trainer
         if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or trainer_config_cache_overwrite
+            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
         ):
             trainer_config_cache.write_text(t.json())
 
