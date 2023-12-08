@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 
 import pytest
-from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.docking_data_validation import DockingResultColsV2
+from asapdiscovery.docking.openeye import POSITDocker
 
 logger = logging.getLogger(__name__)
 
