@@ -1916,10 +1916,10 @@ def _build_ds_config(
 
     if not _check_ds_args(
         exp_file=exp_file,
-        structures=None,
+        structures=structures,
         ds_cache=ds_cache,
         ds_config_cache=ds_config_cache,
-        is_structural=False,
+        is_structural=is_structural,
         config_overwrite=config_overwrite,
     ):
         raise ValueError("Invalid combination of dataset args.")
