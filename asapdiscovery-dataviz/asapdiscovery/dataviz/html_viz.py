@@ -5,10 +5,14 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
+import pandas as pd 
+import logomaker
+import matplotlib.pyplot as plt
+import sys
 
 import xmltodict
 from airium import Airium
-from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
+from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data, get_fitness_scores_bloom_by_target, _FITNESS_DATA_FIT_THRESHOLD
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -21,7 +25,9 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.modeling.modeling import split_openeye_mol, superpose_molecule
-
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetVirusMap,
+)
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
@@ -85,6 +91,7 @@ class HTMLVisualizer:
                     f"No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
                 )
             self.fitness_data = parse_fitness_json(self.target)
+            self.fitness_data_logoplots = get_fitness_scores_bloom_by_target(self.target)
         else:
             raise ValueError(
                 "variable `color_method` must be either of ['subpockets', 'fitness']"
@@ -529,6 +536,10 @@ class HTMLVisualizer:
 
                 a('<!-- show logoplots per residue on hover -->')
                 a('<!-- bake in the base64 divs of all the residues. -->')
+                self.make_logoplot_input(160)
+
+                sys.exit()
+
                 with a.div(klass='logoplotbox_unfit', id=f'unfitDIV_{resi}', style='display:none', **{',': ''}):
                     a.img(alt='unfit residue logoplot', src='')
                 with a.div(klass='logoplotbox_fit', id=f'fitDIV_{resi}', style='display:none', **{',': ''}):
@@ -649,3 +660,33 @@ class HTMLVisualizer:
             html = self.get_html_airium(pose)
             html_renders.append(html)
         return html_renders
+
+    def make_logoplot_input(self, resi):
+        """
+        given a residue number, get data for the fitness of all mutants for the residue. Use
+        LogoMaker to create a logoplot for both the fit and unfit mutants, return the base64
+        string of the image.
+        """
+        # get just the fitness dat for the queried residue index.
+        site_df = self.fitness_data_logoplots[self.fitness_data_logoplots["site"] == resi]
+
+        # add the fitness threshold so that fit mutants end up in the left-hand logoplot.
+        site_df["fitness"] = site_df["fitness"] + _FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]] 
+
+        # adjust DF to follow LogoMaker format. 
+        site_df = site_df[site_df["fitness"] > 0 ]
+        site_df = pd.DataFrame([site_df["fitness"].values], columns=site_df["mutant"])
+        # create Logo object
+        logomaker.Logo(site_df,
+                            shade_below=.5,
+                            fade_below=.5,
+                            font_name='Sans Serif',
+                            figsize=(3,10),
+                            color_scheme="dmslogo_funcgroup",
+                            flip_below=False,
+                            show_spines=True)
+        plt.xticks([])
+        plt.yticks([])
+
+        plt.savefig("tmp.png")
+
