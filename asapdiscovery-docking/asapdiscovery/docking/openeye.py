@@ -5,7 +5,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 from typing import Literal, Optional, Union
-
+import pandas as pd
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.docking.docking_data_validation import (
@@ -77,24 +77,34 @@ class POSITDockingResults(DockingResult):
         for result in results:
             docking_dict = {}
             docking_dict[
-                DockingResultCols.LIGAND_ID
+                DockingResultCols.LIGAND_ID.value
             ] = result.input_pair.ligand.compound_name
             docking_dict[
-                DockingResultCols.TARGET_ID
+                DockingResultCols.TARGET_ID.value
             ] = result.input_pair.complex.target.target_name
             docking_dict[
                 "target_bound_compound_smiles"
             ] = result.input_pair.complex.ligand.smiles
-            docking_dict[DockingResultCols.SMILES] = result.input_pair.ligand.smiles
+            docking_dict[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
             docking_dict[
-                DockingResultCols.DOCKING_CONFIDENCE_POSIT
+                DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
             ] = result.probability
-            docking_dict[DockingResultCols.DOCKING_SCORE_POSIT] = result.score
-            docking_dict["score_type"] = result.score_type.value
             df_prep.append(docking_dict)
 
         df = pd.DataFrame(df_prep)
         return df
+    
+
+    def to_df(self) -> pd.DataFrame:
+        """
+        Make a dataframe from a DockingResult
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe of results
+        """
+        return self.make_df_from_docking_results([self])
 
 
 class POSITDocker(DockingBase):

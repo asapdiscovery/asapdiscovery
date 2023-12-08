@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from asapdiscovery.docking.openeye import POSITDocker
+from asapdiscovery.docking.docking_data_validation import DockingResultColsV2
 
 logger = logging.getLogger(__name__)
 
@@ -84,3 +85,9 @@ def test_multireceptor_docking(docking_multi_structure):
     assert len(results) == 1
     assert results[0].input_pair.complex.target.target_name == "Mpro-x0354"
     assert results[0].probability > 0.0
+
+
+def test_results_to_df(results_simple):
+    df = results_simple[0].to_df()
+    assert DockingResultColsV2.SMILES in df.columns
+    assert DockingResultColsV2.LIGAND_ID in df.columns
