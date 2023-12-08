@@ -5,6 +5,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 from typing import Literal, Optional, Union
+
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -85,7 +86,9 @@ class POSITDockingResults(DockingResult):
             docking_dict[
                 "target_bound_compound_smiles"
             ] = result.input_pair.complex.ligand.smiles
-            docking_dict[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
+            docking_dict[
+                DockingResultCols.SMILES.value
+            ] = result.input_pair.ligand.smiles
             docking_dict[
                 DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
             ] = result.probability
@@ -93,7 +96,6 @@ class POSITDockingResults(DockingResult):
 
         df = pd.DataFrame(df_prep)
         return df
-    
 
     def to_df(self) -> pd.DataFrame:
         """
