@@ -1,12 +1,9 @@
-import logging
 import os
 from pathlib import Path
 
 import pytest
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.docking_data_validation import DockingResultColsV2
-
-logger = logging.getLogger(__name__)
 
 
 @pytest.mark.skipif(
@@ -59,7 +56,7 @@ def test_docking_with_file_write(results_simple, tmp_path):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_docking_with_cache(docking_input_pair, tmp_path, caplog):
+def test_docking_with_cache(docking_input_pair, tmp_path, capfd):
     docker = POSITDocker(use_omega=False)
     results = docker.dock([docking_input_pair], output_dir=tmp_path / "docking_results")
     assert len(results) == 1
@@ -71,8 +68,8 @@ def test_docking_with_cache(docking_input_pair, tmp_path, caplog):
     )
     assert len(results2) == 1
     assert results2 == results
-
-    assert "already exists, reading from disk" in caplog.text
+    out, err = capfd.readouterr()
+    assert "already exists, reading from disk" in out
 
 
 @pytest.mark.skipif(
