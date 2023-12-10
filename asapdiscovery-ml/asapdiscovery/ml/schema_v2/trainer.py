@@ -115,6 +115,9 @@ class Trainer(BaseModel):
         # Allow things to be added to the object after initialization/validation
         extra = Extra.allow
 
+        # Custom encoder to cast device to str before trying to serialize
+        json_encoders = {torch.device: lambda d: str(d)}
+
     # Validator to make sure that if output_dir exists, it is a directory
     @validator("output_dir")
     def output_dir_check(cls, p):
@@ -159,10 +162,16 @@ class Trainer(BaseModel):
                 # Update run config to reflect it's been resumed
                 wandb.config.update({"continue": True}, allow_val_change=True)
             else:
+                # Don't serialize input_data for confidentiality/size reasons
+                ds_config = self.ds_config.dict()
+                del ds_config["input_data"]
+                config = self.dict()
+                config["ds_config"] = ds_config
+
                 # Start new run
                 run_id = wandb.init(
                     project=self.wandb_project,
-                    config=self.dict(),
+                    config=config,
                     name=self.wandb_name,
                 ).id
 
@@ -175,29 +184,17 @@ class Trainer(BaseModel):
                 else:
                     run_id_fn.write_text(run_id)
 
+                for split, table in zip(
+                    ["train", "val", "test"], self._make_wandb_ds_tables()
+                ):
+                    wandb.log({f"dataset_splits/{split}": table})
+
         return run_id
 
     def initialize(self):
         """
         Build the Optimizer and ML Model described by the stored config.
         """
-
-        # Adjust output_dir and make sure it exists
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        # Start the W&B process
-        if self.sweep or self.use_wandb:
-            run_id = self.wandb_init()
-            self.output_dir = self.output_dir / run_id
-        self.output_dir.mkdir(exist_ok=True)
-
-        # If sweep or continuing a run, get the optimizer and model config options from
-        #  the W&B config
-        if self.sweep or self.cont:
-            wandb_optimizer_config = wandb.config["optimizer_config"]
-            wandb_model_config = wandb.config["model_config"]
-
-            self.optimizer_config = self.optimizer_config.update(wandb_optimizer_config)
-            self.model_config = self.model_config.update(wandb_model_config)
 
         # Build the Model
         self.model = self.model_config.build().to(self.device)
@@ -217,9 +214,33 @@ class Trainer(BaseModel):
             self.ds
         )
 
+        print(
+            "ds lengths",
+            len(self.ds_train),
+            len(self.ds_val),
+            len(self.ds_test),
+            flush=True,
+        )
+
         # Build loss function
         self.loss_func = self.loss_config.build()
 
+        # Adjust output_dir and make sure it exists
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        # Start the W&B process
+        if self.sweep or self.use_wandb:
+            run_id = self.wandb_init()
+            self.output_dir = self.output_dir / run_id
+        self.output_dir.mkdir(exist_ok=True)
+
+        # If sweep or continuing a run, get the optimizer and model config options from
+        #  the W&B config
+        if self.sweep or self.cont:
+            wandb_optimizer_config = wandb.config["optimizer_config"]
+            wandb_model_config = wandb.config["model_config"]
+
+            self.optimizer_config = self.optimizer_config.update(wandb_optimizer_config)
+            self.model_config = self.model_config.update(wandb_model_config)
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
@@ -467,6 +488,9 @@ class Trainer(BaseModel):
                     print(f"Stopping training after epoch {epoch_idx}", flush=True)
                     break
 
+        if self.use_wandb or self.sweep:
+            wandb.finish()
+
         torch.save(self.model.state_dict(), self.output_dir / "final.th")
 
     def _update_loss_dict(
@@ -520,3 +544,52 @@ class Trainer(BaseModel):
             }
             if pose_preds is not None:
                 self.loss_dict[split][compound_id]["pose_preds"] = [pose_preds]
+
+    def _make_wandb_ds_tables(self):
+        ds_tables = []
+
+        for ds in [self.ds_train, self.ds_val, self.ds_test]:
+            table = wandb.Table(
+                columns=[
+                    "crystal",
+                    "compound_id",
+                    "pIC50",
+                    "pIC50_range",
+                    "pIC50_stderr",
+                    "date_created",
+                ]
+            )
+            # Build table and add each molecule
+            for compound, d in ds:
+                if type(compound) is tuple:
+                    xtal_id, compound_id = compound
+                    tmp_d = d
+                else:
+                    xtal_id = ""
+                    compound_id = compound
+                    tmp_d = d[0]
+                try:
+                    pic50 = tmp_d["pIC50"]
+                except KeyError:
+                    pic50 = np.nan
+                try:
+                    pic50_range = tmp_d["pIC50_range"]
+                except KeyError:
+                    pic50_range = np.nan
+                try:
+                    pic50_stderr = tmp_d["pIC50_stderr"]
+                except KeyError:
+                    pic50_stderr = np.nan
+                except AttributeError:
+                    pic50 = tmp_d["pIC50"]
+                try:
+                    date_created = tmp_d["date_created"]
+                except KeyError:
+                    date_created = None
+                table.add_data(
+                    xtal_id, compound_id, pic50, pic50_range, pic50_stderr, date_created
+                )
+
+            ds_tables.append(table)
+
+        return ds_tables
