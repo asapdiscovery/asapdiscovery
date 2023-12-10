@@ -6,6 +6,7 @@ import abc
 import logging
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
+import numpy as np
 
 import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
@@ -281,7 +282,7 @@ class DockingResult(BaseModel):
         return (
             (self.input_pair == other.input_pair)
             and (self.posed_ligand == other.posed_ligand)
-            and (self.probability == other.probability)
+            and (np.isclose(self.probability, other.probability))
         )
 
     def __neq__(self, other: Any) -> bool:
