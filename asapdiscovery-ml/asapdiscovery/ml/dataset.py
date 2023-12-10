@@ -330,7 +330,7 @@ class DockedDataset(Dataset):
         str_list = [self.structures[i] for i in str_idx_list]
         compounds = [s["compound"] for s in str_list]
         if return_list:
-            return (compounds, str_list)
+            return zip(compounds, str_list)
         else:
             return (compounds[0], str_list[0])
 
