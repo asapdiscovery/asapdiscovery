@@ -90,7 +90,27 @@ class DockingBase(BaseModel):
         output_dir: Optional[Union[str, Path]] = None,
         use_dask: bool = False,
         dask_client=None,
-    ) -> Union[list[dask.delayed], list["DockingResult"]]:
+    ) -> list["DockingResult"]:
+        """
+        Run docking on a list of DockingInputPairs
+
+        Parameters
+        ----------
+        inputs : list[DockingInputPair]
+            List of DockingInputPairs
+        output_dir : Optional[Union[str, Path]], optional
+            Output directory, to write docking results to, by default None
+            means no output files are written
+        use_dask : bool, optional
+            Whether to use dask, by default False
+        dask_client : dask.distributed.Client, optional
+            Dask client to use, by default None
+
+        Returns
+        -------
+        list[DockingResult]
+            List of DockingResults
+        """
         # make output dir if it doesn't exist
         if output_dir and not Path(output_dir).exists():
             Path(output_dir).mkdir(parents=True, exist_ok=True)
