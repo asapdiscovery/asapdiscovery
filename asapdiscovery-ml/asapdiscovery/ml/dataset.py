@@ -75,19 +75,29 @@ class DockedDataset(Dataset):
 
         compound_idxs = {}
         structures = []
-        for i, comp in enumerate(complexes):
+        # Can't use enumerate in case we skip some
+        comp_counter = 0
+        for comp in complexes:
+            try:
+                comp_exp_dict = exp_dict[comp.ligand.compound_name]
+            except KeyError:
+                print(
+                    f"Couldn't find {comp.ligand.compound_name} in exp_dict, skipping."
+                )
+                continue
             # compound = get_complex_id(comp)
             compound = (comp.target.target_name, comp.ligand.compound_name)
             try:
-                compound_idxs[compound].append(i)
+                compound_idxs[compound].append(comp_counter)
             except KeyError:
-                compound_idxs[compound] = [i]
+                compound_idxs[compound] = [comp_counter]
 
-            comp_exp_dict = exp_dict.get(comp.ligand.compound_name, {})
             pose = cls._complex_to_pose(
                 comp, compound=compound, exp_dict=comp_exp_dict, ignore_h=ignore_h
             )
             structures.append(pose)
+
+            comp_counter += 1
 
         return cls(compound_idxs, structures)
 
