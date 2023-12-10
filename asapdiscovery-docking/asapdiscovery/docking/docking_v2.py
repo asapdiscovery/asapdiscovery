@@ -113,7 +113,7 @@ class DockingBase(BaseModel):
             List of DockingResults
         """
         # make output dir if it doesn't exist
-        if output_dir and not Path(output_dir).exists():
+        if output_dir is not None:
             Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         if use_dask:
