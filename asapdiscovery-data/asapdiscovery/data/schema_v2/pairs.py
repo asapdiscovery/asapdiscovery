@@ -19,7 +19,7 @@ class PairBase(BaseModel):
         if not isinstance(other, PairBase):
             raise NotImplementedError
 
-        # Just check that both Complex and Ligands are the same
+        # Check that both Complexes are the same and both Ligands are the same
         return (self.complex == other.complex) and (self.ligand == other.ligand)
 
     def __ne__(self, other: Any) -> bool:
