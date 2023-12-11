@@ -77,7 +77,7 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame, threshold: float) -
     Returns
     -------
     fitness_dict : dict
-        Dictionary where keys are residue indices, keys are: [
+        Dictionary where keys are residue indices underscored with chain IDs, keys are: [
             mean_fitness,
             wildtype_residue,
             most fit mutation,
@@ -91,12 +91,12 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame, threshold: float) -
         fitness_dataframe["expected_count"] = 0
 
     fitness_dict = {}
-    for idx, site_df in fitness_dataframe.groupby(by="site"):
+    for (idx, chain), site_df in fitness_dataframe.groupby(by=["site", "chain"]):
         # remove wild type fitness score (this is always 0)
         fitness_scores_this_site = site_df[site_df["fitness"] != 0]
 
         # add all values to a dict
-        fitness_dict[idx] = [
+        fitness_dict[f"{idx}_{chain}"] = [
             bloom_abstraction(fitness_scores_this_site, threshold),
             fitness_scores_this_site["wildtype"].values[0],  # wildtype residue
             fitness_scores_this_site.sort_values(by="fitness")["mutant"].values[
@@ -126,6 +126,10 @@ def normalize_fitness(fitness_df_abstract: pd.DataFrame) -> pd.DataFrame:
     fitness_df_abstract: pd.DataFrame
         Dataframe containing per-residue fitness data normalized.
     """
+    return fitness_df_abstract
+
+    # can reactivate below as required - return the above makes fitness categorical from 1 to n, where
+    # n = number of fit mutants
     fitness_df_abstract["fitness"] = (
         (fitness_df_abstract["fitness"] - fitness_df_abstract["fitness"].min())
         / (fitness_df_abstract["fitness"].max() - fitness_df_abstract["fitness"].min())
@@ -177,6 +181,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom, threshold)
+    
     fitness_df_abstract = pd.DataFrame.from_dict(
         fitness_dict_abstract,
         orient="index",
@@ -189,6 +194,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         ],
     )
     fitness_df_abstract.index.name = "residue"
+
     # normalize fitness and confidence values to 0-1 for easier parsing by visualizers downstream and return df.
     # can instead return DF if ever we need to provide more info (top/worst mutation, confidence etc).
     fitness_df_abstract = normalize_fitness(fitness_df_abstract)

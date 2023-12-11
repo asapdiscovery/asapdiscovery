@@ -199,7 +199,11 @@ class HTMLVisualizer:
             oechem.OEAtomGetResidue(atom).GetResidueNumber()
             for atom in self.protein.GetAtoms()
         ]
-
+        protein_chainIDs = [
+            oechem.OEAtomGetResidue(atom).GetChainID()
+            for atom in self.protein.GetAtoms()
+        ]
+        
         hex_color_codes = [
             "#ffffff",
             "#ff9e83",
@@ -209,27 +213,29 @@ class HTMLVisualizer:
             "#ff3f25",
             "#ff0707",
         ]
+        
         color_res_dict = {}
-        for res_num in set(protein_residues):
+        for res_num, chain in set(zip(protein_residues, protein_chainIDs)):
+
             try:
                 # color residue white->red depending on fitness value.
-                color_index_to_grab = int(self.fitness_data[res_num] / 10)
+                color_index_to_grab = self.fitness_data[f"{res_num}_{chain}"]
                 try:
                     color = hex_color_codes[color_index_to_grab]
                 except IndexError:
                     # insane residue that has tons of fit mutants; just assign the darkest red.
                     color = hex_color_codes[-1]
                 if color not in color_res_dict:
-                    color_res_dict[color] = [res_num]
+                    color_res_dict[color] = [f"{res_num}_{chain}"]
                 else:
-                    color_res_dict[color].append(res_num)
+                    color_res_dict[color].append(f"{res_num}_{chain}")
             except KeyError:
                 # fitness data is missing for this residue, color blue instead.
                 color = "#642df0"
                 if color not in color_res_dict:
-                    color_res_dict[color] = [res_num]
+                    color_res_dict[color] = [f"{res_num}_{chain}"]
                 else:
-                    color_res_dict[color].append(res_num)
+                    color_res_dict[color].append(f"{res_num}_{chain}")
 
         return color_res_dict
 
@@ -298,7 +304,8 @@ class HTMLVisualizer:
         # first get the fitness color of the residue the interaction hits, this
         # can be white->red or blue if fitness data is missing.
         intn_color = None
-        for fitness_color, res_nums in self.make_color_res_fitness().items():
+        for fitness_color, res_ids in self.make_color_res_fitness().items():
+            res_nums = [ int(id.split("_")[0]) for id in res_ids]
             if int(plip_xml_dict["resnr"]) in res_nums:
                 intn_color = fitness_color
                 break
@@ -448,15 +455,16 @@ class HTMLVisualizer:
 
         # now prep the coloring function.
         surface_coloring = self.get_color_dict()
+
         residue_coloring_function_js = ""
         start = True
         for color, residues in surface_coloring.items():
-            residues = [str(res) for res in residues]
+            residues = [f"'{res}'" for res in residues] # need to wrap the string in quotes *within* the JS code
             if start:
                 residue_coloring_function_js += (
                     "if (["
                     + ",".join(residues)
-                    + "].includes(atom.resi)){ \n return '"
+                    + "].includes(atom.resi+'_'+atom.chain)){ \n return '"
                     + color
                     + "' \n "
                 )
@@ -465,7 +473,7 @@ class HTMLVisualizer:
                 residue_coloring_function_js += (
                     "} else if (["
                     + ",".join(residues)
-                    + "].includes(atom.resi)){ \n return '"
+                    + "].includes(atom.resi+'_'+atom.chain)){ \n return '"
                     + color
                     + "' \n "
                 )
@@ -553,15 +561,16 @@ class HTMLVisualizer:
                 a('<!-- show logoplots per residue on hover -->')
                 a('<!-- bake in the base64 divs of all the residues. -->')
                 for resi, _ in self.fitness_data.items():
-                    # get the base64 for this residue. The function returns both chain A and B images; split if True. 
-                    for chain, base64_dict in self.make_logoplot_input(resi).items():
-                        if base64_dict:
-                            with a.div(klass='logoplotbox_unfit', id=f'unfitDIV_{resi}_{chain}', style='display:none'):
-                                # add the base64 string while making some corrections. 
-                                a.img(alt='unfit residue logoplot', src=str(base64_dict["unfit"]).replace("b'", "data:image/png;base64,").replace("'", ""))
-                            with a.div(klass='logoplotbox_fit', id=f'fitDIV_{resi}_{chain}', style='display:none'):
-                                a.img(alt='fit residue logoplot', src=str(base64_dict["fit"]).replace("b'", "data:image/png;base64,").replace("'", ""))
-                    
+                    resnum, chain = resi.split("_")
+                    # get the base64 for this residue in this chain. 
+                    for fit_type, base64 in self.make_logoplot_input(resi).items():
+                        
+                        with a.div(klass=f'logoplotbox_{fit_type}', id=f'{fit_type}DIV_{resnum}_{chain}', style='display:none'):
+                            # add the base64 string while making some corrections. 
+                            a.img(alt=f'{fit_type} residue logoplot', src=str(base64).replace("b'", "data:image/png;base64,").replace("'", ""))
+                        # with a.div(klass='logoplotbox_fit', id=f'fitDIV_{resnum}_{chain}', style='display:none'):
+                        #     a.img(alt='fit residue logoplot', src=str(base64_dict["fit"]).replace("b'", "data:image/png;base64,").replace("'", ""))
+                
             
             with a.script():
                 # function to show/hide the logoplots
@@ -680,53 +689,48 @@ class HTMLVisualizer:
 
     def make_logoplot_input(self, resi) -> dict:
         """
-        given a residue number, get data for the fitness of all mutants for the residue. Use
+        given a residue number with underscored chain ID, get data for the fitness of all mutants for the residue. Use
         LogoMaker to create a logoplot for both the fit and unfit mutants, return the base64
         string of the image.
         """
 
         # get just the fitness data for the queried residue index, at the right chain.
-        site_df_resi = self.fitness_data_logoplots[self.fitness_data_logoplots["site"] == resi]
-        site_dfs = {}
-        for chain in ["A", "B"]:
-            if chain in site_df_resi["chain"].values:
-                site_dfs[chain] = site_df_resi[site_df_resi["chain"] == chain]
-
-        logoplot_dicts = {}
-        for chain, site_df in site_dfs.items():
-            if site_df is not None:
-                # add the fitness threshold to normalize so that fit mutants end up in the left-hand logoplot.
-                site_df["fitness"] = site_df["fitness"] + abs(_FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]])
-
-                # split the mutant data into fit/unfit. 
-                site_df_fit = site_df[site_df["fitness"] > 0 ]
-                site_df_unfit = site_df[site_df["fitness"] < 0 ]
-
-                logoplot_base64s_dict = {}
-                with tempfile.TemporaryDirectory() as tmpdirname:
-                    for fit_type, fitness_df in zip(["fit", "unfit"], [site_df_fit, site_df_unfit]):
-                        # pivot table to make into LogoMaker format
-                        logoplot_df = pd.DataFrame([fitness_df["fitness"].values], columns=fitness_df["mutant"])
-
-                        # create Logo object
-                        logomaker.Logo(logoplot_df,
-                                            shade_below=.5,
-                                            fade_below=.5,
-                                            font_name='Sans Serif',
-                                            figsize=(3,10),
-                                            color_scheme="dmslogo_funcgroup",
-                                            flip_below=False,
-                                            show_spines=True)
-                        plt.xticks([])
-                        plt.yticks([])
-
-                        # we could get base64 from buffer, but easier to write as tmp and read back as bas64.
-                        plt.savefig(f"{tmpdirname}/logoplot.png", bbox_inches='tight', pad_inches=0, dpi=50)
-                        plt.close() # prevent matplotlib from freaking out due to large volume of figures.
-                        with open(f"{tmpdirname}/logoplot.png", "rb") as f:
-                            logoplot_base64s_dict[fit_type] = base64.b64encode(f.read())
-                            logoplot_dicts[chain] = logoplot_base64s_dict
+        resi, chain = resi.split("_")
         
-        return logoplot_dicts
+        site_df_resi = self.fitness_data_logoplots[self.fitness_data_logoplots["site"] == int(resi)]
+        site_df = site_df_resi[site_df_resi["chain"] == chain]
+        
+        # add the fitness threshold to normalize so that fit mutants end up in the left-hand logoplot.
+        site_df["fitness"] = site_df["fitness"] + abs(_FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]])
+
+        # split the mutant data into fit/unfit. 
+        site_df_fit = site_df[site_df["fitness"] > 0 ]
+        site_df_unfit = site_df[site_df["fitness"] < 0 ]
+
+        logoplot_base64s_dict = {}
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            for fit_type, fitness_df in zip(["fit", "unfit"], [site_df_fit, site_df_unfit]):
+                # pivot table to make into LogoMaker format
+                logoplot_df = pd.DataFrame([fitness_df["fitness"].values], columns=fitness_df["mutant"])
+
+                # create Logo object
+                logomaker.Logo(logoplot_df,
+                                    shade_below=.5,
+                                    fade_below=.5,
+                                    font_name='Sans Serif',
+                                    figsize=(3,10),
+                                    color_scheme="dmslogo_funcgroup",
+                                    flip_below=False,
+                                    show_spines=True)
+                plt.xticks([])
+                plt.yticks([])
+
+                # we could get base64 from buffer, but easier to write as tmp and read back as bas64.
+                plt.savefig(f"{tmpdirname}/logoplot.png", bbox_inches='tight', pad_inches=0, dpi=50)
+                plt.close() # prevent matplotlib from freaking out due to large volume of figures.
+                with open(f"{tmpdirname}/logoplot.png", "rb") as f:
+                    logoplot_base64s_dict[fit_type] = base64.b64encode(f.read())
+
+        return logoplot_base64s_dict
 
 
