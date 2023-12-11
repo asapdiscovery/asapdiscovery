@@ -31,7 +31,11 @@ class MetaStructureFactory(Base):
 
     @root_validator
     def options_mutex(cls, values):
-        if sum(bool(v) for v in values.values()) != 1:
+        fragalysis = values.get("fragalysis_dir")
+        pdb_file = values.get("pdb_file")
+        structure_dir = values.get("structure_dir")
+        vals = [fragalysis, pdb_file, structure_dir]
+        if sum(bool(v) for v in vals) != 1:
             raise ValueError(
                 "Must specify exactly one of structure_dir, fragalysis_dir or pdb_file"
             )

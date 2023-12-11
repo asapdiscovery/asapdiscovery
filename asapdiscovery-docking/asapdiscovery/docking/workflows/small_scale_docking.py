@@ -205,57 +205,19 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
 
-    if inputs.postera_upload:
-        postera_settings = PosteraSettings()
-        logger.info("Postera settings loaded")
-        logger.info("Postera upload specified, checking for AWS credentials")
-        aws_s3_settings = S3Settings()
-        aws_cloudfront_settings = CloudfrontSettings()
-        logger.info("AWS S3 and CloudFront credentials found")
+    # read ligands
+    ligand_factory = MetaLigandFactory(inputs.postera, inputs.ligands)
+    query_ligands = ligand_factory.load()
 
-    if inputs.postera:
-        # can specify postera without uploading
-        postera_settings = PosteraSettings()
-        logger.info("Postera settings loaded")
-        logger.info(
-            f"Loading Postera database molecule set {inputs.postera_molset_name}"
-        )
-
-        postera = PosteraFactory(
-            settings=postera_settings, molecule_set_name=inputs.postera_molset_name
-        )
-        query_ligands = postera.pull()
-    else:
-        # load from file
-        logger.info(f"Loading ligands from file: {inputs.ligands}")
-        molfile = MolFileFactory.from_file(inputs.ligands)
-        query_ligands = molfile.ligands
-
-    # load complexes from a directory, from fragalysis or from a pdb file
-    if inputs.structure_dir:
-        logger.info(f"Loading structures from directory: {inputs.structure_dir}")
-        structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
-        complexes = structure_factory.load(
-            use_dask=inputs.use_dask, dask_client=dask_client
-        )
-    elif inputs.fragalysis_dir:
-        logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
-        fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
-
-    elif inputs.pdb_file:
-        logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
-        complex = Complex.from_pdb(
-            inputs.pdb_file,
-            target_kwargs={"target_name": inputs.pdb_file.stem},
-            ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
-        )
-        complexes = [complex]
-
-    else:
-        raise ValueError(
-            "Must specify either fragalysis_dir, structure_dir or pdb_file"
-        )
+    # read structures
+    structure_factory = MetaStructureFactory(
+        structure_dir=inputs.structure_dir,
+        fragalysis_dir=inputs.fragalysis_dir,
+        pdb_file=inputs.pdb_file,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+    )
+    complexes = structure_factory.load()
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
@@ -474,6 +436,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             results, use_dask=inputs.use_dask, dask_client=dask_client
         )
 
+        # TODO if overriding a local CPU cluster with a GPU cluster above, we should go back to a CPU cluster
+        # to make gifs below, see issue # XXX
         gif_output_dir = output_dir / "gifs"
         gif_maker = GIFVisualizerV2(output_dir=gif_output_dir, target=inputs.target)
         gifs = gif_maker.visualize(
@@ -498,6 +462,14 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
+
+    if inputs.postera_upload:
+        bleach_columns = _POSTERA_COLUMN_BLEACHING_ACTIVE
+    else:
+        bleach_columns = False
+    if bleach_columns:
+        logger.info("Bleaching column names for Postera upload, see issue #629, 628")
+
     result_df = rename_output_columns_for_manifold(
         combined_df,
         inputs.target,
