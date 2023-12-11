@@ -244,6 +244,10 @@ class DatasetConfig(BaseModel):
     # Multi-pose or not
     grouped: bool = Field(False, description="Build a GroupedDockedDataset.")
 
+    # Dataset will be used in an e3nn model, so make sure the fields have the correct
+    #  names
+    for_e3nn: bool = Field(False, description="Dataset will be used in an e3nn model.")
+
     # Don't use (and overwrite) any existing cache_file
     overwrite: bool = Field(False, description="Overwrite any existing cache_file.")
 
@@ -270,10 +274,12 @@ class DatasetConfig(BaseModel):
         # Load from the cache file if it exists
         if self.cache_file and self.cache_file.exists() and (not self.overwrite):
             print("loading from cache", flush=True)
-            return pkl.loads(self.cache_file.read_bytes())
+            ds = pkl.loads(self.cache_file.read_bytes())
+            if self.for_e3nn:
+                ds = DatasetConfig.fix_e3nn_labels(ds)
+            return ds
 
         # Build directly from Complexes/Ligands
-        #  (still needs to be implemented on the Dataset side)
         match self.ds_type:
             case DatasetType.graph:
                 from dgllife.utils import CanonicalAtomFeaturizer
@@ -293,6 +299,8 @@ class DatasetConfig(BaseModel):
                     ds = DockedDataset.from_complexes(
                         self.input_data, exp_dict=self.exp_data
                     )
+                if self.for_e3nn:
+                    ds = DatasetConfig.fix_e3nn_labels(ds)
             case other:
                 raise ValueError(f"Unknwon dataset type {other}.")
 
@@ -311,6 +319,14 @@ class DatasetConfig(BaseModel):
             exp_dict[compound_id] = exp_compound.experimental_data
 
         return exp_dict
+
+    @staticmethod
+    def fix_e3nn_labels(ds):
+        for _, pose in ds:
+            pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
+            pose["z"] = pose["lig"].reshape((-1, 1)).float()
+
+        return ds
 
 
 class DatasetSplitterType(StringEnum):
@@ -500,6 +516,13 @@ class DatasetSplitterConfig(BaseModel):
                 except KeyError:
                     compound_ids_dict[c[1]] = idx_list
             all_compound_ids = np.asarray(list(compound_ids_dict.keys()))
+            print("compound_ids_dict", next(iter(compound_ids_dict.items())))
+            print(
+                "all_compound_ids",
+                len(all_compound_ids),
+                len(set(all_compound_ids)),
+                flush=True,
+            )
 
             # Shuffle the indices
             indices = torch.randperm(len(all_compound_ids), generator=g)
