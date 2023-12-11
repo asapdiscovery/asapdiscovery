@@ -132,14 +132,18 @@ class DockedDataset(Dataset):
             [False] * target_mol.NumAtoms() + [True] * ligand_mol.NumAtoms()
         )
 
+        # Add some extra stuff for use in e3nn models
+        all_one_hot = torch.nn.functional.one_hot(all_z - 1, 100).float()
+
         # Subset to remove Hs if desired
         if ignore_h:
             h_idx = all_z == 1
             all_pos = all_pos[~h_idx]
             all_z = all_z[~h_idx]
             all_lig = all_lig[~h_idx]
+            all_one_hot = all_one_hot[~h_idx]
 
-        pose = {"pos": all_pos, "z": all_z, "lig": all_lig}
+        pose = {"pos": all_pos, "z": all_z, "lig": all_lig, "x": all_one_hot}
         if compound:
             pose["compound"] = compound
         return pose | exp_dict
