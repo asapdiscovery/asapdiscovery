@@ -1,4 +1,5 @@
 import glob
+import json
 import logging
 import os.path
 import re
@@ -442,7 +443,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
 
     if out_json:
         with open(out_json, "w") as fp:
-            fp.write(compounds.json())
+            fp.write("[" + ", ".join([c.json() for c in compounds]) + "]")
         print(f"Wrote {out_json}", flush=True)
     if out_csv:
         out_cols = [
@@ -693,6 +694,7 @@ def filter_molecules_dataframe(
     retain_racemic=False,
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
+    retain_invalid=False,
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
@@ -727,6 +729,8 @@ def filter_molecules_dataframe(
         If True, retain chirally resolved measurements
     retain_semiquantitative_data : bool, default=False
         If True, retain semiquantitative data (data outside assay dynamic range)
+    retain_invalid : bool, default=False
+        If True, retain data with IC50 values that could not be calculated
 
     Returns
     -------
@@ -783,6 +787,15 @@ def filter_molecules_dataframe(
         except ValueError:
             return True
 
+    def is_invalid(ic50):
+        try:
+            _ = float(ic50)
+            return False
+        except ValueError:
+            if "<" in ic50 or ">" in ic50:
+                return False
+            return True
+
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries")
 
     # Drop any rows with no SMILES (need the copy to make pandas happy)
@@ -812,10 +825,12 @@ def filter_molecules_dataframe(
     semiquant_label = [
         is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
     ]
+    invalid_label = [is_invalid(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]]
     mol_df["achiral"] = achiral_label
     mol_df["racemic"] = racemic_label
     mol_df["enantiopure"] = enantiopure_label
     mol_df["semiquant"] = semiquant_label
+    mol_df["invalid"] = invalid_label
 
     # Check which molcules to keep
     achiral_keep_idx = np.asarray([retain_achiral and lab for lab in achiral_label])
@@ -829,6 +844,10 @@ def filter_molecules_dataframe(
     if not retain_semiquantitative_data:
         # Only want to keep non semi-quant data, so negate label first before taking &
         keep_idx &= ~np.asarray(semiquant_label)
+
+    # Same with invalid data
+    if not retain_invalid:
+        keep_idx &= ~np.asarray(invalid_label)
 
     mol_df = mol_df.loc[keep_idx, :]
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries after filtering")
@@ -1152,7 +1171,7 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
 
     # Dump JSON file
     with open(json_fn, "w") as fp:
-        fp.write(exp_data_compounds.json())
+        fp.write("[" + ", ".join([c.json() for c in exp_data_compounds]) + "]")
 
 
 def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):
