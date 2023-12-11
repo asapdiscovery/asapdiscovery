@@ -6,8 +6,11 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
 import pandas as pd 
+pd.options.mode.chained_assignment = None
 import logomaker
 import matplotlib.pyplot as plt
+import base64
+
 import sys
 
 import xmltodict
@@ -536,19 +539,20 @@ class HTMLVisualizer:
 
                 a('<!-- show logoplots per residue on hover -->')
                 a('<!-- bake in the base64 divs of all the residues. -->')
-                self.make_logoplot_input(160)
-
-                sys.exit()
-
-                with a.div(klass='logoplotbox_unfit', id=f'unfitDIV_{resi}', style='display:none', **{',': ''}):
-                    a.img(alt='unfit residue logoplot', src='')
-                with a.div(klass='logoplotbox_fit', id=f'fitDIV_{resi}', style='display:none', **{',': ''}):
-                    a.img(alt='fit residue logoplot', src='')
-            
+                for resi, _ in self.fitness_data.items():
+                    # get the base64 for this residue. The function returns both chain A and B images; split if True. 
+                    for chain, base64_dict in self.make_logoplot_input(resi).items():
+                        if base64_dict:
+                            with a.div(klass='logoplotbox_unfit', id=f'unfitDIV_{resi}_{chain}', style='display:none'):
+                                # add the base64 string while making some corrections. 
+                                a.img(alt='unfit residue logoplot', src=str(base64_dict["unfit"]).replace("b'", "data:image/png;base64,").replace("'", ""))
+                            with a.div(klass='logoplotbox_fit', id=f'fitDIV_{resi}_{chain}', style='display:none'):
+                                a.img(alt='fit residue logoplot', src=str(base64_dict["fit"]).replace("b'", "data:image/png;base64,").replace("'", ""))
+                    
             
             with a.script():
                 # function to show/hide the logoplots
-                a('function showLogoPlots(resi) {\n        var x = document.getElementById("fitDIV_"+resi);\n        var y = document.getElementById("unfitDIV_"+resi);\n        x.style.display = "block";\n        y.style.display = "block";\n\n      }\n      function hideLogoPlots(resi) {\n        var x = document.getElementById("fitDIV_"+resi);\n        var y = document.getElementById("unfitDIV_"+resi);\n        x.style.display = "none";\n        y.style.display = "none";\n      }')
+                a('function showLogoPlots(resi, chain) {\n        var x = document.getElementById("fitDIV_"+resi+"_"+chain);\n        var y = document.getElementById("unfitDIV_"+resi+"_"+chain);\n        x.style.display = "block";\n        y.style.display = "block";\n\n      }\n      function hideLogoPlots(resi, chain) {\n        var x = document.getElementById("fitDIV_"+resi+"_"+chain);\n        var y = document.getElementById("unfitDIV_"+resi+"_"+chain);\n        x.style.display = "none";\n        y.style.display = "none";\n      }')
                 
                 # function to show 3DMol viewer
                 a(
@@ -590,7 +594,7 @@ class HTMLVisualizer:
                                     display_str = 'LIGAND'; \
                                     } else { \
                                     display_str = atom.chain + ': ' +  atom.resn + atom.resi; \
-                                    showLogoPlots(atom.resi); \
+                                    showLogoPlots(atom.resi, atom.chain); \
                                 } \
                                 atom.label = viewer.addLabel(display_str, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' }); \
                             }\n \
@@ -599,7 +603,7 @@ class HTMLVisualizer:
                             if (atom.label) {\n \
                                 viewer.removeLabel(atom.label);\n \
                                 delete atom.label;\n \
-                                hideLogoPlots(atom.resi); \
+                                hideLogoPlots(atom.resi, atom.chain); \
                             }\n \
                         }\n \
                         );\n \
@@ -661,32 +665,55 @@ class HTMLVisualizer:
             html_renders.append(html)
         return html_renders
 
-    def make_logoplot_input(self, resi):
+    def make_logoplot_input(self, resi) -> dict:
         """
         given a residue number, get data for the fitness of all mutants for the residue. Use
         LogoMaker to create a logoplot for both the fit and unfit mutants, return the base64
         string of the image.
         """
-        # get just the fitness dat for the queried residue index.
-        site_df = self.fitness_data_logoplots[self.fitness_data_logoplots["site"] == resi]
 
-        # add the fitness threshold so that fit mutants end up in the left-hand logoplot.
-        site_df["fitness"] = site_df["fitness"] + _FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]] 
+        # get just the fitness data for the queried residue index, at the right chain.
+        site_df_resi = self.fitness_data_logoplots[self.fitness_data_logoplots["site"] == resi]
+        site_dfs = {}
+        for chain in ["A", "B"]:
+            if chain in site_df_resi["chain"].values:
+                site_dfs[chain] = site_df_resi[site_df_resi["chain"] == chain]
 
-        # adjust DF to follow LogoMaker format. 
-        site_df = site_df[site_df["fitness"] > 0 ]
-        site_df = pd.DataFrame([site_df["fitness"].values], columns=site_df["mutant"])
-        # create Logo object
-        logomaker.Logo(site_df,
-                            shade_below=.5,
-                            fade_below=.5,
-                            font_name='Sans Serif',
-                            figsize=(3,10),
-                            color_scheme="dmslogo_funcgroup",
-                            flip_below=False,
-                            show_spines=True)
-        plt.xticks([])
-        plt.yticks([])
+        logoplot_dicts = {}
+        for chain, site_df in site_dfs.items():
+            if site_df is not None:
+                # add the fitness threshold to normalize so that fit mutants end up in the left-hand logoplot.
+                site_df["fitness"] = site_df["fitness"] + abs(_FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]])
 
-        plt.savefig("tmp.png")
+                # split the mutant data into fit/unfit. 
+                site_df_fit = site_df[site_df["fitness"] > 0 ]
+                site_df_unfit = site_df[site_df["fitness"] < 0 ]
+
+                logoplot_base64s_dict = {}
+                with tempfile.TemporaryDirectory() as tmpdirname:
+                    for fit_type, fitness_df in zip(["fit", "unfit"], [site_df_fit, site_df_unfit]):
+                        # pivot table to make into LogoMaker format
+                        logoplot_df = pd.DataFrame([fitness_df["fitness"].values], columns=fitness_df["mutant"])
+
+                        # create Logo object
+                        logomaker.Logo(logoplot_df,
+                                            shade_below=.5,
+                                            fade_below=.5,
+                                            font_name='Sans Serif',
+                                            figsize=(3,10),
+                                            color_scheme="dmslogo_funcgroup",
+                                            flip_below=False,
+                                            show_spines=True)
+                        plt.xticks([])
+                        plt.yticks([])
+
+                        # we could get base64 from buffer, but easier to write as tmp and read back as bas64.
+                        plt.savefig(f"{tmpdirname}/logoplot.png", bbox_inches='tight', pad_inches=0, dpi=50)
+                        plt.close() # prevent matplotlib from freaking out due to large volume of figures.
+                        with open(f"{tmpdirname}/logoplot.png", "rb") as f:
+                            logoplot_base64s_dict[fit_type] = base64.b64encode(f.read())
+                            logoplot_dicts[chain] = logoplot_base64s_dict
+        
+        return logoplot_dicts
+
 

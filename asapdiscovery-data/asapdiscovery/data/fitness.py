@@ -239,12 +239,8 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
         ]
         ns2b_section = ns2b_section[ns2b_section["site"].between(46, 89)]
 
-        # reset the site column so that we have it aligned with the protein. start with 1 bc HTML starts arrays with 1. 
-        new_site_array = []
-        for i, (_, grp) in enumerate(ns2b_section.groupby(by="site"), start=1):
-            for _ in range(len(grp)):
-                new_site_array.append(i)
-        ns2b_section["site"] = new_site_array
+        # tag NS2B as chain A
+        ns2b_section["chain"] = "A"
 
         # repeat for NS3
         ns3_section = fitness_scores_bloom[
@@ -255,12 +251,8 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
         ]
         ns3_section = ns3_section[ns3_section["site"].between(10, 177)]
 
-        # reset the site column so that we have it aligned with the protein. start from the index that NS3 has ended with.
-        new_site_array = []
-        for i, (_, grp) in enumerate(ns3_section.groupby(by="site"), start=max(ns2b_section["site"])+1):
-            for _ in range(len(grp)):
-                new_site_array.append(i)
-        ns3_section["site"] = new_site_array
+        # tag NS3 as chain B
+        ns3_section["chain"] = "B"
 
         # then add back together and treat as normal downstream.
         fitness_scores_bloom = pd.concat([ns2b_section, ns3_section])
