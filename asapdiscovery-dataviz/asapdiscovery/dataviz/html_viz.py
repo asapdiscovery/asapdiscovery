@@ -499,7 +499,7 @@ class HTMLVisualizer:
                 a.script(src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js")
                 a.script(src="https://d3js.org/d3.v5.min.js")
                 with a.style():
-                    a('/* Dropdown Button */\n      .dropbtn {\n        background-color: #04AA6D;\n        color: white;\n        padding: 16px;\n        font-size: 16px;\n        border: none;\n        border-radius: 5;\n      }\n\n      /* The container <div> - needed to position the dropdown content */\n      .dropdown {\n        position: absolute;\n        display: inline-block;\n        left: 1%;\n        top: 1%;\n      }\n      .dropdown_ctcs {\n        position: absolute;\n        top: 7%;\n        left: 1%;\n        display: inline-block;\n      }\n\n      /* Dropdown Content (Hidden by Default) */\n      .dropdown-content {\n        display: none;\n        position: relative;\n        background-color: #f1f1f1;\n        min-width: 160px;\n        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);\n        z-index: 1;\n      }\n\n      /* Links inside the dropdown */\n      .dropdown-content a {\n        color: black;\n        padding: 12px 16px;\n        text-decoration: none;\n        display: block;\n        cursor: default;\n      }\n                                                              \n      /* Show the dropdown menu on hover */\n      .dropdown:hover .dropdown-content {display: block;}\n      .dropdown_ctcs:hover .dropdown-content {display: block;}\n      \n      /* Change the background color of the dropdown button when the dropdown content is shown */\n      .dropdown:hover .dropbtn {background-color: #3e8e41;}\n    \n\n      .viewerbox {\n        position: absolute;\n        width: 200px;\n        height: 100px;\n        padding: 10px;\n      }\n\n      .logoplotbox_unfit {\n        position: absolute;\n        top: 35%;\n        right:1%;\n        border: 5px solid black;\n      }\n      .logoplotbox_fit {\n        position: absolute;\n        top: 35%;\n        left:1%;\n        border: 5px solid black;\n      }')
+                    a('/* Dropdown Button */\n      .dropbtn {\n        background-color: #04AA6D;\n        color: white;\n        padding: 16px;\n        font-size: 16px;\n        border: none;\n        border-radius: 5;\n      }\n\n      /* The container <div> - needed to position the dropdown content */\n      .dropdown {\n        position: absolute;\n        display: inline-block;\n        left: 1%;\n        top: 1%;\n      }\n      .dropdown_ctcs {\n        position: absolute;\n        top: 7%;\n        left: 1%;\n        display: inline-block;\n      }\n\n  .dropdown_lgplts {\n        position: absolute;\n        top: 13%;\n        left: 1%;\n        display: inline-block;\n      }\n\n    /* Dropdown Content (Hidden by Default) */\n      .dropdown-content {\n        display: none;\n        position: relative;\n        background-color: #f1f1f1;\n        min-width: 160px;\n        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);\n        z-index: 1;\n      }\n\n      /* Links inside the dropdown */\n      .dropdown-content a {\n        color: black;\n        padding: 12px 16px;\n        text-decoration: none;\n        display: block;\n        cursor: default;\n      }\n                                                              \n      /* Show the dropdown menu on hover */\n      .dropdown:hover .dropdown-content {display: block;}\n      .dropdown_ctcs:hover .dropdown-content {display: block;}\n   .dropdown_lgplts:hover .dropdown-content {display: block;}\n   \n      /* Change the background color of the dropdown button when the dropdown content is shown */\n      .dropdown:hover .dropbtn {background-color: #3e8e41;}\n    \n\n      .viewerbox {\n        position: absolute;\n        width: 200px;\n        height: 100px;\n        padding: 10px;\n      }\n\n      .logoplotbox_unfit {\n        position: absolute;\n        top: 35%;\n        right:1%;\n        border: 5px solid black;\n      }\n      .logoplotbox_fit {\n        position: absolute;\n        top: 35%;\n        left:1%;\n        border: 5px solid black;\n      }')
                 a("<!-- wrap the main JS block to please the frontend gods -->")
                 with a.div(klass="box"):
                     a.div(id="gldiv", style="width: 100vw; height: 100vh;")
@@ -516,7 +516,7 @@ class HTMLVisualizer:
                         a.a(href="#", _t="⚪ : No fit mutants for residue")
                         a.a(
                             href="#",
-                            _t="🔴 : Fit mutants for residue (n=1-5 with increasing 🔴)",
+                            _t="🔴 : Fit mutants for residue (increasing 🔴 intensity with n fit mutants)",
                         )
                         a.a(href="#", _t="🟣 : No data for residue")
 
@@ -533,9 +533,22 @@ class HTMLVisualizer:
                         a.a(href="#", _t="🟩 : Ligand contacts residue backbone")
                         a.a(
                             href="#",
-                            _t="🟥 : Fit mutants for contacted residue (n=1-5 with increasing 🟥)",
+                            _t="🟥 : Fit mutants for contacted residue (increasing 🟥 intensity with n fit mutants)",
                         )
                         a.a(href="#", _t="🟪 : No data for contacted residue")
+
+                a("<!-- show the bottom dropdown (logoplots) -->")
+                with a.div(klass="dropdown_lgplts"):
+                    a.button(klass="dropbtn", _t="Key (Logo Plots)")
+                    with a.div(klass="dropdown-content", style="text-align: center"):
+                        a.a(
+                            href="#",
+                            _t="Fitness logo plots are shown on hover of residue atoms:",
+                        )
+                    with a.div(klass="dropdown-content"):
+                        a.a(href="#", _t="Left panel : Wildtype and fit mutant residues<br /> Right panel : Non-fit mutant residues")
+                        a.a(href="#", _t="The height of each residue letter corresponds to its relative fitness:<br /> in the fit residues panel (left) residues are ordered by increasing fitness (from bottom to top);<br /> in the non-fit residues panel (right), residues are ordered by decreasing fitness (top to bottom).<br /> An asterisk (*) denotes the stop codon mutation - this negative control should be non-fit.")
+
 
                 a('<!-- show logoplots per residue on hover -->')
                 a('<!-- bake in the base64 divs of all the residues. -->')
