@@ -68,6 +68,10 @@ class DockingWorkflowInputsBase(BaseModel):
 
     output_dir: Path = Field(Path("output"), description="Output directory")
 
+    overwrite: bool = Field(
+        False, description="Whether to overwrite existing output directory."
+    )
+
     class Config:
         arbitrary_types_allowed = True
 
