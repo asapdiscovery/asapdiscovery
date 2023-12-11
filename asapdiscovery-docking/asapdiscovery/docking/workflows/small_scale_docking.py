@@ -176,26 +176,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
-        set_dask_config()
-        dask_cluster = dask_cluster_from_type(inputs.dask_type)
-        if inputs.dask_type.is_lilac():
-            logger.info("Lilac HPC config selected, setting adaptive scaling")
-            dask_cluster.adapt(
-                minimum=inputs.dask_cluster_n_workers,
-                maximum=inputs.dask_cluster_max_workers,
-                wait_count=10,
-                interval="1m",
-            )
-            logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-            dask_cluster.scale(inputs.dask_cluster_n_workers)
-
-        dask_client = Client(dask_cluster)
-        # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
-        logger.info(f"Using dask client: {dask_client}")
-        logger.info(f"Using dask cluster: {dask_cluster}")
-        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
-
+        dask_client = make_dask_client_meta(inputs.dask_type, adaptive_min_workers=inputs.dask_cluster_n_workers, adaptive_max_workers=inputs.dask_cluster_max_workers)
     else:
         dask_client = None
 
@@ -413,16 +394,13 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     if inputs.md:
-        if inputs.allow_dask_cuda and inputs.dask_type == DaskType.LOCAL:
+        local_cpu_client_gpu_override = False
+        if (inputs.allow_dask_cuda) and (inputs.dask_type == DaskType.LOCAL) and (inputs.use_dask):
             logger.info(
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
-            dask_cluster = dask_cluster_from_type(DaskType.LOCAL_GPU)
-            dask_client = Client(dask_cluster)
-            # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
-            logger.info(f"Using dask client: {dask_client}")
-            logger.info(f"Using dask cluster: {dask_cluster}")
-            logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
+            dask_client = make_dask_client_meta(DaskType.LOCAL_GPU)
+            local_cpu_client_gpu_override = True
 
         md_output_dir = output_dir / "md"
         md_simulator = VanillaMDSimulatorV2(
@@ -437,6 +415,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
         # TODO if overriding a local CPU cluster with a GPU cluster above, we should go back to a CPU cluster
         # to make gifs below, see issue # XXX
+        if local_cpu_client_gpu_override:
+            dask_client = dask_client = make_dask_client_meta(DaskType.LOCAL)
+
+
         gif_output_dir = output_dir / "gifs"
         gif_maker = GIFVisualizerV2(output_dir=gif_output_dir, target=inputs.target)
         gifs = gif_maker.visualize(

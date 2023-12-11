@@ -97,26 +97,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     inputs.to_json_file(output_dir / "cross_docking_inputs.json")
 
     if inputs.use_dask:
-        logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
-        set_dask_config()
-        dask_cluster = dask_cluster_from_type(inputs.dask_type)
-
-        if inputs.dask_type.is_lilac():
-            logger.info("Lilac HPC config selected, setting adaptive scaling")
-            dask_cluster.adapt(
-                minimum=10,
-                maximum=inputs.dask_cluster_max_workers,
-                wait_count=10,
-                interval="1m",
-            )
-            logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-            dask_cluster.scale(inputs.dask_cluster_n_workers)
-
-        dask_client = Client(dask_cluster)
-        logger.info(f"Using dask client: {dask_client}")
-        logger.info(f"Using dask cluster: {dask_cluster}")
-        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
-
+        dask_client = make_dask_client_meta(inputs.dask_type, adaptive_min_workers=inputs.dask_cluster_n_workers, adaptive_max_workers=inputs.dask_cluster_max_workers)
     else:
         dask_client = None
 
