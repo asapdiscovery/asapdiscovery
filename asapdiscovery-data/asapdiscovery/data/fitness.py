@@ -1,5 +1,6 @@
 import json
 import sys
+
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.metadata.resources import (
@@ -181,7 +182,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom, threshold)
-    
+
     fitness_df_abstract = pd.DataFrame.from_dict(
         fitness_dict_abstract,
         orient="index",
