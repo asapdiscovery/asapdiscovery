@@ -198,9 +198,25 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
+    # TODO: hide detail of canonical structure
+    logger.info("Using canonical structure")
+    align_struct = master_structures[inputs.target]
+
+    ref_complex = Complex.from_pdb(
+        align_struct,
+        target_kwargs={"target_name": "ref"},
+        ligand_kwargs={"compound_name": "ref_ligand"},
+    )
+
     # prep complexes, possibly loading in from cache
     logger.info("Prepping complexes")
-    prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
+    prepper = ProteinPrepper(
+        cache_dir=inputs.cache_dir,
+        align=ref_complex,
+        ref_chain="A",
+        active_site_chain="A",
+    )
+
     prepped_complexes = prepper.prep(
         complexes,
         use_dask=inputs.use_dask,

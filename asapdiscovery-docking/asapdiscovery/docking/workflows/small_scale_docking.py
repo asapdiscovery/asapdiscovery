@@ -22,13 +22,10 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
-from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
+from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import (
     CloudfrontSettings,
@@ -175,6 +172,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     logger.info(f"Running small scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
+    # dump config to json file
     inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
@@ -226,6 +224,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
+    # TODO: hide detail of canonical structure
     logger.info("Using canonical structure")
     align_struct = master_structures[inputs.target]
 
@@ -307,7 +306,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
         )
 
-    # score results
+    # score results with multiple scoring functions
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
     scores_df = scorer.score(
