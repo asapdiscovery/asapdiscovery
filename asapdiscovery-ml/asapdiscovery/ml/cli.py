@@ -14,11 +14,14 @@ from asapdiscovery.data.utils import (
     extract_compounds_from_filenames,
 )
 from asapdiscovery.ml.cli_args import (
+    ds_cache_overwrite,
+    ds_config_cache_overwrite,
     ds_split_args,
     e3nn_args,
     es_args,
     gat_args,
     graph_ds_args,
+    grouped,
     loss_args,
     model_config_cache,
     mtenn_args,
@@ -77,8 +80,15 @@ def build_and_train():
     pass
 
 
+# Functions for just building a Dataset and DatasetConfig
+@click.group(name="build-dataset")
+def build_ds():
+    pass
+
+
 cli.add_command(build)
 cli.add_command(build_and_train)
+cli.add_command(build_ds)
 
 
 @build.command(name="gat")
@@ -94,7 +104,6 @@ cli.add_command(build_and_train)
 @ds_split_args
 @loss_args
 @trainer_args
-@overwrite_args
 @overwrite_args
 def build_gat(
     output_dir: Path | None = None,
@@ -1281,6 +1290,7 @@ def build_trainer_gat(
             ds_config_cache=ds_config_cache,
             is_structural=False,
             is_grouped=grouped,
+            for_e3nn=False,
             config_overwrite=overwrite_ds_config_cache,
             pkl_overwrite=overwrite_ds_cache,
         )
@@ -1511,6 +1521,7 @@ def build_trainer_schnet(
             ds_config_cache=ds_config_cache,
             is_structural=True,
             is_grouped=grouped,
+            for_e3nn=False,
             config_overwrite=overwrite_ds_config_cache,
             pkl_overwrite=overwrite_ds_cache,
         )
@@ -1743,6 +1754,7 @@ def build_trainer_e3nn(
             ds_config_cache=ds_config_cache,
             is_structural=True,
             is_grouped=grouped,
+            for_e3nn=True,
             config_overwrite=overwrite_ds_config_cache,
             pkl_overwrite=overwrite_ds_cache,
         )
@@ -1820,6 +1832,101 @@ def build_trainer_e3nn(
     return t
 
 
+@build_ds.command(name="gat")
+@graph_ds_args
+@grouped
+@ds_cache_overwrite
+@ds_config_cache_overwrite
+def build_ds_gat(
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    grouped: bool | None = None,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+):
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=None,
+        xtal_regex=None,
+        cpd_regex=None,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=False,
+        is_grouped=grouped,
+        for_e3nn=False,
+        config_overwrite=overwrite_ds_config_cache,
+        pkl_overwrite=overwrite_ds_cache,
+    )
+    ds_config.build()
+
+
+@build_ds.command(name="schnet")
+@graph_ds_args
+@struct_ds_args
+@grouped
+@ds_cache_overwrite
+@ds_config_cache_overwrite
+def build_ds_schnet(
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    structures: str | None = None,
+    xtal_regex: str = MPRO_ID_REGEX,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
+    grouped: bool | None = None,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+):
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=structures,
+        xtal_regex=xtal_regex,
+        cpd_regex=cpd_regex,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=True,
+        is_grouped=grouped,
+        for_e3nn=False,
+        config_overwrite=overwrite_ds_config_cache,
+        pkl_overwrite=overwrite_ds_cache,
+    )
+    ds_config.build()
+
+
+@build_ds.command(name="e3nn")
+@graph_ds_args
+@struct_ds_args
+@grouped
+@ds_cache_overwrite
+@ds_config_cache_overwrite
+def build_ds_e3nn(
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    structures: str | None = None,
+    xtal_regex: str = MPRO_ID_REGEX,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
+    grouped: bool | None = None,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+):
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=structures,
+        xtal_regex=xtal_regex,
+        cpd_regex=cpd_regex,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=True,
+        is_grouped=grouped,
+        for_e3nn=True,
+        config_overwrite=overwrite_ds_config_cache,
+        pkl_overwrite=overwrite_ds_cache,
+    )
+    ds_config.build()
+
+
 def _check_ds_args(
     exp_file, structures, ds_cache, ds_config_cache, is_structural, config_overwrite
 ):
@@ -1882,6 +1989,7 @@ def _build_ds_config(
     ds_config_cache,
     is_structural,
     is_grouped,
+    for_e3nn,
     config_overwrite,
     pkl_overwrite,
 ):
@@ -1973,6 +2081,7 @@ def _build_ds_config(
         "input_data": input_data,
         "cache_file": ds_cache,
         "overwrite": pkl_overwrite,
+        "for_e3nn": for_e3nn,
     }
     if is_grouped is not None:
         config_kwargs["grouped"] = is_grouped
