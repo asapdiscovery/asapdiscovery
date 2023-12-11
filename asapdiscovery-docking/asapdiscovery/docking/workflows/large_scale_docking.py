@@ -20,6 +20,7 @@ from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
@@ -189,31 +190,15 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         molfile = MolFileFactory.from_file(inputs.ligands)
         query_ligands = molfile.ligands
 
-    # load complexes from a directory, from fragalysis or from a pdb file
-    if inputs.structure_dir:
-        logger.info(f"Loading structures from directory: {inputs.structure_dir}")
-        structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
-        complexes = structure_factory.load(
-            use_dask=inputs.use_dask, dask_client=dask_client
-        )
-    elif inputs.fragalysis_dir:
-        logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
-        fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
-
-    elif inputs.pdb_file:
-        logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
-        complex = Complex.from_pdb(
-            inputs.pdb_file,
-            target_kwargs={"target_name": inputs.pdb_file.stem},
-            ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
-        )
-        complexes = [complex]
-
-    else:
-        raise ValueError(
-            "Must specify either fragalysis_dir, structure_dir or pdb_file"
-        )
+    structure_factory = MetaStructureFactory(
+        structure_dir=inputs.structure_dir,
+        fragalysis_dir=inputs.fragalysis_dir,
+        pdb_file=inputs.pdb_file,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+    )
+    
+    complexes = structure_factory.load()
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
