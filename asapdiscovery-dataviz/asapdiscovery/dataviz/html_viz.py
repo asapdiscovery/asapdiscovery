@@ -649,7 +649,9 @@ class HTMLVisualizer:
                             if (atom.label) {\n \
                                 viewer.removeLabel(atom.label);\n \
                                 delete atom.label;\n \
-                                hideLogoPlots(atom.resi, atom.chain); \
+                                if (atom.chain){\n \
+                                  hideLogoPlots(atom.resi, atom.chain);\n \
+                                 }\n \
                             }\n \
                         }\n \
                         );\n \
