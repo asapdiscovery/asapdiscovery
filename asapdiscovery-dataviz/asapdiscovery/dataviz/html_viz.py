@@ -633,8 +633,6 @@ class HTMLVisualizer:
                         ////////////////// enable show residue number on hover\n \
                         viewer.setHoverable({}, true,\n \
                         function (atom, viewer, event, container) {\n \
-                            console.log('hover', atom);\n \
-                            console.log('view:', viewer.getView()); // to get view for system\n \
                             if (!atom.label) {\n \
                                 if (atom.chain === undefined){ \
                                     display_str = 'LIGAND'; \
