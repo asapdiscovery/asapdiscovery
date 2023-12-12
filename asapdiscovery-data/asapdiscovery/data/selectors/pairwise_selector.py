@@ -3,7 +3,7 @@ from itertools import product
 from typing import ClassVar, Union
 
 from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand, ChemicalRelationship
+from asapdiscovery.data.schema_v2.ligand import ChemicalRelationship, Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.selectors.selector import SelectorBase
 
