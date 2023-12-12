@@ -50,6 +50,7 @@ class GIFBlockData:
     pocket_dict_chains_per_target = {
         "SARS-CoV-2-Mpro": "A",
         "SARS-CoV-2-Mac1": "A",
+        "SARS-CoV-2-Mac1-monomer": "A",
         "MERS-CoV-Mpro": "A",
         "EV-D68-3Cpro": "A",
         "EV-A71-3Cpro": "A",
