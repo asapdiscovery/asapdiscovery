@@ -5,7 +5,9 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
+
 import pandas as pd
+
 pd.options.mode.chained_assignment = None
 import base64
 
@@ -591,7 +593,9 @@ class HTMLVisualizer:
                     for resi, _ in self.fitness_data.items():
                         resnum, chain = resi.split("_")
                         # get the base64 for this residue in this chain.
-                        for fit_type, base64_bj in self.make_logoplot_input(resi).items():
+                        for fit_type, base64_bj in self.make_logoplot_input(
+                            resi
+                        ).items():
                             with a.div(
                                 klass=f"logoplotbox_{fit_type}",
                                 id=f"{fit_type}DIV_{resnum}_{chain}",
