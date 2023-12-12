@@ -5,12 +5,9 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
-
 import pandas as pd
-
 pd.options.mode.chained_assignment = None
 import base64
-import sys
 
 import logomaker
 import matplotlib.pyplot as plt
@@ -34,7 +31,7 @@ from asapdiscovery.data.openeye import (
 )
 from asapdiscovery.data.postera.manifold_data_validation import TargetVirusMap
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.modeling.modeling import split_openeye_mol, superpose_molecule
+from asapdiscovery.modeling.modeling import superpose_molecule
 
 from ._gif_blocks import GIFBlockData
 from ._html_blocks import HTMLBlockData
@@ -530,7 +527,7 @@ class HTMLVisualizer:
                 with a.div(klass="box"):
                     a.div(id="gldiv", style="width: 100vw; height: 100vh;")
 
-                ####### dropdowns. Need to make these different between fitness and subpocket views.
+                # dropdowns. Need to make these different between fitness and subpocket views.
                 if self.color_method == "fitness":
                     a("<!-- show the top dropdown (surfaces) -->")
                     with a.div(klass="dropdown"):
@@ -594,7 +591,7 @@ class HTMLVisualizer:
                     for resi, _ in self.fitness_data.items():
                         resnum, chain = resi.split("_")
                         # get the base64 for this residue in this chain.
-                        for fit_type, base64 in self.make_logoplot_input(resi).items():
+                        for fit_type, base64_bj in self.make_logoplot_input(resi).items():
                             with a.div(
                                 klass=f"logoplotbox_{fit_type}",
                                 id=f"{fit_type}DIV_{resnum}_{chain}",
@@ -603,7 +600,7 @@ class HTMLVisualizer:
                                 # add the base64 string while making some corrections.
                                 a.img(
                                     alt=f"{fit_type} residue logoplot",
-                                    src=str(base64)
+                                    src=str(base64_bj)
                                     .replace("b'", "data:image/png;base64,")
                                     .replace("'", ""),
                                 )
