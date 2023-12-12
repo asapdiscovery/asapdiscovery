@@ -47,9 +47,15 @@ def actualise_dask_delayed_iterable(
         return dask.compute(*delayed_iterable)
     else:
         if scatter:
-            scattered_iterable = dask_client.scatter(delayed_iterable)
+            scattered_iterable = dask_client.submit(dummy_scatter, delayed_iterable)
         futures = dask_client.compute(scattered_iterable)
     return dask_client.gather(futures, errors=errors)
+
+
+# scatter op has issues with adaptive deployments, instead can use this workaround
+# https://github.com/dask/distributed/issues/6686
+def dummy_scatter(x):
+    return x
 
 
 class DaskType(StringEnum):
