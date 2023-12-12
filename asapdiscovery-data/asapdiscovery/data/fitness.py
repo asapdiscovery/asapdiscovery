@@ -235,6 +235,9 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
             fitness_scores_bloom["site"].between(209, 372)
         ]
         fitness_scores_bloom["site"] -= 208
+        fitness_scores_bloom["chain"] = "A"
+    elif target == "SARS-CoV-2-Mpro":
+        fitness_scores_bloom["chain"] = "A"
     elif target == "ZIKV-NS2B-NS3pro":
         # cursed. TODO: replace this with an auto-align.
         fitness_scores_bloom.to_csv("tmp.csv")

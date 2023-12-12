@@ -720,12 +720,10 @@ class HTMLVisualizer:
 
         # get just the fitness data for the queried residue index, at the right chain.
         resi, chain = resi.split("_")
-
         site_df_resi = self.fitness_data_logoplots[
             self.fitness_data_logoplots["site"] == int(resi)
         ]
         site_df = site_df_resi[site_df_resi["chain"] == chain]
-
         # add the fitness threshold to normalize so that fit mutants end up in the left-hand logoplot.
         site_df["fitness"] = site_df["fitness"] + abs(
             _FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]]
@@ -734,6 +732,13 @@ class HTMLVisualizer:
         # split the mutant data into fit/unfit.
         site_df_fit = site_df[site_df["fitness"] > 0]
         site_df_unfit = site_df[site_df["fitness"] < 0]
+
+        if len(site_df_fit) == 0:
+            raise ValueError(f"No fit mutants found for residue {resi} in chain {chain}. Are you sure the fitness threshold is set correctly? At least the wildtype residue should be fit.")
+        elif len(site_df_unfit) == 0:
+            print(f"Warning: no unfit residues found for residue {resi} in chain {chain}.")
+            # make a row with a fake unfit mutant instead. 
+            site_df_unfit.loc[0] = [site_df_fit["gene"].values[0], resi, "X", -0.00001, 0, site_df_fit["wildtype"].values[0], chain]
 
         logoplot_base64s_dict = {}
         with tempfile.TemporaryDirectory() as tmpdirname:
