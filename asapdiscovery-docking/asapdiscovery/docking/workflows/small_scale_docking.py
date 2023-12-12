@@ -23,9 +23,9 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
+from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import (
     CloudfrontSettings,
@@ -176,7 +176,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        dask_client = make_dask_client_meta(inputs.dask_type, adaptive_min_workers=inputs.dask_cluster_n_workers, adaptive_max_workers=inputs.dask_cluster_max_workers)
+        dask_client = make_dask_client_meta(
+            inputs.dask_type,
+            adaptive_min_workers=inputs.dask_cluster_n_workers,
+            adaptive_max_workers=inputs.dask_cluster_max_workers,
+        )
     else:
         dask_client = None
 
@@ -395,7 +399,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     if inputs.md:
         local_cpu_client_gpu_override = False
-        if (inputs.allow_dask_cuda) and (inputs.dask_type == DaskType.LOCAL) and (inputs.use_dask):
+        if (
+            (inputs.allow_dask_cuda)
+            and (inputs.dask_type == DaskType.LOCAL)
+            and (inputs.use_dask)
+        ):
             logger.info(
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
@@ -417,7 +425,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         # to make gifs below, see issue # XXX
         if local_cpu_client_gpu_override:
             dask_client = dask_client = make_dask_client_meta(DaskType.LOCAL)
-
 
         gif_output_dir = output_dir / "gifs"
         gif_maker = GIFVisualizerV2(output_dir=gif_output_dir, target=inputs.target)

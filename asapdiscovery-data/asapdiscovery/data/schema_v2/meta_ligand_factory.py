@@ -1,10 +1,11 @@
-from pydantic import BaseModel, Field, validator, root_validator
+import logging
 from pathlib import Path
 from typing import Any
-from asapdiscovery.data.schema_v2.ligand import Ligand
+
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-import logging
+from pydantic import BaseModel, Field, root_validator, validator
 
 logger = logging.getLogger(__name__)
 

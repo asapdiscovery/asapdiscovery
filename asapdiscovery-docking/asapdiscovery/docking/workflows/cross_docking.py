@@ -12,8 +12,8 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
+from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
@@ -97,7 +97,11 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     inputs.to_json_file(output_dir / "cross_docking_inputs.json")
 
     if inputs.use_dask:
-        dask_client = make_dask_client_meta(inputs.dask_type, adaptive_min_workers=inputs.dask_cluster_n_workers, adaptive_max_workers=inputs.dask_cluster_max_workers)
+        dask_client = make_dask_client_meta(
+            inputs.dask_type,
+            adaptive_min_workers=inputs.dask_cluster_n_workers,
+            adaptive_max_workers=inputs.dask_cluster_max_workers,
+        )
     else:
         dask_client = None
 

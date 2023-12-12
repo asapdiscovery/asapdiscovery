@@ -1,13 +1,14 @@
-from pydantic import BaseModel, Field, validator, root_validator
+import logging
 from pathlib import Path
 from typing import Any
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 
-import logging
+from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
+from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
+from pydantic import BaseModel, Field, root_validator, validator
 
 logger = logging.getLogger(__name__)
+
 
 class MetaStructureFactory(Base):
     structure_dir: str | Path = Field(

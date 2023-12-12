@@ -18,9 +18,9 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
+from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import (
     CloudfrontSettings,
@@ -137,7 +137,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        dask_client = make_dask_client_meta(inputs.dask_type, adaptive_min_workers=inputs.dask_cluster_n_workers, adaptive_max_workers=inputs.dask_cluster_max_workers)
+        dask_client = make_dask_client_meta(
+            inputs.dask_type,
+            adaptive_min_workers=inputs.dask_cluster_n_workers,
+            adaptive_max_workers=inputs.dask_cluster_max_workers,
+        )
     else:
         dask_client = None
 

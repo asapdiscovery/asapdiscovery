@@ -75,6 +75,7 @@ class CPU(StringEnum):
     """
     Enum for CPU types
     """
+
     # lilcac lt-gpu queue used in CPU mode
     LT = "LT"
 
@@ -292,9 +293,13 @@ def dask_cluster_from_type(
     return cluster
 
 
-
-def make_dask_client_meta(dask_type: DaskType, adaptive_min_workers: int=10, adaptive_max_workers: int=200, adaptive_wait_count: int=10, adaptive_interval: str="1m"):
-
+def make_dask_client_meta(
+    dask_type: DaskType,
+    adaptive_min_workers: int = 10,
+    adaptive_max_workers: int = 200,
+    adaptive_wait_count: int = 10,
+    adaptive_interval: str = "1m",
+):
     logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
     set_dask_config()
     dask_cluster = dask_cluster_from_type(inputs.dask_type)
