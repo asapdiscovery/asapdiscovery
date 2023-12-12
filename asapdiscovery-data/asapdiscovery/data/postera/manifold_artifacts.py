@@ -143,7 +143,6 @@ class ManifoldArtifactUploader:
         for artifact_column, artifact_type in zip(
             self.artifact_columns, self.artifact_types
         ):
-
             subset_df = self.molecule_dataframe[
                 [artifact_column, self.manifold_id_column]
             ].copy()
