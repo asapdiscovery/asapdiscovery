@@ -46,16 +46,16 @@ class GIFBlockData:
     )
 
     # set colorings of subpockets by resn. This may change over time.,
-    # first define which chain the binding pocket lives in per target. 
+    # first define which chain the binding pocket lives in per target.
     pocket_dict_chains_per_target = {
-        "SARS-CoV-2-Mpro" : "A",
-        "SARS-CoV-2-Mac1" : "A",
-        "MERS-CoV-Mpro" : "A",
-        "EV-D68-3Cpro" : "A",
-        "EV-A71-3Cpro" : "A",
-        "EV-A71-Capsid" : "A",
-        "DENV-NS2B-NS3pro" : "B",
-        "ZIKV-NS2B-NS3pro" : "B",
+        "SARS-CoV-2-Mpro": "A",
+        "SARS-CoV-2-Mac1": "A",
+        "MERS-CoV-Mpro": "A",
+        "EV-D68-3Cpro": "A",
+        "EV-A71-3Cpro": "A",
+        "EV-A71-Capsid": "A",
+        "DENV-NS2B-NS3pro": "B",
+        "ZIKV-NS2B-NS3pro": "B",
     }
 
     # define the residues that span the subpockets

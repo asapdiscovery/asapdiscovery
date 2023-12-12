@@ -234,7 +234,7 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
         fitness_scores_bloom = fitness_scores_bloom[
             fitness_scores_bloom["site"].between(209, 372)
         ]
-        fitness_scores_bloom["site"] -= 204 # PDB starts at resindex 5
+        fitness_scores_bloom["site"] -= 204  # PDB starts at resindex 5
         fitness_scores_bloom["chain"] = "A"
 
     elif target == "SARS-CoV-2-Mpro":

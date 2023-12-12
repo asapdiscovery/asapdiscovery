@@ -185,14 +185,20 @@ class HTMLVisualizer:
             subpocket_residues = GIFBlockData.get_pocket_dict(self.target)[
                 subpocket
             ].split("+")
-            color_res_dict[color] = [f"{res}_{binding_pocket_chainID}" for res in subpocket_residues]
+            color_res_dict[color] = [
+                f"{res}_{binding_pocket_chainID}" for res in subpocket_residues
+            ]
 
         # set any non-specified residues to white.
         treated_res_nums = [
-            f"{res}_{binding_pocket_chainID}" for sublist in color_res_dict.values() for res in sublist
+            f"{res}_{binding_pocket_chainID}"
+            for sublist in color_res_dict.values()
+            for res in sublist
         ]
         non_treated_res_nums = [
-            f"{res}_{binding_pocket_chainID}" for res in set(protein_residues) if res not in treated_res_nums
+            f"{res}_{binding_pocket_chainID}"
+            for res in set(protein_residues)
+            if res not in treated_res_nums
         ]
         color_res_dict["white"] = non_treated_res_nums
 
@@ -524,12 +530,14 @@ class HTMLVisualizer:
                 with a.div(klass="box"):
                     a.div(id="gldiv", style="width: 100vw; height: 100vh;")
 
-                ####### dropdowns. Need to make these different between fitness and subpocket views. 
+                ####### dropdowns. Need to make these different between fitness and subpocket views.
                 if self.color_method == "fitness":
                     a("<!-- show the top dropdown (surfaces) -->")
                     with a.div(klass="dropdown"):
                         a.button(klass="dropbtn", _t="Key (Surfaces)")
-                        with a.div(klass="dropdown-content", style="text-align: center"):
+                        with a.div(
+                            klass="dropdown-content", style="text-align: center"
+                        ):
                             a.a(
                                 href="#",
                                 _t="Protein residue surfaces are colored by mutability:",
@@ -541,12 +549,13 @@ class HTMLVisualizer:
                                 _t="🔴 : Fit mutants for residue (increasing 🔴 intensity with n fit mutants)",
                             )
                             a.a(href="#", _t="🟣 : No data for residue")
-                            
 
                     a("<!-- show the bottom dropdown (contacts) -->")
                     with a.div(klass="dropdown_ctcs"):
                         a.button(klass="dropbtn", _t="Key (Contacts)")
-                        with a.div(klass="dropdown-content", style="text-align: center"):
+                        with a.div(
+                            klass="dropdown-content", style="text-align: center"
+                        ):
                             a.a(
                                 href="#",
                                 _t="Ligand-protein contacts are shown as dashed lines colored by:",
@@ -563,7 +572,9 @@ class HTMLVisualizer:
                     a("<!-- show the bottom dropdown (logoplots) -->")
                     with a.div(klass="dropdown_lgplts"):
                         a.button(klass="dropbtn", _t="Key (Logo Plots)")
-                        with a.div(klass="dropdown-content", style="text-align: center"):
+                        with a.div(
+                            klass="dropdown-content", style="text-align: center"
+                        ):
                             a.a(
                                 href="#",
                                 _t="Fitness logo plots are shown on hover of residue atoms:",
@@ -578,7 +589,6 @@ class HTMLVisualizer:
                                 _t="The height of each residue letter corresponds to its relative fitness:<br /> in the fit residues panel (left) residues are ordered by increasing fitness (from bottom to top);<br /> in the non-fit residues panel (right), residues are ordered by decreasing fitness (top to bottom).<br /> An asterisk (*) denotes the stop codon mutation - this negative control should be non-fit.",
                             )
 
-                
                     a("<!-- show logoplots per residue on hover -->")
                     a("<!-- bake in the base64 divs of all the residues. -->")
                     for resi, _ in self.fitness_data.items():
@@ -598,27 +608,38 @@ class HTMLVisualizer:
                                     .replace("'", ""),
                                 )
                     show_logoplot_insert = "showLogoPlots(atom.resi, atom.chain);"
-                    hide_logoplot_insert = "if (atom.chain){\n hideLogoPlots(atom.resi, atom.chain);\n }\n"
+                    hide_logoplot_insert = (
+                        "if (atom.chain){\n hideLogoPlots(atom.resi, atom.chain);\n }\n"
+                    )
                 else:
                     show_logoplot_insert = hide_logoplot_insert = ""
                     # drop-down buttons for subpocket view:
                     a("<!-- show the top dropdown (surfaces) -->")
                     with a.div(klass="dropdown"):
                         a.button(klass="dropbtn", _t="Key (Surfaces)")
-                        with a.div(klass="dropdown-content", style="text-align: center"):
+                        with a.div(
+                            klass="dropdown-content", style="text-align: center"
+                        ):
                             a.a(
                                 href="#",
                                 _t="Protein residue surfaces are colored by subpockets, see<br /> notion -> asapdiscovery -> Computational Chemistry Core -><br /> Computational Chemsitry Core Reference Documents -> Canonical-views-of-target-structures",
                             )
                         with a.div(klass="dropdown-content"):
-                            a.a(href="#", _t="⚪ : Residue in chain with binding pocket, but not part of binding pocket")
-                            a.a(href="#", _t="⚫ : Residue not in chain with binding pocket")
-                            
+                            a.a(
+                                href="#",
+                                _t="⚪ : Residue in chain with binding pocket, but not part of binding pocket",
+                            )
+                            a.a(
+                                href="#",
+                                _t="⚫ : Residue not in chain with binding pocket",
+                            )
 
                     a("<!-- show the bottom dropdown (contacts) -->")
                     with a.div(klass="dropdown_ctcs"):
                         a.button(klass="dropbtn", _t="Key (Contacts)")
-                        with a.div(klass="dropdown-content", style="text-align: center"):
+                        with a.div(
+                            klass="dropdown-content", style="text-align: center"
+                        ):
                             a.a(
                                 href="#",
                                 _t="Ligand-protein contacts are shown as dashed lines colored as:",
@@ -659,35 +680,35 @@ class HTMLVisualizer:
                         var colorAsSnake = function(atom) { \
                         '
                     + residue_coloring_function_js
-                    + " \
+                    + ' \
                                         }}; \
-                        viewer.addSurface(\"MS\", {colorfunc: colorAsSnake, opacity: 0.9}) \n \
+                        viewer.addSurface("MS", {colorfunc: colorAsSnake, opacity: 0.9}) \n \
                     \n \
                         viewer.setStyle({bonds: 0}, {sphere:{radius:0.5}}); //water molecules\n \
                     \n \
-                        viewer.addModel(lig_sdf, \"sdf\")   \n \
+                        viewer.addModel(lig_sdf, "sdf")   \n \
                         // set ligand sticks\n \
-                        viewer.setStyle({model: -1}, {stick: {colorscheme: \"pinkCarbon\"}});\n \
+                        viewer.setStyle({model: -1}, {stick: {colorscheme: "pinkCarbon"}});\n \
                     \n \
                         ////////////////// enable show residue number on hover\n \
                         viewer.setHoverable({}, true,\n \
                         function (atom, viewer, event, container) {\n \
                             if (!atom.label) {\n \
                                 if (atom.chain === undefined){ \
-                                    display_str = 'LIGAND'; \
+                                    display_str = \'LIGAND\'; \
                                     } else { \
-                                    display_str = atom.chain + ': ' +  atom.resn + atom.resi;" \
-                                    + show_logoplot_insert \
-                                +"} \
+                                    display_str = atom.chain + \': \' +  atom.resn + atom.resi;'
+                    + show_logoplot_insert
+                    + "} \
                                 atom.label = viewer.addLabel(display_str, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' }); \
                             }\n \
                         },\n \
                         function (atom) {\n \
                             if (atom.label) {\n \
                                 viewer.removeLabel(atom.label);\n \
-                                delete atom.label;\n" \
-                            + hide_logoplot_insert
-                            +"}\n \
+                                delete atom.label;\n"
+                    + hide_logoplot_insert
+                    + "}\n \
                         }\n \
                         );\n \
                         viewer.setHoverDuration(100); // makes resn popup instant on hover\n \
@@ -771,11 +792,23 @@ class HTMLVisualizer:
         site_df_unfit = site_df[site_df["fitness"] < 0]
 
         if len(site_df_fit) == 0:
-            raise ValueError(f"No fit mutants found for residue {resi} in chain {chain}. Are you sure the fitness threshold is set correctly? At least the wildtype residue should be fit.")
+            raise ValueError(
+                f"No fit mutants found for residue {resi} in chain {chain}. Are you sure the fitness threshold is set correctly? At least the wildtype residue should be fit."
+            )
         elif len(site_df_unfit) == 0:
-            print(f"Warning: no unfit residues found for residue {resi} in chain {chain}.")
-            # make a row with a fake unfit mutant instead. 
-            site_df_unfit.loc[0] = [site_df_fit["gene"].values[0], resi, "X", -0.00001, 0, site_df_fit["wildtype"].values[0], chain]
+            print(
+                f"Warning: no unfit residues found for residue {resi} in chain {chain}."
+            )
+            # make a row with a fake unfit mutant instead.
+            site_df_unfit.loc[0] = [
+                site_df_fit["gene"].values[0],
+                resi,
+                "X",
+                -0.00001,
+                0,
+                site_df_fit["wildtype"].values[0],
+                chain,
+            ]
 
         logoplot_base64s_dict = {}
         with tempfile.TemporaryDirectory() as tmpdirname:
