@@ -179,18 +179,20 @@ class HTMLVisualizer:
 
         # build a dict with all specified residue colorings.
         color_res_dict = {}
+        binding_pocket_chainID = GIFBlockData.pocket_dict_chains_per_target[self.target]
+
         for subpocket, color in GIFBlockData.get_color_dict(self.target).items():
             subpocket_residues = GIFBlockData.get_pocket_dict(self.target)[
                 subpocket
             ].split("+")
-            color_res_dict[color] = [int(res) for res in subpocket_residues]
+            color_res_dict[color] = [f"{res}_{binding_pocket_chainID}" for res in subpocket_residues]
 
         # set any non-specified residues to white.
         treated_res_nums = [
-            res for sublist in color_res_dict.values() for res in sublist
+            f"{res}_{binding_pocket_chainID}" for sublist in color_res_dict.values() for res in sublist
         ]
         non_treated_res_nums = [
-            res for res in set(protein_residues) if res not in treated_res_nums
+            f"{res}_{binding_pocket_chainID}" for res in set(protein_residues) if res not in treated_res_nums
         ]
         color_res_dict["white"] = non_treated_res_nums
 
@@ -522,58 +524,61 @@ class HTMLVisualizer:
                 with a.div(klass="box"):
                     a.div(id="gldiv", style="width: 100vw; height: 100vh;")
 
-                a("<!-- show the top dropdown (surfaces) -->")
-                with a.div(klass="dropdown"):
-                    a.button(klass="dropbtn", _t="Key (Surfaces)")
-                    with a.div(klass="dropdown-content", style="text-align: center"):
-                        a.a(
-                            href="#",
-                            _t="Protein residue surfaces are colored by mutability:",
-                        )
-                    with a.div(klass="dropdown-content"):
-                        a.a(href="#", _t="⚪ : No fit mutants for residue")
-                        a.a(
-                            href="#",
-                            _t="🔴 : Fit mutants for residue (increasing 🔴 intensity with n fit mutants)",
-                        )
-                        a.a(href="#", _t="🟣 : No data for residue")
-
-                a("<!-- show the bottom dropdown (contacts) -->")
-                with a.div(klass="dropdown_ctcs"):
-                    a.button(klass="dropbtn", _t="Key (Contacts)")
-                    with a.div(klass="dropdown-content", style="text-align: center"):
-                        a.a(
-                            href="#",
-                            _t="Ligand-protein contacts are shown as dashed lines colored by:",
-                        )
-                    with a.div(klass="dropdown-content"):
-                        a.a(href="#", _t="⬜ : No fit mutants for contacted residue")
-                        a.a(href="#", _t="🟩 : Ligand contacts residue backbone")
-                        a.a(
-                            href="#",
-                            _t="🟥 : Fit mutants for contacted residue (increasing 🟥 intensity with n fit mutants)",
-                        )
-                        a.a(href="#", _t="🟪 : No data for contacted residue")
-
-                a("<!-- show the bottom dropdown (logoplots) -->")
-                with a.div(klass="dropdown_lgplts"):
-                    a.button(klass="dropbtn", _t="Key (Logo Plots)")
-                    with a.div(klass="dropdown-content", style="text-align: center"):
-                        a.a(
-                            href="#",
-                            _t="Fitness logo plots are shown on hover of residue atoms:",
-                        )
-                    with a.div(klass="dropdown-content"):
-                        a.a(
-                            href="#",
-                            _t="Left panel : Wildtype and fit mutant residues<br /> Right panel : Non-fit mutant residues",
-                        )
-                        a.a(
-                            href="#",
-                            _t="The height of each residue letter corresponds to its relative fitness:<br /> in the fit residues panel (left) residues are ordered by increasing fitness (from bottom to top);<br /> in the non-fit residues panel (right), residues are ordered by decreasing fitness (top to bottom).<br /> An asterisk (*) denotes the stop codon mutation - this negative control should be non-fit.",
-                        )
-
+                ####### dropdowns. Need to make these different between fitness and subpocket views. 
                 if self.color_method == "fitness":
+                    a("<!-- show the top dropdown (surfaces) -->")
+                    with a.div(klass="dropdown"):
+                        a.button(klass="dropbtn", _t="Key (Surfaces)")
+                        with a.div(klass="dropdown-content", style="text-align: center"):
+                            a.a(
+                                href="#",
+                                _t="Protein residue surfaces are colored by mutability:",
+                            )
+                        with a.div(klass="dropdown-content"):
+                            a.a(href="#", _t="⚪ : No fit mutants for residue")
+                            a.a(
+                                href="#",
+                                _t="🔴 : Fit mutants for residue (increasing 🔴 intensity with n fit mutants)",
+                            )
+                            a.a(href="#", _t="🟣 : No data for residue")
+                            
+
+                    a("<!-- show the bottom dropdown (contacts) -->")
+                    with a.div(klass="dropdown_ctcs"):
+                        a.button(klass="dropbtn", _t="Key (Contacts)")
+                        with a.div(klass="dropdown-content", style="text-align: center"):
+                            a.a(
+                                href="#",
+                                _t="Ligand-protein contacts are shown as dashed lines colored by:",
+                            )
+                        with a.div(klass="dropdown-content"):
+                            a.a(href="#", _t="⬜ : No fit mutants for contacted residue")
+                            a.a(href="#", _t="🟩 : Ligand contacts residue backbone")
+                            a.a(
+                                href="#",
+                                _t="🟥 : Fit mutants for contacted residue (increasing 🟥 intensity with n fit mutants)",
+                            )
+                            a.a(href="#", _t="🟪 : No data for contacted residue")
+
+                    a("<!-- show the bottom dropdown (logoplots) -->")
+                    with a.div(klass="dropdown_lgplts"):
+                        a.button(klass="dropbtn", _t="Key (Logo Plots)")
+                        with a.div(klass="dropdown-content", style="text-align: center"):
+                            a.a(
+                                href="#",
+                                _t="Fitness logo plots are shown on hover of residue atoms:",
+                            )
+                        with a.div(klass="dropdown-content"):
+                            a.a(
+                                href="#",
+                                _t="Left panel : Wildtype and fit mutant residues<br /> Right panel : Non-fit mutant residues",
+                            )
+                            a.a(
+                                href="#",
+                                _t="The height of each residue letter corresponds to its relative fitness:<br /> in the fit residues panel (left) residues are ordered by increasing fitness (from bottom to top);<br /> in the non-fit residues panel (right), residues are ordered by decreasing fitness (top to bottom).<br /> An asterisk (*) denotes the stop codon mutation - this negative control should be non-fit.",
+                            )
+
+                
                     a("<!-- show logoplots per residue on hover -->")
                     a("<!-- bake in the base64 divs of all the residues. -->")
                     for resi, _ in self.fitness_data.items():
@@ -596,6 +601,37 @@ class HTMLVisualizer:
                     hide_logoplot_insert = "if (atom.chain){\n hideLogoPlots(atom.resi, atom.chain);\n }\n"
                 else:
                     show_logoplot_insert = hide_logoplot_insert = ""
+                    # drop-down buttons for subpocket view:
+                    a("<!-- show the top dropdown (surfaces) -->")
+                    with a.div(klass="dropdown"):
+                        a.button(klass="dropbtn", _t="Key (Surfaces)")
+                        with a.div(klass="dropdown-content", style="text-align: center"):
+                            a.a(
+                                href="#",
+                                _t="Protein residue surfaces are colored by subpockets, see<br /> notion -> asapdiscovery -> Computational Chemistry Core -><br /> Computational Chemsitry Core Reference Documents -> Canonical-views-of-target-structures",
+                            )
+                        with a.div(klass="dropdown-content"):
+                            a.a(href="#", _t="⚪ : Residue in chain with binding pocket, but not part of binding pocket")
+                            a.a(href="#", _t="⚫ : Residue not in chain with binding pocket")
+                            
+
+                    a("<!-- show the bottom dropdown (contacts) -->")
+                    with a.div(klass="dropdown_ctcs"):
+                        a.button(klass="dropbtn", _t="Key (Contacts)")
+                        with a.div(klass="dropdown-content", style="text-align: center"):
+                            a.a(
+                                href="#",
+                                _t="Ligand-protein contacts are shown as dashed lines colored as:",
+                            )
+                        with a.div(klass="dropdown-content"):
+                            a.a(href="#", _t="Gray : Hydrophobic interaction")
+                            a.a(href="#", _t="Blue : Hydrogen bond")
+                            a.a(href="#", _t="Lilac : Water bridge")
+                            a.a(href="#", _t="Yellow : Salt bridge")
+                            a.a(href="#", _t="Green : pi-stacking")
+                            a.a(href="#", _t="Orange : pi-cation interaction")
+                            a.a(href="#", _t="Light-green : Halogen bond")
+                            a.a(href="#", _t="Purple : Metal complex")
 
             with a.script():
                 # function to show/hide the logoplots
