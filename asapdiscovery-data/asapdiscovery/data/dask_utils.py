@@ -27,6 +27,7 @@ def actualise_dask_delayed_iterable(
     delayed_iterable: Iterable,
     dask_client: Optional[Client] = None,
     errors: str = "raise",
+    scatter: bool = True,
 ):
     """
     Run a list of dask delayed functions or collections, and return the results
@@ -45,7 +46,9 @@ def actualise_dask_delayed_iterable(
     if dask_client is None:
         return dask.compute(*delayed_iterable)
     else:
-        futures = dask_client.compute(delayed_iterable)
+        if scatter:
+            scattered_iterable = dask_client.scatter(delayed_iterable)
+        futures = dask_client.compute(scattered_iterable)
     return dask_client.gather(futures, errors=errors)
 
 
