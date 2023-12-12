@@ -573,26 +573,29 @@ class HTMLVisualizer:
                             _t="The height of each residue letter corresponds to its relative fitness:<br /> in the fit residues panel (left) residues are ordered by increasing fitness (from bottom to top);<br /> in the non-fit residues panel (right), residues are ordered by decreasing fitness (top to bottom).<br /> An asterisk (*) denotes the stop codon mutation - this negative control should be non-fit.",
                         )
 
-                a("<!-- show logoplots per residue on hover -->")
-                a("<!-- bake in the base64 divs of all the residues. -->")
-                for resi, _ in self.fitness_data.items():
-                    resnum, chain = resi.split("_")
-                    # get the base64 for this residue in this chain.
-                    for fit_type, base64 in self.make_logoplot_input(resi).items():
-                        with a.div(
-                            klass=f"logoplotbox_{fit_type}",
-                            id=f"{fit_type}DIV_{resnum}_{chain}",
-                            style="display:none",
-                        ):
-                            # add the base64 string while making some corrections.
-                            a.img(
-                                alt=f"{fit_type} residue logoplot",
-                                src=str(base64)
-                                .replace("b'", "data:image/png;base64,")
-                                .replace("'", ""),
-                            )
-                        # with a.div(klass='logoplotbox_fit', id=f'fitDIV_{resnum}_{chain}', style='display:none'):
-                        #     a.img(alt='fit residue logoplot', src=str(base64_dict["fit"]).replace("b'", "data:image/png;base64,").replace("'", ""))
+                if self.color_method == "fitness":
+                    a("<!-- show logoplots per residue on hover -->")
+                    a("<!-- bake in the base64 divs of all the residues. -->")
+                    for resi, _ in self.fitness_data.items():
+                        resnum, chain = resi.split("_")
+                        # get the base64 for this residue in this chain.
+                        for fit_type, base64 in self.make_logoplot_input(resi).items():
+                            with a.div(
+                                klass=f"logoplotbox_{fit_type}",
+                                id=f"{fit_type}DIV_{resnum}_{chain}",
+                                style="display:none",
+                            ):
+                                # add the base64 string while making some corrections.
+                                a.img(
+                                    alt=f"{fit_type} residue logoplot",
+                                    src=str(base64)
+                                    .replace("b'", "data:image/png;base64,")
+                                    .replace("'", ""),
+                                )
+                    show_logoplot_insert = "showLogoPlots(atom.resi, atom.chain);"
+                    hide_logoplot_insert = "if (atom.chain){\n hideLogoPlots(atom.resi, atom.chain);\n }\n"
+                else:
+                    show_logoplot_insert = hide_logoplot_insert = ""
 
             with a.script():
                 # function to show/hide the logoplots
@@ -637,20 +640,18 @@ class HTMLVisualizer:
                                 if (atom.chain === undefined){ \
                                     display_str = 'LIGAND'; \
                                     } else { \
-                                    display_str = atom.chain + ': ' +  atom.resn + atom.resi; \
-                                    showLogoPlots(atom.resi, atom.chain); \
-                                } \
+                                    display_str = atom.chain + ': ' +  atom.resn + atom.resi;" \
+                                    + show_logoplot_insert \
+                                +"} \
                                 atom.label = viewer.addLabel(display_str, { position: atom, backgroundColor: 'mintcream', fontColor: 'black' }); \
                             }\n \
                         },\n \
                         function (atom) {\n \
                             if (atom.label) {\n \
                                 viewer.removeLabel(atom.label);\n \
-                                delete atom.label;\n \
-                                if (atom.chain){\n \
-                                  hideLogoPlots(atom.resi, atom.chain);\n \
-                                 }\n \
-                            }\n \
+                                delete atom.label;\n" \
+                            + hide_logoplot_insert
+                            +"}\n \
                         }\n \
                         );\n \
                         viewer.setHoverDuration(100); // makes resn popup instant on hover\n \
