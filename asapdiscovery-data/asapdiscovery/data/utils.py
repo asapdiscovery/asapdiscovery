@@ -927,20 +927,47 @@ def parse_fluorescence_data_cdd(
     for _, row in mol_df.iterrows():
         try:
             IC50 = float(row[f"{assay_name}: IC50 (µM)"])
+            pIC50 = -np.log10(IC50 * 1e-6)
+        except ValueError:
+            IC50 = row[f"{assay_name}: IC50 (µM)"]
+            # Could not convert to string because value was semiquantitative
+            if IC50 == "(IC50 could not be calculated)":
+                IC50 = "nan"
+                pIC50 = "nan"
+            elif ">" in IC50:
+                pIC50 = "< 4.0"  # lower limit of detection
+            elif "<" in IC50:
+                pIC50 = "> 7.3"  # upper limit of detection
+            else:
+                IC50 = "nan"
+                pIC50 = "nan"
+
+        try:
             IC50_lower = float(row[f"{assay_name}: IC50 CI (Lower) (µM)"])
             IC50_upper = float(row[f"{assay_name}: IC50 CI (Upper) (µM)"])
             IC50_stderr = (
                 np.abs(IC50_upper - IC50_lower) / 4.0
             )  # assume normal distribution
 
-            pIC50 = -np.log10(IC50 * 1e-6)
             pIC50_lower = -np.log10(IC50_upper * 1e-6)
             pIC50_upper = -np.log10(IC50_lower * 1e-6)
             pIC50_stderr = (
                 np.abs(pIC50_upper - pIC50_lower) / 4.0
             )  # assume normal distribution
+        except ValueError:
+            # Keep pIC50 string
+            # Use default pIC50 error
+            # print(row)
+            # Set as high number so sorting works but still puts this at end
+            IC50_stderr = "100"
+            IC50_lower = np.nan
+            IC50_upper = np.nan
+            pIC50_stderr = "100"
+            pIC50_lower = np.nan
+            pIC50_upper = np.nan
 
-            # Render into string with appropriate sig figs
+        if isinstance(IC50, float) and isinstance(IC50_stderr, float):
+            # Have numbers for IC50 and stderr so can do rounding
             try:
                 import sigfig
 
@@ -956,31 +983,10 @@ def parse_fluorescence_data_cdd(
                 IC50_stderr = str(round(IC50_stderr, 4))
                 pIC50 = str(round(pIC50, 4))
                 pIC50_stderr = str(round(pIC50_stderr, 4))
-
-        except ValueError:
-            IC50 = row[f"{assay_name}: IC50 (µM)"]
-            # Could not convert to string because value was semiquantitative
-            if IC50 == "(IC50 could not be calculated)":
-                IC50 = "nan"
-                pIC50 = "nan"
-            elif ">" in IC50:
-                pIC50 = "< 4.0"  # lower limit of detection
-            elif "<" in IC50:
-                pIC50 = "> 7.3"  # upper limit of detection
-            else:
-                IC50 = "nan"
-                pIC50 = "nan"
-
-            # Keep pIC50 string
-            # Use default pIC50 error
-            # print(row)
-            # Set as high number so sorting works but still puts this at end
-            IC50_stderr = "100"
-            IC50_lower = np.nan
-            IC50_upper = np.nan
-            pIC50_stderr = "100"
-            pIC50_lower = np.nan
-            pIC50_upper = np.nan
+        elif isinstance(IC50, float):
+            # No stderr to base off of, so just round to 4
+            IC50 = str(round(IC50, 4))
+            pIC50 = str(round(pIC50, 4))
 
         IC50_series.append(float(IC50.strip("<> ")) * 1e-6)
         IC50_stderr_series.append(float(IC50_stderr) * 1e-6)
