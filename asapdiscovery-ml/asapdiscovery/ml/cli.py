@@ -2060,7 +2060,18 @@ def _build_ds_config(
         compounds = extract_compounds_from_filenames(
             all_str_fns, xtal_pat=xtal_regex, compound_pat=cpd_regex, fail_val="NA"
         )
-        print(len(list(all_str_fns)), len(compounds), flush=True)
+
+        # Filter compounds to only include datat that we have experimental data for
+        idx = [c[1] in exp_data for c in compounds]
+        print(
+            f"Filtering {len(idx) - sum(idx)} structures that we don't have",
+            "experimental data for.",
+            flush=True,
+        )
+        compounds = [c for i, c in zip(idx, compounds) if i]
+        all_str_fns = [fn for i, fn in zip(idx, all_str_fns) if i]
+
+        print(len(all_str_fns), len(compounds), flush=True)
         input_data = [
             Complex.from_pdb(
                 fn,
