@@ -1,17 +1,16 @@
+import base64
 import logging  # noqa: F401
 import os
 import subprocess
 import tempfile
+import warnings
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, Optional, Union  # noqa: F401
 
-import pandas as pd
-
-import base64
-import warnings
 import logomaker
 import matplotlib.pyplot as plt
+import pandas as pd
 import xmltodict
 from airium import Airium
 from asapdiscovery.data.fitness import (
