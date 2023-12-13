@@ -210,9 +210,11 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
     with open(fitness_data) as f:
         data = json.load(f)
     if "data" in data.keys():
+        # this is SARS-CoV-2 cross-genome phylo data - can directly grab 'data' key from json.
         data = data["data"]
         fitness_scores_bloom = pd.DataFrame(data)
     elif "ZIKV NS2B-NS3 (Closed)" in data.keys():
+        # this is ZIKV NS2B-NS3 DMS data - need to grab data differently from json.
         data = data["ZIKV NS2B-NS3 (Closed)"]["mut_metric_df"]
         fitness_scores_bloom = pd.DataFrame(data).rename(
             columns={"reference_site": "site", "Log2(Effect)": "fitness"}
