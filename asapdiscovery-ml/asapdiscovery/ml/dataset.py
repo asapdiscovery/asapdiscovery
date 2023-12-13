@@ -79,12 +79,11 @@ class DockedDataset(Dataset):
         comp_counter = 0
         for comp in complexes:
             try:
-                comp_exp_dict = exp_dict[comp.ligand.compound_name]
-            except KeyError:
-                print(
-                    f"Couldn't find {comp.ligand.compound_name} in exp_dict, skipping."
-                )
-                continue
+                comp_exp_dict = comp.ligand.experimental_data.experimental_data
+            except AttributeError:
+                comp_exp_dict = {}
+            comp_exp_dict |= exp_dict.get(comp.ligand.compound_name, {})
+
             # compound = get_complex_id(comp)
             compound = (comp.target.target_name, comp.ligand.compound_name)
             try:
@@ -396,7 +395,11 @@ class GroupedDockedDataset(Dataset):
             compound = (comp.target.target_name, comp.ligand.compound_name)
 
             # Build pose dict
-            comp_exp_dict = exp_dict.get(comp.ligand.compound_name, {})
+            try:
+                comp_exp_dict = comp.ligand.experimental_data.experimental_data
+            except AttributeError:
+                comp_exp_dict = {}
+            comp_exp_dict |= exp_dict.get(comp.ligand.compound_name, {})
             pose = DockedDataset._complex_to_pose(
                 comp, compound=compound, exp_dict=comp_exp_dict, ignore_h=ignore_h
             )
@@ -594,7 +597,11 @@ class GraphDataset(Dataset):
         missing_dict = {k: np.nan for k in all_shared_exp_keys}
         all_info = []
         for lig in ligands:
-            lig_exp_dict = exp_dict.get(lig.compound_name, missing_dict)
+            try:
+                lig_exp_dict = lig.experimental_data.experimental_data
+            except AttributeError:
+                lig_exp_dict = {}
+            lig_exp_dict |= exp_dict.get(lig.compound_name, missing_dict)
             exp_info = [lig_exp_dict[k] for k in all_shared_exp_keys]
             all_info.append([lig.compound_name, lig.smiles] + exp_info)
 
