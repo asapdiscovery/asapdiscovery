@@ -1,8 +1,8 @@
-import click
-from glob import glob
 import json
+from glob import glob
 from pathlib import Path
 
+import click
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.utils import (
     MOONSHOT_CDD_ID_REGEX,
@@ -13,8 +13,8 @@ from asapdiscovery.ml.cli_args import (
     ds_cache,
     grouped,
     str_files,
-    str_fn_xtal_regex,
     str_fn_cpd_regex,
+    str_fn_xtal_regex,
 )
 from asapdiscovery.ml.schema_v2.config import DatasetConfig, DatasetType
 
