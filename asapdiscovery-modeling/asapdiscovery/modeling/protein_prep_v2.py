@@ -91,6 +91,7 @@ class ProteinPrepperBase(BaseModel):
         use_dask: bool = False,
         dask_client: Optional["Client"] = None,
         cache_dir: Optional[str] = None,
+        use_only_cache: bool = False,
     ) -> list[PreppedComplex]:
         """
         Prepare the list of input receptor ligand complexs re-using any found in the cache.
@@ -122,6 +123,13 @@ class ProteinPrepperBase(BaseModel):
                 inputs, cached_outputs = ProteinPrepperBase._gather_new_tasks(
                     complex_to_prep=inputs, cached_complexs=cached_complexs
                 )
+                if use_only_cache:
+                    if inputs:
+                        logger.warning(
+                            f"Disregarding {len(inputs)} structures which could not be found in the cache."
+                        )
+                        inputs = None
+
 
                 if cached_outputs:
                     logger.info(

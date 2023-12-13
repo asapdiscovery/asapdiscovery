@@ -169,6 +169,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         cache_dir=inputs.cache_dir,
+        use_only_cache=inputs.use_only_cache,
     )
     del complexes
 
