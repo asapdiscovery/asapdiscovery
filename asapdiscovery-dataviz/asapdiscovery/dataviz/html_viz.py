@@ -318,7 +318,6 @@ class HTMLVisualizer:
         # can be white->red or blue if fitness data is missing.
         intn_color = None
         for fitness_color, res_ids in self.make_color_res_fitness().items():
-            # res_nums = [ int(id.split("_")[0]) for id in res_ids]
             if f"{plip_xml_dict['resnr']}_{plip_xml_dict['reschain']}" in res_ids:
                 intn_color = fitness_color
                 break
