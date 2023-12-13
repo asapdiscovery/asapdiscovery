@@ -10,7 +10,7 @@ import pandas as pd
 
 pd.options.mode.chained_assignment = None
 import base64
-
+import warnings
 import logomaker
 import matplotlib.pyplot as plt
 import xmltodict
@@ -796,7 +796,7 @@ class HTMLVisualizer:
                 f"No fit mutants found for residue {resi} in chain {chain}. Are you sure the fitness threshold is set correctly? At least the wildtype residue should be fit."
             )
         elif len(site_df_unfit) == 0:
-            print(
+            warnings.warn(
                 f"Warning: no unfit residues found for residue {resi} in chain {chain}."
             )
             # make a row with a fake unfit mutant instead.
