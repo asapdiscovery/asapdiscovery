@@ -81,9 +81,11 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     """
 
     output_dir = inputs.output_dir
-    if output_dir.exists():
+    if output_dir.exists() and inputs.overwrite:
         rmtree(output_dir)
-    output_dir.mkdir()
+    else:
+        output_dir.mkdir(exist_ok=True, parents=True)
+
     logger = FileLogger(
         inputs.logname,  # default root logger so that dask logging is forwarded
         path=output_dir,
