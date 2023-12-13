@@ -317,6 +317,50 @@ def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
 
+def load_openeye_multiconf_sdf(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
+    """
+    Load an OpenEye SDF file containing multiple conformers of a single molecule and
+    return them as an OEMol object.
+
+    Parameters
+    ----------
+    sdf_fn : Union[str, Path]
+        Path to the SDF file to load.
+
+    Returns
+    -------
+    oechem.OEMol
+        An OpenEye OEMol object containing the molecule data from the SDF file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    oechem.OEError
+        If the file cannot be opened.
+
+    Notes
+    -----
+    This function uses the OEOmegaConfTest to combine multiple conformers of a single
+    molecule into a single OEMol object.
+    """
+    if not Path(sdf_fn).exists():
+        raise FileNotFoundError(f"{sdf_fn} does not exist!")
+
+    ifs = oechem.oemolistream()
+    ifs.SetFlavor(
+        oechem.OEFormat_SDF,
+        oechem.OEIFlavor_SDF_Default,
+    )
+    ifs.SetConfTest(oechem.OEOmegaConfTest())
+    if ifs.open(str(sdf_fn)):
+        for mol in ifs.GetOEMols():
+            return mol
+        ifs.close()
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
+
+
 def load_openeye_sdfs(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     """
     Load a list of OpenEye OEGraphMol objects from an SDF file.

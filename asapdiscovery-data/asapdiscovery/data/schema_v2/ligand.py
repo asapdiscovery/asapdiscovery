@@ -426,6 +426,20 @@ class Ligand(DataModelAbstractBase):
             raise ValueError("Unable to generate canonical tautomer")
 
     @property
+    def num_poses(self) -> int:
+        """
+        Get the number of poses in the ligand.
+        """
+        return len(self.poses)
+
+    @property
+    def has_multiple_poses(self) -> bool:
+        """
+        Check if the ligand has multiple poses.
+        """
+        return self.num_poses > 1
+
+    @property
     def neutralized(self) -> "Ligand":
         """
         Get the neutralized version of the ligand.
