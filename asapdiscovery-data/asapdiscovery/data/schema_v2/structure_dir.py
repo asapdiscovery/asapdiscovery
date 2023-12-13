@@ -54,7 +54,9 @@ class StructureDirFactory(BaseModel):
         List[Complex]
             List of Complex objects.
         """
-        pdb_files = list(self.parent_dir.rglob("*.pdb"))
+        print("hi")
+	pdb_files = list(self.parent_dir.rglob("*.pdb"))
+	print(pdb_files)
         # check all filenames are unique
         pdb_stems = [pdb_file.stem for pdb_file in pdb_files]
         unique = False
