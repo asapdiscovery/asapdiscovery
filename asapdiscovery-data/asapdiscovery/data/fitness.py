@@ -242,7 +242,6 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
         fitness_scores_bloom["chain"] = "A"
     elif target == "ZIKV-NS2B-NS3pro":
         # cursed. TODO: replace this with an auto-align.
-        fitness_scores_bloom.to_csv("tmp.csv")
         ns2b_section = fitness_scores_bloom[
             fitness_scores_bloom["site"].str.contains("NS2B")
         ]
