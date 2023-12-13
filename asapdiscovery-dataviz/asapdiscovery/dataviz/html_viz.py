@@ -8,7 +8,6 @@ from typing import Dict, Optional, Union  # noqa: F401
 
 import pandas as pd
 
-pd.options.mode.chained_assignment = None
 import base64
 import warnings
 import logomaker
@@ -783,7 +782,7 @@ class HTMLVisualizer:
         ]
         site_df = site_df_resi[site_df_resi["chain"] == chain]
         # add the fitness threshold to normalize so that fit mutants end up in the left-hand logoplot.
-        site_df["fitness"] = site_df["fitness"] + abs(
+        site_df.loc[site_df.index, "fitness"] = site_df["fitness"] + abs(
             _FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]]
         )
 

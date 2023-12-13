@@ -245,7 +245,7 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
         ns2b_section = fitness_scores_bloom[
             fitness_scores_bloom["site"].str.contains("NS2B")
         ]
-        ns2b_section["site"] = [
+        ns2b_section.loc[ns2b_section.index, "site"] = [
             int(site.replace("(NS2B)", "")) for site in ns2b_section["site"].values
         ]
         ns2b_section = ns2b_section[ns2b_section["site"].between(46, 89)]
@@ -257,7 +257,7 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
         ns3_section = fitness_scores_bloom[
             fitness_scores_bloom["site"].str.contains("NS3")
         ]
-        ns3_section["site"] = [
+        ns3_section.loc[ns3_section.index, "site"] = [
             int(site.replace("(NS3)", "")) for site in ns3_section["site"].values
         ]
         ns3_section = ns3_section[ns3_section["site"].between(10, 177)]
