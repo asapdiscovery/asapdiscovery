@@ -30,6 +30,7 @@ rank-enantiomers = "asapdiscovery.ml.scripts.rank_enantiomers:main"
 train = "asapdiscovery.ml.scripts.train:main"
 upset-plot-ranked = "asapdiscovery.ml.scripts.upset_plot_ranked:main"
 asap-ml = "asapdiscovery.ml.cli:cli"
+convert-ds = "asapdiscovery.ml.scripts.convert_dataset_v2:convert"
 
 [tool.setuptools.packages.find]
 where = ["."]
