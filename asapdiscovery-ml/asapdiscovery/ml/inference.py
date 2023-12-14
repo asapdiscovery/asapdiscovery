@@ -13,11 +13,11 @@ from asapdiscovery.ml.models import (
     MLModelRegistry,
     MLModelSpec,
 )
-from mtenn.config import ModelType
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
 from dgllife.utils import CanonicalAtomFeaturizer
+from mtenn.config import ModelType
 from pydantic import BaseModel, Field
 
 
