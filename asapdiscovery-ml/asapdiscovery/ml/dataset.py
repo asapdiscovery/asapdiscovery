@@ -599,11 +599,11 @@ class GraphDataset(Dataset):
             # Gather experimental data
             try:
                 lig_exp_dict = lig.experimental_data.experimental_data
+                if lig.experimental_data.date_created:
+                    lig_exp_dict |= {"date_created": lig.experimental_data.date_created}
             except AttributeError:
                 lig_exp_dict = {}
-            lig_exp_dict |= exp_dict.get(compound_id, {}) | {
-                "date_created": compound.date_created
-            }
+            lig_exp_dict |= exp_dict.get(compound_id, {})
 
             # Add data
             try:
@@ -666,6 +666,12 @@ class GraphDataset(Dataset):
 
             # Generate DGL graph
             g = smiles_to_g(smiles)
+
+            # Gather experimental data
+            lig_exp_dict = compound.experimental_data.copy()
+            lig_exp_dict |= exp_dict.get(compound_id, {})
+            if compound.date_created:
+                lig_exp_dict |= {"date_created": compound.date_created}
 
             # Add data
             try:
