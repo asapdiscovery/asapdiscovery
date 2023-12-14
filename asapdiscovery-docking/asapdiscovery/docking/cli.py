@@ -3,7 +3,6 @@ from typing import Optional
 import click
 from asapdiscovery.cli.cli_args import (
     cache_dir,
-    use_only_cache,
     dask_args,
     fragalysis_dir,
     input_json,
@@ -16,6 +15,7 @@ from asapdiscovery.cli.cli_args import (
     save_to_cache,
     structure_dir,
     target,
+    use_only_cache,
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags

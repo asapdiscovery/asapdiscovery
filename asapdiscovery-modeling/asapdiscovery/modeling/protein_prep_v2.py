@@ -130,7 +130,6 @@ class ProteinPrepperBase(BaseModel):
                         )
                         inputs = None
 
-
                 if cached_outputs:
                     logger.info(
                         f"Matched {len(cached_outputs)} cached structures which will be reused."
