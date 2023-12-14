@@ -18,9 +18,12 @@ logger = logging.getLogger(__name__)
 def set_dask_config():
     cfg.set({"distributed.scheduler.worker-ttl": None})
     cfg.set({"distributed.admin.tick.limit": "4h"})
-    cfg.set({"distributed.scheduler.allowed-failures": 1})
+    cfg.set({"distributed.scheduler.allowed-failures": 2})
     # do not tolerate failures, if work fails once job will be marked as permanently failed
     # this stops us cycling through jobs that fail losing all other work on the worker at that time
+    cfg.set({"distributed.worker.memory.spill": False})
+    cfg.set({"distributed.worker.memory.pause": True})
+    cfg.set({"distributed.worker.memory.terminate": False})
 
 
 def actualise_dask_delayed_iterable(
