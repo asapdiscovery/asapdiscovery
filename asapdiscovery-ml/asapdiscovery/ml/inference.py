@@ -21,6 +21,13 @@ from dgllife.utils import CanonicalAtomFeaturizer
 from mtenn.config import ModelType
 from pydantic import BaseModel, Field
 
+"""
+TODO
+
+Need to adjust inference model construction to use new ModelConfigs. Can create one for
+each model and store in S3 to use during testing.
+"""
+
 
 class InferenceBase(BaseModel):
     class Config:
@@ -226,15 +233,18 @@ class GATInference(InferenceBase):
         if isinstance(smiles, str):
             smiles = [smiles]
 
-        ligands = [Ligand.from_smiles(smi) for smi in smiles]
+        ligands = [
+            Ligand.from_smiles(smi, compound_name=f"eval_{i}")
+            for i, smi in enumerate(smiles)
+        ]
 
         if not node_featurizer:
             node_featurizer = CanonicalAtomFeaturizer()
-        gids = GraphDataset.from_ligands(
+        ds = GraphDataset.from_ligands(
             ligands, node_featurizer=node_featurizer, edge_featurizer=edge_featurizer
         )
 
-        data = [self.predict(g) for g in gids]
+        data = [self.predict(pose["g"]) for _, pose in ds]
         data = np.concatenate(np.asarray(data))
         # return a scalar float value if we only have one input
         if np.all(np.array(data.shape) == 1):
