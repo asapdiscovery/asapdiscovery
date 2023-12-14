@@ -6,7 +6,8 @@ import numpy as np
 import torch
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
+from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
     LocalMLModelSpec,
@@ -201,7 +202,10 @@ class GATInference(InferenceBase):
             return output_tensor.cpu().numpy().ravel()
 
     def predict_from_smiles(
-        self, smiles: Union[str, list[str]], **kwargs
+        self,
+        smiles: Union[str, list[str]],
+        node_featurizer=None,
+        edge_featurizer=None,
     ) -> Union[np.ndarray, float]:
         """Predict on a list of SMILES strings, or a single SMILES string.
 
@@ -209,6 +213,10 @@ class GATInference(InferenceBase):
         ----------
         smiles : Union[str, List[str]]
             SMILES string or list of SMILES strings.
+        node_featurizer : BaseAtomFeaturizer, optional
+            Featurizer for node data
+        edge_featurizer : BaseBondFeaturizer, optional
+            Featurizer for edges
 
         Returns
         -------
@@ -218,8 +226,12 @@ class GATInference(InferenceBase):
         if isinstance(smiles, str):
             smiles = [smiles]
 
-        gids = GraphInferenceDataset(
-            smiles, node_featurizer=CanonicalAtomFeaturizer(), **kwargs
+        ligands = [Ligand.from_smiles(smi) for smi in smiles]
+
+        if not node_featurizer:
+            node_featurizer = CanonicalAtomFeaturizer()
+        gids = GraphDataset.from_ligands(
+            ligands, node_featurizer=node_featurizer, edge_featurizer=edge_featurizer
         )
 
         data = [self.predict(g) for g in gids]
