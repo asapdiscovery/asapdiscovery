@@ -16,7 +16,7 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
-from asapdiscovery.ml.models import MLModelType
+from mtenn.config import ModelType
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -208,7 +208,7 @@ class MLModelScorer(ScorerBase):
     Score from some kind of ML model
     """
 
-    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
+    model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
@@ -220,7 +220,7 @@ class MLModelScorer(ScorerBase):
 
     @classmethod
     def from_latest_by_target(cls, target: TargetTags):
-        if cls.model_type == MLModelType.INVALID:
+        if cls.model_type == ModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
         inference_cls = get_inference_cls_from_model_type(cls.model_type)
         inference_instance = inference_cls.from_latest_by_target(target)
@@ -237,15 +237,15 @@ class MLModelScorer(ScorerBase):
             )
 
     @staticmethod
-    def from_latest_by_target_and_type(target: TargetTags, type: MLModelType):
-        if type == MLModelType.INVALID:
+    def from_latest_by_target_and_type(target: TargetTags, type: ModelType):
+        if type == ModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
         scorer_class = get_ml_scorer_cls_from_model_type(type)
         return scorer_class.from_latest_by_target(target)
 
     @classmethod
     def from_model_name(cls, model_name: str):
-        if cls.model_type == MLModelType.INVALID:
+        if cls.model_type == ModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
         inference_cls = get_inference_cls_from_model_type(cls.model_type)
         inference_instance = inference_cls.from_model_name(model_name)
@@ -261,7 +261,7 @@ class GATScorer(MLModelScorer):
     Scoring using GAT ML Model
     """
 
-    model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
+    model_type: ClassVar[ModelType.GAT] = ModelType.GAT
     score_type: ClassVar[ScoreType.GAT] = ScoreType.GAT
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
@@ -282,7 +282,7 @@ class SchnetScorer(MLModelScorer):
     Scoring using Schnet ML Model
     """
 
-    model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
+    model_type: ClassVar[ModelType.schnet] = ModelType.schnet
     score_type: ClassVar[ScoreType.schnet] = ScoreType.schnet
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
@@ -305,9 +305,9 @@ _ml_scorer_classes_meta = [
 ]
 
 
-def get_ml_scorer_cls_from_model_type(model_type: MLModelType):
+def get_ml_scorer_cls_from_model_type(model_type: ModelType):
     instantiable_classes = [
-        m for m in _ml_scorer_classes_meta if m.model_type != MLModelType.INVALID
+        m for m in _ml_scorer_classes_meta if m.model_type != ModelType.INVALID
     ]
     scorer_class = [m for m in instantiable_classes if m.model_type == model_type]
     if len(scorer_class) != 1:

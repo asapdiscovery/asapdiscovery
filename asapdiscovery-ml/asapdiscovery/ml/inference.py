@@ -12,8 +12,8 @@ from asapdiscovery.ml.models import (
     LocalMLModelSpec,
     MLModelRegistry,
     MLModelSpec,
-    MLModelType,
 )
+from mtenn.config import ModelType
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
@@ -31,7 +31,7 @@ class InferenceBase(BaseModel):
     targets: set[TargetTags] = Field(
         ..., description="Targets that them model can predict for"
     )
-    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
+    model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
     model_spec: Optional[MLModelSpec] = Field(
         ..., description="Model spec used to create Model to use"
@@ -176,7 +176,7 @@ class InferenceBase(BaseModel):
 
 
 class GATInference(InferenceBase):
-    model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
+    model_type: ClassVar[ModelType.GAT] = ModelType.GAT
 
     def predict(self, g: dgl.DGLGraph):
         """Predict on a graph, requires a DGLGraph object with the `ndata`
@@ -235,7 +235,7 @@ class StructuralInference(InferenceBase):
     Inference class for models that take a structure as input.
     """
 
-    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
+    model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
 
     def predict(self, pose_dict: dict):
         """Predict on a pose, requires a dictionary with the pose data with
@@ -332,7 +332,7 @@ class SchnetInference(StructuralInference):
     Inference class for SchNet model.
     """
 
-    model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
+    model_type: ClassVar[ModelType.schnet] = ModelType.schnet
 
 
 class E3nnInference(StructuralInference):
@@ -340,7 +340,7 @@ class E3nnInference(StructuralInference):
     Inference class for E3NN model.
     """
 
-    model_type: ClassVar[MLModelType.e3nn] = MLModelType.e3nn
+    model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
 
 
 _inferences_classes_meta = [
@@ -352,9 +352,9 @@ _inferences_classes_meta = [
 ]
 
 
-def get_inference_cls_from_model_type(model_type: MLModelType):
+def get_inference_cls_from_model_type(model_type: ModelType):
     instantiable_classes = [
-        m for m in _inferences_classes_meta if m.model_type != MLModelType.INVALID
+        m for m in _inferences_classes_meta if m.model_type != ModelType.INVALID
     ]
     model_class = [m for m in instantiable_classes if m.model_type == model_type]
     if len(model_class) != 1:
