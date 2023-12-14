@@ -84,19 +84,15 @@ def graph_dataset(
     experimental_compound_data_1_reordered,
     experimental_compound_data_2,
 ):
-    gds = GraphDataset(
+    gds = GraphDataset.from_exp_compounds(
         [
             experimental_compound_data_1,
             experimental_compound_data_1_reordered,
             experimental_compound_data_2,
         ],
-        cache_file="./cache.bin",
         node_featurizer=CanonicalAtomFeaturizer(),
     )
     yield gds
-    # clean up the cache file
-    if os.path.exists("./cache.bin"):
-        os.remove("./cache.bin")
 
 
 @pytest.fixture()

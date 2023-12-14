@@ -227,14 +227,6 @@ class DatasetConfig(BaseModel):
     cache_file: Path | None = Field(
         None, description="Pickle cache file of the actual dataset object."
     )
-    graph_cache_file: Path = Field(
-        "/dev/null",
-        description=(
-            "Cache file to save the processed DGL graphs. If not given, they "
-            "will not be saved and will need to be recomputed each time the dataset is "
-            "built."
-        ),
-    )
 
     # Parallelize data processing
     num_workers: int = Field(
@@ -287,7 +279,6 @@ class DatasetConfig(BaseModel):
                 ds = GraphDataset.from_ligands(
                     self.input_data,
                     exp_dict=self.exp_data,
-                    cache_file=self.graph_cache_file,
                     node_featurizer=CanonicalAtomFeaturizer(),
                 )
             case DatasetType.structural:

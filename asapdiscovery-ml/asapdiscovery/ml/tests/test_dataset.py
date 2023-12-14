@@ -137,7 +137,7 @@ def test_graph_dataset_from_ligands(ligand_sdf, tmp_path):
     lig1 = Ligand.from_sdf(ligand_sdf, compound_name="test1")
     lig2 = Ligand.from_sdf(ligand_sdf, compound_name="test2")
 
-    ds = GraphDataset.from_ligands([lig1, lig2], cache_file=str(tmp_path / "cache.bin"))
+    ds = GraphDataset.from_ligands([lig1, lig2])
 
     assert len(ds) == 2
 
@@ -163,9 +163,7 @@ def test_graph_dataset_from_exp_compounds(ligand_sdf, tmp_path):
         compound_id="test2", smiles=lig.smiles, experimental_data=exp_data
     )
 
-    ds = GraphDataset.from_exp_compounds(
-        [exp1, exp2], cache_file=str(tmp_path / "cache.bin")
-    )
+    ds = GraphDataset.from_exp_compounds([exp1, exp2])
 
     assert len(ds) == 2
 
