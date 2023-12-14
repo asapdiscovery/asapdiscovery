@@ -656,9 +656,9 @@ class GraphDataset(Dataset):
 
         compounds = {}
         structures = []
-        for i, compound in enumerate(exp_compounds):
-            compound_id = compound.compound_id
-            smiles = compound.smiles
+        for i, exp_compound in enumerate(exp_compounds):
+            compound_id = exp_compound.compound_id
+            smiles = exp_compound.smiles
 
             # Need a tuple to match DockedDataset, but the graph objects aren't
             #  attached to a protein structure at all
@@ -668,10 +668,10 @@ class GraphDataset(Dataset):
             g = smiles_to_g(smiles)
 
             # Gather experimental data
-            lig_exp_dict = compound.experimental_data.copy()
+            lig_exp_dict = exp_compound.experimental_data.copy()
             lig_exp_dict |= exp_dict.get(compound_id, {})
-            if compound.date_created:
-                lig_exp_dict |= {"date_created": compound.date_created}
+            if exp_compound.date_created:
+                lig_exp_dict |= {"date_created": exp_compound.date_created}
 
             # Add data
             try:
@@ -684,9 +684,9 @@ class GraphDataset(Dataset):
                     "g": g,
                     "compound": compound,
                 }
-                | compound.experimental_data
+                | exp_compound.experimental_data
                 | exp_dict.get(compound_id, {})
-                | {"date_created": compound.date_created}
+                | {"date_created": exp_compound.date_created}
             )
 
         return cls(compounds, structures)
