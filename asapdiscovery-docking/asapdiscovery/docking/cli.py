@@ -174,7 +174,7 @@ def large_scale(
     "--structure-selector",
     type=click.Choice(StructureSelector.get_values(), case_sensitive=False),
     default=StructureSelector.LEAVE_SIMILAR_OUT,
-    help="The type of structure selector to use. Defaults to pairwise (all pairwise combinations of ligand and complex)",
+    help="The type of structure selector to use.",
 )
 @ligands
 @pdb_file
