@@ -309,17 +309,6 @@ class DatasetConfig(BaseModel):
 
         return ds
 
-    def exp_dict(self):
-        exp_dict = {}
-        for i, exp_compound in enumerate(self.exp_data.compounds):
-            if exp_compound.compound_id:
-                compound_id = exp_compound.compound_id
-            else:
-                compound_id = f"compound_{i}"
-            exp_dict[compound_id] = exp_compound.experimental_data
-
-        return exp_dict
-
     @staticmethod
     def fix_e3nn_labels(ds):
         for _, pose in ds:
