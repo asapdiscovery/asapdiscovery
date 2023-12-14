@@ -178,10 +178,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
-
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
@@ -320,6 +319,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
     results = docker.dock(
         pairs,
+        output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
@@ -327,10 +327,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
-
-    # write docking results
-    logger.info("Writing docking results")
-    POSITDocker.write_docking_files(results, output_dir / "docking_results")
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]

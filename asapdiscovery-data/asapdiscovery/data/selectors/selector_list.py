@@ -6,12 +6,14 @@ from enum import Enum
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.selectors.pairwise_selector import (
     LeaveOneOutSelector,
+    LeaveSimilarOutSelector,
     PairwiseSelector,
     SelfDockingSelector,
 )
 
 _ALL_SELECTORS = {
     LeaveOneOutSelector.selector_type: LeaveOneOutSelector,
+    LeaveSimilarOutSelector.selector_type: LeaveSimilarOutSelector,
     PairwiseSelector.selector_type: PairwiseSelector,
     SelfDockingSelector.selector_type: SelfDockingSelector,
     MCSSelector.selector_type: MCSSelector,
@@ -26,6 +28,7 @@ class StructureSelector(str, Enum):
     MCS = MCSSelector.selector_type
     PAIRWISE = PairwiseSelector.selector_type
     LEAVE_ONE_OUT = LeaveOneOutSelector.selector_type
+    LEAVE_SIMILAR_OUT = LeaveSimilarOutSelector.selector_type
     SELF_DOCKING = SelfDockingSelector.selector_type
 
     @property
