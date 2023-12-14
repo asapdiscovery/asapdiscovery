@@ -534,10 +534,9 @@ def build_model_schnet(
                 "readout",
             ]
             model_params = {p: config[p] for p in model_params if p in config}
-            model = SchNet(**model_params)
+            model = mtenn.conversion_utils.SchNet(**model_params)
         else:
-            model = SchNet()
-        model = mtenn.conversion_utils.SchNet(model)
+            model = mtenn.conversion_utils.SchNet()
     else:
         from torch_geometric.datasets import QM9
 
@@ -570,9 +569,8 @@ def build_model_schnet(
             atomref,
         )
 
-        model = SchNet(*model_params)
+        model = mtenn.conversion_utils.SchNet(*model_params)
         model.load_state_dict(wts)
-        model = mtenn.conversion_utils.SchNet(model)
 
     # Set interatomic cutoff (default of 10) to make the graph smaller
     if (config is None) or ("cutoff" not in config):
