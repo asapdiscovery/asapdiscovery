@@ -539,7 +539,9 @@ class HTMLVisualizer:
                                 _t="Protein residue surfaces are colored by mutability:",
                             )
                         with a.div(klass="dropdown-content"):
-                            a.a(href="#", _t="⚪ : No amino acid substitutions tolerated")
+                            a.a(
+                                href="#", _t="⚪ : No amino acid substitutions tolerated"
+                            )
                             a.a(
                                 href="#",
                                 _t="🔴 : increasing tolerance for amino acid substitutions (increasing with 🔴 intensity)",
@@ -557,8 +559,14 @@ class HTMLVisualizer:
                                 _t="Ligand-protein contacts are shown as dashed lines colored by:",
                             )
                         with a.div(klass="dropdown-content"):
-                            a.a(href="#", _t="⬜ : Ligand contact is with amino acid side chain that has no tolerated substitutions")
-                            a.a(href="#", _t="🟩 : Ligand contact is with peptide backbone")
+                            a.a(
+                                href="#",
+                                _t="⬜ : Ligand contact is with amino acid side chain that has no tolerated substitutions",
+                            )
+                            a.a(
+                                href="#",
+                                _t="🟩 : Ligand contact is with peptide backbone",
+                            )
                             a.a(
                                 href="#",
                                 _t="🟥 : Ligand contact is with amino acid side chain that has tolerated substitutions (increasing with 🔴 intensity)",
