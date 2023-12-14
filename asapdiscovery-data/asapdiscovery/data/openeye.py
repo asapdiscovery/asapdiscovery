@@ -5,13 +5,13 @@ from warnings import warn
 
 from openeye import (  # noqa: F401
     oechem,
-    oeshape,
     oedepict,
     oedocking,
     oeff,
     oegrid,
     oeomega,
     oequacpac,
+    oeshape,
     oespruce,
     oeszybki,
 )

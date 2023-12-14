@@ -1,14 +1,14 @@
 import os
 import pickle as pkl
 import re
+from enum import Enum
 from pathlib import Path
 
-from pydantic import BaseModel, Field, PositiveFloat
-from enum import Enum
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oeshape
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from pydantic import BaseModel, Field, PositiveFloat
 
 
 class DockingDataset:
