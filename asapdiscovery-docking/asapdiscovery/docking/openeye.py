@@ -197,31 +197,31 @@ class POSITDocker(DockingBase):
         ],
         output_dir: Optional[Union[str, Path]] = None,
         error="skip",
+        return_as_path=False,
     ) -> list[DockingResult]:
         """
         Docking workflow using OEPosit
         """
+        if output_dir is None and return_as_path:
+            raise ValueError("Cannot specify return_as_path and not output_dir")
 
         docking_results = []
 
         for set in inputs:
+            docked_result_json_path = Path(
+                Path(output_dir) / set.unique_name() / "docking_result.json"
+            )
             if (
                 set.is_cacheable
                 and (output_dir is not None)
-                and (
-                    Path(
-                        Path(output_dir) / set.unique_name() / "docking_result.json"
-                    ).exists()
-                )
+                and (docked_result_json_path.exists())
             ):
                 print(
                     f"Docking result for {set.unique_name()} already exists, reading from disk"
                 )
                 output_dir = Path(output_dir)
                 docking_results.append(
-                    POSITDockingResults.from_json_file(
-                        output_dir / set.unique_name() / "docking_result.json"
-                    )
+                    POSITDockingResults.from_json_file(docked_result_json_path)
                 )
             else:
                 dus = set.to_design_units()
@@ -315,7 +315,10 @@ class POSITDocker(DockingBase):
                             probability=prob,
                             provenance=self.provenance(),
                         )
-                        docking_results.append(docking_result)
+                        if return_as_path:
+                            docking_results.append(docked_result_json_path)
+                        else:
+                            docking_results.append(docking_result)
                         if output_dir is not None:
                             docking_result.write_docking_files(output_dir)
 

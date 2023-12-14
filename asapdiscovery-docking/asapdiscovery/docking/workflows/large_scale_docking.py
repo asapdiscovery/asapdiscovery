@@ -4,7 +4,11 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
+from asapdiscovery.data.dask_utils import (
+    dask_cluster_from_type,
+    set_dask_config,
+    BackendType,
+)
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_artifacts import (
@@ -272,6 +276,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        return_as_path=True,
     )
 
     n_results = len(results)
@@ -295,17 +300,19 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
 
-    if inputs.write_final_sdf:
-        logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
-        )
+    # if inputs.write_final_sdf:
+    #     logger.info("Writing final docked poses to SDF file")
+    #     write_ligands_to_multi_sdf(
+    #         output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+    #     )
 
+    logger.info("Running scoring")
     scores_df = scorer.score(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         return_df=True,
+        backend=BackendType.DISK,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -319,7 +326,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=html_ouptut_dir,
     )
     pose_visualizatons = html_visualizer.visualize(
-        results, use_dask=inputs.use_dask, dask_client=dask_client
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        backend=BackendType.DISK,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -348,7 +358,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=html_fitness_output_dir,
     )
     fitness_visualizations = html_fitness_visualizer.visualize(
-        results, use_dask=inputs.use_dask, dask_client=dask_client
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        backend=BackendType.DISK,
     )
 
     # duplicate target id column so we can join

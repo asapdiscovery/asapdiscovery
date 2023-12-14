@@ -15,6 +15,16 @@ from .execution_utils import guess_network_interface
 logger = logging.getLogger(__name__)
 
 
+class BackendType(StringEnum):
+    """
+    Enum for backend types indicating how data is being passed into the dask function, either an in-memory object,
+    or a JSON file of that object on disk
+    """
+
+    IN_MEMORY = "in-memory"
+    DISK = "disk"
+
+
 def set_dask_config():
     cfg.set({"distributed.scheduler.worker-ttl": None})
     cfg.set({"distributed.admin.tick.limit": "4h"})
@@ -30,7 +40,6 @@ def actualise_dask_delayed_iterable(
     delayed_iterable: Iterable,
     dask_client: Optional[Client] = None,
     errors: str = "raise",
-    scatter: bool = True,
 ):
     """
     Run a list of dask delayed functions or collections, and return the results
@@ -49,16 +58,18 @@ def actualise_dask_delayed_iterable(
     if dask_client is None:
         return dask.compute(*delayed_iterable)
     else:
-        if scatter:
-            scattered_iterable = dask_client.submit(dummy_scatter, delayed_iterable)
-        futures = dask_client.compute(scattered_iterable)
+        futures = dask_client.compute(delayed_iterable)
     return dask_client.gather(futures, errors=errors)
 
 
 # scatter op has issues with adaptive deployments, instead can use this workaround
 # https://github.com/dask/distributed/issues/6686
-def dummy_scatter(x):
+def _dummy_scatter(x):
     return x
+
+
+def dummy_scatter(x, client):
+    return client.submit(_dummy_scatter, x)
 
 
 class DaskType(StringEnum):
