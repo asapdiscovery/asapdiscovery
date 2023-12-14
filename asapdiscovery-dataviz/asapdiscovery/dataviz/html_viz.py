@@ -530,7 +530,7 @@ class HTMLVisualizer:
                 if self.color_method == "fitness":
                     a("<!-- show the top dropdown (surfaces) -->")
                     with a.div(klass="dropdown"):
-                        a.button(klass="dropbtn", _t="Key (Surfaces)")
+                        a.button(klass="dropbtn", _t="Surface coloration")
                         with a.div(
                             klass="dropdown-content", style="text-align: center"
                         ):
@@ -539,16 +539,16 @@ class HTMLVisualizer:
                                 _t="Protein residue surfaces are colored by mutability:",
                             )
                         with a.div(klass="dropdown-content"):
-                            a.a(href="#", _t="⚪ : No fit mutants for residue")
+                            a.a(href="#", _t="⚪ : No amino acid substitutions tolerated")
                             a.a(
                                 href="#",
-                                _t="🔴 : Fit mutants for residue (increasing 🔴 intensity with n fit mutants)",
+                                _t="🔴 : increasing tolerance for amino acid substitutions (increasing with 🔴 intensity)",
                             )
                             a.a(href="#", _t="🟣 : No data for residue")
 
                     a("<!-- show the bottom dropdown (contacts) -->")
                     with a.div(klass="dropdown_ctcs"):
-                        a.button(klass="dropbtn", _t="Key (Contacts)")
+                        a.button(klass="dropbtn", _t="Ligand-protein contacts")
                         with a.div(
                             klass="dropdown-content", style="text-align: center"
                         ):
@@ -557,17 +557,17 @@ class HTMLVisualizer:
                                 _t="Ligand-protein contacts are shown as dashed lines colored by:",
                             )
                         with a.div(klass="dropdown-content"):
-                            a.a(href="#", _t="⬜ : No fit mutants for contacted residue")
-                            a.a(href="#", _t="🟩 : Ligand contacts residue backbone")
+                            a.a(href="#", _t="⬜ : Ligand contact is with amino acid side chain that has no tolerated substitutions")
+                            a.a(href="#", _t="🟩 : Ligand contact is with peptide backbone")
                             a.a(
                                 href="#",
-                                _t="🟥 : Fit mutants for contacted residue (increasing 🟥 intensity with n fit mutants)",
+                                _t="🟥 : Ligand contact is with amino acid side chain that has tolerated substitutions (increasing with 🔴 intensity)",
                             )
                             a.a(href="#", _t="🟪 : No data for contacted residue")
 
                     a("<!-- show the bottom dropdown (logoplots) -->")
                     with a.div(klass="dropdown_lgplts"):
-                        a.button(klass="dropbtn", _t="Key (Logo Plots)")
+                        a.button(klass="dropbtn", _t="Logo Plots")
                         with a.div(
                             klass="dropdown-content", style="text-align: center"
                         ):
@@ -578,11 +578,11 @@ class HTMLVisualizer:
                         with a.div(klass="dropdown-content"):
                             a.a(
                                 href="#",
-                                _t="Left panel : Wildtype and fit mutant residues<br /> Right panel : Non-fit mutant residues",
+                                _t="Left: amino acids at this position that are consistent with virus viability. Letter heights are scaled to  indicate<br />the fractions of the viable viral populations with the particular residue at this position",
                             )
                             a.a(
                                 href="#",
-                                _t="The height of each residue letter corresponds to its relative fitness:<br /> in the fit residues panel (left) residues are ordered by increasing fitness (from bottom to top);<br /> in the non-fit residues panel (right), residues are ordered by decreasing fitness (top to bottom).<br /> An asterisk (*) denotes the stop codon mutation - this negative control should be non-fit.",
+                                _t="Right: amino acids at this position that are present in the selected population at background frequencies,<br />and thus likely to be inconsistent with viral viability. Stop codons (*) can also be present in these populations<br />of unselected genomes",
                             )
 
                     a("<!-- show logoplots per residue on hover -->")
