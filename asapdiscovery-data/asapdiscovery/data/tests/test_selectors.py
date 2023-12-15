@@ -4,6 +4,7 @@ from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.selectors.pairwise_selector import (
     LeaveOneOutSelector,
+    LeaveSimilarOutSelector,
     PairwiseSelector,
     SelfDockingSelector,
 )
@@ -18,6 +19,12 @@ def test_pairwise_selector(ligands, complexes):
 
 def test_leave_one_out_selector(ligands, complexes):
     selector = LeaveOneOutSelector()
+    pairs = selector.select(ligands, complexes)
+    assert len(pairs) == 36
+
+
+def test_leave_similar_out_selector(ligands, complexes):
+    selector = LeaveSimilarOutSelector()
     pairs = selector.select(ligands, complexes)
     assert len(pairs) == 36
 

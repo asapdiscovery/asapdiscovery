@@ -5,9 +5,10 @@ Defines docking base schema.
 import abc
 import logging
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import dask
+import numpy as np
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
@@ -79,22 +80,52 @@ class DockingBase(BaseModel):
     type: Literal["DockingBase"] = "DockingBase"
 
     @abc.abstractmethod
-    def _dock(self, inputs: list[DockingInputPair]) -> list["DockingResult"]:
+    def _dock(
+        self, inputs: list[DockingInputPair], output_dir: Union[str, Path]
+    ) -> list["DockingResult"]:
         ...
 
     def dock(
-        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
-    ) -> Union[list[dask.delayed], list["DockingResult"]]:
+        self,
+        inputs: list[DockingInputPair],
+        output_dir: Optional[Union[str, Path]] = None,
+        use_dask: bool = False,
+        dask_client=None,
+    ) -> list["DockingResult"]:
+        """
+        Run docking on a list of DockingInputPairs
+
+        Parameters
+        ----------
+        inputs : list[DockingInputPair]
+            List of DockingInputPairs
+        output_dir : Optional[Union[str, Path]], optional
+            Output directory, to write docking results to, by default None
+            means no output files are written
+        use_dask : bool, optional
+            Whether to use dask, by default False
+        dask_client : dask.distributed.Client, optional
+            Dask client to use, by default None
+
+        Returns
+        -------
+        list[DockingResult]
+            List of DockingResults
+        """
+        # make output dir if it doesn't exist
+        if output_dir is not None:
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
-                out = dask.delayed(self._dock)(inputs=[inp])
+                out = dask.delayed(self._dock)(inputs=[inp], output_dir=output_dir)
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client=dask_client, errors="skip"
             )
         else:
-            outputs = self._dock(inputs=inputs)
+            outputs = self._dock(inputs=inputs, output_dir=output_dir)
         # filter out None values
         outputs = [o for o in outputs if o is not None]
         return outputs
@@ -115,36 +146,12 @@ class DockingBase(BaseModel):
 
         Raises
         ------
-        ValueError
-            If compound names of input pair and posed ligand do not match
-
         """
         output_dir = Path(output_dir)
-        # if names are not unique, we will use unknown_ligand_{i} as the ligand portion of directory
-        # when writing files
 
-        # write out the docked pose
+        # write out the docked poses and info
         for result in docking_results:
-            if (
-                not result.input_pair.ligand.compound_name
-                == result.posed_ligand.compound_name
-            ):
-                raise ValueError(
-                    "Compound names of input pair and posed ligand do not match"
-                )
-
-            output_pref = result.unique_name()
-
-            compound_dir = output_dir / output_pref
-            compound_dir.mkdir(parents=True, exist_ok=True)
-            output_sdf_file = compound_dir / "docked.sdf"
-            output_pdb_file = compound_dir / "docked_complex.pdb"
-            output_json_file = compound_dir / "docking_result.json"
-
-            result.posed_ligand.to_sdf(output_sdf_file)
-            combined_oemol = result.to_posed_oemol()
-            save_openeye_pdb(combined_oemol, output_pdb_file)
-            result.to_json_file(output_json_file)
+            result.write_docking_files(output_dir)
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
@@ -181,6 +188,11 @@ class DockingResult(BaseModel):
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
             f.write(self.json(indent=2))
+
+    @classmethod
+    def from_json_file(cls, file: str | Path) -> "DockingResult":
+        with open(file) as f:
+            return cls.parse_raw(f.read())
 
     def get_output(self) -> dict:
         """
@@ -236,3 +248,42 @@ class DockingResult(BaseModel):
         import pandas as pd
 
         return pd.DataFrame([r.get_output() for r in results])
+
+    def write_docking_files(self, output_dir: Union[str, Path]):
+        """
+        Write docking files to output_dir
+
+        Parameters
+        ----------
+        output_dir : Union[str, Path]
+            Output directory
+        """
+        self._write_docking_files(self, output_dir)
+
+    @staticmethod
+    def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
+        output_dir = Path(output_dir)
+        output_pref = result.unique_name()
+        compound_dir = output_dir / output_pref
+        compound_dir.mkdir(parents=True, exist_ok=True)
+        output_sdf_file = compound_dir / "docked.sdf"
+        output_pdb_file = compound_dir / "docked_complex.pdb"
+        output_json_file = compound_dir / "docking_result.json"
+        result.posed_ligand.to_sdf(output_sdf_file)
+        combined_oemol = result.to_posed_oemol()
+        save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.to_json_file(output_json_file)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, DockingResult):
+            raise NotImplementedError
+
+        # Just check that both Complexs and Ligands are the same
+        return (
+            (self.input_pair == other.input_pair)
+            and (self.posed_ligand == other.posed_ligand)
+            and (np.isclose(self.probability, other.probability))
+        )
+
+    def __neq__(self, other: Any) -> bool:
+        return not self.__eq__(other)

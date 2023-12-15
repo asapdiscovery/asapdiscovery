@@ -32,7 +32,7 @@ class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):
     logname: str = Field("", description="Name of the log file.")
 
     structure_selector: StructureSelector = Field(
-        StructureSelector.PAIRWISE,
+        StructureSelector.LEAVE_SIMILAR_OUT,
         description="Structure selector to use for docking",
     )
     multi_reference: bool = Field(
@@ -220,6 +220,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     )
     results = docker.dock(
         sets,
+        output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
@@ -227,10 +228,6 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
-
-    # write docking results
-    logger.info("Writing docking results")
-    POSITDocker.write_docking_files(results, output_dir / "docking_results")
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
