@@ -455,18 +455,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
 
-    if inputs.postera_upload:
-        bleach_columns = True
-        logger.info("Bleaching column names for Postera upload, see issue #629, 628")
-    else:
-        bleach_columns = False
-
     # keep everything not just hits
     result_df = rename_output_columns_for_manifold(
         scores_df,
         inputs.target,
         [DockingResultCols],
-        bleach_columns=bleach_columns,
         manifold_validate=True,
         drop_non_output=True,
         allow=[
