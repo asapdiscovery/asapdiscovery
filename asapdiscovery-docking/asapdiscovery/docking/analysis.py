@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oeshape
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from pydantic import BaseModel, Field, PositiveFloat
 
 
 class DockingDataset:
