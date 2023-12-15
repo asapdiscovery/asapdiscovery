@@ -476,7 +476,8 @@ class TanimotoType(str, Enum):
     Enum for the different types of Tanimoto coefficients that can be calculated.
     """
 
-    SIMPLE = "TanimotoSimple"
+    SHAPE = "TanimotoShape"
+    COLOR = "TanimotoColor"
     COMBO = "TanimotoCombo"
 
 
@@ -515,8 +516,10 @@ def calculate_tanimoto_oe(
     res = oeshape.OEOverlapResults()
     prep.Prep(fitmol)
     shapeFunc.Overlap(fitmol, res)
-    if compute_type == TanimotoType.SIMPLE:
-        return res.GetTanimoto()
+    if compute_type == TanimotoType.SHAPE:
+        return res.GetShapeTanimoto()
+    elif compute_type == TanimotoType.COLOR:
+        return res.GetColorTanimoto()
     elif compute_type == TanimotoType.COMBO:
         return res.GetTanimotoCombo()
 
