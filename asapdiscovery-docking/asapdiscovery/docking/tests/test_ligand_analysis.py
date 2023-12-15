@@ -4,9 +4,9 @@ from asapdiscovery.data.openeye import load_openeye_sdf
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.analysis import (
+    TanimotoType,
     calculate_rmsd_openeye,
     calculate_tanimoto_oe,
-    TanimotoType,
     write_all_rmsds_to_reference,
 )
 
@@ -82,7 +82,6 @@ def test_writing_rmsd_calculation(tmp_path, ref_mol, query_mol):
 
 
 def test_tanimoto_calculation(ref_ligand, query_ligand):
-
     # Test shape and color tanimoto
     assert calculate_tanimoto_oe(ref_ligand, ref_ligand, TanimotoType.SHAPE) == 1.0
     assert np.isclose(
