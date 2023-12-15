@@ -153,8 +153,9 @@ def test_schnet_inference_predict_from_structure_file(docked_structure_file):
 def test_schnet_inference_predict_from_pose(docked_structure_file):
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
 
-    dataset = asapdiscovery.ml.dataset.DockedDataset(
-        [docked_structure_file], [("Mpro-P0008_0A", "ERI-UCB-ce40166b-17")]
+    dataset = asapdiscovery.ml.dataset.DockedDataset.from_files(
+        str_fns=[docked_structure_file],
+        compounds=[("Mpro-P0008_0A", "ERI-UCB-ce40166b-17")],
     )
     assert inference_cls is not None
     c, pose = dataset[0]

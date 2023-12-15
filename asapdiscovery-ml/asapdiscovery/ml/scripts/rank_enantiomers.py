@@ -156,7 +156,7 @@ def main():
     compound_dict = {c[1]: c for c in compounds}
 
     # Load the dataset
-    ds = DockedDataset(all_fns, compounds)
+    ds = DockedDataset.from_files(all_fns, compounds)
 
     # Build the model
     if args.model == "e3nn":

@@ -158,7 +158,7 @@ def build_dataset(
 
         # Load the dataset
         if grouped:
-            ds = GroupedDockedDataset(
+            ds = GroupedDockedDataset.from_files(
                 all_fns,
                 compounds,
                 lig_resn=lig_name,
@@ -166,7 +166,7 @@ def build_dataset(
                 num_workers=num_workers,
             )
         else:
-            ds = DockedDataset(
+            ds = DockedDataset.from_files(
                 all_fns,
                 compounds,
                 lig_resn=lig_name,
