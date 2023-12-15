@@ -1,8 +1,7 @@
 import torch
-from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Dataset
 
 
 class DockedDataset(Dataset):
@@ -306,6 +305,11 @@ class DockedDataset(Dataset):
             return_list = False
             idx_type = int
             idx = [idx]
+        elif isinstance(idx, slice):
+            return_list = True
+            idx_type = int
+            start, stop, step = idx.indices(len(self))
+            idx = list(range(start, stop, step))
         else:
             return_list = True
             if isinstance(idx[0], int):
@@ -333,7 +337,7 @@ class DockedDataset(Dataset):
         str_list = [self.structures[i] for i in str_idx_list]
         compounds = [s["compound"] for s in str_list]
         if return_list:
-            return zip(compounds, str_list)
+            return list(zip(compounds, str_list))
         else:
             return (compounds[0], str_list[0])
 
@@ -515,6 +519,11 @@ class GroupedDockedDataset(Dataset):
         elif (isinstance(idx[0], int)) or (isinstance(idx[0], str)):
             return_list = True
             idx_type = type(idx[0])
+        elif isinstance(idx, slice):
+            return_list = True
+            idx_type = int
+            start, stop, step = idx.indices(len(self))
+            idx = list(range(start, stop, step))
         else:
             try:
                 err_type = type(idx[0])
@@ -531,9 +540,9 @@ class GroupedDockedDataset(Dataset):
 
         str_list = [self.structures[compound_id] for compound_id in compound_id_list]
         if return_list:
-            return compound_id_list, str_list
+            return list(zip(compound_id_list, str_list))
         else:
-            return compound_id_list[0], str_list[0]
+            return (compound_id_list[0], str_list[0])
 
     def __iter__(self):
         for compound_id in self.compound_ids:
@@ -727,6 +736,11 @@ class GraphDataset(Dataset):
             return_list = False
             idx_type = int
             idx = [idx]
+        elif isinstance(idx, slice):
+            return_list = True
+            idx_type = int
+            start, stop, step = idx.indices(len(self))
+            idx = list(range(start, stop, step))
         else:
             return_list = True
             if isinstance(idx[0], bool):
@@ -760,7 +774,7 @@ class GraphDataset(Dataset):
         str_list = [self.structures[i] for i in str_idx_list]
         compounds = [s["compound"] for s in str_list]
         if return_list:
-            return (compounds, str_list)
+            return list(zip(compounds, str_list))
         else:
             return (compounds[0], str_list[0])
 
