@@ -106,12 +106,3 @@ def test_data(graph_dataset):
     g2 = graph_dataset[1][1]["g"]
     g3 = graph_dataset[2][1]["g"]
     return g1, g2, g3, graph_dataset
-
-
-@pytest.fixture()
-def test_inference_data(graph_inference_dataset):
-    # has structure: graph
-    g1 = graph_inference_dataset[0]
-    g2 = graph_inference_dataset[1]
-    g3 = graph_inference_dataset[2]
-    return g1, g2, g3, graph_inference_dataset
