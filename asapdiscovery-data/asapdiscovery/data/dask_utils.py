@@ -35,8 +35,7 @@ def set_dask_config():
     cfg.set({"distributed.worker.memory.pause": False})
     cfg.set({"distributed.worker.memory.target": 0.6})
     cfg.set({"distributed.worker.memory.spill": 0.7})
-    cfg.set({"distributed.nanny.environ":{"MALLOC_TRIM_THRESHOLD_": 0}})
-
+    cfg.set({"distributed.nanny.environ": {"MALLOC_TRIM_THRESHOLD_": 0}})
 
 
 def actualise_dask_delayed_iterable(

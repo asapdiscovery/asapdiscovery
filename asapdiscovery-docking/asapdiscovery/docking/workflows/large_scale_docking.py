@@ -5,9 +5,9 @@ from typing import Optional
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import (
+    BackendType,
     dask_cluster_from_type,
     set_dask_config,
-    BackendType,
 )
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.logging import FileLogger

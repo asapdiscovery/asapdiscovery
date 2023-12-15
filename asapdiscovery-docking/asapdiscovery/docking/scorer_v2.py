@@ -1,12 +1,13 @@
 import abc
 import logging
 from enum import Enum
-from typing import ClassVar, Optional, Union
 from pathlib import Path
+from typing import ClassVar, Optional, Union
+
 import dask
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable, BackendType
+from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers

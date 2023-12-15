@@ -1,9 +1,10 @@
 import abc
+from pathlib import Path
 from typing import Union
+
 import dask
 import pandas as pd
-from pathlib import Path
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable, BackendType
+from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.docking.openeye import POSITDockingResults
 from pydantic import BaseModel
