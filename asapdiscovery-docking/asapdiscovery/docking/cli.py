@@ -10,6 +10,7 @@ from asapdiscovery.cli.cli_args import (
     md_args,
     ml_scorer,
     output_dir,
+    overwrite,
     pdb_file,
     postera_args,
     save_to_cache,
@@ -80,6 +81,7 @@ def docking():
 @cache_dir
 @dask_args
 @output_dir
+@overwrite
 @input_json
 @ml_scorer
 def large_scale(
@@ -99,6 +101,7 @@ def large_scale(
     save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
     output_dir: str = "output",
+    overwrite: bool = False,
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
@@ -133,6 +136,7 @@ def large_scale(
             save_to_cache=save_to_cache,
             ml_scorers=ml_scorer,
             output_dir=output_dir,
+            overwrite=overwrite,
         )
 
     large_scale_docking_workflow(inputs)
@@ -184,6 +188,7 @@ def large_scale(
 @cache_dir
 @dask_args
 @output_dir
+@overwrite
 @input_json
 def cross_docking(
     target: TargetTags,
@@ -200,6 +205,7 @@ def cross_docking(
     save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
     output_dir: str = "output",
+    overwrite: bool = False,
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
@@ -229,6 +235,7 @@ def cross_docking(
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
             output_dir=output_dir,
+            overwrite=overwrite,
             allow_final_clash=allow_final_clash,
         )
 
@@ -259,6 +266,7 @@ def cross_docking(
 @cache_dir
 @dask_args
 @output_dir
+@overwrite
 @input_json
 @ml_scorer
 @md_args
@@ -277,6 +285,7 @@ def small_scale(
     save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
     output_dir: str = "output",
+    overwrite: bool = False,
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
@@ -312,6 +321,7 @@ def small_scale(
             save_to_cache=save_to_cache,
             ml_scorers=ml_scorer,
             output_dir=output_dir,
+            overwrite=overwrite,
             md=md,
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
