@@ -12,11 +12,6 @@ from .postera_api import PostEraAPI
 logger = logging.getLogger(__name__)
 
 
-_POSTERA_COLUMN_BLEACHING_ACTIVE = (
-    True  # NOTE: this is fix for postera bleaching see issues #629 #628
-)
-
-
 class MoleculeSetKeys(StringEnum):
     """Keys for the response from the PostEra API when creating, getting or modifying a molecule set"""
 
@@ -371,19 +366,14 @@ class MoleculeSetAPI(PostEraAPI):
         smiles_field: str = MoleculeSetKeys.smiles.value,
         id_field: str = MoleculeSetKeys.id.value,
         overwrite=False,
-        bleached: bool = _POSTERA_COLUMN_BLEACHING_ACTIVE,  # NOTE: this is fix for postera bleaching see issues #629 #628
         debug_df_path: str = None,
     ) -> list[str]:
-        if bleached:
-            logger.info(
-                "Fix currently applied for postera column name bleaching see issues #629 #628"
-            )
         df = ManifoldAllowedTags.filter_dataframe_cols(
-            df, allow=[smiles_field, id_field], bleached=bleached
+            df, allow=[smiles_field, id_field]
         )
 
         if not ManifoldAllowedTags.all_in_values(
-            df.columns, allow=[id_field, smiles_field], bleached=bleached
+            df.columns, allow=[id_field, smiles_field]
         ):
             raise ValueError(
                 f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
@@ -415,19 +405,14 @@ class MoleculeSetAPI(PostEraAPI):
         df: pd.DataFrame,
         smiles_field: str = MoleculeSetKeys.smiles.value,
         id_field: str = MoleculeSetKeys.id.value,
-        bleached: bool = _POSTERA_COLUMN_BLEACHING_ACTIVE,  # NOTE: this is fix for postera bleaching see issues #629 #628
         debug_df_path: str = None,
     ) -> int:
-        if bleached:
-            logger.warn(
-                "Fix currently applied for postera column name bleaching see issues #629 #628"
-            )
         df = ManifoldAllowedTags.filter_dataframe_cols(
-            df, allow=[smiles_field, id_field], bleached=bleached
+            df, allow=[smiles_field, id_field]
         )
 
         if not ManifoldAllowedTags.all_in_values(
-            df.columns, allow=[id_field, smiles_field], bleached=bleached
+            df.columns, allow=[id_field, smiles_field]
         ):
             raise ValueError(
                 f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
@@ -457,19 +442,14 @@ class MoleculeSetAPI(PostEraAPI):
         df: pd.DataFrame,
         smiles_field: str = MoleculeSetKeys.smiles.value,
         id_field: str = MoleculeSetKeys.id.value,
-        bleached: bool = _POSTERA_COLUMN_BLEACHING_ACTIVE,  # NOTE: this is fix for postera bleaching see issues #629 #628
         debug_df_path: str = None,
     ) -> str:
-        if bleached:
-            logger.info(
-                "Fix currently applied for postera column name bleaching see issues #629 #628"
-            )
         df = ManifoldAllowedTags.filter_dataframe_cols(
-            df, allow=[smiles_field, id_field], bleached=bleached
+            df, allow=[smiles_field, id_field]
         )
 
         if not ManifoldAllowedTags.all_in_values(
-            df.columns, allow=[id_field, smiles_field], bleached=bleached
+            df.columns, allow=[id_field, smiles_field]
         ):
             raise ValueError(
                 f"Columns in dataframe {df.columns} are not all valid for updating in postera. Valid columns are: {ManifoldAllowedTags.get_values()}"
