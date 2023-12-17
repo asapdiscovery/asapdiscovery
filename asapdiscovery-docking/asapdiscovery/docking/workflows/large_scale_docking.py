@@ -19,6 +19,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
@@ -157,7 +158,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
-        # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
+        dask_client.forward_logging()  # distributed vs dask_cuda versioning issue, see # #669
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
@@ -350,35 +351,40 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         how="outer",  # preserves rows where there is no visualisation
     )
 
-    logger.info("Running fitness HTML visualiser")
-    html_fitness_output_dir = output_dir / "fitness"
-    html_fitness_visualizer = HTMLVisualizerV2(
-        colour_method=ColourMethod.fitness,
-        target=inputs.target,
-        output_dir=html_fitness_output_dir,
-    )
-    fitness_visualizations = html_fitness_visualizer.visualize(
-        results,
-        use_dask=inputs.use_dask,
-        dask_client=dask_client,
-        backend=BackendType.DISK,
-    )
+    if target_has_fitness_data(inputs.target):
+        logger.info("Running fitness HTML visualiser")
+        html_fitness_output_dir = output_dir / "fitness"
+        html_fitness_visualizer = HTMLVisualizerV2(
+            colour_method=ColourMethod.fitness,
+            target=inputs.target,
+            output_dir=html_fitness_output_dir,
+        )
+        fitness_visualizations = html_fitness_visualizer.visualize(
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            backend=BackendType.DISK,
+        )
 
-    # duplicate target id column so we can join
-    fitness_visualizations[
-        DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-    ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        # duplicate target id column so we can join
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
-    # join the two dataframes on ligand_id, target_id and smiles
-    scores_df = scores_df.merge(
-        fitness_visualizations,
-        on=[
-            DockingResultCols.LIGAND_ID.value,
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
-            DockingResultCols.SMILES.value,
-        ],
-        how="outer",  # preserves rows where there is no fitness visualisation
-    )
+        # join the two dataframes on ligand_id, target_id and smiles
+        scores_df = scores_df.merge(
+            fitness_visualizations,
+            on=[
+                DockingResultCols.LIGAND_ID.value,
+                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+                DockingResultCols.SMILES.value,
+            ],
+            how="outer",  # preserves rows where there is no fitness visualisation
+        )
+    else:
+        logger.info(
+            f"Target {inputs.target} does not have fitness data, skipping fitness visualisation"
+        )
 
     logger.info("Filtering docking results")
     # filter for POSIT probability > 0.7
@@ -508,12 +514,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
         artifact_columns = [
             DockingResultCols.HTML_PATH_POSE.value,
-            DockingResultCols.HTML_PATH_FITNESS.value,
         ]
         artifact_types = [
             ArtifactType.DOCKING_POSE_POSIT,
-            ArtifactType.DOCKING_POSE_FITNESS_POSIT,
         ]
+
+        if target_has_fitness_data(inputs.target):
+            artifact_columns.append(DockingResultCols.HTML_PATH_FITNESS.value)
+            artifact_types.append(ArtifactType.DOCKING_POSE_FITNESS_POSIT)
 
         uploader = ManifoldArtifactUploader(
             inputs.target,

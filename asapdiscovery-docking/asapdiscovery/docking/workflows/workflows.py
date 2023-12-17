@@ -64,7 +64,7 @@ class DockingWorkflowInputsBase(BaseModel):
         "", description="Name of the log file."
     )  # use root logger for proper forwarding of logs from dask
 
-    loglevel: int = Field(logging.INFO, description="Logging level")
+    loglevel: int = Field(logging.DEBUG, description="Logging level")
 
     output_dir: Path = Field(Path("output"), description="Output directory")
 

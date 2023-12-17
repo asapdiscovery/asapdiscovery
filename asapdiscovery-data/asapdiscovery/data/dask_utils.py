@@ -35,8 +35,7 @@ def set_dask_config():
     cfg.set({"distributed.worker.memory.pause": False})
     cfg.set({"distributed.worker.memory.target": 0.6})
     cfg.set({"distributed.worker.memory.spill": 0.7})
-    cfg.set({"distributed.nanny.environ":{"MALLOC_TRIM_THRESHOLD_": 0}})
-
+    cfg.set({"distributed.nanny.environ": {"MALLOC_TRIM_THRESHOLD_": 0}})
 
 
 def actualise_dask_delayed_iterable(
@@ -278,7 +277,10 @@ class LilacCPUDaskCluster(LilacDaskCluster):
 
 
 def dask_cluster_from_type(
-    dask_type: DaskType, gpu: GPU = GPU.GTX1080TI, cpu: CPU = CPU.LT
+    dask_type: DaskType,
+    gpu: GPU = GPU.GTX1080TI,
+    cpu: CPU = CPU.LT,
+    localcluster_memory_limit: str = "16GB",
 ):
     """
     Get a dask client from a DaskType
@@ -299,7 +301,12 @@ def dask_cluster_from_type(
     """
     logger.info(f"Getting dask cluster of type {dask_type}")
     if dask_type == DaskType.LOCAL:
-        cluster = LocalCluster()
+        # we need about 16GB per worker on the local cluster to stop dask freaking out about memory
+        # this is semi a trick, because the nogil functions called by openeye are not using all this memory
+        # but to the python interpreter it looks like they are, a buffer of 16GB seems to work.
+        cluster = LocalCluster(
+            n_workers=4, threads_per_worker=1, silence_logs=logging.DEBUG
+        )
     elif dask_type == DaskType.LOCAL_GPU:
         try:
             from dask_cuda import LocalCUDACluster

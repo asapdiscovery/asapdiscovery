@@ -211,12 +211,18 @@ class POSITDocker(DockingBase):
             docked_result_json_path = Path(
                 Path(output_dir) / set.unique_name() / "docking_result.json"
             )
+            # oe_logpath = str(Path(output_dir) / set.unique_name() / "oe.log")
+            # errfs = oechem.oeofstream(oe_logpath)
+            # oechem.OEThrow.SetOutputStream(errfs)
+            # oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
+            # oechem.OEThrow.Info(f"Starting docking for {oe_logpath}")
+            # oechem.OEThrow.Debug("Confirm that OE logging is working")
             if (
                 set.is_cacheable
                 and (output_dir is not None)
                 and (docked_result_json_path.exists())
             ):
-                print(
+                logger.info(
                     f"Docking result for {set.unique_name()} already exists, reading from disk"
                 )
                 output_dir = Path(output_dir)
@@ -331,6 +337,8 @@ class POSITDocker(DockingBase):
                         raise ValueError(error_msg)
                     else:
                         raise ValueError(f"Unknown error handling option {error}")
+            # errfs.flush()
+            # errfs.close()
 
         return docking_results
 
