@@ -166,16 +166,25 @@ def dask_time_delta_diff(time_str_1: str, time_str_2: str) -> str:
 
 
 class DaskCluster(BaseModel):
+    """
+    Base config for a dask cluster
+
+    Important is that cores == processes, otherwise we get some weird behaviour with multiple threads per process and
+    OE heavy computation jobs.
+    """
+
     class Config:
         allow_mutation = False
         extra = "forbid"
 
     name: str = Field("dask-worker", description="Name of the dask worker")
     cores: int = Field(8, description="Number of cores per job")
+    processes: int = Field(8, description="Number of processes per job")
     memory: str = Field("48 GB", description="Amount of memory per job")
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
+    silence_logs: int = Field(logging.DEBUG, description="Log level for dask")
 
 
 class LilacDaskCluster(DaskCluster):
@@ -280,7 +289,8 @@ def dask_cluster_from_type(
     dask_type: DaskType,
     gpu: GPU = GPU.GTX1080TI,
     cpu: CPU = CPU.LT,
-    localcluster_memory_limit: str = "16GB",
+    local_threads_per_worker: int = 1,
+    silence_logs: int = logging.DEBUG,  # worst kwarg name but it is what it is
 ):
     """
     Get a dask client from a DaskType
@@ -305,7 +315,7 @@ def dask_cluster_from_type(
         # this is semi a trick, because the nogil functions called by openeye are not using all this memory
         # but to the python interpreter it looks like they are, a buffer of 16GB seems to work.
         cluster = LocalCluster(
-            n_workers=4, threads_per_worker=1, silence_logs=logging.DEBUG
+            threads_per_worker=local_threads_per_worker, silence_logs=silence_logs
         )
     elif dask_type == DaskType.LOCAL_GPU:
         try:
