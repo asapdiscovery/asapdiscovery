@@ -3,17 +3,17 @@ from collections.abc import Iterable
 from typing import Optional
 
 import dask
+import psutil
 from asapdiscovery.data.enum import StringEnum
+from asapdiscovery.data.execution_utils import (
+    guess_network_interface,
+    hyperthreading_is_enabled,
+)
 from dask import config as cfg
 from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
 from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
-import psutil
-from asapdiscovery.data.execution_utils import (
-    guess_network_interface,
-    hyperthreading_is_enabled,
-)
 
 logger = logging.getLogger(__name__)
 

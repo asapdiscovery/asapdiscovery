@@ -10,6 +10,7 @@ from asapdiscovery.data.dask_utils import (
     set_dask_config,
 )
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_artifacts import (
     ArtifactType,
@@ -19,7 +20,6 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
