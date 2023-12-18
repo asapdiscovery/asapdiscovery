@@ -173,7 +173,7 @@ def large_scale(
 @click.option(
     "--structure-selector",
     type=click.Choice(StructureSelector.get_values(), case_sensitive=False),
-    default=StructureSelector.PAIRWISE,
+    default=StructureSelector.LEAVE_SIMILAR_OUT,
     help="The type of structure selector to use. Defaults to pairwise (all pairwise combinations of ligand and complex)",
 )
 @ligands
@@ -188,7 +188,7 @@ def large_scale(
 def cross_docking(
     target: TargetTags,
     multi_reference: bool = False,
-    structure_selector: StructureSelector = StructureSelector.PAIRWISE,
+    structure_selector: StructureSelector = StructureSelector.LEAVE_SIMILAR_OUT,
     use_omega: bool = False,
     omega_dense: bool = False,
     allow_retries: bool = False,

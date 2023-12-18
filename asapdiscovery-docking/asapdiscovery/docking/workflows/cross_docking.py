@@ -31,7 +31,7 @@ class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):
     logname: str = Field("", description="Name of the log file.")
 
     structure_selector: StructureSelector = Field(
-        StructureSelector.PAIRWISE,
+        StructureSelector.LEAVE_SIMILAR_OUT,
         description="Structure selector to use for docking",
     )
     multi_reference: bool = Field(

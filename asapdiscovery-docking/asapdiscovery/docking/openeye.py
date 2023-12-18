@@ -294,8 +294,8 @@ class POSITDocker(DockingBase):
                         # set SD tags
                         sd_data = {
                             DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
-                            DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
-                                self.posit_method.value
+                            DockingResultCols.POSIT_METHOD.value: oedocking.OEPositMethodGetName(
+                                result.GetPositMethod()
                             ),
                         }
                         posed_ligand.set_SD_data(sd_data)
