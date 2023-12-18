@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, root_validator, validator
 logger = logging.getLogger(__name__)
 
 
-class MetaStructureFactory(Base):
+class MetaStructureFactory(BaseModel):
     structure_dir: str | Path = Field(
         ..., description="Path to directory containing structures"
     )
