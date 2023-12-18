@@ -1,7 +1,8 @@
 import logging
 from collections.abc import Iterable
-from typing import Optional, Union, Any, Callable
 from pathlib import Path
+from typing import Any, Callable, Optional, Union
+
 import dask
 import psutil
 from asapdiscovery.data.enum import StringEnum
