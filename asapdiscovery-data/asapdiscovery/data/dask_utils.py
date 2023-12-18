@@ -9,8 +9,11 @@ from dask.utils import parse_timedelta
 from dask_jobqueue import LSFCluster
 from distributed import Client, LocalCluster
 from pydantic import BaseModel, Field
-
-from .execution_utils import guess_network_interface
+import psutil
+from asapdiscovery.data.execution_utils import (
+    guess_network_interface,
+    hyperthreading_is_enabled,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -166,16 +169,25 @@ def dask_time_delta_diff(time_str_1: str, time_str_2: str) -> str:
 
 
 class DaskCluster(BaseModel):
+    """
+    Base config for a dask cluster
+
+    Important is that cores == processes, otherwise we get some weird behaviour with multiple threads per process and
+    OE heavy computation jobs.
+    """
+
     class Config:
         allow_mutation = False
         extra = "forbid"
 
     name: str = Field("dask-worker", description="Name of the dask worker")
     cores: int = Field(8, description="Number of cores per job")
+    processes: int = Field(8, description="Number of processes per job")
     memory: str = Field("48 GB", description="Amount of memory per job")
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
+    silence_logs: int = Field(logging.DEBUG, description="Log level for dask")
 
 
 class LilacDaskCluster(DaskCluster):
@@ -231,9 +243,12 @@ class LilacGPUConfig(BaseModel):
         ]
 
     @classmethod
-    def from_gpu(cls, gpu: GPU):
+    def from_gpu(cls, gpu: GPU, **kwargs):
         return cls(
-            gpu=gpu, gpu_group=_LILAC_GPU_GROUPS[gpu], extra=_LILAC_GPU_EXTRAS[gpu]
+            gpu=gpu,
+            gpu_group=_LILAC_GPU_GROUPS[gpu],
+            extra=_LILAC_GPU_EXTRAS[gpu],
+            **kwargs,
         )
 
 
@@ -251,8 +266,8 @@ class LilacCPUConfig(BaseModel):
         ]
 
     @classmethod
-    def from_cpu(cls, cpu: CPU):
-        return cls(cpu=cpu, cpu_group=_LILAC_CPU_GROUPS[cpu], extra=[])
+    def from_cpu(cls, cpu: CPU, **kwargs):
+        return cls(cpu=cpu, cpu_group=_LILAC_CPU_GROUPS[cpu], extra=[], **kwargs)
 
 
 class LilacGPUDaskCluster(LilacDaskCluster):
@@ -277,7 +292,11 @@ class LilacCPUDaskCluster(LilacDaskCluster):
 
 
 def dask_cluster_from_type(
-    dask_type: DaskType, gpu: GPU = GPU.GTX1080TI, cpu: CPU = CPU.LT
+    dask_type: DaskType,
+    gpu: GPU = GPU.GTX1080TI,
+    cpu: CPU = CPU.LT,
+    local_threads_per_worker: int = 1,
+    silence_logs: int = logging.DEBUG,  # worst kwarg name but it is what it is
 ):
     """
     Get a dask client from a DaskType
@@ -296,9 +315,35 @@ def dask_cluster_from_type(
     dask_jobqueue.Cluster
         A dask cluster
     """
+    cpu_count = psutil.cpu_count()
+    logger.info(f"Logical CPU count: {cpu_count}")
+    physical_cpu_count = psutil.cpu_count(logical=False)
+    logger.info(f"Physical CPU count: {physical_cpu_count}")
+
     logger.info(f"Getting dask cluster of type {dask_type}")
+    logger.info(f"Dask log level: {silence_logs}")
+
     if dask_type == DaskType.LOCAL:
-        cluster = LocalCluster()
+        n_workers = cpu_count // local_threads_per_worker
+        logger.info(f"initial guess {n_workers} workers")
+        if hyperthreading_is_enabled():
+            logger.info("Hyperthreading is enabled")
+            n_workers = n_workers // 2
+            logger.info(f"Scaling to {n_workers} workers due to hyperthreading")
+        else:
+            logger.info("Hyperthreading is disabled")
+
+        if n_workers < 1:
+            n_workers = 1
+            logger.info("Estimating 1 worker due to low CPU count")
+
+        logger.info(f"Executing with {n_workers} workers")
+
+        cluster = LocalCluster(
+            n_workers=n_workers,
+            threads_per_worker=local_threads_per_worker,
+            silence_logs=silence_logs,
+        )
     elif dask_type == DaskType.LOCAL_GPU:
         try:
             from dask_cuda import LocalCUDACluster
@@ -308,9 +353,17 @@ def dask_cluster_from_type(
             )
         cluster = LocalCUDACluster()
     elif dask_type == DaskType.LILAC_GPU:
-        cluster = LilacGPUDaskCluster().from_gpu(gpu).to_cluster(exclude_interface="lo")
+        cluster = (
+            LilacGPUDaskCluster()
+            .from_gpu(gpu, silence_logs=silence_logs)
+            .to_cluster(exclude_interface="lo")
+        )
     elif dask_type == DaskType.LILAC_CPU:
-        cluster = LilacCPUDaskCluster().from_cpu(cpu).to_cluster(exclude_interface="lo")
+        cluster = (
+            LilacCPUDaskCluster()
+            .from_cpu(cpu, silence_logs=silence_logs)
+            .to_cluster(exclude_interface="lo")
+        )
     else:
         raise ValueError(f"Unknown dask type {dask_type}")
 
