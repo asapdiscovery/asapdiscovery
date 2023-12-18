@@ -221,7 +221,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
-    # TODO: fix, see issue XXX
+    # TODO: fix, see issue 560
     logger.info("Selecting pairs for docking based on MCS")
     selector = MCSSelector()
     pairs = selector.select(
@@ -462,7 +462,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         # push the results to PostEra, making a new molecule set if necessary
-        # TODO remove unnessecary sort_col arg see issue XXX
+        # TODO remove unnessecary sort_col arg see issue #704
         posit_score_tag = map_output_col_to_manifold_tag(
             DockingResultCols, inputs.target
         )[DockingResultCols.DOCKING_SCORE_POSIT.value]

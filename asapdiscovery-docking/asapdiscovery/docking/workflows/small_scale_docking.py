@@ -425,10 +425,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             results, use_dask=inputs.use_dask, dask_client=dask_client
         )
 
-        # TODO if overriding a local CPU cluster with a GPU cluster above, we should go back to a CPU cluster
-        # to make gifs below, see issue # XXX
-        if local_cpu_client_gpu_override:
-            dask_client = dask_client = make_dask_client_meta(DaskType.LOCAL)
+        if local_cpu_client_gpu_override and inputs.use_dask:
+            dask_client = make_dask_client_meta(DaskType.LOCAL)
 
         gif_output_dir = output_dir / "gifs"
         gif_maker = GIFVisualizerV2(output_dir=gif_output_dir, target=inputs.target)
