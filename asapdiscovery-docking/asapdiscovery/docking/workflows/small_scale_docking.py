@@ -19,7 +19,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema_v2 import Complex
+from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
