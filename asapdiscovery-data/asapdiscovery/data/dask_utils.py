@@ -68,7 +68,7 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-def dask_backend_wrapper(
+def backend_wrapper(
     inputs: Union[list[Any], list[Path]],
     func: Callable,
     backend=BackendType.IN_MEMORY,

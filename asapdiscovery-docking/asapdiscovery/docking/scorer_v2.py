@@ -10,7 +10,7 @@ import pandas as pd
 from asapdiscovery.data.dask_utils import (
     BackendType,
     actualise_dask_delayed_iterable,
-    dask_backend_wrapper,
+    backend_wrapper,
 )
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -143,7 +143,7 @@ class ScorerBase(BaseModel):
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
-                out = dask.delayed(dask_backend_wrapper)(
+                out = dask.delayed(backend_wrapper)(
                     inputs=[inp],
                     func=self._score,
                     backend=backend,
@@ -154,7 +154,12 @@ class ScorerBase(BaseModel):
                 delayed_outputs, dask_client=dask_client
             )
         else:
-            outputs = self._score(inputs=inputs)
+            outputs = backend_wrapper(
+                inputs=inputs,
+                func=self._score,
+                backend=backend,
+                reconstruct_cls=reconstruct_cls,
+            )
 
         if return_df:
             return self.scores_to_df(outputs)
