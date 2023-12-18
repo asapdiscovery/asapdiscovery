@@ -25,5 +25,6 @@ def test_html_viz_fitness(pose, protein, target, tmp_path):
         target=target,
         protein=protein,
         color_method="fitness",
+        align=True,
     )
     html_visualizer.write_pose_visualizations()
