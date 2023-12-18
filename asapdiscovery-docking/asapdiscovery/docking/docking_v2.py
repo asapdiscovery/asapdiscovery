@@ -9,7 +9,7 @@ from typing import Any, Literal, Optional, Union
 
 import dask
 import numpy as np
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable, BackendType
+from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand

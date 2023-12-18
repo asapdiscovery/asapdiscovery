@@ -4,7 +4,7 @@ This module contains the inputs, docker, and output schema for using POSIT
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional, Union, ClassVar
+from typing import ClassVar, Literal, Optional, Union
 
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
