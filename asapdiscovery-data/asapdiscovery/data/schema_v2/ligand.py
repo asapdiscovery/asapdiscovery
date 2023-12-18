@@ -5,7 +5,6 @@ from enum import Flag, auto
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
 
-from asapdiscovery.data.dask_utils import BackendType
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
