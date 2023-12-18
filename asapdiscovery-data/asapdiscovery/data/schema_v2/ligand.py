@@ -5,6 +5,7 @@ from enum import Flag, auto
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
 
+from asapdiscovery.data.dask_utils import BackendType
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
@@ -23,7 +24,6 @@ from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers, LigandPr
 from asapdiscovery.data.schema_v2.schema_base import DataStorageType
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
 from pydantic import Field, root_validator, validator
-from asapdiscovery.data.dask_utils import BackendType
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
