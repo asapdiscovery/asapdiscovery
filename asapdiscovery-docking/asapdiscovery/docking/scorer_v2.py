@@ -7,7 +7,11 @@ from typing import ClassVar, Optional, Union
 import dask
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    actualise_dask_delayed_iterable,
+    dask_backend_wrapper,
+)
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
@@ -16,7 +20,6 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.docking_v2 import DockingResult
-from asapdiscovery.docking.openeye import POSITDockingResults
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models import MLModelType
 from pydantic import BaseModel, Field
@@ -134,12 +137,18 @@ class ScorerBase(BaseModel):
         use_dask: bool = False,
         dask_client=None,
         backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
-                out = dask.delayed(self._dask_wrapper)(inputs=[inp], backend=backend)
+                out = dask.delayed(dask_backend_wrapper)(
+                    inputs=[inp],
+                    func=self._score,
+                    backend=backend,
+                    reconstruct_cls=reconstruct_cls,
+                )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client=dask_client
@@ -151,22 +160,6 @@ class ScorerBase(BaseModel):
             return self.scores_to_df(outputs)
         else:
             return outputs
-
-    # TODO: this is a bit hacky, but it works
-    # workaround to create data on workers rather than passing it
-    def _dask_wrapper(
-        self,
-        inputs: Union[list[DockingResult], list[Path]],
-        backend=BackendType.IN_MEMORY,
-    ):
-        if backend == BackendType.DISK:
-            inputs = [POSITDockingResults.from_json_file(inp) for inp in inputs]
-        elif backend == BackendType.IN_MEMORY:
-            pass  # do nothing
-        else:
-            raise Exception("invalid backend type")
-
-        return self._score(inputs=inputs)
 
     @staticmethod
     def scores_to_df(scores: list[Score]) -> pd.DataFrame:
@@ -347,6 +340,7 @@ class MetaScorer(BaseModel):
         use_dask: bool = False,
         dask_client=None,
         backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
         results = []
@@ -356,6 +350,7 @@ class MetaScorer(BaseModel):
                 use_dask=use_dask,
                 dask_client=dask_client,
                 backend=backend,
+                reconstruct_cls=reconstruct_cls,
                 return_df=return_df,
             )
             results.append(vals)

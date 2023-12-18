@@ -4,7 +4,7 @@ This module contains the inputs, docker, and output schema for using POSIT
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, ClassVar
 
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
@@ -111,6 +111,8 @@ class POSITDockingResults(DockingResult):
 
 class POSITDocker(DockingBase):
     type: Literal["POSITDocker"] = "POSITDocker"
+
+    result_cls: ClassVar[POSITDockingResults] = POSITDockingResults
 
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,

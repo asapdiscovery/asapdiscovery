@@ -576,7 +576,6 @@ def write_ligands_to_multi_sdf(
     sdf_name: Union[str, Path],
     ligands: list[Ligand],
     overwrite=False,
-    backend=BackendType.IN_MEMORY,
 ):
     """
     Dumb way to do this, but just write out each ligand to the same.
@@ -613,6 +612,4 @@ def write_ligands_to_multi_sdf(
         raise ValueError("SDF name must end in .sdf")
 
     for ligand in ligands:
-        if backend == BackendType.DISK:
-            ligand = Ligand.from_json_file(ligand)
         ligand.to_sdf(sdf_file, allow_append=True)

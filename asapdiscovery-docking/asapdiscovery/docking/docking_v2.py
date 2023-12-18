@@ -9,7 +9,7 @@ from typing import Any, Literal, Optional, Union
 
 import dask
 import numpy as np
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable, BackendType
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -296,3 +296,35 @@ class DockingResult(BaseModel):
 
     def __neq__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+
+def write_results_to_multi_sdf(
+    sdf_file: Union[str, Path],
+    results: Union[list[DockingResult], list[Path]],
+    backend=BackendType.IN_MEMORY,
+    reconstruct_cls=None,
+):
+    """
+    Write a list of DockingResults to a single sdf file
+
+    Parameters
+    ----------
+    results : Union[list[DockingResult], list[Path]]
+        List of DockingResults or paths to DockingResult json files
+    backend : BackendType, optional
+        Backend to use, by default BackendType.IN_MEMORY
+
+
+    """
+    if backend == BackendType.DISK and not reconstruct_cls:
+        raise ValueError("Must provide reconstruct_cls if using disk backend")
+
+    for res in results:
+        if backend == BackendType.IN_MEMORY:
+            lig = res.posed_ligand
+        elif backend == BackendType.DISK:
+            lig = reconstruct_cls.from_json_file(res).posed_ligand
+        else:
+            raise ValueError(f"Unknown backend type {backend}")
+
+        lig.to_sdf(sdf_file, allow_append=True)

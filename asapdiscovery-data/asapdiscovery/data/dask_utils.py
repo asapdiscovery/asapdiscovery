@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Iterable
-from typing import Optional
-
+from typing import Optional, Union, Any, Callable
+from pathlib import Path
 import dask
 import psutil
 from asapdiscovery.data.enum import StringEnum
@@ -66,6 +66,23 @@ def actualise_dask_delayed_iterable(
     else:
         futures = dask_client.compute(delayed_iterable)
     return dask_client.gather(futures, errors=errors)
+
+
+def dask_backend_wrapper(
+    inputs: Union[list[Any], list[Path]],
+    func: Callable,
+    backend=BackendType.IN_MEMORY,
+    reconstruct_cls: Optional[Any] = None,
+):
+    if backend == BackendType.DISK:
+        if not reconstruct_cls:
+            raise ValueError("reconstruct_cls must be provided for disk backend")
+        inputs = [reconstruct_cls.from_json_file(inp) for inp in inputs]
+    elif backend == BackendType.IN_MEMORY:
+        pass  # do nothing
+    else:
+        raise ValueError("invalid backend type")
+    return func(inputs)
 
 
 class DaskType(StringEnum):

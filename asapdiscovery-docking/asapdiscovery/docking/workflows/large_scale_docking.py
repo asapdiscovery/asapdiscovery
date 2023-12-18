@@ -25,7 +25,6 @@ from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
@@ -40,6 +39,7 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.openeye import POSITDocker
+from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
@@ -288,6 +288,15 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
 
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
+        )
+
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
 
@@ -305,12 +314,6 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
 
-    if inputs.write_final_sdf:
-        logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", results, backend=BackendType.DISK
-        )
-
     logger.info("Running scoring")
     scores_df = scorer.score(
         results,
@@ -318,6 +321,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         dask_client=dask_client,
         return_df=True,
         backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -335,6 +339,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -368,6 +373,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             use_dask=inputs.use_dask,
             dask_client=dask_client,
             backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
         # duplicate target id column so we can join

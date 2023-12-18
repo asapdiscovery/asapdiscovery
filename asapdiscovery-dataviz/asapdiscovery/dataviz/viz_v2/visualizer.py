@@ -4,9 +4,12 @@ from typing import Union
 
 import dask
 import pandas as pd
-from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    actualise_dask_delayed_iterable,
+    dask_backend_wrapper,
+)
 from asapdiscovery.docking.docking_v2 import DockingResult
-from asapdiscovery.docking.openeye import POSITDockingResults
 from pydantic import BaseModel
 
 
@@ -26,13 +29,17 @@ class VisualizerBase(abc.ABC, BaseModel):
         use_dask: bool = False,
         dask_client=None,
         backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
         **kwargs,
     ) -> pd.DataFrame:
         if use_dask:
             delayed_outputs = []
             for res in docking_results:
-                out = dask.delayed(self._dask_wrapper)(
-                    docking_results=[res], backend=backend, **kwargs
+                out = dask.delayed(dask_backend_wrapper)(
+                    inputs=[res],
+                    func=self._visualize,
+                    backend=backend,
+                    reconstruct_cls=reconstruct_cls,
                 )
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
@@ -43,24 +50,6 @@ class VisualizerBase(abc.ABC, BaseModel):
             outputs = self._visualize(docking_results=docking_results, *args, **kwargs)
 
         return pd.DataFrame(outputs)
-
-    # TODO: this is a bit hacky, but it works
-    # workaround to create data on workers rather than passing it
-    def _dask_wrapper(
-        self,
-        docking_results: Union[list[DockingResult], list[Path]],
-        backend=BackendType.IN_MEMORY,
-    ):
-        if backend == BackendType.DISK:
-            docking_results = [
-                POSITDockingResults.from_json_file(inp) for inp in docking_results
-            ]
-        elif backend == BackendType.IN_MEMORY:
-            pass  # do nothing
-        else:
-            raise Exception("invalid backend type")
-
-        return self._visualize(docking_results=docking_results)
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
