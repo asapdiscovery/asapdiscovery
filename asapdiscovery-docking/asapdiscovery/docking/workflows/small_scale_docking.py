@@ -6,8 +6,7 @@ from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import (
     DaskType,
-    dask_cluster_from_type,
-    set_dask_config,
+    make_dask_client_meta,
 )
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
@@ -187,6 +186,14 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     # make a directory to store intermediate CSV results
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
+
+    if inputs.postera_upload:
+        postera_settings = PosteraSettings()
+        logger.info("Postera settings loaded")
+        logger.info("Postera upload specified, checking for AWS credentials")
+        aws_s3_settings = S3Settings()
+        aws_cloudfront_settings = CloudfrontSettings()
+        logger.info("AWS S3 and CloudFront credentials found")
 
     # read ligands
     ligand_factory = MetaLigandFactory(inputs.postera, inputs.ligands)
@@ -450,13 +457,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
-
-    if inputs.postera_upload:
-        bleach_columns = _POSTERA_COLUMN_BLEACHING_ACTIVE
-    else:
-        bleach_columns = False
-    if bleach_columns:
-        logger.info("Bleaching column names for Postera upload, see issue #629, 628")
 
     result_df = rename_output_columns_for_manifold(
         combined_df,

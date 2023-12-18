@@ -300,10 +300,10 @@ def make_dask_client_meta(
     adaptive_wait_count: int = 10,
     adaptive_interval: str = "1m",
 ):
-    logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+    logger.info(f"Using dask for parallelism of type: {dask_type}")
     set_dask_config()
-    dask_cluster = dask_cluster_from_type(inputs.dask_type)
-    if inputs.dask_type.is_lilac():
+    dask_cluster = dask_cluster_from_type(dask_type)
+    if dask_type.is_lilac():
         logger.info("Lilac HPC config selected, setting adaptive scaling")
         dask_cluster.adapt(
             minimum=adaptive_min_workers,
@@ -311,8 +311,10 @@ def make_dask_client_meta(
             wait_count=adaptive_wait_count,
             interval=adaptive_interval,
         )
-        logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-        dask_cluster.scale(inputs.dask_cluster_n_workers)
+        logger.info(
+            f"Starting with minimum worker count: {adaptive_min_workers} workers"
+        )
+        dask_cluster.scale(adaptive_min_workers)
 
     dask_client = Client(dask_cluster)
     # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669

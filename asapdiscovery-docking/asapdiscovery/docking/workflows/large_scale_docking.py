@@ -4,7 +4,7 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
+from asapdiscovery.data.dask_utils import make_dask_client_meta
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
@@ -19,6 +19,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
@@ -27,6 +28,7 @@ from asapdiscovery.data.services_config import (
     PosteraSettings,
     S3Settings,
 )
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
@@ -37,7 +39,6 @@ from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLMode
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from distributed import Client
 from pydantic import Field, PositiveInt, validator
 
 

@@ -5,12 +5,10 @@ Removes all the additional layers in the other workflows and adds some features 
 from pathlib import Path
 from shutil import rmtree
 
-from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
@@ -18,12 +16,12 @@ from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
+from asapdiscovery.data.dask_utils import make_dask_client_meta
 from asapdiscovery.docking.docking_v2 import DockingInputMultiStructure
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer
 from asapdiscovery.docking.workflows.workflows import DockingWorkflowInputsBase
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from distributed import Client
 from pydantic import Field, PositiveInt
 
 
