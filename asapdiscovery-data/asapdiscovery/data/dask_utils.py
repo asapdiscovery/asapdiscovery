@@ -8,6 +8,7 @@ from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.execution_utils import (
     guess_network_interface,
     hyperthreading_is_enabled,
+    get_platform,
 )
 from dask import config as cfg
 from dask.utils import parse_timedelta
@@ -65,16 +66,6 @@ def actualise_dask_delayed_iterable(
     else:
         futures = dask_client.compute(delayed_iterable)
     return dask_client.gather(futures, errors=errors)
-
-
-# scatter op has issues with adaptive deployments, instead can use this workaround
-# https://github.com/dask/distributed/issues/6686
-def _dummy_scatter(x):
-    return x
-
-
-def dummy_scatter(x, client):
-    return client.submit(_dummy_scatter, x)
 
 
 class DaskType(StringEnum):
@@ -315,6 +306,7 @@ def dask_cluster_from_type(
     dask_jobqueue.Cluster
         A dask cluster
     """
+    logger.info(f"Platform: {get_platform()}")
     cpu_count = psutil.cpu_count()
     logger.info(f"Logical CPU count: {cpu_count}")
     physical_cpu_count = psutil.cpu_count(logical=False)

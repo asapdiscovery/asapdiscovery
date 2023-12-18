@@ -197,13 +197,15 @@ class POSITDocker(DockingBase):
         ],
         output_dir: Optional[Union[str, Path]] = None,
         error="skip",
-        return_as_path=False,
+        return_for_disk_backend=False,
     ) -> list[DockingResult]:
         """
         Docking workflow using OEPosit
         """
-        if output_dir is None and return_as_path:
-            raise ValueError("Cannot specify return_as_path and not output_dir")
+        if output_dir is None and return_for_disk_backend:
+            raise ValueError(
+                "Cannot specify return_for_disk_backend and not output_dir"
+            )
 
         docking_results = []
 
@@ -211,12 +213,7 @@ class POSITDocker(DockingBase):
             docked_result_json_path = Path(
                 Path(output_dir) / set.unique_name() / "docking_result.json"
             )
-            # oe_logpath = str(Path(output_dir) / set.unique_name() / "oe.log")
-            # errfs = oechem.oeofstream(oe_logpath)
-            # oechem.OEThrow.SetOutputStream(errfs)
-            # oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Debug)
-            # oechem.OEThrow.Info(f"Starting docking for {oe_logpath}")
-            # oechem.OEThrow.Debug("Confirm that OE logging is working")
+
             if (
                 set.is_cacheable
                 and (output_dir is not None)
@@ -321,7 +318,7 @@ class POSITDocker(DockingBase):
                             probability=prob,
                             provenance=self.provenance(),
                         )
-                        if return_as_path:
+                        if return_for_disk_backend:
                             docking_results.append(docked_result_json_path)
                         else:
                             docking_results.append(docking_result)
@@ -337,8 +334,6 @@ class POSITDocker(DockingBase):
                         raise ValueError(error_msg)
                     else:
                         raise ValueError(f"Unknown error handling option {error}")
-            # errfs.flush()
-            # errfs.close()
 
         return docking_results
 

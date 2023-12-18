@@ -9,7 +9,7 @@ from typing import Any, Literal, Optional, Union
 
 import dask
 import numpy as np
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable, dummy_scatter
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -91,7 +91,7 @@ class DockingBase(BaseModel):
         output_dir: Optional[Union[str, Path]] = None,
         use_dask: bool = False,
         dask_client=None,
-        return_as_path: bool = False,
+        return_for_disk_backend: bool = False,
     ) -> list["DockingResult"]:
         """
         Run docking on a list of DockingInputPairs
@@ -121,7 +121,9 @@ class DockingBase(BaseModel):
             delayed_outputs = []
             for inp in inputs:
                 out = dask.delayed(self._dock)(
-                    inputs=[inp], output_dir=output_dir, return_as_path=return_as_path
+                    inputs=[inp],
+                    output_dir=output_dir,
+                    return_for_disk_backend=return_for_disk_backend,
                 )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
@@ -129,7 +131,9 @@ class DockingBase(BaseModel):
             )
         else:
             outputs = self._dock(
-                inputs=inputs, output_dir=output_dir, return_as_path=return_as_path
+                inputs=inputs,
+                output_dir=output_dir,
+                return_for_disk_backend=return_for_disk_backend,
             )
         # filter out None values
         outputs = [o for o in outputs if o is not None]

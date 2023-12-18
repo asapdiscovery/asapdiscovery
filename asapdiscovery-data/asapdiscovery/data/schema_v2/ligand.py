@@ -23,6 +23,7 @@ from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers, LigandPr
 from asapdiscovery.data.schema_v2.schema_base import DataStorageType
 from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
 from pydantic import Field, root_validator, validator
+from asapdiscovery.data.dask_utils import BackendType
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -572,7 +573,10 @@ class ReferenceLigand(Ligand):
 
 
 def write_ligands_to_multi_sdf(
-    sdf_name: Union[str, Path], ligands: list[Ligand], overwrite=False
+    sdf_name: Union[str, Path],
+    ligands: list[Ligand],
+    overwrite=False,
+    backend=BackendType.IN_MEMORY,
 ):
     """
     Dumb way to do this, but just write out each ligand to the same.
@@ -597,6 +601,7 @@ def write_ligands_to_multi_sdf(
     ValueError
         If the sdf_name does not end in .sdf
     """
+
     sdf_file = Path(sdf_name)
     if sdf_file.exists() and not overwrite:
         raise FileExistsError(f"{sdf_file} exists and overwrite is False")
@@ -608,4 +613,6 @@ def write_ligands_to_multi_sdf(
         raise ValueError("SDF name must end in .sdf")
 
     for ligand in ligands:
+        if backend == BackendType.DISK:
+            ligand = Ligand.from_json_file(ligand)
         ligand.to_sdf(sdf_file, allow_append=True)

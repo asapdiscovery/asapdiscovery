@@ -277,8 +277,12 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        return_as_path=True,
+        return_for_disk_backend=True,
     )
+
+    # NOTE: We use disk based dask backend here because the docking results are large and can cause memory issues
+    # and thrashing with data transfer between workers and the scheduler, all the following operations are then marked
+    # as using disk based dask backend
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
@@ -301,11 +305,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
 
-    # if inputs.write_final_sdf:
-    #     logger.info("Writing final docked poses to SDF file")
-    #     write_ligands_to_multi_sdf(
-    #         output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
-    #     )
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_ligands_to_multi_sdf(
+            output_dir / "docking_results.sdf", results, backend=BackendType.DISK
+        )
 
     logger.info("Running scoring")
     scores_df = scorer.score(
