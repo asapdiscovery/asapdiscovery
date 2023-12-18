@@ -1,9 +1,12 @@
 import numpy as np
 import pytest
 from asapdiscovery.data.openeye import load_openeye_sdf
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.analysis import (
+    TanimotoType,
     calculate_rmsd_openeye,
+    calculate_tanimoto_oe,
     write_all_rmsds_to_reference,
 )
 
@@ -20,6 +23,16 @@ def ref_mol():
     return load_openeye_sdf(
         str(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
     )
+
+
+@pytest.fixture(scope="session")
+def query_ligand():
+    return Ligand.from_sdf(fetch_test_file("ERI-UCB-ce40166b-17_Mpro-P2201_0A.sdf"))
+
+
+@pytest.fixture(scope="session")
+def ref_ligand():
+    return Ligand.from_sdf(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
 
 
 def test_rmsd_calculation(ref_mol, query_mol):
@@ -66,3 +79,23 @@ def test_writing_rmsd_calculation(tmp_path, ref_mol, query_mol):
         ]
     )
     assert np.alltrue(reference == rmsds)
+
+
+def test_tanimoto_calculation(ref_ligand, query_ligand):
+    # Test shape and color tanimoto
+    assert calculate_tanimoto_oe(ref_ligand, ref_ligand, TanimotoType.SHAPE) == 1.0
+    assert np.isclose(
+        calculate_tanimoto_oe(ref_ligand, query_ligand, TanimotoType.SHAPE), 0.238878
+    )
+    assert np.isclose(
+        calculate_tanimoto_oe(ref_ligand, query_ligand, TanimotoType.COLOR),
+        0.04464792087674141,
+    )
+
+    # Test TanimotoCombo
+    assert np.isclose(
+        calculate_tanimoto_oe(ref_ligand, query_ligand, TanimotoType.COMBO),
+        0.2835262417793274,
+    )
+    assert calculate_tanimoto_oe(ref_ligand, ref_ligand, TanimotoType.COMBO) == 2.0
+    assert calculate_tanimoto_oe(query_ligand, query_ligand, TanimotoType.COMBO) == 2.0
