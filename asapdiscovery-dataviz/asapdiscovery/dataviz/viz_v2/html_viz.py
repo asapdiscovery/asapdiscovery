@@ -75,6 +75,7 @@ class HTMLVisualizerV2(VisualizerBase):
                 result.to_protein(),
                 self.colour_method,
                 debug=self.debug,
+                align=False,
             )
             outpaths = viz_class.write_pose_visualizations()
             if len(outpaths) != 1:
