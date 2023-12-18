@@ -110,8 +110,8 @@ class DockingBase(BaseModel):
 
         Returns
         -------
-        list[DockingResult]
-            List of DockingResults
+        Union[list[DockingResult], list[Path]]]
+            List of DockingResults or paths to DockingResult json files
         """
         # make output dir if it doesn't exist
         if output_dir is not None:
@@ -306,6 +306,8 @@ def write_results_to_multi_sdf(
 ):
     """
     Write a list of DockingResults to a single sdf file
+    Can accept either a list of DockingResults or a list of paths to DockingResult json files
+    depending on the backend used
 
     Parameters
     ----------
@@ -313,8 +315,13 @@ def write_results_to_multi_sdf(
         List of DockingResults or paths to DockingResult json files
     backend : BackendType, optional
         Backend to use, by default BackendType.IN_MEMORY
+    reconstruct_cls : Optional[DockingResult], optional
+        DockingResult class to use for disk backend, by default None
 
-
+    Raises
+    ------
+    ValueError
+        If backend is disk and no reconstruct_cls is provided
     """
     if backend == BackendType.DISK and not reconstruct_cls:
         raise ValueError("Must provide reconstruct_cls if using disk backend")
