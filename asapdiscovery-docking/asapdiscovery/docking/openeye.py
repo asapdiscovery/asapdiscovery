@@ -212,9 +212,10 @@ class POSITDocker(DockingBase):
         docking_results = []
 
         for set in inputs:
-            docked_result_json_path = Path(
-                Path(output_dir) / set.unique_name() / "docking_result.json"
-            )
+            if output_dir is not None:
+                docked_result_json_path = Path(
+                    Path(output_dir) / set.unique_name() / "docking_result.json"
+                )
 
             if (
                 set.is_cacheable
