@@ -11,6 +11,7 @@ from openeye import (  # noqa: F401
     oegrid,
     oeomega,
     oequacpac,
+    oeshape,
     oespruce,
     oeszybki,
 )
