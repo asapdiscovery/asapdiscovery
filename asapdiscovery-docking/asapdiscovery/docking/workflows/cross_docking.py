@@ -5,6 +5,7 @@ Removes all the additional layers in the other workflows and adds some features 
 from pathlib import Path
 from shutil import rmtree
 
+from asapdiscovery.data.dask_utils import make_dask_client_meta
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
@@ -16,7 +17,6 @@ from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.data.dask_utils import make_dask_client_meta
 from asapdiscovery.docking.docking_v2 import DockingInputMultiStructure
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer

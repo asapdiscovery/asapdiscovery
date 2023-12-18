@@ -4,10 +4,7 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import (
-    DaskType,
-    make_dask_client_meta,
-)
+from asapdiscovery.data.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger

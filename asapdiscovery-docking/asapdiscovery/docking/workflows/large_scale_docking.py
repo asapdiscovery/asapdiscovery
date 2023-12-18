@@ -8,6 +8,7 @@ from asapdiscovery.data.dask_utils import make_dask_client_meta
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.manifold_artifacts import (
     ArtifactType,
     ManifoldArtifactUploader,
@@ -18,8 +19,8 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
@@ -28,7 +29,6 @@ from asapdiscovery.data.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
