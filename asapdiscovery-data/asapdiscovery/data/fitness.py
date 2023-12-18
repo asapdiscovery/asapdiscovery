@@ -77,7 +77,7 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame, threshold: float) -
     Returns
     -------
     fitness_dict : dict
-        Dictionary where keys are residue indices, keys are: [
+        Dictionary where keys are residue indices underscored with chain IDs, keys are: [
             mean_fitness,
             wildtype_residue,
             most fit mutation,
@@ -91,12 +91,12 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame, threshold: float) -
         fitness_dataframe["expected_count"] = 0
 
     fitness_dict = {}
-    for idx, site_df in fitness_dataframe.groupby(by="site"):
+    for (idx, chain), site_df in fitness_dataframe.groupby(by=["site", "chain"]):
         # remove wild type fitness score (this is always 0)
         fitness_scores_this_site = site_df[site_df["fitness"] != 0]
 
         # add all values to a dict
-        fitness_dict[idx] = [
+        fitness_dict[f"{idx}_{chain}"] = [
             bloom_abstraction(fitness_scores_this_site, threshold),
             fitness_scores_this_site["wildtype"].values[0],  # wildtype residue
             fitness_scores_this_site.sort_values(by="fitness")["mutant"].values[
@@ -126,6 +126,10 @@ def normalize_fitness(fitness_df_abstract: pd.DataFrame) -> pd.DataFrame:
     fitness_df_abstract: pd.DataFrame
         Dataframe containing per-residue fitness data normalized.
     """
+    return fitness_df_abstract
+
+    # can reactivate below as required - return the above makes fitness categorical from 1 to n, where
+    # n = number of fit mutants
     fitness_df_abstract["fitness"] = (
         (fitness_df_abstract["fitness"] - fitness_df_abstract["fitness"].min())
         / (fitness_df_abstract["fitness"].max() - fitness_df_abstract["fitness"].min())
@@ -177,6 +181,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
 
     # now apply the abstraction currently recommended by Bloom et al to get to a single float per residue.
     fitness_dict_abstract = apply_bloom_abstraction(fitness_scores_bloom, threshold)
+
     fitness_df_abstract = pd.DataFrame.from_dict(
         fitness_dict_abstract,
         orient="index",
@@ -189,6 +194,7 @@ def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
         ],
     )
     fitness_df_abstract.index.name = "residue"
+
     # normalize fitness and confidence values to 0-1 for easier parsing by visualizers downstream and return df.
     # can instead return DF if ever we need to provide more info (top/worst mutation, confidence etc).
     fitness_df_abstract = normalize_fitness(fitness_df_abstract)
@@ -203,8 +209,16 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
     # read the fitness data into a dataframe
     with open(fitness_data) as f:
         data = json.load(f)
-    data = data["data"]
-    fitness_scores_bloom = pd.DataFrame(data)
+    if "data" in data.keys():
+        # this is SARS-CoV-2 cross-genome phylo data - can directly grab 'data' key from json.
+        data = data["data"]
+        fitness_scores_bloom = pd.DataFrame(data)
+    elif "ZIKV NS2B-NS3 (Closed)" in data.keys():
+        # this is ZIKV NS2B-NS3 DMS data - need to grab data differently from json.
+        data = data["ZIKV NS2B-NS3 (Closed)"]["mut_metric_df"]
+        fitness_scores_bloom = pd.DataFrame(data).rename(
+            columns={"reference_site": "site", "Log2(Effect)": "fitness"}
+        )
 
     if _FITNESS_DATA_IS_CROSSGENOME[virus]:
         # now get the target-specific entries. Need to do because the phylo data is cross-genome.
@@ -215,11 +229,43 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
         pass  # no need to subselect
 
     # post-processing for specific targets
+    # TODO: replace all the below by a more intelligent + robust alignment algorithm.
     if target == "SARS-CoV-2-Mac1":
         # need to subselect from nsp3 multidomain to get just Mac1. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7113668/
         fitness_scores_bloom = fitness_scores_bloom[
             fitness_scores_bloom["site"].between(209, 372)
         ]
-        fitness_scores_bloom["site"] -= 208
+        fitness_scores_bloom["site"] -= 204  # PDB starts at resindex 5
+        fitness_scores_bloom["chain"] = "A"
+
+    elif target == "SARS-CoV-2-Mpro":
+        fitness_scores_bloom["chain"] = "A"
+    elif target == "ZIKV-NS2B-NS3pro":
+        # cursed. TODO: replace this with an auto-align.
+        ns2b_section = fitness_scores_bloom[
+            fitness_scores_bloom["site"].str.contains("NS2B")
+        ]
+        ns2b_section.loc[ns2b_section.index, "site"] = [
+            int(site.replace("(NS2B)", "")) for site in ns2b_section["site"].values
+        ]
+        ns2b_section = ns2b_section[ns2b_section["site"].between(46, 89)]
+
+        # tag NS2B as chain A
+        ns2b_section["chain"] = "A"
+
+        # repeat for NS3
+        ns3_section = fitness_scores_bloom[
+            fitness_scores_bloom["site"].str.contains("NS3")
+        ]
+        ns3_section.loc[ns3_section.index, "site"] = [
+            int(site.replace("(NS3)", "")) for site in ns3_section["site"].values
+        ]
+        ns3_section = ns3_section[ns3_section["site"].between(10, 177)]
+
+        # tag NS3 as chain B
+        ns3_section["chain"] = "B"
+
+        # then add back together and treat as normal downstream.
+        fitness_scores_bloom = pd.concat([ns2b_section, ns3_section])
 
     return fitness_scores_bloom
