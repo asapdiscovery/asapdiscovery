@@ -96,4 +96,5 @@ dependencies:
     - pygifsicle
     - sigfig
     - airium
+    - logomaker
     - git+https://github.com/OpenFreeEnergy/cinnabar.git@main
