@@ -279,7 +279,6 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         write_ligands_to_multi_sdf(
             output_dir / "docking_results.sdf",
             [r.posed_ligand for r in results],
-            allow_append=True,
         )
 
     # run scoring of poses
