@@ -4,7 +4,11 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import make_dask_client_meta
+from asapdiscovery.data.dask_utils import 
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    make_dask_client_meta,
+)
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
@@ -34,6 +38,7 @@ from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
+from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
@@ -251,11 +256,25 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        return_for_disk_backend=True,
     )
+
+    # NOTE: We use disk based dask backend here because the docking results are large and can cause memory issues
+    # and thrashing with data transfer between workers and the scheduler, all the following operations are then marked
+    # as using disk based dask backend
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
+
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
+        )
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
@@ -274,19 +293,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
 
-    if inputs.write_final_sdf:
-        logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf",
-            [r.posed_ligand for r in results],
-        )
-
-    # run scoring of poses
+    logger.info("Running scoring")
     scores_df = scorer.score(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         return_df=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -300,7 +314,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=html_ouptut_dir,
     )
     pose_visualizatons = html_visualizer.visualize(
-        results, use_dask=inputs.use_dask, dask_client=dask_client
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -331,7 +349,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             output_dir=html_fitness_output_dir,
         )
         fitness_visualizations = html_fitness_visualizer.visualize(
-            results, use_dask=inputs.use_dask, dask_client=dask_client
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
         # duplicate target id column so we can join
@@ -351,7 +373,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         )
     else:
         logger.info(
-            f"Not running fitness HTML visualiser because {inputs.target} does not have fitness data"
+            f"Target {inputs.target} does not have fitness data, skipping fitness visualisation"
         )
 
     logger.info("Filtering docking results")
