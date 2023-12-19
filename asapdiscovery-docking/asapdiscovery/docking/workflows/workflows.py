@@ -31,6 +31,11 @@ class DockingWorkflowInputsBase(BaseModel):
         None, description="Path to a directory where a cache has been generated"
     )
 
+    use_only_cache: bool = Field(
+        False,
+        description="Whether to only use the cached structures, otherwise try to prep uncached structures.",
+    )
+
     save_to_cache: bool = Field(
         True,
         description="Generate a cache from structures prepped in this workflow run in this directory",
