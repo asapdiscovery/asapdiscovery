@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
@@ -11,24 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 class MetaStructureFactory(BaseModel):
-    structure_dir: str | Path = Field(
+    structure_dir: Optional[str | Path] = Field(
         ..., description="Path to directory containing structures"
     )
-    fragalysis_dir: str | Path = Field(
+    fragalysis_dir: Optional[str | Path] = Field(
         ..., description="Path to directory containing fragalysis structures"
     )
-    pdb_file: str | Path = Field(
+    pdb_file: Optional[str | Path] = Field(
         ..., description="Path to pdb file containing structure"
     )
     use_dask: bool = Field(False, description="Use dask to load structures")
     dask_client: Any = Field(
         None, description="Dask client to use for loading structures"
     )
-
-    # convert strings to Path objects
-    @validator("structure_dir", "fragalysis_dir", "pdb_file", pre=True)
-    def string_to_path(cls, v):
-        return Path(v)
 
     @root_validator
     def options_mutex(cls, values):

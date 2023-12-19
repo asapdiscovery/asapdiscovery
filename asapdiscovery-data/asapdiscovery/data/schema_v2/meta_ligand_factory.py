@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Optional
 
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -12,8 +13,10 @@ logger = logging.getLogger(__name__)
 
 class MetaLigandFactory(BaseModel):
     postera: bool = Field(..., description="use Postera")
-    postera_molset_name: str = Field(..., description="Postera molecule set name")
-    ligand_file: str | Path = Field(..., description="Ligand file to read")
+    postera_molset_name: Optional[str] = Field(
+        ..., description="Postera molecule set name"
+    )
+    ligand_file: Optional[str | Path] = Field(..., description="Ligand file to read")
 
     @root_validator
     @classmethod
@@ -29,7 +32,7 @@ class MetaLigandFactory(BaseModel):
     def postera_molset_and_name(cls, values):
         postera_molset_name = values.get("postera_molset_name")
         postera = values.get("postera")
-        if not (postera and postera_molset_name):
+        if not postera and postera_molset_name:
             raise ValueError("must specify postera_molset_name if postera is specified")
         return values
 

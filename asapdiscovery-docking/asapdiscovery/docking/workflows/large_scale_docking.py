@@ -159,7 +159,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         logger.info("AWS S3 and CloudFront credentials found")
 
     # read ligands
-    ligand_factory = MetaLigandFactory(inputs.postera, inputs.ligands)
+    ligand_factory = MetaLigandFactory(
+        postera=inputs.postera,
+        postera_molset_name=inputs.postera_molset_name,
+        ligand_file=inputs.ligands,
+    )
     query_ligands = ligand_factory.load()
 
     # read structures
