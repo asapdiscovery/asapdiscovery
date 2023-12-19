@@ -5,7 +5,7 @@ from typing import Any, Optional
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, root_validator
 
 logger = logging.getLogger(__name__)
 
