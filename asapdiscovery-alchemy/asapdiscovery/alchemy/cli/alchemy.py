@@ -381,3 +381,63 @@ def restart(network: str, verbose: bool, tasks):
         click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
     else:
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
+
+
+@alchemy.command()
+@click.option(
+    "-n",
+    "--network",
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
+    help="The name of the JSON file containing a planned FEC network with raw results from alchemiscale.",
+    default="result_network.json",
+    show_default=True,
+)
+@click.option(
+    "-rd",
+    "--reference-dataset",
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
+    help="The name of a csv file containing reference experimental data to be used in the predictions."
+)
+@click.option(
+    "-ru",
+    "--reference-units",
+    type=click.Choice(["pIC50", "IC50"]),
+    help="The units of the reference experimental data provided in the csv or saved as an SDTag on the ligand.",
+    default="pIC50",
+    show_default=True
+)
+def predict(network: str, reference_units: str, reference_dataset: Optional[str] = None):
+    """
+    Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
+    results to the relevant energy range.
+
+    """
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from asapdiscovery.alchemy.predict import get_data_from_femap, create_absolute_report, create_relative_report
+
+    result_network = FreeEnergyCalculationNetwork.from_file(network)
+    ligands = result_network.network.to_openfe_ligands()
+    # convert to cinnabar fepmap to do the prediction via MLE
+    fe_map = result_network.results.to_fe_map()
+    fe_map.generate_absolute_values()
+    absolute_df, relative_df = get_data_from_femap(
+        fe_map=fe_map,
+        ligands=ligands,
+        assay_units=reference_units,
+        reference_dataset=reference_dataset
+    )
+    # write the csv to file to be uploaded to postera later
+    absolute_df.to_csv("absolute-predictions.csv")
+    relative_df.to_csv("relative-predictions.csv")
+
+    absolute_layout = create_absolute_report(dataframe=absolute_df)
+    absolute_layout.save("Absolute-prediction.html", title="ASAP-Alchemy-Absolute", embed=True)
+
+    relative_layout = create_relative_report(dataframe=relative_df)
+    relative_layout.save("Relative-prediction.html", title="ASAP-Alchemy-Relative", embed=True)
+
+
+
+
+
+
