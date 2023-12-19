@@ -4,11 +4,7 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import 
-from asapdiscovery.data.dask_utils import (
-    BackendType,
-    make_dask_client_meta,
-)
+from asapdiscovery.data.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
@@ -45,6 +41,8 @@ from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInpu
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from pydantic import Field, PositiveInt, validator
+
+from asapdiscovery.data.dask_utils import
 
 
 class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
