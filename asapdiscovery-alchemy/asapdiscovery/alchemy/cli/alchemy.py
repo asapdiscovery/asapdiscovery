@@ -396,7 +396,7 @@ def restart(network: str, verbose: bool, tasks):
     "-rd",
     "--reference-dataset",
     type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
-    help="The name of a csv file containing reference experimental data to be used in the predictions."
+    help="The name of a csv file containing reference experimental data to be used in the predictions.",
 )
 @click.option(
     "-ru",
@@ -404,17 +404,23 @@ def restart(network: str, verbose: bool, tasks):
     type=click.Choice(["pIC50", "IC50"]),
     help="The units of the reference experimental data provided in the csv or saved as an SDTag on the ligand.",
     default="pIC50",
-    show_default=True
+    show_default=True,
 )
-def predict(network: str, reference_units: str, reference_dataset: Optional[str] = None):
+def predict(
+    network: str, reference_units: str, reference_dataset: Optional[str] = None
+):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
-    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
-    from asapdiscovery.alchemy.predict import get_data_from_femap, create_absolute_report, create_relative_report
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.predict import (
+        create_absolute_report,
+        create_relative_report,
+        get_data_from_femap,
+    )
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich import pretty
     from rich.padding import Padding
 
@@ -441,7 +447,7 @@ def predict(network: str, reference_units: str, reference_dataset: Optional[str]
         fe_map=fe_map,
         ligands=ligands,
         assay_units=reference_units,
-        reference_dataset=reference_dataset
+        reference_dataset=reference_dataset,
     )
     # write the csv to file to be uploaded to postera later
     absolute_path = f"absolute-predictions-{result_network.dataset_name}.csv"
@@ -451,12 +457,12 @@ def predict(network: str, reference_units: str, reference_dataset: Optional[str]
     predict_status.stop()
     message = Padding(
         f"Absolute predictions wrote to [repr.filename]{absolute_path}[/repr.filename]",
-        (1, 0, 1, 0)
+        (1, 0, 1, 0),
     )
     console.print(message)
     message = Padding(
         f"Relative predictions wrote to [repr.filename]{relative_path}[/repr.filename]",
-        (1, 0, 1, 0)
+        (1, 0, 1, 0),
     )
     console.print(message)
 
@@ -468,19 +474,27 @@ def predict(network: str, reference_units: str, reference_dataset: Optional[str]
         absolute_layout = create_absolute_report(dataframe=absolute_df)
         absolute_path = f"Absolute-prediction-{result_network.dataset_name}.html"
         relative_path = f"Relative-prediction-{result_network.dataset_name}.html"
-        absolute_layout.save(absolute_path, title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}", embed=True)
+        absolute_layout.save(
+            absolute_path,
+            title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}",
+            embed=True,
+        )
 
         relative_layout = create_relative_report(dataframe=relative_df)
-        relative_layout.save(relative_path, title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}", embed=True)
+        relative_layout.save(
+            relative_path,
+            title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}",
+            embed=True,
+        )
         report_status.stop()
 
         message = Padding(
             f"Absolute report wrote to [repr.filename]{absolute_path}[/repr.filename]",
-            (1, 0, 1, 0)
+            (1, 0, 1, 0),
         )
         console.print(message)
         message = Padding(
             f"Relative report wrote to [repr.filename]{relative_path}[/repr.filename]",
-            (1, 0, 1, 0)
+            (1, 0, 1, 0),
         )
         console.print(message)
