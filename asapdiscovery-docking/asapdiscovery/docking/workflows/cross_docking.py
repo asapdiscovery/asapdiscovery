@@ -32,7 +32,7 @@ class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):
     logname: str = Field("", description="Name of the log file.")
 
     structure_selector: StructureSelector = Field(
-        StructureSelector.PAIRWISE,
+        StructureSelector.LEAVE_SIMILAR_OUT,
         description="Structure selector to use for docking",
     )
     multi_reference: bool = Field(
@@ -98,8 +98,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     inputs.to_json_file(output_dir / "cross_docking_inputs.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
 
         if inputs.dask_type.is_lilac():
@@ -126,8 +126,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     data_intermediates.mkdir(exist_ok=True)
 
     # load from file
-    logger.info(f"Loading ligands from file: {inputs.filename}")
-    molfile = MolFileFactory.from_file(inputs.filename)
+    logger.info(f"Loading ligands from file: {inputs.ligands}")
+    molfile = MolFileFactory.from_file(inputs.ligands)
     query_ligands = molfile.ligands
 
     # load complexes from a directory, from fragalysis or from a pdb file
@@ -169,6 +169,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         cache_dir=inputs.cache_dir,
+        use_only_cache=inputs.use_only_cache,
     )
     del complexes
 
@@ -220,6 +221,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     )
     results = docker.dock(
         sets,
+        output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
     )
@@ -227,10 +229,6 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
-
-    # write docking results
-    logger.info("Writing docking results")
-    POSITDocker.write_docking_files(results, output_dir / "docking_results")
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]

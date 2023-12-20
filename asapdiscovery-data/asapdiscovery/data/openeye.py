@@ -11,6 +11,7 @@ from openeye import (  # noqa: F401
     oegrid,
     oeomega,
     oequacpac,
+    oeshape,
     oespruce,
     oeszybki,
 )
@@ -684,7 +685,7 @@ def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
     return mol
 
 
-def oemol_to_smiles(mol: oechem.OEMol) -> str:
+def oemol_to_smiles(mol: oechem.OEMol, isomeric=True) -> str:
     """
     Canonical SMILES string of an OpenEye OEMol
 
@@ -693,12 +694,23 @@ def oemol_to_smiles(mol: oechem.OEMol) -> str:
     mol: oechem.OEMol
         OpenEye OEMol
 
+    isomeric: bool, optional, default=True
+        If True, generate canonical isomeric SMILES (including stereochem)
+        If False, generate canonical SMILES without stereochem
+
     Returns
     -------
     str
        SMILES string of molecule
     """
-    return oechem.OEMolToSmiles(mol)
+    # By default, OEMolToSmiles generates isomeric SMILES, which includes stereochemistry
+    if isomeric:
+        return oechem.OEMolToSmiles(mol)
+
+    # However, if we want to treat two stereoisomers as the same molecule,
+    # we can generate canonical SMILES that don't include stereo info
+    else:
+        return oechem.OECreateCanSmiString(mol)
 
 
 def oe_smiles_roundtrip(smiles: str) -> str:

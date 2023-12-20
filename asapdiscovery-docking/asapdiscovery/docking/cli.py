@@ -15,6 +15,7 @@ from asapdiscovery.cli.cli_args import (
     save_to_cache,
     structure_dir,
     target,
+    use_only_cache,
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -124,7 +125,7 @@ def large_scale(
             posit_confidence_cutoff=posit_confidence_cutoff,
             use_omega=use_omega,
             allow_posit_retries=allow_posit_retries,
-            filename=ligands,
+            ligands=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
@@ -173,8 +174,8 @@ def large_scale(
 @click.option(
     "--structure-selector",
     type=click.Choice(StructureSelector.get_values(), case_sensitive=False),
-    default=StructureSelector.PAIRWISE,
-    help="The type of structure selector to use. Defaults to pairwise (all pairwise combinations of ligand and complex)",
+    default=StructureSelector.LEAVE_SIMILAR_OUT,
+    help="The type of structure selector to use.",
 )
 @ligands
 @pdb_file
@@ -182,13 +183,14 @@ def large_scale(
 @structure_dir
 @save_to_cache
 @cache_dir
+@use_only_cache
 @dask_args
 @output_dir
 @input_json
 def cross_docking(
     target: TargetTags,
     multi_reference: bool = False,
-    structure_selector: StructureSelector = StructureSelector.PAIRWISE,
+    structure_selector: StructureSelector = StructureSelector.LEAVE_SIMILAR_OUT,
     use_omega: bool = False,
     omega_dense: bool = False,
     allow_retries: bool = False,
@@ -197,6 +199,7 @@ def cross_docking(
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
+    use_only_cache: bool = False,
     save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
     output_dir: str = "output",
@@ -222,11 +225,12 @@ def cross_docking(
             use_omega=use_omega,
             omega_dense=omega_dense,
             allow_retries=allow_retries,
-            filename=ligands,
+            ligands=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
             cache_dir=cache_dir,
+            use_only_cache=use_only_cache,
             save_to_cache=save_to_cache,
             output_dir=output_dir,
             allow_final_clash=allow_final_clash,
@@ -243,6 +247,7 @@ def cross_docking(
     default=0.1,
     help="The confidence cutoff for POSIT results to be considered",
 )
+@click.option("--allow-dask-cuda/--no-allow-dask-cuda", default=True)
 @click.option(
     "--no-omega",
     is_flag=True,
@@ -264,6 +269,7 @@ def cross_docking(
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
+    allow_dask_cuda: bool = True,
     no_omega: bool = False,
     ligands: Optional[str] = None,
     postera: bool = False,
@@ -299,8 +305,9 @@ def small_scale(
             use_dask=use_dask,
             dask_type=dask_type,
             posit_confidence_cutoff=posit_confidence_cutoff,
+            allow_dask_cuda=allow_dask_cuda,
             use_omega=not no_omega,
-            filename=ligands,
+            ligands=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,

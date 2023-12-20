@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
 class DockingWorkflowInputsBase(BaseModel):
-    filename: Optional[str] = Field(
+    ligands: Optional[str] = Field(
         None, description="Path to a molecule file containing query ligands."
     )
 
@@ -29,6 +29,11 @@ class DockingWorkflowInputsBase(BaseModel):
 
     cache_dir: Optional[str] = Field(
         None, description="Path to a directory where a cache has been generated"
+    )
+
+    use_only_cache: bool = Field(
+        False,
+        description="Whether to only use the cached structures, otherwise try to prep uncached structures.",
     )
 
     save_to_cache: bool = Field(
@@ -64,9 +69,13 @@ class DockingWorkflowInputsBase(BaseModel):
         "", description="Name of the log file."
     )  # use root logger for proper forwarding of logs from dask
 
-    loglevel: int = Field(logging.INFO, description="Logging level")
+    loglevel: int = Field(logging.DEBUG, description="Logging level")
 
     output_dir: Path = Field(Path("output"), description="Output directory")
+
+    overwrite: bool = Field(
+        False, description="Whether to overwrite existing output directory."
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -85,17 +94,17 @@ class DockingWorkflowInputsBase(BaseModel):
         """
         Validate inputs
         """
-        filename = values.get("filename")
+        ligands = values.get("ligands")
         fragalysis_dir = values.get("fragalysis_dir")
         structure_dir = values.get("structure_dir")
         postera = values.get("postera")
         pdb_file = values.get("pdb_file")
 
-        if postera and filename:
-            raise ValueError("Cannot specify both filename and postera.")
+        if postera and ligands:
+            raise ValueError("Cannot specify both ligands and postera.")
 
-        if not postera and not filename:
-            raise ValueError("Must specify either filename or postera.")
+        if not postera and not ligands:
+            raise ValueError("Must specify either ligands or postera.")
 
         # can only specify one of fragalysis dir, structure dir and PDB file
         if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:

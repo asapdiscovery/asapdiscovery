@@ -1,12 +1,17 @@
 import abc
 import logging
 from enum import Enum
-from typing import ClassVar, Optional
+from pathlib import Path
+from typing import ClassVar, Optional, Union
 
 import dask
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    actualise_dask_delayed_iterable,
+    backend_wrapper,
+)
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
@@ -54,6 +59,7 @@ _SCORE_MANIFOLD_ALIAS = {
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
     "smiles": DockingResultCols.SMILES.value,
+    "ligand_inchikey": DockingResultCols.INCHIKEY.value,
     "probability": DockingResultCols.DOCKING_CONFIDENCE_POSIT.value,
 }
 
@@ -69,6 +75,7 @@ class Score(BaseModel):
     compound_name: Optional[str]
     smiles: Optional[str]
     ligand_identifiers: Optional[LigandIdentifiers]
+    ligand_inchikey: Optional[str]
     target_name: Optional[str]
     target_identifiers: Optional[TargetIdentifiers]
     complex_ligand_smiles: Optional[str]
@@ -88,6 +95,7 @@ class Score(BaseModel):
             score=score,
             compound_name=docking_result.posed_ligand.compound_name,
             smiles=docking_result.posed_ligand.smiles,
+            ligand_inchikey=docking_result.posed_ligand.inchikey,
             ligand_ids=docking_result.posed_ligand.ids,
             target_name=docking_result.input_pair.complex.target.target_name,
             target_ids=docking_result.input_pair.complex.target.ids,
@@ -125,21 +133,33 @@ class ScorerBase(BaseModel):
 
     def score(
         self,
-        inputs: list[DockingResult],
+        inputs: Union[list[DockingResult], list[Path]],
         use_dask: bool = False,
         dask_client=None,
+        backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
-                out = dask.delayed(self._score)(inputs=[inp])
+                out = dask.delayed(backend_wrapper)(
+                    inputs=[inp],
+                    func=self._score,
+                    backend=backend,
+                    reconstruct_cls=reconstruct_cls,
+                )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client=dask_client
             )
         else:
-            outputs = self._score(inputs=inputs)
+            outputs = backend_wrapper(
+                inputs=inputs,
+                func=self._score,
+                backend=backend,
+                reconstruct_cls=reconstruct_cls,
+            )
 
         if return_df:
             return self.scores_to_df(outputs)
@@ -324,6 +344,8 @@ class MetaScorer(BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
+        backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
         results = []
@@ -332,6 +354,8 @@ class MetaScorer(BaseModel):
                 inputs=inputs,
                 use_dask=use_dask,
                 dask_client=dask_client,
+                backend=backend,
+                reconstruct_cls=reconstruct_cls,
                 return_df=return_df,
             )
             results.append(vals)

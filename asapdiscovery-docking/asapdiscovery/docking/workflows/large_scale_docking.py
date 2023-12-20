@@ -2,24 +2,43 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    dask_cluster_from_type,
+    set_dask_config,
+)
+from asapdiscovery.data.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.postera.manifold_artifacts import (
+    ArtifactType,
+    ManifoldArtifactUploader,
+)
 from asapdiscovery.data.postera.manifold_data_validation import (
+    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
 from asapdiscovery.data.utils import check_empty_dataframe
+from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
+from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
@@ -124,10 +143,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
-
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
@@ -152,6 +170,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
 
+    if inputs.postera_upload:
+        postera_settings = PosteraSettings()
+        logger.info("Postera settings loaded")
+        logger.info("Postera upload specified, checking for AWS credentials")
+        aws_s3_settings = S3Settings()
+        aws_cloudfront_settings = CloudfrontSettings()
+        logger.info("AWS S3 and CloudFront credentials found")
+
     if inputs.postera:
         # load postera
         logger.info(
@@ -164,8 +190,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         query_ligands = postera.pull()
     else:
         # load from file
-        logger.info(f"Loading ligands from file: {inputs.filename}")
-        molfile = MolFileFactory.from_file(inputs.filename)
+        logger.info(f"Loading ligands from file: {inputs.ligands}")
+        molfile = MolFileFactory.from_file(inputs.ligands)
         query_ligands = molfile.ligands
 
     # load complexes from a directory, from fragalysis or from a pdb file
@@ -196,6 +222,12 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
+
+    logger.info("Deduplicating by Inchikey")
+    query_ligands = LigandDeDuplicator().deduplicate(query_ligands)
+    n_query_ligands = len(query_ligands)
+    logger.info(f"Deduplicated to {n_query_ligands} query ligands")
+
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
@@ -242,17 +274,28 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     )
     results = docker.dock(
         pairs,
+        output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        return_for_disk_backend=True,
     )
+
+    # NOTE: We use disk based dask backend here because the docking results are large and can cause memory issues
+    # and thrashing with data transfer between workers and the scheduler, all the following operations are then marked
+    # as using disk based dask backend
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
 
-    # write docking results
-    logger.info("Writing docking results")
-    POSITDocker.write_docking_files(results, output_dir / "docking_results")
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
+        )
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
@@ -271,19 +314,87 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
 
-    if inputs.write_final_sdf:
-        logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
-        )
-
+    logger.info("Running scoring")
     scores_df = scorer.score(
-        results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        return_df=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
-    del results
-
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
+
+    # run html visualiser
+    logger.info("Running HTML visualiser for docked poses")
+    html_ouptut_dir = output_dir / "poses"
+    html_visualizer = HTMLVisualizerV2(
+        colour_method=ColourMethod.subpockets,
+        target=inputs.target,
+        output_dir=html_ouptut_dir,
+    )
+    pose_visualizatons = html_visualizer.visualize(
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
+    )
+    # rename visualisations target id column to POSIT structure tag so we can join
+    pose_visualizatons.rename(
+        columns={
+            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        },
+        inplace=True,
+    )
+
+    # join the two dataframes on ligand_id, target_id and smiles
+    scores_df = scores_df.merge(
+        pose_visualizatons,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",  # preserves rows where there is no visualisation
+    )
+
+    if target_has_fitness_data(inputs.target):
+        logger.info("Running fitness HTML visualiser")
+        html_fitness_output_dir = output_dir / "fitness"
+        html_fitness_visualizer = HTMLVisualizerV2(
+            colour_method=ColourMethod.fitness,
+            target=inputs.target,
+            output_dir=html_fitness_output_dir,
+        )
+        fitness_visualizations = html_fitness_visualizer.visualize(
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
+        )
+
+        # duplicate target id column so we can join
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+
+        # join the two dataframes on ligand_id, target_id and smiles
+        scores_df = scores_df.merge(
+            fitness_visualizations,
+            on=[
+                DockingResultCols.LIGAND_ID.value,
+                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+                DockingResultCols.SMILES.value,
+            ],
+            how="outer",  # preserves rows where there is no fitness visualisation
+        )
+    else:
+        logger.info(
+            f"Target {inputs.target} does not have fitness data, skipping fitness visualisation"
+        )
 
     logger.info("Filtering docking results")
     # filter for POSIT probability > 0.7
@@ -329,58 +440,108 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         data_intermediates / "docking_scores_filtered_sorted.csv", index=False
     )
 
-    scores_df = scores_df.drop_duplicates(subset=[DockingResultCols.LIGAND_ID.value])
+    scores_df = scores_df.drop_duplicates(
+        subset=[DockingResultCols.INCHIKEY.value], keep="first"
+    )
 
     n_duplicate_filtered = len(scores_df)
     logger.info(
         f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
 
-    # take top n results
-    scores_df = scores_df.head(inputs.top_n)
+    # set hit flag to False
+    scores_df[DockingResultCols.DOCKING_HIT.value] = False
 
-    n_top_n_filtered = len(scores_df)
+    # set top n hits to True
+    scores_df.loc[
+        scores_df.index[: inputs.top_n], DockingResultCols.DOCKING_HIT.value
+    ] = True  # noqa: E712
+
+    hits_df = scores_df[  # noqa: E712
+        scores_df[DockingResultCols.DOCKING_HIT.value] == True  # noqa: E712
+    ]
+
+    n_top_n_filtered = len(hits_df)
     logger.info(
         f"Filtered to {n_top_n_filtered} / {n_duplicate_filtered} docking results by top n filter"
     )
 
     check_empty_dataframe(
-        scores_df,
+        hits_df,
         logger=logger,
         fail="raise",
         tag="scores",
-        message=f"No docking results passed the top {inputs.top_n} filter",
+        message=f"No docking results passed the top {inputs.top_n} filter, no hits",
     )
 
-    scores_df.to_csv(
-        data_intermediates / f"docking_scores_filtered_sorted_top_{inputs.top_n}.csv",
+    hits_df.to_csv(
+        data_intermediates
+        / f"docking_scores_filtered_sorted_top_{inputs.top_n}_hits.csv",
         index=False,
     )
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
 
-    if inputs.postera_upload:
-        bleach_columns = True
-        logger.info("Bleaching column names for Postera upload, see issue #629, 628")
-    else:
-        bleach_columns = False
-
+    # keep everything not just hits
     result_df = rename_output_columns_for_manifold(
         scores_df,
         inputs.target,
         [DockingResultCols],
-        bleach_columns=bleach_columns,
         manifold_validate=True,
         drop_non_output=True,
-        allow=[DockingResultCols.LIGAND_ID.value],
+        allow=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.HTML_PATH_POSE.value,
+            DockingResultCols.HTML_PATH_FITNESS.value,
+        ],
     )
 
     result_df.to_csv(output_dir / "docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
         logger.info("Uploading results to Postera")
+
         postera_uploader = PosteraUploader(
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
-        postera_uploader.push(result_df)
+        # push the results to PostEra, making a new molecule set if necessary
+        posit_score_tag = map_output_col_to_manifold_tag(
+            DockingResultCols, inputs.target
+        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
+        result_df, molset_name, made_new_molset = postera_uploader.push(
+            result_df, sort_column=posit_score_tag, sort_ascending=True
+        )
+
+        if made_new_molset:
+            logger.info(f"Made new molecule set with name: {molset_name}")
+        else:
+            molset_name = inputs.postera_molset_name
+
+        logger.info("Uploading artifacts to PostEra")
+
+        # make an uploader for the poses and upload them
+
+        artifact_columns = [
+            DockingResultCols.HTML_PATH_POSE.value,
+        ]
+        artifact_types = [
+            ArtifactType.DOCKING_POSE_POSIT,
+        ]
+
+        if target_has_fitness_data(inputs.target):
+            artifact_columns.append(DockingResultCols.HTML_PATH_FITNESS.value)
+            artifact_types.append(ArtifactType.DOCKING_POSE_FITNESS_POSIT)
+
+        uploader = ManifoldArtifactUploader(
+            inputs.target,
+            result_df,
+            molset_name,
+            bucket_name=aws_s3_settings.BUCKET_NAME,
+            artifact_types=artifact_types,
+            artifact_columns=artifact_columns,
+            moleculeset_api=MoleculeSetAPI.from_settings(postera_settings),
+            s3=S3.from_settings(aws_s3_settings),
+            cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
+        )
+        uploader.upload_artifacts()

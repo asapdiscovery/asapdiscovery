@@ -5,13 +5,14 @@ Defines docking base schema.
 import abc
 import logging
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import dask
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+import numpy as np
+from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.schema_v2.sets import MultiStructureBase
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
@@ -49,6 +50,9 @@ class DockingInputPair(CompoundStructurePair, DockingInputBase):
     def to_design_units(self) -> list[oechem.OEDesignUnit]:
         return [self.complex.target.to_oedu()]
 
+    def unique_name(self):
+        return f"{self.complex.unique_name()}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"
+
 
 class DockingInputMultiStructure(MultiStructureBase):
     """
@@ -76,22 +80,61 @@ class DockingBase(BaseModel):
     type: Literal["DockingBase"] = "DockingBase"
 
     @abc.abstractmethod
-    def _dock(self, inputs: list[DockingInputPair]) -> list["DockingResult"]:
+    def _dock(
+        self, inputs: list[DockingInputPair], output_dir: Union[str, Path]
+    ) -> list["DockingResult"]:
         ...
 
     def dock(
-        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
-    ) -> Union[list[dask.delayed], list["DockingResult"]]:
+        self,
+        inputs: list[DockingInputPair],
+        output_dir: Optional[Union[str, Path]] = None,
+        use_dask: bool = False,
+        dask_client=None,
+        return_for_disk_backend: bool = False,
+    ) -> list["DockingResult"]:
+        """
+        Run docking on a list of DockingInputPairs
+
+        Parameters
+        ----------
+        inputs : list[DockingInputPair]
+            List of DockingInputPairs
+        output_dir : Optional[Union[str, Path]], optional
+            Output directory, to write docking results to, by default None
+            means no output files are written
+        use_dask : bool, optional
+            Whether to use dask, by default False
+        dask_client : dask.distributed.Client, optional
+            Dask client to use, by default None
+
+        Returns
+        -------
+        Union[list[DockingResult], list[Path]]]
+            List of DockingResults or paths to DockingResult json files
+        """
+        # make output dir if it doesn't exist
+        if output_dir is not None:
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
-                out = dask.delayed(self._dock)(inputs=[inp])
+                out = dask.delayed(self._dock)(
+                    inputs=[inp],
+                    output_dir=output_dir,
+                    return_for_disk_backend=return_for_disk_backend,
+                )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client=dask_client, errors="skip"
             )
         else:
-            outputs = self._dock(inputs=inputs)
+            outputs = self._dock(
+                inputs=inputs,
+                output_dir=output_dir,
+                return_for_disk_backend=return_for_disk_backend,
+            )
         # filter out None values
         outputs = [o for o in outputs if o is not None]
         return outputs
@@ -101,9 +144,7 @@ class DockingBase(BaseModel):
         docking_results: list["DockingResult"], output_dir: Union[str, Path]
     ):
         """
-        Write docking results to files in output_dir, directories will have the form:
-        {target_name}_+_{ligand_name}/docked.sdf
-        {target_name}_+_{ligand_name}/docked_complex.pdb
+        Write docking results to files in output_dir
 
         Parameters
         ----------
@@ -114,47 +155,12 @@ class DockingBase(BaseModel):
 
         Raises
         ------
-        ValueError
-            If compound names of input pair and posed ligand do not match
-
         """
-        ligs = [docking_result.input_pair.ligand for docking_result in docking_results]
-        names_unique = compound_names_unique(ligs)
         output_dir = Path(output_dir)
-        # if names are not unique, we will use unknown_ligand_{i} as the ligand portion of directory
-        # when writing files
 
-        # write out the docked pose
-        for i, result in enumerate(docking_results):
-            if (
-                not result.input_pair.ligand.compound_name
-                == result.posed_ligand.compound_name
-            ):
-                raise ValueError(
-                    "Compound names of input pair and posed ligand do not match"
-                )
-            if names_unique:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + result.posed_ligand.compound_name
-                )
-            else:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + f"unknown_ligand_{i}"
-                )
-
-            compound_dir = output_dir / output_pref
-            compound_dir.mkdir(parents=True, exist_ok=True)
-            output_sdf_file = compound_dir / "docked.sdf"
-            output_pdb_file = compound_dir / "docked_complex.pdb"
-
-            result.posed_ligand.to_sdf(output_sdf_file)
-
-            combined_oemol = result.to_posed_oemol()
-            save_openeye_pdb(combined_oemol, output_pdb_file)
+        # write out the docked poses and info
+        for result in docking_results:
+            result.write_docking_files(output_dir)
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]:
@@ -187,6 +193,15 @@ class DockingResult(BaseModel):
         description="Probability"
     )  # not easy to get the probability from rescoring
     provenance: dict[str, str] = Field(description="Provenance")
+
+    def to_json_file(self, file: str | Path):
+        with open(file, "w") as f:
+            f.write(self.json(indent=2))
+
+    @classmethod
+    def from_json_file(cls, file: str | Path) -> "DockingResult":
+        with open(file) as f:
+            return cls.parse_raw(f.read())
 
     def get_output(self) -> dict:
         """
@@ -221,20 +236,8 @@ class DockingResult(BaseModel):
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
         return prot
 
-    def get_combined_id(self) -> str:
-        """
-        Get a unique ID for the DockingResult
-
-        Returns
-        -------
-        str
-            Unique ID
-        """
-        return (
-            self.input_pair.complex.target.target_name
-            + "_+_"
-            + self.input_pair.ligand.compound_name
-        )
+    def unique_name(self):
+        return self.input_pair.unique_name()
 
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):
@@ -254,3 +257,81 @@ class DockingResult(BaseModel):
         import pandas as pd
 
         return pd.DataFrame([r.get_output() for r in results])
+
+    def write_docking_files(self, output_dir: Union[str, Path]):
+        """
+        Write docking files to output_dir
+
+        Parameters
+        ----------
+        output_dir : Union[str, Path]
+            Output directory
+        """
+        self._write_docking_files(self, output_dir)
+
+    @staticmethod
+    def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
+        output_dir = Path(output_dir)
+        output_pref = result.unique_name()
+        compound_dir = output_dir / output_pref
+        compound_dir.mkdir(parents=True, exist_ok=True)
+        output_sdf_file = compound_dir / "docked.sdf"
+        output_pdb_file = compound_dir / "docked_complex.pdb"
+        output_json_file = compound_dir / "docking_result.json"
+        result.posed_ligand.to_sdf(output_sdf_file)
+        combined_oemol = result.to_posed_oemol()
+        save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.to_json_file(output_json_file)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, DockingResult):
+            raise NotImplementedError
+
+        # Just check that both Complexs and Ligands are the same
+        return (
+            (self.input_pair == other.input_pair)
+            and (self.posed_ligand == other.posed_ligand)
+            and (np.isclose(self.probability, other.probability))
+        )
+
+    def __neq__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+
+def write_results_to_multi_sdf(
+    sdf_file: Union[str, Path],
+    results: Union[list[DockingResult], list[Path]],
+    backend=BackendType.IN_MEMORY,
+    reconstruct_cls=None,
+):
+    """
+    Write a list of DockingResults to a single sdf file
+    Can accept either a list of DockingResults or a list of paths to DockingResult json files
+    depending on the backend used
+
+    Parameters
+    ----------
+    results : Union[list[DockingResult], list[Path]]
+        List of DockingResults or paths to DockingResult json files
+    backend : BackendType, optional
+        Backend to use, by default BackendType.IN_MEMORY
+    reconstruct_cls : Optional[DockingResult], optional
+        DockingResult class to use for disk backend, by default None
+
+    Raises
+    ------
+    ValueError
+        If backend is disk and no reconstruct_cls is provided
+    """
+    if backend == BackendType.DISK and not reconstruct_cls:
+        raise ValueError("Must provide reconstruct_cls if using disk backend")
+
+    for res in results:
+        if backend == BackendType.IN_MEMORY:
+            lig = res.posed_ligand
+        elif backend == BackendType.DISK:
+            lig = reconstruct_cls.from_json_file(res).posed_ligand
+        else:
+            raise ValueError(f"Unknown backend type {backend}")
+
+        lig.to_sdf(sdf_file, allow_append=True)
