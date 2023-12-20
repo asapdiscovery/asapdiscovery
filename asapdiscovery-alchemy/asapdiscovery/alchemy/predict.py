@@ -94,7 +94,7 @@ def shift_and_add_prediction_error(df: pd.DataFrame, point_type: str) -> pd.Data
     (`point_type`=='DG'), shifts the prediction values to the mean experimental value.
 
     Args:
-        df: The dataframe we want
+        df: The dataframe we want to shift and add the prediction error to.
         point_type: Whether the points are absolute or relative. Can be "DG" or "DDG", resp.
     """
     if point_type == "DG":
@@ -113,7 +113,7 @@ def dG_to_pIC50(dG):
     """
     kT = 0.593 # kcal/mol for 298 K (25C)
 
-    # NOTE: SHOULD WE BE TAKING ABS HERE? IS THIS ACCURATE? LOOKS ACCURATE BUT I'M AN IDIOT SO IDK
+    # NOTE: SHOULD WE BE TAKING ABS HERE? IS THIS ACCURATE?
     return abs(dG / np.log(10.0) / (- kT)) # abs to prevent pIC50s from being negative in cases where 0<DG<1.
 
 
@@ -187,7 +187,6 @@ def extract_experimental_data(reference_csv: str, assay_units: Literal['pIC50', 
     Returns:
         A dictionary of molecule names and tuples of
         experimental data and its associated uncertainty converted to Gibbs free energy in kcal/mol.
-
     """
     experimental_data = {}
     assay_tag = assay_units + "_Mean"
@@ -230,7 +229,7 @@ def add_absolute_expt(dataframe: pd.DataFrame, experimental_data: dict[str, tupl
 
     Args:
         dataframe: The dataframe of absolute free energy predictions to add the experimental data to.
-        experimental_data: A dictionary of experimental free energies in units of kcal/mol to add to the dataframe
+        experimental_data: A dictionary of experimental free energies in units of kcal/mol to add to the dataframe.
     """
     experimental_col,  uncertainty_col = [], []
     for mol_name in dataframe["label"].values:
@@ -245,8 +244,8 @@ def add_relative_expt(dataframe: pd.DataFrame, experimental_data: dict[str, tupl
     Edit the relative dataframe in place by adding experimental data provided to it.
 
     Args:
-        dataframe:
-        experimental_data:
+        dataframe: The dataframe of relative free energy predictions to add the experimental data to.
+        experimental_data: A dictionary of experimental free energies in units of kcal/mol to add to the dataframe.
     """
     experimental_col,  uncertainty_col = [], []
     for _, row in dataframe.iterrows():
@@ -269,13 +268,18 @@ def get_data_from_femap(fe_map: cinnabar.FEMap, ligands: list, assay_units: Opti
     1. a Pandas DataFrame that has all absolute predictions and measurements (DG in kcal/mol) and (pIC50)
     2. a pd DF that has all relative predictions and measurements (DDG in kcal/mol) and PIC50
 
-    This takes a bit of wrangling because the dataframes that come out of an FEMap are not
-    formatted well.
-    """
+    Args:
+        fe_map: The cinnabar FEMap which has all calculated edges present and the absolute estimates.
+        ligands: The list of openfe ligands which are part of the network.
+        assay_units: The units of the experimental data, which should be extracted from the reference dataset.
+        reference_dataset: The name of the cdd csv file which contains the experimental data.
 
+    Returns:
+         An absolute and relative free energy prediction dataframe.
+    """
+    # extract the dataframes from cinnabar and format
     absolute_df = fe_map.get_absolute_dataframe().rename(columns={"DG (kcal/mol)": "DG (kcal/mol) (FECS)", "uncertainty (kcal/mol)": "uncertainty (kcal/mol) (FECS)"}).drop(["source", "computational"], axis=1)
     relative_df = fe_map.get_relative_dataframe().rename(columns={"DDG (kcal/mol)": "DDG (kcal/mol) (FECS)", "uncertainty (kcal/mol)": "uncertainty (kcal/mol) (FECS)"}).drop(["source", "computational"], axis=1)
-    print(relative_df.head())
 
     # add experimental data if available
     if reference_dataset:
@@ -301,11 +305,27 @@ def get_data_from_femap(fe_map: cinnabar.FEMap, ligands: list, assay_units: Opti
 
 
 def draw_mol(smiles: str) -> str:
+    """
+    Create SVG text of a 2D depiction of a molecule which can be embed in an html report.
 
+    Args:
+        smiles: The smiles of the molecule which should be drawn.
+
+    Returns:
+        The SVG text of the drawing.
+
+    Notes:
+        This function will draw multi molecules side by side.
+    """
     rdkit_mol = Chem.RemoveHs(Chem.MolFromSmiles(smiles))
     rdkit_mol = Draw.PrepareMolForDrawing(rdkit_mol, forceCoords=True)
-    drawer = Draw.rdMolDraw2D.MolDraw2DSVG(400, 200)
-    drawer.DrawMolecule(rdkit_mol)
+    mols = Chem.GetMolFrags(rdkit_mol, asMols=True)
+    if len(mols) == 2:
+        drawer = Draw.rdMolDraw2D.MolDraw2DSVG(400, 200, 200, 200)
+        drawer.DrawMolecules(mols)
+    else:
+        drawer = Draw.rdMolDraw2D.MolDraw2DSVG(400, 200)
+        drawer.DrawMolecule(rdkit_mol)
     drawer.FinishDrawing()
 
     data = base64.b64encode(drawer.GetDrawingText().encode()).decode()
@@ -317,20 +337,22 @@ def plotmol_absolute(
         experimental: np.array,
         smiles: list[str],
         titles: Optional[list[str]] = None,
-        calculated_error: Optional[np.array] = None,
-        experimental_error: Optional[np.array] = None
-):
+        calculated_uncertainty: Optional[np.array] = None,
+        experimental_uncertainty: Optional[np.array] = None
+) -> bokeh.plotting.figure:
     """
+    Create an interactive plot using Plotmol for the absolute predictions of the free energies.
 
-    Parameters
-    ----------
-    calculated
-    experimental
-    smiles
+    Args:
+        calculated: An array of calculated predictions.
+        experimental: An array of experimental predictions in order of the calculated values.
+        smiles: A list of smiles strings in order of the calculated values.
+        titles: A list of titles in order of the calculated values.
+        calculated_uncertainty: An optional array of calculated uncertainty values.
+        experimental_uncertainty: An optional array of experimental uncertainty values.
 
-    Returns
-    -------
-
+    Returns:
+        The bokeh interactive plot.
     """
 
     # set up our own tooltip to show the title and other info
@@ -363,10 +385,11 @@ def plotmol_absolute(
         calculated=calculated,
         experimental=experimental,
         smiles=smiles,
-        calculated_error=calculated_error,
-        experimental_error=experimental_error,
+        calculated_uncertainty=calculated_uncertainty,
+        experimental_uncertainty=experimental_uncertainty,
         custom_column_data=tooltip_data
     )
+
 
 def _plot_with_plotmol(
         figure: bokeh.plotting.figure,
@@ -374,8 +397,8 @@ def _plot_with_plotmol(
         experimental: np.array,
         smiles: list[str],
         custom_column_data: dict[str, list],
-        calculated_error: Optional[np.array] = None,
-        experimental_error: Optional[np.array] = None,
+        calculated_uncertainty: Optional[np.array] = None,
+        experimental_uncertainty: Optional[np.array] = None,
 ) -> bokeh.plotting.figure:
 
     # set up the x and y range and plot x=y line
@@ -400,12 +423,12 @@ def _plot_with_plotmol(
     figure.add_layout(outer_band)
 
     # add error bars if provided
-    if calculated_error is not None:
-        calc_error_data = ColumnDataSource({"x": experimental, "upper": calculated + calculated_error, "lower": calculated - calculated_error})
+    if calculated_uncertainty is not None:
+        calc_error_data = ColumnDataSource({"x": experimental, "upper": calculated + calculated_uncertainty, "lower": calculated - calculated_uncertainty})
         calc_error = Whisker(base="x", upper="upper", lower="lower", source=calc_error_data)
         figure.add_layout(calc_error)
-    if experimental_error is not None:
-        exp_error_data = ColumnDataSource({"x": calculated, "upper": experimental + experimental_error, "lower": experimental - experimental_error})
+    if experimental_uncertainty is not None:
+        exp_error_data = ColumnDataSource({"x": calculated, "upper": experimental + experimental_uncertainty, "lower": experimental - experimental_uncertainty})
         exp_error = Whisker(base="x", upper="upper", lower="lower", source=exp_error_data, dimension="width")
         figure.add_layout(exp_error)
 
@@ -427,9 +450,23 @@ def plotmol_relative(
         experimental: np.array,
         smiles: list[str],
         titles: Optional[list[tuple[str, str]]] = None,
-        calculated_error: Optional[np.array] = None,
-        experimental_error: Optional[np.array] = None
+        calculated_uncertainty: Optional[np.array] = None,
+        experimental_uncertainty: Optional[np.array] = None
 ) -> bokeh.plotting.figure:
+    """
+    Create an interactive plot using Plotmol for the relative predictions of the free energies.
+
+    Args:
+        calculated: An array of calculated predictions.
+        experimental: An array of experimental predictions in order of the calculated values.
+        smiles: A list of smiles strings in order of the calculated values.
+        titles: A list of titles in order of the calculated values.
+        calculated_uncertainty: An optional array of calculated uncertainty values.
+        experimental_uncertainty: An optional array of experimental uncertainty values.
+
+    Returns:
+        The bokeh interactive plot.
+    """
     # set up our own tooltip to show the title and other info
     custom_tooltip_template = """
         <div>
@@ -465,11 +502,10 @@ def plotmol_relative(
         calculated=calculated,
         experimental=experimental,
         smiles=smiles,
-        calculated_error=calculated_error,
-        experimental_error=experimental_error,
+        calculated_uncertainty=calculated_uncertainty,
+        experimental_uncertainty=experimental_uncertainty,
         custom_column_data=tooltip_data
     )
-
 
 
 def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
@@ -489,8 +525,8 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     # create the DG plot
     fig = plotmol_absolute(calculated=dataframe["DG (kcal/mol) (FECS)"], experimental=dataframe["DG (kcal/mol) (EXPT)"],
                            smiles=dataframe["SMILES"], titles=dataframe["label"],
-                           calculated_error=dataframe["uncertainty (kcal/mol) (FECS)"],
-                           experimental_error=dataframe["uncertainty (kcal/mol) (EXPT)"])
+                           calculated_uncertainty=dataframe["uncertainty (kcal/mol) (FECS)"],
+                           experimental_uncertainty=dataframe["uncertainty (kcal/mol) (EXPT)"])
     # calculate the bootstrapped stats using cinnabar
     stats_data = []
     for statistic in ["RMSE", "MUE", "R2", "rho"]:
@@ -559,8 +595,8 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     # create the DG plot
     fig = plotmol_relative(calculated=dataframe["DDG (kcal/mol) (FECS)"], experimental=dataframe["DDG (kcal/mol) (EXPT)"],
                            smiles=combined_smiles, titles=titles,
-                           calculated_error=dataframe["uncertainty (kcal/mol) (FECS)"],
-                           experimental_error=dataframe["uncertainty (kcal/mol) (EXPT)"])
+                           calculated_uncertainty=dataframe["uncertainty (kcal/mol) (FECS)"],
+                           experimental_uncertainty=dataframe["uncertainty (kcal/mol) (EXPT)"])
     # calculate the bootstrapped stats using cinnabar
     stats_data = []
     for statistic in ["RMSE", "MUE", "R2", "rho"]:
