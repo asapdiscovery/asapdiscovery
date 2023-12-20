@@ -410,12 +410,29 @@ def predict(network: str, reference_units: str, reference_dataset: Optional[str]
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
-
     """
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.predict import get_data_from_femap, create_absolute_report, create_relative_report
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from rich import pretty
+    from rich.padding import Padding
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
 
     result_network = FreeEnergyCalculationNetwork.from_file(network)
+
+    message = Padding(
+        f"Loaded FreeEnergyCalculationNetwork from [repr.filename]{network}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    predict_status = console.status("Calculating absolute free energies")
+    predict_status.start()
+
     ligands = result_network.network.to_openfe_ligands()
     # convert to cinnabar fepmap to do the prediction via MLE
     fe_map = result_network.results.to_fe_map()
@@ -427,17 +444,43 @@ def predict(network: str, reference_units: str, reference_dataset: Optional[str]
         reference_dataset=reference_dataset
     )
     # write the csv to file to be uploaded to postera later
-    absolute_df.to_csv("absolute-predictions.csv")
-    relative_df.to_csv("relative-predictions.csv")
+    absolute_path = f"absolute-predictions-{result_network.dataset_name}.csv"
+    relative_path = f"relative-predictions-{result_network.dataset_name}.csv"
+    absolute_df.to_csv(absolute_path)
+    relative_df.to_csv(relative_path)
+    predict_status.stop()
+    message = Padding(
+        f"Absolute predictions wrote to [repr.filename]{absolute_path}[/repr.filename]",
+        (1, 0, 1, 0)
+    )
+    console.print(message)
+    message = Padding(
+        f"Relative predictions wrote to [repr.filename]{relative_path}[/repr.filename]",
+        (1, 0, 1, 0)
+    )
+    console.print(message)
 
-    absolute_layout = create_absolute_report(dataframe=absolute_df)
-    absolute_layout.save("Absolute-prediction.html", title="ASAP-Alchemy-Absolute", embed=True)
+    if reference_dataset is not None:
+        report_status = console.status("Generating interactive reports")
+        report_status.start()
+        # we can only make these reports currently with experimental data
+        # TODO update once we have the per replicate estimate and error
+        absolute_layout = create_absolute_report(dataframe=absolute_df)
+        absolute_path = f"Absolute-prediction-{result_network.dataset_name}.html"
+        relative_path = f"Relative-prediction-{result_network.dataset_name}.html"
+        absolute_layout.save(absolute_path, title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}", embed=True)
 
-    relative_layout = create_relative_report(dataframe=relative_df)
-    relative_layout.save("Relative-prediction.html", title="ASAP-Alchemy-Relative", embed=True)
+        relative_layout = create_relative_report(dataframe=relative_df)
+        relative_layout.save(relative_path, title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}", embed=True)
+        report_status.stop()
 
-
-
-
-
-
+        message = Padding(
+            f"Absolute report wrote to [repr.filename]{absolute_path}[/repr.filename]",
+            (1, 0, 1, 0)
+        )
+        console.print(message)
+        message = Padding(
+            f"Relative report wrote to [repr.filename]{relative_path}[/repr.filename]",
+            (1, 0, 1, 0)
+        )
+        console.print(message)
