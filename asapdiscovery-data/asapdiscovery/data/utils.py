@@ -927,16 +927,20 @@ def parse_fluorescence_data_cdd(
         try:
             IC50 = float(row[f"{assay_name}: IC50 (µM)"])
             pIC50 = -np.log10(IC50 * 1e-6)
+            pIC50_range = 0
         except ValueError:
             IC50 = row[f"{assay_name}: IC50 (µM)"]
             # Could not convert to string because value was semiquantitative
             if IC50 == "(IC50 could not be calculated)":
                 IC50 = "nan"
                 pIC50 = "nan"
-            elif ">" in IC50:
-                pIC50 = "< 4.0"  # lower limit of detection
-            elif "<" in IC50:
-                pIC50 = "> 7.3"  # upper limit of detection
+            elif ">" in IC50 or "<" in IC50:
+                # Label indicating whether pIC50 values were out of the assay range
+                # Signs are flipped bc we are assigning based on IC50 but the value
+                #  applies to pIC50
+                pIC50_range = -1 if ">" in IC50 else 1
+                IC50 = float(IC50.strip("<> "))
+                pIC50 = -np.log10(IC50 * 1e-6)
             else:
                 IC50 = "nan"
                 pIC50 = "nan"
@@ -944,6 +948,8 @@ def parse_fluorescence_data_cdd(
         try:
             IC50_lower = float(row[f"{assay_name}: IC50 CI (Lower) (µM)"])
             IC50_upper = float(row[f"{assay_name}: IC50 CI (Upper) (µM)"])
+            if np.isnan(IC50_lower) or np.isnan(IC50_upper):
+                raise ValueError
             IC50_stderr = (
                 np.abs(IC50_upper - IC50_lower) / 4.0
             )  # assume normal distribution
@@ -977,24 +983,17 @@ def parse_fluorescence_data_cdd(
                     pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
                 )  # strings
             except ModuleNotFoundError:
-                # Just round to 4 digits if sigfig pacakge not present
-                IC50 = str(round(IC50, 4))
-                IC50_stderr = str(round(IC50_stderr, 4))
-                pIC50 = str(round(pIC50, 4))
-                pIC50_stderr = str(round(pIC50_stderr, 4))
-        elif isinstance(IC50, float):
-            # No stderr to base off of, so just round to 4
-            IC50 = str(round(IC50, 4))
-            pIC50 = str(round(pIC50, 4))
+                # Don't round
+                pass
 
-        IC50_series.append(float(IC50.strip("<> ")) * 1e-6)
+        IC50_series.append(float(IC50) * 1e-6)
         IC50_stderr_series.append(float(IC50_stderr) * 1e-6)
         IC50_lower_series.append(IC50_lower * 1e-6)
         IC50_upper_series.append(IC50_upper * 1e-6)
-        pIC50_series.append(float(pIC50.strip("<> ")))
+        pIC50_series.append(float(pIC50))
         pIC50_stderr_series.append(float(pIC50_stderr))
         # Add label indicating whether pIC50 values were out of the assay range
-        pIC50_range_series.append(-1 if "<" in pIC50 else (1 if ">" in pIC50 else 0))
+        pIC50_range_series.append(pIC50_range)
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
 
