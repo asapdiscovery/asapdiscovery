@@ -944,7 +944,7 @@ def parse_fluorescence_data_cdd(
                 #  applies to pIC50
                 pIC50_range = -1 if ">" in IC50 else 1
                 IC50 = float(IC50.strip("<> "))
-                pIC50 = -np.log10(IC50 * 1e-6)
+                pIC50 = round(-np.log10(IC50 * 1e-6), 2)
             else:
                 IC50 = "nan"
                 pIC50 = "nan"
