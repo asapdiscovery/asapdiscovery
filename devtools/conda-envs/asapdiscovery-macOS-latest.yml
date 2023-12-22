@@ -5,8 +5,7 @@ channels:
 dependencies:
   # Base depends
   - pip
-  # need python > 3.9.2 for dask-distributed issues
-  - python >= 3.10
+  - python >=3.10,<3.11
 
   # Testing
   - pytest
@@ -96,4 +95,5 @@ dependencies:
     - pygifsicle
     - sigfig
     - airium
+    - logomaker
     - git+https://github.com/OpenFreeEnergy/cinnabar.git@main

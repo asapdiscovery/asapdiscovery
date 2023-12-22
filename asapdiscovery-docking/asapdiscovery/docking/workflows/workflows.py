@@ -31,6 +31,11 @@ class DockingWorkflowInputsBase(BaseModel):
         None, description="Path to a directory where a cache has been generated"
     )
 
+    use_only_cache: bool = Field(
+        False,
+        description="Whether to only use the cached structures, otherwise try to prep uncached structures.",
+    )
+
     save_to_cache: bool = Field(
         True,
         description="Generate a cache from structures prepped in this workflow run in this directory",
@@ -64,7 +69,7 @@ class DockingWorkflowInputsBase(BaseModel):
         "", description="Name of the log file."
     )  # use root logger for proper forwarding of logs from dask
 
-    loglevel: int = Field(logging.INFO, description="Logging level")
+    loglevel: int = Field(logging.DEBUG, description="Logging level")
 
     output_dir: Path = Field(Path("output"), description="Output directory")
 

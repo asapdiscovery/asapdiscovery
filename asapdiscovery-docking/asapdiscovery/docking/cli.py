@@ -15,6 +15,7 @@ from asapdiscovery.cli.cli_args import (
     save_to_cache,
     structure_dir,
     target,
+    use_only_cache,
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -174,7 +175,7 @@ def large_scale(
     "--structure-selector",
     type=click.Choice(StructureSelector.get_values(), case_sensitive=False),
     default=StructureSelector.LEAVE_SIMILAR_OUT,
-    help="The type of structure selector to use. Defaults to pairwise (all pairwise combinations of ligand and complex)",
+    help="The type of structure selector to use.",
 )
 @ligands
 @pdb_file
@@ -182,6 +183,7 @@ def large_scale(
 @structure_dir
 @save_to_cache
 @cache_dir
+@use_only_cache
 @dask_args
 @output_dir
 @input_json
@@ -197,6 +199,7 @@ def cross_docking(
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
+    use_only_cache: bool = False,
     save_to_cache: Optional[bool] = True,
     cache_dir: Optional[str] = None,
     output_dir: str = "output",
@@ -227,6 +230,7 @@ def cross_docking(
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
             cache_dir=cache_dir,
+            use_only_cache=use_only_cache,
             save_to_cache=save_to_cache,
             output_dir=output_dir,
             allow_final_clash=allow_final_clash,
