@@ -913,6 +913,9 @@ def parse_fluorescence_data_cdd(
 
     import numpy as np
 
+    # Create a copy so we don't modify the original
+    mol_df = mol_df.copy()
+
     # Compute pIC50s and uncertainties from 95% CIs
     IC50_series = []
     IC50_stderr_series = []
@@ -934,6 +937,7 @@ def parse_fluorescence_data_cdd(
             if IC50 == "(IC50 could not be calculated)":
                 IC50 = "nan"
                 pIC50 = "nan"
+                pIC50_range = 0
             elif ">" in IC50 or "<" in IC50:
                 # Label indicating whether pIC50 values were out of the assay range
                 # Signs are flipped bc we are assigning based on IC50 but the value
@@ -944,6 +948,7 @@ def parse_fluorescence_data_cdd(
             else:
                 IC50 = "nan"
                 pIC50 = "nan"
+                pIC50_range = 0
 
         try:
             IC50_lower = float(row[f"{assay_name}: IC50 CI (Lower) (µM)"])
@@ -971,7 +976,11 @@ def parse_fluorescence_data_cdd(
             pIC50_lower = np.nan
             pIC50_upper = np.nan
 
-        if isinstance(IC50, float) and isinstance(IC50_stderr, float):
+        if (
+            isinstance(IC50, float)
+            and (pIC50_range == 0)
+            and isinstance(IC50_stderr, float)
+        ):
             # Have numbers for IC50 and stderr so can do rounding
             try:
                 import sigfig
