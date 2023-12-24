@@ -1,5 +1,6 @@
 import pickle as pkl
 from collections.abc import Iterator
+from glob import glob
 import json
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.utils import extract_compounds_from_filenames
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from pydantic import BaseModel, Field, root_validator
@@ -314,6 +316,64 @@ class DatasetConfig(BaseModel):
             input_data=input_data,
             **config_kwargs,
         )
+
+    @classmethod
+    def from_str_files(
+        cls,
+        structures: Path,
+        xtal_regex: str | None = None,
+        cpd_regex: str | None = None,
+        exp_file: str | None = None,
+        **config_kwargs,
+    ):
+        """
+        Build a structural DatasetConfig from structure files.
+
+        Parameters
+        ----------
+        structures : Path
+            Glob or directory containing PDB files
+        xtal_regex : str, optional
+            Regex for extracting crystal structure name from filename
+        cpd_regex : str, optional
+            Regex for extracting compound id from filename
+        exp_file : str, optional
+            JSON file giving a list of ExperimentalDataCompound objects
+        config_kwargs
+            Other kwargs that are passed to the class constructor
+
+
+        Returns
+        -------
+        DatasetConfig
+        """
+
+        # Parse experimental data
+        if exp_file and exp_file.exists():
+            exp_compounds = [
+                ExperimentalCompoundData(**d) for d in json.loads(exp_file.read_text())
+            ]
+            exp_data = {
+                c.compound_id: c.experimental_data | {"date_created": c.date_created}
+                for c in exp_compounds
+            }
+
+            # Update parsed exp_data with anything passed explicitly
+            if "exp_data" in config_kwargs:
+                exp_data |= config_kwargs["exp_data"]
+        else:
+            exp_data = {}
+
+        # Get structure files
+        if Path(structures).is_dir():
+            all_str_fns = Path(structures).glob("*.pdb")
+        else:
+            all_str_fns = glob(structures)
+        compounds = extract_compounds_from_filenames(
+            all_str_fns, xtal_pat=xtal_regex, compound_pat=cpd_regex, fail_val="NA"
+        )
+
+        # Create Complex objects from files
 
     def build(self):
         # Load from the cache file if it exists
