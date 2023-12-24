@@ -1,11 +1,13 @@
 import pickle as pkl
 from collections.abc import Iterator
+import json
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import torch
 from asapdiscovery.data.enum import StringEnum
+from asapdiscovery.data.schema import ExperimentalCompoundData
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
@@ -261,6 +263,57 @@ class DatasetConfig(BaseModel):
                 raise ValueError(f"Unknown dataset type {other}.")
 
         return values
+
+    @classmethod
+    def from_exp_file(cls, exp_file: Path, **config_kwargs):
+        """
+        Build a graph DatasetConfig from an experimental data file.
+
+        Parameters
+        ----------
+        exp_file : Path
+            JSON file giving a list of ExperimentalDataCompound objects
+        config_kwargs
+            Other kwargs that are passed to the class constructor
+
+
+        Returns
+        -------
+        DatasetConfig
+        """
+
+        # Parse experimental data
+        exp_compounds = [
+            ExperimentalCompoundData(**d) for d in json.loads(exp_file.read_text())
+        ]
+        exp_data = {
+            c.compound_id: c.experimental_data | {"date_created": c.date_created}
+            for c in exp_compounds
+        }
+
+        # Update parsed exp_data with anything passed explicitly
+        if "exp_data" in config_kwargs:
+            exp_data |= config_kwargs["exp_data"]
+
+        # Create Ligand objects from SMILES
+        input_data = [
+            Ligand.from_smiles(c.smiles, compound_name=c.compound_id)
+            for c in exp_compounds
+        ]
+
+        # Get rid of the kwargs that we are passing explicitly
+        config_kwargs = {
+            k: v
+            for k, v in config_kwargs.items()
+            if k not in {"ds_type", "exp_data", "input_data"}
+        }
+
+        return cls(
+            ds_type=DatasetType.graph,
+            exp_data=exp_data,
+            input_data=input_data,
+            **config_kwargs,
+        )
 
     def build(self):
         # Load from the cache file if it exists
