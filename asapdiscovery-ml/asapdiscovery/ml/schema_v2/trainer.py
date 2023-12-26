@@ -10,7 +10,6 @@ import wandb
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
-    DatasetType,
     DatasetSplitterConfig,
     EarlyStoppingConfig,
     LossFunctionConfig,
@@ -153,7 +152,7 @@ class Trainer(BaseModel):
         "loss_config",
         pre=True,
     )
-    def load_cache_files(cls, config_kwargs):
+    def load_cache_files(cls, config_kwargs, field):
         """
         This validator will load an existing cache file, and update the config with any
         explicitly passed kwargs. If passed, the cache file must be an entry in config
@@ -161,23 +160,24 @@ class Trainer(BaseModel):
         "overwrite_cache" in config, which, if given and True, will overwrite the given
         cache file.
         """
-        print(cls, config_kwargs, flush=True)
+        config_cls = field.type_
+        print(config_cls, config_kwargs, flush=True)
 
         # If an instance of the actual config class is passed, there's no cache file so
         #  just return
-        if isinstance(config_kwargs, cls):
+        if isinstance(config_kwargs, config_cls):
             return config_kwargs
 
         # Special case to handle model_config since the Field annotation is an abstract
         #  class
-        if cls is ModelConfigBase:
-            match cls["model_type"]:
+        if config_cls is ModelConfigBase:
+            match config_kwargs["model_type"]:
                 case ModelType.GAT:
-                    cls = GATModelConfig
+                    config_cls = GATModelConfig
                 case ModelType.schnet:
-                    cls = SchNetModelConfig
+                    config_cls = SchNetModelConfig
                 case ModelType.e3nn:
-                    cls = E3NNModelConfig
+                    config_cls = E3NNModelConfig
                 case other:
                     raise ValueError(
                         f"Can't instantiate model config for type {other}."
@@ -189,11 +189,11 @@ class Trainer(BaseModel):
         overwrite = config_kwargs.pop("overwrite_cache", False)
 
         return Trainer._build_arbitrary_config(
-            config_cls=cls,
+            config_cls=config_cls,
             config_file=config_file,
             overwrite=overwrite,
             **config_kwargs,
-        ).dict()
+        )
 
     @validator("ds_config", pre=True)
     def check_and_build_ds(cls, config_kwargs):
@@ -264,9 +264,9 @@ class Trainer(BaseModel):
                 for_training=True,
                 exp_file=exp_file,
                 **config_kwargs,
-            ).dict()
+            )
         else:
-            return DatasetConfig.from_exp_file(exp_file, **config_kwargs).dict()
+            return DatasetConfig.from_exp_file(exp_file, **config_kwargs)
 
     @staticmethod
     def _build_arbitrary_config(
