@@ -128,6 +128,36 @@ class Trainer(BaseModel):
 
         return p
 
+    @validator(
+        "optimizer_config",
+        "model_config",
+        "es_config",
+        "ds_config",
+        "ds_splitter_config",
+        "loss_config",
+        pre=True,
+    )
+    def load_cache_files(cls, config):
+        """
+        This validator will load an existing cache file, and update the config with any
+        explicitly passed kwargs. The cache file must be an entry in config with the
+        name "cache". This function will also check for the entry "overwrite_cache" in
+        config, which, if given and True, will overwrite the given cache file.
+        """
+        # If an instance of the actual config class is passed, there's no cache file so
+        #  just return
+        if isinstance(config, cls):
+            return config
+
+        # Get config cache file and overwrite option (if given). Defaults to no cache
+        #  file and not overwriting
+        config_file = config.pop("cache", None)
+        overwrite = config.pop("overwrite_cache", False)
+
+        return Trainer._build_arbitrary_config(
+            config_cls=cls, config_file=config_file, overwrite=overwrite, **config
+        )
+
     @staticmethod
     def _build_arbitrary_config(
         config_cls, config_file, overwrite=False, **config_kwargs
