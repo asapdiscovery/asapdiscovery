@@ -161,11 +161,15 @@ class Trainer(BaseModel):
         cache file.
         """
         config_cls = field.type_
-        print(config_cls, config_kwargs, flush=True)
 
         # If an instance of the actual config class is passed, there's no cache file so
         #  just return
         if isinstance(config_kwargs, config_cls):
+            return config_kwargs
+
+        # Some configs are optional so allow Nones (will get caught later if a None
+        #  that's not allowed is passed)
+        if config_kwargs is None:
             return config_kwargs
 
         # Special case to handle model_config since the Field annotation is an abstract
@@ -204,6 +208,17 @@ class Trainer(BaseModel):
         entry "overwrite_cache" in config, which, if given and True, will overwrite the
         given cache file.
         """
+
+        # If an instance of the actual config class is passed, there's no cache file so
+        #  just return
+        if isinstance(config_kwargs, DatasetConfig):
+            return config_kwargs
+
+        # If a dict version of an existing DatasetConfig is passed, just cast it
+        try:
+            return DatasetConfig(**config_kwargs)
+        except Exception:
+            pass
 
         # Get all the relevant kwarg entries out of config
         ds_config_cache = config_kwargs.pop("cache", None)
