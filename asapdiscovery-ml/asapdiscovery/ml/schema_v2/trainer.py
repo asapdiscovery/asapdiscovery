@@ -267,8 +267,8 @@ class Trainer(BaseModel):
         if is_structural:
             if (xtal_regex is None) or (cpd_regex is None):
                 raise ValueError(
-                        "Must pass values for xtal_regex and cpd_regex if building a "
-                        "structure-based dataset."
+                    "Must pass values for xtal_regex and cpd_regex if building a "
+                    "structure-based dataset."
                 )
             return DatasetConfig.from_str_files(
                 structures=structures,
