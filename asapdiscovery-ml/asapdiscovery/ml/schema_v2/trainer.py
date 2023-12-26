@@ -1,6 +1,6 @@
-from glob import glob
 import json
 import pickle as pkl
+from glob import glob
 from pathlib import Path
 from time import time
 
@@ -252,10 +252,8 @@ class Trainer(BaseModel):
         if is_structural:
             if (xtal_regex is None) or (cpd_regex is None):
                 raise ValueError(
-                    (
                         "Must pass values for xtal_regex and cpd_regex if building a "
                         "structure-based dataset."
-                    )
                 )
             return DatasetConfig.from_str_files(
                 structures=structures,

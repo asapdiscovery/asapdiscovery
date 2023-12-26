@@ -1,7 +1,7 @@
+import json
 import pickle as pkl
 from collections.abc import Iterator
 from glob import glob
-import json
 from pathlib import Path
 from typing import Any
 
