@@ -51,6 +51,7 @@ from mtenn.config import (
     CombinationConfig,
     E3NNModelConfig,
     GATModelConfig,
+    ModelType,
     ReadoutConfig,
     SchNetModelConfig,
     StrategyConfig,
@@ -207,6 +208,7 @@ def build_gat(
         model_config = {
             "cache": model_config_cache,
             "overwrite_cache": overwrite_model_config_cache,
+            "model_type": ModelType.GAT,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
