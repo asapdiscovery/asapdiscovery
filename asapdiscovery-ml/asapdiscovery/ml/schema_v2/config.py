@@ -178,6 +178,8 @@ class EarlyStoppingConfig(BaseModel):
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
+        return values
+
     def build(self) -> BestEarlyStopping | ConvergedEarlyStopping:
         match self.es_type:
             case EarlyStoppingType.best:
