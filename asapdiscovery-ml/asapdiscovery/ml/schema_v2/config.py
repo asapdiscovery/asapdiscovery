@@ -321,8 +321,9 @@ class DatasetConfig(BaseModel):
     def from_str_files(
         cls,
         structures: Path,
-        xtal_regex: str | None = None,
-        cpd_regex: str | None = None,
+        xtal_regex: str,
+        cpd_regex: str,
+        for_training: bool = False,
         exp_file: str | None = None,
         **config_kwargs,
     ):
@@ -333,10 +334,13 @@ class DatasetConfig(BaseModel):
         ----------
         structures : Path
             Glob or directory containing PDB files
-        xtal_regex : str, optional
+        xtal_regex : str
             Regex for extracting crystal structure name from filename
-        cpd_regex : str, optional
+        cpd_regex : str
             Regex for extracting compound id from filename
+        for_training : bool, default=False
+            This dataset will be used for training. Forces exp_file to exist, and
+            filters structures to only include those with exp data
         exp_file : str, optional
             JSON file giving a list of ExperimentalDataCompound objects
         config_kwargs
@@ -361,6 +365,10 @@ class DatasetConfig(BaseModel):
             # Update parsed exp_data with anything passed explicitly
             if "exp_data" in config_kwargs:
                 exp_data |= config_kwargs["exp_data"]
+        elif for_training:
+            raise ValueError(
+                "exp_file must be passed if the dataset will be used for training."
+            )
         else:
             exp_data = {}
 
@@ -373,7 +381,41 @@ class DatasetConfig(BaseModel):
             all_str_fns, xtal_pat=xtal_regex, compound_pat=cpd_regex, fail_val="NA"
         )
 
-        # Create Complex objects from files
+        # Filter compounds to only include datat that we have experimental data for
+        if for_training:
+            idx = [c[1] in exp_data for c in compounds]
+            print(
+                f"Filtering {len(idx) - sum(idx)} structures that we don't have",
+                "experimental data for.",
+                flush=True,
+            )
+            compounds = [c for i, c in zip(idx, compounds) if i]
+            all_str_fns = [fn for i, fn in zip(idx, all_str_fns) if i]
+
+        # Create Complex objects from PDB files
+        print(len(all_str_fns), len(compounds), flush=True)
+        input_data = [
+            Complex.from_pdb(
+                fn,
+                target_kwargs={"target_name": cpd[0]},
+                ligand_kwargs={"compound_name": cpd[1]},
+            )
+            for fn, cpd in zip(all_str_fns, compounds)
+        ]
+
+        # Get rid of the kwargs that we are passing explicitly
+        config_kwargs = {
+            k: v
+            for k, v in config_kwargs.items()
+            if k not in {"ds_type", "exp_data", "input_data"}
+        }
+
+        return cls(
+            ds_type=DatasetType.structural,
+            exp_data=exp_data,
+            input_data=input_data,
+            **config_kwargs,
+        )
 
     def build(self):
         # Load from the cache file if it exists
