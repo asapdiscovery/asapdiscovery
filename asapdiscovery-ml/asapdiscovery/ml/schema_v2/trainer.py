@@ -14,7 +14,13 @@ from asapdiscovery.ml.schema_v2.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
-from mtenn.config import ModelConfigBase
+from mtenn.config import (
+    E3NNModelConfig,
+    GATModelConfig,
+    ModelConfigBase,
+    ModelType,
+    SchNetModelConfig,
+)
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
 
@@ -149,6 +155,21 @@ class Trainer(BaseModel):
         if isinstance(config, cls):
             return config
 
+        # Special case to handle model_config since the Field annotation is an abstract
+        #  class
+        if cls is ModelConfigBase:
+            match cls["model_type"]:
+                case ModelType.GAT:
+                    cls = GATModelConfig
+                case ModelType.schnet:
+                    cls = SchNetModelConfig
+                case ModelType.e3nn:
+                    cls = E3NNModelConfig
+                case other:
+                    raise ValueError(
+                        f"Can't instantiate model config for type {other}."
+                    )
+
         # Get config cache file and overwrite option (if given). Defaults to no cache
         #  file and not overwriting
         config_file = config.pop("cache", None)
@@ -221,6 +242,14 @@ class Trainer(BaseModel):
             config_file.write_text(config.json())
 
         return config
+
+    @validator("device", pre=True)
+    def fix_device(cls, v):
+        """
+        The torch device gets serialized as a string and the Trainer class doesn't
+        automatically cast it back to a device.
+        """
+        return torch.device(v)
 
     def wandb_init(self):
         """
