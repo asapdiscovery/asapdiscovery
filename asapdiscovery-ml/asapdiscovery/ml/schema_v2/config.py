@@ -322,7 +322,7 @@ class DatasetConfig(BaseModel):
     @classmethod
     def from_str_files(
         cls,
-        structures: Path,
+        structures: str,
         xtal_regex: str,
         cpd_regex: str,
         for_training: bool = False,
@@ -334,7 +334,7 @@ class DatasetConfig(BaseModel):
 
         Parameters
         ----------
-        structures : Path
+        structures : str
             Glob or directory containing PDB files
         xtal_regex : str
             Regex for extracting crystal structure name from filename
