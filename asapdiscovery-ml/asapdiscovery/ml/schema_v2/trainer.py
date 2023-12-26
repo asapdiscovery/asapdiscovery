@@ -153,7 +153,7 @@ class Trainer(BaseModel):
         "loss_config",
         pre=True,
     )
-    def load_cache_files(cls, config):
+    def load_cache_files(cls, config_kwargs):
         """
         This validator will load an existing cache file, and update the config with any
         explicitly passed kwargs. If passed, the cache file must be an entry in config
@@ -161,10 +161,12 @@ class Trainer(BaseModel):
         "overwrite_cache" in config, which, if given and True, will overwrite the given
         cache file.
         """
+        print(cls, config_kwargs, flush=True)
+
         # If an instance of the actual config class is passed, there's no cache file so
         #  just return
-        if isinstance(config, cls):
-            return config
+        if isinstance(config_kwargs, cls):
+            return config_kwargs
 
         # Special case to handle model_config since the Field annotation is an abstract
         #  class
@@ -183,15 +185,18 @@ class Trainer(BaseModel):
 
         # Get config cache file and overwrite option (if given). Defaults to no cache
         #  file and not overwriting
-        config_file = config.pop("cache", None)
-        overwrite = config.pop("overwrite_cache", False)
+        config_file = config_kwargs.pop("cache", None)
+        overwrite = config_kwargs.pop("overwrite_cache", False)
 
         return Trainer._build_arbitrary_config(
-            config_cls=cls, config_file=config_file, overwrite=overwrite, **config
-        )
+            config_cls=cls,
+            config_file=config_file,
+            overwrite=overwrite,
+            **config_kwargs,
+        ).dict()
 
     @validator("ds_config", pre=True)
-    def check_and_build_ds(cls, config):
+    def check_and_build_ds(cls, config_kwargs):
         """
         This validator will first check that the appropriate files exist, and then parse
         the files to construct a DatasetConfig. If passed, the cache file must be an
@@ -201,19 +206,19 @@ class Trainer(BaseModel):
         """
 
         # Get all the relevant kwarg entries out of config
-        ds_config_cache = config.pop("cache", None)
+        ds_config_cache = config_kwargs.pop("cache", None)
         if ds_config_cache:
             ds_config_cache = Path(ds_config_cache)
-        overwrite = config.pop("overwrite_cache", False)
-        exp_file = config.pop("exp_file", None)
+        overwrite = config_kwargs.pop("overwrite_cache", False)
+        exp_file = config_kwargs.pop("exp_file", None)
         if exp_file:
             exp_file = Path(exp_file)
-        structures = config.pop("structures", "")
-        is_structural = config.pop("is_structural", False)
+        structures = config_kwargs.pop("structures", "")
+        is_structural = config_kwargs.pop("is_structural", False)
         # Pop these here to get them out of config, but only check to make sure they're
         #  not None if we have a structure-based ds
-        xtal_regex = config.pop("xtal_regex", None)
-        cpd_regex = config.pop("cpd_regex", None)
+        xtal_regex = config_kwargs.pop("xtal_regex", None)
+        cpd_regex = config_kwargs.pop("cpd_regex", None)
 
         if ds_config_cache and ds_config_cache.exists() and (not overwrite):
             print("loading from cache", flush=True)
@@ -241,11 +246,10 @@ class Trainer(BaseModel):
                     raise ValueError("No structure files found.")
 
         # Filter out None kwargs so defaults kick in
-        config = {k: v for k, v in config.items() if v is not None}
+        config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
 
         # Pick correct DatasetType
         if is_structural:
-            ds_type = DatasetType.structural
             if (xtal_regex is None) or (cpd_regex is None):
                 raise ValueError(
                     (
@@ -259,11 +263,10 @@ class Trainer(BaseModel):
                 cpd_regex=cpd_regex,
                 for_training=True,
                 exp_file=exp_file,
-                **config,
-            )
+                **config_kwargs,
+            ).dict()
         else:
-            ds_type = DatasetType.graph
-            return DatasetConfig.from_exp_file(exp_file, **config)
+            return DatasetConfig.from_exp_file(exp_file, **config_kwargs).dict()
 
     @staticmethod
     def _build_arbitrary_config(
