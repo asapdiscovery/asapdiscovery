@@ -15,7 +15,7 @@ from asapdiscovery.ml.schema_v2.config import (
     OptimizerConfig,
 )
 from mtenn.config import ModelConfigBase
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
 
 class Trainer(BaseModel):
@@ -127,6 +127,70 @@ class Trainer(BaseModel):
             ), "If given output_dir already exists, it must be a directory."
 
         return p
+
+    @staticmethod
+    def _build_arbitrary_config(
+        config_cls, config_file, overwrite=False, **config_kwargs
+    ):
+        """
+        Helper function to load/build an arbitrary Config object. All kwargs in
+        config_kwargs will overwrite anything in config_file, and everything will be passed
+        to the config_cls constructor, so make sure only the appropriate kwargs are passed.
+
+        Parameters
+        ----------
+        config_cls : type
+            Config class. Can in theory be any pydantic schema
+        config_file : Path
+            Path to config file. Will be loaded if it exists, otherwise will be saved after
+            object creation.
+        overwrite : bool, default=False
+            Don't load from config_file if it exists, and save over it
+        config_kwargs : dict
+            Dict giving all CLI args for Config construction. Will discard any that are None
+            to allow the Config defaults to kick in.
+
+        Returns
+        -------
+        config_cls
+            Instance of whatever class is passed
+        """
+
+        if config_file and config_file.exists() and (not overwrite):
+            print("loading from cache", config_cls, flush=True)
+            loaded_kwargs = json.loads(config_file.read_text())
+        else:
+            loaded_kwargs = {}
+
+        # Filter out None kwargs so defaults kick in
+        config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
+
+        # Update stored config args
+        loaded_kwargs |= config_kwargs
+
+        # Build Config, catching and handling missing required values
+        try:
+            config = config_cls(**loaded_kwargs)
+        except ValidationError as exc:
+            # Only want to handle missing values, so if anything else went wrong just raise
+            #  the pydantic error
+            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+                raise exc
+
+            # Gather all missing values
+            missing_vals = [err["loc"][0] for err in exc.errors()]
+
+            raise ValueError(
+                f"Tried to build {config_cls} but missing required values: ["
+                + ", ".join(missing_vals)
+                + "]"
+            )
+
+        # If a non-existent file was passed, store the Config
+        if config_file and ((not config_file.exists()) or overwrite):
+            config_file.write_text(config.json())
+
+        return config
 
     def wandb_init(self):
         """
