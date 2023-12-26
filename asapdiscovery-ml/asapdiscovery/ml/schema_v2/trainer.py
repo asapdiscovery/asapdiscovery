@@ -114,9 +114,18 @@ class Trainer(BaseModel):
         #  best to implement __get_validators__ for the Dataset classes.
         arbitrary_types_allowed = True
 
-        # For now exclude, but would be good to handle custom serialization for these
-        #  classes so we can include as much info as possible
-        fields = {"dataset": {"exclude": True}, "loss_dict": {"exclude": True}}
+        # Exclude everything that was built (should be able to fully reconstruct from
+        #  the configs)
+        fields = {
+            "model": {"exclude": True},
+            "optimizer": {"exclude": True},
+            "es": {"exclude": True},
+            "ds": {"exclude": True},
+            "ds_train": {"exclude": True},
+            "ds_val": {"exclude": True},
+            "ds_test": {"exclude": True},
+            "loss_func": {"exclude": True},
+        }
 
         # Allow things to be added to the object after initialization/validation
         extra = Extra.allow
