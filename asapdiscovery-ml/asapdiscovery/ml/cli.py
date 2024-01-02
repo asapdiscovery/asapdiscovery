@@ -36,26 +36,14 @@ from asapdiscovery.ml.cli_args import (
 )
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
-    DatasetSplitterConfig,
     DatasetSplitterType,
     DatasetType,
-    EarlyStoppingConfig,
     EarlyStoppingType,
-    LossFunctionConfig,
     LossFunctionType,
-    OptimizerConfig,
     OptimizerType,
 )
 from asapdiscovery.ml.schema_v2.trainer import Trainer
-from mtenn.config import (
-    CombinationConfig,
-    E3NNModelConfig,
-    GATModelConfig,
-    ModelType,
-    ReadoutConfig,
-    SchNetModelConfig,
-    StrategyConfig,
-)
+from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
 
 
 @click.group()
