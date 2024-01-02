@@ -4,7 +4,7 @@ import pickle as pkl
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.cli import cli
-from asapdiscovery.ml.schema_v2.config import DatasetConfig, DatasetType
+from asapdiscovery.ml.schema_v2.config import DatasetConfig
 from click.testing import CliRunner
 
 

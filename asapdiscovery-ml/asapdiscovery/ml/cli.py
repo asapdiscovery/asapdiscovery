@@ -5,14 +5,7 @@ from pathlib import Path
 import click
 import pydantic
 import torch
-from asapdiscovery.data.schema import ExperimentalCompoundData
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.utils import (
-    MOONSHOT_CDD_ID_REGEX,
-    MPRO_ID_REGEX,
-    extract_compounds_from_filenames,
-)
+from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
     ds_cache_overwrite,
     ds_config_cache_overwrite,
@@ -37,7 +30,6 @@ from asapdiscovery.ml.cli_args import (
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
     DatasetSplitterType,
-    DatasetType,
     EarlyStoppingType,
     LossFunctionType,
     OptimizerType,
