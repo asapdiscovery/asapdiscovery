@@ -1,11 +1,11 @@
 import json
 import pickle as pkl
 
-from click.testing import CliRunner
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.cli import cli
 from asapdiscovery.ml.schema_v2.config import DatasetConfig, DatasetType
+from click.testing import CliRunner
 
 
 @pytest.fixture(scope="session")
