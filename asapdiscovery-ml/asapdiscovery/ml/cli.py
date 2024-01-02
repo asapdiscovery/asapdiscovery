@@ -1685,67 +1685,31 @@ def _build_ds_config(
         print("loading from cache", flush=True)
         return DatasetConfig(**json.loads(ds_config_cache.read_text()))
 
+    config_kwargs = {
+        "cache_file": ds_cache,
+        "grouped": is_grouped,
+        "for_e3nn": for_e3nn,
+        "overwrite": pkl_overwrite,
+    }
+    config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
+
     # Pick correct DatasetType
     if is_structural:
-        ds_type = DatasetType.structural
-    else:
-        ds_type = DatasetType.graph
-
-    # Parse experimental data
-    exp_compounds = [
-        ExperimentalCompoundData(**d) for d in json.loads(exp_file.read_text())
-    ]
-    exp_data = {
-        c.compound_id: c.experimental_data | {"date_created": c.date_created}
-        for c in exp_compounds
-    }
-
-    # Create Ligand/Complex objects
-    if is_structural:
-        if Path(structures).is_dir():
-            all_str_fns = Path(structures).glob("*.pdb")
-        else:
-            all_str_fns = glob(structures)
-        compounds = extract_compounds_from_filenames(
-            all_str_fns, xtal_pat=xtal_regex, compound_pat=cpd_regex, fail_val="NA"
-        )
-
-        # Filter compounds to only include datat that we have experimental data for
-        idx = [c[1] in exp_data for c in compounds]
-        print(
-            f"Filtering {len(idx) - sum(idx)} structures that we don't have",
-            "experimental data for.",
-            flush=True,
-        )
-        compounds = [c for i, c in zip(idx, compounds) if i]
-        all_str_fns = [fn for i, fn in zip(idx, all_str_fns) if i]
-
-        print(len(all_str_fns), len(compounds), flush=True)
-        input_data = [
-            Complex.from_pdb(
-                fn,
-                target_kwargs={"target_name": cpd[0]},
-                ligand_kwargs={"compound_name": cpd[1]},
+        if (xtal_regex is None) or (cpd_regex is None):
+            raise ValueError(
+                "Must pass values for xtal_regex and cpd_regex if building a "
+                "structure-based dataset."
             )
-            for fn, cpd in zip(all_str_fns, compounds)
-        ]
+        ds_config = DatasetConfig.from_str_files(
+            structures=structures,
+            xtal_regex=xtal_regex,
+            cpd_regex=cpd_regex,
+            for_training=True,
+            exp_file=exp_file,
+            **config_kwargs
+        )
     else:
-        input_data = [
-            Ligand.from_smiles(c.smiles, compound_name=c.compound_id)
-            for c in exp_compounds
-        ]
-
-    config_kwargs = {
-        "ds_type": ds_type,
-        "exp_data": exp_data,
-        "input_data": input_data,
-        "cache_file": ds_cache,
-        "overwrite": pkl_overwrite,
-        "for_e3nn": for_e3nn,
-    }
-    if is_grouped is not None:
-        config_kwargs["grouped"] = is_grouped
-    ds_config = DatasetConfig(**config_kwargs)
+        ds_config = DatasetConfig.from_exp_file(exp_file, **config_kwargs)
 
     # Save file if desired
     if ds_config_cache:
