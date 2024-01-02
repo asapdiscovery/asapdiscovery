@@ -326,7 +326,7 @@ class DatasetConfig(BaseModel):
         xtal_regex: str,
         cpd_regex: str,
         for_training: bool = False,
-        exp_file: str | None = None,
+        exp_file: Path | None = None,
         **config_kwargs,
     ):
         """
@@ -376,7 +376,7 @@ class DatasetConfig(BaseModel):
 
         # Get structure files
         if Path(structures).is_dir():
-            all_str_fns = Path(structures).glob("*.pdb")
+            all_str_fns = glob(f"{structures}/*.pdb")
         else:
             all_str_fns = glob(structures)
         compounds = extract_compounds_from_filenames(
