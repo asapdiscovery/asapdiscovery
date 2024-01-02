@@ -65,3 +65,85 @@ def test_build_ds_graph(exp_file, tmp_path):
     assert len(ds_config.input_data) == 10
     assert ds_config.cache_file == ds_cache
     assert not ds_config.overwrite
+
+
+def test_build_ds_schnet(exp_file, docked_files, tmp_path):
+    docked_dir = docked_files[0].parent
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "build-dataset",
+            "schnet",
+            "--exp-file",
+            exp_file,
+            "--structures",
+            str(docked_dir),
+            "--ds-cache",
+            tmp_path / "ds_cache.pkl",
+            "--ds-config-cache",
+            tmp_path / "ds_config_cache.json",
+        ],
+    )
+    if result.exit_code != 0:
+        raise result.exception
+
+    # Make sure files exist
+    ds_cache = tmp_path / "ds_cache.pkl"
+    ds_config_cache = tmp_path / "ds_config_cache.json"
+    assert ds_cache.exists()
+    assert ds_config_cache.exists()
+
+    # Load and check stuff
+    ds = pkl.loads(ds_cache.read_bytes())
+    assert len(ds) == 10
+
+    ds_config = DatasetConfig(**json.loads(ds_config_cache.read_text()))
+    assert ds_config.ds_type == "structural"
+    assert len(ds_config.input_data) == 10
+    assert ds_config.cache_file == ds_cache
+    assert not ds_config.grouped
+    assert not ds_config.for_e3nn
+    assert not ds_config.overwrite
+
+
+def test_build_ds_e3nn(exp_file, docked_files, tmp_path):
+    docked_dir = docked_files[0].parent
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "build-dataset",
+            "e3nn",
+            "--exp-file",
+            exp_file,
+            "--structures",
+            str(docked_dir),
+            "--ds-cache",
+            tmp_path / "ds_cache.pkl",
+            "--ds-config-cache",
+            tmp_path / "ds_config_cache.json",
+        ],
+    )
+    if result.exit_code != 0:
+        raise result.exception
+
+    # Make sure files exist
+    ds_cache = tmp_path / "ds_cache.pkl"
+    ds_config_cache = tmp_path / "ds_config_cache.json"
+    assert ds_cache.exists()
+    assert ds_config_cache.exists()
+
+    # Load and check stuff
+    ds = pkl.loads(ds_cache.read_bytes())
+    assert len(ds) == 10
+
+    ds_config = DatasetConfig(**json.loads(ds_config_cache.read_text()))
+    assert ds_config.ds_type == "structural"
+    assert len(ds_config.input_data) == 10
+    assert ds_config.cache_file == ds_cache
+    assert not ds_config.grouped
+    assert ds_config.for_e3nn
+    assert not ds_config.overwrite
