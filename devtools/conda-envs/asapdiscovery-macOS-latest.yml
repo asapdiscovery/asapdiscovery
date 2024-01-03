@@ -97,3 +97,4 @@ dependencies:
     - airium
     - logomaker
     - git+https://github.com/OpenFreeEnergy/cinnabar.git@main
+    - wandb
