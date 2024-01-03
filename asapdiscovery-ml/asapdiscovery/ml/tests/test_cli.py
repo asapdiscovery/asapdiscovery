@@ -5,6 +5,7 @@ import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.cli import cli
 from asapdiscovery.ml.schema_v2.config import DatasetConfig
+from asapdiscovery.ml.schema_v2.trainer import Trainer
 from click.testing import CliRunner
 
 
@@ -147,3 +148,59 @@ def test_build_ds_e3nn(exp_file, docked_files, tmp_path):
     assert not ds_config.grouped
     assert ds_config.for_e3nn
     assert not ds_config.overwrite
+
+
+def test_build_trainer_graph(exp_file, tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "build",
+            "gat",
+            "--output-dir",
+            tmp_path / "model_out",
+            "--trainer-config-cache",
+            tmp_path / "trainer.json",
+            "--ds-split-type",
+            "temporal",
+            "--exp-file",
+            exp_file,
+            "--ds-cache",
+            tmp_path / "ds_cache.pkl",
+            "--ds-config-cache",
+            tmp_path / "ds_config_cache.json",
+            "--loss-type",
+            "mse_step",
+            "--device",
+            "cpu",
+            "--n-epochs",
+            "3",
+            "--use-wandb",
+            "False",
+        ],
+    )
+    assert result.exit_code == 0
+
+    # Make sure only the trainer.json file exists (other files/dirs shouldn't be made
+    #  until the Trainer is initialized)
+    trainer_config_cache = tmp_path / "trainer.json"
+    output_dir = tmp_path / "model_out"
+    assert trainer_config_cache.exists()
+    assert not output_dir.exists()
+    assert not (tmp_path / "ds_cache.pkl").exists()
+    assert not (tmp_path / "ds_config_cache.json").exists()
+
+    # Load and check stuff
+    t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    assert t.n_epochs == 3
+    assert t.output_dir == output_dir
+    assert not t.use_wandb
+    assert not t._is_initialized
+    assert not hasattr(t, "model")
+    assert not hasattr(t, "optimizer")
+    assert not hasattr(t, "es")
+    assert not hasattr(t, "ds")
+    assert not hasattr(t, "ds_train")
+    assert not hasattr(t, "ds_val")
+    assert not hasattr(t, "ds_test")
+    assert not hasattr(t, "loss_func")
