@@ -270,7 +270,7 @@ class Trainer(BaseModel):
                     "Must pass values for xtal_regex and cpd_regex if building a "
                     "structure-based dataset."
                 )
-            return DatasetConfig.from_str_files(
+            ds_config = DatasetConfig.from_str_files(
                 structures=structures,
                 xtal_regex=xtal_regex,
                 cpd_regex=cpd_regex,
@@ -279,7 +279,12 @@ class Trainer(BaseModel):
                 **config_kwargs,
             )
         else:
-            return DatasetConfig.from_exp_file(exp_file, **config_kwargs)
+            ds_config = DatasetConfig.from_exp_file(exp_file, **config_kwargs)
+
+        if ds_config_cache:
+            ds_config_cache.write_text(ds_config.json())
+
+        return ds_config
 
     @staticmethod
     def _build_arbitrary_config(
