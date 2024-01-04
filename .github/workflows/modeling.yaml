@@ -45,7 +45,10 @@ jobs:
         df -h
         ulimit -a
 
-
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
+        
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
       uses: mamba-org/setup-micromamba@v1
@@ -54,6 +57,8 @@ jobs:
         environment-name: asapdiscovery
         cache-environment: true
         cache-downloads: true
+        cache-environment-key: environment-${{ steps.date.outputs.date }}
+        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
         create-args: >-
           python==${{ matrix.python-version }}
 
