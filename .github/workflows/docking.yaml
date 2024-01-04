@@ -48,7 +48,7 @@ jobs:
     - name: Get current date
       id: date
       run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
-        
+
     - name: Set Swap Space
       uses: pierotofy/set-swap-space@master
       with:

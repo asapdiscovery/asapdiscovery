@@ -48,7 +48,7 @@ jobs:
     - name: Get current date
       id: date
       run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
-        
+
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
       uses: mamba-org/setup-micromamba@v1
