@@ -462,6 +462,8 @@ def build_schnet(
             "is_structural": False,
             "cache_file": ds_cache,
             "overwrite": overwrite_ds_cache,
+            "grouped": grouped,
+            "for_e3nn": False,
         }
 
         ds_splitter_config = {
@@ -696,6 +698,8 @@ def build_e3nn(
             "is_structural": False,
             "cache_file": ds_cache,
             "overwrite": overwrite_ds_cache,
+            "grouped": grouped,
+            "for_e3nn": True,
         }
 
         ds_splitter_config = {
@@ -1161,6 +1165,8 @@ def build_and_train_schnet(
             "is_structural": False,
             "cache_file": ds_cache,
             "overwrite": overwrite_ds_cache,
+            "grouped": grouped,
+            "for_e3nn": False,
         }
 
         ds_splitter_config = {
@@ -1398,6 +1404,8 @@ def build_and_train_e3nn(
             "is_structural": False,
             "cache_file": ds_cache,
             "overwrite": overwrite_ds_cache,
+            "grouped": grouped,
+            "for_e3nn": True,
         }
 
         ds_splitter_config = {
