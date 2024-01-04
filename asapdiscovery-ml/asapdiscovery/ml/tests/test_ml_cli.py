@@ -87,8 +87,7 @@ def test_build_ds_schnet(exp_file, docked_files, tmp_path):
             tmp_path / "ds_config_cache.json",
         ],
     )
-    if result.exit_code != 0:
-        raise result.exception
+    assert result.exit_code == 0
 
     # Make sure files exist
     ds_cache = tmp_path / "ds_cache.pkl"
@@ -128,8 +127,7 @@ def test_build_ds_e3nn(exp_file, docked_files, tmp_path):
             tmp_path / "ds_config_cache.json",
         ],
     )
-    if result.exit_code != 0:
-        raise result.exception
+    assert result.exit_code == 0
 
     # Make sure files exist
     ds_cache = tmp_path / "ds_cache.pkl"
@@ -188,7 +186,7 @@ def test_build_trainer_graph(exp_file, tmp_path):
     assert trainer_config_cache.exists()
     assert not output_dir.exists()
     assert not (tmp_path / "ds_cache.pkl").exists()
-    assert not (tmp_path / "ds_config_cache.json").exists()
+    assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
     t = Trainer(**json.loads(trainer_config_cache.read_text()))
@@ -248,7 +246,7 @@ def test_build_trainer_schnet(exp_file, docked_files, tmp_path):
     assert trainer_config_cache.exists()
     assert not output_dir.exists()
     assert not (tmp_path / "ds_cache.pkl").exists()
-    assert not (tmp_path / "ds_config_cache.json").exists()
+    assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
     t = Trainer(**json.loads(trainer_config_cache.read_text()))
@@ -310,7 +308,7 @@ def test_build_trainer_e3nn(exp_file, docked_files, tmp_path):
     assert trainer_config_cache.exists()
     assert not output_dir.exists()
     assert not (tmp_path / "ds_cache.pkl").exists()
-    assert not (tmp_path / "ds_config_cache.json").exists()
+    assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
     t = Trainer(**json.loads(trainer_config_cache.read_text()))
