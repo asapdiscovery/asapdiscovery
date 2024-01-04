@@ -267,7 +267,7 @@ files:
 
   # integration testing for ML
   - resource: ml_testing/exp_file.json
-    sha256hash: dde2cbff655f74faffe9fd33b48b17aa7574ac4b4110a53b168034e4855c2a4d
+    sha256hash: d887d5bdc705b22b8dfb2be2f9fdd3ac2679be4d19d434fd61873b6497d6f36b
 
   - resource: ml_testing/docked/AAR-POS-5507155c-1_Mpro-P0018_0A_0_bound_best.pdb
     sha256hash: 236e690fbaac7a811afa4cf2cd950c004582173c8346c5439476eb5d8e0b6f97
