@@ -17,6 +17,7 @@ from asapdiscovery.ml.cli_args import (
     grouped,
     loss_args,
     model_config_cache,
+    model_rand_seed,
     mtenn_args,
     optim_args,
     output_dir,
@@ -78,6 +79,7 @@ cli.add_command(build_ds)
 @optim_args
 @wandb_args
 @model_config_cache
+@model_rand_seed
 @mtenn_args
 @gat_args
 @es_args
@@ -116,6 +118,7 @@ def build_gat(
     comb_substrate: float | None = None,
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
     in_feats: int | None = None,
     num_layers: int | None = None,
     hidden_feats: str | None = None,
@@ -140,7 +143,7 @@ def build_gat(
     val_frac: float | None = None,
     test_frac: float | None = None,
     enforce_one: bool | None = None,
-    rand_seed: int | None = None,
+    ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
@@ -189,7 +192,7 @@ def build_gat(
             "cache": model_config_cache,
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.GAT,
-            "rand_seed": rand_seed,
+            "rand_seed": model_rand_seed,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -241,7 +244,7 @@ def build_gat(
             "val_frac": val_frac,
             "test_frac": test_frac,
             "enforce_one": enforce_one,
-            "rand_seed": rand_seed,
+            "rand_seed": ds_rand_seed,
         }
         loss_config = {
             "cache": loss_config_cache,
@@ -308,6 +311,7 @@ def build_gat(
 @trainer_config_cache
 @optim_args
 @model_config_cache
+@model_rand_seed
 @wandb_args
 @mtenn_args
 @schnet_args
@@ -348,6 +352,7 @@ def build_schnet(
     comb_substrate: float | None = None,
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
     hidden_channels: int | None = None,
     num_filters: int | None = None,
     num_interactions: int | None = None,
@@ -374,7 +379,7 @@ def build_schnet(
     val_frac: float | None = None,
     test_frac: float | None = None,
     enforce_one: bool | None = None,
-    rand_seed: int | None = None,
+    ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
@@ -423,7 +428,7 @@ def build_schnet(
             "cache": model_config_cache,
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.schnet,
-            "rand_seed": rand_seed,
+            "rand_seed": model_rand_seed,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -479,7 +484,7 @@ def build_schnet(
             "val_frac": val_frac,
             "test_frac": test_frac,
             "enforce_one": enforce_one,
-            "rand_seed": rand_seed,
+            "rand_seed": ds_rand_seed,
         }
         loss_config = {
             "cache": loss_config_cache,
@@ -546,6 +551,7 @@ def build_schnet(
 @trainer_config_cache
 @optim_args
 @model_config_cache
+@model_rand_seed
 @wandb_args
 @mtenn_args
 @e3nn_args
@@ -586,6 +592,7 @@ def build_e3nn(
     comb_substrate: float | None = None,
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
     num_atom_types: int | None = None,
     irreps_hidden: str | None = None,
     lig: bool | None = None,
@@ -613,7 +620,7 @@ def build_e3nn(
     val_frac: float | None = None,
     test_frac: float | None = None,
     enforce_one: bool | None = None,
-    rand_seed: int | None = None,
+    ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
@@ -662,7 +669,7 @@ def build_e3nn(
             "cache": model_config_cache,
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.e3nn,
-            "rand_seed": rand_seed,
+            "rand_seed": model_rand_seed,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -719,7 +726,7 @@ def build_e3nn(
             "val_frac": val_frac,
             "test_frac": test_frac,
             "enforce_one": enforce_one,
-            "rand_seed": rand_seed,
+            "rand_seed": ds_rand_seed,
         }
         loss_config = {
             "cache": loss_config_cache,
@@ -787,6 +794,7 @@ def build_e3nn(
 @optim_args
 @wandb_args
 @model_config_cache
+@model_rand_seed
 @mtenn_args
 @gat_args
 @es_args
@@ -825,6 +833,7 @@ def build_and_train_gat(
     comb_substrate: float | None = None,
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
     in_feats: int | None = None,
     num_layers: int | None = None,
     hidden_feats: str | None = None,
@@ -849,7 +858,7 @@ def build_and_train_gat(
     val_frac: float | None = None,
     test_frac: float | None = None,
     enforce_one: bool | None = None,
-    rand_seed: int | None = None,
+    ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
@@ -898,7 +907,7 @@ def build_and_train_gat(
             "cache": model_config_cache,
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.GAT,
-            "rand_seed": rand_seed,
+            "rand_seed": model_rand_seed,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -950,7 +959,7 @@ def build_and_train_gat(
             "val_frac": val_frac,
             "test_frac": test_frac,
             "enforce_one": enforce_one,
-            "rand_seed": rand_seed,
+            "rand_seed": ds_rand_seed,
         }
         loss_config = {
             "cache": loss_config_cache,
@@ -1020,6 +1029,7 @@ def build_and_train_gat(
 @trainer_config_cache
 @optim_args
 @model_config_cache
+@model_rand_seed
 @wandb_args
 @mtenn_args
 @schnet_args
@@ -1060,6 +1070,7 @@ def build_and_train_schnet(
     comb_substrate: float | None = None,
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
     hidden_channels: int | None = None,
     num_filters: int | None = None,
     num_interactions: int | None = None,
@@ -1086,7 +1097,7 @@ def build_and_train_schnet(
     val_frac: float | None = None,
     test_frac: float | None = None,
     enforce_one: bool | None = None,
-    rand_seed: int | None = None,
+    ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
@@ -1135,7 +1146,7 @@ def build_and_train_schnet(
             "cache": model_config_cache,
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.schnet,
-            "rand_seed": rand_seed,
+            "rand_seed": model_rand_seed,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -1191,7 +1202,7 @@ def build_and_train_schnet(
             "val_frac": val_frac,
             "test_frac": test_frac,
             "enforce_one": enforce_one,
-            "rand_seed": rand_seed,
+            "rand_seed": ds_rand_seed,
         }
         loss_config = {
             "cache": loss_config_cache,
@@ -1261,6 +1272,7 @@ def build_and_train_schnet(
 @trainer_config_cache
 @optim_args
 @model_config_cache
+@model_rand_seed
 @wandb_args
 @mtenn_args
 @e3nn_args
@@ -1301,6 +1313,7 @@ def build_and_train_e3nn(
     comb_substrate: float | None = None,
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
     num_atom_types: int | None = None,
     irreps_hidden: str | None = None,
     lig: bool | None = None,
@@ -1328,7 +1341,7 @@ def build_and_train_e3nn(
     val_frac: float | None = None,
     test_frac: float | None = None,
     enforce_one: bool | None = None,
-    rand_seed: int | None = None,
+    ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
     loss_type: LossFunctionType | None = None,
     semiquant_fill: float | None = None,
@@ -1377,7 +1390,7 @@ def build_and_train_e3nn(
             "cache": model_config_cache,
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.e3nn,
-            "rand_seed": rand_seed,
+            "rand_seed": model_rand_seed,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -1434,7 +1447,7 @@ def build_and_train_e3nn(
             "val_frac": val_frac,
             "test_frac": test_frac,
             "enforce_one": enforce_one,
-            "rand_seed": rand_seed,
+            "rand_seed": ds_rand_seed,
         }
         loss_config = {
             "cache": loss_config_cache,

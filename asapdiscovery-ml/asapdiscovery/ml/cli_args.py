@@ -238,6 +238,12 @@ def model_config_cache(func):
     )(func)
 
 
+def model_rand_seed(func):
+    return click.option(
+        "--model-rand-seed", type=int, help="Random seed for initializing the model."
+    )(func)
+
+
 ################################################################################
 
 
@@ -931,7 +937,7 @@ def ds_split_args(func):
         val_frac,
         test_frac,
         enforce_1,
-        rand_seed,
+        ds_rand_seed,
         ds_split_config_cache,
     ]:
         func = fn(func)
@@ -982,9 +988,11 @@ def enforce_1(func):
     )(func)
 
 
-def rand_seed(func):
+def ds_rand_seed(func):
     return click.option(
-        "--rand-seed", type=int, help="Random seed to use if randomly splitting data."
+        "--ds-rand-seed",
+        type=int,
+        help="Random seed to use if randomly splitting data.",
     )(func)
 
 
