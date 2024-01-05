@@ -7,6 +7,7 @@ from time import time
 import numpy as np
 import torch
 import wandb
+from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
@@ -91,6 +92,10 @@ class Trainer(BaseModel):
             "Top-level output directory. A subdirectory with the current W&B "
             "run ID will be made/searched if W&B is being used."
         ),
+    )
+    log_file: Path | None = Field(
+        None,
+        description="Output using asapdiscovery.data.FileLogger in addition to stdout.",
     )
 
     # W&B parameters
@@ -426,6 +431,15 @@ class Trainer(BaseModel):
         Build the Optimizer and ML Model described by the stored config.
         """
 
+        # Set up FileLogger
+        if self.log_file:
+            self.log_file.parent.mkdir(parents=True, exist_ok=True)
+            self.logger = FileLogger(
+                logname="Trainer",
+                path=str(self.log_file.parent),
+                logfile=str(self.log_file.name),
+            ).getLogger()
+
         # Build the Model
         self.model = self.model_config.build().to(self.device)
 
@@ -490,6 +504,8 @@ class Trainer(BaseModel):
         # Train for n epochs
         for epoch_idx in range(self.start_epoch, self.n_epochs):
             print(f"Epoch {epoch_idx}/{self.n_epochs}", flush=True)
+            if self.log_file:
+                self.logger.info(f"Epoch {epoch_idx}/{self.n_epochs}")
             if epoch_idx % 10 == 0 and epoch_idx > 0:
                 train_loss = np.mean(
                     [v["losses"][-1] for v in self.loss_dict["train"].values()]
@@ -503,6 +519,10 @@ class Trainer(BaseModel):
                 print(f"Training loss: {train_loss:0.5f}")
                 print(f"Validation loss: {val_loss:0.5f}")
                 print(f"Testing loss: {test_loss:0.5f}", flush=True)
+                if self.log_file:
+                    self.logger.info(f"Training loss: {train_loss:0.5f}")
+                    self.logger.info(f"Validation loss: {val_loss:0.5f}")
+                    self.logger.info(f"Testing loss: {test_loss:0.5f}")
             tmp_loss = []
 
             # Initialize batch
@@ -703,6 +723,13 @@ class Trainer(BaseModel):
                         ),
                         flush=True,
                     )
+                    if self.log_file:
+                        self.logger.info(
+                            (
+                                f"Stopping training after epoch {epoch_idx}, "
+                                f"using weights from epoch {self.es.best_epoch}"
+                            )
+                        )
                     self.model.load_state_dict(self.es.best_wts)
                     if self.use_wandb or self.sweep:
                         wandb.log(
@@ -716,6 +743,8 @@ class Trainer(BaseModel):
                     epoch_val_loss
                 ):
                     print(f"Stopping training after epoch {epoch_idx}", flush=True)
+                    if self.log_file:
+                        self.logger.info(f"Stopping training after epoch {epoch_idx}")
                     break
 
         if self.use_wandb or self.sweep:
