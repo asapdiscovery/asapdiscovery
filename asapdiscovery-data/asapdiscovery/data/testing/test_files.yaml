@@ -94,7 +94,7 @@ files:
 
   # output files for testing CDD parsing
   - resource: test_parse_best_cheng_out.csv
-    sha256hash: bfacfd0ee5d854816f24d3a871424a0a9f418e533a696b99334f7f3800ac1e0b
+    sha256hash: bb232959f19189c7032f89c666279249e6951eccfd1b93497bb4a32984c82d29
 
   - resource: test_parse_best_out.csv
     sha256hash: 58d8681bf3f72429f5e384ade12d1c4cf460ba4066ae369f738731653ae764a1
