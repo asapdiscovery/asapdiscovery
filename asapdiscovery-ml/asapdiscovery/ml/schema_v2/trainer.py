@@ -725,8 +725,8 @@ class Trainer(BaseModel):
                     )
                     if self.log_file:
                         self.logger.info(
-                                f"Stopping training after epoch {epoch_idx}, "
-                                f"using weights from epoch {self.es.best_epoch}"
+                            f"Stopping training after epoch {epoch_idx}, "
+                            f"using weights from epoch {self.es.best_epoch}"
                         )
                     self.model.load_state_dict(self.es.best_wts)
                     if self.use_wandb or self.sweep:
