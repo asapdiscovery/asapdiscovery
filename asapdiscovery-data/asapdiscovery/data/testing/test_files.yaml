@@ -97,13 +97,13 @@ files:
     sha256hash: bb232959f19189c7032f89c666279249e6951eccfd1b93497bb4a32984c82d29
 
   - resource: test_parse_best_out.csv
-    sha256hash: 58d8681bf3f72429f5e384ade12d1c4cf460ba4066ae369f738731653ae764a1
+    sha256hash: af9743adcbd4d7b16b4fa3d8039cf0225bb756a6711120290d6f060b755c7a87
 
   - resource: test_parse_cheng_out.csv
-    sha256hash: 075e76ff923c39cfad1555f172b9c998aacefb05817e6e8cc0a9321d970ad2fe
+    sha256hash: 8b84cb1abc54742c5770332070d7c5ea13fb890e0007ee2d46314ae141c030ed
 
   - resource: test_parse_out.csv
-    sha256hash: d23d7c0abf66e6eff7895e0d78016e3065d915710c427e461e30be3548ef1ff3
+    sha256hash: b2adb03a6546f17f298ceb277a204072e791caa7d0745811656ae56cd7c7e6c6
 
   # fragalysis SARS-2 reference
   - resource: reference.pdb
