@@ -13,6 +13,7 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
 from rdkit import Chem
+import pandas as pd
 
 
 def test_alchemy_create(tmpdir):
@@ -245,3 +246,95 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex):
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 5
         assert prep_dataset.failed_ligands is None
+
+
+def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
+    """Test predicting the absolute and relative free energies with no experimental data, interactive reports should
+    not be generated in this mode.
+    """
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "predict",
+            ]
+        )
+        assert result.exit_code == 0
+        assert "Loaded FreeEnergyCalculationNetwork from" in result.stdout
+        assert "Absolute predictions wrote to absolute-predictions-2023-08-07-tyk2-mini-test.csv" in result.stdout
+        assert "Relative predictions wrote to relative-predictions-2023-08-07-tyk2-mini-test.csv" in result.stdout
+        # load the datasets and check the results match what's expected
+        absolute_dataframe = pd.read_csv("absolute-predictions-2023-08-07-tyk2-mini-test.csv")
+        mol_data = absolute_dataframe.iloc[0]
+        assert mol_data["SMILES"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert mol_data["label"] == "lig_ejm_31"
+        assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-0.1332, abs=1e-4)
+        assert mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(0.0757, abs=1e-4)
+
+        relative_dataframe = pd.read_csv("relative-predictions-2023-08-07-tyk2-mini-test.csv")
+        relative_mol_data = relative_dataframe.iloc[0]
+        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert relative_mol_data["SMILES_B"] == "O=C(Nc1ccnc(NC(=O)C2CCC2)c1)c1c(Cl)cccc1Cl"
+        assert relative_mol_data["labelA"] == "lig_ejm_31"
+        assert relative_mol_data["labelB"] == "lig_ejm_47"
+        assert relative_mol_data["DDG (kcal/mol) (FECS)"] == pytest.approx(0.1115, abs=1e-4)
+        assert relative_mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(0.1497, abs=1e-4)
+
+
+def test_alchemy_predict_experimental_data(tyk2_result_network, tmpdir, tyk2_reference_data):
+    """
+    Test predicting the absolute and relative free energies with experimental data, the predictions should be shifted
+    by the experimental mean to get them in the correct energy range and the interactive reports should be generated.
+    """
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "predict",
+                "-rd",
+                tyk2_reference_data,
+                "-ru",
+                "IC50"
+            ]
+        )
+        assert result.exit_code == 0
+        assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
+        assert "Absolute report wrote to Absolute-prediction-2023-08-07-tyk2-mini-test.html" in result.stdout
+        assert "Relative report wrote to Relative-prediction-2023-08-07-tyk2-mini-test.html" in result.stdout
+        # load the datasets and check the results match what's expected
+        absolute_dataframe = pd.read_csv("absolute-predictions-2023-08-07-tyk2-mini-test.csv")
+        mol_data = absolute_dataframe.iloc[0]
+        assert mol_data["SMILES"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert mol_data["label"] == "lig_ejm_31"
+        # make sure the results have been shifted to match the experimental range
+        assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-10.2182, abs=1e-4)
+        assert mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(0.0757, abs=1e-4)
+        # make sure the experimental data has been added
+        assert mol_data["DG (kcal/mol) (EXPT)"] == pytest.approx(-9.5739, abs=1e-4)
+        # make sure the prediction error has been calculated
+        assert mol_data["prediction error (kcal/mol)"] == pytest.approx(0.6443, abs=1e-4)
+
+        relative_dataframe = pd.read_csv("relative-predictions-2023-08-07-tyk2-mini-test.csv")
+        relative_mol_data = relative_dataframe.iloc[0]
+        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert relative_mol_data["SMILES_B"] == "O=C(Nc1ccnc(NC(=O)C2CCC2)c1)c1c(Cl)cccc1Cl"
+        assert relative_mol_data["labelA"] == "lig_ejm_31"
+        assert relative_mol_data["labelB"] == "lig_ejm_47"
+        # these should not be changed as they do not need shifting
+        assert relative_mol_data["DDG (kcal/mol) (FECS)"] == pytest.approx(0.1115, abs=1e-4)
+        assert relative_mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(0.1497, abs=1e-4)
+        # make sure the experimental data has been added
+        assert relative_mol_data["DDG (kcal/mol) (EXPT)"] == pytest.approx(-0.1542, abs=1e-4)
+        assert relative_mol_data["prediction error (kcal/mol)"] == pytest.approx(0.2657, abs=1e-4)

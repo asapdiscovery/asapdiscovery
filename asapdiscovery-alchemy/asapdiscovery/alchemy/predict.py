@@ -85,15 +85,48 @@ def ki_to_dg(
         ).to(unit.kilocalorie_per_mole)
     else:
         raise ValueError("negative Ki values are not supported")
+    # propagate the uncertainty <https://en.wikipedia.org/wiki/Propagation_of_uncertainty>
     if uncertainty > 0 * unit.molar:
-        ddg = abs(
-            unit.molar_gas_constant
-            * temperature.to(unit.kelvin)
-            * np.log(uncertainty / unit.molar)
-        ).to(unit.kilocalorie_per_mole)
+        ddg = (unit.molar_gas_constant * temperature.to(unit.kelvin)
+               * uncertainty / ki).to(unit.kilocalorie_per_mole)
     else:
         ddg = 0 * unit.kilocalorie_per_mole
 
+    return dg, ddg
+
+def pic50_to_dg(
+        pic50: float,
+        uncertainty: float,
+        temperature: unit.Quantity = 298.15 * unit.kelvin,
+) -> tuple[unit.Quantity, unit.Quantity]:
+    """
+    Convert the PIC50 value and its uncertainty to dg.
+
+    Notes:
+        We use a different function for this due to the slightly different error propagation formula.
+        uncertainty calculated using:
+        G = RTLn(Ki)
+        Ki = 10^(-pK)
+        sigma(G) = dG/dKi * sigma(Ki)
+        sigma(G) = sigma(pK) * RT * d Ln(10^-pK) / dpK
+        sigma(G) = sigma(pK) * RT * Ln(10)
+
+    Args:
+        pic50: The pIC50 value.
+        uncertainty: The standard deviation in the pIC50 value
+        temperature: Experimental temperature. Default: 298.15 * unit.kelvin.
+
+    Returns:
+        dg: Gibbs binding free energy.
+        ddg: Error in binding free energy.
+    """
+    ki = negative_log(pic50) * unit.molar
+    dg = (
+            unit.molar_gas_constant
+            * temperature.to(unit.kelvin)
+            * np.log(ki / unit.molar)
+    ).to(unit.kilocalorie_per_mole)
+    ddg = (unit.molar_gas_constant * temperature.to(unit.kelvin) * np.log(10) * uncertainty).to(unit.kilocalorie_per_mole)
     return dg, ddg
 
 
@@ -234,23 +267,20 @@ def extract_experimental_data(
             f"Could not determine the assay tag from the provided units {assay_units}."
         )
 
+    if assay_units == "pIC50":
+        converter = pic50_to_dg
+        units = unit.dimensionless
+    else:
+        converter = ki_to_dg
+        units = unit.molar
+
     for _, row in exp_data.iterrows():
         # get the data.
         name = row["Molecule Name"]
         exp_value = row[assay_endpoint_tag]
         uncertainty = row[assay_endpoint_confidence_tag]
 
-        # convert to DG and handle possible units
-        if assay_units == "pIC50":
-            ic50 = negative_log(exp_value) * unit.molar
-            if uncertainty != 0.0:
-                uncertainty = negative_log(uncertainty) * unit.molar
-        else:
-            ic50 = exp_value
-            if uncertainty != 0.0:
-                uncertainty = uncertainty * unit.molar
-
-        dg, ddg = ki_to_dg(ki=ic50, uncertainty=uncertainty)
+        dg, ddg = converter(exp_value * units, uncertainty * units)
         experimental_data[name] = (dg, ddg)
 
     return experimental_data
