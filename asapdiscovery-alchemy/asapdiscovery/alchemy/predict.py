@@ -87,17 +87,19 @@ def ki_to_dg(
         raise ValueError("negative Ki values are not supported")
     # propagate the uncertainty <https://en.wikipedia.org/wiki/Propagation_of_uncertainty>
     if uncertainty > 0 * unit.molar:
-        ddg = (unit.molar_gas_constant * temperature.to(unit.kelvin)
-               * uncertainty / ki).to(unit.kilocalorie_per_mole)
+        ddg = (
+            unit.molar_gas_constant * temperature.to(unit.kelvin) * uncertainty / ki
+        ).to(unit.kilocalorie_per_mole)
     else:
         ddg = 0 * unit.kilocalorie_per_mole
 
     return dg, ddg
 
+
 def pic50_to_dg(
-        pic50: float,
-        uncertainty: float,
-        temperature: unit.Quantity = 298.15 * unit.kelvin,
+    pic50: float,
+    uncertainty: float,
+    temperature: unit.Quantity = 298.15 * unit.kelvin,
 ) -> tuple[unit.Quantity, unit.Quantity]:
     """
     Convert the PIC50 value and its uncertainty to dg.
@@ -122,11 +124,11 @@ def pic50_to_dg(
     """
     ki = negative_log(pic50) * unit.molar
     dg = (
-            unit.molar_gas_constant
-            * temperature.to(unit.kelvin)
-            * np.log(ki / unit.molar)
+        unit.molar_gas_constant * temperature.to(unit.kelvin) * np.log(ki / unit.molar)
     ).to(unit.kilocalorie_per_mole)
-    ddg = (unit.molar_gas_constant * temperature.to(unit.kelvin) * np.log(10) * uncertainty).to(unit.kilocalorie_per_mole)
+    ddg = (
+        unit.molar_gas_constant * temperature.to(unit.kelvin) * np.log(10) * uncertainty
+    ).to(unit.kilocalorie_per_mole)
     return dg, ddg
 
 
