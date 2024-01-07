@@ -55,6 +55,7 @@ class GIFBlockData:
         "EV-D68-3Cpro": "A",
         "EV-A71-3Cpro": "A",
         "EV-A71-Capsid": "A",
+        "EV-D68-Capsid": "A",
         "DENV-NS2B-NS3pro": "B",
         "ZIKV-NS2B-NS3pro": "B",
     }
@@ -117,6 +118,13 @@ class GIFBlockData:
         "subP3": "83+85+84+153+154+155+86",
     }
     pocket_dict_EV_A71_Capsid = {
+        "hydrophic_trap": "155+135+137+24+190+179+177+188+133+233",
+        "tube_region": "111+230+195+253+201+131+192+193+196",
+        "entry_pore": "229+228+112+114+113+203+275+274+224",
+    }
+
+
+    pocket_dict_EV_D68_Capsid = {
         "hydrophic_trap": "155+135+137+24+190+179+177+188+133+233",
         "tube_region": "111+230+195+253+201+131+192+193+196",
         "entry_pore": "229+228+112+114+113+203+275+274+224",
