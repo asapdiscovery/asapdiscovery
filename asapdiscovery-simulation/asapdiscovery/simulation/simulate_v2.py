@@ -12,14 +12,25 @@ from asapdiscovery.data.openeye import save_openeye_pdb
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from mdtraj.reporters import XTCReporter
+from mdtraj.core.residue_names import _SOLVENT_TYPES
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveFloat,
+    PositiveInt,
+    root_validator,
+    validator,
+)
 from rdkit import Chem
 
 logger = logging.getLogger(__name__)
+
+
+solvent_types = list(_SOLVENT_TYPES)
 
 
 def truncate_num_steps(num_steps, reporting_interval):
@@ -100,6 +111,61 @@ class VanillaMDSimulatorV2(SimulatorBase):
         2500000,
         description="Number of simulation steps, must be a multiple of reporting interval or will be truncated to nearest multiple of reporting interval",
     )
+
+    rmsd_restraint: bool = Field(
+        False, description="Whether to apply an RMSD restraint to the simulation"
+    )
+    rmsd_restraint_atom_indices: list[int] = Field(
+        [],
+        description="Atom indices to apply the RMSD restraint to, cannot be used with rmsd_restraint_type",
+    )
+    rmsd_restraint_type: Optional[str] = Field(
+        "CA",
+        description="Type of RMSD restraint to apply, must be 'CA' or 'heavy', cannot be used with rmsd_restraint_atom_indices",
+    )
+
+    rmsd_restraint_force_constant: PositiveFloat = Field(
+        50, description="Force constant of the RMSD restraint in kcal/mol/A^2"
+    )
+
+    @validator
+    @classmethod
+    def check_restraint_type(cls, v):
+        if v not in ["CA", "heavy"]:
+            raise ValueError("RMSD restraint type must be 'CA' or 'heavy'")
+        return v
+
+    @validator
+    @classmethod
+    def check_restraint_atom_indices(cls, v):
+        if len(v) == 0:
+            return v
+        if not isinstance(v, list):
+            raise ValueError("RMSD restraint atom indices must be a list")
+        if not all(isinstance(x, int) for x in v):
+            raise ValueError("RMSD restraint atom indices must be a list of ints")
+        return v
+
+    @root_validator
+    @classmethod
+    def check_restraint_setup(cls, values):
+        """
+        Validate RMSD restraint setup
+        """
+        rmsd_restraint = values.get("rmsd_restraint")
+        rmsd_restraint_atom_indices = values.get("rmsd_restraint_atom_indices")
+        rmsd_restraint_type = values.get("rmsd_restraint_type")
+
+        if rmsd_restraint_type and rmsd_restraint_atom_indices:
+            raise ValueError(
+                "If RMSD restraint type is provided, rmsd_restraint_atom_indices must be empty"
+            )
+
+        if rmsd_restraint and len(rmsd_restraint_atom_indices) == 0:
+            raise ValueError(
+                "If RMSD restraint is enabled, rmsd_restraint_atom_indices must be provided"
+            )
+        return values
 
     class Config:
         arbitrary_types_allowed = True
@@ -278,6 +344,36 @@ class VanillaMDSimulatorV2(SimulatorBase):
         # Add barostat
 
         system.addForce(MonteCarloBarostat(self._pressure, self._temperature))
+
+        if self.rmsd_restraint:
+            logger.info("Adding RMSD restraint")
+            if self.rmsd_restraint_atom_indices:
+                atom_indices = self.rmsd_restraint_atom_indices
+
+            elif self.rmsd_restraint_type:
+                if self.rmsd_restraint_type == "CA":
+                    atom_indices = atom_indices = [
+                        atom.index
+                        for atom in modeller.topology.atoms
+                        if atom.residue.name not in solvent_types and atom.name == "CA"
+                    ]
+
+                elif self.rmsd_restraint_type == "heavy":
+                    atom_indices = [
+                        atom.index
+                        for atom in modeller.topology.atoms
+                        if atom.residue.name not in solvent_types
+                        and atom.element.name != "hydrogen"
+                    ]
+            logger.debug(f"RMSD restraint atom indices: {atom_indices}")
+            custom_cv_force = openmm.CustomCVForce("(K_RMSD/2)*(RMSD)^2")
+            custom_cv_force.addGlobalParameter(
+                "K_RMSD", self.rmsd_restraint_force_constant * 2
+            )
+            rmsd_force = openmm.RMSDForce(modeller.positions, atom_indices)
+            custom_cv_force.addCollectiveVariable("RMSD", rmsd_force)
+            system.addForce(custom_cv_force)
+            logger.info("Added RMSD restraint force")
 
         integrator = LangevinMiddleIntegrator(
             self._temperature, self._collision_rate, self._timestep
