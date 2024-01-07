@@ -25,6 +25,7 @@ from pydantic import (
     root_validator,
     validator,
 )
+import warnings
 from rdkit import Chem
 
 logger = logging.getLogger(__name__)
@@ -365,6 +366,9 @@ class VanillaMDSimulatorV2(SimulatorBase):
                         if atom.residue.name not in solvent_types
                         and atom.element.name != "hydrogen"
                     ]
+                    warnings.warn(
+                        "Heavy atom RMSD restraint includes ligand atoms, are you sure this is what you want?"
+                    )
             logger.debug(f"RMSD restraint atom indices: {atom_indices}")
             custom_cv_force = openmm.CustomCVForce("(K_RMSD/2)*(RMSD)^2")
             custom_cv_force.addGlobalParameter(
