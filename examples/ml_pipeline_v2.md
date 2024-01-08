@@ -222,5 +222,55 @@ ds_config = DatasetConfig.from_str_files(
     cache_file="./achiral_enantiopure_semiquant_schnet_ds.pkl",
 )
 Path("./achiral_enantiopure_semiquant_schnet_config.json").write_text(ds_config.json())
-ds_config.build()
+ds = ds_config.build()
 ```
+After either of the above is run, the JSON file can then be loaded and the Dataset
+object built (by loading from the cache) with:
+```python
+ds_config = DatasetConfig(
+    **Path("cdd_achiral_enantiopure_semiquant_schema.json").read_text()
+)
+ds = ds_config.build()
+```
+
+## Train the Model
+There are many different options for how this script can be called. This example shows
+how to train a SchNet model using all the data previously generated in this example. We
+will use the previously generated DatasetConfig and pickled Dataset object
+(`--ds-config-cache ./achiral_enantiopure_semiquant_schnet_config.json`). We will train
+for 300 epochs (`--n-epochs 300`) on the GPU (`--device cuda`), and use temporal
+splitting for our data (`--ds-split-type temporal`). Additionally, this example uses
+Weights & Biases to track
+model training (`--use-wandb True`). You should set up and initialize your W&B account
+according to their docs before running this. We will log this to a `test` project
+(`--wandb-project test`), but you can obviously call this whatever you like. We will use
+a `PIC50Readout` block in the model (`--pred-readout pic50`) to allow training against
+experimental pIC50 values. Here we use the experimental condition values from the Moonshot
+experiments (`--pred-substrate 0.375 --pred-km 9.5`), but these should be adjusted if
+you're using different data. Finally, we use a step MSE loss function
+(`--loss-type mse_step`), which prevents the model from being penalized if the data it's
+trying to predict is outside the assay range, and the model correctly predicts a value
+outside the assay range.
+
+This command will also generate a JSON cache of the generated `Trainer` object, which
+can then be loaded directly in any subsequent training runs. This can also be
+accomplished by running `asap-ml build` instead of `asap-ml build-and-train`, with all
+other options remaining the same. The `build` mode just builds and saves the `Trainer`
+schema, without doing any initializing. The `build-and-train` mode, as the name implies,
+instead builds/loads the `Trainer` schema, then initializes it and runs training.
+```bash
+asap-ml build-and-train schnet \
+    --output-dir ./model_training/achiral_enantiopure_semiquant_schnet/ \
+    --trainer-config-cache ./model_training/achiral_enantiopure_semiquant_schnet/trainer.json \
+    --ds-split-type temporal \
+    --ds-config-cache ./achiral_enantiopure_semiquant_schnet_config.json \
+    --loss-type mse_step \
+    --pred-readout pic50 \
+    --pred-substrate 0.375 \
+    --pred-km 9.5 \
+    --device cuda \
+    --n-epochs 300 \
+    --use-wandb True \
+    --wandb-project test
+```
+This can also be accomplished directly in Python, with:
