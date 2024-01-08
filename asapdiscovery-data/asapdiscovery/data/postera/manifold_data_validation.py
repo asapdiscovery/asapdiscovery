@@ -104,7 +104,6 @@ def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
             virus_target_map[v].append(target)
             target_protein_map[tag] = target
 
-
     return (
         TagEnumBase.from_iterable("TargetTags", target_tags),
         target_tags,
@@ -231,9 +230,13 @@ manifold_data_spec = pkg_resources.resource_filename(
 )
 
 # make target enum and set
-TargetTags, target_tag_set, TargetVirusMap, VirusTargetMap, TargetProteinMap = make_target_tags(
-    manifold_data_spec
-)
+(
+    TargetTags,
+    target_tag_set,
+    TargetVirusMap,
+    VirusTargetMap,
+    TargetProteinMap,
+) = make_target_tags(manifold_data_spec)
 
 VirusTags = make_virus_tags(manifold_data_spec)
 

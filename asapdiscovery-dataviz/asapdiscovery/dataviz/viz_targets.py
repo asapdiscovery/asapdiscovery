@@ -44,7 +44,6 @@ class VizTargets(str, Enum):
     viz_EV_A71_Capsid = "EV-A71-Capsid"
     viz_EV_D68_Capsid = "EV-D68-Capsid"
 
-
     @classmethod
     def get_allowed_targets(cls) -> list[str]:
         return [t.value for t in cls]

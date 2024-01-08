@@ -7,8 +7,8 @@ import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
     TargetProteinMap,
+    TargetTags,
 )
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar
