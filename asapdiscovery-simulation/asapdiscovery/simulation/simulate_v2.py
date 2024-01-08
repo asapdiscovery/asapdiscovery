@@ -129,14 +129,14 @@ class VanillaMDSimulatorV2(SimulatorBase):
         50, description="Force constant of the RMSD restraint in kcal/mol/A^2"
     )
 
-    @validator
+    @validator("rmsd_restraint_type")
     @classmethod
     def check_restraint_type(cls, v):
         if v not in ["CA", "heavy"]:
             raise ValueError("RMSD restraint type must be 'CA' or 'heavy'")
         return v
 
-    @validator
+    @validator("rmsd_restraint_atom_indices")
     @classmethod
     def check_restraint_atom_indices(cls, v):
         if len(v) == 0:
@@ -162,9 +162,13 @@ class VanillaMDSimulatorV2(SimulatorBase):
                 "If RMSD restraint type is provided, rmsd_restraint_atom_indices must be empty"
             )
 
-        if rmsd_restraint and len(rmsd_restraint_atom_indices) == 0:
+        if (
+            rmsd_restraint
+            and not rmsd_restraint_type
+            and len(rmsd_restraint_atom_indices) == 0
+        ):
             raise ValueError(
-                "If RMSD restraint is enabled, rmsd_restraint_atom_indices must be provided"
+                "If RMSD restraint is enabled, and rmsd_restraint_type is not provided rmsd_restraint_atom_indices must be provided"
             )
         return values
 
@@ -353,16 +357,16 @@ class VanillaMDSimulatorV2(SimulatorBase):
 
             elif self.rmsd_restraint_type:
                 if self.rmsd_restraint_type == "CA":
-                    atom_indices = atom_indices = [
+                    atom_indices = [
                         atom.index
-                        for atom in modeller.topology.atoms
+                        for atom in modeller.topology.atoms()
                         if atom.residue.name not in solvent_types and atom.name == "CA"
                     ]
 
                 elif self.rmsd_restraint_type == "heavy":
                     atom_indices = [
                         atom.index
-                        for atom in modeller.topology.atoms
+                        for atom in modeller.topology.atoms()
                         if atom.residue.name not in solvent_types
                         and atom.element.name != "hydrogen"
                     ]
