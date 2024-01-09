@@ -1,11 +1,13 @@
 import os
 import pickle as pkl
 import re
+from enum import Enum
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.openeye import oechem, oeshape
+from asapdiscovery.data.schema_v2.ligand import Ligand
 
 
 class DockingDataset:
@@ -466,6 +468,59 @@ def calculate_rmsd_openeye(
         len(predocked_coords) // 3,
     )
     return rmsd
+
+
+class TanimotoType(str, Enum):
+    """
+    Enum for the different types of Tanimoto coefficients that can be calculated.
+    """
+
+    SHAPE = "TanimotoShape"
+    COLOR = "TanimotoColor"
+    COMBO = "TanimotoCombo"
+
+
+def calculate_tanimoto_oe(
+    refmol: Ligand,
+    fitmol: Ligand,
+    compute_type: TanimotoType = TanimotoType.COMBO,
+):
+    """
+    Calculate the Tanimoto coefficient between two molecules using OpenEye's shape toolkit.
+
+    Parameters
+    ----------
+    refmol : Ligand
+        The reference molecule to which the docked molecule is compared.
+    fitmol : Ligand
+        The docked molecule to be compared to the reference molecule.
+
+    Returns
+    -------
+    float
+        The Tanimoto coefficient between the two molecules.
+    """
+    refmol = refmol.to_oemol()
+    fitmol = fitmol.to_oemol()
+
+    # Prepare reference molecule for calculation
+    # With default options this will remove any explicit hydrogens present
+    prep = oeshape.OEOverlapPrep()
+    prep.Prep(refmol)
+
+    # Get appropriate function to calculate exact shape
+    shapeFunc = oeshape.OEOverlapFunc()
+    shapeFunc.SetupRef(refmol)
+
+    res = oeshape.OEOverlapResults()
+    prep.Prep(fitmol)
+    shapeFunc.Overlap(fitmol, res)
+    if compute_type == TanimotoType.SHAPE:
+        return res.GetShapeTanimoto()
+    elif compute_type == TanimotoType.COLOR:
+        return res.GetColorTanimoto()
+    elif compute_type == TanimotoType.COMBO:
+        return res.GetTanimotoCombo()
 
 
 def write_all_rmsds_to_reference(

@@ -572,7 +572,9 @@ class ReferenceLigand(Ligand):
 
 
 def write_ligands_to_multi_sdf(
-    sdf_name: Union[str, Path], ligands: list[Ligand], overwrite=False
+    sdf_name: Union[str, Path],
+    ligands: list[Ligand],
+    overwrite=False,
 ):
     """
     Dumb way to do this, but just write out each ligand to the same.
@@ -597,6 +599,7 @@ def write_ligands_to_multi_sdf(
     ValueError
         If the sdf_name does not end in .sdf
     """
+
     sdf_file = Path(sdf_name)
     if sdf_file.exists() and not overwrite:
         raise FileExistsError(f"{sdf_file} exists and overwrite is False")
