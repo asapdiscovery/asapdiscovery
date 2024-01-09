@@ -27,6 +27,8 @@ dependencies:
   - rdkit
   - seaborn
   - pebble
+  - panel
+  - plotmol
 
   # data
   - requests
