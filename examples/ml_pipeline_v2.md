@@ -3,6 +3,10 @@ This document will show an example of running the ML pipeline all the way throug
 from data prep to training to inference. This document is focused on running scripts
 rather than interfacing with the API itself.
 
+**TODO**: The first two sections of this document (*Preparing Experimental Data* and
+*Preparing Structural Data*) are somewhat out of date, although both should still work
+as written. These should be updated to use the new schema workflows in a future PR.
+
 # Preparing Experimental Data
 The first step in the pipeline is to download and parse the experimental data from CDD.
 This will act as our labels when training, and will also give us the SMILES strings to
