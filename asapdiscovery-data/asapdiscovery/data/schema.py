@@ -55,12 +55,6 @@ class ExperimentalCompoundData(Model):
     )
 
 
-class ExperimentalCompoundDataUpdate(Model):
-    """A bundle of experimental data for compounds (racemic or enantiopure)."""
-
-    compounds: list[ExperimentalCompoundData]
-
-
 ########################################
 
 
