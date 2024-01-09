@@ -324,6 +324,7 @@ loss_config = {"loss_type": "mse_step"}
 
 # Finally build the Trainer object
 t = Trainer(
+    output_dir=Path("./model_training/achiral_enantiopure_semiquant_schnet/"),
     optimizer_config=optim_config,
     model_config=model_config,
     ds_config=ds_config,
