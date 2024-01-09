@@ -274,3 +274,73 @@ asap-ml build-and-train schnet \
     --wandb-project test
 ```
 This can also be accomplished directly in Python, with:
+```python
+import json
+from pathlib import Path
+
+from asapdiscovery.ml.schema_v2.config import DatasetConfig
+from asapdiscovery.ml.schema_v2.trainer import Trainer
+from mtenn.config import SchNetModelConfig
+
+# Dicts for individual Configs. A lot of them can be mostly empty, as we're just using
+#  the defaults for the most part
+optim_config = {}
+
+# As with the DatasetConfig below, the ModelConfig is a somewhat special case when
+#  being passed to the Trainer. The Trainer has a special validator that selects the
+#  correct subclass to create, so we can just pass a dict to it
+model_config = {
+    "model_type": "schnet",
+    "pred_readout": "pic50",
+    "pred_substrate": 0.375,
+    "pred_km": 9.5,
+}
+"""
+The more general version of the above would be to create the ModelConfig directly:
+model_config = SchNetModelConfig(
+    pred_readout="pic50",
+    pred_substrate=0.375,
+    pred_km=9.5,
+)
+This will also work with the Trainer, but the dict approach is shown here to highlight
+the validators built in to the Trainer class.
+"""
+
+# The DatasetConfig is a bit of a special case. Since we've already generated it, we can
+#  just load it and pass the DatasetConfig object directly.
+ds_config = json.loads(
+    Path("./achiral_enantiopure_semiquant_schnet_config.json").read_text()
+)
+"""
+An alternative to the above that will only work when being passed to a Trainer is:
+ds_config = {"cache": "./achiral_enantiopure_semiquant_schnet_config.json"}
+
+This is because the Trainer has a special validator that will load and instantiate the
+DatasetConfig object from this file.
+"""
+
+ds_splitter_config = {"split_type": "temporal"}
+loss_config = {"loss_type": "mse_step"}
+
+# Finally build the Trainer object
+t = Trainer(
+    optimizer_config=optim_config,
+    model_config=model_config,
+    ds_config=ds_config,
+    ds_splitter_config=ds_splitter_config,
+    loss_config=loss_config,
+    n_epochs=300,
+    device="cuda",
+    use_wandb=True,
+    wandb_project="test",
+)
+# Cache the Trainer as a JSON file
+Path("./model_training/achiral_enantiopure_semiquant_schnet/trainer.json").write_text(
+    t.json()
+)
+# Initialize the Trainer. This step builds all of the objects that are described by the
+#  above Configs (eg model, Dataset, optimizer, etc.)
+t.initialize()
+# Run model training
+t.train()
+```
