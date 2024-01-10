@@ -392,7 +392,7 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
             match="Could not determine the assay tag from the provided units pIC50",
         ):
             # use the wrong unit heading
-            result = runner.invoke(
+            runner.invoke(
                 alchemy,
                 ["predict", "-rd", tyk2_reference_data, "-ru", "pIC50"],
                 catch_exceptions=False,  # let the exception buble up so pytest can check it

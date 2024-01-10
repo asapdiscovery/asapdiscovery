@@ -31,7 +31,7 @@ def get_magnitude(quantity: unit.Quantity) -> float:
     Returns:
         magnitude: The magnitude computed from the quantity.
     """
-    if type(quantity) == float:
+    if type(quantity) is float:
         magnitude = quantity
     else:
         magnitude = quantity.magnitude
