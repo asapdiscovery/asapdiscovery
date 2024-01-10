@@ -1,6 +1,6 @@
 import base64
-from typing import Literal, Optional
 import warnings
+from typing import Literal, Optional
 
 import bokeh.models.widgets.tables
 import bokeh.palettes
@@ -258,14 +258,16 @@ def extract_experimental_data(
     experimental_data = {}
     assay_tags = [assay_units, assay_units + "_Mean"]
     exp_data = pd.read_csv(reference_csv).fillna(0)
-    
+
     # work out the columns for the ref data and the uncertainty
     assay_endpoint_tag, assay_endpoint_confidence_tag = None, None
     for col in exp_data.columns:
         for assay_tag in assay_tags:
             if col.replace(" (µM)", "").endswith(assay_tag):
                 assay_endpoint_tag = col
-            elif col.replace(" (µM)", "").endswith(f"{assay_tag} Standard Deviation (±)"):
+            elif col.replace(" (µM)", "").endswith(
+                f"{assay_tag} Standard Deviation (±)"
+            ):
                 assay_endpoint_confidence_tag = col
     if assay_endpoint_tag is None:
         raise RuntimeError(
@@ -275,7 +277,6 @@ def extract_experimental_data(
         warnings.warn(
             f"Failed to detect Standard Deviation in experimental reference file {reference_csv}."
         )
-
 
     if assay_units == "pIC50":
         converter = pic50_to_dg
@@ -590,7 +591,7 @@ def _plot_with_plotmol(
         marker_color=palette[0],
         custom_column_data=custom_column_data,
     )
-    figure.axis.axis_label_text_font_size = '20pt'
+    figure.axis.axis_label_text_font_size = "20pt"
     return figure
 
 

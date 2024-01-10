@@ -406,7 +406,6 @@ def restart(network: str, verbose: bool, tasks):
     default="pIC50",
     show_default=True,
 )
-
 def predict(
     network: str, reference_units: str, reference_dataset: Optional[str] = None
 ):
