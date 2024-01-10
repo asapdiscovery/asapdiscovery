@@ -187,9 +187,13 @@ class AlchemiscaleHelper:
 
             # if end state ligands did not have names, use SMILES instead
             if not name_a:
-                name_a = individual_runs[0][0].inputs["stateA"].components["ligand"].smiles
+                name_a = (
+                    individual_runs[0][0].inputs["stateA"].components["ligand"].smiles
+                )
             if not name_b:
-                name_b = individual_runs[0][0].inputs["stateB"].components["ligand"].smiles
+                name_b = (
+                    individual_runs[0][0].inputs["stateB"].components["ligand"].smiles
+                )
 
             results.append(
                 TransformationResult(
