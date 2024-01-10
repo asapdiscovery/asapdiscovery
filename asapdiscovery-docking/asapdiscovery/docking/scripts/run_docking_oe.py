@@ -39,7 +39,6 @@ import pandas
 import pebble
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import oechem  # noqa: E402
-from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import check_filelist_has_elements  # noqa: E402
 from asapdiscovery.docking.docking import (  # noqa: E402
     POSIT_METHODS,
@@ -180,7 +179,7 @@ def get_args():
     parser.add_argument(
         "-e",
         "--exp_file",
-        help="JSON file containing ExperimentalCompoundDataUpdate object.",
+        help="JSON file containing list[ExperimentalCompoundData].",
     )
     parser.add_argument(
         "-r",
@@ -347,11 +346,7 @@ def main():
 
         # Load compounds
         exp_compounds = [
-            c
-            for c in ExperimentalCompoundDataUpdate(
-                **json.load(open(args.exp_file))
-            ).compounds
-            if c.smiles is not None
+            c for c in json.load(open(args.exp_file)) if c.smiles is not None
         ]
         # Make OEGraphMol for each compound
         mols = []

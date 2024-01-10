@@ -64,7 +64,7 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
         Whether to use omega confomer enumeration in docking, warning: more expensive
     allow_posit_retries : bool
         Whether to allow retries in docking with varying settings, warning: more expensive
-    ml_scorers : MLModelType, optional
+    ml_scorers : ModelType, optional
         The name of the ml scorers to use.
     logname : str, optional
         Name of the log file.
