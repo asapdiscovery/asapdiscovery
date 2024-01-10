@@ -389,7 +389,8 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         # ligands to have names for human-readable result gathering downstream
         if missing := len([l for l in ligands if not l.name]):
             raise ValueError(
-                    f"{missing} of {len(ligands)} ligands do not have names; names are required for ligands for downstream results handling")
+                f"{missing} of {len(ligands)} ligands do not have names; names are required for ligands for downstream results handling"
+            )
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(

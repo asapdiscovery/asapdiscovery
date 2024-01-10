@@ -111,7 +111,9 @@ def plan(
         # if any ligands lack a name, then raise an exception; important for
         # ligands to have names for human-readable result gathering downstream
         if missing := len([l for l in input_ligands if not l.name]):
-            raise ValueError(f"{missing} of {len(input_ligands)} ligands do not have names; names are required for ligands for downstream results handling")
+            raise ValueError(
+                f"{missing} of {len(input_ligands)} ligands do not have names; names are required for ligands for downstream results handling"
+            )
 
         # write to a temp pdb file and read back in
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
