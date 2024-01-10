@@ -82,19 +82,19 @@ dependencies:
   - alchemiscale-client
 #  - cinnabar >=0.4.1
 
+  # misc
+  - biopython
+  - ase
+  - validators
+  - pyyaml
+  - pytest-console-scripts
+  - pytest-timeout
+  - sigfig
+  - wandb
+
   # Pip-only installs
   - pip:
-    - biopython
-    - ase
-    - validators
-    - pyyaml
-    # testing
-    - pytest-console-scripts
-    - pytest-timeout
-    # viz
-    - pygifsicle
-    - sigfig
-    - airium
-    - logomaker
-    - git+https://github.com/OpenFreeEnergy/cinnabar.git@main
-    - wandb
+    - pygifsicle # is this the same as gifsicle?
+    - airium # not on CF
+    - logomaker # not on CF
+    - git+https://github.com/OpenFreeEnergy/cinnabar.git@main  # may need to wait for release
