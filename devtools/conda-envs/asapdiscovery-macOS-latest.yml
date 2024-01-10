@@ -50,7 +50,7 @@ dependencies:
   - dgl
   - dgllife
   - pooch
-
+  - mtenn >=0.5.0
 
   # md
   - openmm
@@ -88,8 +88,6 @@ dependencies:
     - ase
     - validators
     - pyyaml
-    # ml
-    - git+https://github.com/choderalab/mtenn@0.4.0
     # testing
     - pytest-console-scripts
     - pytest-timeout
@@ -99,3 +97,4 @@ dependencies:
     - airium
     - logomaker
     - git+https://github.com/OpenFreeEnergy/cinnabar.git@main
+    - wandb
