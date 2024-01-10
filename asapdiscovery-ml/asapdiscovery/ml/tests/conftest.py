@@ -2,7 +2,7 @@ import os
 
 import pytest
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from asapdiscovery.ml.dataset import GraphDataset, GraphInferenceDataset
+from asapdiscovery.ml.dataset import GraphDataset
 from dgllife.utils import CanonicalAtomFeaturizer
 from rdkit import Chem
 
@@ -84,40 +84,15 @@ def graph_dataset(
     experimental_compound_data_1_reordered,
     experimental_compound_data_2,
 ):
-    gds = GraphDataset(
+    gds = GraphDataset.from_exp_compounds(
         [
             experimental_compound_data_1,
             experimental_compound_data_1_reordered,
             experimental_compound_data_2,
         ],
-        cache_file="./cache.bin",
         node_featurizer=CanonicalAtomFeaturizer(),
     )
     yield gds
-    # clean up the cache file
-    if os.path.exists("./cache.bin"):
-        os.remove("./cache.bin")
-
-
-@pytest.fixture()
-def graph_inference_dataset(
-    experimental_compound_data_1,
-    experimental_compound_data_1_reordered,
-    experimental_compound_data_2,
-):
-    gds = GraphInferenceDataset(
-        [
-            experimental_compound_data_1,
-            experimental_compound_data_1_reordered,
-            experimental_compound_data_2,
-        ],
-        cache_file="./cache.bin",
-        node_featurizer=CanonicalAtomFeaturizer(),
-    )
-    yield gds
-    # clean up the cache file
-    if os.path.exists("./cache.bin"):
-        os.remove("./cache.bin")
 
 
 @pytest.fixture()
@@ -131,12 +106,3 @@ def test_data(graph_dataset):
     g2 = graph_dataset[1][1]["g"]
     g3 = graph_dataset[2][1]["g"]
     return g1, g2, g3, graph_dataset
-
-
-@pytest.fixture()
-def test_inference_data(graph_inference_dataset):
-    # has structure: graph
-    g1 = graph_inference_dataset[0]
-    g2 = graph_inference_dataset[1]
-    g3 = graph_inference_dataset[2]
-    return g1, g2, g3, graph_inference_dataset

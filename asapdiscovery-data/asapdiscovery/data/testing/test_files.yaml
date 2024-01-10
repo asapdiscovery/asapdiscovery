@@ -264,3 +264,37 @@ files:
   # alchemy result testing
   - resource: tyk2_result_network.json
     sha256hash: 9c29e5db96f8d9f85eec5e8604f0ec9cb503e90a4f1359113352c8352c82fd11
+
+  # integration testing for ML
+  - resource: ml_testing/exp_file.json
+    sha256hash: d887d5bdc705b22b8dfb2be2f9fdd3ac2679be4d19d434fd61873b6497d6f36b
+
+  - resource: ml_testing/docked/AAR-POS-5507155c-1_Mpro-P0018_0A_0_bound_best.pdb
+    sha256hash: 236e690fbaac7a811afa4cf2cd950c004582173c8346c5439476eb5d8e0b6f97
+
+  - resource: ml_testing/docked/AAR-RCN-390aeb1f-1_Mpro-P3074_0A_0_bound_best.pdb
+    sha256hash: b5655f753560f32b93eb8fdbfb6d48afa51e2076ccadf75a4d42d7cde2b30931
+
+  - resource: ml_testing/docked/AAR-RCN-67438d21-1_Mpro-P3074_0A_0_bound_best.pdb
+    sha256hash: 6ba3df5050d99e052b511990c576620e3628312fbb9c2fa6633dc783acfb42ed
+
+  - resource: ml_testing/docked/AAR-POS-d2a4d1df-27_Mpro-P0238_0A_0_bound_best.pdb
+    sha256hash: 75a059a032b4ab61148ec8b66392fade4def68c21bd8f91f055ac79a0ab1c456
+
+  - resource: ml_testing/docked/AAR-POS-8a4e0f60-7_Mpro-P0053_0A_0_bound_best.pdb
+    sha256hash: cc15d8f59dc8d6168969c628e6dc8a0a00433045d31bf15822923f9418839db9
+
+  - resource: ml_testing/docked/AAR-RCN-28a8122f-1_Mpro-P2005_0A_0_bound_best.pdb
+    sha256hash: 4899b6ddfe4c3b5164b2f04547486fa3523ab9e189bb3649e54d16b9abbd4536
+
+  - resource: ml_testing/docked/AAR-RCN-37d0aa00-1_Mpro-P3074_0A_0_bound_best.pdb
+    sha256hash: d088efc7a802fcc6cfa40100580ec2949e7c1d15a322d886139d0f5149f8c4f8
+
+  - resource: ml_testing/docked/AAR-RCN-748c104b-1_Mpro-P3074_0A_0_bound_best.pdb
+    sha256hash: cf67ac6c0fccaba1171166794ad909dda0753494c2a96af68985d30c619e2c3b
+
+  - resource: ml_testing/docked/AAR-RCN-521d1733-1_Mpro-P2005_0A_0_bound_best.pdb
+    sha256hash: d0dc51b8a5694632b3bac2aed448383b1ecf3753c11e8ce134ea1ea2dae1f845
+
+  - resource: ml_testing/docked/AAR-RCN-845f9611-1_Mpro-P2005_0A_0_bound_best.pdb
+    sha256hash: 028cb829b537906edf57f3ddafb5a1daad8d4e969669801aa27e01dac520adae

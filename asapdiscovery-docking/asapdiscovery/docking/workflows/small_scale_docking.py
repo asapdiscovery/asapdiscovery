@@ -67,7 +67,7 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         Whether to allow retries for docking failures
     n_select : PositiveInt
         Number of targets to dock each ligand against.
-    ml_scorers : MLModelType, optional
+    ml_scorers : ModelType, optional
         The name of the ml scorers to use.
     md : bool, optional
         Whether to run MD on the docked poses
