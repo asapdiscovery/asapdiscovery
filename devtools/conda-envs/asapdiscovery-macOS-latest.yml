@@ -89,7 +89,7 @@ dependencies:
   - pytest-timeout
   - sigfig
   - wandb
-  
+
   # Pip-only installs
   - pip:
     - pygifsicle # is this the same as gifsicle?
