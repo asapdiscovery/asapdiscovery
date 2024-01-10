@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import torch
 
 
@@ -7,7 +9,7 @@ class Jitter:
     per-atom.
     """
 
-    def __init__(self, mean: float, std: float, rand_seed: int = None):
+    def __init__(self, mean: float, std: float, rand_seed: int = None, dict_key="pos"):
         """
         Parameters
         ----------
@@ -17,6 +19,9 @@ class Jitter:
             Standard deviation of noise distribution
         rand_seed : int, optional
             Random seed for noise generation
+        dict_key : str, default="pos"
+            If the inputs are a dict, this will be the key used to access the coords in
+            the dict
         """
 
         self.mean = mean
@@ -26,6 +31,7 @@ class Jitter:
             self.g = torch.Generator().manual_seed(rand_seed)
         else:
             self.g = torch.Generator().manual_seed(torch.random.seed())
+        self.dict_key = dict_key
 
     def __call__(self, coords, inplace=False):
         """
@@ -46,12 +52,26 @@ class Jitter:
             Jittered coordinates
         """
 
+        # Figure out if we're working with a dict or raw Tensor inputs
+        if isinstance(coords, dict):
+            dict_inp = True
+        else:
+            dict_inp = False
+
         # Fist make a copy of the input coords (if inplace is False)
         if not inplace:
-            coords_copy = coords.clone().detach()
+            if dict_inp:
+                dict_copy = deepcopy(coords)
+                coords_copy = dict_copy[self.dict_key]
+            else:
+                coords_copy = coords.clone().detach()
         else:
             # Should just be a reference so inputs should get modified
-            coords_copy = coords
+            if dict_inp:
+                dict_copy = coords
+                coords_copy = coords_copy[self.dict_key]
+            else:
+                coords_copy = coords
         # Create the mean Tensor, which should just have the same shape as the coords
         mean = torch.full_like(coords_copy, self.mean).to("cpu")
         # Generate noise (the std will be broadcast to the same shape as mean)
@@ -59,4 +79,7 @@ class Jitter:
         # Add the noise
         coords_copy += noise.to(coords_copy.device)
 
-        return coords_copy
+        if dict_inp:
+            return dict_copy
+        else:
+            return coords_copy
