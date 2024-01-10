@@ -86,7 +86,7 @@ class Trainer(BaseModel):
     )
     loss_dict: dict = Field({}, description="Dict keeping track of training loss.")
     device: torch.device = Field("cpu", description="Device to train on.")
-    data_aug_configs: List[DataAugConfig] = Field(
+    data_aug_configs: list[DataAugConfig] = Field(
         [],
         description="List of data augmentations to be applied in order to each pose.",
     )
