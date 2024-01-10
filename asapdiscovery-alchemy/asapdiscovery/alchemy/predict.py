@@ -580,7 +580,7 @@ def _plot_with_plotmol(
         )
         figure.add_layout(exp_error)
 
-    plotmol.scatter(
+    p = plotmol.scatter(
         figure=figure,
         x=experimental,
         y=calculated,
@@ -590,6 +590,7 @@ def _plot_with_plotmol(
         marker_color=palette[0],
         custom_column_data=custom_column_data,
     )
+    figure.axis.axis_label_text_font_size = '20pt'
     return figure
 
 
