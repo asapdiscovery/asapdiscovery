@@ -183,6 +183,13 @@ class AlchemiscaleHelper:
             # extract the names of the end state ligands to build the affinity estimate graph
             name_a = individual_runs[0][0].inputs["stateA"].components["ligand"].name
             name_b = individual_runs[0][0].inputs["stateB"].components["ligand"].name
+            print(individual_runs[0][0].inputs["stateB"].components["ligand"], name_b)
+
+            # if end state ligands did not have names, use SMILES instead
+            if not name_a:
+                name_a = individual_runs[0][0].inputs["stateA"].components["ligand"].smiles
+            if not name_b:
+                name_b = individual_runs[0][0].inputs["stateB"].components["ligand"].smiles
 
             results.append(
                 TransformationResult(
