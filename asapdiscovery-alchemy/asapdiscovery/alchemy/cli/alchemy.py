@@ -451,18 +451,18 @@ def predict(
         reference_dataset=reference_dataset,
     )
     # write the csv to file to be uploaded to postera later
-    absolute_path = f"absolute-predictions-{result_network.dataset_name}.csv"
-    relative_path = f"relative-predictions-{result_network.dataset_name}.csv"
+    absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"
+    relative_path = f"predictions-relative-{result_network.dataset_name}.csv"
     absolute_df.to_csv(absolute_path)
     relative_df.to_csv(relative_path)
     predict_status.stop()
     message = Padding(
-        f"Absolute predictions wrote to [repr.filename]{absolute_path}[/repr.filename]",
+        f"Absolute predictions written to [repr.filename]{absolute_path}[/repr.filename]",
         (1, 0, 1, 0),
     )
     console.print(message)
     message = Padding(
-        f"Relative predictions wrote to [repr.filename]{relative_path}[/repr.filename]",
+        f"Relative predictions written to [repr.filename]{relative_path}[/repr.filename]",
         (1, 0, 1, 0),
     )
     console.print(message)
@@ -473,8 +473,8 @@ def predict(
         # we can only make these reports currently with experimental data
         # TODO update once we have the per replicate estimate and error
         absolute_layout = create_absolute_report(dataframe=absolute_df)
-        absolute_path = f"Absolute-prediction-{result_network.dataset_name}.html"
-        relative_path = f"Relative-prediction-{result_network.dataset_name}.html"
+        absolute_path = f"prediction-absolute-{result_network.dataset_name}.html"
+        relative_path = f"prediction-relative-{result_network.dataset_name}.html"
         absolute_layout.save(
             absolute_path,
             title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}",
@@ -490,12 +490,12 @@ def predict(
         report_status.stop()
 
         message = Padding(
-            f"Absolute report wrote to [repr.filename]{absolute_path}[/repr.filename]",
+            f"Absolute report written to [repr.filename]{absolute_path}[/repr.filename]",
             (1, 0, 1, 0),
         )
         console.print(message)
         message = Padding(
-            f"Relative report wrote to [repr.filename]{relative_path}[/repr.filename]",
+            f"Relative report written to [repr.filename]{relative_path}[/repr.filename]",
             (1, 0, 1, 0),
         )
         console.print(message)
