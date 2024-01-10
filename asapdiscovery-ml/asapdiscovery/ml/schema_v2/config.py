@@ -768,10 +768,10 @@ class LossFunctionType(StringEnum):
 
 class LossFunctionConfig(BaseModel):
     """
-    Class for splitting an ML Dataset class.
+    Class for building a loss function.
     """
 
-    # Parameter for splitting
+    # Parameter for loss type
     loss_type: LossFunctionType = Field(
         ...,
         description=(
@@ -802,3 +802,52 @@ class LossFunctionConfig(BaseModel):
                 return GaussianNLLLoss(keep_sq=True, semiquant_fill=self.semiquant_fill)
             case other:
                 raise ValueError(f"Unknown LossFunctionType {other}.")
+
+
+class DataAugType(StringEnum):
+    """
+    Enum for different methods of data augmentation.
+    """
+
+    # Jitter all coordinates
+    jitter = "jitter"
+
+
+class DataAugConfig(BaseModel):
+    """
+    Class for building a data augmentation module.
+    """
+
+    # Parameter for augmentation type
+    aug_type: DataAugType = Field(
+        ...,
+        description=(
+            "Type of augmentation."
+            f"Options are [{', '.join(DataAugType.get_values())}]."
+        ),
+    )
+
+    # Define the distribution of random noise to jitter with
+    jitter_mean: float = Field(
+        0.1, description="Mean of gaussian distribution to draw noise from."
+    )
+    jitter_std: float | None = Field(
+        0.01,
+        description="Standard deviation of gaussian distribution to draw noise from.",
+    )
+
+    # Seed for randomly jittering
+    jitter_rand_seed: int | None = Field(
+        None, description="Random seed to use for reproducbility, if desired."
+    )
+
+    def build(self):
+        from asapdiscovery.ml.data_augmentation import Jitter
+
+        match self.aug_type:
+            case DataAugType.jitter:
+                return Jitter(
+                    mean=self.jitter_mean,
+                    std=self.jitter_std,
+                    rand_seed=self.jitter_rand_seed,
+                )
