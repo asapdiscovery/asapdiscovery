@@ -406,18 +406,7 @@ def restart(network: str, verbose: bool, tasks):
     default="pIC50",
     show_default=True,
 )
-@click.option(
-    "-at",
-    "--assay-tag",
-    type=click.STRING,
-    help="The column name of the assay/experimental potency that predictions should be compared to.",
-)
-@click.option(
-    "-avt",
-    "--assay-variance-tag",
-    type=click.STRING,
-    help="The column name of the assay/experimental potency variance.",
-)
+
 def predict(
     network: str, reference_units: str, reference_dataset: Optional[str] = None
 ):
