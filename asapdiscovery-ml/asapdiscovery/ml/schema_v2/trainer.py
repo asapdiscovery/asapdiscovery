@@ -3,6 +3,7 @@ import pickle as pkl
 from glob import glob
 from pathlib import Path
 from time import time
+from typing import List
 
 import numpy as np
 import torch
@@ -10,6 +11,7 @@ import wandb
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.schema_v2.config import (
+    DataAugConfig,
     DatasetConfig,
     DatasetSplitterConfig,
     EarlyStoppingConfig,
@@ -84,6 +86,10 @@ class Trainer(BaseModel):
     )
     loss_dict: dict = Field({}, description="Dict keeping track of training loss.")
     device: torch.device = Field("cpu", description="Device to train on.")
+    data_aug_configs: List[DataAugConfig] = Field(
+        [],
+        description="List of data augmentations to be applied in order to each pose.",
+    )
 
     # I/O options
     output_dir: Path = Field(
@@ -203,6 +209,42 @@ class Trainer(BaseModel):
             overwrite=overwrite,
             **config_kwargs,
         )
+
+    @validator("data_aug_configs", pre=True)
+    def load_cache_files_lists(cls, kwargs_list, field):
+        """
+        This validator performs the same functionality as the above function, but for
+        Fields that contain a list of some type.
+        """
+        config_cls = field.type_
+
+        configs = []
+        for config_kwargs in kwargs_list:
+            # If an instance of the actual config class is passed, there's no cache file so
+            #  just return
+            if isinstance(config_kwargs, config_cls):
+                configs.append(config_kwargs)
+                continue
+
+            # Just skip any Nones
+            if config_kwargs is None:
+                continue
+
+            # Get config cache file and overwrite option (if given). Defaults to no cache
+            #  file and not overwriting
+            config_file = config_kwargs.pop("cache", None)
+            overwrite = config_kwargs.pop("overwrite_cache", False)
+
+            configs.append(
+                Trainer._build_arbitrary_config(
+                    config_cls=config_cls,
+                    config_file=config_file,
+                    overwrite=overwrite,
+                    **config_kwargs,
+                )
+            )
+
+        return configs
 
     @validator("ds_config", pre=True)
     def check_and_build_ds(cls, config_kwargs):
@@ -451,6 +493,9 @@ class Trainer(BaseModel):
             self.es = self.es_config.build()
         else:
             self.es = None
+
+        # Build data augmentation classes
+        self.data_aug = [aug.build() for aug in self.data_aug_configs]
 
         # Build dataset and split
         self.ds = self.ds_config.build()
