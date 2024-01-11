@@ -4,7 +4,6 @@ import pickle as pkl
 from glob import glob
 from pathlib import Path
 from time import time
-from typing import List
 
 import numpy as np
 import torch
@@ -87,7 +86,7 @@ class Trainer(BaseModel):
     )
     loss_dict: dict = Field({}, description="Dict keeping track of training loss.")
     device: torch.device = Field("cpu", description="Device to train on.")
-    data_aug_configs: list[DataAugConfig] = Field(
+    data_aug_configs: list[DataAugConfig | str] = Field(
         [],
         description="List of data augmentations to be applied in order to each pose.",
     )
@@ -230,6 +229,13 @@ class Trainer(BaseModel):
             # Just skip any Nones
             if config_kwargs is None:
                 continue
+
+            # If the config is specified as a string, parse that into a dict first
+            if isinstance(config_kwargs, str):
+                config_kwargs = {
+                    kv.split(":")[0]: kv.split(":")[1]
+                    for kv in config_kwargs.split(",")
+                }
 
             # Get config cache file and overwrite option (if given). Defaults to no cache
             #  file and not overwriting
