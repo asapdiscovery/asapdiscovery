@@ -132,7 +132,7 @@ class VanillaMDSimulatorV2(SimulatorBase):
     @validator("rmsd_restraint_type")
     @classmethod
     def check_restraint_type(cls, v):
-        if v not in ["CA", "heavy"]:
+        if v not in ["CA", "heavy", None]:
             raise ValueError("RMSD restraint type must be 'CA' or 'heavy'")
         return v
 
