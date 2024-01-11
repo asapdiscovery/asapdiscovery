@@ -528,7 +528,6 @@ class Trainer(BaseModel):
             # Initialize batch
             batch_counter = 0
             self.optimizer.zero_grad()
-            batch_loss = None
             start_time = time()
             for compound, pose in self.ds_train:
                 if type(compound) is tuple:
@@ -554,6 +553,9 @@ class Trainer(BaseModel):
                 pose_preds = [p.item() for p in pose_preds]
                 loss = self.loss_func(pred, target, in_range, uncertainty)
 
+                # Can just call loss.backward, grads will accumulate additively
+                loss.backward()
+
                 # Update loss_dict
                 self._update_loss_dict(
                     "train",
@@ -569,17 +571,11 @@ class Trainer(BaseModel):
                 # Keep track of loss for each sample
                 tmp_loss.append(loss.item())
 
-                # Update batch_loss
-                if batch_loss is None:
-                    batch_loss = loss
-                else:
-                    batch_loss += loss
                 batch_counter += 1
 
                 # Perform backprop if we've done all the preds for this batch
                 if batch_counter == self.batch_size:
                     # Backprop
-                    batch_loss.backward()
                     self.optimizer.step()
                     if any(
                         [
@@ -593,11 +589,9 @@ class Trainer(BaseModel):
                     # Reset batch tracking
                     batch_counter = 0
                     self.optimizer.zero_grad()
-                    batch_loss = None
 
             if batch_counter > 0:
                 # Backprop for final incomplete batch
-                batch_loss.backward()
                 self.optimizer.step()
                 if any([p.grad.isnan().any().item() for p in self.model.parameters()]):
                     raise ValueError("NaN gradients")
