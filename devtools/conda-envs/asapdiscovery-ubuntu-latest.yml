@@ -12,6 +12,8 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - codecov
+  - pytest-console-scripts
+  - pytest-timeout
 
   # cli
   - click
@@ -35,6 +37,11 @@ dependencies:
   - flask
   - flask-cors
   - typing-extensions
+  - biopython
+  - ase
+  - validators
+  - pyyaml
+  - sigfig
 
   # ml
   - pytorch
@@ -49,6 +56,7 @@ dependencies:
   - dgllife
   - pooch
   - mtenn >=0.5.0
+  - wandb
 
   # md
   - openmm
@@ -84,17 +92,7 @@ dependencies:
 
   # Pip-only installs
   - pip:
-    - biopython
-    - ase
-    - validators
-    - pyyaml
-    # testing
-    - pytest-console-scripts
-    - pytest-timeout
-    # viz
-    - pygifsicle
-    - sigfig
-    - airium
-    - logomaker
-    - git+https://github.com/OpenFreeEnergy/cinnabar.git@main
-    - wandb
+    - pygifsicle # is this the same as gifsicle?
+    - airium # not on CF
+    - logomaker # not on CF
+    - git+https://github.com/OpenFreeEnergy/cinnabar.git@main  # may need to wait for release
