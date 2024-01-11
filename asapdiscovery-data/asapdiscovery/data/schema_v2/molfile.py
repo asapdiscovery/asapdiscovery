@@ -1,27 +1,21 @@
 import logging
 from pathlib import Path
-from typing import List  # noqa: F401
 
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from pydantic import Field, validator
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
 
-class MolFileFactory(DataModelAbstractBase):
+class MolFileFactory(BaseModel):
     """
     Factory for a loading a generic molecule file into a list of Ligand objects.
     """
 
     filename: str = Field(..., description="Path to the molecule file")
-    ligands: list[Ligand] = Field(..., description="List of Ligand objects")
 
-    @classmethod
-    def from_file(cls, filename):
-        filename = str(filename)
-
+    def load(self) -> list[Ligand]:
         ifs = oechem.oemolistream()
         retcode = ifs.open(str(filename))
         if not retcode:
@@ -37,8 +31,7 @@ class MolFileFactory(DataModelAbstractBase):
             # not often stored in a consistent way eg in SD tags
             ligand = Ligand.from_oemol(mol, compound_name=compound_name)
             ligands.append(ligand)
-
-        return cls(filename=filename, ligands=ligands)
+        return ligands
 
     @validator("filename")
     @classmethod
