@@ -1055,7 +1055,16 @@ def loss_config_cache(func):
 ################################################################################
 # Training args
 def trainer_args(func):
-    for fn in [start_epoch, n_epochs, batch_size, target_prop, cont, loss_dict, device]:
+    for fn in [
+        start_epoch,
+        n_epochs,
+        batch_size,
+        target_prop,
+        cont,
+        loss_dict,
+        device,
+        data_aug,
+    ]:
         func = fn(func)
     return func
 
@@ -1115,6 +1124,21 @@ def loss_dict(func):
 
 def device(func):
     return click.option("--device", type=torch.device, help="Device to train on.")(func)
+
+
+def data_aug(func):
+    return click.option(
+        "--data-aug",
+        type=str,
+        multiple=True,
+        help=(
+            "Specifications for data augmentations to do. Multiple can be passed, and "
+            "they will be applied in the order they are specified on the command line. "
+            "Each individual aug config should be specified as a comma separated list "
+            "of <key>:<value> pairs, which will be passed directly to the "
+            "DataAugConfig class."
+        ),
+    )(func)
 
 
 ################################################################################
