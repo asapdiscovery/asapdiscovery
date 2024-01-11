@@ -1,6 +1,6 @@
-from copy import deepcopy
 import json
 import pickle as pkl
+from copy import deepcopy
 from glob import glob
 from pathlib import Path
 from time import time
