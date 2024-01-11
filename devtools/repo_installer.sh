@@ -1,7 +1,4 @@
-# Edited 2024.01.10 Alex Payne
-# I can never remember the order to install the asapdiscovery packages in,
-# so I'm writing a script to do it for me.
-# this isn't necessarily the *only* correct order, but it is an order that works
+# install asapdiscovery repo
 pip install -e asapdiscovery-data
 pip install -e asapdiscovery-cli
 pip install -e asapdiscovery-simulation
