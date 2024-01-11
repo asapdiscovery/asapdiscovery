@@ -236,7 +236,7 @@ def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
     from gufe import SmallMoleculeComponent
 
     lig = SmallMoleculeComponent(tyk2_ligands[0].to_rdkit(), name="")
-    ligands = lig + tyk2_ligands[1:]
+    ligands = [lig] + tyk2_ligands[1:]
 
     factory = FreeEnergyCalculationFactory()
     with pytest.raises(
@@ -249,7 +249,7 @@ def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
         )
 
     lig = SmallMoleculeComponent(ligands[-1].to_rdkit(), name="")
-    ligands = ligands[:-1] + lig
+    ligands = ligands[:-1] + [lig]
 
     factory = FreeEnergyCalculationFactory()
     with pytest.raises(
