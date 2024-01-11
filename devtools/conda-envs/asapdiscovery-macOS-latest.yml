@@ -87,7 +87,7 @@ dependencies:
   - rich
   - alchemiscale-client
 #  - cinnabar >=0.4.1
-  
+
   # Pip-only installs
   - pip:
     - pygifsicle # is this the same as gifsicle?
