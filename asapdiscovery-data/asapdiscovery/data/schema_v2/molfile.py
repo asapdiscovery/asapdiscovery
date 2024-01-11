@@ -17,9 +17,9 @@ class MolFileFactory(BaseModel):
 
     def load(self) -> list[Ligand]:
         ifs = oechem.oemolistream()
-        retcode = ifs.open(str(filename))
+        retcode = ifs.open(str(self.filename))
         if not retcode:
-            raise ValueError(f"Could not open {filename}")
+            raise ValueError(f"Could not open {self.filename}")
 
         ligands = []
         for i, mol in enumerate(ifs.GetOEGraphMols()):
