@@ -232,6 +232,32 @@ def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
         )
 
 
+def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
+    from gufe import SmallMoleculeComponent
+
+    lig = SmallMoleculeComponent(tyk2_ligands[0].to_rdkit(), name="")
+    ligands = lig + tyk2_ligands[1:]
+
+    factory = FreeEnergyCalculationFactory()
+    with pytest.raises(ValueError, match=f"1 of {len(ligands)} ligands do not have names"):
+        _ = factory.create_fec_dataset(
+            dataset_name="TYK2-test-dataset-missing-name",
+            receptor=tyk2_protein,
+            ligands=ligands,
+        )
+
+    lig = SmallMoleculeComponent(ligands[-1].to_rdkit(), name="")
+    ligands = ligands[:-1] + lig
+
+    factory = FreeEnergyCalculationFactory()
+    with pytest.raises(ValueError, match=f"2 of {len(ligands)} ligands do not have names"):
+        _ = factory.create_fec_dataset(
+            dataset_name="TYK2-test-dataset-missing-name",
+            receptor=tyk2_protein,
+            ligands=ligands,
+        )
+
+
 def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
     """Make sure we can run the full FEC workflow"""
     factory = FreeEnergyCalculationFactory()
