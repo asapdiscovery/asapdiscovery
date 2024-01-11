@@ -12,6 +12,7 @@ PROTEIN_MAPPING = {
     "ZIKV-NS2B-NS3pro": "NS3pro",
     "DENV-NS2B-NS3pro": "NS3pro",
     "EV-A71-Capsid": "Capsid",
+    "EV-D68-Capsid": "Capsid",
 }
 
 # needs underscores to match attr names
@@ -25,6 +26,7 @@ TARGET_MAPPING = {
     "ZIKV-NS2B-NS3pro": "ZIKV-NS2B-NS3pro",
     "DENV-NS2B-NS3pro": "DENV-NS2B-NS3pro",
     "EV-A71-Capsid": "EV-A71-Capsid",
+    "EV-D68-Capsid": "EV-D68-Capsid",
 }
 
 
@@ -40,6 +42,7 @@ class VizTargets(str, Enum):
     viz_ZIKV_NS2B_NS3pro = "ZIKV-NS2B-NS3pro"
     viz_DENV_NS2B_NS3pro = "DENV-NS2B-NS3pro"
     viz_EV_A71_Capsid = "EV-A71-Capsid"
+    viz_EV_D68_Capsid = "EV-D68-Capsid"
 
     @classmethod
     def get_allowed_targets(cls) -> list[str]:
