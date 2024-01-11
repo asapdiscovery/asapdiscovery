@@ -239,7 +239,9 @@ def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
     ligands = lig + tyk2_ligands[1:]
 
     factory = FreeEnergyCalculationFactory()
-    with pytest.raises(ValueError, match=f"1 of {len(ligands)} ligands do not have names"):
+    with pytest.raises(
+        ValueError, match=f"1 of {len(ligands)} ligands do not have names"
+    ):
         _ = factory.create_fec_dataset(
             dataset_name="TYK2-test-dataset-missing-name",
             receptor=tyk2_protein,
@@ -250,7 +252,9 @@ def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
     ligands = ligands[:-1] + lig
 
     factory = FreeEnergyCalculationFactory()
-    with pytest.raises(ValueError, match=f"2 of {len(ligands)} ligands do not have names"):
+    with pytest.raises(
+        ValueError, match=f"2 of {len(ligands)} ligands do not have names"
+    ):
         _ = factory.create_fec_dataset(
             dataset_name="TYK2-test-dataset-missing-name",
             receptor=tyk2_protein,
