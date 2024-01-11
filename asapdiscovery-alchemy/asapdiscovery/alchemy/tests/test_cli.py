@@ -335,7 +335,7 @@ def test_alchemy_predict_experimental_data(
         )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv(
-            "absolute-predictions-2023-08-07-tyk2-mini-test.csv"
+            "predictions-absolute-2023-08-07-tyk2-mini-test.csv"
         )
         mol_data = absolute_dataframe.iloc[0]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
@@ -353,7 +353,7 @@ def test_alchemy_predict_experimental_data(
         )
 
         relative_dataframe = pd.read_csv(
-            "relative-predictions-2023-08-07-tyk2-mini-test.csv"
+            "predictions-relative-2023-08-07-tyk2-mini-test.csv"
         )
         relative_mol_data = relative_dataframe.iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
