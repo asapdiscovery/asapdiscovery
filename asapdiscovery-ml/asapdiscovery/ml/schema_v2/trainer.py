@@ -57,6 +57,10 @@ class Trainer(BaseModel):
         ...,
         description="Config describing the loss function for training.",
     )
+    data_aug_configs: list[DataAugConfig] = Field(
+        [],
+        description="List of data augmentations to be applied in order to each pose.",
+    )
 
     # Options for the training process
     auto_init: bool = Field(
@@ -86,10 +90,6 @@ class Trainer(BaseModel):
     )
     loss_dict: dict = Field({}, description="Dict keeping track of training loss.")
     device: torch.device = Field("cpu", description="Device to train on.")
-    data_aug_configs: list[DataAugConfig | str] = Field(
-        [],
-        description="List of data augmentations to be applied in order to each pose.",
-    )
 
     # I/O options
     output_dir: Path = Field(
@@ -229,13 +229,6 @@ class Trainer(BaseModel):
             # Just skip any Nones
             if config_kwargs is None:
                 continue
-
-            # If the config is specified as a string, parse that into a dict first
-            if isinstance(config_kwargs, str):
-                config_kwargs = {
-                    kv.split(":")[0]: kv.split(":")[1]
-                    for kv in config_kwargs.split(",")
-                }
 
             # Get config cache file and overwrite option (if given). Defaults to no cache
             #  file and not overwriting
