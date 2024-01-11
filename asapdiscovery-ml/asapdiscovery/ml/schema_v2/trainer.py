@@ -594,7 +594,7 @@ class Trainer(BaseModel):
 
                 # Apply all data augmentations
                 aug_pose = deepcopy(pose)
-                for aug in self.augs:
+                for aug in self.data_augs:
                     aug_pose = aug(aug_pose)
 
                 # Make prediction and calculate loss
