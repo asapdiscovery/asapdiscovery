@@ -581,7 +581,7 @@ def _plot_with_plotmol(
         )
         figure.add_layout(exp_error)
 
-    p = plotmol.scatter(
+    plotmol.scatter(
         figure=figure,
         x=experimental,
         y=calculated,

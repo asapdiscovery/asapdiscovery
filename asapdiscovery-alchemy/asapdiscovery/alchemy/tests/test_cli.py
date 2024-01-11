@@ -326,11 +326,11 @@ def test_alchemy_predict_experimental_data(
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
         assert (
-            "Absolute report wrote to Absolute-prediction-2023-08-07-tyk2-mini-test.html"
+            "Absolute report written to Absolute-prediction-2023-08-07-tyk2-mini-test.html"
             in result.stdout
         )
         assert (
-            "Relative report wrote to Relative-prediction-2023-08-07-tyk2-mini-test.html"
+            "Relative report written to Relative-prediction-2023-08-07-tyk2-mini-test.html"
             in result.stdout
         )
         # load the datasets and check the results match what's expected
