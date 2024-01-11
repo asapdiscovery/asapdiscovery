@@ -9,7 +9,13 @@ class Jitter:
     per-atom.
     """
 
-    def __init__(self, mean: float, std: float, rand_seed: int = None, dict_key="pos"):
+    def __init__(
+        self,
+        mean: float,
+        std: float,
+        rand_seed: int | None = None,
+        dict_key: str = "pos",
+    ):
         """
         Parameters
         ----------

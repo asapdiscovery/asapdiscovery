@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import pickle as pkl
 from glob import glob
@@ -495,7 +496,7 @@ class Trainer(BaseModel):
             self.es = None
 
         # Build data augmentation classes
-        self.data_aug = [aug.build() for aug in self.data_aug_configs]
+        self.data_augs = [aug.build() for aug in self.data_aug_configs]
 
         # Build dataset and split
         self.ds = self.ds_config.build()
@@ -592,8 +593,13 @@ class Trainer(BaseModel):
                     device=self.device,
                 ).float()
 
+                # Apply all data augmentations
+                aug_pose = deepcopy(pose)
+                for aug in self.augs:
+                    aug_pose = aug(aug_pose)
+
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(pose)
+                pred, pose_preds = self.model(aug_pose)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
                 loss = self.loss_func(pred, target, in_range, uncertainty)
