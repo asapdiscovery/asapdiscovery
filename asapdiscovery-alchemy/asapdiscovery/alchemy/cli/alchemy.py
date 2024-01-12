@@ -472,8 +472,8 @@ def predict(
         # we can only make these reports currently with experimental data
         # TODO update once we have the per replicate estimate and error
         absolute_layout = create_absolute_report(dataframe=absolute_df)
-        absolute_path = f"prediction-absolute-{result_network.dataset_name}.html"
-        relative_path = f"prediction-relative-{result_network.dataset_name}.html"
+        absolute_path = f"predictions-absolute-{result_network.dataset_name}.html"
+        relative_path = f"predictions-relative-{result_network.dataset_name}.html"
         absolute_layout.save(
             absolute_path,
             title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}",

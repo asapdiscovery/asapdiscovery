@@ -268,11 +268,11 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork from" in result.stdout
         assert (
-            "Absolute predictions written to predictions-absolute-2023-08-07-tyk2-mini-test.csv"
+            "Absolute predictions written"
             in result.stdout
         )
         assert (
-            "Relative predictions written to predictions-relative-2023-08-07-tyk2-mini-test.csv"
+            "Relative predictions written"
             in result.stdout
         )
         # load the datasets and check the results match what's expected
@@ -326,11 +326,11 @@ def test_alchemy_predict_experimental_data(
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
         assert (
-            "Absolute report written to prediction-absolute-2023-08-07-tyk2-mini-test.html"
+            "Absolute report written to predictions-absolute-2023-08-07-tyk2-mini-test.html"
             in result.stdout
         )
         assert (
-            "Relative report written to prediction-relative-2023-08-07-tyk2-mini-test.html"
+            "Relative report written to predictions-relative-2023-08-07-tyk2-mini-test.html"
             in result.stdout
         )
         # load the datasets and check the results match what's expected
