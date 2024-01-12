@@ -267,14 +267,8 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
         )
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork from" in result.stdout
-        assert (
-            "Absolute predictions written"
-            in result.stdout
-        )
-        assert (
-            "Relative predictions written"
-            in result.stdout
-        )
+        assert "Absolute predictions written" in result.stdout
+        assert "Relative predictions written" in result.stdout
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv(
             "predictions-absolute-2023-08-07-tyk2-mini-test.csv"
