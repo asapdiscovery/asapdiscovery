@@ -503,3 +503,129 @@ def test_build_and_train_e3nn(exp_file, docked_files, tmp_path):
     assert len(loss_dict["train"]) == 8
     assert len(loss_dict["val"]) == 1
     assert len(loss_dict["test"]) == 1
+
+
+def test_build_and_train_schnet_jitter(exp_file, docked_files, tmp_path):
+    docked_dir = docked_files[0].parent
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "build-and-train",
+            "schnet",
+            "--output-dir",
+            tmp_path / "model_out",
+            "--trainer-config-cache",
+            tmp_path / "trainer.json",
+            "--ds-split-type",
+            "temporal",
+            "--exp-file",
+            exp_file,
+            "--structures",
+            str(docked_dir),
+            "--ds-cache",
+            tmp_path / "ds_cache.pkl",
+            "--ds-config-cache",
+            tmp_path / "ds_config_cache.json",
+            "--data-aug",
+            "aug_type:jitter",
+            "--loss-type",
+            "mse_step",
+            "--device",
+            "cpu",
+            "--n-epochs",
+            "1",
+            "--use-wandb",
+            "False",
+        ],
+    )
+    # assert result.exit_code == 0
+    if result.exit_code:
+        raise result.exception
+
+    # Make sure the right files exist
+    trainer_config_cache = tmp_path / "trainer.json"
+    output_dir = tmp_path / "model_out"
+    loss_dict_file = output_dir / "loss_dict.json"
+    assert trainer_config_cache.exists()
+    assert output_dir.exists()
+    assert (output_dir / "init.th").exists()
+    for i in range(1):
+        assert (output_dir / f"{i}.th").exists()
+    assert (output_dir / "final.th").exists()
+    assert loss_dict_file.exists()
+    assert (tmp_path / "ds_cache.pkl").exists()
+    assert (tmp_path / "ds_config_cache.json").exists()
+
+    # Load and check stuff
+    loss_dict = json.loads(loss_dict_file.read_text())
+    assert {"train", "test", "val"} == set(loss_dict.keys())
+    print({k: len(v) for k, v in loss_dict.items()}, flush=True)
+    assert len(loss_dict["train"]) == 8
+    assert len(loss_dict["val"]) == 1
+    assert len(loss_dict["test"]) == 1
+
+
+def test_build_and_train_e3nn_jitter(exp_file, docked_files, tmp_path):
+    docked_dir = docked_files[0].parent
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "build-and-train",
+            "e3nn",
+            "--output-dir",
+            tmp_path / "model_out",
+            "--trainer-config-cache",
+            tmp_path / "trainer.json",
+            "--ds-split-type",
+            "temporal",
+            "--exp-file",
+            exp_file,
+            "--structures",
+            str(docked_dir),
+            "--ds-cache",
+            tmp_path / "ds_cache.pkl",
+            "--ds-config-cache",
+            tmp_path / "ds_config_cache.json",
+            "--data-aug",
+            "aug_type:jitter",
+            "--irreps-hidden",
+            "0:5",
+            "--loss-type",
+            "mse_step",
+            "--device",
+            "cpu",
+            "--n-epochs",
+            "1",
+            "--use-wandb",
+            "False",
+        ],
+    )
+    # assert result.exit_code == 0
+    if result.exit_code:
+        raise result.exception
+
+    # Make sure the right files exist
+    trainer_config_cache = tmp_path / "trainer.json"
+    output_dir = tmp_path / "model_out"
+    loss_dict_file = output_dir / "loss_dict.json"
+    assert trainer_config_cache.exists()
+    assert output_dir.exists()
+    assert (output_dir / "init.th").exists()
+    for i in range(1):
+        assert (output_dir / f"{i}.th").exists()
+    assert (output_dir / "final.th").exists()
+    assert loss_dict_file.exists()
+    assert (tmp_path / "ds_cache.pkl").exists()
+    assert (tmp_path / "ds_config_cache.json").exists()
+
+    # Load and check stuff
+    loss_dict = json.loads(loss_dict_file.read_text())
+    assert {"train", "test", "val"} == set(loss_dict.keys())
+    print({k: len(v) for k, v in loss_dict.items()}, flush=True)
+    assert len(loss_dict["train"]) == 8
+    assert len(loss_dict["val"]) == 1
+    assert len(loss_dict["test"]) == 1
