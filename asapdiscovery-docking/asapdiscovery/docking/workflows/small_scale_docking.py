@@ -18,6 +18,7 @@ from asapdiscovery.data.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetProteinMap,
     map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
@@ -466,11 +467,23 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
 
         md_output_dir = output_dir / "md"
+
+        # capsid simulations need a CA rmsd restraint to hold the capsid together
+        if TargetProteinMap[inputs.target] == "Capsid":
+            logger.info("Adding CA RMSD restraint to capsid simulation")
+            rmsd_restraint = True
+            rmsd_restraint_type = "CA"
+        else:
+            rmsd_restraint = False
+            rmsd_restraint_type = None
+
         md_simulator = VanillaMDSimulatorV2(
             output_dir=md_output_dir,
             openmm_platform=inputs.md_openmm_platform,
             num_steps=inputs.md_steps,
             reporting_interval=inputs.md_report_interval,
+            rmsd_restraint=rmsd_restraint,
+            rmsd_restraint_type=rmsd_restraint_type,
         )
         simulation_results = md_simulator.simulate(
             results, use_dask=inputs.use_dask, dask_client=dask_client
