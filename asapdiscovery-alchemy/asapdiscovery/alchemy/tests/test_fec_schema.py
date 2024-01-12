@@ -235,8 +235,8 @@ def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
 def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
     from gufe import SmallMoleculeComponent
 
-    lig = SmallMoleculeComponent(tyk2_ligands[0].to_rdkit(), name="")
-
+    lig = SmallMoleculeComponent(tyk2_ligands[0].to_rdkit())
+    lig._name = ""
     assert not lig.name
 
     ligands = [lig] + tyk2_ligands[1:]
@@ -251,7 +251,10 @@ def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
             ligands=ligands,
         )
 
-    lig = SmallMoleculeComponent(ligands[-1].to_rdkit(), name="")
+    lig = SmallMoleculeComponent(ligands[-1].to_rdkit())
+    lig._name = ""
+    assert not lig.name
+
     ligands = ligands[:-1] + [lig]
 
     factory = FreeEnergyCalculationFactory()
