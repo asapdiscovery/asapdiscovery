@@ -62,7 +62,7 @@ To install an `asapdiscovery` package hosted in this repository, we recommend th
     ```
 
 2. Install the dependencies into a new `conda` environment, and activate it:
-   NOTE: Conda will almost certainly fail to build the environment - `mamba` is a drop-in replacement for `conda` that is much faster and more reliable.
+   NOTES: Conda will almost certainly fail to build the environment - `mamba` is a drop-in replacement for `conda` that is much faster and more reliable.  Additionally, if the environment is built on a CPU, `torch` may not compile with GPU support. Instead, build the environment as described on a GPU node; the architecture will be detected automatically.
 
     ```
     mamba env create -f devtools/conda-envs/asapdiscovery-{platform}.yaml
