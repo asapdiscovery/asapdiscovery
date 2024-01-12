@@ -93,4 +93,3 @@ dependencies:
     - pygifsicle # is this the same as gifsicle?
     - airium # not on CF
     - logomaker # not on CF
-#    - git+https://github.com/OpenFreeEnergy/cinnabar.git@main  # may need to wait for release
