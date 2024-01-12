@@ -387,7 +387,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
 
         # if any ligands lack a name, then raise an exception; important for
         # ligands to have names for human-readable result gathering downstream
-        if missing := len([l for l in ligands if not l.name]):
+        if missing := len([ligand for ligand in ligands if not ligand.name]):
             raise ValueError(
                 f"{missing} of {len(ligands)} ligands do not have names; names are required for ligands for downstream results handling"
             )
