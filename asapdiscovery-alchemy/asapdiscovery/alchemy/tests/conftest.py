@@ -4,6 +4,7 @@ import openfe
 import pytest
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
 from rdkit import Chem
@@ -30,6 +31,13 @@ def tyk2_protein():
 def tyk2_fec_network():
     """Create a FEC planned network from file"""
     fec_network = fetch_test_file("tyk2_small_network.json")
+    return FreeEnergyCalculationNetwork.from_file(fec_network)
+
+
+@pytest.fixture(scope="session")
+def tyk2_result_network():
+    """Return an FEC network with some results."""
+    fec_network = fetch_test_file("tyk2_result_network.json")
     return FreeEnergyCalculationNetwork.from_file(fec_network)
 
 
@@ -86,3 +94,10 @@ def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailur
         ]
         for u in dummy_protocol_units
     ]
+
+
+@pytest.fixture(scope="session")
+def mac1_complex():
+    return PreppedComplex.parse_file(
+        fetch_test_file("constrained_conformer/complex.json")
+    )

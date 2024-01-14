@@ -5,14 +5,15 @@ channels:
 dependencies:
   # Base depends
   - pip
-  # need python > 3.9.2 for dask-distributed issues
-  - python >= 3.10
+  - python >=3.10,<3.11
 
   # Testing
   - pytest
   - pytest-cov
   - pytest-xdist
   - codecov
+  - pytest-console-scripts
+  - pytest-timeout
 
   # cli
   - click
@@ -36,6 +37,11 @@ dependencies:
   - flask
   - flask-cors
   - typing-extensions
+  - biopython
+  - validators
+  - pyyaml
+  - ase
+  - sigfig
 
   # ml
   - pytorch
@@ -49,7 +55,8 @@ dependencies:
   - dgl
   - dgllife
   - pooch
-
+  - mtenn >=0.5.0
+  - wandb
 
   # md
   - openmm
@@ -72,27 +79,18 @@ dependencies:
   - dash
 
   # simulation
-  - openfe =0.11.0
-  - gufe =0.9.1
+  - openfe =>0.14.0
+  - gufe =>0.9.5
   - httpx
   - perses >=0.10.2
   - kartograf
   - rich
   - alchemiscale-client
+#  - cinnabar >=0.4.1
 
   # Pip-only installs
   - pip:
-    - biopython
-    - ase
-    - validators
-    - pyyaml
-    # ml
-    - git+https://github.com/choderalab/mtenn@0.4.0
-    # testing
-    - pytest-console-scripts
-    - pytest-timeout
-    # viz
-    - pygifsicle
-    - sigfig
-    - airium
-    - git+https://github.com/OpenFreeEnergy/cinnabar.git@8ce28bb107b96f48b542ae2bd3dc4fabccc614c3
+    - pygifsicle # is this the same as gifsicle?
+    - airium # not on CF
+    - logomaker # not on CF
+    - git+https://github.com/OpenFreeEnergy/cinnabar.git@main  # may need to wait for release

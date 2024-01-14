@@ -785,7 +785,6 @@ def main():
                 [outpath],
                 args.viz_target,
                 protein_path,
-                logger=logger,
             )
             output_paths = html_visualiser.write_pose_visualizations()
 
@@ -811,7 +810,6 @@ def main():
             top_posit["_outpath_pose"],
             args.viz_target,
             protein_path,
-            logger=logger,
         )
         html_visualiser.write_pose_visualizations()
 
@@ -830,7 +828,6 @@ def main():
                     [outpath],
                     args.target,
                     protein_path,
-                    logger=logger,
                     color_method="fitness",
                 )
                 output_paths = html_visualiser.write_pose_visualizations()
@@ -857,7 +854,6 @@ def main():
                 top_posit["_outpath_pose_fitness"],
                 args.target,
                 protein_path,
-                logger=logger,
                 color_method="fitness",
             )
             html_visualiser.write_pose_visualizations()
@@ -992,7 +988,6 @@ def main():
                 simulator = VanillaMDSimulator(
                     [pose],
                     protein_path,
-                    logger=logger,
                     output_paths=[output_path],
                     num_steps=args.md_steps,
                     reporting_interval=reporting_interval,
@@ -1025,7 +1020,6 @@ def main():
             simulator = VanillaMDSimulator(
                 no_clash["_docked_file"],
                 protein_path,
-                logger=logger,
                 output_paths=no_clash["_outpath_md"],
                 num_steps=args.md_steps,
                 reporting_interval=reporting_interval,
@@ -1075,7 +1069,6 @@ def main():
                 frames_per_ns=200,
                 smooth=5,
                 start=start,
-                logger=logger,
             )
             output_paths = gif_visualizer.write_traj_visualizations()
 
@@ -1112,7 +1105,6 @@ def main():
                 frames_per_ns=200,
                 smooth=5,
                 start=start,
-                logger=logger,
             )
             gif_visualiser.write_traj_visualizations()
 
@@ -1200,14 +1192,14 @@ def main():
         ]
         # make an uploader for the poses and upload them
         pose_uploader = ManifoldArtifactUploader(
+            args.target,
             pose_df,
             molset_id,
-            ArtifactType.DOCKING_POSE_POSIT,
-            ms,
-            cf,
-            s3,
-            args.target,
-            artifact_column="_outpath_pose",
+            artifact_types=[ArtifactType.DOCKING_POSE_POSIT],
+            artifact_columns=["_outpath_pose"],
+            moleculeset_api=ms,
+            cloudfront=cf,
+            s3=s3,
             bucket_name=aws_s3_settings.BUCKET_NAME,
         )
         pose_uploader.upload_artifacts()
@@ -1217,14 +1209,14 @@ def main():
                 [DockingResultCols.LIGAND_ID.value, "_outpath_pose_fitness"]
             ]
             fitness_uploader = ManifoldArtifactUploader(
+                args.target,
                 fitness_df,
                 molset_id,
-                ArtifactType.DOCKING_POSE_FITNESS_POSIT,
-                ms,
-                cf,
-                s3,
-                args.target,
-                artifact_column="_outpath_pose_fitness",
+                artifact_types=[ArtifactType.DOCKING_POSE_FITNESS_POSIT],
+                artifact_columns=["_outpath_pose_fitness"],
+                moleculeset_api=ms,
+                cloudfront=cf,
+                s3=s3,
                 bucket_name=aws_s3_settings.BUCKET_NAME,
             )
             fitness_uploader.upload_artifacts()
@@ -1234,14 +1226,14 @@ def main():
                 [DockingResultCols.LIGAND_ID.value, "_outpath_gif"]
             ]
             md_uploader = ManifoldArtifactUploader(
+                args.target,
                 md_df,
                 molset_id,
-                ArtifactType.MD_POSE,
-                ms,
-                cf,
-                s3,
-                args.target,
-                artifact_column="_outpath_gif",
+                artifact_types=[ArtifactType.MD_POSE],
+                artifact_columns=["_outpath_gif"],
+                moleculeset_api=ms,
+                cloudfront=cf,
+                s3=s3,
                 bucket_name=aws_s3_settings.BUCKET_NAME,
             )
             md_uploader.upload_artifacts()

@@ -31,8 +31,10 @@ virus:
     - Mpro
   EV-D68:
     - 3Cpro
+    - Capsid
   EV-A71:
     - 3Cpro
+    - Capsid
   DENV:
     - NS2B-NS3pro
   ZIKV:
@@ -58,6 +60,12 @@ manifold_outputs:
       prefix: in-silico
       tools:
         - POSIT
+      units:
+      postfix: msk
+
+  - docking-hit:
+      prefix: in-silico
+      tools:
       units:
       postfix: msk
 

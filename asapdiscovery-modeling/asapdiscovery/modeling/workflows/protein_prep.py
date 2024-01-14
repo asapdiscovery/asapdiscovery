@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from shutil import rmtree
 from typing import Optional
 
 from asapdiscovery.data.dask_utils import (
@@ -9,14 +8,15 @@ from asapdiscovery.data.dask_utils import (
     set_dask_config,
 )
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.sequence import seqres_by_target
-from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from distributed import Client
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
 class ProteinPrepInputs(BaseModel):
@@ -33,10 +33,10 @@ class ProteinPrepInputs(BaseModel):
         Path to a fragalysis dump to prep
     structure_dir : Optional[str]
         Path to a directory of structures to prep
-    gen_cache : Path
-        Path to a directory to store generated structures
-    cache_types : CacheType
-        Type of cache to make
+    cache_dir : Path
+        Path to a directory of cached prepped structures.
+    save_to_cache: bool
+        If newly prepared structures should also be saved to the global cache
     align : Optional[Path]
         Path to a reference structure to align to
     ref_chain : Optional[str]
@@ -76,23 +76,21 @@ class ProteinPrepInputs(BaseModel):
         None,
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
     )
-    gen_cache: str = Field(
+    cache_dir: Optional[str] = Field(
         "prepped_structure_cache",
-        description="Path to a directory where generated prepped complexes should be cached",
+        description="Path to a directory of cached prepared Complex structures.",
     )
-
-    cache_type: Optional[list[str]] = Field(
-        [CacheType.DesignUnit], description="The types of cache to use."
+    save_to_cache: bool = Field(
+        True,
+        description="If newly prepared structures should also be saved to the cache_dir, has no effect if the cache_dir is not set.",
     )
 
     align: Optional[Path] = Field(
         None, description="Reference structure pdb to align to."
     )
-    ref_chain: Optional[str] = Field(
-        None, description="Reference chain ID to align to."
-    )
+    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
     active_site_chain: Optional[str] = Field(
-        None, description="Chain ID to align to reference."
+        "A", description="Chain ID to align to reference."
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
@@ -112,18 +110,21 @@ class ProteinPrepInputs(BaseModel):
 
     dask_cluster_n_workers: PositiveInt = Field(
         10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
+        description="Number of workers to use as initial guess for Lilac dask cluster",
     )
 
     dask_cluster_max_workers: PositiveInt = Field(
         40, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
-    logname: str = Field("protein_prep", description="Name of the log file.")
+    logname: str = Field("", description="Name of the log file.")
 
     loglevel: int = Field(logging.INFO, description="Logging level")
 
-    output_dir: Path = Field(Path("output"), description="Output directory")
+    output_dir: Path = Field(
+        Path("output"),
+        description="Output directory where newly prepped structures and log files will be saved to.",
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -154,34 +155,27 @@ class ProteinPrepInputs(BaseModel):
 
         return values
 
-    @validator("cache_type")
-    @classmethod
-    def check_cache_type(cls, v):
-        # must be unique
-        if len(v) != len(set(v)):
-            raise ValueError("cache_type must be unique")
-        return v
-
 
 def protein_prep_workflow(inputs: ProteinPrepInputs):
     output_dir = inputs.output_dir
-
-    if output_dir.exists():
-        rmtree(output_dir)
-    output_dir.mkdir()
+    output_dir.mkdir(exist_ok=True)
 
     logger = FileLogger(
-        inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
+        inputs.logname,  # default root logger so that dask logging is forwarded
+        path=output_dir,
+        logfile="protein-prep.log",
+        stdout=True,
+        level=inputs.loglevel,
     ).getLogger()
 
-    logger.info(f"Running large scale docking with inputs: {inputs}")
+    logger.info(f"Running protein prep with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
     inputs.to_json_file(output_dir / "protein_prep.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
 
         if inputs.dask_type.is_lilac():
@@ -217,12 +211,12 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
 
     elif inputs.pdb_file:
         logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
-        complex = Complex.from_pdb(
+        complex_target = Complex.from_pdb(
             inputs.pdb_file,
             target_kwargs={"target_name": inputs.pdb_file.stem},
             ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
         )
-        complexes = [complex]
+        complexes = [complex_target]
 
     else:
         raise ValueError(
@@ -240,13 +234,17 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     if inputs.align:
         # load reference structure
         logger.info(f"Loading and aligning to reference structure: {inputs.align}")
-        ref_complex = Complex.from_pdb(
-            inputs.align,
-            target_kwargs={"target_name": "ref"},
-            ligand_kwargs={"compound_name": "ref_ligand"},
-        )
+        align_struct = inputs.align
     else:
-        ref_complex = None
+        logger.info("No reference structure specified, using canonical structure")
+        align_struct = master_structures[inputs.target]
+
+    ref_complex = Complex.from_pdb(
+        align_struct,
+        target_kwargs={"target_name": "ref"},
+        ligand_kwargs={"compound_name": "ref_ligand"},
+    )
+
     # prep complexes
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(
@@ -257,17 +255,21 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         ref_chain=inputs.ref_chain,
         active_site_chain=inputs.active_site_chain,
     )
+
     prepped_complexes = prepper.prep(
-        inputs=complexes, use_dask=inputs.use_dask, dask_client=dask_client
+        inputs=complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        cache_dir=inputs.cache_dir,
     )
+
     logger.info(f"Prepped {len(prepped_complexes)} complexes")
-    del complexes
 
-    # cache prepped complexes
-    cache_path = output_dir / inputs.gen_cache
+    logger.info(f"Writing prepped complexes to {inputs.output_dir}")
+    prepper.cache(prepped_complexes, inputs.output_dir)
 
-    logger.info(f"Caching prepped complexes to {cache_path}")
-    for cache_type in inputs.cache_type:
-        prepper.cache(prepped_complexes, cache_path, type=cache_type)
+    if inputs.save_to_cache and inputs.cache_dir is not None:
+        logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
+        prepper.cache(prepped_complexes, inputs.cache_dir)
 
     logger.info("Done")

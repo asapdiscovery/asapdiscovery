@@ -16,7 +16,6 @@ from asapdiscovery.data.schema import (
     EnantiomerPair,
     EnantiomerPairList,
     ExperimentalCompoundData,
-    ExperimentalCompoundDataUpdate,
 )
 
 # Not sure if this is the right place for these
@@ -298,7 +297,7 @@ def seqres_to_res_list(seqres_str):
 def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     """
     Convert a CDD-downloaded and filtered CSV file into a JSON file containing
-    an ExperimentalCompoundDataUpdate. CSV file should be the result of the
+    a list[ExperimentalCompoundData]. CSV file should be the result of the
     filter_molecules_dataframe function and must contain the following headers:
     * name
     * smiles
@@ -321,8 +320,8 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
 
     Returns
     -------
-    ExperimentalCompoundDataUpdate
-        The parsed ExperimentalCompoundDataUpdate.
+    list[ExperimentalCompoundData]
+        The parsed list of ExperimentalCompoundData objects.
     """
 
     # Load and remove any straggling compounds w/o SMILES data
@@ -441,11 +440,9 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
             )
             raise e
 
-    compounds = ExperimentalCompoundDataUpdate(compounds=compounds)
-
     if out_json:
         with open(out_json, "w") as fp:
-            fp.write(compounds.json())
+            fp.write("[" + ", ".join([c.json() for c in compounds]) + "]")
         print(f"Wrote {out_json}", flush=True)
     if out_csv:
         out_cols = [
@@ -696,6 +693,7 @@ def filter_molecules_dataframe(
     retain_racemic=False,
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
+    retain_invalid=False,
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
@@ -730,6 +728,8 @@ def filter_molecules_dataframe(
         If True, retain chirally resolved measurements
     retain_semiquantitative_data : bool, default=False
         If True, retain semiquantitative data (data outside assay dynamic range)
+    retain_invalid : bool, default=False
+        If True, retain data with IC50 values that could not be calculated
 
     Returns
     -------
@@ -786,6 +786,15 @@ def filter_molecules_dataframe(
         except ValueError:
             return True
 
+    def is_invalid(ic50):
+        try:
+            _ = float(ic50)
+            return False
+        except ValueError:
+            if "<" in ic50 or ">" in ic50:
+                return False
+            return True
+
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries")
 
     # Drop any rows with no SMILES (need the copy to make pandas happy)
@@ -815,10 +824,12 @@ def filter_molecules_dataframe(
     semiquant_label = [
         is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
     ]
+    invalid_label = [is_invalid(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]]
     mol_df["achiral"] = achiral_label
     mol_df["racemic"] = racemic_label
     mol_df["enantiopure"] = enantiopure_label
     mol_df["semiquant"] = semiquant_label
+    mol_df["invalid"] = invalid_label
 
     # Check which molcules to keep
     achiral_keep_idx = np.asarray([retain_achiral and lab for lab in achiral_label])
@@ -832,6 +843,10 @@ def filter_molecules_dataframe(
     if not retain_semiquantitative_data:
         # Only want to keep non semi-quant data, so negate label first before taking &
         keep_idx &= ~np.asarray(semiquant_label)
+
+    # Same with invalid data
+    if not retain_invalid:
+        keep_idx &= ~np.asarray(invalid_label)
 
     mol_df = mol_df.loc[keep_idx, :]
     logging.debug(f"  dataframe contains {mol_df.shape[0]} entries after filtering")
@@ -898,6 +913,9 @@ def parse_fluorescence_data_cdd(
 
     import numpy as np
 
+    # Create a copy so we don't modify the original
+    mol_df = mol_df.copy()
+
     # Compute pIC50s and uncertainties from 95% CIs
     IC50_series = []
     IC50_stderr_series = []
@@ -911,50 +929,42 @@ def parse_fluorescence_data_cdd(
     for _, row in mol_df.iterrows():
         try:
             IC50 = float(row[f"{assay_name}: IC50 (µM)"])
-            IC50_lower = float(row[f"{assay_name}: IC50 CI (Lower) (µM)"])
-            IC50_upper = float(row[f"{assay_name}: IC50 CI (Upper) (µM)"])
-            IC50_stderr = (
-                np.abs(IC50_upper - IC50_lower) / 4.0
-            )  # assume normal distribution
-
             pIC50 = -np.log10(IC50 * 1e-6)
-            pIC50_lower = -np.log10(IC50_upper * 1e-6)
-            pIC50_upper = -np.log10(IC50_lower * 1e-6)
-            pIC50_stderr = (
-                np.abs(pIC50_upper - pIC50_lower) / 4.0
-            )  # assume normal distribution
-
-            # Render into string with appropriate sig figs
-            try:
-                import sigfig
-
-                IC50, IC50_stderr = sigfig.round(
-                    IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
-                )  # strings
-                pIC50, pIC50_stderr = sigfig.round(
-                    pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
-                )  # strings
-            except ModuleNotFoundError:
-                # Just round to 4 digits if sigfig pacakge not present
-                IC50 = str(round(IC50, 4))
-                IC50_stderr = str(round(IC50_stderr, 4))
-                pIC50 = str(round(pIC50, 4))
-                pIC50_stderr = str(round(pIC50_stderr, 4))
-
+            pIC50_range = 0
         except ValueError:
             IC50 = row[f"{assay_name}: IC50 (µM)"]
             # Could not convert to string because value was semiquantitative
             if IC50 == "(IC50 could not be calculated)":
                 IC50 = "nan"
                 pIC50 = "nan"
-            elif ">" in IC50:
-                pIC50 = "< 4.0"  # lower limit of detection
-            elif "<" in IC50:
-                pIC50 = "> 7.3"  # upper limit of detection
+                pIC50_range = 0
+            elif ">" in IC50 or "<" in IC50:
+                # Label indicating whether pIC50 values were out of the assay range
+                # Signs are flipped bc we are assigning based on IC50 but the value
+                #  applies to pIC50
+                pIC50_range = -1 if ">" in IC50 else 1
+                IC50 = float(IC50.strip("<> "))
+                pIC50 = round(-np.log10(IC50 * 1e-6), 2)
             else:
                 IC50 = "nan"
                 pIC50 = "nan"
+                pIC50_range = 0
 
+        try:
+            IC50_lower = float(row[f"{assay_name}: IC50 CI (Lower) (µM)"])
+            IC50_upper = float(row[f"{assay_name}: IC50 CI (Upper) (µM)"])
+            if np.isnan(IC50_lower) or np.isnan(IC50_upper):
+                raise ValueError
+            IC50_stderr = (
+                np.abs(IC50_upper - IC50_lower) / 4.0
+            )  # assume normal distribution
+
+            pIC50_lower = -np.log10(IC50_upper * 1e-6)
+            pIC50_upper = -np.log10(IC50_lower * 1e-6)
+            pIC50_stderr = (
+                np.abs(pIC50_upper - pIC50_lower) / 4.0
+            )  # assume normal distribution
+        except ValueError:
             # Keep pIC50 string
             # Use default pIC50 error
             # print(row)
@@ -966,14 +976,33 @@ def parse_fluorescence_data_cdd(
             pIC50_lower = np.nan
             pIC50_upper = np.nan
 
-        IC50_series.append(float(IC50.strip("<> ")) * 1e-6)
+        if (
+            isinstance(IC50, float)
+            and (pIC50_range == 0)
+            and isinstance(IC50_stderr, float)
+        ):
+            # Have numbers for IC50 and stderr so can do rounding
+            try:
+                import sigfig
+
+                IC50, IC50_stderr = sigfig.round(
+                    IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
+                )  # strings
+                pIC50, pIC50_stderr = sigfig.round(
+                    pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
+                )  # strings
+            except ModuleNotFoundError:
+                # Don't round
+                pass
+
+        IC50_series.append(float(IC50) * 1e-6)
         IC50_stderr_series.append(float(IC50_stderr) * 1e-6)
         IC50_lower_series.append(IC50_lower * 1e-6)
         IC50_upper_series.append(IC50_upper * 1e-6)
-        pIC50_series.append(float(pIC50.strip("<> ")))
+        pIC50_series.append(float(pIC50))
         pIC50_stderr_series.append(float(pIC50_stderr))
         # Add label indicating whether pIC50 values were out of the assay range
-        pIC50_range_series.append(-1 if "<" in pIC50 else (1 if ">" in pIC50 else 0))
+        pIC50_range_series.append(pIC50_range)
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
 
@@ -1155,7 +1184,7 @@ def parse_experimental_compound_data(exp_fn: str, json_fn: str):
 
     # Dump JSON file
     with open(json_fn, "w") as fp:
-        fp.write(ExperimentalCompoundDataUpdate(compounds=exp_data_compounds).json())
+        fp.write("[" + ", ".join([c.json() for c in exp_data_compounds]) + "]")
 
 
 def parse_fragalysis_data(frag_fn, x_dir, cmpd_ids=None, o_dir=False):

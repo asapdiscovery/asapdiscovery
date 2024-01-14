@@ -6,7 +6,6 @@ import pickle as pkl
 import numpy as np
 from asapdiscovery.data.fragalysis import parse_xtal  # noqa: E402
 from asapdiscovery.data.schema import EnantiomerPairList  # noqa: E402
-from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate  # noqa: E402
 from asapdiscovery.data.utils import load_exp_from_sdf  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_openeye  # noqa: E402
 from asapdiscovery.docking.mcs import rank_structures_rdkit  # noqa: E402
@@ -79,11 +78,7 @@ def main():
             ]
         else:
             exp_compounds = [
-                c
-                for c in ExperimentalCompoundDataUpdate(
-                    **json.load(open(args.exp))
-                ).compounds
-                if c.smiles is not None
+                c for c in json.load(open(args.exp)) if c.smiles is not None
             ]
             exp_compounds = np.asarray(
                 [

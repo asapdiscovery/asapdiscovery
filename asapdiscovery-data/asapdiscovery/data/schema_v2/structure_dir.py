@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import List  # noqa: F401
 
@@ -5,6 +6,8 @@ import dask
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.schema_v2.complex import Complex
 from pydantic import BaseModel, Field, validator
+
+logger = logging.getLogger(__name__)
 
 
 class StructureDirFactory(BaseModel):
@@ -51,7 +54,7 @@ class StructureDirFactory(BaseModel):
         List[Complex]
             List of Complex objects.
         """
-        pdb_files = list(self.parent_dir.glob("*.pdb"))
+        pdb_files = list(self.parent_dir.rglob("*.pdb"))
         # check all filenames are unique
         pdb_stems = [pdb_file.stem for pdb_file in pdb_files]
         unique = False

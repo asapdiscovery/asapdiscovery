@@ -1,21 +1,25 @@
-from typing import Any
+import logging
+from typing import Any, ClassVar
 
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from pydantic import Field
+from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
-class PairBase(DataModelAbstractBase):
+class PairBase(BaseModel):
     """
     Base class for pairs.
     """
 
+    is_cacheable: ClassVar[bool] = True
+
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, PairBase):
-            return NotImplemented
+            raise NotImplementedError
 
-        # Just check that both Complex and Ligands are the same
+        # Check that both Complexes are the same and both Ligands are the same
         return (self.complex == other.complex) and (self.ligand == other.ligand)
 
     def __ne__(self, other: Any) -> bool:
@@ -31,20 +35,5 @@ class CompoundStructurePair(PairBase):
     complex: Complex = Field(description="Target schema object")
     ligand: Ligand = Field(description="Ligand schema object")
 
-
-class DockingInputPair(PairBase):
-    """
-    Schema for a DockingInputPair, containing both a PreppedComplex and Ligand
-    This is designed to track a matched ligand and complex pair for investigation
-    but with the complex prepped for docking, ie in OEDesignUnit format.
-    """
-
-    complex: PreppedComplex = Field(description="Target schema object")
-    ligand: Ligand = Field(description="Ligand schema object")
-
-    @classmethod
-    def from_compound_structure_pair(
-        cls, compound_structure_pair: CompoundStructurePair
-    ) -> "DockingInputPair":
-        prepped_complex = PreppedComplex.from_complex(compound_structure_pair.complex)
-        return cls(complex=prepped_complex, ligand=compound_structure_pair.ligand)
+    def unique_name(self):
+        return f"{self.complex.unique_name()}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"

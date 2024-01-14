@@ -4,11 +4,12 @@ import click
 
 
 @click.group()
-def cli():
+def alchemy():
+    """Tools to create and execute Alchemy networks using OpenFE and alchemiscale."""
     pass
 
 
-@cli.command()
+@alchemy.command()
 @click.argument(
     "filename",
     type=click.Path(exists=False, file_okay=True, dir_okay=False, writable=True),
@@ -26,7 +27,7 @@ def create(filename: str):
     factory.to_file(filename=filename)
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-f",
     "--factory-file",
@@ -52,6 +53,12 @@ def create(filename: str):
     help="The file which contains the ligands to use in the planned network.",
 )
 @click.option(
+    "-ad",
+    "--alchemy-dataset",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="The JSON file containing an AlchemyDataset created with ASAP-Alchemy prep run. This defines the ligands and the receptor.",
+)
+@click.option(
     "-c",
     "--center-ligand",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -59,10 +66,11 @@ def create(filename: str):
 )
 def plan(
     name: str,
-    receptor: str,
-    ligands: str,
+    receptor: Optional[str] = None,
+    ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
     factory_file: Optional[str] = None,
+    alchemy_dataset: Optional[str] = None,
 ):
     """
     Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
@@ -71,9 +79,15 @@ def plan(
     import pathlib
 
     import openfe
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
+    from asapdiscovery.alchemy.schema.prep_workflow import AlchemyDataSet
     from rdkit import Chem
 
-    from .schema.fec import FreeEnergyCalculationFactory
+    # check mutually exclusive args
+    if ligands is None and alchemy_dataset is None:
+        raise RuntimeError(
+            "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
+        )
 
     click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
@@ -83,11 +97,35 @@ def plan(
     else:
         factory = FreeEnergyCalculationFactory()
 
-    click.echo(f"Loading Ligands from {ligands}")
-    # parse all required data/ assume sdf currently
-    supplier = Chem.SDMolSupplier(ligands, removeHs=False)
-    input_ligands = [openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier]
+    if alchemy_dataset is not None:
+        import tempfile
+
+        # load the set of posed ligands and the receptor from our dataset
+        click.echo(f"Loading Ligands and protein from AlchemyDataSet {alchemy_dataset}")
+        alchemy_ds = AlchemyDataSet.from_file(alchemy_dataset)
+        input_ligands = [
+            openfe.SmallMoleculeComponent.from_sdf_string(mol.to_sdf_str())
+            for mol in alchemy_ds.posed_ligands
+        ]
+
+        # write to a temp pdb file and read back in
+        with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
+            alchemy_ds.reference_complex.target.to_pdb_file(fp.name)
+            receptor = openfe.ProteinComponent.from_pdb_file(fp.name)
+
+    else:
+        # load from separate files
+        click.echo(f"Loading Ligands from {ligands}")
+        # parse all required data/ assume sdf currently
+        supplier = Chem.SDMolSupplier(ligands, removeHs=False)
+        input_ligands = [
+            openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier
+        ]
+        click.echo(f"Loading protein from {receptor}")
+        receptor = openfe.ProteinComponent.from_pdb_file(receptor)
+
     if center_ligand is not None:
+        # handle the center ligand needed for radial networks
         supplier = Chem.SDMolSupplier(center_ligand, removeHs=False)
         center_ligand = [
             openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier
@@ -98,9 +136,6 @@ def plan(
             )
 
         center_ligand = center_ligand[0]
-
-    click.echo(f"Loading protein from {receptor}")
-    receptor = openfe.ProteinComponent.from_pdb_file(receptor)
 
     click.echo("Creating FEC network ...")
     planned_network = factory.create_fec_dataset(
@@ -122,7 +157,7 @@ def plan(
         output.write(planned_network.network.graphml)
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-n",
     "--network",
@@ -196,7 +231,7 @@ def submit(network: str, organization: str, campaign: str, project: str):
     )
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-n",
     "--network",
@@ -224,8 +259,8 @@ def gather(network: str, allow_missing: bool):
     Raises:
         Runtime error if all calculations are not complete and allow missing is False.
     """
-    from .schema.fec import FreeEnergyCalculationNetwork
-    from .utils import AlchemiscaleHelper
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
@@ -249,7 +284,7 @@ def gather(network: str, allow_missing: bool):
     network_with_results.to_file("result_network.json")
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-n",
     "--network",
@@ -308,7 +343,7 @@ def status(network: str, errors: bool, with_traceback: bool):
             click.echo()
 
 
-@cli.command()
+@alchemy.command()
 @click.option(
     "-n",
     "--network",
@@ -334,9 +369,8 @@ def restart(network: str, verbose: bool, tasks):
 
     """
     from alchemiscale import ScopedKey
-
-    from .schema.fec import FreeEnergyCalculationNetwork
-    from .utils import AlchemiscaleHelper
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
     client = AlchemiscaleHelper()
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
@@ -348,7 +382,3 @@ def restart(network: str, verbose: bool, tasks):
         click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
     else:
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
-
-
-if __name__ == "__main__":
-    cli()

@@ -1,6 +1,5 @@
 import warnings
 from datetime import date
-from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Union  # noqa: F401
 from urllib.parse import urljoin
@@ -9,35 +8,8 @@ import pooch
 import yaml
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
+from mtenn.config import ModelType
 from pydantic import BaseModel, Field, HttpUrl
-
-
-class MLModelType(str, Enum):
-    """
-    Enum for model types
-
-    GAT: Graph Attention Network
-    schnet: SchNet
-    e3nn: E(3)-equivariant neural network
-    INVALID: Invalid model type to catch instantiation errors
-    """
-
-    GAT = "GAT"
-    schnet = "schnet"
-    e3nn = "e3nn"
-    INVALID = "INVALID"
-
-    @classmethod
-    def get_values(cls) -> list[str]:
-        """
-        Get list of valid model types
-
-        Returns
-        -------
-        List[str]
-            List of valid model types
-        """
-        return [model_type.value for model_type in cls]
 
 
 class MLModelBase(BaseModel):
@@ -49,7 +21,7 @@ class MLModelBase(BaseModel):
         validate_assignment = True
 
     name: str = Field(..., description="Model name")
-    type: MLModelType = Field(..., description="Model type")
+    type: ModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
     targets: set[TargetTags] = Field(..., description="Biological targets of the model")
 
@@ -143,7 +115,7 @@ class MLModelRegistry(BaseModel):
     )
 
     def get_models_for_target_and_type(
-        self, target: TargetTags, type: MLModelType
+        self, target: TargetTags, type: ModelType
     ) -> list[MLModelSpec]:
         """
         Get available model specs for a target and type.
@@ -152,7 +124,7 @@ class MLModelRegistry(BaseModel):
         ----------
         target : TargetTags
             Target to get models for
-        type : MLModelType
+        type : ModelType
             Type of model to get
 
         Returns
@@ -164,9 +136,9 @@ class MLModelRegistry(BaseModel):
             raise ValueError(
                 f"Target {target} not valid, must be one of {TargetTags.get_values()}"
             )
-        if type not in MLModelType.get_values():
+        if type not in ModelType.get_values():
             raise ValueError(
-                f"Model type {type} not valid, must be one of {MLModelType.get_values()}"
+                f"Model type {type} not valid, must be one of {ModelType.get_values()}"
             )
 
         return [
@@ -196,7 +168,7 @@ class MLModelRegistry(BaseModel):
         return [model for model in self.models.values() if target in model.targets]
 
     def get_latest_model_for_target_and_type(
-        self, target: TargetTags, type: MLModelType
+        self, target: TargetTags, type: ModelType
     ) -> MLModelSpec:
         """
         Get latest model spec for a target
@@ -205,7 +177,7 @@ class MLModelRegistry(BaseModel):
         ----------
         target : TargetTags
             Target to get model for
-        type : MLModelType
+        type : ModelType
             Type of model to get
 
         Returns

@@ -7,9 +7,11 @@ from openeye import (  # noqa: F401
     oechem,
     oedepict,
     oedocking,
+    oeff,
     oegrid,
     oeomega,
     oequacpac,
+    oeshape,
     oespruce,
     oeszybki,
 )
@@ -169,16 +171,17 @@ def load_openeye_smi(smi_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     oechem.OEError
         If the SMI file cannot be opened.
     """
+    # convert to path to make consistent
+    smi_fn = Path(smi_fn)
+    if not smi_fn.exists():
+        raise FileNotFoundError(f"{str(smi_fn)} does not exist!")
 
-    if not Path(smi_fn).exists():
-        raise FileNotFoundError(f"{smi_fn} does not exist!")
-
-    ifs = oechem.oemolistream()
+    ifs = oechem.oemolistream(smi_fn.as_posix())
     ifs.SetFlavor(oechem.OEFormat_SMI, oechem.OEIFlavor_SMI_DEFAULT)
 
     molecules = []
     for mol in ifs.GetOEGraphMols():
-        molecules.append(oechem.OEGetOEGraphMol(mol))
+        molecules.append(oechem.OEGraphMol(mol))
 
     return molecules
 
@@ -682,7 +685,7 @@ def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
     return mol
 
 
-def oemol_to_smiles(mol: oechem.OEMol) -> str:
+def oemol_to_smiles(mol: oechem.OEMol, isomeric=True) -> str:
     """
     Canonical SMILES string of an OpenEye OEMol
 
@@ -691,12 +694,23 @@ def oemol_to_smiles(mol: oechem.OEMol) -> str:
     mol: oechem.OEMol
         OpenEye OEMol
 
+    isomeric: bool, optional, default=True
+        If True, generate canonical isomeric SMILES (including stereochem)
+        If False, generate canonical SMILES without stereochem
+
     Returns
     -------
     str
        SMILES string of molecule
     """
-    return oechem.OEMolToSmiles(mol)
+    # By default, OEMolToSmiles generates isomeric SMILES, which includes stereochemistry
+    if isomeric:
+        return oechem.OEMolToSmiles(mol)
+
+    # However, if we want to treat two stereoisomers as the same molecule,
+    # we can generate canonical SMILES that don't include stereo info
+    else:
+        return oechem.OECreateCanSmiString(mol)
 
 
 def oe_smiles_roundtrip(smiles: str) -> str:

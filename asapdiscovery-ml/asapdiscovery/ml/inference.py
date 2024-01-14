@@ -6,19 +6,27 @@ import numpy as np
 import torch
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.ml.dataset import DockedDataset, GraphInferenceDataset
-from asapdiscovery.ml.models.ml_models import (
+from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
+from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
     LocalMLModelSpec,
     MLModelRegistry,
     MLModelSpec,
-    MLModelType,
 )
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
 from dgllife.utils import CanonicalAtomFeaturizer
+from mtenn.config import ModelType
 from pydantic import BaseModel, Field
+
+"""
+TODO
+
+Need to adjust inference model construction to use new ModelConfigs. Can create one for
+each model and store in S3 to use during testing.
+"""
 
 
 class InferenceBase(BaseModel):
@@ -31,7 +39,7 @@ class InferenceBase(BaseModel):
     targets: set[TargetTags] = Field(
         ..., description="Targets that them model can predict for"
     )
-    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
+    model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
     model_spec: Optional[MLModelSpec] = Field(
         ..., description="Model spec used to create Model to use"
@@ -176,7 +184,7 @@ class InferenceBase(BaseModel):
 
 
 class GATInference(InferenceBase):
-    model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
+    model_type: ClassVar[ModelType.GAT] = ModelType.GAT
 
     def predict(self, g: dgl.DGLGraph):
         """Predict on a graph, requires a DGLGraph object with the `ndata`
@@ -201,7 +209,10 @@ class GATInference(InferenceBase):
             return output_tensor.cpu().numpy().ravel()
 
     def predict_from_smiles(
-        self, smiles: Union[str, list[str]], **kwargs
+        self,
+        smiles: Union[str, list[str]],
+        node_featurizer=None,
+        edge_featurizer=None,
     ) -> Union[np.ndarray, float]:
         """Predict on a list of SMILES strings, or a single SMILES string.
 
@@ -209,6 +220,10 @@ class GATInference(InferenceBase):
         ----------
         smiles : Union[str, List[str]]
             SMILES string or list of SMILES strings.
+        node_featurizer : BaseAtomFeaturizer, optional
+            Featurizer for node data
+        edge_featurizer : BaseBondFeaturizer, optional
+            Featurizer for edges
 
         Returns
         -------
@@ -218,11 +233,18 @@ class GATInference(InferenceBase):
         if isinstance(smiles, str):
             smiles = [smiles]
 
-        gids = GraphInferenceDataset(
-            smiles, node_featurizer=CanonicalAtomFeaturizer(), **kwargs
+        ligands = [
+            Ligand.from_smiles(smi, compound_name=f"eval_{i}")
+            for i, smi in enumerate(smiles)
+        ]
+
+        if not node_featurizer:
+            node_featurizer = CanonicalAtomFeaturizer()
+        ds = GraphDataset.from_ligands(
+            ligands, node_featurizer=node_featurizer, edge_featurizer=edge_featurizer
         )
 
-        data = [self.predict(g) for g in gids]
+        data = [self.predict(pose["g"]) for _, pose in ds]
         data = np.concatenate(np.asarray(data))
         # return a scalar float value if we only have one input
         if np.all(np.array(data.shape) == 1):
@@ -235,7 +257,7 @@ class StructuralInference(InferenceBase):
     Inference class for models that take a structure as input.
     """
 
-    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
+    model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
 
     def predict(self, pose_dict: dict):
         """Predict on a pose, requires a dictionary with the pose data with
@@ -332,7 +354,7 @@ class SchnetInference(StructuralInference):
     Inference class for SchNet model.
     """
 
-    model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
+    model_type: ClassVar[ModelType.schnet] = ModelType.schnet
 
 
 class E3nnInference(StructuralInference):
@@ -340,7 +362,7 @@ class E3nnInference(StructuralInference):
     Inference class for E3NN model.
     """
 
-    model_type: ClassVar[MLModelType.e3nn] = MLModelType.e3nn
+    model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
 
 
 _inferences_classes_meta = [
@@ -352,9 +374,9 @@ _inferences_classes_meta = [
 ]
 
 
-def get_inference_cls_from_model_type(model_type: MLModelType):
+def get_inference_cls_from_model_type(model_type: ModelType):
     instantiable_classes = [
-        m for m in _inferences_classes_meta if m.model_type != MLModelType.INVALID
+        m for m in _inferences_classes_meta if m.model_type != ModelType.INVALID
     ]
     model_class = [m for m in instantiable_classes if m.model_type == model_type]
     if len(model_class) != 1:

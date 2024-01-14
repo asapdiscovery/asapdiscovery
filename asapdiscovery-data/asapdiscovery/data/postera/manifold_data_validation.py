@@ -1,4 +1,7 @@
 import itertools
+import logging
+import warnings
+from collections import defaultdict
 from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
@@ -7,6 +10,9 @@ from typing import List, Optional, Tuple, Union  # noqa: F401
 import pandas as pd
 import pkg_resources
 import yaml
+from asapdiscovery.data.enum import StringEnum
+
+logger = logging.getLogger(__name__)
 
 
 # util function to open a yaml file and return the data
@@ -19,18 +25,11 @@ def load_yaml(yaml_path: Union[str, Path]) -> dict:
 # we define a new Enum class with some handy methods
 
 
-class TagEnumBase(str, Enum):
-    @classmethod
-    def get_values(cls):
-        return [e.value for e in cls]
-
-    @classmethod
-    def get_names(cls):
-        return [e.name for e in cls]
-
+class TagEnumBase(StringEnum):
     @classmethod
     def is_in_values(cls, tag: str) -> bool:
-        return tag in cls.get_values()
+        vals = cls.get_values()
+        return tag in vals
 
     @classmethod
     def all_in_values(cls, query: list[str], allow: list[str] = []) -> bool:
@@ -50,11 +49,19 @@ class TagEnumBase(str, Enum):
     ) -> pd.DataFrame:
         # construct list of allowed columns
         allowed_columns = cls.get_values()
+
         if allow is not None:
             allowed_columns.extend(allow)
 
         # drop columns that are not allowed
         extra_cols = [col for col in df.columns if col not in allowed_columns]
+        if len(extra_cols) > 0:
+            warnings.warn(
+                f"Columns {extra_cols} are not allowed. Dropping them from the dataframe"
+            )
+            logger.warn(
+                f"Columns {extra_cols} are not allowed. Dropping them from the dataframe"
+            )
         return df.drop(columns=extra_cols)
 
     @classmethod
@@ -86,11 +93,33 @@ def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     data = load_yaml(yaml_path)
     viruses = data["virus"]
     target_tags = set()
+    target_virus_map = {}
+    virus_target_map = defaultdict(list)
+    target_protein_map = {}
     for v in viruses:
         for target in viruses[v]:
-            target_tags.add(v + "-" + target)
+            tag = v + "-" + target
+            target_tags.add(tag)
+            target_virus_map[tag] = v
+            virus_target_map[v].append(target)
+            target_protein_map[tag] = target
 
-    return TagEnumBase.from_iterable("TargetTags", target_tags), target_tags
+    return (
+        TagEnumBase.from_iterable("TargetTags", target_tags),
+        target_tags,
+        target_virus_map,
+        virus_target_map,
+        target_protein_map,
+    )
+
+
+def make_virus_tags(yaml_path: Union[str, Path]) -> Enum:
+    data = load_yaml(yaml_path)
+    viruses = data["virus"]
+    virus_tags = set()
+    for v in viruses:
+        virus_tags.add(v)
+    return TagEnumBase.from_iterable("VirusTags", virus_tags)
 
 
 def make_output_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set, dict]:
@@ -201,7 +230,15 @@ manifold_data_spec = pkg_resources.resource_filename(
 )
 
 # make target enum and set
-TargetTags, target_tag_set = make_target_tags(manifold_data_spec)
+(
+    TargetTags,
+    target_tag_set,
+    TargetVirusMap,
+    VirusTargetMap,
+    TargetProteinMap,
+) = make_target_tags(manifold_data_spec)
+
+VirusTags = make_virus_tags(manifold_data_spec)
 
 # make Output enum and set
 OutputTags, output_tag_set, MANIFOLD_PREFIX_POSTFIX_DICT = make_output_tags(
@@ -375,4 +412,5 @@ def rename_output_columns_for_manifold(
             )
     # rename columns
     df = df.rename(columns=mapping)
+
     return df

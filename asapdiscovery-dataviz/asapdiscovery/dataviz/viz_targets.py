@@ -11,6 +11,8 @@ PROTEIN_MAPPING = {
     "EV-A71-3Cpro": "3Cpro",
     "ZIKV-NS2B-NS3pro": "NS3pro",
     "DENV-NS2B-NS3pro": "NS3pro",
+    "EV-A71-Capsid": "Capsid",
+    "EV-D68-Capsid": "Capsid",
 }
 
 # needs underscores to match attr names
@@ -23,12 +25,14 @@ TARGET_MAPPING = {
     "EV-A71-3Cpro": "EV-A71-3Cpro",
     "ZIKV-NS2B-NS3pro": "ZIKV-NS2B-NS3pro",
     "DENV-NS2B-NS3pro": "DENV-NS2B-NS3pro",
+    "EV-A71-Capsid": "EV-A71-Capsid",
+    "EV-D68-Capsid": "EV-D68-Capsid",
 }
 
 
 # enum for allowed targets
 # TODO make configurable from YAML file
-class VizTargets(Enum):
+class VizTargets(str, Enum):
     viz_SARS_CoV_2_Mpro = "SARS-CoV-2-Mpro"
     viz_MERS_CoV_Mpro = "MERS-CoV-Mpro"
     viz_SARS_CoV_2_Mac1 = "SARS-CoV-2-Mac1"
@@ -37,6 +41,8 @@ class VizTargets(Enum):
     viz_EV_A71_3Cpro = "EV-A71-3Cpro"
     viz_ZIKV_NS2B_NS3pro = "ZIKV-NS2B-NS3pro"
     viz_DENV_NS2B_NS3pro = "DENV-NS2B-NS3pro"
+    viz_EV_A71_Capsid = "EV-A71-Capsid"
+    viz_EV_D68_Capsid = "EV-D68-Capsid"
 
     @classmethod
     def get_allowed_targets(cls) -> list[str]:

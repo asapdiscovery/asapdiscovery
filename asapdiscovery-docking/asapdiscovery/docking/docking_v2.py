@@ -1,24 +1,170 @@
+"""
+Defines docking base schema.
+"""
+
 import abc
-from enum import Enum
+import logging
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import dask
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.openeye import (
-    combine_protein_ligand,
-    oechem,
-    oedocking,
-    oeomega,
-    save_openeye_pdb,
-)
-from asapdiscovery.data.schema_v2.ligand import Ligand, compound_names_unique
-from asapdiscovery.data.schema_v2.pairs import DockingInputPair
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
+import numpy as np
+from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
+from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
+from asapdiscovery.data.schema_v2.complex import PreppedComplex
+from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
+from asapdiscovery.data.schema_v2.sets import MultiStructureBase
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, root_validator
+from pydantic import BaseModel, Field, PositiveFloat
+
+logger = logging.getLogger(__name__)
+
+
+class DockingInputBase(BaseModel):
+    """
+    Base class for functionality all docking inputs should have.
+    """
+
+    @abc.abstractmethod
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        ...
+
+
+class DockingInputPair(CompoundStructurePair, DockingInputBase):
+    """
+    Schema for a DockingInputPair, containing both a PreppedComplex and Ligand
+    This is designed to track a matched ligand and complex pair for investigation
+    but with the complex prepped for docking, ie in OEDesignUnit format.
+    """
+
+    complex: PreppedComplex = Field(description="Target schema object")
+
+    @classmethod
+    def from_compound_structure_pair(
+        cls, compound_structure_pair: CompoundStructurePair
+    ) -> "DockingInputPair":
+        prepped_complex = PreppedComplex.from_complex(compound_structure_pair.complex)
+        return cls(complex=prepped_complex, ligand=compound_structure_pair.ligand)
+
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        return [self.complex.target.to_oedu()]
+
+    def unique_name(self):
+        return f"{self.complex.unique_name()}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"
+
+
+class DockingInputMultiStructure(MultiStructureBase):
+    """
+    Schema for one ligand to many possible reference structures.
+    """
+
+    ligand: Ligand = Field(description="Ligand schema object")
+    complexes: list[PreppedComplex] = Field(description="List of reference structures")
+
+    @classmethod
+    def from_pairs(
+        cls, pair_list: list[DockingInputPair]
+    ) -> list["DockingInputMultiStructure"]:
+        return cls._from_pairs(pair_list)
+
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        return [protein_complex.target.to_oedu() for protein_complex in self.complexes]
+
+
+class DockingBase(BaseModel):
+    """
+    Base class for running docking
+    """
+
+    type: Literal["DockingBase"] = "DockingBase"
+
+    @abc.abstractmethod
+    def _dock(
+        self, inputs: list[DockingInputPair], output_dir: Union[str, Path]
+    ) -> list["DockingResult"]:
+        ...
+
+    def dock(
+        self,
+        inputs: list[DockingInputPair],
+        output_dir: Optional[Union[str, Path]] = None,
+        use_dask: bool = False,
+        dask_client=None,
+        return_for_disk_backend: bool = False,
+    ) -> list["DockingResult"]:
+        """
+        Run docking on a list of DockingInputPairs
+
+        Parameters
+        ----------
+        inputs : list[DockingInputPair]
+            List of DockingInputPairs
+        output_dir : Optional[Union[str, Path]], optional
+            Output directory, to write docking results to, by default None
+            means no output files are written
+        use_dask : bool, optional
+            Whether to use dask, by default False
+        dask_client : dask.distributed.Client, optional
+            Dask client to use, by default None
+
+        Returns
+        -------
+        Union[list[DockingResult], list[Path]]]
+            List of DockingResults or paths to DockingResult json files
+        """
+        # make output dir if it doesn't exist
+        if output_dir is not None:
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        if use_dask:
+            delayed_outputs = []
+            for inp in inputs:
+                out = dask.delayed(self._dock)(
+                    inputs=[inp],
+                    output_dir=output_dir,
+                    return_for_disk_backend=return_for_disk_backend,
+                )
+                delayed_outputs.append(out[0])  # flatten
+            outputs = actualise_dask_delayed_iterable(
+                delayed_outputs, dask_client=dask_client, errors="skip"
+            )
+        else:
+            outputs = self._dock(
+                inputs=inputs,
+                output_dir=output_dir,
+                return_for_disk_backend=return_for_disk_backend,
+            )
+        # filter out None values
+        outputs = [o for o in outputs if o is not None]
+        return outputs
+
+    @staticmethod
+    def write_docking_files(
+        docking_results: list["DockingResult"], output_dir: Union[str, Path]
+    ):
+        """
+        Write docking results to files in output_dir
+
+        Parameters
+        ----------
+        docking_results : list[DockingResult]
+            List of DockingResults
+        output_dir : Union[str, Path]
+            Output directory
+
+        Raises
+        ------
+        """
+        output_dir = Path(output_dir)
+
+        # write out the docked poses and info
+        for result in docking_results:
+            result.write_docking_files(output_dir)
+
+    @abc.abstractmethod
+    def provenance(self) -> dict[str, str]:
+        ...
 
 
 class DockingResult(BaseModel):
@@ -48,6 +194,15 @@ class DockingResult(BaseModel):
     )  # not easy to get the probability from rescoring
     provenance: dict[str, str] = Field(description="Provenance")
 
+    def to_json_file(self, file: str | Path):
+        with open(file, "w") as f:
+            f.write(self.json(indent=2))
+
+    @classmethod
+    def from_json_file(cls, file: str | Path) -> "DockingResult":
+        with open(file) as f:
+            return cls.parse_raw(f.read())
+
     def get_output(self) -> dict:
         """
         return a dictionary of some of the fields of the DockingResult
@@ -67,8 +222,22 @@ class DockingResult(BaseModel):
         oechem.OEMol
             Combined oemol
         """
+        return combine_protein_ligand(self.to_protein(), self.posed_ligand.to_oemol())
+
+    def to_protein(self) -> oechem.OEMol:
+        """
+        Return the protein from the original target
+
+        Returns
+        -------
+        oechem.OEMol
+            Protein oemol
+        """
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
-        return combine_protein_ligand(prot, self.posed_ligand.to_oemol())
+        return prot
+
+    def unique_name(self):
+        return self.input_pair.unique_name()
 
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):
@@ -89,379 +258,80 @@ class DockingResult(BaseModel):
 
         return pd.DataFrame([r.get_output() for r in results])
 
-
-class POSITDockingResults(DockingResult):
-    """
-    Schema for a DockingResult from OEPosit, containing both a DockingInputPair used as input to the workflow
-    and a Ligand object containing the docked pose.
-    """
-
-    type: Literal["POSITDockingResults"] = "POSITDockingResults"
-
-    @staticmethod
-    def make_df_from_docking_results(results: list["DockingResult"]):
+    def write_docking_files(self, output_dir: Union[str, Path]):
         """
-        Make a dataframe from a list of DockingResults
+        Write docking files to output_dir
 
         Parameters
         ----------
-        results : list[DockingResult]
-            List of DockingResults
-
-        Returns
-        -------
-        pd.DataFrame
-            Dataframe of results
+        output_dir : Union[str, Path]
+            Output directory
         """
-        import pandas as pd
+        self._write_docking_files(self, output_dir)
 
-        df_prep = []
-        for result in results:
-            docking_dict = {}
-            docking_dict[
-                DockingResultCols.LIGAND_ID
-            ] = result.input_pair.ligand.compound_name
-            docking_dict[
-                DockingResultCols.TARGET_ID
-            ] = result.input_pair.complex.target.target_name
-            docking_dict[
-                "target_bound_compound_smiles"
-            ] = result.input_pair.complex.ligand.smiles
-            docking_dict[DockingResultCols.SMILES] = result.input_pair.ligand.smiles
-            docking_dict[
-                DockingResultCols.DOCKING_CONFIDENCE_POSIT
-            ] = result.probability
-            docking_dict[DockingResultCols.DOCKING_SCORE_POSIT] = result.score
-            docking_dict["score_type"] = result.score_type.value
-            df_prep.append(docking_dict)
+    @staticmethod
+    def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
+        output_dir = Path(output_dir)
+        output_pref = result.unique_name()
+        compound_dir = output_dir / output_pref
+        compound_dir.mkdir(parents=True, exist_ok=True)
+        output_sdf_file = compound_dir / "docked.sdf"
+        output_pdb_file = compound_dir / "docked_complex.pdb"
+        output_json_file = compound_dir / "docking_result.json"
+        result.posed_ligand.to_sdf(output_sdf_file)
+        combined_oemol = result.to_posed_oemol()
+        save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.to_json_file(output_json_file)
 
-        df = pd.DataFrame(df_prep)
-        return df
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, DockingResult):
+            raise NotImplementedError
+
+        # Just check that both Complexs and Ligands are the same
+        return (
+            (self.input_pair == other.input_pair)
+            and (self.posed_ligand == other.posed_ligand)
+            and (np.isclose(self.probability, other.probability))
+        )
+
+    def __neq__(self, other: Any) -> bool:
+        return not self.__eq__(other)
 
 
-class DockingBase(BaseModel):
+def write_results_to_multi_sdf(
+    sdf_file: Union[str, Path],
+    results: Union[list[DockingResult], list[Path]],
+    backend=BackendType.IN_MEMORY,
+    reconstruct_cls=None,
+):
     """
-    Base class for running docking
-    """
-
-    type: Literal["DockingBase"] = "DockingBase"
-
-    @abc.abstractmethod
-    def _dock() -> list[DockingResult]:
-        ...
-
-    def dock(
-        self, inputs: list[DockingInputPair], use_dask: bool = False, dask_client=None
-    ) -> Union[list[dask.delayed], list[DockingResult]]:
-        if use_dask:
-            delayed_outputs = []
-            for inp in inputs:
-                out = dask.delayed(self._dock)(inputs=[inp])
-                delayed_outputs.append(out[0])  # flatten
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client, errors="skip"
-            )
-        else:
-            outputs = self._dock(inputs=inputs)
-        # filter out None values
-        outputs = [o for o in outputs if o is not None]
-        return outputs
-
-    @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
-
-
-class POSIT_METHOD(Enum):
-    """
-    Enum for POSIT methods
-    """
-
-    ALL = oedocking.OEPositMethod_ALL
-    HYBRID = oedocking.OEPositMethod_HYBRID
-    FRED = oedocking.OEPositMethod_FRED
-    MCS = oedocking.OEPositMethod_MCS
-    SHAPEFIT = oedocking.OEPositMethod_SHAPEFIT
-
-    @classmethod
-    def reverse_lookup(cls, value):
-        return cls(value).name
-
-
-class POSIT_RELAX_MODE(Enum):
-    """
-    Enum for POSIT relax modes
-    """
-
-    CLASH = oedocking.OEPoseRelaxMode_CLASHED
-    ALL = oedocking.OEPoseRelaxMode_ALL
-    NONE = oedocking.OEPoseRelaxMode_NONE
-
-
-class POSITDocker(DockingBase):
-    """
-    Docking workflow using OEPosit
+    Write a list of DockingResults to a single sdf file
+    Can accept either a list of DockingResults or a list of paths to DockingResult json files
+    depending on the backend used
 
     Parameters
     ----------
-    relax : POSIT_RELAX_MODE
-        whether to allow receptor relaxation either, 'clash', 'all', 'none', by default POSIT_RELAX_MODE.NONE
-    posit_method : POSIT_METHOD
-        POSIT method to use, by default POSIT_METHOD.ALL
-    use_omega : bool
-        Whether to use OEOmega to generate conformers, by default True
-    num_poses : PositiveInt
-        Number of poses to generate, by default 1
-    allow_low_posit_prob : bool
-        Whether to allow low posit probability, by default False
-    low_posit_prob_thresh : float
-        Minimum posit probability threshold if allow_low_posit_prob is False, by default 0.1
-    allow_final_clash : bool
-        Whether to allow clashing poses in last stage of docking, by default False
+    results : Union[list[DockingResult], list[Path]]
+        List of DockingResults or paths to DockingResult json files
+    backend : BackendType, optional
+        Backend to use, by default BackendType.IN_MEMORY
+    reconstruct_cls : Optional[DockingResult], optional
+        DockingResult class to use for disk backend, by default None
+
+    Raises
+    ------
+    ValueError
+        If backend is disk and no reconstruct_cls is provided
     """
+    if backend == BackendType.DISK and not reconstruct_cls:
+        raise ValueError("Must provide reconstruct_cls if using disk backend")
 
-    type: Literal["POSITDocker"] = "POSITDocker"
+    for res in results:
+        if backend == BackendType.IN_MEMORY:
+            lig = res.posed_ligand
+        elif backend == BackendType.DISK:
+            lig = reconstruct_cls.from_json_file(res).posed_ligand
+        else:
+            raise ValueError(f"Unknown backend type {backend}")
 
-    relax: POSIT_RELAX_MODE = Field(
-        POSIT_RELAX_MODE.NONE,
-        description="When to check for relaxation either, 'clash', 'all', 'none'",
-    )
-    posit_method: POSIT_METHOD = Field(
-        POSIT_METHOD.ALL, description="POSIT method to use"
-    )
-    use_omega: bool = Field(True, description="Use omega to generate conformers")
-    num_poses: PositiveInt = Field(1, description="Number of poses to generate")
-    allow_low_posit_prob: bool = Field(False, description="Allow low posit probability")
-    low_posit_prob_thresh: float = Field(
-        0.1,
-        description="Minimum posit probability threshold if allow_low_posit_prob is False",
-    )
-    allow_final_clash: bool = Field(
-        False, description="Allow clashing poses in last stage of docking"
-    )
-
-    @staticmethod
-    def to_result_type():
-        return POSITDockingResults
-
-    @root_validator
-    @classmethod
-    def _output_dir_write_file(cls, values):
-        output_dir = values.get("output_dir")
-        write_files = values.get("write_file")
-        if write_files and not output_dir:
-            raise ValueError("Output directory must be set if write_file is True")
-
-        if write_files and not Path(output_dir).exists():
-            raise ValueError("Output directory does not exist")
-        return values
-
-    @staticmethod
-    def run_oe_posit_docking(opts, pose_res, du, lig, num_poses):
-        """
-        Helper function to run OEPosit docking
-
-        Parameters
-        ----------
-        opts : oedocking.OEPositOptions
-            OEPosit options
-        pose_res : oedocking.OEPositResults
-            OEPosit results
-        du : oedocking.OEDesignUnit
-            OEDesignUnit
-        lig : oechem.OEMol
-            Ligand
-        num_poses : int
-            Number of poses to generate
-
-        Returns
-        -------
-        oedocking.OEPositResults
-            OEPosit results
-        int
-            Return code
-        """
-        poser = oedocking.OEPosit(opts)
-        retcode = poser.AddReceptor(du)
-        if not retcode:
-            raise ValueError("Failed to add receptor to POSIT")
-        ret_code = poser.Dock(pose_res, lig, num_poses)
-        return pose_res, ret_code
-
-    def _dock(
-        self, inputs: list[DockingInputPair], error="skip"
-    ) -> list[DockingResult]:
-        """
-        Docking workflow using OEPosit
-        """
-
-        docking_results = []
-
-        for pair in inputs:
-            du = pair.complex.target.to_oedu()
-            lig_oemol = oechem.OEMol(pair.ligand.to_oemol())
-            if self.use_omega:
-                omegaOpts = oeomega.OEOmegaOptions()
-                omega = oeomega.OEOmega(omegaOpts)
-                ret_code = omega.Build(lig_oemol)
-                if ret_code:
-                    if error == "skip":
-                        print(
-                            f"Omega failed with error code {oeomega.OEGetOmegaError(ret_code)}"
-                        )
-                    elif error == "raise":
-                        raise ValueError(
-                            f"Omega failed with error code {oeomega.OEGetOmegaError(ret_code)}"
-                        )
-                    else:
-                        raise ValueError(f"Unknown error handling option {error}")
-
-            opts = oedocking.OEPositOptions()
-            opts.SetIgnoreNitrogenStereo(True)
-            opts.SetPositMethods(self.posit_method.value)
-            opts.SetPoseRelaxMode(self.relax.value)
-
-            pose_res = oedocking.OEPositResults()
-            pose_res, retcode = self.run_oe_posit_docking(
-                opts, pose_res, du, lig_oemol, self.num_poses
-            )
-
-            # TODO: all this retrying is very inefficient, this should be able to be done faster.
-
-            # try again with no relaxation
-            if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
-                opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
-                pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig_oemol, self.num_poses
-                )
-
-            # try again with low posit probability
-            if (
-                retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-                and self.allow_low_posit_prob
-            ):
-                opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                opts.SetMinProbability(self.low_posit_prob_thresh)
-                pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig_oemol, self.num_poses
-                )
-
-            # try again allowing clashes
-            if (
-                self.allow_final_clash
-                and ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-            ):
-                opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
-                pose_res, retcode = self.run_oe_posit_docking(
-                    opts, pose_res, du, lig_oemol, self.num_poses
-                )
-
-            if ret_code == oedocking.OEDockingReturnCode_Success:
-                for result in pose_res.GetSinglePoseResults():
-                    posed_mol = result.GetPose()
-                    prob = result.GetProbability()
-                    pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
-                    pose_scorer.Initialize(du)
-                    chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
-
-                    posed_ligand = Ligand.from_oemol(posed_mol, **pair.ligand.dict())
-                    # set SD tags
-                    sd_data = {
-                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
-                        DockingResultCols.DOCKING_SCORE_POSIT.value: chemgauss_score,
-                        DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
-                            self.posit_method.value
-                        ),
-                    }
-                    posed_ligand.set_SD_data(sd_data)
-
-                    docking_result = POSITDockingResults(
-                        input_pair=pair,
-                        posed_ligand=posed_ligand,
-                        probability=prob,
-                        provenance=self.provenance(),
-                    )
-                    docking_results.append(docking_result)
-
-            else:
-                if error == "skip":
-                    print(
-                        f"docking failed for input pair with compound name: {pair.ligand.compound_name}, smiles: {pair.ligand.smiles} and target name: {pair.complex.target.target_name}"
-                    )
-                    docking_results.append(None)
-                elif error == "raise":
-                    raise ValueError(
-                        f"docking failed for input pair with compound name: {pair.ligand.compound_name}, smiles: {pair.ligand.smiles} and target name: {pair.complex.target.target_name}"
-                    )
-                else:
-                    raise ValueError(f"Unknown error handling option {error}")
-
-        return docking_results
-
-    @staticmethod
-    def write_docking_files(
-        docking_results: list[DockingResult], output_dir: Union[str, Path]
-    ):
-        """
-        Write docking results to files in output_dir, directories will have the form:
-        {target_name}_+_{ligand_name}/docked.sdf
-        {target_name}_+_{ligand_name}/docked_complex.pdb
-
-        Parameters
-        ----------
-        docking_results : list[DockingResult]
-            List of DockingResults
-        output_dir : Union[str, Path]
-            Output directory
-
-        Raises
-        ------
-        ValueError
-            If compound names of input pair and posed ligand do not match
-
-        """
-        ligs = [docking_result.input_pair.ligand for docking_result in docking_results]
-        names_unique = compound_names_unique(ligs)
-        output_dir = Path(output_dir)
-        # if names are not unique, we will use unknown_ligand_{i} as the ligand portion of directory
-        # when writing files
-
-        # write out the docked pose
-        for i, result in enumerate(docking_results):
-            if (
-                not result.input_pair.ligand.compound_name
-                == result.posed_ligand.compound_name
-            ):
-                raise ValueError(
-                    "Compound names of input pair and posed ligand do not match"
-                )
-            if names_unique:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + result.posed_ligand.compound_name
-                )
-            else:
-                output_pref = (
-                    result.input_pair.complex.target.target_name
-                    + "_+_"
-                    + f"unknown_ligand_{i}"
-                )
-
-            compound_dir = output_dir / output_pref
-            compound_dir.mkdir(parents=True, exist_ok=True)
-            output_sdf_file = compound_dir / "docked.sdf"
-            output_pdb_file = compound_dir / "docked_complex.pdb"
-
-            result.posed_ligand.to_sdf(output_sdf_file)
-
-            combined_oemol = result.to_posed_oemol()
-            save_openeye_pdb(combined_oemol, output_pdb_file)
-
-    def provenance(self) -> dict[str, str]:
-        return {
-            "oechem": oechem.OEChemGetVersion(),
-            "oeomega": oeomega.OEOmegaGetVersion(),
-            "oedocking": oedocking.OEDockingGetVersion(),
-        }
+        lig.to_sdf(sdf_file, allow_append=True)

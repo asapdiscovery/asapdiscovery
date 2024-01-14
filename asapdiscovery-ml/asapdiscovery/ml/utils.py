@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pickle as pkl
 from functools import partial
@@ -6,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
+
+logger = logging.getLogger(__name__)
 
 
 def build_dataset(
@@ -107,18 +110,10 @@ def build_dataset(
             ]
             print("filter", len(exp_compounds), flush=True)
 
-        # Make cache directory as necessary
-        if cache_fn is None:
-            raise ValueError("Must provide cache_fn for 2d model.")
-        elif os.path.isdir(cache_fn):
-            os.makedirs(cache_fn, exist_ok=True)
-            cache_fn = os.path.join(cache_fn, "graph.bin")
-
         # Build the dataset
-        ds = GraphDataset(
+        ds = GraphDataset.from_exp_compounds(
             exp_compounds,
             node_featurizer=CanonicalAtomFeaturizer(),
-            cache_file=cache_fn,
         )
 
         print(next(iter(ds)), flush=True)
@@ -163,7 +158,7 @@ def build_dataset(
 
         # Load the dataset
         if grouped:
-            ds = GroupedDockedDataset(
+            ds = GroupedDockedDataset.from_files(
                 all_fns,
                 compounds,
                 lig_resn=lig_name,
@@ -171,7 +166,7 @@ def build_dataset(
                 num_workers=num_workers,
             )
         else:
-            ds = DockedDataset(
+            ds = DockedDataset.from_files(
                 all_fns,
                 compounds,
                 lig_resn=lig_name,
@@ -531,10 +526,9 @@ def build_model_schnet(
                 "readout",
             ]
             model_params = {p: config[p] for p in model_params if p in config}
-            model = SchNet(**model_params)
+            model = mtenn.conversion_utils.SchNet(**model_params)
         else:
-            model = SchNet()
-        model = mtenn.conversion_utils.SchNet(model)
+            model = mtenn.conversion_utils.SchNet()
     else:
         from torch_geometric.datasets import QM9
 
@@ -567,9 +561,8 @@ def build_model_schnet(
             atomref,
         )
 
-        model = SchNet(*model_params)
+        model = mtenn.conversion_utils.SchNet(*model_params)
         model.load_state_dict(wts)
-        model = mtenn.conversion_utils.SchNet(model)
 
     # Set interatomic cutoff (default of 10) to make the graph smaller
     if (config is None) or ("cutoff" not in config):
@@ -932,7 +925,7 @@ def load_exp_data(
 ):
     """
     Load all experimental data from JSON file of
-    schema.ExperimentalCompoundDataUpdate.
+    list[ExperimentalCompoundData].
 
     Parameters
     ----------
@@ -957,11 +950,9 @@ def load_exp_data(
     """
     import json
 
-    from asapdiscovery.data.schema import ExperimentalCompoundDataUpdate
-
     # Load all compounds with experimental data and filter to only achiral
     #  molecules (to start)
-    exp_compounds = ExperimentalCompoundDataUpdate(**json.load(open(fn))).compounds
+    exp_compounds = json.load(open(fn))
     exp_compounds = [c for c in exp_compounds if ((not achiral) or c.achiral)]
 
     exp_dict = {
@@ -1081,8 +1072,8 @@ def load_weights(model, wts_fn, check_compatibility=False):
 
     loaded_params = set(wts_dict.keys())
     model_params = set(model.state_dict().keys())
-    print("extra parameters:", loaded_params - model_params)
-    print("missing parameters:", model_params - loaded_params)
+    logger.info(f"extra parameters: {loaded_params - model_params}")
+    logger.info(f"missing parameters: {model_params - loaded_params}")
 
     # Get rid of extra params
     for p in loaded_params - model_params:
@@ -1093,7 +1084,7 @@ def load_weights(model, wts_fn, check_compatibility=False):
         check_model_compatibility(model, wts_dict, check_weights=False)
     # Load model parameters
     model.load_state_dict(wts_dict)
-    print(f"Loaded model weights from {wts_fn}", flush=True)
+    logger.info(f"Loaded model weights from {wts_fn}")
 
     return model
 
@@ -1633,7 +1624,7 @@ def train(
     print("Using optimizer", optimizer, flush=True)
 
     if loss_fn is None:
-        from asapdiscovery.ml.loss.MSELoss import MSELoss
+        from asapdiscovery.ml.loss import MSELoss
 
         loss_fn = MSELoss()
     print("Using loss function", loss_fn, flush=True)

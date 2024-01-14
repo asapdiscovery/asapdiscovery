@@ -1,8 +1,8 @@
 import click
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import CacheType
+from asapdiscovery.ml.models import ASAPMLModelRegistry
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
 def postera(func):
@@ -69,6 +69,7 @@ def target(func):
 
 def ligands(func):
     return click.option(
+        "-l",
         "--ligands",
         type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
         help="File containing ligands",
@@ -137,6 +138,15 @@ def cache_dir(func):
     )(func)
 
 
+def use_only_cache(func):
+    return click.option(
+        "--use-only-cache",
+        is_flag=True,
+        default=False,
+        help="Whether to only use the cache.",
+    )(func)
+
+
 def gen_cache_w_default(func):
     return click.option(
         "--gen-cache",
@@ -158,11 +168,49 @@ def gen_cache(func):
     )(func)
 
 
-def cache_type(func):
+def md(func):
     return click.option(
-        "--cache-type",
-        type=click.Choice(CacheType.get_values(), case_sensitive=False),
-        default=[CacheType.DesignUnit],
-        multiple=True,
-        help="The type of cache to use, can be 'JSON' or 'DesignUnit', an be specified multiple times to use cache",
+        "--md",
+        is_flag=True,
+        default=False,
+        help="Whether to run MD",
+    )(func)
+
+
+def md_steps(func):
+    return click.option(
+        "--md-steps",
+        type=int,
+        default=2500000,
+        help="Number of MD steps",
+    )(func)
+
+
+def md_openmm_platform(func):
+    return click.option(
+        "--md-openmm-platform",
+        type=click.Choice(OpenMMPlatform.get_values(), case_sensitive=False),
+        default=OpenMMPlatform.Fastest,
+        help="The OpenMM platform to use for MD",
+    )(func)
+
+
+def md_args(func):
+    return md(md_steps(md_openmm_platform(func)))
+
+
+def core_smarts(func):
+    return click.option(
+        "-cs",
+        "--core-smarts",
+        type=click.STRING,
+        help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
+    )(func)
+
+
+def save_to_cache(func):
+    return click.option(
+        "--save-to-cache/--no-save-to-cache",
+        help="If the newly generated structures should be saved to the cache folder.",
+        default=True,
     )(func)

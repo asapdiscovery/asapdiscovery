@@ -27,6 +27,8 @@ There are a range of workflows and tooling to use split into several namespace s
 
 `asapdiscovery-alchemy`: Free energy calculations using [OpenFE](https://openfree.energy/) and [Alchemiscale](https://docs.alchemiscale.org/en/latest/)
 
+`asapdiscovery-cli`: Command line tools uniting the whole repo.
+
 `asapdiscovery-data`: Core data models and integrations with services such as [Postera.ai](https://postera.ai/)
 
 `asapdiscovery-dataviz`: Data and structure visualization using `3DMol` and `PyMOL`
@@ -65,7 +67,7 @@ To install an `asapdiscovery` package hosted in this repository, we recommend th
    NOTES: Conda will almost certainly fail to build the environment - `mamba` is a drop-in replacement for `conda` that is much faster and more reliable.  Additionally, if the environment is built on a CPU, `torch` may not compile with GPU support. Instead, build the environment as described on a GPU node; the architecture will be detected automatically.
 
     ```
-    mamba env create -f devtools/conda-envs/asapdiscovery-{platform}.yaml
+    mamba env create -f devtools/conda-envs/asapdiscovery-{platform}.yml
     conda activate asapdiscovery
     ```
 

@@ -1,148 +1,74 @@
-import logging
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.dask_utils import (
-    DaskType,
+    BackendType,
     dask_cluster_from_type,
     set_dask_config,
 )
+from asapdiscovery.data.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.postera.manifold_artifacts import (
+    ArtifactType,
+    ManifoldArtifactUploader,
+)
 from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
+    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
 from asapdiscovery.data.utils import check_empty_dataframe
+from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.docking.docking_v2 import POSITDocker
+from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
+from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
-from asapdiscovery.ml.models.ml_models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import CacheType, ProteinPrepper
+from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
+from asapdiscovery.ml.models import ASAPMLModelRegistry
+from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
 from distributed import Client
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt, validator
 
 
-class LargeScaleDockingInputs(BaseModel):
+class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
     """
     Schema for inputs to large scale docking
 
     Parameters
     ----------
-    filename : str, optional
-        Path to a molecule file containing query ligands.
-    fragalysis_dir : str, optional
-        Path to a directory containing a Fragalysis dump.
-    structure_dir : str, optional
-        Path to a directory containing structures to dock instead of a full fragalysis database.
-    postera : bool, optional
-        Whether to use the Postera database as the query set.
-    postera_upload : bool, optional
-        Whether to upload the results to Postera.
-    postera_molset_name : str, optional
-        The name of the molecule set to pull from and/or upload to.
-    cache_dir : str, optional
-        Path to a directory where structures are cached
-    gen_cache : str, optional
-        Path to a directory where prepped structures should be cached
-    cache_type : list[CacheType], optional
-        The types of cache to use.
-    target : TargetTags, optional
-        The target to dock against.
-    write_final_sdf : bool, optional
-        Whether to write the final docked poses to an SDF file.
-    use_dask : bool, optional
-        Whether to use dask for parallelism.
-    dask_type : DaskType, optional
-        Type of dask client to use for parallelism.
     n_select : int, optional
         Number of targets to dock each ligand against, sorted by MCS
     top_n : int, optional
         Number of docking results to return, ordered by docking score
     posit_confidence_cutoff : float, optional
         POSIT confidence cutoff used to filter docking results
-    ml_scorers : MLModelType, optional
+    use_omega : bool
+        Whether to use omega confomer enumeration in docking, warning: more expensive
+    allow_posit_retries : bool
+        Whether to allow retries in docking with varying settings, warning: more expensive
+    ml_scorers : ModelType, optional
         The name of the ml scorers to use.
     logname : str, optional
         Name of the log file.
-    loglevel : int, optional
-        Logging level.
-    output_dir : Path, optional
-        Output directory
     """
-
-    filename: Optional[str] = Field(
-        None, description="Path to a molecule file containing query ligands."
-    )
-
-    pdb_file: Optional[Path] = Field(
-        None, description="Path to a PDB file to prep and dock to."
-    )
-
-    fragalysis_dir: Optional[Path] = Field(
-        None, description="Path to a directory containing a Fragalysis dump."
-    )
-    structure_dir: Optional[Path] = Field(
-        None,
-        description="Path to a directory containing structures to dock instead of a full fragalysis database.",
-    )
-    postera: bool = Field(
-        False, description="Whether to use the Postera database as the query set."
-    )
-    postera_upload: bool = Field(
-        False, description="Whether to upload the results to Postera."
-    )
-    postera_molset_name: Optional[str] = Field(
-        None, description="The name of the molecule set to upload to."
-    )
-    cache_dir: Optional[str] = Field(
-        None, description="Path to a directory where a cache has been generated"
-    )
-
-    gen_cache: Optional[str] = Field(
-        None,
-        description="Generate a cache from structures prepped in this workflow run in this directory",
-    )
-
-    cache_type: Optional[list[str]] = Field(
-        [CacheType.DesignUnit], description="The types of cache to use."
-    )
-
-    target: TargetTags = Field(None, description="The target to dock against.")
-
-    write_final_sdf: bool = Field(
-        default=True,
-        description="Whether to write the final docked poses to an SDF file.",
-    )
-    use_dask: bool = Field(True, description="Whether to use dask for parallelism.")
-
-    dask_type: DaskType = Field(
-        DaskType.LOCAL, description="Dask client to use for parallelism."
-    )
-
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
-    )
-
-    n_select: PositiveInt = Field(
-        10, description="Number of targets to dock each ligand against, sorted by MCS"
-    )
 
     top_n: PositiveInt = Field(
         500, description="Number of docking results to return, ordered by docking score"
@@ -155,75 +81,19 @@ class LargeScaleDockingInputs(BaseModel):
         description="POSIT confidence cutoff used to filter docking results",
     )
 
+    use_omega: bool = Field(
+        False,
+        description="Whether to use omega confomer enumeration in docking, warning: more expensive",
+    )
+
+    allow_posit_retries: bool = Field(
+        False,
+        description="Whether to allow retries in docking with varying settings, warning: more expensive",
+    )
+
     ml_scorers: Optional[list[str]] = Field(
         None, description="The name of the ml scorers to use"
     )
-
-    logname: str = Field("large_scale_docking", description="Name of the log file.")
-
-    loglevel: int = Field(logging.INFO, description="Logging level")
-
-    output_dir: Path = Field(Path("output"), description="Output directory")
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @classmethod
-    def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
-
-    def to_json_file(self, file: str | Path):
-        with open(file, "w") as f:
-            f.write(self.json(indent=2))
-
-    @root_validator
-    @classmethod
-    def check_inputs(cls, values):
-        """
-        Validate inputs
-        """
-        filename = values.get("filename")
-        fragalysis_dir = values.get("fragalysis_dir")
-        structure_dir = values.get("structure_dir")
-        postera = values.get("postera")
-        postera_upload = values.get("postera_upload")
-        postera_molset_name = values.get("postera_molset_name")
-        cache_dir = values.get("cache_dir")
-        gen_cache = values.get("gen_cache")
-        pdb_file = values.get("pdb_file")
-
-        if postera and filename:
-            raise ValueError("Cannot specify both filename and postera.")
-
-        if not postera and not filename:
-            raise ValueError("Must specify either filename or postera.")
-
-        if postera_upload and not postera_molset_name:
-            raise ValueError(
-                "Must specify postera_molset_name if uploading to postera."
-            )
-
-        # can only specify one of fragalysis dir, structure dir and PDB file
-        if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:
-            raise ValueError(
-                "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
-            )
-
-        if cache_dir and gen_cache:
-            raise ValueError("Cannot specify both cache_dir and gen_cache.")
-
-        return values
-
-    @validator("cache_dir")
-    @classmethod
-    def cache_dir_must_be_directory(cls, v):
-        """
-        Validate that the DU cache is a directory
-        """
-        if v is not None:
-            if not Path(v).is_dir():
-                raise ValueError("Du cache must be a directory.")
-        return v
 
     @classmethod
     @validator("ml_scorers")
@@ -260,7 +130,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     output_dir.mkdir()
 
     logger = FileLogger(
-        inputs.logname, path=output_dir, stdout=True, level=inputs.loglevel
+        inputs.logname,  # default root logger so that dask logging is forwarded
+        path=output_dir,
+        logfile="large-scale-docking.log",
+        stdout=True,
+        level=inputs.loglevel,
     ).getLogger()
 
     logger.info(f"Running large scale docking with inputs: {inputs}")
@@ -269,14 +143,13 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        set_dask_config()
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
+        set_dask_config()
         dask_cluster = dask_cluster_from_type(inputs.dask_type)
-
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
-                minimum=10,
+                minimum=inputs.dask_cluster_n_workers,
                 maximum=inputs.dask_cluster_max_workers,
                 wait_count=10,
                 interval="1m",
@@ -285,6 +158,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
+        dask_client.forward_logging()
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
@@ -295,6 +169,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # make a directory to store intermediate CSV results
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
+
+    if inputs.postera_upload:
+        postera_settings = PosteraSettings()
+        logger.info("Postera settings loaded")
+        logger.info("Postera upload specified, checking for AWS credentials")
+        aws_s3_settings = S3Settings()
+        aws_cloudfront_settings = CloudfrontSettings()
+        logger.info("AWS S3 and CloudFront credentials found")
 
     if inputs.postera:
         # load postera
@@ -308,8 +190,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         query_ligands = postera.pull()
     else:
         # load from file
-        logger.info(f"Loading ligands from file: {inputs.filename}")
-        molfile = MolFileFactory.from_file(inputs.filename)
+        logger.info(f"Loading ligands from file: {inputs.ligands}")
+        molfile = MolFileFactory.from_file(inputs.ligands)
         query_ligands = molfile.ligands
 
     # load complexes from a directory, from fragalysis or from a pdb file
@@ -340,6 +222,12 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
+
+    logger.info("Deduplicating by Inchikey")
+    query_ligands = LigandDeDuplicator().deduplicate(query_ligands)
+    n_query_ligands = len(query_ligands)
+    logger.info(f"Deduplicated to {n_query_ligands} query ligands")
+
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
@@ -347,19 +235,19 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
     prepped_complexes = prepper.prep(
-        complexes, use_dask=inputs.use_dask, dask_client=dask_client
+        complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        cache_dir=inputs.cache_dir,
     )
     del complexes
 
     n_prepped_complexes = len(prepped_complexes)
     logger.info(f"Prepped {n_prepped_complexes} complexes")
 
-    if inputs.gen_cache:
-        # cache prepped complexes
-        cache_path = output_dir / inputs.gen_cache
-        logger.info(f"Caching prepped complexes to {cache_path}")
-        for cache_type in inputs.cache_type:
-            prepper.cache(prepped_complexes, cache_path, type=cache_type)
+    if inputs.save_to_cache and inputs.cache_dir is not None:
+        logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
+        prepper.cache(prepped_complexes, inputs.cache_dir)
 
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
@@ -381,20 +269,33 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker()
+    docker = POSITDocker(
+        use_omega=inputs.use_omega, allow_retries=inputs.allow_posit_retries
+    )
     results = docker.dock(
         pairs,
+        output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        return_for_disk_backend=True,
     )
+
+    # NOTE: We use disk based dask backend here because the docking results are large and can cause memory issues
+    # and thrashing with data transfer between workers and the scheduler, all the following operations are then marked
+    # as using disk based dask backend
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     del pairs
 
-    # write docking results
-    logger.info("Writing docking results")
-    POSITDocker.write_docking_files(results, output_dir / "docking_results")
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
+        )
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
@@ -413,19 +314,87 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
 
-    if inputs.write_final_sdf:
-        logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
-        )
-
+    logger.info("Running scoring")
     scores_df = scorer.score(
-        results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        return_df=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
-    del results
-
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
+
+    # run html visualiser
+    logger.info("Running HTML visualiser for docked poses")
+    html_ouptut_dir = output_dir / "poses"
+    html_visualizer = HTMLVisualizerV2(
+        colour_method=ColourMethod.subpockets,
+        target=inputs.target,
+        output_dir=html_ouptut_dir,
+    )
+    pose_visualizatons = html_visualizer.visualize(
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
+    )
+    # rename visualisations target id column to POSIT structure tag so we can join
+    pose_visualizatons.rename(
+        columns={
+            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        },
+        inplace=True,
+    )
+
+    # join the two dataframes on ligand_id, target_id and smiles
+    scores_df = scores_df.merge(
+        pose_visualizatons,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",  # preserves rows where there is no visualisation
+    )
+
+    if target_has_fitness_data(inputs.target):
+        logger.info("Running fitness HTML visualiser")
+        html_fitness_output_dir = output_dir / "fitness"
+        html_fitness_visualizer = HTMLVisualizerV2(
+            colour_method=ColourMethod.fitness,
+            target=inputs.target,
+            output_dir=html_fitness_output_dir,
+        )
+        fitness_visualizations = html_fitness_visualizer.visualize(
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
+        )
+
+        # duplicate target id column so we can join
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+
+        # join the two dataframes on ligand_id, target_id and smiles
+        scores_df = scores_df.merge(
+            fitness_visualizations,
+            on=[
+                DockingResultCols.LIGAND_ID.value,
+                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+                DockingResultCols.SMILES.value,
+            ],
+            how="outer",  # preserves rows where there is no fitness visualisation
+        )
+    else:
+        logger.info(
+            f"Target {inputs.target} does not have fitness data, skipping fitness visualisation"
+        )
 
     logger.info("Filtering docking results")
     # filter for POSIT probability > 0.7
@@ -471,50 +440,108 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         data_intermediates / "docking_scores_filtered_sorted.csv", index=False
     )
 
-    scores_df = scores_df.drop_duplicates(subset=[DockingResultCols.LIGAND_ID.value])
+    scores_df = scores_df.drop_duplicates(
+        subset=[DockingResultCols.INCHIKEY.value], keep="first"
+    )
 
     n_duplicate_filtered = len(scores_df)
     logger.info(
         f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
 
-    # take top n results
-    scores_df = scores_df.head(inputs.top_n)
+    # set hit flag to False
+    scores_df[DockingResultCols.DOCKING_HIT.value] = False
 
-    n_top_n_filtered = len(scores_df)
+    # set top n hits to True
+    scores_df.loc[
+        scores_df.index[: inputs.top_n], DockingResultCols.DOCKING_HIT.value
+    ] = True  # noqa: E712
+
+    hits_df = scores_df[  # noqa: E712
+        scores_df[DockingResultCols.DOCKING_HIT.value] == True  # noqa: E712
+    ]
+
+    n_top_n_filtered = len(hits_df)
     logger.info(
         f"Filtered to {n_top_n_filtered} / {n_duplicate_filtered} docking results by top n filter"
     )
 
     check_empty_dataframe(
-        scores_df,
+        hits_df,
         logger=logger,
         fail="raise",
         tag="scores",
-        message=f"No docking results passed the top {inputs.top_n} filter",
+        message=f"No docking results passed the top {inputs.top_n} filter, no hits",
     )
 
-    scores_df.to_csv(
-        data_intermediates / f"docking_scores_filtered_sorted_top_{inputs.top_n}.csv",
+    hits_df.to_csv(
+        data_intermediates
+        / f"docking_scores_filtered_sorted_top_{inputs.top_n}_hits.csv",
         index=False,
     )
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
+
+    # keep everything not just hits
     result_df = rename_output_columns_for_manifold(
         scores_df,
         inputs.target,
         [DockingResultCols],
         manifold_validate=True,
         drop_non_output=True,
-        allow=[DockingResultCols.LIGAND_ID.value],
+        allow=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.HTML_PATH_POSE.value,
+            DockingResultCols.HTML_PATH_FITNESS.value,
+        ],
     )
 
     result_df.to_csv(output_dir / "docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
         logger.info("Uploading results to Postera")
+
         postera_uploader = PosteraUploader(
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
-        postera_uploader.push(result_df)
+        # push the results to PostEra, making a new molecule set if necessary
+        posit_score_tag = map_output_col_to_manifold_tag(
+            DockingResultCols, inputs.target
+        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
+        result_df, molset_name, made_new_molset = postera_uploader.push(
+            result_df, sort_column=posit_score_tag, sort_ascending=True
+        )
+
+        if made_new_molset:
+            logger.info(f"Made new molecule set with name: {molset_name}")
+        else:
+            molset_name = inputs.postera_molset_name
+
+        logger.info("Uploading artifacts to PostEra")
+
+        # make an uploader for the poses and upload them
+
+        artifact_columns = [
+            DockingResultCols.HTML_PATH_POSE.value,
+        ]
+        artifact_types = [
+            ArtifactType.DOCKING_POSE_POSIT,
+        ]
+
+        if target_has_fitness_data(inputs.target):
+            artifact_columns.append(DockingResultCols.HTML_PATH_FITNESS.value)
+            artifact_types.append(ArtifactType.DOCKING_POSE_FITNESS_POSIT)
+
+        uploader = ManifoldArtifactUploader(
+            inputs.target,
+            result_df,
+            molset_name,
+            bucket_name=aws_s3_settings.BUCKET_NAME,
+            artifact_types=artifact_types,
+            artifact_columns=artifact_columns,
+            moleculeset_api=MoleculeSetAPI.from_settings(postera_settings),
+            s3=S3.from_settings(aws_s3_settings),
+            cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
+        )
+        uploader.upload_artifacts()

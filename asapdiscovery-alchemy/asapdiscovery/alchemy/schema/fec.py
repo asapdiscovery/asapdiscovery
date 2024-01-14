@@ -114,7 +114,7 @@ class _BaseResults(_SchemaBaseFrozen):
         from collections import defaultdict
 
         import numpy as np
-        from cinnabar import RelativeMeasurement
+        from cinnabar import Measurement
 
         raw_results = defaultdict(list)
         # gather by transform
@@ -143,10 +143,10 @@ class _BaseResults(_SchemaBaseFrozen):
             solvent_leg: TransformationResult = (
                 leg1 if leg1.phase == "solvent" else leg2
             )
-            result = RelativeMeasurement(
+            result = Measurement(
                 labelA=leg1.ligand_a,
                 labelB=leg1.ligand_b,
-                DDG=(complex_leg.estimate - solvent_leg.estimate),
+                DG=(complex_leg.estimate - solvent_leg.estimate),
                 # propagate errors
                 uncertainty=np.sqrt(
                     complex_leg.uncertainty**2 + solvent_leg.uncertainty**2
@@ -383,6 +383,13 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             duplicated = [key.name for key, value in count.items() if value > 1]
             raise ValueError(
                 f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
+            )
+
+        # if any ligands lack a name, then raise an exception; important for
+        # ligands to have names for human-readable result gathering downstream
+        if missing := len([ligand for ligand in ligands if not ligand.name]):
+            raise ValueError(
+                f"{missing} of {len(ligands)} ligands do not have names; names are required for ligands for downstream results handling"
             )
 
         # start by trying to plan the network
