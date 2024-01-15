@@ -313,7 +313,7 @@ def gather(network: str, allow_missing: bool):
     is_flag=True,
     default=False,
     help="If the status of all running tasks in your scope should be displayed. "
-         "This option will cause the command to ignore all other flags."
+    "This option will cause the command to ignore all other flags.",
 )
 def status(network: str, errors: bool, with_traceback: bool, all_networks: bool):
     """
@@ -329,12 +329,12 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
         The `all_networks` flag will ignore all other flags, to get error details for a specific network use the network argument.
 
     """
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
     from rich import pretty
     from rich.padding import Padding
-    import rich
-    from asapdiscovery.alchemy.cli.utils import print_header
     from rich.table import Table
 
     pretty.install()
@@ -356,14 +356,28 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
         # format into a rich table
         table = Table()
         table.add_column("Network Key", justify="center", no_wrap=True)
-        table.add_column("Complete", overflow="fold", style="green", header_style="green")
-        table.add_column("Running", overflow="fold", style="orange3", header_style="orange3")
-        table.add_column("Waiting", overflow="fold", style="#1793d0", header_style="#1793d0")
-        table.add_column("Error", overflow="fold", style="#ff073a", header_style="#ff073a")
-        table.add_column("Invalid", overflow="fold", style="magenta1", header_style="magenta1")
-        table.add_column("Deleted", overflow="fold", style="purple", header_style="purple")
+        table.add_column(
+            "Complete", overflow="fold", style="green", header_style="green"
+        )
+        table.add_column(
+            "Running", overflow="fold", style="orange3", header_style="orange3"
+        )
+        table.add_column(
+            "Waiting", overflow="fold", style="#1793d0", header_style="#1793d0"
+        )
+        table.add_column(
+            "Error", overflow="fold", style="#ff073a", header_style="#ff073a"
+        )
+        table.add_column(
+            "Invalid", overflow="fold", style="magenta1", header_style="magenta1"
+        )
+        table.add_column(
+            "Deleted", overflow="fold", style="purple", header_style="purple"
+        )
         for key in running_networks:
-            network_status = client._client.get_network_status(network=key, visualize=False)
+            network_status = client._client.get_network_status(
+                network=key, visualize=False
+            )
             if "running" in network_status or "waiting" in network_status:
                 table.add_row(
                     str(key),
@@ -372,7 +386,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                     str(network_status.get("waiting", 0)),
                     str(network_status.get("error", 0)),
                     str(network_status.get("invalid", 0)),
-                    str(network_status.get("deleted", 0))
+                    str(network_status.get("deleted", 0)),
                 )
         status_breakdown.stop()
         console.print(table)
