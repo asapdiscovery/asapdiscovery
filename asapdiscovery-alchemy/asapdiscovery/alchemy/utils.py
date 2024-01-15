@@ -164,7 +164,9 @@ class AlchemiscaleHelper:
         # collect results following the notebook from openFE
         results = []
         # use the process pool api point to gather all transformations for the network
-        for tf_sk, raw_result in self._client.get_network_results(network=planned_network.results.network_key).items():
+        for tf_sk, raw_result in self._client.get_network_results(
+            network=planned_network.results.network_key
+        ).items():
             if raw_result is None:
                 continue
             # format into our custom result schema and save
