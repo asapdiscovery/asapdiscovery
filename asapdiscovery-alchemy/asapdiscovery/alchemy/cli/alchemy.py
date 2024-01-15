@@ -107,6 +107,7 @@ def plan(
             openfe.SmallMoleculeComponent.from_sdf_string(mol.to_sdf_str())
             for mol in alchemy_ds.posed_ligands
         ]
+
         # write to a temp pdb file and read back in
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
             alchemy_ds.reference_complex.target.to_pdb_file(fp.name)
