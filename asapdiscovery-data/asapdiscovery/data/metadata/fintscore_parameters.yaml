@@ -1,0 +1,23 @@
+# importance weights to assign to each type of interaction. 1.0 is highest, 0.0 is lowest.
+"hydrophobic_interaction": 0.5
+"hydrogen_bond": 1.0
+"water_bridge": 1.0
+"salt_bridge": 1.0
+"pi_stack": 1.0
+"pi_cation_interaction": 1.0
+"halogen_bond": 1.0
+"metal_complex": 1.0
+
+# penalty weights to assign to each level of mutability
+"#ff9e83": 1 # no fit mutants found for residue
+"#ff8a6c": 2 # one fit mutant found for residue
+"#ff7454": 3 # etc
+"#ff5c3d": 5
+"#ff3f25": 6
+"#ff0707": 7 # 5 or more fit mutants found for residue
+
+# reward for an interaction being with backbone; >= 1.0
+backbone_reward_multiplier: 1.2
+
+# penalty multiplier for an interaction being with a residue that has fit mutants; <= 1.0
+mutating_intn_penalty_multiplier: 0.5

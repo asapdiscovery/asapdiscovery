@@ -92,3 +92,6 @@ master_structures = {
         __name__, "master_structures/ev_d68_capsid.pdb"
     ),
 }
+FINTSCORE_PARAMETERS = pkg_resources.resource_filename(
+    __name__, "fintscore_parameters.yaml"
+)
