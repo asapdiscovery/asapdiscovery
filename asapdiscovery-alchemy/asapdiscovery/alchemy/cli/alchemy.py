@@ -334,7 +334,6 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
     from rich import pretty
-    from rich.padding import Padding
     from rich.table import Table
 
     pretty.install()
