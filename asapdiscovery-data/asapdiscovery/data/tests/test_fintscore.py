@@ -1,19 +1,28 @@
+from pathlib import Path
+
+import numpy as np
 import pytest
+from asapdiscovery.data.openeye import load_openeye_pdb
+from asapdiscovery.data.plip import compute_fint_score
+from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
-from asapdiscovery.data.openeye import (
-    load_openeye_pdb,
-)
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.data.plip import compute_fint_score
-from pathlib import Path
-import numpy as np
 
 def test_fint_score():
     fint_score = compute_fint_score(
-    load_openeye_pdb(Path(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb"))),
-    MolFileFactory.from_file(Path(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))).ligands[0].to_oemol(),
-    "SARS-CoV-2-Mpro",
+        load_openeye_pdb(
+            Path(
+                fetch_test_file(
+                    "Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb"
+                )
+            )
+        ),
+        MolFileFactory.from_file(
+            Path(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
+        )
+        .ligands[0]
+        .to_oemol(),
+        "SARS-CoV-2-Mpro",
     )
     # should return a tuple
     assert isinstance(fint_score, tuple)
