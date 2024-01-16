@@ -20,8 +20,6 @@ from asapdiscovery.data.fitness import (
     target_has_fitness_data,
 )
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.plip import get_interactions_plip, make_color_res_fitness, make_color_res_subpockets
-
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -30,6 +28,11 @@ from asapdiscovery.data.openeye import (
     oemol_to_sdf_string,
     openeye_perceive_residues,
     save_openeye_pdb,
+)
+from asapdiscovery.data.plip import (
+    get_interactions_plip,
+    make_color_res_fitness,
+    make_color_res_subpockets,
 )
 from asapdiscovery.data.postera.manifold_data_validation import TargetVirusMap
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
@@ -470,7 +473,11 @@ class HTMLVisualizer:
                     \n \
                         //////////////// add protein-ligand interactions\n \
                         var intn_dict = "
-                    + str(get_interactions_plip(self.protein, pose, self.color_method, self.target))
+                    + str(
+                        get_interactions_plip(
+                            self.protein, pose, self.color_method, self.target
+                        )
+                    )
                     + '\n \
                         for (const [_, intn] of Object.entries(intn_dict)) {\n \
                             viewer.addCylinder({start:{x:parseFloat(intn["lig_at_x"]),y:parseFloat(intn["lig_at_y"]),z:parseFloat(intn["lig_at_z"])},\n \

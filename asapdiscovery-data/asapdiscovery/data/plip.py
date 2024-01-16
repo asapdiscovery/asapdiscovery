@@ -4,21 +4,17 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
-import yaml
-import numpy as np 
-import xmltodict
-from asapdiscovery.dataviz._gif_blocks import GIFBlockData
-from asapdiscovery.data.metadata.resources import FINTSCORE_PARAMETERS
 
-from asapdiscovery.data.openeye import (
-    combine_protein_ligand,
-    oechem,
-    save_openeye_pdb,
-)
-from asapdiscovery.data.fitness import (
-    parse_fitness_json,
-)
+import numpy as np
+import xmltodict
+import yaml
+from asapdiscovery.data.fitness import parse_fitness_json
+from asapdiscovery.data.metadata.resources import FINTSCORE_PARAMETERS
+from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
+from asapdiscovery.dataviz._gif_blocks import GIFBlockData
+
 logger = logging.getLogger(__name__)
+
 
 def make_color_res_subpockets(protein, target) -> dict:
     """
@@ -26,8 +22,7 @@ def make_color_res_subpockets(protein, target) -> dict:
     """
     # get a list of all residue numbers of the protein.
     protein_residues = [
-        oechem.OEAtomGetResidue(atom).GetResidueNumber()
-        for atom in protein.GetAtoms()
+        oechem.OEAtomGetResidue(atom).GetResidueNumber() for atom in protein.GetAtoms()
     ]
 
     # build a dict with all specified residue colorings.
@@ -35,9 +30,7 @@ def make_color_res_subpockets(protein, target) -> dict:
     binding_pocket_chainID = GIFBlockData.pocket_dict_chains_per_target[target]
 
     for subpocket, color in GIFBlockData.get_color_dict(target).items():
-        subpocket_residues = GIFBlockData.get_pocket_dict(target)[
-            subpocket
-        ].split("+")
+        subpocket_residues = GIFBlockData.get_pocket_dict(target)[subpocket].split("+")
         color_res_dict[color] = [
             f"{res}_{binding_pocket_chainID}" for res in subpocket_residues
         ]
@@ -57,6 +50,7 @@ def make_color_res_subpockets(protein, target) -> dict:
 
     return color_res_dict
 
+
 def make_color_res_fitness(protein, target) -> dict:
     """
     Based on fitness coloring, creates a dict where keys are colors, values are residue numbers.
@@ -64,12 +58,10 @@ def make_color_res_fitness(protein, target) -> dict:
 
     # get a list of all residue numbers of the protein.
     protein_residues = [
-        oechem.OEAtomGetResidue(atom).GetResidueNumber()
-        for atom in protein.GetAtoms()
+        oechem.OEAtomGetResidue(atom).GetResidueNumber() for atom in protein.GetAtoms()
     ]
     protein_chainIDs = [
-        oechem.OEAtomGetResidue(atom).GetChainID()
-        for atom in protein.GetAtoms()
+        oechem.OEAtomGetResidue(atom).GetChainID() for atom in protein.GetAtoms()
     ]
 
     hex_color_codes = [
@@ -107,6 +99,7 @@ def make_color_res_fitness(protein, target) -> dict:
 
     return color_res_dict
 
+
 def get_interaction_color(intn_type) -> str:
     """
     Generated using PLIP docs; colors match PyMol interaction colors. See
@@ -132,6 +125,7 @@ def get_interaction_color(intn_type) -> str:
     else:
         raise ValueError(f"Interaction type {intn_type} not recognized.")
 
+
 def is_backbone_residue(protein, x, y, z) -> bool:
     """
     Given xyz coordinates, find the atom in the protein and return whether
@@ -140,9 +134,7 @@ def is_backbone_residue(protein, x, y, z) -> bool:
     """
     # make a list with this protein's backbone atom indices. Could do higher up,
     # but this is very fast so ok to repeat.
-    backbone_atoms = [
-        at.GetIdx() for at in protein.GetAtoms(oechem.OEIsBackboneAtom())
-    ]
+    backbone_atoms = [at.GetIdx() for at in protein.GetAtoms(oechem.OEIsBackboneAtom())]
 
     # with oe, iterate over atoms until this one's found. then use oechem.OEIsBackboneAtom
     is_backbone = False
@@ -163,6 +155,7 @@ def is_backbone_residue(protein, x, y, z) -> bool:
         # can never be on backbone anyway, so this works.
         return False
 
+
 def get_interaction_fitness_color(plip_xml_dict, protein, target) -> str:
     """
     Get fitness color for a residue. If the interaction is with a backbone atom on
@@ -177,7 +170,8 @@ def get_interaction_fitness_color(plip_xml_dict, protein, target) -> str:
             break
 
     # overwrite the interaction as green if it hits a backbone atom.
-    if is_backbone_residue(protein,
+    if is_backbone_residue(
+        protein,
         plip_xml_dict["protcoo"]["x"],
         plip_xml_dict["protcoo"]["y"],
         plip_xml_dict["protcoo"]["z"],
@@ -186,7 +180,10 @@ def get_interaction_fitness_color(plip_xml_dict, protein, target) -> str:
 
     return intn_color
 
-def build_interaction_dict(plip_xml_dict, intn_counter, intn_type, color_method, protein, target):
+
+def build_interaction_dict(
+    plip_xml_dict, intn_counter, intn_type, color_method, protein, target
+):
     """
     Parses a PLIP interaction dict and builds the dict key values needed for 3DMol.
     """
@@ -207,7 +204,8 @@ def build_interaction_dict(plip_xml_dict, intn_counter, intn_type, color_method,
         "color": intn_color,
     }
     return k, v
-    
+
+
 def get_interactions_plip(protein, pose, color_method, target) -> dict:
     """
     Get protein-ligand interactions according to PLIP.
@@ -255,16 +253,24 @@ def get_interactions_plip(protein, pose, color_method, target) -> dict:
                     ):  # multiple interactions of this type
                         for intn_data_i in intn_data:
                             k, v = build_interaction_dict(
-                                intn_data_i, intn_counter, intn_type, color_method, protein, target
+                                intn_data_i,
+                                intn_counter,
+                                intn_type,
+                                color_method,
+                                protein,
+                                target,
                             )
                             intn_dict[k] = v
                             intn_counter += 1
 
-                    elif isinstance(
-                        intn_data, dict
-                    ):  # single interaction of this type
+                    elif isinstance(intn_data, dict):  # single interaction of this type
                         k, v = build_interaction_dict(
-                            intn_data, intn_counter, intn_type, color_method, protein, target
+                            intn_data,
+                            intn_counter,
+                            intn_type,
+                            color_method,
+                            protein,
+                            target,
                         )
                         intn_dict[k] = v
                         intn_counter += 1
@@ -280,13 +286,13 @@ def compute_fint_score(protein, pose, target):
     Parameters
     ----------
     intn_dict : dict
-        Dictionary containing PLIP output with information on interactions that were found. Created by 
+        Dictionary containing PLIP output with information on interactions that were found. Created by
         asapdiscovery.dataviz.html_viz.HTMLVisualizer.get_interactions_plip().
     fintscore_parameters : str
         Path to a YAML file that contains settings for rewards/penalties of interaction types.
 
     Returns
-    ---------- 
+    ----------
     intn_score: float
         Score based purely on interactions, without penalties applied
     fint_score: float
@@ -303,29 +309,34 @@ def compute_fint_score(protein, pose, target):
     # iterate over each interaction that was found.
     intn_dict = get_interactions_plip(protein, pose, "fitness", target)
     for _, data in intn_dict.items():
-
         # if the interaction is with backbone, add a reward to the score.
-        if data['color'] == "#008000":
+        if data["color"] == "#008000":
             reward_multipliers += 1
 
         # if the interaction is with a residue that is shown to be able to mutate, add a penalty to the score.
-        if data['color'] in fintscore_parameters.keys():
-            penalty_multipliers += fintscore_parameters[data['color']]
+        if data["color"] in fintscore_parameters.keys():
+            penalty_multipliers += fintscore_parameters[data["color"]]
 
         # compute this interaction's score (set in metadata yaml).
-        intn_score_bucket.append(fintscore_parameters[data['type']])
+        intn_score_bucket.append(fintscore_parameters[data["type"]])
 
-    # simply compute the mean score, will end up being between 0.5 and 1.0, typically. 
+    # simply compute the mean score, will end up being between 0.5 and 1.0, typically.
     # we need to take the mean because we don't want a compound with many interactions being favored by this score.
     intn_score = np.mean(intn_score_bucket)
 
     # now compute the FINTscore by applying the reward/penalty correction terms.
     # this follows FINT_{score} = INT_{score} * (REWARD*N_{backbone}) * PENALTY^{N_{mutable}},
-    # where PENALTY <= 1.0 <= REWARD. 
-    fint_score = intn_score * reward_multipliers * fintscore_parameters['backbone_reward_multiplier'] * fintscore_parameters['mutating_intn_penalty_multiplier'] ** penalty_multipliers
+    # where PENALTY <= 1.0 <= REWARD.
+    fint_score = (
+        intn_score
+        * reward_multipliers
+        * fintscore_parameters["backbone_reward_multiplier"]
+        * fintscore_parameters["mutating_intn_penalty_multiplier"]
+        ** penalty_multipliers
+    )
 
     # finally, in some cases with lots of reward the FINTscore can shoot over 1.0; then just set as 1.0.
     if fint_score > 1.0:
         fint_score = 1.0
-    
+
     return intn_score, fint_score
