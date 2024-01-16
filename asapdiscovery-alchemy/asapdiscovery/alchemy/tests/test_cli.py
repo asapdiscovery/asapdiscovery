@@ -258,20 +258,27 @@ def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
 
     def get_network_keys(*args, **kwargs):
         """Mock a network key for a running network"""
-        return [ScopedKey(gufe_key="fakenetwork", org="asap", campaign="alchemy", project="testing")]
+        return [
+            ScopedKey(
+                gufe_key="fakenetwork",
+                org="asap",
+                campaign="alchemy",
+                project="testing",
+            )
+        ]
 
     monkeypatch.setattr(AlchemiscaleClient, "_get_resource", _get_resource)
     monkeypatch.setattr(AlchemiscaleClient, "query_networks", get_network_keys)
 
     runner = CliRunner()
 
-    result = runner.invoke(
-        alchemy,
-        [
-            "status",
-            "-a"
-        ]
-    )
+    result = runner.invoke(alchemy, ["status", "-a"])
     assert result.exit_code == 0
-    assert "complete                                     │                             1 " in result.stdout
-    assert "│ fakenetwork-asap-alchemy-testing │ 1    │ 2    │ 3     │ 0    │ 0     │ 0    │" in result.stdout
+    assert (
+        "complete                                     │                             1 "
+        in result.stdout
+    )
+    assert (
+        "│ fakenetwork-asap-alchemy-testing │ 1    │ 2    │ 3     │ 0    │ 0     │ 0    │"
+        in result.stdout
+    )
