@@ -308,6 +308,7 @@ def compute_fint_score(protein, pose, target):
 
     # iterate over each interaction that was found.
     intn_dict = get_interactions_plip(protein, pose, "fitness", target)
+    
     for _, data in intn_dict.items():
         # if the interaction is with backbone, add a reward to the score.
         if data["color"] == "#008000":
