@@ -143,16 +143,18 @@ def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
                 name=edge.name,
                 source_key=key,
                 inputs={"stateA": edge.stateA, "stateB": edge.stateB},
-                outputs={"unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole},
+                outputs={
+                    "unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole
+                },
             )
-            results[key] = RelativeHybridTopologyProtocolResult(**{edge.name: [task_result]})
+            results[key] = RelativeHybridTopologyProtocolResult(
+                **{edge.name: [task_result]}
+            )
 
         return results
 
     # mock the collection api
-    monkeypatch.setattr(
-        client._client, "get_network_results", get_network_results
-    )
+    monkeypatch.setattr(client._client, "get_network_results", get_network_results)
 
     network_with_results = client.collect_results(planned_network=result_network)
     # convert to cinnabar fep map
