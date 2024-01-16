@@ -3,10 +3,10 @@ from copy import deepcopy
 import torch
 
 
-class Jitter:
+class JitterFixed:
     """
-    Jitter an input pose by drawing noise from a normal distribution. Noise is generated
-    per-atom.
+    Jitter an input pose by drawing noise from a fixed normal distribution. Noise is
+    generated per-atom.
     """
 
     def __init__(
@@ -46,7 +46,7 @@ class Jitter:
 
         Parameters
         ----------
-        coords : torch.Tensor
+        coords : torch.Tensor | dict
             Initial coordinates to be jittered. Noise will be generated independently
             for each
         inplace : bool, default=False
