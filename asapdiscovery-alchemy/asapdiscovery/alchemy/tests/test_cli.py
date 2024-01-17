@@ -245,3 +245,40 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex):
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 5
         assert prep_dataset.failed_ligands is None
+
+
+def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
+    """Mock testing the status all command."""
+
+    from alchemiscale import AlchemiscaleClient
+    from alchemiscale.models import ScopedKey
+
+    def _get_resource(*args, **kwargs):
+        return {"complete": 1, "running": 2, "waiting": 3}
+
+    def get_network_keys(*args, **kwargs):
+        """Mock a network key for a running network"""
+        return [
+            ScopedKey(
+                gufe_key="fakenetwork",
+                org="asap",
+                campaign="alchemy",
+                project="testing",
+            )
+        ]
+
+    monkeypatch.setattr(AlchemiscaleClient, "_get_resource", _get_resource)
+    monkeypatch.setattr(AlchemiscaleClient, "query_networks", get_network_keys)
+
+    runner = CliRunner()
+
+    result = runner.invoke(alchemy, ["status", "-a"])
+    assert result.exit_code == 0
+    assert (
+        "complete                                     │                             1 "
+        in result.stdout
+    )
+    assert (
+        "│ fakenetwork-asap-alchemy-testing │ 1    │ 2    │ 3     │ 0    │ 0     │ 0    │"
+        in result.stdout
+    )
