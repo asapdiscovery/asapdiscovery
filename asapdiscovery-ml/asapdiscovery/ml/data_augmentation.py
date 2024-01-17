@@ -11,17 +11,17 @@ class JitterFixed:
 
     def __init__(
         self,
-        mean: float,
-        std: float,
+        mean: float = 1,
+        std: float = 0.1,
         rand_seed: int | None = None,
         dict_key: str = "pos",
     ):
         """
         Parameters
         ----------
-        mean : float
+        mean : float, default=1
             Mean of noise distribution
-        std : float
+        std : float, default=0.1
             Standard deviation of noise distribution
         rand_seed : int, optional
             Random seed for noise generation
