@@ -854,7 +854,7 @@ class DataAugConfig(BaseModel):
     )
 
     def build(self):
-        from asapdiscovery.ml.data_augmentation import JitterFixed, JitterBFactor
+        from asapdiscovery.ml.data_augmentation import JitterBFactor, JitterFixed
 
         match self.aug_type:
             case DataAugType.jitter_fixed:
