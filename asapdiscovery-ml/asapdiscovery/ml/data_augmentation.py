@@ -11,8 +11,8 @@ class JitterFixed:
 
     def __init__(
         self,
-        mean: float = 1,
-        std: float = 0.1,
+        mean: float = 0,
+        std: float = 1,
         rand_seed: int | None = None,
         dict_key: str = "pos",
     ):
