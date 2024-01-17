@@ -123,12 +123,13 @@ class JitterBFactor:
         self.b_dict_key = b_dict_key
 
     @staticmethod
-    def b_factor_to_mean(b):
+    def b_factor_to_std(b):
         """
-        Convert B factors to a mean that can be used to draw noise from.
+        Convert B factors to a standard deviation that can be used to draw noise from.
         The math in this function is based on the defintion of the B factor as
         B = (8(pi^2)/3) <u^2>
-        We will approximate the mean of our Gaussian as the RMSD = sqrt(<u^2>):
+        We will approximate the standard deviation of our Gaussian as the
+        RMSD = sqrt(<u^2>):
         sqrt(<u^2>) = sqrt(3B / (8(pi^2)))
 
         Parameters
@@ -142,26 +143,6 @@ class JitterBFactor:
             Tensor of converted RMSDs
         """
         return (3 * b / (8 * torch.pi**2)).sqrt()
-
-    @staticmethod
-    def b_factor_to_std(b):
-        """
-        Convert B factors to a standard ceviation that can be used to draw noise from.
-        The math in this function is somewhat arbitrary, until we get a better idea. The
-        20 scaling factor is based on the value that OpeneEye assigns to docked ligands
-        (which is 20), and the square root is to convert from A^2 to A.
-
-        Parameters
-        ----------
-        b : torch.Tensor
-            Tensor of B factors
-
-        Returns
-        -------
-        torch.Tensor
-            Tensor of converted RMSDs
-        """
-        return (b / 20).sqrt()
 
     def __call__(self, pose, inplace=False):
         """
@@ -190,14 +171,11 @@ class JitterBFactor:
             # Should just be a reference so inputs should get modified
             pose_copy = pose
 
-        # Calculate mean and std values. Need to do some reshaping/broadcasting to make
-        #  the shapes line up
-        mean = (
-            JitterBFactor.b_factor_to_mean(pose_copy[self.b_dict_key])
-            .reshape((-1, 1))
-            .broadcast_to(pose_copy[self.pos_dict_key].shape)
-            .to("cpu")
-        )
+        # Zero mean for the noise
+        mean = torch.zeros_like(pose_copy[self.pos_dict_key], device="cpu")
+
+        # Calculate std values. Need to do some reshaping/broadcasting to make the
+        #  shapes line up
         std = (
             JitterBFactor.b_factor_to_std(pose_copy[self.b_dict_key])
             .reshape((-1, 1))
