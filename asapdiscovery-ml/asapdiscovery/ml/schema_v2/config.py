@@ -809,8 +809,10 @@ class DataAugType(StringEnum):
     Enum for different methods of data augmentation.
     """
 
-    # Jitter all coordinates
-    jitter = "jitter"
+    # Jitter all coordinates by a fixed amount
+    jitter_fixed = "jitter_fixed"
+    # Jitter coordinates based on the pose B factor
+    jitter_b = "jitter_b"
 
 
 class DataAugConfig(BaseModel):
@@ -828,11 +830,11 @@ class DataAugConfig(BaseModel):
     )
 
     # Define the distribution of random noise to jitter with
-    jitter_mean: float = Field(
-        0.1, description="Mean of gaussian distribution to draw noise from."
+    jitter_fixed_mean: float | None = Field(
+        None, description="Mean of gaussian distribution to draw noise from."
     )
-    jitter_std: float | None = Field(
-        0.01,
+    jitter_fixed_std: float | None = Field(
+        None,
         description="Standard deviation of gaussian distribution to draw noise from.",
     )
 
@@ -841,13 +843,40 @@ class DataAugConfig(BaseModel):
         None, description="Random seed to use for reproducbility, if desired."
     )
 
+    # Dict key for the positions
+    jitter_pos_key: str | None = Field(
+        None, description="Key to access the coords in pose dict."
+    )
+
+    # Dict key for B factors
+    jitter_b_key: str | None = Field(
+        None, description="Key to access the B factors in pose dict."
+    )
+
     def build(self):
-        from asapdiscovery.ml.data_augmentation import Jitter
+        from asapdiscovery.ml.data_augmentation import JitterFixed, JitterBFactor
 
         match self.aug_type:
-            case DataAugType.jitter:
-                return Jitter(
-                    mean=self.jitter_mean,
-                    std=self.jitter_std,
-                    rand_seed=self.jitter_rand_seed,
-                )
+            case DataAugType.jitter_fixed:
+                build_class = JitterFixed
+                kwargs = {
+                    "mean": "jitter_fixed_mean",
+                    "std": "jitter_fixed_std",
+                    "rand_seed": "jitter_rand_seed",
+                    "dict_key": "jitter_pos_key",
+                }
+            case DataAugType.jitter_b:
+                build_class = JitterBFactor
+                kwargs = {
+                    "rand_seed": "jitter_rand_seed",
+                    "pos_dict_key": "jitter_pos_key",
+                    "b_dict_key": "jitter_b_key",
+                }
+
+        # Remove any None kwargs
+        kwargs = {
+            k: getattr(self, v)
+            for k, v in kwargs.items()
+            if getattr(self, v) is not None
+        }
+        return build_class(**kwargs)
