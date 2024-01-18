@@ -256,19 +256,19 @@ def extract_experimental_data(
         experimental data and its associated uncertainty converted to Gibbs free energy in kcal/mol.
     """
     experimental_data = {}
-    assay_tags = [assay_units, assay_units + "_Mean"]
+    assay_tags = {
+        "pIC50": ("pIC50_Mean", "pIC50_Mean Standard Deviation (±)"),
+        "IC50": ("IC50_GMean (µM)", "IC50_GMean (µM) Standard Deviation (×/÷)")
+    }
     exp_data = pd.read_csv(reference_csv).fillna(0)
 
     # work out the columns for the ref data and the uncertainty
     assay_endpoint_tag, assay_endpoint_confidence_tag = None, None
     for col in exp_data.columns:
-        for assay_tag in assay_tags:
-            if col.replace(" (µM)", "").endswith(assay_tag):
-                assay_endpoint_tag = col
-            elif col.replace(" (µM)", "").endswith(
-                f"{assay_tag} Standard Deviation (±)"
-            ):
-                assay_endpoint_confidence_tag = col
+        if col.endswith(assay_tags[assay_units][0]):
+            assay_endpoint_tag = col
+        elif col.endswith(assay_tags[assay_units][1]):
+            assay_endpoint_confidence_tag = col
     if assay_endpoint_tag is None:
         raise RuntimeError(
             f"Could not determine the assay tag from the provided units {assay_units}."
@@ -281,9 +281,10 @@ def extract_experimental_data(
     if assay_units == "pIC50":
         converter = pic50_to_dg
         units = unit.dimensionless
+    # CDD IC50 uses micromolar units
     else:
         converter = ki_to_dg
-        units = unit.molar
+        units = unit.micromolar
 
     for _, row in exp_data.iterrows():
         # get the data.

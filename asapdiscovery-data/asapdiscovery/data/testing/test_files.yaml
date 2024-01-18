@@ -266,7 +266,7 @@ files:
     sha256hash: 9c29e5db96f8d9f85eec5e8604f0ec9cb503e90a4f1359113352c8352c82fd11
 
   - resource: tyk2_reference_data.csv
-    sha256hash: d42da407f1e045a9c17e526e757b274e383c9c46e205cdee8bf8f41e0bbfaaef
+    sha256hash: 5e73f6cf3b68defcffa5cf54c91ffb5ac1569688278a91c8032d4cd3426930cc
 
   # integration testing for ML
   - resource: ml_testing/exp_file.json
