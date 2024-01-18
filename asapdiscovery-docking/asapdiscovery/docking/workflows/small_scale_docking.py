@@ -327,6 +327,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
+    if n_results == 0:
+        raise ValueError("No docking results generated, exiting")
     del pairs
 
     # add chemgauss4 scorer
