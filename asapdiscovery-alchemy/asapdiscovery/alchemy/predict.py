@@ -258,7 +258,7 @@ def extract_experimental_data(
     experimental_data = {}
     assay_tags = {
         "pIC50": ("pIC50_Mean", "pIC50_Mean Standard Deviation (±)"),
-        "IC50": ("IC50_GMean (µM)", "IC50_GMean (µM) Standard Deviation (×/÷)")
+        "IC50": ("IC50_GMean (µM)", "IC50_GMean (µM) Standard Deviation (×/÷)"),
     }
     exp_data = pd.read_csv(reference_csv).fillna(0)
 
