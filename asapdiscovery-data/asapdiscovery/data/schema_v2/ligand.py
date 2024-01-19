@@ -163,6 +163,9 @@ class Ligand(DataModelAbstractBase):
         """
         # work with a copy as we change the state of the molecule
         input_mol = copy.deepcopy(mol)
+        oechem.OEClearAromaticFlags(input_mol)
+        oechem.OEAssignAromaticFlags(input_mol, oechem.OEAroModel_MDL)
+        oechem.OEAssignHybridization(input_mol)
         kwargs.pop("data", None)
         sd_tags = get_SD_data(input_mol)
         for key, value in sd_tags.items():

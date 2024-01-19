@@ -67,7 +67,7 @@ To install an `asapdiscovery` package hosted in this repository, we recommend th
    NOTE: Conda will almost certainly fail to build the environment - `mamba` is a drop-in replacement for `conda` that is much faster and more reliable.
 
     ```
-    mamba env create -f devtools/conda-envs/asapdiscovery-{platform}.yaml
+    mamba env create -f devtools/conda-envs/asapdiscovery-{platform}.yml
     conda activate asapdiscovery
     ```
 
