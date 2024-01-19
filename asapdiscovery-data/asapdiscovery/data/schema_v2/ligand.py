@@ -221,6 +221,30 @@ class Ligand(DataModelAbstractBase):
         mol = _set_SD_data_repr(mol, data)
         return mol
 
+    def to_rdkit(self) -> "Chem.Mol":
+        """
+        Convert the current molecule state to an RDKit molecule including all fields as SD tags.
+        """
+        from rdkit import Chem
+        rdkit_mol: Chem.Mol = Chem.MolFromMolBlock(self.data, removeHs=False)
+        data = {}
+        for key in self.__fields__.keys():
+            if key not in ["data", "tags", "data_format"]:
+                field = getattr(self, key)
+                try:
+                    data[key] = field.json()
+                except AttributeError:
+                    if field is not None:
+                        data[key] = str(getattr(self, key))
+        # dump the enum using value to get the str repr
+        data["data_format"] = self.data_format.value
+        # dump tags as separate items
+        if self.tags is not None:
+            data.update({k: v for k, v in self.tags.items()})
+        for key, value in data.items():
+            rdkit_mol.SetProp(key, value)
+        return rdkit_mol
+
     @classmethod
     def from_smiles(cls, smiles: str, **kwargs) -> "Ligand":
         """
