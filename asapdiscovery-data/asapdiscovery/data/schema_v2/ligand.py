@@ -226,6 +226,7 @@ class Ligand(DataModelAbstractBase):
         Convert the current molecule state to an RDKit molecule including all fields as SD tags.
         """
         from rdkit import Chem
+
         rdkit_mol: Chem.Mol = Chem.MolFromMolBlock(self.data, removeHs=False)
         data = {}
         for key in self.__fields__.keys():
