@@ -11,6 +11,23 @@ logger = logging.getLogger(__name__)
 
 
 class MetaStructureFactory(BaseModel):
+    """
+    Factory for loading structures from directory, fragalysis or pdb file
+
+    Parameters
+    ----------
+    structure_dir : str
+        Path to directory containing structures
+    fragalysis_dir : str
+        Path to directory containing fragalysis structures
+    pdb_file : str
+        Path to pdb file containing structure
+    use_dask : bool
+        Use dask to load structures where possible
+    dask_client : Any
+        Dask client to use for loading structures
+    """
+
     structure_dir: Optional[str | Path] = Field(
         ..., description="Path to directory containing structures"
     )

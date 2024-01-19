@@ -12,6 +12,19 @@ logger = logging.getLogger(__name__)
 
 
 class MetaLigandFactory(BaseModel):
+    """
+    Factory for loading ligands from file or Postera
+
+    Parameters
+    ----------
+    postera : bool
+        use Postera
+    postera_molset_name : str
+        Postera molecule set name
+    ligand_file : str
+        Ligand file to read
+    """
+
     postera: bool = Field(..., description="use Postera")
     postera_molset_name: Optional[str] = Field(
         ..., description="Postera molecule set name"
