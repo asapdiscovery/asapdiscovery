@@ -1,6 +1,6 @@
 from typing import Literal
 
-from asapdiscovery.data.openeye import oechem, oequacpac
+from asapdiscovery.data.openeye import oechem, oequacpac, clear_SD_data
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
 from pydantic import Field
@@ -41,7 +41,8 @@ class TautomerExpander(StateExpanderBase):
         provenance = self.provenance()
 
         for parent_ligand in ligands:
-            oemol = parent_ligand.to_oemol()
+            # need to clear the SD data otherwise the provenance will break
+            oemol = clear_SD_data(parent_ligand.to_oemol())
 
             for tautomer in oequacpac.OEGetReasonableTautomers(
                 oemol, tautomer_opts, self.pka_norm
@@ -49,7 +50,7 @@ class TautomerExpander(StateExpanderBase):
                 fmol = oechem.OEMol(tautomer)
                 # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
                 # down the track.
-                tautomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
+                tautomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict(exclude={"provenance", "data"}))
                 # only add the expansion tag to new molecules
                 if tautomer_ligand.fixed_inchikey != parent_ligand.fixed_inchikey:
                     tautomer_ligand.set_expansion(
