@@ -45,9 +45,9 @@ from asapdiscovery.docking.docking_data_validation import (
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import (
     ChemGauss4Scorer,
+    FINTScorer,
     MetaScorer,
     MLModelScorer,
-    FINTScorer,
 )
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
