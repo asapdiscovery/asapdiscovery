@@ -1,6 +1,6 @@
 from typing import Literal
 
-from asapdiscovery.data.openeye import oechem, oeomega, clear_SD_data
+from asapdiscovery.data.openeye import clear_SD_data, oechem, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
 from pydantic import Field
