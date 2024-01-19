@@ -33,6 +33,7 @@ class ScoreType(str, Enum):
     """
 
     chemgauss4 = "chemgauss4"
+    FINT = "FINT"
     GAT = "GAT"
     schnet = "schnet"
     INVALID = "INVALID"
@@ -53,6 +54,7 @@ class ScoreUnits(str, Enum):
 
 _SCORE_MANIFOLD_ALIAS = {
     ScoreType.chemgauss4: DockingResultCols.DOCKING_SCORE_POSIT.value,
+    ScoreType.FINT: DockingResultCols.FINT_SCORE.value,
     ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.INVALID: None,
@@ -217,6 +219,34 @@ class ChemGauss4Scorer(ScorerBase):
                     chemgauss_score, self.score_type, self.units, inp
                 )
             )
+        return results
+
+
+class FINTScorer(ScorerBase):
+    """
+    Score using Fitness Interaction Score
+    """
+
+    score_type: ClassVar[ScoreType.FINT] = ScoreType.FINT
+    units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
+    target: TargetTags = Field(..., description="Which target to use for scoring")
+
+    @validator("target")
+    @classmethod
+    def validate_target(cls, v):
+        if not target_has_fitness_data(v):
+            raise ValueError(
+                "target does not have fitness data so cannot use FINTScorer"
+            )
+        return v
+
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+        results = []
+        for inp in inputs:
+            _, fint_score = compute_fint_score(
+                inp.posed_ligand.to_oemol(), inp.to_protein(), self.target
+            )
+            results.append(fint_score)
         return results
 
 
