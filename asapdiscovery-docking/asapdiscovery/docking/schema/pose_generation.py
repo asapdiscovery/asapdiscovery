@@ -455,8 +455,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             ringMatchesRingOnly=True,
             completeRingsOnly=True,
             atomCompare=rdFMCS.AtomCompare.CompareAny,
+            bondCompare=rdFMCS.BondCompare.CompareAny,
             maximizeBonds=False,
-            timeout=10
+            timeout=1
         )
         return Chem.MolFromSmarts(mcs.smartsString)
 
@@ -520,12 +521,15 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         from rdkit.Chem.rdForceFieldHelpers import UFFGetMoleculeForceField
         from rdkit.Chem.rdMolAlign import AlignMol
         from openff.toolkit import Molecule
+        from concurrent.futures import ProcessPoolExecutor
 
         core_ligand = prepared_complex.ligand.to_rdkit()
 
         # process the ligands
         result_ligands = []
         failed_ligands = []
+
+        # TODO wrap in a process pool
         for mol in ligands:
             # generate the template molecule
             target_ligand: Chem.Mol = Chem.AddHs(mol.to_rdkit())
@@ -553,7 +557,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
             for embedding in embeddings:
                 _ = AlignMol(target_ligand, template_mol, prbCid=embedding, atomMap=index_map)
-
+                # TODO expose MMFF as an option
                 ff = UFFGetMoleculeForceField(target_ligand, confId=embedding)
                 conf = template_mol.GetConformer()
                 for matched_index, core_index in index_map:
