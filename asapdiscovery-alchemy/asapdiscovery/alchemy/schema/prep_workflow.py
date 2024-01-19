@@ -7,7 +7,10 @@ from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import EpikExpander
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
-from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator, RDKitConstrainedPoseGenerator
+from asapdiscovery.docking.schema.pose_generation import (
+    OpenEyeConstrainedPoseGenerator,
+    RDKitConstrainedPoseGenerator,
+)
 from pydantic import Field
 from rich import pretty
 
@@ -29,7 +32,9 @@ class _AlchemyPrepBase(_SchemaBase):
         description="The charge and tautomer expander that"
         "should be applied to the ligands. This stage will be skipped if set to `None`.",
     )
-    pose_generator: Union[OpenEyeConstrainedPoseGenerator, RDKitConstrainedPoseGenerator] = Field(
+    pose_generator: Union[
+        OpenEyeConstrainedPoseGenerator, RDKitConstrainedPoseGenerator
+    ] = Field(
         OpenEyeConstrainedPoseGenerator(),
         description="The method "
         "to generate the initial poses for the molecules for FEC.",

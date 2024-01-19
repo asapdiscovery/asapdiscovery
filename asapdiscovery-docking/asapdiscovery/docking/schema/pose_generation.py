@@ -417,12 +417,14 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
     max_confs: PositiveInt = Field(
         1000, description="The maximum number of conformers to try and generate."
     )
-    rms_thresh: PositiveFloat = Field(0.2, description="Retain only the conformations out of 'numConfs' after embedding that are at least this far apart from each other. RMSD is computed on the heavy atoms.")
+    rms_thresh: PositiveFloat = Field(
+        0.2,
+        description="Retain only the conformations out of 'numConfs' after embedding that are at least this far apart from each other. RMSD is computed on the heavy atoms.",
+    )
 
     def provenance(self) -> dict[str, Any]:
-
-        import rdkit
         import openff.toolkit
+        import rdkit
         from openeye import oechem, oeff
 
         return {
@@ -430,10 +432,12 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             "oeff": oeff.OEFFGetVersion(),
             "oedocking": oedocking.OEDockingGetVersion(),
             "rdkit": rdkit.__version__,
-            "openff.toolkit": openff.toolkit.__version__
+            "openff.toolkit": openff.toolkit.__version__,
         }
 
-    def _generate_mcs_core(self, target_ligand: Chem.Mol, reference_ligand: Chem.Mol) -> Chem.Mol:
+    def _generate_mcs_core(
+        self, target_ligand: Chem.Mol, reference_ligand: Chem.Mol
+    ) -> Chem.Mol:
         """
         For the given target and reference ligand find an MCS match to generate
         a new template ligand which can be used in the constrained embedding.
@@ -447,8 +451,8 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         -------
 
         """
-        from rdkit.Chem import rdFMCS
         from rdkit import Chem
+        from rdkit.Chem import rdFMCS
 
         mcs = rdFMCS.FindMCS(
             [target_ligand, reference_ligand],
@@ -456,11 +460,13 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             completeRingsOnly=True,
             atomCompare=rdFMCS.AtomCompare.CompareAny,
             maximizeBonds=False,
-            timeout=10
+            timeout=10,
         )
         return Chem.MolFromSmarts(mcs.smartsString)
 
-    def _transfer_coordinates(self, reference_ligand: Chem.Mol, template_ligand: Chem.Mol) -> Chem.Mol:
+    def _transfer_coordinates(
+        self, reference_ligand: Chem.Mol, template_ligand: Chem.Mol
+    ) -> Chem.Mol:
         """
         Transfer the coordinates from the reference to the template ligand.
 
@@ -482,8 +488,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         template_ligand.AddConformer(template_conformer, assignId=True)
         return template_ligand
 
-    def _generate_coordinate_map(self, target_ligand: Chem.Mol,  template_ligand: Chem.Mol) -> tuple[dict, list]:
-
+    def _generate_coordinate_map(
+        self, target_ligand: Chem.Mol, template_ligand: Chem.Mol
+    ) -> tuple[dict, list]:
         # map the scaffold atoms to the new molecule
         # we assume the template has a single conformer
         template_conformer = template_ligand.GetConformer(0)
@@ -515,11 +522,11 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         -------
 
         """
-        from rdkit.Chem.rdDistGeom import EmbedMultipleConfs
+        from openff.toolkit import Molecule
         from rdkit.Chem import AllChem  # needed to use the force fields
+        from rdkit.Chem.rdDistGeom import EmbedMultipleConfs
         from rdkit.Chem.rdForceFieldHelpers import UFFGetMoleculeForceField
         from rdkit.Chem.rdMolAlign import AlignMol
-        from openff.toolkit import Molecule
 
         core_ligand = prepared_complex.ligand.to_rdkit()
 
@@ -530,36 +537,50 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             # generate the template molecule
             target_ligand: Chem.Mol = Chem.AddHs(mol.to_rdkit())
 
-            template_mol = self._generate_mcs_core(target_ligand=target_ligand, reference_ligand=core_ligand)
+            template_mol = self._generate_mcs_core(
+                target_ligand=target_ligand, reference_ligand=core_ligand
+            )
             # transfer the relevant coordinates from the crystal core to the template
-            template_mol = self._transfer_coordinates(reference_ligand=core_ligand, template_ligand=template_mol)
+            template_mol = self._transfer_coordinates(
+                reference_ligand=core_ligand, template_ligand=template_mol
+            )
             # create a coordinate and atom index map for the embedding
-            coord_map, index_map = self._generate_coordinate_map(target_ligand=target_ligand, template_ligand=template_mol)
+            coord_map, index_map = self._generate_coordinate_map(
+                target_ligand=target_ligand, template_ligand=template_mol
+            )
             # embed multiple conformers
-            embeddings = list(EmbedMultipleConfs(
-                target_ligand,
-                numConfs=self.max_confs,
-                clearConfs=True,
-                pruneRmsThresh=self.rms_thresh,
-                coordMap=coord_map,
-                enforceChirality=True,
-                useExpTorsionAnglePrefs=True,
-                useBasicKnowledge=True,
-                useSmallRingTorsions=True
-            ))
+            embeddings = list(
+                EmbedMultipleConfs(
+                    target_ligand,
+                    numConfs=self.max_confs,
+                    clearConfs=True,
+                    pruneRmsThresh=self.rms_thresh,
+                    coordMap=coord_map,
+                    enforceChirality=True,
+                    useExpTorsionAnglePrefs=True,
+                    useBasicKnowledge=True,
+                    useSmallRingTorsions=True,
+                )
+            )
             if len(embeddings) == 0:
                 # we could not embed this molecule
                 failed_ligands.append(mol)
 
             for embedding in embeddings:
-                _ = AlignMol(target_ligand, template_mol, prbCid=embedding, atomMap=index_map)
+                _ = AlignMol(
+                    target_ligand, template_mol, prbCid=embedding, atomMap=index_map
+                )
 
                 ff = UFFGetMoleculeForceField(target_ligand, confId=embedding)
                 conf = template_mol.GetConformer()
                 for matched_index, core_index in index_map:
                     coord = conf.GetAtomPosition(core_index)
-                    coord_index = ff.AddExtraPoint(coord.x, coord.y, coord.z, fixed=True) - 1
-                    ff.AddDistanceConstraint(coord_index, matched_index, 0, 0, 100.0 * 100)
+                    coord_index = (
+                        ff.AddExtraPoint(coord.x, coord.y, coord.z, fixed=True) - 1
+                    )
+                    ff.AddDistanceConstraint(
+                        coord_index, matched_index, 0, 0, 100.0 * 100
+                    )
 
                 ff.Initialize()
                 n = 4
@@ -569,7 +590,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     n -= 1
 
                 # realign
-                _ = AlignMol(target_ligand, template_mol, prbCid=embedding, atomMap=index_map)
+                _ = AlignMol(
+                    target_ligand, template_mol, prbCid=embedding, atomMap=index_map
+                )
 
             # save the mol with all conformers
             off_mol = Molecule.from_rdkit(target_ligand, allow_undefined_stereo=True)
