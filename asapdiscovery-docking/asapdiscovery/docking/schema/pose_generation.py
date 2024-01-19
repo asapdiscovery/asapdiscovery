@@ -523,12 +523,13 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         -------
 
         """
+        from concurrent.futures import ProcessPoolExecutor
+
         from openff.toolkit import Molecule
         from rdkit.Chem import AllChem  # needed to use the force fields
         from rdkit.Chem.rdDistGeom import EmbedMultipleConfs
         from rdkit.Chem.rdForceFieldHelpers import UFFGetMoleculeForceField
         from rdkit.Chem.rdMolAlign import AlignMol
-        from concurrent.futures import ProcessPoolExecutor
 
         core_ligand = prepared_complex.ligand.to_rdkit()
 
