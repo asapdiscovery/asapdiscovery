@@ -14,6 +14,7 @@ from asapdiscovery.data.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetProteinMap,
     map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
@@ -59,7 +60,7 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         Whether to allow retries for docking failures
     n_select : PositiveInt
         Number of targets to dock each ligand against.
-    ml_scorers : MLModelType, optional
+    ml_scorers : ModelType, optional
         The name of the ml scorers to use.
     md : bool, optional
         Whether to run MD on the docked poses
@@ -280,6 +281,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
+    if n_results == 0:
+        raise ValueError("No docking results generated, exiting")
     del pairs
 
     # add chemgauss4 scorer
@@ -419,11 +422,23 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             local_cpu_client_gpu_override = True
 
         md_output_dir = output_dir / "md"
+
+        # capsid simulations need a CA rmsd restraint to hold the capsid together
+        if TargetProteinMap[inputs.target] == "Capsid":
+            logger.info("Adding CA RMSD restraint to capsid simulation")
+            rmsd_restraint = True
+            rmsd_restraint_type = "CA"
+        else:
+            rmsd_restraint = False
+            rmsd_restraint_type = None
+
         md_simulator = VanillaMDSimulatorV2(
             output_dir=md_output_dir,
             openmm_platform=inputs.md_openmm_platform,
             num_steps=inputs.md_steps,
             reporting_interval=inputs.md_report_interval,
+            rmsd_restraint=rmsd_restraint,
+            rmsd_restraint_type=rmsd_restraint_type,
         )
         simulation_results = md_simulator.simulate(
             results, use_dask=inputs.use_dask, dask_client=dask_client

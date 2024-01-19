@@ -61,7 +61,7 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
         Whether to use omega confomer enumeration in docking, warning: more expensive
     allow_posit_retries : bool
         Whether to allow retries in docking with varying settings, warning: more expensive
-    ml_scorers : MLModelType, optional
+    ml_scorers : ModelType, optional
         The name of the ml scorers to use.
     logname : str, optional
         Name of the log file.
@@ -263,6 +263,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
+    if n_results == 0:
+        raise ValueError("No docking results generated, exiting")
     del pairs
 
     if inputs.write_final_sdf:
