@@ -89,9 +89,8 @@ def output_dir(func):
 
 def overwrite(func):
     return click.option(
-        "--overwrite",
-        is_flag=True,
-        default=False,
+        "--overwrite/--no-overwrite",
+        default=True,
         help="Whether to overwrite the output directory if it exists.",
     )(func)
 
