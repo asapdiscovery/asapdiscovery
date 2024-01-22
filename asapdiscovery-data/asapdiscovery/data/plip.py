@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import xmltodict
@@ -12,11 +13,13 @@ from asapdiscovery.data.fitness import parse_fitness_json
 from asapdiscovery.data.metadata.resources import FINTSCORE_PARAMETERS
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.fitness import target_has_fitness_data
 
 logger = logging.getLogger(__name__)
 
 
-def make_color_res_subpockets(protein, target) -> dict:
+def make_color_res_subpockets(protein, target) -> dict[str, str]:
     """
     Based on subpocket coloring, creates a dict where keys are colors, values are residue numbers.
     """
@@ -51,7 +54,7 @@ def make_color_res_subpockets(protein, target) -> dict:
     return color_res_dict
 
 
-def make_color_res_fitness(protein, target) -> dict:
+def make_color_res_fitness(protein, target) -> dict[str,str]:
     """
     Based on fitness coloring, creates a dict where keys are colors, values are residue numbers.
     """
