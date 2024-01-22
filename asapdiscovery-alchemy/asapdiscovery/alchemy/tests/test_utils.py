@@ -130,37 +130,31 @@ def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
         for edge in alchem_network.edges
     }
 
-    def get_network_transformations(key) -> list[ScopedKey]:
-        """Mock pulling the transforms from alchemiscale"""
-        assert key == network_key
-        transforms = []
-        for edge in alchem_network.edges:
-            transforms.append(ScopedKey(gufe_key=edge.key, **scope.dict()))
-        return transforms
+    def get_network_results(*args, **kwargs):
+        """Mock pull down the results for all transforms in a network"""
+        results = {}
+        for key, edge in keys_to_edges.items():
+            if "complex" in edge.name:
+                estimate = 3
+            else:
+                estimate = 1
 
-    def get_transformation_results(task_key):
-        """Mock pulling a result for a transform"""
-        # create a specific result corresponding to the edge
-        edge = keys_to_edges[task_key]
-        if "complex" in edge.name:
-            estimate = 3
-        else:
-            estimate = 1
-        task_result = ProtocolUnitResult(
-            name=edge.name,
-            source_key=task_key,
-            inputs={"stateA": edge.stateA, "stateB": edge.stateB},
-            outputs={"unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole},
-        )
-        return RelativeHybridTopologyProtocolResult(**{edge.name: [task_result]})
+            task_result = ProtocolUnitResult(
+                name=edge.name,
+                source_key=key,
+                inputs={"stateA": edge.stateA, "stateB": edge.stateB},
+                outputs={
+                    "unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole
+                },
+            )
+            results[key] = RelativeHybridTopologyProtocolResult(
+                **{edge.name: [task_result]}
+            )
+
+        return results
 
     # mock the collection api
-    monkeypatch.setattr(
-        client._client, "get_network_transformations", get_network_transformations
-    )
-    monkeypatch.setattr(
-        client._client, "get_transformation_results", get_transformation_results
-    )
+    monkeypatch.setattr(client._client, "get_network_results", get_network_results)
 
     network_with_results = client.collect_results(planned_network=result_network)
     # convert to cinnabar fep map

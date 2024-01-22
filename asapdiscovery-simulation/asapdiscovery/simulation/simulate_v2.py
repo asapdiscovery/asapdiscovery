@@ -68,7 +68,7 @@ class SimulatorBase(BaseModel):
                 out = dask.delayed(self._simulate)(docking_results=[res], **kwargs)
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="raise"
+                delayed_outputs, dask_client, errors="skip"
             )
             outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
