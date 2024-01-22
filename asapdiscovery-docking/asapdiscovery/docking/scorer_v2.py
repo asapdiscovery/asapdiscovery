@@ -22,7 +22,7 @@ from asapdiscovery.docking.docking_data_validation import (
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from mtenn.config import ModelType
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class ScoreUnits(str, Enum):
 
 _SCORE_MANIFOLD_ALIAS = {
     ScoreType.chemgauss4: DockingResultCols.DOCKING_SCORE_POSIT.value,
-    ScoreType.FINT: DockingResultCols.FINT_SCORE.value,
+    ScoreType.FINT: DockingResultCols.FITNESS_SCORE_FINT.value,
     ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.INVALID: None,
