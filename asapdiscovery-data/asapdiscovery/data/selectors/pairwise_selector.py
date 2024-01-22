@@ -74,7 +74,7 @@ class LeaveSimilarOutSelector(SelectorBase):
     identical ligands but also stereoisomers, protonation states, and tautomers).
     """
 
-    selector_type: ClassVar[str] = "LeaveOneOutSelector"
+    selector_type: ClassVar[str] = "LeaveSimilarOutSelector"
 
     def _select(
         self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]

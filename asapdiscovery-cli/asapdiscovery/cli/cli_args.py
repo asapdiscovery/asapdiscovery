@@ -147,6 +147,15 @@ def cache_dir(func):
     )(func)
 
 
+def use_only_cache(func):
+    return click.option(
+        "--use-only-cache",
+        is_flag=True,
+        default=False,
+        help="Whether to only use the cache.",
+    )(func)
+
+
 def gen_cache_w_default(func):
     return click.option(
         "--gen-cache",

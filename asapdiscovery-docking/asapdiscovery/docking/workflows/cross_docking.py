@@ -178,6 +178,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         cache_dir=inputs.cache_dir,
+        use_only_cache=inputs.use_only_cache,
     )
     del complexes
 
@@ -236,6 +237,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
+    if n_results == 0:
+        raise ValueError("No docking results generated, exiting")
     del pairs
 
     # add chemgauss4 scorer

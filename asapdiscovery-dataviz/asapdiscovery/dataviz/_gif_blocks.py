@@ -46,7 +46,21 @@ class GIFBlockData:
     )
 
     # set colorings of subpockets by resn. This may change over time.,
-    # first define the residues that span the subpockets
+    # first define which chain the binding pocket lives in per target.
+    pocket_dict_chains_per_target = {
+        "SARS-CoV-2-Mpro": "A",
+        "SARS-CoV-2-Mac1": "A",
+        "SARS-CoV-2-Mac1-monomer": "A",
+        "MERS-CoV-Mpro": "A",
+        "EV-D68-3Cpro": "A",
+        "EV-A71-3Cpro": "A",
+        "EV-A71-Capsid": "A",
+        "EV-D68-Capsid": "A",
+        "DENV-NS2B-NS3pro": "B",
+        "ZIKV-NS2B-NS3pro": "B",
+    }
+
+    # define the residues that span the subpockets
     # SARS2
     pocket_dict_SARS_CoV_2_Mpro = {
         "subP1": "140+141+142+143+144+145+163+172",
@@ -107,6 +121,12 @@ class GIFBlockData:
         "hydrophic_trap": "155+135+137+24+190+179+177+188+133+233",
         "tube_region": "111+230+195+253+201+131+192+193+196",
         "entry_pore": "229+228+112+114+113+203+275+274+224",
+    }
+
+    pocket_dict_EV_D68_Capsid = {
+        "hydrophic_trap": "147+119+121+182+171+168+180+117+220",
+        "tube_region": "95+217+187+241+193+115+184+185+186",
+        "entry_pore": "216+215+96+97+98+195+263+262+211",
     }
 
     # now define the colors per subpocket for each target (cross-variant)

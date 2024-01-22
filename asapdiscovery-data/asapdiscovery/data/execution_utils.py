@@ -83,3 +83,31 @@ def estimate_n_workers(
     elif n_workers > maximum:
         n_workers = maximum
     return n_workers
+
+
+def get_platform() -> str:
+    """
+    Get the platform name.
+
+    Returns
+    -------
+    str
+        Platform name.
+    """
+    import platform
+
+    return platform.system().lower()
+
+
+def hyperthreading_is_enabled() -> bool:
+    """
+    Check if hyperthreading is enabled.
+
+    Returns
+    -------
+    bool
+        True if hyperthreading is enabled, False otherwise.
+    """
+    import psutil
+
+    return psutil.cpu_count() != psutil.cpu_count(logical=False)
