@@ -73,12 +73,14 @@ class DockingInputMultiStructure(MultiStructureBase):
 
     def unique_name(self):
         import hashlib
+
         data = ""
         for c in self.complexes:
             data += c.hash()
         complexes_hash = hashlib.sha256(data.encode()).hexdigest()
-        return f"{self.ligand.compound_name}-{self.ligand.fixed_inchikey}_{complexes_hash}"
-
+        return (
+            f"{self.ligand.compound_name}-{self.ligand.fixed_inchikey}_{complexes_hash}"
+        )
 
 
 class DockingBase(BaseModel):
