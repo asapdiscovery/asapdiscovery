@@ -82,8 +82,10 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     output_dir = inputs.output_dir
     if output_dir.exists() and inputs.overwrite:
+        overwritten = True
         rmtree(output_dir)
     else:
+        overwritten = False
         output_dir.mkdir(exist_ok=True, parents=True)
 
     logger = FileLogger(
@@ -93,6 +95,11 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         stdout=True,
         level=inputs.loglevel,
     ).getLogger()
+
+    if overwritten:
+        logger.info(f"Overwriting output directory: {output_dir}")
+    else:
+        logger.info(f"Writing to output directory: {output_dir}")
 
     logger.info(f"Running cross docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
