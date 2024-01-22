@@ -29,6 +29,8 @@ dependencies:
   - rdkit
   - seaborn
   - pebble
+  - panel
+  - plotmol
 
   # data
   - requests
@@ -77,6 +79,9 @@ dependencies:
   - plip
   - plotly
   - dash
+  - pygifsicle
+  - airium
+  - logomaker
 
   # simulation
   - openfe =>0.14.0
@@ -86,11 +91,4 @@ dependencies:
   - kartograf
   - rich
   - alchemiscale-client
-#  - cinnabar >=0.4.1
-
-  # Pip-only installs
-  - pip:
-    - pygifsicle # is this the same as gifsicle?
-    - airium # not on CF
-    - logomaker # not on CF
-    - git+https://github.com/OpenFreeEnergy/cinnabar.git@main  # may need to wait for release
+  - cinnabar >=0.4.1
