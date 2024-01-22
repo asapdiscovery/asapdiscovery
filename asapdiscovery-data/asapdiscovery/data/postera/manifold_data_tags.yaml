@@ -131,11 +131,11 @@ manifold_outputs:
       tools:
         - szybki
       postfix: msk
-  
+
   - fitness-score:
       prefix: in-silico
       units:
-      tools: 
+      tools:
         - FINT
       postfix: msk
 

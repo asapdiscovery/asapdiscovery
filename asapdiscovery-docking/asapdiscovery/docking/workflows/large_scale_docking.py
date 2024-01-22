@@ -42,9 +42,9 @@ from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer_v2 import (
     ChemGauss4Scorer,
+    FINTScorer,
     MetaScorer,
     MLModelScorer,
-    FINTScorer,
 )
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
