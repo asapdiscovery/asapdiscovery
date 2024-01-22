@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Union  # noqa: F401
 
 from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.postera.manifold_data_validation import TargetProteinMap
 
 from ._gif_blocks import GIFBlockData
 from .resources.fonts import opensans_regular
@@ -269,6 +270,10 @@ class GIFVisualizer:
         p.cmd.select("th", "(all) and not ( (all) within 15 of ligand_obj)")
         # hide it to save rendering time.
         p.cmd.hide("everything", "th")
+
+        # capsid needs clipping planes as the ligand is encapsulated
+        if TargetProteinMap[self.target] == "Capsid":
+            p.cmd.clip("near", -25)
 
         if self.pse or self.pse_share:
             p.cmd.save(str(parent_path / "session_5_selections.pse"))
