@@ -176,7 +176,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         level=inputs.loglevel,
     ).getLogger()
 
-
     if overwritten:
         logger.info(f"Overwriting output directory: {output_dir}")
     else:
