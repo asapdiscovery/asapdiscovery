@@ -12,6 +12,7 @@ from asapdiscovery.data.dask_utils import (
     actualise_dask_delayed_iterable,
     backend_wrapper,
 )
+from asapdiscovery.data.fitness import compute_fint_score, target_has_fitness_data
 from asapdiscovery.data.openeye import oedocking
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
