@@ -13,8 +13,8 @@ from asapdiscovery.data.dask_utils import (
     backend_wrapper,
 )
 from asapdiscovery.data.fitness import target_has_fitness_data
-from asapdiscovery.data.plip import compute_fint_score
 from asapdiscovery.data.openeye import oedocking
+from asapdiscovery.data.plip import compute_fint_score
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
