@@ -4,7 +4,6 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import xmltodict
@@ -280,7 +279,7 @@ def get_interactions_plip(protein, pose, color_method, target) -> dict:
     return intn_dict
 
 
-## this should be placed around that area as well, but FINTscore should be added to docking scores by default
+# this should be placed around that area as well, but FINTscore should be added to docking scores by default
 def compute_fint_score(
     protein: oechem.OEMol, pose: oechem.OEMol, target: TargetTags
 ) -> tuple[float, float]:

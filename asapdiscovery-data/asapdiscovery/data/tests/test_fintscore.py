@@ -1,7 +1,4 @@
 from pathlib import Path
-
-import numpy as np
-import pytest
 from asapdiscovery.data.openeye import load_openeye_pdb
 from asapdiscovery.data.plip import compute_fint_score
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
