@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Union
 
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -13,7 +14,7 @@ class MolFileFactory(BaseModel):
     Factory for a loading a generic molecule file into a list of Ligand objects.
     """
 
-    filename: str = Field(..., description="Path to the molecule file")
+    filename: Union[str, Path] = Field(..., description="Path to the molecule file")
 
     def load(self) -> list[Ligand]:
         ifs = oechem.oemolistream()
