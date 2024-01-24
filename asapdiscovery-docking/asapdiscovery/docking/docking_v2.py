@@ -233,6 +233,7 @@ class DockingResult(BaseModel):
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
         return prot
 
+    @property
     def unique_name(self):
         return self.input_pair.unique_name()
 
