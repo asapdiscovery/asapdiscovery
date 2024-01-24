@@ -71,13 +71,6 @@ class DockingInputMultiStructure(MultiStructureBase):
     def to_design_units(self) -> list[oechem.OEDesignUnit]:
         return [protein_complex.target.to_oedu() for protein_complex in self.complexes]
 
-    def unique_name(self):
-        import hashlib
-        data = ""
-        for c in self.complexes:
-            data += c.hash()
-        complexes_hash = hashlib.sha256(data.encode()).hexdigest()
-        return f"{self.ligand.compound_name}-{self.ligand.fixed_inchikey}_{complexes_hash}"
 
 
 
