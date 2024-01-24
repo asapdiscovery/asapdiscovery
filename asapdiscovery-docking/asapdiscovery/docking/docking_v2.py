@@ -50,9 +50,6 @@ class DockingInputPair(CompoundStructurePair, DockingInputBase):
     def to_design_units(self) -> list[oechem.OEDesignUnit]:
         return [self.complex.target.to_oedu()]
 
-    def unique_name(self):
-        return f"{self.complex.unique_name()}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"
-
 
 class DockingInputMultiStructure(MultiStructureBase):
     """
