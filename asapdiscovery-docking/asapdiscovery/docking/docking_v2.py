@@ -80,7 +80,6 @@ class DockingInputMultiStructure(MultiStructureBase):
         )
 
 
-
 class DockingBase(BaseModel):
     """
     Base class for running docking
