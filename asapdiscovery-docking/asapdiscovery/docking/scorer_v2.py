@@ -246,7 +246,7 @@ class FINTScorer(ScorerBase):
         results = []
         for inp in inputs:
             _, fint_score = compute_fint_score(
-                inp.posed_ligand.to_oemol(), inp.to_protein(), self.target
+                inp.to_protein(), inp.posed_ligand.to_oemol(), self.target
             )
             results.append(fint_score)
         return results
