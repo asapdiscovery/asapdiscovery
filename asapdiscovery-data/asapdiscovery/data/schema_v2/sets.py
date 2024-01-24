@@ -64,9 +64,7 @@ class MultiStructureBase(BaseModel):
 
     @property
     def unique_name(self):
-        return (
-            f"{self.ligand.compound_name}-{self.ligand.fixed_inchikey}_{self.complexes_hash}"
-        )
+        return f"{self.ligand.compound_name}-{self.ligand.fixed_inchikey}_{self.complexes_hash}"
 
 
 class CompoundMultiStructure(MultiStructureBase):
