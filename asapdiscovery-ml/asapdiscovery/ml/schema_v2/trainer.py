@@ -22,6 +22,7 @@ from mtenn.config import (
     ModelConfigBase,
     ModelType,
     SchNetModelConfig,
+    ViSNetModelConfig,
 )
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
@@ -187,6 +188,8 @@ class Trainer(BaseModel):
                     config_cls = SchNetModelConfig
                 case ModelType.e3nn:
                     config_cls = E3NNModelConfig
+                case ModelType.visnet:
+                    config_cls = ViSNetModelConfig
                 case other:
                     raise ValueError(
                         f"Can't instantiate model config for type {other}."
