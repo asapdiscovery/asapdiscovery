@@ -281,7 +281,7 @@ class LilacCPUConfig(BaseModel):
 
 class LilacGPUDaskCluster(LilacDaskCluster):
     queue: str = "gpuqueue"
-    walltime = "24h"
+    walltime = "72h"
     memory = "96 GB"
     cores = 1
 
