@@ -42,10 +42,10 @@ def test_prep_workflow(strict_stereo, core_smarts, failed, mac1_complex):
     )
 
     assert len(alchemy_dataset.input_ligands) == 1
-    assert list(alchemy_dataset.provenance.keys()) == [
+    assert set(alchemy_dataset.provenance.keys()) == {
         "OpenEyeConstrainedPoseGenerator",
         "StereoExpander",
-    ]
+    }
     assert alchemy_dataset.provenance["StereoExpander"]["expander"] == {
         "expander_type": "StereoExpander",
         "stereo_expand_defined": False,
