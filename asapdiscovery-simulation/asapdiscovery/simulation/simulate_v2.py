@@ -15,9 +15,10 @@ from asapdiscovery.docking.docking_v2 import DockingResult
 from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
-from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, app, unit
+from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
+from openmmtools.utils import get_fastest_platform
 from pydantic import (
     BaseModel,
     Field,
