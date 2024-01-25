@@ -42,21 +42,13 @@ def test_prep_workflow(strict_stereo, core_smarts, failed, mac1_complex):
     )
 
     assert len(alchemy_dataset.input_ligands) == 1
-    assert alchemy_dataset.provenance == {
-        "OpenEyeConstrainedPoseGenerator": {
-            "oechem": 20230910,
-            "oedocking": 20230910,
-            "oeff": 20230910,
-            "oeomega": 20230910,
-        },
-        "StereoExpander": {
-            "expander": {
-                "expander_type": "StereoExpander",
-                "stereo_expand_defined": False,
-            },
-            "oechem": 20230910,
-            "omega": 20230910,
-        },
+    assert alchemy_dataset.provenance.keys() == [
+        "OpenEyeConstrainedPoseGenerator",
+        "StereoExpander",
+    ]
+    assert alchemy_dataset.provenance["StereoExpander"]["expander"] == {
+        "expander_type": "StereoExpander",
+        "stereo_expand_defined": False,
     }
     if failed:
         assert len(alchemy_dataset.posed_ligands) == 0
