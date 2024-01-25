@@ -97,7 +97,7 @@ class Complex(ComplexBase):
         return f"{self.target.target_name}-{self.hash}"
 
 
-class PreppedComplex(ComplexBase):
+class PreppedComplex(Complex):
     """
     Schema for a Complex, containing both a PreppedTarget and Ligand
     In this case the PreppedTarget contains the protein and ligand.
