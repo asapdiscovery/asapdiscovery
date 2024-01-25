@@ -203,7 +203,7 @@ class LilacDaskCluster(DaskCluster):
     shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
     queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
     project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("24h", description="Walltime for the job")
+    walltime: str = Field("72h", description="Walltime for the job")
     use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
     job_extra_directives: Optional[list[str]] = Field(
         None, description="Extra directives to pass to LSF"
@@ -286,18 +286,24 @@ class LilacGPUDaskCluster(LilacDaskCluster):
     cores = 1
 
     @classmethod
-    def from_gpu(cls, gpu: GPU = GPU.GTX1080TI):
+    def from_gpu(cls, gpu: GPU = GPU.GTX1080TI, silence_logs: int = logging.DEBUG):
         gpu_config = LilacGPUConfig.from_gpu(gpu)
-        return cls(job_extra_directives=gpu_config.to_job_extra_directives())
+        return cls(
+            job_extra_directives=gpu_config.to_job_extra_directives(),
+            silence_logs=silence_logs,
+        )
 
 
 class LilacCPUDaskCluster(LilacDaskCluster):
     # uses default
 
     @classmethod
-    def from_cpu(cls, cpu: CPU = CPU.LT):
+    def from_cpu(cls, cpu: CPU = CPU.LT, silence_logs: int = logging.DEBUG):
         cpu_config = LilacCPUConfig.from_cpu(cpu)
-        return cls(job_extra_directives=cpu_config.to_job_extra_directives())
+        return cls(
+            job_extra_directives=cpu_config.to_job_extra_directives(),
+            silence_logs=silence_logs,
+        )
 
 
 def dask_cluster_from_type(

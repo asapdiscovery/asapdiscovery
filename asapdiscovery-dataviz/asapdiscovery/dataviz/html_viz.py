@@ -134,7 +134,7 @@ class HTMLVisualizer:
             self.protein = openeye_perceive_residues(
                 load_openeye_pdb(protein), preserve_all=True
             )
-        if target == "EV-A71-Capsid":
+        if target == "EV-A71-Capsid" or target == "EV-D68-Capsid":
             # because capsid has an encapsulated ligand, we need to Z-clip.
             self.slab = "viewer.setSlab(-11, 50)\n"
         else:
