@@ -120,8 +120,9 @@ class Target(DataModelAbstractBase):
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
+    @property
     def hash(self):
-        "Create a hash based on the pdb file contents"
+        """Create a hash based on the pdb file contents"""
         import hashlib
 
         return hashlib.sha256(self.data.encode()).hexdigest()
