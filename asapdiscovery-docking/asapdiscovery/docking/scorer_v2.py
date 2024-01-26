@@ -248,7 +248,11 @@ class FINTScorer(ScorerBase):
             _, fint_score = compute_fint_score(
                 inp.to_protein(), inp.posed_ligand.to_oemol(), self.target
             )
-            results.append(fint_score)
+            results.append(
+                Score.from_score_and_docking_result(
+                    fint_score, self.score_type, self.units, inp
+                )
+            )
         return results
 
 
