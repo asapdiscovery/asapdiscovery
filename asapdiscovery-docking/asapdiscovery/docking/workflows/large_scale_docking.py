@@ -125,12 +125,15 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     """
 
     output_dir = inputs.output_dir
-    if output_dir.exists() and inputs.overwrite:
-        overwritten = True
-        rmtree(output_dir)
-    else:
-        overwritten = False
-        output_dir.mkdir(exist_ok=True, parents=True)
+    new_directory = True
+    if output_dir.exists():
+        if inputs.overwrite:
+            rmtree(output_dir)
+        else:
+            new_directory = False
+
+    # this won't overwrite the existing directory
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     logger = FileLogger(
         inputs.logname,  # default root logger so that dask logging is forwarded
@@ -140,10 +143,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         level=inputs.loglevel,
     ).getLogger()
 
-    if overwritten:
-        logger.info(f"Overwriting output directory: {output_dir}")
+    if new_directory:
+        logger.info(f"Writing to / overwriting output directory: {output_dir}")
     else:
-        logger.info(f"Writing to output directory: {output_dir}")
+        logger.info(f"Writing to existing output directory: {output_dir}")
 
     logger.info(f"Running large scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
