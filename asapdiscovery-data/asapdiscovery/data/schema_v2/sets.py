@@ -59,7 +59,7 @@ class MultiStructureBase(BaseModel):
 
         data = ""
         for c in self.complexes:
-            data += c.hash()
+            data += c.hash
         return hashlib.sha256(data.encode()).hexdigest()
 
     @property

@@ -89,7 +89,7 @@ class Complex(ComplexBase):
 
     @property
     def hash(self):
-        return f"{self.target.hash()}+{self.ligand.fixed_inchikey}"
+        return f"{self.target.hash}+{self.ligand.fixed_inchikey}"
 
     @property
     def unique_name(self) -> str:
