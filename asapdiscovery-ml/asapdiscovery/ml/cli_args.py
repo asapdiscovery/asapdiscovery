@@ -835,15 +835,6 @@ def trainable_vecnorm(func):
         help="Whether to make the vector normalization trainable.",
     )(func)
 
-
-def num_heads(func):
-    return click.option(
-        "--num-heads",
-        type=int,
-        help="Number of attention heads",
-    )(func)
-
-
 def num_layers(func):
     return click.option(
         "--num-layers",
