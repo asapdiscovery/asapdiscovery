@@ -132,6 +132,13 @@ manifold_outputs:
         - szybki
       postfix: msk
 
+  - fitness-score:
+      prefix: in-silico
+      units:
+      tools:
+        - FINT
+      postfix: msk
+
 # identifiers for static data
 static_identifiers:
   - in-silico-UUID_POSTERA_API
