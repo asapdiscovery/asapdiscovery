@@ -3,8 +3,8 @@ import logging
 from pathlib import Path
 
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 
 parser = argparse.ArgumentParser(
     description="Turn a PDB complex into a PyMOL PSE file with canonical target view"

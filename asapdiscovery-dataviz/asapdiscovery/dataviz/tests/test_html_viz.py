@@ -1,6 +1,6 @@
 import pytest
-from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 
 
 # enumerate over the allowed targets, these will produce rubbish poses but

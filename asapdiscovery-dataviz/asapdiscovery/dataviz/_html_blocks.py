@@ -7,7 +7,6 @@ Pose orientation per target can be found by
 
 
 class HTMLBlockData:
-
     @classmethod
     def get_color_method(cls, method: str) -> str:
         """

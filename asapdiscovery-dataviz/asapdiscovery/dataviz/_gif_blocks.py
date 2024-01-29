@@ -1,8 +1,7 @@
 from asapdiscovery.data.postera.manifold_data_validation import (
-    TargetTags,
     TargetProteinMap,
+    TargetTags,
 )
-
 
 """
 Find these by going through GIF generation with `pse_share=True`, then inspecting

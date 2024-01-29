@@ -3,8 +3,8 @@ import logging
 from pathlib import Path
 
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 
 parser = argparse.ArgumentParser(description="Turn a trajectory into a GIF")
 
