@@ -8,7 +8,7 @@ import pathlib
 
 import pkg_resources
 import pytest
-from asapdiscovery.data.pdb import download_pdb_structure
+from asapdiscovery.data.rcsb import download_pdb_structure
 
 
 @pytest.fixture
