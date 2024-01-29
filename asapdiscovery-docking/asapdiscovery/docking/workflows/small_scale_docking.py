@@ -43,7 +43,12 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.docking.scorer_v2 import (
+    ChemGauss4Scorer,
+    FINTScorer,
+    MetaScorer,
+    MLModelScorer,
+)
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
@@ -343,6 +348,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
+
+    if target_has_fitness_data(inputs.target):
+        logger.info("Target has fitness data, adding FINT scorer")
+        scorers.append(FINTScorer(target=inputs.target))
 
     # load ml scorers
     if inputs.ml_scorers:
