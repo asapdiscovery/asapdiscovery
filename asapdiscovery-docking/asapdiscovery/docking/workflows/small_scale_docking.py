@@ -52,7 +52,7 @@ from asapdiscovery.docking.scorer_v2 import (
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from asapdiscovery.simulation.simulate_v2 import OpenMMPlatform, VanillaMDSimulatorV2
+from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from distributed import Client
 from pydantic import Field, PositiveInt, root_validator, validator
 
@@ -485,7 +485,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             rmsd_restraint = False
             rmsd_restraint_type = None
 
-        md_simulator = VanillaMDSimulatorV2(
+        md_simulator = VanillaMDSimulator(
             output_dir=md_output_dir,
             openmm_platform=inputs.md_openmm_platform,
             num_steps=inputs.md_steps,

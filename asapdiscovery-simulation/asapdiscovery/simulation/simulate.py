@@ -111,7 +111,7 @@ class SimulationResult(BaseModel):
     input_docking_result: Optional[DockingResult]
 
 
-class VanillaMDSimulatorV2(SimulatorBase):
+class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
         1, description="Collision rate of the simulation"
     )
