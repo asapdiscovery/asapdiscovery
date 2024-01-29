@@ -1,5 +1,6 @@
 import pathlib
 
+import pandas as pd
 import pytest
 from asapdiscovery.alchemy.cli.cli import alchemy
 from asapdiscovery.alchemy.schema.fec import (
@@ -282,3 +283,148 @@ def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
         "│ fakenetwork-asap-alchemy-testing │ 1    │ 2    │ 3     │ 0    │ 0     │ 0    │"
         in result.stdout
     )
+
+
+def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
+    """Test predicting the absolute and relative free energies with no experimental data, interactive reports should
+    not be generated in this mode.
+    """
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "predict",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Loaded FreeEnergyCalculationNetwork from" in result.stdout
+        assert "Absolute predictions written" in result.stdout
+        assert "Relative predictions written" in result.stdout
+        # load the datasets and check the results match what's expected
+        absolute_dataframe = pd.read_csv(
+            "predictions-absolute-2023-08-07-tyk2-mini-test.csv"
+        )
+        mol_data = absolute_dataframe.iloc[0]
+        assert mol_data["SMILES"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert mol_data["label"] == "lig_ejm_31"
+        assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-0.1332, abs=1e-4)
+        assert mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+            0.0757, abs=1e-4
+        )
+
+        relative_dataframe = pd.read_csv(
+            "predictions-relative-2023-08-07-tyk2-mini-test.csv"
+        )
+        relative_mol_data = relative_dataframe.iloc[0]
+        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert (
+            relative_mol_data["SMILES_B"]
+            == "O=C(Nc1ccnc(NC(=O)C2CCC2)c1)c1c(Cl)cccc1Cl"
+        )
+        assert relative_mol_data["labelA"] == "lig_ejm_31"
+        assert relative_mol_data["labelB"] == "lig_ejm_47"
+        assert relative_mol_data["DDG (kcal/mol) (FECS)"] == pytest.approx(
+            0.1115, abs=1e-4
+        )
+        assert relative_mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+            0.1497, abs=1e-4
+        )
+
+
+def test_alchemy_predict_experimental_data(
+    tyk2_result_network, tmpdir, tyk2_reference_data
+):
+    """
+    Test predicting the absolute and relative free energies with experimental data, the predictions should be shifted
+    by the experimental mean to get them in the correct energy range and the interactive reports should be generated.
+    """
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+
+        result = runner.invoke(
+            alchemy, ["predict", "-rd", tyk2_reference_data, "-ru", "IC50"]
+        )
+        assert result.exit_code == 0
+        assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
+        assert (
+            "Absolute report written to predictions-absolute-2023-08-07-tyk2-mini-test.html"
+            in result.stdout
+        )
+        assert (
+            "Relative report written to predictions-relative-2023-08-07-tyk2-mini-test.html"
+            in result.stdout
+        )
+        # load the datasets and check the results match what's expected
+        absolute_dataframe = pd.read_csv(
+            "predictions-absolute-2023-08-07-tyk2-mini-test.csv"
+        )
+        mol_data = absolute_dataframe.iloc[0]
+        assert mol_data["SMILES"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert mol_data["label"] == "lig_ejm_31"
+        # make sure the results have been shifted to match the experimental range
+        assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-10.2182, abs=1e-4)
+        assert mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+            0.0757, abs=1e-4
+        )
+        # make sure the experimental data has been added
+        assert mol_data["DG (kcal/mol) (EXPT)"] == pytest.approx(-9.5739, abs=1e-4)
+        # make sure the prediction error has been calculated
+        assert mol_data["prediction error (kcal/mol)"] == pytest.approx(
+            0.6443, abs=1e-4
+        )
+
+        relative_dataframe = pd.read_csv(
+            "predictions-relative-2023-08-07-tyk2-mini-test.csv"
+        )
+        relative_mol_data = relative_dataframe.iloc[0]
+        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert (
+            relative_mol_data["SMILES_B"]
+            == "O=C(Nc1ccnc(NC(=O)C2CCC2)c1)c1c(Cl)cccc1Cl"
+        )
+        assert relative_mol_data["labelA"] == "lig_ejm_31"
+        assert relative_mol_data["labelB"] == "lig_ejm_47"
+        # these should not be changed as they do not need shifting
+        assert relative_mol_data["DDG (kcal/mol) (FECS)"] == pytest.approx(
+            0.1115, abs=1e-4
+        )
+        assert relative_mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+            0.1497, abs=1e-4
+        )
+        # make sure the experimental data has been added
+        assert relative_mol_data["DDG (kcal/mol) (EXPT)"] == pytest.approx(
+            -0.1542, abs=1e-4
+        )
+        assert relative_mol_data["prediction error (kcal/mol)"] == pytest.approx(
+            0.2657, abs=1e-4
+        )
+
+
+def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
+    """Make sure an error is raised if the units can not be found in the csv headings"""
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+        with pytest.raises(
+            RuntimeError,
+            match="Could not determine the assay tag from the provided units pIC50",
+        ):
+            # use the wrong unit heading
+            runner.invoke(
+                alchemy,
+                ["predict", "-rd", tyk2_reference_data, "-ru", "pIC50"],
+                catch_exceptions=False,  # let the exception buble up so pytest can check it
+            )

@@ -451,3 +451,120 @@ def restart(network: str, verbose: bool, tasks):
         click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
     else:
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
+
+
+@alchemy.command()
+@click.option(
+    "-n",
+    "--network",
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
+    help="The name of the JSON file containing a planned FEC network with raw results from alchemiscale.",
+    default="result_network.json",
+    show_default=True,
+)
+@click.option(
+    "-rd",
+    "--reference-dataset",
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
+    help="The name of a csv file containing reference experimental data to be used in the predictions.",
+)
+@click.option(
+    "-ru",
+    "--reference-units",
+    type=click.Choice(["pIC50", "IC50"]),
+    help="The units of the reference experimental data provided in the csv or saved as an SDTag on the ligand.",
+    default="pIC50",
+    show_default=True,
+)
+def predict(
+    network: str, reference_units: str, reference_dataset: Optional[str] = None
+):
+    """
+    Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
+    results to the relevant energy range.
+    """
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.predict import (
+        create_absolute_report,
+        create_relative_report,
+        get_data_from_femap,
+    )
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from rich import pretty
+    from rich.padding import Padding
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    result_network = FreeEnergyCalculationNetwork.from_file(network)
+
+    message = Padding(
+        f"Loaded FreeEnergyCalculationNetwork from [repr.filename]{network}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    predict_status = console.status("Calculating absolute free energies")
+    predict_status.start()
+
+    ligands = result_network.network.to_openfe_ligands()
+    # convert to cinnabar fepmap to do the prediction via MLE
+    fe_map = result_network.results.to_fe_map()
+    fe_map.generate_absolute_values()
+    absolute_df, relative_df = get_data_from_femap(
+        fe_map=fe_map,
+        ligands=ligands,
+        assay_units=reference_units,
+        reference_dataset=reference_dataset,
+    )
+    # write the csv to file to be uploaded to postera later
+    absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"
+    relative_path = f"predictions-relative-{result_network.dataset_name}.csv"
+    absolute_df.to_csv(absolute_path)
+    relative_df.to_csv(relative_path)
+    predict_status.stop()
+    message = Padding(
+        f"Absolute predictions written to [repr.filename]{absolute_path}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+    message = Padding(
+        f"Relative predictions written to [repr.filename]{relative_path}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    if reference_dataset is not None:
+        report_status = console.status("Generating interactive reports")
+        report_status.start()
+        # we can only make these reports currently with experimental data
+        # TODO update once we have the per replicate estimate and error
+        absolute_layout = create_absolute_report(dataframe=absolute_df)
+        absolute_path = f"predictions-absolute-{result_network.dataset_name}.html"
+        relative_path = f"predictions-relative-{result_network.dataset_name}.html"
+        absolute_layout.save(
+            absolute_path,
+            title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}",
+            embed=True,
+        )
+
+        relative_layout = create_relative_report(dataframe=relative_df)
+        relative_layout.save(
+            relative_path,
+            title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}",
+            embed=True,
+        )
+        report_status.stop()
+
+        message = Padding(
+            f"Absolute report written to [repr.filename]{absolute_path}[/repr.filename]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+        message = Padding(
+            f"Relative report written to [repr.filename]{relative_path}[/repr.filename]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
