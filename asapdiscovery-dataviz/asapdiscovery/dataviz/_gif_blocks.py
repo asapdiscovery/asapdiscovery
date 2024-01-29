@@ -1,3 +1,7 @@
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    TargetProteinMap,
+)
 
 
 """
