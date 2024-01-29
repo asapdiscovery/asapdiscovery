@@ -24,6 +24,9 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
+# guard for visnet import. Refer MTENN issue #42
+from mtenn.conversion_utils.visnet import HAS_VISNET
+
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
 
@@ -153,9 +156,10 @@ class Trainer(BaseModel):
     @validator("model_config")
     def check_model_type_visnet_import(cls, v):
         # VisNet requires PyG >=2.5.0. Currently only in PyG-nightly
+        # Refer MTENN issue #42
         if (
             isinstance(v, ViSNetModelConfig)
-            and not mtenn.conversion_utils.visnet.HAS_VISNET
+            and not HAS_VISNET
         ):
             raise ImportError(
                 "Can't import ViSNetModelConfig without mtenn.conversion_utils.visnet."
