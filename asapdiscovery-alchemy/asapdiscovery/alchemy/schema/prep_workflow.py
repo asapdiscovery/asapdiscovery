@@ -116,6 +116,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         dataset_name: str,
         ligands: list[Ligand],
         reference_complex: PreppedComplex,
+        processors: int = 1
     ) -> AlchemyDataSet:
         """
         Run the set of input ligands through the state enumeration and pose generation workflow to create a set of posed
@@ -126,6 +127,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         dataset_name: The name which should be given to this dataset
         ligands: The list of input ligands which should be run through the workflow
         reference_complex: The prepared target crystal structure with a reference ligand which the poses should be constrained to.
+        processors: The number of parallel processors that should be used to run the workflow.
 
         Returns
         -------
@@ -179,6 +181,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             prepared_complex=reference_complex,
             ligands=ligands,
             core_smarts=self.core_smarts,
+            processors=processors
         )
         posed_ligands = pose_result.posed_ligands
         provenance[self.pose_generator.type] = self.pose_generator.provenance()

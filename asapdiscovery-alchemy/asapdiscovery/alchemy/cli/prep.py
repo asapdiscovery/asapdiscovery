@@ -75,12 +75,21 @@ def create(filename: str, core_smarts: str):
     type=click.STRING,
     help="The SMARTS which should be used to select which atoms to constrain to the reference structure.",
 )
+@click.option(
+    "-p",
+    "--processors",
+    default=1,
+    show_default=True,
+    type=click.INT,
+    help="The number of processors which can be used to run the workflow in parallel."
+)
 def run(
     dataset_name: str,
     ligands: str,
     receptor_complex: str,
     factory_file: Optional[str] = None,
     core_smarts: Optional[str] = None,
+    processors: int = 1
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -94,6 +103,7 @@ def run(
     factory_file: The name of the JSON file with the configured AlchemyPrepWorkflow, if not supplied the default will be
         used but a core smarts must be provided.
     core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained. Required if the factory file is not supplied.
+    processors: The number of processors which can be used to run the workflow in parallel.
     """
     import pathlib
 
@@ -139,7 +149,7 @@ def run(
     console.print(message)
 
     alchemy_dataset = factory.create_alchemy_dataset(
-        dataset_name=dataset_name, ligands=asap_ligands, reference_complex=ref_complex
+        dataset_name=dataset_name, ligands=asap_ligands, reference_complex=ref_complex, processors=processors
     )
     output_folder = pathlib.Path(dataset_name)
     output_folder.mkdir(parents=True, exist_ok=True)
