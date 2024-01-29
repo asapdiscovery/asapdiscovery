@@ -26,8 +26,8 @@ from asapdiscovery.ml.cli_args import (
     struct_ds_args,
     trainer_args,
     trainer_config_cache,
-    wandb_args,
     visnet_args,
+    wandb_args,
 )
 from asapdiscovery.ml.schema_v2.config import (
     DatasetConfig,
@@ -841,7 +841,7 @@ def build_visnet(
     trainable_vecnorm: bool | None = None,
     num_heads: int | None = None,
     num_layers: int | None = None,
-    hidden_channels: int | None = None,    
+    hidden_channels: int | None = None,
     num_rbf: int | None = None,
     trainable_rbf: bool | None = None,
     max_z: int | None = None,
@@ -1817,7 +1817,7 @@ def build_and_train_visnet(
     trainable_vecnorm: bool | None = None,
     num_heads: int | None = None,
     num_layers: int | None = None,
-    hidden_channels: int | None = None,    
+    hidden_channels: int | None = None,
     num_rbf: int | None = None,
     trainable_rbf: bool | None = None,
     max_z: int | None = None,
@@ -2021,7 +2021,6 @@ def build_and_train_visnet(
     t.train()
 
 
-
 @build_ds.command(name="gat")
 @graph_ds_args
 @grouped
@@ -2119,7 +2118,7 @@ def build_ds_e3nn(
 
 @build_ds.command(name="visnet")
 @graph_ds_args
-@struct_ds_args #TODO: check what this on abouts
+@struct_ds_args  # TODO: check what this on abouts
 @grouped
 @ds_cache_overwrite
 @ds_config_cache_overwrite
@@ -2141,9 +2140,9 @@ def build_ds_visnet(
         cpd_regex=cpd_regex,
         ds_cache=ds_cache,
         ds_config_cache=ds_config_cache,
-        is_structural=True, #TODO: check what this on about
+        is_structural=True,  # TODO: check what this on about
         is_grouped=grouped,
-        for_e3nn=False, #TODO: check what this on about
+        for_e3nn=False,  # TODO: check what this on about
         config_overwrite=overwrite_ds_config_cache,
         pkl_overwrite=overwrite_ds_cache,
     )
@@ -2212,7 +2211,7 @@ def _build_ds_config(
     ds_config_cache,
     is_structural,
     is_grouped,
-    for_e3nn, 
+    for_e3nn,
     config_overwrite,
     pkl_overwrite,
 ):
@@ -2290,6 +2289,3 @@ def _build_ds_config(
         ds_config_cache.write_text(ds_config.json())
 
     return ds_config
-
-
-

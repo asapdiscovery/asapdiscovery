@@ -791,16 +791,16 @@ def visnet_args(func):
     for fn in [
         lmax,
         vecnorm_type,
-        trainable_vecnorm, 
+        trainable_vecnorm,
         num_heads,
         num_layers,
-        hidden_channels,    
+        hidden_channels,
         num_rbf,
-        trainable_rbf, 
+        trainable_rbf,
         max_z,
-        cutoff, 
+        cutoff,
         max_num_neighbors,
-        vertex, 
+        vertex,
         reduce_op,
         mean,
         std,
@@ -810,24 +810,23 @@ def visnet_args(func):
 
     return func
 
+
 # DON'T TRUST ANYTHING HERE!
 def lmax(func):
     return click.option(
         "--lmax",
         type=int,
-        help=(
-            "The maximum degree of the spherical harmonics"
-        ),
+        help=("The maximum degree of the spherical harmonics"),
     )(func)
+
 
 def vecnorm_type(func):
     return click.option(
         "--vecnorm-type",
         type=str,
-        help=(
-            "Type of vector normalization to use. ['max_min', None]"
-        ),
+        help=("Type of vector normalization to use. ['max_min', None]"),
     )(func)
+
 
 def trainable_vecnorm(func):
     return click.option(
@@ -836,12 +835,14 @@ def trainable_vecnorm(func):
         help="Whether to make the vector normalization trainable.",
     )(func)
 
+
 def num_heads(func):
     return click.option(
         "--num-heads",
         type=int,
         help="Number of attention heads",
     )(func)
+
 
 def num_layers(func):
     return click.option(
@@ -850,12 +851,14 @@ def num_layers(func):
         help="Number of network layers.",
     )(func)
 
+
 def num_rbf(func):
     return click.option(
         "--num-rbf",
         type=int,
         help="Number of radial basis functions.",
     )(func)
+
 
 def trainable_rbf(func):
     return click.option(
@@ -864,12 +867,14 @@ def trainable_rbf(func):
         help="Whether to make the radial basis functions trainable.",
     )(func)
 
+
 def max_z(func):
     return click.option(
         "--max-z",
         type=int,
         help="Maximum atomic number.",
     )(func)
+
 
 def vertex(func):
     return click.option(
@@ -878,12 +883,14 @@ def vertex(func):
         help="Whether to use the vertex geometric features.",
     )(func)
 
+
 def reduce_op(func):
     return click.option(
         "--reduce-op",
         type=str,
         help="Reduce operation. ['sum', 'mean']",
     )(func)
+
 
 def derivative(func):
     return click.option(
@@ -892,8 +899,8 @@ def derivative(func):
         help="Whether to use the derivative. NOT USED.",
     )(func)
 
-################################################################################
 
+################################################################################
 
 
 ################################################################################
