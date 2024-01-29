@@ -97,7 +97,7 @@ class Complex(ComplexBase):
         return f"{self.target.target_name}-{self.hash}"
 
 
-class PreppedComplex(Complex):
+class PreppedComplex(ComplexBase):
     """
     Schema for a Complex, containing both a PreppedTarget and Ligand
     In this case the PreppedTarget contains the protein and ligand.
@@ -155,3 +155,8 @@ class PreppedComplex(Complex):
         prep_kwargs["ligand_chain"] = complex.ligand_chain
         prepped_complexs = ProteinPrepper(**prep_kwargs).prep(inputs=[complex])
         return prepped_complexs[0]
+
+    @property
+    def hash(self):
+        # Using the target_hash instead hashing the OEDU bytes because prepping is stochastic
+        return f"{self.target.target_hash}+{self.ligand.fixed_inchikey}"
