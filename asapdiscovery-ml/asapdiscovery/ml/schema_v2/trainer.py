@@ -150,6 +150,15 @@ class Trainer(BaseModel):
 
         return p
 
+    @validator("model_config")
+    def check_model_type_visnet_import(cls, v):
+        if isinstance(v, ViSNetModelConfig) and not mtenn.conversion_utils.visnet.HAS_VISNET_FLAG:
+            raise ImportError(
+                "Can't import ViSNetModelConfig without mtenn.conversion_utils.visnet."
+            )
+        else:
+            return v
+            
     @validator(
         "optimizer_config",
         "model_config",
@@ -445,6 +454,7 @@ class Trainer(BaseModel):
 
         # Build the Model
         self.model = self.model_config.build().to(self.device)
+
 
         # Build the Optimizer
         self.optimizer = self.optimizer_config.build(self.model.parameters())
