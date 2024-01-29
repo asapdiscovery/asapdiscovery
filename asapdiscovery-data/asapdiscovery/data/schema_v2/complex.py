@@ -24,17 +24,14 @@ logger = logging.getLogger(__name__)
 
 class ComplexBase(DataModelAbstractBase):
     @abc.abstractmethod
-    @property
     def target(self) -> Target | PreppedTarget:
         ...
 
     @abc.abstractmethod
-    @property
     def ligand(self) -> Ligand:
         ...
 
     @abc.abstractmethod
-    @property
     def hash(self) -> str:
         ...
 
