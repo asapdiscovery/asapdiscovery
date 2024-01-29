@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 import logging
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,21 @@ logger = logging.getLogger(__name__)
 
 
 class ComplexBase(DataModelAbstractBase):
+    @abc.abstractmethod
+    @property
+    def target(self) -> Target | PreppedTarget:
+        ...
+
+    @abc.abstractmethod
+    @property
+    def ligand(self) -> Ligand:
+        ...
+
+    @abc.abstractmethod
+    @property
+    def hash(self) -> str:
+        ...
+
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ComplexBase):
             return NotImplemented
@@ -31,6 +47,11 @@ class ComplexBase(DataModelAbstractBase):
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+    @property
+    def unique_name(self) -> str:
+        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
+        return f"{self.target.target_name}-{self.hash}"
 
 
 class Complex(ComplexBase):
@@ -90,11 +111,6 @@ class Complex(ComplexBase):
     @property
     def hash(self):
         return f"{self.target.hash}+{self.ligand.fixed_inchikey}"
-
-    @property
-    def unique_name(self) -> str:
-        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
-        return f"{self.target.target_name}-{self.hash}"
 
 
 class PreppedComplex(ComplexBase):
