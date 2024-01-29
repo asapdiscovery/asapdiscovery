@@ -29,10 +29,12 @@ from asapdiscovery.data.plip import (
     make_color_res_fitness,
     make_color_res_subpockets,
 )
-from asapdiscovery.data.postera.manifold_data_validation import TargetVirusMap
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    TargetVirusMap,
+)
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.modeling.modeling import superpose_molecule
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 from ._html_blocks import HTMLBlockData
 
