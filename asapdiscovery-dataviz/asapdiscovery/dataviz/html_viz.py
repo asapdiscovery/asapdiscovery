@@ -32,6 +32,7 @@ from asapdiscovery.data.plip import (
 from asapdiscovery.data.postera.manifold_data_validation import TargetVirusMap
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.modeling.modeling import superpose_molecule
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 from ._html_blocks import HTMLBlockData
 
@@ -289,7 +290,8 @@ class HTMLVisualizer:
                             )
                         with a.div(klass="dropdown-content"):
                             a.a(
-                                href="#", _t="⚪ : No amino acid substitutions tolerated"
+                                href="#",
+                                _t="⚪ : No amino acid substitutions tolerated",
                             )
                             a.a(
                                 href="#",
