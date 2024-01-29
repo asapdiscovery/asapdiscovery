@@ -40,7 +40,12 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.docking.scorer_v2 import (
+    ChemGauss4Scorer,
+    FINTScorer,
+    MetaScorer,
+    MLModelScorer,
+)
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
@@ -286,6 +291,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
+    if n_results == 0:
+        raise ValueError("No docking results generated, exiting")
     del pairs
 
     if inputs.write_final_sdf:
@@ -299,6 +306,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
+
+    if target_has_fitness_data(inputs.target):
+        logger.info("Target has fitness data, adding FINT scorer")
+        scorers.append(FINTScorer(target=inputs.target))
 
     # load ml scorers
     if inputs.ml_scorers:
