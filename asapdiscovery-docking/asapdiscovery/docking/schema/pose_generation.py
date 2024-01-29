@@ -2,7 +2,14 @@ import abc
 from enum import Enum
 from typing import Any, Literal, Optional
 
-from asapdiscovery.data.openeye import oechem, oedocking, oeff, oeomega, set_SD_data, get_SD_data
+from asapdiscovery.data.openeye import (
+    get_SD_data,
+    oechem,
+    oedocking,
+    oeff,
+    oeomega,
+    set_SD_data,
+)
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
@@ -66,7 +73,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         prepared_complex: PreppedComplex,
         ligands: list[Ligand],
         core_smarts: Optional[str] = None,
-        processors: int = 1
+        processors: int = 1,
     ) -> tuple[list[oechem.OEMol], list[oechem.OEMol]]:
         """The main worker method which should generate ligand poses in the receptor using the reference ligand where required."""
         ...
@@ -76,7 +83,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         prepared_complex: PreppedComplex,
         ligands: list[Ligand],
         core_smarts: Optional[str] = None,
-        processors: int = 1
+        processors: int = 1,
     ) -> PosedLigands:
         """
         Generate poses for the given list of molecules in the target receptor.
@@ -99,7 +106,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             prepared_complex=prepared_complex,
             ligands=ligands,
             core_smarts=core_smarts,
-            processors=processors
+            processors=processors,
         )
         # store the results, unpacking each posed conformer to a separate molecule
         result = PosedLigands()
@@ -340,10 +347,10 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         return omega_generator
 
     def _generate_pose(
-            self,
-            target_ligand: oechem.OEMol,
-            reference_ligand: oechem.OEMol,
-            core_smarts: Optional[str] = None
+        self,
+        target_ligand: oechem.OEMol,
+        reference_ligand: oechem.OEMol,
+        core_smarts: Optional[str] = None,
     ) -> oechem.OEMol:
         """
         Use the configured openeye Omega instance to generate conformers for the target ligand.
@@ -380,7 +387,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         oechem.OEAddExplicitHydrogens(target_ligand)
 
         if (target_ligand.GetDimension() != 3) or (
-                return_code != oeomega.OEOmegaReturnCode_Success
+            return_code != oeomega.OEOmegaReturnCode_Success
         ):
             # add the failure message as an SD tag, should be able to see visually if the molecule is 2D
             set_SD_data(
@@ -394,7 +401,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         prepared_complex: PreppedComplex,
         ligands: list[Ligand],
         core_smarts: Optional[str] = None,
-        processors: int = 1
+        processors: int = 1,
     ) -> tuple[list[oechem.OEMol], list[oechem.OEMol]]:
         """
         Use openeye oeomega to generate constrained poses for the input ligands. The core smarts is used to decide
@@ -414,7 +421,15 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         with ProcessPoolExecutor(max_workers=processors) as pool:
             work_list = [
-                pool.submit(self._generate_pose, **{"target_ligand": oechem.OEMol(mol.to_oemol()), "core_smarts": core_smarts, "reference_ligand": reference_ligand}) for mol in ligands
+                pool.submit(
+                    self._generate_pose,
+                    **{
+                        "target_ligand": oechem.OEMol(mol.to_oemol()),
+                        "core_smarts": core_smarts,
+                        "reference_ligand": reference_ligand,
+                    },
+                )
+                for mol in ligands
             ]
             for work in as_completed(work_list):
                 target_ligand = work.result()
@@ -450,7 +465,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         0.2,
         description="Retain only the conformations out of 'numConfs' after embedding that are at least this far apart from each other. RMSD is computed on the heavy atoms.",
     )
-    mcs_timeout: PositiveFloat = Field(1, description="The timeout in seconds to run the mcs search in RDKit.")
+    mcs_timeout: PositiveFloat = Field(
+        1, description="The timeout in seconds to run the mcs search in RDKit."
+    )
 
     def provenance(self) -> dict[str, Any]:
         import openff.toolkit
@@ -545,10 +562,10 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         return coords_map, index_map
 
     def _generate_pose(
-            self,
-            target_ligand: Chem.Mol,
-            core_ligand: Chem.Mol,
-            core_smarts: Optional[str] = None
+        self,
+        target_ligand: Chem.Mol,
+        core_ligand: Chem.Mol,
+        core_smarts: Optional[str] = None,
     ) -> Chem.Mol:
         """
         Generate the poses for the target molecule while restraining the MCS to the core ligand.
@@ -614,7 +631,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 for matched_index, core_index in index_map:
                     coord = conf.GetAtomPosition(core_index)
                     coord_index = (
-                            ff.AddExtraPoint(coord.x, coord.y, coord.z, fixed=True) - 1
+                        ff.AddExtraPoint(coord.x, coord.y, coord.z, fixed=True) - 1
                     )
                     ff.AddDistanceConstraint(
                         coord_index, matched_index, 0, 0, 100.0 * 100
@@ -639,7 +656,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         prepared_complex: PreppedComplex,
         ligands: list[Ligand],
         core_smarts: Optional[str] = None,
-        processors: int = 1
+        processors: int = 1,
     ) -> tuple[list[oechem.OEMol], list[oechem.OEMol]]:
         """
         Use RDKit to embed multiple conformers which are constrained to the template molecule.
@@ -654,6 +671,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             Two lists the first of the successfully posed ligands and ligands which failed.
         """
         from concurrent.futures import ProcessPoolExecutor, as_completed
+
         from openff.toolkit import Molecule
 
         core_ligand = prepared_complex.ligand.to_rdkit()
@@ -667,11 +685,21 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         with ProcessPoolExecutor(max_workers=processors) as pool:
             work_list = [
-                pool.submit(self._generate_pose, **{"target_ligand": Chem.AddHs(mol.to_rdkit()), "core_ligand": core_ligand, "core_smarts": core_smarts})  for mol in ligands
+                pool.submit(
+                    self._generate_pose,
+                    **{
+                        "target_ligand": Chem.AddHs(mol.to_rdkit()),
+                        "core_ligand": core_ligand,
+                        "core_smarts": core_smarts,
+                    },
+                )
+                for mol in ligands
             ]
             for work in as_completed(work_list):
                 target_ligand = work.result()
-                off_mol = Molecule.from_rdkit(target_ligand, allow_undefined_stereo=True)
+                off_mol = Molecule.from_rdkit(
+                    target_ligand, allow_undefined_stereo=True
+                )
                 # we need to transfer the properties which would be lost
                 openeye_mol = off_mol.to_openeye()
                 if target_ligand.GetNumConformers() > 0:

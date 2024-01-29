@@ -81,7 +81,7 @@ def create(filename: str, core_smarts: str):
     default=1,
     show_default=True,
     type=click.INT,
-    help="The number of processors which can be used to run the workflow in parallel."
+    help="The number of processors which can be used to run the workflow in parallel.",
 )
 def run(
     dataset_name: str,
@@ -89,7 +89,7 @@ def run(
     receptor_complex: str,
     factory_file: Optional[str] = None,
     core_smarts: Optional[str] = None,
-    processors: int = 1
+    processors: int = 1,
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -149,7 +149,10 @@ def run(
     console.print(message)
 
     alchemy_dataset = factory.create_alchemy_dataset(
-        dataset_name=dataset_name, ligands=asap_ligands, reference_complex=ref_complex, processors=processors
+        dataset_name=dataset_name,
+        ligands=asap_ligands,
+        reference_complex=ref_complex,
+        processors=processors,
     )
     output_folder = pathlib.Path(dataset_name)
     output_folder.mkdir(parents=True, exist_ok=True)

@@ -116,7 +116,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         dataset_name: str,
         ligands: list[Ligand],
         reference_complex: PreppedComplex,
-        processors: int = 1
+        processors: int = 1,
     ) -> AlchemyDataSet:
         """
         Run the set of input ligands through the state enumeration and pose generation workflow to create a set of posed
@@ -181,7 +181,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             prepared_complex=reference_complex,
             ligands=ligands,
             core_smarts=self.core_smarts,
-            processors=processors
+            processors=processors,
         )
         posed_ligands = pose_result.posed_ligands
         provenance[self.pose_generator.type] = self.pose_generator.provenance()
