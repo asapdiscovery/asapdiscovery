@@ -16,7 +16,7 @@ from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.simulation.simulate_v2 import SimulationResult
+from asapdiscovery.simulation.simulate import SimulationResult
 from pydantic import BaseModel, Field, PositiveInt
 
 logger = logging.getLogger(__name__)
