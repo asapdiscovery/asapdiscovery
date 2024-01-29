@@ -111,9 +111,9 @@ class HTMLVisualizer:
                 if isinstance(pose, oechem.OEMolBase):
                     mol = pose.CreateCopy()
                 else:
-                    mol_fact = MolFileFactory.from_file(
-                        str(pose)
-                    ).ligands  # in this way we allow multiple ligands per protein, e.g. for viewing fragments
+                    mol_fact = MolFileFactory(
+                        filename=str(pose)
+                    ).load()  # in this way we allow multiple ligands per protein, e.g. for viewing fragments
                     mol = [mol.to_oemol() for mol in mol_fact]
                     for m in mol:
                         oechem.OESuppressHydrogens(

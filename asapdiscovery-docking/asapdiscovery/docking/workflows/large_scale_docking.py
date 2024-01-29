@@ -196,8 +196,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     else:
         # load from file
         logger.info(f"Loading ligands from file: {inputs.ligands}")
-        molfile = MolFileFactory.from_file(inputs.ligands)
-        query_ligands = molfile.ligands
+        molfile = MolFileFactory(filename=inputs.ligands)
+        query_ligands = molfile.load()
 
     # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:

@@ -119,7 +119,7 @@ def run(
         factory = AlchemyPrepWorkflow(core_smarts=core_smarts)
 
     # load the molecules
-    asap_ligands = MolFileFactory.from_file(filename=ligands).ligands
+    asap_ligands = MolFileFactory(filename=ligands).load()
 
     message = Padding(
         f"Loaded {len(asap_ligands)} ligands from [repr.filename]{ligands}[/repr.filename]",
