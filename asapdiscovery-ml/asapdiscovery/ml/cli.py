@@ -836,7 +836,6 @@ def build_visnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
-
     lmax: int | None = None,
     vecnorm_type: str | None = None,
     trainable_vecnorm: bool | None = None,
@@ -853,7 +852,6 @@ def build_visnet(
     mean: float | None = None,
     std: float | None = None,
     derivative: bool | None = None,
-
     es_type: EarlyStoppingType | None = None,
     es_patience: int | None = None,
     es_n_check: int | None = None,
@@ -931,7 +929,6 @@ def build_visnet(
             "pred_km": pred_km,
             "comb_substrate": comb_substrate,
             "comb_km": comb_km,
-
             "lmax": lmax,
             "vecnorm_type": vecnorm_type,
             "trainable_vecnorm": trainable_vecnorm,
@@ -1831,7 +1828,6 @@ def build_and_train_visnet(
     mean: float | None = None,
     std: float | None = None,
     derivative: bool | None = None,
-
     es_type: EarlyStoppingType | None = None,
     es_patience: int | None = None,
     es_n_check: int | None = None,
