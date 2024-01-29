@@ -201,3 +201,10 @@ class PreppedTarget(DataModelAbstractBase):
         # As advised by Alex <https://github.com/choderalab/asapdiscovery/pull/608#discussion_r1388067468>
         openeye_perceive_residues(oe_receptor)
         save_openeye_pdb(oe_receptor, pdb_fn=filename)
+
+    @property
+    def hash(self):
+        """Create a hash based on the pdb file contents"""
+        import hashlib
+
+        return hashlib.sha256(self.data).hexdigest()
