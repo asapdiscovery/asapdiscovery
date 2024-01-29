@@ -1,11 +1,11 @@
 import pytest
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.dataviz.viz_targets import VizTargets
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 
 # enumerate over the allowed targets, these will produce rubbish poses but
 # that's fine for testing, mostly just testing that they will run
-@pytest.mark.parametrize("target", VizTargets.get_allowed_targets())
+@pytest.mark.parametrize("target", TargetTags.get_values())
 def test_html_viz_subpockets(pose, protein, target, tmp_path):
     html_visualizer = HTMLVisualizer(
         poses=[pose],

@@ -4,17 +4,17 @@ from pathlib import Path
 
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
-from asapdiscovery.dataviz.viz_targets import VizTargets
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 
 parser = argparse.ArgumentParser(
     description="Turn a PDB complex into a PyMOL PSE file with canonical target view"
 )
 
 parser.add_argument(
-    "--viz-target",
+    "--target",
     type=str,
     required=True,
-    choices=VizTargets.get_allowed_targets(),
+    choices=TargetTags.get_values(),
     help="Target to write visualizations for",
 )
 
