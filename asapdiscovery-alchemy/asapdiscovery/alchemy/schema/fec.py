@@ -1,3 +1,4 @@
+import warnings
 from collections import Counter
 from typing import Any, Literal, Optional
 
@@ -15,7 +16,6 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     SolvationSettings,
     SystemSettings,
 )
-import warnings
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
