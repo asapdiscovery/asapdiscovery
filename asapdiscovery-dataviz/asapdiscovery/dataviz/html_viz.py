@@ -210,6 +210,9 @@ class HTMLVisualizer:
                 opts,
             )
 
+        oechem.OESuppressHydrogens(
+            pose, True, True
+        )  # retain polar hydrogens and hydrogens on chiral centers
         # now prep the coloring function.
         surface_coloring = self.get_color_dict()
 
