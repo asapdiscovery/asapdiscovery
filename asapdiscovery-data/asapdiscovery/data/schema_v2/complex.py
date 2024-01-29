@@ -23,17 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 class ComplexBase(DataModelAbstractBase):
-    @abc.abstractmethod
-    def target(self) -> Target | PreppedTarget:
-        ...
-
-    @abc.abstractmethod
-    def ligand(self) -> Ligand:
-        ...
-
-    @abc.abstractmethod
-    def hash(self) -> str:
-        ...
+    """
+    Base class for complexes
+    """
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ComplexBase):
