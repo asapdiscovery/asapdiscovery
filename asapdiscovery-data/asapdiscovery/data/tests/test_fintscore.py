@@ -15,10 +15,10 @@ def test_fint_score():
                 )
             )
         ),
-        MolFileFactory.from_file(
-            Path(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
+        MolFileFactory(
+            filename=Path(fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf"))
         )
-        .ligands[0]
+        .load()[0]
         .to_oemol(),
         "SARS-CoV-2-Mpro",
     )
