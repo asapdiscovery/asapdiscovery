@@ -789,7 +789,6 @@ def build_e3nn(
             trainer_config_cache.write_text(t.json())
 
 
-#FIXME: modify to ViSNet
 @build.command(name="visnet")
 @output_dir
 @trainer_config_cache
@@ -1769,7 +1768,6 @@ def build_and_train_e3nn(
     t.train()
 
 
-#FIXME: modify to ViSNet
 @build_and_train.command(name="visnet")
 @output_dir
 @trainer_config_cache
@@ -1817,8 +1815,6 @@ def build_and_train_visnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
-
-    # TODO: check ViSNet params
     lmax: int | None = None,
     vecnorm_type: str | None = None,
     trainable_vecnorm: bool | None = None,
@@ -1898,7 +1894,6 @@ def build_and_train_visnet(
             "rho": rho,
         }
 
-        # TODO: check missing/extra params
         model_config = {
             "cache": model_config_cache,
             "overwrite_cache": overwrite_model_config_cache,
@@ -1915,7 +1910,6 @@ def build_and_train_visnet(
             "pred_km": pred_km,
             "comb_substrate": comb_substrate,
             "comb_km": comb_km,
-
             "lmax": lmax,
             "vecnorm_type": vecnorm_type,
             "trainable_vecnorm": trainable_vecnorm,

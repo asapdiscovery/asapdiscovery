@@ -786,7 +786,6 @@ def num_nodes(func):
 
 
 ################################################################################
-# TODO: Add args for ViSNet
 # order in cli_args need to match order in cli.py
 def visnet_args(func):
     for fn in [
