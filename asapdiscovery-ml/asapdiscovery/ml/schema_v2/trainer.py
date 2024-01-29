@@ -152,7 +152,7 @@ class Trainer(BaseModel):
 
     @validator("model_config")
     def check_model_type_visnet_import(cls, v):
-        if isinstance(v, ViSNetModelConfig) and not mtenn.conversion_utils.visnet.HAS_VISNET_FLAG:
+        if isinstance(v, ViSNetModelConfig) and not mtenn.conversion_utils.visnet.HAS_VISNET:
             raise ImportError(
                 "Can't import ViSNetModelConfig without mtenn.conversion_utils.visnet."
             )
