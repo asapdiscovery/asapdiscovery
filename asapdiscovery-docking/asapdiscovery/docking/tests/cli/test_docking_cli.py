@@ -1,9 +1,10 @@
 import os
 import traceback
-from mock import patch
+
 import pytest
 from asapdiscovery.docking.cli import docking as cli
 from click.testing import CliRunner
+from unittest.mock import patch
 
 
 def click_success(result):
