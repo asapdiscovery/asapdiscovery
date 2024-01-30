@@ -2,7 +2,7 @@ import click
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.models import ASAPMLModelRegistry
-from asapdiscovery.simulation.simulate_v2 import OpenMMPlatform
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
 def postera(func):
