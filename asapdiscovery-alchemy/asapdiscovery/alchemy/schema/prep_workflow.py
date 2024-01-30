@@ -35,7 +35,7 @@ class _AlchemyPrepBase(_SchemaBase):
     pose_generator: Union[
         OpenEyeConstrainedPoseGenerator, RDKitConstrainedPoseGenerator
     ] = Field(
-        OpenEyeConstrainedPoseGenerator(),
+        RDKitConstrainedPoseGenerator(),
         description="The method "
         "to generate the initial poses for the molecules for FEC.",
     )
