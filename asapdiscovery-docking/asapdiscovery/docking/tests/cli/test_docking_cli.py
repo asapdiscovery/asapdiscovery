@@ -1,8 +1,9 @@
 import os
 import traceback
-
+from mock import patch
 import pytest
 from asapdiscovery.docking.cli import docking as cli
+from asapdiscovery.simulation.simulate_v2 import _SIMULATOR_TRUNCATE_STEPS
 from click.testing import CliRunner
 
 
@@ -154,6 +155,7 @@ def test_project_support_docking_cli_pdb_file_dask(
     assert click_success(result)
 
 
+@patch("asapdiscovery.simulation.simulate_v2._SIMULATOR_TRUNCATE_STEPS", False)
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
@@ -183,6 +185,7 @@ def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path):
             "CPU",
         ],
     )
+    # check that the number of steps was set to 1
     assert click_success(result)
 
 
