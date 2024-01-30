@@ -1,8 +1,5 @@
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-
 """
-HTML blocks for visualising poses.
-Pose orientation per target can be found by
+HTML blocks for visualising poses
 """
 
 
