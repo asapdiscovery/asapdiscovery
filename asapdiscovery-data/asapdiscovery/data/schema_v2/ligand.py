@@ -3,7 +3,7 @@ import json
 import logging
 from enum import Flag, auto
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
+from typing import Any, Dict, Literal, Optional, Tuple, Union, TYPE_CHECKING  # noqa: F401
 
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
@@ -30,6 +30,9 @@ from .schema_base import (
     schema_dict_get_val_overload,
     write_file_directly,
 )
+
+if TYPE_CHECKING:
+    from rdkit import Chem
 
 logger = logging.getLogger(__name__)
 

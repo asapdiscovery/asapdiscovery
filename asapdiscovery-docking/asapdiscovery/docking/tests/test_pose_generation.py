@@ -1,8 +1,8 @@
 import pytest
 from asapdiscovery.data.openeye import get_SD_data, oechem, oemol_to_inchikey
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
-
+from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator, RDKitConstrainedPoseGenerator
+from rdkit import Chem
 
 def test_openeye_prov():
     """Make sure the software versions are correctly captured."""
@@ -13,6 +13,18 @@ def test_openeye_prov():
     assert "oeomega" in provenance
     assert "oedocking" in provenance
     assert "oeff" in provenance
+
+
+def test_rdkit_prov():
+    """Make sure the software versions are correctly captured."""
+
+    pose_gen = RDKitConstrainedPoseGenerator()
+    provenance = pose_gen.provenance()
+    assert "oechem" in provenance
+    assert "oeff" in provenance
+    assert "oedocking" in provenance
+    assert "rdkit" in provenance
+    assert "openff.toolkit" in provenance
 
 
 def test_openeye_generate_core_fragment():
@@ -144,17 +156,35 @@ def test_omega_fail_codes(mac1_complex):
     )
 
 
-def test_mcs_generate(mac1_complex):
+@pytest.mark.parametrize("generator", [
+    pytest.param(OpenEyeConstrainedPoseGenerator, id="Openeye"),
+    pytest.param(RDKitConstrainedPoseGenerator, id="RDKit")
+])
+@pytest.mark.parametrize("core_smarts", [
+    pytest.param("CC1=CC2=C(CCCS2(=O)=O)C=C1", id="Core provided"),
+    pytest.param(None, id="No core")
+])
+def test_mcs_generate(mac1_complex, generator, core_smarts):
     """Make sure we can generate a conformer using the mcs when we do not pass a core smarts"""
 
-    pose_generator = OpenEyeConstrainedPoseGenerator()
+    pose_generator = generator()
     target_ligand = Ligand.from_smiles(
         "CCNC(=O)c1cc2c([nH]1)ncnc2N[C@@H](c3ccc4c(c3)S(=O)(=O)CCC4)C5CC5",
         compound_name="omega-error",
     )
     posed_ligands = pose_generator.generate_poses(
-        prepared_complex=mac1_complex, ligands=[target_ligand]
+        prepared_complex=mac1_complex, ligands=[target_ligand], core_smarts=core_smarts
     )
     assert len(posed_ligands.posed_ligands) == 1
-    # we should have one failure as the smarts does not match
+    # we should have no fails
     assert len(posed_ligands.failed_ligands) == 0
+
+
+def test_coord_transfer_fail():
+    """Make sure an error is raised if we try and transfer the coords with no matching substructure."""
+    asprin = Chem.MolFromSmiles("O=C(C)Oc1ccccc1C(=O)O")
+    biphenyl = Chem.MolFromSmiles("c1ccccc1-c2ccccc2")  # look for biphenyl substructure
+
+    pose_generator = RDKitConstrainedPoseGenerator()
+    with pytest.raises(RuntimeError):
+        pose_generator._transfer_coordinates(reference_ligand=asprin, template_ligand=biphenyl)

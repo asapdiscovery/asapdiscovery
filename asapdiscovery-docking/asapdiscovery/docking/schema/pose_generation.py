@@ -459,7 +459,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
     type: Literal["RDKitConstrainedPoseGenerator"] = "RDKitConstrainedPoseGenerator"
 
     max_confs: PositiveInt = Field(
-        1000, description="The maximum number of conformers to try and generate."
+        300, description="The maximum number of conformers to try and generate."
     )
     rms_thresh: PositiveFloat = Field(
         0.2,
@@ -524,9 +524,14 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             The template ligand with atom positions set to the reference for overlapping atoms.
 
         """
+        matches = reference_ligand.GetSubstructMatch(template_ligand)
+        if not matches:
+            raise RuntimeError(
+                f"A core fragment could not be extracted from the reference ligand using core smarts {Chem.MolToSmarts(template_ligand)}"
+            )
+
         ref_conformer: Chem.Conformer = reference_ligand.GetConformer(0)
         template_conformer = Chem.Conformer()
-        matches = reference_ligand.GetSubstructMatch(template_ligand)
         for i, atom_match in enumerate(matches):
             ref_atom_position = ref_conformer.GetAtomPosition(atom_match)
             template_conformer.SetAtomPosition(i, ref_atom_position)
@@ -582,7 +587,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             This function always returns a molecules even if generation fails it will just have no conformations.
         """
 
-        from rdkit.Chem import AllChem  # needed to use the force fields
+        from rdkit.Chem import AllChem  # noqa needed to trigger force fields in rdkit
         from rdkit.Chem.rdDistGeom import EmbedMultipleConfs
         from rdkit.Chem.rdForceFieldHelpers import UFFGetMoleculeForceField
         from rdkit.Chem.rdMolAlign import AlignMol
@@ -591,7 +596,10 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
 
         if core_smarts is not None:
-            template_mol = Chem.MolFromSmarts(core_smarts)
+            # extract the template mol based on this core smarts
+            template_mol = self._generate_mcs_core(
+                target_ligand=Chem.MolFromSmiles(core_smarts), reference_ligand=core_ligand
+            )
         else:
             # use mcs to find the template mol
             template_mol = self._generate_mcs_core(
