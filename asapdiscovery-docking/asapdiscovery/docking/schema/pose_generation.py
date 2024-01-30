@@ -598,7 +598,8 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         if core_smarts is not None:
             # extract the template mol based on this core smarts
             template_mol = self._generate_mcs_core(
-                target_ligand=Chem.MolFromSmiles(core_smarts), reference_ligand=core_ligand
+                target_ligand=Chem.MolFromSmiles(core_smarts),
+                reference_ligand=core_ligand,
             )
         else:
             # use mcs to find the template mol

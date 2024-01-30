@@ -3,7 +3,15 @@ import json
 import logging
 from enum import Flag, auto
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional, Tuple, Union, TYPE_CHECKING  # noqa: F401
+from typing import (  # noqa: F401
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,

@@ -1,8 +1,12 @@
 import pytest
 from asapdiscovery.data.openeye import get_SD_data, oechem, oemol_to_inchikey
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator, RDKitConstrainedPoseGenerator
+from asapdiscovery.docking.schema.pose_generation import (
+    OpenEyeConstrainedPoseGenerator,
+    RDKitConstrainedPoseGenerator,
+)
 from rdkit import Chem
+
 
 def test_openeye_prov():
     """Make sure the software versions are correctly captured."""
@@ -156,14 +160,20 @@ def test_omega_fail_codes(mac1_complex):
     )
 
 
-@pytest.mark.parametrize("generator", [
-    pytest.param(OpenEyeConstrainedPoseGenerator, id="Openeye"),
-    pytest.param(RDKitConstrainedPoseGenerator, id="RDKit")
-])
-@pytest.mark.parametrize("core_smarts", [
-    pytest.param("CC1=CC2=C(CCCS2(=O)=O)C=C1", id="Core provided"),
-    pytest.param(None, id="No core")
-])
+@pytest.mark.parametrize(
+    "generator",
+    [
+        pytest.param(OpenEyeConstrainedPoseGenerator, id="Openeye"),
+        pytest.param(RDKitConstrainedPoseGenerator, id="RDKit"),
+    ],
+)
+@pytest.mark.parametrize(
+    "core_smarts",
+    [
+        pytest.param("CC1=CC2=C(CCCS2(=O)=O)C=C1", id="Core provided"),
+        pytest.param(None, id="No core"),
+    ],
+)
 def test_mcs_generate(mac1_complex, generator, core_smarts):
     """Make sure we can generate a conformer using the mcs when we do not pass a core smarts"""
 
@@ -187,4 +197,6 @@ def test_coord_transfer_fail():
 
     pose_generator = RDKitConstrainedPoseGenerator()
     with pytest.raises(RuntimeError):
-        pose_generator._transfer_coordinates(reference_ligand=asprin, template_ligand=biphenyl)
+        pose_generator._transfer_coordinates(
+            reference_ligand=asprin, template_ligand=biphenyl
+        )
