@@ -239,7 +239,7 @@ class VanillaMDSimulatorV2(SimulatorBase):
 
         results = []
         for result in docking_results:
-            output_pref = result.unique_name()
+            output_pref = result.unique_name
             outpath = self.output_dir / output_pref
             if not outpath.exists():
                 outpath.mkdir(parents=True)

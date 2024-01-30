@@ -179,7 +179,7 @@ class ProteinPrepperBase(BaseModel):
 
         for pc in prepped_complexes:
             # create a folder for the complex data if its not already present
-            complex_folder = cache_dir.joinpath(pc.unique_name())
+            complex_folder = cache_dir.joinpath(pc.unique_name)
             if not complex_folder.exists():
                 complex_folder.mkdir(parents=True, exist_ok=True)
                 pc.to_json_file(
