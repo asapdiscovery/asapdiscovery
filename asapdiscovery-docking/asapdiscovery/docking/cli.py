@@ -32,7 +32,7 @@ from asapdiscovery.docking.workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
 )
-from asapdiscovery.simulation.simulate_v2 import OpenMMPlatform
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
 @click.group()
