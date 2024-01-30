@@ -25,13 +25,6 @@ dependencies = []
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-dash-all-results-exploration = "asapdiscovery.dataviz.scripts.dash_all_results_exploration:main"
-dash-docking-contour-plot = "asapdiscovery.dataviz.scripts.dash_docking_contour_plot:main"
-#dash-docking-exploration = "asapdiscovery.dataviz.scripts.dash_docking_exploration:main"
-dash-docking-interactive-scatterplots = "asapdiscovery.dataviz.scripts.dash_docking_interactive_scatterplots:main"
-dash-docking-interactive-table = "asapdiscovery.dataviz.scripts.dash_docking_interactive_table:main"
-display-aligned-2d-molecules = "asapdiscovery.dataviz.scripts.display_aligned_2d_molecules:main"
-split-sdf = "asapdiscovery.dataviz.scripts.split_sdf:main"
 traj-to-viz = "asapdiscovery.dataviz.scripts.traj_to_viz:main"
 pose-to-viz = "asapdiscovery.dataviz.scripts.pose_to_viz:main"
 pose-to-viz-pymol = "asapdiscovery.dataviz.scripts.pose_to_viz_pymol:main"

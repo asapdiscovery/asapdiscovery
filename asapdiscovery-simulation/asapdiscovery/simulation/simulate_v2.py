@@ -9,15 +9,16 @@ import mdtraj
 import openmm
 import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import save_openeye_pdb
 from asapdiscovery.docking.docking_v2 import DockingResult
-from asapdiscovery.simulation.simulate import OpenMMPlatform
 from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
-from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, app, unit
+from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
+from openmmtools.utils import get_fastest_platform
 from pydantic import (
     BaseModel,
     Field,
@@ -32,6 +33,27 @@ logger = logging.getLogger(__name__)
 
 
 solvent_types = list(_SOLVENT_TYPES)
+
+
+class OpenMMPlatform(StringEnum):
+    """
+    Enum for OpenMM platforms.
+    """
+
+    CPU = "CPU"
+    CUDA = "CUDA"
+    OpenCL = "OpenCL"
+    Reference = "Reference"
+    Fastest = "Fastest"
+
+    def get_platform(self):
+        if Platform.getNumPlatforms() == 0:
+            raise ValueError("No compatible OpenMM patforms detected")
+
+        if self.value == "Fastest":
+            return get_fastest_platform()
+        else:
+            return Platform.getPlatformByName(self.value)
 
 
 def truncate_num_steps(num_steps, reporting_interval):
