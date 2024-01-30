@@ -2,7 +2,7 @@ import abc
 import logging
 import warnings
 from pathlib import Path
-from typing import Optional, ClassVar  # noqa: F401
+from typing import ClassVar, Optional  # noqa: F401
 
 import dask
 import mdtraj
@@ -110,8 +110,10 @@ class SimulationResult(BaseModel):
     success: Optional[bool]
     input_docking_result: Optional[DockingResult]
 
+
 # ugly hack to disallow truncation of steps for testing
 _SIMULATOR_TRUNCATE_STEPS = True
+
 
 class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
