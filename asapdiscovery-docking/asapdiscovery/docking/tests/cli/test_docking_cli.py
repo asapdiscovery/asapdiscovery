@@ -155,7 +155,7 @@ def test_project_support_docking_cli_pdb_file_dask(
     assert click_success(result)
 
 
-@patch("asapdiscovery.simulation.simulate_v2._SIMULATOR_TRUNCATE_STEPS", False)
+@patch("asapdiscovery.simulation.simulate._SIMULATOR_TRUNCATE_STEPS", False)
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
