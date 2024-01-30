@@ -3,7 +3,6 @@ import traceback
 from mock import patch
 import pytest
 from asapdiscovery.docking.cli import docking as cli
-from asapdiscovery.simulation.simulate_v2 import _SIMULATOR_TRUNCATE_STEPS
 from click.testing import CliRunner
 
 
