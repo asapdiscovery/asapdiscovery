@@ -137,6 +137,6 @@ def test_prepped_complex_hash(complex_pdb):
         == "843587eb7f589836d67da772b11584da4fa02fba63d6d3f3062e98c177306abb"
     )
     assert (
-        pc.hash()
+        pc.hash
         == "843587eb7f589836d67da772b11584da4fa02fba63d6d3f3062e98c177306abb+JZJCSVMJFIAMQB-DLYUOGNHNA-N"
     )
