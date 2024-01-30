@@ -54,7 +54,7 @@ def main():
         [None],  # we just fill these args, they're not being used.
         [complex],
         [out],
-        args.viz_target,
+        args.target,
         frames_per_ns=0,
         smooth=5,
         static_view_only=True,

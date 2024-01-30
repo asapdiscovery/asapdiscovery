@@ -4,7 +4,10 @@ from pathlib import Path
 from typing import Union  # noqa: F401
 
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.postera.manifold_data_validation import TargetProteinMap
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetProteinMap,
+    TargetTags,
+)
 
 from ._gif_blocks import GIFBlockData
 from .resources.fonts import opensans_regular

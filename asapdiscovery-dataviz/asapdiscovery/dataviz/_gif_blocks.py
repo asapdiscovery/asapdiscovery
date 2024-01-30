@@ -21,8 +21,8 @@ class GIFBlockData:
     def get_pocket_dict(cls, target: TargetTags) -> dict[str, str]:
         target = str(target)
         # need underscored protein name for pocket_dict
-        target_name = target_name.replace("-", "_")
-        return getattr(cls, f"pocket_dict_{target_name}")
+        target = target.replace("-", "_")
+        return getattr(cls, f"pocket_dict_{target}")
 
     @classmethod
     def get_color_dict(cls, target: TargetTags) -> dict[str, str]:

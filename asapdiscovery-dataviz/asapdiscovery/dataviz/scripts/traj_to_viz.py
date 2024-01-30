@@ -101,7 +101,7 @@ def main():
         [traj],
         [args.top],
         [out],
-        args.viz_target,
+        args.target,
         frames_per_ns=args.frames_per_ns,
         smooth=args.smooth,
         start=start,

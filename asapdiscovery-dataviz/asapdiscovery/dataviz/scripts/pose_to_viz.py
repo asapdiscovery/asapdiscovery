@@ -73,7 +73,7 @@ def main():
         poses=[str(pose)],
         output_paths=[out],
         color_method=args.color_method,
-        target=args.viz_target,
+        target=args.target,
         protein=protein,
         align=True,
     )
