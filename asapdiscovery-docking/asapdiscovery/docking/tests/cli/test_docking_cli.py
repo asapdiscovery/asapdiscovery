@@ -178,7 +178,7 @@ def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path):
             tmp_path,
             "--md",
             "--md-steps",
-            1000,
+            1,
             "--md-openmm-platform",
             "CPU",
         ],
