@@ -188,6 +188,7 @@ def cdd_col_headers():
         ],
     }
 
+
 @pytest.mark.xfail(reason="CDD download can be flaky")
 @pytest.mark.parametrize(
     "search",
