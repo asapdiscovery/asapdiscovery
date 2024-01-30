@@ -50,9 +50,6 @@ class DockingInputPair(CompoundStructurePair, DockingInputBase):
     def to_design_units(self) -> list[oechem.OEDesignUnit]:
         return [self.complex.target.to_oedu()]
 
-    def unique_name(self):
-        return f"{self.complex.unique_name()}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"
-
 
 class DockingInputMultiStructure(MultiStructureBase):
     """
@@ -236,8 +233,9 @@ class DockingResult(BaseModel):
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
         return prot
 
+    @property
     def unique_name(self):
-        return self.input_pair.unique_name()
+        return self.input_pair.unique_name
 
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):
@@ -272,7 +270,7 @@ class DockingResult(BaseModel):
     @staticmethod
     def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
         output_dir = Path(output_dir)
-        output_pref = result.unique_name()
+        output_pref = result.unique_name
         compound_dir = output_dir / output_pref
         compound_dir.mkdir(parents=True, exist_ok=True)
         output_sdf_file = compound_dir / "docked.sdf"

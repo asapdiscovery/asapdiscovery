@@ -214,7 +214,7 @@ class POSITDocker(DockingBase):
         for set in inputs:
             if output_dir is not None:
                 docked_result_json_path = Path(
-                    Path(output_dir) / set.unique_name() / "docking_result.json"
+                    Path(output_dir) / set.unique_name / "docking_result.json"
                 )
 
             if (
@@ -223,7 +223,7 @@ class POSITDocker(DockingBase):
                 and (docked_result_json_path.exists())
             ):
                 logger.info(
-                    f"Docking result for {set.unique_name()} already exists, reading from disk"
+                    f"Docking result for {set.unique_name} already exists, reading from disk"
                 )
                 output_dir = Path(output_dir)
                 docking_results.append(
