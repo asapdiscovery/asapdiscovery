@@ -838,7 +838,12 @@ class Trainer(BaseModel):
                 except KeyError:
                     date_created = None
                 table.add_data(
-                    xtal_id, compound_id, target_value, target_value_range, target_value_stderr, date_created
+                    xtal_id,
+                    compound_id,
+                    target_value,
+                    target_value_range,
+                    target_value_stderr,
+                    date_created,
                 )
 
             ds_tables.append(table)
