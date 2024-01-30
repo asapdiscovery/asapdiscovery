@@ -110,12 +110,10 @@ class SimulationResult(BaseModel):
     success: Optional[bool]
     input_docking_result: Optional[DockingResult]
 
-
-# ugly hack to allow for testing
+# ugly hack to disallow truncation of steps for testing
 _SIMULATOR_TRUNCATE_STEPS = True
 
-
-class VanillaMDSimulatorV2(SimulatorBase):
+class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
         1, description="Collision rate of the simulation"
     )
