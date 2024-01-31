@@ -12,7 +12,9 @@ from asapdiscovery.data.dask_utils import (
     actualise_dask_delayed_iterable,
     backend_wrapper,
 )
+from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.openeye import oedocking
+from asapdiscovery.data.plip import compute_fint_score
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
@@ -22,7 +24,7 @@ from asapdiscovery.docking.docking_data_validation import (
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from mtenn.config import ModelType
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,7 @@ class ScoreType(str, Enum):
     """
 
     chemgauss4 = "chemgauss4"
+    FINT = "FINT"
     GAT = "GAT"
     schnet = "schnet"
     INVALID = "INVALID"
@@ -53,6 +56,7 @@ class ScoreUnits(str, Enum):
 
 _SCORE_MANIFOLD_ALIAS = {
     ScoreType.chemgauss4: DockingResultCols.DOCKING_SCORE_POSIT.value,
+    ScoreType.FINT: DockingResultCols.FITNESS_SCORE_FINT.value,
     ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.INVALID: None,
@@ -215,6 +219,38 @@ class ChemGauss4Scorer(ScorerBase):
             results.append(
                 Score.from_score_and_docking_result(
                     chemgauss_score, self.score_type, self.units, inp
+                )
+            )
+        return results
+
+
+class FINTScorer(ScorerBase):
+    """
+    Score using Fitness Interaction Score
+    """
+
+    score_type: ClassVar[ScoreType.FINT] = ScoreType.FINT
+    units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
+    target: TargetTags = Field(..., description="Which target to use for scoring")
+
+    @validator("target")
+    @classmethod
+    def validate_target(cls, v):
+        if not target_has_fitness_data(v):
+            raise ValueError(
+                "target does not have fitness data so cannot use FINTScorer"
+            )
+        return v
+
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+        results = []
+        for inp in inputs:
+            _, fint_score = compute_fint_score(
+                inp.to_protein(), inp.posed_ligand.to_oemol(), self.target
+            )
+            results.append(
+                Score.from_score_and_docking_result(
+                    fint_score, self.score_type, self.units, inp
                 )
             )
         return results

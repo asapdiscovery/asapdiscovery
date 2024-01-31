@@ -71,6 +71,6 @@ def test_cache_load(json_cache):
     cached_complexs = ProteinPrepper.load_cache(cache_dir=json_cache.parent)
     assert len(cached_complexs) == 1
     assert (
-        cached_complexs[0].hash()
+        cached_complexs[0].hash
         == "9e2ea19d1a175314647dacb9d878138a80b8443cff5faf56031bf4af61179a0a+GIIIJZOPGUFGBF-QXYFZJGFNA-O"
     )

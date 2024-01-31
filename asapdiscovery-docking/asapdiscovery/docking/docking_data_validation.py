@@ -37,6 +37,7 @@ class DockingResultColsV2(str, Enum):
     DOCKING_CONFIDENCE_POSIT = "docking-confidence-POSIT"  # postera
     DOCKING_SCORE_POSIT = "docking-score-POSIT"  # postera
     DOCKING_STRUCTURE_POSIT = "docking-structure-POSIT"  # postera
+    FITNESS_SCORE_FINT = "fitness-score-FINT"  # postera
     DOCKING_HIT = "docking-hit"  # postera
     SMILES = "SMILES"  # postera
     INCHIKEY = "INCHIKEY"  # postera

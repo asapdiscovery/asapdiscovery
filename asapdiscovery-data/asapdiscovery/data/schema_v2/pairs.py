@@ -35,5 +35,6 @@ class CompoundStructurePair(PairBase):
     complex: Complex = Field(description="Target schema object")
     ligand: Ligand = Field(description="Ligand schema object")
 
+    @property
     def unique_name(self):
-        return f"{self.complex.unique_name()}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"
+        return f"{self.complex.unique_name}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"
