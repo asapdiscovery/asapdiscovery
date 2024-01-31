@@ -78,10 +78,10 @@ def create(filename: str, core_smarts: str):
 @click.option(
     "-p",
     "--processors",
-    default=1,
+    default="auto",
     show_default=True,
-    type=click.INT,
-    help="The number of processors which can be used to run the workflow in parallel.",
+    help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), `all` will use all"
+         "or the exact number of cpus to use can be provided.",
 )
 def run(
     dataset_name: str,
@@ -103,7 +103,8 @@ def run(
     factory_file: The name of the JSON file with the configured AlchemyPrepWorkflow, if not supplied the default will be
         used but a core smarts must be provided.
     core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained. Required if the factory file is not supplied.
-    processors: The number of processors which can be used to run the workflow in parallel.
+    processors: The number of processors which can be used to run the workflow in parallel. `auto` will use all
+    cpus -1, `all` will use all or the exact number of cpus to use can be provided.
     """
     import pathlib
 
@@ -113,6 +114,7 @@ def run(
     from asapdiscovery.data.openeye import save_openeye_sdfs
     from asapdiscovery.data.schema_v2.complex import PreppedComplex
     from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+    from multiprocessing import cpu_count
     from rich import pretty
     from rich.padding import Padding
 
@@ -145,7 +147,14 @@ def run(
     )
     console.print(message)
 
-    message = Padding("Starting Alchemy-Prep workflow", (1, 0, 1, 0))
+    # workout the number of processes to use if auto or all
+    all_cpus = cpu_count()
+    if processors == "all":
+        processors = all_cpus
+    elif processors == "auto":
+        processors = all_cpus - 1
+
+    message = Padding(f"Starting Alchemy-Prep workflow with {processors} processors", (1, 0, 1, 0))
     console.print(message)
 
     alchemy_dataset = factory.create_alchemy_dataset(

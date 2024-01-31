@@ -243,8 +243,6 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
     )
 
     def provenance(self) -> dict[str, Any]:
-        from openeye import oechem, oeff, oeomega
-
         return {
             "oechem": oechem.OEChemGetVersion(),
             "oeomega": oeomega.OEOmegaGetVersion(),
@@ -419,25 +417,38 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         result_ligands = []
         failed_ligands = []
 
-        with ProcessPoolExecutor(max_workers=processors) as pool:
-            work_list = [
-                pool.submit(
-                    self._generate_pose,
-                    **{
-                        "target_ligand": oechem.OEMol(mol.to_oemol()),
-                        "core_smarts": core_smarts,
-                        "reference_ligand": reference_ligand,
-                    },
+        if processors > 1:
+            with ProcessPoolExecutor(max_workers=processors) as pool:
+                work_list = [
+                    pool.submit(
+                        self._generate_pose,
+                        **{
+                            "target_ligand": oechem.OEMol(mol.to_oemol()),
+                            "core_smarts": core_smarts,
+                            "reference_ligand": reference_ligand,
+                        },
+                    )
+                    for mol in ligands
+                ]
+                for work in as_completed(work_list):
+                    target_ligand = work.result()
+                    # check if coordinates could be generated
+                    if "omega_return_code" in get_SD_data(target_ligand):
+                        failed_ligands.append(target_ligand)
+                    else:
+                        result_ligands.append(target_ligand)
+        else:
+            for mol in ligands:
+                posed_ligand = self._generate_pose(
+                    target_ligand=oechem.OEMol(mol.to_oemol()),
+                    core_smarts=core_smarts,
+                    reference_ligand=reference_ligand
                 )
-                for mol in ligands
-            ]
-            for work in as_completed(work_list):
-                target_ligand = work.result()
                 # check if coordinates could be generated
-                if "omega_return_code" in get_SD_data(target_ligand):
-                    failed_ligands.append(target_ligand)
+                if "omega_return_code" in get_SD_data(posed_ligand):
+                    failed_ligands.append(posed_ligand)
                 else:
-                    result_ligands.append(target_ligand)
+                    result_ligands.append(posed_ligand)
 
         # prue down the conformers
         oedu_receptor = prepared_complex.target.to_oedu()
@@ -472,7 +483,6 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
     def provenance(self) -> dict[str, Any]:
         import openff.toolkit
         import rdkit
-        from openeye import oechem, oeff
 
         return {
             "oechem": oechem.OEChemGetVersion(),
@@ -692,26 +702,44 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         result_ligands = []
         failed_ligands = []
 
-        with ProcessPoolExecutor(max_workers=processors) as pool:
-            work_list = [
-                pool.submit(
-                    self._generate_pose,
-                    **{
-                        "target_ligand": Chem.AddHs(mol.to_rdkit()),
-                        "core_ligand": core_ligand,
-                        "core_smarts": core_smarts,
-                    },
+        if processors > 1:
+            with ProcessPoolExecutor(max_workers=processors) as pool:
+                work_list = [
+                    pool.submit(
+                        self._generate_pose,
+                        **{
+                            "target_ligand": Chem.AddHs(mol.to_rdkit()),
+                            "core_ligand": core_ligand,
+                            "core_smarts": core_smarts,
+                        },
+                    )
+                    for mol in ligands
+                ]
+                for work in as_completed(work_list):
+                    target_ligand = work.result()
+                    off_mol = Molecule.from_rdkit(
+                        target_ligand, allow_undefined_stereo=True
+                    )
+                    # we need to transfer the properties which would be lost
+                    openeye_mol = off_mol.to_openeye()
+                    if target_ligand.GetNumConformers() > 0:
+                        # save the mol with all conformers
+                        result_ligands.append(openeye_mol)
+                    else:
+                        failed_ligands.append(openeye_mol)
+        else:
+            for mol in ligands:
+                posed_ligand = self._generate_pose(
+                    target_ligand=Chem.AddHs(mol.to_rdkit()),
+                    core_ligand=core_ligand,
+                    core_smarts=core_smarts
                 )
-                for mol in ligands
-            ]
-            for work in as_completed(work_list):
-                target_ligand = work.result()
                 off_mol = Molecule.from_rdkit(
-                    target_ligand, allow_undefined_stereo=True
+                    posed_ligand, allow_undefined_stereo=True
                 )
                 # we need to transfer the properties which would be lost
                 openeye_mol = off_mol.to_openeye()
-                if target_ligand.GetNumConformers() > 0:
+                if posed_ligand.GetNumConformers() > 0:
                     # save the mol with all conformers
                     result_ligands.append(openeye_mol)
                 else:
