@@ -146,7 +146,7 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
                 "-r",
                 "complex.json",
                 "-p",
-                1
+                1,
             ],
         )
         assert result.exit_code == 0
@@ -218,7 +218,7 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
                 "-r",
                 "complex.json",
                 "-p",
-                1
+                1,
             ],
         )
         assert result.exit_code == 0

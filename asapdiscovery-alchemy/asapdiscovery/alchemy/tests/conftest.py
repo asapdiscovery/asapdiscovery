@@ -110,7 +110,10 @@ def mac1_complex():
         fetch_test_file("constrained_conformer/complex.json")
     )
 
+
 @pytest.fixture()
 def openeye_prep_workflow() -> AlchemyPrepWorkflow:
     """Build an openeye pose generator for testing as its faster than rdkit."""
-    return AlchemyPrepWorkflow(charge_expander=None, pose_generator=OpenEyeConstrainedPoseGenerator())
+    return AlchemyPrepWorkflow(
+        charge_expander=None, pose_generator=OpenEyeConstrainedPoseGenerator()
+    )

@@ -1,5 +1,8 @@
 import pytest
-from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow, OpenEyeConstrainedPoseGenerator
+from asapdiscovery.alchemy.schema.prep_workflow import (
+    AlchemyPrepWorkflow,
+    OpenEyeConstrainedPoseGenerator,
+)
 from asapdiscovery.data.schema_v2.ligand import Ligand
 
 
@@ -30,7 +33,7 @@ def test_prep_workflow(strict_stereo, core_smarts, failed, mac1_complex):
         charge_expander=None,
         strict_stereo=strict_stereo,
         core_smarts=core_smarts,
-        pose_generator=OpenEyeConstrainedPoseGenerator()
+        pose_generator=OpenEyeConstrainedPoseGenerator(),
     )
 
     alchemy_dataset = workflow.create_alchemy_dataset(
