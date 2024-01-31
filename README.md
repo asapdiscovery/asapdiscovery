@@ -1,7 +1,7 @@
 asapdiscovery
 =============
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/choderalab/asapdiscovery/workflows/CI/badge.svg)](https://github.com/choderalab/asapdiscovery/actions?query=workflow%3ACI)
+[![GitHub Actions Build Status](https://github.com/choderalab/asapdiscovery/workflows/CI/badge.svg)](https://github.com/choderalab/asapdiscovery/actions?query=workflow%3ACI+branch%3Amain)
 [![codecov](https://codecov.io/gh/choderalab/asapdiscovery/branch/main/graph/badge.svg)](https://codecov.io/gh/choderalab/asapdiscovery/branch/main)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/choderalab/asapdiscovery/main.svg)](https://results.pre-commit.ci/latest/github/choderalab/asapdiscovery/main)
 [![Documentation Status](https://readthedocs.org/projects/asapdiscovery/badge/?version=latest)](https://asapdiscovery.readthedocs.io/en/latest/?badge=latest)
@@ -64,12 +64,17 @@ To install an `asapdiscovery` package hosted in this repository, we recommend th
     ```
 
 2. Install the dependencies into a new `conda` environment, and activate it:
-   NOTE: Conda will almost certainly fail to build the environment - `mamba` is a drop-in replacement for `conda` that is much faster and more reliable.
+   NOTES: Conda will almost certainly fail to build the environment - `mamba` is a drop-in replacement for `conda` that is much faster and more reliable.  Additionally, if the environment is built on a CPU, `torch` may not compile with GPU support. Instead, build the environment as described on a GPU node; the architecture will be detected automatically. Alternatively to build for a specific CUDA version you can use the
 
     ```
     mamba env create -f devtools/conda-envs/asapdiscovery-{platform}.yml
     conda activate asapdiscovery
     ```
+    Alternatively to build for a specific CUDA version you can use the following.
+    ```
+    export CONDA_OVERRIDE_CUDA=12.2 && mamba env create -f devtools/conda-envs/asapdiscovery-{platform}.yml && conda activate asapdiscovery
+    ```
+
 
 3. Install the individual `asapdiscovery` packages you want to use with `pip` into the environment.
    For example, `asapdiscovery-data`:
