@@ -37,7 +37,7 @@ def test_openeye_generate_core_fragment():
     core_smarts = "OC(=O)C"
     pose_generator = OpenEyeConstrainedPoseGenerator()
     core_mol = pose_generator._generate_core_fragment(
-        reference_ligand=asprin, core_smarts=core_smarts
+        reference_ligand=asprin.to_oemol(), core_smarts=core_smarts
     )
     assert oemol_to_inchikey(core_mol) == "UXTFKIJKRJJXNV-UHFFFAOYSA-N"
 
@@ -49,7 +49,7 @@ def test_openeye_core_fragment_not_possible():
     pose_generator = OpenEyeConstrainedPoseGenerator()
     with pytest.raises(RuntimeError, match="A core fragment could not be extracted "):
         _ = pose_generator._generate_core_fragment(
-            reference_ligand=asprin, core_smarts=core_smarts
+            reference_ligand=asprin.to_oemol(), core_smarts=core_smarts
         )
 
 
