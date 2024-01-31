@@ -195,7 +195,9 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
                 # set the best score as the active conformer
                 poses = sorted(poses, key=lambda x: x[0])
                 ligand.SetActive(poses[0][1])
-                oechem.OESetSDData(ligand, f"{self.selector.value}_score", str(poses[0][0]))
+                oechem.OESetSDData(
+                    ligand, f"{self.selector.value}_score", str(poses[0][0])
+                )
 
             # turn back into a single conformer molecule
             posed_ligands.append(oechem.OEGraphMol(ligand))
@@ -228,7 +230,9 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
         poses = sorted(poses, key=lambda x: x[0])
         ligand.SetActive(poses[0][1])
-        oechem.OESetSDData(ligand, f"{self.backup_score.value}_energy", str(poses[0][0]))
+        oechem.OESetSDData(
+            ligand, f"{self.backup_score.value}_energy", str(poses[0][0])
+        )
 
 
 class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
