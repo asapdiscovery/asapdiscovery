@@ -442,7 +442,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 posed_ligand = self._generate_pose(
                     target_ligand=oechem.OEMol(mol.to_oemol()),
                     core_smarts=core_smarts,
-                    reference_ligand=reference_ligand
+                    reference_ligand=reference_ligand,
                 )
                 # check if coordinates could be generated
                 if "omega_return_code" in get_SD_data(posed_ligand):
@@ -732,11 +732,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 posed_ligand = self._generate_pose(
                     target_ligand=Chem.AddHs(mol.to_rdkit()),
                     core_ligand=core_ligand,
-                    core_smarts=core_smarts
+                    core_smarts=core_smarts,
                 )
-                off_mol = Molecule.from_rdkit(
-                    posed_ligand, allow_undefined_stereo=True
-                )
+                off_mol = Molecule.from_rdkit(posed_ligand, allow_undefined_stereo=True)
                 # we need to transfer the properties which would be lost
                 openeye_mol = off_mol.to_openeye()
                 if posed_ligand.GetNumConformers() > 0:

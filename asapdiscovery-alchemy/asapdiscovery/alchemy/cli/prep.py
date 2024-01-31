@@ -81,7 +81,7 @@ def create(filename: str, core_smarts: str):
     default="auto",
     show_default=True,
     help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), `all` will use all"
-         "or the exact number of cpus to use can be provided.",
+    "or the exact number of cpus to use can be provided.",
 )
 def run(
     dataset_name: str,
@@ -107,6 +107,7 @@ def run(
     cpus -1, `all` will use all or the exact number of cpus to use can be provided.
     """
     import pathlib
+    from multiprocessing import cpu_count
 
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header
@@ -114,7 +115,6 @@ def run(
     from asapdiscovery.data.openeye import save_openeye_sdfs
     from asapdiscovery.data.schema_v2.complex import PreppedComplex
     from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-    from multiprocessing import cpu_count
     from rich import pretty
     from rich.padding import Padding
 
@@ -154,7 +154,9 @@ def run(
     elif processors == "auto":
         processors = all_cpus - 1
 
-    message = Padding(f"Starting Alchemy-Prep workflow with {processors} processors", (1, 0, 1, 0))
+    message = Padding(
+        f"Starting Alchemy-Prep workflow with {processors} processors", (1, 0, 1, 0)
+    )
     console.print(message)
 
     alchemy_dataset = factory.create_alchemy_dataset(
