@@ -69,17 +69,15 @@ class ProteinPrepperBase(BaseModel):
             A tuple of two lists, the first contains the complexs which should be prepped and the second contains
             the PreppedComplex from the cache which should be reused.
         """
-        cached_by_hash = {comp.hash(): comp for comp in cached_complexs}
+        cached_by_hash = {comp.hash: comp for comp in cached_complexs}
         # gather outputs which are in the cache
         cached_outputs = [
-            cached_by_hash[inp.hash()]
+            cached_by_hash[inp.hash]
             for inp in complex_to_prep
-            if inp.hash() in cached_by_hash
+            if inp.hash in cached_by_hash
         ]
         if cached_outputs:
-            to_prep = [
-                inp for inp in complex_to_prep if inp.hash() not in cached_by_hash
-            ]
+            to_prep = [inp for inp in complex_to_prep if inp.hash not in cached_by_hash]
         else:
             to_prep = complex_to_prep
 
@@ -181,7 +179,7 @@ class ProteinPrepperBase(BaseModel):
 
         for pc in prepped_complexes:
             # create a folder for the complex data if its not already present
-            complex_folder = cache_dir.joinpath(pc.unique_name())
+            complex_folder = cache_dir.joinpath(pc.unique_name)
             if not complex_folder.exists():
                 complex_folder.mkdir(parents=True, exist_ok=True)
                 pc.to_json_file(
@@ -309,7 +307,7 @@ class ProteinPrepper(ProteinPrepperBase):
                 ids=complex_target.target.ids,
                 target_name=complex_target.target.target_name,
                 ligand_chain=complex_target.ligand_chain,
-                target_hash=complex_target.target.hash(),
+                target_hash=complex_target.target.hash,
             )
             # we need the ligand at the new translated coordinates
             translated_oemol, _, _ = split_openeye_design_unit(du=du)

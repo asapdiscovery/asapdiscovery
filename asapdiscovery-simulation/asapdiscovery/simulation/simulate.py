@@ -111,7 +111,7 @@ class SimulationResult(BaseModel):
     input_docking_result: Optional[DockingResult]
 
 
-class VanillaMDSimulatorV2(SimulatorBase):
+class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
         1, description="Collision rate of the simulation"
     )
@@ -239,7 +239,7 @@ class VanillaMDSimulatorV2(SimulatorBase):
 
         results = []
         for result in docking_results:
-            output_pref = result.unique_name()
+            output_pref = result.unique_name
             outpath = self.output_dir / output_pref
             if not outpath.exists():
                 outpath.mkdir(parents=True)
