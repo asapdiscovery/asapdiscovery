@@ -3,9 +3,11 @@ import datetime
 import openfe
 import pytest
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
 from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
 from rdkit import Chem
 
@@ -107,3 +109,8 @@ def mac1_complex():
     return PreppedComplex.parse_file(
         fetch_test_file("constrained_conformer/complex.json")
     )
+
+@pytest.fixture()
+def openeye_prep_workflow() -> AlchemyPrepWorkflow:
+    """Build an openeye pose generator for testing as its faster than rdkit."""
+    return AlchemyPrepWorkflow(charge_expander=None, pose_generator=OpenEyeConstrainedPoseGenerator())

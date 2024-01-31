@@ -153,6 +153,9 @@ def run(
         processors = all_cpus
     elif processors == "auto":
         processors = all_cpus - 1
+    else:
+        # can be a string from click
+        processors = int(processors)
 
     message = Padding(
         f"Starting Alchemy-Prep workflow with {processors} processors", (1, 0, 1, 0)
