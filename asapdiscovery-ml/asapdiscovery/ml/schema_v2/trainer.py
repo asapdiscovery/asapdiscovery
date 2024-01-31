@@ -175,6 +175,7 @@ class Trainer(BaseModel):
         "loss_config",
         pre=True,
     )
+    
     def load_cache_files(cls, config_kwargs, field):
         """
         This validator will load an existing cache file, and update the config with any
