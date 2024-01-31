@@ -320,8 +320,8 @@ def test_results_to_cinnabar_missing_phase(tyk2_fec_network):
         results=results,
     )
     # make sure a specific error related to a missing solvent phase is raised.
-    with pytest.raises(
-        RuntimeError,
+    with pytest.warns(
+        UserWarning,
         match="is missing simulated legs in the following phases {'solvent'}",
     ):
         result_network.to_fe_map()
