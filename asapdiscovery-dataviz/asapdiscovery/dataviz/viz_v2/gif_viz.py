@@ -16,7 +16,7 @@ from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.simulation.simulate_v2 import SimulationResult
+from asapdiscovery.simulation.simulate import SimulationResult
 from pydantic import BaseModel, Field, PositiveInt
 
 logger = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ class GIFVisualizerV2(BaseModel):
             p = pymol2.PyMOL()
             p.start()
 
-            out_dir = self.output_dir / res.input_docking_result.unique_name()
+            out_dir = self.output_dir / res.input_docking_result.unique_name
             out_dir.mkdir(parents=True, exist_ok=True)
             path = out_dir / "trajectory.gif"
 

@@ -26,7 +26,7 @@ dependencies = []
 
 [project.scripts]
 make-docked-complexes = "asapdiscovery.docking.scripts.make_docked_complexes_schema_v2:main"
-
+asap-docking = "asapdiscovery.docking.cli:docking"
 
 [tool.setuptools.packages.find]
 where = ["."]
