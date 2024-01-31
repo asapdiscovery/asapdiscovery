@@ -27,17 +27,13 @@ def load_yaml(yaml_path: Union[str, Path]) -> dict:
 
 class TagEnumBase(StringEnum):
     @classmethod
-    def is_in_values(cls, tag: str, bleached: bool = False) -> bool:
-        vals = cls.get_values_underscored() if bleached else cls.get_values()
+    def is_in_values(cls, tag: str) -> bool:
+        vals = cls.get_values()
         return tag in vals
 
     @classmethod
-    def all_in_values(
-        cls, query: list[str], allow: list[str] = [], bleached: bool = False
-    ) -> bool:
-        return all(
-            [cls.is_in_values(q, bleached=bleached) for q in query if q not in allow]
-        )
+    def all_in_values(cls, query: list[str], allow: list[str] = []) -> bool:
+        return all([cls.is_in_values(q) for q in query if q not in allow])
 
     @classmethod
     def from_iterable(cls, name: str, iter: Iterable) -> Enum:
@@ -49,13 +45,10 @@ class TagEnumBase(StringEnum):
 
     @classmethod
     def filter_dataframe_cols(
-        cls, df: pd.DataFrame, allow: Optional[list[str]] = None, bleached: bool = False
+        cls, df: pd.DataFrame, allow: Optional[list[str]] = None
     ) -> pd.DataFrame:
         # construct list of allowed columns
         allowed_columns = cls.get_values()
-
-        if bleached:
-            allowed_columns = [col.replace("-", "_") for col in allowed_columns]
 
         if allow is not None:
             allowed_columns.extend(allow)
@@ -77,9 +70,6 @@ class TagEnumBase(StringEnum):
 
     def get_value_underscored(self):
         return self.value.replace("-", "_")
-
-    def get_value_bleached(self):
-        return self.get_value_underscored()
 
 
 def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
@@ -105,18 +95,21 @@ def make_target_tags(yaml_path: Union[str, Path]) -> tuple[Enum, set]:
     target_tags = set()
     target_virus_map = {}
     virus_target_map = defaultdict(list)
+    target_protein_map = {}
     for v in viruses:
         for target in viruses[v]:
             tag = v + "-" + target
             target_tags.add(tag)
             target_virus_map[tag] = v
             virus_target_map[v].append(target)
+            target_protein_map[tag] = target
 
     return (
         TagEnumBase.from_iterable("TargetTags", target_tags),
         target_tags,
         target_virus_map,
         virus_target_map,
+        target_protein_map,
     )
 
 
@@ -237,9 +230,13 @@ manifold_data_spec = pkg_resources.resource_filename(
 )
 
 # make target enum and set
-TargetTags, target_tag_set, TargetVirusMap, VirusTargetMap = make_target_tags(
-    manifold_data_spec
-)
+(
+    TargetTags,
+    target_tag_set,
+    TargetVirusMap,
+    VirusTargetMap,
+    TargetProteinMap,
+) = make_target_tags(manifold_data_spec)
 
 VirusTags = make_virus_tags(manifold_data_spec)
 
@@ -360,7 +357,6 @@ def rename_output_columns_for_manifold(
     df: pd.DataFrame,
     target: str,
     output_enums: list[Enum],
-    bleach_columns: bool = True,
     manifold_validate: Optional[bool] = True,
     drop_non_output: Optional[bool] = True,
     allow: Optional[list[str]] = [],
@@ -385,8 +381,6 @@ def rename_output_columns_for_manifold(
         Target name
     output_enums : list[Enum]
         List of enums to rename the columns of
-    bleach_columns : bool, optional
-        If True, bleach the column names so that - is replaced with _ see #629 and #628
     manifold_validate : bool, optional
         If True, validate that the columns are valid for Postera Manifold
     drop_non_output : bool, optional
@@ -418,8 +412,5 @@ def rename_output_columns_for_manifold(
             )
     # rename columns
     df = df.rename(columns=mapping)
-
-    if bleach_columns:
-        df.columns = [col.replace("-", "_") for col in df.columns]
 
     return df

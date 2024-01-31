@@ -232,6 +232,44 @@ def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
         )
 
 
+def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
+    from gufe import SmallMoleculeComponent
+
+    # a bit of a hack until we get this addressed: https://github.com/OpenFreeEnergy/gufe/issues/264
+    lig = SmallMoleculeComponent(tyk2_ligands[0].to_rdkit(), name="other")
+    lig._name = ""
+    assert not lig.name
+
+    ligands = [lig] + tyk2_ligands[1:]
+
+    factory = FreeEnergyCalculationFactory()
+    with pytest.raises(
+        ValueError, match=f"1 of {len(ligands)} ligands do not have names"
+    ):
+        _ = factory.create_fec_dataset(
+            dataset_name="TYK2-test-dataset-missing-name",
+            receptor=tyk2_protein,
+            ligands=ligands,
+        )
+
+    # a bit of a hack until we get this addressed: https://github.com/OpenFreeEnergy/gufe/issues/264
+    lig = SmallMoleculeComponent(ligands[-1].to_rdkit(), name="other")
+    lig._name = ""
+    assert not lig.name
+
+    ligands = ligands[:-1] + [lig]
+
+    factory = FreeEnergyCalculationFactory()
+    with pytest.raises(
+        ValueError, match=f"2 of {len(ligands)} ligands do not have names"
+    ):
+        _ = factory.create_fec_dataset(
+            dataset_name="TYK2-test-dataset-missing-name",
+            receptor=tyk2_protein,
+            ligands=ligands,
+        )
+
+
 def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
     """Make sure we can run the full FEC workflow"""
     factory = FreeEnergyCalculationFactory()
@@ -282,8 +320,8 @@ def test_results_to_cinnabar_missing_phase(tyk2_fec_network):
         results=results,
     )
     # make sure a specific error related to a missing solvent phase is raised.
-    with pytest.raises(
-        RuntimeError,
+    with pytest.warns(
+        UserWarning,
         match="is missing simulated legs in the following phases {'solvent'}",
     ):
         result_network.to_fe_map()

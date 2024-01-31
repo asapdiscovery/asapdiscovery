@@ -1,13 +1,20 @@
 import abc
 import logging
 from enum import Enum
-from typing import ClassVar, Optional
+from pathlib import Path
+from typing import ClassVar, Optional, Union
 
 import dask
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    actualise_dask_delayed_iterable,
+    backend_wrapper,
+)
+from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.openeye import oedocking
+from asapdiscovery.data.plip import compute_fint_score
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
@@ -16,8 +23,8 @@ from asapdiscovery.docking.docking_data_validation import (
 )
 from asapdiscovery.docking.docking_v2 import DockingResult
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
-from asapdiscovery.ml.models import MLModelType
-from pydantic import BaseModel, Field
+from mtenn.config import ModelType
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +35,7 @@ class ScoreType(str, Enum):
     """
 
     chemgauss4 = "chemgauss4"
+    FINT = "FINT"
     GAT = "GAT"
     schnet = "schnet"
     INVALID = "INVALID"
@@ -48,6 +56,7 @@ class ScoreUnits(str, Enum):
 
 _SCORE_MANIFOLD_ALIAS = {
     ScoreType.chemgauss4: DockingResultCols.DOCKING_SCORE_POSIT.value,
+    ScoreType.FINT: DockingResultCols.FITNESS_SCORE_FINT.value,
     ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.INVALID: None,
@@ -128,21 +137,33 @@ class ScorerBase(BaseModel):
 
     def score(
         self,
-        inputs: list[DockingResult],
+        inputs: Union[list[DockingResult], list[Path]],
         use_dask: bool = False,
         dask_client=None,
+        backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
-                out = dask.delayed(self._score)(inputs=[inp])
+                out = dask.delayed(backend_wrapper)(
+                    inputs=[inp],
+                    func=self._score,
+                    backend=backend,
+                    reconstruct_cls=reconstruct_cls,
+                )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client=dask_client
             )
         else:
-            outputs = self._score(inputs=inputs)
+            outputs = backend_wrapper(
+                inputs=inputs,
+                func=self._score,
+                backend=backend,
+                reconstruct_cls=reconstruct_cls,
+            )
 
         if return_df:
             return self.scores_to_df(outputs)
@@ -203,12 +224,44 @@ class ChemGauss4Scorer(ScorerBase):
         return results
 
 
+class FINTScorer(ScorerBase):
+    """
+    Score using Fitness Interaction Score
+    """
+
+    score_type: ClassVar[ScoreType.FINT] = ScoreType.FINT
+    units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
+    target: TargetTags = Field(..., description="Which target to use for scoring")
+
+    @validator("target")
+    @classmethod
+    def validate_target(cls, v):
+        if not target_has_fitness_data(v):
+            raise ValueError(
+                "target does not have fitness data so cannot use FINTScorer"
+            )
+        return v
+
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+        results = []
+        for inp in inputs:
+            _, fint_score = compute_fint_score(
+                inp.to_protein(), inp.posed_ligand.to_oemol(), self.target
+            )
+            results.append(
+                Score.from_score_and_docking_result(
+                    fint_score, self.score_type, self.units, inp
+                )
+            )
+        return results
+
+
 class MLModelScorer(ScorerBase):
     """
     Score from some kind of ML model
     """
 
-    model_type: ClassVar[MLModelType.INVALID] = MLModelType.INVALID
+    model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
@@ -220,7 +273,7 @@ class MLModelScorer(ScorerBase):
 
     @classmethod
     def from_latest_by_target(cls, target: TargetTags):
-        if cls.model_type == MLModelType.INVALID:
+        if cls.model_type == ModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
         inference_cls = get_inference_cls_from_model_type(cls.model_type)
         inference_instance = inference_cls.from_latest_by_target(target)
@@ -237,15 +290,15 @@ class MLModelScorer(ScorerBase):
             )
 
     @staticmethod
-    def from_latest_by_target_and_type(target: TargetTags, type: MLModelType):
-        if type == MLModelType.INVALID:
+    def from_latest_by_target_and_type(target: TargetTags, type: ModelType):
+        if type == ModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
         scorer_class = get_ml_scorer_cls_from_model_type(type)
         return scorer_class.from_latest_by_target(target)
 
     @classmethod
     def from_model_name(cls, model_name: str):
-        if cls.model_type == MLModelType.INVALID:
+        if cls.model_type == ModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
         inference_cls = get_inference_cls_from_model_type(cls.model_type)
         inference_instance = inference_cls.from_model_name(model_name)
@@ -261,7 +314,7 @@ class GATScorer(MLModelScorer):
     Scoring using GAT ML Model
     """
 
-    model_type: ClassVar[MLModelType.GAT] = MLModelType.GAT
+    model_type: ClassVar[ModelType.GAT] = ModelType.GAT
     score_type: ClassVar[ScoreType.GAT] = ScoreType.GAT
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
@@ -282,7 +335,7 @@ class SchnetScorer(MLModelScorer):
     Scoring using Schnet ML Model
     """
 
-    model_type: ClassVar[MLModelType.schnet] = MLModelType.schnet
+    model_type: ClassVar[ModelType.schnet] = ModelType.schnet
     score_type: ClassVar[ScoreType.schnet] = ScoreType.schnet
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
@@ -305,9 +358,9 @@ _ml_scorer_classes_meta = [
 ]
 
 
-def get_ml_scorer_cls_from_model_type(model_type: MLModelType):
+def get_ml_scorer_cls_from_model_type(model_type: ModelType):
     instantiable_classes = [
-        m for m in _ml_scorer_classes_meta if m.model_type != MLModelType.INVALID
+        m for m in _ml_scorer_classes_meta if m.model_type != ModelType.INVALID
     ]
     scorer_class = [m for m in instantiable_classes if m.model_type == model_type]
     if len(scorer_class) != 1:
@@ -327,6 +380,8 @@ class MetaScorer(BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
+        backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
         results = []
@@ -335,6 +390,8 @@ class MetaScorer(BaseModel):
                 inputs=inputs,
                 use_dask=use_dask,
                 dask_client=dask_client,
+                backend=backend,
+                reconstruct_cls=reconstruct_cls,
                 return_df=return_df,
             )
             results.append(vals)

@@ -6,14 +6,17 @@ import dask
 import pandas as pd
 from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetProteinMap,
+    TargetTags,
+)
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar
 from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
-from asapdiscovery.simulation.simulate_v2 import SimulationResult
+from asapdiscovery.simulation.simulate import SimulationResult
 from pydantic import BaseModel, Field, PositiveInt
 
 logger = logging.getLogger(__name__)
@@ -97,7 +100,7 @@ class GIFVisualizerV2(BaseModel):
             p = pymol2.PyMOL()
             p.start()
 
-            out_dir = self.output_dir / res.input_docking_result.unique_name()
+            out_dir = self.output_dir / res.input_docking_result.unique_name
             out_dir.mkdir(parents=True, exist_ok=True)
             path = out_dir / "trajectory.gif"
 
@@ -215,6 +218,10 @@ class GIFVisualizerV2(BaseModel):
             p.cmd.select("th", "(all) and not ( (all) within 15 of ligand_obj)")
             # hide it to save rendering time.
             p.cmd.hide("everything", "th")
+
+            # capsid needs clipping planes as the ligand is encapsulated
+            if TargetProteinMap[self.target] == "Capsid":
+                p.cmd.clip("near", -25)
 
             if self.pse or self.pse_share:
                 p.cmd.save(str(out_dir / "session_5_selections.pse"))

@@ -107,6 +107,7 @@ def plan(
             openfe.SmallMoleculeComponent.from_sdf_string(mol.to_sdf_str())
             for mol in alchemy_ds.posed_ligands
         ]
+
         # write to a temp pdb file and read back in
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
             alchemy_ds.reference_complex.target.to_pdb_file(fp.name)
@@ -272,7 +273,7 @@ def gather(network: str, allow_missing: bool):
     status = client.network_status(planned_network=planned_network)
     if not allow_missing and "waiting" in status:
         raise RuntimeError(
-            "Not all calculations have finished, to collect the current results use the flag `--allow_missing`."
+            "Not all calculations have finished, to collect the current results use the flag `--allow-missing`."
         )
 
     click.echo(
@@ -306,7 +307,15 @@ def gather(network: str, allow_missing: bool):
     default=False,
     help="Output the errors and tracebacks from the failing tasks.",
 )
-def status(network: str, errors: bool, with_traceback: bool):
+@click.option(
+    "-a",
+    "--all-networks",
+    is_flag=True,
+    default=False,
+    help="If the status of all running tasks in your scope should be displayed. "
+    "This option will cause the command to ignore all other flags.",
+)
+def status(network: str, errors: bool, with_traceback: bool, all_networks: bool):
     """
     Get the status of the submitted network on alchemiscale.\f
 
@@ -314,32 +323,93 @@ def status(network: str, errors: bool, with_traceback: bool):
         network: The name of the JSON file containing the FreeEnergyCalculationNetwork we should check the status of.
         errors: Flag to show errors from the tasks.
         with_traceback: Flag to show the complete traceback for the errored tasks.
+        all_networks: If that status of all networks under the users scope should be displayed rather than for a single network.
+
+    Notes:
+        The `all_networks` flag will ignore all other flags, to get error details for a specific network use the network argument.
 
     """
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    from rich import pretty
+    from rich.table import Table
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
 
     # launch the helper which will try to login
     client = AlchemiscaleHelper()
-    # load the network
-    planned_network = FreeEnergyCalculationNetwork.from_file(network)
-    # check the status
-    client.network_status(planned_network=planned_network)
-    # collect errors
-    if errors or with_traceback:
-        task_errors = client.collect_errors(
-            planned_network,
+    if all_networks:
+        # show the results of all tasks in scope, this will print to terminal
+        client._client.get_scope_status()
+
+        # now get the status break down for each network in scope with running or waiting tasks only
+        running_networks = client._client.query_networks()
+
+        status_breakdown = console.status("Creating status breakdown")
+        status_breakdown.start()
+
+        # format into a rich table
+        table = Table()
+        table.add_column("Network Key", justify="center", no_wrap=True)
+        table.add_column(
+            "Complete", overflow="fold", style="green", header_style="green"
         )
-        # output errors in readable format
-        for failure in task_errors:
-            click.echo(click.style("Task:", bold=True))
-            click.echo(f"{failure.task_key}")
-            click.echo(click.style("Error:", bold=True))
-            click.echo(f"{failure.error}")
-            if with_traceback:
-                click.echo(click.style("Traceback:", bold=True))
-                click.echo(f"{failure.traceback}")
-            click.echo()
+        table.add_column(
+            "Running", overflow="fold", style="orange3", header_style="orange3"
+        )
+        table.add_column(
+            "Waiting", overflow="fold", style="#1793d0", header_style="#1793d0"
+        )
+        table.add_column(
+            "Error", overflow="fold", style="#ff073a", header_style="#ff073a"
+        )
+        table.add_column(
+            "Invalid", overflow="fold", style="magenta1", header_style="magenta1"
+        )
+        table.add_column(
+            "Deleted", overflow="fold", style="purple", header_style="purple"
+        )
+        for key in running_networks:
+            network_status = client._client.get_network_status(
+                network=key, visualize=False
+            )
+            if "running" in network_status or "waiting" in network_status:
+                table.add_row(
+                    str(key),
+                    str(network_status.get("complete", 0)),
+                    str(network_status.get("running", 0)),
+                    str(network_status.get("waiting", 0)),
+                    str(network_status.get("error", 0)),
+                    str(network_status.get("invalid", 0)),
+                    str(network_status.get("deleted", 0)),
+                )
+        status_breakdown.stop()
+        console.print(table)
+
+    else:
+        # load the network
+        planned_network = FreeEnergyCalculationNetwork.from_file(network)
+        # check the status
+        client.network_status(planned_network=planned_network)
+        # collect errors
+        if errors or with_traceback:
+            task_errors = client.collect_errors(
+                planned_network,
+            )
+            # output errors in readable format
+            for failure in task_errors:
+                click.echo(click.style("Task:", bold=True))
+                click.echo(f"{failure.task_key}")
+                click.echo(click.style("Error:", bold=True))
+                click.echo(f"{failure.error}")
+                if with_traceback:
+                    click.echo(click.style("Traceback:", bold=True))
+                    click.echo(f"{failure.traceback}")
+                click.echo()
 
 
 @alchemy.command()
@@ -381,3 +451,120 @@ def restart(network: str, verbose: bool, tasks):
         click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
     else:
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
+
+
+@alchemy.command()
+@click.option(
+    "-n",
+    "--network",
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
+    help="The name of the JSON file containing a planned FEC network with raw results from alchemiscale.",
+    default="result_network.json",
+    show_default=True,
+)
+@click.option(
+    "-rd",
+    "--reference-dataset",
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
+    help="The name of a csv file containing reference experimental data to be used in the predictions.",
+)
+@click.option(
+    "-ru",
+    "--reference-units",
+    type=click.Choice(["pIC50", "IC50"]),
+    help="The units of the reference experimental data provided in the csv or saved as an SDTag on the ligand.",
+    default="pIC50",
+    show_default=True,
+)
+def predict(
+    network: str, reference_units: str, reference_dataset: Optional[str] = None
+):
+    """
+    Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
+    results to the relevant energy range.
+    """
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.predict import (
+        create_absolute_report,
+        create_relative_report,
+        get_data_from_femap,
+    )
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from rich import pretty
+    from rich.padding import Padding
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    result_network = FreeEnergyCalculationNetwork.from_file(network)
+
+    message = Padding(
+        f"Loaded FreeEnergyCalculationNetwork from [repr.filename]{network}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    predict_status = console.status("Calculating absolute free energies")
+    predict_status.start()
+
+    ligands = result_network.network.to_openfe_ligands()
+    # convert to cinnabar fepmap to do the prediction via MLE
+    fe_map = result_network.results.to_fe_map()
+    fe_map.generate_absolute_values()
+    absolute_df, relative_df = get_data_from_femap(
+        fe_map=fe_map,
+        ligands=ligands,
+        assay_units=reference_units,
+        reference_dataset=reference_dataset,
+    )
+    # write the csv to file to be uploaded to postera later
+    absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"
+    relative_path = f"predictions-relative-{result_network.dataset_name}.csv"
+    absolute_df.to_csv(absolute_path)
+    relative_df.to_csv(relative_path)
+    predict_status.stop()
+    message = Padding(
+        f"Absolute predictions written to [repr.filename]{absolute_path}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+    message = Padding(
+        f"Relative predictions written to [repr.filename]{relative_path}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    if reference_dataset is not None:
+        report_status = console.status("Generating interactive reports")
+        report_status.start()
+        # we can only make these reports currently with experimental data
+        # TODO update once we have the per replicate estimate and error
+        absolute_layout = create_absolute_report(dataframe=absolute_df)
+        absolute_path = f"predictions-absolute-{result_network.dataset_name}.html"
+        relative_path = f"predictions-relative-{result_network.dataset_name}.html"
+        absolute_layout.save(
+            absolute_path,
+            title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}",
+            embed=True,
+        )
+
+        relative_layout = create_relative_report(dataframe=relative_df)
+        relative_layout.save(
+            relative_path,
+            title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}",
+            embed=True,
+        )
+        report_status.stop()
+
+        message = Padding(
+            f"Absolute report written to [repr.filename]{absolute_path}[/repr.filename]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+        message = Padding(
+            f"Relative report written to [repr.filename]{relative_path}[/repr.filename]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)

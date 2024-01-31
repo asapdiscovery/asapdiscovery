@@ -9,7 +9,7 @@ from typing import Any, Literal, Optional, Union
 
 import dask
 import numpy as np
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -50,9 +50,6 @@ class DockingInputPair(CompoundStructurePair, DockingInputBase):
     def to_design_units(self) -> list[oechem.OEDesignUnit]:
         return [self.complex.target.to_oedu()]
 
-    def unique_name(self):
-        return f"{self.complex.unique_name()}_{self.ligand.compound_name}-{self.ligand.fixed_inchikey}"
-
 
 class DockingInputMultiStructure(MultiStructureBase):
     """
@@ -91,6 +88,7 @@ class DockingBase(BaseModel):
         output_dir: Optional[Union[str, Path]] = None,
         use_dask: bool = False,
         dask_client=None,
+        return_for_disk_backend: bool = False,
     ) -> list["DockingResult"]:
         """
         Run docking on a list of DockingInputPairs
@@ -109,8 +107,8 @@ class DockingBase(BaseModel):
 
         Returns
         -------
-        list[DockingResult]
-            List of DockingResults
+        Union[list[DockingResult], list[Path]]]
+            List of DockingResults or paths to DockingResult json files
         """
         # make output dir if it doesn't exist
         if output_dir is not None:
@@ -119,13 +117,21 @@ class DockingBase(BaseModel):
         if use_dask:
             delayed_outputs = []
             for inp in inputs:
-                out = dask.delayed(self._dock)(inputs=[inp], output_dir=output_dir)
+                out = dask.delayed(self._dock)(
+                    inputs=[inp],
+                    output_dir=output_dir,
+                    return_for_disk_backend=return_for_disk_backend,
+                )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
                 delayed_outputs, dask_client=dask_client, errors="skip"
             )
         else:
-            outputs = self._dock(inputs=inputs, output_dir=output_dir)
+            outputs = self._dock(
+                inputs=inputs,
+                output_dir=output_dir,
+                return_for_disk_backend=return_for_disk_backend,
+            )
         # filter out None values
         outputs = [o for o in outputs if o is not None]
         return outputs
@@ -227,8 +233,9 @@ class DockingResult(BaseModel):
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
         return prot
 
+    @property
     def unique_name(self):
-        return self.input_pair.unique_name()
+        return self.input_pair.unique_name
 
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):
@@ -263,7 +270,7 @@ class DockingResult(BaseModel):
     @staticmethod
     def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
         output_dir = Path(output_dir)
-        output_pref = result.unique_name()
+        output_pref = result.unique_name
         compound_dir = output_dir / output_pref
         compound_dir.mkdir(parents=True, exist_ok=True)
         output_sdf_file = compound_dir / "docked.sdf"
@@ -287,3 +294,42 @@ class DockingResult(BaseModel):
 
     def __neq__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+
+def write_results_to_multi_sdf(
+    sdf_file: Union[str, Path],
+    results: Union[list[DockingResult], list[Path]],
+    backend=BackendType.IN_MEMORY,
+    reconstruct_cls=None,
+):
+    """
+    Write a list of DockingResults to a single sdf file
+    Can accept either a list of DockingResults or a list of paths to DockingResult json files
+    depending on the backend used
+
+    Parameters
+    ----------
+    results : Union[list[DockingResult], list[Path]]
+        List of DockingResults or paths to DockingResult json files
+    backend : BackendType, optional
+        Backend to use, by default BackendType.IN_MEMORY
+    reconstruct_cls : Optional[DockingResult], optional
+        DockingResult class to use for disk backend, by default None
+
+    Raises
+    ------
+    ValueError
+        If backend is disk and no reconstruct_cls is provided
+    """
+    if backend == BackendType.DISK and not reconstruct_cls:
+        raise ValueError("Must provide reconstruct_cls if using disk backend")
+
+    for res in results:
+        if backend == BackendType.IN_MEMORY:
+            lig = res.posed_ligand
+        elif backend == BackendType.DISK:
+            lig = reconstruct_cls.from_json_file(res).posed_ligand
+        else:
+            raise ValueError(f"Unknown backend type {backend}")
+
+        lig.to_sdf(sdf_file, allow_append=True)

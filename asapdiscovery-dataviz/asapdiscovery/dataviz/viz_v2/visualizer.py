@@ -2,7 +2,11 @@ import abc
 
 import dask
 import pandas as pd
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    actualise_dask_delayed_iterable,
+    backend_wrapper,
+)
 from asapdiscovery.docking.docking_v2 import DockingResult
 from pydantic import BaseModel
 
@@ -18,23 +22,32 @@ class VisualizerBase(abc.ABC, BaseModel):
 
     def visualize(
         self,
-        docking_results: list[DockingResult],
-        *args,
+        inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
-        **kwargs,
+        backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
     ) -> pd.DataFrame:
         if use_dask:
             delayed_outputs = []
-            for res in docking_results:
-                out = dask.delayed(self._visualize)(docking_results=[res], **kwargs)
-                delayed_outputs.append(out)
+            for inp in inputs:
+                out = dask.delayed(backend_wrapper)(
+                    inputs=[inp],
+                    func=self._visualize,
+                    backend=backend,
+                    reconstruct_cls=reconstruct_cls,
+                )
+                delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="raise"
+                delayed_outputs, dask_client, errors="skip"
             )
-            outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
-            outputs = self._visualize(docking_results=docking_results, *args, **kwargs)
+            outputs = backend_wrapper(
+                inputs=inputs,
+                func=self._visualize,
+                backend=backend,
+                reconstruct_cls=reconstruct_cls,
+            )
 
         return pd.DataFrame(outputs)
 

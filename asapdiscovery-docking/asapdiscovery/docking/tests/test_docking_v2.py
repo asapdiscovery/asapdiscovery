@@ -56,7 +56,10 @@ def test_docking_with_file_write(results_simple, tmp_path):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_docking_with_cache(docking_input_pair, tmp_path, capfd):
+def test_docking_with_cache(docking_input_pair, tmp_path, caplog):
+    import logging
+
+    caplog.set_level(logging.DEBUG)
     docker = POSITDocker(use_omega=False)
     results = docker.dock([docking_input_pair], output_dir=tmp_path / "docking_results")
     assert len(results) == 1
@@ -68,8 +71,7 @@ def test_docking_with_cache(docking_input_pair, tmp_path, capfd):
     )
     assert len(results2) == 1
     assert results2 == results
-    out, err = capfd.readouterr()
-    assert "already exists, reading from disk" in out
+    assert "already exists, reading from disk" in caplog.text
 
 
 @pytest.mark.skipif(

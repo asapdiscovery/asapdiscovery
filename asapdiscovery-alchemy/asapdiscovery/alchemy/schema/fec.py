@@ -1,3 +1,4 @@
+import warnings
 from collections import Counter
 from typing import Any, Literal, Optional
 
@@ -122,17 +123,22 @@ class _BaseResults(_SchemaBaseFrozen):
             raw_results[result.name()].append(result)
 
         # make sure we have a solvent and complex phase for each result
+        ligands_to_remove = []
         for name, transforms in raw_results.items():
             missing_phase = {"complex", "solvent"} - {t.phase for t in transforms}
             if missing_phase:
-                raise RuntimeError(
-                    f"The transformation {name} is missing simulated legs in the following phases {missing_phase}"
+                warnings.warn(
+                    f"The transformation {name} is missing simulated legs in the following phases {missing_phase}; removing"
                 )
-            if len(transforms) != 2:
+                ligands_to_remove.append(name)
+            if len(transforms) > 2:
                 # We have too many simulations for this transform
                 raise RuntimeError(
                     f"The transformation {name} has too many simulated legs, found the following phases {[t.phase for t in transforms]} expected complex and solvent."
                 )
+
+        for name in ligands_to_remove:
+            raw_results.pop(name)
 
         # make the cinnabar data
         all_results = []
@@ -383,6 +389,13 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             duplicated = [key.name for key, value in count.items() if value > 1]
             raise ValueError(
                 f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
+            )
+
+        # if any ligands lack a name, then raise an exception; important for
+        # ligands to have names for human-readable result gathering downstream
+        if missing := len([ligand for ligand in ligands if not ligand.name]):
+            raise ValueError(
+                f"{missing} of {len(ligands)} ligands do not have names; names are required for ligands for downstream results handling"
             )
 
         # start by trying to plan the network

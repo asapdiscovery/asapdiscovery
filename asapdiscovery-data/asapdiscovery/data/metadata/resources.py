@@ -27,6 +27,11 @@ EV_A71_Capsid_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/ev_a71_capsid.yaml"
 )
 
+EV_D68_Capsid_SEQRES = pkg_resources.resource_filename(
+    __name__, "master_seqres/ev_d68_capsid.yaml"
+)
+
+
 seqres_data = {
     TargetTags("MERS-CoV-Mpro").value: MERS_CoV_Mpro_SEQRES,
     TargetTags("SARS-CoV-2-Mpro").value: SARS_CoV_2_Mpro_SEQRES,
@@ -36,6 +41,7 @@ seqres_data = {
     TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_SEQRES,
     TargetTags("DENV-NS2B-NS3pro").value: DENV_NS2B_NS3pro_SEQRES,
     TargetTags("EV-A71-Capsid").value: EV_A71_Capsid_SEQRES,
+    TargetTags("EV-D68-Capsid").value: EV_D68_Capsid_SEQRES,
 }
 
 # Fitness data in JSON format
@@ -82,4 +88,10 @@ master_structures = {
     "EV-A71-Capsid": pkg_resources.resource_filename(
         __name__, "master_structures/ev_a71_capsid.pdb"
     ),
+    "EV-D68-Capsid": pkg_resources.resource_filename(
+        __name__, "master_structures/ev_d68_capsid.pdb"
+    ),
 }
+FINTSCORE_PARAMETERS = pkg_resources.resource_filename(
+    __name__, "fintscore_parameters.yaml"
+)

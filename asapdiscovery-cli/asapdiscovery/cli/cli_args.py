@@ -87,6 +87,14 @@ def output_dir(func):
     )(func)
 
 
+def overwrite(func):
+    return click.option(
+        "--overwrite/--no-overwrite",
+        default=True,
+        help="Whether to overwrite the output directory if it exists.",
+    )(func)
+
+
 def input_json(func):
     return click.option(
         "--input-json",
@@ -135,6 +143,15 @@ def cache_dir(func):
         "--cache-dir",
         type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
         help="Path to a directory where design units are cached.",
+    )(func)
+
+
+def use_only_cache(func):
+    return click.option(
+        "--use-only-cache",
+        is_flag=True,
+        default=False,
+        help="Whether to only use the cache.",
     )(func)
 
 

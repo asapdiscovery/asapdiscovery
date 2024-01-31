@@ -4,7 +4,7 @@ This module contains the inputs, docker, and output schema for using POSIT
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import ClassVar, Literal, Optional, Union
 
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
@@ -112,6 +112,8 @@ class POSITDockingResults(DockingResult):
 class POSITDocker(DockingBase):
     type: Literal["POSITDocker"] = "POSITDocker"
 
+    result_cls: ClassVar[POSITDockingResults] = POSITDockingResults
+
     relax: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
         description="When to check for relaxation either, 'clash', 'all', 'none'",
@@ -197,31 +199,35 @@ class POSITDocker(DockingBase):
         ],
         output_dir: Optional[Union[str, Path]] = None,
         error="skip",
+        return_for_disk_backend=False,
     ) -> list[DockingResult]:
         """
         Docking workflow using OEPosit
         """
+        if output_dir is None and return_for_disk_backend:
+            raise ValueError(
+                "Cannot specify return_for_disk_backend and not output_dir"
+            )
 
         docking_results = []
 
         for set in inputs:
+            if output_dir is not None:
+                docked_result_json_path = Path(
+                    Path(output_dir) / set.unique_name / "docking_result.json"
+                )
+
             if (
                 set.is_cacheable
                 and (output_dir is not None)
-                and (
-                    Path(
-                        Path(output_dir) / set.unique_name() / "docking_result.json"
-                    ).exists()
-                )
+                and (docked_result_json_path.exists())
             ):
-                print(
-                    f"Docking result for {set.unique_name()} already exists, reading from disk"
+                logger.info(
+                    f"Docking result for {set.unique_name} already exists, reading from disk"
                 )
                 output_dir = Path(output_dir)
                 docking_results.append(
-                    POSITDockingResults.from_json_file(
-                        output_dir / set.unique_name() / "docking_result.json"
-                    )
+                    POSITDockingResults.from_json_file(docked_result_json_path)
                 )
             else:
                 dus = set.to_design_units()
@@ -294,8 +300,8 @@ class POSITDocker(DockingBase):
                         # set SD tags
                         sd_data = {
                             DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
-                            DockingResultCols.POSIT_METHOD.value: POSIT_METHOD.reverse_lookup(
-                                self.posit_method.value
+                            DockingResultCols.POSIT_METHOD.value: oedocking.OEPositMethodGetName(
+                                result.GetPositMethod()
                             ),
                         }
                         posed_ligand.set_SD_data(sd_data)
@@ -315,7 +321,10 @@ class POSITDocker(DockingBase):
                             probability=prob,
                             provenance=self.provenance(),
                         )
-                        docking_results.append(docking_result)
+                        if return_for_disk_backend:
+                            docking_results.append(docked_result_json_path)
+                        else:
+                            docking_results.append(docking_result)
                         if output_dir is not None:
                             docking_result.write_docking_files(output_dir)
 
