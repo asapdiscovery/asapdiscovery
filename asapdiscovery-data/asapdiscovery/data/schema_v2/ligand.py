@@ -253,6 +253,9 @@ class Ligand(DataModelAbstractBase):
                         data[key] = str(getattr(self, key))
         # dump the enum using value to get the str repr
         data["data_format"] = self.data_format.value
+        # if we have a compound name set it as the RDKit _Name prop as well
+        if self.compound_name is not None:
+            data["_Name"] = self.compound_name
         # dump tags as separate items
         if self.tags is not None:
             data.update({k: v for k, v in self.tags.items()})

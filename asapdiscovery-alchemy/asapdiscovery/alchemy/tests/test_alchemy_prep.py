@@ -28,7 +28,7 @@ from asapdiscovery.data.schema_v2.ligand import Ligand
 def test_prep_workflow(strict_stereo, core_smarts, failed, mac1_complex):
     """Make sure the full prep workflow can be run and stereo issues can be filtered."""
 
-    # we do not have access to epik in testing so skip, use openeye as its faster
+    # we do not have access to epik in testing so skip, use openeye as it's faster
     workflow = AlchemyPrepWorkflow(
         charge_expander=None,
         strict_stereo=strict_stereo,
