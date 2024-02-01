@@ -51,6 +51,8 @@ asapdiscovery-GAT-2023.04.12:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.0.0"
+  mtenn_upper_pin: "0.3.0"
 
 
 # asapdiscovery-GAT-2023.04.20 model
