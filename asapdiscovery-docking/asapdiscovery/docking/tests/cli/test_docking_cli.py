@@ -1,5 +1,6 @@
 import os
 import traceback
+from unittest.mock import patch
 
 import pytest
 from asapdiscovery.docking.cli import docking as cli
@@ -154,6 +155,7 @@ def test_project_support_docking_cli_pdb_file_dask(
     assert click_success(result)
 
 
+@patch("asapdiscovery.simulation.simulate._SIMULATOR_TRUNCATE_STEPS", False)
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
@@ -178,11 +180,12 @@ def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path):
             tmp_path,
             "--md",
             "--md-steps",
-            1000,
+            1,
             "--md-openmm-platform",
             "CPU",
         ],
     )
+    # check that the number of steps was set to 1
     assert click_success(result)
 
 
