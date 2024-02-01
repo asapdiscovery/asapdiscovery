@@ -28,7 +28,7 @@ from asapdiscovery.ml.cli_args import (
     trainer_config_cache,
     wandb_args,
 )
-from asapdiscovery.ml.schema_v2.config import (
+from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterType,
     EarlyStoppingType,

@@ -9,7 +9,7 @@ import torch
 import wandb
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
-from asapdiscovery.ml.schema_v2.config import (
+from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterConfig,
     EarlyStoppingConfig,
