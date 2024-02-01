@@ -73,6 +73,7 @@ def smiles():
 def ligands(smiles):
     return [Ligand.from_smiles(s, compound_name="test") for s in smiles]
 
+
 @pytest.fixture(scope="module")
 def multipose_ligand():
     return Path("/home/feanor/multiconf.sdf")

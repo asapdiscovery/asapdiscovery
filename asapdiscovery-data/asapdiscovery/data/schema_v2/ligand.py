@@ -309,7 +309,7 @@ class Ligand(DataModelAbstractBase):
         sdf_file : Union[str, Path]
             Path to the SDF file
         """
-        
+
         oemol = load_openeye_sdf(sdf_file)
         return cls.from_oemol(oemol, **kwargs)
 

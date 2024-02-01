@@ -317,8 +317,10 @@ def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
     else:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
+
 def sdf_string_to_oemol():
     pass
+
 
 def load_openeye_multiconf_sdf(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     """
