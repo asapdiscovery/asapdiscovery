@@ -118,7 +118,7 @@ def test_alchemy_prep_create(tmpdir):
         assert prep_workflow.core_smarts == "CC"
 
 
-def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex):
+def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow):
     """Test running the alchemy prep workflow on a set of mac1 ligands and that failures are captured"""
 
     # locate the ligands input file
@@ -129,18 +129,24 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex):
     with tmpdir.as_cwd():
         # complex to a local file
         mac1_complex.to_json_file("complex.json")
+        # write out the workflow to file
+        openeye_prep_workflow.to_file("openeye_workflow.json")
 
         result = runner.invoke(
             alchemy,
             [
                 "prep",
                 "run",
+                "-f",
+                "openeye_workflow.json",
                 "-n",
                 "mac1-testing",
                 "-l",
                 ligand_file.as_posix(),
                 "-r",
                 "complex.json",
+                "-p",
+                1,
             ],
         )
         assert result.exit_code == 0
@@ -182,7 +188,7 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex):
         assert len(prep_dataset.failed_ligands["InconsistentStereo"]) == 2
 
 
-def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex):
+def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
     """Test running the alchemy prep workflow and make sure all ligands pass when expected."""
 
     # locate the ligands input file
@@ -194,7 +200,8 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex):
         # complex to a local file
         mac1_complex.to_json_file("complex.json")
         # create a new prep workflow which allows incorrect stereo
-        workflow = AlchemyPrepWorkflow(strict_stereo=False)
+        workflow = openeye_prep_workflow.copy(deep=True)
+        workflow.strict_stereo = False
         workflow.to_file("workflow.json")
 
         result = runner.invoke(
@@ -210,6 +217,8 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex):
                 ligand_file.as_posix(),
                 "-r",
                 "complex.json",
+                "-p",
+                1,
             ],
         )
         assert result.exit_code == 0
