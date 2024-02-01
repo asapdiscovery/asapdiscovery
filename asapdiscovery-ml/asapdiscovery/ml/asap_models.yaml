@@ -29,6 +29,12 @@ gat_test_v0:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  # Because model compatibility with mtenn versions changes over time, the below pins
+  #  will make sure the model spec is compatible with the installed mtenn version.
+  #  Versions will be checked as:
+  #   `mtenn_lower_pin <= mtenn.__version__ < mtenn_upper_pin`
+  mtenn_lower_pin: "0.0.0"
+  mtenn_upper_pin: "0.3.0"
 
 
 # asapdiscovery-GAT-2023.04.12 model
@@ -61,6 +67,8 @@ asapdiscovery-GAT-2023.04.20:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.0.0"
+  mtenn_upper_pin: "0.3.0"
 
 
 # asapdiscovery-schnet-2023.04.29 model
@@ -77,6 +85,8 @@ asapdiscovery-schnet-2023.04.29:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.0.0"
+  mtenn_upper_pin: "0.3.0"
 
 
 # Earlier models will not work with DGL >1.1 due to changes in their code
@@ -94,6 +104,8 @@ asapdiscovery-GAT-2023.05.09:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.0.0"
+  mtenn_upper_pin: "0.3.0"
 
 
 # ! From here on we will prefix the model names with targets as there are now models for each target
@@ -112,6 +124,8 @@ asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.09:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.0.0"
+  mtenn_upper_pin: "0.3.0"
 
 
 # same as asapdiscovery-schnet-2023.04.29
@@ -128,6 +142,8 @@ asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.04.29:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.0.0"
+  mtenn_upper_pin: "0.3.0"
 
 
 # asapdiscovery-SARS-CoV-2-Mac1-GAT-2023.08.09 !! First Mac1 model
@@ -143,6 +159,8 @@ asapdiscovery-SARS-CoV-2-Mac1-GAT-2023.08.09:
   last_updated: 2023-08-09
   targets:
     - SARS-CoV-2-Mac1
+  mtenn_lower_pin: "0.0.0"
+  mtenn_upper_pin: "0.3.0"
 
 
 # earlier SchNet models shouldn't be used with mtenn >0.3.0 (GAT models should be fine,
@@ -160,6 +178,8 @@ asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.25:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.3.0"
+  mtenn_upper_pin:
 
 
 asapdiscovery-SARS-CoV-2-Mac1-GAT-2023.08.25:
@@ -174,6 +194,8 @@ asapdiscovery-SARS-CoV-2-Mac1-GAT-2023.08.25:
   last_updated: 2023-08-25
   targets:
     - SARS-CoV-2-Mac1
+  mtenn_lower_pin: "0.3.0"
+  mtenn_upper_pin:
 
 
 asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.08.25:
@@ -189,6 +211,8 @@ asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.08.25:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.3.0"
+  mtenn_upper_pin:
 
 
 # new SchNet model trained with a lower learning rate to avoid the weights collapsing
@@ -206,3 +230,5 @@ asapdiscovery-SARS-CoV-2-Mpro-schnet-2023.11.20:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.3.0"
+  mtenn_upper_pin:
