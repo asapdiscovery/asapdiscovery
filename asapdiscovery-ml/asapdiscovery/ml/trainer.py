@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import wandb
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterConfig,
@@ -16,6 +15,7 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
+from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
