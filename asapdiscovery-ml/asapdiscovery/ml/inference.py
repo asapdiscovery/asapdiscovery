@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
 import dgl
+import mtenn
 import numpy as np
 import torch
 from asapdiscovery.data.openeye import oechem
@@ -14,8 +15,6 @@ from asapdiscovery.ml.models import (
     MLModelRegistry,
     MLModelSpec,
 )
-
-import mtenn
 
 # static import of models from base yaml here
 from asapdiscovery.ml.utils import build_model, load_weights
