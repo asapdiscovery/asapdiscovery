@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import rich
 from asapdiscovery.alchemy.schema.base import _SchemaBase
@@ -7,7 +7,10 @@ from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.state_expanders.protomer_expander import EpikExpander
 from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
-from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
+from asapdiscovery.docking.schema.pose_generation import (
+    OpenEyeConstrainedPoseGenerator,
+    RDKitConstrainedPoseGenerator,
+)
 from pydantic import Field
 from rich import pretty
 
@@ -29,8 +32,10 @@ class _AlchemyPrepBase(_SchemaBase):
         description="The charge and tautomer expander that"
         "should be applied to the ligands. This stage will be skipped if set to `None`.",
     )
-    pose_generator: OpenEyeConstrainedPoseGenerator = Field(
-        OpenEyeConstrainedPoseGenerator(),
+    pose_generator: Union[
+        OpenEyeConstrainedPoseGenerator, RDKitConstrainedPoseGenerator
+    ] = Field(
+        RDKitConstrainedPoseGenerator(),
         description="The method "
         "to generate the initial poses for the molecules for FEC.",
     )
@@ -111,6 +116,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         dataset_name: str,
         ligands: list[Ligand],
         reference_complex: PreppedComplex,
+        processors: int = 1,
     ) -> AlchemyDataSet:
         """
         Run the set of input ligands through the state enumeration and pose generation workflow to create a set of posed
@@ -121,6 +127,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         dataset_name: The name which should be given to this dataset
         ligands: The list of input ligands which should be run through the workflow
         reference_complex: The prepared target crystal structure with a reference ligand which the poses should be constrained to.
+        processors: The number of parallel processors that should be used to run the workflow.
 
         Returns
         -------
@@ -174,6 +181,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             prepared_complex=reference_complex,
             ligands=ligands,
             core_smarts=self.core_smarts,
+            processors=processors,
         )
         posed_ligands = pose_result.posed_ligands
         provenance[self.pose_generator.type] = self.pose_generator.provenance()

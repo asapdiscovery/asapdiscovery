@@ -593,7 +593,13 @@ class Trainer(BaseModel):
             if batch_counter > 0:
                 # Backprop for final incomplete batch
                 self.optimizer.step()
-                if any([p.grad.isnan().any().item() for p in self.model.parameters()]):
+                if any(
+                    [
+                        p.grad.isnan().any().item()
+                        for p in self.model.parameters()
+                        if p.grad is not None
+                    ]
+                ):
                     raise ValueError("NaN gradients")
             end_time = time()
 
