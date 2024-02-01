@@ -83,6 +83,14 @@ def create(filename: str, core_smarts: str):
     help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), `all` will use all"
     "or the exact number of cpus to use can be provided.",
 )
+@click.option(
+    "-pm",
+    "--postera-molset-name",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+    help="The name of the Postera molecule set to pull the input ligands from.",
+)
 def run(
     dataset_name: str,
     ligands: str,
@@ -90,6 +98,7 @@ def run(
     factory_file: Optional[str] = None,
     core_smarts: Optional[str] = None,
     processors: int = 1,
+    postera_molset_name: Optional[str] = None
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -104,13 +113,14 @@ def run(
         used but a core smarts must be provided.
     core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained. Required if the factory file is not supplied.
     processors: The number of processors which can be used to run the workflow in parallel. `auto` will use all
-    cpus -1, `all` will use all or the exact number of cpus to use can be provided.
+        cpus -1, `all` will use all or the exact number of cpus to use can be provided.
+    postera_molset_name: The name of the postera molecule set we should pull the data from instead of a local file.
     """
     import pathlib
     from multiprocessing import cpu_count
 
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.cli.utils import print_header, pull_from_postera
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.openeye import save_openeye_sdfs
     from asapdiscovery.data.schema_v2.complex import PreppedComplex
@@ -130,11 +140,19 @@ def run(
     else:
         factory = AlchemyPrepWorkflow(core_smarts=core_smarts)
 
-    # load the molecules
-    asap_ligands = MolFileFactory(filename=ligands).load()
+    # workout where the molecules are coming from
+    if postera_molset_name is not None:
+        postera_download = console.status(f"Downloading molecules from Postera molecule set:{postera_molset_name}")
+        postera_download.start()
+        asap_ligands = pull_from_postera(molecule_set_name=postera_molset_name)
+        postera_download.stop()
+
+    else:
+        # load the molecules
+        asap_ligands = MolFileFactory(filename=ligands).load()
 
     message = Padding(
-        f"Loaded {len(asap_ligands)} ligands from [repr.filename]{ligands}[/repr.filename]",
+        f"Loaded {len(asap_ligands)} ligands from [repr.filename]{postera_molset_name or ligands}[/repr.filename]",
         (1, 0, 1, 0),
     )
     console.print(message)
