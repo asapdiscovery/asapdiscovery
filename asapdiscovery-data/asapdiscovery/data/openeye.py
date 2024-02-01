@@ -309,14 +309,16 @@ def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
         oechem.OEFormat_SDF,
         oechem.OEIFlavor_SDF_Default,
     )
+    ifs.SetConfTest(oechem.OEOmegaConfTest())
     if ifs.open(str(sdf_fn)):
-        coords_mol = oechem.OEGraphMol()
-        oechem.OEReadMolecule(ifs, coords_mol)
+        for mol in ifs.GetOEMols():
+            return mol
         ifs.close()
-        return coords_mol
     else:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
+def sdf_string_to_oemol():
+    pass
 
 def load_openeye_multiconf_sdf(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
     """
@@ -703,11 +705,11 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEGraphMol:
         oechem.OEFormat_SDF,
         oechem.OEIFlavor_SDF_Default,
     )
-    ims.openstring(sdf_str)
-    # NOTE: must use GraphMol here, not OEMol, otherwise SD data will not be read
-    mol = oechem.OEGraphMol()
-    oechem.OEReadMolecule(ims, mol)
-    return mol
+    ims.SetConfTest(oechem.OEOmegaConfTest())
+    if ims.openstring(sdf_str):
+        for mol in ims.GetOEMols():
+            return mol
+        ims.close()
 
 
 def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:

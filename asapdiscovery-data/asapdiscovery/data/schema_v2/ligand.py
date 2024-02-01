@@ -309,6 +309,7 @@ class Ligand(DataModelAbstractBase):
         sdf_file : Union[str, Path]
             Path to the SDF file
         """
+        
         oemol = load_openeye_sdf(sdf_file)
         return cls.from_oemol(oemol, **kwargs)
 
@@ -433,7 +434,7 @@ class Ligand(DataModelAbstractBase):
         """
         Get the number of poses in the ligand.
         """
-        return len(self.poses)
+        return self.to_oemol().NumConfs()
 
     @property
     def has_multiple_poses(self) -> bool:

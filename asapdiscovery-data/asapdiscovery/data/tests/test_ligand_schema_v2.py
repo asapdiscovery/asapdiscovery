@@ -120,6 +120,9 @@ def test_ligand_from_sdf_title_used(moonshot_sdf):
     )
     assert lig.compound_name == "Mpro-P0008_0A_ERI-UCB-ce40166b-17"
 
+def test_multi_pose_ligand_roundtrip(multipose_ligand):
+    lig = Ligand.from_sdf(multipose_ligand)
+    assert lig.num_poses == 1
 
 def test_inchi(smiles):
     lig = Ligand.from_smiles(smiles, compound_name="test_name")
