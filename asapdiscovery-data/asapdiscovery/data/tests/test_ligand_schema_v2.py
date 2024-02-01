@@ -3,7 +3,8 @@ from uuid import uuid4
 import pytest
 from asapdiscovery.data.openeye import get_SD_data, load_openeye_sdf, set_SD_data
 from asapdiscovery.data.schema import ExperimentalCompoundData
-from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
+from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers, LigandProvenance
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
@@ -371,3 +372,17 @@ def test_ligand_sdf_roundtrip_SD(
     # read with SD data
     l2 = Ligand.from_sdf(tmp_path / "test_with_attrs.sdf")
     assert l1 == l2
+
+
+def test_to_rdkit(smiles):
+    """Make sure we can convert to an rdkit molecule without losing any SD tags."""
+
+    molecule = Ligand.from_smiles(smiles=smiles, compound_name="testing")
+    rdkit_mol = molecule.to_rdkit()
+    props = rdkit_mol.GetPropsAsDict(includePrivate=True)
+    # we only check the none default properties as these are what are saved
+    assert molecule.compound_name == props["compound_name"]
+    assert molecule.provenance == LigandProvenance.parse_raw(props["provenance"])
+    assert molecule.data_format.value == props["data_format"]
+    # make sure the name was set when provided.
+    assert molecule.compound_name == props["_Name"]
