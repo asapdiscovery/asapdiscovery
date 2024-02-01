@@ -35,7 +35,7 @@ from asapdiscovery.ml.config import (
     LossFunctionType,
     OptimizerType,
 )
-from asapdiscovery.ml.schema_v2.trainer import Trainer
+from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
 
 

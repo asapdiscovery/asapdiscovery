@@ -5,7 +5,7 @@ import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.cli import cli
 from asapdiscovery.ml.config import DatasetConfig
-from asapdiscovery.ml.schema_v2.trainer import Trainer
+from asapdiscovery.ml.trainer import Trainer
 from click.testing import CliRunner
 
 
