@@ -109,12 +109,12 @@ def run(
     import pathlib
     from multiprocessing import cpu_count
 
+    import pandas
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.schema_v2.complex import PreppedComplex
     from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-    import pandas
     from rich import pretty
     from rich.padding import Padding
 
@@ -207,13 +207,15 @@ def run(
         console.print(message)
         for fail_type, ligands in alchemy_dataset.failed_ligands.items():
             for ligand in ligands:
-                rows.append({
-                    "smiles": ligand.provenance.isomeric_smiles,
-                    "name": ligand.compound_name,
-                    "failure type": fail_type,
-                    # if it was an omega fail print the return code
-                    "failure info": ligand.tags.get("omega_return_code", "")
-                })
+                rows.append(
+                    {
+                        "smiles": ligand.provenance.isomeric_smiles,
+                        "name": ligand.compound_name,
+                        "failure type": fail_type,
+                        # if it was an omega fail print the return code
+                        "failure info": ligand.tags.get("omega_return_code", ""),
+                    }
+                )
 
         # write to csv
         df = pandas.DataFrame(rows)
