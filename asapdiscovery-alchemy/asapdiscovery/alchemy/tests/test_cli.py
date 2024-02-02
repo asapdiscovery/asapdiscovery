@@ -169,7 +169,7 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
         )
         # check a warning is printed if some molecules are removed
         assert (
-            "WARNING some ligands failed to have poses generated see failed_ligands"
+            "WARNING some ligands failed to have poses generated"
             in result.stdout
         )
         # check we can load the result
@@ -182,6 +182,9 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
             .joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb")
             .exists()
         )
+        # make sure the csv of failed ligands is writen to file
+        assert pathlib.Path(prep_dataset.dataset_name).joinpath("failed_ligands.csv").exists()
+        # check the dataset details are as expected
         assert prep_dataset.dataset_name == "mac1-testing"
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 3

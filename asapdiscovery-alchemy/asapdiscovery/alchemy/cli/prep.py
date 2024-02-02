@@ -112,9 +112,9 @@ def run(
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
-    from asapdiscovery.data.openeye import save_openeye_sdfs
     from asapdiscovery.data.schema_v2.complex import PreppedComplex
     from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+    import pandas
     from rich import pretty
     from rich.padding import Padding
 
@@ -196,15 +196,26 @@ def run(
     )
     console.print(message)
 
+    # create a csv of the failed ligands with the failure reason
     if alchemy_dataset.failed_ligands:
+        rows = []
+        failed_ligands_file = output_folder.joinpath("failed_ligands.csv")
         message = Padding(
-            f"[yellow]WARNING some ligands failed to have poses generated see failed_ligands files in [repr.filename]{output_folder}[/repr.filename][/yellow]",
+            f"[yellow]WARNING some ligands failed to have poses generated see [repr.filename]{failed_ligands_file}[/repr.filename][/yellow]",
             (1, 0, 1, 0),
         )
         console.print(message)
         for fail_type, ligands in alchemy_dataset.failed_ligands.items():
-            fails = [ligand.to_oemol() for ligand in ligands]
-            failed_ligand_file = output_folder.joinpath(
-                f"failed_ligands_{fail_type}.sdf"
-            )
-            save_openeye_sdfs(fails, failed_ligand_file)
+            for ligand in ligands:
+                rows.append({
+                    "smiles": ligand.provenance.isomeric_smiles,
+                    "name": ligand.compound_name,
+                    "failure type": fail_type,
+                    # if it was an omega fail print the return code
+                    "failure info": ligand.tags.get("omega_return_code", "")
+                })
+
+        # write to csv
+        df = pandas.DataFrame(rows)
+        failed_ligands_file = output_folder.joinpath("failed_ligands.csv")
+        df.to_csv(failed_ligands_file, index=False)
