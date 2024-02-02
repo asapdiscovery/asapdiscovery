@@ -168,7 +168,7 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
             in result.stdout
         )
         # check a warning is printed if some molecules are removed
-        assert "WARNING some ligands failed to have poses generated" in result.stdout
+        assert "WARNING 2 ligands failed to have poses generated" in result.stdout
         # check we can load the result
         prep_dataset = AlchemyDataSet.from_file(
             "mac1-testing/prepared_alchemy_dataset.json"
@@ -242,7 +242,7 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
         assert "[✓] Stereochemistry filtering complete" not in result.stdout
         # check the failure warning is not printed
         assert (
-            "WARNING some ligands failed to have poses generated see failed_ligands"
+            "WARNING 2 ligands failed to have poses generated see failed_ligands"
             not in result.stdout
         )
         # check we can load the result

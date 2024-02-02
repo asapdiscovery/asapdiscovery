@@ -200,8 +200,10 @@ def run(
     if alchemy_dataset.failed_ligands:
         rows = []
         failed_ligands_file = output_folder.joinpath("failed_ligands.csv")
+        # sum all the failed ligands across all stages
+        fails = sum([len(values) for values in alchemy_dataset.failed_ligands.values()])
         message = Padding(
-            f"[yellow]WARNING some ligands failed to have poses generated see [repr.filename]{failed_ligands_file}[/repr.filename][/yellow]",
+            f"[yellow]WARNING {fails} ligands failed to have poses generated see [repr.filename]{failed_ligands_file}[/repr.filename][/yellow]",
             (1, 0, 1, 0),
         )
         console.print(message)
