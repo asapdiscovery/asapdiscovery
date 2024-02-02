@@ -2,7 +2,7 @@ import rich
 
 
 def print_header(console: "rich.Console"):
-    "Print an ASAP-Alchemy header"
+    """Print an ASAP-Alchemy header"""
 
     console.line()
     console.rule("ASAP-Alchemy")
@@ -11,10 +11,12 @@ def print_header(console: "rich.Console"):
 
 def pull_from_postera(molecule_set_name: str):
     """
-    A convenience method with tucked imports to avoid import Postera tools when not needed.
+    A convenience method with tucked imports to avoid importing Postera tools when not needed.
 
-    Returns
-    -------
+    Args:
+        The name of the molecule set which should be pulled from postera
+
+    Returns:
         A list of Ligands extracted from postera molecule set.
     """
     from asapdiscovery.data.services_config import PosteraSettings

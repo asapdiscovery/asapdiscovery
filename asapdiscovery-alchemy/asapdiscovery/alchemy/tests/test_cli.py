@@ -257,6 +257,49 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
         assert prep_dataset.failed_ligands is None
 
 
+def test_alchemy_prep_run_from_postera(tmpdir, mac1_complex, openeye_prep_workflow, monkeypatch):
+    """Test running the alchemy prep workflow on a set of mac1 ligands downloaded from postera."""
+    from asapdiscovery.alchemy.cli import utils
+    from asapdiscovery.data.schema_v2.ligand import Ligand
+    from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+
+    # locate the ligands input file
+    ligand_file = fetch_test_file("constrained_conformer/mac1_ligands.smi")
+
+    # Mock the method to download from postera making sure the molecule set name is passed
+    def pull(molecule_set_name: str) -> list[Ligand]:
+        assert molecule_set_name == "mac1_ligands"
+        return MolFileFactory(filename=ligand_file.as_posix()).load()
+    monkeypatch.setattr(utils, "pull_from_postera", pull)
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # complex to a local file
+        mac1_complex.to_json_file("complex.json")
+        # write out the workflow to file
+        openeye_prep_workflow.to_file("openeye_workflow.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "run",
+                "-f",
+                "openeye_workflow.json",
+                "-n",
+                "mac1-testing",
+                "-pm",
+                "mac1_ligands",
+                "-r",
+                "complex.json",
+                "-p",
+                1,
+            ],
+        )
+        assert result.exit_code == 0
+
+
 def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
     """Mock testing the status all command."""
 
