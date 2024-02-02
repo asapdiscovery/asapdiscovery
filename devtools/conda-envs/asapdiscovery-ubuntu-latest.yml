@@ -31,6 +31,7 @@ dependencies:
   - pebble
   - panel
   - plotmol
+  - semver
 
   # data
   - requests

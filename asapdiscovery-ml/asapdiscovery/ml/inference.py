@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
 import dgl
+import mtenn
 import numpy as np
 import torch
 from asapdiscovery.data.openeye import oechem
@@ -142,6 +143,27 @@ class InferenceBase(BaseModel):
         InferenceBase
             InferenceBase object created from LocalMLModelSpec.
         """
+
+        # First make sure mtenn versions are compatible
+        if not local_model_spec.check_mtenn_version():
+            lower_pin = (
+                f">={local_model_spec.mtenn_lower_pin}"
+                if local_model_spec.mtenn_lower_pin
+                else ""
+            )
+            upper_pin = (
+                f"<{local_model_spec.mtenn_upper_pin}"
+                if local_model_spec.mtenn_upper_pin
+                else ""
+            )
+            sep = "," if lower_pin and upper_pin else ""
+
+            raise ValueError(
+                f"Installed mtenn version ({mtenn.__version__}) "
+                "is incompatible with the version specified in the MLModelSpec "
+                f"({lower_pin}{sep}{upper_pin})"
+            )
+
         model = build_model(
             local_model_spec.type,
             config=local_model_spec.config_file,
