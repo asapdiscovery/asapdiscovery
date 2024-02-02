@@ -98,7 +98,7 @@ def run(
     factory_file: Optional[str] = None,
     core_smarts: Optional[str] = None,
     processors: int = 1,
-    postera_molset_name: Optional[str] = None
+    postera_molset_name: Optional[str] = None,
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -142,7 +142,9 @@ def run(
 
     # workout where the molecules are coming from
     if postera_molset_name is not None:
-        postera_download = console.status(f"Downloading molecules from Postera molecule set:{postera_molset_name}")
+        postera_download = console.status(
+            f"Downloading molecules from Postera molecule set:{postera_molset_name}"
+        )
         postera_download.start()
         asap_ligands = pull_from_postera(molecule_set_name=postera_molset_name)
         postera_download.stop()
