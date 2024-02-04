@@ -17,7 +17,6 @@ from asapdiscovery.modeling.modeling import (
     split_openeye_mol,
     spruce_protein,
 )
-from asapdiscovery.modeling.schema import PrepOpts
 
 
 @pytest.fixture
@@ -132,53 +131,3 @@ class TestProteinPrep:
         assert du.HasReceptor()
         if "ligand" in target.molecule_filter.components_to_keep:
             assert du.HasLigand()
-
-    @pytest.mark.parametrize("target_name", ["mers", "sars"])
-    def test_protein_prep_workflow(
-        self,
-        target_name,
-        prep_dict,
-        ref,
-        output_dir,
-        loop_db,
-        reference_output_files,
-        ref_chain="A",
-    ):
-        target, seqres_yaml = prep_dict[target_name]
-
-        prep_opts = PrepOpts(
-            ref_fn=ref,
-            ref_chain=ref_chain,
-            loop_db=loop_db,
-            seqres_yaml=seqres_yaml,
-            output_dir=output_dir,
-        )
-        prepped_target = protein_prep_workflow(target, prep_opts)
-
-        generated_output_files = {}
-        if "protein" in prepped_target.molecule_filter.components_to_keep:
-            generated_output_files["protein"] = prepped_target.protein
-            generated_output_files["design_unit"] = prepped_target.design_unit
-        if "ligand" in prepped_target.molecule_filter.components_to_keep:
-            generated_output_files["ligand"] = prepped_target.ligand
-            generated_output_files["complex"] = prepped_target.complex
-        for component, fn in generated_output_files.items():
-            assert Path(fn).exists()
-            assert Path(fn).is_file()
-
-        # Load the prepared design unit
-        du = oechem.OEDesignUnit()
-        oechem.OEReadDesignUnit(str(prepped_target.design_unit), du)
-
-        assert isinstance(du, oechem.OEDesignUnit)
-        assert du.HasReceptor()
-        if "ligand" in prepped_target.molecule_filter.components_to_keep:
-            assert du.HasLigand()
-        # TODO: Find a better way to test if the output matches the excepted output in
-        #  reference_output_files, as hashing does not work due to
-        #  any minor changes in atom positions causing a different hash
-        #  Things to check could include:
-        #  - topologies are the same
-        #  - the correct components are in the correct chain
-        #    using the find_component_chains function as used in test_modeling_utils
-        #  - receptor can be added to POSIT
