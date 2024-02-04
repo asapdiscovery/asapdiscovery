@@ -12,39 +12,14 @@ from asapdiscovery.modeling.modeling import (
     add_seqres_to_openeye_protein,
     make_design_unit,
     mutate_residues,
-    protein_prep_workflow,
     seqres_to_res_list,
     split_openeye_mol,
     spruce_protein,
 )
-
-
-@pytest.fixture
-def ref():
-    return fetch_test_file("reference.pdb")
-
-
-@pytest.fixture
-def reference_output_files():
-    return {
-        "sars": {
-            "protein": fetch_test_file("Mpro-P2660_0A_bound-prepped_protein.pdb"),
-            "ligand": fetch_test_file("Mpro-P2660_0A_bound-prepped_ligand.sdf"),
-            "complex": fetch_test_file("Mpro-P2660_0A_bound-prepped_complex.pdb"),
-            "design_unit": fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu"),
-        },
-        "mers": {
-            "protein": fetch_test_file("rcsb_8czv-assembly1-prepped_protein.pdb"),
-            "design_unit": fetch_test_file("rcsb_8czv-assembly1-prepped_receptor.oedu"),
-        },
-    }
-
-
-def test_output_file_download(reference_output_files):
-    for target, files in reference_output_files.items():
-        for component, fn in files.items():
-            assert Path(fn).exists()
-            assert Path(fn).is_file()
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.sequence import seqres_by_target
+from asapdiscovery.modeling.protein_prep import ProteinPrepper
 
 
 @pytest.fixture
@@ -52,82 +27,71 @@ def loop_db():
     return fetch_test_file("fragalysis-mpro_spruce.loop_db")
 
 
-@pytest.fixture
-def prep_dict(mers_target, sars_target):
-    return {
-        "mers": (mers_target, fetch_test_file("mpro_mers_seqres.yaml")),
-        "sars": (sars_target, fetch_test_file("mpro_sars2_seqres.yaml")),
-    }
+@pytest.fixture(scope="session")
+def cmplx():
+    return Complex.from_pdb(
+        fetch_test_file("structure_dir/Mpro-x0354_0A_bound.pdb"),
+        target_kwargs={"target_name": "test"},
+        ligand_kwargs={"compound_name": "test2"},
+    )
 
 
-@pytest.fixture
-def spruced_protein_dict():
-    return {
-        "mers": fetch_test_file("mers_spruced.pdb"),
-        "sars": fetch_test_file("sars_spruced.pdb"),
-    }
+@pytest.fixture(scope="session")
+def prep_complex():
+    return Complex.from_pdb(
+        fetch_test_file("SARS2_Mac1A-A1013.pdb"),
+        target_kwargs={"target_name": "test"},
+        ligand_kwargs={"compound_name": "test2"},
+    )
 
 
-class TestProteinPrep:
-    # very memory hungry so can fail on CI, mark as xfail for now
-    @pytest.mark.xfail()
-    @pytest.mark.parametrize("target_name", ["mers", "sars"])
-    def test_spruce_protein(
-        self,
-        target_name,
-        prep_dict,
-        oemol_dict,
-        loop_db,
-        reference_output_files,
-        output_dir,
-    ):
-        target, seqres_yaml = prep_dict[target_name]
-        prot = oemol_dict[target_name]
+@pytest.fixture(scope="session")
+def all_structure_dir_fns():
+    return [
+        "structure_dir/Mpro-x0354_0A_bound.pdb",
+        "structure_dir/Mpro-x1002_0A_bound.pdb",
+    ]
 
-        # This is necessary in this test, otherwise the inclusion of the overlapping ligands
-        # in the mers structure will cause a spruce failure
-        prot = split_openeye_mol(prot, target.molecule_filter)["prot"]
 
-        # convert seqres to string
-        with open(seqres_yaml) as f:
-            seqres_dict = yaml.safe_load(f)
-        seqres = seqres_dict["SEQRES"]
-        res_list = seqres_to_res_list(seqres)
-        protein_sequence = " ".join(res_list)
-        prot = mutate_residues(prot, res_list, place_h=True)
+@pytest.fixture(scope="session")
+def structure_dir(all_structure_dir_fns):
+    all_paths = [fetch_test_file(f) for f in all_structure_dir_fns]
+    return all_paths[0].parent, all_paths
 
-        success, spruce_error_msg, spruced = spruce_protein(
-            initial_prot=prot,
-            protein_sequence=protein_sequence,
-            loop_db=loop_db,
-        )
-        assert spruce_error_msg == ""
-        assert success is True
-        assert isinstance(spruced, oechem.OEGraphMol)
-        spruced = add_seqres_to_openeye_protein(spruced, seqres)
-        save_openeye_pdb(spruced, output_dir / f"{target_name}_spruced.pdb")
 
-    # very memory hungry so can fail on CI, mark as xfail for now
-    @pytest.mark.xfail()
-    @pytest.mark.parametrize("target_name", ["mers", "sars"])
-    def test_make_design_unit(
-        self, target_name, prep_dict, output_dir, spruced_protein_dict
-    ):
-        target, seqres_yaml = prep_dict[target_name]
-        mol = load_openeye_pdb(str(spruced_protein_dict[target_name]))
+@pytest.fixture(scope="session")
+def du_cache_files():
+    return ["du_cache/Mpro-x0354_0A_bound.oedu", "du_cache/Mpro-x1002_0A_bound.oedu"]
 
-        # convert seqres to string
-        with open(seqres_yaml) as f:
-            seqres_dict = yaml.safe_load(f)
-        seqres = seqres_dict["SEQRES"]
-        res_list = seqres_to_res_list(seqres)
-        protein_sequence = " ".join(res_list)
 
-        success, du = make_design_unit(
-            mol, target.oe_active_site_residue, protein_sequence=protein_sequence
-        )
-        assert success is True
-        assert isinstance(du, oechem.OEDesignUnit)
-        assert du.HasReceptor()
-        if "ligand" in target.molecule_filter.components_to_keep:
-            assert du.HasLigand()
+@pytest.fixture(scope="session")
+def du_cache(du_cache_files):
+    all_paths = [fetch_test_file(f) for f in du_cache_files]
+    return all_paths[0].parent, all_paths
+
+
+@pytest.fixture(scope="session")
+def json_cache():
+    """A mock json cache of prepared proteins"""
+    return fetch_test_file("protein_json_cache/Mpro-x0354_0A_bound.json")
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_protein_prep(prep_complex, use_dask, loop_db):
+    target = TargetTags["SARS-CoV-2-Mac1"]
+    prepper = ProteinPrepper(loop_db=loop_db, seqres_yaml=seqres_by_target(target))
+    pcs = prepper.prep([prep_complex], use_dask=use_dask)
+    assert len(pcs) == 1
+    assert pcs[0].target.target_name == "test"
+    assert pcs[0].ligand.compound_name == "test2"
+
+
+def test_cache_load(json_cache):
+    """Test loading cached PreppedComplex files."""
+
+    cached_complexs = ProteinPrepper.load_cache(cache_dir=json_cache.parent)
+    assert len(cached_complexs) == 1
+    assert (
+        cached_complexs[0].hash
+        == "9e2ea19d1a175314647dacb9d878138a80b8443cff5faf56031bf4af61179a0a+GIIIJZOPGUFGBF-QXYFZJGFNA-O"
+    )
