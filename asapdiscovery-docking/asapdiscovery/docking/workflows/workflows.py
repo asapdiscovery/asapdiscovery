@@ -114,17 +114,6 @@ class DockingWorkflowInputsBase(BaseModel):
 
         return values
 
-    @validator("cache_dir")
-    @classmethod
-    def cache_dir_must_be_directory(cls, v):
-        """
-        Validate that the DU cache is a directory
-        """
-        if v is not None:
-            if not Path(v).is_dir():
-                raise ValueError("Du cache must be a directory.")
-        return v
-
 
 class PosteraDockingWorkflowInputs(DockingWorkflowInputsBase):
     postera: bool = Field(
