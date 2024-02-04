@@ -572,6 +572,8 @@ class HTMLVisualizer:
 
         logoplot_base64s_dict = {}
         with tempfile.TemporaryDirectory() as tmpdirname:
+            import matplotlib
+            matplotlib.use('agg')
             for fit_type, fitness_df in zip(
                 ["fit", "unfit"], [site_df_fit, site_df_unfit]
             ):
