@@ -15,6 +15,7 @@ from asapdiscovery.data.fitness import (
     parse_fitness_json,
     target_has_fitness_data,
 )
+from asapdiscovery.data.logging import HiddenPrint
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -574,7 +575,12 @@ class HTMLVisualizer:
             ]
 
         logoplot_base64s_dict = {}
-        with tempfile.TemporaryDirectory() as tmpdirname:
+
+        # hide a shockingly large number of prints from inside logomaker
+        with tempfile.TemporaryDirectory() as tmpdirname, HiddenPrint() as _:
+            import matplotlib
+
+            matplotlib.use("agg")
             for fit_type, fitness_df in zip(
                 ["fit", "unfit"], [site_df_fit, site_df_unfit]
             ):
@@ -594,6 +600,7 @@ class HTMLVisualizer:
                     flip_below=False,
                     show_spines=True,
                 )
+
                 plt.xticks([])
                 plt.yticks([])
 
