@@ -6,12 +6,9 @@ from asapdiscovery.data.openeye import (
     oechem,
     oedocking,
     oespruce,
-    openeye_perceive_residues
+    openeye_perceive_residues,
 )
-from asapdiscovery.modeling.schema import (
-    MoleculeComponent,
-    MoleculeFilter,
-)
+from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
 
 
 def add_seqres_to_openeye_protein(
