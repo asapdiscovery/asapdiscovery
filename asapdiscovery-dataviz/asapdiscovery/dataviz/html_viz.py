@@ -30,12 +30,14 @@ from asapdiscovery.data.plip import (
     make_color_res_fitness,
     make_color_res_subpockets,
 )
-from asapdiscovery.data.postera.manifold_data_validation import TargetVirusMap
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    TargetVirusMap,
+)
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.modeling.modeling import superpose_molecule
 
 from ._html_blocks import HTMLBlockData
-from .viz_targets import VizTargets
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,7 @@ class HTMLVisualizer:
     Class for generating HTML visualizations of poses.
     """
 
-    allowed_targets = VizTargets.get_allowed_targets()
+    allowed_targets = TargetTags.get_values()
 
     # TODO: replace input with a schema rather than paths.
     def __init__(
@@ -66,7 +68,7 @@ class HTMLVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of the allowed targets in VizTargets.
+            Target to visualize poses for. Must be one of the allowed targets.
         protein : Path
             Path to protein PDB file.
         color_method : str
