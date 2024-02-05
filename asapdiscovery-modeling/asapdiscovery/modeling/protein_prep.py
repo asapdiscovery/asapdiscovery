@@ -116,6 +116,8 @@ class ProteinPrepperBase(BaseModel):
         all_outputs = []
 
         if cache_dir is not None:
+            # make cache if it doesn't exist
+            Path(cache_dir).mkdir(exist_ok=True, parents=True)
             cached_complexs = ProteinPrepperBase.load_cache(cache_dir=cache_dir)
             # workout what we can reuse
             if cached_complexs:
