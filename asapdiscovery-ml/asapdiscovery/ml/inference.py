@@ -180,7 +180,11 @@ class InferenceBase(BaseModel):
         except AttributeError:
             config_kwargs = {}
 
-        if (config_kwargs["model_weights"] is None) and local_model_spec.weights_file:
+        if (
+            ("model_weights" in config_kwargs)
+            and (config_kwargs["model_weights"] is None)
+            and local_model_spec.weights_file
+        ):
             config_kwargs["model_weights"] = local_model_spec.weights_file
 
         model = config_cls(**config_kwargs).build()
