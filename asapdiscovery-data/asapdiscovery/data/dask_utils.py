@@ -380,13 +380,13 @@ def dask_cluster_from_type(
     elif dask_type == DaskType.LILAC_GPU:
         cluster = (
             LilacGPUDaskCluster()
-            .from_gpu(gpu, silence_logs=silence_logs)
+            .from_gpu(gpu, silence_logs=loglevel)
             .to_cluster(exclude_interface="lo")
         )
     elif dask_type == DaskType.LILAC_CPU:
         cluster = (
             LilacCPUDaskCluster()
-            .from_cpu(cpu, silence_logs=silence_logs)
+            .from_cpu(cpu, silence_logs=loglevel)
             .to_cluster(exclude_interface="lo")
         )
     else:
