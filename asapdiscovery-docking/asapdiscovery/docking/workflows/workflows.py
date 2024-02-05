@@ -7,7 +7,7 @@ from typing import Optional
 
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
 class DockingWorkflowInputsBase(BaseModel):
@@ -113,17 +113,6 @@ class DockingWorkflowInputsBase(BaseModel):
             )
 
         return values
-
-    @validator("cache_dir")
-    @classmethod
-    def cache_dir_must_be_directory(cls, v):
-        """
-        Validate that the DU cache is a directory
-        """
-        if v is not None:
-            if not Path(v).is_dir():
-                raise ValueError("Du cache must be a directory.")
-        return v
 
 
 class PosteraDockingWorkflowInputs(DockingWorkflowInputsBase):

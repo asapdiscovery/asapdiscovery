@@ -1,28 +1,14 @@
-import os
 from functools import reduce
 from pathlib import Path
 from typing import Optional, Union
 
-import yaml
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
-    combine_protein_ligand,
-    load_openeye_cif1,
-    load_openeye_pdb,
     oechem,
     oedocking,
     oespruce,
     openeye_perceive_residues,
-    save_openeye_pdb,
-    save_openeye_sdf,
 )
-from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.modeling.schema import (
-    MoleculeComponent,
-    MoleculeFilter,
-    PrepOpts,
-    PreppedTarget,
-)
+from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
 
 
 def add_seqres_to_openeye_protein(
@@ -40,127 +26,6 @@ def add_seqres_to_openeye_protein(
             if seqres_line != "":
                 oechem.OEAddPDBData(prot, "SEQRES", seqres_line[6:])
     return prot
-
-
-def protein_prep_workflow(target: PreppedTarget, prep_opts: PrepOpts) -> PreppedTarget:
-    """
-    Prepares a protein for docking. Current implementation uses schema from modeling.schema
-    Automatically logs to a file in the output directory (specified by prep_opts).
-    Contains the following steps:
-    - Load structure (cif or pdb)
-    - Get desired components specified by target.molecule_filter
-    - Align if requested
-    - Mutate Residues using SEQRES
-    - Spruce
-    - Saves either a failed spruced pdb or a complete set of prep outputs
-
-    Parameters
-    ----------
-    target : PreppedTarget
-        The target to prepare.
-    prep_opts : PrepOpts
-        The options for preparing the target.
-
-    Returns
-    -------
-    PreppedTarget
-        The prepared target.
-    """
-    target.output_dir = Path(prep_opts.output_dir / target.output_name)
-    if not target.output_dir.exists():
-        target.output_dir.mkdir(parents=True)
-    logger = FileLogger(
-        logname=f"protein_prep_workflow.{target.output_name}",
-        path=str(target.output_dir),
-    ).getLogger()
-
-    # TODO: Add back check to make sure that the target is not already prepared
-    #  I'd like to do something clever with reading the output PreppedTargets file so I'll wait until
-    #  We have the schema finalized.
-
-    logger.info(f"Preparing {target.output_name}")
-
-    # Load structure
-    if Path(target.source.str_fn).suffix == ".pdb":
-        prot = load_openeye_pdb(target.source.str_fn)
-    elif Path(target.source.str_fn).suffix == ".cif":
-        prot = load_openeye_cif1(target.source.str_fn)
-    else:
-        raise NotImplementedError(
-            f"Cannot load structure with extension {Path(target.source.str_fn).suffix}"
-        )
-    logger.info(f"Loaded {target.source.str_fn}")
-
-    # Get desired components
-    logger.info(f"Splitting molecule using {target.molecule_filter}")
-    split_dict = split_openeye_mol(prot, target.molecule_filter)
-    prot = split_dict["prot"]
-    if "ligand" in target.molecule_filter.components_to_keep:
-        lig_mol = split_dict["lig"]
-        prot = combine_protein_ligand(prot, lig_mol)
-
-    # Align
-    if prep_opts.ref_fn:
-        logger.info(f"Aligning to {prep_opts.ref_fn}")
-        ref = load_openeye_pdb(str(prep_opts.ref_fn))
-        prot, rmsd = superpose_molecule(
-            ref, prot, prep_opts.ref_chain, target.active_site_chain
-        )
-
-    # Mutate Residues
-    if prep_opts.seqres_yaml:
-        logger.info(f"Mutating residues using {prep_opts.seqres_yaml}")
-        with open(prep_opts.seqres_yaml) as f:
-            seqres_dict = yaml.safe_load(f)
-        seqres = seqres_dict["SEQRES"]
-
-        res_list = seqres_to_res_list(seqres)
-
-        prot = mutate_residues(prot, res_list, place_h=True)
-        protein_sequence = " ".join(res_list)
-    else:
-        seqres = None
-        protein_sequence = None
-
-    # Spruce Protein
-    logger.info("Running OESpruce using spruce_protein")
-    success, spruce_error_message, spruced = spruce_protein(
-        initial_prot=prot,
-        protein_sequence=protein_sequence,
-        loop_db=prep_opts.loop_db,
-    )
-    if not success:
-        logger.error(
-            f"FAILED: OESpruce failed with error message: {spruce_error_message}"
-        )
-        target.failed = True
-        return target
-
-    if prep_opts.make_design_unit:
-        # Make Design Unit
-        made_design_unit, du = make_design_unit(
-            spruced,
-            site_residue=target.oe_active_site_residue,
-            protein_sequence=protein_sequence,
-        )
-    else:
-        made_design_unit = False
-
-    if made_design_unit:
-        prepped_target = save_design_unit(du, target, seqres)
-        prepped_target.saved = True
-        logger.info(f"SUCCESS: Saved output files to {prepped_target.output_dir}")
-        return prepped_target
-    else:
-        target.get_output_files(success=False, output_dir=target.output_dir)
-        if seqres:
-            spruced = add_seqres_to_openeye_protein(spruced, seqres)
-        spruced = openeye_perceive_residues(spruced)
-        save_openeye_pdb(spruced, str(target.protein))
-
-        target.saved = True
-        logger.info(f"FAILED: Making design units failed. Saved to {target.protein}")
-        return target
 
 
 def get_oe_prep_opts():
@@ -527,43 +392,6 @@ def find_component_chains(mol: oechem.OEMolBase, component: str, res_name=None):
     return chainids
 
 
-def check_completed(d, prefix):
-    """
-    Check if this prep process has already been run successfully in the given
-    directory.
-
-    Parameters
-    ----------
-    d : str
-        Directory to check.
-
-    Returns
-    -------
-    bool
-        True if both files exist and can be loaded, otherwise False.
-    """
-
-    if (not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"))) or (
-        not os.path.isfile(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
-    ):
-        return False
-
-    try:
-        du = oechem.OEDesignUnit()
-        oechem.OEReadDesignUnit(
-            os.path.join(d, f"{prefix}_prepped_receptor_0.oedu"), du
-        )
-    except Exception:
-        return False
-
-    try:
-        _ = load_openeye_pdb(os.path.join(d, f"{prefix}_prepped_receptor_0.pdb"))
-    except Exception:
-        return False
-
-    return True
-
-
 def split_openeye_mol(
     complex_mol,
     molecule_filter: Optional[Union[str, list[str], MoleculeFilter]] = None,
@@ -701,32 +529,6 @@ def split_openeye_mol(
         "oth": oth_mol,
         "keep_lig_chain": keep_lig_chain,
     }
-
-
-def save_design_unit(
-    du: oechem.OEDesignUnit,
-    target: PreppedTarget,
-    seqres=None,
-) -> PreppedTarget:
-    complex_mol = du_to_complex(du)
-    target.get_output_files(success=True, output_dir=target.output_dir)
-    complex_mol = openeye_perceive_residues(complex_mol)
-    if seqres:
-        complex_mol = add_seqres_to_openeye_protein(complex_mol, seqres)
-    if target.complex:
-        save_openeye_pdb(complex_mol, target.complex)
-
-    if target.ligand:
-        save_openeye_sdf(split_openeye_mol(complex_mol)["lig"], str(target.ligand))
-
-    if target.protein:
-        save_openeye_pdb(split_openeye_mol(complex_mol)["prot"], str(target.protein))
-
-    if target.design_unit:
-        oechem.OEWriteDesignUnit(str(target.design_unit), du)
-
-    target.set_saved()
-    return target
 
 
 def split_openeye_design_unit(du, lig=None, lig_title=None):

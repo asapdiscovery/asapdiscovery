@@ -51,7 +51,7 @@ from asapdiscovery.docking.scorer_v2 import (
 )
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from distributed import Client
 from pydantic import Field, PositiveInt, root_validator, validator
