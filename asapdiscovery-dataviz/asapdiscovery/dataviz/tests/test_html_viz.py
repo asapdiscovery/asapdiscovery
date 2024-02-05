@@ -1,11 +1,11 @@
 import pytest
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.dataviz.viz_targets import VizTargets
 
 
 # enumerate over the allowed targets, these will produce rubbish poses but
 # that's fine for testing, mostly just testing that they will run
-@pytest.mark.parametrize("target", VizTargets.get_allowed_targets())
+@pytest.mark.parametrize("target", sorted(TargetTags.get_values()))
 def test_html_viz_subpockets(pose, protein, target, tmp_path):
     html_visualizer = HTMLVisualizer(
         poses=[pose],
@@ -17,7 +17,7 @@ def test_html_viz_subpockets(pose, protein, target, tmp_path):
 
 
 # No fitness data for MERS-CoV-Mpro
-@pytest.mark.parametrize("target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"])
+@pytest.mark.parametrize("target", sorted(["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1"]))
 def test_html_viz_fitness(pose, protein, target, tmp_path):
     html_visualizer = HTMLVisualizer(
         poses=[pose],
