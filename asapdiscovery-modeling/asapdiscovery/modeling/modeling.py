@@ -17,10 +17,7 @@ from asapdiscovery.data.openeye import (
     save_openeye_sdf,
 )
 from asapdiscovery.data.utils import seqres_to_res_list
-from asapdiscovery.modeling.schema import (
-    MoleculeComponent,
-    MoleculeFilter,
-)
+from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
 
 
 def add_seqres_to_openeye_protein(

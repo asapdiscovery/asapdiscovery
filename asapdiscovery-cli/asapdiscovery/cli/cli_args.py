@@ -141,7 +141,9 @@ def pdb_file(func):
 def cache_dir(func):
     return click.option(
         "--cache-dir",
-        type=click.Path(resolve_path=True, exists=False, file_okay=False, dir_okay=True),
+        type=click.Path(
+            resolve_path=True, exists=False, file_okay=False, dir_okay=True
+        ),
         help="Path to a directory where design units are cached.",
     )(func)
 

@@ -7,6 +7,9 @@ from pathlib import Path
 import pytest
 import yaml
 from asapdiscovery.data.openeye import load_openeye_pdb, oechem, save_openeye_pdb
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.schema_v2.complex import Complex
+from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import (
     add_seqres_to_openeye_protein,
@@ -16,9 +19,6 @@ from asapdiscovery.modeling.modeling import (
     split_openeye_mol,
     spruce_protein,
 )
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 
 

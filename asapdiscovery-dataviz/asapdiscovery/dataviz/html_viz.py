@@ -15,6 +15,7 @@ from asapdiscovery.data.fitness import (
     parse_fitness_json,
     target_has_fitness_data,
 )
+from asapdiscovery.data.logging import HiddenPrint
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
@@ -35,7 +36,6 @@ from asapdiscovery.modeling.modeling import superpose_molecule
 
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
-from asapdiscovery.data.logging import HiddenPrint
 
 logger = logging.getLogger(__name__)
 
