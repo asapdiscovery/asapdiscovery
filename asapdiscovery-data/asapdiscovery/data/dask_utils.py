@@ -320,7 +320,7 @@ def dask_cluster_from_type(
     gpu: GPU = GPU.GTX1080TI,
     cpu: CPU = CPU.LT,
     local_threads_per_worker: int = 1,
-    silence_logs: int = logging.DEBUG,  # worst kwarg name but it is what it is
+    loglevel: Union[str, int] = logging.DEBUG,
 ):
     """
     Get a dask client from a DaskType
@@ -346,7 +346,7 @@ def dask_cluster_from_type(
     logger.info(f"Physical CPU count: {physical_cpu_count}")
 
     logger.info(f"Getting dask cluster of type {dask_type}")
-    logger.info(f"Dask log level: {silence_logs}")
+    logger.info(f"Dask log level: {loglevel}")
 
     if dask_type == DaskType.LOCAL:
         n_workers = cpu_count // local_threads_per_worker
@@ -367,7 +367,7 @@ def dask_cluster_from_type(
         cluster = LocalCluster(
             n_workers=n_workers,
             threads_per_worker=local_threads_per_worker,
-            silence_logs=silence_logs,
+            silence_logs=loglevel,  # used as silence_logs, worst kwarg name but it is what it is
         )
     elif dask_type == DaskType.LOCAL_GPU:
         try:

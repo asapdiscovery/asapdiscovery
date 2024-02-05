@@ -2,6 +2,7 @@
 A test-oriented docking workflow for testing the docking pipeline.
 Removes all the additional layers in the other workflows and adds some features to make running cross-docking easier
 """
+
 from pathlib import Path
 from shutil import rmtree
 
@@ -112,7 +113,9 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     if inputs.use_dask:
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
         set_dask_config()
-        dask_cluster = dask_cluster_from_type(inputs.dask_type)
+        dask_cluster = dask_cluster_from_type(
+            inputs.dask_type, loglevel=inputs.loglevel
+        )
 
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
