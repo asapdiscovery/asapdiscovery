@@ -1,8 +1,9 @@
-from asapdiscovery.data.web_utils import _BaseWebAPI
-from asapdiscovery.data.service_confing import CDDSettings
-from asapdiscovery.data.schema_v2.experimental import ExperimentalCompoundData
 import json
 from typing import Optional
+
+from asapdiscovery.data.schema_v2.experimental import ExperimentalCompoundData
+from asapdiscovery.data.service_confing import CDDSettings
+from asapdiscovery.data.web_utils import _BaseWebAPI
 
 
 class CDDAPI(_BaseWebAPI):
@@ -19,7 +20,12 @@ class CDDAPI(_BaseWebAPI):
 
     @classmethod
     def from_settings(cls, settings: CDDSettings):
-        return cls(url=settings.CDD_API_URL, api_version=settings.CDD_API_VERSION, api_key=settings.CDD_API_KEY, vault=settings.CDD_VAULT_NUMBER)
+        return cls(
+            url=settings.CDD_API_URL,
+            api_version=settings.CDD_API_VERSION,
+            api_key=settings.CDD_API_KEY,
+            vault=settings.CDD_VAULT_NUMBER,
+        )
 
     def get_molecule(self, smiles: str) -> Optional[dict]:
         """
@@ -45,7 +51,9 @@ class CDDAPI(_BaseWebAPI):
             # should only be one molecule but maybe we should check?
             return result_data["objects"][0]
 
-    def get_protocol(self, molecule_id: int, protocol_name: Optional[str] = None) -> list[dict]:
+    def get_protocol(
+        self, molecule_id: int, protocol_name: Optional[str] = None
+    ) -> list[dict]:
         """
         Search for a specific protocol performed on the query molecule.
 
@@ -56,9 +64,7 @@ class CDDAPI(_BaseWebAPI):
         Returns:
             A list of protocols associated with this molecule
         """
-        protocol_data = {
-            "molecules": [molecule_id]
-        }
+        protocol_data = {"molecules": [molecule_id]}
         if protocol_name is not None:
             protocol_data["names"] = [protocol_name]
         result = self._session.get(url=self.api_url + "protocols", json=protocol_data)
@@ -80,7 +86,7 @@ class CDDAPI(_BaseWebAPI):
             "protocols": [protocol],
             "molecules": [molecule_id],
             # this is hard coded to get the pIC50_Mean
-            "type": ["molecule_protocol_aggregate_row"]
+            "type": ["molecule_protocol_aggregate_row"],
         }
         result = self._session.get(url=self.api_url + "readout_rows", json=readout_data)
         result_data = json.loads(result.content.decode())
@@ -89,7 +95,9 @@ class CDDAPI(_BaseWebAPI):
         else:
             return result_data["objects"][0]
 
-    def get_pic50(self, smiles: str, protocol_name: str) -> Optional[ExperimentalCompoundData]:
+    def get_pic50(
+        self, smiles: str, protocol_name: str
+    ) -> Optional[ExperimentalCompoundData]:
         """
         A convenience method which wraps the required function calls to gather the pIC50 from the CDD for the given
         molecule calculated as part of the named protocol.
@@ -111,7 +119,9 @@ class CDDAPI(_BaseWebAPI):
             return molecule
         # look for the protocol, we expect a single result as we search for a named protocol
         # if we don't find anything for the molecule return None
-        protocols = self.get_protocol(molecule_id=molecule["id"], protocol_name=protocol_name)
+        protocols = self.get_protocol(
+            molecule_id=molecule["id"], protocol_name=protocol_name
+        )
         if protocols:
             protocol = protocols[0]
         else:
@@ -125,7 +135,9 @@ class CDDAPI(_BaseWebAPI):
         if pic50_id is None:
             return None
         # now search for the result, this should always be present if the above protocol has a result
-        readout_data = self.get_readout_row(molecule_id=molecule["id"], protocol=protocol["id"])
+        readout_data = self.get_readout_row(
+            molecule_id=molecule["id"], protocol=protocol["id"]
+        )
         # extract the results
         pic50_data = readout_data["readouts"][str(pic50_id)]
         pic50 = pic50_data["value"]
@@ -145,7 +157,6 @@ class CDDAPI(_BaseWebAPI):
                 "pIC50_Uncertainty": pic50_uncertainty,
                 "protocol_name": protocol_name,
                 "protocol_id": protocol["id"],
-            }
+            },
         )
         return experimental_result
-

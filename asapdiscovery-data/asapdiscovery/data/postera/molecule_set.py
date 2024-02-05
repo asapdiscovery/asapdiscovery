@@ -4,10 +4,10 @@ from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
 from asapdiscovery.data.enum import StringEnum
+from asapdiscovery.data.web_utils import _BaseWebAPI
 from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
-from asapdiscovery.data.web_utils import _BaseWebAPI
 
 logger = logging.getLogger(__name__)
 

@@ -38,7 +38,13 @@ class CloudfrontSettings(BaseSettings):
 
 
 class CDDSettings(BaseSettings):
-    CDD_API_KEY: str = Field(description="The CDD API key with access to the specified vault.")
-    CDD_VAULT_NUMBER: int = Field(description="The id of the CDD vault you wish to query.")
-    CDD_API_URL: str = Field("https://app.collaborativedrug.com", description="The base url of the CCD API")
+    CDD_API_KEY: str = Field(
+        description="The CDD API key with access to the specified vault."
+    )
+    CDD_VAULT_NUMBER: int = Field(
+        description="The id of the CDD vault you wish to query."
+    )
+    CDD_API_URL: str = Field(
+        "https://app.collaborativedrug.com", description="The base url of the CCD API"
+    )
     CDD_API_VERSION: str = Field("v1", description="The version of CDD API to use.")
