@@ -296,6 +296,7 @@ class LilacGPUDaskCluster(LilacDaskCluster):
         return cls(
             job_extra_directives=gpu_config.to_job_extra_directives(),
             silence_logs=silence_logs,
+            walltime=walltime,
         )
 
 
