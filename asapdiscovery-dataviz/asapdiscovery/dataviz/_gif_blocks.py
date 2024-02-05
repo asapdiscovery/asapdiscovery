@@ -2,11 +2,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     TargetProteinMap,
     TargetTags,
 )
-
-"""
-Find these by going through GIF generation with `pse_share=True`, then inspecting
-session_5.pse with pymol, orienting and running `get_view` in pymol terminal.
-"""
+from typing import Union
 
 
 class GIFBlockData:
@@ -18,15 +14,21 @@ class GIFBlockData:
         return getattr(cls, "master_view_coords")
 
     @classmethod
-    def get_pocket_dict(cls, target: TargetTags) -> dict[str, str]:
-        target = str(target)
+    def get_pocket_dict(cls, target: Union[TargetTags, str]) -> dict[str, str]:
+        if isinstance(target, TargetTags):
+            target = str(target.value)
+        else:
+            target = str(target)
         # need underscored protein name for pocket_dict
         target = target.replace("-", "_")
         return getattr(cls, f"pocket_dict_{target}")
 
     @classmethod
     def get_color_dict(cls, target: TargetTags) -> dict[str, str]:
-        target = str(target)
+        if isinstance(target, TargetTags):
+            target = str(target.value)
+        else:
+            target = str(target)
         protein_name = TargetProteinMap[target]
         # need underscored protein name for color_dict
         protein_name = protein_name.replace("-", "_")
