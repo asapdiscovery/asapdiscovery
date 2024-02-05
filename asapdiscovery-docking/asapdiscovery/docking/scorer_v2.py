@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 from asapdiscovery.data.dask_utils import (
     BackendType,
+    DaskFailureMode,
     actualise_dask_delayed_iterable,
     backend_wrapper,
-    DaskFailureMode,
 )
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.openeye import oedocking
