@@ -3,7 +3,10 @@ from pathlib import Path
 from typing import List  # noqa: F401
 
 import dask
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    actualise_dask_delayed_iterable,
+    DaskFailureMode,
+)
 from asapdiscovery.data.schema_v2.complex import Complex
 from pydantic import BaseModel, Field, validator
 
@@ -37,7 +40,9 @@ class StructureDirFactory(BaseModel):
         """
         return cls(parent_dir=Path(parent_dir))
 
-    def load(self, use_dask=True, dask_client=None):
+    def load(
+        self, use_dask=True, dask_client=None, dask_failure_mode=DaskFailureMode.SKIP
+    ):
         """
         Load a directory of PDB files as Complex objects.
 
@@ -48,6 +53,8 @@ class StructureDirFactory(BaseModel):
             Defaults to True.
         dask_client : dask.distributed.Client, optional
             Dask client to use for parallelisation. Defaults to None.
+        dask_failure_mode : DaskFailureMode
+            The failure mode for dask. Can be 'raise' or 'skip'.
 
         Returns
         -------
@@ -74,7 +81,7 @@ class StructureDirFactory(BaseModel):
                 )
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="raise"
+                delayed_outputs, dask_client, errors=dask_failure_mode
             )
         else:
             outputs = []

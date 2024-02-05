@@ -11,6 +11,7 @@ from asapdiscovery.data.dask_utils import (
     BackendType,
     actualise_dask_delayed_iterable,
     backend_wrapper,
+    DaskFailureMode,
 )
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.openeye import oedocking
@@ -140,6 +141,7 @@ class ScorerBase(BaseModel):
         inputs: Union[list[DockingResult], list[Path]],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
@@ -155,7 +157,7 @@ class ScorerBase(BaseModel):
                 )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client
+                delayed_outputs, dask_client=dask_client, errors=dask_failure_mode
             )
         else:
             outputs = backend_wrapper(
@@ -380,6 +382,7 @@ class MetaScorer(BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
@@ -390,6 +393,7 @@ class MetaScorer(BaseModel):
                 inputs=inputs,
                 use_dask=use_dask,
                 dask_client=dask_client,
+                dask_failure_mode=dask_failure_mode,
                 backend=backend,
                 reconstruct_cls=reconstruct_cls,
                 return_df=return_df,

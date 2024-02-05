@@ -9,7 +9,11 @@ from typing import Any, Literal, Optional, Union
 
 import dask
 import numpy as np
-from asapdiscovery.data.dask_utils import BackendType, actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    actualise_dask_delayed_iterable,
+    DaskFailureMode,
+)
 from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
@@ -88,6 +92,7 @@ class DockingBase(BaseModel):
         output_dir: Optional[Union[str, Path]] = None,
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         return_for_disk_backend: bool = False,
     ) -> list["DockingResult"]:
         """
@@ -104,6 +109,7 @@ class DockingBase(BaseModel):
             Whether to use dask, by default False
         dask_client : dask.distributed.Client, optional
             Dask client to use, by default None
+        dask_failure_mode : DaskFailureMode, optional
 
         Returns
         -------
@@ -124,7 +130,7 @@ class DockingBase(BaseModel):
                 )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client, errors="skip"
+                delayed_outputs, dask_client=dask_client, errors=dask_failure_mode
             )
         else:
             outputs = self._dock(

@@ -2,7 +2,10 @@ import abc
 from typing import Literal, Union
 
 import dask
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    actualise_dask_delayed_iterable,
+    DaskFailureMode,
+)
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
@@ -30,6 +33,7 @@ class SelectorBase(abc.ABC, BaseModel):
         complexes: list[Union[Complex, PreppedComplex]],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         **kwargs,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         if use_dask:
@@ -37,10 +41,11 @@ class SelectorBase(abc.ABC, BaseModel):
             for lig in ligands:
                 out = dask.delayed(self._select)(
                     ligands=[lig], complexes=complexes, **kwargs
-                )  # be careful here, need ALL complexes to perform a full search, ie no parallelism over complexes is possible.
+                )  # be careful here, need ALL complexes to perform a full search, ie no parallelism over complexes is possible with current setup
+                # see # 560
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="raise"
+                delayed_outputs, dask_client, errors=dask_failure_mode
             )
             outputs = [
                 item for sublist in outputs for item in sublist

@@ -252,12 +252,18 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         logger.info(f"Loading structures from directory: {inputs.structure_dir}")
         structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
         complexes = structure_factory.load(
-            use_dask=inputs.use_dask, dask_client=dask_client
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
     elif inputs.fragalysis_dir:
         logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
         fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
+        complexes = fragalysis.load(
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
+        )
 
     elif inputs.pdb_file:
         logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
@@ -299,9 +305,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
     prepped_complexes = prepper.prep(
         complexes,
+        cache_dir=inputs.cache_dir,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        cache_dir=inputs.cache_dir,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
     del complexes
 
@@ -323,6 +330,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         n_select=inputs.n_select,
         use_dask=False,
         dask_client=None,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -338,6 +346,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_results = len(results)
@@ -371,7 +380,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
     scores_df = scorer.score(
-        results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
+        return_df=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -404,7 +417,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=html_ouptut_dir,
     )
     pose_visualizatons = html_visualizer.visualize(
-        results, use_dask=inputs.use_dask, dask_client=dask_client
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -434,7 +450,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             output_dir=html_fitness_output_dir,
         )
         fitness_visualizations = html_fitness_visualizer.visualize(
-            results, use_dask=inputs.use_dask, dask_client=dask_client
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
 
         # duplicate target id column so we can join
@@ -505,13 +524,19 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             rmsd_restraint_type=rmsd_restraint_type,
         )
         simulation_results = md_simulator.simulate(
-            results, use_dask=inputs.use_dask, dask_client=dask_client
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
 
         gif_output_dir = output_dir / "gifs"
         gif_maker = GIFVisualizerV2(output_dir=gif_output_dir, target=inputs.target)
         gifs = gif_maker.visualize(
-            simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
+            simulation_results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
 
         # duplicate target id column so we can join

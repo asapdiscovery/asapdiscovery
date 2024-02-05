@@ -6,6 +6,7 @@ from asapdiscovery.data.dask_utils import (
     BackendType,
     actualise_dask_delayed_iterable,
     backend_wrapper,
+    DaskFailureMode,
 )
 from asapdiscovery.docking.docking_v2 import DockingResult
 from pydantic import BaseModel
@@ -25,6 +26,7 @@ class VisualizerBase(abc.ABC, BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
     ) -> pd.DataFrame:
@@ -39,7 +41,7 @@ class VisualizerBase(abc.ABC, BaseModel):
                 )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="skip"
+                delayed_outputs, dask_client, errors=dask_failure_mode
             )
         else:
             outputs = backend_wrapper(

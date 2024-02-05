@@ -215,12 +215,18 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         logger.info(f"Loading structures from directory: {inputs.structure_dir}")
         structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
         complexes = structure_factory.load(
-            use_dask=inputs.use_dask, dask_client=dask_client
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
     elif inputs.fragalysis_dir:
         logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
         fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
+        complexes = fragalysis.load(
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
+        )
 
     elif inputs.pdb_file:
         logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
@@ -254,6 +260,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         cache_dir=inputs.cache_dir,
     )
     del complexes
@@ -276,6 +283,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         n_select=inputs.n_select,
         use_dask=False,
         dask_client=None,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -293,6 +301,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         return_for_disk_backend=True,
     )
 
@@ -341,6 +350,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         return_df=True,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
@@ -360,6 +370,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
     )
@@ -394,6 +405,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
             backend=BackendType.DISK,
             reconstruct_cls=docker.result_cls,
         )

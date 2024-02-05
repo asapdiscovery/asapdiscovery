@@ -1,5 +1,5 @@
 import click
-from asapdiscovery.data.dask_utils import DaskType
+from asapdiscovery.data.dask_utils import DaskType, DaskFailureMode
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.simulation.simulate import OpenMMPlatform
@@ -57,8 +57,8 @@ def dask_type(func):
 def dask_failure_mode(func):
     return click.option(
         "--dask-failure-mode",
-        type=click.Choice(["raise", "skip"], case_sensitive=False),
-        default="raise",
+        type=click.Choice(DaskFailureMode.get_values(), case_sensitive=False),
+        default=DaskFailureMode.SKIP,
         help="The failure mode for dask. Can be 'raise' or 'skip'.",
     )(func)
 

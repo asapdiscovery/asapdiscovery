@@ -30,6 +30,15 @@ class BackendType(StringEnum):
     DISK = "disk"
 
 
+class DaskFailureMode(StringEnum):
+    """
+    Enum for Dask failure modes
+    """
+
+    RAISE = "raise"
+    SKIP = "skip"
+
+
 def set_dask_config():
     cfg.set({"distributed.scheduler.worker-ttl": None})
     cfg.set({"distributed.admin.tick.limit": "4h"})
