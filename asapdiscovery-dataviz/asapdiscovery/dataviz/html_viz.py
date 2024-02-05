@@ -35,6 +35,7 @@ from asapdiscovery.modeling.modeling import superpose_molecule
 
 from ._html_blocks import HTMLBlockData
 from .viz_targets import VizTargets
+from asapdiscovery.data.logging import HiddenPrint
 
 logger = logging.getLogger(__name__)
 
@@ -290,7 +291,8 @@ class HTMLVisualizer:
                             )
                         with a.div(klass="dropdown-content"):
                             a.a(
-                                href="#", _t="⚪ : No amino acid substitutions tolerated"
+                                href="#",
+                                _t="⚪ : No amino acid substitutions tolerated",
                             )
                             a.a(
                                 href="#",
@@ -573,7 +575,8 @@ class HTMLVisualizer:
         logoplot_base64s_dict = {}
         with tempfile.TemporaryDirectory() as tmpdirname:
             import matplotlib
-            matplotlib.use('agg')
+
+            matplotlib.use("agg")
             for fit_type, fitness_df in zip(
                 ["fit", "unfit"], [site_df_fit, site_df_unfit]
             ):
@@ -581,18 +584,21 @@ class HTMLVisualizer:
                 logoplot_df = pd.DataFrame(
                     [fitness_df["fitness"].values], columns=fitness_df["mutant"]
                 )
+                with (
+                    HiddenPrint
+                ):  # hide a shockingly large number of prints from inside logomaker
+                    # create Logo object
+                    logomaker.Logo(
+                        logoplot_df,
+                        shade_below=0.5,
+                        fade_below=0.5,
+                        font_name="Sans Serif",
+                        figsize=(3, 10),
+                        color_scheme="dmslogo_funcgroup",
+                        flip_below=False,
+                        show_spines=True,
+                    )
 
-                # create Logo object
-                logomaker.Logo(
-                    logoplot_df,
-                    shade_below=0.5,
-                    fade_below=0.5,
-                    font_name="Sans Serif",
-                    figsize=(3, 10),
-                    color_scheme="dmslogo_funcgroup",
-                    flip_below=False,
-                    show_spines=True,
-                )
                 plt.xticks([])
                 plt.yticks([])
 
