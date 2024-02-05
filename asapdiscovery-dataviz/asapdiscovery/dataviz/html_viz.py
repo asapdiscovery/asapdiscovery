@@ -573,7 +573,7 @@ class HTMLVisualizer:
             ]
 
         logoplot_base64s_dict = {}
-        with tempfile.TemporaryDirectory() as tmpdirname:
+        with tempfile.TemporaryDirectory() as tmpdirname, HiddenPrint() as hp:
             import matplotlib
 
             matplotlib.use("agg")
@@ -584,20 +584,19 @@ class HTMLVisualizer:
                 logoplot_df = pd.DataFrame(
                     [fitness_df["fitness"].values], columns=fitness_df["mutant"]
                 )
-                with (
-                    HiddenPrint
-                ):  # hide a shockingly large number of prints from inside logomaker
-                    # create Logo object
-                    logomaker.Logo(
-                        logoplot_df,
-                        shade_below=0.5,
-                        fade_below=0.5,
-                        font_name="Sans Serif",
-                        figsize=(3, 10),
-                        color_scheme="dmslogo_funcgroup",
-                        flip_below=False,
-                        show_spines=True,
-                    )
+
+                # hide a shockingly large number of prints from inside logomaker
+                # create Logo object
+                logomaker.Logo(
+                    logoplot_df,
+                    shade_below=0.5,
+                    fade_below=0.5,
+                    font_name="Sans Serif",
+                    figsize=(3, 10),
+                    color_scheme="dmslogo_funcgroup",
+                    flip_below=False,
+                    show_spines=True,
+                )
 
                 plt.xticks([])
                 plt.yticks([])
