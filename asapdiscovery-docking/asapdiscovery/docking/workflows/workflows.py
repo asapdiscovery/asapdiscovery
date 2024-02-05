@@ -4,7 +4,7 @@ Schema for workflows base classes
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from asapdiscovery.data.dask_utils import DaskType, DaskFailureMode
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
