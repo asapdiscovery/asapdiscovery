@@ -1,8 +1,9 @@
+from typing import Union
+
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetProteinMap,
     TargetTags,
 )
-from typing import Union
 
 
 class GIFBlockData:
