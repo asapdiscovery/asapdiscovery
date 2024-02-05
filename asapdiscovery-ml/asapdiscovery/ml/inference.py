@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
@@ -17,9 +18,8 @@ from asapdiscovery.ml.models import (
 )
 
 # static import of models from base yaml here
-from asapdiscovery.ml.utils import build_model, load_weights
 from dgllife.utils import CanonicalAtomFeaturizer
-from mtenn.config import ModelType
+from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
 from pydantic import BaseModel, Field
 
 """
@@ -164,14 +164,26 @@ class InferenceBase(BaseModel):
                 f"({lower_pin}{sep}{upper_pin})"
             )
 
-        model = build_model(
-            local_model_spec.type,
-            config=local_model_spec.config_file,
-            **build_model_kwargs,
-        )
-        model = load_weights(
-            model, local_model_spec.weights_file, check_compatibility=True
-        )
+        # Select appropriate Config class
+        match local_model_spec.type:
+            case ModelType.GAT:
+                config_cls = GATModelConfig
+            case ModelType.schnet:
+                config_cls = SchNetModelConfig
+            case ModelType.e3nn:
+                config_cls = E3NNModelConfig
+            case other:
+                raise ValueError(f"Can't instantiate model config for type {other}.")
+
+        try:
+            config_kwargs = json.loads(local_model_spec.config_file.read_text())
+        except AttributeError:
+            config_kwargs = {}
+
+        if (config_kwargs["model_weights"] is None) and local_model_spec.weights_file:
+            config_kwargs["model_weights"] = local_model_spec.weights_file
+
+        model = config_cls(**config_kwargs).build()
         model.eval()
 
         return cls(
