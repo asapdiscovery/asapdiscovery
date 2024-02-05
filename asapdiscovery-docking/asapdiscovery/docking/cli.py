@@ -1,5 +1,6 @@
-from typing import Optional, Union
 import logging
+from typing import Optional, Union
+
 import click
 from asapdiscovery.cli.cli_args import (
     cache_dir,
@@ -7,6 +8,7 @@ from asapdiscovery.cli.cli_args import (
     fragalysis_dir,
     input_json,
     ligands,
+    loglevel,
     md_args,
     ml_scorer,
     output_dir,
@@ -17,9 +19,8 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     target,
     use_only_cache,
-    loglevel,
 )
-from asapdiscovery.data.dask_utils import DaskType, DaskFailureMode
+from asapdiscovery.data.dask_utils import DaskFailureMode, DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.workflows.cross_docking import (
