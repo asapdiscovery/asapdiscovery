@@ -1,5 +1,5 @@
-from typing import Optional
-
+from typing import Optional, Union
+import logging
 import click
 from asapdiscovery.cli.cli_args import (
     cache_dir,
@@ -17,8 +17,9 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     target,
     use_only_cache,
+    loglevel,
 )
-from asapdiscovery.data.dask_utils import DaskType
+from asapdiscovery.data.dask_utils import DaskType, DaskFailureMode
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.workflows.cross_docking import (
@@ -107,7 +108,7 @@ def large_scale(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    dask_failure_mode=dask_failure_mode,
+    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     loglevel: Union[int, str] = logging.INFO,
 ):
@@ -218,7 +219,7 @@ def cross_docking(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    dask_failure_mode=dask_failure_mode,
+    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     loglevel: Union[int, str] = logging.INFO,
 ):
     """
@@ -304,7 +305,7 @@ def small_scale(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    dask_failure_mode=dask_failure_mode,
+    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
