@@ -7,7 +7,7 @@ from asapdiscovery.data.enum import StringEnum
 from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
-from .postera_api import PostEraAPI
+from asapdiscovery.data.web_utils import _BaseWebAPI
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +87,12 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
         )
 
 
-class MoleculeSetAPI(PostEraAPI):
+class MoleculeSetAPI(_BaseWebAPI):
     """Connection and commands for PostEra Molecule Set API"""
+
+    @classmethod
+    def token_name(cls) -> str:
+        return "X-API-KEY"
 
     @classmethod
     def from_settings(cls, settings):
