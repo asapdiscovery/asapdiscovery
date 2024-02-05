@@ -66,7 +66,7 @@ class HTMLVisualizerV2(VisualizerBase):
         data = []
         for result in docking_results:
             # sorryyyyy
-            output_pref = result.unique_name()
+            output_pref = result.unique_name
             outpath = self.output_dir / output_pref / "pose.html"
             viz_class = HTMLVisualizer(
                 [result.posed_ligand.to_oemol()],

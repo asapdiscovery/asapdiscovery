@@ -43,12 +43,16 @@ from asapdiscovery.docking.docking_data_validation import (
     DockingResultColsV2 as DockingResultCols,
 )
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.docking.scorer_v2 import (
+    ChemGauss4Scorer,
+    FINTScorer,
+    MetaScorer,
+    MLModelScorer,
+)
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
-from asapdiscovery.simulation.simulate import OpenMMPlatform
-from asapdiscovery.simulation.simulate_v2 import VanillaMDSimulatorV2
+from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from distributed import Client
 from pydantic import Field, PositiveInt, root_validator, validator
 
@@ -161,9 +165,15 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     """
 
     output_dir = inputs.output_dir
+    new_directory = True
     if output_dir.exists():
-        rmtree(output_dir)
-    output_dir.mkdir()
+        if inputs.overwrite:
+            rmtree(output_dir)
+        else:
+            new_directory = False
+
+    # this won't overwrite the existing directory
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     logger = FileLogger(
         inputs.logname,  # default root logger so that dask logging is forwarded
@@ -172,6 +182,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         stdout=True,
         level=inputs.loglevel,
     ).getLogger()
+
+    if new_directory:
+        logger.info(f"Writing to / overwriting output directory: {output_dir}")
+    else:
+        logger.info(f"Writing to existing output directory: {output_dir}")
 
     logger.info(f"Running small scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
@@ -229,8 +244,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     else:
         # load from file
         logger.info(f"Loading ligands from file: {inputs.ligands}")
-        molfile = MolFileFactory.from_file(inputs.ligands)
-        query_ligands = molfile.ligands
+        molfile = MolFileFactory(filename=inputs.ligands)
+        query_ligands = molfile.load()
 
     # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:
@@ -333,6 +348,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
+
+    if target_has_fitness_data(inputs.target):
+        logger.info("Target has fitness data, adding FINT scorer")
+        scorers.append(FINTScorer(target=inputs.target))
 
     # load ml scorers
     if inputs.ml_scorers:
@@ -477,7 +496,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             rmsd_restraint = False
             rmsd_restraint_type = None
 
-        md_simulator = VanillaMDSimulatorV2(
+        md_simulator = VanillaMDSimulator(
             output_dir=md_output_dir,
             openmm_platform=inputs.md_openmm_platform,
             num_steps=inputs.md_steps,

@@ -273,7 +273,7 @@ def gather(network: str, allow_missing: bool):
     status = client.network_status(planned_network=planned_network)
     if not allow_missing and "waiting" in status:
         raise RuntimeError(
-            "Not all calculations have finished, to collect the current results use the flag `--allow_missing`."
+            "Not all calculations have finished, to collect the current results use the flag `--allow-missing`."
         )
 
     click.echo(

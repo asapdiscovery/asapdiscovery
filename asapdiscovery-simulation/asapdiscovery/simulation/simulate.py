@@ -1,19 +1,38 @@
-# Configure logging
+import abc
 import logging
+import warnings
 from pathlib import Path
-from typing import List  # noqa: F401
+from typing import ClassVar, Optional  # noqa: F401
 
+import dask
 import mdtraj
 import openmm
+import pandas as pd
+from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
 from asapdiscovery.data.enum import StringEnum
-from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.openeye import save_openeye_pdb
+from asapdiscovery.docking.docking_v2 import DockingResult
+from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
 from openmmtools.utils import get_fastest_platform
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveFloat,
+    PositiveInt,
+    root_validator,
+    validator,
+)
 from rdkit import Chem
+
+logger = logging.getLogger(__name__)
+
+
+solvent_types = list(_SOLVENT_TYPES)
 
 
 class OpenMMPlatform(StringEnum):
@@ -37,128 +56,250 @@ class OpenMMPlatform(StringEnum):
             return Platform.getPlatformByName(self.value)
 
 
-class VanillaMDSimulator:
+def truncate_num_steps(num_steps, reporting_interval):
+    # Ensure num_steps is at least one reporting interval
+    num_steps = max(num_steps, reporting_interval)
+    # Truncate num_steps to be a multiple of reporting_interval
+    num_steps = (num_steps // reporting_interval) * reporting_interval
+
+    return num_steps
+
+
+class SimulatorBase(BaseModel):
     """
-    Class for running MD simulations using OpenMM.
+    Base class for Simulators.
     """
 
-    def __init__(
+    output_dir: Path = Field("md", description="Output directory")
+    debug: bool = Field(False, description="Debug mode of the simulation")
+
+    @abc.abstractmethod
+    def _simulate(self) -> list["SimulationResult"]:
+        ...
+
+    def simulate(
         self,
-        ligand_paths: list[Path],
-        protein_path: Path,
-        temperature: float = 300,
-        pressure: float = 1,
-        collision_rate: float = 1,
-        timestep: float = 4,
-        equilibration_steps: int = 5000,
-        reporting_interval: int = 1250,
-        num_steps: int = 2500000,
-        output_paths: list[Path] = None,
-        logger: FileLogger = None,
-        openmm_logname: str = "openmm_log.tsv",
-        openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
-        debug: bool = False,
-    ):
-        """
-
-        Parameters
-        ----------
-        ligand_paths : list[Path]
-            List of ligand SDFs to simulate.
-        protein_path : Path
-            Path to protein to simulate.
-        temperature : float
-            Temperature to simulate at.
-        pressure : float
-            Pressure to simulate at.
-        collision_rate : float
-            Collision rate
-        timestep : float
-            Timestep to use.
-        equilibration_steps : int
-            Number of equilibration steps to run.
-        reporting_interval : int
-            How many steps between reporting.
-        num_steps : int
-            How many steps to run.
-        output_paths : list[Path]
-            List of paths to write the output to.
-        logger : FileLogger
-            Logger to use.
-        openmm_logname : str
-            Name of the OpenMM log file.
-        debug : bool
-            Whether to run in debug mode.
-        """
-        self.ligand_paths = [Path(path) for path in ligand_paths]
-
-        for ligand_path in self.ligand_paths:
-            if not ligand_path.exists():
-                raise FileNotFoundError(f"{ligand_path} does not exist")
-
-        self.protein_path = Path(protein_path)
-        if not self.protein_path.exists():
-            raise FileNotFoundError(f"{self.protein_path} does not exist")
-
-        # thermo
-        self.temperature = temperature * unit.kelvin
-        self.pressure = pressure * unit.atmospheres
-        self.collision_rate = collision_rate / unit.picoseconds
-        self.timestep = timestep * unit.femtoseconds
-        self.equilibration_steps = equilibration_steps
-        self.reporting_interval = reporting_interval
-        self.num_steps = num_steps
-        self.n_snapshots = int(self.num_steps / self.reporting_interval)
-        self.num_steps = self.n_snapshots * self.reporting_interval
-        self.openmm_logname = openmm_logname
-        self.openmm_platform = openmm_platform
-
-        if output_paths is None:
-            outdir = Path("md").mkdir(exist_ok=True)
-            self.output_paths = [outdir / ligand.parent for ligand in ligand_paths]
+        docking_results: list[DockingResult],
+        use_dask: bool = False,
+        dask_client=None,
+        **kwargs,
+    ) -> pd.DataFrame:
+        if use_dask:
+            delayed_outputs = []
+            for res in docking_results:
+                out = dask.delayed(self._simulate)(docking_results=[res], **kwargs)
+                delayed_outputs.append(out)
+            outputs = actualise_dask_delayed_iterable(
+                delayed_outputs, dask_client, errors="skip"
+            )
+            outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
-            self.output_paths = output_paths
+            outputs = self._simulate(docking_results=docking_results, **kwargs)
 
-        # init logger
-        if logger is None:
-            self.logger = FileLogger(
-                "md_log.txt", "./", stdout=True, level=logging.INFO
-            ).getLogger()
-        else:
-            self.logger = logger
+        return outputs
 
-        self.logger.info("Starting MD run")
-        self.debug = debug
-        if self.debug:
-            self.logger.setLevel(logging.DEBUG)
-            self.logger.debug("Running in debug mode")
-        self.logger.debug(f"Running MD on {len(self.ligand_paths)} ligands")
-        self.logger.debug(f"Running MD on {self.protein_path} protein")
-        self.logger.debug(f"Writing to  {self.output_paths}")
+    @abc.abstractmethod
+    def provenance(self) -> dict[str, str]:
+        ...
 
-        self.set_platform()
 
-    def set_platform(self):
-        # could use structuring to increase flexibility
-        # check whether we have a GPU platform and if so set the precision to mixed
-        self.logger.info("Setting platform for MD run")
+class SimulationResult(BaseModel):
+    traj_path: Path
+    minimized_pdb_path: Path
+    final_pdb_path: Optional[Path]
+    success: Optional[bool]
+    input_docking_result: Optional[DockingResult]
 
-        self.platform = OpenMMPlatform(self.openmm_platform).get_platform()
 
-        if self.platform.getName() == "CUDA" or self.platform.getName() == "OpenCL":
-            self.platform.setPropertyDefaultValue("Precision", "mixed")
-            self.logger.info(
-                f"Setting precision for platform {self.platform.getName()} to mixed"
+# ugly hack to disallow truncation of steps for testing
+_SIMULATOR_TRUNCATE_STEPS = True
+
+
+class VanillaMDSimulator(SimulatorBase):
+    collision_rate: PositiveFloat = Field(
+        1, description="Collision rate of the simulation"
+    )
+    openmm_logname: str = Field(
+        "openmm_log.tsv", description="Name of the OpenMM log file"
+    )
+    openmm_platform: OpenMMPlatform = Field(
+        OpenMMPlatform.Fastest, description="OpenMM platform to use"
+    )
+    temperature: PositiveFloat = Field(300, description="Temperature of the simulation")
+    pressure: PositiveFloat = Field(1, description="Pressure of the simulation")
+    timestep: PositiveFloat = Field(4, description="Timestep of the simulation")
+    equilibration_steps: PositiveInt = Field(
+        5000, description="Number of equilibration steps"
+    )
+    reporting_interval: PositiveInt = Field(
+        1250, description="Reporting interval of the simulation"
+    )
+    num_steps: PositiveInt = Field(
+        2500000,
+        description="Number of simulation steps, must be a multiple of reporting interval or will be truncated to nearest multiple of reporting interval",
+    )
+
+    rmsd_restraint: bool = Field(
+        False, description="Whether to apply an RMSD restraint to the simulation"
+    )
+    rmsd_restraint_atom_indices: list[int] = Field(
+        [],
+        description="Atom indices to apply the RMSD restraint to, cannot be used with rmsd_restraint_type",
+    )
+    rmsd_restraint_type: Optional[str] = Field(
+        "CA",
+        description="Type of RMSD restraint to apply, must be 'CA' or 'heavy', cannot be used with rmsd_restraint_atom_indices",
+    )
+
+    rmsd_restraint_force_constant: PositiveFloat = Field(
+        50, description="Force constant of the RMSD restraint in kcal/mol/A^2"
+    )
+
+    truncate_steps: bool = Field(
+        _SIMULATOR_TRUNCATE_STEPS,
+        description="Whether to truncate num_steps to multiple of reporting interval, used for testing",
+    )
+
+    @validator("rmsd_restraint_type")
+    @classmethod
+    def check_restraint_type(cls, v):
+        if v not in ["CA", "heavy", None]:
+            raise ValueError("RMSD restraint type must be 'CA' or 'heavy'")
+        return v
+
+    @validator("rmsd_restraint_atom_indices")
+    @classmethod
+    def check_restraint_atom_indices(cls, v):
+        if len(v) == 0:
+            return v
+        if not isinstance(v, list):
+            raise ValueError("RMSD restraint atom indices must be a list")
+        if not all(isinstance(x, int) for x in v):
+            raise ValueError("RMSD restraint atom indices must be a list of ints")
+        return v
+
+    @root_validator
+    @classmethod
+    def check_restraint_setup(cls, values):
+        """
+        Validate RMSD restraint setup
+        """
+        rmsd_restraint = values.get("rmsd_restraint")
+        rmsd_restraint_atom_indices = values.get("rmsd_restraint_atom_indices")
+        rmsd_restraint_type = values.get("rmsd_restraint_type")
+
+        if rmsd_restraint_type and rmsd_restraint_atom_indices:
+            raise ValueError(
+                "If RMSD restraint type is provided, rmsd_restraint_atom_indices must be empty"
             )
 
-        self.logger.info(f"Using platform {self.platform.getName()}")
-        if self.debug:
-            self.logger.debug("Setting platform to CPU for debugging")
-            self.platform = OpenMMPlatform.CPU.get_platform()
+        if (
+            rmsd_restraint
+            and not rmsd_restraint_type
+            and len(rmsd_restraint_atom_indices) == 0
+        ):
+            raise ValueError(
+                "If RMSD restraint is enabled, and rmsd_restraint_type is not provided rmsd_restraint_atom_indices must be provided"
+            )
+        return values
 
-    def process_ligand(self, ligand_path) -> Molecule:
-        self.logger.debug("Prepping ligand")
-        rdkitmol = Chem.SDMolSupplier(str(ligand_path))[0]
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "allow"
+
+    @root_validator
+    @classmethod
+    def check_and_apply_truncation(cls, values):
+        """
+        Validate num_steps and reporting_interval along with truncate_steps
+        """
+        step_truncation = values.get("truncate_steps")
+        num_steps = values.get("num_steps")
+        reporting_interval = values.get("reporting_interval")
+        if step_truncation:
+            values["num_steps"] = truncate_num_steps(num_steps, reporting_interval)
+        return values
+
+    @root_validator
+    @classmethod
+    def check_steps(cls, values):
+        """
+        Validate num_steps and reporting_interval
+        """
+        num_steps = values.get("num_steps")
+        reporting_interval = values.get("reporting_interval")
+        truncate_steps = values.get("truncate_steps")
+        if (num_steps % reporting_interval != 0) and truncate_steps:
+            raise ValueError(
+                f"num_steps ({num_steps}) must be a multiple of reporting_interval ({reporting_interval})"
+            )
+        return values
+
+    def _to_openmm_units(self):
+        self._temperature = self.temperature * unit.kelvin
+        self._pressure = self.pressure * unit.atmospheres
+        self._collision_rate = self.collision_rate / unit.picoseconds
+        self._timestep = self.timestep * unit.femtoseconds
+        self.n_snapshots = int(self.num_steps / self.reporting_interval)
+        self.num_steps = self.n_snapshots * self.reporting_interval
+        # set platform
+        self._platform = OpenMMPlatform(self.openmm_platform).get_platform()
+        if self._platform.getName() == "CUDA" or self._platform.getName() == "OpenCL":
+            self._platform.setPropertyDefaultValue("Precision", "mixed")
+
+        if self.debug:
+            self._platform = OpenMMPlatform.CPU.get_platform()
+
+    def _simulate(self, docking_results: list[DockingResult]) -> list[SimulationResult]:
+        self._to_openmm_units()
+
+        results = []
+        for result in docking_results:
+            output_pref = result.unique_name
+            outpath = self.output_dir / output_pref
+            if not outpath.exists():
+                outpath.mkdir(parents=True)
+
+            posed_sdf_path = outpath / "posed_ligand.sdf"
+            result.posed_ligand.to_sdf(posed_sdf_path)
+            processed_ligand = self.process_ligand_rdkit(posed_sdf_path)
+            system_generator, ligand_mol = self.create_system_generator(
+                processed_ligand
+            )
+            # write pdb to pre file
+            pre_pdb_path = outpath / "pre.pdb"
+            save_openeye_pdb(result.to_protein(), pre_pdb_path)
+
+            modeller, ligand_mol = self.get_complex_model(ligand_mol, pre_pdb_path)
+            modeller, mol_atom_indices = self.setup_and_solvate(
+                system_generator, modeller, ligand_mol
+            )
+            system, output_indices, output_topology = self.create_system(
+                system_generator, modeller, mol_atom_indices, processed_ligand
+            )
+            simulation, context = self.setup_simulation(
+                modeller, system, output_indices, output_topology, outpath
+            )
+            simulation = self.equilibrate(simulation)
+            retcode = self.run_production_simulation(
+                simulation, context, output_indices, output_topology, outpath
+            )
+
+            sim_result = SimulationResult(
+                input_docking_result=result,
+                traj_path=outpath / "traj.xtc",
+                minimized_pdb_path=outpath / "minimized.pdb",
+                final_pdb_path=outpath / "final.pdb",
+                success=retcode,
+            )
+
+            results.append(sim_result)
+
+        return results
+
+    @staticmethod
+    def process_ligand_rdkit(sdf_path) -> Molecule:
+        rdkitmol = Chem.SDMolSupplier(str(sdf_path))[0]
         rdkitmolh = Chem.AddHs(rdkitmol, addCoords=True)
         # ensure the chiral centers are all defined
         Chem.AssignAtomChiralTagsFromStructure(rdkitmolh)
@@ -166,9 +307,8 @@ class VanillaMDSimulator:
         ligand_mol = Molecule(rdkitmolh)
         return ligand_mol
 
-    def create_system_generator(self, ligand_mol, outpath):
-        self.logger.debug("Initializing SystemGenerator")
-        self.logger.debug(f"Creating system generator for {ligand_mol}")
+    @staticmethod
+    def create_system_generator(ligand_mol):
         forcefield_kwargs = {
             "constraints": app.HBonds,
             "rigidWater": True,
@@ -186,15 +326,9 @@ class VanillaMDSimulator:
         )
         return system_generator, ligand_mol
 
-    def get_complex_model(self, ligand_mol, protein_path):
-        # load in ligand, protein, then combine them into an openmm object.
-        self.logger.debug(f"Creating complex model for {ligand_mol} and {protein_path}")
-        # Use Modeller to combine the protein and ligand into a complex
-        self.logger.debug("Reading protein")
-
+    @staticmethod
+    def get_complex_model(ligand_mol, protein_path):
         protein_pdb = PDBFile(str(protein_path))
-        self.logger.debug("Preparing complex")
-
         modeller = Modeller(protein_pdb.topology, protein_pdb.positions)
         # This next bit is black magic.
         # Modeller needs topology and positions. Lots of trial and error found that this is what works to get these from
@@ -202,13 +336,14 @@ class VanillaMDSimulator:
         # The topology part is described in the openforcefield API but the positions part grabs the first (and only)
         # conformer and passes it to Modeller. It works. Don't ask why!
         modeller.add(
-            ligand_mol.to_topology().to_openmm(), ligand_mol.conformers[0].to_openmm()
+            ligand_mol.to_topology().to_openmm(),
+            ligand_mol.conformers[0].to_openmm(),
         )
         return modeller, ligand_mol
 
-    def setup_and_solvate(self, system_generator, modeller, ligand_mol):
+    @staticmethod
+    def setup_and_solvate(system_generator, modeller, ligand_mol):
         # We need to temporarily create a Context in order to identify molecules for adding virtual bonds
-        self.logger.debug("Setup and solvate")
         integrator = openmm.VerletIntegrator(1 * unit.femtoseconds)
         system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
         context = openmm.Context(
@@ -218,21 +353,15 @@ class VanillaMDSimulator:
         del context, integrator, system
 
         # Solvate
-        self.logger.debug("Adding solvent...")
         # we use the 'padding' option to define the periodic box. The PDB file does not contain any
         # unit cell information so we just create a box that has a 9A padding around the complex.
         modeller.addSolvent(
             system_generator.forcefield, model="tip3p", padding=12.0 * unit.angstroms
         )
-        self.logger.info(f"System has {modeller.topology.getNumAtoms()} atoms")
         return modeller, molecules_atom_indices
 
-    def create_system(
-        self, system_generator, modeller, molecule_atom_indices, ligand_mol
-    ):
-        self.logger.debug("Creating system...")
-        # Determine which atom indices we want to use
-
+    @staticmethod
+    def create_system(system_generator, modeller, molecule_atom_indices, ligand_mol):
         mdtop = mdtraj.Topology.from_openmm(modeller.topology)
         output_indices = mdtop.select("not water")
         output_topology = mdtop.subset(output_indices).to_openmm()
@@ -241,7 +370,6 @@ class VanillaMDSimulator:
         system = system_generator.create_system(modeller.topology, molecules=ligand_mol)
 
         # Add virtual bonds so solute is imaged together
-        self.logger.debug("Adding virtual bonds between molecules")
         custom_bond_force = openmm.CustomBondForce("0")
         for molecule_index in range(len(molecule_atom_indices) - 1):
             custom_bond_force.addBond(
@@ -258,33 +386,55 @@ class VanillaMDSimulator:
     ):
         # Add barostat
 
-        system.addForce(MonteCarloBarostat(self.pressure, self.temperature))
-        self.logger.debug("Default Periodic box:")
-        for dim in range(3):
-            self.logger.info(f" {system.getDefaultPeriodicBoxVectors()[dim]}")
+        system.addForce(MonteCarloBarostat(self._pressure, self._temperature))
 
-        # Create integrator
-        self.logger.info("Creating integrator...")
+        if self.rmsd_restraint:
+            logger.info("Adding RMSD restraint")
+            if self.rmsd_restraint_atom_indices:
+                atom_indices = self.rmsd_restraint_atom_indices
+
+            elif self.rmsd_restraint_type:
+                if self.rmsd_restraint_type == "CA":
+                    atom_indices = [
+                        atom.index
+                        for atom in modeller.topology.atoms()
+                        if atom.residue.name not in solvent_types and atom.name == "CA"
+                    ]
+
+                elif self.rmsd_restraint_type == "heavy":
+                    atom_indices = [
+                        atom.index
+                        for atom in modeller.topology.atoms()
+                        if atom.residue.name not in solvent_types
+                        and atom.element.name != "hydrogen"
+                    ]
+                    warnings.warn(
+                        "Heavy atom RMSD restraint includes ligand atoms, are you sure this is what you want?"
+                    )
+            logger.debug(f"RMSD restraint atom indices: {atom_indices}")
+            custom_cv_force = openmm.CustomCVForce("(K_RMSD/2)*(RMSD)^2")
+            custom_cv_force.addGlobalParameter(
+                "K_RMSD", self.rmsd_restraint_force_constant * 2
+            )
+            rmsd_force = openmm.RMSDForce(modeller.positions, atom_indices)
+            custom_cv_force.addCollectiveVariable("RMSD", rmsd_force)
+            system.addForce(custom_cv_force)
+            logger.info("Added RMSD restraint force")
 
         integrator = LangevinMiddleIntegrator(
-            self.temperature, self.collision_rate, self.timestep
+            self._temperature, self._collision_rate, self._timestep
         )
 
-        # Create simulation
-        self.logger.info("Creating simulation...")
-
         simulation = Simulation(
-            modeller.topology, system, integrator, platform=self.platform
+            modeller.topology, system, integrator, platform=self._platform
         )
         context = simulation.context
         context.setPositions(modeller.positions)
 
         # Minimize energy
-        self.logger.info("Minimizing ...")
         simulation.minimizeEnergy()
 
         # Write minimized PDB
-        self.logger.debug("Writing minimized PDB")
         output_positions = context.getState(
             getPositions=True, enforcePeriodicBox=False
         ).getPositions(asNumpy=True)
@@ -299,11 +449,8 @@ class VanillaMDSimulator:
 
     def equilibrate(self, simulation):
         # Equilibrate
-        self.logger.info("Starting equilibration...")
-        simulation.context.setVelocitiesToTemperature(self.temperature)
+        simulation.context.setVelocitiesToTemperature(self._temperature)
         simulation.step(self.equilibration_steps)
-        self.logger.info("Finished")
-
         return simulation
 
     def run_production_simulation(
@@ -332,17 +479,10 @@ class VanillaMDSimulator:
                 separator="\t",
             )
         )
-
-        # Run simulation
-        self.logger.info("Running simulation...")
-
-        for snapshot_index in range(self.n_snapshots):
+        logger.info(f"Running simulation for {self.num_steps} steps")
+        for _ in range(self.n_snapshots):
             simulation.step(self.reporting_interval)
 
-        self.logger.info("Finished")
-
-        # Write final PDB
-        self.logger.info("Writing final PDB")
         output_positions = context.getState(
             getPositions=True, enforcePeriodicBox=False
         ).getPositions(asNumpy=True)
@@ -362,37 +502,7 @@ class VanillaMDSimulator:
         del simulation.context
         del simulation
         # return some sort of success/fail code
-        return 0
+        return True
 
-    def run_simulation(self, ligand, outpath):
-        if not outpath.exists():
-            outpath.mkdir(parents=True)
-        self.logger.info(
-            f"starting simulation for {ligand} writing simulation to {outpath}"
-        )
-        processed_ligand = self.process_ligand(ligand)
-        system_generator, ligand_mol = self.create_system_generator(
-            processed_ligand, outpath
-        )
-        modeller, ligand_mol = self.get_complex_model(ligand_mol, self.protein_path)
-        modeller, mol_atom_indices = self.setup_and_solvate(
-            system_generator, modeller, ligand_mol
-        )
-        system, output_indices, output_topology = self.create_system(
-            system_generator, modeller, mol_atom_indices, processed_ligand
-        )
-        simulation, context = self.setup_simulation(
-            modeller, system, output_indices, output_topology, outpath
-        )
-        simulation = self.equilibrate(simulation)
-        retcode = self.run_production_simulation(
-            simulation, context, output_indices, output_topology, outpath
-        )
-        return retcode
-
-    def run_all_simulations(self):
-        retcodes = []
-        for ligand, outpath in zip(self.ligand_paths, self.output_paths):
-            retcode = self.run_simulation(ligand, outpath)
-            retcodes.append(retcode)
-        return retcodes
+    def provenance(self) -> dict[str, str]:
+        return {}

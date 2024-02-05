@@ -81,9 +81,16 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     """
 
     output_dir = inputs.output_dir
+    new_directory = True
     if output_dir.exists():
-        rmtree(output_dir)
-    output_dir.mkdir()
+        if inputs.overwrite:
+            rmtree(output_dir)
+        else:
+            new_directory = False
+
+    # this won't overwrite the existing directory
+    output_dir.mkdir(exist_ok=True, parents=True)
+
     logger = FileLogger(
         inputs.logname,  # default root logger so that dask logging is forwarded
         path=output_dir,
@@ -91,6 +98,11 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         stdout=True,
         level=inputs.loglevel,
     ).getLogger()
+
+    if new_directory:
+        logger.info(f"Writing to / overwriting output directory: {output_dir}")
+    else:
+        logger.info(f"Writing to existing output directory: {output_dir}")
 
     logger.info(f"Running cross docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
@@ -127,8 +139,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     # load from file
     logger.info(f"Loading ligands from file: {inputs.ligands}")
-    molfile = MolFileFactory.from_file(inputs.ligands)
-    query_ligands = molfile.ligands
+    molfile = MolFileFactory(filename=inputs.ligands)
+    query_ligands = molfile.load()
 
     # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:
