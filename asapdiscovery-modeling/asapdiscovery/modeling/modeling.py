@@ -1,22 +1,13 @@
-import os
 from functools import reduce
 from pathlib import Path
 from typing import Optional, Union
 
-import yaml
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.openeye import (
-    combine_protein_ligand,
-    load_openeye_cif1,
-    load_openeye_pdb,
     oechem,
     oedocking,
     oespruce,
-    openeye_perceive_residues,
-    save_openeye_pdb,
-    save_openeye_sdf,
+    openeye_perceive_residues
 )
-from asapdiscovery.data.utils import seqres_to_res_list
 from asapdiscovery.modeling.schema import (
     MoleculeComponent,
     MoleculeFilter,

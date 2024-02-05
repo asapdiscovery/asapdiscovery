@@ -7,7 +7,7 @@ from typing import Optional
 
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
 class DockingWorkflowInputsBase(BaseModel):
