@@ -286,7 +286,12 @@ class LilacGPUDaskCluster(LilacDaskCluster):
     cores = 1
 
     @classmethod
-    def from_gpu(cls, gpu: GPU = GPU.GTX1080TI, silence_logs: int = logging.DEBUG):
+    def from_gpu(
+        cls,
+        gpu: GPU = GPU.GTX1080TI,
+        silence_logs: int = logging.INFO,
+        walltime: str = "72h",
+    ):
         gpu_config = LilacGPUConfig.from_gpu(gpu)
         return cls(
             job_extra_directives=gpu_config.to_job_extra_directives(),
@@ -298,11 +303,14 @@ class LilacCPUDaskCluster(LilacDaskCluster):
     # uses default
 
     @classmethod
-    def from_cpu(cls, cpu: CPU = CPU.LT, silence_logs: int = logging.DEBUG):
+    def from_cpu(
+        cls, cpu: CPU = CPU.LT, silence_logs: int = logging.INFO, walltime: str = "72h"
+    ):
         cpu_config = LilacCPUConfig.from_cpu(cpu)
         return cls(
             job_extra_directives=cpu_config.to_job_extra_directives(),
             silence_logs=silence_logs,
+            walltime=walltime,
         )
 
 
@@ -312,6 +320,7 @@ def dask_cluster_from_type(
     cpu: CPU = CPU.LT,
     local_threads_per_worker: int = 1,
     silence_logs: int = logging.DEBUG,  # worst kwarg name but it is what it is
+    walltime: str = "72h",
 ):
     """
     Get a dask client from a DaskType
@@ -371,13 +380,13 @@ def dask_cluster_from_type(
     elif dask_type == DaskType.LILAC_GPU:
         cluster = (
             LilacGPUDaskCluster()
-            .from_gpu(gpu, silence_logs=silence_logs)
+            .from_gpu(gpu, silence_logs=silence_logs, walltime=walltime)
             .to_cluster(exclude_interface="lo")
         )
     elif dask_type == DaskType.LILAC_CPU:
         cluster = (
             LilacCPUDaskCluster()
-            .from_cpu(cpu, silence_logs=silence_logs)
+            .from_cpu(cpu, silence_logs=silence_logs, walltime=walltime)
             .to_cluster(exclude_interface="lo")
         )
     else:

@@ -196,7 +196,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     if inputs.use_dask:
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
         set_dask_config()
-        dask_cluster = dask_cluster_from_type(inputs.dask_type)
+        dask_cluster = dask_cluster_from_type(
+            inputs.dask_type, walltime=inputs.walltime
+        )
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
@@ -438,9 +440,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
