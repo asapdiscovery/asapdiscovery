@@ -109,7 +109,7 @@ def large_scale(
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
     ml_scorer: Optional[list[str]] = None,
-    walltime: Optional[str] = None,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -217,7 +217,7 @@ def cross_docking(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    walltime: Optional[str] = None,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run cross docking on a set of ligands, against a set of targets.
@@ -305,7 +305,7 @@ def small_scale(
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
-    walltime: Optional[str] = None,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run small scale docking on a set of ligands, against a set of targets.
