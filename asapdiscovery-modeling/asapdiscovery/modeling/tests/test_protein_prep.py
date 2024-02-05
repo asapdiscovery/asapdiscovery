@@ -3,10 +3,10 @@
 # without a local path, output files will be saved to a temporary directory
 # This behaviour is controlled by the output_dir fixture.
 import pytest
-from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.complex import Complex
 from asapdiscovery.data.sequence import seqres_by_target
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 
 
