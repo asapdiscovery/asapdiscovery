@@ -83,6 +83,14 @@ def create(filename: str, core_smarts: str):
     help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), `all` will use all"
     "or the exact number of cpus to use can be provided.",
 )
+@click.option(
+    "-pm",
+    "--postera-molset-name",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+    help="The name of the Postera molecule set to pull the input ligands from.",
+)
 def run(
     dataset_name: str,
     ligands: str,
@@ -90,6 +98,7 @@ def run(
     factory_file: Optional[str] = None,
     core_smarts: Optional[str] = None,
     processors: int = 1,
+    postera_molset_name: Optional[str] = None,
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -104,15 +113,16 @@ def run(
         used but a core smarts must be provided.
     core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained. Required if the factory file is not supplied.
     processors: The number of processors which can be used to run the workflow in parallel. `auto` will use all
-    cpus -1, `all` will use all or the exact number of cpus to use can be provided.
+        cpus -1, `all` will use all or the exact number of cpus to use can be provided.
+    postera_molset_name: The name of the postera molecule set we should pull the data from instead of a local file.
     """
     import pathlib
     from multiprocessing import cpu_count
 
+    import pandas
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.cli.utils import print_header, pull_from_postera
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
-    from asapdiscovery.data.openeye import save_openeye_sdfs
     from asapdiscovery.data.schema_v2.complex import PreppedComplex
     from asapdiscovery.data.schema_v2.molfile import MolFileFactory
     from rich import pretty
@@ -130,11 +140,21 @@ def run(
     else:
         factory = AlchemyPrepWorkflow(core_smarts=core_smarts)
 
-    # load the molecules
-    asap_ligands = MolFileFactory(filename=ligands).load()
+    # workout where the molecules are coming from
+    if postera_molset_name is not None:
+        postera_download = console.status(
+            f"Downloading molecules from Postera molecule set:{postera_molset_name}"
+        )
+        postera_download.start()
+        asap_ligands = pull_from_postera(molecule_set_name=postera_molset_name)
+        postera_download.stop()
+
+    else:
+        # load the molecules
+        asap_ligands = MolFileFactory(filename=ligands).load()
 
     message = Padding(
-        f"Loaded {len(asap_ligands)} ligands from [repr.filename]{ligands}[/repr.filename]",
+        f"Loaded {len(asap_ligands)} ligands from [repr.filename]{postera_molset_name or ligands}[/repr.filename]",
         (1, 0, 1, 0),
     )
     console.print(message)
@@ -196,15 +216,30 @@ def run(
     )
     console.print(message)
 
+    # create a csv of the failed ligands with the failure reason
     if alchemy_dataset.failed_ligands:
+        rows = []
+        failed_ligands_file = output_folder.joinpath("failed_ligands.csv")
+        # sum all the failed ligands across all stages
+        fails = sum([len(values) for values in alchemy_dataset.failed_ligands.values()])
         message = Padding(
-            f"[yellow]WARNING some ligands failed to have poses generated see failed_ligands files in [repr.filename]{output_folder}[/repr.filename][/yellow]",
+            f"[yellow]WARNING {fails} ligands failed to have poses generated see [repr.filename]{failed_ligands_file}[/repr.filename][/yellow]",
             (1, 0, 1, 0),
         )
         console.print(message)
         for fail_type, ligands in alchemy_dataset.failed_ligands.items():
-            fails = [ligand.to_oemol() for ligand in ligands]
-            failed_ligand_file = output_folder.joinpath(
-                f"failed_ligands_{fail_type}.sdf"
-            )
-            save_openeye_sdfs(fails, failed_ligand_file)
+            for ligand in ligands:
+                rows.append(
+                    {
+                        "smiles": ligand.provenance.isomeric_smiles,
+                        "name": ligand.compound_name,
+                        "failure type": fail_type,
+                        # if it was an omega fail print the return code
+                        "failure info": ligand.tags.get("omega_return_code", ""),
+                    }
+                )
+
+        # write to csv
+        df = pandas.DataFrame(rows)
+        failed_ligands_file = output_folder.joinpath("failed_ligands.csv")
+        df.to_csv(failed_ligands_file, index=False)

@@ -168,10 +168,7 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
             in result.stdout
         )
         # check a warning is printed if some molecules are removed
-        assert (
-            "WARNING some ligands failed to have poses generated see failed_ligands"
-            in result.stdout
-        )
+        assert "WARNING 2 ligands failed to have poses generated" in result.stdout
         # check we can load the result
         prep_dataset = AlchemyDataSet.from_file(
             "mac1-testing/prepared_alchemy_dataset.json"
@@ -182,6 +179,13 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
             .joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb")
             .exists()
         )
+        # make sure the csv of failed ligands is writen to file
+        assert (
+            pathlib.Path(prep_dataset.dataset_name)
+            .joinpath("failed_ligands.csv")
+            .exists()
+        )
+        # check the dataset details are as expected
         assert prep_dataset.dataset_name == "mac1-testing"
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 3
@@ -238,7 +242,7 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
         assert "[✓] Stereochemistry filtering complete" not in result.stdout
         # check the failure warning is not printed
         assert (
-            "WARNING some ligands failed to have poses generated see failed_ligands"
+            "WARNING 2 ligands failed to have poses generated see failed_ligands"
             not in result.stdout
         )
         # check we can load the result
@@ -255,6 +259,52 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 5
         assert prep_dataset.failed_ligands is None
+
+
+def test_alchemy_prep_run_from_postera(
+    tmpdir, mac1_complex, openeye_prep_workflow, monkeypatch
+):
+    """Test running the alchemy prep workflow on a set of mac1 ligands downloaded from postera."""
+    from asapdiscovery.alchemy.cli import utils
+    from asapdiscovery.data.schema_v2.ligand import Ligand
+    from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+
+    # locate the ligands input file
+    ligand_file = fetch_test_file("constrained_conformer/mac1_ligands.smi")
+
+    # Mock the method to download from postera making sure the molecule set name is passed
+    def pull(molecule_set_name: str) -> list[Ligand]:
+        assert molecule_set_name == "mac1_ligands"
+        return MolFileFactory(filename=ligand_file.as_posix()).load()
+
+    monkeypatch.setattr(utils, "pull_from_postera", pull)
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # complex to a local file
+        mac1_complex.to_json_file("complex.json")
+        # write out the workflow to file
+        openeye_prep_workflow.to_file("openeye_workflow.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "run",
+                "-f",
+                "openeye_workflow.json",
+                "-n",
+                "mac1-testing",
+                "-pm",
+                "mac1_ligands",
+                "-r",
+                "complex.json",
+                "-p",
+                1,
+            ],
+        )
+        assert result.exit_code == 0
 
 
 def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
