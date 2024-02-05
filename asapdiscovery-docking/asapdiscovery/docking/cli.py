@@ -85,6 +85,7 @@ def docking():
 @overwrite
 @input_json
 @ml_scorer
+@loglevel
 def large_scale(
     target: TargetTags,
     n_select: int = 5,
@@ -106,7 +107,9 @@ def large_scale(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
+    dask_failure_mode=dask_failure_mode,
     ml_scorer: Optional[list[str]] = None,
+    loglevel: Union[int, str] = logging.INFO,
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -125,6 +128,7 @@ def large_scale(
             top_n=top_n,
             use_dask=use_dask,
             dask_type=dask_type,
+            dask_failure_mode=dask_failure_mode,
             posit_confidence_cutoff=posit_confidence_cutoff,
             use_omega=use_omega,
             allow_posit_retries=allow_posit_retries,
@@ -138,6 +142,7 @@ def large_scale(
             ml_scorers=ml_scorer,
             output_dir=output_dir,
             overwrite=overwrite,
+            loglevel=loglevel,
         )
 
     large_scale_docking_workflow(inputs)
@@ -192,6 +197,7 @@ def large_scale(
 @output_dir
 @overwrite
 @input_json
+@loglevel
 def cross_docking(
     target: TargetTags,
     multi_reference: bool = False,
@@ -212,6 +218,8 @@ def cross_docking(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
+    dask_failure_mode=dask_failure_mode,
+    loglevel: Union[int, str] = logging.INFO,
 ):
     """
     Run cross docking on a set of ligands, against a set of targets.
@@ -228,6 +236,7 @@ def cross_docking(
             structure_selector=structure_selector,
             use_dask=use_dask,
             dask_type=dask_type,
+            dask_failure_mode=dask_failure_mode,
             use_omega=use_omega,
             omega_dense=omega_dense,
             allow_retries=allow_retries,
@@ -241,6 +250,7 @@ def cross_docking(
             output_dir=output_dir,
             overwrite=overwrite,
             allow_final_clash=allow_final_clash,
+            loglevel=loglevel,
         )
 
     cross_docking_workflow(inputs)
@@ -274,6 +284,7 @@ def cross_docking(
 @input_json
 @ml_scorer
 @md_args
+@loglevel
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
@@ -293,10 +304,12 @@ def small_scale(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
+    dask_failure_mode=dask_failure_mode,
     ml_scorer: Optional[list[str]] = None,
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
+    loglevel: Union[int, str] = logging.INFO,
 ):
     """
     Run small scale docking on a set of ligands, against a set of targets.
@@ -313,6 +326,7 @@ def small_scale(
             target=target,
             use_dask=use_dask,
             dask_type=dask_type,
+            dask_failure_mode=dask_failure_mode,
             posit_confidence_cutoff=posit_confidence_cutoff,
             allow_dask_cuda=allow_dask_cuda,
             use_omega=not no_omega,
@@ -329,6 +343,7 @@ def small_scale(
             md=md,
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
+            loglevel=loglevel,
         )
 
     small_scale_docking_workflow(inputs)

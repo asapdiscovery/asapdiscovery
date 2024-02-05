@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional
+from typing import Optional, Union
 
 from rich.console import Console
 from rich.logging import RichHandler
@@ -12,7 +12,7 @@ class FileLogger:
         logname: str,
         path: str,
         logfile: Optional[str] = None,
-        level: Optional[int] = logging.DEBUG,
+        level: Optional[Union[int, str]] = logging.DEBUG,
         format: Optional[
             str
         ] = "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s",
