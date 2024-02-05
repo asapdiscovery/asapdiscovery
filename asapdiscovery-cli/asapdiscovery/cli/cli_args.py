@@ -87,6 +87,14 @@ def output_dir(func):
     )(func)
 
 
+def overwrite(func):
+    return click.option(
+        "--overwrite/--no-overwrite",
+        default=True,
+        help="Whether to overwrite the output directory if it exists.",
+    )(func)
+
+
 def input_json(func):
     return click.option(
         "--input-json",

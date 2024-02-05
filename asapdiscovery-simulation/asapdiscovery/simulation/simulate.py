@@ -2,7 +2,7 @@ import abc
 import logging
 import warnings
 from pathlib import Path
-from typing import Optional  # noqa: F401
+from typing import ClassVar, Optional  # noqa: F401
 
 import dask
 import mdtraj
@@ -111,6 +111,10 @@ class SimulationResult(BaseModel):
     input_docking_result: Optional[DockingResult]
 
 
+# ugly hack to disallow truncation of steps for testing
+_SIMULATOR_TRUNCATE_STEPS = True
+
+
 class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
         1, description="Collision rate of the simulation"
@@ -149,6 +153,11 @@ class VanillaMDSimulator(SimulatorBase):
 
     rmsd_restraint_force_constant: PositiveFloat = Field(
         50, description="Force constant of the RMSD restraint in kcal/mol/A^2"
+    )
+
+    truncate_steps: bool = Field(
+        _SIMULATOR_TRUNCATE_STEPS,
+        description="Whether to truncate num_steps to multiple of reporting interval, used for testing",
     )
 
     @validator("rmsd_restraint_type")
@@ -198,12 +207,18 @@ class VanillaMDSimulator(SimulatorBase):
         arbitrary_types_allowed = True
         extra = "allow"
 
-    def __init__(self, **kwargs):
-        # truncate num_steps to be a multiple of reporting_interval and at least one reporting interval
-        kwargs["num_steps"] = truncate_num_steps(
-            kwargs["num_steps"], kwargs["reporting_interval"]
-        )
-        super().__init__(**kwargs)
+    @root_validator
+    @classmethod
+    def check_and_apply_truncation(cls, values):
+        """
+        Validate num_steps and reporting_interval along with truncate_steps
+        """
+        step_truncation = values.get("truncate_steps")
+        num_steps = values.get("num_steps")
+        reporting_interval = values.get("reporting_interval")
+        if step_truncation:
+            values["num_steps"] = truncate_num_steps(num_steps, reporting_interval)
+        return values
 
     @root_validator
     @classmethod
@@ -213,7 +228,8 @@ class VanillaMDSimulator(SimulatorBase):
         """
         num_steps = values.get("num_steps")
         reporting_interval = values.get("reporting_interval")
-        if num_steps % reporting_interval != 0:
+        truncate_steps = values.get("truncate_steps")
+        if (num_steps % reporting_interval != 0) and truncate_steps:
             raise ValueError(
                 f"num_steps ({num_steps}) must be a multiple of reporting_interval ({reporting_interval})"
             )
@@ -463,7 +479,7 @@ class VanillaMDSimulator(SimulatorBase):
                 separator="\t",
             )
         )
-
+        logger.info(f"Running simulation for {self.num_steps} steps")
         for _ in range(self.n_snapshots):
             simulation.step(self.reporting_interval)
 

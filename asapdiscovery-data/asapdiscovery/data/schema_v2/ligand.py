@@ -3,7 +3,15 @@ import json
 import logging
 from enum import Flag, auto
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional, Tuple, Union  # noqa: F401
+from typing import (  # noqa: F401
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from asapdiscovery.data.openeye import (
     _set_SD_data_repr,
@@ -30,6 +38,9 @@ from .schema_base import (
     schema_dict_get_val_overload,
     write_file_directly,
 )
+
+if TYPE_CHECKING:
+    from rdkit import Chem
 
 logger = logging.getLogger(__name__)
 
@@ -223,6 +234,34 @@ class Ligand(DataModelAbstractBase):
             data.update({k: v for k, v in self.tags.items()})
         mol = _set_SD_data_repr(mol, data)
         return mol
+
+    def to_rdkit(self) -> "Chem.Mol":
+        """
+        Convert the current molecule state to an RDKit molecule including all fields as SD tags.
+        """
+        from rdkit import Chem
+
+        rdkit_mol: Chem.Mol = Chem.MolFromMolBlock(self.data, removeHs=False)
+        data = {}
+        for key in self.__fields__.keys():
+            if key not in ["data", "tags", "data_format"]:
+                field = getattr(self, key)
+                try:
+                    data[key] = field.json()
+                except AttributeError:
+                    if field is not None:
+                        data[key] = str(getattr(self, key))
+        # dump the enum using value to get the str repr
+        data["data_format"] = self.data_format.value
+        # if we have a compound name set it as the RDKit _Name prop as well
+        if self.compound_name is not None:
+            data["_Name"] = self.compound_name
+        # dump tags as separate items
+        if self.tags is not None:
+            data.update({k: v for k, v in self.tags.items()})
+        for key, value in data.items():
+            rdkit_mol.SetProp(key, value)
+        return rdkit_mol
 
     @classmethod
     def from_smiles(cls, smiles: str, **kwargs) -> "Ligand":
