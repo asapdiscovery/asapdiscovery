@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 import dask
 import yaml
 from asapdiscovery.data.dask_utils import (
-    actualise_dask_delayed_iterable,
     DaskFailureMode,
+    actualise_dask_delayed_iterable,
 )
 from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import oechem
