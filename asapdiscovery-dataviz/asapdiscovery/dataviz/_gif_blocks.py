@@ -1,27 +1,38 @@
-from .viz_targets import VizTargets
+from typing import Union
 
-"""
-Find these by going through GIF generation with `pse_share=True`, then inspecting
-session_5.pse with pymol, orienting and running `get_view` in pymol terminal.
-"""
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetProteinMap,
+    TargetTags,
+)
 
 
 class GIFBlockData:
     @classmethod
-    def get_view_coords(cls):
+    def get_view_coords(cls) -> tuple[float]:
         """
         Get the master orient coords.
         """
         return getattr(cls, "master_view_coords")
 
     @classmethod
-    def get_pocket_dict(cls, target):
-        target_name = VizTargets.get_target_name(target, underscore=True)
-        return getattr(cls, f"pocket_dict_{target_name}")
+    def get_pocket_dict(cls, target: Union[TargetTags, str]) -> dict[str, str]:
+        if isinstance(target, TargetTags):
+            target = str(target.value)
+        else:
+            target = str(target)
+        # need underscored protein name for pocket_dict
+        target = target.replace("-", "_")
+        return getattr(cls, f"pocket_dict_{target}")
 
     @classmethod
-    def get_color_dict(cls, target):
-        protein_name = VizTargets.get_protein_name(target, underscore=True)
+    def get_color_dict(cls, target: TargetTags) -> dict[str, str]:
+        if isinstance(target, TargetTags):
+            target = str(target.value)
+        else:
+            target = str(target)
+        protein_name = TargetProteinMap[target]
+        # need underscored protein name for color_dict
+        protein_name = protein_name.replace("-", "_")
         return getattr(cls, f"color_dict_{protein_name}")
 
     master_view_coords = (
@@ -150,7 +161,7 @@ class GIFBlockData:
         "subP3": "cyan",
         "subP4": "magenta",
     }
-    color_dict_NS3pro = {
+    color_dict_NS2B_NS3pro = {
         "subP1": "yellow",
         "subP1_prime": "orange",
         "subP2": "blue",
