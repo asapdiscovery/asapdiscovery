@@ -35,12 +35,10 @@ from asapdiscovery.data.services_config import (
 )
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer_v2 import (
+from asapdiscovery.docking.scorer import (
     ChemGauss4Scorer,
     FINTScorer,
     MetaScorer,

@@ -6,9 +6,7 @@ from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedT
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
 from asapdiscovery.data.rdkit import rdkit_smiles_roundtrip
 from asapdiscovery.data.services_config import PosteraSettings
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

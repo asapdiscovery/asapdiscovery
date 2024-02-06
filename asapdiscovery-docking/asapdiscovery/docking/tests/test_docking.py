@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import pytest
-from asapdiscovery.docking.docking_data_validation import DockingResultColsV2
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 
 
@@ -88,5 +88,5 @@ def test_multireceptor_docking(docking_multi_structure):
 
 def test_results_to_df(results_simple):
     df = results_simple[0].to_df()
-    assert DockingResultColsV2.SMILES in df.columns
-    assert DockingResultColsV2.LIGAND_ID in df.columns
+    assert DockingResultCols.SMILES in df.columns
+    assert DockingResultCols.LIGAND_ID in df.columns

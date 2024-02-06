@@ -9,10 +9,8 @@ from typing import ClassVar, Literal, Optional, Union
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import (
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.docking.docking import (
     DockingBase,
     DockingInputMultiStructure,
     DockingInputPair,

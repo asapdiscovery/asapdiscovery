@@ -6,10 +6,8 @@ from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.docking.docking import DockingResult
 from pydantic import Field, root_validator
 
 logger = logging.getLogger(__name__)
