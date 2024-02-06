@@ -440,9 +440,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
@@ -511,7 +511,17 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         gif_output_dir = output_dir / "gifs"
-        gif_maker = GIFVisualizerV2(output_dir=gif_output_dir, target=inputs.target)
+
+        # take the last ns, accounting for possible low number of frames
+        start_frame = max(md_simulator.n_frames - md_simulator.frames_per_ns, 1)
+
+        logger.info(f"Using start frame {start_frame} for GIFs")
+        gif_maker = GIFVisualizerV2(
+            output_dir=gif_output_dir,
+            target=inputs.target,
+            frames_per_ns=md_simulator.frames_per_ns,
+            start=start_frame,
+        )
         gifs = gif_maker.visualize(
             simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
         )

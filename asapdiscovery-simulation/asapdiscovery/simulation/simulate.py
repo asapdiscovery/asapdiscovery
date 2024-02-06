@@ -74,8 +74,7 @@ class SimulatorBase(BaseModel):
     debug: bool = Field(False, description="Debug mode of the simulation")
 
     @abc.abstractmethod
-    def _simulate(self) -> list["SimulationResult"]:
-        ...
+    def _simulate(self) -> list["SimulationResult"]: ...
 
     def simulate(
         self,
@@ -99,8 +98,7 @@ class SimulatorBase(BaseModel):
         return outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
 
 class SimulationResult(BaseModel):
@@ -234,6 +232,20 @@ class VanillaMDSimulator(SimulatorBase):
                 f"num_steps ({num_steps}) must be a multiple of reporting_interval ({reporting_interval})"
             )
         return values
+
+    @property
+    def n_frames(self) -> int:
+        return self.num_steps // self.reporting_interval
+
+    @property
+    def total_simulation_time(self) -> openmm.unit.quantity.Quantity:
+        return self.num_steps * self.timestep * unit.femtoseconds
+
+    @property
+    def frames_per_ns(self) -> unit.quantity.Quantity:
+        # convert to ns
+        length = (self.total_simulation_time).value_in_unit(unit.nanoseconds)
+        return self.n_frames / length
 
     def _to_openmm_units(self):
         self._temperature = self.temperature * unit.kelvin
