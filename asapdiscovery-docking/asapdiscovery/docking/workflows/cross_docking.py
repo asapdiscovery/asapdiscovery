@@ -114,7 +114,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
         set_dask_config()
         dask_cluster = dask_cluster_from_type(
-            inputs.dask_type, loglevel=inputs.loglevel,  walltime=inputs.walltime)
+            inputs.dask_type, loglevel=inputs.loglevel, walltime=inputs.walltime
+        )
 
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")

@@ -331,7 +331,6 @@ def dask_cluster_from_type(
     local_threads_per_worker: int = 1,
     loglevel: Union[str, int] = logging.DEBUG,
     walltime: str = "72h",
-
 ):
     """
     Get a dask client from a DaskType
