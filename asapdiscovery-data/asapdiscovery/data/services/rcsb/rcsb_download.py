@@ -2,25 +2,6 @@ import os
 from typing import Union
 
 
-def load_pdbs_from_yaml(pdb_list_yaml):
-    """
-    Load a pdb list from yaml file
-    Parameters
-    ----------
-    pdb_list_yaml
-
-    Returns
-    -------
-
-    """
-    import yaml
-
-    print(f"Loading pdb list from {pdb_list_yaml}...")
-    with open(pdb_list_yaml) as f:
-        pdb_dict = yaml.safe_load(f)
-    return pdb_dict
-
-
 def download_pdb_structure(
     pdb_id: str, directory: Union[str, os.PathLike], file_format: str = "pdb"
 ):
@@ -49,7 +30,7 @@ def download_pdb_structure(
 
     import requests
 
-    from .utils import download_file
+    from asapdiscovery.data.util.utils import download_file
 
     url_base_str = "https://files.rcsb.org/download/"  # base str to use for URLs
     # Dictionary with allowed formats and their upstream basenames
