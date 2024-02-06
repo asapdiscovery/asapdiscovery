@@ -232,3 +232,11 @@ def loglevel(func):
         help="The log level to use.",
         default="INFO",
     )(func)
+
+def walltime(func):
+    return click.option(
+        "--walltime",
+        type=str,
+        default="72h",
+        help="The walltime to use for the dask_jobqueue cluster (if used) in dask format, e.g. '1h'",
+    )(func)

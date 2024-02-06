@@ -19,6 +19,7 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     target,
     use_only_cache,
+    walltime,
 )
 from asapdiscovery.data.dask_utils import DaskFailureMode, DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -88,6 +89,7 @@ def docking():
 @input_json
 @ml_scorer
 @loglevel
+@walltime
 def large_scale(
     target: TargetTags,
     n_select: int = 5,
@@ -112,6 +114,7 @@ def large_scale(
     dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     loglevel: Union[int, str] = logging.INFO,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -145,6 +148,7 @@ def large_scale(
             output_dir=output_dir,
             overwrite=overwrite,
             loglevel=loglevel,
+            walltime=walltime,
         )
 
     large_scale_docking_workflow(inputs)
@@ -200,6 +204,7 @@ def large_scale(
 @overwrite
 @input_json
 @loglevel
+@walltime
 def cross_docking(
     target: TargetTags,
     multi_reference: bool = False,
@@ -222,6 +227,7 @@ def cross_docking(
     dask_type: DaskType = DaskType.LOCAL,
     dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     loglevel: Union[int, str] = logging.INFO,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run cross docking on a set of ligands, against a set of targets.
@@ -253,6 +259,7 @@ def cross_docking(
             overwrite=overwrite,
             allow_final_clash=allow_final_clash,
             loglevel=loglevel,
+            walltime=walltime,
         )
 
     cross_docking_workflow(inputs)
@@ -287,6 +294,7 @@ def cross_docking(
 @ml_scorer
 @md_args
 @loglevel
+@walltime
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
@@ -312,6 +320,7 @@ def small_scale(
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
     loglevel: Union[int, str] = logging.INFO,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run small scale docking on a set of ligands, against a set of targets.
@@ -346,6 +355,7 @@ def small_scale(
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
             loglevel=loglevel,
+            walltime=walltime,
         )
 
     small_scale_docking_workflow(inputs)
