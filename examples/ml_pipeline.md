@@ -154,7 +154,7 @@ the ligand placed in the crystal structure it was docked to. This is also parall
 generated in the same directory as the input file.
 
 ```bash
-make-docked-complexes-v2 \
+make-docked-complexes \
     -d ./docking_results/ \
     -x ./mpro_fragalysis/ \
     -w 12
