@@ -1,3 +1,5 @@
+import json
+
 import asapdiscovery.ml
 import mtenn
 import numpy as np
@@ -26,7 +28,7 @@ def test_gatinference_construct_from_name(
     tmp_path,
 ):
     inference_cls = GATInference.from_model_name(
-        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.25", local_dir=tmp_path
+        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06", local_dir=tmp_path
     )
     assert inference_cls is not None
     assert inference_cls.local_model_spec.local_dir == tmp_path
@@ -34,7 +36,7 @@ def test_gatinference_construct_from_name(
 
 def test_gatinference_predict(test_data):
     inference_cls = GATInference.from_model_name(
-        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.25"
+        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06"
     )
     g1, _, _, _ = test_data
     assert inference_cls is not None
