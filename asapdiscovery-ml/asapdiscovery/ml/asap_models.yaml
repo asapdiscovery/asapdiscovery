@@ -50,6 +50,20 @@ asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06:
     - MERS-CoV-Mpro
   mtenn_lower_pin: "0.5.0"
 
+asapdiscovery-SARS-CoV-2-Mac1-GAT-2024.02.06:
+  type: GAT
+  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/GAT/
+  weights:
+    resource: asapdiscovery-SARS-CoV-2-Mac1-GAT-2024.02.06.th
+    sha256hash: 4a6494412089d390723b107a30361672f2d2711622eea016c33caf1d7c28e1a7
+  config:
+    resource: asapdiscovery-SARS-CoV-2-Mac1-GAT-2024.02.06.json
+    sha256hash: d26f278c189eb897607b9b3a2c61ed6c82fbcd7590683631dc9afd7fa010f256
+  last_updated: 2024-02-06
+  targets:
+    - SARS-CoV-2-Mac1
+  mtenn_lower_pin: "0.5.0"
+
 asapdiscovery-SARS-CoV-2-Mpro-schnet-2024.02.05:
   type: schnet
   base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/schnet/
