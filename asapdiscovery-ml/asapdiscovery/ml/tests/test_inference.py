@@ -1,5 +1,3 @@
-import json
-
 import asapdiscovery.ml
 import mtenn
 import numpy as np
