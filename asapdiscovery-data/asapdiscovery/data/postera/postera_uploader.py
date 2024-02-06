@@ -1,5 +1,4 @@
 import logging
-import warnings
 from uuid import UUID
 
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
@@ -32,7 +31,7 @@ class PosteraUploader(BaseModel):
         False, description="Overwrite existing data on molecule set"
     )
 
-    def push(self, df, sort_column, sort_ascending: bool = True) -> None:
+    def push(self, df) -> None:
         """
         Push molecules to a Postera molecule set
 
@@ -40,10 +39,6 @@ class PosteraUploader(BaseModel):
         ----------
         df : DataFrame
             DataFrame of data to upload
-        sort_column : str
-            Name of the column to use to sort the dataframe if any duplicate UUIDs are found
-        sort_ascending : bool
-            Whether to sort ascending or descending if any duplicate UUIDs are found
 
         Returns
         -------
@@ -100,23 +95,14 @@ class PosteraUploader(BaseModel):
 
                 if not uuid_rows.empty:
                     # check if there are any duplicate UUIDs and find how many
-                    # if there are duplicates, we need to sort the dataframe by the sort column and drop duplicates
+                    # if there are duplicates, we need to raise an error
                     # this is because the manifold API will not allow us to upload duplicate UUIDs
                     if uuid_rows[self.id_field].duplicated().any():
                         # how many duplicates are there?
                         num_duplicates = len(uuid_rows[self.id_field].duplicated())
 
-                        warnings.warn(
-                            f"{num_duplicates} duplicate UUIDs found in dataframe, sorting by sort_column and dropping duplicates"
-                        )
-                        # make sure there are no duplicate UUIDs, sorting by sort col
-                        if sort_column not in uuid_rows.columns:
-                            raise ValueError("sort_column not found in dataframe")
-                        uuid_rows.sort_values(
-                            by=sort_column, inplace=True, ascending=sort_ascending
-                        )
-                        uuid_rows.drop_duplicates(
-                            subset=[self.id_field], inplace=True, keep="first"
+                        raise ValueError(
+                            f"{num_duplicates} duplicate UUIDs found in dataframe, cannot upload to Postera"
                         )
 
                     # rows with a UUID can be updated
