@@ -7,7 +7,7 @@ from asapdiscovery.data.dask_utils import (
     actualise_dask_delayed_iterable,
     backend_wrapper,
 )
-from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking import DockingResult
 from pydantic import BaseModel
 
 

@@ -18,10 +18,8 @@ from asapdiscovery.data.plip import compute_fint_score
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking import DockingResult
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from mtenn.config import ModelType
 from pydantic import BaseModel, Field, validator
