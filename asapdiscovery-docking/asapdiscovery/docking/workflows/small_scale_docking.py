@@ -19,7 +19,6 @@ from asapdiscovery.data.postera.manifold_artifacts import (
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetProteinMap,
-    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
@@ -39,11 +38,9 @@ from asapdiscovery.data.services_config import (
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer_v2 import (
+from asapdiscovery.docking.scorer import (
     ChemGauss4Scorer,
     FINTScorer,
     MetaScorer,
@@ -582,12 +579,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # push the results to PostEra, making a new molecule set if necessary
-        posit_score_tag = map_output_col_to_manifold_tag(
-            DockingResultCols, inputs.target
-        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
-        result_df, molset_name, made_new_molset = postera_uploader.push(
-            result_df, sort_column=posit_score_tag, sort_ascending=True
-        )
+
+        result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")
