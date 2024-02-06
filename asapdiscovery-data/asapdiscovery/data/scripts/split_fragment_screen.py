@@ -20,14 +20,13 @@ import os
 from pathlib import Path
 
 import networkx as nx
-from pymol import cmd
-
 from asapdiscovery.data.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
     save_openeye_pdb,
     save_openeye_sdfs,
 )
+from pymol import cmd
 
 
 # Arguments define the input file and the output file
