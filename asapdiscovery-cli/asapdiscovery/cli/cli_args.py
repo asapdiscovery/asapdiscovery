@@ -60,6 +60,7 @@ def dask_failure_mode(func):
         type=click.Choice(DaskFailureMode.get_values(), case_sensitive=False),
         default=DaskFailureMode.SKIP,
         help="The failure mode for dask. Can be 'raise' or 'skip'.",
+        show_default=True,
     )(func)
 
 
@@ -231,6 +232,7 @@ def loglevel(func):
         type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
         help="The log level to use.",
         default="INFO",
+        show_default=True,
     )(func)
 
 
