@@ -5,10 +5,7 @@ from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.docking.docking import (
-    DockingInputMultiStructure,
-    DockingInputPair,
-)
+from asapdiscovery.docking.docking import DockingInputMultiStructure, DockingInputPair
 from asapdiscovery.docking.openeye import POSITDocker
 
 

@@ -9,13 +9,13 @@ from typing import ClassVar, Literal, Optional, Union
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.docking import (
     DockingBase,
     DockingInputMultiStructure,
     DockingInputPair,
     DockingResult,
 )
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import Field, PositiveInt, root_validator
 
 logger = logging.getLogger(__name__)
