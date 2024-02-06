@@ -17,6 +17,7 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     target,
     use_only_cache,
+    walltime,
 )
 from asapdiscovery.data.dask_utils import DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
@@ -85,6 +86,7 @@ def docking():
 @overwrite
 @input_json
 @ml_scorer
+@walltime
 def large_scale(
     target: TargetTags,
     n_select: int = 5,
@@ -107,6 +109,7 @@ def large_scale(
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
     ml_scorer: Optional[list[str]] = None,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -138,6 +141,7 @@ def large_scale(
             ml_scorers=ml_scorer,
             output_dir=output_dir,
             overwrite=overwrite,
+            walltime=walltime,
         )
 
     large_scale_docking_workflow(inputs)
@@ -192,6 +196,7 @@ def large_scale(
 @output_dir
 @overwrite
 @input_json
+@walltime
 def cross_docking(
     target: TargetTags,
     multi_reference: bool = False,
@@ -212,6 +217,7 @@ def cross_docking(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run cross docking on a set of ligands, against a set of targets.
@@ -241,6 +247,7 @@ def cross_docking(
             output_dir=output_dir,
             overwrite=overwrite,
             allow_final_clash=allow_final_clash,
+            walltime=walltime,
         )
 
     cross_docking_workflow(inputs)
@@ -274,6 +281,7 @@ def cross_docking(
 @input_json
 @ml_scorer
 @md_args
+@walltime
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
@@ -297,6 +305,7 @@ def small_scale(
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
+    walltime: Optional[str] = "72h",
 ):
     """
     Run small scale docking on a set of ligands, against a set of targets.
@@ -329,6 +338,7 @@ def small_scale(
             md=md,
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
+            walltime=walltime,
         )
 
     small_scale_docking_workflow(inputs)

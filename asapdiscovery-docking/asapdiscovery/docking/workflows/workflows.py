@@ -1,6 +1,7 @@
 """
 Schema for workflows base classes
 """
+
 import logging
 from pathlib import Path
 from typing import Optional
@@ -75,6 +76,9 @@ class DockingWorkflowInputsBase(BaseModel):
 
     overwrite: bool = Field(
         False, description="Whether to overwrite existing output directory."
+    )
+    walltime: str = Field(
+        "72h", description="Walltime for the workflow, used for dask-jobqueue"
     )
 
     class Config:
