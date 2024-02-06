@@ -117,7 +117,7 @@ _SIMULATOR_TRUNCATE_STEPS = True
 
 class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
-        1, description="Collision rate of the simulation"
+        1, description="Collision rate of the simulation (in 1/ps)"
     )
     openmm_logname: str = Field(
         "openmm_log.tsv", description="Name of the OpenMM log file"
@@ -125,9 +125,15 @@ class VanillaMDSimulator(SimulatorBase):
     openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use"
     )
-    temperature: PositiveFloat = Field(300, description="Temperature of the simulation")
-    pressure: PositiveFloat = Field(1, description="Pressure of the simulation")
-    timestep: PositiveFloat = Field(4, description="Timestep of the simulation")
+    temperature: PositiveFloat = Field(
+        300, description="Temperature of the simulation (in kelvin)"
+    )
+    pressure: PositiveFloat = Field(
+        1, description="Pressure of the simulation (in atm)"
+    )
+    timestep: PositiveFloat = Field(
+        4, description="Timestep of the simulation (in femtoseconds)"
+    )
     equilibration_steps: PositiveInt = Field(
         5000, description="Number of equilibration steps"
     )
@@ -152,7 +158,7 @@ class VanillaMDSimulator(SimulatorBase):
     )
 
     rmsd_restraint_force_constant: PositiveFloat = Field(
-        50, description="Force constant of the RMSD restraint in kcal/mol/A^2"
+        50, description="Force constant of the RMSD restraint (in kcal/mol/A^2)"
     )
 
     truncate_steps: bool = Field(
