@@ -185,7 +185,9 @@ class InferenceBase(BaseModel):
             and (config_kwargs["model_weights"] is None)
             and local_model_spec.weights_file
         ):
-            config_kwargs["model_weights"] = local_model_spec.weights_file
+            config_kwargs["model_weights"] = torch.load(
+                local_model_spec.weights_file, map_location=device
+            )
 
         model = config_cls(**config_kwargs).build()
         model.eval()
