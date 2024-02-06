@@ -5,10 +5,12 @@ ligand named LIG bound to the original protein crystall structure and a sdf
 file that contains all of the ligands. All the pdb files would be within a
 directory within the directory of the original protein called output.
 The sdf file containing all the ligands in original file will be also in that
-directory named Combined_ligands.sdf.
+directory named combined_ligands.sdf.
+The name of the structure name of original conglomerate structure can be defined
+with -c.
 
 Minimal example usage:
-python cdd_to_schema.py \
+python split_fragment_screen.py \
 -i multiple_ligand_bound.pdb \
 -d directory/
 """
@@ -36,32 +38,53 @@ def get_args():
         "-d", required=True, help="Directory of input and output files."
     )
     parser.add_argument("-i", required=True, help="PDB file input.")
+    parser.add_argument(
+        "-c",
+        default="complex",
+        help="Name of the original protein with multiple ligands.",
+    )
 
     return parser.parse_args()
 
 
+# Function that saves residues named "LIG" to a PDB file
+def save_ligand_residues(structure_name, output_file):
+    # Select residues named "LIG"
+    selection = f"{structure_name} and resn LIG"
+
+    # Save the selected residues to a PDB file
+    cmd.save(output_file, selection, format="pdb")
+
+
+# Function to save each group connected atoms (a ligand) into individual files (with bonds)
+def save_subset_with_conect(structure_name, atom_ids, output_file):
+    # Select atoms by IDs
+    selection = f"{structure_name} and id {'+'.join(map(str, atom_ids))}"
+
+    # Create a new object containing only the selected atoms
+    cmd.create("selected_atoms", selection)
+
+    # Save the selection with CONECT records to a PDB file
+    cmd.save(output_file, "selected_atoms", format="pdb")
+
+    # Delete the temporary object
+    cmd.delete("selected_atoms")
+
+
 # The function to isolate ligands in original file and separate out individual ligands
 # Each ligand saved in individual pdb file
-def split_ligands(directory, input_file):
+def split_ligands(directory, input_file, structure_name):
     # Where original file is from
     local_path = Path(directory)
     # Where ending strucutures will be put into
-    os.mkdir(directory + "output/")
-    output_path = Path(directory + "output/")
+    output_path = Path(directory) / "output"
+    output_path.mkdir()
 
     # Load structure into pymol
-    cmd.load(local_path / input_file, "complex")
-
-    # Function that saves residues named "LIG" to a PDB file
-    def save_ligand_residues(structure_name, output_file):
-        # Select residues named "LIG"
-        selection = f"{structure_name} and resn LIG"
-
-        # Save the selected residues to a PDB file
-        cmd.save(output_file, selection, format="pdb")
+    cmd.load(local_path / input_file, structure_name)
 
     # Save all the ligands into one file
-    save_ligand_residues("complex", local_path / "ligand_only.pdb")
+    save_ligand_residues(structure_name, local_path / "ligand_only.pdb")
 
     # Make a Graph out of pdb CONECT record
     ligands = local_path / "ligand_only.pdb"
@@ -76,25 +99,11 @@ def split_ligands(directory, input_file):
                 for atom1 in atom_numbers[1:]:
                     G.add_edge(atom_numbers[0], atom1)
     # Delete previous pymol structure before proceeding so no confusion
-    cmd.delete("complex")
+    cmd.delete(structure_name)
     # Load only ligands into Pymol
     cmd.load(ligands, "ligands")
     # Remove this pdb since no longer in use
     os.remove(ligands)
-
-    # Function to save each group connected atoms (a ligand) into individual files (with bonds)
-    def save_subset_with_conect(structure_name, atom_ids, output_file):
-        # Select atoms by IDs
-        selection = f"{structure_name} and id {'+'.join(map(str, atom_ids))}"
-
-        # Create a new object containing only the selected atoms
-        cmd.create("selected_atoms", selection)
-
-        # Save the selection with CONECT records to a PDB file
-        cmd.save(output_file, "selected_atoms", format="pdb")
-
-        # Delete the temporary object
-        cmd.delete("selected_atoms")
 
     # Know which atom is from which ligand based on the graph constructed
     # List of the different ligands as {} of atoms
@@ -110,14 +119,14 @@ def split_ligands(directory, input_file):
         lig = load_openeye_pdb(lig_pdb_file)
         lig.SetTitle(lig_pdb_file.stem)
         ligs.append(lig)
-    save_openeye_sdfs(ligs, output_path / "Combined_ligs.sdf")
+    save_openeye_sdfs(ligs, output_path / "combined_ligs.sdf")
 
     # Put each individual ligands back in protein in original orientation
     # Isolate protien in pymol and save to a pdb file
-    cmd.load(local_path / input_file, "complex")
-    cmd.select("protein", "complex and polymer.protein")
+    cmd.load(local_path / input_file, structure_name)
+    cmd.select("protein", structure_name + " and polymer.protein")
     cmd.save(local_path / "protein.pdb", "protein")
-    cmd.delete("complex")
+    cmd.delete(structure_name)
 
     # Load in the protein into openeye
     protein_file = local_path / "protein.pdb"
@@ -143,8 +152,7 @@ def split_ligands(directory, input_file):
 def main():
     args = get_args()
 
-    # The function would be
-    split_ligands(args.d, args.i)
+    split_ligands(args.d, args.i, args.c)
 
 
 if __name__ == "__main__":

@@ -38,6 +38,7 @@ combine-and-label-mpro-sdf = "asapdiscovery.data.scripts.combine_and_label_mpro_
 fragalysis-to-schema = "asapdiscovery.data.scripts.fragalysis_to_schema:main"
 split-sdf = "asapdiscovery.data.scripts.split_sdf:main"
 sdf-to-smiles-list = "asapdiscovery.data.scripts.sdf_to_smiles_list:main"
+ split-fragment-screen = "asapdiscovery.data.scripts.split_fragment_screen:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
