@@ -30,6 +30,15 @@ class BackendType(StringEnum):
     DISK = "disk"
 
 
+class DaskFailureMode(StringEnum):
+    """
+    Enum for Dask failure modes
+    """
+
+    RAISE = "raise"
+    SKIP = "skip"
+
+
 def set_dask_config():
     cfg.set({"distributed.scheduler.worker-ttl": None})
     cfg.set({"distributed.admin.tick.limit": "4h"})
@@ -320,7 +329,7 @@ def dask_cluster_from_type(
     gpu: GPU = GPU.GTX1080TI,
     cpu: CPU = CPU.LT,
     local_threads_per_worker: int = 1,
-    silence_logs: int = logging.DEBUG,  # worst kwarg name but it is what it is
+    loglevel: Union[str, int] = logging.DEBUG,
     walltime: str = "72h",
 ):
     """
@@ -347,7 +356,7 @@ def dask_cluster_from_type(
     logger.info(f"Physical CPU count: {physical_cpu_count}")
 
     logger.info(f"Getting dask cluster of type {dask_type}")
-    logger.info(f"Dask log level: {silence_logs}")
+    logger.info(f"Dask log level: {loglevel}")
 
     if dask_type == DaskType.LOCAL:
         n_workers = cpu_count // local_threads_per_worker
@@ -368,7 +377,7 @@ def dask_cluster_from_type(
         cluster = LocalCluster(
             n_workers=n_workers,
             threads_per_worker=local_threads_per_worker,
-            silence_logs=silence_logs,
+            silence_logs=loglevel,  # used as silence_logs, worst kwarg name but it is what it is
         )
     elif dask_type == DaskType.LOCAL_GPU:
         try:
@@ -381,13 +390,13 @@ def dask_cluster_from_type(
     elif dask_type == DaskType.LILAC_GPU:
         cluster = (
             LilacGPUDaskCluster()
-            .from_gpu(gpu, silence_logs=silence_logs, walltime=walltime)
+            .from_gpu(gpu, silence_logs=loglevel, walltime=walltime)
             .to_cluster(exclude_interface="lo")
         )
     elif dask_type == DaskType.LILAC_CPU:
         cluster = (
             LilacCPUDaskCluster()
-            .from_cpu(cpu, silence_logs=silence_logs, walltime=walltime)
+            .from_cpu(cpu, silence_logs=loglevel, walltime=walltime)
             .to_cluster(exclude_interface="lo")
         )
     else:

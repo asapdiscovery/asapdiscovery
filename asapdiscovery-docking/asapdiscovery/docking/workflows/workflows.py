@@ -4,9 +4,9 @@ Schema for workflows base classes
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
-from asapdiscovery.data.dask_utils import DaskType
+from asapdiscovery.data.dask_utils import DaskFailureMode, DaskType
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
@@ -54,6 +54,10 @@ class DockingWorkflowInputsBase(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
+    dask_failure_mode: DaskFailureMode = Field(
+        DaskFailureMode.SKIP, description="Dask failure mode."
+    )
+
     dask_cluster_n_workers: PositiveInt = Field(
         10,
         description="Number of workers to use as inital guess for Lilac dask cluster",
@@ -70,7 +74,7 @@ class DockingWorkflowInputsBase(BaseModel):
         "", description="Name of the log file."
     )  # use root logger for proper forwarding of logs from dask
 
-    loglevel: int = Field(logging.DEBUG, description="Logging level")
+    loglevel: Union[int, str] = Field(logging.INFO, description="Logging level")
 
     output_dir: Path = Field(Path("output"), description="Output directory")
 

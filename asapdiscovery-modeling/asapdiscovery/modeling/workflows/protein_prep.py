@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from asapdiscovery.data.dask_utils import (
     DaskType,
@@ -119,7 +119,7 @@ class ProteinPrepInputs(BaseModel):
 
     logname: str = Field("", description="Name of the log file.")
 
-    loglevel: int = Field(logging.INFO, description="Logging level")
+    loglevel: Union[str, int] = Field(logging.INFO, description="Logging level")
 
     output_dir: Path = Field(
         Path("output"),
@@ -176,7 +176,9 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     if inputs.use_dask:
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
         set_dask_config()
-        dask_cluster = dask_cluster_from_type(inputs.dask_type)
+        dask_cluster = dask_cluster_from_type(
+            inputs.dask_type, loglevel=inputs.loglevel
+        )
 
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
@@ -190,6 +192,7 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
+        dask_client.forward_logging(level=inputs.loglevel)
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
