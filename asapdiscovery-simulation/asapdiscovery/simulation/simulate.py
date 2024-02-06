@@ -117,7 +117,7 @@ _SIMULATOR_TRUNCATE_STEPS = True
 
 class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
-        1, description="Collision rate of the simulation"
+        1, description="Collision rate of the simulation (in 1/ps)"
     )
     openmm_logname: str = Field(
         "openmm_log.tsv", description="Name of the OpenMM log file"
@@ -125,9 +125,15 @@ class VanillaMDSimulator(SimulatorBase):
     openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use"
     )
-    temperature: PositiveFloat = Field(300, description="Temperature of the simulation")
-    pressure: PositiveFloat = Field(1, description="Pressure of the simulation")
-    timestep: PositiveFloat = Field(4, description="Timestep of the simulation")
+    temperature: PositiveFloat = Field(
+        300, description="Temperature of the simulation (in kelvin)"
+    )
+    pressure: PositiveFloat = Field(
+        1, description="Pressure of the simulation (in atm)"
+    )
+    timestep: PositiveFloat = Field(
+        4, description="Timestep of the simulation (in femtoseconds)"
+    )
     equilibration_steps: PositiveInt = Field(
         5000, description="Number of equilibration steps"
     )
@@ -152,7 +158,7 @@ class VanillaMDSimulator(SimulatorBase):
     )
 
     rmsd_restraint_force_constant: PositiveFloat = Field(
-        50, description="Force constant of the RMSD restraint in kcal/mol/A^2"
+        50, description="Force constant of the RMSD restraint (in kcal/mol/A^2)"
     )
 
     truncate_steps: bool = Field(
@@ -234,6 +240,20 @@ class VanillaMDSimulator(SimulatorBase):
                 f"num_steps ({num_steps}) must be a multiple of reporting_interval ({reporting_interval})"
             )
         return values
+
+    @property
+    def n_frames(self) -> int:
+        return self.num_steps // self.reporting_interval
+
+    @property
+    def total_simulation_time(self) -> openmm.unit.quantity.Quantity:
+        return self.num_steps * self.timestep * unit.femtoseconds
+
+    @property
+    def frames_per_ns(self) -> unit.quantity.Quantity:
+        # convert to ns
+        length = (self.total_simulation_time).value_in_unit(unit.nanoseconds)
+        return self.n_frames / length
 
     def _to_openmm_units(self):
         self._temperature = self.temperature * unit.kelvin
