@@ -36,6 +36,7 @@ PARSE_ADDED_COLS = [
     "exp_binding_affinity_kcal_mol_95ci_upper",
 ]
 
+# skip tests if no CDD token
 pytestmark = pytest.mark.skipif(not os.getenv("CDDTOKEN"), reason="No CDD token")
 
 
