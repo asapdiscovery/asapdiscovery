@@ -1,5 +1,4 @@
 import logging
-import warnings
 from uuid import UUID
 
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
