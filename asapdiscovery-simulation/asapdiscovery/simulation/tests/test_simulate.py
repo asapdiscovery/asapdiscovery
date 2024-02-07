@@ -1,5 +1,11 @@
-import pytest  # noqa: F401
+from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
 
-def test_placeholder():
-    ...
+def test_actual_simulation(results, tmp_path):
+    vs = VanillaMDSimulator(
+        num_steps=1, equilibration_steps=1, output_dir=tmp_path, truncate_steps=False
+    )
+    assert vs.num_steps == 1
+    assert vs.equilibration_steps == 1
+    simulation_results = vs.simulate(results)
+    assert simulation_results[0].success

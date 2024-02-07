@@ -77,8 +77,7 @@ class SimulatorBase(BaseModel):
     debug: bool = Field(False, description="Debug mode of the simulation")
 
     @abc.abstractmethod
-    def _simulate(self) -> list["SimulationResult"]:
-        ...
+    def _simulate(self) -> list["SimulationResult"]: ...
 
     def simulate(
         self,
@@ -103,8 +102,7 @@ class SimulatorBase(BaseModel):
         return outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
 
 class SimulationResult(BaseModel):
@@ -113,10 +111,6 @@ class SimulationResult(BaseModel):
     final_pdb_path: Optional[Path]
     success: Optional[bool]
     input_docking_result: Optional[DockingResult]
-
-
-# ugly hack to disallow truncation of steps for testing
-_SIMULATOR_TRUNCATE_STEPS = True
 
 
 class VanillaMDSimulator(SimulatorBase):
@@ -166,8 +160,8 @@ class VanillaMDSimulator(SimulatorBase):
     )
 
     truncate_steps: bool = Field(
-        _SIMULATOR_TRUNCATE_STEPS,
-        description="Whether to truncate num_steps to multiple of reporting interval, used for testing",
+        True,
+        description="Whether to truncate num_steps to multiple of reporting interval, used mostly for testing",
     )
 
     @validator("rmsd_restraint_type")
