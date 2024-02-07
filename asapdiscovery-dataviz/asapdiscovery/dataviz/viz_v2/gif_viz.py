@@ -4,7 +4,7 @@ from pathlib import Path
 
 import dask
 import pandas as pd
-from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable, DaskFailureMode
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
@@ -58,6 +58,7 @@ class GIFVisualizerV2(BaseModel):
         simulation_results: list[SimulationResult],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         **kwargs,
     ) -> pd.DataFrame:
         """
@@ -69,7 +70,7 @@ class GIFVisualizerV2(BaseModel):
                 out = dask.delayed(self._visualize)(simulation_results=[res], **kwargs)
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="raise"
+                delayed_outputs, dask_client, errors=dask_failure_mode
             )
             outputs = [item for sublist in outputs for item in sublist]
         else:

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import dask
 import yaml
-from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable, DaskFailureMode
 from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
@@ -88,6 +88,7 @@ class ProteinPrepperBase(BaseModel):
         inputs: list[Complex],
         use_dask: bool = False,
         dask_client: Optional["Client"] = None,
+        dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
         cache_dir: Optional[str] = None,
         use_only_cache: bool = False,
     ) -> list[PreppedComplex]:
@@ -98,6 +99,7 @@ class ProteinPrepperBase(BaseModel):
         inputs: The list of complexs to prepare.
         use_dask: If dask should be used to distribute the jobs.
         dask_client: The dask client that should be used to submit the jobs.
+        dask_failure_mode: The failure mode for dask. Can be 'raise' or 'skip'.
         cache_dir: The directory of previously cached PreppedComplexs which can be reused.
 
         Note
@@ -146,7 +148,7 @@ class ProteinPrepperBase(BaseModel):
                     out = dask.delayed(self._prep)(inputs=[inp])
                     delayed_outputs.append(out[0])  # flatten
                 outputs = actualise_dask_delayed_iterable(
-                    delayed_outputs, dask_client, errors="skip"
+                    delayed_outputs, dask_client, errors=dask_failure_mode
                 )  # skip here as some complexes may fail for various reasons
             else:
                 outputs = self._prep(inputs=inputs)

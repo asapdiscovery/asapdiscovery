@@ -1,4 +1,5 @@
-from typing import Optional
+import logging
+from typing import Optional, Union
 
 import click
 from asapdiscovery.cli.cli_args import (
@@ -7,6 +8,7 @@ from asapdiscovery.cli.cli_args import (
     fragalysis_dir,
     input_json,
     ligands,
+    loglevel,
     md_args,
     ml_scorer,
     output_dir,
@@ -19,7 +21,7 @@ from asapdiscovery.cli.cli_args import (
     use_only_cache,
     walltime,
 )
-from asapdiscovery.data.util.dask_utils import DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, DaskFailureMode
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.structural.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.workflows.cross_docking import (
@@ -86,6 +88,7 @@ def docking():
 @overwrite
 @input_json
 @ml_scorer
+@loglevel
 @walltime
 def large_scale(
     target: TargetTags,
@@ -108,7 +111,9 @@ def large_scale(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
+    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
+    loglevel: Union[int, str] = logging.INFO,
     walltime: Optional[str] = "72h",
 ):
     """
@@ -128,6 +133,7 @@ def large_scale(
             top_n=top_n,
             use_dask=use_dask,
             dask_type=dask_type,
+            dask_failure_mode=dask_failure_mode,
             posit_confidence_cutoff=posit_confidence_cutoff,
             use_omega=use_omega,
             allow_posit_retries=allow_posit_retries,
@@ -141,6 +147,7 @@ def large_scale(
             ml_scorers=ml_scorer,
             output_dir=output_dir,
             overwrite=overwrite,
+            loglevel=loglevel,
             walltime=walltime,
         )
 
@@ -196,6 +203,7 @@ def large_scale(
 @output_dir
 @overwrite
 @input_json
+@loglevel
 @walltime
 def cross_docking(
     target: TargetTags,
@@ -217,6 +225,8 @@ def cross_docking(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
+    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+    loglevel: Union[int, str] = logging.INFO,
     walltime: Optional[str] = "72h",
 ):
     """
@@ -234,6 +244,7 @@ def cross_docking(
             structure_selector=structure_selector,
             use_dask=use_dask,
             dask_type=dask_type,
+            dask_failure_mode=dask_failure_mode,
             use_omega=use_omega,
             omega_dense=omega_dense,
             allow_retries=allow_retries,
@@ -247,6 +258,7 @@ def cross_docking(
             output_dir=output_dir,
             overwrite=overwrite,
             allow_final_clash=allow_final_clash,
+            loglevel=loglevel,
             walltime=walltime,
         )
 
@@ -281,6 +293,7 @@ def cross_docking(
 @input_json
 @ml_scorer
 @md_args
+@loglevel
 @walltime
 def small_scale(
     target: TargetTags,
@@ -301,10 +314,12 @@ def small_scale(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
+    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
+    loglevel: Union[int, str] = logging.INFO,
     walltime: Optional[str] = "72h",
 ):
     """
@@ -322,6 +337,7 @@ def small_scale(
             target=target,
             use_dask=use_dask,
             dask_type=dask_type,
+            dask_failure_mode=dask_failure_mode,
             posit_confidence_cutoff=posit_confidence_cutoff,
             allow_dask_cuda=allow_dask_cuda,
             use_omega=not no_omega,
@@ -338,6 +354,7 @@ def small_scale(
             md=md,
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
+            loglevel=loglevel,
             walltime=walltime,
         )
 

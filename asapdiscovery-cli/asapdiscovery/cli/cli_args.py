@@ -54,8 +54,18 @@ def dask_type(func):
     )(func)
 
 
+def dask_failure_mode(func):
+    return click.option(
+        "--dask-failure-mode",
+        type=click.Choice(DaskFailureMode.get_values(), case_sensitive=False),
+        default=DaskFailureMode.SKIP,
+        help="The failure mode for dask. Can be 'raise' or 'skip'.",
+        show_default=True,
+    )(func)
+
+
 def dask_args(func):
-    return use_dask(dask_type(func))
+    return use_dask(dask_type(dask_failure_mode(func)))
 
 
 def target(func):
@@ -168,16 +178,6 @@ def gen_cache_w_default(func):
     )(func)
 
 
-def gen_cache(func):
-    return click.option(
-        "--gen-cache",
-        type=click.Path(
-            resolve_path=False, exists=False, file_okay=False, dir_okay=True
-        ),
-        help="Path to a directory where a design unit cache should be generated.",
-    )(func)
-
-
 def md(func):
     return click.option(
         "--md",
@@ -223,6 +223,16 @@ def save_to_cache(func):
         "--save-to-cache/--no-save-to-cache",
         help="If the newly generated structures should be saved to the cache folder.",
         default=True,
+    )(func)
+
+
+def loglevel(func):
+    return click.option(
+        "--loglevel",
+        type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+        help="The log level to use.",
+        default="INFO",
+        show_default=True,
     )(func)
 
 
