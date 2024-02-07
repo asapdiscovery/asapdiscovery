@@ -541,7 +541,6 @@ class HTMLVisualizer:
         """
 
         # get just the fitness data for the queried residue index, at the right chain.
-        print(resi)
         resi, chain = resi.split("_")
         site_df_resi = self.fitness_data_logoplots[
             self.fitness_data_logoplots["site"] == int(resi)
