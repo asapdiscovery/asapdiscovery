@@ -3,6 +3,8 @@ Tests for downloading and processing Moonshot data from CDD.
 """
 
 import os
+
+import pandas
 import pytest
 from asapdiscovery.data.services.cdd.cdd_download import (
     CDD_URL,
@@ -15,7 +17,6 @@ from asapdiscovery.data.services.cdd.cdd_download import (
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.util.utils import filter_molecules_dataframe
 from asapdiscovery.data.utils import parse_fluorescence_data_cdd
-import pandas
 from numpy.testing import assert_allclose
 
 # Columns added by filter_molecules_dataframe
@@ -231,8 +232,6 @@ def test_filter_df(
     retain_semiquantitative_data,
     filter_df_files,
 ):
-
-
     in_fn, all_out_fns = filter_df_files
     flags = (
         retain_achiral,
