@@ -1,7 +1,5 @@
 from pathlib import Path
-
-from unittest import mock
-import pytest
+import mock
 from asapdiscovery.simulation.szybki import (
     SzybkiFreeformConformerAnalyzer,
     SzybkiFreeformResult,
