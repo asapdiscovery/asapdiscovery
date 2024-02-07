@@ -563,18 +563,27 @@ class HTMLVisualizer:
             warnings.warn(
                 f"Warning: no unfit residues found for residue {resi} in chain {chain}."
             )
-            # make a row with a fake unfit mutant instead.
-            site_df_unfit.loc[0] = [
-                site_df_fit["gene"].values[0],
-                resi,
-                "X",
-                -0.00001,
-                0,
-                site_df_fit["wildtype"].values[0],
-                chain,
-            ]
+            # make a dataframe with a fake unfit mutant instead.
+            site_df_unfit = pd.DataFrame(
+                [
+                    {
+                        "gene": site_df_fit["gene"].values[0],
+                        "site": resi,
+                        "mutant": "X",
+                        "fitness": -0.00001,
+                        "expected_count": 0,
+                        "wildtype": site_df_fit["wildtype"].values[0],
+                        "chain": chain,
+                    }
+                ]
+            )
 
         logoplot_base64s_dict = {}
+        for fit_type, fitness_df in zip(["fit", "unfit"], [site_df_fit, site_df_unfit]):
+            # pivot table to make into LogoMaker format
+            logoplot_df = pd.DataFrame(
+                [fitness_df["fitness"].values], columns=fitness_df["mutant"]
+            )
 
         # hide a shockingly large number of prints from inside logomaker
         with tempfile.TemporaryDirectory() as tmpdirname, HiddenPrint() as _:
@@ -588,7 +597,6 @@ class HTMLVisualizer:
                 logoplot_df = pd.DataFrame(
                     [fitness_df["fitness"].values], columns=fitness_df["mutant"]
                 )
-
                 # create Logo object
                 logomaker.Logo(
                     logoplot_df,
