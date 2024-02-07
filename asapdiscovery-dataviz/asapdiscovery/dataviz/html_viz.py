@@ -554,7 +554,7 @@ class HTMLVisualizer:
         # split the mutant data into fit/unfit.
         site_df_fit = site_df[site_df["fitness"] > 0]
         site_df_unfit = site_df[site_df["fitness"] < 0]
-        
+
         if len(site_df_fit) == 0:
             raise ValueError(
                 f"No fit mutants found for residue {resi} in chain {chain}. Are you sure the fitness threshold is set correctly? At least the wildtype residue should be fit."
@@ -564,20 +564,22 @@ class HTMLVisualizer:
                 f"Warning: no unfit residues found for residue {resi} in chain {chain}."
             )
             # make a dataframe with a fake unfit mutant instead.
-            site_df_unfit = pd.DataFrame([{
-                "gene" : site_df_fit["gene"].values[0],
-                "site" : resi,
-                "mutant" : "X",
-                "fitness" : -0.00001,
-                "expected_count" : 0,
-                "wildtype" : site_df_fit["wildtype"].values[0],
-                "chain" : chain,
-            }])
+            site_df_unfit = pd.DataFrame(
+                [
+                    {
+                        "gene": site_df_fit["gene"].values[0],
+                        "site": resi,
+                        "mutant": "X",
+                        "fitness": -0.00001,
+                        "expected_count": 0,
+                        "wildtype": site_df_fit["wildtype"].values[0],
+                        "chain": chain,
+                    }
+                ]
+            )
 
         logoplot_base64s_dict = {}
-        for fit_type, fitness_df in zip(
-            ["fit", "unfit"], [site_df_fit, site_df_unfit]
-        ):
+        for fit_type, fitness_df in zip(["fit", "unfit"], [site_df_fit, site_df_unfit]):
             # pivot table to make into LogoMaker format
             logoplot_df = pd.DataFrame(
                 [fitness_df["fitness"].values], columns=fitness_df["mutant"]
