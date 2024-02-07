@@ -22,7 +22,7 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
-  - openeye-toolkits
+  - openeye-toolkits <2023.2.3
   - pandas
   - pebble
   - pydantic >=1.10.8,<2.0.0a0
@@ -31,6 +31,7 @@ dependencies:
   - pebble
   - panel
   - plotmol
+  - semver
 
   # data
   - requests
@@ -65,7 +66,7 @@ dependencies:
   - openmmforcefields
   - mdtraj
   - openff-toolkit
-  - cudatoolkit<=11.7 # need to specify explicitly for lilac
+  - cudatoolkit
 
   # execution
   - distributed

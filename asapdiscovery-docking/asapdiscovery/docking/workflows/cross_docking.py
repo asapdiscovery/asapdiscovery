@@ -2,6 +2,7 @@
 A test-oriented docking workflow for testing the docking pipeline.
 Removes all the additional layers in the other workflows and adds some features to make running cross-docking easier
 """
+
 from pathlib import Path
 from shutil import rmtree
 
@@ -14,14 +15,13 @@ from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.selectors.selector_list import StructureSelector
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import DockingInputMultiStructure
+from asapdiscovery.docking.docking import DockingInputMultiStructure
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
-from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer
+from asapdiscovery.docking.scorer import ChemGauss4Scorer, MetaScorer
 from asapdiscovery.docking.workflows.workflows import DockingWorkflowInputsBase
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.modeling.protein_prep import ProteinPrepper
+from distributed import Client
 from pydantic import Field, PositiveInt
 
 
@@ -78,9 +78,16 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     """
 
     output_dir = inputs.output_dir
+    new_directory = True
     if output_dir.exists():
-        rmtree(output_dir)
-    output_dir.mkdir()
+        if inputs.overwrite:
+            rmtree(output_dir)
+        else:
+            new_directory = False
+
+    # this won't overwrite the existing directory
+    output_dir.mkdir(exist_ok=True, parents=True)
+
     logger = FileLogger(
         inputs.logname,  # default root logger so that dask logging is forwarded
         path=output_dir,
@@ -88,6 +95,11 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         stdout=True,
         level=inputs.loglevel,
     ).getLogger()
+
+    if new_directory:
+        logger.info(f"Writing to / overwriting output directory: {output_dir}")
+    else:
+        logger.info(f"Writing to existing output directory: {output_dir}")
 
     logger.info(f"Running cross docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
@@ -99,6 +111,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
             inputs.dask_type,
             adaptive_min_workers=inputs.dask_cluster_n_workers,
             adaptive_max_workers=inputs.dask_cluster_max_workers,
+            loglevel=inputs.loglevel,
+            walltime=inputs.walltime
         )
     else:
         dask_client = None
@@ -109,8 +123,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     # load from file
     logger.info(f"Loading ligands from file: {inputs.ligands}")
-    molfile = MolFileFactory.from_file(inputs.ligands)
-    query_ligands = molfile.ligands
+    molfile = MolFileFactory(filename=inputs.ligands)
+    query_ligands = molfile.load()
 
     # read structures
     structure_factory = MetaStructureFactory(
@@ -118,6 +132,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
         use_dask=inputs.use_dask,
+        dask_failure_mode=inputs.dask_failure_mode,
         dask_client=dask_client,
     )
     complexes = structure_factory.load()
@@ -134,6 +149,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         cache_dir=inputs.cache_dir,
         use_only_cache=inputs.use_only_cache,
     )
@@ -190,6 +206,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_results = len(results)
@@ -212,7 +229,11 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         )
 
     scores_df = scorer.score(
-        results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        return_df=True,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     del results

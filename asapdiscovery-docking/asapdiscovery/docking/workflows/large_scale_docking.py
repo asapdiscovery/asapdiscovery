@@ -14,7 +14,6 @@ from asapdiscovery.data.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
-    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
@@ -30,15 +29,19 @@ from asapdiscovery.data.services_config import (
 )
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.docking.scorer import (
+    ChemGauss4Scorer,
+    FINTScorer,
+    MetaScorer,
+    MLModelScorer,
+)
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.modeling.protein_prep import ProteinPrepper
+from distributed import Client
 from pydantic import Field, PositiveInt, validator
 
 
@@ -119,9 +122,15 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     """
 
     output_dir = inputs.output_dir
+    new_directory = True
     if output_dir.exists():
-        rmtree(output_dir)
-    output_dir.mkdir()
+        if inputs.overwrite:
+            rmtree(output_dir)
+        else:
+            new_directory = False
+
+    # this won't overwrite the existing directory
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     logger = FileLogger(
         inputs.logname,  # default root logger so that dask logging is forwarded
@@ -130,6 +139,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         stdout=True,
         level=inputs.loglevel,
     ).getLogger()
+
+    if new_directory:
+        logger.info(f"Writing to / overwriting output directory: {output_dir}")
+    else:
+        logger.info(f"Writing to existing output directory: {output_dir}")
 
     logger.info(f"Running large scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
@@ -142,6 +156,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             inputs.dask_type,
             adaptive_min_workers=inputs.dask_cluster_n_workers,
             adaptive_max_workers=inputs.dask_cluster_max_workers,
+            loglevel=inputs.loglevel,
+            walltime=inputs.walltime
         )
     else:
         dask_client = None
@@ -172,6 +188,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
         use_dask=inputs.use_dask,
+        dask_failure_mode=inputs.dask_failure_mode,
         dask_client=dask_client,
     )
     complexes = structure_factory.load()
@@ -211,6 +228,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         cache_dir=inputs.cache_dir,
     )
     del complexes
@@ -234,6 +252,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         n_select=inputs.n_select,
         use_dask=False,
         dask_client=None,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -251,6 +270,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         return_for_disk_backend=True,
     )
 
@@ -276,7 +296,15 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
 
+<<<<<<< HEAD
     # load ml scorers specified on command line
+=======
+    if target_has_fitness_data(inputs.target):
+        logger.info("Target has fitness data, adding FINT scorer")
+        scorers.append(FINTScorer(target=inputs.target))
+
+    # load ml scorers
+>>>>>>> upstream/main
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
             logger.info(f"Loading ml scorer: {ml_scorer}")
@@ -295,6 +323,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         return_df=True,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
@@ -314,6 +343,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
     )
@@ -349,6 +379,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
             backend=BackendType.DISK,
             reconstruct_cls=docker.result_cls,
         )
@@ -484,6 +515,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         # push the results to PostEra, making a new molecule set if necessary
+<<<<<<< HEAD
         # TODO remove unnessecary sort_col arg see issue #704
         posit_score_tag = map_output_col_to_manifold_tag(
             DockingResultCols, inputs.target
@@ -491,6 +523,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         result_df, molset_name, made_new_molset = postera_uploader.push(
             result_df, sort_column=posit_score_tag, sort_ascending=True
         )
+=======
+        result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
+>>>>>>> upstream/main
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")

@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import dask
 import yaml
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    DaskFailureMode,
+    actualise_dask_delayed_iterable,
+)
 from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
@@ -69,17 +72,15 @@ class ProteinPrepperBase(BaseModel):
             A tuple of two lists, the first contains the complexs which should be prepped and the second contains
             the PreppedComplex from the cache which should be reused.
         """
-        cached_by_hash = {comp.hash(): comp for comp in cached_complexs}
+        cached_by_hash = {comp.hash: comp for comp in cached_complexs}
         # gather outputs which are in the cache
         cached_outputs = [
-            cached_by_hash[inp.hash()]
+            cached_by_hash[inp.hash]
             for inp in complex_to_prep
-            if inp.hash() in cached_by_hash
+            if inp.hash in cached_by_hash
         ]
         if cached_outputs:
-            to_prep = [
-                inp for inp in complex_to_prep if inp.hash() not in cached_by_hash
-            ]
+            to_prep = [inp for inp in complex_to_prep if inp.hash not in cached_by_hash]
         else:
             to_prep = complex_to_prep
 
@@ -90,6 +91,7 @@ class ProteinPrepperBase(BaseModel):
         inputs: list[Complex],
         use_dask: bool = False,
         dask_client: Optional["Client"] = None,
+        dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
         cache_dir: Optional[str] = None,
         use_only_cache: bool = False,
     ) -> list[PreppedComplex]:
@@ -100,6 +102,7 @@ class ProteinPrepperBase(BaseModel):
         inputs: The list of complexs to prepare.
         use_dask: If dask should be used to distribute the jobs.
         dask_client: The dask client that should be used to submit the jobs.
+        dask_failure_mode: The failure mode for dask. Can be 'raise' or 'skip'.
         cache_dir: The directory of previously cached PreppedComplexs which can be reused.
 
         Note
@@ -113,6 +116,8 @@ class ProteinPrepperBase(BaseModel):
         all_outputs = []
 
         if cache_dir is not None:
+            # make cache if it doesn't exist
+            Path(cache_dir).mkdir(exist_ok=True, parents=True)
             cached_complexs = ProteinPrepperBase.load_cache(cache_dir=cache_dir)
             # workout what we can reuse
             if cached_complexs:
@@ -146,7 +151,7 @@ class ProteinPrepperBase(BaseModel):
                     out = dask.delayed(self._prep)(inputs=[inp])
                     delayed_outputs.append(out[0])  # flatten
                 outputs = actualise_dask_delayed_iterable(
-                    delayed_outputs, dask_client, errors="skip"
+                    delayed_outputs, dask_client, errors=dask_failure_mode
                 )  # skip here as some complexes may fail for various reasons
             else:
                 outputs = self._prep(inputs=inputs)
@@ -181,7 +186,7 @@ class ProteinPrepperBase(BaseModel):
 
         for pc in prepped_complexes:
             # create a folder for the complex data if its not already present
-            complex_folder = cache_dir.joinpath(pc.unique_name())
+            complex_folder = cache_dir.joinpath(pc.unique_name)
             if not complex_folder.exists():
                 complex_folder.mkdir(parents=True, exist_ok=True)
                 pc.to_json_file(
@@ -309,7 +314,7 @@ class ProteinPrepper(ProteinPrepperBase):
                 ids=complex_target.target.ids,
                 target_name=complex_target.target.target_name,
                 ligand_chain=complex_target.ligand_chain,
-                target_hash=complex_target.target.hash(),
+                target_hash=complex_target.target.hash,
             )
             # we need the ligand at the new translated coordinates
             translated_oemol, _, _ = split_openeye_design_unit(du=du)

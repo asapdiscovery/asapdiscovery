@@ -1,21 +1,9 @@
-from .viz_targets import VizTargets
-
 """
-HTML blocks for visualising poses.
-Pose orientation per target can be found by
+HTML blocks for visualising poses
 """
 
 
 class HTMLBlockData:
-    @classmethod
-    def get_pocket_color(cls, target: str) -> str:
-        """
-        Get the color for the pocket of a target.
-        """
-        # need protein name
-        protein_name = VizTargets.get_target_name(target, underscore=True)
-        return getattr(cls, f"colour_{protein_name}")
-
     @classmethod
     def get_color_method(cls, method: str) -> str:
         """

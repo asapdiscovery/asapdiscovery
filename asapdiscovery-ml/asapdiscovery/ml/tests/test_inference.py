@@ -25,13 +25,17 @@ def test_gatinference_construct_by_latest(target):
 def test_gatinference_construct_from_name(
     tmp_path,
 ):
-    inference_cls = GATInference.from_model_name("gat_test_v0", local_dir=tmp_path)
+    inference_cls = GATInference.from_model_name(
+        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.25", local_dir=tmp_path
+    )
     assert inference_cls is not None
     assert inference_cls.local_model_spec.local_dir == tmp_path
 
 
 def test_gatinference_predict(test_data):
-    inference_cls = GATInference.from_model_name("gat_test_v0")
+    inference_cls = GATInference.from_model_name(
+        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2023.08.25"
+    )
     g1, _, _, _ = test_data
     assert inference_cls is not None
     output = inference_cls.predict(g1)

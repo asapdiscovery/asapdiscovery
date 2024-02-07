@@ -53,6 +53,19 @@ class MultiStructureBase(BaseModel):
     def __neq__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
+    @property
+    def complexes_hash(self):
+        import hashlib
+
+        data = ""
+        for c in self.complexes:
+            data += c.hash
+        return hashlib.sha256(data.encode()).hexdigest()
+
+    @property
+    def unique_name(self):
+        return f"{self.ligand.compound_name}-{self.ligand.fixed_inchikey}_{self.complexes_hash}"
+
 
 class CompoundMultiStructure(MultiStructureBase):
     """

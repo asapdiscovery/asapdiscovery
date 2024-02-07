@@ -9,15 +9,13 @@ from typing import ClassVar, Literal, Optional, Union
 import pandas as pd
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import (
+from asapdiscovery.docking.docking import (
     DockingBase,
     DockingInputMultiStructure,
     DockingInputPair,
     DockingResult,
 )
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import Field, PositiveInt, root_validator
 
 logger = logging.getLogger(__name__)
@@ -214,7 +212,7 @@ class POSITDocker(DockingBase):
         for set in inputs:
             if output_dir is not None:
                 docked_result_json_path = Path(
-                    Path(output_dir) / set.unique_name() / "docking_result.json"
+                    Path(output_dir) / set.unique_name / "docking_result.json"
                 )
 
             if (
@@ -223,7 +221,7 @@ class POSITDocker(DockingBase):
                 and (docked_result_json_path.exists())
             ):
                 logger.info(
-                    f"Docking result for {set.unique_name()} already exists, reading from disk"
+                    f"Docking result for {set.unique_name} already exists, reading from disk"
                 )
                 output_dir = Path(output_dir)
                 docking_results.append(
