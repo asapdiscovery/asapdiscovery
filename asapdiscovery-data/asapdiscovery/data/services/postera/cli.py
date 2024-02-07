@@ -1,5 +1,4 @@
 import click
-
 from asapdiscovery.data.cli import cli
 
 
@@ -94,7 +93,6 @@ def create(
     input_file,
 ):
     import pandas as pd
-
     from asapdiscovery.data.services.postera.molecule_set import MoleculeList
 
     msa = ctx.obj["moleculesetapi"]
@@ -163,7 +161,6 @@ def update_molecules(
     input_file,
 ):
     import pandas as pd
-
     from asapdiscovery.data.services.postera.molecule_set import MoleculeUpdateList
 
     msa = ctx.obj["moleculesetapi"]

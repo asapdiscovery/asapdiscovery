@@ -18,7 +18,6 @@ from asapdiscovery.data.schema.legacy import (
     EnantiomerPairList,
 )
 
-
 # Not sure if this is the right place for these
 # Regex patterns for extracting Mpro dataset ID and Moonshot CDD style compound ID
 #  from filenames. This is used eg in building ML datasets. For more details on any of
@@ -111,6 +110,7 @@ def download_file(url: str, path: str):
             write_file.write(response.content)
 
     return response
+
 
 def extract_compounds_from_filenames(fn_list, xtal_pat, compound_pat, fail_val=None):
     """
@@ -502,6 +502,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
         print(f"Wrote {out_csv}", flush=True)
 
     return ep_list
+
 
 def strip_smiles_salts(smiles):
     """
@@ -991,6 +992,7 @@ def get_sdf_fn_from_dataset(
         fn = None  # not sure what behaviour this should have
     return fn
 
+
 def check_filelist_has_elements(
     filelist: Union[glob.glob, list], tag: Optional[str] = "untagged"
 ) -> None:
@@ -1028,6 +1030,7 @@ def is_valid_smiles(smiles):
         return False
 
     return True
+
 
 def combine_files(paths: list[Union[Path, str]], output_file):
     with open(output_file, "w") as ofs:

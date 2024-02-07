@@ -2,7 +2,9 @@ from typing import Literal
 
 from asapdiscovery.data.backend.openeye import clear_SD_data, oechem, oeomega
 from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.structural.state_expanders.state_expander import StateExpanderBase
+from asapdiscovery.data.structural.state_expanders.state_expander import (
+    StateExpanderBase,
+)
 from pydantic import Field
 
 

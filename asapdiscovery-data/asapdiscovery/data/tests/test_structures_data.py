@@ -11,7 +11,6 @@ import pytest
 from asapdiscovery.data.services.rcsb.rcsb_download import download_pdb_structure
 
 
-
 class TestAsapPDB:
     """Class for testing PDB munging in ASAP discovery data package"""
 
@@ -39,7 +38,10 @@ class TestAsapPDB:
 
     def test_load_save_openeye_pdb(self, tmp_path):
         """Test that a downloaded pdb file can be loaded with the openeye-specific functions"""
-        from asapdiscovery.data.backend.openeye import load_openeye_pdb, save_openeye_pdb
+        from asapdiscovery.data.backend.openeye import (
+            load_openeye_pdb,
+            save_openeye_pdb,
+        )
 
         pdb_id = "8DGY"
         file_path = download_pdb_structure(pdb_id, tmp_path, file_format="pdb")

@@ -8,7 +8,7 @@ from asapdiscovery.data.structural.selectors.pairwise_selector import (
     PairwiseSelector,
     SelfDockingSelector,
 )
-from asapdiscovery.docking.docking import DockingInputPair #TODO: move to data
+from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to data
 
 
 def test_pairwise_selector(ligands, complexes):

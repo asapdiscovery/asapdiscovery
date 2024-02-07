@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 from zipfile import ZipFile
-from asapdiscovery.data.schema.legacy import CrystalCompoundData
 
 import requests
+from asapdiscovery.data.schema.legacy import CrystalCompoundData
 
 BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
 # Info for the POST call
@@ -99,7 +99,6 @@ def parse_xtal(x_fn, x_dir, p_only=True):
         List of parsed crystal structures
     """
     import pandas
-
 
     df = pandas.read_csv(x_fn)
 

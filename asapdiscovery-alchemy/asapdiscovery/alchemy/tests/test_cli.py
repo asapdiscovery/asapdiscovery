@@ -266,8 +266,8 @@ def test_alchemy_prep_run_from_postera(
 ):
     """Test running the alchemy prep workflow on a set of mac1 ligands downloaded from postera."""
     from asapdiscovery.alchemy.cli import utils
-    from asapdiscovery.data.schema.ligand import Ligand
     from asapdiscovery.data.readers.molfile import MolFileFactory
+    from asapdiscovery.data.schema.ligand import Ligand
 
     # locate the ligands input file
     ligand_file = fetch_test_file("constrained_conformer/mac1_ligands.smi")

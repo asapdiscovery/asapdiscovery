@@ -5,8 +5,8 @@ from typing import Optional, Union
 from asapdiscovery.data.backend.openeye import (
     oechem,
     oedocking,
-    oespruce,
     oegrid,
+    oespruce,
     openeye_perceive_residues,
 )
 from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter

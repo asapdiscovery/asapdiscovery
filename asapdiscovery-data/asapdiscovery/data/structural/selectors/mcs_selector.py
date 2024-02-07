@@ -7,7 +7,7 @@ from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedCompl
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.structural.selectors.selector import SelectorBase
-from asapdiscovery.docking.docking import DockingInputPair #TODO: move to backend
+from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 from pydantic import Field
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 
 class ExperimentalCompoundData(BaseModel):
-    
     compound_id: str = Field(
         None,
         description="The unique compound identifier (PostEra or enumerated ID)",

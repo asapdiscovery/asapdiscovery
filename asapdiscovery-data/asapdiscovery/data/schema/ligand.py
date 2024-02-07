@@ -29,7 +29,9 @@ from asapdiscovery.data.backend.openeye import (
 )
 from asapdiscovery.data.schema.identifiers import LigandIdentifiers, LigandProvenance
 from asapdiscovery.data.schema.schema_base import DataStorageType
-from asapdiscovery.data.structural.state_expanders.expansion_tag import StateExpansionTag
+from asapdiscovery.data.structural.state_expanders.expansion_tag import (
+    StateExpansionTag,
+)
 from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData

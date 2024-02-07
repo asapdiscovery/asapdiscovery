@@ -15,8 +15,11 @@ from asapdiscovery.data.backend.openeye import (
     save_openeye_pdb,
 )
 from asapdiscovery.data.schema.identifiers import TargetIdentifiers
-from asapdiscovery.modeling.modeling import split_openeye_design_unit, split_openeye_mol #TODO: move to backend
-from asapdiscovery.modeling.schema import MoleculeFilter #TODO: move to backend
+from asapdiscovery.modeling.modeling import (  # TODO: move to backend
+    split_openeye_design_unit,
+    split_openeye_mol,
+)
+from asapdiscovery.modeling.schema import MoleculeFilter  # TODO: move to backend
 from pydantic import Field, root_validator
 
 from .schema_base import (

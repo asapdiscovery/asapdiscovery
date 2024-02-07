@@ -9,14 +9,6 @@ import logomaker
 import matplotlib.pyplot as plt
 import pandas as pd
 from airium import Airium
-from asapdiscovery.data.fitness import (
-    _FITNESS_DATA_FIT_THRESHOLD,
-    get_fitness_scores_bloom_by_target,
-    parse_fitness_json,
-    target_has_fitness_data,
-)
-from asapdiscovery.data.util.logging import HiddenPrint
-from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -30,12 +22,20 @@ from asapdiscovery.data.backend.plip import (
     make_color_res_fitness,
     make_color_res_subpockets,
 )
+from asapdiscovery.data.fitness import (
+    _FITNESS_DATA_FIT_THRESHOLD,
+    get_fitness_scores_bloom_by_target,
+    parse_fitness_json,
+    target_has_fitness_data,
+)
+from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetTags,
     TargetVirusMap,
 )
-from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.modeling.modeling import superpose_molecule #TODO: move to backend
+from asapdiscovery.data.util.logging import HiddenPrint
+from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 
 from ._html_blocks import HTMLBlockData
 

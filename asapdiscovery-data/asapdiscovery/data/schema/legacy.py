@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
+from pydantic import BaseModel, Field
+
 
 class CrystalCompoundData(BaseModel):
     class Config:
@@ -24,6 +25,7 @@ class CrystalCompoundData(BaseModel):
 class EnantiomerPair(BaseModel):
     active: ExperimentalCompoundData = Field(description="Active enantiomer.")
     inactive: ExperimentalCompoundData = Field(description="Inactive enantiomer.")
+
 
 class EnantiomerPairList(BaseModel):
     pairs: list[EnantiomerPair]

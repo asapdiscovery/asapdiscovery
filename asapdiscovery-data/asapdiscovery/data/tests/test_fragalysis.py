@@ -5,8 +5,12 @@ import os
 import shutil
 
 import pytest
-from asapdiscovery.data.services.fragalysis.fragalysis_download import API_CALL_BASE, download, parse_fragalysis
 from asapdiscovery.data.schema.legacy import CrystalCompoundData
+from asapdiscovery.data.services.fragalysis.fragalysis_download import (
+    API_CALL_BASE,
+    download,
+    parse_fragalysis,
+)
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
@@ -34,17 +38,13 @@ class TestFragalysisDownload:
     def test_download_fragalysis_mpro_zip(self, tmp_path, mpro_fragalysis_api_call):
         """Checks downloading target zip file dataset from fragalysis"""
         zip_file = tmp_path / "mpro_fragalysis.zip"
-        download(
-            zip_file, mpro_fragalysis_api_call, extract=False
-        )  # don't extract
+        download(zip_file, mpro_fragalysis_api_call, extract=False)  # don't extract
         assert os.path.exists(zip_file)
 
     def test_download_fragalysis_mac1_zip(self, tmp_path, mac1_fragalysis_api_call):
         """Checks downloading target zip file dataset from fragalysis"""
         zip_file = tmp_path / "mac1_fragalysis.zip"
-        download(
-            zip_file, mac1_fragalysis_api_call, extract=False
-        )  # don't extract
+        download(zip_file, mac1_fragalysis_api_call, extract=False)  # don't extract
         assert os.path.exists(zip_file)
 
     def test_failed_download_fragalysis_target(

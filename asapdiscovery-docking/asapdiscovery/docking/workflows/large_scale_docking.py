@@ -2,16 +2,13 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
+from asapdiscovery.data.fitness import target_has_fitness_data
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.readers.structure_dir import StructureDirFactory
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
-from asapdiscovery.data.util.dask_utils import (
-    BackendType,
-    dask_cluster_from_type,
-    set_dask_config,
-)
-from asapdiscovery.data.structural.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.fitness import target_has_fitness_data
-from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.services.postera.manifold_artifacts import (
     ArtifactType,
     ManifoldArtifactUploader,
@@ -22,16 +19,19 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
-from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.readers.structure_dir import StructureDirFactory
-from asapdiscovery.data.structural.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services.services_config import (
     CloudfrontSettings,
     PosteraSettings,
     S3Settings,
 )
+from asapdiscovery.data.structural.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.structural.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.util.dask_utils import (
+    BackendType,
+    dask_cluster_from_type,
+    set_dask_config,
+)
+from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking import write_results_to_multi_sdf

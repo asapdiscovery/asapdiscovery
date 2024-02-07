@@ -9,7 +9,9 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.docking.docking_data_validation import DockingResultCols #TODO: remove
+from asapdiscovery.docking.docking_data_validation import (  # TODO: remove
+    DockingResultCols,
+)
 
 from ..aws.cloudfront import CloudFront
 from ..aws.s3 import S3

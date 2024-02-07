@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import click
-
 from asapdiscovery.data.cli import cli
 
 # use these extra kwargs with any option from a settings parameter.
