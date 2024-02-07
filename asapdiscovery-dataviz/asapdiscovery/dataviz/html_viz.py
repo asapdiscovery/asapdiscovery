@@ -213,6 +213,13 @@ class HTMLVisualizer:
                 opts,
             )
 
+        else:
+            # just combine into a single molecule
+            _pose = oechem.OEGraphMol()
+            for pos in pose:
+                oechem.OEAddMols(_pose, pos)
+            pose = _pose
+
         oechem.OESuppressHydrogens(
             pose, True, True
         )  # retain polar hydrogens and hydrogens on chiral centers
@@ -511,6 +518,7 @@ class HTMLVisualizer:
         Write HTML visualisations for all poses.
         """
         output_paths = []
+        print(self.poses)
         for pose, path in zip(self.poses, self.output_paths):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
