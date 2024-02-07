@@ -123,8 +123,8 @@ def run(
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header, pull_from_postera
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
-    from asapdiscovery.data.schema_v2.complex import PreppedComplex
-    from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+    from asapdiscovery.data.schema.complex import PreppedComplex
+    from asapdiscovery.data.readers.molfile import MolFileFactory
     from rich import pretty
     from rich.padding import Padding
 
