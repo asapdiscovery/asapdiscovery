@@ -2,7 +2,7 @@ from functools import reduce
 from pathlib import Path
 from typing import Optional, Union
 
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.backend.openeye import (
     oechem,
     oedocking,
     oespruce,

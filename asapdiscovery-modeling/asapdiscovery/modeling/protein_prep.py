@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import dask
 import yaml
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.enum import StringEnum
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.target import PreppedTarget
-from asapdiscovery.data.utils import seqres_to_res_list
+from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.util.stringenum import StringEnum
+from asapdiscovery.data.backend.openeye import oechem
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.target import PreppedTarget
+from asapdiscovery.data.util.utils import seqres_to_res_list
 from asapdiscovery.modeling.modeling import (
     make_design_unit,
     mutate_residues,

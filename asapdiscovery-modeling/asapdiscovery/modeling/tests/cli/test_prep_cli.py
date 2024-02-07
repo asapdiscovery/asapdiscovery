@@ -4,7 +4,7 @@ import traceback
 
 import numpy as np
 import pytest
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.modeling.cli import modeling as cli
 from click.testing import CliRunner
 
