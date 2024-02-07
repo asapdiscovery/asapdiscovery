@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
+from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 

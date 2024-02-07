@@ -1,9 +1,9 @@
 import pytest
-from asapdiscovery.data.openeye import oe_smiles_roundtrip
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.state_expanders.protomer_expander import ProtomerExpander
-from asapdiscovery.data.state_expanders.state_expander import StateExpansionSet
-from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
+from asapdiscovery.data.backend.openeye import oe_smiles_roundtrip
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.structural.state_expanders.protomer_expander import ProtomerExpander
+from asapdiscovery.data.structural.state_expanders.state_expander import StateExpansionSet
+from asapdiscovery.data.structural.state_expanders.stereo_expander import StereoExpander
 
 
 @pytest.fixture(scope="session")

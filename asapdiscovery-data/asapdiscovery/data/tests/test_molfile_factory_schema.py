@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 

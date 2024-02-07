@@ -8,19 +8,8 @@ import pathlib
 
 import pkg_resources
 import pytest
-from asapdiscovery.data.rcsb import download_pdb_structure
+from asapdiscovery.data.services.rcsb.rcsb_download import download_pdb_structure
 
-
-@pytest.fixture
-def pdbs_from_yaml():
-    """Fixture that gets pdb dictionary from mers-structures.yaml file"""
-    from asapdiscovery.data.pdb import load_pdbs_from_yaml
-
-    yaml_file = pkg_resources.resource_filename(
-        "asapdiscovery-data", "data/mers-structures.yaml"
-    )
-    pdb_dict = load_pdbs_from_yaml(yaml_file)
-    return pdb_dict
 
 
 class TestAsapPDB:
@@ -50,7 +39,7 @@ class TestAsapPDB:
 
     def test_load_save_openeye_pdb(self, tmp_path):
         """Test that a downloaded pdb file can be loaded with the openeye-specific functions"""
-        from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
+        from asapdiscovery.data.backend.openeye import load_openeye_pdb, save_openeye_pdb
 
         pdb_id = "8DGY"
         file_path = download_pdb_structure(pdb_id, tmp_path, file_format="pdb")
@@ -67,7 +56,7 @@ class TestLigands:
 
     def test_ligand_filtering(self):
         """Test SMARTS pattern matching ligand filtering"""
-        from asapdiscovery.data import utils
+        from asapdiscovery.data.util import utils
 
         # First, parse the fragalysis directory and
         csv_file = "CSV_FILE_NEEDED_HERE.csv"

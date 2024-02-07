@@ -2,7 +2,7 @@ import os
 from unittest import mock
 
 import pytest
-from asapdiscovery.data.services_config import (
+from asapdiscovery.data.services.services_config import (
     CloudfrontSettings,
     PosteraSettings,
     S3Settings,

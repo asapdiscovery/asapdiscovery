@@ -1,14 +1,14 @@
 import pytest
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
-from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.selectors.pairwise_selector import (
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.pairs import CompoundStructurePair
+from asapdiscovery.data.structural.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.structural.selectors.pairwise_selector import (
     LeaveOneOutSelector,
     LeaveSimilarOutSelector,
     PairwiseSelector,
     SelfDockingSelector,
 )
-from asapdiscovery.docking.docking import DockingInputPair
+from asapdiscovery.docking.docking import DockingInputPair #TODO: move to data
 
 
 def test_pairwise_selector(ligands, complexes):
