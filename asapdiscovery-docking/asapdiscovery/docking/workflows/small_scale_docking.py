@@ -191,7 +191,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             adaptive_min_workers=inputs.dask_cluster_n_workers,
             adaptive_max_workers=inputs.dask_cluster_max_workers,
             loglevel=inputs.loglevel,
-            walltime=inputs.walltime
+            walltime=inputs.walltime,
         )
     else:
         dask_client = None
@@ -224,9 +224,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         dask_failure_mode=inputs.dask_failure_mode,
         dask_client=dask_client,
     )
-    complexes = structure_factory.load(use_dask=inputs.use_dask,
+    complexes = structure_factory.load(
+        use_dask=inputs.use_dask,
         dask_failure_mode=inputs.dask_failure_mode,
-        dask_client=dask_client,)
+        dask_client=dask_client,
+    )
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
@@ -452,7 +454,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             logger.info(
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
-            dask_client = make_dask_client_meta(DaskType.LOCAL_GPU, walltime=inputs.walltime, loglevel=inputs.loglevel)
+            dask_client = make_dask_client_meta(
+                DaskType.LOCAL_GPU, walltime=inputs.walltime, loglevel=inputs.loglevel
+            )
             local_cpu_client_gpu_override = True
 
         md_output_dir = output_dir / "md"

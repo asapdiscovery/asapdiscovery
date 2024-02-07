@@ -51,7 +51,12 @@ class MetaStructureFactory(BaseModel):
             )
         return values
 
-    def load(self, use_dask: bool=False, dask_client=None, dask_failure_mode: DaskFailureMode=DaskFailureMode.SKIP) -> list[Complex]:
+    def load(
+        self,
+        use_dask: bool = False,
+        dask_client=None,
+        dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+    ) -> list[Complex]:
         # load complexes from a directory, from fragalysis or from a pdb file
         if self.structure_dir:
             logger.info(f"Loading structures from directory: {self.structure_dir}")
@@ -62,9 +67,7 @@ class MetaStructureFactory(BaseModel):
         elif self.fragalysis_dir:
             logger.info(f"Loading structures from fragalysis: {self.fragalysis_dir}")
             fragalysis = FragalysisFactory.from_dir(self.fragalysis_dir)
-            complexes = fragalysis.load(
-                use_dask=use_dask, dask_client=dask_client
-            )
+            complexes = fragalysis.load(use_dask=use_dask, dask_client=dask_client)
 
         elif self.pdb_file:
             logger.info(f"Loading structures from pdb: {self.pdb_file}")

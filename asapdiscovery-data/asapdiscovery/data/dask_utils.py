@@ -417,7 +417,9 @@ def make_dask_client_meta(
 ):
     logger.info(f"Using dask for parallelism of type: {dask_type}")
     set_dask_config()
-    dask_cluster = dask_cluster_from_type(dask_type, loglevel=loglevel, walltime=walltime)
+    dask_cluster = dask_cluster_from_type(
+        dask_type, loglevel=loglevel, walltime=walltime
+    )
     if dask_type.is_lilac():
         logger.info("Lilac HPC config selected, setting adaptive scaling")
         dask_cluster.adapt(

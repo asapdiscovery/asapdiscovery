@@ -112,7 +112,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
             adaptive_min_workers=inputs.dask_cluster_n_workers,
             adaptive_max_workers=inputs.dask_cluster_max_workers,
             loglevel=inputs.loglevel,
-            walltime=inputs.walltime
+            walltime=inputs.walltime,
         )
     else:
         dask_client = None

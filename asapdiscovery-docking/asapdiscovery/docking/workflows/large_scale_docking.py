@@ -157,7 +157,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             adaptive_min_workers=inputs.dask_cluster_n_workers,
             adaptive_max_workers=inputs.dask_cluster_max_workers,
             loglevel=inputs.loglevel,
-            walltime=inputs.walltime
+            walltime=inputs.walltime,
         )
     else:
         dask_client = None
@@ -188,9 +188,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
     )
-    complexes = structure_factory.load(use_dask=inputs.use_dask,
+    complexes = structure_factory.load(
+        use_dask=inputs.use_dask,
         dask_failure_mode=inputs.dask_failure_mode,
-        dask_client=dask_client)
+        dask_client=dask_client,
+    )
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
