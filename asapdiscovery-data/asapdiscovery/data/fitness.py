@@ -249,8 +249,8 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
 
         # now add chain A/C to the first/second half of the doubled DF.
         doubled_df.loc[:len(fitness_scores_bloom), "chain"] = "A"
-        doubled_df.loc[len(fitness_scores_bloom):, "chain"] = "B"
-        if not len(doubled_df[doubled_df["chain"] == "A"].values) == len(doubled_df[doubled_df["chain"] == "B"].values):
+        doubled_df.loc[len(fitness_scores_bloom):, "chain"] = "C"
+        if not len(doubled_df[doubled_df["chain"] == "A"].values) == len(doubled_df[doubled_df["chain"] == "C"].values):
             raise ValueError("Chain lengths between chains A/C are not equal - unable to naively duplicate fitness data across; please debug.")
         else:
             fitness_scores_bloom = doubled_df
