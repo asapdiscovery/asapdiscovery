@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_sdf
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
@@ -15,6 +16,7 @@ def test_html_viz_subpockets(pose, protein, target, tmp_path):
         protein=protein,
     )
     html_visualizer.write_pose_visualizations()
+    assert Path(tmp_path / "html_viz.html").exists()
 
 
 @pytest.mark.parametrize("align", [True, False])
@@ -27,6 +29,7 @@ def test_html_viz_subpockets_align(pose, protein, align, tmp_path):
         align=align,
     )
     html_visualizer.write_pose_visualizations()
+    assert Path(tmp_path / "html_viz.html").exists()
 
 
 # test the OEMol code path
@@ -42,6 +45,7 @@ def test_html_viz_subpockets_oemol_align(pose, protein, align, tmp_path):
         align=align,
     )
     html_visualizer.write_pose_visualizations()
+    assert Path(tmp_path / "html_viz.html").exists()
 
 
 # No fitness data for MERS-CoV-Mpro
@@ -57,3 +61,4 @@ def test_html_viz_fitness(pose, protein, target, align, tmp_path):
         align=align,
     )
     html_visualizer.write_pose_visualizations()
+    assert Path(tmp_path / "html_viz.html").exists()

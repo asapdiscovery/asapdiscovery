@@ -1,3 +1,4 @@
+from pathlib import Path
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 
 
@@ -14,3 +15,4 @@ def test_gif_viz(traj, top, tmp_path):
         pse_share=False,
     )
     gif_visualiser.write_traj_visualizations()
+    assert Path(tmp_path / "gif_viz.gif").exists()
