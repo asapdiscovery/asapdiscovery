@@ -1,4 +1,4 @@
-from asapdiscovery.data.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.structural.deduplicator import LigandDeDuplicator
 
 
 def test_deduplication_all_unique(ligands):

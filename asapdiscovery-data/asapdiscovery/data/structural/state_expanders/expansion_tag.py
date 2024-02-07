@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Any, Optional
 
-from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers
+from asapdiscovery.data.schema.identifiers import LigandIdentifiers
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from asapdiscovery.data.schema_v2.ligand import Ligand
+    from asapdiscovery.data.schema.ligand import Ligand
 
 
 class StateExpansionTag(BaseModel):

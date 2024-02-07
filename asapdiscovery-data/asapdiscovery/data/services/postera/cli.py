@@ -1,6 +1,6 @@
 import click
 
-from ..cli import cli
+from asapdiscovery.data.cli import cli
 
 
 def molecule_set_id_arg(func):
@@ -75,7 +75,7 @@ def postera(ctx, api_url, api_token, api_version):
 @postera.group()
 @click.pass_context
 def moleculeset(ctx):
-    from .postera.molecule_set import MoleculeSetAPI
+    from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 
     ctx.obj["moleculesetapi"] = MoleculeSetAPI(
         ctx.obj["api_url"], ctx.obj["api_version"], ctx.obj["api_token"]
@@ -95,7 +95,7 @@ def create(
 ):
     import pandas as pd
 
-    from .postera.molecule_set import MoleculeList
+    from asapdiscovery.data.services.postera.molecule_set import MoleculeList
 
     msa = ctx.obj["moleculesetapi"]
     df = pd.read_csv(input_file)
@@ -164,7 +164,7 @@ def update_molecules(
 ):
     import pandas as pd
 
-    from .postera.molecule_set import MoleculeUpdateList
+    from asapdiscovery.data.services.postera.molecule_set import MoleculeUpdateList
 
     msa = ctx.obj["moleculesetapi"]
 

@@ -10,8 +10,8 @@ import xmltodict
 import yaml
 from asapdiscovery.data.fitness import parse_fitness_json, target_has_fitness_data
 from asapdiscovery.data.metadata.resources import FINTSCORE_PARAMETERS
-from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.backend.openeye import combine_protein_ligand, oechem, save_openeye_pdb
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 
 logger = logging.getLogger(__name__)

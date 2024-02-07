@@ -5,7 +5,7 @@ Tests for downloading and processing Moonshot data from CDD.
 import os
 
 import pytest
-from asapdiscovery.data.cdd import (
+from asapdiscovery.data.services.cdd.cdd_download import (
     CDD_URL,
     MOONSHOT_ALL_SMI_SEARCH,
     MOONSHOT_NONCOVALENT_SMI_SEARCH,

@@ -2,12 +2,12 @@ import logging
 from typing import ClassVar, Union
 
 import numpy as np
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
-from asapdiscovery.data.selectors.selector import SelectorBase
-from asapdiscovery.docking.docking import DockingInputPair
+from asapdiscovery.data.backend.openeye import oechem
+from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.pairs import CompoundStructurePair
+from asapdiscovery.data.structural.selectors.selector import SelectorBase
+from asapdiscovery.docking.docking import DockingInputPair #TODO: move to backend
 from pydantic import Field
 
 logger = logging.getLogger(__name__)

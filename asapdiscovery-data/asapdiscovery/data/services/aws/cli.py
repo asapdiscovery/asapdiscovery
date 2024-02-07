@@ -2,7 +2,7 @@ from pathlib import Path
 
 import click
 
-from ..cli import cli
+from asapdiscovery.data.cli import cli
 
 # use these extra kwargs with any option from a settings parameter.
 SETTINGS_OPTION_KWARGS = {

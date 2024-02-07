@@ -2,11 +2,11 @@ import abc
 from typing import Literal, Union
 
 import dask
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
-from asapdiscovery.docking.docking import DockingInputPair
+from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.pairs import CompoundStructurePair
+from asapdiscovery.docking.docking import DockingInputPair #TODO: move to backend
 from pydantic import BaseModel
 
 

@@ -4,12 +4,12 @@ from typing import Union
 from uuid import UUID
 
 import pandas as pd
-from asapdiscovery.data.services_config import (
+from asapdiscovery.data.services.services_config import (
     CloudfrontSettings,
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.docking.docking_data_validation import DockingResultCols #TODO: remove
 
 from ..aws.cloudfront import CloudFront
 from ..aws.s3 import S3

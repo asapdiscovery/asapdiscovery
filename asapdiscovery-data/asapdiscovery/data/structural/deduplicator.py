@@ -1,4 +1,4 @@
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import BaseModel
 
 

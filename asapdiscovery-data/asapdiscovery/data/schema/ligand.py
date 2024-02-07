@@ -13,7 +13,7 @@ from typing import (  # noqa: F401
     Union,
 )
 
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.backend.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
     get_SD_data,
@@ -27,9 +27,9 @@ from asapdiscovery.data.openeye import (
     sdf_string_to_oemol,
     smiles_to_oemol,
 )
-from asapdiscovery.data.schema_v2.identifiers import LigandIdentifiers, LigandProvenance
-from asapdiscovery.data.schema_v2.schema_base import DataStorageType
-from asapdiscovery.data.state_expanders.expansion_tag import StateExpansionTag
+from asapdiscovery.data.schema.identifiers import LigandIdentifiers, LigandProvenance
+from asapdiscovery.data.schema.schema_base import DataStorageType
+from asapdiscovery.data.structural.state_expanders.expansion_tag import StateExpansionTag
 from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData

@@ -1,8 +1,8 @@
 import logging
 from typing import Any, ClassVar
 
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

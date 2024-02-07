@@ -4,16 +4,16 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_design_unit,
     load_openeye_pdb,
     oechem,
     save_openeye_pdb,
 )
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.schema_base import DataModelAbstractBase
-from asapdiscovery.data.schema_v2.target import PreppedTarget, Target
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
+from asapdiscovery.data.schema.target import PreppedTarget, Target
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
 from pydantic import Field

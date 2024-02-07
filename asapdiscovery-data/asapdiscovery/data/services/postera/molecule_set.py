@@ -3,7 +3,7 @@ import uuid
 from typing import Dict, Tuple, Union  # noqa: F401
 
 import pandas as pd
-from asapdiscovery.data.enum import StringEnum
+from asapdiscovery.data.util.stringenum import StringEnum
 from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags

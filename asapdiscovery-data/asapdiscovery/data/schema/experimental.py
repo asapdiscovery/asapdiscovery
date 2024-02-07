@@ -3,13 +3,8 @@ from datetime import date
 from pydantic import BaseModel, Field
 
 
-class Model(BaseModel):
-    class Config:
-        allow_mutation = False
-        extra = "forbid"
-
-
-class ExperimentalCompoundData(Model):
+class ExperimentalCompoundData(BaseModel):
+    
     compound_id: str = Field(
         None,
         description="The unique compound identifier (PostEra or enumerated ID)",
@@ -57,3 +52,7 @@ class ExperimentalCompoundData(Model):
         data = {str(k): str(v) for k, v in data.items() if v is not None}
         exp_data = {str(k): float(v) for k, v in exp_data.items() if v is not None}
         return data, exp_data
+
+    class Config:
+        allow_mutation = False
+        extra = "forbid"

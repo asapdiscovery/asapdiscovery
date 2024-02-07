@@ -1,10 +1,10 @@
 from typing import Optional
 from uuid import UUID
 
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from pydantic import UUID4, Field
 
-from .schema_base import DataModelAbstractBase
+from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
 
 
 class LigandIdentifiers(DataModelAbstractBase):

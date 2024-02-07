@@ -7,7 +7,7 @@ from asapdiscovery.data.metadata.resources import (
     ZIKV_NS2B_NS3pro_fitness_data,
     targets_with_fitness_data,
 )
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetTags,
     TargetVirusMap,
     VirusTags,

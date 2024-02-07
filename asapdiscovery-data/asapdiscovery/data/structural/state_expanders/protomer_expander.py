@@ -3,14 +3,14 @@ import subprocess
 import tempfile
 from typing import Literal
 
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.backend.openeye import (
     load_openeye_sdfs,
     oechem,
     oequacpac,
     save_openeye_sdfs,
 )
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.state_expanders.state_expander import StateExpanderBase
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.structural.state_expanders.state_expander import StateExpanderBase
 from pydantic import Field
 
 
