@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from asapdiscovery.data.dask_utils import DaskFailureMode
 from asapdiscovery.data.schema_v2.complex import Complex
@@ -62,12 +62,12 @@ class MetaStructureFactory(BaseModel):
             logger.info(f"Loading structures from directory: {self.structure_dir}")
             structure_factory = StructureDirFactory.from_dir(self.structure_dir)
             complexes = structure_factory.load(
-                use_dask=use_dask, dask_client=dask_client
+                use_dask=use_dask, dask_client=dask_client, dask_failure_mode=dask_failure_mode
             )
         elif self.fragalysis_dir:
             logger.info(f"Loading structures from fragalysis: {self.fragalysis_dir}")
             fragalysis = FragalysisFactory.from_dir(self.fragalysis_dir)
-            complexes = fragalysis.load(use_dask=use_dask, dask_client=dask_client)
+            complexes = fragalysis.load(use_dask=use_dask, dask_client=dask_client, dask_failure_mode=dask_failure_mode)
 
         elif self.pdb_file:
             logger.info(f"Loading structures from pdb: {self.pdb_file}")
