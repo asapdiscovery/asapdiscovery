@@ -19,9 +19,9 @@ from asapdiscovery.cli.cli_args import (
     use_only_cache,
     walltime,
 )
-from asapdiscovery.data.dask_utils import DaskType
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.selectors.selector_list import StructureSelector
+from asapdiscovery.data.util.dask_utils import DaskType
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.structural.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.workflows.cross_docking import (
     CrossDockingWorkflowInputs,
     cross_docking_workflow,

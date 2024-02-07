@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 from typing import Any, Literal, Optional
 
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.backend.openeye import (
     get_SD_data,
     oechem,
     oedocking,
@@ -10,8 +10,8 @@ from asapdiscovery.data.openeye import (
     oeomega,
     set_SD_data,
 )
-from asapdiscovery.data.schema_v2.complex import PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 from rdkit import Chem
 

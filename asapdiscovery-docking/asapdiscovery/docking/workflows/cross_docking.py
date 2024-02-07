@@ -6,17 +6,17 @@ Removes all the additional layers in the other workflows and adds some features 
 from pathlib import Path
 from shutil import rmtree
 
-from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
-from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.util.dask_utils import dask_cluster_from_type, set_dask_config
+from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.selectors.selector_list import StructureSelector
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.fragalysis import FragalysisFactory
+from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.schema.molfile import MolFileFactory
+from asapdiscovery.data.schema.structure_dir import StructureDirFactory
+from asapdiscovery.data.structural.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking import DockingInputMultiStructure
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
