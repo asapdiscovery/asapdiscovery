@@ -2,8 +2,8 @@ import argparse
 import logging
 from pathlib import Path
 
-from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 
 parser = argparse.ArgumentParser(

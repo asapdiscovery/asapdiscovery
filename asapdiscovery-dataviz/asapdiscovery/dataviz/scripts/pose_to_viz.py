@@ -2,7 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
-from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 

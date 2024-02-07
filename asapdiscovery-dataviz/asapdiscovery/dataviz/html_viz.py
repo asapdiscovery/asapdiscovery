@@ -15,9 +15,9 @@ from asapdiscovery.data.fitness import (
     parse_fitness_json,
     target_has_fitness_data,
 )
-from asapdiscovery.data.logging import HiddenPrint
+from asapdiscovery.data.util.logging import HiddenPrint
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
     oechem,
@@ -25,17 +25,17 @@ from asapdiscovery.data.openeye import (
     oemol_to_sdf_string,
     openeye_perceive_residues,
 )
-from asapdiscovery.data.plip import (
+from asapdiscovery.data.backend.plip import (
     get_interactions_plip,
     make_color_res_fitness,
     make_color_res_subpockets,
 )
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetTags,
     TargetVirusMap,
 )
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.modeling.modeling import superpose_molecule
+from asapdiscovery.data.schema.molfile import MolFileFactory
+from asapdiscovery.modeling.modeling import superpose_molecule #TODO: move to backend
 
 from ._html_blocks import HTMLBlockData
 

@@ -2,7 +2,7 @@ import abc
 
 import dask
 import pandas as pd
-from asapdiscovery.data.dask_utils import (
+from asapdiscovery.data.util.dask_utils import (
     BackendType,
     actualise_dask_delayed_iterable,
     backend_wrapper,
