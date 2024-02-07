@@ -34,7 +34,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetTags,
     TargetVirusMap,
 )
-from asapdiscovery.data.schema.molfile import MolFileFactory
+from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.modeling.modeling import superpose_molecule #TODO: move to backend
 
 from ._html_blocks import HTMLBlockData
