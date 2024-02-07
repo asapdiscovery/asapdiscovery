@@ -62,4 +62,4 @@ def test_html_viz_fitness(pose, protein, target, align, tmp_path):
         align=align,
     )
     html_visualizer.write_pose_visualizations()
-    assert Path(tmp_path / "html_viz.html").exists()
+    assert Path(tmp_path / "html_viz_fitness.html").exists()
