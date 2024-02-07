@@ -23,11 +23,11 @@ from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema.molfile import MolFileFactory
-from asapdiscovery.data.schema.structure_dir import StructureDirFactory
-from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.services_config import (
+from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.readers.structure_dir import StructureDirFactory
+from asapdiscovery.data.structural.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.services.services_config import (
     CloudfrontSettings,
     PosteraSettings,
     S3Settings,

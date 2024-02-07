@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from asapdiscovery.data.openeye import load_openeye_sdf
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.backend.openeye import load_openeye_sdf
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.analysis import (
     TanimotoType,

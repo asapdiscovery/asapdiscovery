@@ -1,10 +1,10 @@
 import logging
 from uuid import UUID
 
-from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
-from asapdiscovery.data.rdkit import rdkit_smiles_roundtrip
-from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.services.postera.manifold_data_validation import ManifoldAllowedTags
+from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
+from asapdiscovery.data.backend.rdkit import rdkit_smiles_roundtrip
+from asapdiscovery.data.services.services_config import PosteraSettings
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import BaseModel, Field
 

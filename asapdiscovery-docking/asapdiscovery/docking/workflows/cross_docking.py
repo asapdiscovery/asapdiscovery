@@ -12,10 +12,10 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.fragalysis import FragalysisFactory
+from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.schema.molfile import MolFileFactory
-from asapdiscovery.data.schema.structure_dir import StructureDirFactory
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.structural.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking import DockingInputMultiStructure
 from asapdiscovery.docking.docking_data_validation import DockingResultCols

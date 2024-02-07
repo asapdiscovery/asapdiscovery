@@ -11,8 +11,8 @@ from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema.structure_dir import StructureDirFactory
+from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
+from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from distributed import Client
