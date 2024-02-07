@@ -16,6 +16,7 @@ def test_html_viz_subpockets(pose, protein, target, tmp_path):
     )
     html_visualizer.write_pose_visualizations()
 
+
 @pytest.mark.parametrize("align", [True, False])
 def test_html_viz_subpockets_align(pose, protein, align, tmp_path):
     html_visualizer = HTMLVisualizer(
