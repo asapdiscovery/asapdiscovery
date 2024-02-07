@@ -1,7 +1,7 @@
 import pytest
-from asapdiscovery.data.schema import ExperimentalCompoundData
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 

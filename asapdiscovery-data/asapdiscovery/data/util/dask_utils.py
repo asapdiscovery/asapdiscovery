@@ -5,8 +5,8 @@ from typing import Any, Callable, Optional, Union
 
 import dask
 import psutil
-from asapdiscovery.data.enum import StringEnum
-from asapdiscovery.data.execution_utils import (
+from asapdiscovery.data.util.stringenum import StringEnum
+from asapdiscovery.data.util.execution_utils import (
     get_platform,
     guess_network_interface,
     hyperthreading_is_enabled,

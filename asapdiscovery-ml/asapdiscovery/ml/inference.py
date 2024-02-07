@@ -5,9 +5,9 @@ import dgl
 import mtenn
 import numpy as np
 import torch
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.backend.openeye import oechem
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
