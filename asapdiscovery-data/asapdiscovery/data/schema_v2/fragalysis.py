@@ -7,7 +7,10 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    DaskFailureMode,
+    actualise_dask_delayed_iterable,
+)
 from asapdiscovery.data.schema_v2.complex import Complex
 from pydantic import BaseModel, Field, root_validator, validator
 
@@ -65,7 +68,9 @@ class FragalysisFactory(BaseModel):
             raise FileNotFoundError("No aligned/ directory found in parent_dir.")
         return values
 
-    def load(self, use_dask=False, dask_client=None) -> list[Complex]:
+    def load(
+        self, use_dask=False, dask_client=None, dask_failure_mode=DaskFailureMode.SKIP
+    ) -> list[Complex]:
         """
         Load a Fragalysis dump as a list of Complex objects.
 
@@ -76,6 +81,8 @@ class FragalysisFactory(BaseModel):
             Defaults to False.
         dask_client : dask.distributed.Client, optional
             Dask client to use for parallelisation. Defaults to None.
+        dask_failure_mode : DaskFailureMode
+            The failure mode for dask. Can be 'raise' or 'skip'.
 
         Returns
         -------
@@ -125,7 +132,7 @@ class FragalysisFactory(BaseModel):
 
         if use_dask:
             complexes = actualise_dask_delayed_iterable(
-                complexes, dask_client=dask_client
+                complexes, dask_client=dask_client, errors=dask_failure_mode
             )
 
         # remove None values

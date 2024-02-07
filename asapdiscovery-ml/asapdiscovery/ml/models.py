@@ -4,12 +4,14 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union  # noqa: F401
 from urllib.parse import urljoin
 
+import mtenn
 import pooch
 import yaml
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from mtenn.config import ModelType
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, validator
+from semver import Version
 
 
 class MLModelBase(BaseModel):
@@ -20,10 +22,56 @@ class MLModelBase(BaseModel):
     class Config:
         validate_assignment = True
 
+        # Add custom encoders for semver Versions
+        json_encoders = {Version: lambda v: str(v)}
+
+        # Allow arbitrary types so that pydantic will accept Versions
+        arbitrary_types_allowed = True
+
     name: str = Field(..., description="Model name")
     type: ModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
     targets: set[TargetTags] = Field(..., description="Biological targets of the model")
+    mtenn_lower_pin: Version | None = Field(
+        None, description="Lower bound on compatible mtenn versions (inclusive)."
+    )
+    mtenn_upper_pin: Version | None = Field(
+        None, description="Upper bound on compatible mtenn versions (exclusive)."
+    )
+
+    @validator("mtenn_lower_pin", "mtenn_upper_pin", pre=True)
+    def cast_versions(cls, v):
+        """
+        Cast SemVer version strings to Version objects.
+        """
+        if v is None:
+            return None
+        elif isinstance(v, Version):
+            return v
+        else:
+            return Version.parse(v)
+
+    def check_mtenn_version(self):
+        """
+        Convenience function for checking the installed mtenn version is compatible with
+        the versions specified by the pins.
+        """
+
+        cur_version = Version.parse(mtenn.__version__)
+
+        # If no lower/upper pin has been set, set temp values here that will pass
+        if self.mtenn_lower_pin is None:
+            low_pin = Version.parse("0.0.0")
+        else:
+            low_pin = self.mtenn_lower_pin
+        if self.mtenn_upper_pin is None:
+            # Bumping the patch from current version will make sure current version is
+            #  included in exclusive comparison
+            upper_pin = cur_version.bump_patch()
+        else:
+            upper_pin = self.mtenn_lower_pin
+
+        return low_pin <= cur_version < upper_pin
 
 
 class MLModelSpec(MLModelBase):
@@ -56,7 +104,9 @@ class MLModelSpec(MLModelBase):
         try:
             weights_file = Path(
                 pooch.retrieve(
-                    url=weights_url, known_hash=self.weights_sha256hash, path=local_dir
+                    url=weights_url,
+                    known_hash=self.weights_sha256hash,
+                    path=local_dir,
                 )
             )
         except Exception as e:
@@ -88,6 +138,8 @@ class MLModelSpec(MLModelBase):
             last_updated=self.last_updated,
             targets=self.targets,
             local_dir=Path(local_dir) if local_dir else None,
+            mtenn_lower_pin=self.mtenn_lower_pin,
+            mtenn_upper_pin=self.mtenn_upper_pin,
         )
 
 
@@ -259,6 +311,12 @@ class MLModelRegistry(BaseModel):
                 else None,
                 last_updated=model_data["last_updated"],
                 targets=set(model_data["targets"]),
+                mtenn_lower_pin=model_data["mtenn_lower_pin"]
+                if "mtenn_lower_pin" in model_data
+                else None,
+                mtenn_upper_pin=model_data["mtenn_upper_pin"]
+                if "mtenn_upper_pin" in model_data
+                else None,
             )
 
         return cls(models=models)

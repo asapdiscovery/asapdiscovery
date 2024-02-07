@@ -6,10 +6,8 @@ from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking import DockingResult
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import Field, root_validator
 
 logger = logging.getLogger(__name__)
@@ -66,7 +64,7 @@ class HTMLVisualizerV2(VisualizerBase):
         data = []
         for result in docking_results:
             # sorryyyyy
-            output_pref = result.unique_name()
+            output_pref = result.unique_name
             outpath = self.output_dir / output_pref / "pose.html"
             viz_class = HTMLVisualizer(
                 [result.posed_ligand.to_oemol()],

@@ -14,10 +14,12 @@ def smi_file():
 
 
 def test_molfile_factory_sdf(sdf_file):
-    molfile = MolFileFactory.from_file(filename=sdf_file)
-    assert len(molfile.ligands) == 576
+    molfile = MolFileFactory(filename=sdf_file)
+    ligands = molfile.load()
+    assert len(ligands) == 576
 
 
 def test_molfile_factory_smi(smi_file):
-    molfile = MolFileFactory.from_file(filename=smi_file)
-    assert len(molfile.ligands) == 556
+    molfile = MolFileFactory(filename=smi_file)
+    ligands = molfile.load()
+    assert len(ligands) == 556

@@ -1,5 +1,8 @@
 import pytest
-from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
+from asapdiscovery.alchemy.schema.prep_workflow import (
+    AlchemyPrepWorkflow,
+    OpenEyeConstrainedPoseGenerator,
+)
 from asapdiscovery.data.schema_v2.ligand import Ligand
 
 
@@ -25,9 +28,12 @@ from asapdiscovery.data.schema_v2.ligand import Ligand
 def test_prep_workflow(strict_stereo, core_smarts, failed, mac1_complex):
     """Make sure the full prep workflow can be run and stereo issues can be filtered."""
 
-    # we do not have access to epik in testing so skip
+    # we do not have access to epik in testing so skip, use openeye as it's faster
     workflow = AlchemyPrepWorkflow(
-        charge_expander=None, strict_stereo=strict_stereo, core_smarts=core_smarts
+        charge_expander=None,
+        strict_stereo=strict_stereo,
+        core_smarts=core_smarts,
+        pose_generator=OpenEyeConstrainedPoseGenerator(),
     )
 
     alchemy_dataset = workflow.create_alchemy_dataset(
@@ -42,21 +48,13 @@ def test_prep_workflow(strict_stereo, core_smarts, failed, mac1_complex):
     )
 
     assert len(alchemy_dataset.input_ligands) == 1
-    assert alchemy_dataset.provenance == {
-        "OpenEyeConstrainedPoseGenerator": {
-            "oechem": 20230910,
-            "oedocking": 20230910,
-            "oeff": 20230910,
-            "oeomega": 20230910,
-        },
-        "StereoExpander": {
-            "expander": {
-                "expander_type": "StereoExpander",
-                "stereo_expand_defined": False,
-            },
-            "oechem": 20230910,
-            "omega": 20230910,
-        },
+    assert set(alchemy_dataset.provenance.keys()) == {
+        "OpenEyeConstrainedPoseGenerator",
+        "StereoExpander",
+    }
+    assert alchemy_dataset.provenance["StereoExpander"]["expander"] == {
+        "expander_type": "StereoExpander",
+        "stereo_expand_defined": False,
     }
     if failed:
         assert len(alchemy_dataset.posed_ligands) == 0

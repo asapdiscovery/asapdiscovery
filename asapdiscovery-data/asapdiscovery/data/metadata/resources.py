@@ -11,6 +11,9 @@ SARS_CoV_2_Mpro_SEQRES = pkg_resources.resource_filename(
 SARS_CoV_2_Mac1_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/sars_cov_2_mac1_seqres.yaml"
 )
+SARS_CoV_2_N_protein_SEQRES = pkg_resources.resource_filename(
+    __name__, "master_seqres/sars_cov_2_n_protein_seqres.yaml"
+)
 EV_D68_3Cpro_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/ev_d68_3cpro.yaml"
 )
@@ -36,6 +39,7 @@ seqres_data = {
     TargetTags("MERS-CoV-Mpro").value: MERS_CoV_Mpro_SEQRES,
     TargetTags("SARS-CoV-2-Mpro").value: SARS_CoV_2_Mpro_SEQRES,
     TargetTags("SARS-CoV-2-Mac1").value: SARS_CoV_2_Mac1_SEQRES,
+    TargetTags("SARS-CoV-2-N-protein").value: SARS_CoV_2_N_protein_SEQRES,
     TargetTags("EV-D68-3Cpro").value: EV_D68_3Cpro_SEQRES,
     TargetTags("EV-A71-3Cpro").value: EV_A71_3Cpro_SEQRES,
     TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_SEQRES,
@@ -56,6 +60,7 @@ ZIKV_NS2B_NS3pro_fitness_data = pkg_resources.resource_filename(
 targets_with_fitness_data = [
     TargetTags("SARS-CoV-2-Mpro"),
     TargetTags("SARS-CoV-2-Mac1"),
+    TargetTags("SARS-CoV-2-N-protein"),
     TargetTags("ZIKV-NS2B-NS3pro"),
 ]
 
@@ -66,6 +71,9 @@ master_structures = {
     ),
     "SARS-CoV-2-Mac1": pkg_resources.resource_filename(
         __name__, "master_structures/sars_cov_2_mac1.pdb"
+    ),
+    "SARS-CoV-2-N-protein": pkg_resources.resource_filename(
+        __name__, "master_structures/sars_cov_2_n_protein.pdb"
     ),
     "SARS-CoV-2-Mac1-monomer": pkg_resources.resource_filename(
         __name__, "master_structures/sars_cov_2_mac1.pdb"
@@ -92,3 +100,6 @@ master_structures = {
         __name__, "master_structures/ev_d68_capsid.pdb"
     ),
 }
+FINTSCORE_PARAMETERS = pkg_resources.resource_filename(
+    __name__, "fintscore_parameters.yaml"
+)

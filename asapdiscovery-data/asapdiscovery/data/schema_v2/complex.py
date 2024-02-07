@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 class ComplexBase(DataModelAbstractBase):
+    """
+    Base class for complexes
+    """
+
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ComplexBase):
             return NotImplemented
@@ -31,6 +35,11 @@ class ComplexBase(DataModelAbstractBase):
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+    @property
+    def unique_name(self) -> str:
+        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
+        return f"{self.target.target_name}-{self.hash}"
 
 
 class Complex(ComplexBase):
@@ -42,7 +51,7 @@ class Complex(ComplexBase):
 
     target: Target = Field(description="Target schema object")
     ligand: Ligand = Field(description="Ligand schema object")
-    ligand_chain: str = Field(..., description="Chain ID of ligand in complex")
+    ligand_chain: str = Field(None, description="Chain ID of ligand in complex")
 
     # Overload from base class to check target and ligand individually
     def data_equal(self, other: Complex):
@@ -87,12 +96,9 @@ class Complex(ComplexBase):
             self.target.to_oemol(), self.ligand.to_oemol(), lig_chain=self.ligand_chain
         )
 
+    @property
     def hash(self):
-        return f"{self.target.hash()}+{self.ligand.fixed_inchikey}"
-
-    def unique_name(self) -> str:
-        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
-        return f"{self.target.target_name}-{self.hash()}"
+        return f"{self.target.hash}+{self.ligand.fixed_inchikey}"
 
 
 class PreppedComplex(ComplexBase):
@@ -146,7 +152,7 @@ class PreppedComplex(ComplexBase):
             PreppedComplex object
         """
         # use local import here to avoid circular imports
-        from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+        from asapdiscovery.modeling.protein_prep import ProteinPrepper
 
         # overwrite ligand_chain with ligand_chain from complex if it exists
         prep_kwargs.pop("ligand_chain", None)
@@ -154,9 +160,7 @@ class PreppedComplex(ComplexBase):
         prepped_complexs = ProteinPrepper(**prep_kwargs).prep(inputs=[complex])
         return prepped_complexs[0]
 
+    @property
     def hash(self):
+        # Using the target_hash instead hashing the OEDU bytes because prepping is stochastic
         return f"{self.target.target_hash}+{self.ligand.fixed_inchikey}"
-
-    def unique_name(self) -> str:
-        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
-        return f"{self.target.target_name}-{self.hash()}"

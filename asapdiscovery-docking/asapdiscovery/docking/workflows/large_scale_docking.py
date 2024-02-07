@@ -17,7 +17,6 @@ from asapdiscovery.data.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
-    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
@@ -35,15 +34,18 @@ from asapdiscovery.data.services_config import (
 )
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import write_results_to_multi_sdf
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer_v2 import ChemGauss4Scorer, MetaScorer, MLModelScorer
+from asapdiscovery.docking.scorer import (
+    ChemGauss4Scorer,
+    FINTScorer,
+    MetaScorer,
+    MLModelScorer,
+)
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from distributed import Client
 from pydantic import Field, PositiveInt, validator
 
@@ -125,9 +127,15 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     """
 
     output_dir = inputs.output_dir
+    new_directory = True
     if output_dir.exists():
-        rmtree(output_dir)
-    output_dir.mkdir()
+        if inputs.overwrite:
+            rmtree(output_dir)
+        else:
+            new_directory = False
+
+    # this won't overwrite the existing directory
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     logger = FileLogger(
         inputs.logname,  # default root logger so that dask logging is forwarded
@@ -137,6 +145,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         level=inputs.loglevel,
     ).getLogger()
 
+    if new_directory:
+        logger.info(f"Writing to / overwriting output directory: {output_dir}")
+    else:
+        logger.info(f"Writing to existing output directory: {output_dir}")
+
     logger.info(f"Running large scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
@@ -145,7 +158,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     if inputs.use_dask:
         logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
         set_dask_config()
-        dask_cluster = dask_cluster_from_type(inputs.dask_type)
+        dask_cluster = dask_cluster_from_type(
+            inputs.dask_type, loglevel=inputs.loglevel, walltime=inputs.walltime
+        )
         if inputs.dask_type.is_lilac():
             logger.info("Lilac HPC config selected, setting adaptive scaling")
             dask_cluster.adapt(
@@ -158,7 +173,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             dask_cluster.scale(inputs.dask_cluster_n_workers)
 
         dask_client = Client(dask_cluster)
-        dask_client.forward_logging()
+        dask_client.forward_logging(level=inputs.loglevel)
         logger.info(f"Using dask client: {dask_client}")
         logger.info(f"Using dask cluster: {dask_cluster}")
         logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
@@ -191,20 +206,26 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     else:
         # load from file
         logger.info(f"Loading ligands from file: {inputs.ligands}")
-        molfile = MolFileFactory.from_file(inputs.ligands)
-        query_ligands = molfile.ligands
+        molfile = MolFileFactory(filename=inputs.ligands)
+        query_ligands = molfile.load()
 
     # load complexes from a directory, from fragalysis or from a pdb file
     if inputs.structure_dir:
         logger.info(f"Loading structures from directory: {inputs.structure_dir}")
         structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
         complexes = structure_factory.load(
-            use_dask=inputs.use_dask, dask_client=dask_client
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
     elif inputs.fragalysis_dir:
         logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
         fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
+        complexes = fragalysis.load(
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
+        )
 
     elif inputs.pdb_file:
         logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
@@ -238,6 +259,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         cache_dir=inputs.cache_dir,
     )
     del complexes
@@ -260,6 +282,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         n_select=inputs.n_select,
         use_dask=False,
         dask_client=None,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -277,6 +300,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         return_for_disk_backend=True,
     )
 
@@ -302,6 +326,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
 
+    if target_has_fitness_data(inputs.target):
+        logger.info("Target has fitness data, adding FINT scorer")
+        scorers.append(FINTScorer(target=inputs.target))
+
     # load ml scorers
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
@@ -321,6 +349,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         return_df=True,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
@@ -340,6 +369,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
     )
@@ -374,6 +404,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
             backend=BackendType.DISK,
             reconstruct_cls=docker.result_cls,
         )
@@ -508,12 +539,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         # push the results to PostEra, making a new molecule set if necessary
-        posit_score_tag = map_output_col_to_manifold_tag(
-            DockingResultCols, inputs.target
-        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
-        result_df, molset_name, made_new_molset = postera_uploader.push(
-            result_df, sort_column=posit_score_tag, sort_ascending=True
-        )
+        result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")

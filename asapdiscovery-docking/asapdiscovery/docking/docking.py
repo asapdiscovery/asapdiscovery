@@ -1,555 +1,341 @@
+"""
+Defines docking base schema.
+"""
+
+import abc
 import logging
-import os
-import pickle as pkl
-from collections import namedtuple
-from datetime import datetime
-from pathlib import Path  # noqa: F401
-from typing import List, Optional, Tuple  # noqa: F401
+from pathlib import Path
+from typing import Any, Literal, Optional, Union
 
+import dask
 import numpy as np
-import pandas as pd
-from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.openeye import (
-    combine_protein_ligand,
-    load_openeye_sdf,
-    oechem,
-    oedocking,
-    save_openeye_sdf,
+from asapdiscovery.data.dask_utils import (
+    BackendType,
+    DaskFailureMode,
+    actualise_dask_delayed_iterable,
 )
-from asapdiscovery.data.utils import check_name_length_and_truncate
-from asapdiscovery.docking.analysis import calculate_rmsd_openeye
+from asapdiscovery.data.openeye import combine_protein_ligand, oechem, save_openeye_pdb
+from asapdiscovery.data.schema_v2.complex import PreppedComplex
+from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
+from asapdiscovery.data.schema_v2.sets import MultiStructureBase
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
+from pydantic import BaseModel, Field, PositiveFloat
 
-from .docking_data_validation import DockingResultCols
-
-POSIT_METHODS = ("all", "hybrid", "fred", "mcs", "shapefit")
-
-
-posit_methods = namedtuple("posit_methods", POSIT_METHODS)
-posit_method_ints = posit_methods(
-    oedocking.OEPositMethod_ALL,
-    oedocking.OEPositMethod_HYBRID,
-    oedocking.OEPositMethod_FRED,
-    oedocking.OEPositMethod_MCS,
-    oedocking.OEPositMethod_SHAPEFIT,
-)
+logger = logging.getLogger(__name__)
 
 
-def run_docking_oe(
-    du,
-    orig_mol,
-    dock_sys,
-    relax="none",
-    posit_method: str = "all",
-    compound_name=None,
-    use_omega=False,
-    omega_dense=False,
-    num_poses=1,
-    log_name="run_docking_oe",
-    openeye_logname="openeye-log.txt",
-    allow_low_posit_prob=False,
-    low_posit_prob_thresh=0.1,
-    allow_final_clash=False,
+class DockingInputBase(BaseModel):
+    """
+    Base class for functionality all docking inputs should have.
+    """
+
+    @abc.abstractmethod
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        ...
+
+
+class DockingInputPair(CompoundStructurePair, DockingInputBase):
+    """
+    Schema for a DockingInputPair, containing both a PreppedComplex and Ligand
+    This is designed to track a matched ligand and complex pair for investigation
+    but with the complex prepped for docking, ie in OEDesignUnit format.
+    """
+
+    complex: PreppedComplex = Field(description="Target schema object")
+
+    @classmethod
+    def from_compound_structure_pair(
+        cls, compound_structure_pair: CompoundStructurePair
+    ) -> "DockingInputPair":
+        prepped_complex = PreppedComplex.from_complex(compound_structure_pair.complex)
+        return cls(complex=prepped_complex, ligand=compound_structure_pair.ligand)
+
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        return [self.complex.target.to_oedu()]
+
+
+class DockingInputMultiStructure(MultiStructureBase):
+    """
+    Schema for one ligand to many possible reference structures.
+    """
+
+    ligand: Ligand = Field(description="Ligand schema object")
+    complexes: list[PreppedComplex] = Field(description="List of reference structures")
+
+    @classmethod
+    def from_pairs(
+        cls, pair_list: list[DockingInputPair]
+    ) -> list["DockingInputMultiStructure"]:
+        return cls._from_pairs(pair_list)
+
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        return [protein_complex.target.to_oedu() for protein_complex in self.complexes]
+
+
+class DockingBase(BaseModel):
+    """
+    Base class for running docking
+    """
+
+    type: Literal["DockingBase"] = "DockingBase"
+
+    @abc.abstractmethod
+    def _dock(
+        self, inputs: list[DockingInputPair], output_dir: Union[str, Path]
+    ) -> list["DockingResult"]:
+        ...
+
+    def dock(
+        self,
+        inputs: list[DockingInputPair],
+        output_dir: Optional[Union[str, Path]] = None,
+        use_dask: bool = False,
+        dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
+        return_for_disk_backend: bool = False,
+    ) -> list["DockingResult"]:
+        """
+        Run docking on a list of DockingInputPairs
+
+        Parameters
+        ----------
+        inputs : list[DockingInputPair]
+            List of DockingInputPairs
+        output_dir : Optional[Union[str, Path]], optional
+            Output directory, to write docking results to, by default None
+            means no output files are written
+        use_dask : bool, optional
+            Whether to use dask, by default False
+        dask_client : dask.distributed.Client, optional
+            Dask client to use, by default None
+        dask_failure_mode : DaskFailureMode, optional
+
+        Returns
+        -------
+        Union[list[DockingResult], list[Path]]]
+            List of DockingResults or paths to DockingResult json files
+        """
+        # make output dir if it doesn't exist
+        if output_dir is not None:
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        if use_dask:
+            delayed_outputs = []
+            for inp in inputs:
+                out = dask.delayed(self._dock)(
+                    inputs=[inp],
+                    output_dir=output_dir,
+                    return_for_disk_backend=return_for_disk_backend,
+                )
+                delayed_outputs.append(out[0])  # flatten
+            outputs = actualise_dask_delayed_iterable(
+                delayed_outputs, dask_client=dask_client, errors=dask_failure_mode
+            )
+        else:
+            outputs = self._dock(
+                inputs=inputs,
+                output_dir=output_dir,
+                return_for_disk_backend=return_for_disk_backend,
+            )
+        # filter out None values
+        outputs = [o for o in outputs if o is not None]
+        return outputs
+
+    @staticmethod
+    def write_docking_files(
+        docking_results: list["DockingResult"], output_dir: Union[str, Path]
+    ):
+        """
+        Write docking results to files in output_dir
+
+        Parameters
+        ----------
+        docking_results : list[DockingResult]
+            List of DockingResults
+        output_dir : Union[str, Path]
+            Output directory
+
+        Raises
+        ------
+        """
+        output_dir = Path(output_dir)
+
+        # write out the docked poses and info
+        for result in docking_results:
+            result.write_docking_files(output_dir)
+
+    @abc.abstractmethod
+    def provenance(self) -> dict[str, str]:
+        ...
+
+
+class DockingResult(BaseModel):
+    """
+    Schema for a DockingResult, containing both a DockingInputPair used as input to the workflow
+    and a Ligand object containing the docked pose.
+    Also contains the probability of the docked pose if applicable.
+
+    Parameters
+    ----------
+    input_pair : DockingInputPair
+        Input pair
+    posed_ligand : Ligand
+        Posed ligand
+    probability : float, optional
+        Probability of the docked pose, by default None
+    provenance : dict[str, str]
+        Provenance information
+
+    """
+
+    type: Literal["DockingResult"] = "DockingResult"
+    input_pair: DockingInputPair = Field(description="Input pair")
+    posed_ligand: Ligand = Field(description="Posed ligand")
+    probability: Optional[PositiveFloat] = Field(
+        description="Probability"
+    )  # not easy to get the probability from rescoring
+    provenance: dict[str, str] = Field(description="Provenance")
+
+    def to_json_file(self, file: str | Path):
+        with open(file, "w") as f:
+            f.write(self.json(indent=2))
+
+    @classmethod
+    def from_json_file(cls, file: str | Path) -> "DockingResult":
+        with open(file) as f:
+            return cls.parse_raw(f.read())
+
+    def get_output(self) -> dict:
+        """
+        return a dictionary of some of the fields of the DockingResult
+        """
+        dct = self.dict()
+        dct.pop("input_pair")
+        dct.pop("posed_ligand")
+        dct.pop("type")
+        return dct
+
+    def to_posed_oemol(self) -> oechem.OEMol:
+        """
+        Combine the original target and posed ligand into a single oemol
+
+        Returns
+        -------
+        oechem.OEMol
+            Combined oemol
+        """
+        return combine_protein_ligand(self.to_protein(), self.posed_ligand.to_oemol())
+
+    def to_protein(self) -> oechem.OEMol:
+        """
+        Return the protein from the original target
+
+        Returns
+        -------
+        oechem.OEMol
+            Protein oemol
+        """
+        _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
+        return prot
+
+    @property
+    def unique_name(self):
+        return self.input_pair.unique_name
+
+    @staticmethod
+    def make_df_from_docking_results(results: list["DockingResult"]):
+        """
+        Make a dataframe from a list of DockingResults
+
+        Parameters
+        ----------
+        results : list[DockingResult]
+            List of DockingResults
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe of DockingResults
+        """
+        import pandas as pd
+
+        return pd.DataFrame([r.get_output() for r in results])
+
+    def write_docking_files(self, output_dir: Union[str, Path]):
+        """
+        Write docking files to output_dir
+
+        Parameters
+        ----------
+        output_dir : Union[str, Path]
+            Output directory
+        """
+        self._write_docking_files(self, output_dir)
+
+    @staticmethod
+    def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
+        output_dir = Path(output_dir)
+        output_pref = result.unique_name
+        compound_dir = output_dir / output_pref
+        compound_dir.mkdir(parents=True, exist_ok=True)
+        output_sdf_file = compound_dir / "docked.sdf"
+        output_pdb_file = compound_dir / "docked_complex.pdb"
+        output_json_file = compound_dir / "docking_result.json"
+        result.posed_ligand.to_sdf(output_sdf_file)
+        combined_oemol = result.to_posed_oemol()
+        save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.to_json_file(output_json_file)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, DockingResult):
+            raise NotImplementedError
+
+        # Just check that both Complexs and Ligands are the same
+        return (
+            (self.input_pair == other.input_pair)
+            and (self.posed_ligand == other.posed_ligand)
+            and (np.isclose(self.probability, other.probability))
+        )
+
+    def __neq__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+
+def write_results_to_multi_sdf(
+    sdf_file: Union[str, Path],
+    results: Union[list[DockingResult], list[Path]],
+    backend=BackendType.IN_MEMORY,
+    reconstruct_cls=None,
 ):
     """
-    Run docking using OpenEye. The returned OEGraphMol object will have the
-    following SD tags set:
-    * Docking_<docking_id>_RMSD: RMSD score to original molecule
-    * Docking_<docking_id>_POSIT: POSIT probability
-    * Docking_<docking_id>_POSIT_method: POSIT method used in docking
-    * Docking_<docking_id>_Chemgauss4: Chemgauss4 score
-    * Docking_<docking_id>_clash: clash results
+    Write a list of DockingResults to a single sdf file
+    Can accept either a list of DockingResults or a list of paths to DockingResult json files
+    depending on the backend used
 
     Parameters
     ----------
-    du : oechem.OEDesignUnit
-        DesignUnit receptor to dock to
-    orig_mol : oechem.OEMol
-        Mol object to dock
-    dock_sys : str
-        Which docking system to use ["posit", "hybrid"]
-    relax : str, default="none"
-        When to check for relaxation ["clash", "all", "none"]
-    posit_method : bool, default=False
-        Set POSIT method to use one of the POSIT_METHODS
-    log_name : str, optional
-        Name of high-level logger to use
-    compound_name : str, optional
-        Compound name, used for error messages if given
-    use_omega : bool, default=False
-        Use OEOmega to manually generate conformations
-    num_poses : int, default=1
-        Number of poses to return from docking (only relevant for POSIT)
-    openeye_logname : str, optional
-        Name of OpenEye log file to use
-    allow_low_posit_prob : bool, optional
-        Allow poses with low POSIT probability if no other poses found, by default False
-    low_posit_prob_thresh : float, optional
-        Threshold for POSIT probability if allow_low_posit_prob=True, by default 0.1
-    allow_final_clash : bool, optional
-        Allow clashes in last ditch attempt to get poses, by default False
-    Returns
-    -------
-    bool
-        If docking succeeded
-    oechem.OEMol
-        Molecule with each pose as a different conformation
-        (each with set SD tags)
-    str
-        Generated docking_id, used to access SD tag data
+    results : Union[list[DockingResult], list[Path]]
+        List of DockingResults or paths to DockingResult json files
+    backend : BackendType, optional
+        Backend to use, by default BackendType.IN_MEMORY
+    reconstruct_cls : Optional[DockingResult], optional
+        DockingResult class to use for disk backend, by default None
+
+    Raises
+    ------
+    ValueError
+        If backend is disk and no reconstruct_cls is provided
     """
-    import sys
+    if backend == BackendType.DISK and not reconstruct_cls:
+        raise ValueError("Must provide reconstruct_cls if using disk backend")
 
-    if compound_name:
-        logname = f"{log_name}.{compound_name}"
-    else:
-        logname = log_name
-    logger = logging.getLogger(logname)
-
-    if not logger.hasHandlers():
-        logger.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(asctime)s | %(name)s | %(levelname)s | %(filename)s | %(funcName)s | %(message)s"
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.warning(f"No logfile with name '{logname}' exists, using stdout instead")
-    logger.info(f"Running docking for {compound_name}")
-
-    # Make copy so we can keep the original for RMSD purposes
-    orig_mol = orig_mol.CreateCopy()
-
-    # Convert to OEMol for docking purposes
-    dock_lig = oechem.OEMol(orig_mol.CreateCopy())
-
-    # Perform OMEGA sampling
-    if use_omega:
-        from asapdiscovery.data.openeye import oeomega
-
-        if omega_dense:
-            omegaOpts = oeomega.OEOmegaOptions(oeomega.OEOmegaSampling_Dense)
+    for res in results:
+        if backend == BackendType.IN_MEMORY:
+            lig = res.posed_ligand
+        elif backend == BackendType.DISK:
+            lig = reconstruct_cls.from_json_file(res).posed_ligand
         else:
-            omegaOpts = oeomega.OEOmegaOptions()
-        omega = oeomega.OEOmega(omegaOpts)
-        ret_code = omega.Build(dock_lig)
-        if ret_code:
-            logger.error(f"Omega failed with error {oeomega.OEGetOmegaError(ret_code)}")
+            raise ValueError(f"Unknown backend type {backend}")
 
-    # Set docking string id (for SD tags)
-    docking_id = [dock_sys]
-
-    # Keep track of if there's a clash (-1 if not using POSIT, 0 if no clash,
-    #  1 if there was a clash that couldn't be resolved)
-    clash = -1
-
-    # Get ligand to dock
-    if dock_sys == "posit":
-        # Set up POSIT docking options
-        opts = oedocking.OEPositOptions()
-        # kinoml has the below option set, but the accompanying comment implies
-        #  that we should be ignoring N stereochemistry, which, paradoxically,
-        #  corresponds to a False option (the default)
-        opts.SetIgnoreNitrogenStereo(True)
-        # Set the POSIT methods to only be hybrid (otherwise leave as default
-        #  of all)
-        if posit_method not in POSIT_METHODS:
-            raise ValueError(
-                f"Unknown POSIT method {posit_method}. Must be one of {POSIT_METHODS}"
-            )
-        else:
-            method = posit_method_ints._asdict()[posit_method]
-            opts.SetPositMethods(method)
-            docking_id.append(posit_method)
-
-        # Set up pose relaxation
-        if relax == "clash":
-            clash = 0
-            opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_CLASHED)
-        elif relax == "all":
-            clash = 0
-            opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-        elif relax != "none":
-            # Don't need to do anything for none bc that's already the default
-            raise ValueError(f'Unknown arg for relaxation "{relax}"')
-        docking_id.append(relax)
-
-        if compound_name:
-            logger.info(
-                f"Running POSIT method '{posit_method}' docking with "
-                f"{relax} relaxation for {compound_name}"
-            )
-
-        # Set up poser object
-        poser = oedocking.OEPosit(opts)
-        if not poser.AddReceptor(du):
-            logger.critical("Failed to add receptor to POSIT object")
-            raise RuntimeError("Failed to add receptor to POSIT object")
-
-        # Run posing
-        pose_res = oedocking.OEPositResults()
-        try:
-            ret_code = poser.Dock(pose_res, dock_lig, num_poses)
-        except TypeError as e:
-            logger.error(pose_res, dock_lig, type(dock_lig))
-            raise e
-    elif dock_sys == "hybrid":
-        if compound_name:
-            logger.info(f"Running Hybrid docking for {compound_name}")
-
-        # Set up poser object
-        poser = oedocking.OEHybrid()
-
-        # Ensure poser is initialized
-        if not poser.Initialize(du):
-            logger.critical("Failed to add receptor to HYBRID object")
-            raise RuntimeError("Failed to add receptor to HYBRID object")
-
-        # Run posing
-        posed_mol = oechem.OEMol()
-        ret_code = poser.DockMultiConformerMolecule(posed_mol, dock_lig)
-
-        # Place in list to match output
-        posed_mols = [posed_mol]
-
-        posit_probs = [-1.0]
-        posit_methods = ["NA"]
-    else:
-        raise ValueError(f'Unknown docking system "{dock_sys}"')
-
-    if ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
-        # For POSIT with clash removal, if no non-clashing pose can be found,
-        #  re-run with no clash removal
-        opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
-        clash = 1
-
-        if compound_name:
-            logger.info(
-                f"Re-running POSIT with method '{posit_method}' docking with no relaxation for {compound_name}",
-            )
-
-        # Set up poser object
-        poser = oedocking.OEPosit(opts)
-        poser.AddReceptor(du)
-
-        # Run posing
-        pose_res = oedocking.OEPositResults()
-        ret_code = poser.Dock(pose_res, dock_lig, num_poses)
-
-    if allow_low_posit_prob and (
-        ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-    ):
-        # try again reducing acceptable posit probability
-        # these poses will be pretty bad
-        opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-        opts.SetMinProbability(low_posit_prob_thresh)
-
-        if compound_name:
-            logger.info(
-                f"Re-running POSIT with method '{posit_method}' docking with all relaxation for {compound_name} and min probability {low_posit_prob_thresh}",
-            )
-
-        # Set up poser object
-        poser = oedocking.OEPosit(opts)
-        poser.AddReceptor(du)
-
-        # Run posing
-        pose_res = oedocking.OEPositResults()
-        ret_code = poser.Dock(pose_res, dock_lig, num_poses)
-
-    if allow_final_clash and (
-        ret_code == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-    ):
-        # try one final time allowing clashes
-        opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
-        if compound_name:
-            logger.info(
-                f"Re-running POSIT with method '{posit_method}' docking with all relaxation for {compound_name} allowing clashes",
-            )
-        # Set up poser object
-        poser = oedocking.OEPosit(opts)
-        poser.AddReceptor(du)
-
-        # Run posing
-        pose_res = oedocking.OEPositResults()
-        ret_code = poser.Dock(pose_res, dock_lig, num_poses)
-
-    # Check results
-    if ret_code == oedocking.OEDockingReturnCode_Success and dock_sys == "posit":
-        posed_mols = []
-        posit_probs = []
-        posit_methods = []
-        for single_res in pose_res.GetSinglePoseResults():
-            posed_mols.append(single_res.GetPose())
-            posit_probs.append(single_res.GetProbability())
-            posit_methods.append(
-                oedocking.OEPositMethodGetName(single_res.GetPositMethod())
-            )
-    else:
-        err_type = oedocking.OEDockingReturnCodeGetName(ret_code)
-        if compound_name:
-            logger.error(
-                f"Pose generation failed for {compound_name} ({err_type})",
-            )
-        return False, None, None
-
-    # Set docking_id key for SD tags
-    docking_id = "_".join(docking_id)
-
-    for i, (mol, prob, method) in enumerate(
-        zip(posed_mols, posit_probs, posit_methods)
-    ):
-        # Get the Chemgauss4 score (adapted from kinoml)
-        pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
-        pose_scorer.Initialize(du)
-        chemgauss_score = pose_scorer.ScoreLigand(mol)
-
-        # Calculate RMSD
-        posed_copy = mol.CreateCopy()
-        rmsd = calculate_rmsd_openeye(orig_mol.CreateCopy(), posed_copy)
-
-        # First copy over original SD tags
-        for sd_data in oechem.OEGetSDDataPairs(orig_mol):
-            oechem.OESetSDData(mol, sd_data)
-
-        # Set SD tags for molecule
-        oechem.OESetSDData(mol, f"Docking_{docking_id}_RMSD", str(rmsd))
-        oechem.OESetSDData(mol, f"Docking_{docking_id}_POSIT", str(prob))
-        oechem.OESetSDData(mol, f"Docking_{docking_id}_POSIT_method", method)
-        oechem.OESetSDData(
-            mol, f"Docking_{docking_id}_Chemgauss4", str(chemgauss_score)
-        )
-        oechem.OESetSDData(mol, f"Docking_{docking_id}_clash", str(clash))
-        oechem.OESetSDData(mol, "SMILES", oechem.OEMolToSmiles(mol))
-
-        # Set molecule name if given
-        if compound_name:
-            name = check_name_length_and_truncate(compound_name, logger=logger)
-            mol.SetTitle(name)
-
-    # Combine all the conformations into one
-    combined_mol = oechem.OEMol(posed_mols[0])
-    for mol in posed_mols[1:]:
-        combined_mol.NewConf(mol)
-    assert combined_mol.NumConfs() == len(posed_mols)
-    return True, combined_mol, docking_id
-
-
-def make_docking_result_dataframe(
-    results: list,
-    output_dir: Path,
-    save_csv: bool = True,
-    results_cols: Optional[list[str]] = DockingResultCols.get_columns(),
-    csv_name: Optional[str] = "results.csv",
-) -> tuple[pd.DataFrame, Path]:
-    """
-    Save results to a CSV file
-
-    Parameters
-    ----------
-    results : List
-        List of results from docking
-    output_dir : Path
-        Path to output directory
-    results_cols : Optional[List[str]], optional
-        List of column names for results, by default will use a set of hardcoded column names
-    csv_name : Optional[str], optional
-        Name of CSV file, by default "results.csv"
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame of results
-    Path
-        Path to CSV file
-    """
-    _results_cols = results_cols
-
-    flattened_results_list = [res for res_list in results for res in res_list]
-    results_df = pd.DataFrame(flattened_results_list, columns=_results_cols)
-    if save_csv:
-        csv = output_dir / csv_name
-        results_df.to_csv(csv, index=False)
-    else:
-        csv = None
-    return results_df, csv
-
-
-def check_results(d):
-    """
-    Check if results exist already so we can skip.
-
-    Parameters
-    ----------
-    d : str
-        Directory
-
-    Returns
-    -------
-    bool
-        Results already exist
-    """
-    if (not os.path.isfile(os.path.join(d, "docked.sdf"))) or (
-        not os.path.isfile(os.path.join(d, "results.pkl"))
-    ):
-        return False
-
-    try:
-        _ = load_openeye_sdf(os.path.join(d, "docked.sdf"))
-    except Exception:
-        return False
-
-    try:
-        _ = pkl.load(open(os.path.join(d, "results.pkl"), "rb"))
-    except Exception:
-        return False
-
-    return True
-
-
-def dock_and_score_pose_oe(
-    out_dir,
-    lig_name,
-    du_name,
-    log_name,
-    compound_name,
-    du,
-    *args,
-    GAT_model=None,
-    schnet_model=None,
-    allow_low_posit_prob=False,
-    low_posit_prob_thresh=0.1,
-    allow_final_clash=False,
-    **kwargs,
-):
-    """
-    Wrapper function for multiprocessing. Everything other than the named args
-    will be passed directly to run_docking_oe.
-
-    Parameters
-    ----------
-    out_dir : str
-        Output file
-    lig_name : str
-        Ligand name
-    du_name : str
-        DesignUnit name
-    log_name : str
-        High-level logger name
-    compound_name : str
-        Compound name, used for error messages if given
-    GAT_model : GATInference, optional
-        GAT model to use for inference. If None, will not perform inference.
-    schnet_model : SchNetInference, optional
-        SchNet model to use for inference. If None, will not perform inference.
-    allow_low_posit_prob : bool, optional
-        Allow poses with low POSIT probability if no other poses found, by default False
-    low_posit_prob_thresh : float, optional
-        Threshold for POSIT probability if allow_low_posit_prob=True, by default 0.1
-    allow_final_clash : bool, optional
-        Allow clashes in last ditch attempt to get poses, by default False
-
-    Returns
-    -------
-    """
-    logname = f"{log_name}.{compound_name}"
-
-    before = datetime.now().isoformat()
-    if check_results(out_dir):
-        logger = FileLogger(logname, path=str(out_dir)).getLogger()
-        logger.info(f"Found results for {compound_name}")
-        after = datetime.now().isoformat()
-        results = pkl.load(open(os.path.join(out_dir, "results.pkl"), "rb"))
-        logger.info(f"Start: {before}, End: {after}")
-        return results
-    else:
-        os.makedirs(out_dir, exist_ok=True)
-        logger = FileLogger(logname, path=str(out_dir)).getLogger()
-        logger.info(f"No results for {compound_name} found, running docking")
-        openeye_logname = os.path.join(out_dir, f"openeye_{logname}-log.txt")
-    if not allow_low_posit_prob:
-        logger.info("Ignoring low_posit_prob_thresh")
-    success, posed_mol, docking_id = run_docking_oe(
-        du,
-        *args,
-        log_name=log_name,
-        openeye_logname=openeye_logname,
-        allow_low_posit_prob=allow_low_posit_prob,
-        low_posit_prob_thresh=low_posit_prob_thresh,
-        allow_final_clash=allow_final_clash,
-        **kwargs,
-    )
-    if success:
-        out_fn = os.path.join(out_dir, "docked.sdf")
-        save_openeye_sdf(posed_mol, out_fn)
-
-        rmsds = []
-        posit_probs = []
-        posit_methods = []
-        chemgauss_scores = []
-        schnet_scores = []
-
-        # grab the du passed in and split it
-        lig, prot, complex = split_openeye_design_unit(du.CreateCopy())
-
-        for conf in posed_mol.GetConfs():
-            rmsds.append(float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_RMSD")))
-            posit_probs.append(
-                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT"))
-            )
-            posit_methods.append(
-                oechem.OEGetSDData(conf, f"Docking_{docking_id}_POSIT_method")
-            )
-            chemgauss_scores.append(
-                float(oechem.OEGetSDData(conf, f"Docking_{docking_id}_Chemgauss4"))
-            )
-            if schnet_model is not None:
-                combined = combine_protein_ligand(prot, conf)
-                schnet_score = schnet_model.predict_from_oemol(combined)
-                schnet_scores.append(schnet_score)
-            else:
-                schnet_scores.append(np.nan)
-
-        smiles = oechem.OEGetSDData(conf, "SMILES")
-        clash = int(oechem.OEGetSDData(conf, f"Docking_{docking_id}_clash"))
-        if GAT_model is not None:
-            GAT_score = GAT_model.predict_from_smiles(smiles)
-        else:
-            GAT_score = np.nan
-
-    else:
-        out_fn = ""
-        rmsds = [-1.0]
-        posit_probs = [-1.0]
-        posit_methods = [""]
-        chemgauss_scores = [-1.0]
-        clash = -1
-        smiles = "None"
-        GAT_score = np.nan
-        schnet_scores = [np.nan]
-
-    results = [
-        (
-            lig_name,
-            du_name,
-            out_fn,
-            i,
-            rmsd,
-            prob,
-            method,
-            chemgauss,
-            clash,
-            smiles,
-            GAT_score,
-            schnet,
-        )
-        for i, (rmsd, prob, method, chemgauss, schnet) in enumerate(
-            zip(rmsds, posit_probs, posit_methods, chemgauss_scores, schnet_scores)
-        )
-    ]
-
-    pkl.dump(results, open(os.path.join(out_dir, "results.pkl"), "wb"))
-    after = datetime.now().isoformat()
-    logger.info(f"Start: {before}, End: {after}")
-    return results
+        lig.to_sdf(sdf_file, allow_append=True)
