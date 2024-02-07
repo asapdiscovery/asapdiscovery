@@ -63,7 +63,6 @@ class MetaLigandFactory(BaseModel):
         else:
             # load from file
             logger.info(f"Loading ligands from file: {self.ligand_file}")
-            molfile = MolFileFactory.from_file(self.ligand_file)
-            query_ligands = molfile.ligands
-
+            molfile = MolFileFactory(filename=self.ligand_file)
+            query_ligands = molfile.load()
         return query_ligands
