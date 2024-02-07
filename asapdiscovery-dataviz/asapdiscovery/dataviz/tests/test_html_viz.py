@@ -1,5 +1,6 @@
 import pytest
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_sdf
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 
 
@@ -12,6 +13,19 @@ def test_html_viz_subpockets(pose, protein, target, tmp_path):
         output_paths=[tmp_path / "html_viz.html"],
         target=target,
         protein=protein,
+    )
+    html_visualizer.write_pose_visualizations()
+
+
+# test the OEMol code path
+def test_html_viz_subpockets_oemol(pose, protein, tmp_path):
+    pose_mol = load_openeye_sdf(pose)
+    protein_mol = load_openeye_pdb(protein)
+    html_visualizer = HTMLVisualizer(
+        poses=[pose_mol],
+        output_paths=[tmp_path / "html_viz.html"],
+        target="SARS-CoV-2-Mpro",
+        protein=protein_mol,
     )
     html_visualizer.write_pose_visualizations()
 

@@ -112,7 +112,7 @@ class HTMLVisualizer:
         for pose, path in zip(poses, output_paths):
             if pose:
                 if isinstance(pose, oechem.OEMolBase):
-                    mol = pose.CreateCopy()
+                    mol = [pose.CreateCopy()]
                 else:
                     mol_fact = MolFileFactory(
                         filename=str(pose)
