@@ -6,7 +6,7 @@ import shutil
 
 import pytest
 from asapdiscovery.data.services.fragalysis.fragalysis_download import API_CALL_BASE, download, parse_fragalysis
-from asapdiscovery.data.schema import CrystalCompoundData
+from asapdiscovery.data.schema.legacy import CrystalCompoundData
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 

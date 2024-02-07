@@ -6,6 +6,7 @@ from asapdiscovery.data.backend.openeye import (
     oechem,
     oedocking,
     oespruce,
+    oegrid,
     openeye_perceive_residues,
 )
 from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
@@ -119,7 +120,6 @@ def spruce_protein(
         a string of the error message if sprucing failed
         the prepared protein structure.
     """
-    from asapdiscovery.data.openeye import openeye_perceive_residues
 
     # Add Hs to prep protein and ligand
     oechem.OEAddExplicitHydrogens(initial_prot)
@@ -146,7 +146,6 @@ def spruce_protein(
     spruce = oespruce.OESpruceFilter(spruce_opts, opts)
 
     # Spruce!
-    from asapdiscovery.data.openeye import oegrid
 
     # These objects is for some reason needed in order to run spruce
     grid = oegrid.OESkewGrid()

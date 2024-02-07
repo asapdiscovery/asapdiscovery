@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from zipfile import ZipFile
+from asapdiscovery.data.schema.legacy import CrystalCompoundData
 
 import requests
 
@@ -99,7 +100,6 @@ def parse_xtal(x_fn, x_dir, p_only=True):
     """
     import pandas
 
-    from .schema import CrystalCompoundData
 
     df = pandas.read_csv(x_fn)
 
@@ -172,8 +172,6 @@ def parse_fragalysis(
     """
     import pandas
     from tqdm import tqdm
-
-    from .schema import CrystalCompoundData
 
     x_dir = Path(x_dir)
 
