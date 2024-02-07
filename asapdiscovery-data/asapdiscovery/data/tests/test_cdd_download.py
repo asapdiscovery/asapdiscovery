@@ -16,7 +16,8 @@ from asapdiscovery.data.services.cdd.cdd_download import (
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.data.util.utils import filter_molecules_dataframe
-from asapdiscovery.data.utils import parse_fluorescence_data_cdd
+from asapdiscovery.data.util.utils import parse_fluorescence_data_cdd
+import pandas
 from numpy.testing import assert_allclose
 
 # Columns added by filter_molecules_dataframe
