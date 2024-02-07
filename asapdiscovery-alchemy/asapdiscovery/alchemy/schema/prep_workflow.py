@@ -85,7 +85,7 @@ class AlchemyDataSet(_AlchemyPrepBase):
         ----------
         filename: The name of the SDF the ligands should be saved to.
         """
-        from asapdiscovery.data.openeye import save_openeye_sdfs
+        from asapdiscovery.data.backend.openeye import save_openeye_sdfs
 
         oemols = [ligand.to_oemol() for ligand in self.posed_ligands]
         save_openeye_sdfs(oemols, filename)
