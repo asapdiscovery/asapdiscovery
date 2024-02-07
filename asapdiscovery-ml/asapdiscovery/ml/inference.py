@@ -180,11 +180,8 @@ class InferenceBase(BaseModel):
         except AttributeError:
             config_kwargs = {}
 
-        if (
-            ("model_weights" in config_kwargs)
-            and (config_kwargs["model_weights"] is None)
-            and local_model_spec.weights_file
-        ):
+        existing_model_weights = config_kwargs.get("model_weights", None)
+        if (existing_model_weights is None) and local_model_spec.weights_file:
             config_kwargs["model_weights"] = torch.load(
                 local_model_spec.weights_file, map_location=device
             )
