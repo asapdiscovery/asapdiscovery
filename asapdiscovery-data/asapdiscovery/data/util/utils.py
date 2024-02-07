@@ -10,10 +10,7 @@ import pandas
 import pydantic
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
-from asapdiscovery.data.schema.legacy import (
-    EnantiomerPair,
-    EnantiomerPairList,
-)
+from asapdiscovery.data.schema.legacy import EnantiomerPair, EnantiomerPairList
 
 # Not sure if this is the right place for these
 # Regex patterns for extracting Mpro dataset ID and Moonshot CDD style compound ID
