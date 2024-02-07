@@ -518,7 +518,6 @@ class HTMLVisualizer:
         Write HTML visualisations for all poses.
         """
         output_paths = []
-        print(self.poses)
         for pose, path in zip(self.poses, self.output_paths):
             if not path.parent.exists():
                 path.parent.mkdir(parents=True, exist_ok=True)
