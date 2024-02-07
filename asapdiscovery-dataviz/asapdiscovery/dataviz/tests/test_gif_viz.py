@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 
 
