@@ -180,18 +180,19 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         postera_molset_name=inputs.postera_molset_name,
         ligand_file=inputs.ligands,
     )
-    query_ligands = ligand_factory.load()
+    query_ligands = ligand_factory.load(use_dask=inputs.use_dask,
+        dask_failure_mode=inputs.dask_failure_mode,
+        dask_client=dask_client)
 
     # read structures
     structure_factory = MetaStructureFactory(
         structure_dir=inputs.structure_dir,
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
-        use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
-        dask_client=dask_client,
     )
-    complexes = structure_factory.load()
+    complexes = structure_factory.load(use_dask=inputs.use_dask,
+        dask_failure_mode=inputs.dask_failure_mode,
+        dask_client=dask_client)
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
@@ -296,15 +297,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
 
-<<<<<<< HEAD
-    # load ml scorers specified on command line
-=======
     if target_has_fitness_data(inputs.target):
         logger.info("Target has fitness data, adding FINT scorer")
         scorers.append(FINTScorer(target=inputs.target))
 
     # load ml scorers
->>>>>>> upstream/main
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
             logger.info(f"Loading ml scorer: {ml_scorer}")
@@ -515,17 +512,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         # push the results to PostEra, making a new molecule set if necessary
-<<<<<<< HEAD
-        # TODO remove unnessecary sort_col arg see issue #704
-        posit_score_tag = map_output_col_to_manifold_tag(
-            DockingResultCols, inputs.target
-        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
-        result_df, molset_name, made_new_molset = postera_uploader.push(
-            result_df, sort_column=posit_score_tag, sort_ascending=True
-        )
-=======
         result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
->>>>>>> upstream/main
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")
