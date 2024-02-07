@@ -1,6 +1,6 @@
 import click
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, DaskFailureMode
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 

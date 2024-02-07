@@ -7,13 +7,10 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas
-import pkg_resources
 import pydantic
-import rdkit.Chem as Chem
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.data.schema.legacy import (
-    CrystalCompoundData,
     EnantiomerPair,
     EnantiomerPairList,
 )
