@@ -1,7 +1,7 @@
 import os
 import traceback
-
 from unittest import mock
+
 import pytest
 from asapdiscovery.docking.cli import docking as cli
 from asapdiscovery.docking.docking import DockingResult
