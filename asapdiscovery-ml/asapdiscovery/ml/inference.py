@@ -5,7 +5,7 @@ import dgl
 import mtenn
 import numpy as np
 import torch
-from asapdiscovery.data.backend.openeye import oechem
+from asapdiscovery.data.backend.openeye import oechem, oemol_to_pdb_string
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
@@ -346,7 +346,6 @@ class StructuralInference(InferenceBase):
         """
         from io import StringIO
 
-        from asapdiscovery.data.openeye import oechem, oemol_to_pdb_string
 
         if isinstance(pose, oechem.OEMolBase):
             pose = [pose]
