@@ -180,9 +180,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         postera_molset_name=inputs.postera_molset_name,
         ligand_file=inputs.ligands,
     )
-    query_ligands = ligand_factory.load(use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
-        dask_client=dask_client)
+    query_ligands = ligand_factory.load()
 
     # read structures
     structure_factory = MetaStructureFactory(

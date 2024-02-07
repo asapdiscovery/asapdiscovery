@@ -330,7 +330,7 @@ def dask_cluster_from_type(
     gpu: GPU = GPU.GTX1080TI,
     cpu: CPU = CPU.LT,
     local_threads_per_worker: int = 1,
-    loglevel: Union[str, int] = logging.DEBUG,
+    loglevel: Union[str, int] = logging.INFO,
     walltime: str = "72h",
 ):
     """
@@ -408,6 +408,8 @@ def dask_cluster_from_type(
 
 def make_dask_client_meta(
     dask_type: DaskType,
+    loglevel: Union[str, int] = logging.INFO,
+    walltime: str = "72h",
     adaptive_min_workers: int = 10,
     adaptive_max_workers: int = 200,
     adaptive_wait_count: int = 10,
@@ -415,7 +417,7 @@ def make_dask_client_meta(
 ):
     logger.info(f"Using dask for parallelism of type: {dask_type}")
     set_dask_config()
-    dask_cluster = dask_cluster_from_type(dask_type)
+    dask_cluster = dask_cluster_from_type(dask_type, loglevel=loglevel, walltime=walltime)
     if dask_type.is_lilac():
         logger.info("Lilac HPC config selected, setting adaptive scaling")
         dask_cluster.adapt(
@@ -430,7 +432,7 @@ def make_dask_client_meta(
         dask_cluster.scale(adaptive_min_workers)
 
     dask_client = Client(dask_cluster)
-    # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
+    dask_client.forward_logging(level=loglevel)
     logger.info(f"Using dask client: {dask_client}")
     logger.info(f"Using dask cluster: {dask_cluster}")
     logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
