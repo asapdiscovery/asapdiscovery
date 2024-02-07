@@ -1,6 +1,6 @@
 import pytest
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.openeye import load_openeye_pdb, load_openeye_sdf
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 
 
