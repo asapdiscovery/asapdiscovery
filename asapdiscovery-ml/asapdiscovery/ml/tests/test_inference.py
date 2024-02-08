@@ -2,6 +2,7 @@ import asapdiscovery.ml
 import mtenn
 import numpy as np
 import pytest
+import torch
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.inference import GATInference, SchnetInference
 from numpy.testing import assert_allclose
@@ -30,6 +31,23 @@ def test_gatinference_construct_from_name(
     )
     assert inference_cls is not None
     assert inference_cls.local_model_spec.local_dir == tmp_path
+
+
+def test_gatinference_weights(tmp_path):
+    inference_cls = GATInference.from_model_name(
+        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06", local_dir=tmp_path
+    )
+    wts_file_params = torch.load(
+        inference_cls.local_model_spec.weights_file,
+        map_location=inference_cls.device,
+    )
+
+    param_mismatches = []
+    for k, model_param in inference_cls.model.named_parameters():
+        if not torch.allclose(model_param, wts_file_params[k]):
+            param_mismatches.append(k)
+
+    assert len(param_mismatches) == 0, param_mismatches
 
 
 def test_gatinference_predict(test_data):
@@ -130,6 +148,23 @@ def test_schnet_inference_construct():
     assert inference_cls is not None
     assert inference_cls.model_type == "schnet"
     assert type(inference_cls.model.readout) is mtenn.readout.PIC50Readout
+
+
+def test_schnet_inference_weights(tmp_path):
+    inference_cls = SchnetInference.from_model_name(
+        "asapdiscovery-SARS-CoV-2-Mpro-schnet-2024.02.05", local_dir=tmp_path
+    )
+    wts_file_params = torch.load(
+        inference_cls.local_model_spec.weights_file,
+        map_location=inference_cls.device,
+    )
+
+    param_mismatches = []
+    for k, model_param in inference_cls.model.named_parameters():
+        if not torch.allclose(model_param, wts_file_params[k]):
+            param_mismatches.append(k)
+
+    assert len(param_mismatches) == 0, param_mismatches
 
 
 def test_schnet_inference_predict_from_structure_file(docked_structure_file):
