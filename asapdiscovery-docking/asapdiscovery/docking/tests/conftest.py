@@ -61,12 +61,16 @@ def docking_multi_structure(prepped_complexes, ligand):
 
 @pytest.fixture()
 def results():  # precomputed results
-    return [POSITDockingResults.from_json(fetch_test_file("docking_results.json"))]
+    return [POSITDockingResults.from_json_file(fetch_test_file("docking_results.json"))]
 
 
 @pytest.fixture()
 def results_simple():
-    return [POSITDockingResults.from_json(fetch_test_file("docking_results_simple.json"))]
+    return [
+        POSITDockingResults.from_json_file(
+            fetch_test_file("docking_results_simple.json")
+        )
+    ]
 
 
 @pytest.fixture()
