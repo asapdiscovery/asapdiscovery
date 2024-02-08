@@ -1,3 +1,4 @@
+import os
 import pytest
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
