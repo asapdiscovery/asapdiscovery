@@ -48,6 +48,11 @@ def test_project_support_docking_cli_fragalysis(
     assert click_success(result)
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+@pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
 def test_project_support_docking_cli_structure_directory_dask(
     ligand_file, structure_dir, tmp_path, subcommand
 ):
@@ -75,6 +80,11 @@ def test_project_support_docking_cli_structure_directory_dask(
     assert click_success(result)
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+@pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
 def test_project_support_docking_cli_structure_directory_du_cache_dask(
     ligand_file, structure_dir, du_cache, tmp_path, subcommand
 ):
@@ -105,6 +115,11 @@ def test_project_support_docking_cli_structure_directory_du_cache_dask(
     assert click_success(result)
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+@pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
 def test_project_support_docking_cli_pdb_file_dask(
     ligand_file, pdb_file, tmp_path, subcommand
 ):
