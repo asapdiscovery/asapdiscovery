@@ -350,7 +350,7 @@ class SchnetScorer(MLModelScorer):
                 )
             )
         return results
-    
+
 
 class E3NNScorer(MLModelScorer):
     """

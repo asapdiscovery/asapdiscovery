@@ -1,10 +1,10 @@
 import pytest
 from asapdiscovery.docking.scorer import (
     ChemGauss4Scorer,
+    E3NNScorer,
     GATScorer,
     MetaScorer,
     SchnetScorer,
-    E3NNScorer,
 )
 
 
@@ -43,6 +43,7 @@ def test_schnet_scorer(results_multi, use_dask):
     assert scores[0].score_type == "schnet"
     assert scores[0].score > 0.0
 
+
 @pytest.mark.parametrize("use_dask", [True, False])
 def test_e3nn_scorer(results_multi, use_dask):
     scorer = E3NNScorer.from_latest_by_target("SARS-CoV-2-Mpro")
@@ -50,7 +51,6 @@ def test_e3nn_scorer(results_multi, use_dask):
     assert len(scores) == 2
     assert scores[0].score_type == "e3nn"
     assert scores[0].score > 0.0
-
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
