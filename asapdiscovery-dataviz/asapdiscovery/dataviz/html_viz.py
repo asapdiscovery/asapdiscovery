@@ -112,7 +112,7 @@ class HTMLVisualizer:
         for pose, path in zip(poses, output_paths):
             if pose:
                 if isinstance(pose, oechem.OEMolBase):
-                    mol = pose.CreateCopy()
+                    mol = [pose.CreateCopy()]
                 else:
                     mol_fact = MolFileFactory(
                         filename=str(pose)
@@ -212,6 +212,13 @@ class HTMLVisualizer:
                 complex_aligned,
                 opts,
             )
+
+        else:
+            # just combine into a single molecule
+            _pose = oechem.OEGraphMol()
+            for pos in pose:
+                oechem.OEAddMols(_pose, pos)
+            pose = _pose
 
         oechem.OESuppressHydrogens(
             pose, True, True
