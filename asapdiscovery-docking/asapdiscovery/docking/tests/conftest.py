@@ -66,7 +66,9 @@ def results():  # precomputed results
 
 @pytest.fixture()
 def results_simple():
-    return [POSITDockingResults.from_json(fetch_test_file("docking_results_simple.json"))]
+    return [
+        POSITDockingResults.from_json(fetch_test_file("docking_results_simple.json"))
+    ]
 
 
 @pytest.fixture()
