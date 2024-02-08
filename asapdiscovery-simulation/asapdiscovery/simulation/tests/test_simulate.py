@@ -1,6 +1,7 @@
 import pytest
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 
+
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
