@@ -9,6 +9,7 @@ import torch
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
@@ -319,7 +320,7 @@ class StructuralInference(InferenceBase):
             return output_tensor.cpu().numpy().ravel()
 
     def predict_from_structure_file(
-        self, pose: Union[Path, list[Path]]
+        self, pose: Union[Path, list[Path]], for_e3nn: bool = False
     ) -> Union[np.ndarray, float]:
         """Predict on a list of poses or a single pose.
 
@@ -327,6 +328,9 @@ class StructuralInference(InferenceBase):
         ----------
         pose : Union[Path, List[Path]]
             Path to pose file or list of paths to pose files.
+        for_e3nn : bool, default=False
+            If this prediction is being made for an e3nn model. Need to adjust the
+            dict labels in this case
 
         Returns
         -------
@@ -338,6 +342,10 @@ class StructuralInference(InferenceBase):
             pose = [pose]
 
         pose = [DockedDataset._load_structure(p, None) for p in pose]
+        if for_e3nn:
+            pose = [
+                p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
+            ]
         data = [self.predict(p) for p in pose]
 
         data = np.concatenate(np.asarray(data))
@@ -347,7 +355,7 @@ class StructuralInference(InferenceBase):
         return data
 
     def predict_from_oemol(
-        self, pose: Union[oechem.OEMol, list[oechem.OEMol]]
+        self, pose: Union[oechem.OEMol, list[oechem.OEMol]], for_e3nn: bool = False
     ) -> Union[np.ndarray, float]:
         """
         Predict on a (list of) OEMol objects.
@@ -356,6 +364,9 @@ class StructuralInference(InferenceBase):
         ----------
         pose : Union[oechem.OEMol, list[oechem.OEMol]]
             (List of) OEMol pose(s)
+        for_e3nn : bool, default=False
+            If this prediction is being made for an e3nn model. Need to adjust the
+            dict labels in this case
 
         Returns
         -------
@@ -376,6 +387,10 @@ class StructuralInference(InferenceBase):
             DockedDataset._load_structure(p, ("pose", str(i)))
             for i, p in enumerate(stringio_handles)
         ]
+        if for_e3nn:
+            pose = [
+                p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
+            ]
         # Close all the handles
         for h in stringio_handles:
             h.close()
@@ -403,6 +418,18 @@ class E3nnInference(StructuralInference):
     """
 
     model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
+
+    def predict_from_structure_file(self, pose):
+        """
+        Overload the base class method to pass for_e3nn=True.
+        """
+        return super().predict_from_structure_file(pose, for_e3nn=True)
+
+    def predict_from_oemol(self, pose):
+        """
+        Overload the base class method to pass for_e3nn=True.
+        """
+        return super().predict_from_oemol(pose, for_e3nn=True)
 
 
 _inferences_classes_meta = [
