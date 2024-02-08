@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.docking.scorer_v2 import (
+from asapdiscovery.docking.scorer import (
     ChemGauss4Scorer,
     GATScorer,
     MetaScorer,
@@ -31,6 +31,9 @@ def test_gat_scorer(results_multi, use_dask):
     assert scores[0].score > 0.0
 
 
+@pytest.mark.xfail(
+    reason="Schnet models returning strange values currently see issue #838"
+)
 @pytest.mark.parametrize("use_dask", [True, False])
 def test_schnet_scorer(results_multi, use_dask):
     scorer = SchnetScorer.from_latest_by_target("SARS-CoV-2-Mpro")
