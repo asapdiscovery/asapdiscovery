@@ -1,12 +1,10 @@
-from pathlib import Path
-
 import pytest
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.schema_v2.complex import PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.docking import DockingInputMultiStructure, DockingInputPair
-from asapdiscovery.docking.openeye import POSITDocker
+from asapdiscovery.docking.openeye import POSITDocker, POSITDockingResults
 
 
 @pytest.fixture()
@@ -62,17 +60,13 @@ def docking_multi_structure(prepped_complexes, ligand):
 
 
 @pytest.fixture()
-def results(docking_input_pair):
-    docker = POSITDocker()
-    results = docker.dock([docking_input_pair])
-    return results
+def results():  # precomputed results
+    return [POSITDockingResults.from_json(fetch_test_file("docking_results.json"))]
 
 
 @pytest.fixture()
-def results_simple(docking_input_pair_simple):
-    docker = POSITDocker()
-    results = docker.dock([docking_input_pair_simple])
-    return results
+def results_simple():
+    return [POSITDockingResults.from_json(fetch_test_file("docking_results_simple.json"))]
 
 
 @pytest.fixture()

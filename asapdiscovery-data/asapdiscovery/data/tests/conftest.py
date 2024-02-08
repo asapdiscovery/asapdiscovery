@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
