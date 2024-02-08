@@ -152,7 +152,7 @@ class PreppedComplex(ComplexBase):
             PreppedComplex object
         """
         # use local import here to avoid circular imports
-        from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+        from asapdiscovery.modeling.protein_prep import ProteinPrepper
 
         # overwrite ligand_chain with ligand_chain from complex if it exists
         prep_kwargs.pop("ligand_chain", None)

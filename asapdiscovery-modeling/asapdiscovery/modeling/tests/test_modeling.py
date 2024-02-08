@@ -3,9 +3,15 @@
 # without a local path, output files will not be written
 
 import pytest
-from asapdiscovery.data.openeye import oechem
+from asapdiscovery.data.openeye import load_openeye_pdb, oechem
+from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
+
+
+@pytest.fixture()
+def oemol():
+    return load_openeye_pdb(fetch_test_file("Mpro-P2660_0A_bound.pdb"))
 
 
 # The main use cases for the modeling utils are:
@@ -13,9 +19,7 @@ from asapdiscovery.modeling.schema import MoleculeFilter
 # Getting just the ligand in the active site
 # Getting the protein and ligand in the active site
 # Getting the protein and ligand and water
-@pytest.mark.parametrize("target", ["sars"])
-def test_simple_splitting(target, oemol_dict):
-    oemol = oemol_dict[target]
+def test_simple_splitting(oemol):
     split_mol = split_openeye_mol(oemol, keep_one_lig=False)
     comp_dict = {
         "prot": (None, {"A", "B"}),
@@ -31,23 +35,17 @@ def test_simple_splitting(target, oemol_dict):
         assert {res.GetChainID() for res in oechem.OEGetResidues(comp_mol)} == chains
 
 
-@pytest.mark.parametrize("target", ["sars"])
-def test_simple_splitting_keep_one_lig(target, oemol_dict):
-    oemol = oemol_dict[target]
+def test_simple_splitting_keep_one_lig(oemol):
     lig_mol = split_openeye_mol(oemol)["lig"]
     assert {res.GetChainID() for res in oechem.OEGetResidues(lig_mol)} == {"A"}
 
 
-@pytest.mark.parametrize(
-    ("target", "ligand_chain"),
-    [("sars", "A"), ("sars", "B"), ("mers", "B"), ("mers", "C")],
-)
-def test_ligand_splitting(target, local_path, ligand_chain, oemol_dict):
+@pytest.mark.parametrize("ligand_chain", ["A", "B"])
+def test_ligand_splitting(local_path, ligand_chain, oemol):
     """
     Test splitting when we just care about ligand.
     """
 
-    oemol = oemol_dict[target]
     molfilter = MoleculeFilter(ligand_chain=ligand_chain)
     split_dict = split_openeye_mol(oemol, molfilter)
 
@@ -59,13 +57,11 @@ def test_ligand_splitting(target, local_path, ligand_chain, oemol_dict):
 
 
 @pytest.mark.parametrize("protein_chains", [["A"], ["B"], ["A", "B"]])
-@pytest.mark.parametrize("target", ["sars", "mers"])
-def test_protein_splitting(target, local_path, protein_chains, oemol_dict):
+def test_protein_splitting(local_path, protein_chains, oemol):
     """
     Test splitting when we just care about protein.
     """
 
-    oemol = oemol_dict[target]
     molfilter = MoleculeFilter(protein_chains=protein_chains)
     split_dict = split_openeye_mol(oemol, molfilter)
 
@@ -76,19 +72,13 @@ def test_protein_splitting(target, local_path, protein_chains, oemol_dict):
     assert prot_chains == set(protein_chains)
 
 
-@pytest.mark.parametrize(
-    ("target", "ligand_chain"),
-    [("sars", "A"), ("sars", "B"), ("mers", "B"), ("mers", "C")],
-)
+@pytest.mark.parametrize("ligand_chain", ["A", "B"])
 @pytest.mark.parametrize("protein_chains", [["A"], ["B"], ["A", "B"]])
-def test_prot_and_lig_splitting(
-    target, local_path, protein_chains, ligand_chain, oemol_dict
-):
+def test_prot_and_lig_splitting(local_path, protein_chains, ligand_chain, oemol):
     """
     Test splitting when we care about protein and ligand.
     """
 
-    oemol = oemol_dict[target]
     molfilter = MoleculeFilter(protein_chains=protein_chains, ligand_chain=ligand_chain)
     split_dict = split_openeye_mol(oemol, molfilter)
 

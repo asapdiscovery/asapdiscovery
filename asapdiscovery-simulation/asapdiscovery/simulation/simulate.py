@@ -8,10 +8,13 @@ import dask
 import mdtraj
 import openmm
 import pandas as pd
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    DaskFailureMode,
+    actualise_dask_delayed_iterable,
+)
 from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import save_openeye_pdb
-from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking import DockingResult
 from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
@@ -82,6 +85,7 @@ class SimulatorBase(BaseModel):
         docking_results: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         **kwargs,
     ) -> pd.DataFrame:
         if use_dask:
@@ -90,7 +94,7 @@ class SimulatorBase(BaseModel):
                 out = dask.delayed(self._simulate)(docking_results=[res], **kwargs)
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="skip"
+                delayed_outputs, dask_client, errors=dask_failure_mode
             )
             outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
@@ -117,7 +121,7 @@ _SIMULATOR_TRUNCATE_STEPS = True
 
 class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
-        1, description="Collision rate of the simulation"
+        1, description="Collision rate of the simulation (in 1/ps)"
     )
     openmm_logname: str = Field(
         "openmm_log.tsv", description="Name of the OpenMM log file"
@@ -125,9 +129,15 @@ class VanillaMDSimulator(SimulatorBase):
     openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use"
     )
-    temperature: PositiveFloat = Field(300, description="Temperature of the simulation")
-    pressure: PositiveFloat = Field(1, description="Pressure of the simulation")
-    timestep: PositiveFloat = Field(4, description="Timestep of the simulation")
+    temperature: PositiveFloat = Field(
+        300, description="Temperature of the simulation (in kelvin)"
+    )
+    pressure: PositiveFloat = Field(
+        1, description="Pressure of the simulation (in atm)"
+    )
+    timestep: PositiveFloat = Field(
+        4, description="Timestep of the simulation (in femtoseconds)"
+    )
     equilibration_steps: PositiveInt = Field(
         5000, description="Number of equilibration steps"
     )
@@ -152,7 +162,7 @@ class VanillaMDSimulator(SimulatorBase):
     )
 
     rmsd_restraint_force_constant: PositiveFloat = Field(
-        50, description="Force constant of the RMSD restraint in kcal/mol/A^2"
+        50, description="Force constant of the RMSD restraint (in kcal/mol/A^2)"
     )
 
     truncate_steps: bool = Field(
@@ -234,6 +244,20 @@ class VanillaMDSimulator(SimulatorBase):
                 f"num_steps ({num_steps}) must be a multiple of reporting_interval ({reporting_interval})"
             )
         return values
+
+    @property
+    def n_frames(self) -> int:
+        return self.num_steps // self.reporting_interval
+
+    @property
+    def total_simulation_time(self) -> openmm.unit.quantity.Quantity:
+        return self.num_steps * self.timestep * unit.femtoseconds
+
+    @property
+    def frames_per_ns(self) -> unit.quantity.Quantity:
+        # convert to ns
+        length = (self.total_simulation_time).value_in_unit(unit.nanoseconds)
+        return self.n_frames / length
 
     def _to_openmm_units(self):
         self._temperature = self.temperature * unit.kelvin
