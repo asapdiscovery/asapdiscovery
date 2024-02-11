@@ -354,7 +354,7 @@ class SchnetScorer(MLModelScorer):
 
 class E3NNScorer(MLModelScorer):
     """
-    Scoring using Schnet ML Model
+    Scoring using e3nn ML Model
     """
 
     model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
