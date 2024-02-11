@@ -77,8 +77,7 @@ class SimulatorBase(BaseModel):
     debug: bool = Field(False, description="Debug mode of the simulation")
 
     @abc.abstractmethod
-    def _simulate(self) -> list["SimulationResult"]:
-        ...
+    def _simulate(self) -> list["SimulationResult"]: ...
 
     def simulate(
         self,
@@ -103,8 +102,7 @@ class SimulatorBase(BaseModel):
         return outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
 
 class SimulationResult(BaseModel):
@@ -153,7 +151,7 @@ class VanillaMDSimulator(SimulatorBase):
         description="Atom indices to apply the RMSD restraint to, cannot be used with rmsd_restraint_type",
     )
     rmsd_restraint_type: Optional[str] = Field(
-        "CA",
+        None,
         description="Type of RMSD restraint to apply, must be 'CA' or 'heavy', cannot be used with rmsd_restraint_atom_indices",
     )
 

@@ -1,7 +1,9 @@
 import os
 
 import pytest
+import pydantic
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
+from openmm import unit
 
 
 @pytest.mark.skipif(
@@ -57,7 +59,7 @@ def test_rmsd_restraint_indices(tmp_path):
 
 def test_rmsd_restraint_indices_mutex_type(tmp_path):
     with pytest.raises(ValueError):
-        vs = VanillaMDSimulator(
+        _ = VanillaMDSimulator(
             num_steps=1,
             equilibration_steps=1,
             output_dir=tmp_path,
@@ -66,3 +68,18 @@ def test_rmsd_restraint_indices_mutex_type(tmp_path):
             rmsd_restraint_indices=[1, 2, 3],
             rmsd_restraint_type="CA",
         )
+
+
+def test_properties(tmp_path):
+    vs = VanillaMDSimulator(
+        num_steps=1000,
+        equilibration_steps=1000,
+        reporting_interval=5,
+        output_dir=tmp_path,
+    )
+    assert vs.num_steps == 1000
+    assert vs.equilibration_steps == 1000
+    assert vs.output_dir == tmp_path
+    assert vs.n_frames == 200
+    assert vs.total_simulation_time == unit.Quantity(4000, unit.femtosecond)
+    assert vs.frames_per_ns == 50000.0
