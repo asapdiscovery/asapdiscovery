@@ -1,7 +1,7 @@
 import os
 
-import pytest
 import pydantic
+import pytest
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 from openmm import unit
 
