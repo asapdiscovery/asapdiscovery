@@ -377,6 +377,7 @@ _ml_scorer_classes_meta = [
     MLModelScorer,
     GATScorer,
     SchnetScorer,
+    E3NNScorer,
 ]
 
 
