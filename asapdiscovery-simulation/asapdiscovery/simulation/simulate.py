@@ -191,21 +191,20 @@ class VanillaMDSimulator(SimulatorBase):
         Validate RMSD restraint setup
         """
         rmsd_restraint = values.get("rmsd_restraint")
-        rmsd_restraint_atom_indices = values.get("rmsd_restraint_atom_indices")
+        rmsd_restraint_indices = values.get("rmsd_restraint_indices")
         rmsd_restraint_type = values.get("rmsd_restraint_type")
-
-        if rmsd_restraint_type and rmsd_restraint_atom_indices:
+        if rmsd_restraint_type and rmsd_restraint_indices:
             raise ValueError(
-                "If RMSD restraint type is provided, rmsd_restraint_atom_indices must be empty"
+                "If RMSD restraint type is provided, rmsd_restraint_indices must be empty"
             )
 
         if (
             rmsd_restraint
             and not rmsd_restraint_type
-            and len(rmsd_restraint_atom_indices) == 0
+            and len(rmsd_restraint_indices) == 0
         ):
             raise ValueError(
-                "If RMSD restraint is enabled, and rmsd_restraint_type is not provided rmsd_restraint_atom_indices must be provided"
+                "If RMSD restraint is enabled, and rmsd_restraint_type is not provided rmsd_restraint_indices must be provided"
             )
         return values
 
