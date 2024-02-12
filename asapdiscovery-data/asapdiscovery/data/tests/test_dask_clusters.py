@@ -1,5 +1,6 @@
-import pytest
 import logging
+
+import pytest
 from asapdiscovery.data.dask_utils import (
     DaskCluster,
     DaskType,
