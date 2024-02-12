@@ -1,4 +1,6 @@
 import pytest
+from dask.distributed import Client
+from dask_jobqueue.lsf import LSFCluster
 from asapdiscovery.data.dask_utils import (
     DaskCluster,
     DaskType,
@@ -46,11 +48,10 @@ def test_lilac_cpu_cluster(loglevel):
     cluster = LilacCPUDaskCluster.from_cpu("LT", loglevel=loglevel)
     assert cluster is not None
 
-
 @pytest.mark.parametrize("loglevel", ["DEBUG", 10])
 @pytest.mark.parametrize(
     "type", [DaskType("local"), DaskType("lilac-cpu"), DaskType("lilac-gpu")]
 )
 def test_make_dask_cluster_meta(type, loglevel):
     meta = make_dask_client_meta(type, loglevel=loglevel)
-    assert meta is not None
+    assert isinstance(meta, Client)
