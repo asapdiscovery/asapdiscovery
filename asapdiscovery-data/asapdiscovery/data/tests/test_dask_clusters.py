@@ -1,5 +1,3 @@
-import logging
-
 import pytest
 from asapdiscovery.data.dask_utils import (
     DaskCluster,
@@ -12,7 +10,6 @@ from asapdiscovery.data.dask_utils import (
     make_dask_client_meta,
 )
 from dask.distributed import Client
-from dask_jobqueue.lsf import LSFCluster
 
 
 def test_dask_cluster():
