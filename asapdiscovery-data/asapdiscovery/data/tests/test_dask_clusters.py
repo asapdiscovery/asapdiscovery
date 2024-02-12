@@ -1,4 +1,5 @@
 import pytest
+import logging
 from asapdiscovery.data.dask_utils import (
     DaskCluster,
     DaskType,
@@ -41,11 +42,13 @@ def test_lilac_cpu_config():
 def test_lilac_gpu_cluster(loglevel):
     cluster = LilacGPUDaskCluster.from_gpu("GTX1080TI", loglevel=loglevel)
     assert cluster is not None
+    assert cluster.silence_logs == loglevel
 
 
 @pytest.mark.parametrize("loglevel", ["DEBUG", 10])
 def test_lilac_cpu_cluster(loglevel):
     cluster = LilacCPUDaskCluster.from_cpu("LT", loglevel=loglevel)
+    assert cluster.silence_logs == loglevel
     assert cluster is not None
 
 

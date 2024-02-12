@@ -206,8 +206,8 @@ class DaskCluster(BaseModel):
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
-    silence_logs: Union[str, int] = Field(
-        logging.DEBUG, description="Log level for dask"
+    silence_logs: Union[int, str] = Field(
+        logging.INFO, description="Log level for dask"
     )
 
 
@@ -319,7 +319,7 @@ class LilacCPUDaskCluster(LilacDaskCluster):
     def from_cpu(
         cls,
         cpu: CPU = CPU.LT,
-        loglevel: Union[str, int] = logging.INFO,
+        loglevel: Union[int, str] = logging.INFO,
         walltime: str = "72h",
     ):
         cpu_config = LilacCPUConfig.from_cpu(cpu)
@@ -335,7 +335,7 @@ def dask_cluster_from_type(
     gpu: GPU = GPU.GTX1080TI,
     cpu: CPU = CPU.LT,
     local_threads_per_worker: int = 1,
-    loglevel: Union[str, int] = logging.INFO,
+    loglevel: Union[int, str] = logging.INFO,
     walltime: str = "72h",
 ):
     """
@@ -413,7 +413,7 @@ def dask_cluster_from_type(
 
 def make_dask_client_meta(
     dask_type: DaskType,
-    loglevel: Union[str, int] = logging.INFO,
+    loglevel: Union[int, str] = logging.INFO,
     walltime: str = "72h",
     adaptive_min_workers: int = 10,
     adaptive_max_workers: int = 200,
