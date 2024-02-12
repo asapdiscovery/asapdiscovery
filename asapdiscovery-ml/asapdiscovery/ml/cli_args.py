@@ -789,11 +789,11 @@ def num_nodes(func):
 # order in cli_args need to match order in cli.py
 def visnet_args(func):
     for fn in [
+        num_heads,
         lmax,
         vecnorm_type,
         trainable_vecnorm,
-        num_heads,
-        num_layers,
+        num_layers_visnet,
         hidden_channels,
         num_rbf,
         trainable_rbf,
@@ -810,8 +810,6 @@ def visnet_args(func):
 
     return func
 
-
-# DON'T TRUST ANYTHING HERE!
 def lmax(func):
     return click.option(
         "--lmax",
@@ -836,7 +834,7 @@ def trainable_vecnorm(func):
     )(func)
 
 
-def num_layers(func):
+def num_layers_visnet(func):
     return click.option(
         "--num-layers",
         type=int,
