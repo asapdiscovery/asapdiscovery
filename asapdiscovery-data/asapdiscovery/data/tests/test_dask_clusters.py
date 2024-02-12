@@ -20,7 +20,7 @@ def test_dask_cluster():
 
 def test_lilac_dask_cluster():
     cluster = LilacDaskCluster()
-    assert cluster.use_stdin == True
+    assert cluster.use_stdin
     assert cluster.queue == "cpuqueue"
 
 
