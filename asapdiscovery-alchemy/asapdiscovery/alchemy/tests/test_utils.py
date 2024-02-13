@@ -104,7 +104,7 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     monkeypatch.setattr(client._client, "create_tasks", create_tasks)
     monkeypatch.setattr(client._client, "action_tasks", action_tasks)
 
-    tasks = client.action_network(planned_network=result_network)
+    tasks = client.action_network(planned_network=result_network, prioritize=True)
 
     assert len(tasks) == (result_network.n_repeats + 1) * len(alchem_network.edges)
 
