@@ -1,8 +1,9 @@
-import pandas
-from asapdiscovery.data.web_utils import _BaseWebAPI
-from asapdiscovery.data.services_config import CDDSettings
 import json
 from typing import Optional
+
+import pandas
+from asapdiscovery.data.services_config import CDDSettings
+from asapdiscovery.data.web_utils import _BaseWebAPI
 
 
 class CDDAPI(_BaseWebAPI):
@@ -72,7 +73,9 @@ class CDDAPI(_BaseWebAPI):
         result_data = json.loads(result.content.decode())
         return result_data["objects"]
 
-    def get_readout_row(self, molecule_id: int, protocol: int, types: Optional[list[str]] = None) -> Optional[dict]:
+    def get_readout_row(
+        self, molecule_id: int, protocol: int, types: Optional[list[str]] = None
+    ) -> Optional[dict]:
         """
         Get the readout data for a specific protocol performed on a molecule. This is used to pull the pIC50_Mean.
 
@@ -133,7 +136,7 @@ class CDDAPI(_BaseWebAPI):
             "IC50": None,
             "IC50 CI (Lower)": None,
             "IC50 CI (Upper)": None,
-            "Curve class": None
+            "Curve class": None,
         }
         for readout_def in protocol["readout_definitions"]:
             if (readout_name := readout_def["name"]) in required_data:
@@ -144,12 +147,20 @@ class CDDAPI(_BaseWebAPI):
             return None
 
         # pull down all batch readouts for this protocol and extract the data
-        readout_data = self.get_readout_row(molecule_id=molecule["id"], protocol=protocol["id"], types=["batch_run_aggregate_row"])
+        readout_data = self.get_readout_row(
+            molecule_id=molecule["id"],
+            protocol=protocol["id"],
+            types=["batch_run_aggregate_row"],
+        )
         # extract the results
         ic50_data = []
         for readout in readout_data:
             try:
-                batch_data = dict((f"{protocol_name}: {key} {'(µM)' if 'IC50' in key else ''}", readout["readouts"][str(value)]["value"]) for key, value in required_data.items())
+                batch_data = {
+                        f"{protocol_name}: {key} {'(µM)' if 'IC50' in key else ''}":
+                        readout["readouts"][str(value)]["value"]
+                    for key, value in required_data.items()
+                }
                 batch_data["name"] = molecule["name"]
                 batch_data["smiles"] = smiles
                 ic50_data.append(batch_data)

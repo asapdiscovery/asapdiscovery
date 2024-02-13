@@ -4,6 +4,7 @@ Tests for downloading and processing Moonshot data from CDD.
 import os
 
 import pytest
+import requests_mock
 from asapdiscovery.data.cdd import (
     CDD_URL,
     MOONSHOT_ALL_SMI_SEARCH,
@@ -12,11 +13,10 @@ from asapdiscovery.data.cdd import (
     download_molecules,
     download_url,
 )
-from asapdiscovery.data.testing.test_resources import fetch_test_file
-from numpy.testing import assert_allclose
 from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
 from asapdiscovery.data.services_config import CDDSettings
-import requests_mock
+from asapdiscovery.data.testing.test_resources import fetch_test_file
+from numpy.testing import assert_allclose
 
 # Columns added by filter_molecules_dataframe
 FILTER_ADDED_COLS = ["name", "smiles", "achiral", "racemic", "enantiopure", "semiquant"]
