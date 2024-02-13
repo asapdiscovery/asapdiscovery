@@ -178,7 +178,7 @@ def plan(
     "-c",
     "--campaign",
     type=click.STRING,
-    help="The name of the campaign in alchemiscale the network should be submitted to.",
+    help="The name of the campaign in alchemiscale the network should be submitted to. If `-o` is set to 'asap' (default), `-c` must be either of 'public' or 'confidential'.",
     required=True,
 )
 @click.option(
@@ -202,6 +202,9 @@ def submit(network: str, organization: str, campaign: str, project: str):
     from alchemiscale import Scope
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    # make sure the org/campaign combination is valid
+    if organization == "asap" and not campaign == "public" or "confidential":
+        raise ValueError("If organization (`-o`) is set to 'asap' (default), campaign (`-c`) must be either of 'public' or 'confidential'.")
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
