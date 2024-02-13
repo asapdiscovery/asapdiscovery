@@ -1,4 +1,5 @@
 from typing import Optional
+import numpy as np 
 
 from alchemiscale import Scope, ScopedKey
 from openmm.app import ForceField, Modeller, PDBFile
@@ -81,14 +82,50 @@ class AlchemiscaleHelper:
         result_network = FreeEnergyCalculationNetwork(**network_data)
         return result_network
 
+    def get_actioned_weights(
+            self
+    ) -> list[float]:
+        """
+        For all waiting/running networks, return the weights associated with them.
+
+        Args:
+
+        Returns:
+            A list of floats that are associated with all currently waiting/running networks.
+        """
+        finished_counter = 0
+        active_network_weights = []
+
+        # get all networks that we're able to see
+        for key in self._client.query_networks():
+            n_running = self._client.get_network_status(
+                        network=key, visualize=False
+                    ).get('running', 0)
+            n_waiting = self._client.get_network_status(
+                        network=key, visualize=False
+                    ).get('waiting', 0)
+
+            # if we've encountered 5 stale networks we've probably reached the finished ones, can safely stop collecting weights
+            if n_running == 0 and n_waiting == 0:
+                finished_counter += 1
+            if finished_counter == 5:
+                break
+                
+            active_network_weights.append(self._client.get_network_weight(
+                network=key)
+            )
+
+        return active_network_weights
+        
     def action_network(
-        self, planned_network: FreeEnergyCalculationNetwork
+        self, planned_network: FreeEnergyCalculationNetwork, prioritize: Optional[bool]
     ) -> list[Optional[ScopedKey]]:
         """
         For the given network which is already stored on alchemiscale create and action tasks.
 
         Args:
             planned_network: The network which should action tasks for.
+            prioritize: Whether the network should be set to `high` or `low` priority. If undefined, defaults to standard priority (0.5).
 
         Returns:
             A list of actioned tasks for this network.
@@ -103,8 +140,16 @@ class AlchemiscaleHelper:
                 self._client.create_tasks(tf_sk, count=planned_network.n_repeats + 1)
             )
 
+        # set the network weight based on the found network weights that are currently running while making sure the weight doesn't fall outside 0-1
+        if prioritize is None:
+            weight = 0.5
+        elif prioritize:
+            weight = np.clip(max(self.get_actioned_weights())+0.01, 0.0, 1.0)
+        else:
+            weight = np.clip(min(self.get_actioned_weights())-0.01, 0.0, 1.0)
+
         # now action the tasks to ensure they are picked up by compute.
-        actioned_tasks = self._client.action_tasks(tasks, network_key)
+        actioned_tasks = self._client.action_tasks(tasks, network_key, weight=weight)
         return actioned_tasks
 
     def network_status(
