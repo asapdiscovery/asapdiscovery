@@ -1,6 +1,6 @@
 from typing import Optional
-import numpy as np 
 
+import numpy as np
 from alchemiscale import Scope, ScopedKey
 from openmm.app import ForceField, Modeller, PDBFile
 
@@ -82,9 +82,7 @@ class AlchemiscaleHelper:
         result_network = FreeEnergyCalculationNetwork(**network_data)
         return result_network
 
-    def get_actioned_weights(
-            self
-    ) -> list[float]:
+    def get_actioned_weights(self) -> list[float]:
         """
         For all waiting/running networks, return the weights associated with them.
 
@@ -99,24 +97,22 @@ class AlchemiscaleHelper:
         # get all networks that we're able to see
         for key in self._client.query_networks():
             n_running = self._client.get_network_status(
-                        network=key, visualize=False
-                    ).get('running', 0)
+                network=key, visualize=False
+            ).get("running", 0)
             n_waiting = self._client.get_network_status(
-                        network=key, visualize=False
-                    ).get('waiting', 0)
+                network=key, visualize=False
+            ).get("waiting", 0)
 
             # if we've encountered 5 stale networks we've probably reached the finished ones, can safely stop collecting weights
             if n_running == 0 and n_waiting == 0:
                 finished_counter += 1
             if finished_counter == 5:
                 break
-                
-            active_network_weights.append(self._client.get_network_weight(
-                network=key)
-            )
+
+            active_network_weights.append(self._client.get_network_weight(network=key))
 
         return active_network_weights
-        
+
     def action_network(
         self, planned_network: FreeEnergyCalculationNetwork, prioritize: Optional[bool]
     ) -> list[Optional[ScopedKey]]:
@@ -144,9 +140,9 @@ class AlchemiscaleHelper:
         if prioritize is None:
             weight = 0.5
         elif prioritize:
-            weight = np.clip(max(self.get_actioned_weights())+0.01, 0.0, 1.0)
+            weight = np.clip(max(self.get_actioned_weights()) + 0.01, 0.0, 1.0)
         else:
-            weight = np.clip(min(self.get_actioned_weights())-0.01, 0.0, 1.0)
+            weight = np.clip(min(self.get_actioned_weights()) - 0.01, 0.0, 1.0)
 
         # now action the tasks to ensure they are picked up by compute.
         actioned_tasks = self._client.action_tasks(tasks, network_key, weight=weight)
