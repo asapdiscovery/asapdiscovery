@@ -214,7 +214,7 @@ def submit(
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
     # make sure the org/campaign combination is valid
-    if organization == "asap" and not campaign in ("public", "confidential"):
+    if organization == "asap" and campaign not in ("public", "confidential"):
         raise ValueError(
             "If organization (`-o`) is set to 'asap' (default), campaign (`-c`) must be either of 'public' or 'confidential'."
         )
@@ -490,7 +490,7 @@ def stop(network_key: str):
     deleted = [
         sc_k
         for sc_k in client._client.set_tasks_status(running + waiting, "deleted")
-        if not sc_k is None
+        if sc_k is not None
     ]
 
     print(f"Deleted {len(deleted)} tasks from network {network_key}.")
