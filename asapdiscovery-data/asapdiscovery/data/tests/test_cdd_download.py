@@ -14,6 +14,9 @@ from asapdiscovery.data.cdd import (
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from numpy.testing import assert_allclose
+from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
+from asapdiscovery.data.services_config import CDDSettings
+import requests_mock
 
 # Columns added by filter_molecules_dataframe
 FILTER_ADDED_COLS = ["name", "smiles", "achiral", "racemic", "enantiopure", "semiquant"]
@@ -370,3 +373,18 @@ def test_download_molecules_cache(
     )
     target_cols = cdd_col_headers[search] + FILTER_ADDED_COLS + PARSE_ADDED_COLS
     assert sorted(df.columns.tolist()) == sorted(target_cols)
+
+
+# def test_ic50_data_download(monkeypatch):
+#     """Mock test to pull down ic50 data using the API"""
+#
+#     with requests_mock.Mocker() as m:
+#         settings = CDDSettings(CDD_VAULT_NUMBER=1, CDD_API_KEY="my_key")
+#         cdd_api = CDDAPI.from_settings(settings=settings)
+#         smiles = "CCO"
+#         # mock the molecules request
+#         m.get(cdd_api.api_url + "molecules/", json={"count": 1, "objects": [{"name": "ethanol", "smiles": smiles, "id": 1}]})
+#         # mock the protocols request
+#         m.get(cdd_api.api_url + "protocols/", json={"objects":[{"readout_definitions": []}]})
+#         ic50_data = cdd_api.get_ic50_data(smiles=smiles, protocol_name="EVA-71-3C_fluorescence-dose-response_weizmann")
+#         print(ic50_data)
