@@ -464,7 +464,31 @@ def restart(network: str, verbose: bool, tasks):
     else:
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
 
+@alchemy.command()
+@click.option(
+    "-nk",
+    "--network-key",
+    type=click.STRING,
+    help="The network key of the network to be stopped. This can be found by running e.g. `asap-alchemy status -a`.",
+    required=True,
+)
+def stop(network_key: str):
+    """Stop (i.e. set to 'error') a network's running and waiting tasks.
+    
+    """
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
+    client = AlchemiscaleHelper()
+    running = client._client.get_network_tasks(network_key,
+                                     status=["running"])
+    waiting = client._client.get_network_tasks(network_key,
+                                     status=["waiting"])
+    
+    deleted = [ sc_k for sc_k in client._client.set_tasks_status(running + waiting, "deleted"
+                            ) if not sc_k is None]
+    
+    print(f"Deleted {len(deleted)} tasks from network {network_key}.")
+    
 @alchemy.command()
 @click.option(
     "-n",
