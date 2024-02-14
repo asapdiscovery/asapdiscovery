@@ -30,9 +30,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, ubuntu-nightly]
         python-version: ["3.10"]
-        dep-version: ["latest", "nightly"]
 
     env:
       OE_LICENSE: ${{ github.workspace }}/oe_license.txt
@@ -55,7 +54,7 @@ jobs:
     - name: Setup Conda Environment
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: devtools/conda-envs/asapdiscovery-${{ matrix.os }}-${{ matrix.dep-version }}.yml
+        environment-file: devtools/conda-envs/asapdiscovery-${{ matrix.os }}.yml
         environment-name: asapdiscovery
         cache-environment: true
         cache-downloads: true
