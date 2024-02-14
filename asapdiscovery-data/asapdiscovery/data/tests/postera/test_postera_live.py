@@ -297,3 +297,43 @@ class TestPosteraLive:
         # check both smiles are there
         assert "CCCCCF" in ret_df["smiles"].tolist()
         assert "CCCCCCCCF" in ret_df["smiles"].tolist()
+
+
+    def test_update_with_data_validation(self, live_postera_ms_api_instance):
+        # add a molecule to the set
+        ms_api = live_postera_ms_api_instance
+
+        # make random data for each element
+        fields = ManifoldAllowedTags.get_values()
+        data = {field: random.randint(0, 1) for field in fields}
+        # turn it into a dataframe
+        new_molecules = pd.DataFrame({"smiles": ["CCCCCF"], "id": ["3"], **data})
+
+        uuid = ms_api.create_molecule_set_from_df_with_manifold_validation(
+            molecule_set_name=str(uuid4()),
+            df=new_molecules,
+            id_field="id",
+            smiles_field="smiles",
+        )
+
+        ret_df = ms_api.get_molecules(uuid, return_as="dataframe")
+
+        # update the fields
+        updated_data = {field: random.randint(0, 1) for field in fields}
+
+        # grab the id field from ret_df
+        mol_uuid = ret_df["id"].iloc[0]
+
+        updated_molecules = pd.DataFrame({"smiles": ["CCCCCF"], "id": [mol_uuid], **updated_data})
+
+        ms_api.update_molecules_from_df_with_manifold_validation(
+            molecule_set_id=uuid,
+            df=updated_molecules,
+            id_field="id",
+            smiles_field="smiles",
+        )
+
+        # get the updated data
+        ret_df_updated = ms_api.get_molecules(uuid, return_as="dataframe")
+        ms_api.destroy(uuid)
+        assert any(ret_df.sort_index(inplace=True) != ret_df_updated.sort_index(inplace=True))  
