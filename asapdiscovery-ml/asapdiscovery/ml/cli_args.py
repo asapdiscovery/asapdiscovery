@@ -810,6 +810,7 @@ def visnet_args(func):
 
     return func
 
+
 def lmax(func):
     return click.option(
         "--lmax",
