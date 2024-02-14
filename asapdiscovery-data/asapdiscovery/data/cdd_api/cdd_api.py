@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Optional
 
 import pandas
@@ -29,58 +30,75 @@ class CDDAPI(_BaseWebAPI):
             vault=settings.CDD_VAULT_NUMBER,
         )
 
-    def get_molecule(self, smiles: str) -> Optional[dict]:
+    def get_molecules(self, smiles: Optional[str] = None, names: Optional[list[str]] = None, compound_ids: Optional[list[int]] = None) -> Optional[list[dict]]:
         """
-        Search for a molecule in the CDD vault.
+        Search for molecules in the CDD vault.
+
+        Notes:
+            CDD only allows for a single structure searches via smiles, multiple molecules can be downloaded when using
+            names or compound_ids.
 
         Args:
             smiles: The smiles of the molecule to search for.
+            names: The list of names of molecules which should be searched in the CDD.
+            compound_ids: The list of CDD compound ids of molecules we wish to search for.
 
         Returns:
-            A dictionary of the molecule details if present in CDD else None.
+            A list of molecules found in the CDD.
 
         """
         mol_data = {
-            "structure": smiles,
-            "no_structures": "true",
-            "structure_search_type": "exact",
+            "only_batch_ids": "true"
         }
-        result = self._session.get(url=self.api_url + "molecules/", json=mol_data)
-        result_data = json.loads(result.content.decode())
-        if result_data["count"] == 0:
+        if smiles is not None:
+            mol_data["structure"] = smiles
+            mol_data["no_structures"] = "true"
+            mol_data["structure_search_type"] = "exact"
+        elif names is not None:
+            mol_data["names"] = names
+            mol_data["async"] = "true"
+        else:
+            mol_data["molecules"] = compound_ids
+            mol_data["async"] = "true"
+        result = json.loads(self._session.get(url=self.api_url + "molecules/", json=mol_data).content.decode())
+        if "async" in mol_data:
+            result = self.get_async_export(job_id=result["id"])
+        if result["count"] == 0:
             return None
         else:
-            # should only be one molecule but maybe we should check?
-            return result_data["objects"][0]
+            return result["objects"]
 
     def get_protocol(
-        self, molecule_id: int, protocol_name: Optional[str] = None
+        self, molecule_ids: Optional[list[int]] = None, protocol_name: Optional[str] = None
     ) -> list[dict]:
         """
-        Search for a specific protocol performed on the query molecule.
+        Search for a specific protocol performed on the query molecules, if no molecules are provided all molecules
+        computed under the protocol are retured.
 
         Args:
-            molecule_id: The CDD id of the molecule who's protocols we want to gather.
+            molecule_ids: The CDD ids of the molecule who's protocols we want to gather.
             protocol_name: The name of the protocol to search for, if not provided all protocols will be pulled.
 
         Returns:
-            A list of protocols associated with this molecule
+            A list of protocols associated with these molecules
         """
-        protocol_data = {"molecules": [molecule_id]}
+        protocol_data = {}
+        if molecule_ids is not None:
+            protocol_data["molecules"] = molecule_ids
         if protocol_name is not None:
             protocol_data["names"] = [protocol_name]
         result = self._session.get(url=self.api_url + "protocols", json=protocol_data)
         result_data = json.loads(result.content.decode())
         return result_data["objects"]
 
-    def get_readout_row(
-        self, molecule_id: int, protocol: int, types: Optional[list[str]] = None
-    ) -> Optional[dict]:
+    def get_readout_rows(
+        self, protocol: int, molecule_ids: Optional[list[int]] = None, types: Optional[list[str]] = None
+    ) -> Optional[list[dict]]:
         """
-        Get the readout data for a specific protocol performed on a molecule. This is used to pull the pIC50_Mean.
+        Get the readout data for a specific protocol performed on a set of molecules.
 
         Args:
-            molecule_id: The CDD id of the molecule to get the values for.
+            molecule_ids: The CDD ids of the molecules to get the values for if None all molecules under this protocol will be downloaded.
             protocol: The id of the protocol to use in the search.
             types: A list of readout types to pull the results for.
 
@@ -89,49 +107,61 @@ class CDDAPI(_BaseWebAPI):
         """
         readout_data = {
             "protocols": [protocol],
-            "molecules": [molecule_id],
+            "async": "true"  # use async as we may have many results
         }
         if types is not None:
             readout_data["type"] = types
+        if molecule_ids is not None:
+            readout_data["molecules"] = molecule_ids
         result = self._session.get(url=self.api_url + "readout_rows", json=readout_data)
-        result_data = json.loads(result.content.decode())
+        request_id = json.loads(result.content.decode())["id"]
+        result_data = self.get_async_export(job_id=request_id)
         if result_data["count"] == 0:
             return None
         else:
             return result_data["objects"]
 
-    def get_ic50_data(self, smiles: str, protocol_name: str) -> Optional[list[dict]]:
+    def get_async_export(self, job_id: int) -> dict:
         """
-        A convenience method which wraps the required function calls to gather the raw ic50 data from the CDD for the
-        given molecule calculated as part of the named protocol.
+        A helper method to gather async request results.
 
         Args:
-            smiles: The smiles of the molecule we want the IC50 for.
-            protocol_name: The name of the protocol we want the IC50 for.
+            job_id: The id of the request we want the results for.
+
+        Notes:
+            This function waits till the request is complete before returning the results.
+
+        Returns:
+            The finished request.
+        """
+        done = False
+        while not done:
+            result = json.loads(self._session.get(url=self.api_url + f"exports/{job_id}").content.decode())
+            if "objects" not in result:
+                time.sleep(1)
+            else:
+                return result
+
+    def get_ic50_data(self, protocol_name: str) -> Optional[list[dict]]:
+        """
+        A convenience method which wraps the required function calls to gather the raw ic50 data from the CDD for the
+        calculated as part of the named protocol.
+
+        Args:
+            protocol_name: The name of the protocol we want all IC50 result for.
 
         Returns:
             A list of dictionaries containing the IC50 values along with upper and lower CI and curve class for each
-            batch measurement on the molecule performed as part of the given protocol.
+            batch measurement on the molecules performed as part of the given protocol.
 
-        Notes:
-            Returns None if no IC50 data can be collected.
-            Returns all batch IC50 data for a molecule.
         """
-        # get the molecule id
-        molecule = self.get_molecule(smiles=smiles)
-        # check we found the molecule
-        if molecule is None:
-            return molecule
-        # look for the protocol, we expect a single result as we search for a named protocol
-        # if we don't find anything for the molecule return None
-        protocols = self.get_protocol(
-            molecule_id=molecule["id"], protocol_name=protocol_name
-        )
+        # get the id of the protocol we want the readout for
+        protocols = self.get_protocol(protocol_name=protocol_name)
         if protocols:
             protocol = protocols[0]
         else:
             return None
-        # define the readouts we want to find
+        # define the readouts we want to find and get the ids
         required_data = {
             "IC50": None,
             "IC50 CI (Lower)": None,
@@ -147,25 +177,36 @@ class CDDAPI(_BaseWebAPI):
             return None
 
         # pull down all batch readouts for this protocol and extract the data
-        readout_data = self.get_readout_row(
-            molecule_id=molecule["id"],
-            protocol=protocol["id"],
-            types=["batch_run_aggregate_row"],
-        )
-        # extract the results
+        readout_data = self.get_readout_rows(protocol=protocol["id"], types=["batch_run_aggregate_row"])
+        # make a list of molecules we want to pull from the CDD
+        compound_ids = set()
+        # extract the results linking the molecules to the extracted data
         ic50_data = []
         for readout in readout_data:
             try:
                 batch_data = {
                         f"{protocol_name}: {key} {'(µM)' if 'IC50' in key else ''}":
                         readout["readouts"][str(value)]["value"]
-                    for key, value in required_data.items()
+                        for key, value in required_data.items()
                 }
-                batch_data["name"] = molecule["name"]
-                batch_data["smiles"] = smiles
+                # add a place holder for the molecule data to be added later
+                batch_data["name"] = readout["molecule"]
+                compound_ids.add(readout["molecule"])
                 ic50_data.append(batch_data)
             except KeyError:
-                # If any data is missing skip this molecule
+                # This is triggered if the upper and lower CI values are missing
+                # This means the values falls outside the does series
                 continue
+
+        # gather the molecules
+        molecule_data = self.get_molecules(compound_ids=list(compound_ids))
+        compounds_by_id = dict((molecule["id"], molecule) for molecule in molecule_data)
+        # loop over the list again and update the molecule info
+        for compound_data in ic50_data:
+            mol_data = compounds_by_id[compound_data["name"]]
+            compound_data["smiles"] = mol_data["smiles"]
+            compound_data["inchi"] = mol_data["inchi"]
+            compound_data["inchi_key"] = mol_data["inchi_key"]
+            compound_data["name"] = mol_data["name"]
 
         return ic50_data
