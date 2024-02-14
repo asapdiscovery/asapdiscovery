@@ -59,6 +59,7 @@ _SCORE_MANIFOLD_ALIAS = {
     ScoreType.FINT: DockingResultCols.FITNESS_SCORE_FINT.value,
     ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
+    ScoreType.e3nn: DockingResultCols.COMPUTED_E3NN_PIC50.value,
     ScoreType.INVALID: None,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
