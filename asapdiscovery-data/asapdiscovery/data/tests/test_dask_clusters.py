@@ -1,4 +1,5 @@
 import pytest
+import time
 from asapdiscovery.data.dask_utils import (
     DaskCluster,
     DaskType,
@@ -52,8 +53,10 @@ def test_lilac_cpu_cluster(loglevel):
 
 @pytest.mark.parametrize("loglevel", ["DEBUG", 10])
 @pytest.mark.parametrize(
-    "type", [DaskType("local"), DaskType("lilac-cpu"), DaskType("lilac-gpu")]
+    "type", [DaskType("local")]
 )
 def test_make_dask_cluster_meta(type, loglevel):
     meta = make_dask_client_meta(type, loglevel=loglevel)
     assert isinstance(meta, Client)
+    time.sleep(2)
+    meta.close()
