@@ -429,7 +429,6 @@ def make_dask_client_meta(
     )
     if dask_type.is_lilac():
         logger.info("Lilac HPC config selected, setting adaptive scaling")
-        print("scaling")
         dask_cluster.adapt(
             minimum=adaptive_min_workers,
             maximum=adaptive_max_workers,
