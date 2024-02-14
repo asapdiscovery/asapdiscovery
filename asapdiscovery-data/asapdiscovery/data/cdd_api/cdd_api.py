@@ -30,7 +30,12 @@ class CDDAPI(_BaseWebAPI):
             vault=settings.CDD_VAULT_NUMBER,
         )
 
-    def get_molecules(self, smiles: Optional[str] = None, names: Optional[list[str]] = None, compound_ids: Optional[list[int]] = None) -> Optional[list[dict]]:
+    def get_molecules(
+        self,
+        smiles: Optional[str] = None,
+        names: Optional[list[str]] = None,
+        compound_ids: Optional[list[int]] = None,
+    ) -> Optional[list[dict]]:
         """
         Search for molecules in the CDD vault.
 
@@ -47,9 +52,7 @@ class CDDAPI(_BaseWebAPI):
             A list of molecules found in the CDD.
 
         """
-        mol_data = {
-            "only_batch_ids": "true"
-        }
+        mol_data = {"only_batch_ids": "true"}
         if smiles is not None:
             mol_data["structure"] = smiles
             mol_data["no_structures"] = "true"
@@ -60,7 +63,11 @@ class CDDAPI(_BaseWebAPI):
         else:
             mol_data["molecules"] = compound_ids
             mol_data["async"] = "true"
-        result = json.loads(self._session.get(url=self.api_url + "molecules/", json=mol_data).content.decode())
+        result = json.loads(
+            self._session.get(
+                url=self.api_url + "molecules/", json=mol_data
+            ).content.decode()
+        )
         if "async" in mol_data:
             result = self.get_async_export(job_id=result["id"])
         if result["count"] == 0:
@@ -69,7 +76,9 @@ class CDDAPI(_BaseWebAPI):
             return result["objects"]
 
     def get_protocol(
-        self, molecule_ids: Optional[list[int]] = None, protocol_name: Optional[str] = None
+        self,
+        molecule_ids: Optional[list[int]] = None,
+        protocol_name: Optional[str] = None,
     ) -> list[dict]:
         """
         Search for a specific protocol performed on the query molecules, if no molecules are provided all molecules
@@ -92,7 +101,10 @@ class CDDAPI(_BaseWebAPI):
         return result_data["objects"]
 
     def get_readout_rows(
-        self, protocol: int, molecule_ids: Optional[list[int]] = None, types: Optional[list[str]] = None
+        self,
+        protocol: int,
+        molecule_ids: Optional[list[int]] = None,
+        types: Optional[list[str]] = None,
     ) -> Optional[list[dict]]:
         """
         Get the readout data for a specific protocol performed on a set of molecules.
@@ -107,7 +119,7 @@ class CDDAPI(_BaseWebAPI):
         """
         readout_data = {
             "protocols": [protocol],
-            "async": "true"  # use async as we may have many results
+            "async": "true",  # use async as we may have many results
         }
         if types is not None:
             readout_data["type"] = types
@@ -136,7 +148,11 @@ class CDDAPI(_BaseWebAPI):
         """
         done = False
         while not done:
-            result = json.loads(self._session.get(url=self.api_url + f"exports/{job_id}").content.decode())
+            result = json.loads(
+                self._session.get(
+                    url=self.api_url + f"exports/{job_id}"
+                ).content.decode()
+            )
             if "objects" not in result:
                 time.sleep(1)
             else:
@@ -177,7 +193,9 @@ class CDDAPI(_BaseWebAPI):
             return None
 
         # pull down all batch readouts for this protocol and extract the data
-        readout_data = self.get_readout_rows(protocol=protocol["id"], types=["batch_run_aggregate_row"])
+        readout_data = self.get_readout_rows(
+            protocol=protocol["id"], types=["batch_run_aggregate_row"]
+        )
         # make a list of molecules we want to pull from the CDD
         compound_ids = set()
         # extract the results linking the molecules to the extracted data
@@ -185,9 +203,14 @@ class CDDAPI(_BaseWebAPI):
         for readout in readout_data:
             try:
                 batch_data = {
-                        f"{protocol_name}: {key} {'(µM)' if 'IC50' in key else ''}":
-                        readout["readouts"][str(value)]["value"]
-                        for key, value in required_data.items()
+                    f"{protocol_name}: {key} {'(µM)' if 'IC50' in key else ''}": readout[
+                        "readouts"
+                    ][
+                        str(value)
+                    ][
+                        "value"
+                    ]
+                    for key, value in required_data.items()
                 }
                 # add a place holder for the molecule data to be added later
                 batch_data["name"] = readout["molecule"]
@@ -200,7 +223,7 @@ class CDDAPI(_BaseWebAPI):
 
         # gather the molecules
         molecule_data = self.get_molecules(compound_ids=list(compound_ids))
-        compounds_by_id = dict((molecule["id"], molecule) for molecule in molecule_data)
+        compounds_by_id = {molecule["id"]: molecule for molecule in molecule_data}
         # loop over the list again and update the molecule info
         for compound_data in ic50_data:
             mol_data = compounds_by_id[compound_data["name"]]
