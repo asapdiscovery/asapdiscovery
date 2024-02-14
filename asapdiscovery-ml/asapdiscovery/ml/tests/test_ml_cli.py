@@ -147,6 +147,7 @@ def test_build_ds_e3nn(exp_file, docked_files, tmp_path):
     assert ds_config.for_e3nn
     assert not ds_config.overwrite
 
+
 def test_build_ds_visnet(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
 
@@ -603,6 +604,7 @@ def test_build_and_train_e3nn(exp_file, docked_files, tmp_path):
     assert len(loss_dict["train"]) == 8
     assert len(loss_dict["val"]) == 1
     assert len(loss_dict["test"]) == 1
+
 
 def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
