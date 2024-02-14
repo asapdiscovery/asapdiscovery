@@ -30,6 +30,15 @@ class BackendType(StringEnum):
     DISK = "disk"
 
 
+class DaskFailureMode(StringEnum):
+    """
+    Enum for Dask failure modes
+    """
+
+    RAISE = "raise"
+    SKIP = "skip"
+
+
 def set_dask_config():
     cfg.set({"distributed.scheduler.worker-ttl": None})
     cfg.set({"distributed.admin.tick.limit": "4h"})
@@ -113,6 +122,7 @@ class CPU(StringEnum):
     Enum for CPU types
     """
 
+    # lilcac lt-gpu queue used in CPU mode
     LT = "LT"
 
 
@@ -196,7 +206,9 @@ class DaskCluster(BaseModel):
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
-    silence_logs: int = Field(logging.DEBUG, description="Log level for dask")
+    silence_logs: Union[int, str] = Field(
+        logging.INFO, description="Log level for dask"
+    )
 
 
 class LilacDaskCluster(DaskCluster):
@@ -286,11 +298,17 @@ class LilacGPUDaskCluster(LilacDaskCluster):
     cores = 1
 
     @classmethod
-    def from_gpu(cls, gpu: GPU = GPU.GTX1080TI, silence_logs: int = logging.DEBUG):
+    def from_gpu(
+        cls,
+        gpu: GPU = GPU.GTX1080TI,
+        loglevel: Union[str, int] = logging.INFO,
+        walltime: str = "72h",
+    ):
         gpu_config = LilacGPUConfig.from_gpu(gpu)
         return cls(
             job_extra_directives=gpu_config.to_job_extra_directives(),
-            silence_logs=silence_logs,
+            silence_logs=loglevel,
+            walltime=walltime,
         )
 
 
@@ -298,11 +316,17 @@ class LilacCPUDaskCluster(LilacDaskCluster):
     # uses default
 
     @classmethod
-    def from_cpu(cls, cpu: CPU = CPU.LT, silence_logs: int = logging.DEBUG):
+    def from_cpu(
+        cls,
+        cpu: CPU = CPU.LT,
+        loglevel: Union[int, str] = logging.INFO,
+        walltime: str = "72h",
+    ):
         cpu_config = LilacCPUConfig.from_cpu(cpu)
         return cls(
             job_extra_directives=cpu_config.to_job_extra_directives(),
-            silence_logs=silence_logs,
+            silence_logs=loglevel,
+            walltime=walltime,
         )
 
 
@@ -311,7 +335,8 @@ def dask_cluster_from_type(
     gpu: GPU = GPU.GTX1080TI,
     cpu: CPU = CPU.LT,
     local_threads_per_worker: int = 1,
-    silence_logs: int = logging.DEBUG,  # worst kwarg name but it is what it is
+    loglevel: Union[int, str] = logging.INFO,
+    walltime: str = "72h",
 ):
     """
     Get a dask client from a DaskType
@@ -337,7 +362,7 @@ def dask_cluster_from_type(
     logger.info(f"Physical CPU count: {physical_cpu_count}")
 
     logger.info(f"Getting dask cluster of type {dask_type}")
-    logger.info(f"Dask log level: {silence_logs}")
+    logger.info(f"Dask log level: {loglevel}")
 
     if dask_type == DaskType.LOCAL:
         n_workers = cpu_count // local_threads_per_worker
@@ -358,7 +383,7 @@ def dask_cluster_from_type(
         cluster = LocalCluster(
             n_workers=n_workers,
             threads_per_worker=local_threads_per_worker,
-            silence_logs=silence_logs,
+            silence_logs=loglevel,  # used as silence_logs, worst kwarg name but it is what it is
         )
     elif dask_type == DaskType.LOCAL_GPU:
         try:
@@ -371,16 +396,55 @@ def dask_cluster_from_type(
     elif dask_type == DaskType.LILAC_GPU:
         cluster = (
             LilacGPUDaskCluster()
-            .from_gpu(gpu, silence_logs=silence_logs)
+            .from_gpu(gpu, loglevel=loglevel, walltime=walltime)
             .to_cluster(exclude_interface="lo")
         )
     elif dask_type == DaskType.LILAC_CPU:
         cluster = (
             LilacCPUDaskCluster()
-            .from_cpu(cpu, silence_logs=silence_logs)
+            .from_cpu(cpu, loglevel=loglevel, walltime=walltime)
             .to_cluster(exclude_interface="lo")
         )
     else:
         raise ValueError(f"Unknown dask type {dask_type}")
 
     return cluster
+
+
+def make_dask_client_meta(
+    dask_type: DaskType,
+    loglevel: Union[int, str] = logging.INFO,
+    walltime: str = "72h",
+    adaptive_min_workers: int = 10,
+    adaptive_max_workers: int = 200,
+    adaptive_wait_count: int = 10,
+    adaptive_interval: str = "1m",
+):
+    logger.info(f"Using dask for parallelism of type: {dask_type}")
+    if isinstance(loglevel, int):
+        loglevel = logging.getLevelName(loglevel)
+    set_dask_config()
+    dask_cluster = dask_cluster_from_type(
+        dask_type, loglevel=loglevel, walltime=walltime
+    )
+    if dask_type.is_lilac():
+        logger.info("Lilac HPC config selected, setting adaptive scaling")
+        print("scaling")
+        dask_cluster.adapt(
+            minimum=adaptive_min_workers,
+            maximum=adaptive_max_workers,
+            wait_count=adaptive_wait_count,
+            interval=adaptive_interval,
+        )
+        logger.info(
+            f"Starting with minimum worker count: {adaptive_min_workers} workers"
+        )
+        dask_cluster.scale(adaptive_min_workers)
+
+    dask_client = Client(dask_cluster)
+    dask_client.forward_logging(level=loglevel)
+    logger.info(f"Using dask client: {dask_client}")
+    logger.info(f"Using dask cluster: {dask_cluster}")
+    logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
+
+    return dask_client

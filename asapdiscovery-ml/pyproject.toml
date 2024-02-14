@@ -26,7 +26,7 @@ dependencies = []
 
 [project.scripts]
 asap-ml = "asapdiscovery.ml.cli:cli"
-convert-ds = "asapdiscovery.ml.scripts.convert_dataset_v2:convert"
+convert-ds = "asapdiscovery.ml.scripts.convert_dataset:convert"
 
 [tool.setuptools.packages.find]
 where = ["."]

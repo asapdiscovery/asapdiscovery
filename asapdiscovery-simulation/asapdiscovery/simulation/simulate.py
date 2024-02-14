@@ -2,16 +2,19 @@ import abc
 import logging
 import warnings
 from pathlib import Path
-from typing import Optional  # noqa: F401
+from typing import ClassVar, Optional  # noqa: F401
 
 import dask
 import mdtraj
 import openmm
 import pandas as pd
-from asapdiscovery.data.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.dask_utils import (
+    DaskFailureMode,
+    actualise_dask_delayed_iterable,
+)
 from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.openeye import save_openeye_pdb
-from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking import DockingResult
 from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter
 from openff.toolkit.topology import Molecule
@@ -82,6 +85,7 @@ class SimulatorBase(BaseModel):
         docking_results: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         **kwargs,
     ) -> pd.DataFrame:
         if use_dask:
@@ -90,7 +94,7 @@ class SimulatorBase(BaseModel):
                 out = dask.delayed(self._simulate)(docking_results=[res], **kwargs)
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors="skip"
+                delayed_outputs, dask_client, errors=dask_failure_mode
             )
             outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
@@ -111,9 +115,13 @@ class SimulationResult(BaseModel):
     input_docking_result: Optional[DockingResult]
 
 
+# ugly hack to disallow truncation of steps for testing
+_SIMULATOR_TRUNCATE_STEPS = True
+
+
 class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
-        1, description="Collision rate of the simulation"
+        1, description="Collision rate of the simulation (in 1/ps)"
     )
     openmm_logname: str = Field(
         "openmm_log.tsv", description="Name of the OpenMM log file"
@@ -121,9 +129,15 @@ class VanillaMDSimulator(SimulatorBase):
     openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use"
     )
-    temperature: PositiveFloat = Field(300, description="Temperature of the simulation")
-    pressure: PositiveFloat = Field(1, description="Pressure of the simulation")
-    timestep: PositiveFloat = Field(4, description="Timestep of the simulation")
+    temperature: PositiveFloat = Field(
+        300, description="Temperature of the simulation (in kelvin)"
+    )
+    pressure: PositiveFloat = Field(
+        1, description="Pressure of the simulation (in atm)"
+    )
+    timestep: PositiveFloat = Field(
+        4, description="Timestep of the simulation (in femtoseconds)"
+    )
     equilibration_steps: PositiveInt = Field(
         5000, description="Number of equilibration steps"
     )
@@ -148,7 +162,12 @@ class VanillaMDSimulator(SimulatorBase):
     )
 
     rmsd_restraint_force_constant: PositiveFloat = Field(
-        50, description="Force constant of the RMSD restraint in kcal/mol/A^2"
+        50, description="Force constant of the RMSD restraint (in kcal/mol/A^2)"
+    )
+
+    truncate_steps: bool = Field(
+        _SIMULATOR_TRUNCATE_STEPS,
+        description="Whether to truncate num_steps to multiple of reporting interval, used for testing",
     )
 
     @validator("rmsd_restraint_type")
@@ -198,12 +217,18 @@ class VanillaMDSimulator(SimulatorBase):
         arbitrary_types_allowed = True
         extra = "allow"
 
-    def __init__(self, **kwargs):
-        # truncate num_steps to be a multiple of reporting_interval and at least one reporting interval
-        kwargs["num_steps"] = truncate_num_steps(
-            kwargs["num_steps"], kwargs["reporting_interval"]
-        )
-        super().__init__(**kwargs)
+    @root_validator
+    @classmethod
+    def check_and_apply_truncation(cls, values):
+        """
+        Validate num_steps and reporting_interval along with truncate_steps
+        """
+        step_truncation = values.get("truncate_steps")
+        num_steps = values.get("num_steps")
+        reporting_interval = values.get("reporting_interval")
+        if step_truncation:
+            values["num_steps"] = truncate_num_steps(num_steps, reporting_interval)
+        return values
 
     @root_validator
     @classmethod
@@ -213,11 +238,26 @@ class VanillaMDSimulator(SimulatorBase):
         """
         num_steps = values.get("num_steps")
         reporting_interval = values.get("reporting_interval")
-        if num_steps % reporting_interval != 0:
+        truncate_steps = values.get("truncate_steps")
+        if (num_steps % reporting_interval != 0) and truncate_steps:
             raise ValueError(
                 f"num_steps ({num_steps}) must be a multiple of reporting_interval ({reporting_interval})"
             )
         return values
+
+    @property
+    def n_frames(self) -> int:
+        return self.num_steps // self.reporting_interval
+
+    @property
+    def total_simulation_time(self) -> openmm.unit.quantity.Quantity:
+        return self.num_steps * self.timestep * unit.femtoseconds
+
+    @property
+    def frames_per_ns(self) -> unit.quantity.Quantity:
+        # convert to ns
+        length = (self.total_simulation_time).value_in_unit(unit.nanoseconds)
+        return self.n_frames / length
 
     def _to_openmm_units(self):
         self._temperature = self.temperature * unit.kelvin
@@ -463,7 +503,7 @@ class VanillaMDSimulator(SimulatorBase):
                 separator="\t",
             )
         )
-
+        logger.info(f"Running simulation for {self.num_steps} steps")
         for _ in range(self.n_snapshots):
             simulation.step(self.reporting_interval)
 

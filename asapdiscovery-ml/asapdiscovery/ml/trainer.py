@@ -8,14 +8,14 @@ import numpy as np
 import torch
 import wandb
 from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
-from asapdiscovery.ml.schema_v2.config import (
+from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterConfig,
     EarlyStoppingConfig,
     LossFunctionConfig,
     OptimizerConfig,
 )
+from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
@@ -557,7 +557,7 @@ class Trainer(BaseModel):
                     [[pose[self.target_prop]]], device=self.device
                 ).float()
                 in_range = torch.tensor(
-                    [[pose["pIC50_range"]]], device=self.device
+                    [[pose[f"{self.target_prop}_range"]]], device=self.device
                 ).float()
                 uncertainty = torch.tensor(
                     [[pose[f"{self.target_prop}_stderr"]]],
@@ -610,7 +610,13 @@ class Trainer(BaseModel):
             if batch_counter > 0:
                 # Backprop for final incomplete batch
                 self.optimizer.step()
-                if any([p.grad.isnan().any().item() for p in self.model.parameters()]):
+                if any(
+                    [
+                        p.grad.isnan().any().item()
+                        for p in self.model.parameters()
+                        if p.grad is not None
+                    ]
+                ):
                     raise ValueError("NaN gradients")
             end_time = time()
 
@@ -629,7 +635,7 @@ class Trainer(BaseModel):
                     [[pose[self.target_prop]]], device=self.device
                 ).float()
                 in_range = torch.tensor(
-                    [[pose["pIC50_range"]]], device=self.device
+                    [[pose[f"{self.target_prop}_range"]]], device=self.device
                 ).float()
                 uncertainty = torch.tensor(
                     [[pose[f"{self.target_prop}_stderr"]]],
@@ -669,7 +675,7 @@ class Trainer(BaseModel):
                     [[pose[self.target_prop]]], device=self.device
                 ).float()
                 in_range = torch.tensor(
-                    [[pose["pIC50_range"]]], device=self.device
+                    [[pose[f"{self.target_prop}_range"]]], device=self.device
                 ).float()
                 uncertainty = torch.tensor(
                     [[pose[f"{self.target_prop}_stderr"]]],
@@ -821,9 +827,9 @@ class Trainer(BaseModel):
                 columns=[
                     "crystal",
                     "compound_id",
-                    "pIC50",
-                    "pIC50_range",
-                    "pIC50_stderr",
+                    self.target_prop,
+                    f"{self.target_prop}_range",
+                    f"{self.target_prop}_stderr",
                     "date_created",
                 ]
             )
@@ -837,25 +843,30 @@ class Trainer(BaseModel):
                     compound_id = compound
                     tmp_d = d[0]
                 try:
-                    pic50 = tmp_d["pIC50"]
+                    target_value = tmp_d[self.target_prop]
                 except KeyError:
-                    pic50 = np.nan
+                    target_value = np.nan
                 try:
-                    pic50_range = tmp_d["pIC50_range"]
+                    target_value_range = tmp_d[f"{self.target_prop}_range"]
                 except KeyError:
-                    pic50_range = np.nan
+                    target_value_range = np.nan
                 try:
-                    pic50_stderr = tmp_d["pIC50_stderr"]
+                    target_value_stderr = tmp_d[f"{self.target_prop}_stderr"]
                 except KeyError:
-                    pic50_stderr = np.nan
+                    target_value_stderr = np.nan
                 except AttributeError:
-                    pic50 = tmp_d["pIC50"]
+                    target_value = tmp_d[self.target_prop]
                 try:
                     date_created = tmp_d["date_created"]
                 except KeyError:
                     date_created = None
                 table.add_data(
-                    xtal_id, compound_id, pic50, pic50_range, pic50_stderr, date_created
+                    xtal_id,
+                    compound_id,
+                    target_value,
+                    target_value_range,
+                    target_value_stderr,
+                    date_created,
                 )
 
             ds_tables.append(table)
