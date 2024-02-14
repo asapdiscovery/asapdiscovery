@@ -53,7 +53,9 @@ class CDDAPI(_BaseWebAPI):
 
         """
         if len([i for i in [smiles, names, compound_ids] if i is not None]) > 1:
-            raise ValueError("The arguments `smiles`, `names` and `compound_ids` are mutually exclusive provide only one.")
+            raise ValueError(
+                "The arguments `smiles`, `names` and `compound_ids` are mutually exclusive provide only one."
+            )
 
         mol_data = {"only_batch_ids": "true"}
         if smiles is not None:

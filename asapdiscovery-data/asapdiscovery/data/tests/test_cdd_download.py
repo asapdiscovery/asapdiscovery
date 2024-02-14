@@ -379,15 +379,32 @@ def test_cdd_api_get_molecules_exclusive_args(mocked_cdd_api):
     """Make sure an error is raised if we pass mutually exclusive args."""
 
     with pytest.raises(ValueError):
-        _ = mocked_cdd_api.get_molecules(smiles="CCO", names=["ASAP-Ethanol"], compound_ids=[1, 2])
+        _ = mocked_cdd_api.get_molecules(
+            smiles="CCO", names=["ASAP-Ethanol"], compound_ids=[1, 2]
+        )
 
 
-@pytest.mark.parametrize("search, expected_result", [
-    pytest.param({"smiles": "CO"}, None,  id="smiles missing"),
-    pytest.param({"smiles": "CCO"}, [{"name": "ethanol", "smiles": "CCO", "id": 1}], id="Smiles"),
-    pytest.param({"names": ["ASAP-Ethanol"]}, [{"name": "ethanol", "smiles": "CCO", "id": 1}], id="Names"),
-    pytest.param({"compound_ids": [1]}, [{"name": "ethanol", "smiles": "CCO", "id": 1}], id="Compound ids")
-])
+@pytest.mark.parametrize(
+    "search, expected_result",
+    [
+        pytest.param({"smiles": "CO"}, None, id="smiles missing"),
+        pytest.param(
+            {"smiles": "CCO"},
+            [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            id="Smiles",
+        ),
+        pytest.param(
+            {"names": ["ASAP-Ethanol"]},
+            [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            id="Names",
+        ),
+        pytest.param(
+            {"compound_ids": [1]},
+            [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            id="Compound ids",
+        ),
+    ],
+)
 def test_cdd_api_get_molecules(mocked_cdd_api, search, expected_result):
     """Test searching via the api using different molecule identifiers."""
 
@@ -397,22 +414,31 @@ def test_cdd_api_get_molecules(mocked_cdd_api, search, expected_result):
         if "structure" in data and data["structure"] != "CCO":
             return {"count": 0, "objects": []}
         elif "structure" in data:
-            return {"count": 1, "objects": [{"name": "ethanol", "smiles": "CCO", "id": 1}]}
+            return {
+                "count": 1,
+                "objects": [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            }
         else:
             # if not we do an async request
             return {"id": "1"}
 
     with requests_mock.Mocker() as m:
         m.get(mocked_cdd_api.api_url + "molecules/", json=get_mols)
-        m.get(mocked_cdd_api.api_url + "exports/1", json={"count": 1, "objects": [{"name": "ethanol", "smiles": "CCO", "id": 1}]})
+        m.get(
+            mocked_cdd_api.api_url + "exports/1",
+            json={
+                "count": 1,
+                "objects": [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            },
+        )
         result = mocked_cdd_api.get_molecules(**search)
         assert result == expected_result
 
 
-@pytest.mark.parametrize("protocol_names", [
-    pytest.param(None, id="No names"),
-    pytest.param(["p1", "p2"], id="Names")
-])
+@pytest.mark.parametrize(
+    "protocol_names",
+    [pytest.param(None, id="No names"), pytest.param(["p1", "p2"], id="Names")],
+)
 def test_cdd_api_get_protocol(mocked_cdd_api, protocol_names):
     """Test pulling down protocol data."""
 
@@ -427,9 +453,14 @@ def test_cdd_api_readout_rows(mocked_cdd_api):
 
     with requests_mock.Mocker() as m:
         m.get(mocked_cdd_api.api_url + "readout_rows", json={"id": 2})
-        m.get(mocked_cdd_api.api_url + "exports/2", json={"count": 2, "objects": [{"id": 2}, {"id": 3}]})
+        m.get(
+            mocked_cdd_api.api_url + "exports/2",
+            json={"count": 2, "objects": [{"id": 2}, {"id": 3}]},
+        )
         # do a query with two results
-        result = mocked_cdd_api.get_readout_rows(protocol=2, types=["batch_run_aggregate_row"], molecule_ids=[1, 2])
+        result = mocked_cdd_api.get_readout_rows(
+            protocol=2, types=["batch_run_aggregate_row"], molecule_ids=[1, 2]
+        )
         assert result == [{"id": 2}, {"id": 3}]
 
 
@@ -443,23 +474,11 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
             {
                 "id": 1,
                 "readout_definitions": [
-                    {
-                        "name": "IC50",
-                        "id": 500
-                    },
-                    {
-                        "name": "IC50 CI (Lower)",
-                        "id": 501
-                    },
-                    {
-                        "name": "IC50 CI (Upper)",
-                        "id": 502
-                    },
-                    {
-                        "name": "Curve class",
-                        "id": 503
-                    }
-                ]
+                    {"name": "IC50", "id": 500},
+                    {"name": "IC50 CI (Lower)", "id": 501},
+                    {"name": "IC50 CI (Upper)", "id": 502},
+                    {"name": "Curve class", "id": 503},
+                ],
             }
         ]
     }
@@ -470,21 +489,13 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
                 "id": 1,
                 "molecule": 1,
                 "readouts": {
-                    "500": {
-                        "value": 0.03
-                    },
-                    "501": {
-                        "value": 0.028
-                    },
-                    "502": {
-                        "value": 0.031
-                    },
-                    "503": {
-                        "value": 1.1
-                    }
-                }
+                    "500": {"value": 0.03},
+                    "501": {"value": 0.028},
+                    "502": {"value": 0.031},
+                    "503": {"value": 1.1},
+                },
             }
-        ]
+        ],
     }
     mock_molecule_response = {
         "count": 1,
@@ -494,9 +505,9 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
                 "smiles": "CCO",
                 "inchi": "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3",
                 "inchi_key": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
-                "name": "ASAP-Ethanol"
+                "name": "ASAP-Ethanol",
             }
-        ]
+        ],
     }
     with requests_mock.Mocker() as m:
         # mock the required protocols
