@@ -192,6 +192,7 @@ def test_build_ds_visnet(exp_file, docked_files, tmp_path):
     assert not ds_config.for_3nn
     assert not ds_config.overwrite
 
+
 @pytest.mark.skipif(HAS_VISNET, reason="requires VisNet from nightly PyG")
 def test_build_ds_visnet_importerror(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
@@ -213,11 +214,15 @@ def test_build_ds_visnet_importerror(exp_file, docked_files, tmp_path):
         ],
     )
     # FIXME:
-    assert result.stdout.fnmatch_lines([
-        "*>>> from mtenn.config import *",
-        "*UNEXPECTED*{e}*".format(e=ImportError),
-        "{e}: cannot import name 'ViSNetModelConfig' from 'mtenn.config'*".format(e=ImportError),
-    ])
+    assert result.stdout.fnmatch_lines(
+        [
+            "*>>> from mtenn.config import *",
+            f"*UNEXPECTED*{ImportError}*",
+            "{e}: cannot import name 'ViSNetModelConfig' from 'mtenn.config'*".format(
+                e=ImportError
+            ),
+        ]
+    )
 
 
 def test_build_trainer_graph(exp_file, tmp_path):
@@ -498,11 +503,16 @@ def test_build_trainer_visnet_importerror(exp_file, docked_files, tmp_path):
         ],
     )
     # FIXME:
-    assert result.stdout.fnmatch_lines([
-        "*>>> from mtenn.config import *",
-        "*UNEXPECTED*{e}*".format(e=ImportError),
-        "{e}: cannot import name 'ViSNetModelConfig' from 'mtenn.config'*".format(e=ImportError),
-    ])
+    assert result.stdout.fnmatch_lines(
+        [
+            "*>>> from mtenn.config import *",
+            f"*UNEXPECTED*{ImportError}*",
+            "{e}: cannot import name 'ViSNetModelConfig' from 'mtenn.config'*".format(
+                e=ImportError
+            ),
+        ]
+    )
+
 
 def test_build_and_train_graph(exp_file, tmp_path):
     runner = CliRunner()
