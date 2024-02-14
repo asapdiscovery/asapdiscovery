@@ -797,7 +797,7 @@ def build_e3nn(
 @model_rand_seed
 @wandb_args
 @mtenn_args
-@schnet_args
+@visnet_args
 @es_args
 @graph_ds_args
 @struct_ds_args
