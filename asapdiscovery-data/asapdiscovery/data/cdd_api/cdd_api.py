@@ -203,7 +203,7 @@ class CDDAPI(_BaseWebAPI):
         for readout in readout_data:
             try:
                 batch_data = {
-                    f"{protocol_name}: {key} {'(µM)' if 'IC50' in key else ''}": readout[
+                    f"{protocol_name}: {key}{' (µM)' if 'IC50' in key else ''}": readout[
                         "readouts"
                     ][
                         str(value)
