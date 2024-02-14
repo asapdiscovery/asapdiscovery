@@ -6,16 +6,14 @@ Removes all the additional layers in the other workflows and adds some features 
 from pathlib import Path
 from shutil import rmtree
 
-from asapdiscovery.data.dask_utils import dask_cluster_from_type, set_dask_config
+from asapdiscovery.data.dask_utils import make_dask_client_meta
 from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
 from asapdiscovery.data.selectors.selector_list import StructureSelector
 from asapdiscovery.docking.docking import DockingInputMultiStructure
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
@@ -23,7 +21,6 @@ from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITD
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, MetaScorer
 from asapdiscovery.docking.workflows.workflows import DockingWorkflowInputsBase
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
-from distributed import Client
 from pydantic import Field, PositiveInt
 
 
@@ -109,28 +106,13 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     inputs.to_json_file(output_dir / "cross_docking_inputs.json")
 
     if inputs.use_dask:
-        logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
-        set_dask_config()
-        dask_cluster = dask_cluster_from_type(
-            inputs.dask_type, loglevel=inputs.loglevel, walltime=inputs.walltime
+        dask_client = make_dask_client_meta(
+            inputs.dask_type,
+            adaptive_min_workers=inputs.dask_cluster_n_workers,
+            adaptive_max_workers=inputs.dask_cluster_max_workers,
+            loglevel=inputs.loglevel,
+            walltime=inputs.walltime,
         )
-
-        if inputs.dask_type.is_lilac():
-            logger.info("Lilac HPC config selected, setting adaptive scaling")
-            dask_cluster.adapt(
-                minimum=10,
-                maximum=inputs.dask_cluster_max_workers,
-                wait_count=10,
-                interval="1m",
-            )
-            logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-            dask_cluster.scale(inputs.dask_cluster_n_workers)
-
-        dask_client = Client(dask_cluster)
-        logger.info(f"Using dask client: {dask_client}")
-        logger.info(f"Using dask cluster: {dask_cluster}")
-        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
-
     else:
         dask_client = None
 
@@ -143,37 +125,16 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     molfile = MolFileFactory(filename=inputs.ligands)
     query_ligands = molfile.load()
 
-    # load complexes from a directory, from fragalysis or from a pdb file
-    if inputs.structure_dir:
-        logger.info(f"Loading structures from directory: {inputs.structure_dir}")
-        structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
-        complexes = structure_factory.load(
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
-        )
-    elif inputs.fragalysis_dir:
-        logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
-        fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
-        )
-
-    elif inputs.pdb_file:
-        logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
-        complex = Complex.from_pdb(
-            inputs.pdb_file,
-            target_kwargs={"target_name": inputs.pdb_file.stem},
-            ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
-        )
-        complexes = [complex]
-
-    else:
-        raise ValueError(
-            "Must specify either fragalysis_dir, structure_dir or pdb_file"
-        )
+    # read structures
+    structure_factory = MetaStructureFactory(
+        structure_dir=inputs.structure_dir,
+        fragalysis_dir=inputs.fragalysis_dir,
+        pdb_file=inputs.pdb_file,
+        use_dask=inputs.use_dask,
+        dask_failure_mode=inputs.dask_failure_mode,
+        dask_client=dask_client,
+    )
+    complexes = structure_factory.load()
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")

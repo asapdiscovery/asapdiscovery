@@ -37,6 +37,7 @@ class ScoreType(str, Enum):
     FINT = "FINT"
     GAT = "GAT"
     schnet = "schnet"
+    e3nn = "e3nn"
     INVALID = "INVALID"
 
 
@@ -351,10 +352,32 @@ class SchnetScorer(MLModelScorer):
         return results
 
 
+class E3NNScorer(MLModelScorer):
+    """
+    Scoring using e3nn ML Model
+    """
+
+    model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
+    score_type: ClassVar[ScoreType.e3nn] = ScoreType.e3nn
+    units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
+
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+        results = []
+        for inp in inputs:
+            e3nn_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
+            results.append(
+                Score.from_score_and_docking_result(
+                    e3nn_score, self.score_type, self.units, inp
+                )
+            )
+        return results
+
+
 _ml_scorer_classes_meta = [
     MLModelScorer,
     GATScorer,
     SchnetScorer,
+    E3NNScorer,
 ]
 
 

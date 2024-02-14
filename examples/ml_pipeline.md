@@ -154,7 +154,7 @@ the ligand placed in the crystal structure it was docked to. This is also parall
 generated in the same directory as the input file.
 
 ```bash
-make-docked-complexes-v2 \
+make-docked-complexes \
     -d ./docking_results/ \
     -x ./mpro_fragalysis/ \
     -w 12
@@ -169,21 +169,21 @@ I'll try to show how things can be done both with the new CLI and with the API.
 ## Some preliminary API notes
 The API has been updated to follow the Pydantic schema pattern that the rest of the repo
 has adopted. There are now 8 `*Config` classes (5 of which are implemented in
-`asapdiscovery.ml.schema_v2.config` and 3 of which are implemented in `mtenn.config`).
+`asapdiscovery.ml.config` and 3 of which are implemented in `mtenn.config`).
 Each config class is fairly well documented so I'll just give a brief summary here:
-* `asapdiscovery.ml.schema_v2.OptimizerConfig`: A Config class describing the
+* `asapdiscovery.ml.config.OptimizerConfig`: A Config class describing the
 optimizer to be used in training.
-* `asapdiscovery.ml.schema_v2.EarlyStoppingConfig`: A Config class describing the
+* `asapdiscovery.ml.config.EarlyStoppingConfig`: A Config class describing the
 early stopping method to be used in training.
-* `asapdiscovery.ml.schema_v2.DatasetConfig`: A Config class describing a Dataset
+* `asapdiscovery.ml.config.DatasetConfig`: A Config class describing a Dataset
 (either graph-based or structural). This Config has two convenient constructor
 methods, one for constructing a graph-based Config from an experimental data file
 (`DatasetConfig.from_exp_file`) and one for constructing a structural Config from
 PDB file(s) and an optional experimental data file (`DatasetConfig.from_str_files`).
-* `asapdiscovery.ml.schema_v2.DatasetSplitterConfig`: A Config class describing how
+* `asapdiscovery.ml.config.DatasetSplitterConfig`: A Config class describing how
 to split a Dataset. This Config differs from the others in that it does not build a
 secondary object, but can instead be used directly.
-* `asapdiscovery.ml.schema_v2.LossFunctionConfig`: A Config class describing a loss
+* `asapdiscovery.ml.config.LossFunctionConfig`: A Config class describing a loss
 function to be used in training.
 * `mtenn.config.[GAT/SchNet/E3NN]ModelConfig`: Config classes describing an `mtenn`
 GAT/SchNet/E3NN model. Each of these Configs also contains the parameters in the
@@ -215,7 +215,7 @@ The equivalent Python code would be:
 from pathlib import Path
 
 from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
-from asapdiscovery.ml.schema_v2.config import DatasetConfig
+from asapdiscovery.ml.config import DatasetConfig
 
 ds_config = DatasetConfig.from_str_files(
     structures="./docking_results/*/*_bound.pdb",
@@ -282,8 +282,8 @@ This can also be accomplished directly in Python, with:
 import json
 from pathlib import Path
 
-from asapdiscovery.ml.schema_v2.config import DatasetConfig
-from asapdiscovery.ml.schema_v2.trainer import Trainer
+from asapdiscovery.ml.config import DatasetConfig
+from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import SchNetModelConfig
 
 # Dicts for individual Configs. A lot of them can be mostly empty, as we're just using

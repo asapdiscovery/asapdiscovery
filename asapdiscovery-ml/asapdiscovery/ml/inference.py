@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
@@ -8,6 +9,7 @@ import torch
 from asapdiscovery.data.openeye import oechem
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
@@ -17,9 +19,8 @@ from asapdiscovery.ml.models import (
 )
 
 # static import of models from base yaml here
-from asapdiscovery.ml.utils import build_model, load_weights
 from dgllife.utils import CanonicalAtomFeaturizer
-from mtenn.config import ModelType
+from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
 from pydantic import BaseModel, Field
 
 """
@@ -164,14 +165,29 @@ class InferenceBase(BaseModel):
                 f"({lower_pin}{sep}{upper_pin})"
             )
 
-        model = build_model(
-            local_model_spec.type,
-            config=local_model_spec.config_file,
-            **build_model_kwargs,
-        )
-        model = load_weights(
-            model, local_model_spec.weights_file, check_compatibility=True
-        )
+        # Select appropriate Config class
+        match local_model_spec.type:
+            case ModelType.GAT:
+                config_cls = GATModelConfig
+            case ModelType.schnet:
+                config_cls = SchNetModelConfig
+            case ModelType.e3nn:
+                config_cls = E3NNModelConfig
+            case other:
+                raise ValueError(f"Can't instantiate model config for type {other}.")
+
+        try:
+            config_kwargs = json.loads(local_model_spec.config_file.read_text())
+        except AttributeError:
+            config_kwargs = {}
+
+        existing_model_weights = config_kwargs.get("model_weights", None)
+        if (existing_model_weights is None) and local_model_spec.weights_file:
+            config_kwargs["model_weights"] = torch.load(
+                local_model_spec.weights_file, map_location=device
+            )
+
+        model = config_cls(**config_kwargs).build()
         model.eval()
 
         return cls(
@@ -301,7 +317,7 @@ class StructuralInference(InferenceBase):
             return output_tensor.cpu().numpy().ravel()
 
     def predict_from_structure_file(
-        self, pose: Union[Path, list[Path]]
+        self, pose: Union[Path, list[Path]], for_e3nn: bool = False
     ) -> Union[np.ndarray, float]:
         """Predict on a list of poses or a single pose.
 
@@ -309,6 +325,9 @@ class StructuralInference(InferenceBase):
         ----------
         pose : Union[Path, List[Path]]
             Path to pose file or list of paths to pose files.
+        for_e3nn : bool, default=False
+            If this prediction is being made for an e3nn model. Need to adjust the
+            dict labels in this case
 
         Returns
         -------
@@ -320,6 +339,10 @@ class StructuralInference(InferenceBase):
             pose = [pose]
 
         pose = [DockedDataset._load_structure(p, None) for p in pose]
+        if for_e3nn:
+            pose = [
+                p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
+            ]
         data = [self.predict(p) for p in pose]
 
         data = np.concatenate(np.asarray(data))
@@ -329,7 +352,7 @@ class StructuralInference(InferenceBase):
         return data
 
     def predict_from_oemol(
-        self, pose: Union[oechem.OEMol, list[oechem.OEMol]]
+        self, pose: Union[oechem.OEMol, list[oechem.OEMol]], for_e3nn: bool = False
     ) -> Union[np.ndarray, float]:
         """
         Predict on a (list of) OEMol objects.
@@ -338,6 +361,9 @@ class StructuralInference(InferenceBase):
         ----------
         pose : Union[oechem.OEMol, list[oechem.OEMol]]
             (List of) OEMol pose(s)
+        for_e3nn : bool, default=False
+            If this prediction is being made for an e3nn model. Need to adjust the
+            dict labels in this case
 
         Returns
         -------
@@ -358,6 +384,10 @@ class StructuralInference(InferenceBase):
             DockedDataset._load_structure(p, ("pose", str(i)))
             for i, p in enumerate(stringio_handles)
         ]
+        if for_e3nn:
+            pose = [
+                p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
+            ]
         # Close all the handles
         for h in stringio_handles:
             h.close()
@@ -385,6 +415,18 @@ class E3nnInference(StructuralInference):
     """
 
     model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
+
+    def predict_from_structure_file(self, pose):
+        """
+        Overload the base class method to pass for_e3nn=True.
+        """
+        return super().predict_from_structure_file(pose, for_e3nn=True)
+
+    def predict_from_oemol(self, pose):
+        """
+        Overload the base class method to pass for_e3nn=True.
+        """
+        return super().predict_from_oemol(pose, for_e3nn=True)
 
 
 _inferences_classes_meta = [
