@@ -52,6 +52,9 @@ class CDDAPI(_BaseWebAPI):
             A list of molecules found in the CDD.
 
         """
+        if len([i for i in [smiles, names, compound_ids] if i is not None]) > 1:
+            raise ValueError("The arguments `smiles`, `names` and `compound_ids` are mutually exclusive provide only one.")
+
         mol_data = {"only_batch_ids": "true"}
         if smiles is not None:
             mol_data["structure"] = smiles
@@ -75,27 +78,22 @@ class CDDAPI(_BaseWebAPI):
         else:
             return result["objects"]
 
-    def get_protocol(
+    def get_protocols(
         self,
-        molecule_ids: Optional[list[int]] = None,
-        protocol_name: Optional[str] = None,
+        protocol_names: Optional[list[str]] = None,
     ) -> list[dict]:
         """
-        Search for a specific protocol performed on the query molecules, if no molecules are provided all molecules
-        computed under the protocol are retured.
+        Search for a specific protocol.
 
         Args:
-            molecule_ids: The CDD ids of the molecule who's protocols we want to gather.
-            protocol_name: The name of the protocol to search for, if not provided all protocols will be pulled.
+            protocol_names: The list of protocol names to search for, if not provided all protocols will be pulled.
 
         Returns:
             A list of protocols associated with these molecules
         """
         protocol_data = {}
-        if molecule_ids is not None:
-            protocol_data["molecules"] = molecule_ids
-        if protocol_name is not None:
-            protocol_data["names"] = [protocol_name]
+        if protocol_names is not None:
+            protocol_data["names"] = protocol_names
         result = self._session.get(url=self.api_url + "protocols", json=protocol_data)
         result_data = json.loads(result.content.decode())
         return result_data["objects"]
@@ -158,7 +156,7 @@ class CDDAPI(_BaseWebAPI):
             else:
                 return result
 
-    def get_ic50_data(self, protocol_name: str) -> Optional[list[dict]]:
+    def get_ic50_data(self, protocol_name: str) -> Optional[pandas.DataFrame]:
         """
         A convenience method which wraps the required function calls to gather the raw ic50 data from the CDD for the
         calculated as part of the named protocol.
@@ -172,7 +170,7 @@ class CDDAPI(_BaseWebAPI):
 
         """
         # get the id of the protocol we want the readout for
-        protocols = self.get_protocol(protocol_name=protocol_name)
+        protocols = self.get_protocols(protocol_names=[protocol_name])
         if protocols:
             protocol = protocols[0]
         else:
@@ -232,4 +230,4 @@ class CDDAPI(_BaseWebAPI):
             compound_data["inchi_key"] = mol_data["inchi_key"]
             compound_data["name"] = mol_data["name"]
 
-        return ic50_data
+        return pandas.DataFrame(ic50_data)
