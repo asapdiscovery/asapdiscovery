@@ -157,7 +157,7 @@ class TestPosteraLive:
         self, live_postera_ms_api_instance, simple_moleculeset
     ):
         # update one subset of molecules
-        molecule_set_name, uuid = simple_moleculeset
+        _, uuid = simple_moleculeset
         ms_api = live_postera_ms_api_instance
         # id and smiles fields will be set to their postera values on pulldown
         molecules_df = ms_api.get_molecules(uuid, return_as="dataframe")
@@ -181,7 +181,7 @@ class TestPosteraLive:
 
     def test_add(self, live_postera_ms_api_instance, simple_moleculeset):
         # add a molecule to the set
-        molecule_set_name, uuid = simple_moleculeset
+        _, uuid = simple_moleculeset
         ms_api = live_postera_ms_api_instance
 
         # make sopme new molecules
@@ -342,11 +342,8 @@ class TestPosteraLive:
         ret_df_updated = ret_df_updated.sort_index(inplace=True)
         assert any(ret_df == ret_df_updated)
 
-    def test_factory_name(
-        self, live_postera_ms_api_instance, simple_moleculeset, postera_settings
-    ):
+    def test_factory_name(self, simple_moleculeset, postera_settings):
         molecule_set_name, uuid = simple_moleculeset
-        ms_api = live_postera_ms_api_instance
         factory = PosteraFactory(
             molecule_set_name=molecule_set_name, settings=postera_settings
         )
@@ -355,11 +352,8 @@ class TestPosteraLive:
         smiles = set([ligand.smiles for ligand in ligands])
         assert smiles == {"CCCC", "CCCCCCCC"}
 
-    def test_factory_id(
-        self, live_postera_ms_api_instance, simple_moleculeset, postera_settings
-    ):
-        molecule_set_name, uuid = simple_moleculeset
-        ms_api = live_postera_ms_api_instance
+    def test_factory_id(self, simple_moleculeset, postera_settings):
+        _, uuid = simple_moleculeset
         factory = PosteraFactory(molecule_set_id=uuid, settings=postera_settings)
         ligands = factory.pull()
         assert len(ligands) == 2
@@ -429,6 +423,7 @@ class TestPosteraLive:
         subset_data["non_allowed"] = ["non_allowed"]
         df, id, new = uploader.push(subset_data)
         assert not new
+        assert id == uuid
         assert df[field].tolist() == [
             1,
             "",
@@ -446,7 +441,6 @@ class TestPosteraLive:
     def test_uploader_update_all_uuid_castable(
         self,
         simple_moleculeset,
-        simple_moleculeset_data,
         live_postera_ms_api_instance,
         postera_settings,
     ):
@@ -474,6 +468,7 @@ class TestPosteraLive:
         data["non_allowed"] = ["non_allowed", "non_allowed"]
         ret_data, id, new = uploader.push(data)
         assert not new
+        assert id == uuid
         assert ret_data[field].tolist() == [1, 2]
         assert set(ret_data.columns) == {
             "smiles",
@@ -488,7 +483,6 @@ class TestPosteraLive:
     def test_uploader_update_superset_some_uuids(
         self,
         simple_moleculeset,
-        simple_moleculeset_data,
         live_postera_ms_api_instance,
         postera_settings,
     ):
@@ -523,6 +517,7 @@ class TestPosteraLive:
         # and a non-allowed tag, will be dropped
         data["non_allowed"] = ["non_allowed", "non_allowed", "non_allowed"]
         ret_data, id, new = uploader.push(data)
+        assert id == uuid
         assert not new
         assert ret_data[field].tolist() == [1, 2, 3]
         assert set(ret_data.columns) == {
