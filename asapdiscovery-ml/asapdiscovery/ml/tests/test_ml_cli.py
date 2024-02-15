@@ -1,12 +1,13 @@
 import json
-import re
 import pickle as pkl
+import re
 
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.cli import cli
+from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.trainer import Trainer
+from click.testing import CliRunner
 
 # guard for visnet import. Refer MTENN issue #42
 # also guard against older versions of mtenn with no visnet
@@ -15,7 +16,6 @@ try:
 except ModuleNotFoundError:
     HAS_VISNET = False
 
-from click.testing import CliRunner
 
 @pytest.fixture(scope="session")
 def exp_file():
@@ -475,7 +475,9 @@ def test_build_trainer_visnet_importerror(exp_file, docked_files, tmp_path):
     )
     assert result.exit_code == 1
     assert isinstance(result.exception, ImportError)
-    assert re.match(r".*Can't import ViSNetModelConfig without.*",str(result.exception))
+    assert re.match(
+        r".*Can't import ViSNetModelConfig without.*", str(result.exception)
+    )
 
 
 def test_build_and_train_graph(exp_file, tmp_path):
@@ -751,5 +753,6 @@ def test_build_and_train_visnet_importerror(exp_file, docked_files, tmp_path):
     )
     assert result.exit_code == 1
     assert isinstance(result.exception, ImportError)
-    assert re.match(r".*Can't import ViSNetModelConfig without.*",str(result.exception))
-   
+    assert re.match(
+        r".*Can't import ViSNetModelConfig without.*", str(result.exception)
+    )

@@ -1,5 +1,10 @@
 import json
 import pickle as pkl
+
+# a gross hack to get around support for MTENN stable and MTENN dev
+# TODO: rip this out when MTENN is next released
+import re
+import warnings
 from glob import glob
 from pathlib import Path
 from time import time
@@ -24,12 +29,9 @@ from mtenn.config import (
     SchNetModelConfig,
 )
 
-# a gross hack to get around support for MTENN stable and MTENN dev
-# TODO: rip this out when MTENN is next released
-import re
-import warnings
-try: 
+try:
     from mtenn.config import ViSNetModelConfig
+
     # guard for visnet import. Refer MTENN issue #42
     from mtenn.conversion_utils.visnet import HAS_VISNET
 except ImportError as e:
@@ -38,8 +40,8 @@ except ImportError as e:
         warnings.warn("To use VisNet, pip install MTENN from Github", ImportWarning)
         HAS_VISNET = False
     else:
-        raise ImportError("Unexpected ImportError: {e}".format(e=e))
-    
+        raise ImportError(f"Unexpected ImportError: {e}")
+
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
 
