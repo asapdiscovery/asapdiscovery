@@ -1,17 +1,17 @@
 import json
+import re
 import pickle as pkl
 
 import pytest
-from _pytest.compat import ImportError
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.cli import cli
 from asapdiscovery.ml.config import DatasetConfig
+from asapdiscovery.ml.cli import cli
 from asapdiscovery.ml.trainer import Trainer
-from click.testing import CliRunner
 
-# this is really gross. Any ideas on how to make this better?
+# guard for visnet import. Refer MTENN issue #42
 from mtenn.conversion_utils.visnet import HAS_VISNET
 
+from click.testing import CliRunner
 
 @pytest.fixture(scope="session")
 def exp_file():
@@ -152,7 +152,6 @@ def test_build_ds_e3nn(exp_file, docked_files, tmp_path):
     assert not ds_config.overwrite
 
 
-@pytest.mark.skipif(not HAS_VISNET, reason="requires VisNet from nightly PyG")
 def test_build_ds_visnet(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
 
@@ -189,35 +188,8 @@ def test_build_ds_visnet(exp_file, docked_files, tmp_path):
     assert len(ds_config.input_data) == 10
     assert ds_config.cache_file == ds_cache
     assert not ds_config.grouped
-    assert not ds_config.for_3nn
+    assert not ds_config.for_e3nn
     assert not ds_config.overwrite
-
-@pytest.mark.skipif(HAS_VISNET, reason="requires VisNet from nightly PyG")
-def test_build_ds_visnet_importerror(exp_file, docked_files, tmp_path):
-    docked_dir = docked_files[0].parent
-
-    runner = CliRunner()
-    result = runner.invoke(
-        cli,
-        [
-            "build-dataset",
-            "visnet",
-            "--exp-file",
-            exp_file,
-            "--structures",
-            str(docked_dir),
-            "--ds-cache",
-            tmp_path / "ds_cache.pkl",
-            "--ds-config-cache",
-            tmp_path / "ds_config_cache.json",
-        ],
-    )
-    # FIXME:
-    assert result.stdout.fnmatch_lines([
-        "*>>> from mtenn.config import *",
-        "*UNEXPECTED*{e}*".format(e=ImportError),
-        "{e}: cannot import name 'ViSNetModelConfig' from 'mtenn.config'*".format(e=ImportError),
-    ])
 
 
 def test_build_trainer_graph(exp_file, tmp_path):
@@ -497,12 +469,10 @@ def test_build_trainer_visnet_importerror(exp_file, docked_files, tmp_path):
             "False",
         ],
     )
-    # FIXME:
-    assert result.stdout.fnmatch_lines([
-        "*>>> from mtenn.config import *",
-        "*UNEXPECTED*{e}*".format(e=ImportError),
-        "{e}: cannot import name 'ViSNetModelConfig' from 'mtenn.config'*".format(e=ImportError),
-    ])
+    assert result.exit_code == 1
+    assert isinstance(result.exception, ImportError)
+    assert re.match(r".*Can't import ViSNetModelConfig without.*",str(result.exception))
+
 
 def test_build_and_train_graph(exp_file, tmp_path):
     runner = CliRunner()
@@ -680,6 +650,7 @@ def test_build_and_train_e3nn(exp_file, docked_files, tmp_path):
     assert len(loss_dict["test"]) == 1
 
 
+@pytest.mark.skipif(not HAS_VISNET, reason="requires VisNet from nightly PyG")
 def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
 
@@ -703,8 +674,6 @@ def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
             tmp_path / "ds_cache.pkl",
             "--ds-config-cache",
             tmp_path / "ds_config_cache.json",
-            "--irreps-hidden",
-            "0:5",
             "--loss-type",
             "mse_step",
             "--device",
@@ -740,3 +709,43 @@ def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
     assert len(loss_dict["train"]) == 8
     assert len(loss_dict["val"]) == 1
     assert len(loss_dict["test"]) == 1
+
+
+@pytest.mark.skipif(HAS_VISNET, reason="requires VisNet from nightly PyG")
+def test_build_and_train_visnet_importerror(exp_file, docked_files, tmp_path):
+    docked_dir = docked_files[0].parent
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "build-and-train",
+            "visnet",
+            "--output-dir",
+            tmp_path / "model_out",
+            "--trainer-config-cache",
+            tmp_path / "trainer.json",
+            "--ds-split-type",
+            "temporal",
+            "--exp-file",
+            exp_file,
+            "--structures",
+            str(docked_dir),
+            "--ds-cache",
+            tmp_path / "ds_cache.pkl",
+            "--ds-config-cache",
+            tmp_path / "ds_config_cache.json",
+            "--loss-type",
+            "mse_step",
+            "--device",
+            "cpu",
+            "--n-epochs",
+            "1",
+            "--use-wandb",
+            "False",
+        ],
+    )
+    assert result.exit_code == 1
+    assert isinstance(result.exception, ImportError)
+    assert re.match(r".*Can't import ViSNetModelConfig without.*",str(result.exception))
+   
