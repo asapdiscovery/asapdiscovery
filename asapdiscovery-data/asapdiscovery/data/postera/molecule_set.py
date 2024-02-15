@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Dict, Tuple, Union  # noqa: F401
+from typing import Dict, Tuple, Union, Optional  # noqa: F401
 
 import pandas as pd
 from asapdiscovery.data.enum import StringEnum
@@ -124,26 +124,7 @@ class MoleculeSetAPI(PostEraAPI):
     def molecule_set_url(self):
         return f"{self.api_url}/moleculesets"
 
-    @staticmethod
-    def molecule_set_id_or_name(
-        id_or_name: str, available_molsets: dict[str, str]
-    ) -> str:
-        """
-        Helper function to determine if the input is a molecule set id or name
-        and return the molecule set id
-        """
-        try:
-            uuid.UUID(id_or_name)
-            molset_id = id_or_name
-        except ValueError:
-            available_molsets_rev = {v: k for k, v in available_molsets.items()}
-            try:
-                molset_id = available_molsets_rev[id_or_name]
-            except KeyError:
-                raise ValueError(
-                    f"Molecule Set with identifier: {id_or_name} not found in PostEra"
-                )
-        return molset_id
+
 
     def create(
         self, molecule_set_name: str, data: MoleculeList, return_full: bool = False
@@ -183,6 +164,7 @@ class MoleculeSetAPI(PostEraAPI):
     def _read_page(self, url: str, page: int) -> Tuple[pd.DataFrame, str]:
         response = self._session.get(url, params={"page": page})
         response_json = response.json()
+        logger.debug(f"Postera MoleculeSetAPI._read_page response: {response_json}, status code: {response.status_code}")
         return response_json["results"], response_json["paginationInfo"]["hasNext"]
 
     def _collate(self, url):
@@ -192,7 +174,9 @@ class MoleculeSetAPI(PostEraAPI):
 
         while has_next:
             page += 1
+            logger.debug(f"Reading page {page} of {url}")
             result, has_next = self._read_page(url, page)
+            logger.debug(f"Has next: {has_next}")
             results.extend(result)
 
         return results
@@ -315,10 +299,46 @@ class MoleculeSetAPI(PostEraAPI):
             ]
             return pd.DataFrame(response_data)
 
+    def get_id_from_name(self, name: str) -> str:
+        """Get the unique id of a MoleculeSet from its human-readable name.
+
+        Parameters
+        ----------
+        name
+            The human-readable name of the MoleculeSet.
+
+        Returns
+        -------
+        str
+            The unique id of the MoleculeSet.
+
+        """
+        avail = self.list_available(return_full=False)
+        avail_rev = {v: k for k, v in avail.items()}
+        id = avail_rev.get(name)
+        if id is None:
+            raise ValueError(f"Molecule set with name {name} not found in PostEra")
+        return id
+
+
+
     def get_molecules_from_id_or_name(
-        self, molecule_set_id: str, return_as="dataframe"
+        self, id: Optional[str]=None, name: Optional[str]=None, return_as="dataframe"
     ) -> tuple[Union[pd.DataFrame, list], str]:
-        molset_id = self.molecule_set_id_or_name(molecule_set_id, self.list_available())
+        if id is None and name is None:
+            raise ValueError("Either id or name must be set")
+
+        if id is not None and name is not None:
+            raise ValueError("Only one of id or name can be set")
+
+        if name is not None:
+            molset_id = self.get_id_from_name(name)
+            if molset_id is None:
+                raise ValueError(f"Molecule set with name {name} not found in PostEra")
+        
+        if id is not None:
+            molset_id = id
+        
         return self.get_molecules(molset_id, return_as), molset_id
 
     def add_molecules(

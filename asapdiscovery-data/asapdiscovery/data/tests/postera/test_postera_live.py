@@ -11,13 +11,15 @@ from asapdiscovery.data.postera.molecule_set import (
 )
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
 from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.postera.postera_factory import PosteraFactory
+from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 
 from hashlib import sha256
 
 # WARNING IMPORTANT: - this is a live test and will make real requests to the POSTERA API
 # A sanboxed API key is required to run this test, DO NOT USE A PRODUCTION API KEY
-# we have a second environment variable to stop you accidentally running this test with a production API key
-# DO NOT REMOVE
+# we have a two layer safeguard to stop you accidentally running this test with a production API key
+# DO NOT REMOVE THESE GUARDS
 
 
 @pytest.mark.skipif(not os.getenv("POSTERA_API_KEY"), reason="No POSTERA_API_KEY")
@@ -338,3 +340,55 @@ class TestPosteraLive:
         ret_df = ret_df.sort_index()
         ret_df_updated = ret_df_updated.sort_index(inplace=True)
         assert any(ret_df == ret_df_updated)
+
+
+    def test_factory_name(self, live_postera_ms_api_instance, simple_moleculeset, postera_settings):
+        molecule_set_name, uuid = simple_moleculeset
+        ms_api = live_postera_ms_api_instance
+        factory = PosteraFactory(molecule_set_name=molecule_set_name, settings=postera_settings)
+        ligands = factory.pull()
+        assert len(ligands) == 2
+        smiles = set([ligand.smiles for ligand in ligands])
+        assert smiles == {"CCCC", "CCCCCCCC"}
+
+
+    def test_factory_id(self, live_postera_ms_api_instance, simple_moleculeset, postera_settings):
+        molecule_set_name, uuid = simple_moleculeset
+        ms_api = live_postera_ms_api_instance
+        factory = PosteraFactory(molecule_set_id=uuid, settings=postera_settings)
+        ligands = factory.pull()
+        assert len(ligands) == 2
+        smiles = set([ligand.smiles for ligand in ligands])
+        assert smiles == {"CCCC", "CCCCCCCC"}
+
+
+    def test_uploader_empty(self, postera_settings, simple_moleculeset_data, live_postera_ms_api_instance):
+        uploader = PosteraUploader(molecule_set_name=str(uuid4()), settings=postera_settings, id_field="id_field", smiles_field="smiles_field")
+        df, id, new = uploader.push(simple_moleculeset_data, "id_field")
+        ms_api = live_postera_ms_api_instance
+        assert ms_api.exists(uploader.molecule_set_name, by="name")
+        assert ms_api.exists(id, by="id")
+        assert new
+
+        postera_data = ms_api.get_molecules(id, return_as="dataframe")
+        ms_api.destroy(id)
+        # should have been joined with the manifold data
+        assert set(df.columns) == set(simple_moleculeset_data.columns)
+        print(postera_data)
+        # keys change when pulled down from manifold
+        assert any(postera_data["smiles"] == simple_moleculeset_data["smiles_field"])
+        assert any(postera_data["id"] == df["id_field"])
+        raise Exception("test")
+
+
+
+    # def test_uploader_update(self, simple_moleculeset, live_postera_ms_api_instance, postera_settings):
+    #     molecule_set_name, uuid = simple_moleculeset
+    #     ms_api = live_postera_ms_api_instance
+    #     uploader = PosteraUploader(molecule_set_name=molecule_set_name, settings=postera_settings, id_field="id_field", smiles_field="smiles_field")
+
+
+    #     df, name, new = uploader.push(simple_moleculeset_data, "id_field")
+    #     assert not new
+
+        
