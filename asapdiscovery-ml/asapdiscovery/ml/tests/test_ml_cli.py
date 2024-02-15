@@ -9,7 +9,11 @@ from asapdiscovery.ml.cli import cli
 from asapdiscovery.ml.trainer import Trainer
 
 # guard for visnet import. Refer MTENN issue #42
-from mtenn.conversion_utils.visnet import HAS_VISNET
+# also guard against older versions of mtenn with no visnet
+try:
+    from mtenn.conversion_utils.visnet import HAS_VISNET
+except ModuleNotFoundError:
+    HAS_VISNET = False
 
 from click.testing import CliRunner
 
