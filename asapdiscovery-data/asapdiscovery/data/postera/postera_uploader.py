@@ -91,6 +91,7 @@ class PosteraUploader(BaseModel):
                     smiles_field=self.smiles_field,
                     id_field=self.id_field,
                 )
+                data.to_csv("data.csv")
                 self._check_for_duplicates(
                     data, self.id_field, allow_empty=True, raise_error=True
                 )
@@ -275,7 +276,7 @@ class PosteraUploader(BaseModel):
             If there are blank UUIDs
         """
         df = df.copy()
-        df = df.replace("", np.nan, inplace=True)
+        df = df.replace("", np.nan)
         if df[id_field].isna().any():
             if raise_error:
                 raise ValueError("Blank UUIDs found in dataframe")
