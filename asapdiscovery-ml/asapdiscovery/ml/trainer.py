@@ -22,11 +22,24 @@ from mtenn.config import (
     ModelConfigBase,
     ModelType,
     SchNetModelConfig,
-    ViSNetModelConfig,
 )
 
-# guard for visnet import. Refer MTENN issue #42
-from mtenn.conversion_utils.visnet import HAS_VISNET
+# a gross hack to get around support for MTENN stable and MTENN dev
+# TODO: rip this out when MTENN is next released
+import re
+import warnings
+try: 
+    from mtenn.config import ViSNetModelConfig
+    # guard for visnet import. Refer MTENN issue #42
+    from mtenn.conversion_utils.visnet import HAS_VISNET
+except ImportError as e:
+    match = re.search(r"cannot import name 'ViSNetModelConfig'*", str(e))
+    if match:
+        warnings.warn("To use VisNet, pip install MTENN from Github", ImportWarning)
+        HAS_VISNET = False
+    else:
+        raise ImportError("Unexpected ImportError: {e}".format(e=e))
+    
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
 
@@ -157,7 +170,7 @@ class Trainer(BaseModel):
     def check_model_type_visnet_import(cls, v):
         # VisNet requires PyG >=2.5.0. Currently only in PyG-nightly
         # Refer MTENN issue #42
-        if isinstance(v, ViSNetModelConfig) and not HAS_VISNET:
+        if not HAS_VISNET and isinstance(v, ViSNetModelConfig):
             raise ImportError(
                 "Can't import ViSNetModelConfig without mtenn.conversion_utils.visnet."
             )
