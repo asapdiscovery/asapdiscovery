@@ -255,6 +255,10 @@ files:
   - resource: docking_results.json
     sha256hash: 4340695755c2f30edc834a2ad339425df320cbf3f5a1af2e389df8a1758584cc
 
+  # precomputed docking result to make some tests faster
+  - resource: docking_results_simple.json
+    sha256hash: 420d8a50a7ba19a1ba9f1a5b5add2f93bc4a33839f07895421edf1fe6eeea66c
+
   # constrained conformer generation testing
   - resource: constrained_conformer/ASAP-0008650.sdf
     sha256hash: 2aded7f8f4450b94b6bfeb13095ba755867918fb0195d1176165928fc7e5cd13
