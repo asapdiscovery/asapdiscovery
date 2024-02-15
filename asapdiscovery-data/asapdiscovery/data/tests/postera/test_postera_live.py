@@ -8,6 +8,7 @@ from asapdiscovery.data.postera.molecule_set import (
     MoleculeSetAPI,
     MoleculeList,
     MoleculeUpdateList,
+    MoleculeSetKeys,
 )
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
 from asapdiscovery.data.services_config import PosteraSettings
@@ -341,18 +342,22 @@ class TestPosteraLive:
         ret_df_updated = ret_df_updated.sort_index(inplace=True)
         assert any(ret_df == ret_df_updated)
 
-
-    def test_factory_name(self, live_postera_ms_api_instance, simple_moleculeset, postera_settings):
+    def test_factory_name(
+        self, live_postera_ms_api_instance, simple_moleculeset, postera_settings
+    ):
         molecule_set_name, uuid = simple_moleculeset
         ms_api = live_postera_ms_api_instance
-        factory = PosteraFactory(molecule_set_name=molecule_set_name, settings=postera_settings)
+        factory = PosteraFactory(
+            molecule_set_name=molecule_set_name, settings=postera_settings
+        )
         ligands = factory.pull()
         assert len(ligands) == 2
         smiles = set([ligand.smiles for ligand in ligands])
         assert smiles == {"CCCC", "CCCCCCCC"}
 
-
-    def test_factory_id(self, live_postera_ms_api_instance, simple_moleculeset, postera_settings):
+    def test_factory_id(
+        self, live_postera_ms_api_instance, simple_moleculeset, postera_settings
+    ):
         molecule_set_name, uuid = simple_moleculeset
         ms_api = live_postera_ms_api_instance
         factory = PosteraFactory(molecule_set_id=uuid, settings=postera_settings)
@@ -361,34 +366,175 @@ class TestPosteraLive:
         smiles = set([ligand.smiles for ligand in ligands])
         assert smiles == {"CCCC", "CCCCCCCC"}
 
+    def test_uploader_new(
+        self, postera_settings, simple_moleculeset_data, live_postera_ms_api_instance
+    ):
+        """
+        Test that the uploader can create a new molecule set and push data to it
+        Not as much to test here
+        """
+        uploader = PosteraUploader(
+            molecule_set_name=str(uuid4()),
+            settings=postera_settings,
+            id_field="id_field",
+            smiles_field="smiles_field",
+        )
 
-    def test_uploader_empty(self, postera_settings, simple_moleculeset_data, live_postera_ms_api_instance):
-        uploader = PosteraUploader(molecule_set_name=str(uuid4()), settings=postera_settings, id_field="id_field", smiles_field="smiles_field")
-        df, id, new = uploader.push(simple_moleculeset_data, "id_field")
+        # inject one allowed column into the data
+        input_data = simple_moleculeset_data.copy()
+        field = ManifoldAllowedTags.get_values()[-1]  # grab a random field
+        input_data[field] = [1, 2]
+
+        df, id, new = uploader.push(input_data)
         ms_api = live_postera_ms_api_instance
         assert ms_api.exists(uploader.molecule_set_name, by="name")
         assert ms_api.exists(id, by="id")
         assert new
-
         postera_data = ms_api.get_molecules(id, return_as="dataframe")
         ms_api.destroy(id)
-        # should have been joined with the manifold data
-        assert set(df.columns) == set(simple_moleculeset_data.columns)
-        print(postera_data)
-        # keys change when pulled down from manifold
-        assert any(postera_data["smiles"] == simple_moleculeset_data["smiles_field"])
-        assert any(postera_data["id"] == df["id_field"])
-        raise Exception("test")
 
+        assert set(df.columns) == {"smiles", "id", field}
 
+        # check that the extra field is there
+        assert all(postera_data == df)
 
-    # def test_uploader_update(self, simple_moleculeset, live_postera_ms_api_instance, postera_settings):
-    #     molecule_set_name, uuid = simple_moleculeset
-    #     ms_api = live_postera_ms_api_instance
-    #     uploader = PosteraUploader(molecule_set_name=molecule_set_name, settings=postera_settings, id_field="id_field", smiles_field="smiles_field")
+    def test_uploader_update_subset_prexisting_data(
+        self,
+        simple_moleculeset,
+        simple_moleculeset_data,
+        live_postera_ms_api_instance,
+        postera_settings,
+    ):
+        """
+        Test that the uploader can update a subset of molecules in a pre-existing molecule set with some non-editable data already present
 
+        """
+        molecule_set_name, uuid = simple_moleculeset
+        ms_api = live_postera_ms_api_instance
+        uploader = PosteraUploader(
+            molecule_set_name=molecule_set_name,
+            settings=postera_settings,
+            id_field="id_field",
+            smiles_field="smiles_field",
+        )
 
-    #     df, name, new = uploader.push(simple_moleculeset_data, "id_field")
-    #     assert not new
+        # update one subset of molecules
+        subset_data = simple_moleculeset_data.iloc[:1]
+        # change some values on an allowed tag
+        field = ManifoldAllowedTags.get_values()[
+            -1
+        ]  # get the last field (doesn't matter which one)
+        subset_data[field] = [1]
+        # and a non-allowed tag, will be dropped
+        subset_data["non_allowed"] = ["non_allowed"]
+        df, id, new = uploader.push(subset_data)
+        assert not new
+        assert df[field].tolist() == [
+            1,
+            "",
+        ]  # we updated one value and the other is empty
+        assert set(df.columns) == {
+            "smiles",
+            "id",
+            field,
+            "custom_fieldA",
+            "custom_fieldB",
+            "custom_fieldC",
+            "custom_fieldD",
+        }
 
-        
+    def test_uploader_update_all_uuid_castable(
+        self,
+        simple_moleculeset,
+        simple_moleculeset_data,
+        live_postera_ms_api_instance,
+        postera_settings,
+    ):
+        """
+        Check that the uploader can update the data in a molecule set with UUIDs already present
+        """
+        molecule_set_name, uuid = simple_moleculeset
+        ms_api = live_postera_ms_api_instance
+        data = ms_api.get_molecules(
+            uuid, return_as="dataframe"
+        )  # these data will already have UUIDs present as we pull down directly from the API
+
+        uploader = PosteraUploader(
+            molecule_set_name=molecule_set_name,
+            settings=postera_settings,
+            id_field=MoleculeSetKeys.id,
+            smiles_field=MoleculeSetKeys.smiles,
+        )
+        # change some values on an allowed tag
+        field = ManifoldAllowedTags.get_values()[
+            -1
+        ]  # get the last field (doesn't matter which one)
+        data[field] = [1, 2]
+        # and a non-allowed tag, will be dropped
+        data["non_allowed"] = ["non_allowed", "non_allowed"]
+        ret_data, id, new = uploader.push(data)
+        assert not new
+        assert ret_data[field].tolist() == [1, 2]
+        assert set(ret_data.columns) == {
+            "smiles",
+            "id",
+            field,
+            "custom_fieldA",
+            "custom_fieldB",
+            "custom_fieldC",
+            "custom_fieldD",
+        }
+
+    def test_uploader_update_superset_some_uuids(
+        self,
+        simple_moleculeset,
+        simple_moleculeset_data,
+        live_postera_ms_api_instance,
+        postera_settings,
+    ):
+        """
+        Check that the uploader can update the data in a molecule set with SOME UUIDs present and some not
+        """
+        molecule_set_name, uuid = simple_moleculeset
+        ms_api = live_postera_ms_api_instance
+        data = ms_api.get_molecules(
+            uuid, return_as="dataframe"
+        )  # these data will already have UUIDs present as we pull down directly from the API
+
+        # add a new molecule to the data
+        new_molecule = pd.DataFrame(
+            {
+                "smiles": ["CCCCCF"],
+                "id": [np.nan],
+            }
+        )
+        data = pd.concat([data, new_molecule])
+        uploader = PosteraUploader(
+            molecule_set_name=molecule_set_name,
+            settings=postera_settings,
+            id_field=MoleculeSetKeys.id,
+            smiles_field=MoleculeSetKeys.smiles,
+        )
+        # change some values on an allowed tag
+        field = ManifoldAllowedTags.get_values()[
+            -1
+        ]  # get the last field (doesn't matter which one)
+        data[field] = [1, 2, 3]
+        # and a non-allowed tag, will be dropped
+        data["non_allowed"] = ["non_allowed", "non_allowed", "non_allowed"]
+        ret_data, id, new = uploader.push(data)
+        assert not new
+        assert ret_data[field].tolist() == [1, 2, 3]
+        assert set(ret_data.columns) == {
+            "smiles",
+            "id",
+            field,
+            "custom_fieldA",
+            "custom_fieldB",
+            "custom_fieldC",
+            "custom_fieldD",
+        }
+        # check the smiles is there
+        assert "CCCCCF" in ret_data["smiles"].tolist()
+        assert "CCCC" in ret_data["smiles"].tolist()
+        assert "CCCCCCCC" in ret_data["smiles"].tolist()
