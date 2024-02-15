@@ -132,7 +132,7 @@ class PosteraUploader(BaseModel):
                 )
                 # check for blanks, raising
                 self._check_for_blank_ids(
-                    data, self.id_field, allow_empty=False, raise_error=True
+                    data, self.id_field, raise_error=True
                 )
 
                 # ok to update the molecule set
