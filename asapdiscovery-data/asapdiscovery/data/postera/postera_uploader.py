@@ -2,6 +2,7 @@ import logging
 import warnings
 from uuid import UUID
 import pandas as pd
+import numpy as np
 from typing import Tuple
 
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
@@ -82,7 +83,6 @@ class PosteraUploader(BaseModel):
             )
 
             if not self.id_data_is_uuid_castable(data, self.id_field):
-
                 # we need to get the data from the manifold API and join it with the original data
                 new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
                 data = self.join_with_manifold_data(
@@ -91,7 +91,9 @@ class PosteraUploader(BaseModel):
                     smiles_field=self.smiles_field,
                     id_field=self.id_field,
                 )
-                self._check_for_duplicates(data, self.id_field, raise_error=True)
+                self._check_for_duplicates(
+                    data, self.id_field, allow_empty=True, raise_error=True
+                )
 
                 # find rows with blank id, they need to be added to molset, using **add** endpoint rather than **update**
                 has_blank_id_rows, blank_id_rows = self._check_for_blank_ids(
@@ -124,9 +126,13 @@ class PosteraUploader(BaseModel):
                 # if the id data is castable to UUID, we can just update the molecule set
 
                 # check for duplicates
-                self._check_for_duplicates(data, self.id_field, raise_error=True)
+                self._check_for_duplicates(
+                    data, self.id_field, allow_empty=False, raise_error=True
+                )
                 # check for blanks, raising
-                self._check_for_blank_ids(data, self.id_field, raise_error=True)
+                self._check_for_blank_ids(
+                    data, self.id_field, allow_empty=False, raise_error=True
+                )
 
                 # ok to update the molecule set
                 ms_api.update_molecules_from_df_with_manifold_validation(
@@ -216,7 +222,7 @@ class PosteraUploader(BaseModel):
             return False
 
     @staticmethod
-    def _check_for_duplicates(df, id_field, raise_error=False):
+    def _check_for_duplicates(df, id_field, allow_empty=True, raise_error=False):
         """
         Check for duplicate UUIDs in the dataframe
 
@@ -226,14 +232,24 @@ class PosteraUploader(BaseModel):
             DataFrame of data to upload
         id_field : str
             Name of the column in the dataframe to use as the ligand id
+        allow_empty : bool
+            Whether to allow empty UUIDs to be exempt from the check
+        raise_error : bool
+            Whether to raise an error if duplicates are found
 
         Raises
         ------
         ValueError
             If there are duplicate UUIDs
         """
+        df = df.copy()
+        df = df.replace("", np.nan)
+        if allow_empty:
+            df = df[~df[id_field].isna()]
+        df.to_csv("test.csv")
         if df[id_field].duplicated().any():
             duplicates = df[df[id_field].duplicated()]
+            duplicates.to_csv("duplicates.csv")
             num_duplicates = len(duplicates)
             if raise_error:
                 raise ValueError(f"{num_duplicates} duplicate UUIDs found in dataframe")
@@ -258,6 +274,8 @@ class PosteraUploader(BaseModel):
         ValueError
             If there are blank UUIDs
         """
+        df = df.copy()
+        df = df.replace("", np.nan, inplace=True)
         if df[id_field].isna().any():
             if raise_error:
                 raise ValueError("Blank UUIDs found in dataframe")

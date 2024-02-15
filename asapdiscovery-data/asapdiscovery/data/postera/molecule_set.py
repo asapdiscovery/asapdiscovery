@@ -172,9 +172,7 @@ class MoleculeSetAPI(PostEraAPI):
 
         while has_next:
             page += 1
-            logger.debug(f"Reading page {page} of {url}")
             result, has_next = self._read_page(url, page)
-            logger.debug(f"Has next: {has_next}")
             results.extend(result)
 
         return results
