@@ -91,7 +91,6 @@ class PosteraUploader(BaseModel):
                     smiles_field=self.smiles_field,
                     id_field=self.id_field,
                 )
-                data.to_csv("data.csv")
                 self._check_for_duplicates(
                     data, self.id_field, allow_empty=True, raise_error=True
                 )
@@ -247,10 +246,8 @@ class PosteraUploader(BaseModel):
         df = df.replace("", np.nan)
         if allow_empty:
             df = df[~df[id_field].isna()]
-        df.to_csv("test.csv")
         if df[id_field].duplicated().any():
             duplicates = df[df[id_field].duplicated()]
-            duplicates.to_csv("duplicates.csv")
             num_duplicates = len(duplicates)
             if raise_error:
                 raise ValueError(f"{num_duplicates} duplicate UUIDs found in dataframe")
