@@ -30,10 +30,9 @@ from mtenn.config import (
 )
 
 try:
-    from mtenn.config import ViSNetModelConfig
-
-    # guard for visnet import. Refer MTENN issue #42
     from mtenn.conversion_utils.visnet import HAS_VISNET
+    from mtenn.config import ViSNetModelConfig
+    # guard for visnet import. Refer MTENN issue #42
 except ImportError as e:
     match = re.search(r"cannot import name 'ViSNetModelConfig'*", str(e))
     if match:
