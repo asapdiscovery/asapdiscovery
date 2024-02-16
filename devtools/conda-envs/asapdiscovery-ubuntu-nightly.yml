@@ -56,6 +56,7 @@ dependencies:
   - dgl
   - dgllife
   - pooch
+  - mtenn >=0.5.1
   - wandb
 
   # md
@@ -95,4 +96,3 @@ dependencies:
 
   - pip:
     - pyg-nightly
-    - git+https://github.com/choderalab/mtenn.git@main

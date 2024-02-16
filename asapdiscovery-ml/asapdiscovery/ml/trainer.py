@@ -29,8 +29,9 @@ from mtenn.config import (
 # a gross hack to get around support for MTENN stable and MTENN dev
 # TODO: rip this out when MTENN is next released
 try:
-    from mtenn.conversion_utils.visnet import HAS_VISNET
     from mtenn.config import ViSNetModelConfig
+    from mtenn.conversion_utils.visnet import HAS_VISNET
+
     # guard for visnet import. Refer MTENN issue #42
 except ImportError as e:
     match = re.search(r"cannot import name 'ViSNetModelConfig'", str(e))
