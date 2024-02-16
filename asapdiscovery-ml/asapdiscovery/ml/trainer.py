@@ -1,8 +1,5 @@
 import json
 import pickle as pkl
-
-# a gross hack to get around support for MTENN stable and MTENN dev
-# TODO: rip this out when MTENN is next released
 import re
 import warnings
 from glob import glob
@@ -29,12 +26,14 @@ from mtenn.config import (
     SchNetModelConfig,
 )
 
+# a gross hack to get around support for MTENN stable and MTENN dev
+# TODO: rip this out when MTENN is next released
 try:
     from mtenn.conversion_utils.visnet import HAS_VISNET
     from mtenn.config import ViSNetModelConfig
     # guard for visnet import. Refer MTENN issue #42
 except ImportError as e:
-    match = re.search(r"cannot import name 'ViSNetModelConfig'*", str(e))
+    match = re.search(r"cannot import name 'ViSNetModelConfig'", str(e))
     if match:
         warnings.warn("To use VisNet, pip install MTENN from Github", ImportWarning)
         HAS_VISNET = False
@@ -216,7 +215,7 @@ class Trainer(BaseModel):
                     config_cls = SchNetModelConfig
                 case ModelType.e3nn:
                     config_cls = E3NNModelConfig
-                case ModelType.visnet:
+                case ModelType.visnet if HAS_VISNET:
                     config_cls = ViSNetModelConfig
                 case other:
                     raise ValueError(
