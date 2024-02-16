@@ -440,7 +440,7 @@ def test_build_trainer_visnet(exp_file, docked_files, tmp_path):
 
 
 @pytest.mark.skipif(HAS_VISNET, reason="requires VisNet from nightly PyG")
-def test_build_trainer_visnet_importerror(exp_file, docked_files, tmp_path):
+def test_build_trainer_visnet_valueerror(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
 
     runner = CliRunner()
@@ -474,9 +474,9 @@ def test_build_trainer_visnet_importerror(exp_file, docked_files, tmp_path):
         ],
     )
     assert result.exit_code == 1
-    assert isinstance(result.exception, ImportError)
-    assert re.match(
-        r".*Can't import ViSNetModelConfig without.*", str(result.exception)
+    assert isinstance(result.exception, ValueError)
+    assert re.search(
+        r"Can't instantiate model config for type visnet", str(result.exception)
     )
 
 
@@ -718,7 +718,7 @@ def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
 
 
 @pytest.mark.skipif(HAS_VISNET, reason="requires VisNet from nightly PyG")
-def test_build_and_train_visnet_importerror(exp_file, docked_files, tmp_path):
+def test_build_and_train_visnet_valueerror(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
 
     runner = CliRunner()
@@ -752,7 +752,7 @@ def test_build_and_train_visnet_importerror(exp_file, docked_files, tmp_path):
         ],
     )
     assert result.exit_code == 1
-    assert isinstance(result.exception, ImportError)
-    assert re.match(
-        r".*Can't import ViSNetModelConfig without.*", str(result.exception)
+    assert isinstance(result.exception, ValueError)
+    assert re.search(
+        r"Can't instantiate model config for type visnet", str(result.exception)
     )
