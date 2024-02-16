@@ -17,6 +17,8 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER  .  /home/mambauser/asapdiscovery
 RUN micromamba install -y -n base git -f /tmp/env.yaml && \
     micromamba clean --all --yes
 
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
+
 
 WORKDIR /home/mambauser/asapdiscovery
 
@@ -28,6 +30,3 @@ RUN python -m pip install --no-deps -e asapdiscovery-docking
 RUN python -m pip install --no-deps -e asapdiscovery-ml
 RUN python -m pip install --no-deps -e asapdiscovery-modeling
 RUN python -m pip install --no-deps -e asapdiscovery-simulation
-
-
-ARG MAMBA_DOCKERFILE_ACTIVATE=1
