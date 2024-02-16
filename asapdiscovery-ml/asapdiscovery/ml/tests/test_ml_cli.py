@@ -15,7 +15,7 @@ try:
     from mtenn.conversion_utils.visnet import HAS_VISNET
 except ModuleNotFoundError:
     HAS_VISNET = False
-    
+
 
 @pytest.fixture(scope="session")
 def exp_file():
