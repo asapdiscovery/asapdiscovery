@@ -18,6 +18,7 @@ RUN micromamba install -y -n base git -f /tmp/env.yaml && \
     micromamba clean --all --yes
 
 
+WORKDIR /home/mambauser/asapdiscovery
 
 RUN python -m pip install --no-deps -e asapdiscovery-alchemy
 RUN python -m pip install --no-deps -e asapdiscovery-cli
@@ -26,7 +27,7 @@ RUN python -m pip install --no-deps -e asapdiscovery-dataviz
 RUN python -m pip install --no-deps -e asapdiscovery-docking
 RUN python -m pip install --no-deps -e asapdiscovery-ml
 RUN python -m pip install --no-deps -e asapdiscovery-modeling
-RUN python -m pip install --no-deps -e asapdiscovery-simulatio
+RUN python -m pip install --no-deps -e asapdiscovery-simulation
 
 
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
