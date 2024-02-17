@@ -142,6 +142,9 @@ class PosteraUploader(BaseModel):
                 )
 
         new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
+        new_data = self.join_with_manifold_data(
+            df, new_data, self.smiles_field, self.id_field
+        )
         molset_name = ms_api.get_name_from_id(molset_id)
         return new_data, molset_name, new_molset
 
