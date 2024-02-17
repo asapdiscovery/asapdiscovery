@@ -447,7 +447,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     # remove duplicates that are the same compound docked to different structures
     scores_df = scores_df.drop_duplicates(
-        subset=[DockingResultCols.INCHIKEY.value], keep="first"
+        subset=[DockingResultCols.SMILES.value], keep="first"
     )
 
     n_duplicate_filtered = len(scores_df)
