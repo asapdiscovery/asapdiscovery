@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Union
+from typing import Union, Optional
 from uuid import UUID
-
+from pydantic import BaseModel, Field, validator, root_validator
 import pandas as pd
 from asapdiscovery.data.services_config import (
     CloudfrontSettings,
@@ -11,10 +11,13 @@ from asapdiscovery.data.services_config import (
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 
-from ..aws.cloudfront import CloudFront
-from ..aws.s3 import S3
-from .manifold_data_validation import TargetTags, map_output_col_to_manifold_tag
-from .molecule_set import MoleculeSetAPI
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    map_output_col_to_manifold_tag,
+)
+from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 
 
 class ArtifactType(Enum):
@@ -30,89 +33,64 @@ ARTIFACT_TYPE_TO_S3_CONTENT_TYPE = {
 }
 
 
-class ManifoldArtifactUploader:
-    """
-    This class is used to upload artifacts to the Postera Manifold and AWS simultaneously, linking the two together
-    via CloudFront and the Manifold MoleculeSetAPI.
+class ManifoldArtifactUploader(BaseModel):
+    target: TargetTags = Field(
+        ..., description="The biological target string for the artifact"
+    )
+    molecule_dataframe: pd.DataFrame = Field(
+        ...,
+        description="The dataframe containing the molecules and artifacts to upload",
+    )
+    molecule_set_id: Optional[Union[UUID, str]] = Field(
+        ..., description="The UUID of the molecule set to upload to"
+    )
+    molecule_set_name: Optional[str] = Field(
+        ..., description="The name of the molecule set to upload to"
+    )
 
-    """
+    bucket_name: str = Field(..., description="The name of the bucket to upload to")
 
-    def __init__(
-        self,
-        target: str,
-        molecule_dataframe: pd.DataFrame,
-        molecule_set_id_or_name: Union[str, UUID],
-        bucket_name: str,
-        artifact_columns: list[str],
-        artifact_types: list[ArtifactType],
-        moleculeset_api: MoleculeSetAPI = None,
-        cloudfront: CloudFront = None,
-        s3: S3 = None,
-        manifold_id_column: str = DockingResultCols.LIGAND_ID.value,
-    ):
-        """
-        Parameters
-        ----------
-        molecule_dataframe : pd.DataFrame
-            The dataframe containing the molecules to upload.
-            Must contain a column with the name of the artifact
-        molecule_set_id : UUID
-            The UUID of the molecule set to upload to
-        artifact_type : ArtifactType
-            The type of artifact to upload
-        moleculeset_api : MoleculeSetAPI
-            The MoleculeSetAPI object to use to upload to Manifold
-        cloudfront : CloudFront
-            The CloudFront object to use to generate signed urls
-        s3 : S3
-            The S3 object to use to upload to S3
-        target : str
-            The biological target string for the artifact, one of asapdiscovery.data.postera.manifold_data_validation.TargetTags
-        artifact_column : str
-            The name of the column containing the filesystem path to the artifact that will be uploaded.
-        bucket_name : str
-            The name of the bucket to upload to
-        manifold_id_column : str
-            The name of the column containing the manifold id
-        """
-        self.target = target
-        self.molecule_dataframe = molecule_dataframe.copy()
-        self.molecule_set_id_or_name = molecule_set_id_or_name
-        self.bucket_name = bucket_name
-        self.artifact_columns = artifact_columns
-        self.artifact_types = artifact_types
+    artifact_columns: list[str] = Field(
+        ...,
+        description="The name of the column containing the filesystem path to the artifacts that will be uploaded.",
+    )
 
-        if moleculeset_api is None:
-            moleculeset_api = MoleculeSetAPI().from_settings(PosteraSettings())
-        self.moleculeset_api = moleculeset_api
+    artifact_types: list[ArtifactType] = Field(
+        ..., description="The type of artifacts to upload"
+    )
 
-        self.molset_id = self.moleculeset_api.molecule_set_id_or_name(
-            self.molecule_set_id_or_name, self.moleculeset_api.list_available()
-        )
+    moleculeset_api: Optional[MoleculeSetAPI] = Field(
+        ..., description="The MoleculeSetAPI object to use to upload to Manifold"
+    )
 
-        if cloudfront is None:
-            cloudfront = CloudFront.from_settings(CloudfrontSettings())
-        self.cloudfront = cloudfront
+    cloudfront: Optional[CloudFront] = Field(
+        ..., description="The CloudFront object to use to generate signed urls"
+    )
 
-        if s3 is None:
-            s3 = S3.from_settings(S3Settings())
-        self.s3 = s3
+    s3: Optional[S3] = Field(..., description="The S3 object to use to upload to S3")
 
-        self.manifold_id_column = manifold_id_column
-        if len(self.artifact_columns) != len(self.artifact_types):
+    manifold_id_column: str = Field(
+        DockingResultCols.LIGAND_ID.value,
+        description="The name of the column containing the manifold id",
+    )
+
+    @root_validator
+    @classmethod
+    def validate_artifact_columns_and_types(cls, values):
+        if len(values["artifact_columns"]) != len(values["artifact_types"]):
             raise ValueError(
                 "Number of artifact columns must match number of artifact types"
             )
+        return values
 
-        if not TargetTags.is_in_values(target):
+    @root_validator
+    @classmethod
+    def name_id_mutually_exclusive(cls, values):
+        if values["molecule_set_id"] and values["molecule_set_name"]:
             raise ValueError(
-                f"Target {target} not in allowed values {TargetTags.get_values()}"
+                "molecule_set_id and molecule_set_name are mutually exclusive"
             )
-
-        # drop rows in molecule df where artifact_columns is None or NaN
-        self.molecule_dataframe = self.molecule_dataframe.dropna(
-            subset=self.artifact_columns
-        )
+        return values
 
     def generate_cloudfront_url(
         self, bucket_path, expires_delta: timedelta = timedelta(days=365 * 5)
@@ -140,6 +118,19 @@ class ManifoldArtifactUploader:
         """
         Upload the artifacts to Postera Manifold and S3
         """
+
+        if self.cloudfront is None:
+            self.cloudfront = CloudFront.from_settings(CloudfrontSettings())
+
+        if self.s3 is None:
+            self.s3 = S3.from_settings(S3Settings())
+
+        if self.moleculeset_api is None:
+            self.moleculeset_api = MoleculeSetAPI.from_settings(PosteraSettings())
+
+        if self.molset_id is None:
+            self.molset_id = self.ms_api.get_id_from_name(self.molecule_set_name)
+
         for artifact_column, artifact_type in zip(
             self.artifact_columns, self.artifact_types
         ):
