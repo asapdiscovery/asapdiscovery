@@ -33,10 +33,10 @@ from hashlib import sha256
     reason="POSTERA_API_KEY is not the sandbox key",
 )
 class TestPosteraLive:
-
     @pytest.fixture()
     def postera_settings(self):
-        return PosteraSettings()
+        # IMPORTANT: pass this fixture to ensure the test is using the sandbox key
+        return PosteraSettings(POSTERA_API_KEY=os.getenv("POSTERA_API_KEY"))
 
     @pytest.fixture()
     def simple_moleculeset_data(self):
@@ -105,6 +105,18 @@ class TestPosteraLive:
         molecules = ms_api.get(uuid)
         assert molecules["id"] == uuid
         assert molecules["name"] == molecule_set_name
+
+    def test_get_name_from_id(self, live_postera_ms_api_instance, simple_moleculeset):
+        molecule_set_name, uuid = simple_moleculeset
+        ms_api = live_postera_ms_api_instance
+        name = ms_api.get_name_from_id(uuid)
+        assert name == molecule_set_name
+
+    def test_get_id_from_name(self, live_postera_ms_api_instance, simple_moleculeset):
+        molecule_set_name, uuid = simple_moleculeset
+        ms_api = live_postera_ms_api_instance
+        id = ms_api.get_id_from_name(molecule_set_name)
+        assert id == uuid
 
     def test_get_molecules(self, live_postera_ms_api_instance, simple_moleculeset):
         molecule_set_name, uuid = simple_moleculeset

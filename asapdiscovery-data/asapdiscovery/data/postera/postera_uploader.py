@@ -130,9 +130,7 @@ class PosteraUploader(BaseModel):
                     data, self.id_field, allow_empty=False, raise_error=True
                 )
                 # check for blanks, raising
-                self._check_for_blank_ids(
-                    data, self.id_field, raise_error=True
-                )
+                self._check_for_blank_ids(data, self.id_field, raise_error=True)
 
                 # ok to update the molecule set
                 ms_api.update_molecules_from_df_with_manifold_validation(
@@ -144,7 +142,8 @@ class PosteraUploader(BaseModel):
                 )
 
         new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
-        return new_data, molset_id, new_molset
+        molset_name = ms_api.get_name_from_id(molset_id)
+        return new_data, molset_name, new_molset
 
     @staticmethod
     def join_with_manifold_data(original, molset_query_df, smiles_field, id_field):

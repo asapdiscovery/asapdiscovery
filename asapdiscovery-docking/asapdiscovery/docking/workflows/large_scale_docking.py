@@ -535,9 +535,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
         # upload artifacts to S3 and link them to postera
         uploader = ManifoldArtifactUploader(
-            inputs.target,
-            result_df,
-            molset_name,
+            target=inputs.target,
+            molecule_dataframe=result_df,
+            molecule_set_name=molset_name,
             bucket_name=aws_s3_settings.BUCKET_NAME,
             artifact_types=artifact_types,
             artifact_columns=artifact_columns,

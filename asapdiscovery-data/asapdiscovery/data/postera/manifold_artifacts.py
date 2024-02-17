@@ -35,58 +35,72 @@ ARTIFACT_TYPE_TO_S3_CONTENT_TYPE = {
 
 class ManifoldArtifactUploader(BaseModel):
     target: TargetTags = Field(
-        ..., description="The biological target string for the artifact"
+        None, description="The biological target string for the artifact"
     )
     molecule_dataframe: pd.DataFrame = Field(
         ...,
         description="The dataframe containing the molecules and artifacts to upload",
     )
-    molecule_set_id: Optional[Union[UUID, str]] = Field(
-        ..., description="The UUID of the molecule set to upload to"
+    molecule_set_id: Optional[str] = Field(
+        None, description="The UUID of the molecule set to upload to"
     )
     molecule_set_name: Optional[str] = Field(
-        ..., description="The name of the molecule set to upload to"
+        None, description="The name of the molecule set to upload to"
     )
 
     bucket_name: str = Field(..., description="The name of the bucket to upload to")
 
     artifact_columns: list[str] = Field(
-        ...,
+        None,
         description="The name of the column containing the filesystem path to the artifacts that will be uploaded.",
     )
 
     artifact_types: list[ArtifactType] = Field(
-        ..., description="The type of artifacts to upload"
+        None, description="The type of artifacts to upload"
     )
 
     moleculeset_api: Optional[MoleculeSetAPI] = Field(
-        ..., description="The MoleculeSetAPI object to use to upload to Manifold"
+        None, description="The MoleculeSetAPI object to use to upload to Manifold"
     )
 
     cloudfront: Optional[CloudFront] = Field(
-        ..., description="The CloudFront object to use to generate signed urls"
+        None, description="The CloudFront object to use to generate signed urls"
     )
 
-    s3: Optional[S3] = Field(..., description="The S3 object to use to upload to S3")
+    s3: Optional[S3] = Field(None, description="The S3 object to use to upload to S3")
 
     manifold_id_column: str = Field(
         DockingResultCols.LIGAND_ID.value,
         description="The name of the column containing the manifold id",
     )
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @root_validator
     @classmethod
     def validate_artifact_columns_and_types(cls, values):
-        if len(values["artifact_columns"]) != len(values["artifact_types"]):
+        artifact_columns = values.get("artifact_columns")
+        artifact_types = values.get("artifact_types")
+        if len(artifact_columns) != len(artifact_types):
             raise ValueError(
                 "Number of artifact columns must match number of artifact types"
             )
+        if len(artifact_columns) == len(artifact_types) == 0:
+            raise ValueError("Must have at least one artifact column")
+
         return values
 
     @root_validator
     @classmethod
     def name_id_mutually_exclusive(cls, values):
-        if values["molecule_set_id"] and values["molecule_set_name"]:
+        molecule_set_id = values.get("molecule_set_id")
+        molecule_set_name = values.get("molecule_set_name")
+
+        if not molecule_set_id and not molecule_set_name:
+            raise ValueError("Must provide molecule_set_id or molecule_set_name")
+
+        if molecule_set_id and molecule_set_name:
             raise ValueError(
                 "molecule_set_id and molecule_set_name are mutually exclusive"
             )
@@ -128,8 +142,10 @@ class ManifoldArtifactUploader(BaseModel):
         if self.moleculeset_api is None:
             self.moleculeset_api = MoleculeSetAPI.from_settings(PosteraSettings())
 
-        if self.molset_id is None:
-            self.molset_id = self.ms_api.get_id_from_name(self.molecule_set_name)
+        if self.molecule_set_id is None:
+            self.molecule_set_id = self.moleculeset_api.get_id_from_name(
+                self.molecule_set_name
+            )
 
         for artifact_column, artifact_type in zip(
             self.artifact_columns, self.artifact_types
@@ -144,7 +160,7 @@ class ManifoldArtifactUploader(BaseModel):
 
             subset_df[f"_bucket_path_{artifact_column}"] = subset_df[
                 self.manifold_id_column
-            ].apply(lambda x: f"{output_tag_name}/{self.molset_id}/{x}.html")
+            ].apply(lambda x: f"{output_tag_name}/{self.molecule_set_id}/{x}.html")
 
             # now make urls
             subset_df[output_tag_name] = subset_df[
@@ -153,7 +169,7 @@ class ManifoldArtifactUploader(BaseModel):
 
             # this will trim the dataframe to only the columns we want to update
             self.moleculeset_api.update_molecules_from_df_with_manifold_validation(
-                self.molset_id,
+                self.molecule_set_id,
                 subset_df,
                 id_field=self.manifold_id_column,
             )

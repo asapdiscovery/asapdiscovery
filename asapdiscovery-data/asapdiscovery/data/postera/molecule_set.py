@@ -320,6 +320,26 @@ class MoleculeSetAPI(PostEraAPI):
             raise ValueError(f"Molecule set with name {name} not found in PostEra")
         return id
 
+    def get_name_from_id(self, id: str) -> str:
+        """Get the human-readable name of a MoleculeSet from its unique id.
+
+        Parameters
+        ----------
+        id
+            The unique id of the MoleculeSet.
+
+        Returns
+        -------
+        str
+            The human-readable name of the MoleculeSet.
+
+        """
+        avail = self.list_available(return_full=False)
+        name = avail.get(id)
+        if name is None:
+            raise ValueError(f"Molecule set with id {id} not found in PostEra")
+        return name
+
     def get_molecules_from_id_or_name(
         self,
         id: Optional[str] = None,
