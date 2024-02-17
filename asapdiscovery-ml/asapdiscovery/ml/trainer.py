@@ -24,22 +24,9 @@ from mtenn.config import (
     ModelConfigBase,
     ModelType,
     SchNetModelConfig,
+    ViSNetModelConfig,
 )
-
-# a gross hack to get around support for MTENN stable and MTENN dev
-# TODO: rip this out when MTENN is next released
-try:
-    from mtenn.config import ViSNetModelConfig
-    from mtenn.conversion_utils.visnet import HAS_VISNET
-
-    # guard for visnet import. Refer MTENN issue #42
-except ImportError as e:
-    match = re.search(r"cannot import name 'ViSNetModelConfig'", str(e))
-    if match:
-        warnings.warn("To use VisNet, pip install MTENN from Github", ImportWarning)
-        HAS_VISNET = False
-    else:
-        raise ImportError(f"Unexpected ImportError: {e}")
+from mtenn.conversion_utils.visnet import HAS_VISNET
 
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 

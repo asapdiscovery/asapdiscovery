@@ -11,11 +11,7 @@ from click.testing import CliRunner
 
 # guard for visnet import. Refer MTENN issue #42
 # also guard against older versions of mtenn with no visnet
-try:
-    from mtenn.conversion_utils.visnet import HAS_VISNET
-except ModuleNotFoundError:
-    HAS_VISNET = False
-
+from mtenn.conversion_utils.visnet import HAS_VISNET
 
 @pytest.fixture(scope="session")
 def exp_file():
