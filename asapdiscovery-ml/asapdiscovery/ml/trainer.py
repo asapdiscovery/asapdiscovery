@@ -1,7 +1,5 @@
 import json
 import pickle as pkl
-import re
-import warnings
 from glob import glob
 from pathlib import Path
 from time import time
