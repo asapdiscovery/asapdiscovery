@@ -391,9 +391,10 @@ class TestPosteraLive:
         field = ManifoldAllowedTags.get_values()[-1]  # grab a random field
         input_data[field] = [1, 2]
 
-        df, id, new = uploader.push(input_data)
+        df, name, new = uploader.push(input_data)
         ms_api = live_postera_ms_api_instance
-        assert ms_api.exists(uploader.molecule_set_name, by="name")
+        assert ms_api.exists(name, by="name")
+        id = ms_api.get_id_from_name(name)
         assert ms_api.exists(id, by="id")
         assert new
         postera_data = ms_api.get_molecules(id, return_as="dataframe")
@@ -433,7 +434,8 @@ class TestPosteraLive:
         subset_data[field] = [1]
         # and a non-allowed tag, will be dropped
         subset_data["non_allowed"] = ["non_allowed"]
-        df, id, new = uploader.push(subset_data)
+        df, name, new = uploader.push(subset_data)
+        id = ms_api.get_id_from_name(name)
         assert not new
         assert id == uuid
         assert df[field].tolist() == [
@@ -478,7 +480,8 @@ class TestPosteraLive:
         data[field] = [1, 2]
         # and a non-allowed tag, will be dropped
         data["non_allowed"] = ["non_allowed", "non_allowed"]
-        ret_data, id, new = uploader.push(data)
+        ret_data, name, new = uploader.push(data)
+        id = ms_api.get_id_from_name(name)
         assert not new
         assert id == uuid
         assert ret_data[field].tolist() == [1, 2]
@@ -528,7 +531,8 @@ class TestPosteraLive:
         data[field] = [1, 2, 3]
         # and a non-allowed tag, will be dropped
         data["non_allowed"] = ["non_allowed", "non_allowed", "non_allowed"]
-        ret_data, id, new = uploader.push(data)
+        ret_data, name, new = uploader.push(data)
+        id = ms_api.get_id_from_name(name)
         assert id == uuid
         assert not new
         assert ret_data[field].tolist() == [1, 2, 3]
