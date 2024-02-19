@@ -23,14 +23,18 @@ from asapdiscovery.data.services_config import PosteraSettings
 # DO NOT REMOVE THESE GUARDS
 
 
-@pytest.mark.skipif(not os.getenv("POSTERA_API_KEY"), reason="No POSTERA_API_KEY")
-@pytest.mark.skipif(
-    not os.getenv("POSTERA_API_KEY_IS_SANDBOX"), reason="No POSTERA_API_KEY_IS_SANDBOX"
-)
+# NOTE: order of decorators is important
 @pytest.mark.skipif(
     os.getenv("POSTERA_API_KEY_HASH")
     != sha256(os.getenv("POSTERA_API_KEY").encode()).hexdigest(),
     reason="POSTERA_API_KEY is not the sandbox key",
+)
+@pytest.mark.skipif(not os.getenv("POSTERA_API_KEY"), reason="No POSTERA_API_KEY")
+@pytest.mark.skipif(
+    not os.getenv("POSTERA_API_KEY_HASH"), reason="No POSTERA_API_KEY_HASH"
+)
+@pytest.mark.skipif(
+    not os.getenv("POSTERA_API_KEY_IS_SANDBOX"), reason="No POSTERA_API_KEY_IS_SANDBOX"
 )
 class TestPosteraLive:
     @pytest.fixture()
