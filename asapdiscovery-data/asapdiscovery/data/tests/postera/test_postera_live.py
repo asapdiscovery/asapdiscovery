@@ -79,7 +79,7 @@ class TestPosteraLive:
         uuid = ms_api.create(molecule_set_name, simple_moleculeset_molecule_list)
         # poll to make sure the molecule set is ready
         while not ms_api.exists(uuid, by="id"):
-            sleep(10)
+            pass
         sleep(5)
         yield molecule_set_name, uuid
         # clean up
