@@ -25,7 +25,6 @@ from mtenn.config import (
     ViSNetModelConfig,
 )
 from mtenn.conversion_utils.visnet import HAS_VISNET
-
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
 
