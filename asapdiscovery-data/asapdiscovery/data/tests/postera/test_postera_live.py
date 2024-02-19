@@ -1,21 +1,21 @@
-import pytest
 import os
-import pandas as pd
-import numpy as np
-from uuid import uuid4
 import random
-from asapdiscovery.data.postera.molecule_set import (
-    MoleculeSetAPI,
-    MoleculeList,
-    MoleculeUpdateList,
-    MoleculeSetKeys,
-)
+from hashlib import sha256
+from uuid import uuid4
+
+import numpy as np
+import pandas as pd
+import pytest
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
-from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.postera.molecule_set import (
+    MoleculeList,
+    MoleculeSetAPI,
+    MoleculeSetKeys,
+    MoleculeUpdateList,
+)
 from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-
-from hashlib import sha256
+from asapdiscovery.data.services_config import PosteraSettings
 
 # WARNING IMPORTANT: - this is a live test and will make real requests to the POSTERA API
 # A sanboxed API key is required to run this test, DO NOT USE A PRODUCTION API KEY
@@ -361,7 +361,7 @@ class TestPosteraLive:
         )
         ligands = factory.pull()
         assert len(ligands) == 2
-        smiles = set([ligand.smiles for ligand in ligands])
+        smiles = {ligand.smiles for ligand in ligands}
         assert smiles == {"CCCC", "CCCCCCCC"}
 
     def test_factory_id(self, simple_moleculeset, postera_settings):
@@ -369,7 +369,7 @@ class TestPosteraLive:
         factory = PosteraFactory(molecule_set_id=uuid, settings=postera_settings)
         ligands = factory.pull()
         assert len(ligands) == 2
-        smiles = set([ligand.smiles for ligand in ligands])
+        smiles = {ligand.smiles for ligand in ligands}
         assert smiles == {"CCCC", "CCCCCCCC"}
 
     def test_uploader_new(

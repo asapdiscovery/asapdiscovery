@@ -1,8 +1,9 @@
+from typing import Optional
+
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.schema_v2.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.services_config import PosteraSettings
 from pydantic import BaseModel, Field, root_validator
-from typing import Optional
 
 
 class PosteraFactory(BaseModel):
@@ -10,7 +11,8 @@ class PosteraFactory(BaseModel):
     molecule_set_name: Optional[str] = Field(
         None, description="Name of the molecule set to pull from Postera"
     )
-    molecule_set_id: Optional[str] = Field(None, description="ID of the molecule set to pull from Postera"
+    molecule_set_id: Optional[str] = Field(
+        None, description="ID of the molecule set to pull from Postera"
     )
 
     @root_validator
@@ -32,7 +34,9 @@ class PosteraFactory(BaseModel):
             List of ligands
         """
         ms_api = MoleculeSetAPI.from_settings(self.settings)
-        mols, _ = ms_api.get_molecules_from_id_or_name(name=self.molecule_set_name, id=self.molecule_set_id)
+        mols, _ = ms_api.get_molecules_from_id_or_name(
+            name=self.molecule_set_name, id=self.molecule_set_id
+        )
         ligands = [
             Ligand.from_smiles(
                 compound_name=mol.id,

@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Dict, Tuple, Union, Optional  # noqa: F401
+from typing import Dict, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
 from asapdiscovery.data.enum import StringEnum
@@ -160,7 +160,7 @@ class MoleculeSetAPI(PostEraAPI):
         else:
             return response_json[MoleculeSetKeys.id.value]
 
-    def _read_page(self, url: str, page: int) -> Tuple[pd.DataFrame, str]:
+    def _read_page(self, url: str, page: int) -> tuple[pd.DataFrame, str]:
         response = self._session.get(url, params={"page": page})
         response_json = response.json()
         return response_json["results"], response_json["paginationInfo"]["hasNext"]

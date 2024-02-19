@@ -1,10 +1,10 @@
 import logging
 import warnings
-from uuid import UUID
-import pandas as pd
-import numpy as np
 from typing import Tuple
+from uuid import UUID
 
+import numpy as np
+import pandas as pd
 from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
 from asapdiscovery.data.rdkit import rdkit_smiles_roundtrip
@@ -33,7 +33,7 @@ class PosteraUploader(BaseModel):
         False, description="Overwrite existing data on molecule set"
     )
 
-    def push(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, UUID, bool]:
+    def push(self, df: pd.DataFrame) -> tuple[pd.DataFrame, UUID, bool]:
         """
         Push molecules to a Postera molecule set
 
