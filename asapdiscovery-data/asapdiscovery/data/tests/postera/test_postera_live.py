@@ -2,7 +2,7 @@ import os
 import random
 from hashlib import sha256
 from uuid import uuid4
-
+from time import sleep
 import numpy as np
 import pandas as pd
 import pytest
@@ -37,7 +37,7 @@ from asapdiscovery.data.services_config import PosteraSettings
     not os.getenv("POSTERA_API_KEY_IS_SANDBOX"), reason="No POSTERA_API_KEY_IS_SANDBOX"
 )
 class TestPosteraLive:
-    @pytest.fixture()
+    @pytest.fixture(scope="class")
     def postera_settings(self):
         # IMPORTANT: pass this fixture to ensure the test is using the sandbox key
         return PosteraSettings(POSTERA_API_KEY=os.getenv("POSTERA_API_KEY"))
@@ -61,35 +61,28 @@ class TestPosteraLive:
             simple_moleculeset_data, smiles_field="smiles_field", id_field="id_field"
         )
 
-    @pytest.fixture()
+    @pytest.fixture(scope="function")
     def live_postera_ms_api_instance(self, postera_settings):
         ms_api = MoleculeSetAPI.from_settings(postera_settings)
         return ms_api
 
-    def test_simple_moleculeset_create(
-        self, live_postera_ms_api_instance, simple_moleculeset_molecule_list
-    ):
-        # make a random  string for the molecule set name
-        molecule_set_name = str(uuid4())
-        ms_api = live_postera_ms_api_instance
-        uuid = ms_api.create(molecule_set_name, simple_moleculeset_molecule_list)
-        assert uuid is not None
-        assert ms_api.exists(molecule_set_name, by="name")
-        assert ms_api.exists(uuid, by="id")
-        # clean up
-        ms_api.destroy(uuid)
-
-    @pytest.fixture()
+    @pytest.fixture(scope="function")
     def simple_moleculeset(
         self, live_postera_ms_api_instance, simple_moleculeset_molecule_list
     ):
         # fixture of the above test
         # make a random  string for the molecule set name
+        # NOTE: need a few sleeps to make sure the molecule set database transactions are complete
         molecule_set_name = str(uuid4())
         ms_api = live_postera_ms_api_instance
         uuid = ms_api.create(molecule_set_name, simple_moleculeset_molecule_list)
+        # poll to make sure the molecule set is ready
+        while not ms_api.exists(uuid, by="id"):
+            sleep(10)
+        sleep(5)
         yield molecule_set_name, uuid
         # clean up
+        sleep(10)
         ms_api.destroy(uuid)
 
     def test_exists(self, live_postera_ms_api_instance, simple_moleculeset):
@@ -358,7 +351,9 @@ class TestPosteraLive:
         ret_df_updated = ret_df_updated.sort_index(inplace=True)
         assert any(ret_df == ret_df_updated)
 
-    def test_factory_name(self, simple_moleculeset, postera_settings):
+    def test_factory_name(
+        self, simple_moleculeset, postera_settings, live_postera_ms_api_instance
+    ):
         molecule_set_name, uuid = simple_moleculeset
         factory = PosteraFactory(
             molecule_set_name=molecule_set_name, settings=postera_settings
