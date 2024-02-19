@@ -1,8 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional, Union
-from uuid import UUID
+from typing import Optional
 
 import pandas as pd
 from asapdiscovery.data.aws.cloudfront import CloudFront
@@ -18,7 +17,7 @@ from asapdiscovery.data.services_config import (
     S3Settings,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, root_validator
 
 
 class ArtifactType(Enum):

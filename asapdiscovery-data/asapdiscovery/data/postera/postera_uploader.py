@@ -1,11 +1,8 @@
 import logging
-import warnings
-from typing import Tuple
 from uuid import UUID
 
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
 from asapdiscovery.data.rdkit import rdkit_smiles_roundtrip
 from asapdiscovery.data.services_config import PosteraSettings
@@ -52,9 +49,9 @@ class PosteraUploader(BaseModel):
             Whether a new molecule set was created
         """
 
-        if not self.smiles_field in df.columns:
+        if self.smiles_field not in df.columns:
             raise ValueError(f"smiles_field {self.smiles_field} not found in dataframe")
-        if not self.id_field in df.columns:
+        if self.id_field not in df.columns:
             raise ValueError(f"id_field {self.id_field} not found in dataframe")
 
         ms_api = MoleculeSetAPI.from_settings(self.settings)
@@ -217,7 +214,7 @@ class PosteraUploader(BaseModel):
         try:
             df[id_field].apply(lambda x: UUID(x))
             return True
-        except:
+        except:  # noqa: E722
             return False
 
     @staticmethod

@@ -15,7 +15,6 @@ from asapdiscovery.data.postera.manifold_artifacts import (
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetProteinMap,
-    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
