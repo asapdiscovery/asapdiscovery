@@ -1,8 +1,9 @@
 import os
 import random
 from hashlib import sha256
-from uuid import uuid4
 from time import sleep
+from uuid import uuid4
+
 import numpy as np
 import pandas as pd
 import pytest
