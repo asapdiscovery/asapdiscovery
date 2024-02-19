@@ -382,9 +382,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
 
         # join the two dataframes on ligand_id, target_id and smiles
         scores_df = scores_df.merge(
@@ -512,7 +512,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         # push the results to PostEra, making a new molecule set if necessary
-        result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df)
+
+        combined = postera_uploader.join_with_manifold_data(
+            result_df,
+            manifold_data,
+            DockingResultCols.SMILES.value,
+            DockingResultCols.LIGAND_ID.value,
+        )
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")
@@ -536,7 +543,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         # upload artifacts to S3 and link them to postera
         uploader = ManifoldArtifactUploader(
             target=inputs.target,
-            molecule_dataframe=result_df,
+            molecule_dataframe=combined,
             molecule_set_name=molset_name,
             bucket_name=aws_s3_settings.BUCKET_NAME,
             artifact_types=artifact_types,

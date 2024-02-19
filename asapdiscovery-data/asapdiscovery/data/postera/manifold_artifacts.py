@@ -4,6 +4,7 @@ from typing import Union, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, validator, root_validator
 import pandas as pd
+import logging
 from asapdiscovery.data.services_config import (
     CloudfrontSettings,
     PosteraSettings,
@@ -31,6 +32,8 @@ ARTIFACT_TYPE_TO_S3_CONTENT_TYPE = {
     ArtifactType.DOCKING_POSE_FITNESS_POSIT: "text/html",
     ArtifactType.MD_POSE: "image/gif",
 }
+
+logger = logging.getLogger(__name__)
 
 
 class ManifoldArtifactUploader(BaseModel):
@@ -150,6 +153,7 @@ class ManifoldArtifactUploader(BaseModel):
         for artifact_column, artifact_type in zip(
             self.artifact_columns, self.artifact_types
         ):
+            logger.info(f"Uploading {artifact_type} artifacts from {artifact_column}")
             subset_df = self.molecule_dataframe[
                 [artifact_column, self.manifold_id_column]
             ].copy()
@@ -157,6 +161,9 @@ class ManifoldArtifactUploader(BaseModel):
             output_tag_name = map_output_col_to_manifold_tag(ArtifactType, self.target)[
                 artifact_type.value
             ]
+
+            # subselect non-null artifact column rows
+            subset_df = subset_df.dropna(subset=[artifact_column])
 
             subset_df[f"_bucket_path_{artifact_column}"] = subset_df[
                 self.manifold_id_column
@@ -174,12 +181,19 @@ class ManifoldArtifactUploader(BaseModel):
                 id_field=self.manifold_id_column,
             )
 
-            # push to s3
-            subset_df.apply(
-                lambda x: self.s3.push_file(
-                    x[artifact_column],
-                    location=x[f"_bucket_path_{artifact_column}"],
-                    content_type=ARTIFACT_TYPE_TO_S3_CONTENT_TYPE[artifact_type],
-                ),
-                axis=1,
+            self._upload_column_to_s3(
+                subset_df,
+                artifact_column,
+                f"_bucket_path_{artifact_column}",
+                artifact_type,
             )
+
+    def _upload_column_to_s3(self, row, artifact_column, bucket_path, artifact_type):
+        for _, row in row.iterrows():
+            if pd.notnull(row[artifact_column]) and pd.notnull(row[bucket_path]):
+                logger.debug(f"S3 push: {row[artifact_column]} to {row[bucket_path]}")
+                self.s3.push_file(
+                    row[artifact_column],
+                    location=row[bucket_path],
+                    content_type=ARTIFACT_TYPE_TO_S3_CONTENT_TYPE[artifact_type],
+                )
