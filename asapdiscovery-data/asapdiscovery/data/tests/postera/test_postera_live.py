@@ -24,11 +24,16 @@ from asapdiscovery.data.services_config import PosteraSettings
 # DO NOT REMOVE THESE GUARDS
 
 
+def _check_key_match():
+    if os.getenv("POSTERA_API_KEY_HASH") and os.getenv("POSTERA_API_KEY"):
+        key_hash = sha256(os.getenv("POSTERA_API_KEY").encode()).hexdigest()
+        return key_hash == os.getenv("POSTERA_API_KEY_HASH")
+
+
 # NOTE: order of decorators is important
 @pytest.mark.skipif(
-    os.getenv("POSTERA_API_KEY_HASH")
-    != sha256(os.getenv("POSTERA_API_KEY").encode()).hexdigest(),
-    reason="POSTERA_API_KEY is not the sandbox key",
+    not _check_key_match(),
+    reason="POSTERA_API_KEY and POSTERA_API_KEY_HASH do not match",
 )
 @pytest.mark.skipif(not os.getenv("POSTERA_API_KEY"), reason="No POSTERA_API_KEY")
 @pytest.mark.skipif(
