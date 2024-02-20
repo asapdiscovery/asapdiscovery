@@ -308,8 +308,6 @@ class TestPosteraLive:
         ms_api.destroy(uuid)
         # check all the data is there
         assert "extra_field" not in ret_df.columns
-        print(ret_df)
-        print(ret_df.columns)
         # check both smiles are there
         assert "CCCCCF" in ret_df["smiles"].tolist()
         assert "CCCCCCCCF" in ret_df["smiles"].tolist()
