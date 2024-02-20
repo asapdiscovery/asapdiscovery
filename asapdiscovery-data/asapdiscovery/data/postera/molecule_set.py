@@ -275,6 +275,7 @@ class MoleculeSetAPI(PostEraAPI):
         molecule_set_id
             The unique id of the MoleculeSet
         return_as : {'dataframe', 'list'}
+            Whether to return the molecules as a DataFrame or a list.
 
         """
 
@@ -345,6 +346,23 @@ class MoleculeSetAPI(PostEraAPI):
         name: Optional[str] = None,
         return_as="dataframe",
     ) -> tuple[Union[pd.DataFrame, list], str]:
+        """
+        Get the molecules from a molecule set by either id or name.
+
+        Parameters
+        ----------
+        id
+            The unique id of the MoleculeSet.
+        name
+            The human-readable name of the MoleculeSet.
+        return_as : {'dataframe', 'list'}
+            Whether to return the molecules as a DataFrame or a list.
+
+        Returns
+        -------
+        Union[pd.DataFrame, list]
+            The molecules in the molecule set.
+        """
         if id is None and name is None:
             raise ValueError("Either id or name must be set")
 
