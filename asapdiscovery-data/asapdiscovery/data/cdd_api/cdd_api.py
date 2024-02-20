@@ -212,7 +212,7 @@ class CDDAPI(_BaseWebAPI):
                     ]
                     for key, value in required_data.items()
                 }
-                # add a place holder for the molecule data to be added later
+                # add a placeholder for the molecule data to be added later
                 batch_data["name"] = readout["molecule"]
                 compound_ids.add(readout["molecule"])
                 ic50_data.append(batch_data)
@@ -227,9 +227,9 @@ class CDDAPI(_BaseWebAPI):
         # loop over the list again and update the molecule info
         for compound_data in ic50_data:
             mol_data = compounds_by_id[compound_data["name"]]
-            compound_data["smiles"] = mol_data["smiles"]
-            compound_data["inchi"] = mol_data["inchi"]
-            compound_data["inchi_key"] = mol_data["inchi_key"]
-            compound_data["name"] = mol_data["name"]
+            compound_data["Smiles"] = mol_data["smiles"]
+            compound_data["Inchi"] = mol_data["inchi"]
+            compound_data["Inchi Key"] = mol_data["inchi_key"]
+            compound_data["Molecule Name"] = mol_data["name"]
 
         return pandas.DataFrame(ic50_data)

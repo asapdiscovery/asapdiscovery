@@ -367,10 +367,12 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
         assert "Relative predictions written" in result.stdout
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv(
-            "predictions-absolute-2023-08-07-tyk2-mini-test.csv"
+            "predictions-absolute-tyk2-small-test.csv"
         )
+
         mol_data = absolute_dataframe.iloc[0]
-        assert mol_data["SMILES"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
+        assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
         assert mol_data["label"] == "lig_ejm_31"
         assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-0.1332, abs=1e-4)
         assert mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
@@ -378,14 +380,16 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
         )
 
         relative_dataframe = pd.read_csv(
-            "predictions-relative-2023-08-07-tyk2-mini-test.csv"
+            "predictions-relative-tyk2-small-test.csv"
         )
         relative_mol_data = relative_dataframe.iloc[0]
-        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
             relative_mol_data["SMILES_B"]
-            == "O=C(Nc1ccnc(NC(=O)C2CCC2)c1)c1c(Cl)cccc1Cl"
+            == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
         )
+        assert relative_mol_data["Inchi_Key_A"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
+        assert relative_mol_data["Inchi_Key_B"] == "YJMGZFGQBBEAQT-UHFFFAOYSA-N"
         assert relative_mol_data["labelA"] == "lig_ejm_31"
         assert relative_mol_data["labelB"] == "lig_ejm_47"
         assert relative_mol_data["DDG (kcal/mol) (FECS)"] == pytest.approx(
@@ -413,22 +417,24 @@ def test_alchemy_predict_experimental_data(
         result = runner.invoke(
             alchemy, ["predict", "-rd", tyk2_reference_data, "-ru", "IC50"]
         )
+        print(result.stdout)
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
         assert (
-            "Absolute report written to predictions-absolute-2023-08-07-tyk2-mini-test.html"
+            "Absolute report written to predictions-absolute-tyk2-small-test.html"
             in result.stdout
         )
         assert (
-            "Relative report written to predictions-relative-2023-08-07-tyk2-mini-test.html"
+            "Relative report written to predictions-relative-tyk2-small-test.html"
             in result.stdout
         )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv(
-            "predictions-absolute-2023-08-07-tyk2-mini-test.csv"
+            "predictions-absolute-tyk2-small-test.csv"
         )
         mol_data = absolute_dataframe.iloc[0]
-        assert mol_data["SMILES"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
+        assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
         assert mol_data["label"] == "lig_ejm_31"
         # make sure the results have been shifted to match the experimental range
         assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-10.2182, abs=1e-4)
@@ -443,14 +449,16 @@ def test_alchemy_predict_experimental_data(
         )
 
         relative_dataframe = pd.read_csv(
-            "predictions-relative-2023-08-07-tyk2-mini-test.csv"
+            "predictions-relative-tyk2-small-test.csv"
         )
         relative_mol_data = relative_dataframe.iloc[0]
-        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(NC(=O)c2c(Cl)cccc2Cl)ccn1"
+        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
             relative_mol_data["SMILES_B"]
-            == "O=C(Nc1ccnc(NC(=O)C2CCC2)c1)c1c(Cl)cccc1Cl"
+            == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
         )
+        assert relative_mol_data["Inchi_Key_A"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
+        assert relative_mol_data["Inchi_Key_B"] == "YJMGZFGQBBEAQT-UHFFFAOYSA-N"
         assert relative_mol_data["labelA"] == "lig_ejm_31"
         assert relative_mol_data["labelB"] == "lig_ejm_47"
         # these should not be changed as they do not need shifting

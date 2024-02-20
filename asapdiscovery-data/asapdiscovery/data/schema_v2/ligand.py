@@ -41,6 +41,7 @@ from .schema_base import (
 
 if TYPE_CHECKING:
     from rdkit import Chem
+    import openfe
 
 logger = logging.getLogger(__name__)
 
@@ -262,6 +263,13 @@ class Ligand(DataModelAbstractBase):
         for key, value in data.items():
             rdkit_mol.SetProp(key, value)
         return rdkit_mol
+
+    def to_openfe(self) -> "openfe.SmallMoleculeComponent":
+        """
+        Convert to an openfe SmallMoleculeComponent via the rdkit interface.
+        """
+        import openfe
+        return openfe.SmallMoleculeComponent.from_rdkit(self.to_rdkit())
 
     @classmethod
     def from_smiles(cls, smiles: str, **kwargs) -> "Ligand":

@@ -1,6 +1,6 @@
 import warnings
 from collections import Counter
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, TYPE_CHECKING
 
 import gufe
 import openfe
@@ -22,6 +22,9 @@ from pydantic import BaseSettings, Field
 
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
+
+if TYPE_CHECKING:
+    from asapdiscovery.data.schema_v2.ligand import Ligand
 
 
 class AlchemiscaleSettings(BaseSettings):
@@ -299,6 +302,10 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         None,
         description="The results object which tracks how the calculation was run locally or on alchemiscale and stores the physical results.",
     )
+    experimental_protocol: Optional[str] = Field(
+        None,
+        description="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network."
+    )
 
     class Config:
         """Overwrite the class config to freeze the results model"""
@@ -366,19 +373,22 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         self,
         dataset_name: str,
         receptor: openfe.ProteinComponent,
-        ligands: list[openfe.SmallMoleculeComponent],
-        central_ligand: Optional[openfe.SmallMoleculeComponent] = None,
+        ligands: list["Ligand"],
+        central_ligand: Optional["Ligand"] = None,
+        experimental_protocol: Optional[str] = None
     ) -> FreeEnergyCalculationNetwork:
         """
          Use the factory settings to create a FEC dataset using OpenFE models.
 
         Args:
             dataset_name: The name which should be given to this dataset, this will be used for local file creation or
-            to identify on alchemiscale
+                to identify on alchemiscale
             receptor: The prepared receptor to use in the FEC dataset.
             ligands: The list of prepared and state enumerated ligands to use in the FEC calculation.
             central_ligand: An optional ligand which should be considered as the center only needed for radial networks.
-            Note this ligand will be deduplicated from the list if it appears in both.
+                Note this ligand will be deduplicated from the list if it appears in both.
+            experimental_protocol: The name of the experimental protocol in the CDD vault that should be
+                associated with this Alchemy network.
 
          Returns:
              The planned FEC network which can be executed locally or submitted to alchemiscale.
@@ -386,14 +396,14 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         # check that all ligands are unique in the series
         if len(set(ligands)) != len(ligands):
             count = Counter(ligands)
-            duplicated = [key.name for key, value in count.items() if value > 1]
+            duplicated = [key.compound_name for key, value in count.items() if value > 1]
             raise ValueError(
                 f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
             )
 
         # if any ligands lack a name, then raise an exception; important for
         # ligands to have names for human-readable result gathering downstream
-        if missing := len([ligand for ligand in ligands if not ligand.name]):
+        if missing := len([ligand for ligand in ligands if not ligand.compound_name]):
             raise ValueError(
                 f"{missing} of {len(ligands)} ligands do not have names; names are required for ligands for downstream results handling"
             )
@@ -407,6 +417,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             dataset_name=dataset_name,
             network=planned_network,
             receptor=receptor.to_json(),
+            experimental_protocol=experimental_protocol,
             **self.dict(exclude={"type", "network_planner"}),
         )
         return planned_fec_network
