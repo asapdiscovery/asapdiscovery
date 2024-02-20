@@ -95,4 +95,4 @@ dependencies:
   - cinnabar >=0.4.1
 
   - pip:
-    - pyg-nightly
+    - torch_geometric >=2.5.0
