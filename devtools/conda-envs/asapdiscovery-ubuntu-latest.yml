@@ -58,7 +58,7 @@ dependencies:
   - dgl
   - dgllife
   - pooch
-  - mtenn >=0.5.0
+  - mtenn >=0.5.1
   - wandb
 
   # md
