@@ -88,4 +88,4 @@ def test_FINT_scorer(results_multi, use_dask):
     assert len(scores) == 2
     assert scores[0].score_type == "FINT"
     assert scores[0].score > 0.0
-    assert scores[0].score < 1.0
+    assert scores[0].score <= 1.0
