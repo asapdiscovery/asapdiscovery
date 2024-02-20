@@ -70,7 +70,7 @@ def create(filename: str):
     help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
     type=click.STRING,
     default=None,
-    show_default=True
+    show_default=True,
 )
 def plan(
     name: str,
@@ -79,7 +79,7 @@ def plan(
     center_ligand: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
-    experimental_protocol: Optional[str] = None
+    experimental_protocol: Optional[str] = None,
 ):
     """
     Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
@@ -144,7 +144,7 @@ def plan(
         receptor=receptor,
         ligands=input_ligands,
         central_ligand=center_ligand,
-        experimental_protocol=experimental_protocol
+        experimental_protocol=experimental_protocol,
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
@@ -484,10 +484,13 @@ def restart(network: str, verbose: bool, tasks):
     help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
     type=click.STRING,
     default=None,
-    show_default=True
+    show_default=True,
 )
 def predict(
-    network: str, reference_units: str, reference_dataset: Optional[str] = None, experimental_protocol: Optional[str] = None
+    network: str,
+    reference_units: str,
+    reference_dataset: Optional[str] = None,
+    experimental_protocol: Optional[str] = None,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
@@ -530,7 +533,7 @@ def predict(
         ligands=ligands,
         assay_units=reference_units,
         reference_dataset=reference_dataset,
-        cdd_protocol=experimental_protocol
+        cdd_protocol=experimental_protocol,
     )
     # write the csv to file to be uploaded to postera later
     absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"

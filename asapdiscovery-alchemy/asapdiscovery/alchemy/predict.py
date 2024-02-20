@@ -223,7 +223,10 @@ def add_identifiers_to_df(dataframe: pd.DataFrame, ligands: list) -> pd.DataFram
         Currently adds the smiles and inchi key
     """
     # get the identifiers for each ligand by name
-    ligands_by_name = {ligand.compound_name: {"smiles": ligand.smiles, "inchi_key": ligand.inchikey} for ligand in ligands}
+    ligands_by_name = {
+        ligand.compound_name: {"smiles": ligand.smiles, "inchi_key": ligand.inchikey}
+        for ligand in ligands
+    }
 
     # get the identifiers. Relative dataframe is a bit more involved than absolute.
     if "labelA" in dataframe.columns:
@@ -239,8 +242,12 @@ def add_identifiers_to_df(dataframe: pd.DataFrame, ligands: list) -> pd.DataFram
         dataframe["Inchi_Key_B"] = inchi_key_b
 
     elif "label" in dataframe.columns:
-        smiles = [ligands_by_name[label]["smiles"] for label in dataframe["label"].values]
-        inchi_key = [ligands_by_name[label]["inchi_key"] for label in dataframe["label"].values]
+        smiles = [
+            ligands_by_name[label]["smiles"] for label in dataframe["label"].values
+        ]
+        inchi_key = [
+            ligands_by_name[label]["inchi_key"] for label in dataframe["label"].values
+        ]
         dataframe["SMILES"] = smiles
         dataframe["Inchi_Key"] = inchi_key
 
@@ -312,7 +319,9 @@ def extract_experimental_data(
     return exp_data
 
 
-def _find_ligand_data(name: str, inchi_key: str, experimental_data: pd.DataFrame) -> dict:
+def _find_ligand_data(
+    name: str, inchi_key: str, experimental_data: pd.DataFrame
+) -> dict:
     """
     Multi search method which tries to match the name then the inchi key when looking for a molecules experimental data.
 
@@ -336,7 +345,10 @@ def _find_ligand_data(name: str, inchi_key: str, experimental_data: pd.DataFrame
         ligand_data = ligand_data.iloc[0]
     else:
         # dummy data if not found easy to drop later
-        ligand_data = {"exp_binding_affinity_kcal_mol": np.nan, "exp_binding_affinity_kcal_mol_stderr": np.nan}
+        ligand_data = {
+            "exp_binding_affinity_kcal_mol": np.nan,
+            "exp_binding_affinity_kcal_mol_stderr": np.nan,
+        }
 
     return ligand_data
 
@@ -357,7 +369,11 @@ def add_absolute_expt(
     experimental_col, uncertainty_col = [], []
     for _, row in dataframe.iterrows():
         # use the two stage lookup
-        ligand_data = _find_ligand_data(name=row["label"], inchi_key=row["Inchi_Key"], experimental_data=experimental_data)
+        ligand_data = _find_ligand_data(
+            name=row["label"],
+            inchi_key=row["Inchi_Key"],
+            experimental_data=experimental_data,
+        )
         experimental_col.append(ligand_data["exp_binding_affinity_kcal_mol"])
         uncertainty_col.append(ligand_data["exp_binding_affinity_kcal_mol_stderr"])
     dataframe["DG (kcal/mol) (EXPT)"] = experimental_col
@@ -377,11 +393,22 @@ def add_relative_expt(
     """
     experimental_col, uncertainty_col = [], []
     for _, row in dataframe.iterrows():
-        ligand_a_data = _find_ligand_data(name=row["labelA"], inchi_key=row["Inchi_Key_A"], experimental_data=experimental_data)
-        ligand_b_data = _find_ligand_data(name=row["labelB"], inchi_key=row["Inchi_Key_B"], experimental_data=experimental_data)
+        ligand_a_data = _find_ligand_data(
+            name=row["labelA"],
+            inchi_key=row["Inchi_Key_A"],
+            experimental_data=experimental_data,
+        )
+        ligand_b_data = _find_ligand_data(
+            name=row["labelB"],
+            inchi_key=row["Inchi_Key_B"],
+            experimental_data=experimental_data,
+        )
 
         # compute experimental DDG for this edge
-        ddg = ligand_b_data["exp_binding_affinity_kcal_mol"] - ligand_a_data["exp_binding_affinity_kcal_mol"]
+        ddg = (
+            ligand_b_data["exp_binding_affinity_kcal_mol"]
+            - ligand_a_data["exp_binding_affinity_kcal_mol"]
+        )
         # take the average uncertainty between measurements for this edge.
         delta_ddg = np.mean(
             [
@@ -401,7 +428,7 @@ def get_data_from_femap(
     ligands: list,
     assay_units: Optional[str] = None,
     reference_dataset: Optional[str] = None,
-    cdd_protocol: Optional[str] = None
+    cdd_protocol: Optional[str] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Given a `cinnabar` `FEMap` add the experimental reference data and generate and return:
@@ -911,6 +938,8 @@ def download_cdd_data(protocol_name: str) -> pd.DataFrame:
 
     ic50_data = cdd_api.get_ic50_data(protocol_name=protocol_name)
     # format the data to add the pIC50 and error
-    formatted_data = parse_fluorescence_data_cdd(mol_df=ic50_data, assay_name=protocol_name)
+    formatted_data = parse_fluorescence_data_cdd(
+        mol_df=ic50_data, assay_name=protocol_name
+    )
 
     return formatted_data

@@ -40,8 +40,8 @@ from .schema_base import (
 )
 
 if TYPE_CHECKING:
-    from rdkit import Chem
     import openfe
+    from rdkit import Chem
 
 logger = logging.getLogger(__name__)
 
@@ -269,6 +269,7 @@ class Ligand(DataModelAbstractBase):
         Convert to an openfe SmallMoleculeComponent via the rdkit interface.
         """
         import openfe
+
         return openfe.SmallMoleculeComponent.from_rdkit(self.to_rdkit())
 
     @classmethod

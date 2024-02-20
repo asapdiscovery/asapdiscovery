@@ -1,6 +1,6 @@
 import warnings
 from collections import Counter
-from typing import Any, Literal, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gufe
 import openfe
@@ -304,7 +304,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
     )
     experimental_protocol: Optional[str] = Field(
         None,
-        description="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network."
+        description="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
     )
 
     class Config:
@@ -375,7 +375,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         receptor: openfe.ProteinComponent,
         ligands: list["Ligand"],
         central_ligand: Optional["Ligand"] = None,
-        experimental_protocol: Optional[str] = None
+        experimental_protocol: Optional[str] = None,
     ) -> FreeEnergyCalculationNetwork:
         """
          Use the factory settings to create a FEC dataset using OpenFE models.
@@ -396,7 +396,9 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         # check that all ligands are unique in the series
         if len(set(ligands)) != len(ligands):
             count = Counter(ligands)
-            duplicated = [key.compound_name for key, value in count.items() if value > 1]
+            duplicated = [
+                key.compound_name for key, value in count.items() if value > 1
+            ]
             raise ValueError(
                 f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
             )

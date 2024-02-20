@@ -2,11 +2,11 @@ import abc
 from typing import Callable, Literal, Optional, Union
 
 import openfe
+from asapdiscovery.data.schema_v2.ligand import Ligand
 from pydantic import Field
 
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
 from .base import _SchemaBase
-from asapdiscovery.data.schema_v2.ligand import Ligand
 
 
 class _NetworkPlannerMethod(_SchemaBase, abc.ABC):
@@ -141,14 +141,9 @@ class PlannedNetwork(_NetworkPlannerSettings):
         Returns:
             A list of openfe.SmallMoleculeComponents made from the central ligand followed by all ligands in the network.
         """
-        ligands = [
-            mol.to_openfe()
-            for mol in self.ligands
-        ]
+        ligands = [mol.to_openfe() for mol in self.ligands]
         if self.central_ligand is not None:
-            ligands.insert(
-                0, self.central_ligand.to_openfe()
-            )
+            ligands.insert(0, self.central_ligand.to_openfe())
         return ligands
 
 
@@ -192,7 +187,9 @@ class NetworkPlanner(_NetworkPlannerSettings):
 
         # build the network planner
         planner_data = {
-            "ligands": [mol.to_openfe() for mol in ligands],  # need to convert to rdkit objects?
+            "ligands": [
+                mol.to_openfe() for mol in ligands
+            ],  # need to convert to rdkit objects?
             "mappers": [self.atom_mapping_engine.get_mapper()],
             "scorer": self._get_scorer(),
         }

@@ -366,9 +366,7 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
         assert "Absolute predictions written" in result.stdout
         assert "Relative predictions written" in result.stdout
         # load the datasets and check the results match what's expected
-        absolute_dataframe = pd.read_csv(
-            "predictions-absolute-tyk2-small-test.csv"
-        )
+        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
 
         mol_data = absolute_dataframe.iloc[0]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
@@ -379,9 +377,7 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
             0.0757, abs=1e-4
         )
 
-        relative_dataframe = pd.read_csv(
-            "predictions-relative-tyk2-small-test.csv"
-        )
+        relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
         relative_mol_data = relative_dataframe.iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
@@ -429,9 +425,7 @@ def test_alchemy_predict_experimental_data(
             in result.stdout
         )
         # load the datasets and check the results match what's expected
-        absolute_dataframe = pd.read_csv(
-            "predictions-absolute-tyk2-small-test.csv"
-        )
+        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
         mol_data = absolute_dataframe.iloc[0]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
@@ -448,9 +442,7 @@ def test_alchemy_predict_experimental_data(
             0.6443, abs=1e-4
         )
 
-        relative_dataframe = pd.read_csv(
-            "predictions-relative-tyk2-small-test.csv"
-        )
+        relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
         relative_mol_data = relative_dataframe.iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
