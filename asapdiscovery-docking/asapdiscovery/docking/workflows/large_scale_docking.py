@@ -14,7 +14,6 @@ from asapdiscovery.data.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
-    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
@@ -444,7 +443,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     # remove duplicates that are the same compound docked to different structures
     scores_df = scores_df.drop_duplicates(
-        subset=[DockingResultCols.INCHIKEY.value], keep="first"
+        subset=[DockingResultCols.SMILES.value], keep="first"
     )
 
     n_duplicate_filtered = len(scores_df)
@@ -509,11 +508,13 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         # push the results to PostEra, making a new molecule set if necessary
-        posit_score_tag = map_output_col_to_manifold_tag(
-            DockingResultCols, inputs.target
-        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
-        result_df, molset_name, made_new_molset = postera_uploader.push(
-            result_df, sort_column=posit_score_tag, sort_ascending=True
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df)
+
+        combined = postera_uploader.join_with_manifold_data(
+            result_df,
+            manifold_data,
+            DockingResultCols.SMILES.value,
+            DockingResultCols.LIGAND_ID.value,
         )
 
         if made_new_molset:
@@ -537,9 +538,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
         # upload artifacts to S3 and link them to postera
         uploader = ManifoldArtifactUploader(
-            inputs.target,
-            result_df,
-            molset_name,
+            target=inputs.target,
+            molecule_dataframe=combined,
+            molecule_set_name=molset_name,
             bucket_name=aws_s3_settings.BUCKET_NAME,
             artifact_types=artifact_types,
             artifact_columns=artifact_columns,

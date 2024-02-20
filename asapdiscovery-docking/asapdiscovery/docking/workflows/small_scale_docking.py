@@ -15,7 +15,6 @@ from asapdiscovery.data.postera.manifold_artifacts import (
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetProteinMap,
-    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
@@ -546,11 +545,13 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # push the results to PostEra, making a new molecule set if necessary
-        posit_score_tag = map_output_col_to_manifold_tag(
-            DockingResultCols, inputs.target
-        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
-        result_df, molset_name, made_new_molset = postera_uploader.push(
-            result_df, sort_column=posit_score_tag, sort_ascending=True
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df)
+
+        combined = postera_uploader.join_with_manifold_data(
+            result_df,
+            manifold_data,
+            DockingResultCols.SMILES.value,
+            DockingResultCols.LIGAND_ID.value,
         )
 
         if made_new_molset:
@@ -578,9 +579,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             artifact_types.append(ArtifactType.MD_POSE)
 
         uploader = ManifoldArtifactUploader(
-            inputs.target,
-            result_df,
-            molset_name,
+            target=inputs.target,
+            molecule_dataframe=combined,
+            molecule_set_name=molset_name,
             bucket_name=aws_s3_settings.BUCKET_NAME,
             artifact_types=artifact_types,
             artifact_columns=artifact_columns,
