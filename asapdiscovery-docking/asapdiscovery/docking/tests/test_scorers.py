@@ -5,6 +5,7 @@ from asapdiscovery.docking.scorer import (
     GATScorer,
     MetaScorer,
     SchnetScorer,
+    FINTScorer,
 )
 
 
@@ -78,3 +79,13 @@ def test_meta_scorer_df(results_multi):
 
     scores = scorer.score(results_multi, return_df=True)
     assert len(scores) == 2  # 3 scorers for each of 2 inputs
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_FINT_scorer(results_multi, use_dask):
+    scorer = FINTScorer(target="SARS-CoV-2-Mpro")
+    scores = scorer.score(results_multi, use_dask=use_dask)
+    assert len(scores) == 2
+    assert scores[0].score_type == "FINT"
+    assert scores[0].score > 0.0
+    assert scores[0].score < 1.0
