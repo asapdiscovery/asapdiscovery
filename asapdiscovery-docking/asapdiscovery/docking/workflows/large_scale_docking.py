@@ -251,9 +251,6 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         query_ligands,
         prepped_complexes,
         n_select=inputs.n_select,
-        use_dask=False,
-        dask_client=None,
-        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_pairs = len(pairs)
