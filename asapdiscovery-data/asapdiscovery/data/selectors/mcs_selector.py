@@ -26,6 +26,15 @@ class MCSSelector(SelectorBase):
         description="Whether to use a structure-based search (True) or a more strict element-based search (False).",
     )
 
+    def select(
+        self,
+        ligands: list[Ligand],
+        complexes: list[Union[Complex, PreppedComplex]],
+        **kwargs,
+    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+        outputs = self._select(ligands=ligands, complexes=complexes, **kwargs)
+        return outputs
+
     def _select(
         self,
         ligands: list[Ligand],
