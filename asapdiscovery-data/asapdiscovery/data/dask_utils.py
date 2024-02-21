@@ -1,8 +1,9 @@
+import functools
 import logging
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Optional, Union, Callable
-import functools
+from typing import Any, Callable, Optional, Union
+
 import dask
 import numpy as np
 import psutil
@@ -132,7 +133,7 @@ def backend_wrapper(kwargname):
 def dask_vmap(kwargsnames):
     """
     Decorator to handle either returning a whole vector if not using dask, or using dask to parallelise over a vector
-    if dask is being used 
+    if dask is being used
 
     Designed to be used structure of the form
 

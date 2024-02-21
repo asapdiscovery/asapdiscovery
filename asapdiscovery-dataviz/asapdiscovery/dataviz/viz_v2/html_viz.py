@@ -2,6 +2,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 
+from asapdiscovery.data.dask_utils import backend_wrapper, dask_vmap
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
@@ -9,7 +10,6 @@ from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import Field, root_validator
-from asapdiscovery.data.dask_utils import dask_vmap, backend_wrapper
 
 logger = logging.getLogger(__name__)
 
@@ -85,12 +85,12 @@ class HTMLVisualizerV2(VisualizerBase):
                 )
             # make dataframe with ligand name, target name, and path to HTML
             row = {}
-            row[DockingResultCols.LIGAND_ID.value] = (
-                result.input_pair.ligand.compound_name
-            )
-            row[DockingResultCols.TARGET_ID.value] = (
-                result.input_pair.complex.target.target_name
-            )
+            row[
+                DockingResultCols.LIGAND_ID.value
+            ] = result.input_pair.ligand.compound_name
+            row[
+                DockingResultCols.TARGET_ID.value
+            ] = result.input_pair.complex.target.target_name
             row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
             row[self.get_tag_for_colour_method()] = outpaths[0]
             data.append(row)

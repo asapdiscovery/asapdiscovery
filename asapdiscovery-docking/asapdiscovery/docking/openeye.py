@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import ClassVar, Literal, Optional, Union
 
 import pandas as pd
+from asapdiscovery.data.dask_utils import dask_vmap
 from asapdiscovery.data.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.docking.docking import (
@@ -18,7 +19,6 @@ from asapdiscovery.docking.docking import (
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import Field, PositiveInt, root_validator
-from asapdiscovery.data.dask_utils import dask_vmap
 
 logger = logging.getLogger(__name__)
 
@@ -77,21 +77,21 @@ class POSITDockingResults(DockingResult):
         df_prep = []
         for result in results:
             docking_dict = {}
-            docking_dict[DockingResultCols.LIGAND_ID.value] = (
-                result.input_pair.ligand.compound_name
-            )
-            docking_dict[DockingResultCols.TARGET_ID.value] = (
-                result.input_pair.complex.target.target_name
-            )
-            docking_dict["target_bound_compound_smiles"] = (
-                result.input_pair.complex.ligand.smiles
-            )
-            docking_dict[DockingResultCols.SMILES.value] = (
-                result.input_pair.ligand.smiles
-            )
-            docking_dict[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value] = (
-                result.probability
-            )
+            docking_dict[
+                DockingResultCols.LIGAND_ID.value
+            ] = result.input_pair.ligand.compound_name
+            docking_dict[
+                DockingResultCols.TARGET_ID.value
+            ] = result.input_pair.complex.target.target_name
+            docking_dict[
+                "target_bound_compound_smiles"
+            ] = result.input_pair.complex.ligand.smiles
+            docking_dict[
+                DockingResultCols.SMILES.value
+            ] = result.input_pair.ligand.smiles
+            docking_dict[
+                DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
+            ] = result.probability
             df_prep.append(docking_dict)
 
         df = pd.DataFrame(df_prep)

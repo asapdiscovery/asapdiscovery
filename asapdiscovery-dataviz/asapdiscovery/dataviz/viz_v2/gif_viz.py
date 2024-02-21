@@ -17,8 +17,8 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar
-from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
 from asapdiscovery.dataviz.show_contacts import show_contacts
+from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.simulation.simulate import SimulationResult
 from pydantic import BaseModel, Field, PositiveInt
@@ -270,15 +270,15 @@ class GIFVisualizerV2(VisualizerBase):
             shutil.rmtree(tmpdir)
 
             row = {}
-            row[DockingResultCols.LIGAND_ID.value] = (
-                res.input_docking_result.input_pair.ligand.compound_name
-            )
-            row[DockingResultCols.TARGET_ID.value] = (
-                res.input_docking_result.input_pair.complex.target.target_name
-            )
-            row[DockingResultCols.SMILES.value] = (
-                res.input_docking_result.input_pair.ligand.smiles
-            )
+            row[
+                DockingResultCols.LIGAND_ID.value
+            ] = res.input_docking_result.input_pair.ligand.compound_name
+            row[
+                DockingResultCols.TARGET_ID.value
+            ] = res.input_docking_result.input_pair.complex.target.target_name
+            row[
+                DockingResultCols.SMILES.value
+            ] = res.input_docking_result.input_pair.ligand.smiles
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data

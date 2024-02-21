@@ -1,5 +1,6 @@
-import pytest
 from pathlib import Path
+
+import pytest
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 
 

@@ -10,8 +10,8 @@ import pandas as pd
 from asapdiscovery.data.dask_utils import (
     BackendType,
     DaskFailureMode,
-    dask_vmap,
     backend_wrapper,
+    dask_vmap,
 )
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.openeye import oedocking
@@ -133,7 +133,8 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]: ...
+    def _score() -> list[DockingResult]:
+        ...
 
     def score(
         self,
@@ -145,7 +146,6 @@ class ScorerBase(BaseModel):
         reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
-
         outputs = self._score(
             inputs=inputs,
             use_dask=use_dask,
