@@ -82,11 +82,17 @@ def actualise_dask_delayed_iterable(
 def backend_wrapper(kwargname):
     """
     Decorator to handle dask backend for passing data into a function from disk or in-memory
+    kwargname is the name of the keyword argument that is being passed in from disk or in-memory
+
+    The decorator will take the following kwargs from a call site and pops them from kwargs.
+
 
     Parameters
     ----------
-    kwargname : str
-        The keyword argument name for the object to be reconstructed from disk
+    backend : BackendType
+        The backend type to use, either in-memory or disk
+    reconstruct_cls : Callable
+        The class to use to reconstruct the object from disk
     """
 
     def backend_wrapper_inner(func):
@@ -125,12 +131,28 @@ def backend_wrapper(kwargname):
 
 def dask_vmap(kwargsnames):
     """
-    Decorator to handle dask vmap for parallelising a function over multiple inputs
+    Decorator to handle either returning a whole vector if not using dask, or using dask to parallelise over a vector
+    if dask is being used 
+
+    Designed to be used structure of the form
+
+    @dask_vmap(["kwargs1", "kwargs2"])
+    def my_function(kwargs1, kwargs2, use_dask=False, dask_client=None, dask_failure_mode=DaskFailureMode.RAISE.value):
+        return _my_function(kwargs1, kwargs2)
+
+    If use_dask is `True`, then `_my_function` will be parallelised over kwargs1 and kwargs2 (zipped, must be same length) using dask, passing in iterable
+    intputs of length 1. If use_dask is `False` it will call `_my_function` directly.
 
     Parameters
     ----------
     kwargsnames : list[str]
         List of keyword argument names to parallelise over
+    use_dask : bool, optional
+        Whether to use dask, by default False
+    dask_client : Client, optional
+        Dask client to use, by default None
+    dask_failure_mode : str, optional
+        Dask failure mode, by default DaskFailureMode.RAISE.value
     """
 
     def dask_vmap_inner(func):
