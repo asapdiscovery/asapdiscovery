@@ -31,8 +31,7 @@ class DockingInputBase(BaseModel):
     """
 
     @abc.abstractmethod
-    def to_design_units(self) -> list[oechem.OEDesignUnit]:
-        ...
+    def to_design_units(self) -> list[oechem.OEDesignUnit]: ...
 
 
 class DockingInputPair(CompoundStructurePair, DockingInputBase):
@@ -83,8 +82,7 @@ class DockingBase(BaseModel):
     @abc.abstractmethod
     def _dock(
         self, inputs: list[DockingInputPair], output_dir: Union[str, Path]
-    ) -> list["DockingResult"]:
-        ...
+    ) -> list["DockingResult"]: ...
 
     def dock(
         self,
@@ -110,6 +108,9 @@ class DockingBase(BaseModel):
         dask_client : dask.distributed.Client, optional
             Dask client to use, by default None
         dask_failure_mode : DaskFailureMode, optional
+            Dask failure mode, by default DaskFailureMode.SKIP
+        return_for_disk_backend : bool, optional
+            Whether to return the results for disk backend, by default False
 
         Returns
         -------
@@ -120,26 +121,15 @@ class DockingBase(BaseModel):
         if output_dir is not None:
             Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        if use_dask:
-            delayed_outputs = []
-            for inp in inputs:
-                out = dask.delayed(self._dock)(
-                    inputs=[inp],
-                    output_dir=output_dir,
-                    return_for_disk_backend=return_for_disk_backend,
-                )
-                delayed_outputs.append(out[0])  # flatten
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client, errors=dask_failure_mode
-            )
-        else:
-            outputs = self._dock(
-                inputs=inputs,
-                output_dir=output_dir,
-                return_for_disk_backend=return_for_disk_backend,
-            )
-        # filter out None values
-        outputs = [o for o in outputs if o is not None]
+        outputs = self._dock(
+            inputs=inputs,
+            output_dir=output_dir,
+            use_dask=use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=dask_failure_mode,
+            return_for_disk_backend=return_for_disk_backend,
+        )
+
         return outputs
 
     @staticmethod
@@ -166,8 +156,7 @@ class DockingBase(BaseModel):
             result.write_docking_files(output_dir)
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
 
 class DockingResult(BaseModel):

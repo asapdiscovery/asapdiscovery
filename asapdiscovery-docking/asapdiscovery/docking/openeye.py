@@ -1,6 +1,7 @@
 """
 This module contains the inputs, docker, and output schema for using POSIT
 """
+
 import logging
 from enum import Enum
 from pathlib import Path
@@ -17,6 +18,7 @@ from asapdiscovery.docking.docking import (
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import Field, PositiveInt, root_validator
+from asapdiscovery.data.dask_utils import dask_vmap
 
 logger = logging.getLogger(__name__)
 
@@ -75,21 +77,21 @@ class POSITDockingResults(DockingResult):
         df_prep = []
         for result in results:
             docking_dict = {}
-            docking_dict[
-                DockingResultCols.LIGAND_ID.value
-            ] = result.input_pair.ligand.compound_name
-            docking_dict[
-                DockingResultCols.TARGET_ID.value
-            ] = result.input_pair.complex.target.target_name
-            docking_dict[
-                "target_bound_compound_smiles"
-            ] = result.input_pair.complex.ligand.smiles
-            docking_dict[
-                DockingResultCols.SMILES.value
-            ] = result.input_pair.ligand.smiles
-            docking_dict[
-                DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
-            ] = result.probability
+            docking_dict[DockingResultCols.LIGAND_ID.value] = (
+                result.input_pair.ligand.compound_name
+            )
+            docking_dict[DockingResultCols.TARGET_ID.value] = (
+                result.input_pair.complex.target.target_name
+            )
+            docking_dict["target_bound_compound_smiles"] = (
+                result.input_pair.complex.ligand.smiles
+            )
+            docking_dict[DockingResultCols.SMILES.value] = (
+                result.input_pair.ligand.smiles
+            )
+            docking_dict[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value] = (
+                result.probability
+            )
             df_prep.append(docking_dict)
 
         df = pd.DataFrame(df_prep)
@@ -187,6 +189,7 @@ class POSITDocker(DockingBase):
         retcode = poser.Dock(pose_res, lig, num_poses)
         return pose_res, retcode
 
+    @dask_vmap(["inputs"])
     def _dock(
         self,
         inputs: list[
