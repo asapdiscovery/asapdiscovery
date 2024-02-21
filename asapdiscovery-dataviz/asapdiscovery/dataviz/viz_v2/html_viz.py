@@ -9,6 +9,7 @@ from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import Field, root_validator
+from asapdiscovery.data.dask_utils import dask_vmap, backend_wrapper
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +56,16 @@ class HTMLVisualizerV2(VisualizerBase):
         elif self.colour_method == ColourMethod.fitness:
             return DockingResultCols.HTML_PATH_FITNESS.value
 
-    def _visualize(self, docking_results: list[DockingResult]) -> list[dict[str, str]]:
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
+    def _visualize(self, inputs: list[DockingResult]) -> list[dict[str, str]]:
         """
         Visualize a list of docking results.
 
         NOTE: This is an extremely bad way of doing this, but it's a quick fix for now
         """
         data = []
-        for result in docking_results:
+        for result in inputs:
             # sorryyyyy
             output_pref = result.unique_name
             outpath = self.output_dir / output_pref / "pose.html"
@@ -82,12 +85,12 @@ class HTMLVisualizerV2(VisualizerBase):
                 )
             # make dataframe with ligand name, target name, and path to HTML
             row = {}
-            row[
-                DockingResultCols.LIGAND_ID.value
-            ] = result.input_pair.ligand.compound_name
-            row[
-                DockingResultCols.TARGET_ID.value
-            ] = result.input_pair.complex.target.target_name
+            row[DockingResultCols.LIGAND_ID.value] = (
+                result.input_pair.ligand.compound_name
+            )
+            row[DockingResultCols.TARGET_ID.value] = (
+                result.input_pair.complex.target.target_name
+            )
             row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
             row[self.get_tag_for_colour_method()] = outpaths[0]
             data.append(row)

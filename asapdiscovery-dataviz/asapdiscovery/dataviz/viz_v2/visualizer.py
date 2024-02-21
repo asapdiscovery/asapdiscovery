@@ -18,8 +18,7 @@ class VisualizerBase(abc.ABC, BaseModel):
     """
 
     @abc.abstractmethod
-    def _visualize(self) -> pd.DataFrame:
-        ...
+    def _visualize(self) -> pd.DataFrame: ...
 
     def visualize(
         self,
@@ -30,32 +29,20 @@ class VisualizerBase(abc.ABC, BaseModel):
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
     ) -> pd.DataFrame:
-        if use_dask:
-            delayed_outputs = []
-            for inp in inputs:
-                out = dask.delayed(backend_wrapper)(
-                    inputs=[inp],
-                    func=self._visualize,
-                    backend=backend,
-                    reconstruct_cls=reconstruct_cls,
-                )
-                delayed_outputs.append(out[0])  # flatten
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors=dask_failure_mode
-            )
-        else:
-            outputs = backend_wrapper(
-                inputs=inputs,
-                func=self._visualize,
-                backend=backend,
-                reconstruct_cls=reconstruct_cls,
-            )
+
+        outputs = self._visualize(
+            inputs=inputs,
+            use_dask=use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=dask_failure_mode,
+            backend=backend,
+            reconstruct_cls=reconstruct_cls,
+        )
 
         return pd.DataFrame(outputs)
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
     @staticmethod
     def write_data(data, path):

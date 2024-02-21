@@ -7,6 +7,8 @@ import pandas as pd
 from asapdiscovery.data.dask_utils import (
     DaskFailureMode,
     actualise_dask_delayed_iterable,
+    backend_wrapper,
+    dask_vmap,
 )
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.postera.manifold_data_validation import (
@@ -15,6 +17,7 @@ from asapdiscovery.data.postera.manifold_data_validation import (
 )
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar
+from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
 from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.simulation.simulate import SimulationResult
@@ -23,7 +26,7 @@ from pydantic import BaseModel, Field, PositiveInt
 logger = logging.getLogger(__name__)
 
 
-class GIFVisualizerV2(BaseModel):
+class GIFVisualizerV2(VisualizerBase):
     """
     Class for generating GIF visualizations of MD simulations.
     """
@@ -56,33 +59,9 @@ class GIFVisualizerV2(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def visualize(
-        self,
-        simulation_results: list[SimulationResult],
-        use_dask: bool = False,
-        dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
-        **kwargs,
-    ) -> pd.DataFrame:
-        """
-        Visualize a trajectory.
-        """
-        if use_dask:
-            delayed_outputs = []
-            for res in simulation_results:
-                out = dask.delayed(self._visualize)(simulation_results=[res], **kwargs)
-                delayed_outputs.append(out)
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors=dask_failure_mode
-            )
-            outputs = [item for sublist in outputs for item in sublist]
-        else:
-            outputs = self._visualize(simulation_results=simulation_results, **kwargs)
-
-        return pd.DataFrame(outputs)
-
+    @dask_vmap(["inputs"])
     def _visualize(
-        self, simulation_results: list[SimulationResult]
+        self, inputs: list[SimulationResult], **kwargs
     ) -> list[dict[str, str]]:
         view_coords = GIFBlockData.get_view_coords()
 
@@ -91,7 +70,7 @@ class GIFVisualizerV2(BaseModel):
         color_dict = GIFBlockData.get_color_dict(self.target)
 
         data = []
-        for res in simulation_results:
+        for res in inputs:
             traj = res.traj_path
             system = res.minimized_pdb_path
             # NOTE very important, need to spawn a new pymol proc for each trajectory
@@ -291,15 +270,18 @@ class GIFVisualizerV2(BaseModel):
             shutil.rmtree(tmpdir)
 
             row = {}
-            row[
-                DockingResultCols.LIGAND_ID.value
-            ] = res.input_docking_result.input_pair.ligand.compound_name
-            row[
-                DockingResultCols.TARGET_ID.value
-            ] = res.input_docking_result.input_pair.complex.target.target_name
-            row[
-                DockingResultCols.SMILES.value
-            ] = res.input_docking_result.input_pair.ligand.smiles
+            row[DockingResultCols.LIGAND_ID.value] = (
+                res.input_docking_result.input_pair.ligand.compound_name
+            )
+            row[DockingResultCols.TARGET_ID.value] = (
+                res.input_docking_result.input_pair.complex.target.target_name
+            )
+            row[DockingResultCols.SMILES.value] = (
+                res.input_docking_result.input_pair.ligand.smiles
+            )
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data
+
+    def provenance(self):
+        return {}

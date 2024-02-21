@@ -1,9 +1,10 @@
 import logging
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
-
+from typing import Any, Optional, Union, Callable
+import functools
 import dask
+import numpy as np
 import psutil
 from asapdiscovery.data.enum import StringEnum
 from asapdiscovery.data.execution_utils import (
@@ -55,7 +56,7 @@ def set_dask_config():
 def actualise_dask_delayed_iterable(
     delayed_iterable: Iterable,
     dask_client: Optional[Client] = None,
-    errors: str = "raise",
+    errors: str = DaskFailureMode.RAISE.value,
 ):
     """
     Run a list of dask delayed functions or collections, and return the results
@@ -78,21 +79,98 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-def backend_wrapper(
-    inputs: Union[list[Any], list[Path]],
-    func: Callable,
-    backend=BackendType.IN_MEMORY,
-    reconstruct_cls: Optional[Any] = None,
-):
-    if backend == BackendType.DISK:
-        if not reconstruct_cls:
-            raise ValueError("reconstruct_cls must be provided for disk backend")
-        inputs = [reconstruct_cls.from_json_file(inp) for inp in inputs]
-    elif backend == BackendType.IN_MEMORY:
-        pass  # do nothing
-    else:
-        raise ValueError("invalid backend type")
-    return func(inputs)
+def backend_wrapper(kwargname):
+    """
+    Decorator to handle dask backend for passing data into a function from disk or in-memory
+
+    Parameters
+    ----------
+    kwargname : str
+        The keyword argument name for the object to be reconstructed from disk
+    """
+
+    def backend_wrapper_inner(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            backend = kwargs.pop("backend", None)
+            reconstruct_cls = kwargs.pop("reconstruct_cls", None)
+
+            if backend == BackendType.DISK:
+                # grab optional disk kwargs
+                to_be_reconstructed = kwargs.pop(kwargname, None)
+                if to_be_reconstructed is None:
+                    raise ValueError(f"Missing keyword argument {kwargname}")
+
+                if reconstruct_cls is None:
+                    raise ValueError("Missing keyword argument reconstruct_cls")
+
+                # reconstruct the object from disk
+                reconstructed = [
+                    reconstruct_cls.from_json_file(f) for f in to_be_reconstructed
+                ]
+
+                # add the reconstructed object to the kwargs
+                kwargs[kwargname] = reconstructed
+
+            elif backend == BackendType.IN_MEMORY:
+                pass
+            else:
+                raise ValueError(f"Unknown backend type {backend}")
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return backend_wrapper_inner
+
+
+def dask_vmap(kwargsnames):
+    """
+    Decorator to handle dask vmap for parallelising a function over multiple inputs
+
+    Parameters
+    ----------
+    kwargsnames : list[str]
+        List of keyword argument names to parallelise over
+    """
+
+    def dask_vmap_inner(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # grab optional dask kwargs
+            use_dask = kwargs.pop("use_dask", None)
+            dask_client = kwargs.pop("dask_client", None)
+            dask_failure_mode = kwargs.pop(
+                "dask_failure_mode", DaskFailureMode.SKIP.value
+            )
+
+            if use_dask:
+                # grab iterable_kwargs
+                iterable_kwargs = {name: kwargs.pop(name) for name in kwargsnames}
+                # check they are all the same length
+                # Check if all iterable keyword arguments are of the same length
+                lengths = {name: len(value) for name, value in iterable_kwargs.items()}
+                if len(set(lengths.values())) != 1:
+                    raise ValueError(
+                        "Iterable keyword arguments must be of the same length."
+                    )
+
+                computations = []
+                for values in zip(*iterable_kwargs.values()):
+                    local_kwargs = kwargs.copy()
+                    for name, value in zip(iterable_kwargs.keys(), values):
+                        local_kwargs[name] = [value]
+                    computations.append(dask.delayed(func)(*args, **local_kwargs))
+                return np.ravel(
+                    actualise_dask_delayed_iterable(
+                        computations, dask_client=dask_client, errors=dask_failure_mode
+                    )
+                ).tolist()
+            else:
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return dask_vmap_inner
 
 
 class DaskType(StringEnum):
