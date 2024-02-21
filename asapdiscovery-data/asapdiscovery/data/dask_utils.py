@@ -1,8 +1,7 @@
 import functools
 import logging
 from collections.abc import Iterable
-from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Optional, Union
 
 import dask
 import numpy as np

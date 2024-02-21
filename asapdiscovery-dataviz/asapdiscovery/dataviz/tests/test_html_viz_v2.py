@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.viz_v2.html_viz import HTMLVisualizerV2

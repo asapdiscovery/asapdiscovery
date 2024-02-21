@@ -4,7 +4,6 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Optional, Union
 
-import dask
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.dask_utils import (
