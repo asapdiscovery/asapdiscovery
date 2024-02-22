@@ -14,7 +14,7 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
 from rdkit import Chem
-
+from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
 
 def test_alchemy_create(tmpdir):
     """Test making a workflow file using the cli"""
@@ -413,7 +413,6 @@ def test_alchemy_predict_experimental_data(
         result = runner.invoke(
             alchemy, ["predict", "-rd", tyk2_reference_data, "-ru", "IC50"]
         )
-        print(result.stdout)
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
         assert (
@@ -487,3 +486,111 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
                 ["predict", "-rd", tyk2_reference_data, "-ru", "pIC50"],
                 catch_exceptions=False,  # let the exception buble up so pytest can check it
             )
+
+
+def test_alchemy_predict_ccd_data(tmpdir, tyk2_result_network, tyk2_reference_data, monkeypatch):
+    """
+    Make sure we can do a prediction with experimental data when using the CDD api interface.
+
+    Notes:
+        The CDD api will be mocked, so we are testing the ability to match the data up correctly.
+        We expected slightly different values here due to rounding of the pIC50 via this pathway.
+    """
+
+    # mock the env variables
+    monkeypatch.setenv("CDD_API_KEY", "mykey")
+    monkeypatch.setenv("CDD_VAULT_NUMBER", "1")
+    protocol_name = "my-protocol"
+    # mock the cdd_api
+    def get_tyk2_data(*args, **kwargs):
+        data = pd.read_csv(tyk2_reference_data, index_col=0)
+        # format the data and add expected columns
+        ic50_lower, ic50_upper, curve, inchi, inchi_key = [], [], [], [], []
+        data.rename(columns={"SMILES": "Smiles", "IC50_GMean (µM)": f"{protocol_name}: IC50 (µM)"}, inplace=True)
+        data.drop(columns=["IC50_GMean (µM) Standard Deviation (×/÷)"], inplace=True)
+        for _, row in data.iterrows():
+            # calculate the required data
+            rdkit_mol = Chem.MolFromSmiles(row["Smiles"])
+            inchi.append(Chem.MolToInchi(rdkit_mol))
+            inchi_key.append(Chem.MolToInchiKey(rdkit_mol))
+            curve.append(1.1)
+            ic50_lower.append(row[f"{protocol_name}: IC50 (µM)"] - 0.001)
+            ic50_upper.append(row[f"{protocol_name}: IC50 (µM)"] + 0.01)
+        data[f"{protocol_name}: IC50 CI (Lower) (µM)"] = ic50_lower
+        data[f"{protocol_name}: IC50 CI (Upper) (µM)"] = ic50_upper
+        data[f"{protocol_name}: Curve class"] = curve
+        data["Inchi"] = inchi
+        data["Inchi Key"] = inchi_key
+        # these should be the cdd ids but just use some mock id
+        data["name"] = data["Molecule Name"]
+        return data
+
+    monkeypatch.setattr(CDDAPI, "get_ic50_data", get_tyk2_data)
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+
+        result = runner.invoke(
+            alchemy, ["predict", "-ep", protocol_name]
+        )
+        assert result.exit_code == 0
+        assert result.exit_code == 0
+        assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
+        assert (
+                "Absolute report written to predictions-absolute-tyk2-small-test.html"
+                in result.stdout
+        )
+        assert (
+                "Relative report written to predictions-relative-tyk2-small-test.html"
+                in result.stdout
+        )
+        # load the datasets and check the results match what's expected
+        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
+        # make sure all results are present
+        assert len(absolute_dataframe) == 10
+        mol_data = absolute_dataframe.iloc[0]
+        assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
+        assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
+        assert mol_data["label"] == "lig_ejm_31"
+        # make sure the results have been shifted to match the experimental range
+        assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-10.2151, abs=1e-4)
+        assert mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+            0.0757, abs=1e-4
+        )
+        # make sure the experimental data has been added
+        assert mol_data["DG (kcal/mol) (EXPT)"] == pytest.approx(-9.5721, abs=1e-4)
+        # make sure the prediction error has been calculated
+        assert mol_data["prediction error (kcal/mol)"] == pytest.approx(
+            0.6429, abs=1e-4
+        )
+
+        relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
+        # make sure all results are present
+        assert len(relative_dataframe) == 9
+        relative_mol_data = relative_dataframe.iloc[0]
+        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
+        assert (
+                relative_mol_data["SMILES_B"]
+                == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
+        )
+        assert relative_mol_data["Inchi_Key_A"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
+        assert relative_mol_data["Inchi_Key_B"] == "YJMGZFGQBBEAQT-UHFFFAOYSA-N"
+        assert relative_mol_data["labelA"] == "lig_ejm_31"
+        assert relative_mol_data["labelB"] == "lig_ejm_47"
+        # these should not be changed as they do not need shifting
+        assert relative_mol_data["DDG (kcal/mol) (FECS)"] == pytest.approx(
+            0.1115, abs=1e-4
+        )
+        assert relative_mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+            0.1497, abs=1e-4
+        )
+        # make sure the experimental data has been added
+        assert relative_mol_data["DDG (kcal/mol) (EXPT)"] == pytest.approx(
+            -0.1499, abs=1e-4
+        )
+        assert relative_mol_data["prediction error (kcal/mol)"] == pytest.approx(
+            0.2615, abs=1e-4
+        )

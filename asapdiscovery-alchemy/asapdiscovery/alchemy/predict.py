@@ -479,7 +479,6 @@ def get_data_from_femap(
         )
     elif cdd_protocol:
         experimental_data = download_cdd_data(protocol_name=cdd_protocol)
-        experimental_data.to_csv("cdd_downloaded_data.csv")
 
     if experimental_data is not None:
         add_absolute_expt(dataframe=absolute_df, experimental_data=experimental_data)
@@ -807,7 +806,6 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
             # use full data frame including nans for table
             dataframe,
             show_index=False,
-            selectable="checkbox",
             disabled=True,
             formatters={
                 "SMILES": "html",
@@ -897,9 +895,8 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
             ),
         ),
         panel.widgets.Tabulator(
-            dataframe,
+            dataframe.drop(columns=["labels", "smiles"]),
             show_index=False,
-            selectable="checkbox",
             disabled=True,
             formatters={
                 "SMILES_A": "html",
