@@ -1,6 +1,5 @@
 import json
 import pickle as pkl
-import re
 
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
