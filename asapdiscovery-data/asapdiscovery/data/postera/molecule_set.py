@@ -3,10 +3,10 @@ from typing import Dict, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
 from asapdiscovery.data.enum import StringEnum
+from asapdiscovery.data.web_utils import _BaseWebAPI
 from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
-from .postera_api import PostEraAPI
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
         )
 
 
-class MoleculeSetAPI(PostEraAPI):
+class MoleculeSetAPI(_BaseWebAPI):
     """Connection and commands for PostEra Molecule Set API"""
 
     @staticmethod
@@ -96,6 +96,10 @@ class MoleculeSetAPI(PostEraAPI):
             raise ValueError(
                 f"User does not have permission to perform this operation in the PostEra API, check API key and user permissions. Response: {response}"
             )
+
+    @classmethod
+    def token_name(cls) -> str:
+        return "X-API-KEY"
 
     @classmethod
     def from_settings(cls, settings):
