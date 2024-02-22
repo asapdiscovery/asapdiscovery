@@ -1,6 +1,8 @@
 import pytest
+from asapdiscovery.data.cdd_api import CDDAPI
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.services_config import CDDSettings
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
@@ -53,3 +55,10 @@ def smiles():
 @pytest.fixture(scope="module")
 def ligands(smiles):
     return [Ligand.from_smiles(s, compound_name="test") for s in smiles]
+
+
+@pytest.fixture()
+def mocked_cdd_api():
+    """A cdd_api configured with dummy data which should have the requests mocked."""
+    settings = CDDSettings(CDD_API_KEY="my-key", CDD_VAULT_NUMBER=1)
+    return CDDAPI.from_settings(settings=settings)

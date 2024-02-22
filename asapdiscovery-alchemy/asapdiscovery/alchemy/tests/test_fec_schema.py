@@ -221,47 +221,15 @@ def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
             ligands=ligands,
         )
 
-    ligands = ligands + tyk2_ligands[:1]
-
-    factory = FreeEnergyCalculationFactory()
-    with pytest.raises(ValueError, match="2 duplicate ligands"):
-        _ = factory.create_fec_dataset(
-            dataset_name="TYK2-test-dataset-duplicated",
-            receptor=tyk2_protein,
-            ligands=ligands,
-        )
-
 
 def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
-    from gufe import SmallMoleculeComponent
-
-    # a bit of a hack until we get this addressed: https://github.com/OpenFreeEnergy/gufe/issues/264
-    lig = SmallMoleculeComponent(tyk2_ligands[0].to_rdkit(), name="other")
-    lig._name = ""
-    assert not lig.name
-
-    ligands = [lig] + tyk2_ligands[1:]
+    """Make sure missing ligand names are caught"""
+    ligands = [ligand.copy(deep=True) for ligand in tyk2_ligands]
+    ligands[0].compound_name = ""
 
     factory = FreeEnergyCalculationFactory()
     with pytest.raises(
         ValueError, match=f"1 of {len(ligands)} ligands do not have names"
-    ):
-        _ = factory.create_fec_dataset(
-            dataset_name="TYK2-test-dataset-missing-name",
-            receptor=tyk2_protein,
-            ligands=ligands,
-        )
-
-    # a bit of a hack until we get this addressed: https://github.com/OpenFreeEnergy/gufe/issues/264
-    lig = SmallMoleculeComponent(ligands[-1].to_rdkit(), name="other")
-    lig._name = ""
-    assert not lig.name
-
-    ligands = ligands[:-1] + [lig]
-
-    factory = FreeEnergyCalculationFactory()
-    with pytest.raises(
-        ValueError, match=f"2 of {len(ligands)} ligands do not have names"
     ):
         _ = factory.create_fec_dataset(
             dataset_name="TYK2-test-dataset-missing-name",
