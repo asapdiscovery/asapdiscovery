@@ -67,6 +67,8 @@ def actualise_dask_delayed_iterable(
         List of dask delayed functions
     dask_client Client, optional
         Dask client to use, by default None
+    errors : str
+        Dask failure mode, one of "raise" or "skip", by default "raise"
     Returns
     -------
     iterable: Iterable
