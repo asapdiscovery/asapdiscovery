@@ -530,6 +530,7 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
         assert ethanol_data[f"{assay_name}: Curve class"] == 1.1
         # check the molecule identifiers
         mol_data = mock_molecule_response["objects"][0]
-        for key, value in mol_data.items():
-            if key != "id":
-                assert ethanol_data[key] == value
+        assert mol_data["smiles"] == ethanol_data["Smiles"]
+        assert mol_data['inchi'] == ethanol_data["Inchi"]
+        assert mol_data["inchi_key"] == ethanol_data["Inchi Key"]
+        assert mol_data["name"] == ethanol_data["Molecule Name"]
