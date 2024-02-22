@@ -192,7 +192,7 @@ files:
 
   # TYK2 FEC network for testing
   - resource: tyk2_small_network.json
-    sha256hash: 90264719a7e2ca6a6b1f838e5a368cb7fc65774c9edb4c12e82d0279952a9e88
+    sha256hash: 7f49cff105c79fab2ca873f26bd4dc0d34a426ff48ce4ecc07a8f1544be8a0b1
 
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
@@ -255,6 +255,10 @@ files:
   - resource: docking_results.json
     sha256hash: 4340695755c2f30edc834a2ad339425df320cbf3f5a1af2e389df8a1758584cc
 
+  # precomputed docking result to make some tests faster
+  - resource: docking_results_simple.json
+    sha256hash: 420d8a50a7ba19a1ba9f1a5b5add2f93bc4a33839f07895421edf1fe6eeea66c
+
   # constrained conformer generation testing
   - resource: constrained_conformer/ASAP-0008650.sdf
     sha256hash: 2aded7f8f4450b94b6bfeb13095ba755867918fb0195d1176165928fc7e5cd13
@@ -267,7 +271,7 @@ files:
 
   # alchemy result testing
   - resource: tyk2_result_network.json
-    sha256hash: 9c29e5db96f8d9f85eec5e8604f0ec9cb503e90a4f1359113352c8352c82fd11
+    sha256hash: f1bc3f03c84a28cb6fecda38160afba7b860cfca27ffc39da4359da3957f80cc
 
   - resource: tyk2_reference_data.csv
     sha256hash: 5e73f6cf3b68defcffa5cf54c91ffb5ac1569688278a91c8032d4cd3426930cc

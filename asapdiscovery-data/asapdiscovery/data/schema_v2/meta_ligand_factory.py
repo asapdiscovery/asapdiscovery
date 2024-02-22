@@ -45,7 +45,7 @@ class MetaLigandFactory(BaseModel):
     def postera_molset_and_name(cls, values):
         postera_molset_name = values.get("postera_molset_name")
         postera = values.get("postera")
-        if not postera and postera_molset_name:
+        if postera and not postera_molset_name:
             raise ValueError("must specify postera_molset_name if postera is specified")
         return values
 

@@ -170,8 +170,6 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        use_dask=False,
-        dask_client=None,
     )
 
     n_pairs = len(pairs)
