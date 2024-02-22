@@ -919,7 +919,7 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
 
 def download_cdd_data(protocol_name: str) -> pd.DataFrame:
     """
-    A wrapper method to download CDD protocol data, manly used to tuck imports.
+    A wrapper method to download CDD protocol data, mainly used to tuck imports.
 
     Args:
         protocol_name: The name of the CDD protocol to extract experimental data for.
