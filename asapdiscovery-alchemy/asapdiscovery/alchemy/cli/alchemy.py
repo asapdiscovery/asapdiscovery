@@ -528,12 +528,14 @@ def predict(
     # convert to cinnabar fepmap to do the prediction via MLE
     fe_map = result_network.results.to_fe_map()
     fe_map.generate_absolute_values()
+    # check if we have a protocol on the network already
+    protocol = experimental_protocol or result_network.experimental_protocol
     absolute_df, relative_df = get_data_from_femap(
         fe_map=fe_map,
         ligands=ligands,
         assay_units=reference_units,
         reference_dataset=reference_dataset,
-        cdd_protocol=experimental_protocol,
+        cdd_protocol=protocol,
     )
     # write the csv to file to be uploaded to postera later
     absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"
