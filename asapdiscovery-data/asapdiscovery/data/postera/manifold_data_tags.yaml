@@ -27,6 +27,7 @@ virus:
   SARS-CoV-2:
     - Mpro
     - Mac1
+    - N-protein
   MERS-CoV:
     - Mpro
   EV-D68:
@@ -89,6 +90,7 @@ manifold_outputs:
       tools:
         - GAT
         - SchNet
+        - E3NN
       postfix: msk
 
   - computed: # FEC biochemical activity

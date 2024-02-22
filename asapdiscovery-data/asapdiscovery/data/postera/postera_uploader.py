@@ -1,14 +1,12 @@
 import logging
-import warnings
 from uuid import UUID
 
-from asapdiscovery.data.postera.manifold_data_validation import ManifoldAllowedTags
+import numpy as np
+import pandas as pd
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI, MoleculeSetKeys
 from asapdiscovery.data.rdkit import rdkit_smiles_roundtrip
 from asapdiscovery.data.services_config import PosteraSettings
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -32,7 +30,7 @@ class PosteraUploader(BaseModel):
         False, description="Overwrite existing data on molecule set"
     )
 
-    def push(self, df, sort_column, sort_ascending: bool = True) -> None:
+    def push(self, df: pd.DataFrame) -> tuple[pd.DataFrame, UUID, bool]:
         """
         Push molecules to a Postera molecule set
 
@@ -40,114 +38,127 @@ class PosteraUploader(BaseModel):
         ----------
         df : DataFrame
             DataFrame of data to upload
-        sort_column : str
-            Name of the column to use to sort the dataframe if any duplicate UUIDs are found
-        sort_ascending : bool
-            Whether to sort ascending or descending if any duplicate UUIDs are found
 
         Returns
         -------
         DataFrame
-            The dataframe with the manifold id's added if a new molecule set was created
+            The input dataframe merged with the data from the molecule set, including UUIDs
         molecule_set_id : UUID
             The UUID of the molecule set
         new_molset : bool
+            Whether a new molecule set was created
         """
+
+        if self.smiles_field not in df.columns:
+            raise ValueError(f"smiles_field {self.smiles_field} not found in dataframe")
+        if self.id_field not in df.columns:
+            raise ValueError(f"id_field {self.id_field} not found in dataframe")
+
         ms_api = MoleculeSetAPI.from_settings(self.settings)
-        df_copy = df.copy()
+        data = df.copy()
         new_molset = False
-        molset_name = self.molecule_set_name
 
         # if the molecule set doesn't exist, create it
-
         if not ms_api.exists(self.molecule_set_name, by="name"):
-            id = ms_api.create_molecule_set_from_df_with_manifold_validation(
+            logger.debug(
+                f"molecule set {self.molecule_set_name} does not exist, creating new molecule set"
+            )
+            molset_id = ms_api.create_molecule_set_from_df_with_manifold_validation(
                 molecule_set_name=self.molecule_set_name,
                 df=df,
                 id_field=self.id_field,
                 smiles_field=self.smiles_field,
             )
             # get the new data including manifold UUIDs and join it with the original data
-            new_data = ms_api.get_molecules(id, return_as="dataframe")
-            df_copy = self.join_with_manifold_data(df_copy, new_data)
             new_molset = True
+
         else:
-            molset_id = ms_api.molecule_set_id_or_name(
-                self.molecule_set_name, ms_api.list_available()
+            # grab id of molecule set
+            molset_id = ms_api.get_id_from_name(self.molecule_set_name)
+            logger.debug(
+                f"molecule set {self.molecule_set_name} exists with id {molset_id}, updating molecule set"
             )
 
-            # if the id data is not castable to UUID, we need to get the data from the manifold API
-            if not self.id_data_is_uuid_castable(df, self.id_field):
-                # grab data and join
+            if not self.id_data_is_uuid_castable(data, self.id_field):
+                # we need to get the data from the manifold API and join it with the original data
                 new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
-                df_copy = self.join_with_manifold_data(df_copy, new_data)
+                data = self.join_with_manifold_data(
+                    data,
+                    new_data,
+                    smiles_field=self.smiles_field,
+                    id_field=self.id_field,
+                )
+                self._check_for_duplicates(
+                    data, self.id_field, allow_empty=True, raise_error=True
+                )
 
                 # find rows with blank id, they need to be added to molset, using **add** endpoint rather than **update**
-                blank_id_rows = df_copy[df_copy[self.id_field].isna()]
-                if not blank_id_rows.empty:
+                has_blank_id_rows, blank_id_rows = self._check_for_blank_ids(
+                    data, self.id_field, raise_error=False
+                )
+                logger.debug(f"data has_blank_id_rows: {has_blank_id_rows}")
+                if has_blank_id_rows:
                     ms_api.add_molecules_from_df_with_manifold_validation(
                         molecule_set_id=molset_id,
                         df=blank_id_rows,
                         id_field=self.id_field,
                         smiles_field=self.smiles_field,
                     )
-                    logger.info(
+                    logger.debug(
                         "appending to molecule set where some molecules have not been matched to an existing molecule in the molecule set, these ligands will be added to the molecule set"
                     )
 
                 # find rows with a UUID, they need to be updated using the **update** endpoint
-                uuid_rows = df_copy[~df_copy[self.id_field].isna()]
+                uuid_rows = data[~data[self.id_field].isna()]
 
-                if not uuid_rows.empty:
-                    # check if there are any duplicate UUIDs and find how many
-                    # if there are duplicates, we need to sort the dataframe by the sort column and drop duplicates
-                    # this is because the manifold API will not allow us to upload duplicate UUIDs
-                    if uuid_rows[self.id_field].duplicated().any():
-                        # how many duplicates are there?
-                        num_duplicates = len(uuid_rows[self.id_field].duplicated())
-
-                        warnings.warn(
-                            f"{num_duplicates} duplicate UUIDs found in dataframe, sorting by sort_column and dropping duplicates"
-                        )
-                        # make sure there are no duplicate UUIDs, sorting by sort col
-                        if sort_column not in uuid_rows.columns:
-                            raise ValueError("sort_column not found in dataframe")
-                        uuid_rows.sort_values(
-                            by=sort_column, inplace=True, ascending=sort_ascending
-                        )
-                        uuid_rows.drop_duplicates(
-                            subset=[self.id_field], inplace=True, keep="first"
-                        )
-
-                    # rows with a UUID can be updated
-                    ms_api.update_molecules_from_df_with_manifold_validation(
-                        molecule_set_id=molset_id,
-                        df=uuid_rows,
-                        id_field=self.id_field,
-                        smiles_field=self.smiles_field,
-                        overwrite=self.overwrite,
-                    )
-            else:
-                # if the id data is castable to UUID, we can just update the molecule set
                 ms_api.update_molecules_from_df_with_manifold_validation(
                     molecule_set_id=molset_id,
-                    df=df,
+                    df=uuid_rows,
                     id_field=self.id_field,
                     smiles_field=self.smiles_field,
                     overwrite=self.overwrite,
                 )
 
-            # now that we have finished all operations, get the updated data following and join it with the original data
-            new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
-            df_copy = self.join_with_manifold_data(df_copy, new_data)
+            else:
+                # if the id data is castable to UUID, we can just update the molecule set
 
-        return df_copy, molset_name, new_molset
+                # check for duplicates
+                self._check_for_duplicates(
+                    data, self.id_field, allow_empty=False, raise_error=True
+                )
+                # check for blanks, raising
+                self._check_for_blank_ids(data, self.id_field, raise_error=True)
+
+                # ok to update the molecule set
+                ms_api.update_molecules_from_df_with_manifold_validation(
+                    molecule_set_id=molset_id,
+                    df=data,
+                    id_field=self.id_field,
+                    smiles_field=self.smiles_field,
+                    overwrite=self.overwrite,
+                )
+
+        new_data = ms_api.get_molecules(molset_id, return_as="dataframe")
+        molset_name = ms_api.get_name_from_id(molset_id)
+        return new_data, molset_name, new_molset
 
     @staticmethod
-    def join_with_manifold_data(original, molset_query_df):
+    def join_with_manifold_data(original, molset_query_df, smiles_field, id_field):
         """
         Join the original dataframe with manifold data
         that is returned from a query to the manifold API
+
+
+        Parameters
+        ----------
+        original : DataFrame
+            The original dataframe
+        molset_query_df : DataFrame
+            The dataframe returned from a query to the manifold API
+        smiles_field : str
+            The name of the smiles field in the original dataframe
+        id_field : str
+            The name of the id field in the original dataframe
         """
         data = original.copy()
         subset = molset_query_df[
@@ -163,23 +174,24 @@ class PosteraUploader(BaseModel):
         ].apply(rdkit_smiles_roundtrip)
 
         # do the same to the original data
-        data.loc[:, ManifoldAllowedTags.SMILES.value] = data[
-            ManifoldAllowedTags.SMILES.value
-        ].apply(rdkit_smiles_roundtrip)
+        data.loc[:, smiles_field] = data[smiles_field].apply(rdkit_smiles_roundtrip)
 
-        # give it the right column names
+        # rename
         subset.rename(
-            columns={MoleculeSetKeys.smiles.value: ManifoldAllowedTags.SMILES.value},
+            columns={MoleculeSetKeys.smiles.value: smiles_field},
             inplace=True,
         )
+
         # merge the data, outer join very important here to avoid dropping rows that are present in local data but not in manifold
-        data = data.merge(subset, on=ManifoldAllowedTags.SMILES.value, how="outer")
+        data = data.merge(subset, on=smiles_field, how="outer", suffixes=("", "_y"))
+        data.drop(data.filter(regex="_y$").columns, axis=1, inplace=True)
         # drop original ID column and replace with the manifold ID
-        data.drop(columns=[DockingResultCols.LIGAND_ID.value], inplace=True)
-        data.rename(
-            columns={MoleculeSetKeys.id.value: DockingResultCols.LIGAND_ID.value},
-            inplace=True,
-        )
+        if id_field != MoleculeSetKeys.id.value:
+            data.drop(columns=id_field, inplace=True)
+            data.rename(
+                columns={MoleculeSetKeys.id.value: id_field},
+                inplace=True,
+            )
         return data
 
     @staticmethod
@@ -197,10 +209,71 @@ class PosteraUploader(BaseModel):
         Returns
         -------
         bool
-            Whether the data is castable to UUID
+            Whether the entire data column is castable to UUID
         """
         try:
             df[id_field].apply(lambda x: UUID(x))
             return True
-        except ValueError:
+        except:  # noqa: E722
             return False
+
+    @staticmethod
+    def _check_for_duplicates(df, id_field, allow_empty=True, raise_error=False):
+        """
+        Check for duplicate UUIDs in the dataframe
+
+        Parameters
+        ----------
+        df : DataFrame
+            DataFrame of data to upload
+        id_field : str
+            Name of the column in the dataframe to use as the ligand id
+        allow_empty : bool
+            Whether to allow empty UUIDs to be exempt from the check
+        raise_error : bool
+            Whether to raise an error if duplicates are found
+
+        Raises
+        ------
+        ValueError
+            If there are duplicate UUIDs
+        """
+        df = df.copy()
+        df = df.replace("", np.nan)
+        if allow_empty:
+            df = df[~df[id_field].isna()]
+        if df[id_field].duplicated().any():
+            duplicates = df[df[id_field].duplicated()]
+            num_duplicates = len(duplicates)
+            if raise_error:
+                raise ValueError(f"{num_duplicates} duplicate UUIDs found in dataframe")
+            return True, duplicates
+        else:
+            return False, None
+
+    @staticmethod
+    def _check_for_blank_ids(df, id_field, raise_error=False):
+        """
+        Check for blank UUIDs in the dataframe
+
+        Parameters
+        ----------
+        df : DataFrame
+            DataFrame of data to upload
+        id_field : str
+            Name of the column in the dataframe to use as the ligand id
+
+        Raises
+        ------
+        ValueError
+            If there are blank UUIDs
+        """
+        df = df.copy()
+        df = df.replace("", np.nan)
+        if df[id_field].isna().any():
+            if raise_error:
+                raise ValueError("Blank UUIDs found in dataframe")
+            return True, df[df[id_field].isna()]
+
+        else:
+            return False, None

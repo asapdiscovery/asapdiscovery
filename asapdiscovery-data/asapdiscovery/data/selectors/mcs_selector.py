@@ -7,7 +7,7 @@ from asapdiscovery.data.schema_v2.complex import Complex, ComplexBase, PreppedCo
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
 from asapdiscovery.data.selectors.selector import SelectorBase
-from asapdiscovery.docking.docking_v2 import DockingInputPair
+from asapdiscovery.docking.docking import DockingInputPair
 from pydantic import Field
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,15 @@ class MCSSelector(SelectorBase):
         False,
         description="Whether to use a structure-based search (True) or a more strict element-based search (False).",
     )
+
+    def select(
+        self,
+        ligands: list[Ligand],
+        complexes: list[Union[Complex, PreppedComplex]],
+        **kwargs,
+    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+        outputs = self._select(ligands=ligands, complexes=complexes, **kwargs)
+        return outputs
 
     def _select(
         self,

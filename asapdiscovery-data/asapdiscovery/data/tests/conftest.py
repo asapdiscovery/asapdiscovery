@@ -1,28 +1,9 @@
-from pathlib import Path
-
 import pytest
 from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
 from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema_v2.ligand import Ligand
 from asapdiscovery.data.services_config import CDDSettings
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-
-
-@pytest.fixture(scope="session")
-def local_path(request):
-    return request.config.getoption("--local_path")
-
-
-# This needs to have a scope of session so that a new tmp file is not created for each test
-@pytest.fixture(scope="session")
-def output_dir(tmp_path_factory, local_path):
-    if type(local_path) is not str:
-        return tmp_path_factory.mktemp("test_prep")
-    else:
-        local_path = Path(local_path)
-        local_path.mkdir(exist_ok=True)
-        assert local_path.exists()
-        return local_path
 
 
 @pytest.fixture(scope="session")

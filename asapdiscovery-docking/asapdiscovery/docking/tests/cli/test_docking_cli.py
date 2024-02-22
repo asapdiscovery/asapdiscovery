@@ -1,9 +1,11 @@
 import os
 import traceback
-from unittest.mock import patch
+from unittest import mock
 
 import pytest
 from asapdiscovery.docking.cli import docking as cli
+from asapdiscovery.docking.docking import DockingResult
+from asapdiscovery.simulation.simulate import SimulationResult, VanillaMDSimulator
 from click.testing import CliRunner
 
 
@@ -18,14 +20,13 @@ def click_success(result):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
 def test_project_support_docking_cli_fragalysis(
     ligand_file, mpro_frag_dir, tmp_path, subcommand
 ):
     runner = CliRunner()
-
     frag_parent_dir, _ = mpro_frag_dir
-
     args = [
         subcommand,
         "--target",
@@ -39,12 +40,10 @@ def test_project_support_docking_cli_fragalysis(
         "--output-dir",
         tmp_path,
     ]
-
     if (
         subcommand == "small-scale"
     ):  # turn off dask cuda overrides for CI runners which lack GPUs
         args.extend(["--no-allow-dask-cuda"])
-
     result = runner.invoke(cli, args)
     assert click_success(result)
 
@@ -52,14 +51,13 @@ def test_project_support_docking_cli_fragalysis(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
 def test_project_support_docking_cli_structure_directory_dask(
     ligand_file, structure_dir, tmp_path, subcommand
 ):
     runner = CliRunner()
-
     struct_dir, _ = structure_dir
-
     args = [
         subcommand,
         "--target",
@@ -74,12 +72,10 @@ def test_project_support_docking_cli_structure_directory_dask(
         "--output-dir",
         tmp_path,
     ]
-
     if (
         subcommand == "small-scale"
     ):  # turn off dask cuda overrides for CI runners which lack GPUs
         args.extend(["--no-allow-dask-cuda"])
-
     result = runner.invoke(cli, args)
     assert click_success(result)
 
@@ -87,15 +83,14 @@ def test_project_support_docking_cli_structure_directory_dask(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
 def test_project_support_docking_cli_structure_directory_du_cache_dask(
     ligand_file, structure_dir, du_cache, tmp_path, subcommand
 ):
     runner = CliRunner()
-
     struct_dir, _ = structure_dir
     du_cache_dir, _ = du_cache
-
     args = [
         subcommand,
         "--target",
@@ -112,12 +107,10 @@ def test_project_support_docking_cli_structure_directory_du_cache_dask(
         "--output-dir",
         tmp_path,
     ]
-
     if (
         subcommand == "small-scale"
     ):  # turn off dask cuda overrides for CI runners which lack GPUs
         args.extend(["--no-allow-dask-cuda"])
-
     result = runner.invoke(cli, args)
     assert click_success(result)
 
@@ -125,12 +118,12 @@ def test_project_support_docking_cli_structure_directory_du_cache_dask(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
 def test_project_support_docking_cli_pdb_file_dask(
     ligand_file, pdb_file, tmp_path, subcommand
 ):
     runner = CliRunner()
-
     args = [
         subcommand,
         "--target",
@@ -145,61 +138,64 @@ def test_project_support_docking_cli_pdb_file_dask(
         "--output-dir",
         tmp_path,
     ]
-
     if (
         subcommand == "small-scale"
     ):  # turn off dask cuda overrides for CI runners which lack GPUs
         args.extend(["--no-allow-dask-cuda"])
-
     result = runner.invoke(cli, args)
     assert click_success(result)
 
 
-@patch("asapdiscovery.simulation.simulate._SIMULATOR_TRUNCATE_STEPS", False)
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path):
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path, simulation_results):
     runner = CliRunner()
 
-    result = runner.invoke(
-        cli,
-        [
-            "small-scale",
-            "--target",
-            "SARS-CoV-2-Mpro",
-            "--ligands",
-            ligand_file,
-            "--pdb-file",
-            pdb_file,
-            "--use-dask",
-            "--no-allow-dask-cuda",
-            "--posit-confidence-cutoff",
-            0,
-            "--output-dir",
-            tmp_path,
-            "--md",
-            "--md-steps",
-            1,
-            "--md-openmm-platform",
-            "CPU",
-        ],
-    )
-    # check that the number of steps was set to 1
+    def _simulate_patch(
+        self, docking_results: list[DockingResult]
+    ) -> list[SimulationResult]:
+        return [simulation_results]
+
+    # NB: cannot use dask for below test as patch will not survive pickling and transfer to worker
+
+    with mock.patch.object(VanillaMDSimulator, "_simulate", _simulate_patch):
+        result = runner.invoke(
+            cli,
+            [
+                "small-scale",
+                "--target",
+                "SARS-CoV-2-Mpro",
+                "--ligands",
+                ligand_file,
+                "--pdb-file",
+                pdb_file,
+                "--no-allow-dask-cuda",
+                "--posit-confidence-cutoff",
+                0,
+                "--output-dir",
+                tmp_path,
+                "--md",
+                "--md-steps",
+                1,
+                "--md-openmm-platform",
+                "CPU",
+            ],
+        )
     assert click_success(result)
 
 
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 def test_cross_docking_cli_structure_directory_du_cache(
     ligand_file, structure_dir, du_cache, tmp_path
 ):
     runner = CliRunner()
-
     struct_dir, _ = structure_dir
     du_cache_dir, _ = du_cache
-
     result = runner.invoke(
         cli,
         [

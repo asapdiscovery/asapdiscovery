@@ -4,17 +4,17 @@ from pathlib import Path
 
 import mdtraj as md
 from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
-from asapdiscovery.dataviz.viz_targets import VizTargets
 
 parser = argparse.ArgumentParser(description="Turn a trajectory into a GIF")
 
 parser.add_argument(
-    "--viz-target",
+    "--target",
     type=str,
     required=True,
-    choices=VizTargets.get_allowed_targets(),
-    help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
+    choices=TargetTags.get_values(),
+    help="Target to write visualizations for",
 )
 
 parser.add_argument(
@@ -101,7 +101,7 @@ def main():
         [traj],
         [args.top],
         [out],
-        args.viz_target,
+        args.target,
         frames_per_ns=args.frames_per_ns,
         smooth=args.smooth,
         start=start,

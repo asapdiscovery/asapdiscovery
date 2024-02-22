@@ -4,11 +4,7 @@ from typing import Optional
 
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import (
-    DaskType,
-    dask_cluster_from_type,
-    set_dask_config,
-)
+from asapdiscovery.data.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.logging import FileLogger
@@ -19,17 +15,14 @@ from asapdiscovery.data.postera.manifold_artifacts import (
 )
 from asapdiscovery.data.postera.manifold_data_validation import (
     TargetProteinMap,
-    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
-from asapdiscovery.data.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
 from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
+from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
+from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.services_config import (
     CloudfrontSettings,
@@ -39,11 +32,9 @@ from asapdiscovery.data.services_config import (
 from asapdiscovery.data.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer_v2 import (
+from asapdiscovery.docking.scorer import (
     ChemGauss4Scorer,
     FINTScorer,
     MetaScorer,
@@ -51,9 +42,8 @@ from asapdiscovery.docking.scorer_v2 import (
 )
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
-from asapdiscovery.modeling.protein_prep_v2 import ProteinPrepper
+from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
-from distributed import Client
 from pydantic import Field, PositiveInt, root_validator, validator
 
 
@@ -191,32 +181,19 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     logger.info(f"Running small scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
+    # dump config to json file
     inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
-        set_dask_config()
-        dask_cluster = dask_cluster_from_type(inputs.dask_type)
-        if inputs.dask_type.is_lilac():
-            logger.info("Lilac HPC config selected, setting adaptive scaling")
-            dask_cluster.adapt(
-                minimum=inputs.dask_cluster_n_workers,
-                maximum=inputs.dask_cluster_max_workers,
-                wait_count=10,
-                interval="1m",
-            )
-            logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-            dask_cluster.scale(inputs.dask_cluster_n_workers)
-
-        dask_client = Client(dask_cluster)
-        dask_client.forward_logging()
-        logger.info(f"Using dask client: {dask_client}")
-        logger.info(f"Using dask cluster: {dask_cluster}")
-        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
-
+        dask_client = make_dask_client_meta(
+            inputs.dask_type,
+            adaptive_min_workers=inputs.dask_cluster_n_workers,
+            adaptive_max_workers=inputs.dask_cluster_max_workers,
+            loglevel=inputs.loglevel,
+            walltime=inputs.walltime,
+        )
     else:
         dask_client = None
-
     # make a directory to store intermediate CSV results
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
@@ -229,49 +206,28 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         aws_cloudfront_settings = CloudfrontSettings()
         logger.info("AWS S3 and CloudFront credentials found")
 
-    if inputs.postera:
-        # can specify postera without uploading
-        postera_settings = PosteraSettings()
-        logger.info("Postera settings loaded")
-        logger.info(
-            f"Loading Postera database molecule set {inputs.postera_molset_name}"
-        )
+    # read ligands
+    ligand_factory = MetaLigandFactory(
+        postera=inputs.postera,
+        postera_molset_name=inputs.postera_molset_name,
+        ligand_file=inputs.ligands,
+    )
+    query_ligands = ligand_factory.load()
 
-        postera = PosteraFactory(
-            settings=postera_settings, molecule_set_name=inputs.postera_molset_name
-        )
-        query_ligands = postera.pull()
-    else:
-        # load from file
-        logger.info(f"Loading ligands from file: {inputs.ligands}")
-        molfile = MolFileFactory(filename=inputs.ligands)
-        query_ligands = molfile.load()
-
-    # load complexes from a directory, from fragalysis or from a pdb file
-    if inputs.structure_dir:
-        logger.info(f"Loading structures from directory: {inputs.structure_dir}")
-        structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
-        complexes = structure_factory.load(
-            use_dask=inputs.use_dask, dask_client=dask_client
-        )
-    elif inputs.fragalysis_dir:
-        logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
-        fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(use_dask=inputs.use_dask, dask_client=dask_client)
-
-    elif inputs.pdb_file:
-        logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
-        complex = Complex.from_pdb(
-            inputs.pdb_file,
-            target_kwargs={"target_name": inputs.pdb_file.stem},
-            ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
-        )
-        complexes = [complex]
-
-    else:
-        raise ValueError(
-            "Must specify either fragalysis_dir, structure_dir or pdb_file"
-        )
+    # read structures
+    structure_factory = MetaStructureFactory(
+        structure_dir=inputs.structure_dir,
+        fragalysis_dir=inputs.fragalysis_dir,
+        pdb_file=inputs.pdb_file,
+        use_dask=inputs.use_dask,
+        dask_failure_mode=inputs.dask_failure_mode,
+        dask_client=dask_client,
+    )
+    complexes = structure_factory.load(
+        use_dask=inputs.use_dask,
+        dask_failure_mode=inputs.dask_failure_mode,
+        dask_client=dask_client,
+    )
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
@@ -280,6 +236,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
+    # TODO: hide detail of canonical structure
     logger.info("Using canonical structure")
     align_struct = master_structures[inputs.target]
 
@@ -299,9 +256,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
     prepped_complexes = prepper.prep(
         complexes,
+        cache_dir=inputs.cache_dir,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        cache_dir=inputs.cache_dir,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
     del complexes
 
@@ -321,8 +279,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         query_ligands,
         prepped_complexes,
         n_select=inputs.n_select,
-        use_dask=False,
-        dask_client=None,
     )
 
     n_pairs = len(pairs)
@@ -338,6 +294,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_results = len(results)
@@ -367,11 +324,15 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
         )
 
-    # score results
+    # score results with multiple scoring functions
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
     scores_df = scorer.score(
-        results, use_dask=inputs.use_dask, dask_client=dask_client, return_df=True
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
+        return_df=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -404,7 +365,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=html_ouptut_dir,
     )
     pose_visualizatons = html_visualizer.visualize(
-        results, use_dask=inputs.use_dask, dask_client=dask_client
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -434,7 +398,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             output_dir=html_fitness_output_dir,
         )
         fitness_visualizations = html_fitness_visualizer.visualize(
-            results, use_dask=inputs.use_dask, dask_client=dask_client
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
 
         # duplicate target id column so we can join
@@ -474,16 +441,19 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     if inputs.md:
-        if inputs.allow_dask_cuda and inputs.dask_type == DaskType.LOCAL:
+        local_cpu_client_gpu_override = False
+        if (
+            (inputs.allow_dask_cuda)
+            and (inputs.dask_type == DaskType.LOCAL)
+            and (inputs.use_dask)
+        ):
             logger.info(
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
-            dask_cluster = dask_cluster_from_type(DaskType.LOCAL_GPU)
-            dask_client = Client(dask_cluster)
-            # dask_client.forward_logging() distributed vs dask_cuda versioning issue, see # #669
-            logger.info(f"Using dask client: {dask_client}")
-            logger.info(f"Using dask cluster: {dask_cluster}")
-            logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
+            dask_client = make_dask_client_meta(
+                DaskType.LOCAL_GPU, walltime=inputs.walltime, loglevel=inputs.loglevel
+            )
+            local_cpu_client_gpu_override = True
 
         md_output_dir = output_dir / "md"
 
@@ -505,13 +475,32 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             rmsd_restraint_type=rmsd_restraint_type,
         )
         simulation_results = md_simulator.simulate(
-            results, use_dask=inputs.use_dask, dask_client=dask_client
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
 
+        if local_cpu_client_gpu_override and inputs.use_dask:
+            dask_client = make_dask_client_meta(DaskType.LOCAL)
+
         gif_output_dir = output_dir / "gifs"
-        gif_maker = GIFVisualizerV2(output_dir=gif_output_dir, target=inputs.target)
+
+        # take the last ns, accounting for possible low number of frames
+        start_frame = max(md_simulator.n_frames - md_simulator.frames_per_ns, 1)
+
+        logger.info(f"Using start frame {start_frame} for GIFs")
+        gif_maker = GIFVisualizerV2(
+            output_dir=gif_output_dir,
+            target=inputs.target,
+            frames_per_ns=md_simulator.frames_per_ns,
+            start=start_frame,
+        )
         gifs = gif_maker.visualize(
-            simulation_results, use_dask=inputs.use_dask, dask_client=dask_client
+            simulation_results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
         )
 
         # duplicate target id column so we can join
@@ -532,6 +521,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
+
     result_df = rename_output_columns_for_manifold(
         combined_df,
         inputs.target,
@@ -555,11 +545,13 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # push the results to PostEra, making a new molecule set if necessary
-        posit_score_tag = map_output_col_to_manifold_tag(
-            DockingResultCols, inputs.target
-        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
-        result_df, molset_name, made_new_molset = postera_uploader.push(
-            result_df, sort_column=posit_score_tag, sort_ascending=True
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df)
+
+        combined = postera_uploader.join_with_manifold_data(
+            result_df,
+            manifold_data,
+            DockingResultCols.SMILES.value,
+            DockingResultCols.LIGAND_ID.value,
         )
 
         if made_new_molset:
@@ -587,9 +579,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             artifact_types.append(ArtifactType.MD_POSE)
 
         uploader = ManifoldArtifactUploader(
-            inputs.target,
-            result_df,
-            molset_name,
+            target=inputs.target,
+            molecule_dataframe=combined,
+            molecule_set_name=molset_name,
             bucket_name=aws_s3_settings.BUCKET_NAME,
             artifact_types=artifact_types,
             artifact_columns=artifact_columns,

@@ -15,6 +15,7 @@ dependencies:
   - pytest-console-scripts
   - pytest-timeout
   - requests-mock
+  - mock
 
   # cli
   - click

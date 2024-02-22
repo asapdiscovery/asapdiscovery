@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from asapdiscovery.data.dask_utils import (
     BackendType,
+    DaskFailureMode,
     actualise_dask_delayed_iterable,
     backend_wrapper,
 )
@@ -18,10 +19,8 @@ from asapdiscovery.data.plip import compute_fint_score
 from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
 from asapdiscovery.data.schema_v2.target import TargetIdentifiers
-from asapdiscovery.docking.docking_data_validation import (
-    DockingResultColsV2 as DockingResultCols,
-)
-from asapdiscovery.docking.docking_v2 import DockingResult
+from asapdiscovery.docking.docking import DockingResult
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from mtenn.config import ModelType
 from pydantic import BaseModel, Field, validator
@@ -38,6 +37,7 @@ class ScoreType(str, Enum):
     FINT = "FINT"
     GAT = "GAT"
     schnet = "schnet"
+    e3nn = "e3nn"
     INVALID = "INVALID"
 
 
@@ -59,6 +59,7 @@ _SCORE_MANIFOLD_ALIAS = {
     ScoreType.FINT: DockingResultCols.FITNESS_SCORE_FINT.value,
     ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
+    ScoreType.e3nn: DockingResultCols.COMPUTED_E3NN_PIC50.value,
     ScoreType.INVALID: None,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
@@ -140,6 +141,7 @@ class ScorerBase(BaseModel):
         inputs: Union[list[DockingResult], list[Path]],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
@@ -155,7 +157,7 @@ class ScorerBase(BaseModel):
                 )
                 delayed_outputs.append(out[0])  # flatten
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client
+                delayed_outputs, dask_client=dask_client, errors=dask_failure_mode
             )
         else:
             outputs = backend_wrapper(
@@ -351,10 +353,32 @@ class SchnetScorer(MLModelScorer):
         return results
 
 
+class E3NNScorer(MLModelScorer):
+    """
+    Scoring using e3nn ML Model
+    """
+
+    model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
+    score_type: ClassVar[ScoreType.e3nn] = ScoreType.e3nn
+    units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
+
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+        results = []
+        for inp in inputs:
+            e3nn_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
+            results.append(
+                Score.from_score_and_docking_result(
+                    e3nn_score, self.score_type, self.units, inp
+                )
+            )
+        return results
+
+
 _ml_scorer_classes_meta = [
     MLModelScorer,
     GATScorer,
     SchnetScorer,
+    E3NNScorer,
 ]
 
 
@@ -380,6 +404,7 @@ class MetaScorer(BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
+        dask_failure_mode=DaskFailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
@@ -390,6 +415,7 @@ class MetaScorer(BaseModel):
                 inputs=inputs,
                 use_dask=use_dask,
                 dask_client=dask_client,
+                dask_failure_mode=dask_failure_mode,
                 backend=backend,
                 reconstruct_cls=reconstruct_cls,
                 return_df=return_df,

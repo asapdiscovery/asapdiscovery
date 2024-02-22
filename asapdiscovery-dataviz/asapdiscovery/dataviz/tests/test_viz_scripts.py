@@ -6,7 +6,7 @@ from asapdiscovery.data.postera.manifold_data_validation import TargetTags
 def test_traj_to_viz(tmp_path, script_runner, traj, top):
     ret = script_runner.run(
         "traj-to-viz",
-        "--viz-target",
+        "--target",
         "SARS-CoV-2-Mpro",
         "--traj",
         traj,
@@ -23,7 +23,7 @@ def test_traj_to_viz(tmp_path, script_runner, traj, top):
 def test_pose_to_viz(tmp_path, script_runner, target, pose, protein):
     ret = script_runner.run(
         "pose-to-viz",
-        "--viz-target",
+        "--target",
         target,
         "--pose",
         pose,
@@ -40,7 +40,7 @@ def test_pose_to_viz(tmp_path, script_runner, target, pose, protein):
 def test_pose_to_viz_pymol(tmp_path, script_runner, target, protein):
     ret = script_runner.run(
         "pose-to-viz-pymol",
-        "--viz-target",
+        "--target",
         target,
         "--complex",
         protein,

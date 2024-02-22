@@ -8,7 +8,7 @@ from asapdiscovery.data.selectors.pairwise_selector import (
     PairwiseSelector,
     SelfDockingSelector,
 )
-from asapdiscovery.docking.docking_v2 import DockingInputPair
+from asapdiscovery.docking.docking import DockingInputPair
 
 
 def test_pairwise_selector(ligands, complexes):
@@ -42,10 +42,9 @@ def test_pairwise_selector_prepped(ligands, prepped_complexes, use_dask):
     assert len(pairs) == 8
 
 
-@pytest.mark.parametrize("use_dask", [True, False])
-def test_mcs_selector(ligands, complexes, use_dask):
+def test_mcs_selector(ligands, complexes):
     selector = MCSSelector()
-    pairs = selector.select(ligands, complexes, n_select=1, use_dask=use_dask)
+    pairs = selector.select(ligands, complexes, n_select=1)
     # should be 4 pairs
     assert len(pairs) == 4
     # as we matched against the exact smiles of the first 4 complex ligands, they should be in order
