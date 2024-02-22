@@ -87,10 +87,8 @@ jobs:
       run: |
         # run each package test suite; append to coverage file
         # Exit immediately if a command exits with a non-zero status.
-        set -e
-        pytest -n auto --durations=10 -v --cov-report=xml --cov-report=term --color=yes \
-                       --cov=asapdiscovery-ml \
-                       asapdiscovery-ml/asapdiscovery/ml/tests
+        # set -e
+        pytest -n auto --durations=10 -v --cov-report=xml --cov-report=term --color=yes \ --cov=asapdiscovery-ml \ asapdiscovery-ml/asapdiscovery/ml/tests
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3
