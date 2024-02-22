@@ -11,7 +11,7 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
     AlchemyDataSet,
     AlchemyPrepWorkflow,
 )
-from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
+from asapdiscovery.data.cdd_api import CDDAPI
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
 from rdkit import Chem

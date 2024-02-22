@@ -328,14 +328,15 @@ def _find_ligand_data(
     Notes:
         Columns should have names `Molecule Name` and `Inchi Key`, if the molecule can not be found dummy data
         is returned.
+        We use InchiKey when matching as this is atom order and cheminformatics toolkit independent.
 
-    Parameters
-    ----------
-    reference_row
-    experimental_data
+    Args:
+        name: The name which should be used to match the molecules
+        inchi_key: The inchi key which should be used to match the molecules
+        experimental_data: The experimental dataframe which should be searched for the target molecule
 
-    Returns
-    -------
+    Returns:
+        A dictionary of the data from the dataframe which matches the provided name or inchi key
     """
 
     ligand_data = experimental_data[experimental_data["Molecule Name"] == name]
@@ -926,7 +927,7 @@ def download_cdd_data(protocol_name: str) -> pd.DataFrame:
     Returns:
         A dataframe of the extracted and formatted experimental data.
     """
-    from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
+    from asapdiscovery.data.cdd_api import CDDAPI
     from asapdiscovery.data.services_config import CDDSettings
     from asapdiscovery.data.utils import parse_fluorescence_data_cdd
 
