@@ -24,7 +24,6 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
-from mtenn.conversion_utils.visnet import HAS_VISNET
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
 
@@ -151,17 +150,6 @@ class Trainer(BaseModel):
 
         return p
 
-    @validator("model_config")
-    def check_model_type_visnet_import(cls, v):
-        # VisNet requires PyG >=2.5.0. Currently only in PyG-nightly
-        # Refer MTENN issue #42
-        if not HAS_VISNET and isinstance(v, ViSNetModelConfig):
-            raise ImportError(
-                "Can't import ViSNetModelConfig without mtenn.conversion_utils.visnet."
-            )
-        else:
-            return v
-
     @validator(
         "optimizer_config",
         "model_config",
@@ -170,6 +158,7 @@ class Trainer(BaseModel):
         "loss_config",
         pre=True,
     )
+
     def load_cache_files(cls, config_kwargs, field):
         """
         This validator will load an existing cache file, and update the config with any
@@ -200,7 +189,7 @@ class Trainer(BaseModel):
                     config_cls = SchNetModelConfig
                 case ModelType.e3nn:
                     config_cls = E3NNModelConfig
-                case ModelType.visnet if HAS_VISNET:
+                case ModelType.visnet:
                     config_cls = ViSNetModelConfig
                 case other:
                     raise ValueError(
