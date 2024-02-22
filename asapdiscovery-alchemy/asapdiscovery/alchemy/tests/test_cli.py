@@ -11,10 +11,11 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
     AlchemyDataSet,
     AlchemyPrepWorkflow,
 )
+from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
 from rdkit import Chem
-from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
+
 
 def test_alchemy_create(tmpdir):
     """Test making a workflow file using the cli"""
@@ -488,7 +489,9 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
             )
 
 
-def test_alchemy_predict_ccd_data(tmpdir, tyk2_result_network, tyk2_reference_data, monkeypatch):
+def test_alchemy_predict_ccd_data(
+    tmpdir, tyk2_result_network, tyk2_reference_data, monkeypatch
+):
     """
     Make sure we can do a prediction with experimental data when using the CDD api interface.
 
@@ -501,12 +504,19 @@ def test_alchemy_predict_ccd_data(tmpdir, tyk2_result_network, tyk2_reference_da
     monkeypatch.setenv("CDD_API_KEY", "mykey")
     monkeypatch.setenv("CDD_VAULT_NUMBER", "1")
     protocol_name = "my-protocol"
+
     # mock the cdd_api
     def get_tyk2_data(*args, **kwargs):
         data = pd.read_csv(tyk2_reference_data, index_col=0)
         # format the data and add expected columns
         ic50_lower, ic50_upper, curve, inchi, inchi_key = [], [], [], [], []
-        data.rename(columns={"SMILES": "Smiles", "IC50_GMean (µM)": f"{protocol_name}: IC50 (µM)"}, inplace=True)
+        data.rename(
+            columns={
+                "SMILES": "Smiles",
+                "IC50_GMean (µM)": f"{protocol_name}: IC50 (µM)",
+            },
+            inplace=True,
+        )
         data.drop(columns=["IC50_GMean (µM) Standard Deviation (×/÷)"], inplace=True)
         for _, row in data.iterrows():
             # calculate the required data
@@ -533,19 +543,17 @@ def test_alchemy_predict_ccd_data(tmpdir, tyk2_result_network, tyk2_reference_da
         # write the results file to local
         tyk2_result_network.to_file("result_network.json")
 
-        result = runner.invoke(
-            alchemy, ["predict", "-ep", protocol_name]
-        )
+        result = runner.invoke(alchemy, ["predict", "-ep", protocol_name])
         assert result.exit_code == 0
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
         assert (
-                "Absolute report written to predictions-absolute-tyk2-small-test.html"
-                in result.stdout
+            "Absolute report written to predictions-absolute-tyk2-small-test.html"
+            in result.stdout
         )
         assert (
-                "Relative report written to predictions-relative-tyk2-small-test.html"
-                in result.stdout
+            "Relative report written to predictions-relative-tyk2-small-test.html"
+            in result.stdout
         )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
@@ -573,8 +581,8 @@ def test_alchemy_predict_ccd_data(tmpdir, tyk2_result_network, tyk2_reference_da
         relative_mol_data = relative_dataframe.iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
-                relative_mol_data["SMILES_B"]
-                == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
+            relative_mol_data["SMILES_B"]
+            == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
         )
         assert relative_mol_data["Inchi_Key_A"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
         assert relative_mol_data["Inchi_Key_B"] == "YJMGZFGQBBEAQT-UHFFFAOYSA-N"
