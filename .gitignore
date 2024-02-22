@@ -123,6 +123,14 @@ cluster_scripts/log_files
 *.stderr
 *.out
 *-log.txt
+model_training/*
+wandb/*
+# run scripts
+run_*.sh
+
+# configs and data structures
+*_config.json
+*_ds.pkl
 
 
 # structure and molecule files

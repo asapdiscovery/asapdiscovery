@@ -9,10 +9,6 @@ from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.trainer import Trainer
 from click.testing import CliRunner
 
-# guard for visnet import. Refer MTENN issue #42
-# also guard against older versions of mtenn with no visnet
-from mtenn.conversion_utils.visnet import HAS_VISNET
-
 
 @pytest.fixture(scope="session")
 def exp_file():
@@ -374,7 +370,6 @@ def test_build_trainer_e3nn(exp_file, docked_files, tmp_path):
     assert t.model_config.irreps_hidden == "5x0o+5x0e"
 
 
-@pytest.mark.skipif(not HAS_VISNET, reason="requires VisNet from nightly PyG")
 def test_build_trainer_visnet(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
 
@@ -434,47 +429,6 @@ def test_build_trainer_visnet(exp_file, docked_files, tmp_path):
     assert not hasattr(t, "loss_func")
 
     assert not t.ds_config.for_e3nn
-
-
-@pytest.mark.skipif(HAS_VISNET, reason="requires VisNet from nightly PyG")
-def test_build_trainer_visnet_valueerror(exp_file, docked_files, tmp_path):
-    docked_dir = docked_files[0].parent
-
-    runner = CliRunner()
-    result = runner.invoke(
-        cli,
-        [
-            "build",
-            "visnet",
-            "--output-dir",
-            tmp_path / "model_out",
-            "--trainer-config-cache",
-            tmp_path / "trainer.json",
-            "--ds-split-type",
-            "temporal",
-            "--exp-file",
-            exp_file,
-            "--structures",
-            str(docked_dir),
-            "--ds-cache",
-            tmp_path / "ds_cache.pkl",
-            "--ds-config-cache",
-            tmp_path / "ds_config_cache.json",
-            "--loss-type",
-            "mse_step",
-            "--device",
-            "cpu",
-            "--n-epochs",
-            "1",
-            "--use-wandb",
-            "False",
-        ],
-    )
-    assert result.exit_code == 1
-    assert isinstance(result.exception, ValueError)
-    assert re.search(
-        r"Can't instantiate model config for type visnet", str(result.exception)
-    )
 
 
 def test_build_and_train_graph(exp_file, tmp_path):
@@ -653,7 +607,6 @@ def test_build_and_train_e3nn(exp_file, docked_files, tmp_path):
     assert len(loss_dict["test"]) == 1
 
 
-@pytest.mark.skipif(not HAS_VISNET, reason="requires VisNet from nightly PyG")
 def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
     docked_dir = docked_files[0].parent
 
@@ -712,44 +665,3 @@ def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
     assert len(loss_dict["train"]) == 8
     assert len(loss_dict["val"]) == 1
     assert len(loss_dict["test"]) == 1
-
-
-@pytest.mark.skipif(HAS_VISNET, reason="requires VisNet from nightly PyG")
-def test_build_and_train_visnet_valueerror(exp_file, docked_files, tmp_path):
-    docked_dir = docked_files[0].parent
-
-    runner = CliRunner()
-    result = runner.invoke(
-        cli,
-        [
-            "build-and-train",
-            "visnet",
-            "--output-dir",
-            tmp_path / "model_out",
-            "--trainer-config-cache",
-            tmp_path / "trainer.json",
-            "--ds-split-type",
-            "temporal",
-            "--exp-file",
-            exp_file,
-            "--structures",
-            str(docked_dir),
-            "--ds-cache",
-            tmp_path / "ds_cache.pkl",
-            "--ds-config-cache",
-            tmp_path / "ds_config_cache.json",
-            "--loss-type",
-            "mse_step",
-            "--device",
-            "cpu",
-            "--n-epochs",
-            "1",
-            "--use-wandb",
-            "False",
-        ],
-    )
-    assert result.exit_code == 1
-    assert isinstance(result.exception, ValueError)
-    assert re.search(
-        r"Can't instantiate model config for type visnet", str(result.exception)
-    )
