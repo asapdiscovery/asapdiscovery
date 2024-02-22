@@ -14,8 +14,6 @@ from asapdiscovery.data.cdd import (
     download_molecules,
     download_url,
 )
-from asapdiscovery.data.cdd_api.cdd_api import CDDAPI
-from asapdiscovery.data.services_config import CDDSettings
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from numpy.testing import assert_allclose
 

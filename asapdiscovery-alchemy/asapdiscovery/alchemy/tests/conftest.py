@@ -10,7 +10,6 @@ from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
 from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
-from rdkit import Chem
 
 
 @pytest.fixture(scope="session")
