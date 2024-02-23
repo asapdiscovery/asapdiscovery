@@ -16,7 +16,7 @@ from asapdiscovery.ml.cli_args import (
     str_fn_cpd_regex,
     str_fn_xtal_regex,
 )
-from asapdiscovery.ml.schema_v2.config import DatasetConfig, DatasetType
+from asapdiscovery.ml.config import DatasetConfig, DatasetType
 
 
 @click.command()

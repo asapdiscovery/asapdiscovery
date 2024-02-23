@@ -1,22 +1,20 @@
+import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Union
-from uuid import UUID
+from typing import Optional
 
 import pandas as pd
-from asapdiscovery.data.services.services_config import (
-    CloudfrontSettings,
-    PosteraSettings,
-    S3Settings,
+from asapdiscovery.data.services.services_config import CloudfrontSettings, PosteraSettings, S3Settings
+from asapdiscovery.data.aws.cloudfront import CloudFront
+from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.postera.manifold_data_validation import (
+    TargetTags,
+    map_output_col_to_manifold_tag,
 )
-from asapdiscovery.docking.docking_data_validation import (  # TODO: remove
-    DockingResultCols,
-)
+from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 
-from ..aws.cloudfront import CloudFront
-from ..aws.s3 import S3
-from .manifold_data_validation import TargetTags, map_output_col_to_manifold_tag
-from .molecule_set import MoleculeSetAPI
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from pydantic import BaseModel, Field, root_validator
 
 
 class ArtifactType(Enum):
@@ -31,90 +29,81 @@ ARTIFACT_TYPE_TO_S3_CONTENT_TYPE = {
     ArtifactType.MD_POSE: "image/gif",
 }
 
+logger = logging.getLogger(__name__)
 
-class ManifoldArtifactUploader:
-    """
-    This class is used to upload artifacts to the Postera Manifold and AWS simultaneously, linking the two together
-    via CloudFront and the Manifold MoleculeSetAPI.
 
-    """
+class ManifoldArtifactUploader(BaseModel):
+    target: TargetTags = Field(
+        None, description="The biological target string for the artifact"
+    )
+    molecule_dataframe: pd.DataFrame = Field(
+        ...,
+        description="The dataframe containing the molecules and artifacts to upload",
+    )
+    molecule_set_id: Optional[str] = Field(
+        None, description="The UUID of the molecule set to upload to"
+    )
+    molecule_set_name: Optional[str] = Field(
+        None, description="The name of the molecule set to upload to"
+    )
 
-    def __init__(
-        self,
-        target: str,
-        molecule_dataframe: pd.DataFrame,
-        molecule_set_id_or_name: Union[str, UUID],
-        bucket_name: str,
-        artifact_columns: list[str],
-        artifact_types: list[ArtifactType],
-        moleculeset_api: MoleculeSetAPI = None,
-        cloudfront: CloudFront = None,
-        s3: S3 = None,
-        manifold_id_column: str = DockingResultCols.LIGAND_ID.value,
-    ):
-        """
-        Parameters
-        ----------
-        molecule_dataframe : pd.DataFrame
-            The dataframe containing the molecules to upload.
-            Must contain a column with the name of the artifact
-        molecule_set_id : UUID
-            The UUID of the molecule set to upload to
-        artifact_type : ArtifactType
-            The type of artifact to upload
-        moleculeset_api : MoleculeSetAPI
-            The MoleculeSetAPI object to use to upload to Manifold
-        cloudfront : CloudFront
-            The CloudFront object to use to generate signed urls
-        s3 : S3
-            The S3 object to use to upload to S3
-        target : str
-            The biological target string for the artifact, one of asapdiscovery.data.postera.manifold_data_validation.TargetTags
-        artifact_column : str
-            The name of the column containing the filesystem path to the artifact that will be uploaded.
-        bucket_name : str
-            The name of the bucket to upload to
-        manifold_id_column : str
-            The name of the column containing the manifold id
-        """
-        self.target = target
-        self.molecule_dataframe = molecule_dataframe.copy()
-        self.molecule_set_id_or_name = molecule_set_id_or_name
-        self.bucket_name = bucket_name
-        self.artifact_columns = artifact_columns
-        self.artifact_types = artifact_types
+    bucket_name: str = Field(..., description="The name of the bucket to upload to")
 
-        if moleculeset_api is None:
-            moleculeset_api = MoleculeSetAPI().from_settings(PosteraSettings())
-        self.moleculeset_api = moleculeset_api
+    artifact_columns: list[str] = Field(
+        None,
+        description="The name of the column containing the filesystem path to the artifacts that will be uploaded.",
+    )
 
-        self.molset_id = self.moleculeset_api.molecule_set_id_or_name(
-            self.molecule_set_id_or_name, self.moleculeset_api.list_available()
-        )
+    artifact_types: list[ArtifactType] = Field(
+        None, description="The type of artifacts to upload"
+    )
 
-        if cloudfront is None:
-            cloudfront = CloudFront.from_settings(CloudfrontSettings())
-        self.cloudfront = cloudfront
+    moleculeset_api: Optional[MoleculeSetAPI] = Field(
+        None, description="The MoleculeSetAPI object to use to upload to Manifold"
+    )
 
-        if s3 is None:
-            s3 = S3.from_settings(S3Settings())
-        self.s3 = s3
+    cloudfront: Optional[CloudFront] = Field(
+        None, description="The CloudFront object to use to generate signed urls"
+    )
 
-        self.manifold_id_column = manifold_id_column
-        if len(self.artifact_columns) != len(self.artifact_types):
+    s3: Optional[S3] = Field(None, description="The S3 object to use to upload to S3")
+
+    manifold_id_column: str = Field(
+        DockingResultCols.LIGAND_ID.value,
+        description="The name of the column containing the manifold id",
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @root_validator
+    @classmethod
+    def validate_artifact_columns_and_types(cls, values):
+        artifact_columns = values.get("artifact_columns")
+        artifact_types = values.get("artifact_types")
+        if len(artifact_columns) != len(artifact_types):
             raise ValueError(
                 "Number of artifact columns must match number of artifact types"
             )
+        if len(artifact_columns) == len(artifact_types) == 0:
+            raise ValueError("Must have at least one artifact column")
 
-        if not TargetTags.is_in_values(target):
+        return values
+
+    @root_validator
+    @classmethod
+    def name_id_mutually_exclusive(cls, values):
+        molecule_set_id = values.get("molecule_set_id")
+        molecule_set_name = values.get("molecule_set_name")
+
+        if not molecule_set_id and not molecule_set_name:
+            raise ValueError("Must provide molecule_set_id or molecule_set_name")
+
+        if molecule_set_id and molecule_set_name:
             raise ValueError(
-                f"Target {target} not in allowed values {TargetTags.get_values()}"
+                "molecule_set_id and molecule_set_name are mutually exclusive"
             )
-
-        # drop rows in molecule df where artifact_columns is None or NaN
-        self.molecule_dataframe = self.molecule_dataframe.dropna(
-            subset=self.artifact_columns
-        )
+        return values
 
     def generate_cloudfront_url(
         self, bucket_path, expires_delta: timedelta = timedelta(days=365 * 5)
@@ -142,9 +131,25 @@ class ManifoldArtifactUploader:
         """
         Upload the artifacts to Postera Manifold and S3
         """
+
+        if self.cloudfront is None:
+            self.cloudfront = CloudFront.from_settings(CloudfrontSettings())
+
+        if self.s3 is None:
+            self.s3 = S3.from_settings(S3Settings())
+
+        if self.moleculeset_api is None:
+            self.moleculeset_api = MoleculeSetAPI.from_settings(PosteraSettings())
+
+        if self.molecule_set_id is None:
+            self.molecule_set_id = self.moleculeset_api.get_id_from_name(
+                self.molecule_set_name
+            )
+
         for artifact_column, artifact_type in zip(
             self.artifact_columns, self.artifact_types
         ):
+            logger.info(f"Uploading {artifact_type} artifacts from {artifact_column}")
             subset_df = self.molecule_dataframe[
                 [artifact_column, self.manifold_id_column]
             ].copy()
@@ -153,9 +158,12 @@ class ManifoldArtifactUploader:
                 artifact_type.value
             ]
 
+            # subselect non-null artifact column rows
+            subset_df = subset_df.dropna(subset=[artifact_column])
+
             subset_df[f"_bucket_path_{artifact_column}"] = subset_df[
                 self.manifold_id_column
-            ].apply(lambda x: f"{output_tag_name}/{self.molset_id}/{x}.html")
+            ].apply(lambda x: f"{output_tag_name}/{self.molecule_set_id}/{x}.html")
 
             # now make urls
             subset_df[output_tag_name] = subset_df[
@@ -164,17 +172,24 @@ class ManifoldArtifactUploader:
 
             # this will trim the dataframe to only the columns we want to update
             self.moleculeset_api.update_molecules_from_df_with_manifold_validation(
-                self.molset_id,
+                self.molecule_set_id,
                 subset_df,
                 id_field=self.manifold_id_column,
             )
 
-            # push to s3
-            subset_df.apply(
-                lambda x: self.s3.push_file(
-                    x[artifact_column],
-                    location=x[f"_bucket_path_{artifact_column}"],
-                    content_type=ARTIFACT_TYPE_TO_S3_CONTENT_TYPE[artifact_type],
-                ),
-                axis=1,
+            self._upload_column_to_s3(
+                subset_df,
+                artifact_column,
+                f"_bucket_path_{artifact_column}",
+                artifact_type,
             )
+
+    def _upload_column_to_s3(self, row, artifact_column, bucket_path, artifact_type):
+        for _, row in row.iterrows():
+            if pd.notnull(row[artifact_column]) and pd.notnull(row[bucket_path]):
+                logger.debug(f"S3 push: {row[artifact_column]} to {row[bucket_path]}")
+                self.s3.push_file(
+                    row[artifact_column],
+                    location=row[bucket_path],
+                    content_type=ARTIFACT_TYPE_TO_S3_CONTENT_TYPE[artifact_type],
+                )

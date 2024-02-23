@@ -1,9 +1,10 @@
+import functools
 import logging
 from collections.abc import Iterable
-from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Optional, Union
 
 import dask
+import numpy as np
 import psutil
 from asapdiscovery.data.util.execution_utils import (
     get_platform,
@@ -55,7 +56,7 @@ def set_dask_config():
 def actualise_dask_delayed_iterable(
     delayed_iterable: Iterable,
     dask_client: Optional[Client] = None,
-    errors: str = "raise",
+    errors: str = DaskFailureMode.RAISE.value,
 ):
     """
     Run a list of dask delayed functions or collections, and return the results
@@ -66,6 +67,8 @@ def actualise_dask_delayed_iterable(
         List of dask delayed functions
     dask_client Client, optional
         Dask client to use, by default None
+    errors : str
+        Dask failure mode, one of "raise" or "skip", by default "raise"
     Returns
     -------
     iterable: Iterable
@@ -78,21 +81,120 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-def backend_wrapper(
-    inputs: Union[list[Any], list[Path]],
-    func: Callable,
-    backend=BackendType.IN_MEMORY,
-    reconstruct_cls: Optional[Any] = None,
-):
-    if backend == BackendType.DISK:
-        if not reconstruct_cls:
-            raise ValueError("reconstruct_cls must be provided for disk backend")
-        inputs = [reconstruct_cls.from_json_file(inp) for inp in inputs]
-    elif backend == BackendType.IN_MEMORY:
-        pass  # do nothing
-    else:
-        raise ValueError("invalid backend type")
-    return func(inputs)
+def backend_wrapper(kwargname):
+    """
+    Decorator to handle dask backend for passing data into a function from disk or in-memory
+    kwargname is the name of the keyword argument that is being passed in from disk or in-memory
+
+    The decorator will take the following kwargs from a call site and pops them from kwargs.
+
+
+    Parameters
+    ----------
+    backend : BackendType
+        The backend type to use, either in-memory or disk
+    reconstruct_cls : Callable
+        The class to use to reconstruct the object from disk
+    """
+
+    def backend_wrapper_inner(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            backend = kwargs.pop("backend", None)
+            reconstruct_cls = kwargs.pop("reconstruct_cls", None)
+
+            if backend == BackendType.DISK:
+                # grab optional disk kwargs
+                to_be_reconstructed = kwargs.pop(kwargname, None)
+                if to_be_reconstructed is None:
+                    raise ValueError(f"Missing keyword argument {kwargname}")
+
+                if reconstruct_cls is None:
+                    raise ValueError("Missing keyword argument reconstruct_cls")
+
+                # reconstruct the object from disk
+                reconstructed = [
+                    reconstruct_cls.from_json_file(f) for f in to_be_reconstructed
+                ]
+
+                # add the reconstructed object to the kwargs
+                kwargs[kwargname] = reconstructed
+
+            elif backend == BackendType.IN_MEMORY:
+                pass
+            else:
+                raise ValueError(f"Unknown backend type {backend}")
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return backend_wrapper_inner
+
+
+def dask_vmap(kwargsnames):
+    """
+    Decorator to handle either returning a whole vector if not using dask, or using dask to parallelise over a vector
+    if dask is being used
+
+    Designed to be used structure of the form
+
+    @dask_vmap(["kwargs1", "kwargs2"])
+    def my_function(kwargs1, kwargs2, use_dask=False, dask_client=None, dask_failure_mode=DaskFailureMode.RAISE.value):
+        return _my_function(kwargs1, kwargs2)
+
+    If use_dask is `True`, then `_my_function` will be parallelised over kwargs1 and kwargs2 (zipped, must be same length) using dask, passing in iterable
+    intputs of length 1. If use_dask is `False` it will call `_my_function` directly.
+
+    Parameters
+    ----------
+    kwargsnames : list[str]
+        List of keyword argument names to parallelise over
+    use_dask : bool, optional
+        Whether to use dask, by default False
+    dask_client : Client, optional
+        Dask client to use, by default None
+    dask_failure_mode : str, optional
+        Dask failure mode, by default DaskFailureMode.RAISE.value
+    """
+
+    def dask_vmap_inner(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # grab optional dask kwargs
+            use_dask = kwargs.pop("use_dask", None)
+            dask_client = kwargs.pop("dask_client", None)
+            dask_failure_mode = kwargs.pop(
+                "dask_failure_mode", DaskFailureMode.SKIP.value
+            )
+
+            if use_dask:
+                # grab iterable_kwargs
+                iterable_kwargs = {name: kwargs.pop(name) for name in kwargsnames}
+                # check they are all the same length
+                # Check if all iterable keyword arguments are of the same length
+                lengths = {name: len(value) for name, value in iterable_kwargs.items()}
+                if len(set(lengths.values())) != 1:
+                    raise ValueError(
+                        "Iterable keyword arguments must be of the same length."
+                    )
+
+                computations = []
+                for values in zip(*iterable_kwargs.values()):
+                    local_kwargs = kwargs.copy()
+                    for name, value in zip(iterable_kwargs.keys(), values):
+                        local_kwargs[name] = [value]
+                    computations.append(dask.delayed(func)(*args, **local_kwargs))
+                return np.ravel(
+                    actualise_dask_delayed_iterable(
+                        computations, dask_client=dask_client, errors=dask_failure_mode
+                    )
+                ).tolist()
+            else:
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return dask_vmap_inner
 
 
 class DaskType(StringEnum):
@@ -122,6 +224,7 @@ class CPU(StringEnum):
     Enum for CPU types
     """
 
+    # lilcac lt-gpu queue used in CPU mode
     LT = "LT"
 
 
@@ -205,7 +308,9 @@ class DaskCluster(BaseModel):
     death_timeout: int = Field(
         120, description="Timeout in seconds for a worker to be considered dead"
     )
-    silence_logs: int = Field(logging.DEBUG, description="Log level for dask")
+    silence_logs: Union[int, str] = Field(
+        logging.INFO, description="Log level for dask"
+    )
 
 
 class LilacDaskCluster(DaskCluster):
@@ -298,13 +403,13 @@ class LilacGPUDaskCluster(LilacDaskCluster):
     def from_gpu(
         cls,
         gpu: GPU = GPU.GTX1080TI,
-        silence_logs: int = logging.INFO,
+        loglevel: Union[str, int] = logging.INFO,
         walltime: str = "72h",
     ):
         gpu_config = LilacGPUConfig.from_gpu(gpu)
         return cls(
             job_extra_directives=gpu_config.to_job_extra_directives(),
-            silence_logs=silence_logs,
+            silence_logs=loglevel,
             walltime=walltime,
         )
 
@@ -314,12 +419,15 @@ class LilacCPUDaskCluster(LilacDaskCluster):
 
     @classmethod
     def from_cpu(
-        cls, cpu: CPU = CPU.LT, silence_logs: int = logging.INFO, walltime: str = "72h"
+        cls,
+        cpu: CPU = CPU.LT,
+        loglevel: Union[int, str] = logging.INFO,
+        walltime: str = "72h",
     ):
         cpu_config = LilacCPUConfig.from_cpu(cpu)
         return cls(
             job_extra_directives=cpu_config.to_job_extra_directives(),
-            silence_logs=silence_logs,
+            silence_logs=loglevel,
             walltime=walltime,
         )
 
@@ -329,7 +437,7 @@ def dask_cluster_from_type(
     gpu: GPU = GPU.GTX1080TI,
     cpu: CPU = CPU.LT,
     local_threads_per_worker: int = 1,
-    loglevel: Union[str, int] = logging.DEBUG,
+    loglevel: Union[int, str] = logging.INFO,
     walltime: str = "72h",
 ):
     """
@@ -390,16 +498,54 @@ def dask_cluster_from_type(
     elif dask_type == DaskType.LILAC_GPU:
         cluster = (
             LilacGPUDaskCluster()
-            .from_gpu(gpu, silence_logs=loglevel, walltime=walltime)
+            .from_gpu(gpu, loglevel=loglevel, walltime=walltime)
             .to_cluster(exclude_interface="lo")
         )
     elif dask_type == DaskType.LILAC_CPU:
         cluster = (
             LilacCPUDaskCluster()
-            .from_cpu(cpu, silence_logs=loglevel, walltime=walltime)
+            .from_cpu(cpu, loglevel=loglevel, walltime=walltime)
             .to_cluster(exclude_interface="lo")
         )
     else:
         raise ValueError(f"Unknown dask type {dask_type}")
 
     return cluster
+
+
+def make_dask_client_meta(
+    dask_type: DaskType,
+    loglevel: Union[int, str] = logging.INFO,
+    walltime: str = "72h",
+    adaptive_min_workers: int = 10,
+    adaptive_max_workers: int = 200,
+    adaptive_wait_count: int = 10,
+    adaptive_interval: str = "1m",
+):
+    logger.info(f"Using dask for parallelism of type: {dask_type}")
+    if isinstance(loglevel, int):
+        loglevel = logging.getLevelName(loglevel)
+    set_dask_config()
+    dask_cluster = dask_cluster_from_type(
+        dask_type, loglevel=loglevel, walltime=walltime
+    )
+    if dask_type.is_lilac():
+        logger.info("Lilac HPC config selected, setting adaptive scaling")
+        dask_cluster.adapt(
+            minimum=adaptive_min_workers,
+            maximum=adaptive_max_workers,
+            wait_count=adaptive_wait_count,
+            interval=adaptive_interval,
+        )
+        logger.info(
+            f"Starting with minimum worker count: {adaptive_min_workers} workers"
+        )
+        dask_cluster.scale(adaptive_min_workers)
+
+    dask_client = Client(dask_cluster)
+    dask_client.forward_logging(level=loglevel)
+    logger.info(f"Using dask client: {dask_client}")
+    logger.info(f"Using dask cluster: {dask_cluster}")
+    logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
+
+    return dask_client

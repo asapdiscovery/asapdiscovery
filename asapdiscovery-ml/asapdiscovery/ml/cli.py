@@ -28,14 +28,14 @@ from asapdiscovery.ml.cli_args import (
     trainer_config_cache,
     wandb_args,
 )
-from asapdiscovery.ml.schema_v2.config import (
+from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterType,
     EarlyStoppingType,
     LossFunctionType,
     OptimizerType,
 )
-from asapdiscovery.ml.schema_v2.trainer import Trainer
+from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
 
 
@@ -221,9 +221,9 @@ def build_gat(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -456,9 +456,9 @@ def build_schnet(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -698,9 +698,9 @@ def build_e3nn(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -936,9 +936,9 @@ def build_and_train_gat(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -1174,9 +1174,9 @@ def build_and_train_schnet(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -1419,9 +1419,9 @@ def build_and_train_e3nn(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None

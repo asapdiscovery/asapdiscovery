@@ -61,6 +61,7 @@ class GIFBlockData:
     pocket_dict_chains_per_target = {
         "SARS-CoV-2-Mpro": "A",
         "SARS-CoV-2-Mac1": "A",
+        "SARS-CoV-2-N-protein": "A",
         "SARS-CoV-2-Mac1-monomer": "A",
         "MERS-CoV-Mpro": "A",
         "EV-D68-3Cpro": "A",
@@ -96,6 +97,11 @@ class GIFBlockData:
         "bridge": "126+155",
         "phosphate": "46+47+48+38+39+40+130+131+132+127+128+97",
         "anion_hole": "129+157+160+136+164",
+    }
+
+    # N-protein
+    pocket_dict_SARS_CoV_2_N_protein = {
+        "undecided": "1-116",
     }
 
     # 3CPRO
@@ -153,6 +159,9 @@ class GIFBlockData:
         "bridge": "pink",
         "phosphate": "orange",
         "anion_hole": "blue",
+    }
+    color_dict_N_protein = {
+        "undecided": "grey",
     }
     color_dict_3Cpro = {
         "subP1": "orange",

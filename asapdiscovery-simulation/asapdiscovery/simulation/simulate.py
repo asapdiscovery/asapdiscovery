@@ -115,10 +115,6 @@ class SimulationResult(BaseModel):
     input_docking_result: Optional[DockingResult]
 
 
-# ugly hack to disallow truncation of steps for testing
-_SIMULATOR_TRUNCATE_STEPS = True
-
-
 class VanillaMDSimulator(SimulatorBase):
     collision_rate: PositiveFloat = Field(
         1, description="Collision rate of the simulation (in 1/ps)"
@@ -157,7 +153,7 @@ class VanillaMDSimulator(SimulatorBase):
         description="Atom indices to apply the RMSD restraint to, cannot be used with rmsd_restraint_type",
     )
     rmsd_restraint_type: Optional[str] = Field(
-        "CA",
+        None,
         description="Type of RMSD restraint to apply, must be 'CA' or 'heavy', cannot be used with rmsd_restraint_atom_indices",
     )
 
@@ -166,8 +162,8 @@ class VanillaMDSimulator(SimulatorBase):
     )
 
     truncate_steps: bool = Field(
-        _SIMULATOR_TRUNCATE_STEPS,
-        description="Whether to truncate num_steps to multiple of reporting interval, used for testing",
+        True,
+        description="Whether to truncate num_steps to multiple of reporting interval, used mostly for testing",
     )
 
     @validator("rmsd_restraint_type")
@@ -195,21 +191,20 @@ class VanillaMDSimulator(SimulatorBase):
         Validate RMSD restraint setup
         """
         rmsd_restraint = values.get("rmsd_restraint")
-        rmsd_restraint_atom_indices = values.get("rmsd_restraint_atom_indices")
+        rmsd_restraint_indices = values.get("rmsd_restraint_indices")
         rmsd_restraint_type = values.get("rmsd_restraint_type")
-
-        if rmsd_restraint_type and rmsd_restraint_atom_indices:
+        if rmsd_restraint_type and rmsd_restraint_indices:
             raise ValueError(
-                "If RMSD restraint type is provided, rmsd_restraint_atom_indices must be empty"
+                "If RMSD restraint type is provided, rmsd_restraint_indices must be empty"
             )
 
         if (
             rmsd_restraint
             and not rmsd_restraint_type
-            and len(rmsd_restraint_atom_indices) == 0
+            and len(rmsd_restraint_indices) == 0
         ):
             raise ValueError(
-                "If RMSD restraint is enabled, and rmsd_restraint_type is not provided rmsd_restraint_atom_indices must be provided"
+                "If RMSD restraint is enabled, and rmsd_restraint_type is not provided rmsd_restraint_indices must be provided"
             )
         return values
 

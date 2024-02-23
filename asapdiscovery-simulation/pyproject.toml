@@ -11,7 +11,7 @@ authors = [
 ]
 description = "API and scripts for running molecular dynamics simulations"
 readme = "README.md"
-requires-python = ">=3.9,<3.11"
+requires-python = ">=3.9,<3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -19,10 +19,6 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 dependencies = [
-    "pandas",
-    "rdkit",
-    #"openeye-toolkit",
-    "plotly",
 ]
 
 [project.urls]

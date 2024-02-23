@@ -2,6 +2,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 
+from asapdiscovery.data.dask_utils import backend_wrapper, dask_vmap
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
@@ -55,14 +56,16 @@ class HTMLVisualizerV2(VisualizerBase):
         elif self.colour_method == ColourMethod.fitness:
             return DockingResultCols.HTML_PATH_FITNESS.value
 
-    def _visualize(self, docking_results: list[DockingResult]) -> list[dict[str, str]]:
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
+    def _visualize(self, inputs: list[DockingResult]) -> list[dict[str, str]]:
         """
         Visualize a list of docking results.
 
         NOTE: This is an extremely bad way of doing this, but it's a quick fix for now
         """
         data = []
-        for result in docking_results:
+        for result in inputs:
             # sorryyyyy
             output_pref = result.unique_name
             outpath = self.output_dir / output_pref / "pose.html"

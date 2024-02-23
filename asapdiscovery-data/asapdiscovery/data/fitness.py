@@ -13,22 +13,23 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     VirusTags,
 )
 
-_TARGET_TO_GENE = {  # contains some entries for finding targets when subselecting a genome-wide DMS result.
+_TARGET_TO_GENE = {  # contains some entries for finding targets when subselecting a genome-wide fitness result.
     TargetTags("SARS-CoV-2-Mpro").value: "nsp5 (Mpro)",
     TargetTags("SARS-CoV-2-Mac1").value: "nsp3",
+    TargetTags("SARS-CoV-2-N-protein").value: "N",
 }
 
-_VIRUS_TO_FITNESS_DATA = {  # points to the vendored DMS data.
+_VIRUS_TO_FITNESS_DATA = {  # points to the vendored fitness data.
     VirusTags("SARS-CoV-2").value: SARS_CoV_2_fitness_data,
     VirusTags("ZIKV").value: ZIKV_NS2B_NS3pro_fitness_data,
 }
 
-_FITNESS_DATA_IS_CROSSGENOME = {  # sets whether the DMS data we have for this virus is the whole genome or a single target.
+_FITNESS_DATA_IS_CROSSGENOME = {  # sets whether the fitness data we have for this virus is the whole genome or a single target.
     VirusTags("SARS-CoV-2").value: True,
     VirusTags("ZIKV").value: False,
 }
 
-_FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considered 'fit' for the specific DMS experiment. Directed by Bloom et al.
+_FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considered 'fit' for the specific fitness experiment. Directed by Bloom et al.
     VirusTags("SARS-CoV-2").value: -1.0,
     VirusTags("ZIKV").value: -1.0,
 }
@@ -240,6 +241,23 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
 
     elif target == "SARS-CoV-2-Mpro":
         fitness_scores_bloom["chain"] = "A"
+    elif target == "SARS-CoV-2-N-protein":
+        # For N-protein, we want to show both monomers in the dimer because they are inter-locked and ligands may bind the interface,
+        # so can't get away with showing one of the monomers as blue. We'll make separate rows in the data for each chain.
+        # first double the DF.
+        doubled_df = pd.concat([fitness_scores_bloom] * 2).reset_index()
+
+        # now add chain A/C to the first/second half of the doubled DF.
+        doubled_df.loc[: len(fitness_scores_bloom), "chain"] = "A"
+        doubled_df.loc[len(fitness_scores_bloom) :, "chain"] = "C"
+        if not len(doubled_df[doubled_df["chain"] == "A"].values) == len(
+            doubled_df[doubled_df["chain"] == "C"].values
+        ):
+            raise ValueError(
+                "Chain lengths between chains A/C are not equal - unable to naively duplicate fitness data across; please debug."
+            )
+        else:
+            fitness_scores_bloom = doubled_df
     elif target == "ZIKV-NS2B-NS3pro":
         # cursed. TODO: replace this with an auto-align.
         ns2b_section = fitness_scores_bloom[

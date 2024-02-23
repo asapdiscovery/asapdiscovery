@@ -6,6 +6,7 @@ import os
 
 import pandas
 import pytest
+import requests_mock
 from asapdiscovery.data.services.cdd.cdd_download import (
     CDD_URL,
     MOONSHOT_ALL_SMI_SEARCH,
@@ -371,3 +372,162 @@ def test_download_molecules_cache(
     )
     target_cols = cdd_col_headers[search] + FILTER_ADDED_COLS + PARSE_ADDED_COLS
     assert sorted(df.columns.tolist()) == sorted(target_cols)
+
+
+def test_cdd_api_get_molecules_exclusive_args(mocked_cdd_api):
+    """Make sure an error is raised if we pass mutually exclusive args."""
+
+    with pytest.raises(ValueError):
+        _ = mocked_cdd_api.get_molecules(
+            smiles="CCO", names=["ASAP-Ethanol"], compound_ids=[1, 2]
+        )
+
+
+@pytest.mark.parametrize(
+    "search, expected_result",
+    [
+        pytest.param({"smiles": "CO"}, None, id="smiles missing"),
+        pytest.param(
+            {"smiles": "CCO"},
+            [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            id="Smiles",
+        ),
+        pytest.param(
+            {"names": ["ASAP-Ethanol"]},
+            [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            id="Names",
+        ),
+        pytest.param(
+            {"compound_ids": [1]},
+            [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            id="Compound ids",
+        ),
+    ],
+)
+def test_cdd_api_get_molecules(mocked_cdd_api, search, expected_result):
+    """Test searching via the api using different molecule identifiers."""
+
+    def get_mols(request, *args):
+        "mock the molecule get request"
+        data = request.json()
+        if "structure" in data and data["structure"] != "CCO":
+            return {"count": 0, "objects": []}
+        elif "structure" in data:
+            return {
+                "count": 1,
+                "objects": [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            }
+        else:
+            # if not we do an async request
+            return {"id": "1"}
+
+    with requests_mock.Mocker() as m:
+        m.get(mocked_cdd_api.api_url + "molecules/", json=get_mols)
+        m.get(
+            mocked_cdd_api.api_url + "exports/1",
+            json={
+                "count": 1,
+                "objects": [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            },
+        )
+        result = mocked_cdd_api.get_molecules(**search)
+        assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "protocol_names",
+    [pytest.param(None, id="No names"), pytest.param(["p1", "p2"], id="Names")],
+)
+def test_cdd_api_get_protocol(mocked_cdd_api, protocol_names):
+    """Test pulling down protocol data."""
+
+    with requests_mock.Mocker() as m:
+        m.get(mocked_cdd_api.api_url + "protocols", json={"objects": [{"id": 1}]})
+        result = mocked_cdd_api.get_protocols(protocol_names=protocol_names)
+        assert result == [{"id": 1}]
+
+
+def test_cdd_api_readout_rows(mocked_cdd_api):
+    """Test pulling down readout data using the api"""
+
+    with requests_mock.Mocker() as m:
+        m.get(mocked_cdd_api.api_url + "readout_rows", json={"id": 2})
+        m.get(
+            mocked_cdd_api.api_url + "exports/2",
+            json={"count": 2, "objects": [{"id": 2}, {"id": 3}]},
+        )
+        # do a query with two results
+        result = mocked_cdd_api.get_readout_rows(
+            protocol=2, types=["batch_run_aggregate_row"], molecule_ids=[1, 2]
+        )
+        assert result == [{"id": 2}, {"id": 3}]
+
+
+def test_cdd_api_get_ic50(mocked_cdd_api):
+    """Test a full run of finding ic50 data for a given protocol.
+    Get ready to mock everything!
+    """
+    assay_name = "My_fancy_assay"
+    mock_protocol_response = {
+        "objects": [
+            {
+                "id": 1,
+                "readout_definitions": [
+                    {"name": "IC50", "id": 500},
+                    {"name": "IC50 CI (Lower)", "id": 501},
+                    {"name": "IC50 CI (Upper)", "id": 502},
+                    {"name": "Curve class", "id": 503},
+                ],
+            }
+        ]
+    }
+    mock_readout_response = {
+        "count": 1,
+        "objects": [
+            {
+                "id": 1,
+                "molecule": 1,
+                "readouts": {
+                    "500": {"value": 0.03},
+                    "501": {"value": 0.028},
+                    "502": {"value": 0.031},
+                    "503": {"value": 1.1},
+                },
+            }
+        ],
+    }
+    mock_molecule_response = {
+        "count": 1,
+        "objects": [
+            {
+                "id": 1,
+                "smiles": "CCO",
+                "inchi": "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3",
+                "inchi_key": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
+                "name": "ASAP-Ethanol",
+            }
+        ],
+    }
+    with requests_mock.Mocker() as m:
+        # mock the required protocols
+        m.get(mocked_cdd_api.api_url + "protocols", json=mock_protocol_response)
+        # mock the return of the async request
+        m.get(mocked_cdd_api.api_url + "readout_rows", json={"id": 100})
+        # mock the export request for the readout rows
+        m.get(mocked_cdd_api.api_url + "exports/100", json=mock_readout_response)
+        # mock the molecule async request
+        m.get(mocked_cdd_api.api_url + "molecules/", json={"id": 101})
+        m.get(mocked_cdd_api.api_url + "exports/101", json=mock_molecule_response)
+        ic50_df = mocked_cdd_api.get_ic50_data(protocol_name=assay_name)
+        # check the values were collected correctly
+        ethanol_data = ic50_df.iloc[0]
+        assert ethanol_data[f"{assay_name}: IC50 (µM)"] == 0.03
+        assert ethanol_data[f"{assay_name}: IC50 CI (Lower) (µM)"] == 0.028
+        assert ethanol_data[f"{assay_name}: IC50 CI (Upper) (µM)"] == 0.031
+        assert ethanol_data[f"{assay_name}: Curve class"] == 1.1
+        # check the molecule identifiers
+        mol_data = mock_molecule_response["objects"][0]
+        assert mol_data["smiles"] == ethanol_data["Smiles"]
+        assert mol_data["inchi"] == ethanol_data["Inchi"]
+        assert mol_data["inchi_key"] == ethanol_data["Inchi Key"]
+        assert mol_data["name"] == ethanol_data["Molecule Name"]
