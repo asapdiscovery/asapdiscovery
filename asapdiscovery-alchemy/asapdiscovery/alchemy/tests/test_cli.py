@@ -313,7 +313,7 @@ def test_alchemy_prep_run_from_postera(
 def test_alchemy_status_all(monkeypatch):
     """Mock testing the status all command."""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
-    monkeypatch.setenv("ALCHEMISCALE_KEY": "my-key")
+    monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
 
     network_key = ScopedKey(
         gufe_key="fakenetwork",
