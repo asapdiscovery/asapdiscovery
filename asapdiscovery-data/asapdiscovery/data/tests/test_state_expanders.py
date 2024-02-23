@@ -3,12 +3,12 @@ import subprocess
 import pytest
 from asapdiscovery.data.backend.openeye import oe_smiles_roundtrip, save_openeye_sdfs
 from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.structural.state_expanders.protomer_expander import (
+from asapdiscovery.data.operators.state_expanders.protomer_expander import (
     EpikExpander,
     ProtomerExpander,
 )
-from asapdiscovery.data.structural.state_expanders.stereo_expander import StereoExpander
-from asapdiscovery.data.structural.state_expanders.tautomer_expander import (
+from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoExpander
+from asapdiscovery.data.operators.state_expanders.tautomer_expander import (
     TautomerExpander,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file

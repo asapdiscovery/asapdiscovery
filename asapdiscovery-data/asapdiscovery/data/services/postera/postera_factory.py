@@ -2,6 +2,7 @@ from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.services_config import PosteraSettings
 from pydantic import BaseModel, Field, root_validator
+from typing import Optional
 
 
 class PosteraFactory(BaseModel):

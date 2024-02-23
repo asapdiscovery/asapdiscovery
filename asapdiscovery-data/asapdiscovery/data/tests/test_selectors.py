@@ -1,8 +1,8 @@
 import pytest
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
-from asapdiscovery.data.structural.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.structural.selectors.pairwise_selector import (
+from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.operators.selectors.pairwise_selector import (
     LeaveOneOutSelector,
     LeaveSimilarOutSelector,
     PairwiseSelector,
