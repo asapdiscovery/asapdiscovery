@@ -927,9 +927,9 @@ def download_cdd_data(protocol_name: str) -> pd.DataFrame:
     Returns:
         A dataframe of the extracted and formatted experimental data.
     """
-    from asapdiscovery.data.cdd_api import CDDAPI
-    from asapdiscovery.data.services_config import CDDSettings
-    from asapdiscovery.data.utils import parse_fluorescence_data_cdd
+    from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
+    from asapdiscovery.data.services.services_config import CDDSettings
+    from asapdiscovery.data.util.utils import parse_fluorescence_data_cdd
 
     settings = CDDSettings()
     cdd_api = CDDAPI.from_settings(settings=settings)
