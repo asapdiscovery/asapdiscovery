@@ -4,14 +4,13 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Optional, Union
 
-import dask
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.dask_utils import (
     BackendType,
     DaskFailureMode,
-    actualise_dask_delayed_iterable,
     backend_wrapper,
+    dask_vmap,
 )
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.openeye import oedocking
@@ -146,26 +145,14 @@ class ScorerBase(BaseModel):
         reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
-        if use_dask:
-            delayed_outputs = []
-            for inp in inputs:
-                out = dask.delayed(backend_wrapper)(
-                    inputs=[inp],
-                    func=self._score,
-                    backend=backend,
-                    reconstruct_cls=reconstruct_cls,
-                )
-                delayed_outputs.append(out[0])  # flatten
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client, errors=dask_failure_mode
-            )
-        else:
-            outputs = backend_wrapper(
-                inputs=inputs,
-                func=self._score,
-                backend=backend,
-                reconstruct_cls=reconstruct_cls,
-            )
+        outputs = self._score(
+            inputs=inputs,
+            use_dask=use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=dask_failure_mode,
+            backend=backend,
+            reconstruct_cls=reconstruct_cls,
+        )
 
         if return_df:
             return self.scores_to_df(outputs)
@@ -210,6 +197,8 @@ class ChemGauss4Scorer(ScorerBase):
     score_type: ClassVar[ScoreType.chemgauss4] = ScoreType.chemgauss4
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
@@ -244,6 +233,8 @@ class FINTScorer(ScorerBase):
             )
         return v
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
@@ -320,6 +311,8 @@ class GATScorer(MLModelScorer):
     score_type: ClassVar[ScoreType.GAT] = ScoreType.GAT
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
@@ -341,6 +334,8 @@ class SchnetScorer(MLModelScorer):
     score_type: ClassVar[ScoreType.schnet] = ScoreType.schnet
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
@@ -362,6 +357,8 @@ class E3NNScorer(MLModelScorer):
     score_type: ClassVar[ScoreType.e3nn] = ScoreType.e3nn
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
