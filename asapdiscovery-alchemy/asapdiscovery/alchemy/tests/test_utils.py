@@ -61,12 +61,17 @@ def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert status == {"complete": 1}
 
 
-@pytest.mark.parametrize("priority, expected_weight", [
-    pytest.param(None, 0.5,  id="None"),
-    pytest.param(True, 0.51, id="True"),
-    pytest.param(False, 0.49, id="False")
-])
-def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper, priority, expected_weight):
+@pytest.mark.parametrize(
+    "priority, expected_weight",
+    [
+        pytest.param(None, 0.5, id="None"),
+        pytest.param(True, 0.51, id="True"),
+        pytest.param(False, 0.49, id="False"),
+    ],
+)
+def test_action_tasks(
+    monkeypatch, tyk2_fec_network, alchemiscale_helper, priority, expected_weight
+):
     """Make sure the helper can action tasks on alchemiscale with the correct priority"""
 
     client = alchemiscale_helper
@@ -312,4 +317,3 @@ def test_get_actioned_weights(alchemiscale_helper, monkeypatch, tyk2_fec_network
     active_network_weights = client.get_actioned_weights()
     # we should have 4 weights from early stopping
     assert active_network_weights == [0.5 for _ in range(4)]
-

@@ -94,7 +94,9 @@ class AlchemiscaleHelper:
 
         # get all networks that we're able to see
         for key in self._client.query_networks():
-            network_stats = self._client.get_network_status(network=key, visualize=False)
+            network_stats = self._client.get_network_status(
+                network=key, visualize=False
+            )
             n_running = network_stats.get("running", 0)
             n_waiting = network_stats.get("waiting", 0)
 
@@ -110,7 +112,9 @@ class AlchemiscaleHelper:
         return active_network_weights
 
     def action_network(
-        self, planned_network: FreeEnergyCalculationNetwork, prioritize: Optional[bool] = None
+        self,
+        planned_network: FreeEnergyCalculationNetwork,
+        prioritize: Optional[bool] = None,
     ) -> list[Optional[ScopedKey]]:
         """
         For the given network which is already stored on alchemiscale create and action tasks.
@@ -300,7 +304,9 @@ class AlchemiscaleHelper:
         """
         actioned_tasks = self._client.get_network_actioned_tasks(network=network_key)
         if actioned_tasks:
-            canceled_tasks = self._client.cancel_tasks(tasks=actioned_tasks, network=network_key)
+            canceled_tasks = self._client.cancel_tasks(
+                tasks=actioned_tasks, network=network_key
+            )
         else:
             canceled_tasks = []
         return canceled_tasks

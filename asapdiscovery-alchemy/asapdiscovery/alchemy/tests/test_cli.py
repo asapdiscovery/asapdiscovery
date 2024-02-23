@@ -326,9 +326,7 @@ def test_alchemy_status_all(monkeypatch):
 
     def get_network_keys(*args, **kwargs):
         """Mock a network key for a running network"""
-        return [
-            network_key
-        ]
+        return [network_key]
 
     def get_actioned(*args, **kwargs):
         assert kwargs["network"] == network_key
@@ -374,12 +372,17 @@ def test_alchemy_stop(monkeypatch):
         assert network == network_key
         return tasks
 
-    monkeypatch.setattr(AlchemiscaleClient, "get_network_actioned_tasks", get_network_actioned_tasks)
+    monkeypatch.setattr(
+        AlchemiscaleClient, "get_network_actioned_tasks", get_network_actioned_tasks
+    )
     monkeypatch.setattr(AlchemiscaleClient, "cancel_tasks", cancel_tasks)
 
     result = runner.invoke(alchemy, ["stop", "-nk", network_key])
     assert result.exit_code == 0
-    assert "Canceled 4 actioned tasks for network fakenetwork-12345-asap-alchemy-testing" in result.stdout
+    assert (
+        "Canceled 4 actioned tasks for network fakenetwork-12345-asap-alchemy-testing"
+        in result.stdout
+    )
 
 
 def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
@@ -393,20 +396,15 @@ def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
         with pytest.raises(ValueError) as exp:
             _ = runner.invoke(
                 alchemy,
-                [
-                    "submit",
-                    "-o",
-                    "asap",
-                    "-c",
-                    "fancy_campaign",
-                    "-p",
-                    "fancy_ligands"
-                ],
-                catch_exceptions=False
+                ["submit", "-o", "asap", "-c", "fancy_campaign", "-p", "fancy_ligands"],
+                catch_exceptions=False,
             )
             # cannot use match here due to regex escaping
-            assert exp.value.args[0] == "If organization (`-o`) is set to 'asap' (default), campaign (`-c`) must be either of 'public' or 'confidential'."
-            
+            assert (
+                exp.value.args[0]
+                == "If organization (`-o`) is set to 'asap' (default), campaign (`-c`) must be either of 'public' or 'confidential'."
+            )
+
 
 def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
     """Test predicting the absolute and relative free energies with no experimental data, interactive reports should

@@ -402,7 +402,9 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                 network=key, visualize=False
             )
             running_tasks = client._client.get_network_actioned_tasks(network=key)
-            if ("running" in network_status or "waiting" in network_status) and running_tasks:
+            if (
+                "running" in network_status or "waiting" in network_status
+            ) and running_tasks:
                 table.add_row(
                     str(key),
                     str(network_status.get("complete", 0)),
@@ -411,7 +413,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                     str(network_status.get("error", 0)),
                     str(network_status.get("invalid", 0)),
                     str(network_status.get("deleted", 0)),
-                    str(len(running_tasks))
+                    str(len(running_tasks)),
                 )
         status_breakdown.stop()
         console.print(table)
@@ -490,10 +492,10 @@ def restart(network: str, verbose: bool, tasks):
 def stop(network_key: str):
     """Stop (i.e. set to 'error') a network's running and waiting tasks."""
     import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
     from rich import pretty
     from rich.padding import Padding
-    from asapdiscovery.alchemy.cli.utils import print_header
 
     pretty.install()
     console = rich.get_console()
