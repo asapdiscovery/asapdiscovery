@@ -12,6 +12,7 @@ class DockingResultCols(str, Enum):
     INCHIKEY = "INCHIKEY"  # postera
     COMPUTED_GAT_PIC50 = "computed-GAT-pIC50"  # postera
     COMPUTED_SCHNET_PIC50 = "computed-SchNet-pIC50"  # postera
+    COMPUTED_E3NN_PIC50 = "computed-E3NN-pIC50"  # postera
     POSIT_METHOD = "_POSIT_method"
     LIGAND_ID = "ligand_id"
     TARGET_ID = "target_id"

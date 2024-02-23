@@ -23,22 +23,30 @@ class TestDocking:
         assert len(results) == 1
         assert results[0].probability > 0.0
 
-    def test_docking_omega_dense_fails_no_omega(self, docking_input_pair):
+    def test_docking_omega_dense_fails_no_omega(self):
         with pytest.raises(
             ValueError, match="Cannot use omega_dense without use_omega"
         ):
             _ = POSITDocker(use_omega=False, omega_dense=True)
 
     @pytest.mark.parametrize("use_dask", [True, False])
+    @pytest.mark.parametrize("return_for_disk_backend", [True, False])
     def test_docking_dask(
-        self, docking_input_pair, docking_input_pair_simple, use_dask
+        self,
+        docking_input_pair,
+        docking_input_pair_simple,
+        use_dask,
+        return_for_disk_backend,
+        tmp_path,
     ):
         docker = POSITDocker(use_omega=False)  # save compute
         results = docker.dock(
-            [docking_input_pair, docking_input_pair_simple], use_dask=use_dask
+            [docking_input_pair, docking_input_pair_simple],
+            use_dask=use_dask,
+            return_for_disk_backend=return_for_disk_backend,
+            output_dir=tmp_path / "docking_results",
         )
         assert len(results) == 2
-        assert results[0].probability > 0.0
 
     def test_docking_with_file_write(self, results_simple, tmp_path):
         docker = POSITDocker(use_omega=False)

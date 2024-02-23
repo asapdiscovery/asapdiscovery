@@ -64,6 +64,14 @@ def create(filename: str):
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="The file which contains the center ligand, only required by radial type networks.",
 )
+@click.option(
+    "-ep",
+    "--experimental-protocol",
+    help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+)
 def plan(
     name: str,
     receptor: Optional[str] = None,
@@ -71,6 +79,7 @@ def plan(
     center_ligand: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
+    experimental_protocol: Optional[str] = None,
 ):
     """
     Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
@@ -81,7 +90,7 @@ def plan(
     import openfe
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyDataSet
-    from rdkit import Chem
+    from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 
     # check mutually exclusive args
     if ligands is None and alchemy_dataset is None:
@@ -103,10 +112,7 @@ def plan(
         # load the set of posed ligands and the receptor from our dataset
         click.echo(f"Loading Ligands and protein from AlchemyDataSet {alchemy_dataset}")
         alchemy_ds = AlchemyDataSet.from_file(alchemy_dataset)
-        input_ligands = [
-            openfe.SmallMoleculeComponent.from_sdf_string(mol.to_sdf_str())
-            for mol in alchemy_ds.posed_ligands
-        ]
+        input_ligands = alchemy_ds.posed_ligands
 
         # write to a temp pdb file and read back in
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
@@ -117,19 +123,14 @@ def plan(
         # load from separate files
         click.echo(f"Loading Ligands from {ligands}")
         # parse all required data/ assume sdf currently
-        supplier = Chem.SDMolSupplier(ligands, removeHs=False)
-        input_ligands = [
-            openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier
-        ]
+        input_ligands = MolFileFactory(filename=ligands).load()
+
         click.echo(f"Loading protein from {receptor}")
         receptor = openfe.ProteinComponent.from_pdb_file(receptor)
 
     if center_ligand is not None:
         # handle the center ligand needed for radial networks
-        supplier = Chem.SDMolSupplier(center_ligand, removeHs=False)
-        center_ligand = [
-            openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier
-        ]
+        center_ligand = MolFileFactory(filename=center_ligand).load()
         if len(center_ligand) > 1:
             raise RuntimeError(
                 f"Only a single center ligand can be used for radial networks, found {len(center_ligand)} ligands in {center_ligand}."
@@ -143,6 +144,7 @@ def plan(
         receptor=receptor,
         ligands=input_ligands,
         central_ligand=center_ligand,
+        experimental_protocol=experimental_protocol,
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
@@ -519,8 +521,19 @@ def stop(network_key: str):
     default="pIC50",
     show_default=True,
 )
+@click.option(
+    "-ep",
+    "--experimental-protocol",
+    help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+)
 def predict(
-    network: str, reference_units: str, reference_dataset: Optional[str] = None
+    network: str,
+    reference_units: str,
+    reference_dataset: Optional[str] = None,
+    experimental_protocol: Optional[str] = None,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
@@ -552,15 +565,20 @@ def predict(
     predict_status = console.status("Calculating absolute free energies")
     predict_status.start()
 
-    ligands = result_network.network.to_openfe_ligands()
+    ligands = result_network.network.ligands
+    if result_network.network.central_ligand is not None:
+        ligands.append(result_network.network.central_ligand)
     # convert to cinnabar fepmap to do the prediction via MLE
     fe_map = result_network.results.to_fe_map()
     fe_map.generate_absolute_values()
+    # check if we have a protocol on the network already
+    protocol = experimental_protocol or result_network.experimental_protocol
     absolute_df, relative_df = get_data_from_femap(
         fe_map=fe_map,
         ligands=ligands,
         assay_units=reference_units,
         reference_dataset=reference_dataset,
+        cdd_protocol=protocol,
     )
     # write the csv to file to be uploaded to postera later
     absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"
@@ -579,7 +597,9 @@ def predict(
     )
     console.print(message)
 
-    if reference_dataset is not None:
+    # use short switch to find if either value is not None
+    has_ref_data = reference_dataset or experimental_protocol
+    if has_ref_data is not None:
         report_status = console.status("Generating interactive reports")
         report_status.start()
         # we can only make these reports currently with experimental data

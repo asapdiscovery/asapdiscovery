@@ -90,6 +90,7 @@ manifold_outputs:
       tools:
         - GAT
         - SchNet
+        - E3NN
       postfix: msk
 
   - computed: # FEC biochemical activity

@@ -1,13 +1,12 @@
 import logging
-import uuid
-from typing import Dict, Tuple, Union  # noqa: F401
+from typing import Dict, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
 from asapdiscovery.data.enum import StringEnum
+from asapdiscovery.data.web_utils import _BaseWebAPI
 from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
-from .postera_api import PostEraAPI
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +86,20 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
         )
 
 
-class MoleculeSetAPI(PostEraAPI):
+class MoleculeSetAPI(_BaseWebAPI):
     """Connection and commands for PostEra Molecule Set API"""
+
+    @staticmethod
+    def _check_response_for_perm_error(response: dict):
+        detail = response.get("detail")
+        if detail and "You do not have permission" in detail:
+            raise ValueError(
+                f"User does not have permission to perform this operation in the PostEra API, check API key and user permissions. Response: {response}"
+            )
+
+    @classmethod
+    def token_name(cls) -> str:
+        return "X-API-KEY"
 
     @classmethod
     def from_settings(cls, settings):
@@ -115,27 +126,6 @@ class MoleculeSetAPI(PostEraAPI):
     def molecule_set_url(self):
         return f"{self.api_url}/moleculesets"
 
-    @staticmethod
-    def molecule_set_id_or_name(
-        id_or_name: str, available_molsets: dict[str, str]
-    ) -> str:
-        """
-        Helper function to determine if the input is a molecule set id or name
-        and return the molecule set id
-        """
-        try:
-            uuid.UUID(id_or_name)
-            molset_id = id_or_name
-        except ValueError:
-            available_molsets_rev = {v: k for k, v in available_molsets.items()}
-            try:
-                molset_id = available_molsets_rev[id_or_name]
-            except KeyError:
-                raise ValueError(
-                    f"Molecule Set with identifier: {id_or_name} not found in PostEra"
-                )
-        return molset_id
-
     def create(
         self, molecule_set_name: str, data: MoleculeList, return_full: bool = False
     ) -> str:
@@ -153,23 +143,30 @@ class MoleculeSetAPI(PostEraAPI):
 
         """
         url = f"{self.molecule_set_url}/"
+
         response = self._session.post(
             url,
             json={
                 "molecules": data,
                 "name": molecule_set_name,
             },
-        ).json()
+        )
+        response_json = response.json()
+        logger.debug(
+            f"Postera MoleculeSetAPI.create response: {response_json}, status code: {response.status_code}"
+        )
+        self._check_response_for_perm_error(response_json)
+        response.raise_for_status()
 
         if return_full:
-            return response
+            return response_json
         else:
-            return response[MoleculeSetKeys.id.value]
+            return response_json[MoleculeSetKeys.id.value]
 
-    def _read_page(self, url: str, page: int) -> (pd.DataFrame, str):
-        response = self._session.get(url, params={"page": page}).json()
-
-        return response["results"], response["paginationInfo"]["hasNext"]
+    def _read_page(self, url: str, page: int) -> tuple[pd.DataFrame, str]:
+        response = self._session.get(url, params={"page": page})
+        response_json = response.json()
+        return response_json["results"], response_json["paginationInfo"]["hasNext"]
 
     def _collate(self, url):
         page = 0
@@ -245,9 +242,32 @@ class MoleculeSetAPI(PostEraAPI):
         url = f"{self.molecule_set_url}/{molecule_set_id}"
         response = self._session.get(
             url,
-        ).json()
+        )
+        response_json = response.json()
+        logger.debug(
+            f"Postera MoleculeSetAPI.get response: {response_json}, status code: {response.status_code}"
+        )
+        self._check_response_for_perm_error(response_json)
+        response.raise_for_status()
 
-        return response
+        return response_json
+
+    def destroy(self, molecule_set_id: str) -> None:
+        """Delete a MoleculeSet.
+
+        Parameters
+        ----------
+        molecule_set_id
+            The unique id of the MoleculeSet
+
+        """
+        url = f"{self.molecule_set_url}/{molecule_set_id}"
+        response = self._session.delete(url)
+        # no response body for delete
+        logger.debug(
+            f"Postera MoleculeSetAPI.destroy response: {response}, status code: {response.status_code}"
+        )
+        response.raise_for_status()
 
     def get_molecules(
         self, molecule_set_id: str, return_as="dataframe"
@@ -259,6 +279,7 @@ class MoleculeSetAPI(PostEraAPI):
         molecule_set_id
             The unique id of the MoleculeSet
         return_as : {'dataframe', 'list'}
+            Whether to return the molecules as a DataFrame or a list.
 
         """
 
@@ -282,10 +303,84 @@ class MoleculeSetAPI(PostEraAPI):
             ]
             return pd.DataFrame(response_data)
 
+    def get_id_from_name(self, name: str) -> str:
+        """Get the unique id of a MoleculeSet from its human-readable name.
+
+        Parameters
+        ----------
+        name
+            The human-readable name of the MoleculeSet.
+
+        Returns
+        -------
+        str
+            The unique id of the MoleculeSet.
+
+        """
+        avail = self.list_available(return_full=False)
+        avail_rev = {v: k for k, v in avail.items()}
+        id = avail_rev.get(name)
+        if id is None:
+            raise ValueError(f"Molecule set with name {name} not found in PostEra")
+        return id
+
+    def get_name_from_id(self, id: str) -> str:
+        """Get the human-readable name of a MoleculeSet from its unique id.
+
+        Parameters
+        ----------
+        id
+            The unique id of the MoleculeSet.
+
+        Returns
+        -------
+        str
+            The human-readable name of the MoleculeSet.
+
+        """
+        avail = self.list_available(return_full=False)
+        name = avail.get(id)
+        if name is None:
+            raise ValueError(f"Molecule set with id {id} not found in PostEra")
+        return name
+
     def get_molecules_from_id_or_name(
-        self, molecule_set_id: str, return_as="dataframe"
+        self,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        return_as="dataframe",
     ) -> tuple[Union[pd.DataFrame, list], str]:
-        molset_id = self.molecule_set_id_or_name(molecule_set_id, self.list_available())
+        """
+        Get the molecules from a molecule set by either id or name.
+
+        Parameters
+        ----------
+        id
+            The unique id of the MoleculeSet.
+        name
+            The human-readable name of the MoleculeSet.
+        return_as : {'dataframe', 'list'}
+            Whether to return the molecules as a DataFrame or a list.
+
+        Returns
+        -------
+        Union[pd.DataFrame, list]
+            The molecules in the molecule set.
+        """
+        if id is None and name is None:
+            raise ValueError("Either id or name must be set")
+
+        if id is not None and name is not None:
+            raise ValueError("Only one of id or name can be set")
+
+        if name is not None:
+            molset_id = self.get_id_from_name(name)
+            if molset_id is None:
+                raise ValueError(f"Molecule set with name {name} not found in PostEra")
+
+        if id is not None:
+            molset_id = id
+
         return self.get_molecules(molset_id, return_as), molset_id
 
     def add_molecules(
@@ -315,12 +410,19 @@ class MoleculeSetAPI(PostEraAPI):
                 "newMolecules": data,
             },
         )
+        response_json = response.json()
+        logger.debug(
+            f"Postera MoleculeSetAPI.add_molecules response: {response_json}, status code: {response.status_code}"
+        )
+        self._check_response_for_perm_error(response_json)
+
         try:
-            n_over_limit = response.json()["nOverLimit"]
+            n_over_limit = response_json["nOverLimit"]
         except Exception as e:
             raise ValueError(
                 f"Add failed for molecule set {molecule_set_id}, with response: {response}"
             ) from e
+        response.raise_for_status()
         return n_over_limit
 
     def update_molecules(
@@ -350,13 +452,21 @@ class MoleculeSetAPI(PostEraAPI):
 
         response = self._session.patch(
             url, json={"moleculesToUpdate": data, "overwrite": overwrite}
-        ).json()
+        )
+        response_json = response.json()
+
+        logger.debug(
+            f"Postera MoleculeSetAPI.update_molecules response: {response_json}, status code: {response.status_code}"
+        )
+        self._check_response_for_perm_error(response_json)
+        response.raise_for_status()
+
         try:
-            return response["moleculesUpdated"]
+            return response_json["moleculesUpdated"]
 
         except Exception as e:
             raise ValueError(
-                f"Update failed for molecule set {molecule_set_id}, with response: {response}"
+                f"Update failed for molecule set {molecule_set_id}, with response: {response_json}, status code: {response.status_code}"
             ) from e
 
     def update_molecules_from_df_with_manifold_validation(
