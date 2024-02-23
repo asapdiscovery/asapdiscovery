@@ -37,12 +37,6 @@ jobs:
       OE_LICENSE: ${{ github.workspace }}/oe_license.txt
 
     steps:
-
-    # - name: Set Swap Space
-    #   uses: pierotofy/set-swap-space@master
-    #   with:
-    #     swap-size-gb: 10
-
     - name: Checkout Repository
       uses: actions/checkout@v3
 
