@@ -308,28 +308,36 @@ def test_alchemy_prep_run_from_postera(
         assert result.exit_code == 0
 
 
-def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
+def test_alchemy_status_all(monkeypatch):
     """Mock testing the status all command."""
 
     from alchemiscale import AlchemiscaleClient
     from alchemiscale.models import ScopedKey
 
+    network_key = ScopedKey(
+        gufe_key="fakenetwork",
+        org="asap",
+        campaign="alchemy",
+        project="testing",
+    )
+
     def _get_resource(*args, **kwargs):
+        "We mock this as it changes the return on get scope status and get network status"
         return {"complete": 1, "running": 2, "waiting": 3}
 
     def get_network_keys(*args, **kwargs):
         """Mock a network key for a running network"""
         return [
-            ScopedKey(
-                gufe_key="fakenetwork",
-                org="asap",
-                campaign="alchemy",
-                project="testing",
-            )
+            network_key
         ]
+
+    def get_actioned(*args, **kwargs):
+        assert kwargs["network"] == network_key
+        return [i for i in range(5)]
 
     monkeypatch.setattr(AlchemiscaleClient, "_get_resource", _get_resource)
     monkeypatch.setattr(AlchemiscaleClient, "query_networks", get_network_keys)
+    monkeypatch.setattr(AlchemiscaleClient, "get_network_actioned_tasks", get_actioned)
 
     runner = CliRunner()
 
@@ -340,10 +348,36 @@ def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
         in result.stdout
     )
     assert (
-        "│ fakenetwork-asap-alchemy-testing │ 1    │ 2    │ 3     │ 0    │ 0     │ 0    │"
+        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2   │ 3   │ 0   │ 0    │ 0   │ 5    │"
         in result.stdout
     )
 
+
+def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
+    """Make sure an error is raised if the org is asap but the campaign is not in public or confidential."""
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the network to a local file
+        tyk2_fec_network.to_file("planned_network.json")
+        with pytest.raises(ValueError) as exp:
+            _ = runner.invoke(
+                alchemy,
+                [
+                    "submit",
+                    "-o",
+                    "asap",
+                    "-c",
+                    "fancy_campaign",
+                    "-p",
+                    "fancy_ligands"
+                ],
+                catch_exceptions=False
+            )
+            # cannot use match here due to regex escaping
+            assert exp.value.args[0] == "If organization (`-o`) is set to 'asap' (default), campaign (`-c`) must be either of 'public' or 'confidential'."
+            
 
 def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
     """Test predicting the absolute and relative free energies with no experimental data, interactive reports should

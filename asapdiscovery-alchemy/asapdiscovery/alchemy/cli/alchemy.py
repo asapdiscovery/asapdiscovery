@@ -393,11 +393,16 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
         table.add_column(
             "Deleted", overflow="fold", style="purple", header_style="purple"
         )
+        table.add_column(
+            "Actioned", overflow="fold", style="orange_red1", header_style="orange_red1"
+        )
         for key in running_networks:
+            # get status
             network_status = client._client.get_network_status(
                 network=key, visualize=False
             )
-            if "running" in network_status or "waiting" in network_status:
+            running_tasks = client._client.get_network_actioned_tasks(network=key)
+            if ("running" in network_status or "waiting" in network_status) and running_tasks:
                 table.add_row(
                     str(key),
                     str(network_status.get("complete", 0)),
@@ -406,6 +411,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                     str(network_status.get("error", 0)),
                     str(network_status.get("invalid", 0)),
                     str(network_status.get("deleted", 0)),
+                    str(len(running_tasks))
                 )
         status_breakdown.stop()
         console.print(table)
