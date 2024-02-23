@@ -22,7 +22,7 @@ from asapdiscovery.cli.cli_args import (
     walltime,
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.structural.selectors.selector_list import StructureSelector
+from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
 from asapdiscovery.docking.workflows.cross_docking import (
     CrossDockingWorkflowInputs,

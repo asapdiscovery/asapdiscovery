@@ -2,10 +2,10 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from asapdiscovery.data.dask_utils import DaskFailureMode
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
+from asapdiscovery.data.util.dask_utils import DaskFailureMode
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
+from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from pydantic import BaseModel, Field, root_validator
 
 logger = logging.getLogger(__name__)

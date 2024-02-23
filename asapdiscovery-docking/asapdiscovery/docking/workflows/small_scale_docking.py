@@ -2,16 +2,12 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
-from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.services.postera.manifold_artifacts import (
     ArtifactType,
     ManifoldArtifactUploader,
@@ -21,40 +17,20 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
-from asapdiscovery.data.services.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.services.services_config import (
     CloudfrontSettings,
-    Complex,
-    MCSSelector,
-    MetaLigandFactory,
-    MetaStructureFactory,
-    MoleculeSetAPI,
-    PosteraSettings,
-    PosteraUploader,
     S3Settings,
-    asapdiscovery.data.postera.molecule_set,
-    asapdiscovery.data.postera.postera_uploader,
-    asapdiscovery.data.schema.complex,
-    asapdiscovery.data.schema.ligand,
-    asapdiscovery.data.schema.meta_ligand_factory,
-    asapdiscovery.data.schema.meta_structure_factory,
-    asapdiscovery.data.selectors.mcs_selector,
-    asapdiscovery.data.services_config,
-    from,
-    import,
-    write_ligands_to_multi_sdf,
+    PosteraSettings,
 )
-from asapdiscovery.data.structural.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.structural.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.util.dask_utils import (
-    DaskType,
-    dask_cluster_from_type,
-    set_dask_config,
-)
+from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
+from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
+from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
-from asapdiscovery.data.utils.dask_utils import DaskType, make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
@@ -430,9 +406,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(

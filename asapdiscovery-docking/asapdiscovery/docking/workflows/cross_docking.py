@@ -6,31 +6,24 @@ Removes all the additional layers in the other workflows and adds some features 
 from pathlib import Path
 from shutil import rmtree
 
-<<<<<<< HEAD
 from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.readers.structure_dir import StructureDirFactory
-from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.structural.selectors.selector_list import StructureSelector
-from asapdiscovery.data.util.dask_utils import dask_cluster_from_type, set_dask_config
+from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.util.logging import FileLogger
 
-=======
-from asapdiscovery.data.dask_utils import make_dask_client_meta
-from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.util.dask_utils import make_dask_client_meta
+from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.data.selectors.selector_list import StructureSelector
+from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 
->>>>>>> upstream/main
 from asapdiscovery.docking.docking import DockingInputMultiStructure
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker

@@ -4,9 +4,9 @@ from enum import Enum
 from typing import Optional
 
 import pandas as pd
-from asapdiscovery.data.aws.cloudfront import CloudFront
-from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.services.aws.cloudfront import CloudFront
+from asapdiscovery.data.services.aws.s3 import S3
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetTags,
     map_output_col_to_manifold_tag,
 )

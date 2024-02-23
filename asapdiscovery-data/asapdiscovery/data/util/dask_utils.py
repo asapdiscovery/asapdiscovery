@@ -131,7 +131,7 @@ def backend_wrapper(kwargname):
     return backend_wrapper_inner
 
 
-def dask_vmap(kwargsnames):
+def dask_vmap(kwargsnames, remove_none=True):
     """
     Decorator to handle either returning a whole vector if not using dask, or using dask to parallelise over a vector
     if dask is being used
@@ -184,11 +184,15 @@ def dask_vmap(kwargsnames):
                     for name, value in zip(iterable_kwargs.keys(), values):
                         local_kwargs[name] = [value]
                     computations.append(dask.delayed(func)(*args, **local_kwargs))
-                return np.ravel(
+                results = np.ravel(
                     actualise_dask_delayed_iterable(
                         computations, dask_client=dask_client, errors=dask_failure_mode
                     )
                 ).tolist()
+                if remove_none:
+                    results = [r for r in results if r is not None]
+                return results
+
             else:
                 return func(*args, **kwargs)
 
