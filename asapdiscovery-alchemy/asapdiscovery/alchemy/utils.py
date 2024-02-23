@@ -283,3 +283,24 @@ class AlchemiscaleHelper:
                     )
                     error_data.append(failure)
         return error_data
+
+    def cancel_actioned_tasks(self, network_key: ScopedKey) -> list[ScopedKey]:
+        """
+        Cancel all currently actioned tasks on a network to stop all future compute.
+
+        Notes:
+            This removes the networks from the view of `asap-alchemy status -a`.
+            To run these tasks again they must be actioned.
+
+        Args:
+            network_key: The alchemiscale network key who's actioned tasks should be canceled.
+
+        Returns:
+            A list of the ScopedKeys of all canceled tasks.
+        """
+        actioned_tasks = self._client.get_network_actioned_tasks(network=network_key)
+        if actioned_tasks:
+            canceled_tasks = self._client.cancel_tasks(tasks=actioned_tasks, network=network_key)
+        else:
+            canceled_tasks = []
+        return canceled_tasks

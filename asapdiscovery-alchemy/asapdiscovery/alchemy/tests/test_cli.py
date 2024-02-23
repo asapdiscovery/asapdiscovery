@@ -2,6 +2,8 @@ import pathlib
 
 import pandas as pd
 import pytest
+from alchemiscale import AlchemiscaleClient
+from alchemiscale.models import ScopedKey
 from asapdiscovery.alchemy.cli.cli import alchemy
 from asapdiscovery.alchemy.schema.fec import (
     FreeEnergyCalculationFactory,
@@ -311,9 +313,6 @@ def test_alchemy_prep_run_from_postera(
 def test_alchemy_status_all(monkeypatch):
     """Mock testing the status all command."""
 
-    from alchemiscale import AlchemiscaleClient
-    from alchemiscale.models import ScopedKey
-
     network_key = ScopedKey(
         gufe_key="fakenetwork",
         org="asap",
@@ -351,6 +350,36 @@ def test_alchemy_status_all(monkeypatch):
         "│ fakenetwork-asap-alchemy-testing │ 1   │ 2   │ 3   │ 0   │ 0    │ 0   │ 5    │"
         in result.stdout
     )
+
+
+def test_alchemy_stop(monkeypatch):
+    """Test canceling the actioned tasks on a network"""
+
+    runner = CliRunner()
+
+    network_key = ScopedKey(
+        gufe_key="fakenetwork-12345",
+        org="asap",
+        campaign="alchemy",
+        project="testing",
+    )
+
+    def get_network_actioned_tasks(*args, **kwargs):
+        assert ScopedKey.from_str(kwargs["network"]) == network_key
+        return [1, 2, 3, 4]
+
+    def cancel_tasks(*args, **kwargs):
+        tasks = kwargs["tasks"]
+        network = ScopedKey.from_str(kwargs["network"])
+        assert network == network_key
+        return tasks
+
+    monkeypatch.setattr(AlchemiscaleClient, "get_network_actioned_tasks", get_network_actioned_tasks)
+    monkeypatch.setattr(AlchemiscaleClient, "cancel_tasks", cancel_tasks)
+
+    result = runner.invoke(alchemy, ["stop", "-nk", network_key])
+    assert result.exit_code == 0
+    assert "Canceled 4 actioned tasks for network fakenetwork-12345-asap-alchemy-testing" in result.stdout
 
 
 def test_submit_bad_campaign(tyk2_fec_network, tmpdir):

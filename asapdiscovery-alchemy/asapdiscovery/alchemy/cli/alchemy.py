@@ -489,19 +489,29 @@ def restart(network: str, verbose: bool, tasks):
 )
 def stop(network_key: str):
     """Stop (i.e. set to 'error') a network's running and waiting tasks."""
+    import rich
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    from rich import pretty
+    from rich.padding import Padding
+    from asapdiscovery.alchemy.cli.utils import print_header
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
 
     client = AlchemiscaleHelper()
-    running = client._client.get_network_tasks(network_key, status=["running"])
-    waiting = client._client.get_network_tasks(network_key, status=["waiting"])
+    cancel_status = console.status(f"Canceling actioned tasks on network {network_key}")
+    cancel_status.start()
+    canceled_tasks = client.cancel_actioned_tasks(network_key=network_key)
+    # check how many were canceled as some maybe None if not found
+    total_tasks = len([task for task in canceled_tasks if task is not None])
+    cancel_status.stop()
 
-    deleted = [
-        sc_k
-        for sc_k in client._client.set_tasks_status(running + waiting, "deleted")
-        if sc_k is not None
-    ]
-
-    print(f"Deleted {len(deleted)} tasks from network {network_key}.")
+    message = Padding(
+        f"Canceled {total_tasks} actioned tasks for network {network_key}",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
 
 
 @alchemy.command()
