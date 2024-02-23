@@ -1,6 +1,4 @@
 import pytest
-from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.operators.selectors.pairwise_selector import (
     LeaveOneOutSelector,
@@ -8,6 +6,8 @@ from asapdiscovery.data.operators.selectors.pairwise_selector import (
     PairwiseSelector,
     SelfDockingSelector,
 )
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to data
 
 

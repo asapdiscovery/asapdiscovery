@@ -3,10 +3,10 @@ from typing import Any, Literal, Optional, Union
 
 import rich
 from asapdiscovery.alchemy.schema.base import _SchemaBase
-from asapdiscovery.data.schema.complex import PreppedComplex
-from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.operators.state_expanders.protomer_expander import EpikExpander
 from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoExpander
+from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,

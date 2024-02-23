@@ -9,10 +9,10 @@ from asapdiscovery.data.backend.openeye import (
     oequacpac,
     save_openeye_sdfs,
 )
-from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.operators.state_expanders.state_expander import (
     StateExpanderBase,
 )
+from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import Field
 
 

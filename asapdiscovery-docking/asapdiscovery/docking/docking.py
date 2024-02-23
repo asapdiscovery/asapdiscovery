@@ -17,10 +17,7 @@ from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
-from asapdiscovery.data.util.dask_utils import (
-    BackendType,
-    DaskFailureMode,
-)
+from asapdiscovery.data.util.dask_utils import BackendType, DaskFailureMode
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
 

@@ -2,10 +2,10 @@ import logging
 from itertools import product
 from typing import ClassVar, Union
 
+from asapdiscovery.data.operators.selectors.selector import SelectorBase
 from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema.ligand import ChemicalRelationship, Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
-from asapdiscovery.data.operators.selectors.selector import SelectorBase
 
 logger = logging.getLogger(__name__)
 

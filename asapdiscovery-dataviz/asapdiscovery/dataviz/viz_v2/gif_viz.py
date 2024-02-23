@@ -3,7 +3,6 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
-from asapdiscovery.data.util.dask_utils import dask_vmap
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
@@ -12,6 +11,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
 from asapdiscovery.data.util.dask_utils import (
     DaskFailureMode,
     actualise_dask_delayed_iterable,
+    dask_vmap,
 )
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar

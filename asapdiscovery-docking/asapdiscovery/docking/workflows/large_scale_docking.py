@@ -10,16 +10,26 @@ from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.services.postera.manifold_artifacts import (
-from asapdiscovery.data.aws.cloudfront import CloudFront
-from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import BackendType, make_dask_client_meta
-from asapdiscovery.data.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.fitness import target_has_fitness_data
-from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.postera.manifold_artifacts import (
+    S3,
     ArtifactType,
+    BackendType,
+    CloudFront,
+    FileLogger,
+    LigandDeDuplicator,
     ManifoldArtifactUploader,
+    asapdiscovery.data.aws.cloudfront,
+    asapdiscovery.data.aws.s3,
+    asapdiscovery.data.dask_utils,
+    asapdiscovery.data.deduplicator,
+    asapdiscovery.data.fitness,
+    asapdiscovery.data.logging,
+    asapdiscovery.data.metadata.resources,
+    asapdiscovery.data.postera.manifold_artifacts,
+    from,
+    import,
+    make_dask_client_meta,
+    master_structures,
+    target_has_fitness_data,
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
@@ -28,16 +38,24 @@ from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.services.services_config import (
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
-from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
-from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.services_config import (
     CloudfrontSettings,
+    Complex,
+    MCSSelector,
+    MetaLigandFactory,
+    MetaStructureFactory,
+    MoleculeSetAPI,
     PosteraSettings,
+    PosteraUploader,
     S3Settings,
+    asapdiscovery.data.postera.molecule_set,
+    asapdiscovery.data.postera.postera_uploader,
+    asapdiscovery.data.schema_v2.complex,
+    asapdiscovery.data.schema_v2.meta_ligand_factory,
+    asapdiscovery.data.schema_v2.meta_structure_factory,
+    asapdiscovery.data.selectors.mcs_selector,
+    asapdiscovery.data.services_config,
+    from,
+    import,
 )
 from asapdiscovery.data.structural.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.structural.selectors.mcs_selector import MCSSelector

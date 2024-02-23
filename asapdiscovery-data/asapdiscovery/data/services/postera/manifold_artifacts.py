@@ -4,7 +4,6 @@ from enum import Enum
 from typing import Optional
 
 import pandas as pd
-from asapdiscovery.data.services.services_config import CloudfrontSettings, PosteraSettings, S3Settings
 from asapdiscovery.data.aws.cloudfront import CloudFront
 from asapdiscovery.data.aws.s3 import S3
 from asapdiscovery.data.postera.manifold_data_validation import (
@@ -12,7 +11,11 @@ from asapdiscovery.data.postera.manifold_data_validation import (
     map_output_col_to_manifold_tag,
 )
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
-
+from asapdiscovery.data.services.services_config import (
+    CloudfrontSettings,
+    PosteraSettings,
+    S3Settings,
+)
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import BaseModel, Field, root_validator
 

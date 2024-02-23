@@ -18,6 +18,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
 from asapdiscovery.data.structural.selectors.selector_list import StructureSelector
 from asapdiscovery.data.util.dask_utils import dask_cluster_from_type, set_dask_config
 from asapdiscovery.data.util.logging import FileLogger
+
 =======
 from asapdiscovery.data.dask_utils import make_dask_client_meta
 from asapdiscovery.data.logging import FileLogger
@@ -28,6 +29,7 @@ from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema_v2.molfile import MolFileFactory
 from asapdiscovery.data.selectors.selector_list import StructureSelector
+
 >>>>>>> upstream/main
 from asapdiscovery.docking.docking import DockingInputMultiStructure
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
