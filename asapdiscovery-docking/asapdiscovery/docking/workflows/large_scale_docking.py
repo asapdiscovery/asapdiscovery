@@ -3,15 +3,20 @@ from shutil import rmtree
 from typing import Optional
 
 from asapdiscovery.data.fitness import target_has_fitness_data
+from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
+from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
-from asapdiscovery.data.services.postera.manifold_data_validation import (
-    rename_output_columns_for_manifold,
-)
 from asapdiscovery.data.services.postera.manifold_artifacts import (
     ArtifactType,
     ManifoldArtifactUploader,
+)
+from asapdiscovery.data.services.postera.manifold_data_validation import (
+    rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
@@ -20,11 +25,6 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
-from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
@@ -378,9 +378,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
-            fitness_visualizations[DockingResultCols.TARGET_ID.value]
-        )
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
         # join the two dataframes on ligand_id, target_id and smiles
         scores_df = scores_df.merge(
