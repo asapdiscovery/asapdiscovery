@@ -156,6 +156,14 @@ class ManifoldArtifactUploader(BaseModel):
             subset_df = self.molecule_dataframe[
                 [artifact_column, self.manifold_id_column]
             ].copy()
+
+            # check if there is any data to upload
+            if subset_df[artifact_column].isnull().all():
+                logger.info(
+                    f"No data to upload for {artifact_type} from {artifact_column}"
+                )
+                continue
+
             # rename columns to match manifold
             output_tag_name = map_output_col_to_manifold_tag(ArtifactType, self.target)[
                 artifact_type.value
