@@ -24,7 +24,7 @@ from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
 
 if TYPE_CHECKING:
-    from asapdiscovery.data.schema_v2.ligand import Ligand
+    from asapdiscovery.data.schema.ligand import Ligand
 
 
 class AlchemiscaleSettings(BaseSettings):

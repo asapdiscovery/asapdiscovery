@@ -3,6 +3,7 @@ import mtenn
 import numpy as np
 import pytest
 import torch
+from asapdiscovery.data.backend.openeye import load_openeye_pdb
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.inference import GATInference, SchnetInference
 from numpy.testing import assert_allclose
@@ -188,8 +189,6 @@ def test_schnet_inference_predict_from_pose(docked_structure_file):
 
 
 def test_schnet_inference_predict_from_oemol(docked_structure_file):
-    from asapdiscovery.data.openeye import load_openeye_pdb
-
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
 
     pose_oemol = load_openeye_pdb(docked_structure_file)

@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 import mtenn
 import pooch
 import yaml
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from mtenn.config import ModelType
 from pydantic import BaseModel, Field, HttpUrl, validator

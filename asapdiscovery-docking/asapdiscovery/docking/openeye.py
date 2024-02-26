@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import ClassVar, Literal, Optional, Union
 
 import pandas as pd
-from asapdiscovery.data.dask_utils import dask_vmap
-from asapdiscovery.data.openeye import oechem, oedocking, oeomega
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.backend.openeye import oechem, oedocking, oeomega
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.util.dask_utils import dask_vmap
 from asapdiscovery.docking.docking import (
     DockingBase,
     DockingInputMultiStructure,

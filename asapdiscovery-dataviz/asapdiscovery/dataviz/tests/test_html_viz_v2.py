@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.viz_v2.html_viz import HTMLVisualizerV2
 from asapdiscovery.docking.openeye import POSITDockingResults
 

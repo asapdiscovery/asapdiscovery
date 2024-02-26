@@ -7,11 +7,11 @@ from typing import Any
 
 import numpy as np
 import torch
-from asapdiscovery.data.enum import StringEnum
-from asapdiscovery.data.schema import ExperimentalCompoundData
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.utils import extract_compounds_from_filenames
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.util.stringenum import StringEnum
+from asapdiscovery.data.util.utils import extract_compounds_from_filenames
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from pydantic import BaseModel, Field, root_validator

@@ -2,7 +2,7 @@ import abc
 from typing import Callable, Literal, Optional, Union
 
 import openfe
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import Field
 
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper

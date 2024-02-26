@@ -90,7 +90,7 @@ def plan(
     import openfe
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyDataSet
-    from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+    from asapdiscovery.data.readers.molfile import MolFileFactory
 
     # check mutually exclusive args
     if ligands is None and alchemy_dataset is None:

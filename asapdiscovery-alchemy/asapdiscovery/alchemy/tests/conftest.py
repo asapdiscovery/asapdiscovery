@@ -5,8 +5,8 @@ import pytest
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
-from asapdiscovery.data.schema_v2.complex import PreppedComplex
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
 from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure

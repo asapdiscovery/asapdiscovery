@@ -1,7 +1,7 @@
 import time
 
 import pytest
-from asapdiscovery.data.dask_utils import (
+from asapdiscovery.data.util.dask_utils import (
     DaskCluster,
     DaskType,
     LilacCPUConfig,

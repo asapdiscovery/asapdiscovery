@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Union  # noqa: F401
 
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
     TargetTags,
 )

@@ -2,9 +2,9 @@ import logging
 from enum import Enum
 from pathlib import Path
 
-from asapdiscovery.data.dask_utils import backend_wrapper, dask_vmap
 from asapdiscovery.data.fitness import target_has_fitness_data
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.util.dask_utils import backend_wrapper, dask_vmap
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
 from asapdiscovery.docking.docking import DockingResult
