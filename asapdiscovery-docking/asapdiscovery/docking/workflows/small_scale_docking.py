@@ -440,6 +440,24 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         message="No docking results passed the clash filter",
     )
 
+    # then order by chemgauss4 score
+    scores_df = scores_df.sort_values(
+        DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
+    )
+    scores_df.to_csv(
+        data_intermediates / "docking_scores_filtered_sorted.csv", index=False
+    )
+
+    # remove duplicates that are the same compound docked to different structures
+    scores_df = scores_df.drop_duplicates(
+        subset=[DockingResultCols.SMILES.value], keep="first"
+    )
+
+    n_duplicate_filtered = len(scores_df)
+    logger.info(
+        f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
+    )
+
     if inputs.md:
         local_cpu_client_gpu_override = False
         if (
