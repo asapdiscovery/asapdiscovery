@@ -547,8 +547,14 @@ class Trainer(BaseModel):
                     device=self.device,
                 ).float()
 
+                # Get input poses for GroupedModel
+                if self.model_config.grouped:
+                    model_inp = pose["poses"]
+                else:
+                    model_inp = pose
+
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(pose)
+                pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
                 loss = self.loss_func(pred, target, in_range, uncertainty)
@@ -625,8 +631,14 @@ class Trainer(BaseModel):
                     device=self.device,
                 ).float()
 
+                # Get input poses for GroupedModel
+                if self.model_config.grouped:
+                    model_inp = pose["poses"]
+                else:
+                    model_inp = pose
+
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(pose)
+                pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
                 loss = self.loss_func(pred, target, in_range, uncertainty)
@@ -665,8 +677,14 @@ class Trainer(BaseModel):
                     device=self.device,
                 ).float()
 
+                # Get input poses for GroupedModel
+                if self.model_config.grouped:
+                    model_inp = pose["poses"]
+                else:
+                    model_inp = pose
+
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(pose)
+                pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
                 loss = self.loss_func(pred, target, in_range, uncertainty)
