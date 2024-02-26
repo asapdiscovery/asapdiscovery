@@ -249,6 +249,15 @@ class FINTScorer(ScorerBase):
         return results
 
 
+_ml_scorer_classes_meta = []
+
+
+# decorator to register all the ml scorers
+def register_ml_scorer(cls):
+    _ml_scorer_classes_meta.append(cls)
+    return cls
+
+
 class MLModelScorer(ScorerBase):
     """
     Score from some kind of ML model
@@ -302,6 +311,7 @@ class MLModelScorer(ScorerBase):
         )
 
 
+@register_ml_scorer
 class GATScorer(MLModelScorer):
     """
     Scoring using GAT ML Model
@@ -325,6 +335,7 @@ class GATScorer(MLModelScorer):
         return results
 
 
+@register_ml_scorer
 class SchnetScorer(MLModelScorer):
     """
     Scoring using Schnet ML Model
@@ -348,6 +359,7 @@ class SchnetScorer(MLModelScorer):
         return results
 
 
+@register_ml_scorer
 class E3NNScorer(MLModelScorer):
     """
     Scoring using e3nn ML Model
@@ -369,14 +381,6 @@ class E3NNScorer(MLModelScorer):
                 )
             )
         return results
-
-
-_ml_scorer_classes_meta = [
-    MLModelScorer,
-    GATScorer,
-    SchnetScorer,
-    E3NNScorer,
-]
 
 
 def get_ml_scorer_cls_from_model_type(model_type: ModelType):
