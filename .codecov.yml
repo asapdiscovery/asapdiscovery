@@ -6,7 +6,7 @@ coverage:
       default:
         threshold: 50%
         ignore:
-          - "**/**/tests/**/*.py"
+          - "**/test_*.py"
 comment:
   layout: "header"
   require_changes: false
