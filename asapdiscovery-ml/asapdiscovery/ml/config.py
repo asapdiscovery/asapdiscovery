@@ -714,23 +714,10 @@ class DatasetSplitterConfig(BaseModel):
         else:
             iter_list = ds.structures
         for i, iter_item in enumerate(iter_list):
-            if self.grouped:
-                # Take the earliest date from all structures (they should all be the same,
-                #  but just in case)
-                all_dates = [
-                    s["date_created"]
-                    for s in ds.structures[iter_item]
-                    if "date_created" in s
-                ]
-                if len(all_dates) == 0:
-                    raise ValueError("Dataset doesn't contain dates.")
-                else:
-                    date_created = min(all_dates)
-            else:
-                try:
-                    date_created = iter_item["date_created"]
-                except KeyError:
-                    raise ValueError("Dataset doesn't contain dates.")
+            try:
+                date_created = iter_item["date_created"]
+            except KeyError:
+                raise ValueError("Dataset doesn't contain dates.")
             try:
                 dates_dict[date_created].append(i)
             except KeyError:
