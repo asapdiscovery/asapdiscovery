@@ -4,9 +4,10 @@ Tests for downloading and processing Moonshot data from CDD.
 
 import os
 
+import pandas
 import pytest
 import requests_mock
-from asapdiscovery.data.cdd import (
+from asapdiscovery.data.services.cdd.cdd_download import (
     CDD_URL,
     MOONSHOT_ALL_SMI_SEARCH,
     MOONSHOT_NONCOVALENT_SMI_SEARCH,
@@ -15,6 +16,10 @@ from asapdiscovery.data.cdd import (
     download_url,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.data.util.utils import (
+    filter_molecules_dataframe,
+    parse_fluorescence_data_cdd,
+)
 from numpy.testing import assert_allclose
 
 # Columns added by filter_molecules_dataframe
@@ -230,9 +235,6 @@ def test_filter_df(
     retain_semiquantitative_data,
     filter_df_files,
 ):
-    import pandas
-    from asapdiscovery.data.utils import filter_molecules_dataframe
-
     in_fn, all_out_fns = filter_df_files
     flags = (
         retain_achiral,
@@ -262,10 +264,6 @@ def test_filter_df(
 @pytest.mark.parametrize("keep_best", [True, False])
 @pytest.mark.parametrize("cp_values", [None, [0.375, 9.5]])
 def test_parse_fluorescence(keep_best, cp_values, parse_df_files):
-    print(keep_best, cp_values, flush=True)
-    import pandas
-    from asapdiscovery.data.utils import parse_fluorescence_data_cdd
-
     in_fn, all_out_fns = parse_df_files
     flags = (keep_best, bool(cp_values))
     out_fn = all_out_fns[flags]

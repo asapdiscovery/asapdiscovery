@@ -6,8 +6,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.openeye import oechem, oeshape
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.backend.openeye import oechem, oeshape
+from asapdiscovery.data.schema.ligand import Ligand
 
 
 class DockingDataset:

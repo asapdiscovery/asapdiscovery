@@ -2,34 +2,34 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from asapdiscovery.data.aws.cloudfront import CloudFront
-from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import DaskType, make_dask_client_meta
-from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
-from asapdiscovery.data.logging import FileLogger
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.postera.manifold_artifacts import (
+from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
+from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.services.aws.cloudfront import CloudFront
+from asapdiscovery.data.services.aws.s3 import S3
+from asapdiscovery.data.services.postera.manifold_artifacts import (
     ArtifactType,
     ManifoldArtifactUploader,
 )
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
-from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.schema_v2.meta_ligand_factory import MetaLigandFactory
-from asapdiscovery.data.schema_v2.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.services_config import (
+from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
+from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
+from asapdiscovery.data.services.services_config import (
     CloudfrontSettings,
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.utils import check_empty_dataframe
+from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
+from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
@@ -438,6 +438,24 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         fail="raise",
         tag="scores",
         message="No docking results passed the clash filter",
+    )
+
+    # then order by chemgauss4 score
+    scores_df = scores_df.sort_values(
+        DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
+    )
+    scores_df.to_csv(
+        data_intermediates / "docking_scores_filtered_sorted.csv", index=False
+    )
+
+    # remove duplicates that are the same compound docked to different structures
+    scores_df = scores_df.drop_duplicates(
+        subset=[DockingResultCols.SMILES.value], keep="first"
+    )
+
+    n_duplicate_filtered = len(scores_df)
+    logger.info(
+        f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
 
     if inputs.md:

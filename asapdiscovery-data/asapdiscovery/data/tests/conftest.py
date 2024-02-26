@@ -1,8 +1,8 @@
 import pytest
-from asapdiscovery.data.cdd_api import CDDAPI
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.services_config import CDDSettings
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
+from asapdiscovery.data.services.services_config import CDDSettings
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 

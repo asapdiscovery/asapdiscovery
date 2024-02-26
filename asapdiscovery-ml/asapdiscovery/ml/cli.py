@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 import pydantic
 import torch
-from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
+from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
     ds_cache_overwrite,
     ds_config_cache_overwrite,

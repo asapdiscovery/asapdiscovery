@@ -2,12 +2,12 @@ import logging
 import shutil
 from pathlib import Path
 
-from asapdiscovery.data.dask_utils import dask_vmap
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
     TargetTags,
 )
+from asapdiscovery.data.util.dask_utils import dask_vmap
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar
 from asapdiscovery.dataviz.show_contacts import show_contacts
@@ -265,13 +265,13 @@ class GIFVisualizerV2(VisualizerBase):
             row = {}
             row[
                 DockingResultCols.LIGAND_ID.value
-            ] = res.input_docking_result.input_pair.ligand.compound_name
+            ] = res.input_docking_result.posed_ligand.compound_name
             row[
                 DockingResultCols.TARGET_ID.value
             ] = res.input_docking_result.input_pair.complex.target.target_name
             row[
                 DockingResultCols.SMILES.value
-            ] = res.input_docking_result.input_pair.ligand.smiles
+            ] = res.input_docking_result.posed_ligand.smiles
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data

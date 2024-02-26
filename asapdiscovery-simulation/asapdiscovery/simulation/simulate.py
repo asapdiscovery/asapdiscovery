@@ -8,12 +8,12 @@ import dask
 import mdtraj
 import openmm
 import pandas as pd
-from asapdiscovery.data.dask_utils import (
+from asapdiscovery.data.backend.openeye import save_openeye_pdb
+from asapdiscovery.data.util.dask_utils import (
     DaskFailureMode,
     actualise_dask_delayed_iterable,
 )
-from asapdiscovery.data.enum import StringEnum
-from asapdiscovery.data.openeye import save_openeye_pdb
+from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.docking.docking import DockingResult
 from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter

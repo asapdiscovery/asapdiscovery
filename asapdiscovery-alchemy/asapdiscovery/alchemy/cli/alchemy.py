@@ -90,7 +90,7 @@ def plan(
     import openfe
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyDataSet
-    from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+    from asapdiscovery.data.readers.molfile import MolFileFactory
 
     # check mutually exclusive args
     if ligands is None and alchemy_dataset is None:
@@ -180,7 +180,7 @@ def plan(
     "-c",
     "--campaign",
     type=click.STRING,
-    help="The name of the campaign in alchemiscale the network should be submitted to.",
+    help="The name of the campaign in alchemiscale the network should be submitted to. If `-o` is set to 'asap' (default), `-c` must be either of 'public' or 'confidential'.",
     required=True,
 )
 @click.option(
@@ -190,7 +190,17 @@ def plan(
     help="The name of the project in alchemiscale the network should be submitted to.",
     required=True,
 )
-def submit(network: str, organization: str, campaign: str, project: str):
+@click.option(
+    "-pr",
+    "--prioritize",
+    type=click.BOOL,
+    default=None,
+    help="Whether to prioritize the submitted network to have the highest priority of all currently running/waiting networks, or to de-prioritize it instead. Defaults to 0.5 which is the `alchemiscale` default network priority.",
+    show_default=True,
+)
+def submit(
+    network: str, organization: str, campaign: str, project: str, prioritize: bool
+):
     """
     Submit a local FreeEnergyCalculationNetwork to alchemiscale using the provided scope details. The network object
     will have these details saved into it.
@@ -204,6 +214,12 @@ def submit(network: str, organization: str, campaign: str, project: str):
     from alchemiscale import Scope
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+
+    # make sure the org/campaign combination is valid
+    if organization == "asap" and campaign not in ("public", "confidential"):
+        raise ValueError(
+            "If organization (`-o`) is set to 'asap' (default), campaign (`-c`) must be either of 'public' or 'confidential'."
+        )
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
@@ -224,7 +240,9 @@ def submit(network: str, organization: str, campaign: str, project: str):
     submitted_network.to_file(network)
     # now action the tasks
     click.echo("Creating and actioning FEC tasks on Alchemiscale...")
-    task_ids = client.action_network(planned_network=submitted_network)
+    task_ids = client.action_network(
+        planned_network=submitted_network, prioritize=prioritize
+    )
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
@@ -375,11 +393,18 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
         table.add_column(
             "Deleted", overflow="fold", style="purple", header_style="purple"
         )
+        table.add_column(
+            "Actioned", overflow="fold", style="orange_red1", header_style="orange_red1"
+        )
         for key in running_networks:
+            # get status
             network_status = client._client.get_network_status(
                 network=key, visualize=False
             )
-            if "running" in network_status or "waiting" in network_status:
+            running_tasks = client._client.get_network_actioned_tasks(network=key)
+            if (
+                "running" in network_status or "waiting" in network_status
+            ) and running_tasks:
                 table.add_row(
                     str(key),
                     str(network_status.get("complete", 0)),
@@ -388,6 +413,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                     str(network_status.get("error", 0)),
                     str(network_status.get("invalid", 0)),
                     str(network_status.get("deleted", 0)),
+                    str(len(running_tasks)),
                 )
         status_breakdown.stop()
         console.print(table)
@@ -453,6 +479,41 @@ def restart(network: str, verbose: bool, tasks):
         click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
     else:
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
+
+
+@alchemy.command()
+@click.option(
+    "-nk",
+    "--network-key",
+    type=click.STRING,
+    help="The network key of the network to be stopped. This can be found by running e.g. `asap-alchemy status -a`.",
+    required=True,
+)
+def stop(network_key: str):
+    """Stop (i.e. set to 'error') a network's running and waiting tasks."""
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    from rich import pretty
+    from rich.padding import Padding
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    client = AlchemiscaleHelper()
+    cancel_status = console.status(f"Canceling actioned tasks on network {network_key}")
+    cancel_status.start()
+    canceled_tasks = client.cancel_actioned_tasks(network_key=network_key)
+    # check how many were canceled as some maybe None if not found
+    total_tasks = len([task for task in canceled_tasks if task is not None])
+    cancel_status.stop()
+
+    message = Padding(
+        f"Canceled {total_tasks} actioned tasks for network {network_key}",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
 
 
 @alchemy.command()

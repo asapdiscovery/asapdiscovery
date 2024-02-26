@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from asapdiscovery.data.aws.s3 import S3
+from asapdiscovery.data.services.aws.s3 import S3
 from boto3.session import Session
 from moto.server import ThreadedMotoServer
 

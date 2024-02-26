@@ -6,9 +6,9 @@ import dgl
 import mtenn
 import numpy as np
 import torch
-from asapdiscovery.data.openeye import oechem
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.backend.openeye import oechem, oemol_to_pdb_string
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml.models import (
@@ -371,8 +371,6 @@ class StructuralInference(InferenceBase):
             Model prediction(s)
         """
         from io import StringIO
-
-        from asapdiscovery.data.openeye import oechem, oemol_to_pdb_string
 
         if isinstance(pose, oechem.OEMolBase):
             pose = [pose]

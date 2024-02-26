@@ -6,18 +6,18 @@ from typing import ClassVar, Optional, Union
 
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.dask_utils import (
+from asapdiscovery.data.backend.openeye import oedocking
+from asapdiscovery.data.backend.plip import compute_fint_score
+from asapdiscovery.data.fitness import target_has_fitness_data
+from asapdiscovery.data.schema.ligand import LigandIdentifiers
+from asapdiscovery.data.schema.target import TargetIdentifiers
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.util.dask_utils import (
     BackendType,
     DaskFailureMode,
     backend_wrapper,
     dask_vmap,
 )
-from asapdiscovery.data.fitness import target_has_fitness_data
-from asapdiscovery.data.openeye import oedocking
-from asapdiscovery.data.plip import compute_fint_score
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
-from asapdiscovery.data.schema_v2.target import TargetIdentifiers
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type

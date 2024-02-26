@@ -3,13 +3,13 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
-from asapdiscovery.data.postera import (
+from asapdiscovery.data.services.postera import (
     Molecule,
     MoleculeList,
     MoleculeSetAPI,
     MoleculeUpdateList,
 )
-from asapdiscovery.data.services_config import PosteraSettings
+from asapdiscovery.data.services.services_config import PosteraSettings
 from requests import Session
 
 

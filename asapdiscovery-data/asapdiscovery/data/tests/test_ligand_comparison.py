@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.schema_v2.ligand import ChemicalRelationship, Ligand
+from asapdiscovery.data.schema.ligand import ChemicalRelationship, Ligand
 
 
 @pytest.fixture(scope="session")

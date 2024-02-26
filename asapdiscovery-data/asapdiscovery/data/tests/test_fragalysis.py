@@ -5,15 +5,18 @@ import os
 import shutil
 
 import pytest
-from asapdiscovery.data import fragalysis
-from asapdiscovery.data.schema import CrystalCompoundData
+from asapdiscovery.data.schema.legacy import CrystalCompoundData
+from asapdiscovery.data.services.fragalysis.fragalysis_download import (
+    API_CALL_BASE,
+    download,
+    parse_fragalysis,
+)
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
 @pytest.fixture
 def mpro_fragalysis_api_call(scope="session"):
     """Fragalysis API call for downloading target data"""
-    from asapdiscovery.data.fragalysis import API_CALL_BASE
 
     api_call = copy.deepcopy(API_CALL_BASE)
     api_call["target_name"] = "Mpro"
@@ -23,8 +26,6 @@ def mpro_fragalysis_api_call(scope="session"):
 @pytest.fixture
 def mac1_fragalysis_api_call(scope="session"):
     """Fragalysis API call for downloading target data"""
-    from asapdiscovery.data.fragalysis import API_CALL_BASE
-
     api_call = copy.deepcopy(API_CALL_BASE)
     api_call["target_name"] = "Mac1"
     return api_call
@@ -37,17 +38,13 @@ class TestFragalysisDownload:
     def test_download_fragalysis_mpro_zip(self, tmp_path, mpro_fragalysis_api_call):
         """Checks downloading target zip file dataset from fragalysis"""
         zip_file = tmp_path / "mpro_fragalysis.zip"
-        fragalysis.download(
-            zip_file, mpro_fragalysis_api_call, extract=False
-        )  # don't extract
+        download(zip_file, mpro_fragalysis_api_call, extract=False)  # don't extract
         assert os.path.exists(zip_file)
 
     def test_download_fragalysis_mac1_zip(self, tmp_path, mac1_fragalysis_api_call):
         """Checks downloading target zip file dataset from fragalysis"""
         zip_file = tmp_path / "mac1_fragalysis.zip"
-        fragalysis.download(
-            zip_file, mac1_fragalysis_api_call, extract=False
-        )  # don't extract
+        download(zip_file, mac1_fragalysis_api_call, extract=False)  # don't extract
         assert os.path.exists(zip_file)
 
     def test_failed_download_fragalysis_target(
@@ -59,12 +56,12 @@ class TestFragalysisDownload:
         mpro_fragalysis_api_call["target_name"] = "ThisIsNotATargetName"
         with pytest.raises(HTTPError):
             zip_file = tmp_path / "fragalysis.zip"
-            fragalysis.download(zip_file, mpro_fragalysis_api_call)
+            download(zip_file, mpro_fragalysis_api_call)
 
     def test_sdfs_pdbs_fragalysis_download(self, tmp_path, mpro_fragalysis_api_call):
         """Test SDF and PDB files exists in downloaded fragalysis zip file"""
         zip_file = tmp_path / "mpro_fragalysis.zip"
-        fragalysis.download(zip_file, mpro_fragalysis_api_call, extract=True)  # extract
+        download(zip_file, mpro_fragalysis_api_call, extract=True)  # extract
         # Make sure there are sdf and pdb files in the extracted files
         assert glob.glob(
             f"{zip_file.parent}/**/*.sdf", recursive=True
@@ -89,6 +86,6 @@ def local_fragalysis(tmp_path):
 
 
 def test_parse_fragalysis(metadata_csv, local_fragalysis):
-    xtals = fragalysis.parse_fragalysis(metadata_csv, local_fragalysis)
+    xtals = parse_fragalysis(metadata_csv, local_fragalysis)
     assert len(xtals) == 1
     assert type(xtals[0]) is CrystalCompoundData

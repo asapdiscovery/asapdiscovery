@@ -1,7 +1,7 @@
 import abc
 
 import pandas as pd
-from asapdiscovery.data.dask_utils import BackendType, DaskFailureMode
+from asapdiscovery.data.util.dask_utils import BackendType, DaskFailureMode
 from asapdiscovery.docking.docking import DockingResult
 from pydantic import BaseModel
 

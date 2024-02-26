@@ -2,6 +2,8 @@ import pathlib
 
 import pandas as pd
 import pytest
+from alchemiscale import AlchemiscaleClient
+from alchemiscale.models import ScopedKey
 from asapdiscovery.alchemy.cli.cli import alchemy
 from asapdiscovery.alchemy.schema.fec import (
     FreeEnergyCalculationFactory,
@@ -11,7 +13,7 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
     AlchemyDataSet,
     AlchemyPrepWorkflow,
 )
-from asapdiscovery.data.cdd_api import CDDAPI
+from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
 from rdkit import Chem
@@ -267,8 +269,8 @@ def test_alchemy_prep_run_from_postera(
 ):
     """Test running the alchemy prep workflow on a set of mac1 ligands downloaded from postera."""
     from asapdiscovery.alchemy.cli import utils
-    from asapdiscovery.data.schema_v2.ligand import Ligand
-    from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+    from asapdiscovery.data.readers.molfile import MolFileFactory
+    from asapdiscovery.data.schema.ligand import Ligand
 
     # locate the ligands input file
     ligand_file = fetch_test_file("constrained_conformer/mac1_ligands.smi")
@@ -308,28 +310,33 @@ def test_alchemy_prep_run_from_postera(
         assert result.exit_code == 0
 
 
-def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
+def test_alchemy_status_all(monkeypatch):
     """Mock testing the status all command."""
+    monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
+    monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
 
-    from alchemiscale import AlchemiscaleClient
-    from alchemiscale.models import ScopedKey
+    network_key = ScopedKey(
+        gufe_key="fakenetwork",
+        org="asap",
+        campaign="alchemy",
+        project="testing",
+    )
 
     def _get_resource(*args, **kwargs):
+        "We mock this as it changes the return on get scope status and get network status"
         return {"complete": 1, "running": 2, "waiting": 3}
 
     def get_network_keys(*args, **kwargs):
         """Mock a network key for a running network"""
-        return [
-            ScopedKey(
-                gufe_key="fakenetwork",
-                org="asap",
-                campaign="alchemy",
-                project="testing",
-            )
-        ]
+        return [network_key]
+
+    def get_actioned(*args, **kwargs):
+        assert kwargs["network"] == network_key
+        return [i for i in range(5)]
 
     monkeypatch.setattr(AlchemiscaleClient, "_get_resource", _get_resource)
     monkeypatch.setattr(AlchemiscaleClient, "query_networks", get_network_keys)
+    monkeypatch.setattr(AlchemiscaleClient, "get_network_actioned_tasks", get_actioned)
 
     runner = CliRunner()
 
@@ -340,9 +347,67 @@ def test_alchemy_status_all(monkeypatch, alchemiscale_helper):
         in result.stdout
     )
     assert (
-        "│ fakenetwork-asap-alchemy-testing │ 1    │ 2    │ 3     │ 0    │ 0     │ 0    │"
+        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2   │ 3   │ 0   │ 0    │ 0   │ 5    │"
         in result.stdout
     )
+
+
+def test_alchemy_stop(monkeypatch):
+    """Test canceling the actioned tasks on a network"""
+    monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
+    monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
+
+    runner = CliRunner()
+
+    network_key = ScopedKey(
+        gufe_key="fakenetwork-12345",
+        org="asap",
+        campaign="alchemy",
+        project="testing",
+    )
+
+    def get_network_actioned_tasks(*args, **kwargs):
+        assert ScopedKey.from_str(kwargs["network"]) == network_key
+        return [1, 2, 3, 4]
+
+    def cancel_tasks(*args, **kwargs):
+        tasks = kwargs["tasks"]
+        network = ScopedKey.from_str(kwargs["network"])
+        assert network == network_key
+        return tasks
+
+    monkeypatch.setattr(
+        AlchemiscaleClient, "get_network_actioned_tasks", get_network_actioned_tasks
+    )
+    monkeypatch.setattr(AlchemiscaleClient, "cancel_tasks", cancel_tasks)
+
+    result = runner.invoke(alchemy, ["stop", "-nk", network_key])
+    assert result.exit_code == 0
+    assert (
+        "Canceled 4 actioned tasks for network fakenetwork-12345-asap-alchemy-testing"
+        in result.stdout
+    )
+
+
+def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
+    """Make sure an error is raised if the org is asap but the campaign is not in public or confidential."""
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the network to a local file
+        tyk2_fec_network.to_file("planned_network.json")
+        with pytest.raises(ValueError) as exp:
+            _ = runner.invoke(
+                alchemy,
+                ["submit", "-o", "asap", "-c", "fancy_campaign", "-p", "fancy_ligands"],
+                catch_exceptions=False,
+            )
+            # cannot use match here due to regex escaping
+            assert (
+                exp.value.args[0]
+                == "If organization (`-o`) is set to 'asap' (default), campaign (`-c`) must be either of 'public' or 'confidential'."
+            )
 
 
 def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
