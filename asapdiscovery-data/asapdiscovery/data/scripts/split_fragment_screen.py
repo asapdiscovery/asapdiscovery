@@ -20,13 +20,14 @@ import os
 from pathlib import Path
 
 import networkx as nx
-from asapdiscovery.data.openeye import (
+from pymol import cmd
+
+from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
     save_openeye_pdb,
     save_openeye_sdfs,
 )
-from pymol import cmd
 
 
 # Arguments define the input file and the output file
@@ -76,7 +77,7 @@ def split_ligands(directory, input_file, structure_name):
     # Where original file is from
     local_path = Path(directory)
     # Where ending strucutures will be put into
-    output_path = Path(directory) / "output"
+    output_path = local_path / "output"
     output_path.mkdir()
 
     # Load structure into pymol
@@ -142,10 +143,27 @@ def split_ligands(directory, input_file, structure_name):
         output_file = str(lig_pdb_file.stem) + "_protein.pdb"
         save_openeye_pdb(lig_protein, output_path / output_file)
         # Delete the ligand pdb since no longer useful
-        os.remove(lig_pdb_file)
+        # os.remove(lig_pdb_file)
 
     # Remove the pdb file with just the protein structure
     os.remove(protein_file)
+
+
+# Add a filtering step to see if the ligand is actually in the output file
+# Try to see if all the files have a ligand in them
+def check_lig_presence(directory):
+    folder = Path(directory) / "output"
+    count = 1
+    for pdb_file in folder.glob("lig_*_protein.pdb"):
+        # Distinguish the structures
+        structure_name = count
+        cmd.load(folder / pdb_file, structure_name)
+        selection = f"{structure_name} and resn LIG"
+        # If the file does not contain any ligands
+        if cmd.count_atoms(selection) == 0:
+            # Print out the file name with a warning
+            print("This file does not contain a ligand:\n" + str(pdb_file))
+        count += 1
 
 
 def main():
