@@ -1,4 +1,4 @@
-from asapdiscovery.data.dask_utils import LilacDaskCluster, LilacGPUDaskCluster
+from asapdiscovery.data.util.dask_utils import LilacDaskCluster, LilacGPUDaskCluster
 
 
 def test_LilacDaskCluster():

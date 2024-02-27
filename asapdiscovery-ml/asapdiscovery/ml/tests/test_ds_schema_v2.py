@@ -2,16 +2,16 @@ from datetime import datetime
 from functools import reduce
 
 import pytest
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
-from asapdiscovery.ml.schema_v2.config import (
+from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterConfig,
     DatasetSplitterType,
     DatasetType,
 )
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 
 
 @pytest.fixture(scope="session")

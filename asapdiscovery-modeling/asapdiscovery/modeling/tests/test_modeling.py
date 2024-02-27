@@ -1,9 +1,5 @@
-# This test suite can be run with a local path to save the output, ie:
-# pytest test_modeling_utils.py --local_path=/path/to/save/files
-# without a local path, output files will not be written
-
 import pytest
-from asapdiscovery.data.openeye import load_openeye_pdb, oechem
+from asapdiscovery.data.backend.openeye import load_openeye_pdb, oechem
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
@@ -41,7 +37,7 @@ def test_simple_splitting_keep_one_lig(oemol):
 
 
 @pytest.mark.parametrize("ligand_chain", ["A", "B"])
-def test_ligand_splitting(local_path, ligand_chain, oemol):
+def test_ligand_splitting(ligand_chain, oemol):
     """
     Test splitting when we just care about ligand.
     """
@@ -57,7 +53,7 @@ def test_ligand_splitting(local_path, ligand_chain, oemol):
 
 
 @pytest.mark.parametrize("protein_chains", [["A"], ["B"], ["A", "B"]])
-def test_protein_splitting(local_path, protein_chains, oemol):
+def test_protein_splitting(protein_chains, oemol):
     """
     Test splitting when we just care about protein.
     """
@@ -74,7 +70,7 @@ def test_protein_splitting(local_path, protein_chains, oemol):
 
 @pytest.mark.parametrize("ligand_chain", ["A", "B"])
 @pytest.mark.parametrize("protein_chains", [["A"], ["B"], ["A", "B"]])
-def test_prot_and_lig_splitting(local_path, protein_chains, ligand_chain, oemol):
+def test_prot_and_lig_splitting(protein_chains, ligand_chain, oemol):
     """
     Test splitting when we care about protein and ligand.
     """

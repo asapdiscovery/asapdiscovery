@@ -2,8 +2,8 @@ from pathlib import Path
 
 import click
 import torch
-from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
-from asapdiscovery.ml.schema_v2.config import (
+from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
+from asapdiscovery.ml.config import (
     DatasetSplitterType,
     EarlyStoppingType,
     LossFunctionType,

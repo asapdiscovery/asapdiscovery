@@ -1,9 +1,9 @@
 import pytest
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.docking.docking_v2 import DockingInputPair
+from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to data
 
 
 @pytest.fixture(scope="session")

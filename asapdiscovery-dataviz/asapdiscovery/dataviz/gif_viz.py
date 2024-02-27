@@ -4,12 +4,14 @@ from pathlib import Path
 from typing import Union  # noqa: F401
 
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.postera.manifold_data_validation import TargetProteinMap
+from asapdiscovery.data.services.postera.manifold_data_validation import (
+    TargetProteinMap,
+    TargetTags,
+)
 
 from ._gif_blocks import GIFBlockData
 from .resources.fonts import opensans_regular
 from .show_contacts import show_contacts
-from .viz_targets import VizTargets
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,7 @@ class GIFVisualizer:
     Class for generating GIF visualizations of MD trajectories.
     """
 
-    allowed_targets = VizTargets.get_allowed_targets()
+    allowed_targets = TargetTags.get_values()
 
     # TODO: replace input with a schema rather than paths.
     def __init__(
@@ -49,7 +51,7 @@ class GIFVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of the allowed targets in VizTargets
+            Target to visualize poses for. Must be one of the allowed targets
         pse : bool
             Whether to write PyMol session files.
         smooth : int

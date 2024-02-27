@@ -1,6 +1,6 @@
 import logging
 
-from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.util.logging import FileLogger
 
 
 def run_func(name):

@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from asapdiscovery.data.openeye import load_openeye_pdb
-from asapdiscovery.data.plip import compute_fint_score
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
+from asapdiscovery.data.backend.openeye import load_openeye_pdb
+from asapdiscovery.data.backend.plip import compute_fint_score
+from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 

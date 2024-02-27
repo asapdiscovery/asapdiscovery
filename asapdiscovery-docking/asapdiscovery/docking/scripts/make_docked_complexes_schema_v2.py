@@ -6,11 +6,11 @@ import multiprocessing as mp
 from functools import partial
 from pathlib import Path
 
-from asapdiscovery.data.openeye import load_openeye_sdfs
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.schema_v2.target import Target
-from asapdiscovery.data.utils import (
+from asapdiscovery.data.backend.openeye import load_openeye_sdfs
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.target import Target
+from asapdiscovery.data.util.utils import (
     MOONSHOT_CDD_ID_REGEX,
     MPRO_ID_REGEX,
     construct_regex_function,

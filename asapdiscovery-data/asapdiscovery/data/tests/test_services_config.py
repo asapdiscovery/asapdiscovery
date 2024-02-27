@@ -2,7 +2,7 @@ import os
 from unittest import mock
 
 import pytest
-from asapdiscovery.data.services_config import (
+from asapdiscovery.data.services.services_config import (
     CloudfrontSettings,
     PosteraSettings,
     S3Settings,
@@ -67,7 +67,7 @@ def mock_cloudfront_env_vars():
 @pytest.fixture()
 def mock_cloudfront_pem_file_exists():
     with mock.patch(
-        "asapdiscovery.data.services_config.Path.exists", return_value=True
+        "asapdiscovery.data.services.services_config.Path.exists", return_value=True
     ):
         yield
 

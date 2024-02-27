@@ -1,6 +1,7 @@
 import itertools
 from uuid import uuid4
 
+import pytest
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
@@ -60,8 +61,18 @@ def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert status == {"complete": 1}
 
 
-def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
-    """Make sure the helper can action tasks on alchemiscale"""
+@pytest.mark.parametrize(
+    "priority, expected_weight",
+    [
+        pytest.param(None, 0.5, id="None"),
+        pytest.param(True, 0.51, id="True"),
+        pytest.param(False, 0.49, id="False"),
+    ],
+)
+def test_action_tasks(
+    monkeypatch, tyk2_fec_network, alchemiscale_helper, priority, expected_weight
+):
+    """Make sure the helper can action tasks on alchemiscale with the correct priority"""
 
     client = alchemiscale_helper
 
@@ -92,19 +103,25 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
             for _ in range(count)
         ]
 
-    def action_tasks(tasks, network):
+    def action_tasks(tasks, network, weight):
         "mock actioning tasks"
         # make sure we get the correct key for the submission
         assert network == network_key
+        # make sure we get the expected weight for this priority
+        assert weight == expected_weight
         return tasks
+
+    def actioned_weights():
+        return [0.5]
 
     monkeypatch.setattr(
         client._client, "get_network_transformations", get_network_transformations
     )
     monkeypatch.setattr(client._client, "create_tasks", create_tasks)
     monkeypatch.setattr(client._client, "action_tasks", action_tasks)
+    monkeypatch.setattr(client, "get_actioned_weights", actioned_weights)
 
-    tasks = client.action_network(planned_network=result_network)
+    tasks = client.action_network(planned_network=result_network, prioritize=priority)
 
     assert len(tasks) == (result_network.n_repeats + 1) * len(alchem_network.edges)
 
@@ -269,3 +286,34 @@ def test_get_failures(
     assert all(
         "foo" == data.traceback for data in errors
     ), "'foo' string expected in `traceback` attribute."
+
+
+def test_get_actioned_weights(alchemiscale_helper, monkeypatch, tyk2_fec_network):
+    """Mock getting the network weights for submitted networks"""
+
+    client = alchemiscale_helper
+
+    scope = Scope(org="asap", campaign="testing", project="tyk2")
+    network_key = ScopedKey(
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+    )
+
+    def query_networks(*args, **kwargs):
+        # return many networks to trigger the early stopping
+        return [network_key for _ in range(10)]
+
+    def network_status(network, *args, **kwargs):
+        assert network == network_key
+        return {"complete": 1, "error": 1}
+
+    def network_weight(network):
+        assert network == network_key
+        return 0.5
+
+    monkeypatch.setattr(client._client, "query_networks", query_networks)
+    monkeypatch.setattr(client._client, "get_network_status", network_status)
+    monkeypatch.setattr(client._client, "get_network_weight", network_weight)
+
+    active_network_weights = client.get_actioned_weights()
+    # we should have 4 weights from early stopping
+    assert active_network_weights == [0.5 for _ in range(4)]
