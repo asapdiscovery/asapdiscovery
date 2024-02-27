@@ -26,13 +26,13 @@ class LigandIdentifiers(DataModelAbstractBase):
     moonshot_compound_id: Optional[str] = Field(
         None, description="Moonshot compound ID"
     )
-    manifold_api_id: Optional[Union[UUID, str]] = Field(
+    manifold_api_id: Optional[str] = Field(
         None, description="Unique ID from Postera Manifold API"
     )
     manifold_vc_id: Optional[str] = Field(
         None, description="Unique VC ID (virtual compound ID) from Postera Manifold"
     )
-    compchem_id: Optional[Union[UUID, str]] = Field(
+    compchem_id: Optional[str] = Field(
         None, description="Unique ID for P5 compchem reference, unused for now"
     )
 
