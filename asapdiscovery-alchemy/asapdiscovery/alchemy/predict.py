@@ -170,42 +170,36 @@ def dG_to_pIC50(dG):
     )  # abs to prevent pIC50s from being negative in cases where 0<DG<1.
 
 
-def dg_to_pic50_dataframe(df):
+def dg_to_postera_dataframe(absolute_predictions: pd.DataFrame) -> pd.DataFrame:
     """
-    Given a wrangled `FEMap` dataframe of absolute DG values (kcal/mol), replace 'kcal/mol' columns with
-    pIC50 values.
+    Given a wrangled `FEMap` dataframe of absolute predicted DG values (kcal/mol), replace 'kcal/mol' columns with
+    pIC50 values and rename the columns to match what's expected by manifold. These names are defined in
+    data.services.postera.manifold_data_tags.yaml
+
+    Args:
+        absolute_predictions: The dataframe of absolute DG predictions from asap-alchemy
+
+    Returns:
+        A copy of the dataframe with calculated pIC50 values rather than DGs ready for upload to postera.
     """
-    # we have a decent amount of columns to get through, so replacing all numeric columns
-    # with their respective pIC50 values will be much cleaner.
-    for column in df._get_numeric_data().columns:
+    # use the expected column names from alchemy predict and convert them into the allowed column names defined in
+    # data.services.postera.manifold_data_tags.yaml
+    postera_df = absolute_predictions.copy(deep=True)
+
+    for column, new_name in [("DG (kcal/mol) (FECS)", "FEC"), ("uncertainty (kcal/mol) (FECS)", "FEC-uncertainty")]:
         # replace the kcal/mol values with pIC50s.
-        df[column] = dG_to_pIC50(df[column].values)
+        postera_df[column] = dG_to_pIC50(postera_df[column].values)
 
-        # just need to rename the column now. No clean way of doing this AFAIK.
-        if "DDG (kcal/mol)" in column:
-            df = df.rename(
-                columns={
-                    column: f"{column.replace('DDG (kcal/mol)', 'relative pIC50')}"
-                }
-            )
-        elif "DG (kcal/mol)" in column:
-            df = df.rename(
-                columns={column: f"{column.replace('DG (kcal/mol)', 'pIC50')}"}
-            )
-        elif "uncertainty (kcal/mol)" in column:
-            df = df.rename(
-                columns={
-                    column: f"{column.replace('uncertainty (kcal/mol)', 'pIC50 uncertainty')}"
-                }
-            )
-        elif "prediction error (kcal/mol)" in column:
-            df = df.rename(
-                columns={
-                    column: f"{column.replace('prediction error (kcal/mol)', 'prediction error (pIC50)')}"
-                }
-            )
+        # rename the column
+        postera_df.rename(
+            columns={column: f"computed-biochemical-activity-{new_name}"}, inplace=True
+        )
+    # rename the label column to be clear in postera
+    postera_df.rename(
+        columns={"label": "Ligand_ID"}, inplace=True
+    )
 
-    return df
+    return postera_df
 
 
 def add_identifiers_to_df(dataframe: pd.DataFrame, ligands: list) -> pd.DataFrame:
@@ -488,7 +482,7 @@ def get_data_from_femap(
         absolute_df = shift_and_add_prediction_error(df=absolute_df, point_type="DG")
         relative_df = shift_and_add_prediction_error(df=relative_df, point_type="DDG")
 
-    # now also generate the pCI50 absolute dataframe.
+    # now also add the calculated pCI50 absolute dataframe which is used .
     # absolute_df = dg_to_pic50_dataframe(absolute_df)
     # relative_df_wrangled_pic50 = dg_to_pic50_dataframe(relative_df_wrangled)
 

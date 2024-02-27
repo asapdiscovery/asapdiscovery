@@ -1,6 +1,7 @@
 from typing import Optional
 
 import click
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags, TagEnumBase
 
 
 @click.group()
@@ -72,6 +73,12 @@ def create(filename: str):
     default=None,
     show_default=True,
 )
+@click.option(
+    "-t",
+    "--target",
+    help="The name of the biological target associated with this workflow.",
+    type=click.Choice(TargetTags.get_values(), case_sensitive=True),
+)
 def plan(
     name: str,
     receptor: Optional[str] = None,
@@ -80,6 +87,7 @@ def plan(
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
+    target: Optional[TagEnumBase] = None
 ):
     """
     Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
@@ -145,6 +153,7 @@ def plan(
         ligands=input_ligands,
         central_ligand=center_ligand,
         experimental_protocol=experimental_protocol,
+        target=target
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
@@ -547,18 +556,34 @@ def stop(network_key: str):
     default=None,
     show_default=True,
 )
+@click.option(
+    "-t",
+    "--target",
+    help="The name of the biological target associated with this workflow.",
+    type=click.Choice(TargetTags.get_values(), case_sensitive=True),
+)
+@click.option(
+    "-pm",
+    "--postera-molset-name",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+    help="The name of the Postera molecule set to upload the results to.",
+)
 def predict(
     network: str,
     reference_units: str,
     reference_dataset: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
+    target: Optional[TagEnumBase] = None,
+    postera_molset_name: Optional[str] = None
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
     from asapdiscovery.alchemy.predict import (
         create_absolute_report,
         create_relative_report,
@@ -583,14 +608,18 @@ def predict(
     predict_status = console.status("Calculating absolute free energies")
     predict_status.start()
 
+    # gather all ligands needed for the prediction labels
     ligands = result_network.network.ligands
     if result_network.network.central_ligand is not None:
         ligands.append(result_network.network.central_ligand)
+
     # convert to cinnabar fepmap to do the prediction via MLE
     fe_map = result_network.results.to_fe_map()
     fe_map.generate_absolute_values()
-    # check if we have a protocol on the network already
+
+    # check if we have a protocol on the network already to draw experimental results from
     protocol = experimental_protocol or result_network.experimental_protocol
+
     absolute_df, relative_df = get_data_from_femap(
         fe_map=fe_map,
         ligands=ligands,
@@ -598,7 +627,8 @@ def predict(
         reference_dataset=reference_dataset,
         cdd_protocol=protocol,
     )
-    # write the csv to file to be uploaded to postera later
+
+    # write predictions to csv file
     absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"
     relative_path = f"predictions-relative-{result_network.dataset_name}.csv"
     absolute_df.to_csv(absolute_path)
@@ -615,8 +645,30 @@ def predict(
     )
     console.print(message)
 
-    # use short switch to find if either value is not None
-    has_ref_data = reference_dataset or experimental_protocol
+    # check if we have a biological target
+    bio_target = target or result_network.target
+
+    # workout if we should upload to postera
+    if bio_target is not None and postera_molset_name is not None:
+        # format and upload to posteara
+        postera_status = console.status(f"Uploading predictions to Postera Manifold molecule set: {postera_molset_name}.")
+        postera_status.start()
+
+        _ = upload_to_postera(
+            molecule_set_name=postera_molset_name,
+            target=target,
+            absolute_dg_predictions=absolute_df
+        )
+
+        message = Padding(
+            f"Predictions uploaded to Postera Manifold molecule set: {postera_molset_name}",
+            (1, 0, 1, 0)
+        )
+        postera_status.stop()
+        console.print(message)
+
+    # workout if any reference data was provided and if we should create the interactive reports
+    has_ref_data = reference_dataset or protocol
     if has_ref_data is not None:
         report_status = console.status("Generating interactive reports")
         report_status.start()
