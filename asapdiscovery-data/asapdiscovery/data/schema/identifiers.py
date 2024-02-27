@@ -3,7 +3,7 @@ from uuid import UUID
 
 from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from pydantic import UUID4, Field
+from pydantic import Field
 
 
 class LigandIdentifiers(DataModelAbstractBase):
@@ -27,13 +27,13 @@ class LigandIdentifiers(DataModelAbstractBase):
     moonshot_compound_id: Optional[str] = Field(
         None, description="Moonshot compound ID"
     )
-    manifold_api_id: Optional[UUID] = Field(
+    manifold_api_id: Optional[str] = Field(
         None, description="Unique ID from Postera Manifold API"
     )
     manifold_vc_id: Optional[str] = Field(
         None, description="Unique VC ID (virtual compound ID) from Postera Manifold"
     )
-    compchem_id: Optional[UUID4] = Field(
+    compchem_id: Optional[str] = Field(
         None, description="Unique ID for P5 compchem reference, unused for now"
     )
 
