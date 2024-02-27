@@ -6,6 +6,8 @@ file that contains all of the ligands. All the pdb files would be within a
 directory within the directory of the original protein called output.
 The sdf file containing all the ligands in original file will be also in that
 directory named combined_ligands.sdf.
+If the ligand was not successfully combined with the protein, then will print
+error message stating the file that does not have any ligands.
 The name of the structure name of original conglomerate structure can be defined
 with -c.
 
@@ -170,6 +172,7 @@ def main():
     args = get_args()
 
     split_ligands(args.d, args.i, args.c)
+    check_lig_presence(args.d)
 
 
 if __name__ == "__main__":
