@@ -2,37 +2,32 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from asapdiscovery.data.aws.cloudfront import CloudFront
-from asapdiscovery.data.aws.s3 import S3
-from asapdiscovery.data.dask_utils import (
-    BackendType,
-    dask_cluster_from_type,
-    set_dask_config,
-)
-from asapdiscovery.data.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.fitness import target_has_fitness_data
-from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.postera.manifold_artifacts import (
+from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
+from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
+from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.services.aws.cloudfront import CloudFront
+from asapdiscovery.data.services.aws.s3 import S3
+from asapdiscovery.data.services.postera.manifold_artifacts import (
     ArtifactType,
     ManifoldArtifactUploader,
 )
-from asapdiscovery.data.postera.manifold_data_validation import (
+from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.postera.molecule_set import MoleculeSetAPI
-from asapdiscovery.data.postera.postera_factory import PosteraFactory
-from asapdiscovery.data.postera.postera_uploader import PosteraUploader
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.services_config import (
+from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
+from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
+from asapdiscovery.data.services.services_config import (
     CloudfrontSettings,
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.utils import check_empty_dataframe
+from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
+from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
 from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
@@ -46,7 +41,6 @@ from asapdiscovery.docking.scorer import (
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
-from distributed import Client
 from pydantic import Field, PositiveInt, validator
 
 
@@ -153,31 +147,17 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info(f"Running large scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
+    # dump config to json file
     inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
 
     if inputs.use_dask:
-        logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
-        set_dask_config()
-        dask_cluster = dask_cluster_from_type(
-            inputs.dask_type, loglevel=inputs.loglevel, walltime=inputs.walltime
+        dask_client = make_dask_client_meta(
+            inputs.dask_type,
+            adaptive_min_workers=inputs.dask_cluster_n_workers,
+            adaptive_max_workers=inputs.dask_cluster_max_workers,
+            loglevel=inputs.loglevel,
+            walltime=inputs.walltime,
         )
-        if inputs.dask_type.is_lilac():
-            logger.info("Lilac HPC config selected, setting adaptive scaling")
-            dask_cluster.adapt(
-                minimum=inputs.dask_cluster_n_workers,
-                maximum=inputs.dask_cluster_max_workers,
-                wait_count=10,
-                interval="1m",
-            )
-            logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-            dask_cluster.scale(inputs.dask_cluster_n_workers)
-
-        dask_client = Client(dask_cluster)
-        dask_client.forward_logging(level=inputs.loglevel)
-        logger.info(f"Using dask client: {dask_client}")
-        logger.info(f"Using dask cluster: {dask_cluster}")
-        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
-
     else:
         dask_client = None
 
@@ -193,57 +173,30 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         aws_cloudfront_settings = CloudfrontSettings()
         logger.info("AWS S3 and CloudFront credentials found")
 
-    if inputs.postera:
-        # load postera
-        logger.info(
-            f"Loading Postera database molecule set {inputs.postera_molset_name}"
-        )
-        postera_settings = PosteraSettings()
-        postera = PosteraFactory(
-            settings=postera_settings, molecule_set_name=inputs.postera_molset_name
-        )
-        query_ligands = postera.pull()
-    else:
-        # load from file
-        logger.info(f"Loading ligands from file: {inputs.ligands}")
-        molfile = MolFileFactory(filename=inputs.ligands)
-        query_ligands = molfile.load()
+    # read ligands
+    ligand_factory = MetaLigandFactory(
+        postera=inputs.postera,
+        postera_molset_name=inputs.postera_molset_name,
+        ligand_file=inputs.ligands,
+    )
+    query_ligands = ligand_factory.load()
 
-    # load complexes from a directory, from fragalysis or from a pdb file
-    if inputs.structure_dir:
-        logger.info(f"Loading structures from directory: {inputs.structure_dir}")
-        structure_factory = StructureDirFactory.from_dir(inputs.structure_dir)
-        complexes = structure_factory.load(
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
-        )
-    elif inputs.fragalysis_dir:
-        logger.info(f"Loading structures from fragalysis: {inputs.fragalysis_dir}")
-        fragalysis = FragalysisFactory.from_dir(inputs.fragalysis_dir)
-        complexes = fragalysis.load(
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
-        )
-
-    elif inputs.pdb_file:
-        logger.info(f"Loading structures from pdb: {inputs.pdb_file}")
-        complex = Complex.from_pdb(
-            inputs.pdb_file,
-            target_kwargs={"target_name": inputs.pdb_file.stem},
-            ligand_kwargs={"compound_name": f"{inputs.pdb_file.stem}_ligand"},
-        )
-        complexes = [complex]
-
-    else:
-        raise ValueError(
-            "Must specify either fragalysis_dir, structure_dir or pdb_file"
-        )
+    # read structures
+    structure_factory = MetaStructureFactory(
+        structure_dir=inputs.structure_dir,
+        fragalysis_dir=inputs.fragalysis_dir,
+        pdb_file=inputs.pdb_file,
+    )
+    complexes = structure_factory.load(
+        use_dask=inputs.use_dask,
+        dask_failure_mode=inputs.dask_failure_mode,
+        dask_client=dask_client,
+    )
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
 
+    # deduplicate ligands
     logger.info("Deduplicating by Inchikey")
     query_ligands = LigandDeDuplicator().deduplicate(query_ligands)
     n_query_ligands = len(query_ligands)
@@ -252,9 +205,25 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
-    # prep complexes
+    # TODO: hide detail of canonical structure
+    logger.info("Using canonical structure")
+    align_struct = master_structures[inputs.target]
+
+    ref_complex = Complex.from_pdb(
+        align_struct,
+        target_kwargs={"target_name": "ref"},
+        ligand_kwargs={"compound_name": "ref_ligand"},
+    )
+
+    # prep complexes, possibly loading in from cache
     logger.info("Prepping complexes")
-    prepper = ProteinPrepper(cache_dir=inputs.cache_dir)
+    prepper = ProteinPrepper(
+        cache_dir=inputs.cache_dir,
+        align=ref_complex,
+        ref_chain="A",
+        active_site_chain="A",
+    )
+
     prepped_complexes = prepper.prep(
         complexes,
         use_dask=inputs.use_dask,
@@ -274,15 +243,13 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
+    # TODO: fix, see issue 560
     logger.info("Selecting pairs for docking based on MCS")
     selector = MCSSelector()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
         n_select=inputs.n_select,
-        use_dask=False,
-        dask_client=None,
-        dask_failure_mode=inputs.dask_failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -290,7 +257,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     del prepped_complexes
 
-    # dock pairs
+    # dock pairs, possibly reading and writing from a local cache of completed work
     logger.info("Running docking on selected pairs")
     docker = POSITDocker(
         use_omega=inputs.use_omega, allow_retries=inputs.allow_posit_retries
@@ -340,7 +307,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             if scorer:
                 scorers.append(scorer)
 
-    # score results
+    # score results using multiple scoring functions
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
 
@@ -357,7 +324,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
 
-    # run html visualiser
+    # run html visualiser to get web-ready vis of docked poses
     logger.info("Running HTML visualiser for docked poses")
     html_ouptut_dir = output_dir / "poses"
     html_visualizer = HTMLVisualizerV2(
@@ -392,6 +359,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         how="outer",  # preserves rows where there is no visualisation
     )
 
+    # run html viz of target fitness to get web-ready vis of docked poses
     if target_has_fitness_data(inputs.target):
         logger.info("Running fitness HTML visualiser")
         html_fitness_output_dir = output_dir / "fitness"
@@ -465,7 +433,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         message="No docking results passed the clash filter",
     )
 
-    # then order by chemgauss4 score and remove duplicates by ligand id
+    # then order by chemgauss4 score
     scores_df = scores_df.sort_values(
         DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
     )
@@ -473,8 +441,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         data_intermediates / "docking_scores_filtered_sorted.csv", index=False
     )
 
+    # remove duplicates that are the same compound docked to different structures
     scores_df = scores_df.drop_duplicates(
-        subset=[DockingResultCols.INCHIKEY.value], keep="first"
+        subset=[DockingResultCols.SMILES.value], keep="first"
     )
 
     n_duplicate_filtered = len(scores_df)
@@ -539,7 +508,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
         # push the results to PostEra, making a new molecule set if necessary
-        result_df, molset_name, made_new_molset = postera_uploader.push(result_df)
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df)
+
+        combined = postera_uploader.join_with_manifold_data(
+            result_df,
+            manifold_data,
+            DockingResultCols.SMILES.value,
+            DockingResultCols.LIGAND_ID.value,
+        )
 
         if made_new_molset:
             logger.info(f"Made new molecule set with name: {molset_name}")
@@ -549,7 +525,6 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         logger.info("Uploading artifacts to PostEra")
 
         # make an uploader for the poses and upload them
-
         artifact_columns = [
             DockingResultCols.HTML_PATH_POSE.value,
         ]
@@ -561,10 +536,11 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             artifact_columns.append(DockingResultCols.HTML_PATH_FITNESS.value)
             artifact_types.append(ArtifactType.DOCKING_POSE_FITNESS_POSIT)
 
+        # upload artifacts to S3 and link them to postera
         uploader = ManifoldArtifactUploader(
-            inputs.target,
-            result_df,
-            molset_name,
+            target=inputs.target,
+            molecule_dataframe=combined,
+            molecule_set_name=molset_name,
             bucket_name=aws_s3_settings.BUCKET_NAME,
             artifact_types=artifact_types,
             artifact_columns=artifact_columns,

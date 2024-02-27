@@ -2,18 +2,18 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from asapdiscovery.data.dask_utils import (
+from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.readers.structure_dir import StructureDirFactory
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.sequence import seqres_by_target
+from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.util.dask_utils import (
     DaskType,
     dask_cluster_from_type,
     set_dask_config,
 )
-from asapdiscovery.data.logging import FileLogger
-from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.fragalysis import FragalysisFactory
-from asapdiscovery.data.schema_v2.structure_dir import StructureDirFactory
-from asapdiscovery.data.sequence import seqres_by_target
+from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator

@@ -1,14 +1,16 @@
 """
 This module contains the inputs, docker, and output schema for using POSIT
 """
+
 import logging
 from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Literal, Optional, Union
 
 import pandas as pd
-from asapdiscovery.data.openeye import oechem, oedocking, oeomega
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.backend.openeye import oechem, oedocking, oeomega
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.util.dask_utils import dask_vmap
 from asapdiscovery.docking.docking import (
     DockingBase,
     DockingInputMultiStructure,
@@ -187,6 +189,7 @@ class POSITDocker(DockingBase):
         retcode = poser.Dock(pose_res, lig, num_poses)
         return pose_res, retcode
 
+    @dask_vmap(["inputs"])
     def _dock(
         self,
         inputs: list[

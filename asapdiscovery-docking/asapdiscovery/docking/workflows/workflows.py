@@ -6,8 +6,8 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from asapdiscovery.data.dask_utils import DaskFailureMode, DaskType
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 

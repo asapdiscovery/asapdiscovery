@@ -3,7 +3,7 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
     AlchemyPrepWorkflow,
     OpenEyeConstrainedPoseGenerator,
 )
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.ligand import Ligand
 
 
 @pytest.mark.parametrize(

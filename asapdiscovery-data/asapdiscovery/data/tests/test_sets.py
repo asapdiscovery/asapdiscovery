@@ -1,7 +1,7 @@
 from itertools import product
 
-from asapdiscovery.data.schema_v2.pairs import CompoundStructurePair
-from asapdiscovery.data.schema_v2.sets import CompoundMultiStructure
+from asapdiscovery.data.schema.pairs import CompoundStructurePair
+from asapdiscovery.data.schema.sets import CompoundMultiStructure
 
 
 def test_multi_structure_from_pairs(ligands, complexes):

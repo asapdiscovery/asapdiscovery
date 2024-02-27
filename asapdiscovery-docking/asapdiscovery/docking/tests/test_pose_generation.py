@@ -1,6 +1,6 @@
 import pytest
-from asapdiscovery.data.openeye import get_SD_data, oechem, oemol_to_inchikey
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.backend.openeye import get_SD_data, oechem, oemol_to_inchikey
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,

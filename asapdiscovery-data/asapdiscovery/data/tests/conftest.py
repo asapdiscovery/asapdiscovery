@@ -1,26 +1,9 @@
-from pathlib import Path
-
 import pytest
-from asapdiscovery.data.schema_v2.complex import Complex, PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
+from asapdiscovery.data.services.services_config import CDDSettings
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-
-
-@pytest.fixture(scope="session")
-def local_path(request):
-    return request.config.getoption("--local_path")
-
-
-# This needs to have a scope of session so that a new tmp file is not created for each test
-@pytest.fixture(scope="session")
-def output_dir(tmp_path_factory, local_path):
-    if type(local_path) is not str:
-        return tmp_path_factory.mktemp("test_prep")
-    else:
-        local_path = Path(local_path)
-        local_path.mkdir(exist_ok=True)
-        assert local_path.exists()
-        return local_path
 
 
 @pytest.fixture(scope="session")
@@ -72,3 +55,10 @@ def smiles():
 @pytest.fixture(scope="module")
 def ligands(smiles):
     return [Ligand.from_smiles(s, compound_name="test") for s in smiles]
+
+
+@pytest.fixture()
+def mocked_cdd_api():
+    """A cdd_api configured with dummy data which should have the requests mocked."""
+    settings = CDDSettings(CDD_API_KEY="my-key", CDD_VAULT_NUMBER=1)
+    return CDDAPI.from_settings(settings=settings)

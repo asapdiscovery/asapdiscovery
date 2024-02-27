@@ -11,10 +11,10 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     target,
 )
-from asapdiscovery.data.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
 
 if TYPE_CHECKING:
-    from asapdiscovery.data.postera.manifold_data_validation import TargetTags
+    from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 
 
 @click.group()

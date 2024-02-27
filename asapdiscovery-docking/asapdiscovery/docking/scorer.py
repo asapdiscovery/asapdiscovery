@@ -4,21 +4,20 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Optional, Union
 
-import dask
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.dask_utils import (
+from asapdiscovery.data.backend.openeye import oedocking
+from asapdiscovery.data.backend.plip import compute_fint_score
+from asapdiscovery.data.fitness import target_has_fitness_data
+from asapdiscovery.data.schema.ligand import LigandIdentifiers
+from asapdiscovery.data.schema.target import TargetIdentifiers
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.util.dask_utils import (
     BackendType,
     DaskFailureMode,
-    actualise_dask_delayed_iterable,
     backend_wrapper,
+    dask_vmap,
 )
-from asapdiscovery.data.fitness import target_has_fitness_data
-from asapdiscovery.data.openeye import oedocking
-from asapdiscovery.data.plip import compute_fint_score
-from asapdiscovery.data.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.schema_v2.ligand import LigandIdentifiers
-from asapdiscovery.data.schema_v2.target import TargetIdentifiers
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
@@ -37,6 +36,7 @@ class ScoreType(str, Enum):
     FINT = "FINT"
     GAT = "GAT"
     schnet = "schnet"
+    e3nn = "e3nn"
     INVALID = "INVALID"
 
 
@@ -58,6 +58,7 @@ _SCORE_MANIFOLD_ALIAS = {
     ScoreType.FINT: DockingResultCols.FITNESS_SCORE_FINT.value,
     ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
+    ScoreType.e3nn: DockingResultCols.COMPUTED_E3NN_PIC50.value,
     ScoreType.INVALID: None,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
@@ -144,26 +145,14 @@ class ScorerBase(BaseModel):
         reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
-        if use_dask:
-            delayed_outputs = []
-            for inp in inputs:
-                out = dask.delayed(backend_wrapper)(
-                    inputs=[inp],
-                    func=self._score,
-                    backend=backend,
-                    reconstruct_cls=reconstruct_cls,
-                )
-                delayed_outputs.append(out[0])  # flatten
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client=dask_client, errors=dask_failure_mode
-            )
-        else:
-            outputs = backend_wrapper(
-                inputs=inputs,
-                func=self._score,
-                backend=backend,
-                reconstruct_cls=reconstruct_cls,
-            )
+        outputs = self._score(
+            inputs=inputs,
+            use_dask=use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=dask_failure_mode,
+            backend=backend,
+            reconstruct_cls=reconstruct_cls,
+        )
 
         if return_df:
             return self.scores_to_df(outputs)
@@ -208,6 +197,8 @@ class ChemGauss4Scorer(ScorerBase):
     score_type: ClassVar[ScoreType.chemgauss4] = ScoreType.chemgauss4
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
@@ -242,6 +233,8 @@ class FINTScorer(ScorerBase):
             )
         return v
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
@@ -254,6 +247,15 @@ class FINTScorer(ScorerBase):
                 )
             )
         return results
+
+
+_ml_scorer_classes_meta = []
+
+
+# decorator to register all the ml scorers
+def register_ml_scorer(cls):
+    _ml_scorer_classes_meta.append(cls)
+    return cls
 
 
 class MLModelScorer(ScorerBase):
@@ -309,6 +311,7 @@ class MLModelScorer(ScorerBase):
         )
 
 
+@register_ml_scorer
 class GATScorer(MLModelScorer):
     """
     Scoring using GAT ML Model
@@ -318,6 +321,8 @@ class GATScorer(MLModelScorer):
     score_type: ClassVar[ScoreType.GAT] = ScoreType.GAT
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
@@ -330,6 +335,7 @@ class GATScorer(MLModelScorer):
         return results
 
 
+@register_ml_scorer
 class SchnetScorer(MLModelScorer):
     """
     Scoring using Schnet ML Model
@@ -339,6 +345,8 @@ class SchnetScorer(MLModelScorer):
     score_type: ClassVar[ScoreType.schnet] = ScoreType.schnet
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
@@ -351,11 +359,28 @@ class SchnetScorer(MLModelScorer):
         return results
 
 
-_ml_scorer_classes_meta = [
-    MLModelScorer,
-    GATScorer,
-    SchnetScorer,
-]
+@register_ml_scorer
+class E3NNScorer(MLModelScorer):
+    """
+    Scoring using e3nn ML Model
+    """
+
+    model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
+    score_type: ClassVar[ScoreType.e3nn] = ScoreType.e3nn
+    units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
+
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
+    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+        results = []
+        for inp in inputs:
+            e3nn_score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
+            results.append(
+                Score.from_score_and_docking_result(
+                    e3nn_score, self.score_type, self.units, inp
+                )
+            )
+        return results
 
 
 def get_ml_scorer_cls_from_model_type(model_type: ModelType):

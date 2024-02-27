@@ -19,8 +19,8 @@ def pull_from_postera(molecule_set_name: str):
     Returns:
         A list of Ligands extracted from postera molecule set.
     """
-    from asapdiscovery.data.postera.postera_factory import PosteraFactory
-    from asapdiscovery.data.services_config import PosteraSettings
+    from asapdiscovery.data.services.postera.postera_factory import PosteraFactory
+    from asapdiscovery.data.services.services_config import PosteraSettings
 
     # this will pull the settings from environment variables
     settings = PosteraSettings()

@@ -1,0 +1,1441 @@
+<?xml version="1.0"?>
+<!DOCTYPE BlastOutput PUBLIC "-//NCBI//NCBI BlastOutput/EN" "http://www.ncbi.nlm.nih.gov/dtd/NCBI_BlastOutput.dtd">
+<BlastOutput>
+  <BlastOutput_program>blastp</BlastOutput_program>
+  <BlastOutput_version>BLASTP 2.15.0+</BlastOutput_version>
+  <BlastOutput_reference>Stephen F. Altschul, Thomas L. Madden, Alejandro A. Sch&amp;auml;ffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. Lipman (1997), &quot;Gapped BLAST and PSI-BLAST: a new generation of protein database search programs&quot;, Nucleic Acids Res. 25:3389-3402.</BlastOutput_reference>
+  <BlastOutput_db>refseq_protein</BlastOutput_db>
+  <BlastOutput_query-ID>Query_2120863</BlastOutput_query-ID>
+  <BlastOutput_query-def>unnamed protein product</BlastOutput_query-def>
+  <BlastOutput_query-len>156</BlastOutput_query-len>
+  <BlastOutput_param>
+    <Parameters>
+      <Parameters_matrix>BLOSUM62</Parameters_matrix>
+      <Parameters_expect>10</Parameters_expect>
+      <Parameters_gap-open>11</Parameters_gap-open>
+      <Parameters_gap-extend>1</Parameters_gap-extend>
+      <Parameters_filter>F</Parameters_filter>
+    </Parameters>
+  </BlastOutput_param>
+<BlastOutput_iterations>
+<Iteration>
+  <Iteration_iter-num>1</Iteration_iter-num>
+  <Iteration_query-ID>Query_2120863</Iteration_query-ID>
+  <Iteration_query-def>unnamed protein product</Iteration_query-def>
+  <Iteration_query-len>156</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>ref|YP_009227202.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Zika virus]</Hit_def>
+  <Hit_accession>YP_009227202</Hit_accession>
+  <Hit_len>617</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>321.627</Hsp_bit-score>
+      <Hsp_score>823</Hsp_score>
+      <Hsp_evalue>1.33216e-104</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>171</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>155</Hsp_identity>
+      <Hsp_positive>156</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERARNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_hseq>
+      <Hsp_midline>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERA+NIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>ref|YP_009430304.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Zika virus]</Hit_def>
+  <Hit_accession>YP_009430304</Hit_accession>
+  <Hit_len>617</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>317.005</Hsp_bit-score>
+      <Hsp_score>811</Hsp_score>
+      <Hsp_evalue>8.41656e-103</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>171</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>152</Hsp_identity>
+      <Hsp_positive>155</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGSALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGHSEVQLLAVPPGERARNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGRRE</Hsp_hseq>
+      <Hsp_midline>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKG+ALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDG SEVQLLAVPPGERA+NIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQG+RE</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>3</Hit_num>
+  <Hit_id>ref|YP_002790881.1|</Hit_id>
+  <Hit_def>polyprotein [Zika virus]</Hit_def>
+  <Hit_accession>YP_002790881</Hit_accession>
+  <Hit_len>3419</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>321.242</Hsp_bit-score>
+      <Hsp_score>822</Hsp_score>
+      <Hsp_evalue>1.98662e-98</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1514</Hsp_hit-from>
+      <Hsp_hit-to>1669</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>155</Hsp_identity>
+      <Hsp_positive>156</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERARNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_hseq>
+      <Hsp_midline>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERA+NIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>4</Hit_num>
+  <Hit_id>ref|YP_009428568.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Zika virus]</Hit_def>
+  <Hit_accession>YP_009428568</Hit_accession>
+  <Hit_len>3423</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>317.005</Hsp_bit-score>
+      <Hsp_score>811</Hsp_score>
+      <Hsp_evalue>7.07248e-97</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1518</Hsp_hit-from>
+      <Hsp_hit-to>1673</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>152</Hsp_identity>
+      <Hsp_positive>155</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGSALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGHSEVQLLAVPPGERARNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGRRE</Hsp_hseq>
+      <Hsp_midline>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKG+ALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDG SEVQLLAVPPGERA+NIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQG+RE</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>5</Hit_num>
+  <Hit_id>ref|YP_009227191.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Spondweni virus]</Hit_def>
+  <Hit_accession>YP_009227191</Hit_accession>
+  <Hit_len>619</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>267.7</Hsp_bit-score>
+      <Hsp_score>683</Hsp_score>
+      <Hsp_evalue>1.16688e-83</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>170</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>123</Hsp_identity>
+      <Hsp_positive>142</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GETTAGVYRIMTRKLLGSTQVGAGVMHEGVFHTMWHVTKGSALRSGEGRLDPYWGNVKQDLISYCGPWKLDGKWDGVSEVQLIAVAPGERARNVQTKPGVFKTTDGEIGALALDFPGGSSGSPIIDKNGHVIGLYGNGVVVKSGSYVSAIMQTEK</Hsp_hseq>
+      <Hsp_midline>GETT GVYR+MTR+LLGSTQVG GVM EGVFHTMWHVTKG+ALRSGEGRLDPYWG+VKQDL+SYCGPWKLD  WDG+SEVQL+AV PGERA+N+QT PG+FKT DG+IGA+ALD+P G+SGSPI+DK G VIGLYGNGVV+K+GSYVSAI Q ++</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>6</Hit_num>
+  <Hit_id>ref|YP_009222008.1|</Hit_id>
+  <Hit_def>polyprotein [Spondweni virus]</Hit_def>
+  <Hit_accession>YP_009222008</Hit_accession>
+  <Hit_len>3429</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>267.7</Hsp_bit-score>
+      <Hsp_score>683</Hsp_score>
+      <Hsp_evalue>9.7336e-80</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1518</Hsp_hit-from>
+      <Hsp_hit-to>1672</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>123</Hsp_identity>
+      <Hsp_positive>142</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GETTAGVYRIMTRKLLGSTQVGAGVMHEGVFHTMWHVTKGSALRSGEGRLDPYWGNVKQDLISYCGPWKLDGKWDGVSEVQLIAVAPGERARNVQTKPGVFKTTDGEIGALALDFPGGSSGSPIIDKNGHVIGLYGNGVVVKSGSYVSAIMQTEK</Hsp_hseq>
+      <Hsp_midline>GETT GVYR+MTR+LLGSTQVG GVM EGVFHTMWHVTKG+ALRSGEGRLDPYWG+VKQDL+SYCGPWKLD  WDG+SEVQL+AV PGERA+N+QT PG+FKT DG+IGA+ALD+P G+SGSPI+DK G VIGLYGNGVV+K+GSYVSAI Q ++</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>7</Hit_num>
+  <Hit_id>ref|NP_776018.1|</Hit_id>
+  <Hit_def>non-structural protein NS3 [West Nile virus]</Hit_def>
+  <Hit_accession>NP_776018</Hit_accession>
+  <Hit_len>619</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>230.335</Hsp_bit-score>
+      <Hsp_score>586</Hsp_score>
+      <Hsp_evalue>2.6542e-69</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>170</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>126</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMTRGLLGSYQAGAGVMVEGVFHTLWHTTKGAALMSGEGRLDPYWGSVKEDRLCYGGPWKLQHKWNGHDEVQMIVVEPGKNVKNVQTKPGVFKTPEGEIGAVTLDYPTGTSGSPIVDKNGDVIGLYGNGVIMPNGSYISAIVQGER</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+MTR LLGS Q G GVM EGVFHT+WH TKGAAL SGEGRLDPYWG VK+D + Y GPWKL   W+G  EVQ++ V PG+  KN+QT PG+FKT +G+IGAV LDYP GTSGSPI+DK G VIGLYGNGV++ NGSY+SAI QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>8</Hit_num>
+  <Hit_id>ref|YP_009553732.1|</Hit_id>
+  <Hit_def>peptidase S7 [Kampung Karu virus]</Hit_def>
+  <Hit_accession>YP_009553732</Hit_accession>
+  <Hit_len>149</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>215.312</Hsp_bit-score>
+      <Hsp_score>547</Hsp_score>
+      <Hsp_evalue>5.28734e-69</Hsp_evalue>
+      <Hsp_query-from>6</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>3</Hsp_hit-from>
+      <Hsp_hit-to>149</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>98</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>147</Hsp_align-len>
+      <Hsp_qseq>GVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>GVYRVMKETILGSKQIGVGIMENGVFHTMWHVTQGASLKLEEGRIDPFWASVQEDLISYGGAWQLKGQWDGIEEVQLLAVPPKKNPENVQTKPGIFKTKEGELGAVALDYPEGTSGSPILNAKGAVVGLYGNGVVIGNSDYVSAISQ</Hsp_hseq>
+      <Hsp_midline>GVYRVM   +LGS Q+GVG+M+ GVFHTMWHVT+GA+L+  EGR+DP+W  V++DL+SY G W+L   WDG+ EVQLLAVPP +  +N+QT PGIFKTK+G++GAVALDYP GTSGSPIL+  G V+GLYGNGVVI N  YVSAI+Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>9</Hit_num>
+  <Hit_id>ref|YP_001527884.1|</Hit_id>
+  <Hit_def>nonstructural protein 3 [West Nile virus]</Hit_def>
+  <Hit_accession>YP_001527884</Hit_accession>
+  <Hit_len>619</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>229.18</Hsp_bit-score>
+      <Hsp_score>583</Hsp_score>
+      <Hsp_evalue>9.09074e-69</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>170</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>107</Hsp_identity>
+      <Hsp_positive>126</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMTRGLLGSYQAGAGVMVEGVFHTLWHTTKGAALMSGEGRLDPYWGSVKEDRLCYGGPWKLQHKWNGQDEVQMIVVEPGKNVKNVQTKPGVFKTPEGEIGAVTLDFPTGTSGSPIVDKNGDVIGLYGNGVIMPNGSYISAIVQGER</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+MTR LLGS Q G GVM EGVFHT+WH TKGAAL SGEGRLDPYWG VK+D + Y GPWKL   W+G  EVQ++ V PG+  KN+QT PG+FKT +G+IGAV LD+P GTSGSPI+DK G VIGLYGNGV++ NGSY+SAI QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>10</Hit_num>
+  <Hit_id>ref|YP_164814.1|</Hit_id>
+  <Hit_def>NS3 [Usutu virus]</Hit_def>
+  <Hit_accession>YP_164814</Hit_accession>
+  <Hit_len>619</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>228.409</Hsp_bit-score>
+      <Hsp_score>581</Hsp_score>
+      <Hsp_evalue>1.31788e-68</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>171</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>106</Hsp_identity>
+      <Hsp_positive>129</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GDTSPGVYRIMSRYILGTYQAGVGVMYEGVLHTLWHTTRGAAIRSGEGRLTPYWGSVKEDRITYGGPWKFDRKWNGLDDVQLIIVAPGKAAINIQTKPGIFKTPQGEIGAVSLDYPEGTSGSPILDKNGDIVGLYGNGVILGNGSYVSAIVQGERE</Hsp_hseq>
+      <Hsp_midline>G+T+ GVYR+M+R +LG+ Q GVGVM EGV HT+WH T+GAA+RSGEGRL PYWG VK+D ++Y GPWK D  W+GL +VQL+ V PG+ A NIQT PGIFKT  G+IGAV+LDYP GTSGSPILDK G ++GLYGNGV++ NGSYVSAI QG+RE</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>11</Hit_num>
+  <Hit_id>ref|YP_001040004.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Aroa virus]</Hit_def>
+  <Hit_accession>YP_001040004</Hit_accession>
+  <Hit_len>3429</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>234.958</Hsp_bit-score>
+      <Hsp_score>598</Hsp_score>
+      <Hsp_evalue>3.11834e-68</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1519</Hsp_hit-from>
+      <Hsp_hit-to>1673</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>107</Hsp_identity>
+      <Hsp_positive>133</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GSTENGVYRILANRLFGKTQVGVGVMHEGVFHTMWHVTRGAALKSGEGRLDPYWGDVKKDLISYGGPWKLEGRWDGVSEVQLIAVPPKEKAKNVQTTPGVFKTPHGEIGAIVLDFPAGSSGSPIINKLGEVIGLYGNGLMMGD-AYASSIAQAEVE</Hsp_hseq>
+      <Hsp_midline>G T +GVYR++  RL G TQVGVGVM EGVFHTMWHVT+GAAL+SGEGRLDPYWGDVK+DL+SY GPWKL+  WDG+SEVQL+AVPP E+AKN+QT PG+FKT  G+IGA+ LD+PAG+SGSPI++K G VIGLYGNG+++ + +Y S+I Q + E</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>12</Hit_num>
+  <Hit_id>ref|YP_009333111.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Cacipacore virus]</Hit_def>
+  <Hit_accession>YP_009333111</Hit_accession>
+  <Hit_len>618</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>224.557</Hsp_bit-score>
+      <Hsp_score>571</Hsp_score>
+      <Hsp_evalue>4.05604e-67</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>171</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>104</Hsp_identity>
+      <Hsp_positive>127</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMARGVLGSFQAGAGVMVEGVFHTLWHTTKGSALISGEGKLIPYWGSVKEDRICYGGPWKLDKKWDGETEVQLIAVQPGQPTRNVQTMPGVFKTPHGEIGAVTLDFPTGTSGSPIVNTFGEVIGLYGNGVILGNGTYVSAIVQGERE</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+M R +LGS Q G GVM EGVFHT+WH TKG+AL SGEG+L PYWG VK+D + Y GPWKLD  WDG +EVQL+AV PG+  +N+QT+PG+FKT  G+IGAV LD+P GTSGSPI++  G VIGLYGNGV++ NG+YVSAI QG+RE</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>13</Hit_num>
+  <Hit_id>ref|NP_041724.2|</Hit_id>
+  <Hit_def>polyprotein [West Nile virus]</Hit_def>
+  <Hit_accession>NP_041724</Hit_accession>
+  <Hit_len>3430</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>230.335</Hsp_bit-score>
+      <Hsp_score>586</Hsp_score>
+      <Hsp_evalue>1.33556e-66</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1517</Hsp_hit-from>
+      <Hsp_hit-to>1671</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>108</Hsp_identity>
+      <Hsp_positive>126</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMTRGLLGSYQAGAGVMVEGVFHTLWHTTKGAALMSGEGRLDPYWGSVKEDRLCYGGPWKLQHKWNGHDEVQMIVVEPGKNVKNVQTKPGVFKTPEGEIGAVTLDYPTGTSGSPIVDKNGDVIGLYGNGVIMPNGSYISAIVQGER</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+MTR LLGS Q G GVM EGVFHT+WH TKGAAL SGEGRLDPYWG VK+D + Y GPWKL   W+G  EVQ++ V PG+  KN+QT PG+FKT +G+IGAV LDYP GTSGSPI+DK G VIGLYGNGV++ NGSY+SAI QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>14</Hit_num>
+  <Hit_id>ref|YP_009246337.1|</Hit_id>
+  <Hit_def>truncated flavivirus polyprotein WARF4 [West Nile virus]</Hit_def>
+  <Hit_accession>YP_009246337</Hit_accession>
+  <Hit_len>2553</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>229.18</Hsp_bit-score>
+      <Hsp_score>583</Hsp_score>
+      <Hsp_evalue>2.76377e-66</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1521</Hsp_hit-from>
+      <Hsp_hit-to>1675</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>107</Hsp_identity>
+      <Hsp_positive>126</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMTRGLLGSYQAGAGVMVEGVFHTLWHTTKGAALMSGEGRLDPYWGSVKEDRLCYGGPWKLQHKWNGQDEVQMIVVEPGKNVKNVQTKPGVFKTPEGEIGAVTLDFPTGTSGSPIVDKNGDVIGLYGNGVIMPNGSYISAIVQGER</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+MTR LLGS Q G GVM EGVFHT+WH TKGAAL SGEGRLDPYWG VK+D + Y GPWKL   W+G  EVQ++ V PG+  KN+QT PG+FKT +G+IGAV LD+P GTSGSPI+DK G VIGLYGNGV++ NGSY+SAI QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>15</Hit_num>
+  <Hit_id>ref|YP_164264.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Usutu virus]</Hit_def>
+  <Hit_accession>YP_164264</Hit_accession>
+  <Hit_len>3434</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>229.18</Hsp_bit-score>
+      <Hsp_score>583</Hsp_score>
+      <Hsp_evalue>3.13157e-66</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1519</Hsp_hit-from>
+      <Hsp_hit-to>1674</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>106</Hsp_identity>
+      <Hsp_positive>129</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GDTSPGVYRIMSRYILGTYQAGVGVMYEGVLHTLWHTTRGAAIRSGEGRLTPYWGSVKEDRITYGGPWKFDRKWNGLDDVQLIIVAPGKAAINIQTKPGIFKTPQGEIGAVSLDYPEGTSGSPILDKNGDIVGLYGNGVILGNGSYVSAIVQGERE</Hsp_hseq>
+      <Hsp_midline>G+T+ GVYR+M+R +LG+ Q GVGVM EGV HT+WH T+GAA+RSGEGRL PYWG VK+D ++Y GPWK D  W+GL +VQL+ V PG+ A NIQT PGIFKT  G+IGAV+LDYP GTSGSPILDK G ++GLYGNGV++ NGSYVSAI QG+RE</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>16</Hit_num>
+  <Hit_id>ref|YP_001527877.1|</Hit_id>
+  <Hit_def>polyprotein [West Nile virus]</Hit_def>
+  <Hit_accession>YP_001527877</Hit_accession>
+  <Hit_len>3433</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>228.794</Hsp_bit-score>
+      <Hsp_score>582</Hsp_score>
+      <Hsp_evalue>3.95086e-66</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1521</Hsp_hit-from>
+      <Hsp_hit-to>1675</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>107</Hsp_identity>
+      <Hsp_positive>126</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMTRGLLGSYQAGAGVMVEGVFHTLWHTTKGAALMSGEGRLDPYWGSVKEDRLCYGGPWKLQHKWNGQDEVQMIVVEPGKNVKNVQTKPGVFKTPEGEIGAVTLDFPTGTSGSPIVDKNGDVIGLYGNGVIMPNGSYISAIVQGER</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+MTR LLGS Q G GVM EGVFHT+WH TKGAAL SGEGRLDPYWG VK+D + Y GPWKL   W+G  EVQ++ V PG+  KN+QT PG+FKT +G+IGAV LD+P GTSGSPI+DK G VIGLYGNGV++ NGSY+SAI QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>17</Hit_num>
+  <Hit_id>ref|NP_722535.1|</Hit_id>
+  <Hit_def>NS3 [Murray Valley encephalitis virus]</Hit_def>
+  <Hit_accession>NP_722535</Hit_accession>
+  <Hit_len>619</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>221.476</Hsp_bit-score>
+      <Hsp_score>563</Hsp_score>
+      <Hsp_evalue>8.02093e-66</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>170</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>127</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GDTTPGVYRIMARGILGRYQAGVGVMHEGVFHTLWHTTRGAAIMSGEGRLTPYWGNVKEDRVTYGGPWKLDQKWNGVDDVQMIVVEPGKPAINVQTKPGIFKTAHGEIGAVSLDYPIGTSGSPIVNSNGEIIGLYGNGVILGNGAYVSAIVQGER</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+M R +LG  Q GVGVM EGVFHT+WH T+GAA+ SGEGRL PYWG+VK+D V+Y GPWKLD  W+G+ +VQ++ V PG+ A N+QT PGIFKT  G+IGAV+LDYP GTSGSPI++  G +IGLYGNGV++ NG+YVSAI QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>18</Hit_num>
+  <Hit_id>ref|YP_009329953.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Saint Louis encephalitis virus]</Hit_def>
+  <Hit_accession>YP_009329953</Hit_accession>
+  <Hit_len>618</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>221.09</Hsp_bit-score>
+      <Hsp_score>562</Hsp_score>
+      <Hsp_evalue>9.42346e-66</Hsp_evalue>
+      <Hsp_query-from>2</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>17</Hsp_hit-from>
+      <Hsp_hit-to>170</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>104</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>154</Hsp_align-len>
+      <Hsp_qseq>ETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>ETKPGIYRIMTRGILGTFQAGVGVMHEGVFHTMWHATEGAVLRNGEGRLDPYAGDVRNDLISYGGPWKLSATWDGTEEVQMIAVAPGKPAINVQTTPGVFKTPLGTIGAVTLDFPKGTSGSPIINKKGEIIGLYGNGVLIGQGEYVSGIIQGER</Hsp_hseq>
+      <Hsp_midline>ET  G+YR+MTR +LG+ Q GVGVM EGVFHTMWH T+GA LR+GEGRLDPY GDV+ DL+SY GPWKL A WDG  EVQ++AV PG+ A N+QT PG+FKT  G IGAV LD+P GTSGSPI++K G +IGLYGNGV+I  G YVS I QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>19</Hit_num>
+  <Hit_id>ref|YP_009126874.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Cacipacore virus]</Hit_def>
+  <Hit_accession>YP_009126874</Hit_accession>
+  <Hit_len>3427</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>224.942</Hsp_bit-score>
+      <Hsp_score>572</Hsp_score>
+      <Hsp_evalue>9.64958e-65</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1516</Hsp_hit-from>
+      <Hsp_hit-to>1671</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>104</Hsp_identity>
+      <Hsp_positive>127</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMARGVLGSFQAGAGVMVEGVFHTLWHTTKGSALISGEGKLIPYWGSVKEDRICYGGPWKLDKKWDGETEVQLIAVQPGQPTRNVQTMPGVFKTPHGEIGAVTLDFPTGTSGSPIVNTFGEVIGLYGNGVILGNGTYVSAIVQGERE</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+M R +LGS Q G GVM EGVFHT+WH TKG+AL SGEG+L PYWG VK+D + Y GPWKLD  WDG +EVQL+AV PG+  +N+QT+PG+FKT  G+IGAV LD+P GTSGSPI++  G VIGLYGNGV++ NG+YVSAI QG+RE</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>20</Hit_num>
+  <Hit_id>ref|NP_051124.1|</Hit_id>
+  <Hit_def>polyprotein [Murray Valley encephalitis virus]</Hit_def>
+  <Hit_accession>NP_051124</Hit_accession>
+  <Hit_len>3434</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>221.861</Hsp_bit-score>
+      <Hsp_score>564</Hsp_score>
+      <Hsp_evalue>1.14014e-63</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1519</Hsp_hit-from>
+      <Hsp_hit-to>1673</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>127</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GDTTPGVYRIMARGILGRYQAGVGVMHEGVFHTLWHTTRGAAIMSGEGRLTPYWGNVKEDRVTYGGPWKLDQKWNGVDDVQMIVVEPGKPAINVQTKPGIFKTAHGEIGAVSLDYPIGTSGSPIVNSNGEIIGLYGNGVILGNGAYVSAIVQGER</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+M R +LG  Q GVGVM EGVFHT+WH T+GAA+ SGEGRL PYWG+VK+D V+Y GPWKLD  W+G+ +VQ++ V PG+ A N+QT PGIFKT  G+IGAV+LDYP GTSGSPI++  G +IGLYGNGV++ NG+YVSAI QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>21</Hit_num>
+  <Hit_id>ref|YP_009259661.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Chaoyang virus]</Hit_def>
+  <Hit_accession>YP_009259661</Hit_accession>
+  <Hit_len>621</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>215.312</Hsp_bit-score>
+      <Hsp_score>547</Hsp_score>
+      <Hsp_evalue>1.57587e-63</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>153</Hsp_query-to>
+      <Hsp_hit-from>20</Hsp_hit-from>
+      <Hsp_hit-to>169</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>99</Hsp_identity>
+      <Hsp_positive>124</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>150</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQG</Hsp_qseq>
+      <Hsp_hseq>DGCYRVMSRRLIGSTQVGVGVMKDSVFHTMWHVTRGASLTSGNGRMDPYWADVREDLISYGGPWKLNSTWDGSSEVQLIAVQPQKIPENVQTTPGRFVMSDGTEVGAVVLDYPSGTSGSPIVDKDGNVVGLYGNGVMLNDSTYASAIAQS</Hsp_hseq>
+      <Hsp_midline>DG YRVM+RRL+GSTQVGVGVM++ VFHTMWHVT+GA+L SG GR+DPYW DV++DL+SY GPWKL++ WDG SEVQL+AV P +  +N+QT PG F   DG ++GAV LDYP+GTSGSPI+DK G V+GLYGNGV++ + +Y SAI Q </Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>22</Hit_num>
+  <Hit_id>ref|YP_001008348.1|</Hit_id>
+  <Hit_def>polyprotein [Saint Louis encephalitis virus]</Hit_def>
+  <Hit_accession>YP_001008348</Hit_accession>
+  <Hit_len>3430</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>221.09</Hsp_bit-score>
+      <Hsp_score>562</Hsp_score>
+      <Hsp_evalue>2.03837e-63</Hsp_evalue>
+      <Hsp_query-from>2</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1516</Hsp_hit-from>
+      <Hsp_hit-to>1669</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>104</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>154</Hsp_align-len>
+      <Hsp_qseq>ETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>ETKPGIYRIMTRGILGTFQAGVGVMHEGVFHTMWHATEGAVLRNGEGRLDPYAGDVRNDLISYGGPWKLSATWDGTEEVQMIAVAPGKPAINVQTTPGVFKTPLGTIGAVTLDFPKGTSGSPIINKKGEIIGLYGNGVLIGQGEYVSGIIQGER</Hsp_hseq>
+      <Hsp_midline>ET  G+YR+MTR +LG+ Q GVGVM EGVFHTMWH T+GA LR+GEGRLDPY GDV+ DL+SY GPWKL A WDG  EVQ++AV PG+ A N+QT PG+FKT  G IGAV LD+P GTSGSPI++K G +IGLYGNGV+I  G YVS I QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>23</Hit_num>
+  <Hit_id>ref|YP_009350103.1|</Hit_id>
+  <Hit_def>polyprotein [Yaounde virus]</Hit_def>
+  <Hit_accession>YP_009350103</Hit_accession>
+  <Hit_len>3430</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>219.935</Hsp_bit-score>
+      <Hsp_score>559</Hsp_score>
+      <Hsp_evalue>5.31669e-63</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1517</Hsp_hit-from>
+      <Hsp_hit-to>1671</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>102</Hsp_identity>
+      <Hsp_positive>125</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMTHGILGKYQAGVGVMYEGVFHTLWHTTRGAALMSGDGRLDPYWGSVKEDRLTYGGPWKLERKWNGEEDVQMIVVEPGKPVKNVQTRPGVFKTPHGEIGAVTLDYQTGTSGSPIVDKNGDIIGLYGNGVIMANGSYVSAIVQGER</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+MT  +LG  Q GVGVM EGVFHT+WH T+GAAL SG+GRLDPYWG VK+D ++Y GPWKL+  W+G  +VQ++ V PG+  KN+QT PG+FKT  G+IGAV LDY  GTSGSPI+DK G +IGLYGNGV++ NGSYVSAI QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>24</Hit_num>
+  <Hit_id>ref|YP_009268592.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Lammi virus]</Hit_def>
+  <Hit_accession>YP_009268592</Hit_accession>
+  <Hit_len>621</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>211.46</Hsp_bit-score>
+      <Hsp_score>537</Hsp_score>
+      <Hsp_evalue>5.4598e-62</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>153</Hsp_query-to>
+      <Hsp_hit-from>20</Hsp_hit-from>
+      <Hsp_hit-to>169</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>98</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>150</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQG</Hsp_qseq>
+      <Hsp_hseq>DGCYRVMSKRLIGSTQVGVGVMKDSVFHTMWHVTRGASLTSGEGRMDPYWADVREDLISYGGPWKLNGTWDGNSEVQLIAVQPQQVPVNVKTTPGRFVMTDGTEVGAVVLDYPSGTSGSPIIDKDGVVVGLYGNGVMLNDSTYASAIAQS</Hsp_hseq>
+      <Hsp_midline>DG YRVM++RL+GSTQVGVGVM++ VFHTMWHVT+GA+L SGEGR+DPYW DV++DL+SY GPWKL+  WDG SEVQL+AV P +   N++T PG F   DG ++GAV LDYP+GTSGSPI+DK G V+GLYGNGV++ + +Y SAI Q </Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>25</Hit_num>
+  <Hit_id>ref|NP_775670.1|</Hit_id>
+  <Hit_def>non-structural protein NS3 [Japanese encephalitis virus]</Hit_def>
+  <Hit_accession>NP_775670</Hit_accession>
+  <Hit_len>619</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>210.69</Hsp_bit-score>
+      <Hsp_score>535</Hsp_score>
+      <Hsp_evalue>9.31431e-62</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>171</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>97</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMARGILGTYQAGVGVMYENVFHTLWHTTRGAAIMSGEGKLTPYWGSVKEDRIAYGGPWRFDRKWNGTDDVQVIVVEPGKAAVNIQTKPGVFRTPFGEVGAVSLDYPRGTSGSPILDSNGDIIGLYGNGVELGDGSYVSAIVQGDRQ</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+M R +LG+ Q GVGVM E VFHT+WH T+GAA+ SGEG+L PYWG VK+D ++Y GPW+ D  W+G  +VQ++ V PG+ A NIQT PG+F+T  G++GAV+LDYP GTSGSPILD  G +IGLYGNGV + +GSYVSAI QG R+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>26</Hit_num>
+  <Hit_id>ref|YP_001040006.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Ilheus virus]</Hit_def>
+  <Hit_accession>YP_001040006</Hit_accession>
+  <Hit_len>3424</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>216.083</Hsp_bit-score>
+      <Hsp_score>549</Hsp_score>
+      <Hsp_evalue>1.14502e-61</Hsp_evalue>
+      <Hsp_query-from>2</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1514</Hsp_hit-from>
+      <Hsp_hit-to>1668</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>101</Hsp_identity>
+      <Hsp_positive>125</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>ETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>ELKPGVYRVMTMGILGRYQSGVGVMWDGVFHTMWHVTQGAALRNGEGRLNPTWGSVRDDLISYGGKWKLSATWNGSEEVQMIAVEPGKAAKNYQTKPGVFKTPAGEIGAITLDFPKGTSGSPIINKAGEITGLYGNGIVLERGAYVSAITQGERQ</Hsp_hseq>
+      <Hsp_midline>E   GVYRVMT  +LG  Q GVGVM +GVFHTMWHVT+GAALR+GEGRL+P WG V+ DL+SY G WKL A W+G  EVQ++AV PG+ AKN QT PG+FKT  G+IGA+ LD+P GTSGSPI++K G + GLYGNG+V++ G+YVSAITQG+R+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>27</Hit_num>
+  <Hit_id>ref|YP_009259532.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Donggang virus]</Hit_def>
+  <Hit_accession>YP_009259532</Hit_accession>
+  <Hit_len>621</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>209.92</Hsp_bit-score>
+      <Hsp_score>533</Hsp_score>
+      <Hsp_evalue>1.55013e-61</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>168</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>94</Hsp_identity>
+      <Hsp_positive>124</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>153</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>GDTETGVYRIMSKRLFGATQIGVGVMYESVFHTMWHVTRGASLMSGEGRIDPYWADVREDLISYGGPWRLNGTWDGTTEVQLIAVSPGKVPINVQTKPGKFVLTDGREIGAVVLDYPPGTSGSPVIDQEGKIVGLYGNGVMLNEQTFASSIAQ</Hsp_hseq>
+      <Hsp_midline>G+T  GVYR+M++RL G+TQ+GVGVM E VFHTMWHVT+GA+L SGEGR+DPYW DV++DL+SY GPW+L+  WDG +EVQL+AV PG+   N+QT PG F   DG +IGAV LDYP GTSGSP++D+ G+++GLYGNGV++   ++ S+I Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>28</Hit_num>
+  <Hit_id>ref|YP_009553376.1|</Hit_id>
+  <Hit_def>polyprotein [Kampung Karu virus]</Hit_def>
+  <Hit_accession>YP_009553376</Hit_accession>
+  <Hit_len>3436</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>215.312</Hsp_bit-score>
+      <Hsp_score>547</Hsp_score>
+      <Hsp_evalue>2.00809e-61</Hsp_evalue>
+      <Hsp_query-from>6</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>1541</Hsp_hit-from>
+      <Hsp_hit-to>1687</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>98</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>147</Hsp_align-len>
+      <Hsp_qseq>GVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>GVYRVMKETILGSKQIGVGIMENGVFHTMWHVTQGASLKLEEGRIDPFWASVQEDLISYGGAWQLKGQWDGIEEVQLLAVPPKKNPENVQTKPGIFKTKEGELGAVALDYPEGTSGSPILNAKGAVVGLYGNGVVIGNSDYVSAISQ</Hsp_hseq>
+      <Hsp_midline>GVYRVM   +LGS Q+GVG+M+ GVFHTMWHVT+GA+L+  EGR+DP+W  V++DL+SY G W+L   WDG+ EVQLLAVPP +  +N+QT PGIFKTK+G++GAVALDYP GTSGSPIL+  G V+GLYGNGVVI N  YVSAI+Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>29</Hit_num>
+  <Hit_id>ref|YP_005454257.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Chaoyang virus]</Hit_def>
+  <Hit_accession>YP_005454257</Hit_accession>
+  <Hit_len>3435</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>215.312</Hsp_bit-score>
+      <Hsp_score>547</Hsp_score>
+      <Hsp_evalue>2.39046e-61</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>153</Hsp_query-to>
+      <Hsp_hit-from>1522</Hsp_hit-from>
+      <Hsp_hit-to>1671</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>99</Hsp_identity>
+      <Hsp_positive>124</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>150</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQG</Hsp_qseq>
+      <Hsp_hseq>DGCYRVMSRRLIGSTQVGVGVMKDSVFHTMWHVTRGASLTSGNGRMDPYWADVREDLISYGGPWKLNSTWDGSSEVQLIAVQPQKIPENVQTTPGRFVMSDGTEVGAVVLDYPSGTSGSPIVDKDGNVVGLYGNGVMLNDSTYASAIAQS</Hsp_hseq>
+      <Hsp_midline>DG YRVM+RRL+GSTQVGVGVM++ VFHTMWHVT+GA+L SG GR+DPYW DV++DL+SY GPWKL++ WDG SEVQL+AV P +  +N+QT PG F   DG ++GAV LDYP+GTSGSPI+DK G V+GLYGNGV++ + +Y SAI Q </Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>30</Hit_num>
+  <Hit_id>ref|YP_009553341.1|</Hit_id>
+  <Hit_def>polyprotein [Rocio virus]</Hit_def>
+  <Hit_accession>YP_009553341</Hit_accession>
+  <Hit_len>3425</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>215.312</Hsp_bit-score>
+      <Hsp_score>547</Hsp_score>
+      <Hsp_evalue>2.41354e-61</Hsp_evalue>
+      <Hsp_query-from>6</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1518</Hsp_hit-from>
+      <Hsp_hit-to>1668</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>100</Hsp_identity>
+      <Hsp_positive>124</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>151</Hsp_align-len>
+      <Hsp_qseq>GVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GVYRVMTSGVLGSYQSGVGVMYDGVFHTMWHVTQGAALRNGEGRLNPTWGSVRDDLITYGGKWKLSATWDGTEEVQLIAAEPGKPVKNFQTRPGVFKTPAGEVGAITLDFPKGTSGSPIVNKAGAVIGLYGNGLVLSHGAYVSAISQGERQ</Hsp_hseq>
+      <Hsp_midline>GVYRVMT  +LGS Q GVGVM +GVFHTMWHVT+GAALR+GEGRL+P WG V+ DL++Y G WKL A WDG  EVQL+A  PG+  KN QT PG+FKT  G++GA+ LD+P GTSGSPI++K G VIGLYGNG+V+ +G+YVSAI+QG+R+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>31</Hit_num>
+  <Hit_id>ref|YP_002790882.1|</Hit_id>
+  <Hit_def>polyprotein [Kedougou virus]</Hit_def>
+  <Hit_accession>YP_002790882</Hit_accession>
+  <Hit_len>3408</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>212.616</Hsp_bit-score>
+      <Hsp_score>540</Hsp_score>
+      <Hsp_evalue>1.86209e-60</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1509</Hsp_hit-from>
+      <Hsp_hit-to>1659</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>100</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>151</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>DGVYRIMSKKLLGPSQLGVGVMTQGVFHTMWHVTRGCTIEYNGGRLTPYWGSVKEDAISYGGPWKLTEKWDGTSEVQLIAVAPGKGAENVQTKPGIFNTATGTIGAVALDYPAGTSGSPILNSEGKVVGLYGNGVLVGGSSYVSAISQVKH</Hsp_hseq>
+      <Hsp_midline>DGVYR+M+++LLG +Q+GVGVM +GVFHTMWHVT+G  +    GRL PYWG VK+D +SY GPWKL   WDG SEVQL+AV PG+ A+N+QT PGIF T  G IGAVALDYPAGTSGSPIL+  G+V+GLYGNGV++   SYVSAI+Q K </Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>32</Hit_num>
+  <Hit_id>ref|YP_009056848.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Lammi virus]</Hit_def>
+  <Hit_accession>YP_009056848</Hit_accession>
+  <Hit_len>3434</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>211.46</Hsp_bit-score>
+      <Hsp_score>537</Hsp_score>
+      <Hsp_evalue>4.28327e-60</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>1521</Hsp_hit-from>
+      <Hsp_hit-to>1669</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>98</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>149</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>DGCYRVMSKRLIGSTQVGVGVMKDSVFHTMWHVTRGASLTSGEGRMDPYWADVREDLISYGGPWKLNGTWDGNSEVQLIAVQPQQVPVNVKTTPGRFVMTDGTEVGAVVLDYPSGTSGSPIIDKDGVVVGLYGNGVMLNDSTYASAIAQ</Hsp_hseq>
+      <Hsp_midline>DG YRVM++RL+GSTQVGVGVM++ VFHTMWHVT+GA+L SGEGR+DPYW DV++DL+SY GPWKL+  WDG SEVQL+AV P +   N++T PG F   DG ++GAV LDYP+GTSGSPI+DK G V+GLYGNGV++ + +Y SAI Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>33</Hit_num>
+  <Hit_id>ref|YP_009268576.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Ilomantsi virus]</Hit_def>
+  <Hit_accession>YP_009268576</Hit_accession>
+  <Hit_len>622</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>206.068</Hsp_bit-score>
+      <Hsp_score>523</Hsp_score>
+      <Hsp_evalue>5.83695e-60</Hsp_evalue>
+      <Hsp_query-from>3</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>19</Hsp_hit-from>
+      <Hsp_hit-to>169</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>95</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>151</Hsp_align-len>
+      <Hsp_qseq>TTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>TEEGVYRVMSKRIIGSSQVGVGIMYENTFHTMWHVTRGASLSSGEGRIDPYWADVRDDLISYGGGWKLTGKWDGVSEVQLIAVPPNKVPENVQTRPGKFVMSTGQEIGAVVLDYPPGTSGSPIVNRDGNVVGLYGNGVMLNDTTYASAIAQ</Hsp_hseq>
+      <Hsp_midline>T +GVYRVM++R++GS+QVGVG+M E  FHTMWHVT+GA+L SGEGR+DPYW DV+ DL+SY G WKL   WDG+SEVQL+AVPP +  +N+QT PG F    G +IGAV LDYP GTSGSPI+++ G V+GLYGNGV++ + +Y SAI Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>34</Hit_num>
+  <Hit_id>ref|NP_059434.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Japanese encephalitis virus]</Hit_def>
+  <Hit_accession>NP_059434</Hit_accession>
+  <Hit_len>3432</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>211.075</Hsp_bit-score>
+      <Hsp_score>536</Hsp_score>
+      <Hsp_evalue>7.65795e-60</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1520</Hsp_hit-from>
+      <Hsp_hit-to>1675</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>97</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>GDTTTGVYRIMARGILGTYQAGVGVMYENVFHTLWHTTRGAAIMSGEGKLTPYWGSVKEDRIAYGGPWRFDRKWNGTDDVQVIVVEPGKAAVNIQTKPGVFRTPFGEVGAVSLDYPRGTSGSPILDSNGDIIGLYGNGVELGDGSYVSAIVQGDRQ</Hsp_hseq>
+      <Hsp_midline>G+TT GVYR+M R +LG+ Q GVGVM E VFHT+WH T+GAA+ SGEG+L PYWG VK+D ++Y GPW+ D  W+G  +VQ++ V PG+ A NIQT PG+F+T  G++GAV+LDYP GTSGSPILD  G +IGLYGNGV + +GSYVSAI QG R+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>35</Hit_num>
+  <Hit_id>ref|YP_005352889.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Donggang virus]</Hit_def>
+  <Hit_accession>YP_005352889</Hit_accession>
+  <Hit_len>3444</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>210.305</Hsp_bit-score>
+      <Hsp_score>534</Hsp_score>
+      <Hsp_evalue>1.15025e-59</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>1525</Hsp_hit-from>
+      <Hsp_hit-to>1677</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>94</Hsp_identity>
+      <Hsp_positive>124</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>153</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>GDTETGVYRIMSKRLFGATQIGVGVMYESVFHTMWHVTRGASLMSGEGRIDPYWADVREDLISYGGPWRLNGTWDGTTEVQLIAVSPGKVPINVQTKPGKFVLTDGREIGAVVLDYPPGTSGSPVIDQEGKIVGLYGNGVMLNEQTFASSIAQ</Hsp_hseq>
+      <Hsp_midline>G+T  GVYR+M++RL G+TQ+GVGVM E VFHTMWHVT+GA+L SGEGR+DPYW DV++DL+SY GPW+L+  WDG +EVQL+AV PG+   N+QT PG F   DG +IGAV LDYP GTSGSP++D+ G+++GLYGNGV++   ++ S+I Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>36</Hit_num>
+  <Hit_id>ref|YP_009351820.1|</Hit_id>
+  <Hit_def>polyprotein [T&apos;Ho virus]</Hit_def>
+  <Hit_accession>YP_009351820</Hit_accession>
+  <Hit_len>3427</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>209.149</Hsp_bit-score>
+      <Hsp_score>531</Hsp_score>
+      <Hsp_evalue>3.67641e-59</Hsp_evalue>
+      <Hsp_query-from>2</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1514</Hsp_hit-from>
+      <Hsp_hit-to>1668</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>100</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>ETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>ELKPGVYRVMSRGVFGSFQAGVGVMYEGVFHTMWHVTQGAALRNGEGRMVPEWGSVKDDLISYGGGWKLSGKWDGTEEVQMIVVEPGKPVVNLQTKPGIFKTPQGSVGAVTLDYPRGTSGSPIVNKDGQVVGLYGNGLVLSDGTYVSAISQTDRQ</Hsp_hseq>
+      <Hsp_midline>E   GVYRVM+R + GS Q GVGVM EGVFHTMWHVT+GAALR+GEGR+ P WG VK DL+SY G WKL   WDG  EVQ++ V PG+   N+QT PGIFKT  G +GAV LDYP GTSGSPI++K G+V+GLYGNG+V+ +G+YVSAI+Q  R+</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>37</Hit_num>
+  <Hit_id>ref|YP_004734464.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Tembusu virus]</Hit_def>
+  <Hit_accession>YP_004734464</Hit_accession>
+  <Hit_len>3425</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>207.994</Hsp_bit-score>
+      <Hsp_score>528</Hsp_score>
+      <Hsp_evalue>7.67456e-59</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>156</Hsp_query-to>
+      <Hsp_hit-from>1514</Hsp_hit-from>
+      <Hsp_hit-to>1669</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>94</Hsp_identity>
+      <Hsp_positive>123</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>156</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKRE</Hsp_qseq>
+      <Hsp_hseq>AEVGNGVFRIMARGLLGKYQAGVGVMHEGVFHTMWHVTNGAVIQAGEGTLVPYWASVRNDLISYGGPWKLGKQWNGVDEVQVIVVQPGKEVINVQTQPGIFKTQYGEVGAVSLDYPTGTSGSPIIDKEGQVVGLYGNGILVGSGDFVSMITQGEKK</Hsp_hseq>
+      <Hsp_midline> E  +GV+R+M R LLG  Q GVGVM EGVFHTMWHVT GA +++GEG L PYW  V+ DL+SY GPWKL   W+G+ EVQ++ V PG+   N+QT PGIFKT+ G++GAV+LDYP GTSGSPI+DK G+V+GLYGNG+++ +G +VS ITQG+++</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>38</Hit_num>
+  <Hit_id>ref|YP_009333127.1|</Hit_id>
+  <Hit_def>nonstructural protein NS3 [Kokobera virus]</Hit_def>
+  <Hit_accession>YP_009333127</Hit_accession>
+  <Hit_len>616</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>200.675</Hsp_bit-score>
+      <Hsp_score>509</Hsp_score>
+      <Hsp_evalue>4.64906e-58</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>16</Hsp_hit-from>
+      <Hsp_hit-to>167</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>91</Hsp_identity>
+      <Hsp_positive>120</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>152</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>AKVEDGVYRIFSRKLFGESQIGAGVMVKGTFHTMWHVTRGAVLKAGEGLLEPAWADVRKDLICYGGNWKLEEHWDGNEEVQLIALEPGKKVRHIQTKPGIFKTSEGEIGALDLDCMAGTSGSPIVNKNGEVVGLYGNGVLIKGDRYVSAISQ</Hsp_hseq>
+      <Hsp_midline> +  DGVYR+ +R+L G +Q+G GVM +G FHTMWHVT+GA L++GEG L+P W DV++DL+ Y G WKL+  WDG  EVQL+A+ PG++ ++IQT PGIFKT +G+IGA+ LD  AGTSGSPI++K G V+GLYGNGV+IK   YVSAI+Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>39</Hit_num>
+  <Hit_id>ref|YP_009056847.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Ilomantsi virus]</Hit_def>
+  <Hit_accession>YP_009056847</Hit_accession>
+  <Hit_len>3451</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>205.297</Hsp_bit-score>
+      <Hsp_score>521</Hsp_score>
+      <Hsp_evalue>7.61907e-58</Hsp_evalue>
+      <Hsp_query-from>3</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>1528</Hsp_hit-from>
+      <Hsp_hit-to>1678</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>95</Hsp_identity>
+      <Hsp_positive>121</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>151</Hsp_align-len>
+      <Hsp_qseq>TTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>TEEGVYRVMSKRIIGSSQVGVGIMYENTFHTMWHVTRGASLSSGEGRIDPYWADVRDDLISYGGGWKLTGKWDGVSEVQLIAVPPNKVPENVQTRPGKFVMSTGQEIGAVVLDYPPGTSGSPIVNRDGNVVGLYGNGVMLNDTTYASAIAQ</Hsp_hseq>
+      <Hsp_midline>T +GVYRVM++R++GS+QVGVG+M E  FHTMWHVT+GA+L SGEGR+DPYW DV+ DL+SY G WKL   WDG+SEVQL+AVPP +  +N+QT PG F    G +IGAV LDYP GTSGSPI+++ G V+GLYGNGV++ + +Y SAI Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>40</Hit_num>
+  <Hit_id>ref|YP_009344961.1|</Hit_id>
+  <Hit_def>polyprotein [Bouboui virus]</Hit_def>
+  <Hit_accession>YP_009344961</Hit_accession>
+  <Hit_len>3390</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>201.06</Hsp_bit-score>
+      <Hsp_score>510</Hsp_score>
+      <Hsp_evalue>1.9717e-56</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>1490</Hsp_hit-from>
+      <Hsp_hit-to>1638</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>96</Hsp_identity>
+      <Hsp_positive>118</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>149</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDG-DIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>DGVYRVMQTGLFGSSQVGVGVAKSGVFHTMWHVTKGAFLLVGDKRLIPSWGSVRKDLICYGGSWKLEGTWDGNDEVQLIAVPPGKEPLNVQTKPGVFRMQNGEEIGAVVLDYPAGTSGSPIINRQGEVVGLYGNGVVLDNGAYASAISQ</Hsp_hseq>
+      <Hsp_midline>DGVYRVM   L GS+QVGVGV + GVFHTMWHVTKGA L  G+ RL P WG V++DL+ Y G WKL+  WDG  EVQL+AVPPG+   N+QT PG+F+ ++G +IGAV LDYPAGTSGSPI+++ G V+GLYGNGVV+ NG+Y SAI+Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>41</Hit_num>
+  <Hit_id>ref|YP_001040007.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Kokobera virus]</Hit_def>
+  <Hit_accession>YP_001040007</Hit_accession>
+  <Hit_len>3410</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>200.675</Hsp_bit-score>
+      <Hsp_score>509</Hsp_score>
+      <Hsp_evalue>2.76765e-56</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>1508</Hsp_hit-from>
+      <Hsp_hit-to>1659</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>91</Hsp_identity>
+      <Hsp_positive>120</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>152</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>AKVEDGVYRIFSRKLFGESQIGAGVMVKGTFHTMWHVTRGAVLKAGEGLLEPAWADVRKDLICYGGNWKLEEHWDGNEEVQLIALEPGKKVRHIQTKPGIFKTSEGEIGALDLDCMAGTSGSPIVNKNGEVVGLYGNGVLIKGDRYVSAISQ</Hsp_hseq>
+      <Hsp_midline> +  DGVYR+ +R+L G +Q+G GVM +G FHTMWHVT+GA L++GEG L+P W DV++DL+ Y G WKL+  WDG  EVQL+A+ PG++ ++IQT PGIFKT +G+IGA+ LD  AGTSGSPI++K G V+GLYGNGV+IK   YVSAI+Q</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>42</Hit_num>
+  <Hit_id>ref|YP_002790883.1|</Hit_id>
+  <Hit_def>polyprotein [Bagaza virus]</Hit_def>
+  <Hit_accession>YP_002790883</Hit_accession>
+  <Hit_len>3426</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>200.675</Hsp_bit-score>
+      <Hsp_score>509</Hsp_score>
+      <Hsp_evalue>3.2319e-56</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1516</Hsp_hit-from>
+      <Hsp_hit-to>1670</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>91</Hsp_identity>
+      <Hsp_positive>118</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>AELSTGVFRIMARGILGKYQAGVGVMFDGVFHTMWHVTNGATINVGDGCLVPYWASVREDLISYGGPWKMGTKWNGVDEVQVIVVQPGKSVMNVQTKPGVFKTSTGEIGAVTLDYPTGTSGSPIVDKEGNIIGLYGNGILVGAGSFVSMISQGQR</Hsp_hseq>
+      <Hsp_midline> E + GV+R+M R +LG  Q GVGVM +GVFHTMWHVT GA +  G+G L PYW  V++DL+SY GPWK+   W+G+ EVQ++ V PG+   N+QT PG+FKT  G+IGAV LDYP GTSGSPI+DK G +IGLYGNG+++  GS+VS I+QG+R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>43</Hit_num>
+  <Hit_id>ref|NP_740321.1|</Hit_id>
+  <Hit_def>NS3 protein [dengue virus type 4]</Hit_def>
+  <Hit_accession>NP_740321</Hit_accession>
+  <Hit_len>618</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>194.897</Hsp_bit-score>
+      <Hsp_score>494</Hsp_score>
+      <Hsp_evalue>7.69318e-56</Hsp_evalue>
+      <Hsp_query-from>4</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>19</Hsp_hit-from>
+      <Hsp_hit-to>170</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>90</Hsp_identity>
+      <Hsp_positive>117</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>152</Hsp_align-len>
+      <Hsp_qseq>TDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>SEGVYRIMQRGLFGKTQVGVGIHMEGVFHTMWHVTRGSVICHETGRLEPSWADVRNDMISYGGGWRLGDKWDKEEDVQVLAIEPGKNPKHVQTKPGLFKTLTGEIGAVTLDFKPGTSGSPIINRKGKVIGLYGNGVVTKSGDYVSAITQAER</Hsp_hseq>
+      <Hsp_midline>++GVYR+M R L G TQVGVG+  EGVFHTMWHVT+G+ +    GRL+P W DV+ D++SY G W+L   WD   +VQ+LA+ PG+  K++QT PG+FKT  G+IGAV LD+  GTSGSPI+++ G+VIGLYGNGVV K+G YVSAITQ +R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>44</Hit_num>
+  <Hit_id>ref|NP_722463.1|</Hit_id>
+  <Hit_def>nonstructural protein 3 [dengue virus type 1]</Hit_def>
+  <Hit_accession>NP_722463</Hit_accession>
+  <Hit_len>619</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>194.512</Hsp_bit-score>
+      <Hsp_score>493</Hsp_score>
+      <Hsp_evalue>1.20045e-55</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>154</Hsp_query-to>
+      <Hsp_hit-from>20</Hsp_hit-from>
+      <Hsp_hit-to>169</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>88</Hsp_identity>
+      <Hsp_positive>116</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>150</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGK</Hsp_qseq>
+      <Hsp_hseq>DGIYRILQRGLLGRSQVGVGVFQEGVFHTMWHVTRGAVLMYQGKRLEPSWASVKKDLISYGGGWRFQGSWNAGEEVQVIAVEPGKNPKNVQTAPGTFKTPEGEVGAIALDFKPGTSGSPIVNREGKIVGLYGNGVVTTSGTYVSAIAQAK</Hsp_hseq>
+      <Hsp_midline>DG+YR++ R LLG +QVGVGV QEGVFHTMWHVT+GA L     RL+P W  VK+DL+SY G W+   +W+   EVQ++AV PG+  KN+QT PG FKT +G++GA+ALD+  GTSGSPI+++ G+++GLYGNGVV  +G+YVSAI Q K</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>45</Hit_num>
+  <Hit_id>ref|YP_009328360.1|</Hit_id>
+  <Hit_def>flavivirus polyprotein [New Mapoon virus]</Hit_def>
+  <Hit_accession>YP_009328360</Hit_accession>
+  <Hit_len>3409</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>198.749</Hsp_bit-score>
+      <Hsp_score>504</Hsp_score>
+      <Hsp_evalue>1.50703e-55</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>152</Hsp_query-to>
+      <Hsp_hit-from>1512</Hsp_hit-from>
+      <Hsp_hit-to>1659</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>93</Hsp_identity>
+      <Hsp_positive>116</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>148</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQ</Hsp_qseq>
+      <Hsp_hseq>DGVYRIYARRLFGSGQIGVGVMKDGTFHTMWHVTRGAALVLGEGILEPHWADVRHDMIAYNGNWKLTNKWNGEEFVQLIAVEPGSRVQHVQTKPGKFKTQDGEIGALDLDFAAGTSGSPIVNSEGEVIGLYGNGVLIHGEHYVSAITQ</Hsp_hseq>
+      <Hsp_midline>DGVYR+  RRL GS Q+GVGVM++G FHTMWHVT+GAAL  GEG L+P+W DV+ D+++Y G WKL   W+G   VQL+AV PG R +++QT PG FKT+DG+IGA+ LD+ AGTSGSPI++  G VIGLYGNGV+I    YVSAITQ</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>46</Hit_num>
+  <Hit_id>ref|YP_009345019.1|</Hit_id>
+  <Hit_def>polyprotein [Nounane virus]</Hit_def>
+  <Hit_accession>YP_009345019</Hit_accession>
+  <Hit_len>3442</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>198.364</Hsp_bit-score>
+      <Hsp_score>503</Hsp_score>
+      <Hsp_evalue>2.1362e-55</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>154</Hsp_query-to>
+      <Hsp_hit-from>1527</Hsp_hit-from>
+      <Hsp_hit-to>1680</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>101</Hsp_identity>
+      <Hsp_positive>114</Hsp_positive>
+      <Hsp_gaps>2</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGER-AKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGK</Hsp_qseq>
+      <Hsp_hseq>AERTDGVYRIMKHGWFGKQQAGVGVMQEGVFHTMWHVTQGAALRLERDRLDVHWASVESDLISYGGGWKLKTTWDGESEVQLLAVAPNRKEAVNVQTRPGKLKTIDGEIGAIALDYPTGTSGSPILNSSGAVIGLYGNGIKI-SGSYVSAISQAN</Hsp_hseq>
+      <Hsp_midline> E TDGVYR+M     G  Q GVGVMQEGVFHTMWHVT+GAALR    RLD +W  V+ DL+SY G WKL   WDG SEVQLLAV P  + A N+QT PG  KT DG+IGA+ALDYP GTSGSPIL+  G VIGLYGNG+ I +GSYVSAI+Q  </Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>47</Hit_num>
+  <Hit_id>ref|NP_073286.1|</Hit_id>
+  <Hit_def>polyprotein [dengue virus type 4]</Hit_def>
+  <Hit_accession>NP_073286</Hit_accession>
+  <Hit_len>3387</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>195.282</Hsp_bit-score>
+      <Hsp_score>495</Hsp_score>
+      <Hsp_evalue>2.45089e-54</Hsp_evalue>
+      <Hsp_query-from>4</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1493</Hsp_hit-from>
+      <Hsp_hit-to>1644</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>90</Hsp_identity>
+      <Hsp_positive>117</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>152</Hsp_align-len>
+      <Hsp_qseq>TDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>SEGVYRIMQRGLFGKTQVGVGIHMEGVFHTMWHVTRGSVICHETGRLEPSWADVRNDMISYGGGWRLGDKWDKEEDVQVLAIEPGKNPKHVQTKPGLFKTLTGEIGAVTLDFKPGTSGSPIINRKGKVIGLYGNGVVTKSGDYVSAITQAER</Hsp_hseq>
+      <Hsp_midline>++GVYR+M R L G TQVGVG+  EGVFHTMWHVT+G+ +    GRL+P W DV+ D++SY G W+L   WD   +VQ+LA+ PG+  K++QT PG+FKT  G+IGAV LD+  GTSGSPI+++ G+VIGLYGNGVV K+G YVSAITQ +R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>48</Hit_num>
+  <Hit_id>ref|NP_059433.1|</Hit_id>
+  <Hit_def>polyprotein [dengue virus type 1]</Hit_def>
+  <Hit_accession>NP_059433</Hit_accession>
+  <Hit_len>3392</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>194.126</Hsp_bit-score>
+      <Hsp_score>492</Hsp_score>
+      <Hsp_evalue>5.31871e-54</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>154</Hsp_query-to>
+      <Hsp_hit-from>1495</Hsp_hit-from>
+      <Hsp_hit-to>1644</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>88</Hsp_identity>
+      <Hsp_positive>116</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>150</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGK</Hsp_qseq>
+      <Hsp_hseq>DGIYRILQRGLLGRSQVGVGVFQEGVFHTMWHVTRGAVLMYQGKRLEPSWASVKKDLISYGGGWRFQGSWNAGEEVQVIAVEPGKNPKNVQTAPGTFKTPEGEVGAIALDFKPGTSGSPIVNREGKIVGLYGNGVVTTSGTYVSAIAQAK</Hsp_hseq>
+      <Hsp_midline>DG+YR++ R LLG +QVGVGV QEGVFHTMWHVT+GA L     RL+P W  VK+DL+SY G W+   +W+   EVQ++AV PG+  KN+QT PG FKT +G++GA+ALD+  GTSGSPI+++ G+++GLYGNGVV  +G+YVSAI Q K</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>49</Hit_num>
+  <Hit_id>ref|YP_006846328.2|</Hit_id>
+  <Hit_def>flavivirus polyprotein [Ntaya virus]</Hit_def>
+  <Hit_accession>YP_006846328</Hit_accession>
+  <Hit_len>3427</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>192.971</Hsp_bit-score>
+      <Hsp_score>489</Hsp_score>
+      <Hsp_evalue>1.66806e-53</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>155</Hsp_query-to>
+      <Hsp_hit-from>1516</Hsp_hit-from>
+      <Hsp_hit-to>1670</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>91</Hsp_identity>
+      <Hsp_positive>117</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>155</Hsp_align-len>
+      <Hsp_qseq>GETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGKR</Hsp_qseq>
+      <Hsp_hseq>AEISTGVFRIMARGIFGKYQAGVGVMYEGVFHTMWHVTNGATINVGDGCLVPYWASVREDLISYGGPWKLGKKWNGVDEVQVVVVQPGKPATNVQTKPGIFRTHAGEVGAVTLDYPTGTSGSPIIDKEGNIIGLYGNGILVGAGNFVSMISQGNR</Hsp_hseq>
+      <Hsp_midline> E + GV+R+M R + G  Q GVGVM EGVFHTMWHVT GA +  G+G L PYW  V++DL+SY GPWKL   W+G+ EVQ++ V PG+ A N+QT PGIF+T  G++GAV LDYP GTSGSPI+DK G +IGLYGNG+++  G++VS I+QG R</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>50</Hit_num>
+  <Hit_id>ref|YP_009222007.1|</Hit_id>
+  <Hit_def>polyprotein [Banzi virus]</Hit_def>
+  <Hit_accession>YP_009222007</Hit_accession>
+  <Hit_len>3393</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>192.586</Hsp_bit-score>
+      <Hsp_score>488</Hsp_score>
+      <Hsp_evalue>1.71678e-53</Hsp_evalue>
+      <Hsp_query-from>5</Hsp_query-from>
+      <Hsp_query-to>154</Hsp_query-to>
+      <Hsp_hit-from>1490</Hsp_hit-from>
+      <Hsp_hit-to>1640</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>89</Hsp_identity>
+      <Hsp_positive>118</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>151</Hsp_align-len>
+      <Hsp_qseq>DGVYRVMTRRLLGSTQVGVGVMQEGVFHTMWHVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERAKNIQTLPGIFKTKDGD-IGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAITQGK</Hsp_qseq>
+      <Hsp_hseq>DGVFRIIQKGLFGSSQVGIGVAKDGVFHTMWHVTRGAFLMHSGKQLTPTWGSVRKDLVCYGGTWKLDGAWNGVDEVQLIAVPPGKPATNVQTKPGTFVLPTGDEAGAVLLDFPSGTSGSPIIDRHGNILGLYGNGIVLENGAYASAISQAQ</Hsp_hseq>
+      <Hsp_midline>DGV+R++ + L GS+QVG+GV ++GVFHTMWHVT+GA L     +L P WG V++DLV Y G WKLD AW+G+ EVQL+AVPPG+ A N+QT PG F    GD  GAV LD+P+GTSGSPI+D+ G ++GLYGNG+V++NG+Y SAI+Q +</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>301066129</Statistics_db-num>
+      <Statistics_db-len>378414520</Statistics_db-len>
+      <Statistics_hsp-len>0</Statistics_hsp-len>
+      <Statistics_eff-space>0</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+</BlastOutput_iterations>
+</BlastOutput>

@@ -5,20 +5,18 @@ import pytest
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
-from asapdiscovery.data.schema_v2.complex import PreppedComplex
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
 from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
-from rdkit import Chem
 
 
 @pytest.fixture(scope="session")
 def tyk2_ligands():
     """Create a set of openfe tyk2 ligands"""
     input_ligands = fetch_test_file("tyk2_ligands.sdf")
-    supp = Chem.SDMolSupplier(input_ligands.as_posix(), removeHs=False)
-    # convert to openfe objects
-    ligands = [openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supp]
+    ligands = MolFileFactory(filename=input_ligands.as_posix()).load()
     return ligands
 
 

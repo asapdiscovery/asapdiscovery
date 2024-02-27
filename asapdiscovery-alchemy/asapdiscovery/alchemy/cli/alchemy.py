@@ -64,6 +64,14 @@ def create(filename: str):
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="The file which contains the center ligand, only required by radial type networks.",
 )
+@click.option(
+    "-ep",
+    "--experimental-protocol",
+    help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+)
 def plan(
     name: str,
     receptor: Optional[str] = None,
@@ -71,6 +79,7 @@ def plan(
     center_ligand: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
+    experimental_protocol: Optional[str] = None,
 ):
     """
     Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
@@ -81,7 +90,7 @@ def plan(
     import openfe
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyDataSet
-    from rdkit import Chem
+    from asapdiscovery.data.readers.molfile import MolFileFactory
 
     # check mutually exclusive args
     if ligands is None and alchemy_dataset is None:
@@ -103,10 +112,7 @@ def plan(
         # load the set of posed ligands and the receptor from our dataset
         click.echo(f"Loading Ligands and protein from AlchemyDataSet {alchemy_dataset}")
         alchemy_ds = AlchemyDataSet.from_file(alchemy_dataset)
-        input_ligands = [
-            openfe.SmallMoleculeComponent.from_sdf_string(mol.to_sdf_str())
-            for mol in alchemy_ds.posed_ligands
-        ]
+        input_ligands = alchemy_ds.posed_ligands
 
         # write to a temp pdb file and read back in
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
@@ -117,19 +123,14 @@ def plan(
         # load from separate files
         click.echo(f"Loading Ligands from {ligands}")
         # parse all required data/ assume sdf currently
-        supplier = Chem.SDMolSupplier(ligands, removeHs=False)
-        input_ligands = [
-            openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier
-        ]
+        input_ligands = MolFileFactory(filename=ligands).load()
+
         click.echo(f"Loading protein from {receptor}")
         receptor = openfe.ProteinComponent.from_pdb_file(receptor)
 
     if center_ligand is not None:
         # handle the center ligand needed for radial networks
-        supplier = Chem.SDMolSupplier(center_ligand, removeHs=False)
-        center_ligand = [
-            openfe.SmallMoleculeComponent.from_rdkit(mol) for mol in supplier
-        ]
+        center_ligand = MolFileFactory(filename=center_ligand).load()
         if len(center_ligand) > 1:
             raise RuntimeError(
                 f"Only a single center ligand can be used for radial networks, found {len(center_ligand)} ligands in {center_ligand}."
@@ -143,6 +144,7 @@ def plan(
         receptor=receptor,
         ligands=input_ligands,
         central_ligand=center_ligand,
+        experimental_protocol=experimental_protocol,
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
@@ -178,7 +180,7 @@ def plan(
     "-c",
     "--campaign",
     type=click.STRING,
-    help="The name of the campaign in alchemiscale the network should be submitted to.",
+    help="The name of the campaign in alchemiscale the network should be submitted to. If `-o` is set to 'asap' (default), `-c` must be either of 'public' or 'confidential'.",
     required=True,
 )
 @click.option(
@@ -188,7 +190,17 @@ def plan(
     help="The name of the project in alchemiscale the network should be submitted to.",
     required=True,
 )
-def submit(network: str, organization: str, campaign: str, project: str):
+@click.option(
+    "-pr",
+    "--prioritize",
+    type=click.BOOL,
+    default=None,
+    help="Whether to prioritize the submitted network to have the highest priority of all currently running/waiting networks, or to de-prioritize it instead. Defaults to 0.5 which is the `alchemiscale` default network priority.",
+    show_default=True,
+)
+def submit(
+    network: str, organization: str, campaign: str, project: str, prioritize: bool
+):
     """
     Submit a local FreeEnergyCalculationNetwork to alchemiscale using the provided scope details. The network object
     will have these details saved into it.
@@ -202,6 +214,12 @@ def submit(network: str, organization: str, campaign: str, project: str):
     from alchemiscale import Scope
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+
+    # make sure the org/campaign combination is valid
+    if organization == "asap" and campaign not in ("public", "confidential"):
+        raise ValueError(
+            "If organization (`-o`) is set to 'asap' (default), campaign (`-c`) must be either of 'public' or 'confidential'."
+        )
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
@@ -222,7 +240,9 @@ def submit(network: str, organization: str, campaign: str, project: str):
     submitted_network.to_file(network)
     # now action the tasks
     click.echo("Creating and actioning FEC tasks on Alchemiscale...")
-    task_ids = client.action_network(planned_network=submitted_network)
+    task_ids = client.action_network(
+        planned_network=submitted_network, prioritize=prioritize
+    )
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
@@ -373,11 +393,18 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
         table.add_column(
             "Deleted", overflow="fold", style="purple", header_style="purple"
         )
+        table.add_column(
+            "Actioned", overflow="fold", style="orange_red1", header_style="orange_red1"
+        )
         for key in running_networks:
+            # get status
             network_status = client._client.get_network_status(
                 network=key, visualize=False
             )
-            if "running" in network_status or "waiting" in network_status:
+            running_tasks = client._client.get_network_actioned_tasks(network=key)
+            if (
+                "running" in network_status or "waiting" in network_status
+            ) and running_tasks:
                 table.add_row(
                     str(key),
                     str(network_status.get("complete", 0)),
@@ -386,6 +413,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                     str(network_status.get("error", 0)),
                     str(network_status.get("invalid", 0)),
                     str(network_status.get("deleted", 0)),
+                    str(len(running_tasks)),
                 )
         status_breakdown.stop()
         console.print(table)
@@ -455,6 +483,41 @@ def restart(network: str, verbose: bool, tasks):
 
 @alchemy.command()
 @click.option(
+    "-nk",
+    "--network-key",
+    type=click.STRING,
+    help="The network key of the network to be stopped. This can be found by running e.g. `asap-alchemy status -a`.",
+    required=True,
+)
+def stop(network_key: str):
+    """Stop (i.e. set to 'error') a network's running and waiting tasks."""
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    from rich import pretty
+    from rich.padding import Padding
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    client = AlchemiscaleHelper()
+    cancel_status = console.status(f"Canceling actioned tasks on network {network_key}")
+    cancel_status.start()
+    canceled_tasks = client.cancel_actioned_tasks(network_key=network_key)
+    # check how many were canceled as some maybe None if not found
+    total_tasks = len([task for task in canceled_tasks if task is not None])
+    cancel_status.stop()
+
+    message = Padding(
+        f"Canceled {total_tasks} actioned tasks for network {network_key}",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+
+@alchemy.command()
+@click.option(
     "-n",
     "--network",
     type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
@@ -476,8 +539,19 @@ def restart(network: str, verbose: bool, tasks):
     default="pIC50",
     show_default=True,
 )
+@click.option(
+    "-ep",
+    "--experimental-protocol",
+    help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+)
 def predict(
-    network: str, reference_units: str, reference_dataset: Optional[str] = None
+    network: str,
+    reference_units: str,
+    reference_dataset: Optional[str] = None,
+    experimental_protocol: Optional[str] = None,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
@@ -509,15 +583,20 @@ def predict(
     predict_status = console.status("Calculating absolute free energies")
     predict_status.start()
 
-    ligands = result_network.network.to_openfe_ligands()
+    ligands = result_network.network.ligands
+    if result_network.network.central_ligand is not None:
+        ligands.append(result_network.network.central_ligand)
     # convert to cinnabar fepmap to do the prediction via MLE
     fe_map = result_network.results.to_fe_map()
     fe_map.generate_absolute_values()
+    # check if we have a protocol on the network already
+    protocol = experimental_protocol or result_network.experimental_protocol
     absolute_df, relative_df = get_data_from_femap(
         fe_map=fe_map,
         ligands=ligands,
         assay_units=reference_units,
         reference_dataset=reference_dataset,
+        cdd_protocol=protocol,
     )
     # write the csv to file to be uploaded to postera later
     absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"
@@ -536,7 +615,9 @@ def predict(
     )
     console.print(message)
 
-    if reference_dataset is not None:
+    # use short switch to find if either value is not None
+    has_ref_data = reference_dataset or experimental_protocol
+    if has_ref_data is not None:
         report_status = console.status("Generating interactive reports")
         report_status.start()
         # we can only make these reports currently with experimental data

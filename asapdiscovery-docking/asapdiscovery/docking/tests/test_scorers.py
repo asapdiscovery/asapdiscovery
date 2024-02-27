@@ -1,6 +1,8 @@
 import pytest
 from asapdiscovery.docking.scorer import (
     ChemGauss4Scorer,
+    E3NNScorer,
+    FINTScorer,
     GATScorer,
     MetaScorer,
     SchnetScorer,
@@ -31,12 +33,24 @@ def test_gat_scorer(results_multi, use_dask):
     assert scores[0].score > 0.0
 
 
+@pytest.mark.xfail(
+    reason="Schnet models returning strange values currently see issue #838"
+)
 @pytest.mark.parametrize("use_dask", [True, False])
 def test_schnet_scorer(results_multi, use_dask):
     scorer = SchnetScorer.from_latest_by_target("SARS-CoV-2-Mpro")
     scores = scorer.score(results_multi, use_dask=use_dask)
     assert len(scores) == 2
     assert scores[0].score_type == "schnet"
+    assert scores[0].score > 0.0
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_e3nn_scorer(results_multi, use_dask):
+    scorer = E3NNScorer.from_latest_by_target("SARS-CoV-2-Mpro")
+    scores = scorer.score(results_multi, use_dask=use_dask)
+    assert len(scores) == 2
+    assert scores[0].score_type == "e3nn"
     assert scores[0].score > 0.0
 
 
@@ -65,3 +79,13 @@ def test_meta_scorer_df(results_multi):
 
     scores = scorer.score(results_multi, return_df=True)
     assert len(scores) == 2  # 3 scorers for each of 2 inputs
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_FINT_scorer(results_multi, use_dask):
+    scorer = FINTScorer(target="SARS-CoV-2-Mpro")
+    scores = scorer.score(results_multi, use_dask=use_dask)
+    assert len(scores) == 2
+    assert scores[0].score_type == "FINT"
+    assert scores[0].score > 0.0
+    assert scores[0].score <= 1.0
