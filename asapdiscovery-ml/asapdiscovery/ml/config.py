@@ -138,7 +138,7 @@ class EarlyStoppingConfig(BaseModel):
         ),
     )
     # Parameters for best
-    es_patience: int = Field(
+    patience: int = Field(
         None,
         description=(
             "The maximum number of epochs to continue training with no improvement in "
@@ -146,14 +146,14 @@ class EarlyStoppingConfig(BaseModel):
         ),
     )
     # Parameters for converged
-    es_n_check: int = Field(
+    n_check: int = Field(
         None,
         description=(
             "Number of past epochs to keep track of when calculating divergence. "
             "Used only in ConvergedEarlyStopping."
         ),
     )
-    es_divergence: float = Field(
+    divergence: float = Field(
         None,
         description=(
             "Max allowable difference from the mean of the losses. "
@@ -166,11 +166,11 @@ class EarlyStoppingConfig(BaseModel):
         match values["es_type"]:
             case EarlyStoppingType.best:
                 assert (
-                    values["es_patience"] is not None
+                    values["patience"] is not None
                 ), "Value required for patience when using BestEarlyStopping."
             case EarlyStoppingType.converged:
-                assert (values["es_n_check"] is not None) and (
-                    values["es_divergence"] is not None
+                assert (values["n_check"] is not None) and (
+                    values["divergence"] is not None
                 ), (
                     "Values required for n_check and divergence when using "
                     "ConvergedEarlyStopping."
@@ -183,9 +183,9 @@ class EarlyStoppingConfig(BaseModel):
     def build(self) -> BestEarlyStopping | ConvergedEarlyStopping:
         match self.es_type:
             case EarlyStoppingType.best:
-                return BestEarlyStopping(self.es_patience)
+                return BestEarlyStopping(self.patience)
             case EarlyStoppingType.converged:
-                return ConvergedEarlyStopping(self.es_n_check, self.es_divergence)
+                return ConvergedEarlyStopping(self.n_check, self.divergence)
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 

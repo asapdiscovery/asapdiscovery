@@ -951,9 +951,9 @@ def build_visnet(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -1928,9 +1928,9 @@ def build_and_train_visnet(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
