@@ -1,7 +1,10 @@
 from typing import Optional
 
 import click
-from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags, TagEnumBase
+from asapdiscovery.data.services.postera.manifold_data_validation import (
+    TagEnumBase,
+    TargetTags,
+)
 
 
 @click.group()
@@ -87,7 +90,7 @@ def plan(
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
-    target: Optional[TagEnumBase] = None
+    target: Optional[TagEnumBase] = None,
 ):
     """
     Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file
@@ -153,7 +156,7 @@ def plan(
         ligands=input_ligands,
         central_ligand=center_ligand,
         experimental_protocol=experimental_protocol,
-        target=target
+        target=target,
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
@@ -576,7 +579,7 @@ def predict(
     reference_dataset: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
     target: Optional[TagEnumBase] = None,
-    postera_molset_name: Optional[str] = None
+    postera_molset_name: Optional[str] = None,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
@@ -651,18 +654,20 @@ def predict(
     # workout if we should upload to postera
     if bio_target is not None and postera_molset_name is not None:
         # format and upload to posteara
-        postera_status = console.status(f"Uploading predictions to Postera Manifold molecule set: {postera_molset_name}.")
+        postera_status = console.status(
+            f"Uploading predictions to Postera Manifold molecule set: {postera_molset_name}."
+        )
         postera_status.start()
 
         _ = upload_to_postera(
             molecule_set_name=postera_molset_name,
             target=target,
-            absolute_dg_predictions=absolute_df
+            absolute_dg_predictions=absolute_df,
         )
 
         message = Padding(
             f"Predictions uploaded to Postera Manifold molecule set: {postera_molset_name}",
-            (1, 0, 1, 0)
+            (1, 0, 1, 0),
         )
         postera_status.stop()
         console.print(message)

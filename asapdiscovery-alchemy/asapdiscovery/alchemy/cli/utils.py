@@ -28,7 +28,9 @@ def pull_from_postera(molecule_set_name: str):
     return PosteraFactory(settings=settings, molecule_set_name=molecule_set_name).pull()
 
 
-def upload_to_postera(molecule_set_name: str, target: str, absolute_dg_predictions: pd.DataFrame) -> bool:
+def upload_to_postera(
+    molecule_set_name: str, target: str, absolute_dg_predictions: pd.DataFrame
+) -> bool:
     """
     A convenience method to format predicted absolute DG values using Alchemy and upload to postera with tucked imports
     to avoid importing Postera tools.
@@ -41,11 +43,14 @@ def upload_to_postera(molecule_set_name: str, target: str, absolute_dg_predictio
     Returns:
         `True` if a new molecule set was made else `False` if we just update an existing set.
     """
+    from enum import Enum
+
+    from asapdiscovery.alchemy.predict import dg_to_postera_dataframe
+    from asapdiscovery.data.services.postera.manifold_data_validation import (
+        rename_output_columns_for_manifold,
+    )
     from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
     from asapdiscovery.data.services.services_config import PosteraSettings
-    from asapdiscovery.alchemy.predict import dg_to_postera_dataframe
-    from asapdiscovery.data.services.postera.manifold_data_validation import rename_output_columns_for_manifold
-    from enum import Enum
 
     # mock some enum to specifiy which columns are allowed?
     class AlchemyResults(str, Enum):
@@ -53,7 +58,9 @@ def upload_to_postera(molecule_set_name: str, target: str, absolute_dg_predictio
         INCHI_KEY = "Inchi_Key"
         LIGAND_ID = "Ligand_ID"
         COMPUTED_BIOCHEMICAL_ACTIVITY_FEC = "computed-biochemical-activity-FEC"
-        COMPUTED_BIOCHEMICAL_ACTIVITY_FEC_UNCERTAINTY = "computed-biochemical-activity-FEC-uncertainty"
+        COMPUTED_BIOCHEMICAL_ACTIVITY_FEC_UNCERTAINTY = (
+            "computed-biochemical-activity-FEC-uncertainty"
+        )
 
     # convert the dg values to pIC50 with the expected names
     postera_df = dg_to_postera_dataframe(absolute_predictions=absolute_dg_predictions)
@@ -66,7 +73,7 @@ def upload_to_postera(molecule_set_name: str, target: str, absolute_dg_predictio
         allow=[
             AlchemyResults.SMILES.value,
             AlchemyResults.INCHI_KEY.value,
-            AlchemyResults.LIGAND_ID.value
+            AlchemyResults.LIGAND_ID.value,
         ],
     )
 
@@ -74,7 +81,7 @@ def upload_to_postera(molecule_set_name: str, target: str, absolute_dg_predictio
         settings=PosteraSettings(),
         molecule_set_name=molecule_set_name,
         id_field=AlchemyResults.LIGAND_ID.value,
-        smiles_field=AlchemyResults.SMILES.value
+        smiles_field=AlchemyResults.SMILES.value,
     )
 
     _, _, made_new_molset = postera_uploader.push(result_df)

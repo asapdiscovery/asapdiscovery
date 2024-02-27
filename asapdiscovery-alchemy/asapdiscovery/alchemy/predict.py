@@ -186,7 +186,10 @@ def dg_to_postera_dataframe(absolute_predictions: pd.DataFrame) -> pd.DataFrame:
     # data.services.postera.manifold_data_tags.yaml
     postera_df = absolute_predictions.copy(deep=True)
 
-    for column, new_name in [("DG (kcal/mol) (FECS)", "FEC"), ("uncertainty (kcal/mol) (FECS)", "FEC-uncertainty")]:
+    for column, new_name in [
+        ("DG (kcal/mol) (FECS)", "FEC"),
+        ("uncertainty (kcal/mol) (FECS)", "FEC-uncertainty"),
+    ]:
         # replace the kcal/mol values with pIC50s.
         postera_df[column] = dG_to_pIC50(postera_df[column].values)
 
@@ -195,9 +198,7 @@ def dg_to_postera_dataframe(absolute_predictions: pd.DataFrame) -> pd.DataFrame:
             columns={column: f"computed-biochemical-activity-{new_name}"}, inplace=True
         )
     # rename the label column to be clear in postera
-    postera_df.rename(
-        columns={"label": "Ligand_ID"}, inplace=True
-    )
+    postera_df.rename(columns={"label": "Ligand_ID"}, inplace=True)
 
     return postera_df
 

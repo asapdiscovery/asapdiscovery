@@ -308,7 +308,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
     )
     target: Optional[str] = Field(
         None,
-        description="The name of the biological target associated with this Alchemy network."
+        description="The name of the biological target associated with this Alchemy network.",
     )
 
     class Config:
@@ -380,7 +380,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         ligands: list["Ligand"],
         central_ligand: Optional["Ligand"] = None,
         experimental_protocol: Optional[str] = None,
-        target: Optional[str] = None
+        target: Optional[str] = None,
     ) -> FreeEnergyCalculationNetwork:
         """
          Use the factory settings to create a FEC dataset using OpenFE models.
