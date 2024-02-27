@@ -1,8 +1,8 @@
-from typing import Optional
-
+from typing import Optional, Union
+from uuid import UUID
 from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from pydantic import Field
+from pydantic import Field, validator
 
 
 class LigandIdentifiers(DataModelAbstractBase):
@@ -26,18 +26,28 @@ class LigandIdentifiers(DataModelAbstractBase):
     moonshot_compound_id: Optional[str] = Field(
         None, description="Moonshot compound ID"
     )
-    manifold_api_id: Optional[str] = Field(
+    manifold_api_id: Optional[Union[UUID, str]] = Field(
         None, description="Unique ID from Postera Manifold API"
     )
     manifold_vc_id: Optional[str] = Field(
         None, description="Unique VC ID (virtual compound ID) from Postera Manifold"
     )
-    compchem_id: Optional[str] = Field(
+    compchem_id: Optional[Union[UUID, str]] = Field(
         None, description="Unique ID for P5 compchem reference, unused for now"
     )
 
     class Config:
         allow_mutation = False
+
+    @validator("manifold_api_id", "compchem_id", pre=True)
+    def cast_uuids(cls, v):
+        """
+        Cast UUIDS to string
+        """
+        if v is None:
+            return None
+        else:
+            return str(v)
 
 
 class LigandProvenance(DataModelAbstractBase):
