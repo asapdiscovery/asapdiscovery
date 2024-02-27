@@ -66,4 +66,4 @@ def mocked_cdd_api():
 
 @pytest.fixture(scope="module")
 def multipose_ligand():
-    return Path("/home/feanor/multiconf.sdf")
+    return fetch_test_file("multiconf.sdf")

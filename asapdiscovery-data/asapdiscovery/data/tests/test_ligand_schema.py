@@ -128,7 +128,7 @@ def test_ligand_from_sdf_title_used(moonshot_sdf):
 
 def test_multi_pose_ligand_roundtrip(multipose_ligand):
     lig = Ligand.from_sdf(multipose_ligand)
-    assert lig.num_poses == 1
+    assert lig.num_poses == 50
 
 
 def test_inchi(smiles):
