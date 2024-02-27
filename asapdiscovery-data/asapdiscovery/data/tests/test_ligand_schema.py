@@ -94,6 +94,7 @@ def test_ligand_ids_json_roundtrip():
     )
     ids2 = LigandIdentifiers.from_json(ids.json())
     assert ids == ids2
+    assert isinstance(ids2.manifold_api_id, str)
 
 
 def test_ligand_ids_json_file_roundtrip(tmp_path):
