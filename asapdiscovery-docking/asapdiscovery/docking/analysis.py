@@ -475,14 +475,15 @@ class TanimotoType(str, Enum):
     Enum for the different types of Tanimoto coefficients that can be calculated.
     """
 
+    MORGAN = "MorganFingerprint"
     SHAPE = "TanimotoShape"
     COLOR = "TanimotoColor"
     COMBO = "TanimotoCombo"
 
 
 def calculate_tanimoto_oe(
-    refmol: Ligand,
-    fitmol: Ligand,
+    refmol: oechem.OEMol,
+    fitmol: oechem.OEMol,
     compute_type: TanimotoType = TanimotoType.COMBO,
 ):
     """
@@ -490,19 +491,18 @@ def calculate_tanimoto_oe(
 
     Parameters
     ----------
-    refmol : Ligand
+    refmol : oechem.OEMol
         The reference molecule to which the docked molecule is compared.
-    fitmol : Ligand
+    fitmol : oechem.OEMol
         The docked molecule to be compared to the reference molecule.
+    compute_type : TanimotoType
+        The type of Tanimoto coefficient to calculate.
 
     Returns
     -------
     float
         The Tanimoto coefficient between the two molecules.
     """
-    refmol = refmol.to_oemol()
-    fitmol = fitmol.to_oemol()
-
     # Prepare reference molecule for calculation
     # With default options this will remove any explicit hydrogens present
     prep = oeshape.OEOverlapPrep()
@@ -521,6 +521,29 @@ def calculate_tanimoto_oe(
         return res.GetColorTanimoto()
     elif compute_type == TanimotoType.COMBO:
         return res.GetTanimotoCombo()
+
+
+def calculate_tanimoto(
+    refmol: Ligand,
+    fitmol: Ligand,
+    compute_type: TanimotoType = TanimotoType.COMBO,
+):
+    """
+    Calculate the Tanimoto coefficient between two molecules.
+
+    Parameters
+    ----------
+    refmol : Ligand
+        The reference molecule to which the docked molecule is compared.
+    fitmol : Ligand
+        The docked molecule to be compared to the reference molecule.
+
+    Returns
+    -------
+    float
+        The Tanimoto coefficient between the two molecules.
+    """
+    return calculate_tanimoto_oe(refmol.to_oemol(), fitmol.to_oemol(), compute_type)
 
 
 def write_all_rmsds_to_reference(
