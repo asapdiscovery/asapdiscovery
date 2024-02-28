@@ -413,6 +413,8 @@ def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
 def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
     """Test predicting the absolute and relative free energies with no experimental data, interactive reports should
     not be generated in this mode.
+    We also test that a warning is printed in the terminal as the target is missing so the results can not be uploaded
+    to postera.
     """
 
     runner = CliRunner()
@@ -425,12 +427,15 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
             alchemy,
             [
                 "predict",
+                "-pm",
+                "my-molset"
             ],
         )
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork from" in result.stdout
         assert "Absolute predictions written" in result.stdout
         assert "Relative predictions written" in result.stdout
+        assert "WARNING a postera molecule set name was provided without a target, results " in result.stdout
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
 

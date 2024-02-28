@@ -653,13 +653,13 @@ def predict(
 
     # workout if we should upload to postera
     if bio_target is not None and postera_molset_name is not None:
-        # format and upload to posteara
+        # format and upload to postera
         postera_status = console.status(
             f"Uploading predictions to Postera Manifold molecule set: {postera_molset_name}."
         )
         postera_status.start()
 
-        _ = upload_to_postera(
+        upload_to_postera(
             molecule_set_name=postera_molset_name,
             target=target,
             absolute_dg_predictions=absolute_df,
@@ -670,6 +670,14 @@ def predict(
             (1, 0, 1, 0),
         )
         postera_status.stop()
+        console.print(message)
+
+    elif postera_molset_name is not None and bio_target is None:
+        message = Padding(
+            f"[yellow]WARNING a postera molecule set name was provided without a target, results will not be uploaded! "
+            f"Please run again and provide a valid target `-t`[/yellow]",
+            (1, 0, 1, 0)
+        )
         console.print(message)
 
     # workout if any reference data was provided and if we should create the interactive reports

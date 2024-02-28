@@ -30,7 +30,7 @@ def pull_from_postera(molecule_set_name: str):
 
 def upload_to_postera(
     molecule_set_name: str, target: str, absolute_dg_predictions: pd.DataFrame
-) -> bool:
+):
     """
     A convenience method to format predicted absolute DG values using Alchemy and upload to postera with tucked imports
     to avoid importing Postera tools.
@@ -39,9 +39,6 @@ def upload_to_postera(
         molecule_set_name: The name of the molecule set in postera the results should be attached to.
         target: The name of the biological target this result is associated with.
         absolute_dg_predictions: The dataset of absolute dg predictions created by asap-alchemy.
-
-    Returns:
-        `True` if a new molecule set was made else `False` if we just update an existing set.
     """
     from enum import Enum
 
@@ -52,7 +49,7 @@ def upload_to_postera(
     from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
     from asapdiscovery.data.services.services_config import PosteraSettings
 
-    # mock some enum to specifiy which columns are allowed?
+    # mock an enum to specify which columns are allowed
     class AlchemyResults(str, Enum):
         SMILES = "SMILES"
         INCHI_KEY = "Inchi_Key"
@@ -84,6 +81,4 @@ def upload_to_postera(
         smiles_field=AlchemyResults.SMILES.value,
     )
 
-    _, _, made_new_molset = postera_uploader.push(result_df)
-
-    return made_new_molset
+    _, _, _ = postera_uploader.push(result_df)
