@@ -33,8 +33,6 @@ import shutil
 from pathlib import Path
 
 import networkx as nx
-from pymol import cmd
-
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -44,6 +42,7 @@ from asapdiscovery.data.backend.openeye import (
     save_openeye_sdfs,
 )
 from asapdiscovery.data.schema.ligand import Ligand
+from pymol import cmd
 
 
 # Arguments define the input file and the output file
