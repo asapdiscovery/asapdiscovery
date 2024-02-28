@@ -195,7 +195,7 @@ def dg_to_postera_dataframe(absolute_predictions: pd.DataFrame) -> pd.DataFrame:
 
         # rename the column
         postera_df.rename(
-            columns={column: f"computed-biochemical-activity-{new_name}"}, inplace=True
+            columns={column: f"computed-{new_name}-pIC50"}, inplace=True
         )
     # rename the label column to be clear in postera
     postera_df.rename(columns={"label": "Ligand_ID"}, inplace=True)

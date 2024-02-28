@@ -54,9 +54,9 @@ def upload_to_postera(
         SMILES = "SMILES"
         INCHI_KEY = "Inchi_Key"
         LIGAND_ID = "Ligand_ID"
-        COMPUTED_BIOCHEMICAL_ACTIVITY_FEC = "computed-biochemical-activity-FEC"
+        COMPUTED_BIOCHEMICAL_ACTIVITY_FEC = "computed-FEC-pIC50"
         COMPUTED_BIOCHEMICAL_ACTIVITY_FEC_UNCERTAINTY = (
-            "computed-biochemical-activity-FEC-uncertainty"
+            "computed-FEC-uncertainty-pIC50"
         )
 
     # convert the dg values to pIC50 with the expected names
@@ -81,4 +81,4 @@ def upload_to_postera(
         smiles_field=AlchemyResults.SMILES.value,
     )
 
-    _, _, _ = postera_uploader.push(result_df)
+    _, _, _ = postera_uploader.push(df=result_df)
