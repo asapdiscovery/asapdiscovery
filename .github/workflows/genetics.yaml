@@ -1,4 +1,4 @@
-name: alchemy-ci
+name: genetics-ci
 
 on:
   push:
