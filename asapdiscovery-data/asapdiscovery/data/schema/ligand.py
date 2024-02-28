@@ -195,18 +195,17 @@ class Ligand(DataModelAbstractBase):
                 kwargs[key] = value
 
         # extract all info as a tag if it has no field on the model
-        tags = {
-            (key, value)
-            for key, value in kwargs.items()
-            if key not in cls.__fields__.keys()
-        }
+        keys_to_save = [
+            key for key in kwargs.keys() if key not in cls.__fields__.keys()
+        ]
+        tags = {(key, value) for key, value in kwargs.items() if key in keys_to_save}
         kwargs["tags"] = tags
 
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
         conf_tags = get_multiconf_SD_data(input_mol)
 
         kwargs["conf_tags"] = {
-            (key, value) for key, value in conf_tags.items() if key in tags
+            (key, value) for key, value in conf_tags.items() if key in keys_to_save
         }
 
         # clean the sdf data for the internal model
