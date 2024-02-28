@@ -21,13 +21,13 @@ from asapdiscovery.ml.cli_args import (
     mtenn_args,
     optim_args,
     output_dir,
-    weights_path,
     overwrite_args,
     schnet_args,
     struct_ds_args,
     trainer_args,
     trainer_config_cache,
     wandb_args,
+    weights_path,
 )
 from asapdiscovery.ml.config import (
     DatasetConfig,
