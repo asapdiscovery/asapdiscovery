@@ -16,6 +16,8 @@ from asapdiscovery.data.backend.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
     get_multiconf_SD_data,
+    set_multiconf_SD_data,
+    set_SD_data,
     get_SD_data,
     load_openeye_sdf,
     oechem,
@@ -46,8 +48,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):
@@ -236,7 +237,7 @@ class Ligand(DataModelAbstractBase):
         mol = sdf_string_to_oemol(self.data)
         data = {}
         for key in self.__fields__.keys():
-            if key not in ["data", "tags", "data_format"]:
+            if key not in ["data", "tags", "conf_tags", "data_format"]:
                 field = getattr(self, key)
                 try:
                     data[key] = field.json()
@@ -245,10 +246,17 @@ class Ligand(DataModelAbstractBase):
                         data[key] = str(getattr(self, key))
         # dump the enum using value to get the str repr
         data["data_format"] = self.data_format.value
-        # dump tags as separate items
-        if self.tags is not None:
-            data.update({k: v for k, v in self.tags.items()})
-        mol = _set_SD_data_repr(mol, data)
+
+        # set the SD that is the same for every conformer
+        mol = set_SD_data(mol, data)
+
+        # set the SD that is different for each conformer
+        # convert to str first
+        multiconf_data = {
+            tag: [str(v) for v in values] for tag, values in self.conf_tags.items()
+        }
+        mol = set_multiconf_SD_data(mol, multiconf_data)
+
         return mol
 
     def to_rdkit(self) -> "Chem.Mol":

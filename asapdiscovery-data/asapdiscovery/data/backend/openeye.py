@@ -802,11 +802,11 @@ def set_multiconf_SD_data(mol: oechem.OEMol, data: dict[str, list]) -> oechem.OE
     for key, value in data.items():
         if not len(value) == mol.NumConfs():
             raise ValueError(
-                f"Length of data for tag {key} does not match number of conformers. "
+                f"Length of data for tag '{key}' does not match number of conformers. "
                 f"Expected {mol.NumConfs()} but got {len(value)} elements."
             )
         for i, conf in enumerate(mol.GetConfs()):
-            oechem.OESetSDData(conf, key, value[0])
+            oechem.OESetSDData(conf, key, value[i])
     return mol
 
 
