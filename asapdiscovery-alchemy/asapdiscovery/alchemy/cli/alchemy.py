@@ -73,7 +73,7 @@ def create(filename: str):
     show_default=True,
 )
 def plan(
-    name: str,
+    name: Optional[str] = None,
     receptor: Optional[str] = None,
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
@@ -113,6 +113,9 @@ def plan(
         click.echo(f"Loading Ligands and protein from AlchemyDataSet {alchemy_dataset}")
         alchemy_ds = AlchemyDataSet.from_file(alchemy_dataset)
         input_ligands = alchemy_ds.posed_ligands
+
+        # workout which name should be used, the CLI input takes priority over the prep `dataset_name`.
+        name = name or alchemy_ds.dataset_name
 
         # write to a temp pdb file and read back in
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
