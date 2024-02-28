@@ -16,8 +16,8 @@ from typing import (  # noqa: F401
 from asapdiscovery.data.backend.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
-    get_SD_data,
     get_multiconf_SD_data,
+    get_SD_data,
     load_openeye_sdf,
     oechem,
     oemol_to_inchi,
