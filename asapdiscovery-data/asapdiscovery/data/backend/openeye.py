@@ -937,7 +937,8 @@ def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data cleared
     """
-    oechem.OEClearSDData(mol)
+    for conf in mol.GetConfs():
+        oechem.OEClearSDData(conf)
     return mol
 
 
