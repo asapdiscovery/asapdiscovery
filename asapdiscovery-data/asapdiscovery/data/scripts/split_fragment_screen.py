@@ -4,12 +4,22 @@ one crystal structure from Diamond to multiple pdb file each containing one
 ligand named LIG bound to the original protein crystall structure and a sdf
 file that contains all of the ligands. All the pdb files would be within a
 directory within the directory of the original protein called output.
-The sdf file containing all the ligands in original file will be also in that
-directory named combined_ligands.sdf.
+The sdf file containing all the unique ligands in original file that are bound to
+different portions of the protein will be also in that directory named
+combined_ligands.sdf.
+-d indicates the directory with the original pdb file.
+-i indicates the file with the X-ray screen.
 If the ligand was not successfully combined with the protein, then will print
 error message stating the file that does not have any ligands.
 The name of the structure name of original conglomerate structure can be defined
 with -c.
+The intermediate protein only and ligand pdb files can be saved by indicating
+-s True (default is to not save the intermediate structures)
+If keep the intermediates, directory named pdb_intermediates/ would have all the
+ligands regardless of redundancy in individual pdb files and the protein pdb file.
+Directory named lig_sdfs/ would only have only the non-redundant ligands in
+individual sdf files. If there are the same molecule with bound to different
+positions, would save as different sdf files.
 
 Minimal example usage:
 python split_fragment_screen.py \
@@ -19,16 +29,21 @@ python split_fragment_screen.py \
 
 import argparse
 import os
+import shutil
 from pathlib import Path
 
 import networkx as nx
+from pymol import cmd
+
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
+    load_openeye_sdf,
     save_openeye_pdb,
+    save_openeye_sdf,
     save_openeye_sdfs,
 )
-from pymol import cmd
+from asapdiscovery.data.schema.ligand import Ligand
 
 
 # Arguments define the input file and the output file
@@ -43,6 +58,11 @@ def get_args():
         "-c",
         default="complex",
         help="Name of the original protein with multiple ligands.",
+    )
+    parser.add_argument(
+        "-s",
+        default="False",
+        help="Save the intermediate individual ligand pdb and sdf files as True. Otherwise False.",
     )
 
     return parser.parse_args()
@@ -74,19 +94,20 @@ def save_subset_with_conect(structure_name, atom_ids, output_file):
 
 # The function to isolate ligands in original file and separate out individual ligands
 # Each ligand saved in individual pdb file
-def split_ligands(directory, input_file, structure_name):
+def split_ligands(directory, input_file, structure_name, save_intermediate):
     # Where original file is from
     local_path = Path(directory)
     # Where ending strucutures will be put into
     output_path = local_path / "output"
     output_path.mkdir()
+    # Where to store intermediate pdb files
+    intermediates_path = local_path / "pdb_intermediates"
+    intermediates_path.mkdir()
 
     # Load structure into pymol
     cmd.load(local_path / input_file, structure_name)
-
     # Save all the ligands into one file
     save_ligand_residues(structure_name, local_path / "ligand_only.pdb")
-
     # Make a Graph out of pdb CONECT record
     ligands = local_path / "ligand_only.pdb"
     G = nx.Graph()
@@ -95,7 +116,6 @@ def split_ligands(directory, input_file, structure_name):
             if line.startswith("CONECT"):
                 # Extract atom numbers
                 atom_numbers = [int(x.strip()) for x in line.split()[1:]]
-
                 # Add edges to the graph
                 for atom1 in atom_numbers[1:]:
                     G.add_edge(atom_numbers[0], atom1)
@@ -105,49 +125,68 @@ def split_ligands(directory, input_file, structure_name):
     cmd.load(ligands, "ligands")
     # Remove this pdb since no longer in use
     os.remove(ligands)
-
     # Know which atom is from which ligand based on the graph constructed
     # List of the different ligands as {} of atoms
     atom_list = list(nx.connected_components(G))
-
     for i, atom_ids in enumerate(atom_list):
         # Save the selected subset with CONECT records to a PDB file
-        save_subset_with_conect("ligands", atom_ids, local_path / f"lig_{i}.pdb")
+        save_subset_with_conect(
+            "ligands", atom_ids, intermediates_path / f"lig_{i}.pdb"
+        )
 
     # Load pdb files and save all singled out ligands to singular combined sdf
+    ligands_path = Path(directory) / "lig_sdfs"
+    os.mkdir(ligands_path)
+
     ligs = []
-    for lig_pdb_file in local_path.glob("lig_*.pdb"):
+    ligands = []
+    for lig_pdb_file in intermediates_path.glob("lig_*.pdb"):
         lig = load_openeye_pdb(lig_pdb_file)
         lig.SetTitle(lig_pdb_file.stem)
-        ligs.append(lig)
+        ligand = Ligand.from_oemol(lig)
+        # Check if this ligand already exists
+        exist = False
+        for i in range(len(ligands)):
+            # Check if the ligands are chemically the same structure
+            if ligands[i].is_chemically_equal(ligand):
+                # Check if the ligands are bound in the same position
+                if lig.GetCoords() == ligs[i].GetCoords():
+                    exist = True
+                    break
+        # Only add the ligand if the ligand is not already within the list
+        if exist is False:
+            ligands.append(ligand)
+            ligs.append(lig)
+            # Save this ligand in a sdf file
+            save_openeye_sdf(lig, ligands_path / f"{ligand.compound_name}.sdf")
+
     save_openeye_sdfs(ligs, output_path / "combined_ligs.sdf")
 
-    # Put each individual ligands back in protein in original orientation
     # Isolate protien in pymol and save to a pdb file
     cmd.load(local_path / input_file, structure_name)
     cmd.select("protein", structure_name + " and polymer.protein")
-    cmd.save(local_path / "protein.pdb", "protein")
+    cmd.save(intermediates_path / "protein.pdb", "protein")
     cmd.delete(structure_name)
 
     # Load in the protein into openeye
-    protein_file = local_path / "protein.pdb"
+    protein_file = intermediates_path / "protein.pdb"
     protein = load_openeye_pdb(protein_file)
 
     # Load in each of the ligands and combine them with the protein
     # Save in folder called output within current path
-    for lig_pdb_file in local_path.glob("lig_*.pdb"):
+    for lig_sdf_file in ligands_path.glob("lig_*.sdf"):
         # Load in the ligand pdb into openeye
-        lig = load_openeye_pdb(lig_pdb_file)
+        lig = load_openeye_sdf(lig_sdf_file)
         # Put it back
         lig_protein = combine_protein_ligand(protein, lig)
         # Save in file
-        output_file = str(lig_pdb_file.stem) + "_protein.pdb"
+        output_file = str(lig_sdf_file.stem) + "_protein.pdb"
         save_openeye_pdb(lig_protein, output_path / output_file)
-        # Delete the ligand pdb since no longer useful
-        # os.remove(lig_pdb_file)
 
-    # Remove the pdb file with just the protein structure
-    os.remove(protein_file)
+    # Delete the folders with intermediates if do not want to save those
+    if save_intermediate is False:
+        shutil.rmtree(intermediates_path)
+        shutil.rmtree(ligands_path)
 
 
 # Add a filtering step to see if the ligand is actually in the output file
@@ -170,7 +209,12 @@ def check_lig_presence(directory):
 def main():
     args = get_args()
 
-    split_ligands(args.d, args.i, args.c)
+    # See if want to save the intermediate files
+    save_intermediate = False
+    if args.s == "True":
+        save_intermediate = True
+
+    split_ligands(args.d, args.i, args.c, save_intermediate)
     check_lig_presence(args.d)
 
 
