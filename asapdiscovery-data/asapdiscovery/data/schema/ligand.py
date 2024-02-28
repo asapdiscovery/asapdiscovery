@@ -47,8 +47,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):
@@ -413,6 +412,13 @@ class Ligand(DataModelAbstractBase):
             if k in self.__fields__.keys():
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
         self.tags.update(data)
+
+        # also update the conformer tags
+        # convert to dict of lists
+        multiconf_data = {}
+        for key, value in data.items():
+            multiconf_data[key] = [value for _ in range(self.num_poses)]
+        self.conf_tags.update(multiconf_data)
 
     def to_sdf_str(self) -> str:
         """
