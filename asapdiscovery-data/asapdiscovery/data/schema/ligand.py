@@ -204,9 +204,9 @@ class Ligand(DataModelAbstractBase):
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
         conf_tags = get_multiconf_SD_data(input_mol)
 
-        kwargs["conf_tags"] = {
+        kwargs["conf_tags"] = [
             (key, value) for key, value in conf_tags.items() if key in keys_to_save
-        }
+        ]
 
         # clean the sdf data for the internal model
         sdf_str = oemol_to_sdf_string(clear_SD_data(input_mol))
