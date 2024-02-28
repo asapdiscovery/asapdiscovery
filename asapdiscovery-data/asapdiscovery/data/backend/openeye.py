@@ -785,6 +785,26 @@ def oemol_to_inchikey(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
     return inchi_key
 
 
+def set_multiconf_SD_data(mol: oechem.OEMol, data: dict[str, list]) -> oechem.OEMol:
+    """
+    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    oechem.OEMol
+        OpenEye OEMol with SD data set
+    """
+    for key, value in data.items():
+        for i, v in enumerate(value):
+            oechem.OESetSDData(mol.GetConf(i), key, v)
+    return mol
+
+
 def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
@@ -800,7 +820,7 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
         OpenEye OEMol with SD data set
     """
     for key, value in data.items():
-        oechem.OESetSDData(mol, key, value)
+        oechem.OESetSDData(mol.GetConf(0), key, value)
     return mol
 
 
