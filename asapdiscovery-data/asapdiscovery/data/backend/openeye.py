@@ -666,7 +666,7 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
         ims.close()
 
 
-def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
+def smiles_to_oemol(smiles: str) -> oechem.OEMol:
     """
     Loads a smiles string into an openeye molecule
 
@@ -680,7 +680,7 @@ def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
     oechem.OEGraphMol
         resulting OpenEye OEGraphMol
     """
-    mol = oechem.OEGraphMol()
+    mol = oechem.OEMol()
     oechem.OESmilesToMol(mol, smiles)
     return mol
 
