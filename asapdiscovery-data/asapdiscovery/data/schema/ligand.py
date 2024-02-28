@@ -47,8 +47,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):
@@ -320,7 +319,7 @@ class Ligand(DataModelAbstractBase):
         Create a Ligand from an InChI string
         """
         kwargs.pop("data", None)
-        mol = oechem.OEGraphMol()
+        mol = oechem.OEMol()
         oechem.OEInChIToMol(mol, inchi)
         return cls.from_oemol(mol=mol, **kwargs)
 
@@ -477,7 +476,7 @@ class Ligand(DataModelAbstractBase):
         Not necessarily the most physiologically relevant tautomer, but helpful for comparing ligands.
         """
         mol = self.to_oemol()
-        canonical_tautomer = oechem.OEGraphMol()
+        canonical_tautomer = oechem.OEMol()
         if oequacpac.OEGetUniqueProtomer(canonical_tautomer, mol):
             return Ligand.from_oemol(
                 compound_name=self.compound_name,

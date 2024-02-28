@@ -159,7 +159,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
     def _select_best_pose(
         self, receptor: oechem.OEDesignUnit, ligands: list[oechem.OEMol]
-    ) -> list[oechem.OEGraphMol]:
+    ) -> list[oechem.OEMol]:
         """
         Select the best pose for each ligand in place using the selected criteria.
 
@@ -200,7 +200,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
                 )
 
             # turn back into a single conformer molecule
-            posed_ligands.append(oechem.OEGraphMol(ligand))
+            posed_ligands.append(oechem.OEMol(ligand))
 
         return posed_ligands
 
@@ -256,9 +256,9 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
     def _generate_core_fragment(
         self, reference_ligand: oechem.OEMol, core_smarts: str
-    ) -> oechem.OEGraphMol:
+    ) -> oechem.OEMol:
         """
-        Generate an openeye GraphMol of the core fragment made from the MCS match between the ligand and core smarts
+        Generate an openeye Mol of the core fragment made from the MCS match between the ligand and core smarts
         which will be used to constrain the geometries of the ligands during pose generation.
 
         Parameters
@@ -268,12 +268,12 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         Returns
         -------
-            An OEGraphMol of the MCS matched core fragment.
+            An OEMol of the MCS matched core fragment.
         """
 
         # build a query mol which allows for wild card matches
         # <https://github.com/choderalab/asapdiscovery/pull/430#issuecomment-1702360130>
-        smarts_mol = oechem.OEGraphMol()
+        smarts_mol = oechem.OEMol()
         oechem.OESmilesToMol(smarts_mol, core_smarts)
         pattern_query = oechem.OEQMol(smarts_mol)
         atomexpr = oechem.OEExprOpts_DefaultAtoms
@@ -284,7 +284,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         core_fragment = None
 
         for match in ss.Match(reference_ligand):
-            core_fragment = oechem.OEGraphMol()
+            core_fragment = oechem.OEMol()
             oechem.OESubsetMol(core_fragment, match)
             break
 
@@ -295,7 +295,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         return core_fragment
 
     def _generate_omega_instance(
-        self, core_fragment: oechem.OEGraphMol, use_mcs: bool
+        self, core_fragment: oechem.OEMol, use_mcs: bool
     ) -> oeomega.OEOmega:
         """
         Create an instance of omega for constrained pose generation using the input core molecule and the runtime
@@ -303,7 +303,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         Parameters
         ----------
-        core_fragment: The OEGraphMol which should be used to define the constrained atoms during generation.
+        core_fragment: The OEMol which should be used to define the constrained atoms during generation.
         use_mcs: If the core fragment is not defined by the user try and mcs match between it and the target ligands.
 
         Returns
