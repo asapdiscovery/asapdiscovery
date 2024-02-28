@@ -258,6 +258,14 @@ class Ligand(DataModelAbstractBase):
 
         return mol
 
+    def to_oemols(self) -> list[oechem.OEMol]:
+        """
+        Convert the current molecule state to a list of OEMols
+        (one for each conformation) including all fields as SD tags.
+        """
+
+        return [oechem.OEMol(conf) for conf in self.to_oemol().GetConfs()]
+
     def to_rdkit(self) -> "Chem.Mol":
         """
         Convert the current molecule state to an RDKit molecule including all fields as SD tags.
@@ -428,11 +436,12 @@ class Ligand(DataModelAbstractBase):
         mol = self.to_oemol()
         return oemol_to_sdf_string(mol)
 
-    def get_SD_data(self) -> dict[str, str]:
+    def get_SD_data(self, i: int = 0) -> dict[str, str]:
         """
-        Get the SD data for the ligand
+        Get the SD data for the ligand for a particular conformer
         """
-        return self.tags
+        data = {tag: values[i] for tag, values in self.conf_tags.items()}
+        return data
 
     def print_SD_data(self) -> None:
         """
@@ -445,6 +454,7 @@ class Ligand(DataModelAbstractBase):
         Clear the SD data for the ligand
         """
         self.tags = {}
+        self.conf_tags = {}
 
     def set_expansion(
         self,
