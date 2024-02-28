@@ -273,55 +273,10 @@ def load_openeye_cif(
         oechem.OEThrow.Fatal(f"Unable to open {cif_fn}")
 
 
-def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
+def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEMol:
     """
     Load an OpenEye SDF file containing a single molecule and return it as an
-    OpenEye OEGraphMol object.
-
-    Parameters
-    ----------
-    sdf_fn : Union[str, Path]
-        Path to the SDF file to load.
-
-    Returns
-    -------
-    oechem.OEGraphMol
-        An OpenEye OEGraphMol object containing the molecule data from the SDF file.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the specified file does not exist.
-    oechem.OEError
-        If the CIF file cannot be opened.
-
-    Notes
-    -----
-    This function assumes that the SDF file contains a single molecule. If the
-    file contains more than one molecule, only the first molecule will be loaded.
-    """
-
-    if not Path(sdf_fn).exists():
-        raise FileNotFoundError(f"{sdf_fn} does not exist!")
-
-    ifs = oechem.oemolistream()
-    ifs.SetFlavor(
-        oechem.OEFormat_SDF,
-        oechem.OEIFlavor_SDF_Default,
-    )
-    ifs.SetConfTest(oechem.OEOmegaConfTest())
-    if ifs.open(str(sdf_fn)):
-        for mol in ifs.GetOEMols():
-            return mol
-        ifs.close()
-    else:
-        oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
-
-
-def load_openeye_multiconf_sdf(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphMol]:
-    """
-    Load an OpenEye SDF file containing multiple conformers of a single molecule and
-    return them as an OEMol object.
+    OpenEye OEMol object.
 
     Parameters
     ----------
@@ -338,13 +293,14 @@ def load_openeye_multiconf_sdf(sdf_fn: Union[str, Path]) -> list[oechem.OEGraphM
     FileNotFoundError
         If the specified file does not exist.
     oechem.OEError
-        If the file cannot be opened.
+        If the CIF file cannot be opened.
 
     Notes
     -----
-    This function uses the OEOmegaConfTest to combine multiple conformers of a single
-    molecule into a single OEMol object.
+    This function assumes that the SDF file contains a single molecule. If the
+    file contains more than one molecule, only the first molecule will be loaded.
     """
+
     if not Path(sdf_fn).exists():
         raise FileNotFoundError(f"{sdf_fn} does not exist!")
 
@@ -682,7 +638,7 @@ def oemol_to_sdf_string(mol: oechem.OEMol) -> str:
     return molstring
 
 
-def sdf_string_to_oemol(sdf_str: str) -> oechem.OEGraphMol:
+def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     """
     Loads an SDF string into an openeye molecule
 
@@ -869,6 +825,29 @@ def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     return mol
 
 
+def get_multiconf_SD_data(mol: oechem.OEMol) -> dict[str, list]:
+    """
+    Get all SD data on an OpenEye OEMol
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary of SD data
+    """
+    from collections import defaultdict
+
+    sd_data = defaultdict(list)
+    for conf in mol.GetConfs():
+        for dp in oechem.OEGetSDDataPairs(conf):
+            sd_data[dp.GetTag()].append(dp.GetValue())
+    return sd_data
+
+
 def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
     """
     Get all SD data on an OpenEye OEMol
@@ -883,7 +862,7 @@ def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
     Dict[str, str]
         Dictionary of SD data
     """
-    sd_data = {dp.GetTag(): dp.GetValue() for dp in oechem.OEGetSDDataPairs(mol)}
+    sd_data = {tag: value[0] for tag, value in get_multiconf_SD_data(mol).items()}
     return sd_data
 
 

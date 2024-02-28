@@ -17,6 +17,7 @@ from asapdiscovery.data.backend.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
     get_SD_data,
+    get_multiconf_SD_data,
     load_openeye_sdf,
     oechem,
     oemol_to_inchi,
@@ -115,7 +116,15 @@ class Ligand(DataModelAbstractBase):
         description="Expansion tag linking this ligand to its parent in a state expansion if needed",
     )
 
-    tags: dict[str, str] = Field({}, description="Dictionary of SD tags")
+    tags: dict[str, str] = Field(
+        {},
+        description="Dictionary of SD tags. "
+        "If multiple conformers are present, these tags represent the first conformer.",
+    )
+
+    conf_tags: Optional[dict[str, list]] = Field(
+        {}, description="Dictionary of SD tags for each conformer."
+    )
 
     data: str = Field(
         ...,
@@ -194,6 +203,14 @@ class Ligand(DataModelAbstractBase):
             if key not in cls.__fields__.keys()
         }
         kwargs["tags"] = tags
+
+        # Do the same thing for the conformer tags, only keeping the ones in 'tags'
+        conf_tags = get_multiconf_SD_data(input_mol)
+
+        kwargs["conf_tags"] = {
+            (key, value) for key, value in conf_tags.items() if key in tags
+        }
+
         # clean the sdf data for the internal model
         sdf_str = oemol_to_sdf_string(clear_SD_data(input_mol))
         # create a smiles which does not have nitrogen stereo
