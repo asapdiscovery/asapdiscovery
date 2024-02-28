@@ -182,7 +182,7 @@ class Ligand(DataModelAbstractBase):
         Create a Ligand from an OEMol extracting all SD tags into the internal model
         """
         # work with a copy as we change the state of the molecule
-        input_mol = copy.deepcopy(mol)
+        input_mol = oechem.OEMol(mol)
         oechem.OEClearAromaticFlags(input_mol)
         oechem.OEAssignAromaticFlags(input_mol, oechem.OEAroModel_MDL)
         oechem.OEAssignHybridization(input_mol)
