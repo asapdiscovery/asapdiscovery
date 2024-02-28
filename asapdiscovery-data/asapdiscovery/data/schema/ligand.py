@@ -16,8 +16,6 @@ from asapdiscovery.data.backend.openeye import (
     _set_SD_data_repr,
     clear_SD_data,
     get_multiconf_SD_data,
-    set_multiconf_SD_data,
-    set_SD_data,
     get_SD_data,
     load_openeye_sdf,
     oechem,
@@ -27,6 +25,8 @@ from asapdiscovery.data.backend.openeye import (
     oemol_to_smiles,
     oequacpac,
     sdf_string_to_oemol,
+    set_multiconf_SD_data,
+    set_SD_data,
     smiles_to_oemol,
 )
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
@@ -48,7 +48,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError): ...
+class InvalidLigandError(ValueError):
+    ...
 
 
 class ChemicalRelationship(Flag):
