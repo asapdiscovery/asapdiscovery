@@ -832,27 +832,6 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     return mol
 
 
-def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
-    """
-    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
-    sets the SD tag to the str of the value, so that re-reading the SD data with
-    ast.literal_eval in get_SD_data_to_object  give the same value
-
-    Parameters
-    ----------
-    mol: oechem.OEMol
-        OpenEye OEMol
-
-    Returns
-    -------
-    oechem.OEMol
-        OpenEye OEMol with SD data set
-    """
-    # NOTE: use str to ensure re-reading the SD data will give the same value
-    mol = set_SD_data(mol, {k: str(v) for k, v in data.items()})
-    return mol
-
-
 def get_multiconf_SD_data(mol: oechem.OEMol) -> dict[str, list]:
     """
     Get all SD data on an OpenEye OEMol
