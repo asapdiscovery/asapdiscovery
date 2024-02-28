@@ -800,8 +800,13 @@ def set_multiconf_SD_data(mol: oechem.OEMol, data: dict[str, list]) -> oechem.OE
         OpenEye OEMol with SD data set
     """
     for key, value in data.items():
-        for i, v in enumerate(value):
-            oechem.OESetSDData(mol.GetConf(i), key, v)
+        if not len(value) == mol.NumConfs():
+            raise ValueError(
+                f"Length of data for tag {key} does not match number of conformers. "
+                f"Expected {mol.NumConfs()} but got {len(value)} elements."
+            )
+        for i, conf in enumerate(mol.GetConfs()):
+            oechem.OESetSDData(conf, key, value[0])
     return mol
 
 
@@ -819,8 +824,11 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
+    # convert to dict of lists
+    multiconf_data = {}
     for key, value in data.items():
-        oechem.OESetSDData(mol.GetConf(0), key, value)
+        multiconf_data[key] = [value for _ in range(mol.NumConfs())]
+    mol = set_multiconf_SD_data(mol, multiconf_data)
     return mol
 
 
