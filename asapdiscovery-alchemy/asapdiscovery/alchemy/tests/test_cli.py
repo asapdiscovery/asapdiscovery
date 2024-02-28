@@ -425,17 +425,16 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
 
         result = runner.invoke(
             alchemy,
-            [
-                "predict",
-                "-pm",
-                "my-molset"
-            ],
+            ["predict", "-pm", "my-molset"],
         )
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork from" in result.stdout
         assert "Absolute predictions written" in result.stdout
         assert "Relative predictions written" in result.stdout
-        assert "WARNING a postera molecule set name was provided without a target, results " in result.stdout
+        assert (
+            "WARNING a postera molecule set name was provided without a target, results "
+            in result.stdout
+        )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
 

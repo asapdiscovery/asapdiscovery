@@ -55,9 +55,7 @@ def upload_to_postera(
         INCHI_KEY = "Inchi_Key"
         LIGAND_ID = "Ligand_ID"
         COMPUTED_BIOCHEMICAL_ACTIVITY_FEC = "computed-FEC-pIC50"
-        COMPUTED_BIOCHEMICAL_ACTIVITY_FEC_UNCERTAINTY = (
-            "computed-FEC-uncertainty-pIC50"
-        )
+        COMPUTED_BIOCHEMICAL_ACTIVITY_FEC_UNCERTAINTY = "computed-FEC-uncertainty-pIC50"
 
     # convert the dg values to pIC50 with the expected names
     postera_df = dg_to_postera_dataframe(absolute_predictions=absolute_dg_predictions)

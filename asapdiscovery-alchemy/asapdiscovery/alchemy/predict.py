@@ -194,9 +194,7 @@ def dg_to_postera_dataframe(absolute_predictions: pd.DataFrame) -> pd.DataFrame:
         postera_df[column] = dG_to_pIC50(postera_df[column].values)
 
         # rename the column
-        postera_df.rename(
-            columns={column: f"computed-{new_name}-pIC50"}, inplace=True
-        )
+        postera_df.rename(columns={column: f"computed-{new_name}-pIC50"}, inplace=True)
     # rename the label column to be clear in postera
     postera_df.rename(columns={"label": "Ligand_ID"}, inplace=True)
 

@@ -4,11 +4,11 @@ from uuid import uuid4
 import pandas as pd
 import pytest
 from alchemiscale import Scope, ScopedKey
+from asapdiscovery.alchemy.cli.utils import upload_to_postera
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from asapdiscovery.alchemy.cli.utils import upload_to_postera
 from gufe.protocols import ProtocolDAGResult, ProtocolUnitResult
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
@@ -323,8 +323,8 @@ def test_get_actioned_weights(alchemiscale_helper, monkeypatch, tyk2_fec_network
 
 def test_upload_to_postera(monkeypatch, tyk2_result_network):
     """A mocked test to make sure the dataframe is formatted correctly ready for upload to postera."""
-    from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
     from asapdiscovery.alchemy.predict import get_data_from_femap
+    from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
 
     fe_map = tyk2_result_network.results.to_fe_map()
     fe_map.generate_absolute_values()
@@ -340,8 +340,13 @@ def test_upload_to_postera(monkeypatch, tyk2_result_network):
     def push(*args, **kwargs):
         df = kwargs["df"]
         # check we have the expected column names
-        assert "biochemical-activity_SARS-CoV-2-Mpro_computed-FEC-pIC50_msk" in df.columns
-        assert "biochemical-activity_SARS-CoV-2-Mpro_computed-FEC-uncertainty-pIC50_msk" in df.columns
+        assert (
+            "biochemical-activity_SARS-CoV-2-Mpro_computed-FEC-pIC50_msk" in df.columns
+        )
+        assert (
+            "biochemical-activity_SARS-CoV-2-Mpro_computed-FEC-uncertainty-pIC50_msk"
+            in df.columns
+        )
         assert "Ligand_ID" in df.columns
         assert "SMILES" in df.columns
         assert "Inchi_Key" in df.columns
@@ -353,5 +358,5 @@ def test_upload_to_postera(monkeypatch, tyk2_result_network):
     upload_to_postera(
         molecule_set_name="my_mol_set",
         target="SARS-CoV-2-Mpro",
-        absolute_dg_predictions=absolute_df
+        absolute_dg_predictions=absolute_df,
     )
