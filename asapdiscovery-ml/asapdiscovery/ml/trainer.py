@@ -836,29 +836,30 @@ class Trainer(BaseModel):
             )
             # Build table and add each molecule
             for compound, d in ds:
-                if type(compound) is tuple:
-                    xtal_id, compound_id = compound
-                    tmp_d = d
-                else:
+                try:
+                    # This should work for all structural datasets
+                    xtal_id, compound_id = d["compound"]
+                except KeyError:
+                    # This should only trigger for graph datasets
                     xtal_id = ""
                     compound_id = compound
-                    tmp_d = d[0]
+
                 try:
-                    target_value = tmp_d[self.target_prop]
+                    target_value = d[self.target_prop]
                 except KeyError:
                     target_value = np.nan
                 try:
-                    target_value_range = tmp_d[f"{self.target_prop}_range"]
+                    target_value_range = d[f"{self.target_prop}_range"]
                 except KeyError:
                     target_value_range = np.nan
                 try:
-                    target_value_stderr = tmp_d[f"{self.target_prop}_stderr"]
+                    target_value_stderr = d[f"{self.target_prop}_stderr"]
                 except KeyError:
                     target_value_stderr = np.nan
                 except AttributeError:
-                    target_value = tmp_d[self.target_prop]
+                    target_value = d[self.target_prop]
                 try:
-                    date_created = tmp_d["date_created"]
+                    date_created = d["date_created"]
                 except KeyError:
                     date_created = None
                 table.add_data(
