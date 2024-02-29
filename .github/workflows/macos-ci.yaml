@@ -80,7 +80,7 @@ jobs:
         python -m pip install -e ./asapdiscovery-ml --no-deps
         python -m pip install -e ./asapdiscovery-modeling --no-deps
         python -m pip install -e ./asapdiscovery-simulation --no-deps
-
+        python -m pip install -e ./asapdiscovery-genetics --no-deps
         micromamba list
 
     - name: Run tests
@@ -99,13 +99,15 @@ jobs:
                        --cov=asapdiscovery-ml \
                        --cov=asapdiscovery-modeling \
                        --cov=asapdiscovery-simulation \
+                        --cov=asapdiscovery-genetics \
                        asapdiscovery-alchemy/asapdiscovery/alchemy/tests \
                        asapdiscovery-data/asapdiscovery/data/tests \
                        asapdiscovery-dataviz/asapdiscovery/dataviz/tests \
                        asapdiscovery-docking/asapdiscovery/docking/tests \
                        asapdiscovery-ml/asapdiscovery/ml/tests \
                        asapdiscovery-modeling/asapdiscovery/modeling/tests \
-                       asapdiscovery-simulation/asapdiscovery/simulation/tests
+                       asapdiscovery-simulation/asapdiscovery/simulation/tests \
+                       asapdiscovery-genetics/asapdiscovery/genetics/tests
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3
