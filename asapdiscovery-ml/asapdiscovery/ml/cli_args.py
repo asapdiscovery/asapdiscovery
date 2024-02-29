@@ -244,6 +244,17 @@ def model_rand_seed(func):
     )(func)
 
 
+def weights_path(func):
+    return click.option(
+        "--weights-path",
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "Path to an existing weights file. Use this for loading pretrained "
+            "weights from a previous run as the starting weights."
+        ),
+    )(func)
+
+
 ################################################################################
 
 

@@ -28,6 +28,7 @@ from asapdiscovery.ml.cli_args import (
     trainer_config_cache,
     visnet_args,
     wandb_args,
+    weights_path,
 )
 from asapdiscovery.ml.config import (
     DatasetConfig,
@@ -76,6 +77,7 @@ cli.add_command(build_ds)
 
 @build.command(name="gat")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @wandb_args
@@ -91,6 +93,7 @@ cli.add_command(build_ds)
 @overwrite_args
 def build_gat(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -194,6 +197,7 @@ def build_gat(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.GAT,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -309,6 +313,7 @@ def build_gat(
 
 @build.command(name="schnet")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -325,6 +330,7 @@ def build_gat(
 @overwrite_args
 def build_schnet(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -430,6 +436,7 @@ def build_schnet(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.schnet,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -549,6 +556,7 @@ def build_schnet(
 
 @build.command(name="e3nn")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -565,6 +573,7 @@ def build_schnet(
 @overwrite_args
 def build_e3nn(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -671,6 +680,7 @@ def build_e3nn(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.e3nn,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -1043,6 +1053,7 @@ def build_visnet(
 
 @build_and_train.command(name="gat")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @wandb_args
@@ -1058,6 +1069,7 @@ def build_visnet(
 @overwrite_args
 def build_and_train_gat(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1161,6 +1173,7 @@ def build_and_train_gat(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.GAT,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -1279,6 +1292,7 @@ def build_and_train_gat(
 
 @build_and_train.command(name="schnet")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -1295,6 +1309,7 @@ def build_and_train_gat(
 @overwrite_args
 def build_and_train_schnet(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1400,6 +1415,7 @@ def build_and_train_schnet(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.schnet,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -1522,6 +1538,7 @@ def build_and_train_schnet(
 
 @build_and_train.command("e3nn")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -1538,6 +1555,7 @@ def build_and_train_schnet(
 @overwrite_args
 def build_and_train_e3nn(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1644,6 +1662,7 @@ def build_and_train_e3nn(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.e3nn,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
