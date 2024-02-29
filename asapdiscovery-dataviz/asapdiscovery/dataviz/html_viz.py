@@ -22,7 +22,7 @@ from asapdiscovery.data.backend.plip import (
     make_color_res_fitness,
     make_color_res_subpockets,
 )
-from asapdiscovery.data.fitness import (
+from asapdiscovery.genetics.fitness import (
     _FITNESS_DATA_FIT_THRESHOLD,
     get_fitness_scores_bloom_by_target,
     parse_fitness_json,
