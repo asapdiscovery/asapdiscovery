@@ -1,7 +1,6 @@
 import itertools
 from uuid import uuid4
 
-import pandas as pd
 import pytest
 from alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.cli.utils import upload_to_postera

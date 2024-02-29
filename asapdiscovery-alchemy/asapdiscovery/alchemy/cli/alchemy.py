@@ -674,8 +674,8 @@ def predict(
 
     elif postera_molset_name is not None and bio_target is None:
         message = Padding(
-            f"[yellow]WARNING a postera molecule set name was provided without a target, results will not be uploaded! "
-            f"Please run again and provide a valid target `-t`[/yellow]",
+            "[yellow]WARNING a postera molecule set name was provided without a target, results will not be uploaded! "
+            "Please run again and provide a valid target `-t`[/yellow]",
             (1, 0, 1, 0),
         )
         console.print(message)
