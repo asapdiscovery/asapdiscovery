@@ -78,6 +78,7 @@ jobs:
         python -m pip install -e ./asapdiscovery-ml --no-deps
         python -m pip install -e ./asapdiscovery-modeling --no-deps
         python -m pip install -e ./asapdiscovery-simulation --no-deps
+        python -m pip install -e ./asapdiscovery-genetics --no-deps
         micromamba list
 
     - name: Run tests

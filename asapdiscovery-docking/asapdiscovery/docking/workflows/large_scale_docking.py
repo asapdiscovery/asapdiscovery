@@ -2,7 +2,6 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
@@ -39,6 +38,7 @@ from asapdiscovery.docking.scorer import (
     MLModelScorer,
 )
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
+from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from pydantic import Field, PositiveInt, validator
