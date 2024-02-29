@@ -5,7 +5,6 @@ from typing import Any, Literal, Optional
 from asapdiscovery.data.backend.openeye import (
     _get_SD_data,
     _set_SD_data,
-    get_SD_data,
     oechem,
     oedocking,
     oeff,
