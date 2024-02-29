@@ -22,12 +22,6 @@ from asapdiscovery.data.backend.plip import (
     make_color_res_fitness,
     make_color_res_subpockets,
 )
-from asapdiscovery.genetics.fitness import (
-    _FITNESS_DATA_FIT_THRESHOLD,
-    get_fitness_scores_bloom_by_target,
-    parse_fitness_json,
-    target_has_fitness_data,
-)
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -35,6 +29,12 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetVirusMap,
 )
 from asapdiscovery.data.util.logging import HiddenPrint
+from asapdiscovery.genetics.fitness import (
+    _FITNESS_DATA_FIT_THRESHOLD,
+    get_fitness_scores_bloom_by_target,
+    parse_fitness_json,
+    target_has_fitness_data,
+)
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 
 from ._html_blocks import HTMLBlockData
