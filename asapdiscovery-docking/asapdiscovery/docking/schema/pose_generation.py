@@ -195,9 +195,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
                 # set the best score as the active conformer
                 poses = sorted(poses, key=lambda x: x[0])
                 ligand.SetActive(poses[0][1])
-                oechem.OESetSDData(
-                    ligand, f"{self.selector.value}_score", str(poses[0][0])
-                )
+                set_SD_data(ligand, {f"{self.selector.value}_score": str(poses[0][0])})
 
             # turn back into a single conformer molecule
             posed_ligands.append(oechem.OEGraphMol(ligand))
@@ -230,9 +228,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
         poses = sorted(poses, key=lambda x: x[0])
         ligand.SetActive(poses[0][1])
-        oechem.OESetSDData(
-            ligand, f"{self.backup_score.value}_energy", str(poses[0][0])
-        )
+        set_SD_data(ligand, {f"{self.backup_score.value}_energy": str(poses[0][0])})
 
 
 class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
@@ -392,7 +388,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             return_code != oeomega.OEOmegaReturnCode_Success
         ):
             # add the failure message as an SD tag, should be able to see visually if the molecule is 2D
-            target_ligand = set_SD_data(
+            set_SD_data(
                 mol=target_ligand,
                 data={"omega_return_code": oeomega.OEGetOmegaError(return_code)},
             )
