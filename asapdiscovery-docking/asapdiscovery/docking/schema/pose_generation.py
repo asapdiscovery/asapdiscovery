@@ -4,11 +4,13 @@ from typing import Any, Literal, Optional
 
 from asapdiscovery.data.backend.openeye import (
     get_SD_data,
+    _get_SD_data,
     oechem,
     oedocking,
     oeff,
     oeomega,
     set_SD_data,
+    _set_SD_data,
 )
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
@@ -115,7 +117,6 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
         for fail_oemol in failed_ligands:
             result.failed_ligands.append(Ligand.from_oemol(fail_oemol))
-
         return result
 
     def _prune_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
@@ -195,11 +196,12 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
                 # set the best score as the active conformer
                 poses = sorted(poses, key=lambda x: x[0])
                 ligand.SetActive(poses[0][1])
-                set_SD_data(ligand, {f"{self.selector.value}_score": str(poses[0][0])})
+                # set SD data to whole molecule, then get all the SD data and set to all conformers
+                _set_SD_data(ligand, {f"{self.selector.value}_score": str(poses[0][0])})
+                set_SD_data(ligand, _get_SD_data(ligand))
 
             # turn back into a single conformer molecule
-            posed_ligands.append(oechem.OEMol(ligand.GetActive()))
-
+            posed_ligands.append(oechem.OEGraphMol(ligand.GetActive()))
         return posed_ligands
 
     def _select_by_energy(self, ligand: oechem.OEMol):
@@ -388,7 +390,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             return_code != oeomega.OEOmegaReturnCode_Success
         ):
             # add the failure message as an SD tag, should be able to see visually if the molecule is 2D
-            set_SD_data(
+            _set_SD_data(
                 mol=target_ligand,
                 data={"omega_return_code": oeomega.OEGetOmegaError(return_code)},
             )
@@ -433,7 +435,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 for work in as_completed(work_list):
                     target_ligand = work.result()
                     # check if coordinates could be generated
-                    if "omega_return_code" in get_SD_data(target_ligand):
+                    if "omega_return_code" in _get_SD_data(target_ligand):
                         failed_ligands.append(target_ligand)
                     else:
                         result_ligands.append(target_ligand)
@@ -445,7 +447,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     reference_ligand=reference_ligand,
                 )
                 # check if coordinates could be generated
-                if "omega_return_code" in get_SD_data(posed_ligand):
+                if "omega_return_code" in _get_SD_data(posed_ligand):
                     failed_ligands.append(posed_ligand)
                 else:
                     result_ligands.append(posed_ligand)
@@ -460,7 +462,6 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         posed_ligands = self._select_best_pose(
             receptor=oedu_receptor, ligands=result_ligands
         )
-
         return posed_ligands, failed_ligands
 
 
