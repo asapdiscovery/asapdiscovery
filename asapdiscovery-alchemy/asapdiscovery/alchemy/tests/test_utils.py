@@ -349,7 +349,6 @@ def test_upload_to_postera(monkeypatch, tyk2_result_network):
         )
         assert "Ligand_ID" in df.columns
         assert "SMILES" in df.columns
-        assert "Inchi_Key" in df.columns
         return df, 1, False
 
     monkeypatch.setenv("POSTERA_API_KEY", "my-key")

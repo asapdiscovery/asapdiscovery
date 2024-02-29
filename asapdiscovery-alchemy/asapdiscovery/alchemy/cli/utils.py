@@ -52,7 +52,6 @@ def upload_to_postera(
     # mock an enum to specify which columns are allowed
     class AlchemyResults(str, Enum):
         SMILES = "SMILES"
-        INCHI_KEY = "Inchi_Key"
         LIGAND_ID = "Ligand_ID"
         COMPUTED_BIOCHEMICAL_ACTIVITY_FEC = "computed-FEC-pIC50"
         COMPUTED_BIOCHEMICAL_ACTIVITY_FEC_UNCERTAINTY = "computed-FEC-uncertainty-pIC50"
@@ -67,7 +66,6 @@ def upload_to_postera(
         drop_non_output=True,
         allow=[
             AlchemyResults.SMILES.value,
-            AlchemyResults.INCHI_KEY.value,
             AlchemyResults.LIGAND_ID.value,
         ],
     )
