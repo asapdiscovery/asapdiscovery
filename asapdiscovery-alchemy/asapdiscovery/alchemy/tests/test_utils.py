@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import pytest
 from alchemiscale import Scope, ScopedKey
+from asapdiscovery.alchemy.cli.utils import upload_to_postera
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
@@ -317,3 +318,43 @@ def test_get_actioned_weights(alchemiscale_helper, monkeypatch, tyk2_fec_network
     active_network_weights = client.get_actioned_weights()
     # we should have 4 weights from early stopping
     assert active_network_weights == [0.5 for _ in range(4)]
+
+
+def test_upload_to_postera(monkeypatch, tyk2_result_network):
+    """A mocked test to make sure the dataframe is formatted correctly ready for upload to postera."""
+    from asapdiscovery.alchemy.predict import get_data_from_femap
+    from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
+
+    fe_map = tyk2_result_network.results.to_fe_map()
+    fe_map.generate_absolute_values()
+
+    absolute_df, _ = get_data_from_femap(
+        fe_map=fe_map,
+        ligands=tyk2_result_network.network.ligands,
+        assay_units=None,
+        reference_dataset=None,
+        cdd_protocol=None,
+    )
+
+    def push(*args, **kwargs):
+        df = kwargs["df"]
+        # check we have the expected column names
+        assert (
+            "biochemical-activity_SARS-CoV-2-Mpro_computed-FEC-pIC50_msk" in df.columns
+        )
+        assert (
+            "biochemical-activity_SARS-CoV-2-Mpro_computed-FEC-uncertainty-pIC50_msk"
+            in df.columns
+        )
+        assert "Ligand_ID" in df.columns
+        assert "SMILES" in df.columns
+        return df, 1, False
+
+    monkeypatch.setenv("POSTERA_API_KEY", "my-key")
+    monkeypatch.setattr(PosteraUploader, "push", push)
+
+    upload_to_postera(
+        molecule_set_name="my_mol_set",
+        target="SARS-CoV-2-Mpro",
+        absolute_dg_predictions=absolute_df,
+    )
