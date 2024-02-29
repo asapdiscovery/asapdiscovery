@@ -138,6 +138,60 @@ def test_multi_pose_ligand_roundtrip(multipose_ligand, tmp_path):
     assert lig2 == lig
 
 
+def test_multiconf_ligand_utils(multipose_ligand):
+    lig = Ligand.from_sdf(multipose_ligand)
+    lig2 = Ligand.from_sdf(multipose_ligand)
+    assert lig.num_poses == 50
+
+    ligs = lig.to_single_conformers()
+
+    mols = lig.to_oemols()
+
+    assert len(ligs) == 50
+    assert len(mols) == 50
+
+    assert ligs[0].tags == {
+        "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+        "Docking_posit_hybrid_clash_POSIT": "0.23999999463558197",
+        "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+        "Docking_posit_hybrid_clash_clash": "0",
+        "Docking_posit_hybrid_clash_Chemgauss4": "-3.9384562969207764",
+        "Docking_posit_hybrid_clash_RMSD": "23.510106811395577",
+        "Dataset": "Mpro-P2005_0A",
+        "Compound_ID": "ADA-UCB-6c2cb422-1",
+    }
+
+    assert ligs[-1].tags == {
+        "Docking_posit_hybrid_clash_RMSD": "23.63229756112464",
+        "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+        "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+        "Docking_posit_hybrid_clash_Chemgauss4": "-6.079061985015869",
+        "Docking_posit_hybrid_clash_clash": "0",
+        "Dataset": "Mpro-P2005_0A",
+        "Docking_posit_hybrid_clash_POSIT": "0.18000000715255737",
+        "Compound_ID": "ADA-UCB-6c2cb422-1",
+    }
+
+    for i in range(50):
+        assert ligs[i].tags == lig.get_SD_data(i)
+        assert Ligand.from_oemol(mols[i]) == ligs[i]
+
+    lig.set_SD_data({"same_for_all": "yes"})
+
+    lig.set_SD_data({"different_for_all": [str(i) for i in range(50)]})
+
+    assert lig2.tags != lig.tags
+
+    assert all(
+        lig.tags["same_for_all"] == value for value in lig.conf_tags["same_for_all"]
+    )
+    assert lig.tags["different_for_all"] == lig.conf_tags["different_for_all"][0]
+    assert all(
+        lig.tags["different_for_all"] != value
+        for value in lig.conf_tags["different_for_all"][1:]
+    )
+
+
 def test_inchi(smiles):
     lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.inchi == "InChI=1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3"

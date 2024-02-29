@@ -188,7 +188,9 @@ class Ligand(DataModelAbstractBase):
         oechem.OEAssignAromaticFlags(input_mol, oechem.OEAroModel_MDL)
         oechem.OEAssignHybridization(input_mol)
         kwargs.pop("data", None)
-        sd_tags = get_SD_data(input_mol)
+        sd_tags = {
+            k: values[0] for k, values in get_multiconf_SD_data(input_mol).items()
+        }
         for key, value in sd_tags.items():
             try:
                 # check to see if we have JSON of a model field
@@ -266,6 +268,12 @@ class Ligand(DataModelAbstractBase):
         """
 
         return [oechem.OEMol(conf) for conf in self.to_oemol().GetConfs()]
+
+    def to_single_conformers(self) -> ["Ligand"]:
+        """
+        Return a new Ligand with only the conformer at the given index.
+        """
+        return [self.from_oemol(mol) for mol in self.to_oemols()]
 
     def to_rdkit(self) -> "Chem.Mol":
         """
@@ -411,7 +419,7 @@ class Ligand(DataModelAbstractBase):
         mol = self.to_oemol()
         write_file_directly(filename, oemol_to_sdf_string(mol), mode=fmode)
 
-    def set_SD_data(self, data: dict[str, str]) -> None:
+    def set_SD_data(self, data: dict[str, Union[str, list]]) -> None:
         """
         Set the SD data for the ligand, uses an update to overwrite existing data in line with
         OpenEye behaviour
@@ -420,14 +428,22 @@ class Ligand(DataModelAbstractBase):
         for k in data.keys():
             if k in self.__fields__.keys():
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
-        self.tags.update(data)
 
-        # also update the conformer tags
-        # convert to dict of lists
-        multiconf_data = {}
-        for key, value in data.items():
-            multiconf_data[key] = [value for _ in range(self.num_poses)]
-        self.conf_tags.update(multiconf_data)
+        # first update the conformer tags, which is simple if the data is a dict of lists
+        if all([isinstance(v, list) for v in data.values()]):
+            self.conf_tags.update(data)
+        elif all([isinstance(v, str) for v in data.values()]):
+            # convert to dict of lists
+            multiconf_data = {
+                key: [value for _ in range(self.num_poses)]
+                for key, value in data.items()
+            }
+            self.conf_tags.update(multiconf_data)
+        else:
+            raise ValueError("Data must be a dict of lists or strings")
+
+        # now update the tags to be the first conformer
+        self.tags.update(self.to_single_conformers()[0].tags)
 
     def to_sdf_str(self) -> str:
         """
