@@ -15,7 +15,6 @@ from typing import (  # noqa: F401
 from asapdiscovery.data.backend.openeye import (
     clear_SD_data,
     get_multiconf_SD_data,
-    get_SD_data,
     load_openeye_sdf,
     oechem,
     oemol_to_inchi,
@@ -47,8 +46,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):
