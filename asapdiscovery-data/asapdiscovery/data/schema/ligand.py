@@ -46,8 +46,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):
@@ -430,16 +429,26 @@ class Ligand(DataModelAbstractBase):
 
         # first update the conformer tags, which is simple if the data is a dict of lists
         if all([isinstance(v, list) for v in data.values()]):
-            self.conf_tags.update(data)
+            # don't need to do anything
+            pass
         elif all([isinstance(v, str) for v in data.values()]):
-            # convert to dict of lists
-            multiconf_data = {
-                key: [value for _ in range(self.num_poses)]
+            # convert to dict of lists of strings
+            data = {
+                key: [str(value) for _ in range(self.num_poses)]
                 for key, value in data.items()
             }
-            self.conf_tags.update(multiconf_data)
+
         else:
-            raise ValueError("Data must be a dict of lists or strings")
+            try:
+                # try converting to list of strings
+                data = {
+                    key: [str(value) for _ in range(self.num_poses)]
+                    for key, value in data.items()
+                }
+            except TypeError:
+                raise ValueError("Data must be a dict of lists or strings")
+        # now update the conformer tags
+        self.conf_tags.update(data)
 
         # now update the tags to be the first conformer
         self.tags.update(self.to_single_conformers()[0].tags)
