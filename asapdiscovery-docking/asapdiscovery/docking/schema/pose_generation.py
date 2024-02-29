@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Any, Literal, Optional
 
 from asapdiscovery.data.backend.openeye import (
-    get_SD_data,
     _get_SD_data,
     oechem,
     oedocking,
@@ -198,10 +197,9 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
                 ligand.SetActive(poses[0][1])
                 # set SD data to whole molecule, then get all the SD data and set to all conformers
                 _set_SD_data(ligand, {f"{self.selector.value}_score": str(poses[0][0])})
-                set_SD_data(ligand, _get_SD_data(ligand))
 
             # turn back into a single conformer molecule
-            posed_ligands.append(oechem.OEGraphMol(ligand.GetActive()))
+            posed_ligands.append(oechem.OEGraphMol(ligand))
         return posed_ligands
 
     def _select_by_energy(self, ligand: oechem.OEMol):
