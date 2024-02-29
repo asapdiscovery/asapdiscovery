@@ -785,6 +785,27 @@ def oemol_to_inchikey(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
     return inchi_key
 
 
+def _set_SD_data(mol: oechem.OEMolBase, data: dict[str, str]) -> oechem.OEMolBase:
+    """
+    Set SD data on an OpenEye OEMolBase object.
+    Since this function works on OEMol, OEGraphMol, OEConfBase objects, it is worth repurposing.
+    But it is not recommended to use this function directly for multi-conformer molecules.
+
+    Parameters
+    ----------
+    mol: oechem.OEMolBase
+        OpenEye OEMolBase
+
+    Returns
+    -------
+    oechem.OEMolBase
+        OpenEye OEMolBase with SD data set
+    """
+    for key, value in data.items():
+        oechem.OESetSDData(mol, key, value)
+    return mol
+
+
 def set_multiconf_SD_data(mol: oechem.OEMol, data: dict[str, list]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
@@ -802,7 +823,7 @@ def set_multiconf_SD_data(mol: oechem.OEMol, data: dict[str, list]) -> oechem.OE
     for key, value in data.items():
         if not len(value) == mol.NumConfs():
             raise ValueError(
-                f"Length of data for tag '{key}' does not match number of conformers. "
+                f"Length of data for tag '{key}' does not match number of conformers ({mol.NumConfs()}). "
                 f"Expected {mol.NumConfs()} but got {len(value)} elements."
             )
         for i, conf in enumerate(mol.GetConfs()):
@@ -824,12 +845,43 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    # convert to dict of lists
-    multiconf_data = {}
-    for key, value in data.items():
-        multiconf_data[key] = [value for _ in range(mol.NumConfs())]
-    mol = set_multiconf_SD_data(mol, multiconf_data)
-    return mol
+    """
+        Get SD data for first (or only) conformer of an OpenEye OEMol or OEGraphMol object.
+        """
+    if isinstance(mol, oechem.OEMol):
+        if mol.NumConfs() > 1:
+            RuntimeWarning(
+                f"Overwriting the following tags for all conformers: {data.keys()}"
+            )
+        multiconf_data = {
+            key: [value for _ in range(mol.NumConfs())] for key, value in data.items()
+        }
+        return set_multiconf_SD_data(mol, multiconf_data)
+    elif isinstance(mol, oechem.OEGraphMol) or isinstance(mol, oechem.OEConfBase):
+        return _set_SD_data(mol, data)
+    else:
+        raise TypeError(
+            f"Expected an OpenEye OEMol, OEGraphMol, or OEConf, but got {type(mol)}"
+        )
+
+
+def _get_SD_data(mol: oechem.OEMolBase) -> dict[str, str]:
+    """
+    Get SD data on an OpenEye OEMolBase object.
+    Since this function works on OEMol, OEGraphMol, OEConfBase objects, it is worth repurposing.
+    But it is not recommended to use this function directly for multi-conformer molecules.
+
+    Parameters
+    ----------
+    mol: oechem.OEMolBase
+        OpenEye OEMolBase
+
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary of SD data
+    """
+    return {dp.GetTag(): dp.GetValue() for dp in oechem.OEGetSDDataPairs(mol)}
 
 
 def get_multiconf_SD_data(mol: oechem.OEMol) -> dict[str, list]:
@@ -855,22 +907,38 @@ def get_multiconf_SD_data(mol: oechem.OEMol) -> dict[str, list]:
     return sd_data
 
 
-def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
+def get_SD_data(mol: oechem.OEMolBase) -> dict[str, str]:
     """
-    Get all SD data on an OpenEye OEMol
-
-    Parameters
-    ----------
-    mol: oechem.OEMol
-        OpenEye OEMol
-
-    Returns
-    -------
-    Dict[str, str]
-        Dictionary of SD data
+    Get SD data for first (or only) conformer of an OpenEye OEMol, OEGraphMol, or OEConfBase object.
     """
-    sd_data = {tag: value[0] for tag, value in get_multiconf_SD_data(mol).items()}
-    return sd_data
+    if isinstance(mol, oechem.OEMol):
+
+        # This isn't the recommended place to put SD data for multiconf molecules but we want to handle it for
+        # backwards compatibility and convenience
+        other_sd_data = _get_SD_data(mol)
+        sd_data = {tag: value[0] for tag, value in get_multiconf_SD_data(mol).items()}
+
+        if other_sd_data:
+            if mol.NumConfs() > 1:
+                RuntimeWarning(
+                    "For multi-conformer molecules, it is recommended to save SD data to the conformers."
+                )
+            return other_sd_data
+
+        else:
+            if mol.NumConfs() > 1:
+                RuntimeWarning(
+                    f"{mol.NumConfs()} conformers found, only returning SD data from the first conformer."
+                    f"Use get_multiconf_SD_data to get data from all conformers."
+                )
+            return sd_data
+
+    elif isinstance(mol, oechem.OEGraphMol) or isinstance(mol, oechem.OEConfBase):
+        return _get_SD_data(mol)
+    else:
+        raise TypeError(
+            f"Expected an OpenEye OEMol, OEGraphMol, or OEConf, but got {type(mol)}"
+        )
 
 
 def _get_SD_data_to_object(mol: oechem.OEMol) -> dict[str, Any]:
