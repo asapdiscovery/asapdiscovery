@@ -710,7 +710,7 @@ class DatasetSplitterConfig(BaseModel):
         #  allow us to access a group of structures. Otherwise, loop through the structures
         #  directly
         if self.grouped:
-            iter_list = ds.compound_ids
+            iter_list = ds.structures.values()
         else:
             iter_list = ds.structures
         for i, iter_item in enumerate(iter_list):
