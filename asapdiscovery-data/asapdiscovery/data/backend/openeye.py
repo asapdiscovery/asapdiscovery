@@ -845,14 +845,10 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    """
-        Get SD data for first (or only) conformer of an OpenEye OEMol or OEGraphMol object.
-        """
     if isinstance(mol, oechem.OEMol):
         if mol.NumConfs() > 1:
-            RuntimeWarning(
-                f"Overwriting the following tags for all conformers: {data.keys()}"
-            )
+            warn(f"Overwriting the following tags for all conformers: {data.keys()}")
+
         multiconf_data = {
             key: [value for _ in range(mol.NumConfs())] for key, value in data.items()
         }
@@ -913,25 +909,21 @@ def get_SD_data(mol: oechem.OEMolBase) -> dict[str, str]:
     """
     if isinstance(mol, oechem.OEMol):
 
-        # This isn't the recommended place to put SD data for multiconf molecules but we want to handle it for
-        # backwards compatibility and convenience
+        # This isn't the recommended place to put SD data for multiconf molecules
         other_sd_data = _get_SD_data(mol)
         sd_data = {tag: value[0] for tag, value in get_multiconf_SD_data(mol).items()}
 
         if other_sd_data:
-            if mol.NumConfs() > 1:
-                RuntimeWarning(
-                    "For multi-conformer molecules, it is recommended to save SD data to the conformers."
-                )
-            return other_sd_data
-
-        else:
-            if mol.NumConfs() > 1:
-                RuntimeWarning(
-                    f"{mol.NumConfs()} conformers found, only returning SD data from the first conformer."
-                    f"Use get_multiconf_SD_data to get data from all conformers."
-                )
-            return sd_data
+            warn(
+                "SD data found at the base level of a multiconformer object, which will be ignored. "
+                "Use set_SD_data to set SD data correctly."
+            )
+        if mol.NumConfs() > 1:
+            warn(
+                f"{mol.NumConfs()} conformers found, only returning SD data from the first conformer."
+                f"Use get_multiconf_SD_data to get data from all conformers."
+            )
+        return sd_data
 
     elif isinstance(mol, oechem.OEGraphMol) or isinstance(mol, oechem.OEConfBase):
         return _get_SD_data(mol)
