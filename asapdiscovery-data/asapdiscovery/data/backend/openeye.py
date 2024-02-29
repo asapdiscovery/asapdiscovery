@@ -908,7 +908,6 @@ def get_SD_data(mol: oechem.OEMolBase) -> dict[str, str]:
     Get SD data for first (or only) conformer of an OpenEye OEMol, OEGraphMol, or OEConfBase object.
     """
     if isinstance(mol, oechem.OEMol):
-
         # This isn't the recommended place to put SD data for multiconf molecules
         other_sd_data = _get_SD_data(mol)
         sd_data = {tag: value[0] for tag, value in get_multiconf_SD_data(mol).items()}
