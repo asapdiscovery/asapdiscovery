@@ -159,7 +159,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
     def _select_best_pose(
         self, receptor: oechem.OEDesignUnit, ligands: list[oechem.OEMol]
-    ) -> list[oechem.OEGraphMol]:
+    ) -> list[oechem.OEMol]:
         """
         Select the best pose for each ligand in place using the selected criteria.
 
@@ -198,7 +198,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
                 set_SD_data(ligand, {f"{self.selector.value}_score": str(poses[0][0])})
 
             # turn back into a single conformer molecule
-            posed_ligands.append(oechem.OEGraphMol(ligand))
+            posed_ligands.append(oechem.OEMol(ligand.GetActive()))
 
         return posed_ligands
 
