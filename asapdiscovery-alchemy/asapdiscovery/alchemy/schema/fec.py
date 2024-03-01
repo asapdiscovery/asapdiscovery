@@ -306,6 +306,10 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         None,
         description="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
     )
+    target: Optional[str] = Field(
+        None,
+        description="The name of the biological target associated with this Alchemy network.",
+    )
 
     class Config:
         """Overwrite the class config to freeze the results model"""
@@ -376,6 +380,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         ligands: list["Ligand"],
         central_ligand: Optional["Ligand"] = None,
         experimental_protocol: Optional[str] = None,
+        target: Optional[str] = None,
     ) -> FreeEnergyCalculationNetwork:
         """
          Use the factory settings to create a FEC dataset using OpenFE models.
@@ -389,6 +394,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
                 Note this ligand will be deduplicated from the list if it appears in both.
             experimental_protocol: The name of the experimental protocol in the CDD vault that should be
                 associated with this Alchemy network.
+            target: The name of the biological target associated with this Alchemy network.
 
          Returns:
              The planned FEC network which can be executed locally or submitted to alchemiscale.
@@ -420,6 +426,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             network=planned_network,
             receptor=receptor.to_json(),
             experimental_protocol=experimental_protocol,
+            target=target,
             **self.dict(exclude={"type", "network_planner"}),
         )
         return planned_fec_network

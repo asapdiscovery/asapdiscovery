@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from asapdiscovery.data.backend.openeye import oedocking
 from asapdiscovery.data.backend.plip import compute_fint_score
-from asapdiscovery.data.fitness import target_has_fitness_data
 from asapdiscovery.data.schema.ligand import LigandIdentifiers
 from asapdiscovery.data.schema.target import TargetIdentifiers
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -20,6 +19,7 @@ from asapdiscovery.data.util.dask_utils import (
 )
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from mtenn.config import ModelType
 from pydantic import BaseModel, Field, validator

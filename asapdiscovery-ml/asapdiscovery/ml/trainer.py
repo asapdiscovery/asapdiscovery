@@ -22,6 +22,7 @@ from mtenn.config import (
     ModelConfigBase,
     ModelType,
     SchNetModelConfig,
+    ViSNetModelConfig,
 )
 from pydantic import BaseModel, Extra, Field, ValidationError, validator
 
@@ -187,6 +188,8 @@ class Trainer(BaseModel):
                     config_cls = SchNetModelConfig
                 case ModelType.e3nn:
                     config_cls = E3NNModelConfig
+                case ModelType.visnet:
+                    config_cls = ViSNetModelConfig
                 case other:
                     raise ValueError(
                         f"Can't instantiate model config for type {other}."
@@ -547,8 +550,14 @@ class Trainer(BaseModel):
                     device=self.device,
                 ).float()
 
+                # Get input poses for GroupedModel
+                if self.model_config.grouped:
+                    model_inp = pose["poses"]
+                else:
+                    model_inp = pose
+
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(pose)
+                pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
                 loss = self.loss_func(pred, target, in_range, uncertainty)
@@ -625,8 +634,14 @@ class Trainer(BaseModel):
                     device=self.device,
                 ).float()
 
+                # Get input poses for GroupedModel
+                if self.model_config.grouped:
+                    model_inp = pose["poses"]
+                else:
+                    model_inp = pose
+
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(pose)
+                pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
                 loss = self.loss_func(pred, target, in_range, uncertainty)
@@ -665,8 +680,14 @@ class Trainer(BaseModel):
                     device=self.device,
                 ).float()
 
+                # Get input poses for GroupedModel
+                if self.model_config.grouped:
+                    model_inp = pose["poses"]
+                else:
+                    model_inp = pose
+
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(pose)
+                pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
                 loss = self.loss_func(pred, target, in_range, uncertainty)
@@ -818,29 +839,30 @@ class Trainer(BaseModel):
             )
             # Build table and add each molecule
             for compound, d in ds:
-                if type(compound) is tuple:
-                    xtal_id, compound_id = compound
-                    tmp_d = d
-                else:
+                try:
+                    # This should work for all structural datasets
+                    xtal_id, compound_id = d["compound"]
+                except KeyError:
+                    # This should only trigger for graph datasets
                     xtal_id = ""
                     compound_id = compound
-                    tmp_d = d[0]
+
                 try:
-                    target_value = tmp_d[self.target_prop]
+                    target_value = d[self.target_prop]
                 except KeyError:
                     target_value = np.nan
                 try:
-                    target_value_range = tmp_d[f"{self.target_prop}_range"]
+                    target_value_range = d[f"{self.target_prop}_range"]
                 except KeyError:
                     target_value_range = np.nan
                 try:
-                    target_value_stderr = tmp_d[f"{self.target_prop}_stderr"]
+                    target_value_stderr = d[f"{self.target_prop}_stderr"]
                 except KeyError:
                     target_value_stderr = np.nan
                 except AttributeError:
-                    target_value = tmp_d[self.target_prop]
+                    target_value = d[self.target_prop]
                 try:
-                    date_created = tmp_d["date_created"]
+                    date_created = d["date_created"]
                 except KeyError:
                     date_created = None
                 table.add_data(

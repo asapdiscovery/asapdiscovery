@@ -692,7 +692,8 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         from openff.toolkit import Molecule
 
-        core_ligand = prepared_complex.ligand.to_rdkit()
+        # make sure we are not using hs placed by prep as a reference coordinate for the generated conformers
+        core_ligand = Chem.RemoveHs(prepared_complex.ligand.to_rdkit())
 
         # setup the rdkit pickle properties to save all molecule properties
         Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)

@@ -244,6 +244,17 @@ def model_rand_seed(func):
     )(func)
 
 
+def weights_path(func):
+    return click.option(
+        "--weights-path",
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "Path to an existing weights file. Use this for loading pretrained "
+            "weights from a previous run as the starting weights."
+        ),
+    )(func)
+
+
 ################################################################################
 
 
@@ -779,6 +790,115 @@ def num_neighbors(func):
 def num_nodes(func):
     return click.option(
         "--num-nodes", type=float, help="Typical number of nodes in a graph."
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
+# order in cli_args need to match order in cli.py
+def visnet_args(func):
+    for fn in [
+        num_heads,
+        lmax,
+        vecnorm_type,
+        trainable_vecnorm,
+        num_layers_visnet,
+        hidden_channels,
+        num_rbf,
+        trainable_rbf,
+        max_z,
+        cutoff,
+        max_num_neighbors,
+        vertex,
+        reduce_op,
+        mean,
+        std,
+        derivative,
+    ]:
+        func = fn(func)
+
+    return func
+
+
+def lmax(func):
+    return click.option(
+        "--lmax",
+        type=int,
+        help=("The maximum degree of the spherical harmonics"),
+    )(func)
+
+
+def vecnorm_type(func):
+    return click.option(
+        "--vecnorm-type",
+        type=str,
+        help=("Type of vector normalization to use. ['max_min', None]"),
+    )(func)
+
+
+def trainable_vecnorm(func):
+    return click.option(
+        "--trainable-vecnorm",
+        type=bool,
+        help="Whether to make the vector normalization trainable.",
+    )(func)
+
+
+def num_layers_visnet(func):
+    return click.option(
+        "--num-layers",
+        type=int,
+        help="Number of network layers.",
+    )(func)
+
+
+def num_rbf(func):
+    return click.option(
+        "--num-rbf",
+        type=int,
+        help="Number of radial basis functions.",
+    )(func)
+
+
+def trainable_rbf(func):
+    return click.option(
+        "--trainable-rbf",
+        type=bool,
+        help="Whether to make the radial basis functions trainable.",
+    )(func)
+
+
+def max_z(func):
+    return click.option(
+        "--max-z",
+        type=int,
+        help="Maximum atomic number.",
+    )(func)
+
+
+def vertex(func):
+    return click.option(
+        "--vertex",
+        type=bool,
+        help="Whether to use the vertex geometric features.",
+    )(func)
+
+
+def reduce_op(func):
+    return click.option(
+        "--reduce-op",
+        type=str,
+        help="Reduce operation. ['sum', 'mean']",
+    )(func)
+
+
+def derivative(func):
+    return click.option(
+        "--derivative",
+        type=bool,
+        help="Whether to use the derivative. NOT USED.",
     )(func)
 
 

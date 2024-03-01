@@ -408,9 +408,13 @@ class GroupedDockedDataset(Dataset):
                 comp, compound=compound, exp_dict=comp_exp_dict, ignore_h=ignore_h
             )
             try:
-                structures[comp.ligand.compound_name].append(pose)
+                structures[comp.ligand.compound_name]["poses"].append(pose)
             except KeyError:
-                structures[comp.ligand.compound_name] = [pose]
+                # Take compound-level data from first pose
+                exp_data = {
+                    k: v for k, v in pose.items() if not isinstance(v, torch.Tensor)
+                }
+                structures[comp.ligand.compound_name] = {"poses": [pose]} | exp_data
                 compound_ids.append(comp.ligand.compound_name)
 
         return cls(compound_ids=compound_ids, structures=structures)
@@ -474,9 +478,13 @@ class GroupedDockedDataset(Dataset):
         structures = {}
         for i, ((_, compound_id), struct) in enumerate(zip(compounds, all_structures)):
             try:
-                structures[compound_id].append(struct)
+                structures[compound_id]["poses"].append(struct)
             except KeyError:
-                structures[compound_id] = [struct]
+                # Take compound-level data from first pose
+                exp_data = {
+                    k: v for k, v in struct.items() if not isinstance(v, torch.Tensor)
+                }
+                structures[compound_id] = {"poses": [struct]} | exp_data
                 compound_ids.append(compound_id)
         compound_ids = np.asarray(compound_ids)
 
