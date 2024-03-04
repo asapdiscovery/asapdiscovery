@@ -124,6 +124,7 @@ cluster_scripts/log_files
 *.out
 *-log.txt
 
+pdb_search_bkp/
 
 # structure and molecule files
 *.xyz
@@ -144,3 +145,4 @@ cluster_scripts/log_files
 *.inchi
 *.inchikey
 *.gz
+*.xml
