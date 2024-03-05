@@ -15,21 +15,15 @@ class PosteraFactory(BaseModel):
         None, description="ID of the molecule set to pull from Postera"
     )
 
-    @root_validator
-    @classmethod
-    def check_molecule_set_name_or_id(cls, values):
-        molecule_set_name = values.get("molecule_set_name")
-        molecule_set_id = values.get("molecule_set_id")
-        if molecule_set_name is None and molecule_set_id is None:
-            raise ValueError("Either molecule_set_name or molecule_set_id must be set")
-        return values
-
     @staticmethod
     def _pull_molecule_set(
         ms_api: MoleculeSetAPI,
         molecule_set_id: Optional[str] = None,
         molecule_set_name: Optional[str] = None,
     ) -> list[Ligand]:
+
+        if molecule_set_id is None and molecule_set_name is None:
+            raise ValueError("You must provide either a molecule set name or ID")
 
         mols, _ = ms_api.get_molecules_from_id_or_name(
             name=molecule_set_name, id=molecule_set_id
