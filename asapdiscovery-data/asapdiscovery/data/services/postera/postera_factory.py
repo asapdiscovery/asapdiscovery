@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
@@ -75,7 +75,7 @@ class PosteraFactory(BaseModel):
             ms_api, self.molecule_set_id, self.molecule_set_name
         )
 
-    def pull_all(self) -> list[Ligand]:
+    def pull_all(self) -> list[Dict]:
         """
         Pull all molecules from all Postera molecule sets
 
