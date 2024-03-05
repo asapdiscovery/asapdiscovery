@@ -1,9 +1,9 @@
-from typing import Dict, Optional
+from typing import Optional
 
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.services_config import PosteraSettings
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field
 
 
 class PosteraFactory(BaseModel):
@@ -31,7 +31,7 @@ class PosteraFactory(BaseModel):
         # check if there are any custom columns in this moleculeset
         standard_columns = ["smiles", "id", "idx", "label"]
         custom_data_columns = [
-            col for col in mols.columns if not col in standard_columns
+            col for col in mols.columns if col not in standard_columns
         ]
 
         ligands = []

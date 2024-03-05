@@ -555,7 +555,7 @@ class TestPosteraLive:
         assert "CCCC" in ret_data["smiles"].tolist()
         assert "CCCCCCCC" in ret_data["smiles"].tolist()
 
-    def test_factory_name(
+    def test_factory_pull_all(
         self, simple_moleculeset, postera_settings, live_postera_ms_api_instance
     ):
         molecule_set_name, uuid = simple_moleculeset
