@@ -21,7 +21,6 @@ class PosteraFactory(BaseModel):
         molecule_set_id: Optional[str] = None,
         molecule_set_name: Optional[str] = None,
     ) -> list[Ligand]:
-
         if molecule_set_id is None and molecule_set_name is None:
             raise ValueError("You must provide either a molecule set name or ID")
 
