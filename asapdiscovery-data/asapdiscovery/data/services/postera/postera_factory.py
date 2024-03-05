@@ -3,26 +3,37 @@ from typing import Optional
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.services_config import PosteraSettings
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
 
 class PosteraFactory(BaseModel):
     settings: PosteraSettings = Field(default_factory=PosteraSettings)
     molecule_set_name: Optional[str] = Field(
-        "", description="Name of the molecule set to pull from Postera"
+        None, description="Name of the molecule set to pull from Postera"
+    )
+    molecule_set_id: Optional[str] = Field(
+        None, description="ID of the molecule set to pull from Postera"
     )
 
-    def pull(self) -> list[Ligand]:
-        """
-        Pull molecules from a Postera molecule set
+    @root_validator
+    @classmethod
+    def check_molecule_set_name_or_id(cls, values):
+        molecule_set_name = values.get("molecule_set_name")
+        molecule_set_id = values.get("molecule_set_id")
+        if molecule_set_name is None and molecule_set_id is None:
+            raise ValueError("Either molecule_set_name or molecule_set_id must be set")
+        return values
 
-        Returns
-        -------
-        List[Ligand]
-            List of ligands
-        """
-        ms_api = MoleculeSetAPI.from_settings(self.settings)
-        mols, _ = ms_api.get_molecules_from_id_or_name(self.molecule_set_name)
+    @staticmethod
+    def _pull_molecule_set(
+        ms_api: MoleculeSetAPI,
+        molecule_set_id: Optional[str] = None,
+        molecule_set_name: Optional[str] = None,
+    ) -> list[Ligand]:
+
+        mols, _ = ms_api.get_molecules_from_id_or_name(
+            name=molecule_set_name, id=molecule_set_id
+        )
 
         # check if there are any custom columns in this moleculeset
         standard_columns = ["smiles", "id", "idx", "label"]
@@ -50,6 +61,20 @@ class PosteraFactory(BaseModel):
             ligands.append(ligand)
         return ligands
 
+    def pull(self) -> list[Ligand]:
+        """
+        Pull molecules from a Postera molecule set
+
+        Returns
+        -------
+        List[Ligand]
+            List of ligands
+        """
+        ms_api = MoleculeSetAPI.from_settings(self.settings)
+        return self._pull_molecule_set(
+            ms_api, self.molecule_set_id, self.molecule_set_name
+        )
+
     def pull_all(self) -> list[Ligand]:
         """
         Pull all molecules from all Postera molecule sets
@@ -76,8 +101,9 @@ class PosteraFactory(BaseModel):
             )  # need to use UUID here instead of name for postera API reasons.
 
             # gather compound data contained in this mset
-            self.molecule_set_name = mset_uuid
-            mset_compound_data = self.pull()
+            mset_compound_data = self._pull_molecule_set(
+                ms_api, molecule_set_id=mset_uuid
+            )
 
             # add to metadata, and add the whole thing to the data bucket
             mset_metadata["ligand_data"] = mset_compound_data
