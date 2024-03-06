@@ -672,24 +672,31 @@ def _plot_with_plotmol(
         )
     else:
         # we run the scatterplot for every category instead
-        for i, (cat, pred_df) in enumerate(pd.DataFrame.from_dict({
-            "category" : categories,
-            "smiles" : smiles,
-            "calculated" : calculated,
-            "experimental" : experimental
-        }).groupby(by="category")):        
-                plotmol.scatter(
+        for i, (cat, pred_df) in enumerate(
+            pd.DataFrame.from_dict(
+                {
+                    "category": categories,
+                    "smiles": smiles,
+                    "calculated": calculated,
+                    "experimental": experimental,
+                }
+            ).groupby(by="category")
+        ):
+            plotmol.scatter(
                 figure=figure,
                 x=pred_df["experimental"],
                 y=pred_df["calculated"],
                 smiles=pred_df["smiles"],
                 marker="o",
                 marker_size=15,
-                marker_color=palette[i], # TODO make this work for i>20
+                marker_color=palette[i],  # TODO make this work for i>20
                 legend_label=f"{cat}",
-                custom_column_data={"experimental": pred_df["experimental"], "prediction": pred_df["calculated"]}
+                custom_column_data={
+                    "experimental": pred_df["experimental"],
+                    "prediction": pred_df["calculated"],
+                },
             )
-        
+
         figure.legend.location = "top_left"
         figure.legend.click_policy = "hide"
     figure.axis.axis_label_text_font_size = "20pt"
