@@ -46,8 +46,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):
@@ -279,11 +278,16 @@ class Ligand(DataModelAbstractBase):
         Convert the current molecule state to an RDKit molecule including all fields as SD tags.
         """
         from rdkit import Chem
+        from asapdiscovery.data.backend.rdkit import (
+            sdf_str_to_rdkit_mol,
+            set_SD_data,
+            set_multiconf_SD_data,
+        )
 
-        rdkit_mol: Chem.Mol = Chem.MolFromMolBlock(self.data, removeHs=False)
+        rdkit_mol: Chem.Mol = sdf_str_to_rdkit_mol(self.data)
         data = {}
         for key in self.__fields__.keys():
-            if key not in ["data", "tags", "data_format"]:
+            if key not in ["data", "tags", "data_format", "conf_tags"]:
                 field = getattr(self, key)
                 try:
                     data[key] = field.json()
@@ -298,8 +302,15 @@ class Ligand(DataModelAbstractBase):
         # dump tags as separate items
         if self.tags is not None:
             data.update({k: v for k, v in self.tags.items()})
-        for key, value in data.items():
-            rdkit_mol.SetProp(key, value)
+
+        # set the SD that is different for each conformer
+        # convert to str first
+        multiconf_data = {
+            tag: [str(v) for v in values] for tag, values in self.conf_tags.items()
+        }
+
+        set_SD_data(rdkit_mol, data)
+        set_multiconf_SD_data(rdkit_mol, multiconf_data)
         return rdkit_mol
 
     def to_openfe(self) -> "openfe.SmallMoleculeComponent":

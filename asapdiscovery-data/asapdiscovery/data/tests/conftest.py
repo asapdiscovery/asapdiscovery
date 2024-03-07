@@ -52,6 +52,17 @@ def smiles():
     ]
 
 
+@pytest.fixture(scope="session")
+def moonshot_sdf():
+    sdf = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17.sdf")
+    return sdf
+
+
+@pytest.fixture
+def sdf_file():
+    return fetch_test_file("Mpro_combined_labeled.sdf")
+
+
 @pytest.fixture(scope="module")
 def ligands(smiles):
     return [Ligand.from_smiles(s, compound_name="test") for s in smiles]

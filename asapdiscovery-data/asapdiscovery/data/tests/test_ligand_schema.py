@@ -139,7 +139,7 @@ def test_multi_pose_ligand_roundtrip(multipose_ligand, tmp_path):
     assert lig2 == lig
 
 
-def test_multiconf_ligand_utils(multipose_ligand):
+def test_multiconf_ligand_basics(multipose_ligand):
     lig = Ligand.from_sdf(multipose_ligand)
     lig2 = Ligand.from_sdf(multipose_ligand)
     assert lig.num_poses == 50
@@ -191,6 +191,12 @@ def test_multiconf_ligand_utils(multipose_ligand):
         lig.tags["different_for_all"] != value
         for value in lig.conf_tags["different_for_all"][1:]
     )
+
+
+def test_multiconf_lig_to_rdkit(multipose_ligand):
+    lig = Ligand.from_sdf(multipose_ligand)
+    rdkit_mol = lig.to_rdkit()
+    assert rdkit_mol.GetNumConformers() == 50
 
 
 def test_inchi(smiles):
