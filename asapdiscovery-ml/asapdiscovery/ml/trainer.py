@@ -756,7 +756,7 @@ class Trainer(BaseModel):
                                 "best_loss": self.es.best_loss,
                             }
                         )
-                    self.loss_dict["use_epoch"] = self.best_epoch
+                    use_epoch = self.es.best_epoch
                     break
                 elif self.es_config.es_type == "patient_converged" and self.es.check(
                     epoch_idx, epoch_val_loss, self.model.state_dict()
@@ -781,7 +781,7 @@ class Trainer(BaseModel):
                                 "converged_loss": self.es.converged_loss,
                             }
                         )
-                    self.loss_dict["use_epoch"] = self.converged_epoch
+                    use_epoch = self.es.converged_epoch
                     break
                 elif self.es_config.es_type == "converged" and self.es.check(
                     epoch_val_loss
@@ -789,12 +789,32 @@ class Trainer(BaseModel):
                     print(f"Stopping training after epoch {epoch_idx}", flush=True)
                     if self.log_file:
                         self.logger.info(f"Stopping training after epoch {epoch_idx}")
+                    use_epoch = epoch_idx
                     break
+        else:
+            use_epoch = None
+
+        if use_epoch is not None:
+            (self.output_dir / "loss_dict_full.json").write_text(
+                json.dumps(self.loss_dict)
+            )
+            # Trim the loss_dict
+            self.loss_dict = {
+                sp: {
+                    compound_id: {
+                        k: v[: use_epoch + 1] if isinstance(v, list) else v
+                        for k, v in compound_d.items()
+                    }
+                    for compound_id, compound_d in sp_d.items()
+                }
+                for sp, sp_d in self.loss_dict.items()
+            }
 
         if self.use_wandb or self.sweep:
             wandb.finish()
 
         torch.save(self.model.state_dict(), self.output_dir / "final.th")
+        (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
     def _update_loss_dict(
         self,
