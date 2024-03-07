@@ -15,7 +15,11 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
-from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
+from asapdiscovery.ml.es import (
+    BestEarlyStopping,
+    ConvergedEarlyStopping,
+    PatientConvergedEarlyStopping,
+)
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
@@ -734,7 +738,7 @@ class Trainer(BaseModel):
 
             # Stop training if EarlyStopping says to
             if self.es:
-                if isinstance(self.es, BestEarlyStopping) and self.es.check(
+                if self.es_config.es_type == "best" and self.es.check(
                     epoch_idx, epoch_val_loss, self.model.state_dict()
                 ):
                     print(
@@ -758,7 +762,31 @@ class Trainer(BaseModel):
                             }
                         )
                     break
-                elif isinstance(self.es, ConvergedEarlyStopping) and self.es.check(
+                elif self.es_config.es_type == "patient_converged" and self.es.check(
+                    epoch_idx, epoch_val_loss, self.model.state_dict()
+                ):
+                    print(
+                        (
+                            f"Stopping training after epoch {epoch_idx}, "
+                            f"using weights from epoch {self.es.converged_epoch}"
+                        ),
+                        flush=True,
+                    )
+                    if self.log_file:
+                        self.logger.info(
+                            f"Stopping training after epoch {epoch_idx}, "
+                            f"using weights from epoch {self.es.converged_epoch}"
+                        )
+                    self.model.load_state_dict(self.es.converged_wts)
+                    if self.use_wandb or self.sweep:
+                        wandb.log(
+                            {
+                                "converged_epoch": self.es.converged_epoch,
+                                "converged_loss": self.es.converged_loss,
+                            }
+                        )
+                    break
+                elif self.es_config.es_type == "converged" and self.es.check(
                     epoch_val_loss
                 ):
                     print(f"Stopping training after epoch {epoch_idx}", flush=True)

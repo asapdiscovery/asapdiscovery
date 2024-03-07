@@ -13,7 +13,11 @@ from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.data.util.utils import extract_compounds_from_filenames
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
-from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
+from asapdiscovery.ml.es import (
+    BestEarlyStopping,
+    ConvergedEarlyStopping,
+    PatientConvergedEarlyStopping,
+)
 from pydantic import BaseModel, Field, root_validator
 
 
@@ -123,6 +127,7 @@ class EarlyStoppingType(StringEnum):
 
     best = "best"
     converged = "converged"
+    patient_converged = "patient_converged"
 
 
 class EarlyStoppingConfig(BaseModel):
@@ -175,17 +180,30 @@ class EarlyStoppingConfig(BaseModel):
                     "Values required for n_check and divergence when using "
                     "ConvergedEarlyStopping."
                 )
+            case EarlyStoppingType.patient_converged:
+                assert (values["n_check"] is not None) and (
+                    values["divergence"] is not None
+                ), (
+                    "Values required for n_check and divergence when using "
+                    "PatientConvergedEarlyStopping."
+                )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
         return values
 
-    def build(self) -> BestEarlyStopping | ConvergedEarlyStopping:
+    def build(
+        self,
+    ) -> BestEarlyStopping | ConvergedEarlyStopping | PatientConvergedEarlyStopping:
         match self.es_type:
             case EarlyStoppingType.best:
                 return BestEarlyStopping(self.patience)
             case EarlyStoppingType.converged:
                 return ConvergedEarlyStopping(self.n_check, self.divergence)
+            case EarlyStoppingType.patient_converged:
+                return PatientConvergedEarlyStopping(
+                    self.n_check, self.divergence, self.patience
+                )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
