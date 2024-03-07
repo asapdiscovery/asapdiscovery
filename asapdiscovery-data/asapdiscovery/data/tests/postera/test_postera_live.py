@@ -554,3 +554,13 @@ class TestPosteraLive:
         assert "CCCCCF" in ret_data["smiles"].tolist()
         assert "CCCC" in ret_data["smiles"].tolist()
         assert "CCCCCCCC" in ret_data["smiles"].tolist()
+
+    def test_factory_pull_all(
+        self, simple_moleculeset, postera_settings, live_postera_ms_api_instance
+    ):
+        molecule_set_name, uuid = simple_moleculeset
+        factory = PosteraFactory(settings=postera_settings)
+        mset_data = factory.pull_all()
+        assert len(mset_data) > 0
+        assert isinstance(mset_data[0], dict)
+        assert mset_data[0]["ligand_data"] is not None
