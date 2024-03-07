@@ -1,5 +1,5 @@
-from asapdiscovery.data.backend.rdkit import load_sdf
 import pytest
+from asapdiscovery.data.backend.rdkit import load_sdf
 
 
 def test_ligand_sdf(moonshot_sdf, multipose_ligand, sdf_file):

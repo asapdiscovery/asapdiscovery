@@ -48,7 +48,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError): ...
+class InvalidLigandError(ValueError):
+    ...
 
 
 class ChemicalRelationship(Flag):
@@ -719,9 +720,7 @@ class Ligand(DataModelAbstractBase):
         Returns the indices of the conformers in the sorted order.
         """
         import numpy as np
-        from asapdiscovery.data.backend.openeye import (
-            get_multiconf_SD_data,
-        )
+        from asapdiscovery.data.backend.openeye import get_multiconf_SD_data
 
         if self.num_poses == 1:
             warnings.warn("Only one conformer present, no sorting will be done")
