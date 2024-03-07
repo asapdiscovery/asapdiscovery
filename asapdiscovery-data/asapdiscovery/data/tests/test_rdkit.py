@@ -1,4 +1,5 @@
 from asapdiscovery.data.backend.rdkit import load_sdf
+import pytest
 
 
 def test_ligand_sdf(moonshot_sdf, multipose_ligand, sdf_file):
@@ -9,8 +10,5 @@ def test_ligand_sdf(moonshot_sdf, multipose_ligand, sdf_file):
     assert multiconf.GetNumConformers() == 50
 
     # this should fail if the file has multiple ligands
-    try:
-        multiligand = load_sdf(sdf_file)
-        raise Error("This should fail")
-    except RuntimeError:
-        pass
+    with pytest.raises(RuntimeError):
+        load_sdf(sdf_file)

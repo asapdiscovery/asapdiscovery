@@ -49,8 +49,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):
@@ -723,7 +722,6 @@ class Ligand(DataModelAbstractBase):
         import numpy as np
         from asapdiscovery.data.backend.openeye import (
             get_multiconf_SD_data,
-            get_SD_data,
         )
 
         if self.num_poses == 1:

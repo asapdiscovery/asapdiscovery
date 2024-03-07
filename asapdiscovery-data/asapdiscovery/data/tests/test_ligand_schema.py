@@ -238,8 +238,6 @@ def test_multiconf_ligand_basics(multipose_ligand):
     ],
 )
 def test_multiconformer_sorting(sort_by, top_tags_dict, multipose_ligand):
-    import numpy as np
-    from asapdiscovery.data.backend.openeye import get_multiconf_SD_data
 
     lig = Ligand.from_sdf(multipose_ligand)
     lig_unsorted = Ligand.from_sdf(multipose_ligand)
