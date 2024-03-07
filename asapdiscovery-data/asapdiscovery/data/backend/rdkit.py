@@ -1,7 +1,8 @@
-from rdkit import Chem
-from typing import Union
 from pathlib import Path
+from typing import Union
+
 from asapdiscovery.data.schema.schema_base import read_file_directly
+from rdkit import Chem
 
 
 def set_SD_data(mol: Chem.Conformer, data: dict) -> None:
