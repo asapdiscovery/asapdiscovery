@@ -193,6 +193,75 @@ def test_multiconf_ligand_basics(multipose_ligand):
     )
 
 
+@pytest.mark.parametrize(
+    ("sort_by", "top_tags_dict"),
+    [
+        (
+            "Docking_posit_hybrid_clash_POSIT",
+            {
+                "Docking_posit_hybrid_clash_Chemgauss4": "-5.716377258300781",
+                "Docking_posit_hybrid_clash_POSIT": "0.18000000715255737",
+                "Docking_posit_hybrid_clash_RMSD": "23.07465599544404",
+                "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+                "Compound_ID": "ADA-UCB-6c2cb422-1",
+                "Docking_posit_hybrid_clash_clash": "0",
+                "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+                "Dataset": "Mpro-P2005_0A",
+            },
+        ),
+        (
+            "Docking_posit_hybrid_clash_RMSD",
+            {
+                "Docking_posit_hybrid_clash_Chemgauss4": "-6.190071105957031",
+                "Docking_posit_hybrid_clash_POSIT": "0.18000000715255737",
+                "Docking_posit_hybrid_clash_RMSD": "21.846467954052606",
+                "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+                "Compound_ID": "ADA-UCB-6c2cb422-1",
+                "Docking_posit_hybrid_clash_clash": "0",
+                "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+                "Dataset": "Mpro-P2005_0A",
+            },
+        ),
+        (
+            "Docking_posit_hybrid_clash_Chemgauss4",
+            {
+                "Docking_posit_hybrid_clash_Chemgauss4": "-2.448556661605835",
+                "Docking_posit_hybrid_clash_POSIT": "0.18000000715255737",
+                "Docking_posit_hybrid_clash_RMSD": "23.0875245713518",
+                "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+                "Compound_ID": "ADA-UCB-6c2cb422-1",
+                "Docking_posit_hybrid_clash_clash": "0",
+                "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+                "Dataset": "Mpro-P2005_0A",
+            },
+        ),
+    ],
+)
+def test_multiconformer_sorting(sort_by, top_tags_dict, multipose_ligand):
+    import numpy as np
+    from asapdiscovery.data.backend.openeye import get_multiconf_SD_data
+
+    lig = Ligand.from_sdf(multipose_ligand)
+    lig_unsorted = Ligand.from_sdf(multipose_ligand)
+
+    assert lig.tags == {
+        "Docking_posit_hybrid_clash_Chemgauss4": "-3.9384562969207764",
+        "Docking_posit_hybrid_clash_POSIT": "0.23999999463558197",
+        "Docking_posit_hybrid_clash_RMSD": "23.510106811395577",
+        "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+        "Compound_ID": "ADA-UCB-6c2cb422-1",
+        "Docking_posit_hybrid_clash_clash": "0",
+        "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+        "Dataset": "Mpro-P2005_0A",
+    }
+
+    lig.sort_confs(sort_by, ascending=True)
+
+    assert lig.tags == top_tags_dict
+    assert lig_unsorted.tags != lig.tags
+    assert lig.to_oemol().GetCoords() != lig_unsorted.to_oemol().GetCoords()
+
+
 def test_multiconf_lig_to_rdkit(multipose_ligand):
     lig = Ligand.from_sdf(multipose_ligand)
     rdkit_mol = lig.to_rdkit()

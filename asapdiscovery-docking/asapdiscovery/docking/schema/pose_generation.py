@@ -388,7 +388,14 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             return_code != oeomega.OEOmegaReturnCode_Success
         ):
             # add the failure message as an SD tag, should be able to see visually if the molecule is 2D
+
+            # because of downstream inconsistencies in the way we handle SD data, here we'll just add both to the
+            # top level and conformations. There are testing errors if we don't do both.
             _set_SD_data(
+                mol=target_ligand,
+                data={"omega_return_code": oeomega.OEGetOmegaError(return_code)},
+            )
+            set_SD_data(
                 mol=target_ligand,
                 data={"omega_return_code": oeomega.OEGetOmegaError(return_code)},
             )

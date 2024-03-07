@@ -12,6 +12,8 @@ from typing import (  # noqa: F401
     Union,
 )
 
+import numpy as np
+
 from asapdiscovery.data.backend.openeye import (
     clear_SD_data,
     get_multiconf_SD_data,
@@ -27,6 +29,7 @@ from asapdiscovery.data.backend.openeye import (
     set_SD_data,
     smiles_to_oemol,
 )
+import warnings
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
 from asapdiscovery.data.schema.identifiers import LigandIdentifiers, LigandProvenance
 from asapdiscovery.data.schema.schema_base import DataStorageType
@@ -435,35 +438,38 @@ class Ligand(DataModelAbstractBase):
         OpenEye behaviour
         """
         # make sure we don't overwrite any attributes
-        for k in data.keys():
+        new_data = {}
+        for k, v in data.items():
             if k in self.__fields__.keys():
-                raise ValueError(f"Tag name {k} is a reserved attribute name")
+                warnings.warn(f"Tag name {k} is a reserved attribute name, skipping")
+            else:
+                new_data[k] = v
 
         # first update the conformer tags, which is simple if the data is a dict of lists
-        if all([isinstance(v, list) for v in data.values()]):
+        if all([isinstance(v, list) for v in new_data.values()]):
             # don't need to do anything
             pass
-        elif all([isinstance(v, str) for v in data.values()]):
+        elif all([isinstance(v, str) for v in new_data.values()]):
             # convert to dict of lists of strings
-            data = {
+            new_data = {
                 key: [str(value) for _ in range(self.num_poses)]
-                for key, value in data.items()
+                for key, value in new_data.items()
             }
 
         else:
             try:
                 # try converting to list of strings
-                data = {
+                new_data = {
                     key: [str(value) for _ in range(self.num_poses)]
-                    for key, value in data.items()
+                    for key, value in new_data.items()
                 }
             except TypeError:
                 raise ValueError("Data must be a dict of lists or strings")
         # now update the conformer tags
-        self.conf_tags.update(data)
+        self.conf_tags.update(new_data)
 
         # now update the tags to be the first conformer
-        self.tags.update(self.to_single_conformers()[0].tags)
+        self.tags.update({k: v[0] for k, v in new_data.items()})
 
     def to_sdf_str(self) -> str:
         """
@@ -707,6 +713,37 @@ class Ligand(DataModelAbstractBase):
         if relationship == ChemicalRelationship.UNKNOWN:
             relationship |= ChemicalRelationship.DISTINCT
         return relationship
+
+    def sort_confs(self, by: str, ascending: bool = True) -> np.ndarray:
+        """
+        Sort the conformers of the ligand by a particular tag.
+        Returns the indices of the conformers in the sorted order.
+        """
+        import numpy as np
+        from asapdiscovery.data.backend.openeye import (
+            get_multiconf_SD_data,
+            get_SD_data,
+        )
+
+        if self.num_poses == 1:
+            warnings.warn("Only one conformer present, no sorting will be done")
+            return np.array([0])
+
+        if not self.tags.get(by):
+            raise ValueError(f"Tag {by} not found in ligand tags: {self.tags.keys()}")
+
+        mol = self.to_oemol()
+        confs = np.array([conf for conf in mol.GetConfs()])
+        sort_array = np.argsort(np.array(self.conf_tags[by]))
+        if not ascending:
+            sort_array = np.flip(sort_array)
+        sorted_by_value = confs[sort_array]
+        if mol.OrderConfs(sorted_by_value):
+            self.set_SD_data(get_multiconf_SD_data(mol))
+            self.data = oemol_to_sdf_string(mol)
+            return sort_array
+        else:
+            raise ValueError("Unable to sort conformers")
 
 
 class ReferenceLigand(Ligand):
