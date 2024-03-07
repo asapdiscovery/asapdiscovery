@@ -48,8 +48,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):

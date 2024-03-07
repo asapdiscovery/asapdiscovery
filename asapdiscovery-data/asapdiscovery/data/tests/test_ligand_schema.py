@@ -447,6 +447,13 @@ def test_ligand_oemol_roundtrip_data_only(moonshot_sdf):
     assert l1.data_equal(l2)
 
 
+def test_clear_sd_data_reserved_fails(moonshot_sdf):
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
+    data = {"experimental_data": "blahblah"}
+    with pytest.warns():
+        l1.set_SD_data(data)
+
+
 def test_get_set_sd_data(moonshot_sdf):
     l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
