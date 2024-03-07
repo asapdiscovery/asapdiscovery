@@ -1,5 +1,6 @@
 import json
 import logging
+import warnings
 from enum import Flag, auto
 from pathlib import Path
 from typing import (  # noqa: F401
@@ -13,7 +14,6 @@ from typing import (  # noqa: F401
 )
 
 import numpy as np
-
 from asapdiscovery.data.backend.openeye import (
     clear_SD_data,
     get_multiconf_SD_data,
@@ -29,7 +29,6 @@ from asapdiscovery.data.backend.openeye import (
     set_SD_data,
     smiles_to_oemol,
 )
-import warnings
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
 from asapdiscovery.data.schema.identifiers import LigandIdentifiers, LigandProvenance
 from asapdiscovery.data.schema.schema_base import DataStorageType
