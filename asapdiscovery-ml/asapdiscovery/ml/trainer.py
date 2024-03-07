@@ -15,11 +15,6 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
-from asapdiscovery.ml.es import (
-    BestEarlyStopping,
-    ConvergedEarlyStopping,
-    PatientConvergedEarlyStopping,
-)
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
@@ -761,6 +756,7 @@ class Trainer(BaseModel):
                                 "best_loss": self.es.best_loss,
                             }
                         )
+                    self.loss_dict["use_epoch"] = self.best_epoch
                     break
                 elif self.es_config.es_type == "patient_converged" and self.es.check(
                     epoch_idx, epoch_val_loss, self.model.state_dict()
@@ -785,6 +781,7 @@ class Trainer(BaseModel):
                                 "converged_loss": self.es.converged_loss,
                             }
                         )
+                    self.loss_dict["use_epoch"] = self.converged_epoch
                     break
                 elif self.es_config.es_type == "converged" and self.es.check(
                     epoch_val_loss
