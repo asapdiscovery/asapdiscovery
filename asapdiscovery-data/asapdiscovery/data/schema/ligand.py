@@ -46,7 +46,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError): ...
+class InvalidLigandError(ValueError):
+    ...
 
 
 class ChemicalRelationship(Flag):
@@ -277,12 +278,12 @@ class Ligand(DataModelAbstractBase):
         """
         Convert the current molecule state to an RDKit molecule including all fields as SD tags.
         """
-        from rdkit import Chem
         from asapdiscovery.data.backend.rdkit import (
             sdf_str_to_rdkit_mol,
-            set_SD_data,
             set_multiconf_SD_data,
+            set_SD_data,
         )
+        from rdkit import Chem
 
         rdkit_mol: Chem.Mol = sdf_str_to_rdkit_mol(self.data)
         data = {}
