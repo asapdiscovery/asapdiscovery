@@ -238,7 +238,6 @@ def test_multiconf_ligand_basics(multipose_ligand):
     ],
 )
 def test_multiconformer_sorting(sort_by, top_tags_dict, multipose_ligand):
-
     lig = Ligand.from_sdf(multipose_ligand)
     lig_unsorted = Ligand.from_sdf(multipose_ligand)
 
