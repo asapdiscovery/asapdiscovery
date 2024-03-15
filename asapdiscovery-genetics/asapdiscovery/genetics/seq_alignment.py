@@ -37,7 +37,9 @@ class Alignment:
 
     @staticmethod
     def select_checkbox():
-        raise NotImplementedError("I'm not sure this can be implemented outside of Jupyter")
+        raise NotImplementedError(
+            "I'm not sure this can be implemented outside of Jupyter"
+        )
 
     def select_keyword(self, match_string: str, selection_file: str):
         # First filter unique entries

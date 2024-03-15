@@ -11,7 +11,7 @@ from Bio.Blast import NCBIWWW, NCBIXML
 _E_VALUE_THRESH = 1e-20
 
 
-def parse_blast(results_file: str, verbose: bool=False) -> pd.DataFrame:
+def parse_blast(results_file: str, verbose: bool = False) -> pd.DataFrame:
     """Parse data from BLAST xml file
 
     Args:
