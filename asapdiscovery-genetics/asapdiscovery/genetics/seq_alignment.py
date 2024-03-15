@@ -24,7 +24,7 @@ class Alignment:
             query (str): Descriptor of query sequence
             results_dir (str): Path for directory where results will be saved
         """
-        self.dir_save = results_dir
+        self.dir_save = dir_save
         self.blast_query = query
         self.query_label = self.blast_query.strip().replace(" ", "_")
 
@@ -37,7 +37,7 @@ class Alignment:
 
     @staticmethod
     def select_checkbox():
-        return "I'm not sure this can be implemented outside of Jupyter"
+        raise NotImplementedError("I'm not sure this can be implemented outside of Jupyter")
 
     def select_keyword(self, match_string: str, selection_file: str):
         # First filter unique entries

@@ -11,7 +11,7 @@ from Bio.Blast import NCBIWWW, NCBIXML
 _E_VALUE_THRESH = 1e-20
 
 
-def parse_blast(results_file: str, verbose: bool) -> pd.DataFrame:
+def parse_blast(results_file: str, verbose: bool=False) -> pd.DataFrame:
     """Parse data from BLAST xml file
 
     Args:
@@ -107,14 +107,11 @@ def get_blast_seqs(
         # Input is sequence
         sequence = seq_source
     else:  # Another source?
-        return
+        raise ValueError("unknown input type")
 
     # Retrieve blastp results
-    program = "blastp"  # protein sequence BLAST
-    database = database  # protein database
-    alignments = nalign  # number of alignments to retrieve
     result_handle = NCBIWWW.qblast(
-        program, database, sequence, hitlist_size=nhits, alignments=alignments
+        "qblast", database, sequence, hitlist_size=nhits, alignments=nalign
     )
 
     # Create folder if doesn't already exists
