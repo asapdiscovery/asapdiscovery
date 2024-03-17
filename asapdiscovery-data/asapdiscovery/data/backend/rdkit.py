@@ -4,40 +4,80 @@ from typing import Union
 from asapdiscovery.data.schema.schema_base import read_file_directly
 from rdkit import Chem
 
-
-def set_SD_data(mol: Chem.Conformer, data: dict) -> None:
-    for key, value in data.items():
-        mol.SetProp(str(key), str(value))
-
-
-def set_multiconf_SD_data(mol: Chem.Mol, data: dict[str, list]):
+def _set_SD_data(mol: Union[Chem.Mol, Chem.Conformer], data: dict[str, str]):
     """
-    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+    Set the SD data on an rdkit molecule or conformer
 
     Parameters
     ----------
-    mol: oechem.OEMol
-        OpenEye OEMol
+    mol: Union[Chem.Mol, Chem.Conformer]
+        rdkit molecule or conformer
 
-    Returns
-    -------
-    oechem.OEMol
-        OpenEye OEMol with SD data set
+    data: dict[str, str]
+        Dictionary of SD data to set
+    """
+    for key, value in data.items():
+        mol.SetProp(str(key), str(value))
+
+def set_SD_data(mol: Chem.Mol, data: dict[str, list]):
+    """
+    Set the SD data on an rdkit molecule, overwriting any existing data.
+    If the length of a list is 1, will set that value to all conformers.
+    If the length of a list is equal to the number of conformers, will set each value to the corresponding conformer.
+    Finally, it will set the properties for the whole molecule to be the data for the first conformer.
+    Otherwise, will raise a ValueError.
+
+    Parameters
+    ----------
+    mol: rdkit.Chem.Mol
+        rdkit molecule
+
+    data: dict[str, list]
+        Dictionary of SD data to set.
+        Each key should be a tag name and each value should be a list of values, one for each conformer.
     """
     num_confs = mol.GetNumConformers()
+
     for key, value in data.items():
-        if not len(value) == num_confs:
+        if len(value) == 1:
+            for conf in mol.GetConformers():
+                conf.SetProp(str(key), str(value[0]))
+        elif len(value) == num_confs:
+            for i, conf in enumerate(mol.GetConformers()):
+                conf.SetProp(str(key), str(value[i]))
+        else:
             raise ValueError(
                 f"Length of data for tag '{key}' does not match number of conformers ({num_confs}). "
                 f"Expected {num_confs} but got {len(value)} elements."
             )
-        for i, conf in enumerate(mol.GetConformers()):
-            set_SD_data(conf, data)
+
+    # Set the properties for the highest level to be the data for the first conformer
+    from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
+    first_conf_data = get_first_value_of_dict_of_lists(data)
+    _set_SD_data(mol, first_conf_data)
 
 
-def get_multiconf_SD_data(mol: Chem.Mol) -> dict[str, list]:
+def _get_SD_data(mol: Union[Chem.Mol, Chem.Conformer]) -> dict[str, str]:
     """
-    Get the SD data from an RDKit molecule
+    Get the SD data from an RDKit molecule or conformer
+
+    Parameters
+    ----------
+    mol: Union[Chem.Mol, Chem.Conformer]
+        RDKit molecule or conformer
+
+    Returns
+    -------
+    dict
+        Dictionary of SD data
+    """
+    return mol.GetPropsAsDict()
+
+def get_SD_data(mol: Chem.Mol) -> dict[str, list]:
+    """
+    Get the SD data from an RDKit molecule.
+    If there are multiple conformers, will get data from the conformers,
+    so properties saved to mol.Prop will be ignored.
 
     Parameters
     ----------
@@ -49,14 +89,13 @@ def get_multiconf_SD_data(mol: Chem.Mol) -> dict[str, list]:
     dict
         Dictionary of SD data
     """
-    data = {}
-    for conf in mol.GetConformers():
-        conf_data = conf.GetPropsAsDict()
-        for key, value in conf_data.items():
-            if key not in data:
-                data[key] = []
-            data[key].append(value)
-    return data
+    if mol.GetNumConformers() == 1:
+        from asapdiscovery.data.util.data_conversion import get_dict_of_lists_from_dict
+        return get_dict_of_lists_from_dict(_get_SD_data(mol))
+
+    from asapdiscovery.data.util.data_conversion import get_dict_of_lists_from_list_of_dicts
+    data_list = [_get_SD_data(conf) for conf in mol.GetConformers()]
+    return get_dict_of_lists_from_list_of_dicts(data_list)
 
 
 def load_sdf(file: Union[str, Path]) -> Chem.Mol:
