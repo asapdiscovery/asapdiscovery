@@ -5,7 +5,9 @@ from pathlib import Path
 from asapdiscovery.genetics.blast import PDBEntry, get_blast_seqs
 from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
 
-parser = argparse.ArgumentParser(description="Find similarities between reference protein and its related proteins by sequence")
+parser = argparse.ArgumentParser(
+    description="Find similarities between reference protein and its related proteins by sequence"
+)
 
 parser.add_argument(
     "--fasta",
@@ -60,6 +62,7 @@ parser.add_argument(
     help="Optional file name for saving result of BLAST search",
 )
 
+
 def main():
     args = parser.parse_args()
     # check all the required files exist
@@ -85,7 +88,9 @@ def main():
     for query in matches_df["query"].unique():
         alignment = Alignment(matches_df, query, results_folder)
         file_prefix = f"{args.aln_output}{alignment.query_label}"
-        selection_fasta, plot = do_MSA(alignment, args.sel_key, file_prefix, args.plot_width)
+        selection_fasta, plot = do_MSA(
+            alignment, args.sel_key, file_prefix, args.plot_width
+        )
 
         # Generate PDB file for template (only for the reference structure)
         pdb_entry = PDBEntry(seq=selection_fasta, type="fasta")
@@ -97,6 +102,7 @@ def main():
         print(f"A PDB template for {record.label} was saved as {record.pdb_file}")
 
     return
+
 
 if __name__ == "__main__":
     main()

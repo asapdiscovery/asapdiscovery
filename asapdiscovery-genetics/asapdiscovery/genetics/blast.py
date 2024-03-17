@@ -1,13 +1,13 @@
+import subprocess
+from pathlib import Path
+
 import pandas as pd
 import requests
-from pathlib import Path
-import subprocess
 
 # BioPython
 from Bio import SeqIO
 from Bio.Blast import NCBIWWW, NCBIXML
 from Bio.PDB import PDBList
-
 from pydantic import BaseModel, Field
 
 _E_VALUE_THRESH = 1e-20
@@ -80,7 +80,7 @@ def get_blast_seqs(
     xml_file="results.xml",
     verbose=True,
     save_csv=None,
-    ) -> pd.DataFrame:
+) -> pd.DataFrame:
     """Run a BLAST search on a protein sequence.
 
     Parameters
@@ -127,7 +127,7 @@ def get_blast_seqs(
         "blastp", database, sequence, hitlist_size=nhits, alignments=nalign
     )
 
-    save_file = save_folder / xml_file 
+    save_file = save_folder / xml_file
 
     with open(save_file, "w") as file:
         blast_results = result_handle.read()
@@ -138,6 +138,7 @@ def get_blast_seqs(
         matches_df.to_csv(save_folder / save_csv, index=False)
 
     return matches_df
+
 
 class PDBRecord(BaseModel):
     label: str = Field(description="RefID label of the Blast PDB record")
@@ -153,11 +154,11 @@ class PDBEntry(BaseModel):
     type: str = Field(description="Type of input")
 
     def retrieve_pdb(
-            self, 
-            results_folder: Path, 
-            min_id_match=99, 
-            ref_only=False,
-            ):#->list[PDBRecord]:
+        self,
+        results_folder: Path,
+        min_id_match=99,
+        ref_only=False,
+    ):  # ->list[PDBRecord]:
         """Retrieve the PDB record of a given sequence.
 
         Parameters
@@ -203,10 +204,12 @@ class PDBEntry(BaseModel):
             seq_description = seq_record.description
             seq_chain = int(seq_record.id.split("|")[1].split(".")[-1])
             pdb_file_record.append(
-                PDBRecord(label=seq_id, 
-                          description=seq_description, 
-                          seq=str(seq_record.seq),
-                          chain=seq_chain)
+                PDBRecord(
+                    label=seq_id,
+                    description=seq_description,
+                    seq=str(seq_record.seq),
+                    chain=seq_chain,
+                )
             )
 
         best_scores = []
@@ -241,7 +244,7 @@ class PDBEntry(BaseModel):
         return pdb_file_record
 
     @staticmethod
-    def parse_pdb_blast_results(blast_df: pd.DataFrame, min_score: int)->list[dict]:
+    def parse_pdb_blast_results(blast_df: pd.DataFrame, min_score: int) -> list[dict]:
         """For a pdb database search extract pdb ids with a minimum score.
         Outputs are lists because iterables are needed for functions down the pipeline.
 

@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -13,7 +14,6 @@ from bokeh.models.glyphs import Rect, Text
 
 # Bokeh imports
 from bokeh.plotting import figure, output_file, save
-from pathlib import Path
 
 
 class Alignment:
@@ -111,7 +111,7 @@ class Alignment:
         text = [i for s in list(seqs) for i in s]  # Al units joind on same list
         # List with ALL colors
         colors = get_colors_protein(seqs)
-        N = len(seqs[0]) 
+        N = len(seqs[0])
         S = len(seqs)
 
         x = np.arange(1, N + 1)
@@ -122,9 +122,7 @@ class Alignment:
         gx = xx.ravel()
         gy = yy.flatten()
         # use recty for rect coords with an offset
-        recty = (
-            gy + 0.5
-        )  
+        recty = gy + 0.5
         # now we can create the ColumnDataSource with all the arrays
         print(f"Aligning {S} sequences of lenght {N}")
         # ColumnDataSource is a JSON dict that maps names to arrays of values
