@@ -13,16 +13,21 @@ from bokeh.models.glyphs import Rect, Text
 
 # Bokeh imports
 from bokeh.plotting import figure, output_file, save
+from pathlib import Path
 
 
 class Alignment:
-    def __init__(self, blast_match: pd.DataFrame, query: str, results_dir: str):
+    def __init__(self, blast_match: pd.DataFrame, query: str, dir_save: Path):
         """An alignment object
 
-        Args:
-            blast_match (pd.DataFrame): DataFrame with BLAST results
-            query (str): Descriptor of query sequence
-            results_dir (str): Path for directory where results will be saved
+        Parameters
+        ----------
+        blast_match : pd.DataFrame
+            DataFrame with BLAST results
+        query : str
+            Descriptor of query sequence
+        dir_save : Path
+            Path for directory where results will be saved
         """
         self.dir_save = dir_save
         self.blast_query = query
@@ -100,14 +105,13 @@ class Alignment:
         """Bokeh sequence alignment view
         From: https://dmnfarrell.github.io/bioinformatics/bokeh-sequence-aligner"""
         # The function takes a biopython alignment object as input.
-        # rec is the alignment record: Each one of the entries given as input
         aln = self.align_obj
         seqs = [rec.seq for rec in (aln)]  # Each sequence input
         ids = [rec.id for rec in aln]  # Each entry ID
         text = [i for s in list(seqs) for i in s]  # Al units joind on same list
         # List with ALL colors
         colors = get_colors_protein(seqs)
-        N = len(seqs[0])  # What if they're not the same length???
+        N = len(seqs[0]) 
         S = len(seqs)
 
         x = np.arange(1, N + 1)
@@ -120,8 +124,7 @@ class Alignment:
         # use recty for rect coords with an offset
         recty = (
             gy + 0.5
-        )  # Just to make the rectangles twice the size and the letter in the middle
-        h = 1 / S
+        )  
         # now we can create the ColumnDataSource with all the arrays
         print(f"Aligning {S} sequences of lenght {N}")
         # ColumnDataSource is a JSON dict that maps names to arrays of values
@@ -244,7 +247,7 @@ class Alignment:
 
 
 def do_MSA(alignment: Alignment, select_mode: str, file_prefix: str, plot_width: int):
-    save_file = f"{alignment.dir_save}/{file_prefix}"
+    save_file = alignment.dir_save / file_prefix
     # Select sequeneces of interest
     if select_mode == "checkbox":
         select_file = alignment.select_checkbox()

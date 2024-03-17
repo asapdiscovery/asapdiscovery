@@ -1,12 +1,14 @@
-import subprocess
-import sys
-
 import pandas as pd
 import requests
+from pathlib import Path
+import subprocess
 
 # BioPython
 from Bio import SeqIO
 from Bio.Blast import NCBIWWW, NCBIXML
+from Bio.PDB import PDBList
+
+from pydantic import BaseModel, Field
 
 _E_VALUE_THRESH = 1e-20
 
@@ -14,12 +16,17 @@ _E_VALUE_THRESH = 1e-20
 def parse_blast(results_file: str, verbose: bool = False) -> pd.DataFrame:
     """Parse data from BLAST xml file
 
-    Args:
-        results_file (str): Path to BLAST results
-        verbose (bool): Whether to print information
+    Parameters
+    ----------
+    results_file : str
+        Path to BLAST results
+    verbose : bool, optional
+        Whether to print information, by default False
 
-    Returns:
-        pd.DataFrame: DataFrame with BLAST entries
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with BLAST entries
     """
     # Return DataFrame with BLAST results
     dfs = []
@@ -65,7 +72,7 @@ def parse_blast(results_file: str, verbose: bool = False) -> pd.DataFrame:
 
 def get_blast_seqs(
     seq_source: str,
-    save_folder: str,
+    save_folder: Path,
     input_type="fasta",
     nhits=100,
     nalign=500,
@@ -73,29 +80,35 @@ def get_blast_seqs(
     xml_file="results.xml",
     verbose=True,
     save_csv=None,
-) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """Run a BLAST search on a protein sequence.
-    Args:
-        seq_source (str): Source with the sequence.
-        input_type (str, optional): Type of sequence source ["pre-cal", "fasta", "sequence"]. Defaults to "fasta".
-        save_file (str, optional): Name of output file storing BLAST results. Defaults to "results.xml".
 
-    Args:
-        seq_source (str): Source with the sequence.
-        save_folder (str): Path to folder to save BLAST results
-        input_type (str, optional): Type of sequence source ["pre-cal", "fasta", "sequence"]. Defaults to "fasta".
-        nhits (int, optional): Number of hits, hitlist_size parameter in BLAST. Defaults to 100.
-        nalign (int, optional): Number of alignments, alignments parameter in BLAST. Defaults to 500.
-        database (str, optional): Name of BLAST database. Defaults to "refseq_protein".
-        xml_file (str, optional): Name to be given to XML with BLAST results. Defaults to "results.xml".
-        verbose (bool, optional): Whether to print info on BLAST search. Defaults to True.
-        save_csv (Union[str, None], optional): CSV file name to optionally save dataframe. Defaults to None.
+    Parameters
+    ----------
+    seq_source : str
+        Source with the sequence.
+    save_folder : Path
+        Path to folder to save BLAST results
+    input_type : str, optional
+        Type of sequence source ["pre-cal", "fasta", "sequence"], by default "fasta"
+    nhits : int, optional
+        Number of hits, hitlist_size parameter in BLAST, by default 100
+    nalign : int, optional
+        Number of alignments, alignments parameter in BLAST, by default 500
+    database : str, optional
+        Name of BLAST database, by default "refseq_protein"
+    xml_file : str, optional
+        Name to be given to XML with BLAST results, by default "results.xml"
+    verbose : bool, optional
+        Whether to print info on BLAST search, by default True
+    save_csv : Union[str, None], optional
+        CSV file name to optionally save dataframe, by default None
 
-    Returns:
-        pd.DataFrame: DataFrame with Blast results.
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with Blast results.
     """
-
-    from pathlib import Path
 
     if input_type == "pre-calc":
         matches_df = parse_blast(seq_source, verbose)
@@ -111,12 +124,10 @@ def get_blast_seqs(
 
     # Retrieve blastp results
     result_handle = NCBIWWW.qblast(
-        "qblast", database, sequence, hitlist_size=nhits, alignments=nalign
+        "blastp", database, sequence, hitlist_size=nhits, alignments=nalign
     )
 
-    # Create folder if doesn't already exists
-    Path(save_folder).mkdir(parents=True, exist_ok=True)
-    save_file = f"{save_folder}/{xml_file}"
+    save_file = save_folder / xml_file 
 
     with open(save_file, "w") as file:
         blast_results = result_handle.read()
@@ -124,29 +135,50 @@ def get_blast_seqs(
 
     matches_df = parse_blast(save_file, verbose)
     if save_csv:
-        matches_df.to_csv(f"{save_folder}/{save_csv}", index=False)
+        matches_df.to_csv(save_folder / save_csv, index=False)
 
     return matches_df
 
-
-class PDB_record:
-    def __init__(
-        self, label: str, query_seq: str, description: str, chain: int
-    ) -> None:
-        self.label = label
-        self.description = description
-        self.seq = query_seq
-        self.chain = chain
+class PDBRecord(BaseModel):
+    label: str = Field(description="RefID label of the Blast PDB record")
+    description: str = Field(description="Description of the Blast record")
+    seq: str = Field(description="Sequence")
+    chain: int = Field(description="Chain identifier")
+    pdb_id: str = Field("", description="The pdb ID of entry")
+    pdb_file: str = Field("", description="The PDB file Path that was saved")
 
 
-class PDBentry:
-    def __init__(self, input_seq: str, input_type: str) -> None:
-        self.input = input_seq
-        self.type = input_type
+class PDBEntry(BaseModel):
+    seq: str = Field(description="Input with the protein sequence")
+    type: str = Field(description="Type of input")
 
-    def retrieve_pdb(self, results_folder: str, min_id_match=99, ref_only=False):
-        """Retrieve the PDB record of a given sequence."""
-        from pathlib import Path
+    def retrieve_pdb(
+            self, 
+            results_folder: Path, 
+            min_id_match=99, 
+            ref_only=False,
+            ):#->list[PDBRecord]:
+        """Retrieve the PDB record of a given sequence.
+
+        Parameters
+        ----------
+        results_folder : Path
+            Path store results
+        min_id_match : int, optional
+            Minimum match score (in %) to use as criteria to filter PDB blast entries, by default 99
+        ref_only : bool, optional
+            Whether to save the PDBs of only the reference seq or for all BLAST selections, by default False
+
+        Returns
+        -------
+        _type_
+            _description_
+
+        Raises
+        ------
+        ValueError
+            _description_
+        """
 
         import prody
 
@@ -154,7 +186,7 @@ class PDBentry:
 
         # Find pdb matching given sequence
         matches_df = get_blast_seqs(
-            self.input,
+            self.seq,
             results_folder,
             input_type=self.type,
             xml_file=record_name,
@@ -162,16 +194,19 @@ class PDBentry:
             database="pdb",
             verbose=False,
         )
-        print(f"Saving blast results in {results_folder}/{record_name}")
+        print(f"Saving blast results in {results_folder / record_name}")
 
         # Load original sequence names and descriptors for reference
         pdb_file_record = []
-        for seq_record in SeqIO.parse(self.input, self.type):
+        for seq_record in SeqIO.parse(self.seq, self.type):
             seq_id = seq_record.id
             seq_description = seq_record.description
             seq_chain = int(seq_record.id.split("|")[1].split(".")[-1])
             pdb_file_record.append(
-                PDB_record(seq_id, seq_record.seq, seq_description, seq_chain)
+                PDBRecord(label=seq_id, 
+                          description=seq_description, 
+                          seq=str(seq_record.seq),
+                          chain=seq_chain)
             )
 
         best_scores = []
@@ -192,7 +227,10 @@ class PDBentry:
             else:
                 # Return the pdb entry with the max alignment and max resolution (if there are multiple matches)
                 best_pdb_record = self.choose_best_pdb_entry(hits, best_scores[i])
-                filename = prody.fetchPDB(best_pdb_record, folder=results_folder)
+
+                # pdbl = PDBList()
+                # filename = pdbl.retrieve_pdb_file(best_pdb_record.lower(), file_format="pdb", pdir=results_folder)
+                filename = prody.fetchPDB(best_pdb_record, folder=str(results_folder))
                 subprocess.run(["gunzip", filename])
                 pdb_file_record[i].pdb_file = filename
                 pdb_file_record[i].pdb_id = best_pdb_record
@@ -203,9 +241,21 @@ class PDBentry:
         return pdb_file_record
 
     @staticmethod
-    def parse_pdb_blast_results(blast_df, min_score):
+    def parse_pdb_blast_results(blast_df: pd.DataFrame, min_score: int)->list[dict]:
         """For a pdb database search extract pdb ids with a minimum score.
         Outputs are lists because iterables are needed for functions down the pipeline.
+
+        Parameters
+        ----------
+        blast_df : pd.DataFrame
+            DataFrame with BLAST results
+        min_score : int
+            The minimum match score (in %) that a BLAST entry must have w.r.t the reference
+
+        Returns
+        -------
+        list[dict]
+            Blast hits for each query, where data on each hit can be accessed through its PDB ID.
         """
 
         match_hits = []
@@ -233,7 +283,6 @@ class PDBentry:
         r = requests.get(requestURL, headers={"Accept": "application/json"})
         if not r.ok:
             r.raise_for_status()
-            sys.exit()
         return r.json()
 
     @classmethod
@@ -244,7 +293,7 @@ class PDBentry:
     @classmethod
     def choose_best_pdb_entry(self, hits, best_match_percent):
         """If a sequence have different PDB files all with the same alignment match, we choose and retrieve the one with the highest resolution"""
-        max_res = 10  # some unrealistically large number?
+        max_res = 100  # some unrealistically large number?
         best_pdb_record = ""
         for h in hits:
             id_match = hits[h]["percent_identity"]
