@@ -90,8 +90,8 @@ def get_SD_data(mol: Chem.Mol) -> dict[str, list]:
         Dictionary of SD data
     """
     if mol.GetNumConformers() == 1:
-        from asapdiscovery.data.util.data_conversion import get_dict_of_lists_from_dict
-        return get_dict_of_lists_from_dict(_get_SD_data(mol))
+        from asapdiscovery.data.util.data_conversion import get_dict_of_lists_from_dict_of_str
+        return get_dict_of_lists_from_dict_of_str(_get_SD_data(mol))
 
     from asapdiscovery.data.util.data_conversion import get_dict_of_lists_from_list_of_dicts
     data_list = [_get_SD_data(conf) for conf in mol.GetConformers()]
@@ -129,7 +129,7 @@ def sdf_str_to_rdkit_mol(sdf: str) -> Chem.Mol:
     for mol in suppl:
         data = mol.GetPropsAsDict()
         conf = mol.GetConformer()
-        set_SD_data(conf, data)
+        _set_SD_data(conf, data)
         ref.AddConformer(conf, assignId=True)
     return ref
 
