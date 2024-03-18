@@ -1,5 +1,4 @@
 import argparse
-import logging
 from pathlib import Path
 
 from asapdiscovery.genetics.blast import PDBEntry, get_blast_seqs
