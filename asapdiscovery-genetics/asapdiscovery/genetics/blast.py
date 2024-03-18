@@ -7,7 +7,6 @@ import requests
 # BioPython
 from Bio import SeqIO
 from Bio.Blast import NCBIWWW, NCBIXML
-from Bio.PDB import PDBList
 from pydantic import BaseModel, Field
 
 _E_VALUE_THRESH = 1e-20
