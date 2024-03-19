@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "versioningit"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "asapdiscovery-docking"
+name = "asapdiscovery-workflows"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
@@ -25,7 +25,7 @@ dependencies = []
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-make-docked-complexes = "asapdiscovery.docking.scripts.make_docked_complexes_schema_v2:main"
+asap-docking = "asapdiscovery.workflows.cli:docking"
 
 [tool.setuptools.packages.find]
 where = ["."]
