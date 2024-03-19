@@ -41,6 +41,12 @@ def set_SD_data(mol: Chem.Mol, data: dict[str, list]):
     num_confs = mol.GetNumConformers()
 
     for key, value in data.items():
+        if isinstance(value, str):
+            value = [value]
+        if not isinstance(value, list):
+            raise ValueError(
+                f"Expected a list of values for tag '{key}' but got type {type(value)}."
+            )
         if len(value) == 1:
             for conf in mol.GetConformers():
                 conf.SetProp(str(key), str(value[0]))

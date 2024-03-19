@@ -282,7 +282,6 @@ class Ligand(DataModelAbstractBase):
         """
         from asapdiscovery.data.backend.rdkit import (
             sdf_str_to_rdkit_mol,
-            set_multiconf_SD_data,
             set_SD_data,
         )
         from rdkit import Chem
@@ -308,12 +307,12 @@ class Ligand(DataModelAbstractBase):
 
         # set the SD that is different for each conformer
         # convert to str first
-        multiconf_data = {
+        data.update({
             tag: [str(v) for v in values] for tag, values in self.conf_tags.items()
-        }
-
+        })
+        import pdb
+        pdb.set_trace()
         set_SD_data(rdkit_mol, data)
-        set_multiconf_SD_data(rdkit_mol, multiconf_data)
         return rdkit_mol
 
     def to_openfe(self) -> "openfe.SmallMoleculeComponent":
