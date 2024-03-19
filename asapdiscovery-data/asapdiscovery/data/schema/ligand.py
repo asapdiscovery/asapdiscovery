@@ -310,8 +310,6 @@ class Ligand(DataModelAbstractBase):
         data.update({
             tag: [str(v) for v in values] for tag, values in self.conf_tags.items()
         })
-        import pdb
-        pdb.set_trace()
         set_SD_data(rdkit_mol, data)
         return rdkit_mol
 
