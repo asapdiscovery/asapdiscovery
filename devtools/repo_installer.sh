@@ -1,3 +1,4 @@
+#!/bin/bash
 # install asapdiscovery repo
 # run this script from the root of the repo
 pip install -e asapdiscovery-data/.
